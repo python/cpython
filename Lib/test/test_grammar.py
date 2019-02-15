@@ -1264,7 +1264,7 @@ class GrammarTests(unittest.TestCase):
             compile('x is ...', '<testcase>', 'exec')
 
     def test_warn_missed_comma(self):
-        def check(test, msg='perhaps missed a comma'):
+        def check(test):
             with self.assertWarnsRegex(SyntaxWarning, msg):
                 compile(test, '<testcase>', 'exec')
             with warnings.catch_warnings():
@@ -1272,6 +1272,7 @@ class GrammarTests(unittest.TestCase):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     compile(test, '<testcase>', 'exec')
 
+        msg=r'is not callable; perhaps you missed a comma\?'
         check('[(1, 2) (3, 4)]')
         check('[(x, y) (3, 4)]')
         check('[[1, 2] (3, 4)]')
@@ -1292,18 +1293,11 @@ class GrammarTests(unittest.TestCase):
         check('[True (3, 4)]')
         check('[... (3, 4)]')
 
-        check('[(1, 2) [i, j]]')
-        check('[(x, y) [i, j]]')
-        check('[[1, 2] [i, j]]')
+        msg=r'is not subscriptable; perhaps you missed a comma\?'
         check('[{1, 2} [i, j]]')
-        check('[[i for i in range(5)] [i, j]]')
         check('[{i for i in range(5)} [i, j]]')
         check('[(i for i in range(5)) [i, j]]')
         check('[(lambda x, y: x) [i, j]]')
-        check('[f"{x}" [i, j]]')
-        check('[f"x={x}" [i, j]]')
-        check('["abc" [i, j]]')
-        check('[b"abc" [i, j]]')
         check('[123 [i, j]]')
         check('[12.3 [i, j]]')
         check('[12.3j [i, j]]')
@@ -1311,14 +1305,36 @@ class GrammarTests(unittest.TestCase):
         check('[True [i, j]]')
         check('[... [i, j]]')
 
+        msg=r'indices must be integers or slices, not tuple; perhaps you missed a comma\?'
+        check('[(1, 2) [i, j]]')
+        check('[(x, y) [i, j]]')
+        check('[[1, 2] [i, j]]')
+        check('[[i for i in range(5)] [i, j]]')
+        check('[f"{x}" [i, j]]')
+        check('[f"x={x}" [i, j]]')
+        check('["abc" [i, j]]')
+        check('[b"abc" [i, j]]')
+
+        msg=r'indices must be integers or slices, not tuple;'
         check('[[1, 2] [3, 4]]')
+        msg=r'indices must be integers or slices, not list;'
         check('[[1, 2] [[3, 4]]]')
+        check('[[1, 2] [[i for i in range(5)]]]')
+        msg=r'indices must be integers or slices, not set;'
         check('[[1, 2] [{3, 4}]]')
+        check('[[1, 2] [{i for i in range(5)}]]')
+        msg=r'indices must be integers or slices, not dict;'
         check('[[1, 2] [{3: 4}]]')
+        check('[[1, 2] [{i: i for i in range(5)}]]')
+        msg=r'indices must be integers or slices, not generator;'
+        check('[[1, 2] [(i for i in range(5))]]')
+        msg=r'indices must be integers or slices, not function;'
         check('[[1, 2] [(lambda x, y: x)]]')
+        msg=r'indices must be integers or slices, not str;'
         check('[[1, 2] [f"{x}"]]')
         check('[[1, 2] [f"x={x}"]]')
         check('[[1, 2] ["abc"]]')
+        msg=r'indices must be integers or slices, not'
         check('[[1, 2] [b"abc"]]')
         check('[[1, 2] [12.3]]')
         check('[[1, 2] [12.3j]]')

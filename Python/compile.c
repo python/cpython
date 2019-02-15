@@ -3810,8 +3810,8 @@ check_caller(struct compiler *c, expr_ty e)
     case GeneratorExp_kind:
     case JoinedStr_kind:
     case FormattedValue_kind:
-        return compiler_warn(c, "'%.200s' object is not callable, "
-                                "perhaps missed a comma?",
+        return compiler_warn(c, "'%.200s' object is not callable; "
+                                "perhaps you missed a comma?",
                                 infer_type(e)->tp_name);
     default:
         return 1;
@@ -3837,8 +3837,8 @@ check_subscripter(struct compiler *c, expr_ty e)
     case SetComp_kind:
     case GeneratorExp_kind:
     case Lambda_kind:
-        return compiler_warn(c, "'%.200s' object is not subscriptable, "
-                                "perhaps missed a comma?",
+        return compiler_warn(c, "'%.200s' object is not subscriptable; "
+                                "perhaps you missed a comma?",
                                 infer_type(e)->tp_name);
     default:
         return 1;
@@ -3873,8 +3873,8 @@ check_index(struct compiler *c, expr_ty e, slice_ty s)
     case JoinedStr_kind:
     case FormattedValue_kind:
         return compiler_warn(c, "%.200s indices must be integers or slices, "
-                                "not %.200s, "
-                                "perhaps missed a comma?",
+                                "not %.200s; "
+                                "perhaps you missed a comma?",
                                 infer_type(e)->tp_name,
                                 index_type->tp_name);
     default:
