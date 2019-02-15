@@ -12,6 +12,7 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "grammar.h"
 #include "node.h"
@@ -1038,6 +1039,9 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
         return NULL;
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     Py_DECREF(co);
+    if (!v && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
+        _Py_UnhandledKeyboardInterrupt = 1;
+    }
     return v;
 }
 
@@ -1077,6 +1081,9 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
     if (v && flags)
         flags->cf_flags |= (co->co_flags & PyCF_MASK);
     Py_DECREF(co);
+    if (!v && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
+        _Py_UnhandledKeyboardInterrupt = 1;
+    }
     return v;
 error:
     fclose(fp);
