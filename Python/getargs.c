@@ -1864,7 +1864,9 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
         return cleanreturn(0, &freelist);
     }
 
-    if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
+    if (!IS_END_OF_FORMAT(*format) &&
+        (*format != '|') && (*format != '$') && (*format != '@'))
+    {
         PyErr_Format(PyExc_SystemError,
             "more argument specifiers than keyword list entries "
             "(remaining format:'%s')", format);
