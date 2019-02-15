@@ -259,6 +259,8 @@ class BasicAuthHandler(http.server.BaseHTTPRequestHandler):
             else:
                 self.send_response(400, "Empty request data")
                 self.end_headers()
+        else:
+            self.do_AUTHHEAD()
 
 # Proxy test infrastructure
 
