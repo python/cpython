@@ -61,6 +61,11 @@ copying of data.
    that platform's memory page size, the exact size of the shared memory
    block may be larger or equal to the size requested.  When attaching to an
    existing shared memory block, set to ``0`` (which is the default).
+   Requesting a size greater than the original when attaching to an existing
+   shared memory block will attempt a resize of the shared memory block
+   which may or may not be successful.  Requesting a size smaller than the
+   original will attempt to attach to the first N bytes of the existing
+   shared memory block but may still give access to the full allocated size.
 
    *read_only* controls whether a shared memory block is to be available
    for only reading or for both reading and writing.  Its specification is
