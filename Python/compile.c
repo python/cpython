@@ -2404,11 +2404,11 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         return 1;
     }
     case Compare_kind: {
-        if (!check_compare(c, e)) {
-            return 0;
-        }
         Py_ssize_t i, n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
+            if (!check_compare(c, e)) {
+                return 0;
+            }
             basicblock *cleanup = compiler_new_block(c);
             if (cleanup == NULL)
                 return 0;
