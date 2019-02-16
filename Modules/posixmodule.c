@@ -13696,6 +13696,9 @@ all_ins(PyObject *m)
 #ifdef CLD_CONTINUED
     if (PyModule_AddIntMacro(m, CLD_CONTINUED)) return -1;
 #endif
+#ifdef STATUS_CONTROL_C_EXIT  /* Windows */
+    if (PyModule_AddIntMacro(m, STATUS_CONTROL_C_EXIT)) return -1;
+#endif
 
     /* constants for lockf */
 #ifdef F_LOCK

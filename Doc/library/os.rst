@@ -3910,6 +3910,14 @@ used to determine the disposition of a process.
 
    .. availability:: Unix.
 
+.. data:: STATUS_CONTROL_C_EXIT
+
+   This is the process status code of a Windows application exiting as a
+   result of a Ctrl+C.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.8
 
 Interface to the scheduler
 --------------------------
