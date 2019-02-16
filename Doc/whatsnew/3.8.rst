@@ -115,6 +115,16 @@ Other Language Changes
   a :exc:`SyntaxWarning` instead.
   (Contributed by Serhiy Storchaka in :issue:`32912`.)
 
+* The compiler now produces a :exc:`SyntaxWarning` in some cases when a comma
+  is missed before tuple or list.  For example::
+
+     data = [
+         (1, 2, 3) # oops, missing comma!
+         (4, 5, 6)
+     ]
+
+  (Contributed by Serhiy Storchaka in :issue:`15248`.)
+
 * Arithmetic operations between subclasses of :class:`datetime.date` or
   :class:`datetime.datetime` and :class:`datetime.timedelta` objects now return
   an instance of the subclass, rather than the base class. This also affects
