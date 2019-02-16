@@ -1834,6 +1834,8 @@ pymain_main(_PyMain *pymain)
         }
     }
 
+    pymain_free(pymain);
+
     if (_Py_UnhandledKeyboardInterrupt) {
         /* https://bugs.python.org/issue1054041 - We need to exit via the
          * SIG_DFL handler for SIGINT if KeyboardInterrupt went unhandled.
@@ -1850,8 +1852,6 @@ pymain_main(_PyMain *pymain)
         pymain->status = SIGINT + 128;
 #endif /* HAVE_GETPID && !MS_WINDOWS */
     }
-
-    pymain_free(pymain);
 
     return pymain->status;
 }
