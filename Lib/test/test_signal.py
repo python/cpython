@@ -88,18 +88,29 @@ class PosixTests(unittest.TestCase):
         self.assertIn(b"KeyboardInterrupt", process.stderr)
         self.assertEqual(process.returncode, -signal.SIGINT)
 
-    @unittest.skipUnless(os.access("/bin/bash", os.X_OK), "Needs /bin/bash.")
     @unittest.skipUnless(sys.executable, "sys.executable required.")
     def test_keyboard_interrupt_communicated_to_shell(self):
         """KeyboardInterrupt exits such that bash detects a ^C."""
+        bash_proc = subprocess.run(
+                ["bash", "-c", 'echo "${BASH_VERSION}"'],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        if bash_proc.returncode:
+            raise unittest.SkipTest("bash required.")
+        bash_ver = bash_proc.stdout.decode('ascii', errors='ignore').strip()
+        bash_major_minor = [int(n) for n in bash_ver.split('.', 2)[:2]]
+        if bash_major_minor < [4, 0]:  # A guess, adjust as needed.
+            # macOS still ships with bash 3.2.x.  -i does not work as
+            # needed _for this automated test_ in older versions.
+            # Older shells do behave properly in manual interactive use.
+            raise unittest.SkipTest(f"bash version {bash_ver} is too old.")
         # The motivation for https://bugs.python.org/issue1054041.
         # An _interactive_ shell (bash -i simulates that here) detects
         # when a command exits via ^C and stops executing further
         # commands.
         process = subprocess.run(
-            ["/bin/bash", "-ic",
+            ["bash", "-ic",
              f"{sys.executable} -c 'import os,signal; os.kill(os.getpid(), signal.SIGINT)'; "
-             "echo TESTFAIL on \"${BASH_VERSION}\""],
+             "echo TESTFAIL using bash \"${BASH_VERSION}\""],
             stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
         # An interactive shell will abort if python exits properly to
@@ -141,7 +152,7 @@ class WindowsSignalTests(unittest.TestCase):
             signal.signal(7, handler)
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
-    def test_Ctrl_C_exit_code(self):
+    def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
         # I tried using this as the child code:
         #  "import os,signal; os.kill(os.getpid(), signal.CTRL_C_EVENT)"
