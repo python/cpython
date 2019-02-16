@@ -193,9 +193,16 @@ Add option ``--json-lines`` to parse every input line as separate JSON object.
 math
 ----
 
+Added new function :func:`math.dist` for computing Euclidean distance
+between two points.  (Contributed by Raymond Hettinger in :issue:`33089`.)
+
+Expanded the :func:`math.hypot` function to handle multiple dimensions.
+Formerly, it only supported the 2-D case.
+(Contributed by Raymond Hettinger in :issue:`33089`.)
+
 Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
-numbers. (Contributed by Pablo Galindo in :issue:`issue35606`)
+numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 
 
 os.path
