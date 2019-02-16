@@ -1038,10 +1038,10 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
     if (co == NULL)
         return NULL;
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
-    Py_DECREF(co);
     if (!v && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
         _Py_UnhandledKeyboardInterrupt = 1;
     }
+    Py_DECREF(co);
     return v;
 }
 
@@ -1080,10 +1080,10 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (v && flags)
         flags->cf_flags |= (co->co_flags & PyCF_MASK);
-    Py_DECREF(co);
     if (!v && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
         _Py_UnhandledKeyboardInterrupt = 1;
     }
+    Py_DECREF(co);
     return v;
 error:
     fclose(fp);
