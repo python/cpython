@@ -142,18 +142,15 @@ class WindowsSignalTests(unittest.TestCase):
     @unittest.skipUnless(sys.executable, "sys.executable required.")
     def test_Ctrl_C_exit_code(self):
         """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
-        # If this test ever causes problems due to Windows not
-        # allowing Ctrl+C events to be sent to some processes
-        # (it seems to have a console vs non-console type?), change
-        # the child code below to just "raise KeyboardInterrupt".
+        # I tried using this as the child code:
+        #  "import os,signal; os.kill(os.getpid(), signal.CTRL_C_EVENT)"
+        # but that caused the entire testsuite runner to receive the
+        # event and bail out due to an interrupt on CI systems.
         process = subprocess.run(
-                [sys.executable, "-c",
-                "import os,signal; os.kill(os.getpid(), signal.CTRL_C_EVENT)"],
+                [sys.executable, "-c", "raise KeyboardInterrupt"],
                 stderr=subprocess.PIPE)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
         self.assertEqual(process.returncode, os.STATUS_CONTROL_C_EXIT)
-        #STATUS_CONTROL_C_EXIT = 0xC000013A - 2**32
-        print("\nSTATUS_CONTROL_C_EXIT =", os.STATUS_CONTROL_C_EXIT, file=sys.stderr)  # XXX DO NOT MERGE
 
 
 class WakeupFDTests(unittest.TestCase):
