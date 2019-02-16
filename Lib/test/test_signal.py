@@ -165,7 +165,8 @@ class WindowsSignalTests(unittest.TestCase):
                 [sys.executable, "-c", "raise KeyboardInterrupt"],
                 stderr=subprocess.PIPE)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
-        self.assertEqual(process.returncode, os.STATUS_CONTROL_C_EXIT)
+        STATUS_CONTROL_C_EXIT = 0xC000013A
+        self.assertEqual(process.returncode, STATUS_CONTROL_C_EXIT)
 
 
 class WakeupFDTests(unittest.TestCase):
