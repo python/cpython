@@ -1,0 +1,2 @@
+The compiler emits now syntax warnings in the case when a comma is likely
+missed before tuple or list.
