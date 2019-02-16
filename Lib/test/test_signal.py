@@ -157,10 +157,10 @@ class WindowsSignalTests(unittest.TestCase):
     @unittest.skipUnless(sys.executable, "sys.executable required.")
     def test_keyboard_interrupt_exit_code(self):
         """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
-        # I tried using this as the child code:
-        #  "import os,signal; os.kill(os.getpid(), signal.CTRL_C_EVENT)"
-        # but that caused the entire testsuite runner to receive the
-        # event and bail out due to an interrupt on CI systems.
+        # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
+        # as that requires setting up a console control handler in a child
+        # in its own process group.  Doable, but quite complicated.  (see
+        # @eryksun on https://github.com/python/cpython/pull/11862)
         process = subprocess.run(
                 [sys.executable, "-c", "raise KeyboardInterrupt"],
                 stderr=subprocess.PIPE)
