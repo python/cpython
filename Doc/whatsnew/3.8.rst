@@ -359,6 +359,17 @@ Optimizations
 
 * :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
 
+* Improved performance of :func:`operator.itemgetter` by 33%.  Optimized
+  argument handling and added a fast path for the common case of a single
+  non-negative integer index into a tuple (which is the typical use case in
+  the standard library).  (Contributed by Raymond Hettinger in
+  :issue:`35664`.)
+
+* Sped-up field lookups in :func:`collections.namedtuple`.  They are now more
+  than two times faster, making them the fastest form of instance variable
+  lookup in Python. (Contributed by Raymond Hettinger, Pablo Galindo, and
+  Serhiy Storchaka in :issue:`32492`.)
+
 * The :class:`list` constructor does not overallocate the internal item buffer
   if the input iterable has a known length (the input implements ``__len__``).
   This makes the created list 12% smaller on average. (Contributed by Pablo
