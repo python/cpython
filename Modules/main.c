@@ -351,6 +351,7 @@ typedef struct {
     (pymain->command != NULL || pymain->filename != NULL \
      || pymain->module != NULL)
 
+
 static wchar_t*
 pymain_wstrdup(_PyMain *pymain, const wchar_t *str)
 {
