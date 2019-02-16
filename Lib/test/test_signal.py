@@ -78,6 +78,33 @@ class PosixTests(unittest.TestCase):
         self.assertNotIn(signal.NSIG, s)
         self.assertLess(len(s), signal.NSIG)
 
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers exit via SIGINT."""
+        process = subprocess.run(
+                [sys.executable, "-c",
+                 "import os,signal; os.kill(os.getpid(), signal.SIGINT)"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        self.assertEqual(process.returncode, -signal.SIGINT)
+
+    @unittest.skipUnless(os.access("/bin/bash", os.X_OK), "Needs /bin/bash.")
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_communicated_to_shell(self):
+        """KeyboardInterrupt exits such that bash detects a ^C."""
+        # The motivation for https://bugs.python.org/issue1054041.
+        # An _interactive_ shell (bash -i simulates that here) detects
+        # when a command exits via ^C and stops executing further
+        # commands.
+        process = subprocess.run(
+            ["/bin/bash", "-ic",
+             f"{sys.executable} -c 'import os,signal; os.kill(os.getpid(), signal.SIGINT)'; echo FAIL"],
+            stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        # An interactive shell will abort if python exits properly to
+        # indicate that a KeyboardInterrupt occurred.
+        self.assertNotIn(b"FAIL", process.stderr)
+
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
@@ -111,6 +138,22 @@ class WindowsSignalTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             signal.signal(7, handler)
+
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_Ctrl_C_exit_code(self):
+        """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
+        # If this test ever causes problems due to Windows not
+        # allowing Ctrl+C events to be sent to some processes
+        # (it seems to have a console vs non-console type?), change
+        # the child code below to just "raise KeyboardInterrupt".
+        process = subprocess.run(
+                [sys.executable, "-c",
+                "import os,signal; os.kill(os.getpid(), signal.CTRL_C_EVENT)"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        self.assertEqual(process.returncode, os.STATUS_CONTROL_C_EXIT)
+        #STATUS_CONTROL_C_EXIT = 0xC000013A - 2**32
+        print("\nSTATUS_CONTROL_C_EXIT =", os.STATUS_CONTROL_C_EXIT, file=sys.stderr)  # XXX DO NOT MERGE
 
 
 class WakeupFDTests(unittest.TestCase):
@@ -1217,11 +1260,8 @@ class StressTest(unittest.TestCase):
 class RaiseSignalTest(unittest.TestCase):
 
     def test_sigint(self):
-        try:
+        with self.assertRaises(KeyboardInterrupt):
             signal.raise_signal(signal.SIGINT)
-            self.fail("Expected KeyInterrupt")
-        except KeyboardInterrupt:
-            pass
 
     @unittest.skipIf(sys.platform != "win32", "Windows specific test")
     def test_invalid_argument(self):
