@@ -1,2 +1,0 @@
-:mod:`modulefinder` no longer uses the deprecated :mod:`imp` module.
-Patch by Brandt Bucher.
