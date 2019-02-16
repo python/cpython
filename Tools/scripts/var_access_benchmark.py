@@ -214,6 +214,15 @@ def deque_append_pop(trials=trials, a=deque([1])):
         ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
         ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
 
+def deque_append_popleft(trials=trials, a=deque([1])):
+    ap, pop = a.append, a.popleft
+    for t in trials:
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
+        ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop(); ap(1); pop();
+
 def write_list(trials=trials, a=[1]):
     for t in trials:
         a[0]=1; a[0]=1; a[0]=1; a[0]=1; a[0]=1
@@ -261,7 +270,7 @@ if __name__=='__main__':
             '\nData structure write access:',
             write_list, write_deque, write_dict,
             '\nStack (or queue) operations:',
-            list_append_pop, deque_append_pop,
+            list_append_pop, deque_append_pop, deque_append_popleft,
             '\nTiming loop overhead:',
             loop_overhead]:
         if isinstance(f, str):
