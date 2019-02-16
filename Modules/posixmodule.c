@@ -13697,7 +13697,10 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, CLD_CONTINUED)) return -1;
 #endif
 #ifdef STATUS_CONTROL_C_EXIT  /* Windows */
-    if (PyModule_AddIntMacro(m, STATUS_CONTROL_C_EXIT)) return -1;
+    if (PyModule_AddObject(m, "STATUS_CONTROL_C_EXIT",
+                           PyLong_FromUnsignedLong(STATUS_CONTROL_C_EXIT))) {
+        return -1;
+    }
 #endif
 
     /* constants for lockf */
