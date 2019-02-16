@@ -173,20 +173,27 @@ class PosixSharedMemory:
         self.mode = mode
         if not size >= 0:
             raise ValueError("'size' must be a positive integer")
-        self.size = size
         if name is None:
             self._open_retry()
         else:
             self.name = name
             self.fd = _posixshmem.shm_open(name, flags, mode=mode)
-        if self.size:
+        if size:
             try:
-                os.ftruncate(self.fd, self.size)
+                os.ftruncate(self.fd, size)
             except OSError:
                 self.unlink()
                 raise
         self._mmap = mmap.mmap(self.fd, self.size)
         self.buf = memoryview(self._mmap)
+
+    @property
+    def size(self):
+        "Size in bytes."
+        if self.fd >= 0:
+            return os.fstat(self.fd).st_size
+        else:
+            return 0
 
     def _open_retry(self):
         # generate a random name, open, retry if it exists
