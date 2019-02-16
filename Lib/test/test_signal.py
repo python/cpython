@@ -90,18 +90,21 @@ class PosixTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
     def test_keyboard_interrupt_communicated_to_shell(self):
-        """KeyboardInterrupt exits such that bash detects a ^C."""
-        bash_proc = subprocess.run(
-                ["bash", "-c", 'echo "${BASH_VERSION}"'],
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        if bash_proc.returncode:
+        """KeyboardInterrupt exits such that shells detect a ^C."""
+        try:
+            bash_proc = subprocess.run(
+                    ["bash", "-c", 'echo "${BASH_VERSION}"'],
+                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        except OSError:
             raise unittest.SkipTest("bash required.")
-        bash_ver = bash_proc.stdout.decode('ascii', errors='ignore').strip()
-        bash_major_minor = [int(n) for n in bash_ver.split('.', 2)[:2]]
-        if bash_major_minor < [4, 0]:  # A guess, adjust as needed.
-            # macOS still ships with bash 3.2.x.  -i does not work as
-            # needed _for this automated test_ in older versions.
-            # Older shells do behave properly in manual interactive use.
+        if bash_proc.returncode:
+            raise unittest.SkipTest("could not determine bash version.")
+        bash_ver = bash_proc.stdout.decode("ascii").strip()
+        bash_major_minor = [int(n) for n in bash_ver.split(".", 2)[:2]]
+        if bash_major_minor < [4, 4]:
+            # In older versions of bash, -i does not work as needed
+            # _for this automated test_.  Older shells do behave as
+            # expected in manual interactive use.
             raise unittest.SkipTest(f"bash version {bash_ver} is too old.")
         # The motivation for https://bugs.python.org/issue1054041.
         # An _interactive_ shell (bash -i simulates that here) detects
