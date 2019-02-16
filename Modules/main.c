@@ -1848,9 +1848,15 @@ pymain_main(_PyMain *pymain)
             kill(getpid(), SIGINT);
         }
         /* If setting SIG_DFL failed, or kill failed to terminate us,
-         * there isn't much else we can do. */
+         * there isn't much else we can do aside from an error code. */
+#endif  /* HAVE_GETPID && !MS_WINDOWS */
+#ifdef MS_WINDOWS
+        /* cmd.exe detects this, prints ^C, and offers to terminate. */
+        /* https://msdn.microsoft.com/en-us/library/cc704588.aspx */
+        pymain->status = STATUS_CONTROL_C_EXIT;
+#else
         pymain->status = SIGINT + 128;
-#endif /* HAVE_GETPID && !MS_WINDOWS */
+#endif  /* !MS_WINDOWS */
     }
 
     return pymain->status;
