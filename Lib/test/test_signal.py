@@ -98,7 +98,8 @@ class PosixTests(unittest.TestCase):
         # commands.
         process = subprocess.run(
             ["/bin/bash", "-ic",
-             f"{sys.executable} -c 'import os,signal; os.kill(os.getpid(), signal.SIGINT)'; echo TESTFAIL on \"${BASH_VERSION}\""],
+             f"{sys.executable} -c 'import os,signal; os.kill(os.getpid(), signal.SIGINT)'; "
+             "echo TESTFAIL on \"${BASH_VERSION}\""],
             stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
         # An interactive shell will abort if python exits properly to
