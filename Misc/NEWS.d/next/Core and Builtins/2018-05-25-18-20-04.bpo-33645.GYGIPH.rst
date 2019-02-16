@@ -1,2 +1,0 @@
-Fixed an "unknown parsing error" on parsing the "<>" operator when run
-Python with both options ``-3`` and ``-We``.

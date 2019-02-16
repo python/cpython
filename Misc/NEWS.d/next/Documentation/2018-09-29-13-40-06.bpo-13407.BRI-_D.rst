@@ -1,2 +1,0 @@
-Add a note to :mod:`bz2` and :mod:`tarfile` stating that handling of
-multi-stream bzip2 files is not supported.

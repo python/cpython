@@ -1,1 +1,0 @@
-Fix running ``python -m curses.has_key``.

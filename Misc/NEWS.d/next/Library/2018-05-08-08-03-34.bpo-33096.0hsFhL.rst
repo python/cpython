@@ -1,1 +1,0 @@
-Removed unintentionally backported from Python 3 Tkinter files.

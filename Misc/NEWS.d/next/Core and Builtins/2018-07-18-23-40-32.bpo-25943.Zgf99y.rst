@@ -1,2 +1,0 @@
-Fix potential heap corruption in the :mod:`bsddb` module.  Patch by Zackery
-Spytz.

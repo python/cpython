@@ -1,2 +1,0 @@
-Adding I/O error checking when reading .py files and aborting importing on
-error.

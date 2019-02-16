@@ -1,2 +1,0 @@
-Format character ``%s`` in :c:func:`PyString_FromFormat` no longer read
-memory past the limit if *precision* is specified.

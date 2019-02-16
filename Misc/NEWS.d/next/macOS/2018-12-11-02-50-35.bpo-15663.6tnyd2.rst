@@ -1,2 +1,0 @@
-The macOS 10.6+ installer now provides a private copy of Tcl/Tk 8.6, like
-the 10.9+ installer does.

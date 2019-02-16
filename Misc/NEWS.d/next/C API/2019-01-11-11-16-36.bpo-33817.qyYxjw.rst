@@ -1,4 +1,0 @@
-Fixed :c:func:`_PyString_Resize` and :c:func:`_PyUnicode_Resize` for empty
-strings. This fixed also :c:func:`PyString_FromFormat` and
-:c:func:`PyUnicode_FromFormat` when they return an empty string (e.g.
-``PyString_FromFormat("%s", "")``).
