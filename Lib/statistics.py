@@ -338,7 +338,7 @@ def fmean(data):
     try:
         return total / n
     except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point')
+        raise StatisticsError('fmean requires at least one data point') from None
 
 def harmonic_mean(data):
     """Return the harmonic mean of data.
