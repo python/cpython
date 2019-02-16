@@ -936,6 +936,18 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
                 if self.is_suburi(uri, reduced_authuri):
                     return self.authenticated[uri]
 
+class AuthHandlerFileReiterator:
+    def __init__(self, file):
+        self.file = file
+        self.chunksize = 8196
+
+    def __iter__(self):
+        self.file.seek(0)
+        while True:
+            chunk = self.file.read(self.chunksize)
+            yield chunk
+            if len(chunk) < self.chunksize:
+                break
 
 class AbstractBasicAuthHandler:
 
@@ -987,6 +999,8 @@ class AbstractBasicAuthHandler:
             if req.get_header(self.auth_header, None) == auth:
                 return None
             req.add_unredirected_header(self.auth_header, auth)
+            if hasattr(req._data, "read"):
+                req._data = AuthHandlerFileReiterator(req._data)
             return self.parent.open(req, timeout=req.timeout)
         else:
             return None
@@ -1099,6 +1113,8 @@ class AbstractDigestAuthHandler:
             if req.headers.get(self.auth_header, None) == auth_val:
                 return None
             req.add_unredirected_header(self.auth_header, auth_val)
+            if hasattr(req._data, "read"):
+                req._data = AuthHandlerFileReiterator(req._data)
             resp = self.parent.open(req, timeout=req.timeout)
             return resp
 

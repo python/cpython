@@ -7,6 +7,7 @@ import http.server
 import threading
 import unittest
 import hashlib
+import mmap
 
 from test import support
 
@@ -238,7 +239,29 @@ class BasicAuthHandler(http.server.BaseHTTPRequestHandler):
             # Request Unauthorized
             self.do_AUTHHEAD()
 
-
+    def do_POST(self):
+        if not self.headers.get("Authorization", ""):
+            self.do_AUTHHEAD()
+            self.wfile.write(b"No Auth header received")
+        elif self.headers.get(
+                "Authorization", "") == "Basic " + self.ENCODED_AUTH:
+            encoding = self.headers.get("Transfer-Encoding")
+            if encoding is None:
+                length = int(self.headers.get("Content-Length"))
+            else:
+                assert encoding == "chunked"
+                length = int(self.rfile.readline(), 16)
+            request = self.rfile.read(length)
+            assert len(request) == length
+            if length > 0:
+                self.send_response(200, "OK")
+                self.end_headers()
+                self.wfile.write(request)
+            else:
+                self.send_response(400, "Empty request data")
+                self.end_headers()
+        else:
+            self.do_AUTHHEAD()
 
 # Proxy test infrastructure
 
@@ -272,6 +295,28 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
                                    "ascii"))
             self.wfile.write(b"Our apologies, but our server is down due to "
                              b"a sudden zombie invasion.")
+
+    def do_POST(self):
+        (scm, netloc, path, params, query, fragment) = urllib.parse.urlparse(
+            self.path, "http")
+        self.short_path = path
+        if self.digest_auth_handler.handle_request(self):
+            encoding = self.headers.get("Transfer-Encoding")
+            if encoding is None:
+                length = int(self.headers.get("Content-Length"))
+            else:
+                assert encoding == "chunked"
+                length = int(self.rfile.readline(), 16)
+            request = self.rfile.read(length)
+            assert len(request) == length
+            if length > 0:
+                self.send_response(200, "OK")
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(request)
+            else:
+                self.send_response(400, "Empty request data")
+                self.end_headers()
 
 # Test cases
 
@@ -314,6 +359,17 @@ class BasicAuthTests(unittest.TestCase):
         urllib.request.install_opener(urllib.request.build_opener(ah))
         self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen, self.server_url)
 
+    def test_basic_auth_mmap_post(self):
+        data = "field=value".encode("ascii")
+        mem = mmap.mmap(-1, len(data))
+        mem[:] = data
+        auth_handler = urllib.request.HTTPBasicAuthHandler()
+        auth_handler.add_password(realm=self.REALM, uri=self.server_url,
+                                  user=self.USER, passwd=self.PASSWD)
+        opener = urllib.request.build_opener(auth_handler)
+        urllib.request.install_opener(opener)
+        response = opener.open(self.server_url, mem)
+        self.assertEqual(response.read(), data)
 
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
@@ -392,6 +448,14 @@ class ProxyAuthTests(unittest.TestCase):
                 pass
             result.close()
 
+    def test_proxy_auth_mmap_post(self):
+        data = "field=value".encode("ascii")
+        mem = mmap.mmap(-1, len(data))
+        mem[:] = data
+        self.proxy_digest_handler.add_password(self.REALM, self.URL,
+                                               self.USER, self.PASSWD)
+        response = self.opener.open(self.URL, mem)
+        self.assertEqual(response.read(), data)
 
 def GetRequestHandler(responses):
 
