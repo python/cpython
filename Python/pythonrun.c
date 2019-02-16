@@ -12,6 +12,7 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "grammar.h"
 #include "node.h"
@@ -1028,6 +1029,17 @@ flush_io(void)
 }
 
 static PyObject *
+run_eval_code_obj(PyCodeObject *co, PyObject *globals, PyObject *locals)
+{
+    PyObject *v;
+    v = PyEval_EvalCode((PyObject*)co, globals, locals);
+    if (!v && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
+        _Py_UnhandledKeyboardInterrupt = 1;
+    }
+    return v;
+}
+
+static PyObject *
 run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena)
 {
@@ -1036,7 +1048,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
     co = PyAST_CompileObject(mod, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
-    v = PyEval_EvalCode((PyObject*)co, globals, locals);
+    v = run_eval_code_obj(co, globals, locals);
     Py_DECREF(co);
     return v;
 }
@@ -1073,7 +1085,7 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
     }
     fclose(fp);
     co = (PyCodeObject *)v;
-    v = PyEval_EvalCode((PyObject*)co, globals, locals);
+    v = run_eval_code_obj(co, globals, locals);
     if (v && flags)
         flags->cf_flags |= (co->co_flags & PyCF_MASK);
     Py_DECREF(co);

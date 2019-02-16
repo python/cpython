@@ -66,6 +66,7 @@ static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
 
+int _Py_UnhandledKeyboardInterrupt = 0;
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
 _PyInitError

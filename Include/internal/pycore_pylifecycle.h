@@ -8,6 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
 #endif
 
+/* True if the main interpreter thread exited due to an unhandled
+ * KeyboardInterrupt exception, suggesting the user pressed ^C. */
+PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
+
 PyAPI_FUNC(int) _Py_UnixMain(int argc, char **argv);
 
 PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
