@@ -13,7 +13,7 @@
 #include <signal.h>
 #endif
 #include <stdio.h>
-#ifdef HAVE_GETPID && HAVE_UNISTD_H
+#if defined(HAVE_GETPID) && defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
