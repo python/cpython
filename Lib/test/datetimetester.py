@@ -1826,6 +1826,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (2019, 1, -1),
             (2019, 1, 8),
             KnownFailure([2019, 53, 1]),
+            (10000, 1, 1),
+            (0, 1, 1),
+            (9999999, 1, 1),
         ]
 
         for isocal in isocals:
@@ -1840,9 +1843,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
                 if known_failure:
                     raise Exception("XPASS: Known failure condition not met")
-
-
-
 
 
 #############################################################################

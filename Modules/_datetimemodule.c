@@ -3028,6 +3028,12 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw) {
         return NULL;
     }
 
+    // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
+    if (year <= 0 || year >= 10000) {
+        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
+        return NULL;
+    }
+
     if (week <= 0 || week >= 54) {
         PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
         return NULL;
@@ -3037,6 +3043,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw) {
         PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])");
         return NULL;
     }
+
 
     int month = week;
     isocalendar_to_ymd(&year, &month, &day);

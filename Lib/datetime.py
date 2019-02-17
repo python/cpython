@@ -886,6 +886,10 @@ class date:
 
     @classmethod
     def fromisocalendar(cls, year, week, day):
+        # Year is bounded this way because 9999-12-31 is (9999, 52, 5)
+        if not 0 < year < 10000:
+            raise ValueError(f"Year is out of range: {year}")
+
         if not 0 < week < 54:
             raise ValueError(f"Invalid week: {week}")
 
