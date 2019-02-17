@@ -953,6 +953,8 @@ The :mod:`test.support` module defines the following functions:
    is not ``None``, compares to the line of the warning and exception.
    If *offset* is not ``None``, compares to the offset of the exception.
 
+   .. versionadded:: 3.8
+
 
 .. function:: open_urlresource(url, *args, **kw)
 
