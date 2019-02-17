@@ -71,19 +71,16 @@ def _find_module(name, path=None):
 
     file_path = spec.origin
 
-    _, suffix = os.path.splitext(file_path)
+    if spec.loader.is_package(name):
+        return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
 
-    if isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
-        kind = _C_EXTENSION
-        mode = "rb"
-
-    elif isinstance(spec.loader, importlib.machinery.SourceFileLoader):
-
-        if spec.loader.is_package(name):
-            return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
-
+    if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
         kind = _PY_SOURCE
         mode = "r"
+
+    elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
+        kind = _C_EXTENSION
+        mode = "rb"
 
     elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
         kind = _PY_COMPILED
@@ -93,6 +90,7 @@ def _find_module(name, path=None):
         return None, None, ("", "", _SEARCH_ERROR)
 
     file = open(file_path, mode)
+    suffix = os.path.splitext(file_path)[-1]
 
     return file, file_path, (suffix, mode, kind)
 
