@@ -154,6 +154,25 @@ class DigestAuthHandler:
         request_handler.wfile.write(b"Proxy Authentication Required.")
         return False
 
+    def _read_post_body(self, request_handler):
+        encoding = request_handler.headers.get("Transfer-Encoding")
+        if encoding is None:
+            length = int(request_handler.headers.get("Content-Length"))
+        if encoding == "chunked":
+            request = b""
+            while True:
+                line = request_handler.rfile.readline()
+                length = int(line, 16)
+                if length == 0:
+                    request_handler.rfile.readline()
+                    break
+                request = request + request_handler.rfile.read(length)
+                request_handler.rfile.read(2)
+        else:
+            request = self.rfile.read(length)
+
+        return request
+
     def handle_request(self, request_handler):
         """Performs digest authentication on the given HTTP request
         handler.  Returns True if authentication was successful, False
@@ -162,6 +181,9 @@ class DigestAuthHandler:
         If no users have been set, then digest auth is effectively
         disabled and this method will always return True.
         """
+
+        if request_handler.is_POST == True:
+            request_handler.post_body = self._read_post_body(request_handler)
 
         if len(self._users) == 0:
             return True
@@ -240,28 +262,38 @@ class BasicAuthHandler(http.server.BaseHTTPRequestHandler):
             self.do_AUTHHEAD()
 
     def do_POST(self):
-        if not self.headers.get("Authorization", ""):
-            self.do_AUTHHEAD()
-            self.wfile.write(b"No Auth header received")
-        elif self.headers.get(
-                "Authorization", "") == "Basic " + self.ENCODED_AUTH:
-            encoding = self.headers.get("Transfer-Encoding")
-            if encoding is None:
-                length = int(self.headers.get("Content-Length"))
-            else:
-                assert encoding == "chunked"
-                length = int(self.rfile.readline(), 16)
+        encoding = self.headers.get("Transfer-Encoding")
+        if encoding is None:
+            length = int(self.headers.get("Content-Length"))
+        if encoding == "chunked":
+            request = b""
+            while True:
+                line = self.rfile.readline()
+                length = int(line, 16)
+                if length == 0:
+                    self.rfile.readline()
+                    break
+                request = request + self.rfile.read(length)
+                self.rfile.read(2)
+            length = len(request)
+        else:
             request = self.rfile.read(length)
-            assert len(request) == length
-            if length > 0:
+        if length > 0:
+            if not self.headers.get("Authorization", ""):
+                self.do_AUTHHEAD()
+                self.wfile.write(b"No Auth header received")
+                return
+            elif self.headers.get(
+                    "Authorization", "") == "Basic " + self.ENCODED_AUTH:
                 self.send_response(200, "OK")
                 self.end_headers()
                 self.wfile.write(request)
             else:
-                self.send_response(400, "Empty request data")
-                self.end_headers()
+                self.do_AUTHHEAD()
+                return
         else:
-            self.do_AUTHHEAD()
+            self.send_response(400, "Empty request data")
+            self.end_headers()
 
 # Proxy test infrastructure
 
@@ -287,6 +319,7 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
         (scm, netloc, path, params, query, fragment) = urllib.parse.urlparse(
             self.path, "http")
         self.short_path = path
+        self.is_POST = False
         if self.digest_auth_handler.handle_request(self):
             self.send_response(200, "OK")
             self.send_header("Content-Type", "text/html")
@@ -300,16 +333,10 @@ class FakeProxyHandler(http.server.BaseHTTPRequestHandler):
         (scm, netloc, path, params, query, fragment) = urllib.parse.urlparse(
             self.path, "http")
         self.short_path = path
+        self.is_POST = True
         if self.digest_auth_handler.handle_request(self):
-            encoding = self.headers.get("Transfer-Encoding")
-            if encoding is None:
-                length = int(self.headers.get("Content-Length"))
-            else:
-                assert encoding == "chunked"
-                length = int(self.rfile.readline(), 16)
-            request = self.rfile.read(length)
-            assert len(request) == length
-            if length > 0:
+            request = self.post_body
+            if len(request) > 0:
                 self.send_response(200, "OK")
                 self.send_header("Content-Type", "text/plain")
                 self.end_headers()
@@ -368,8 +395,12 @@ class BasicAuthTests(unittest.TestCase):
                                   user=self.USER, passwd=self.PASSWD)
         opener = urllib.request.build_opener(auth_handler)
         urllib.request.install_opener(opener)
-        response = opener.open(self.server_url, mem)
-        self.assertEqual(response.read(), data)
+        try:
+            response = urllib.request.urlopen(self.server_url, mem)
+        except urllib.error.HTTPError:
+            self.fail("Basic auth failed for the url: %s" % self.server_url)
+        response_data = response.read()
+        self.assertEqual(response_data, data)
 
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
@@ -456,6 +487,7 @@ class ProxyAuthTests(unittest.TestCase):
                                                self.USER, self.PASSWD)
         response = self.opener.open(self.URL, mem)
         self.assertEqual(response.read(), data)
+
 
 def GetRequestHandler(responses):
 
