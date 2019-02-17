@@ -83,7 +83,9 @@ class PosixTests(unittest.TestCase):
         """KeyboardInterrupt triggers exit via SIGINT."""
         process = subprocess.run(
                 [sys.executable, "-c",
-                 "import os,signal; os.kill(os.getpid(), signal.SIGINT)"],
+                 "import os, signal, time\n"
+                 "os.kill(os.getpid(), signal.SIGINT)\n"
+                 "for _ in range(999): time.sleep(0.01)"],
                 stderr=subprocess.PIPE)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
         self.assertEqual(process.returncode, -signal.SIGINT)
