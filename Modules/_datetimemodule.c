@@ -3359,8 +3359,9 @@ static PyMethodDef date_methods[] = {
 
      {"fromisocalendar", (PyCFunction)(void(*)(void))date_fromisocalendar,
       METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-      PyDoc_STR("int, int, int -> Construct a date from the "
-                "output of date.isocalendar()")},
+      PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
+                "number and weekday.\n\n"
+                "This is the inverse of the date.isocalendar() function")},
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "

@@ -886,6 +886,9 @@ class date:
 
     @classmethod
     def fromisocalendar(cls, year, week, day):
+        """Construct a date from the ISO year, week number and weekday.
+
+        This is the inverse of the date.isocalendar() function"""
         # Year is bounded this way because 9999-12-31 is (9999, 52, 5)
         if not 0 < year < 10000:
             raise ValueError(f"Year is out of range: {year}")
