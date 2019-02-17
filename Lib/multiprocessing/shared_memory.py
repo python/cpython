@@ -1,4 +1,8 @@
-"Provides shared memory for direct access across processes."
+"""Provides shared memory for direct access across processes.
+
+The API of this package is currently provisional. Refer to the
+documentation for details.
+"""
 
 
 __all__ = [ 'SharedMemory', 'PosixSharedMemory', 'WindowsNamedSharedMemory',
