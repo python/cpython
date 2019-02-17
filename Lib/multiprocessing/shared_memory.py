@@ -112,17 +112,31 @@ class WindowsNamedSharedMemory:
                 raise FileExistsError(name)
 
         self._mmap = mmap.mmap(-1, size, tagname=name)
-        self.buf = memoryview(self._mmap)
+        self._buf = memoryview(self._mmap)
         self.name = name
         self.mode = mode
-        self.size = size
+        self._size = size
+
+    @property
+    def size(self):
+        "Size in bytes."
+        return self._size
+
+    @property
+    def buf(self):
+        "A memoryview of contents of the shared memory block."
+        return self._buf
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.name!r}, size={self.size})'
 
     def close(self):
-        self.buf.release()
-        self._mmap.close()
+        if self._buf is not None:
+            self._buf.release()
+            self._buf = None
+        if self._mmap is not None:
+            self._mmap.close()
+            self._mmap = None
 
     def unlink(self):
         """Windows ensures that destruction of the last reference to this
@@ -157,7 +171,7 @@ class PosixSharedMemory:
     fd = -1
     name = None
     _mmap = None
-    buf = None
+    _buf = None
 
     def __init__(self, name, flags=None, mode=384, size=0, read_only=False):
         if name and (flags is None):
@@ -185,7 +199,7 @@ class PosixSharedMemory:
                 self.unlink()
                 raise
         self._mmap = mmap.mmap(self.fd, self.size)
-        self.buf = memoryview(self._mmap)
+        self._buf = memoryview(self._mmap)
 
     @property
     def size(self):
@@ -194,6 +208,11 @@ class PosixSharedMemory:
             return os.fstat(self.fd).st_size
         else:
             return 0
+
+    @property
+    def buf(self):
+        "A memoryview of contents of the shared memory block."
+        return self._buf
 
     def _open_retry(self):
         # generate a random name, open, retry if it exists
@@ -215,9 +234,9 @@ class PosixSharedMemory:
             _posixshmem.shm_unlink(self.name)
 
     def close(self):
-        if self.buf is not None:
-            self.buf.release()
-            self.buf = None
+        if self._buf is not None:
+            self._buf.release()
+            self._buf = None
         if self._mmap is not None:
             self._mmap.close()
             self._mmap = None
