@@ -1,0 +1,1 @@
+urllib now allows mmap'ed files to be resent when the http server responds with 401 unauthorized for basic and digest authentication.
