@@ -1,3 +1,0 @@
-Prevent ''test_shutil.test_unpack_archive_xztar'' from MemoryError on 32-bit AIX
-when MAXDATA setting is less than 0x20000000.
-patch by Michael Felt, aixtools

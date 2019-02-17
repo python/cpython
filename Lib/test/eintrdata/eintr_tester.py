@@ -507,7 +507,7 @@ class FNTLEINTRTest(EINTRBaseTest):
                         lock_func(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
                         lock_func(f, fcntl.LOCK_UN)
                         time.sleep(0.01)
-                    except (BlockingIOError, PermissionError):
+                    except BlockingIOError:
                         break
                 # the child locked the file just a moment ago for 'sleep_time' seconds
                 # that means that the lock below will block for 'sleep_time' minus some
