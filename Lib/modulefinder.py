@@ -87,12 +87,12 @@ def _find_module(name, path=None):
 
     _, suffix = os.path.splitext(file_path)
 
-    if suffix in importlib.machinery.EXTENSION_SUFFIXES:
+    if isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
         file_path = os.path.abspath(file_path)
         kind = _C_EXTENSION
         mode = "rb"
 
-    elif suffix in importlib.machinery.SOURCE_SUFFIXES:
+    elif isinstance(spec.loader, importlib.machinery.SourceFileLoader):
 
         if spec.loader.is_package(name):
             return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
@@ -100,7 +100,7 @@ def _find_module(name, path=None):
         kind = _PY_SOURCE
         mode = "r"
 
-    elif suffix in importlib.machinery.BYTECODE_SUFFIXES:
+    elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
         kind = _PY_COMPILED
         mode = "rb"
 
