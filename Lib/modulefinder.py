@@ -56,7 +56,7 @@ def _find_module(name, path=None):
 
     importlib.machinery.PathFinder.invalidate_caches()
 
-    spec = importlib.machinery.PathFinder.find_spec(name, path+sys.path)
+    spec = importlib.machinery.PathFinder.find_spec(name, path)
 
     if spec is None:
         raise ImportError("No module named {name!r}".format(name=name), name=name)
