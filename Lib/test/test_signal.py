@@ -87,43 +87,10 @@ class PosixTests(unittest.TestCase):
                 stderr=subprocess.PIPE)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
         self.assertEqual(process.returncode, -signal.SIGINT)
-
-    @unittest.skipUnless(sys.executable, "sys.executable required.")
-    def test_keyboard_interrupt_communicated_to_shell(self):
-        """KeyboardInterrupt exits such that interactive shells detect ^C."""
-        # Initially written to use bash, many buildbots and CI systems
-        # were reunning into problems where it would fail to behave.
-        # This is a high level integration test, the dependency on an
-        # external shell implementation's interactive mode failure within
-        # automated environments is... fragile.  Delete this test if it
-        # continues to cause headaches.
-        try:
-            sh_proc = subprocess.run(
-                ["zsh", "-c", 'echo "${ZSH_VERSION}"'],
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        except OSError:
-            raise unittest.SkipTest("zsh required.")
-        if sh_proc.returncode:
-            raise unittest.SkipTest("could not determine zsh version.")
-        sh_ver = sh_proc.stdout.decode("ascii").strip()
-        sh_major_minor = [int(n) for n in sh_ver.split(".", 2)[:2]]
-        if sh_major_minor < [5, 1]:
-            raise unittest.SkipTest(f"zsh version {sh_ver} is too old.")
-        # The motivation for https://bugs.python.org/issue1054041.
-        # An _interactive_ shell (sh -i simulates that here) detects
-        # when a command exits via ^C and stops executing further
-        # commands.
-        process = subprocess.run(
-            ["zsh", "-ic",
-             "echo TEST  START 1>&2; "
-             f"{sys.executable} -c 'import os,signal; os.kill(os.getpid(), signal.SIGINT)'; "
-             "echo TEST  FAIL using zsh \"${ZSH_VERSION}\" 1>&2"],
-            stderr=subprocess.PIPE)
-        self.assertIn(b"TEST START", process.stderr)
-        self.assertIn(b"KeyboardInterrupt", process.stderr)
-        # An interactive shell will abort if python exits properly to
-        # indicate that a KeyboardInterrupt occurred.
-        self.assertNotIn(b"TEST FAIL", process.stderr)
+        # Caveat: The exit code is insufficient to guarantee we actually died
+        # via a signal.  POSIX shells do more than look at the 8 bit value.
+        # Writing an automation friendly test of an interactive shell
+        # to confirm that our process died via a SIGINT proved too complex.
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
