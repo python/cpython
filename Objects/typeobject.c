@@ -2108,6 +2108,7 @@ static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
 static int set_names(PyTypeObject *);
 static int init_subclass(PyTypeObject *, PyObject *);
+static int name_looks_like_slot(PyObject *name);
 
 /*
  * Helpers for  __dict__ descriptor.  We don't want to expose the dicts
@@ -3289,7 +3290,11 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     }
     res = _PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL);
     if (res == 0) {
-        res = update_slot(type, name);
+        if (name_looks_like_slot(name)) {
+            res = update_slot(type, name);
+        } else {
+            PyType_Modified(type);
+        }
         assert(_PyType_CheckConsistency(type));
     }
     Py_DECREF(name);
@@ -7000,6 +7005,32 @@ static slotdef slotdefs[] = {
     {NULL}
 };
 
+
+/* Since searching slotdefs[] is expensive and assigning to slots is rare,
+   do a quick probability check if the PyUnicode name could be a slot name
+   at all. */
+static int name_looks_like_slot(PyObject *name) {
+    Py_ssize_t length = PyUnicode_GET_LENGTH(name);
+    /* The longest slot name is currently "__getattribute__": 16 characters */
+    if (length >= 6 && length <= 16) {
+        int kind = PyUnicode_KIND(name);
+        void *data = PyUnicode_DATA(name);
+        if (PyUnicode_READ(kind, data, 0) == '_') {
+            if (PyUnicode_READ(kind, data, 1) == '_') {
+                if (PyUnicode_READ(kind, data, length-2) == '_') {
+                    if (PyUnicode_READ(kind, data, length-1) == '_') {
+                        /* Might be a slot name: "__x...y__" */
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+    /* Definitely not a slot name. */
+    return 0;
+}
+
+
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
    the offset to the type pointer, since it takes care to indirect through the
@@ -7239,11 +7270,6 @@ update_slot(PyTypeObject *type, PyObject *name)
        they each have their own conditions on which to stop
        recursing into subclasses. */
     PyType_Modified(type);
-
-    if (PyUnicode_READ_CHAR(name, 0) != '_') {
-        /* Definitely not a slot name. */
-        return 0;
-    }
 
     init_slotdefs();
     pp = ptrs;
