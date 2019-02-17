@@ -954,14 +954,34 @@ path_converter(PyObject *o, void *p)
     if (!is_index && !is_buffer && !is_unicode && !is_bytes) {
         /* Inline PyOS_FSPath() for better error messages. */
         _Py_IDENTIFIER(__fspath__);
+        PyObject *func = NULL;
         PyObject *res = NULL;
 
-        res = PyOS_FSPath(o);
-        if (res == NULL) {
+        func = _PyObject_LookupSpecial(o, &PyId___fspath__);
+        if (NULL == func) {
+            goto error_format;
+        }
+        res = _PyObject_CallNoArg(func);
+        Py_DECREF(func);
+        if (NULL == res) {
+            Py_DECREF(o);
+            o = res;
             goto error_exit;
         }
+        if (!(PyUnicode_Check(res) || PyBytes_Check(res))) {
+            PyErr_Format(PyExc_TypeError,
+                 "expected %.200s.__fspath__() to return str or bytes, "
+                 "not %.200s", Py_TYPE(o)->tp_name,
+                 Py_TYPE(res)->tp_name);
+            Py_DECREF(o);
+            o = res;
+            goto error_exit;
+        }
+
+        /* still owns a reference to the original object */
         Py_DECREF(o);
         o = res;
+
         if (PyUnicode_Check(o)) {
             is_unicode = 1;
         }
