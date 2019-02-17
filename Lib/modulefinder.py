@@ -61,13 +61,13 @@ def _find_module(name, path=None):
     if spec is None:
         raise ImportError("No module named {name!r}".format(name=name), name=name)
 
-    if isinstance(spec.loader, type):  # Some special cases:
+    # Some special cases:
 
-        if issubclass(spec.loader, importlib.machinery.BuiltinImporter):
-            return None, None, ("", "", _C_BUILTIN)
+    if spec.loader is importlib.machinery.BuiltinImporter:
+        return None, None, ("", "", _C_BUILTIN)
 
-        if issubclass(spec.loader, importlib.machinery.FrozenImporter):
-            return None, None, ("", "", _PY_FROZEN)
+    if spec.loader is importlib.machinery.FrozenImporter:
+        return None, None, ("", "", _PY_FROZEN)
 
     file_path = spec.origin
 
