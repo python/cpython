@@ -71,24 +71,9 @@ def _find_module(name, path=None):
 
     file_path = spec.origin
 
-    try:
-
-        # `imp` behavior is s bit funny here:
-
-        # If the path is a descendant of the CWD, it is reported as a relative filepath
-        # ...unless it is an extension, in which case it will be absolute (see below)
-        # ...otherwise, it is fully resolved.
-
-        if os.path.commonpath(map(os.path.abspath, (file_path, os.getcwd()))) == os.getcwd():
-            file_path = os.path.relpath(file_path)
-
-    except ValueError:
-        pass
-
     _, suffix = os.path.splitext(file_path)
 
     if isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
-        file_path = os.path.abspath(file_path)
         kind = _C_EXTENSION
         mode = "rb"
 
