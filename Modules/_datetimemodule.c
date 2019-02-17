@@ -3047,7 +3047,8 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     }
 
     if (day <= 0 || day >= 8) {
-        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])");
+        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])",
+                     day);
         return NULL;
     }
 
