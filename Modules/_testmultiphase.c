@@ -627,6 +627,9 @@ bad_traverse(PyObject *self, visitproc visit, void *arg) {
 
     /* The following assertion mimics any traversal function that doesn't correctly handle
      * the case during module creation where the module state hasn't been created yet.
+     *
+     * The check that it is used to test only runs in debug mode, so it is OK that the
+     * assert() will get compiled out in fully optimised release builds.
      */
     assert(m_state != NULL);
     Py_VISIT(m_state->integer);
