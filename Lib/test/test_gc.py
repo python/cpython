@@ -766,6 +766,22 @@ class GCTests(unittest.TestCase):
         gc.unfreeze()
         self.assertEqual(gc.get_freeze_count(), 0)
 
+    def test_get_objects(self):
+        gc.collect()
+        l = []
+        l.append(l)
+        self.assertIn(l, gc.get_objects(generation=0))
+        gc.collect(generation=0)
+        self.assertIn(l, gc.get_objects(generation=1))
+        gc.collect(generation=1)
+        self.assertIn(l, gc.get_objects(generation=2))
+        gc.collect(generation=2)
+        self.assertIn(l, gc.get_objects(generation=2))
+
+        self.assertEqual(gc.collect(), 0)
+        del l
+        self.assertEqual(gc.collect(), 1)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
