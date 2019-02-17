@@ -90,35 +90,40 @@ class PosixTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.executable, "sys.executable required.")
     def test_keyboard_interrupt_communicated_to_shell(self):
-        """KeyboardInterrupt exits such that shells detect a ^C."""
+        """KeyboardInterrupt exits such that interactive shells detect ^C."""
+        # Initially written to use bash, many buildbots and CI systems
+        # were reunning into problems where it would fail to behave.
+        # This is a high level integration test, the dependency on an
+        # external shell implementation's interactive mode failure within
+        # automated environments is... fragile.  Delete this test if it
+        # continues to cause headaches.
         try:
-            bash_proc = subprocess.run(
-                    ["bash", "-c", 'echo "${BASH_VERSION}"'],
-                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            sh_proc = subprocess.run(
+                ["zsh", "-c", 'echo "${ZSH_VERSION}"'],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         except OSError:
-            raise unittest.SkipTest("bash required.")
-        if bash_proc.returncode:
-            raise unittest.SkipTest("could not determine bash version.")
-        bash_ver = bash_proc.stdout.decode("ascii").strip()
-        bash_major_minor = [int(n) for n in bash_ver.split(".", 2)[:2]]
-        if bash_major_minor < [4, 4]:
-            # In older versions of bash, -i does not work as needed
-            # _for this automated test_.  Older shells do behave as
-            # expected in manual interactive use.
-            raise unittest.SkipTest(f"bash version {bash_ver} is too old.")
+            raise unittest.SkipTest("zsh required.")
+        if sh_proc.returncode:
+            raise unittest.SkipTest("could not determine zsh version.")
+        sh_ver = sh_proc.stdout.decode("ascii").strip()
+        sh_major_minor = [int(n) for n in sh_ver.split(".", 2)[:2]]
+        if sh_major_minor < [5, 1]:
+            raise unittest.SkipTest(f"zsh version {sh_ver} is too old.")
         # The motivation for https://bugs.python.org/issue1054041.
-        # An _interactive_ shell (bash -i simulates that here) detects
+        # An _interactive_ shell (sh -i simulates that here) detects
         # when a command exits via ^C and stops executing further
         # commands.
         process = subprocess.run(
-            ["bash", "-ic",
+            ["zsh", "-ic",
+             "echo TEST  START 1>&2; "
              f"{sys.executable} -c 'import os,signal; os.kill(os.getpid(), signal.SIGINT)'; "
-             "echo TESTFAIL using bash \"${BASH_VERSION}\""],
-            stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+             "echo TEST  FAIL using zsh \"${ZSH_VERSION}\" 1>&2"],
+            stderr=subprocess.PIPE)
+        self.assertIn(b"TEST START", process.stderr)
         self.assertIn(b"KeyboardInterrupt", process.stderr)
         # An interactive shell will abort if python exits properly to
         # indicate that a KeyboardInterrupt occurred.
-        self.assertNotIn(b"TESTFAIL", process.stdout)
+        self.assertNotIn(b"TEST FAIL", process.stderr)
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
