@@ -1,0 +1,2 @@
+Fix ``__class_getitem__()`` not being called on a class with a custom
+non-subscriptable metaclass.
