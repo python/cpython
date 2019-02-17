@@ -86,6 +86,7 @@ __all__ = [
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver", "check_syntax_error",
+    "check_syntax_warning",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
