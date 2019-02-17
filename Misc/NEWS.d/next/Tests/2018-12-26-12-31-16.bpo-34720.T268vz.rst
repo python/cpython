@@ -1,0 +1,2 @@
+Assert m_state != NULL to mimic GC traversal functions that do not correctly
+handle module creation when the module state has not been created.
