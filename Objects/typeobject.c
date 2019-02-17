@@ -7013,15 +7013,17 @@ static int name_looks_like_slot(PyObject *name) {
     Py_ssize_t length = PyUnicode_GET_LENGTH(name);
     /* The longest slot name is currently "__getattribute__": 16 characters */
     if (length >= 6 && length <= 16) {
+        /* All slot names are pure ASCII. */
         int kind = PyUnicode_KIND(name);
-        void *data = PyUnicode_DATA(name);
-        if (PyUnicode_READ(kind, data, 0) == '_') {
-            if (PyUnicode_READ(kind, data, 1) == '_') {
-                if (PyUnicode_READ(kind, data, length-2) == '_') {
-                    if (PyUnicode_READ(kind, data, length-1) == '_') {
-                        /* Might be a slot name: "__x...y__" */
-                        return 1;
-                    }
+        if (kind == PyUnicode_1BYTE_KIND) {
+            void *data = PyUnicode_DATA(name);
+            /* Allow the C compiler to read 2 bytes instead of two times 1 byte. */
+            if ((PyUnicode_READ(kind, data, 0) == '_') &
+                    (PyUnicode_READ(kind, data, 1) == '_')) {
+                if ((PyUnicode_READ(kind, data, length-2) == '_') &
+                        (PyUnicode_READ(kind, data, length-1) == '_')) {
+                    /* Might be a slot name: "__x...y__" */
+                    return 1;
                 }
             }
         }
