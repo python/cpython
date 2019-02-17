@@ -891,9 +891,17 @@ class date:
             raise ValueError(f"Year is out of range: {year}")
 
         if not 0 < week < 53:
-            if not (week == 53 and
-                    _iso_long_year_helper(year) == 4 or
-                    _iso_long_year_helper(year - 1) == 3):
+            out_of_range = True
+
+            if week == 53:
+                # ISO years have 53 weeks in them on years starting with a
+                # Thursday and leap years starting on a Wednesday
+                first_weekday = _ymd2ord(year, 1, 1) % 7
+                if (first_weekday == 4 or (first_weekday == 3 and
+                                           _is_leap(year))):
+                    out_of_range = False
+
+            if out_of_range:
                 raise ValueError(f"Invalid week: {week}")
 
         if not 0 < day < 8:
@@ -2153,10 +2161,6 @@ datetime.max = datetime(9999, 12, 31, 23, 59, 59, 999999)
 datetime.resolution = timedelta(microseconds=1)
 
 
-def _iso_long_year_helper(year):
-    return (year + (year // 4) - (year // 100) + (year // 400)) % 7
-
-
 def _isoweek1monday(year):
     # Helper to calculate the day number of the Monday starting week 1
     # XXX This could be done more efficiently
@@ -2500,7 +2504,7 @@ else:
          _format_time, _format_offset, _is_leap, _isoweek1monday, _math,
          _ord2ymd, _time, _time_class, _tzinfo_class, _wrap_strftime, _ymd2ord,
          _divide_and_round, _parse_isoformat_date, _parse_isoformat_time,
-         _parse_hh_mm_ss_ff, _iso_long_year_helper)
+         _parse_hh_mm_ss_ff)
     # XXX Since import * above excludes names that start with _,
     # docstring does not get overwritten. In the future, it may be
     # appropriate to maintain a single module level docstring and

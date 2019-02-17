@@ -3004,12 +3004,9 @@ invalid_string_error:
 }
 
 
-static int _iso_long_year_helper(int year) {
-    return ((year + (year / 4) - (year / 100) + (year / 400)) % 7);
-}
-
 static PyObject *
-date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw) {
+date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
+{
     static char *keywords[] = {
         "year", "week", "day", NULL
     };
@@ -3033,9 +3030,17 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw) {
     }
 
     if (week <= 0 || week >= 53) {
-        if (!(week == 53 &&
-             (_iso_long_year_helper(year) == 4 ||
-              _iso_long_year_helper(year - 1) == 3))) {
+        int out_of_range = 1;
+        if (week == 53) {
+            // ISO years have 53 weeks in it on years starting with a Thursday
+            // and on leap years starting on Wednesday
+            int first_weekday = weekday(year, 1, 1);
+            if (first_weekday == 3 || (first_weekday == 2 && is_leap(year))) {
+                out_of_range = 0;
+            }
+        }
+
+        if (out_of_range) {
             PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
             return NULL;
         }
