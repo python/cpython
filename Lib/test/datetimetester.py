@@ -1815,9 +1815,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 self.assertEqual(dobj, d_roundtrip)
 
     def test_fromisocalendar_value_errors(self):
-        class KnownFailure(tuple):
-            pass
-
         isocals = [
             (2019, 0, 1),
             (2019, -1, 1),
@@ -1829,20 +1826,15 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (10000, 1, 1),
             (0, 1, 1),
             (9999999, 1, 1),
+            (2<<32, 1, 1),
+            (2019, 2<<32, 1),
+            (2019, 1, 2<<32),
         ]
 
         for isocal in isocals:
             with self.subTest(isocal=isocal):
                 with self.assertRaises(ValueError):
-                    known_failure = isinstance(isocal, KnownFailure)
                     self.theclass.fromisocalendar(*isocal)
-
-                    if isinstance(isocal, KnownFailure):
-                        known_failure = False
-                        raise ValueError()
-
-                if known_failure:
-                    raise Exception("XPASS: Known failure condition not met")
 
 
 #############################################################################

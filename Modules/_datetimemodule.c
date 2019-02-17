@@ -3025,6 +3025,11 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw) {
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
                 keywords,
                 &year, &week, &day) == 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Format(PyExc_ValueError,
+                    "ISO calendar component out of range");
+
+        }
         return NULL;
     }
 
