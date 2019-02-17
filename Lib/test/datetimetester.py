@@ -1800,9 +1800,18 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # inverse of the isocalendar function
         dates = [
             (2016, 4, 3),
-            (2005, 1, 2),
-            (2008, 12, 30),
-            (2010, 1, 2),
+            (2005, 1, 2),       # (2004, 53, 7)
+            (2008, 12, 30),     # (2009, 1, 2)
+            (2010, 1, 2),       # (2009, 53, 6)
+            (2009, 12, 31),     # (2009, 53, 4)
+            (1900, 1, 1),       # Unusual non-leap year (year % 100 == 0)
+            (1900, 12, 31),
+            (2000, 1, 1),       # Unusual leap year (year % 400 == 0)
+            (2000, 12, 31),
+            (2004, 1, 1),       # Leap year
+            (2004, 12, 31),
+            (1, 1, 1),
+            (9999, 12, 31),
         ]
 
         for datecomps in dates:
