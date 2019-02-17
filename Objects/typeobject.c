@@ -7240,6 +7240,11 @@ update_slot(PyTypeObject *type, PyObject *name)
        recursing into subclasses. */
     PyType_Modified(type);
 
+    if (PyUnicode_READ_CHAR(name, 0) != '_') {
+        /* Definitely not a slot name. */
+        return 0;
+    }
+
     init_slotdefs();
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
