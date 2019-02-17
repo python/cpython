@@ -85,7 +85,7 @@ def _find_module(name, path=None):
     except ValueError:
         pass
 
-    base, suffix = os.path.splitext(file_path)
+    _, suffix = os.path.splitext(file_path)
 
     if suffix in importlib.machinery.EXTENSION_SUFFIXES:
         file_path = os.path.abspath(file_path)
@@ -94,8 +94,8 @@ def _find_module(name, path=None):
 
     elif suffix in importlib.machinery.SOURCE_SUFFIXES:
 
-        if name != "__init__" and os.path.basename(base) == "__init__":
-            return (None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY))
+        if spec.loader.is_package(name):
+            return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
 
         kind = _PY_SOURCE
         mode = "r"
