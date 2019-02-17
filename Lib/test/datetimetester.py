@@ -1845,6 +1845,24 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.theclass.fromisocalendar(*isocal)
 
+    def test_fromisocalendar_type_errors(self):
+        isocals = [
+            ("2019", 1, 1),
+            (2019, "1", 1),
+            (2019, 1, "1"),
+            (None, 1, 1),
+            (2019, None, 1),
+            (2019, 1, None),
+            (2019.0, 1, 1),
+            (2019, 1.0, 1),
+            (2019, 1, 1.0),
+        ]
+
+        for isocal in isocals:
+            with self.subTest(isocal=isocal):
+                with self.assertRaises(TypeError):
+                    self.theclass.fromisocalendar(*isocal)
+
 
 #############################################################################
 # datetime tests
