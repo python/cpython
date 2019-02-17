@@ -937,12 +937,13 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
                     return self.authenticated[uri]
 
 class AuthHandlerFileReiterator:
-    def __init__(self, file):
+    def __init__(self, file, startPosition):
         self.file = file
+        self.startPosition = startPosition
         self.chunksize = 8196
 
     def __iter__(self):
-        self.file.seek(0)
+        self.file.seek(self.startPosition)
         while True:
             chunk = self.file.read(self.chunksize)
             yield chunk
@@ -968,6 +969,7 @@ class AbstractBasicAuthHandler:
             password_mgr = HTTPPasswordMgr()
         self.passwd = password_mgr
         self.add_password = self.passwd.add_password
+        self.file_start_position = 0
 
     def http_error_auth_reqed(self, authreq, host, req, headers):
         # host may be an authority (without userinfo) or a URL with an
@@ -1000,12 +1002,14 @@ class AbstractBasicAuthHandler:
                 return None
             req.add_unredirected_header(self.auth_header, auth)
             if hasattr(req._data, "read"):
-                req._data = AuthHandlerFileReiterator(req._data)
+                req._data = AuthHandlerFileReiterator(req._data, self.file_start_position)
             return self.parent.open(req, timeout=req.timeout)
         else:
             return None
 
     def http_request(self, req):
+        if hasattr(req._data, "read"):
+            self.file_start_position = req._data.tell()
         if (not hasattr(self.passwd, 'is_authenticated') or
            not self.passwd.is_authenticated(req.full_url)):
             return req
@@ -1080,6 +1084,7 @@ class AbstractDigestAuthHandler:
         self.retried = 0
         self.nonce_count = 0
         self.last_nonce = None
+        self.file_start_position = 0
 
     def reset_retry_count(self):
         self.retried = 0
@@ -1114,7 +1119,7 @@ class AbstractDigestAuthHandler:
                 return None
             req.add_unredirected_header(self.auth_header, auth_val)
             if hasattr(req._data, "read"):
-                req._data = AuthHandlerFileReiterator(req._data)
+                req._data = AuthHandlerFileReiterator(req._data, self.file_start_position)
             resp = self.parent.open(req, timeout=req.timeout)
             return resp
 
@@ -1206,6 +1211,12 @@ class AbstractDigestAuthHandler:
         # XXX not implemented yet
         return None
 
+    def http_request(self, req):
+        if hasattr(req._data, "read"):
+            self.file_start_position = req._data.tell()
+        return req
+
+    https_request = http_request
 
 class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     """An authentication protocol defined by RFC 2069
