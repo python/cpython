@@ -19,6 +19,7 @@ import random
 import logging
 import struct
 import operator
+import pickle
 import weakref
 import warnings
 import test.support
@@ -3623,8 +3624,11 @@ class _TestSharedMemory(BaseTestCase):
     ALLOWED_TYPES = ('processes',)
 
     @staticmethod
-    def _attach_existing_shmem_then_write(shmem_name, binary_data):
-        local_sms = shared_memory.SharedMemory(shmem_name)
+    def _attach_existing_shmem_then_write(shmem_name_or_obj, binary_data):
+        if isinstance(shmem_name_or_obj, str):
+            local_sms = shared_memory.SharedMemory(shmem_name_or_obj)
+        else:
+            local_sms = shmem_name_or_obj
         local_sms.buf[:len(binary_data)] = binary_data
         local_sms.close()
 
@@ -3718,6 +3722,7 @@ class _TestSharedMemory(BaseTestCase):
         )
         self.addCleanup(sms.unlink)
 
+        # Verify remote attachment to existing block by name is working.
         p = self.Process(
             target=self._attach_existing_shmem_then_write,
             args=(sms.name, b'howdy')
@@ -3726,6 +3731,16 @@ class _TestSharedMemory(BaseTestCase):
         p.start()
         p.join()
         self.assertEqual(bytes(sms.buf[:5]), b'howdy')
+
+        # Verify pickling of SharedMemory instance also works.
+        p = self.Process(
+            target=self._attach_existing_shmem_then_write,
+            args=(sms, b'HELLO')
+        )
+        p.daemon = True
+        p.start()
+        p.join()
+        self.assertEqual(bytes(sms.buf[:5]), b'HELLO')
 
         sms.close()
 
@@ -3841,6 +3856,31 @@ class _TestSharedMemory(BaseTestCase):
             empty_sl.shm.close()
         finally:
             empty_sl.shm.unlink()
+
+    def test_shared_memory_ShareableList_pickling(self):
+        sl = shared_memory.ShareableList(range(10))
+        self.addCleanup(sl.shm.unlink)
+
+        serialized_sl = pickle.dumps(sl)
+        deserialized_sl = pickle.loads(serialized_sl)
+        self.assertTrue(
+            isinstance(deserialized_sl, shared_memory.ShareableList)
+        )
+        self.assertTrue(deserialized_sl[-1], 9)
+        self.assertFalse(sl is deserialized_sl)
+        deserialized_sl[4] = "changed"
+        self.assertEqual(sl[4], "changed")
+
+        # Verify data is not being put into the pickled representation.
+        name = 'a' * len(sl.shm.name)
+        larger_sl = shared_memory.ShareableList(range(400))
+        self.addCleanup(larger_sl.shm.unlink)
+        serialized_larger_sl = pickle.dumps(larger_sl)
+        self.assertTrue(len(serialized_sl) == len(serialized_larger_sl))
+        larger_sl.shm.close()
+
+        deserialized_sl.shm.close()
+        sl.shm.close()
 
 #
 #

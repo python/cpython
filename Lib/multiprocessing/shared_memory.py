@@ -10,7 +10,7 @@ __all__ = [ 'SharedMemory', 'PosixSharedMemory', 'WindowsNamedSharedMemory',
             'SharedMemoryServer', 'SharedMemoryManager' ]
 
 
-from functools import reduce
+from functools import partial, reduce
 import mmap
 from .managers import dispatch, BaseManager, Server, State, ProcessError
 from . import util
@@ -129,6 +129,18 @@ class WindowsNamedSharedMemory:
         "A memoryview of contents of the shared memory block."
         return self._buf
 
+    def __reduce__(self):
+        return (
+            self.__class__,
+            (
+                self.name,
+                None,
+                self.mode,
+                0,
+                False,
+            ),
+        )
+
     def __repr__(self):
         return f'{self.__class__.__name__}({self.name!r}, size={self.size})'
 
@@ -227,6 +239,18 @@ class PosixSharedMemory:
                 continue
             self.name = name
             break
+
+    def __reduce__(self):
+        return (
+            self.__class__,
+            (
+                self.name,
+                None,
+                self.mode,
+                0,
+                False,
+            ),
+        )
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.name!r}, size={self.size})'
@@ -474,6 +498,9 @@ class ShareableList:
         )
         value = value.encode(encoding) if isinstance(value, str) else value
         struct.pack_into(new_format, self.shm.buf, offset, value)
+
+    def __reduce__(self):
+        return partial(self.__class__, name=self.shm.name), ()
 
     def __len__(self):
         return struct.unpack_from("q", self.shm.buf, 0)[0]
