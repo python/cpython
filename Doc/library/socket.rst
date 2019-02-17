@@ -620,6 +620,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
      import socket
 
+     addr = ("", 8080)  # all interfaces, port 8080
      if socket.has_dualstack_ipv6():
          s = socket.create_server(addr, family=socket.AF_INET6, dualstack_ipv6=True)
      else:
@@ -1833,12 +1834,12 @@ advantage of accepting both IPv4 or IPv6 connections on the same socket.
    # Echo server program
    import socket
 
-   HOST = None
+   HOST = ""
    PORT = 50007
    if socket.has_dualstack_ipv6():
        s = socket.create_server((HOST, PORT), family=socket.AF_INET6, dualstack_ipv6=True)
    else:
-       s = socket.create_server(addr)
+       s = socket.create_server((HOST, PORT))
    conn, addr = s.accept()
    with conn:
        print('Connected by', addr)

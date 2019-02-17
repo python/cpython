@@ -6116,23 +6116,19 @@ class CreateServerFunctionalTest(unittest.TestCase):
             self.thread.join(self.timeout)
 
     def echo_server(self, sock):
-        def run():
-            if sock.type == socket.SOCK_STREAM:
+        def run(sock):
+            with sock:
                 conn, _ = sock.accept()
-                conn.settimeout(self.timeout)
-                event.wait(self.timeout)
                 with conn:
+                    event.wait(self.timeout)
                     msg = conn.recv(1024)
                     if not msg:
                         return
                     conn.sendall(msg)
-            else:
-                msg, addr = sock.recvfrom(1024)
-                sock.sendto(msg, addr)
 
         event = threading.Event()
         sock.settimeout(self.timeout)
-        self.thread = threading.Thread(target=run)
+        self.thread = threading.Thread(target=run, args=(sock, ))
         self.thread.start()
         event.set()
 
@@ -6143,15 +6139,9 @@ class CreateServerFunctionalTest(unittest.TestCase):
             connect_host = sock.getsockname()[0]
         port = sock.getsockname()[1]
         server_addr = (connect_host, port)
-        if sock.type == socket.SOCK_STREAM:
-            with socket.create_connection(server_addr) as client:
-                client.sendall(b'foo')
-                self.assertEqual(client.recv(1024), b'foo')
-        else:
-            with socket.socket(sock.family, sock.type) as client:
-                client.sendto(b'foo', server_addr)
-                msg, _ = client.recvfrom(1024)
-                self.assertEqual(msg, b'foo')
+        with socket.create_connection(server_addr) as client:
+            client.sendall(b'foo')
+            self.assertEqual(client.recv(1024), b'foo')
 
     def test_tcp4(self):
         with socket.create_server(("localhost", 0),
