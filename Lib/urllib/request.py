@@ -936,7 +936,7 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
                 if self.is_suburi(uri, reduced_authuri):
                     return self.authenticated[uri]
 
-class AuthHandlerFileReiterator:
+class _AuthHandlerFileReiterator:
     def __init__(self, file, startPosition):
         self.file = file
         self.startPosition = startPosition
@@ -1002,7 +1002,7 @@ class AbstractBasicAuthHandler:
                 return None
             req.add_unredirected_header(self.auth_header, auth)
             if hasattr(req._data, "read"):
-                req._data = AuthHandlerFileReiterator(req._data, self.file_start_position)
+                req._data = _AuthHandlerFileReiterator(req._data, self.file_start_position)
             return self.parent.open(req, timeout=req.timeout)
         else:
             return None
@@ -1119,7 +1119,7 @@ class AbstractDigestAuthHandler:
                 return None
             req.add_unredirected_header(self.auth_header, auth_val)
             if hasattr(req._data, "read"):
-                req._data = AuthHandlerFileReiterator(req._data, self.file_start_position)
+                req._data = _AuthHandlerFileReiterator(req._data, self.file_start_position)
             resp = self.parent.open(req, timeout=req.timeout)
             return resp
 
