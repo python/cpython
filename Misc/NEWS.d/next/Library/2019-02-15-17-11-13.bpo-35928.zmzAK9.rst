@@ -1,1 +1,1 @@
-TextIOWrapper now correctly handles the decoding buffer in read-write mode, using sockets aswell.
+TextIOWrapper now correctly handles the decoding buffer in read-write mode.
