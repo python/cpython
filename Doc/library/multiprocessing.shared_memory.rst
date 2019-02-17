@@ -205,9 +205,7 @@ same ``numpy.ndarray`` from two distinct Python shells:
 
    This class provides methods for creating and returning :class:`SharedMemory`
    instances and for creating a list-like object (:class:`ShareableList`)
-   backed by shared memory.  It also provides methods that create and
-   return :ref:`multiprocessing-proxy_objects` that support synchronization
-   across processes (i.e. multi-process-safe locks and semaphores).
+   backed by shared memory.
 
    Refer to :class:`multiprocessing.managers.BaseManager` for a description
    of the inherited *address* and *authkey* optional input arguments and how
@@ -224,38 +222,6 @@ same ``numpy.ndarray`` from two distinct Python shells:
       Create and return a new :class:`ShareableList` object, initialized
       by the values from the input ``sequence``.
 
-   .. method:: Barrier(parties[, action[, timeout]])
-
-      Create a shared :class:`threading.Barrier` object and return a
-      proxy for it.
-
-   .. method:: BoundedSemaphore([value])
-
-      Create a shared :class:`threading.BoundedSemaphore` object and return
-      a proxy for it.
-
-   .. method:: Condition([lock])
-
-      Create a shared :class:`threading.Condition` object and return a proxy
-      for it.  The optional input *lock* supports a proxy for a
-      :class:`threading.Lock` or :class:`threading.RLock` object.
-
-   .. method:: Event()
-
-      Create a shared :class:`threading.Event` object and return a proxy for it.
-
-   .. method:: Lock()
-
-      Create a shared :class:`threading.Lock` object and return a proxy for it.
-
-   .. method:: RLock()
-
-      Create a shared :class:`threading.RLock` object and return a proxy for it.
-
-   .. method:: Semaphore([value])
-
-      Create a shared :class:`threading.Semaphore` object and return a proxy
-      for it.
 
 The following example demonstrates the basic mechanisms of a
 :class:`SharedMemoryManager`:

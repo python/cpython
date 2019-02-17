@@ -3751,9 +3751,7 @@ class _TestSharedMemory(BaseTestCase):
 
         with shared_memory.SharedMemoryManager() as smm2:
             sl = smm2.ShareableList("howdy")
-            unnecessary_lock = smm2.Lock()
-            with unnecessary_lock:
-                shm = smm2.SharedMemory(size=128)
+            shm = smm2.SharedMemory(size=128)
             held_name = sl.shm.name
         if sys.platform != "win32":
             with self.assertRaises(FileNotFoundError):
@@ -4944,9 +4942,29 @@ class TestPoolNotLeakOnFailure(unittest.TestCase):
             any(process.is_alive() for process in forked_processes))
 
 
-class _MixinTestCommonManagerTypes(object):
+class TestSyncManagerTypes(unittest.TestCase):
+    """Test all the types which can be shared between a parent and a
+    child process by using a manager which acts as an intermediary
+    between them.
 
-    manager_class = None
+    In the following unit-tests the base type is created in the parent
+    process, the @classmethod represents the worker process and the
+    shared object is readable and editable between the two.
+
+    # The child.
+    @classmethod
+    def _test_list(cls, obj):
+        assert obj[0] == 5
+        assert obj.append(6)
+
+    # The parent.
+    def test_list(self):
+        o = self.manager.list()
+        o.append(5)
+        self.run_worker(self._test_list, o)
+        assert o[1] == 6
+    """
+    manager_class = multiprocessing.managers.SyncManager
 
     def setUp(self):
         self.manager = self.manager_class()
@@ -5056,31 +5074,6 @@ class _MixinTestCommonManagerTypes(object):
         o = self.manager.Barrier(5)
         self.run_worker(self._test_barrier, o)
 
-
-class TestSyncManagerTypes(_MixinTestCommonManagerTypes, unittest.TestCase):
-    """Test all the types which can be shared between a parent and a
-    child process by using a manager which acts as an intermediary
-    between them.
-
-    In the following unit-tests the base type is created in the parent
-    process, the @classmethod represents the worker process and the
-    shared object is readable and editable between the two.
-
-    # The child.
-    @classmethod
-    def _test_list(cls, obj):
-        assert obj[0] == 5
-        assert obj.append(6)
-
-    # The parent.
-    def test_list(self):
-        o = self.manager.list()
-        o.append(5)
-        self.run_worker(self._test_list, o)
-        assert o[1] == 6
-    """
-    manager_class = multiprocessing.managers.SyncManager
-
     @classmethod
     def _test_pool(cls, obj):
         # TODO: fix https://bugs.python.org/issue35919
@@ -5184,20 +5177,6 @@ class TestSyncManagerTypes(_MixinTestCommonManagerTypes, unittest.TestCase):
         o.x = 0
         o.y = 1
         self.run_worker(self._test_namespace, o)
-
-
-try:
-    import multiprocessing.shared_memory
-except ImportError:
-    @unittest.skip("SharedMemoryManager not available on this platform")
-    class TestSharedMemoryManagerTypes(_MixinTestCommonManagerTypes,
-                                       unittest.TestCase):
-        pass
-else:
-    class TestSharedMemoryManagerTypes(_MixinTestCommonManagerTypes,
-                                       unittest.TestCase):
-        """Same as above but by using SharedMemoryManager."""
-        manager_class = multiprocessing.shared_memory.SharedMemoryManager
 
 
 class MiscTestCase(unittest.TestCase):

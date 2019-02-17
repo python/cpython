@@ -12,13 +12,11 @@ __all__ = [ 'SharedMemory', 'PosixSharedMemory', 'WindowsNamedSharedMemory',
 
 from functools import reduce
 import mmap
-from .managers import dispatch, BaseManager, Server, State, ProcessError, \
-                      BarrierProxy, AcquirerProxy, ConditionProxy, EventProxy
+from .managers import dispatch, BaseManager, Server, State, ProcessError
 from . import util
 import os
 import struct
 import sys
-import threading
 import secrets
 try:
     import  _posixshmem
@@ -835,15 +833,3 @@ class SharedMemoryManager(BaseManager):
                 sl.shm.unlink()
                 raise e
         return sl
-
-SharedMemoryManager.register('Barrier', threading.Barrier, BarrierProxy)
-SharedMemoryManager.register(
-    'BoundedSemaphore',
-    threading.BoundedSemaphore,
-    AcquirerProxy
-)
-SharedMemoryManager.register('Condition', threading.Condition, ConditionProxy)
-SharedMemoryManager.register('Event', threading.Event, EventProxy)
-SharedMemoryManager.register('Lock', threading.Lock, AcquirerProxy)
-SharedMemoryManager.register('RLock', threading.RLock, AcquirerProxy)
-SharedMemoryManager.register('Semaphore', threading.Semaphore, AcquirerProxy)
