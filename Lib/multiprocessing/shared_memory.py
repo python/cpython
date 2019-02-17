@@ -7,7 +7,7 @@ documentation for details.
 
 __all__ = [ 'SharedMemory', 'PosixSharedMemory', 'WindowsNamedSharedMemory',
             'ShareableList', 'shareable_wrap',
-            'SharedMemoryServer', 'SharedMemoryManager', 'SharedMemoryTracker' ]
+            'SharedMemoryServer', 'SharedMemoryManager' ]
 
 
 from functools import reduce
@@ -696,7 +696,7 @@ class ShareableList:
             raise ValueError(f"{value!r} not in this container")
 
 
-class SharedMemoryTracker:
+class _SharedMemoryTracker:
     "Manages one or more shared memory segments."
 
     def __init__(self, name, segment_names=[]):
@@ -746,7 +746,7 @@ class SharedMemoryServer(Server):
     def __init__(self, *args, **kwargs):
         Server.__init__(self, *args, **kwargs)
         self.shared_memory_context = \
-            SharedMemoryTracker(f"shmm_{self.address}_{os.getpid()}")
+            _SharedMemoryTracker(f"shmm_{self.address}_{os.getpid()}")
         util.debug(f"SharedMemoryServer started by pid {os.getpid()}")
 
     def create(self, c, typeid, *args, **kwargs):
