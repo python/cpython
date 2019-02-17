@@ -1,0 +1,2 @@
+``gc.get_objects`` can now receive an optional parameter indicating a
+generation to get objects from. Patch by Pablo Galindo.
