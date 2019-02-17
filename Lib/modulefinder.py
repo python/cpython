@@ -54,6 +54,10 @@ def ReplacePackage(oldname, newname):
 def _find_module(name, path=None):
     """An importlib reimplementation of imp.find_module (for our purposes)."""
 
+    # It's necessary to clear the caches for our Finder first, in case any
+    # modules are being added/deleted/modified at runtime. In particular,
+    # test_modulefinder.py changes file tree contents in a cache-breaking way:
+
     importlib.machinery.PathFinder.invalidate_caches()
 
     spec = importlib.machinery.PathFinder.find_spec(name, path)
