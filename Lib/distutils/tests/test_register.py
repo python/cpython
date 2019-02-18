@@ -152,8 +152,8 @@ class RegisterTestCase(BasePyPIRCCommandTestCase):
         req1 = dict(self.conn.reqs[0].headers)
         req2 = dict(self.conn.reqs[1].headers)
 
-        self.assertEqual(req1['Content-length'], '1374')
-        self.assertEqual(req2['Content-length'], '1374')
+        self.assertEqual(req1['Content-Length'], '1374')
+        self.assertEqual(req2['Content-Length'], '1374')
         self.assertIn(b'xxx', self.conn.reqs[1].data)
 
     def test_password_not_in_file(self):
@@ -183,7 +183,7 @@ class RegisterTestCase(BasePyPIRCCommandTestCase):
         self.assertEqual(len(self.conn.reqs), 1)
         req = self.conn.reqs[0]
         headers = dict(req.headers)
-        self.assertEqual(headers['Content-length'], '608')
+        self.assertEqual(headers['Content-Length'], '608')
         self.assertIn(b'tarek', req.data)
 
     def test_password_reset(self):
@@ -201,7 +201,7 @@ class RegisterTestCase(BasePyPIRCCommandTestCase):
         self.assertEqual(len(self.conn.reqs), 1)
         req = self.conn.reqs[0]
         headers = dict(req.headers)
-        self.assertEqual(headers['Content-length'], '290')
+        self.assertEqual(headers['Content-Length'], '290')
         self.assertIn(b'tarek', req.data)
 
     @unittest.skipUnless(docutils is not None, 'needs docutils')

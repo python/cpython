@@ -750,8 +750,8 @@ supply compound field names that read attributes or access dictionary keys::
     [GCC 4.0.1 (Apple Computer, Inc. build 5367)]'
 
     >>> import mimetypes
-    >>> 'Content-type: {0[.mp4]}'.format(mimetypes.types_map)
-    'Content-type: video/mp4'
+    >>> 'Content-Type: {0[.mp4]}'.format(mimetypes.types_map)
+    'Content-Type: video/mp4'
 
 Note that when using dictionary-style notation such as ``[.mp4]``, you
 don't need to put any quotation marks around the string; it will look

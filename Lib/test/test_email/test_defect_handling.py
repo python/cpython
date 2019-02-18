@@ -20,32 +20,32 @@ class TestDefectsBase:
             Subject: XX
             From: xx@xx.dk
             To: XX
-            Mime-version: 1.0
-            Content-type: multipart/mixed;
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed;
                boundary="MS_Mac_OE_3071477847_720252_MIME_Part"
 
             --MS_Mac_OE_3071477847_720252_MIME_Part
-            Content-type: multipart/alternative;
+            Content-Type: multipart/alternative;
                boundary="MS_Mac_OE_3071477847_720252_MIME_Part"
 
             --MS_Mac_OE_3071477847_720252_MIME_Part
-            Content-type: text/plain; charset="ISO-8859-1"
-            Content-transfer-encoding: quoted-printable
+            Content-Type: text/plain; charset="ISO-8859-1"
+            Content-Transfer-Encoding: quoted-printable
 
             text
 
             --MS_Mac_OE_3071477847_720252_MIME_Part
-            Content-type: text/html; charset="ISO-8859-1"
-            Content-transfer-encoding: quoted-printable
+            Content-Type: text/html; charset="ISO-8859-1"
+            Content-Transfer-Encoding: quoted-printable
 
             <HTML></HTML>
 
             --MS_Mac_OE_3071477847_720252_MIME_Part--
 
             --MS_Mac_OE_3071477847_720252_MIME_Part
-            Content-type: image/gif; name="xx.gif";
-            Content-disposition: attachment
-            Content-transfer-encoding: base64
+            Content-Type: image/gif; name="xx.gif";
+            Content-Disposition: attachment
+            Content-Transfer-Encoding: base64
 
             Some removed base64 encoded chars.
 

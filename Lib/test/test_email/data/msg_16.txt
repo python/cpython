@@ -33,7 +33,7 @@ Content-Type: multipart/report; boundary="Boundary_(ID_PGS2F2a+z+/jL7hupKgRhA)"
 
 
 --Boundary_(ID_PGS2F2a+z+/jL7hupKgRhA)
-Content-type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1
 
 This report relates to a message you sent with the following header fields:
 
@@ -50,7 +50,7 @@ Your message cannot be delivered to the following recipients:
 
 
 --Boundary_(ID_PGS2F2a+z+/jL7hupKgRhA)
-Content-type: message/DELIVERY-STATUS
+Content-Type: message/DELIVERY-STATUS
 
 Original-envelope-id: 0GK500B4HD0888@cougar.noc.ucla.edu
 Reporting-MTA: dns; cougar.noc.ucla.edu
@@ -61,7 +61,7 @@ Original-recipient: rfc822;jangel1@cougar.noc.ucla.edu
 Final-recipient: rfc822;jangel1@cougar.noc.ucla.edu
 
 --Boundary_(ID_PGS2F2a+z+/jL7hupKgRhA)
-Content-type: MESSAGE/RFC822
+Content-Type: MESSAGE/RFC822
 
 Return-path: scr-admin@socal-raves.org
 Received: from sims-ms-daemon by cougar.noc.ucla.edu
@@ -94,7 +94,7 @@ Errors-to: scr-admin@socal-raves.org
 Message-id: <002001c144a6$8752e060$56104586@oxy.edu>
 MIME-version: 1.0
 X-Mailer: Microsoft Outlook Express 5.50.4522.1200
-Content-type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=us-ascii
 Precedence: bulk
 Delivered-to: scr-post@babylon.socal-raves.org
 Delivered-to: scr@socal-raves.org

@@ -99,7 +99,7 @@ class MimeTypes:
 
         Return value is a tuple (type, encoding) where type is None if
         the type can't be guessed (no or unknown suffix) or a string
-        of the form type/subtype, usable for a MIME Content-type
+        of the form type/subtype, usable for a MIME Content-Type
         header; and encoding is None for no encoding or the name of
         the program used to encode (e.g. compress or gzip).  The
         mappings are table driven.  Encoding suffixes are case
@@ -274,7 +274,7 @@ def guess_type(url, strict=True):
 
     Return value is a tuple (type, encoding) where type is None if the
     type can't be guessed (no or unknown suffix) or a string of the
-    form type/subtype, usable for a MIME Content-type header; and
+    form type/subtype, usable for a MIME Content-Type header; and
     encoding is None for no encoding or the name of the program used
     to encode (e.g. compress or gzip).  The mappings are table
     driven.  Encoding suffixes are case sensitive; type suffixes are

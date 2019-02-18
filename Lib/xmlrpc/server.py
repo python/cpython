@@ -526,11 +526,11 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
                 trace = str(trace.encode('ASCII', 'backslashreplace'), 'ASCII')
                 self.send_header("X-traceback", trace)
 
-            self.send_header("Content-length", "0")
+            self.send_header("Content-Length", "0")
             self.end_headers()
         else:
             self.send_response(200)
-            self.send_header("Content-type", "text/xml")
+            self.send_header("Content-Type", "text/xml")
             if self.encode_threshold is not None:
                 if len(response) > self.encode_threshold:
                     q = self.accept_encodings().get("gzip", 0)
@@ -540,7 +540,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
                             self.send_header("Content-Encoding", "gzip")
                         except NotImplementedError:
                             pass
-            self.send_header("Content-length", str(len(response)))
+            self.send_header("Content-Length", str(len(response)))
             self.end_headers()
             self.wfile.write(response)
 
@@ -558,15 +558,15 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
                 self.send_response(400, "error decoding gzip content")
         else:
             self.send_response(501, "encoding %r not supported" % encoding)
-        self.send_header("Content-length", "0")
+        self.send_header("Content-Length", "0")
         self.end_headers()
 
     def report_404 (self):
             # Report a 404 error
         self.send_response(404)
         response = b'No such page'
-        self.send_header("Content-type", "text/plain")
-        self.send_header("Content-length", str(len(response)))
+        self.send_header("Content-Type", "text/plain")
+        self.send_header("Content-Length", str(len(response)))
         self.end_headers()
         self.wfile.write(response)
 
@@ -919,8 +919,8 @@ class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
 
         response = self.server.generate_html_documentation().encode('utf-8')
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.send_header("Content-length", str(len(response)))
+        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Length", str(len(response)))
         self.end_headers()
         self.wfile.write(response)
 

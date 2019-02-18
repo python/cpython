@@ -9,8 +9,8 @@ X-Mailman-Version: 2.0.4
 Content-Type: multipart/mixed; boundary="192.168.1.2.889.32614.987812255.500.21814"
 
 --192.168.1.2.889.32614.987812255.500.21814
-Content-type: text/plain; charset=us-ascii
-Content-description: Masthead (Ppp digest, Vol 1 #2)
+Content-Type: text/plain; charset=us-ascii
+Content-Description: Masthead (Ppp digest, Vol 1 #2)
 
 Send Ppp mailing list submissions to
 	ppp@zzz.org
@@ -28,8 +28,8 @@ than "Re: Contents of Ppp digest..."
 
 
 --192.168.1.2.889.32614.987812255.500.21814
-Content-type: text/plain; charset=us-ascii
-Content-description: Today's Topics (5 msgs)
+Content-Type: text/plain; charset=us-ascii
+Content-Description: Today's Topics (5 msgs)
 
 Today's Topics:
 
@@ -121,8 +121,8 @@ hello
 --__--__----
 
 --192.168.1.2.889.32614.987812255.500.21814
-Content-type: text/plain; charset=us-ascii
-Content-description: Digest Footer
+Content-Type: text/plain; charset=us-ascii
+Content-Description: Digest Footer
 
 _______________________________________________
 Ppp mailing list

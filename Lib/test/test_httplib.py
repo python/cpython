@@ -143,7 +143,7 @@ class HeaderTests(TestCase):
                 list.append(self, item)
 
         for explicit_header in True, False:
-            for header in 'Content-length', 'Host', 'Accept-encoding':
+            for header in 'Content-Length', 'Host', 'Accept-Encoding':
                 conn = client.HTTPConnection('example.com')
                 conn.sock = FakeSocket('blahblahblah')
                 conn._buffer = HeaderCountingBuffer()
@@ -225,8 +225,8 @@ class HeaderTests(TestCase):
         conn = client.HTTPConnection('example.com')
         conn.sock = FakeSocket(None)
         conn.putrequest('GET','/')
-        conn.putheader('Content-length', 42)
-        self.assertIn(b'Content-length: 42', conn._buffer)
+        conn.putheader('Content-Length', 42)
+        self.assertIn(b'Content-Length: 42', conn._buffer)
 
         conn.putheader('Foo', ' bar ')
         self.assertIn(b'Foo:  bar ', conn._buffer)
@@ -946,7 +946,7 @@ class BasicTest(TestCase):
     def test_epipe(self):
         sock = EPipeSocket(
             "HTTP/1.0 401 Authorization Required\r\n"
-            "Content-type: text/html\r\n"
+            "Content-Type: text/html\r\n"
             "WWW-Authenticate: Basic realm=\"example\"\r\n",
             b"Content-Length")
         conn = client.HTTPConnection("example.com")

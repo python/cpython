@@ -43,7 +43,7 @@ class BaseRobotTest:
 
 class UserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
-User-agent: *
+User-Agent: *
 Disallow: /cyberworld/map/ # This is an infinite virtual URL space
 Disallow: /tmp/ # these will soon disappear
 Disallow: /foo.html
@@ -56,13 +56,13 @@ class CrawlDelayAndCustomAgentTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 # robots.txt for http://www.example.com/
 
-User-agent: *
+User-Agent: *
 Crawl-delay: 1
 Request-rate: 3/15
 Disallow: /cyberworld/map/ # This is an infinite virtual URL space
 
 # Cybermapper knows where to go.
-User-agent: cybermapper
+User-Agent: cybermapper
 Disallow:
     """
     good = ['/', '/test.html', ('cybermapper', '/cyberworld/map/index.html')]
@@ -73,7 +73,7 @@ class SitemapTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 # robots.txt for http://www.example.com/
 
-User-agent: *
+User-Agent: *
 Sitemap: http://www.gstatic.com/s2/sitemaps/profiles-sitemap.xml
 Sitemap: http://www.google.com/hostednews/sitemap_index.xml
 Request-rate: 3/15
@@ -89,7 +89,7 @@ Disallow: /cyberworld/map/ # This is an infinite virtual URL space
 class RejectAllRobotsTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 # go away
-User-agent: *
+User-Agent: *
 Disallow: /
     """
     good = []
@@ -123,7 +123,7 @@ class BaseRequestRateTest(BaseRobotTest):
 
 class CrawlDelayAndRequestRateTest(BaseRequestRateTest, unittest.TestCase):
     robots_txt = """\
-User-agent: figtree
+User-Agent: figtree
 Crawl-delay: 3
 Request-rate: 9/30
 Disallow: /tmp
@@ -149,7 +149,7 @@ class DifferentAgentTest(CrawlDelayAndRequestRateTest):
 
 class InvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
-User-agent: *
+User-Agent: *
 Disallow: /tmp/
 Disallow: /a%3Cd.html
 Disallow: /a/b.html
@@ -178,7 +178,7 @@ Crawl-delay: pears
 class AnotherInvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
     # also test that Allow and Diasallow works well with each other
     robots_txt = """\
-User-agent: Googlebot
+User-Agent: Googlebot
 Allow: /folder1/myfile.html
 Disallow: /folder1/
 Request-rate: whale/banana
@@ -189,14 +189,14 @@ Request-rate: whale/banana
 
 
 class UserAgentOrderingTest(BaseRobotTest, unittest.TestCase):
-    # the order of User-agent should be correct. note
+    # the order of User-Agent should be correct. note
     # that this file is incorrect because "Googlebot" is a
     # substring of "Googlebot-Mobile"
     robots_txt = """\
-User-agent: Googlebot
+User-Agent: Googlebot
 Disallow: /
 
-User-agent: Googlebot-Mobile
+User-Agent: Googlebot-Mobile
 Allow: /
     """
     agent = 'Googlebot'
@@ -211,7 +211,7 @@ class GoogleURLOrderingTest(BaseRobotTest, unittest.TestCase):
     # Google also got the order wrong. You need
     # to specify the URLs from more specific to more general
     robots_txt = """\
-User-agent: Googlebot
+User-Agent: Googlebot
 Allow: /folder1/myfile.html
 Disallow: /folder1/
     """
@@ -223,7 +223,7 @@ Disallow: /folder1/
 class DisallowQueryStringTest(BaseRobotTest, unittest.TestCase):
     # see issue #6325 for details
     robots_txt = """\
-User-agent: *
+User-Agent: *
 Disallow: /some/path?name=value
     """
     good = ['/some/path']
@@ -233,10 +233,10 @@ Disallow: /some/path?name=value
 class UseFirstUserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
     # obey first * entry (#4108)
     robots_txt = """\
-User-agent: *
+User-Agent: *
 Disallow: /some/path
 
-User-agent: *
+User-Agent: *
 Disallow: /another/path
     """
     good = ['/another/path']
@@ -246,7 +246,7 @@ Disallow: /another/path
 class EmptyQueryStringTest(BaseRobotTest, unittest.TestCase):
     # normalize the URL first (#17403)
     robots_txt = """\
-User-agent: *
+User-Agent: *
 Allow: /some/path?
 Disallow: /another/path?
     """
@@ -256,7 +256,7 @@ Disallow: /another/path?
 
 class DefaultEntryTest(BaseRequestRateTest, unittest.TestCase):
     robots_txt = """\
-User-agent: *
+User-Agent: *
 Crawl-delay: 1
 Request-rate: 3/15
 Disallow: /cyberworld/map/
@@ -269,21 +269,21 @@ Disallow: /cyberworld/map/
 
 class StringFormattingTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
-User-agent: *
+User-Agent: *
 Crawl-delay: 1
 Request-rate: 3/15
 Disallow: /cyberworld/map/ # This is an infinite virtual URL space
 
 # Cybermapper knows where to go.
-User-agent: cybermapper
+User-Agent: cybermapper
 Disallow: /some/path
     """
 
     expected_output = """\
-User-agent: cybermapper
+User-Agent: cybermapper
 Disallow: /some/path
 
-User-agent: *
+User-Agent: *
 Crawl-delay: 1
 Request-rate: 3/15
 Disallow: /cyberworld/map/\

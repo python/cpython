@@ -183,7 +183,7 @@ def _run_test_server(*, address, use_ssl=False, server_cls, server_ssl_cls):
 
     def app(environ, start_response):
         status = '200 OK'
-        headers = [('Content-type', 'text/plain')]
+        headers = [('Content-Type', 'text/plain')]
         start_response(status, headers)
         if environ['PATH_INFO'] == '/loop':
             return loop(environ)

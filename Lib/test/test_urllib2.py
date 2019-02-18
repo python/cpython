@@ -760,8 +760,8 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(h.ftpwrapper.filename, filename)
             self.assertEqual(h.ftpwrapper.filetype, type_)
             headers = r.info()
-            self.assertEqual(headers.get("Content-type"), mimetype)
-            self.assertEqual(int(headers["Content-length"]), len(data))
+            self.assertEqual(headers.get("Content-Type"), mimetype)
+            self.assertEqual(int(headers["Content-Length"]), len(data))
 
     def test_file(self):
         import email.utils
@@ -803,9 +803,9 @@ class HandlerTests(unittest.TestCase):
             finally:
                 os.remove(TESTFN)
             self.assertEqual(data, towrite)
-            self.assertEqual(headers["Content-type"], "text/plain")
-            self.assertEqual(headers["Content-length"], "13")
-            self.assertEqual(headers["Last-modified"], modified)
+            self.assertEqual(headers["Content-Type"], "text/plain")
+            self.assertEqual(headers["Content-Length"], "13")
+            self.assertEqual(headers["Last-Modified"], modified)
             self.assertEqual(respurl, url)
 
         for url in [
@@ -900,24 +900,24 @@ class HandlerTests(unittest.TestCase):
             r = MockResponse(200, "OK", {}, "")
             newreq = h.do_request_(req)
             if data is None:  # GET
-                self.assertNotIn("Content-length", req.unredirected_hdrs)
-                self.assertNotIn("Content-type", req.unredirected_hdrs)
+                self.assertNotIn("Content-Length", req.unredirected_hdrs)
+                self.assertNotIn("Content-Type", req.unredirected_hdrs)
             else:  # POST
-                self.assertEqual(req.unredirected_hdrs["Content-length"], "0")
-                self.assertEqual(req.unredirected_hdrs["Content-type"],
+                self.assertEqual(req.unredirected_hdrs["Content-Length"], "0")
+                self.assertEqual(req.unredirected_hdrs["Content-Type"],
                              "application/x-www-form-urlencoded")
             # XXX the details of Host could be better tested
             self.assertEqual(req.unredirected_hdrs["Host"], "example.com")
             self.assertEqual(req.unredirected_hdrs["Spam"], "eggs")
 
             # don't clobber existing headers
-            req.add_unredirected_header("Content-length", "foo")
-            req.add_unredirected_header("Content-type", "bar")
+            req.add_unredirected_header("Content-Length", "foo")
+            req.add_unredirected_header("Content-Type", "bar")
             req.add_unredirected_header("Host", "baz")
             req.add_unredirected_header("Spam", "foo")
             newreq = h.do_request_(req)
-            self.assertEqual(req.unredirected_hdrs["Content-length"], "foo")
-            self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
+            self.assertEqual(req.unredirected_hdrs["Content-Length"], "foo")
+            self.assertEqual(req.unredirected_hdrs["Content-Type"], "bar")
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 
@@ -936,15 +936,15 @@ class HandlerTests(unittest.TestCase):
         with open(file_path, "rb") as f:
             req = Request("http://example.com/", f, {})
             newreq = h.do_request_(req)
-            te = newreq.get_header('Transfer-encoding')
+            te = newreq.get_header('Transfer-Encoding')
             self.assertEqual(te, "chunked")
-            self.assertFalse(newreq.has_header('Content-length'))
+            self.assertFalse(newreq.has_header('Content-Length'))
 
         with open(file_path, "rb") as f:
             req = Request("http://example.com/", f, {"Content-Length": 30})
             newreq = h.do_request_(req)
-            self.assertEqual(int(newreq.get_header('Content-length')), 30)
-            self.assertFalse(newreq.has_header("Transfer-encoding"))
+            self.assertEqual(int(newreq.get_header('Content-Length')), 30)
+            self.assertFalse(newreq.has_header("Transfer-Encoding"))
 
     def test_http_body_fileobj(self):
         # A file object - chunked encoding is used
@@ -958,14 +958,14 @@ class HandlerTests(unittest.TestCase):
 
         req = Request("http://example.com/", file_obj, {})
         newreq = h.do_request_(req)
-        self.assertEqual(newreq.get_header('Transfer-encoding'), 'chunked')
-        self.assertFalse(newreq.has_header('Content-length'))
+        self.assertEqual(newreq.get_header('Transfer-Encoding'), 'chunked')
+        self.assertFalse(newreq.has_header('Content-Length'))
 
         headers = {"Content-Length": 30}
         req = Request("http://example.com/", file_obj, headers)
         newreq = h.do_request_(req)
-        self.assertEqual(int(newreq.get_header('Content-length')), 30)
-        self.assertFalse(newreq.has_header("Transfer-encoding"))
+        self.assertEqual(int(newreq.get_header('Content-Length')), 30)
+        self.assertFalse(newreq.has_header("Transfer-Encoding"))
 
         file_obj.close()
 
@@ -973,7 +973,7 @@ class HandlerTests(unittest.TestCase):
         # A file reading from a pipe.
         # A pipe cannot be seek'ed.  There is no way to determine the
         # content length up front.  Thus, do_request_() should fall
-        # back to Transfer-encoding chunked.
+        # back to Transfer-Encoding chunked.
 
         h = urllib.request.AbstractHTTPHandler()
         o = h.parent = MockOpener()
@@ -984,16 +984,16 @@ class HandlerTests(unittest.TestCase):
                 req = Request("http://example.com/", proc.stdout, headers)
                 newreq = h.do_request_(req)
                 if not headers:
-                    self.assertEqual(newreq.get_header('Content-length'), None)
-                    self.assertEqual(newreq.get_header('Transfer-encoding'),
+                    self.assertEqual(newreq.get_header('Content-Length'), None)
+                    self.assertEqual(newreq.get_header('Transfer-Encoding'),
                                      'chunked')
                 else:
-                    self.assertEqual(int(newreq.get_header('Content-length')),
+                    self.assertEqual(int(newreq.get_header('Content-Length')),
                                      30)
 
     def test_http_body_iterable(self):
         # Generic iterable.  There is no way to determine the content
-        # length up front.  Fall back to Transfer-encoding chunked.
+        # length up front.  Fall back to Transfer-Encoding chunked.
 
         h = urllib.request.AbstractHTTPHandler()
         o = h.parent = MockOpener()
@@ -1005,19 +1005,19 @@ class HandlerTests(unittest.TestCase):
             req = Request("http://example.com/", iterable_body(), headers)
             newreq = h.do_request_(req)
             if not headers:
-                self.assertEqual(newreq.get_header('Content-length'), None)
-                self.assertEqual(newreq.get_header('Transfer-encoding'),
+                self.assertEqual(newreq.get_header('Content-Length'), None)
+                self.assertEqual(newreq.get_header('Transfer-Encoding'),
                                  'chunked')
             else:
-                self.assertEqual(int(newreq.get_header('Content-length')), 11)
+                self.assertEqual(int(newreq.get_header('Content-Length')), 11)
 
     def test_http_body_empty_seq(self):
         # Zero-length iterable body should be treated like any other iterable
         h = urllib.request.AbstractHTTPHandler()
         h.parent = MockOpener()
         req = h.do_request_(Request("http://example.com/", ()))
-        self.assertEqual(req.get_header("Transfer-encoding"), "chunked")
-        self.assertFalse(req.has_header("Content-length"))
+        self.assertEqual(req.get_header("Transfer-Encoding"), "chunked")
+        self.assertFalse(req.has_header("Content-Length"))
 
     def test_http_body_array(self):
         # array.array Iterable - Content Length is calculated
@@ -1030,7 +1030,7 @@ class HandlerTests(unittest.TestCase):
         for headers in {}, {"Content-Length": 16}:
             req = Request("http://example.com/", iterable_array, headers)
             newreq = h.do_request_(req)
-            self.assertEqual(int(newreq.get_header('Content-length')),16)
+            self.assertEqual(int(newreq.get_header('Content-Length')),16)
 
     def test_http_handler_debuglevel(self):
         o = OpenerDirector()
@@ -1421,7 +1421,7 @@ class HandlerTests(unittest.TestCase):
                       https_handler.httpconn.req_headers)
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.host, "proxy.example.com:3128")
-        self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
+        self.assertEqual(req.get_header("Proxy-Authorization"), "FooBar")
 
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):
@@ -1491,7 +1491,7 @@ class HandlerTests(unittest.TestCase):
             407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
-        self._test_basic_auth(opener, auth_handler, "Proxy-authorization",
+        self._test_basic_auth(opener, auth_handler, "Proxy-Authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com:3128/protected",
                               "proxy.example.com:3128",
@@ -1758,11 +1758,11 @@ class MiscTests(unittest.TestCase):
 
             opener.open(request, "1".encode("us-ascii"))
             self.assertEqual(b"1", request.data)
-            self.assertEqual("1", request.get_header("Content-length"))
+            self.assertEqual("1", request.get_header("Content-Length"))
 
             opener.open(request, "1234567890".encode("us-ascii"))
             self.assertEqual(b"1234567890", request.data)
-            self.assertEqual("10", request.get_header("Content-length"))
+            self.assertEqual("10", request.get_header("Content-Length"))
 
     def test_HTTPError_interface(self):
         """
@@ -1861,20 +1861,20 @@ class RequestTests(unittest.TestCase):
     # if we change data we need to remove content-length header
     # (cause it's most probably calculated for previous value)
     def test_setting_data_should_remove_content_length(self):
-        self.assertNotIn("Content-length", self.get.unredirected_hdrs)
-        self.get.add_unredirected_header("Content-length", 42)
-        self.assertEqual(42, self.get.unredirected_hdrs["Content-length"])
+        self.assertNotIn("Content-Length", self.get.unredirected_hdrs)
+        self.get.add_unredirected_header("Content-Length", 42)
+        self.assertEqual(42, self.get.unredirected_hdrs["Content-Length"])
         self.get.data = "spam"
-        self.assertNotIn("Content-length", self.get.unredirected_hdrs)
+        self.assertNotIn("Content-Length", self.get.unredirected_hdrs)
 
     # issue 17485 same for deleting data.
     def test_deleting_data_should_remove_content_length(self):
-        self.assertNotIn("Content-length", self.get.unredirected_hdrs)
+        self.assertNotIn("Content-Length", self.get.unredirected_hdrs)
         self.get.data = 'foo'
-        self.get.add_unredirected_header("Content-length", 3)
-        self.assertEqual(3, self.get.unredirected_hdrs["Content-length"])
+        self.get.add_unredirected_header("Content-Length", 3)
+        self.assertEqual(3, self.get.unredirected_hdrs["Content-Length"])
         del self.get.data
-        self.assertNotIn("Content-length", self.get.unredirected_hdrs)
+        self.assertNotIn("Content-Length", self.get.unredirected_hdrs)
 
     def test_get_full_url(self):
         self.assertEqual("http://www.python.org/~jeremy/",

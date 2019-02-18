@@ -90,7 +90,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         response = self.client.getresponse()
 
         self.assertEqual(response.status, 200)
-        self.assertEqual(response.getheader("Content-type"), "text/html")
+        self.assertEqual(response.getheader("Content-Type"), "text/html")
 
         # Server raises an exception if we don't start to read the data
         response.read()
@@ -100,7 +100,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         response = self.client.getresponse()
 
         self.assertEqual(response.status, 404)
-        self.assertEqual(response.getheader("Content-type"), "text/plain")
+        self.assertEqual(response.getheader("Content-Type"), "text/plain")
 
         response.read()
 

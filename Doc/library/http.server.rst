@@ -372,7 +372,7 @@ provides three different variants:
       type is guessed by calling the :meth:`guess_type` method, which in turn
       uses the *extensions_map* variable, and the file contents are returned.
 
-      A ``'Content-type:'`` header with the guessed content type is output,
+      A ``'Content-Type:'`` header with the guessed content type is output,
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
 

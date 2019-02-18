@@ -218,7 +218,7 @@ def _parseparam(s):
         s = s[end:]
 
 def parse_header(line):
-    """Parse a Content-type like header.
+    """Parse a Content-Type like header.
 
     Return the main content-type and a dictionary of options.
 
@@ -835,7 +835,7 @@ def test(environ=os.environ):
     the script in HTML form.
 
     """
-    print("Content-type: text/html")
+    print("Content-Type: text/html")
     print()
     sys.stderr = sys.stdout
     try:

@@ -276,8 +276,8 @@ Your selection [default 1]: ''', log.INFO)
 
         # build the Request
         headers = {
-            'Content-type': 'multipart/form-data; boundary=%s; charset=utf-8'%boundary,
-            'Content-length': str(len(body))
+            'Content-Type': 'multipart/form-data; boundary=%s; charset=utf-8'%boundary,
+            'Content-Length': str(len(body))
         }
         req = urllib.request.Request(self.repository, body, headers)
 

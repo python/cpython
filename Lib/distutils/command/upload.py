@@ -162,8 +162,8 @@ class upload(PyPIRCCommand):
 
         # build the Request
         headers = {
-            'Content-type': 'multipart/form-data; boundary=%s' % boundary,
-            'Content-length': str(len(body)),
+            'Content-Type': 'multipart/form-data; boundary=%s' % boundary,
+            'Content-Length': str(len(body)),
             'Authorization': auth,
         }
 

@@ -1185,9 +1185,9 @@ class HTTPHandler(logging.Handler):
             # on Python 3.x.
             # h.putheader("Host", host)
             if self.method == "POST":
-                h.putheader("Content-type",
+                h.putheader("Content-Type",
                             "application/x-www-form-urlencoded")
-                h.putheader("Content-length", str(len(data)))
+                h.putheader("Content-Length", str(len(data)))
             if self.credentials:
                 import base64
                 s = ('%s:%s' % self.credentials).encode('utf-8')

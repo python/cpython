@@ -514,7 +514,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         """
         response = self.request(self.base_url + '/test')
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
-        last_modif_header = response.headers['Last-modified']
+        last_modif_header = response.headers['Last-Modified']
         self.assertEqual(last_modif_header, self.last_modif_header)
 
     def test_path_without_leading_slash(self):
@@ -558,7 +558,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 cgi_file1 = """\
 #!%s
 
-print("Content-type: text/html")
+print("Content-Type: text/html")
 print()
 print("Hello World")
 """
@@ -567,7 +567,7 @@ cgi_file2 = """\
 #!%s
 import cgi
 
-print("Content-type: text/html")
+print("Content-Type: text/html")
 print()
 
 form = cgi.FieldStorage()
@@ -579,7 +579,7 @@ cgi_file4 = """\
 #!%s
 import os
 
-print("Content-type: text/html")
+print("Content-Type: text/html")
 print()
 
 print(os.environ["%s"])
@@ -718,7 +718,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
     def test_headers_and_content(self):
         res = self.request('/cgi-bin/file1.py')
         self.assertEqual(
-            (res.read(), res.getheader('Content-type'), res.status),
+            (res.read(), res.getheader('Content-Type'), res.status),
             (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK))
 
     def test_issue19435(self):
@@ -728,7 +728,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
     def test_post(self):
         params = urllib.parse.urlencode(
             {'spam' : 1, 'eggs' : 'python', 'bacon' : 123456})
-        headers = {'Content-type' : 'application/x-www-form-urlencoded'}
+        headers = {'Content-Type' : 'application/x-www-form-urlencoded'}
         res = self.request('/cgi-bin/file2.py', 'POST', params, headers)
 
         self.assertEqual(res.read(), b'1, python, 123456' + self.linesep)
@@ -744,14 +744,14 @@ class CGIHTTPServerTestCase(BaseTestCase):
         res = self.request('/cgi-bin/file1.py', 'GET', headers=headers)
         self.assertEqual(
             (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
+            (res.read(), res.getheader('Content-Type'), res.status))
 
     def test_no_leading_slash(self):
         # http://bugs.python.org/issue2254
         res = self.request('cgi-bin/file1.py')
         self.assertEqual(
             (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
+            (res.read(), res.getheader('Content-Type'), res.status))
 
     def test_os_environ_is_not_altered(self):
         signature = "Test CGI Server"
@@ -759,33 +759,33 @@ class CGIHTTPServerTestCase(BaseTestCase):
         res = self.request('/cgi-bin/file1.py')
         self.assertEqual(
             (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
+            (res.read(), res.getheader('Content-Type'), res.status))
         self.assertEqual(os.environ['SERVER_SOFTWARE'], signature)
 
     def test_urlquote_decoding_in_cgi_check(self):
         res = self.request('/cgi-bin%2ffile1.py')
         self.assertEqual(
             (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
+            (res.read(), res.getheader('Content-Type'), res.status))
 
     def test_nested_cgi_path_issue21323(self):
         res = self.request('/cgi-bin/child-dir/file3.py')
         self.assertEqual(
             (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
+            (res.read(), res.getheader('Content-Type'), res.status))
 
     def test_query_with_multiple_question_mark(self):
         res = self.request('/cgi-bin/file4.py?a=b?c=d')
         self.assertEqual(
             (b'a=b?c=d' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
+            (res.read(), res.getheader('Content-Type'), res.status))
 
     def test_query_with_continuous_slashes(self):
         res = self.request('/cgi-bin/file4.py?k=aa%2F%2Fbb&//q//p//=//a//b//')
         self.assertEqual(
             (b'k=aa%2F%2Fbb&//q//p//=//a//b//' + self.linesep,
              'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
+            (res.read(), res.getheader('Content-Type'), res.status))
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):

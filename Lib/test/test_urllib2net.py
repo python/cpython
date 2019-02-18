@@ -180,10 +180,10 @@ class OtherNetworkTests(unittest.TestCase):
             self.assertFalse(request.header_items())
             opener.open(request)
             self.assertTrue(request.header_items())
-            self.assertTrue(request.has_header('User-agent'))
+            self.assertTrue(request.has_header('User-Agent'))
             request.add_header('User-Agent','Test-Agent')
             opener.open(request)
-            self.assertEqual(request.get_header('User-agent'),'Test-Agent')
+            self.assertEqual(request.get_header('User-Agent'),'Test-Agent')
 
     @unittest.skip('XXX: http://www.imdb.com is gone')
     def test_sites_no_connection_close(self):

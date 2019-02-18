@@ -216,13 +216,13 @@ class BasicAuthHandler(http.server.BaseHTTPRequestHandler):
 
     def do_HEAD(self):
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
 
     def do_AUTHHEAD(self):
         self.send_response(401)
         self.send_header("WWW-Authenticate", "Basic realm=\"%s\"" % self.REALM)
-        self.send_header("Content-type", "text/html")
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
 
     def do_GET(self):
@@ -424,7 +424,7 @@ def GetRequestHandler(responses):
             for (header, value) in headers:
                 self.send_header(header, value % {'port':self.port})
             if body:
-                self.send_header("Content-type", "text/plain")
+                self.send_header("Content-Type", "text/plain")
                 self.end_headers()
                 return body
             self.end_headers()

@@ -370,8 +370,8 @@ class Request:
             # issue 16464
             # if we change data we need to remove content-length header
             # (cause it's most probably calculated for previous value)
-            if self.has_header("Content-length"):
-                self.remove_header("Content-length")
+            if self.has_header("Content-Length"):
+                self.remove_header("Content-Length")
 
     @data.deleter
     def data(self):
@@ -817,7 +817,7 @@ class ProxyHandler(BaseHandler):
             user_pass = '%s:%s' % (unquote(user),
                                    unquote(password))
             creds = base64.b64encode(user_pass.encode()).decode("ascii")
-            req.add_header('Proxy-authorization', 'Basic ' + creds)
+            req.add_header('Proxy-Authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
         if orig_type == proxy_type or orig_type == 'https':
@@ -1030,7 +1030,7 @@ class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
 class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
-    auth_header = 'Proxy-authorization'
+    auth_header = 'Proxy-Authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
         # http_error_auth_reqed requires that there is no userinfo component in
@@ -1245,19 +1245,19 @@ class AbstractHTTPHandler(BaseHandler):
                 msg = "POST data should be bytes, an iterable of bytes, " \
                       "or a file object. It cannot be of type str."
                 raise TypeError(msg)
-            if not request.has_header('Content-type'):
+            if not request.has_header('Content-Type'):
                 request.add_unredirected_header(
-                    'Content-type',
+                    'Content-Type',
                     'application/x-www-form-urlencoded')
-            if (not request.has_header('Content-length')
-                    and not request.has_header('Transfer-encoding')):
+            if (not request.has_header('Content-Length')
+                    and not request.has_header('Transfer-Encoding')):
                 content_length = self._get_content_length(request)
                 if content_length is not None:
                     request.add_unredirected_header(
-                            'Content-length', str(content_length))
+                            'Content-Length', str(content_length))
                 else:
                     request.add_unredirected_header(
-                            'Transfer-encoding', 'chunked')
+                            'Transfer-Encoding', 'chunked')
 
         sel_host = host
         if request.has_proxy():
@@ -1314,7 +1314,7 @@ class AbstractHTTPHandler(BaseHandler):
         try:
             try:
                 h.request(req.get_method(), req.selector, req.data, headers,
-                          encode_chunked=req.has_header('Transfer-encoding'))
+                          encode_chunked=req.has_header('Transfer-Encoding'))
             except OSError as err: # timeout error
                 raise URLError(err)
             r = h.getresponse()
@@ -1475,7 +1475,7 @@ class FileHandler(BaseHandler):
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(filename)[0]
             headers = email.message_from_string(
-                'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
+                'Content-Type: %s\nContent-Length: %d\nLast-Modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
             if host:
                 host, port = _splitport(host)
@@ -1541,9 +1541,9 @@ class FTPHandler(BaseHandler):
             headers = ""
             mtype = mimetypes.guess_type(req.full_url)[0]
             if mtype:
-                headers += "Content-type: %s\n" % mtype
+                headers += "Content-Type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
-                headers += "Content-length: %d\n" % retrlen
+                headers += "Content-Length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
         except ftplib.all_errors as exp:
@@ -1632,7 +1632,7 @@ class DataHandler(BaseHandler):
         if not mediatype:
             mediatype = "text/plain;charset=US-ASCII"
 
-        headers = email.message_from_string("Content-type: %s\nContent-length: %d\n" %
+        headers = email.message_from_string("Content-Type: %s\nContent-Length: %d\n" %
             (mediatype, len(data)))
 
         return addinfourl(io.BytesIO(data), headers, url)
@@ -1987,7 +1987,7 @@ class URLopener:
         modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(url)[0]
         headers = email.message_from_string(
-            'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
+            'Content-Type: %s\nContent-Length: %d\nLast-Modified: %s\n' %
             (mtype or 'text/plain', size, modified))
         if not host:
             urlfile = file
@@ -2089,7 +2089,7 @@ class URLopener:
         msg = []
         msg.append('Date: %s'%time.strftime('%a, %d %b %Y %H:%M:%S GMT',
                                             time.gmtime(time.time())))
-        msg.append('Content-type: %s' % type)
+        msg.append('Content-Type: %s' % type)
         if encoding == 'base64':
             # XXX is this encoding/decoding ok?
             data = base64.decodebytes(data.encode('ascii')).decode('latin-1')

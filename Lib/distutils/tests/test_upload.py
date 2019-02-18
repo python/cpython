@@ -130,8 +130,8 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
 
         # what did we send ?
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2162')
-        content_type = headers['Content-type']
+        self.assertEqual(headers['Content-Length'], '2162')
+        content_type = headers['Content-Type']
         self.assertTrue(content_type.startswith('multipart/form-data'))
         self.assertEqual(self.last_open.req.get_method(), 'POST')
         expected_url = 'https://upload.pypi.org/legacy/'
@@ -166,7 +166,7 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
         cmd.run()
 
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2172')
+        self.assertEqual(headers['Content-Length'], '2172')
         self.assertIn(b'long description\r', self.last_open.req.data)
 
     def test_upload_fails(self):
