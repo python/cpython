@@ -1875,7 +1875,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     PyObject *excval = NULL;
     PyObject *tb = NULL;
 
-    PyObject *main_mod = PyMapping_GetItemString(interp->modules, "__main__");
+    PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
         goto error;
     }
