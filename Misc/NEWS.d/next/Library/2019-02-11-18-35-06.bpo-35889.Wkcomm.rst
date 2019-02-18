@@ -1,1 +1,2 @@
 Add ``repr()`` to the ``sqlite3.Row`` class.
+It looks like this: ``<sqlite3.Row object; {'name': 'Smith', 'salary': 42}>``.
