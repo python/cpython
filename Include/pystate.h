@@ -20,8 +20,9 @@ struct _frame;
 struct _ts;
 struct _is;
 
-/* struct _is and struct _ts are defined in internal/pycore_pystate.h */
+/* struct _ts is defined in cpython/pystate.h */
 typedef struct _ts PyThreadState;
+/* struct _is is defined in internal/pycore_pystate.h */
 typedef struct _is PyInterpreterState;
 
 /* State unique per thread */
