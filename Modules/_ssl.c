@@ -5419,6 +5419,7 @@ ssl_collect_certificates(const char *store_name)
         CERT_SYSTEM_STORE_SERVICES,
         CERT_SYSTEM_STORE_USERS};
     unsigned int i;
+    unsigned int storesAdded;
 
     if (!(hCollectionStore = CertOpenStore(
         CERT_STORE_PROV_COLLECTION,
@@ -5430,6 +5431,7 @@ ssl_collect_certificates(const char *store_name)
         return NULL;
     }
 
+    storesAdded = 0;
     for (i=0;i<sizeof(system_stores)/sizeof(DWORD);i++)
     {
         if (hSystemStore = CertOpenStore(
@@ -5439,9 +5441,16 @@ ssl_collect_certificates(const char *store_name)
             CERT_STORE_READONLY_FLAG | system_stores[i],
             store_name))
         {
-            CertAddStoreToCollection(hCollectionStore, hSystemStore,
-                CERT_PHYSICAL_STORE_ADD_ENABLE_FLAG, 0);
+            if (CertAddStoreToCollection(hCollectionStore, hSystemStore,
+                CERT_PHYSICAL_STORE_ADD_ENABLE_FLAG, 0)) {
+                ++storesAdded;
+            }
         }
+    }
+
+    if (storesAdded == 0) {
+        CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
+        return NULL;
     }
 
     return hCollectionStore;
