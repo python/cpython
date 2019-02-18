@@ -1009,7 +1009,7 @@ the division result if the arguments are floats or complex::
 
 In Python 3, the default behaviour of the division operator (see :pep:`238`) has
 been changed but you can have the same behaviour in Python 2 if you import
-`division` from :mod:`__future__`::
+``division`` from :mod:`__future__` ::
 
    >>> from __future__ import division
    >>> print('{:.3f}'.format(1/3))
