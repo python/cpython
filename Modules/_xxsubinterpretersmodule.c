@@ -71,6 +71,8 @@ struct _sharednsitem {
     _PyCrossInterpreterData data;
 };
 
+static void _sharednsitem_clear(struct _sharednsitem *);  // forward
+
 static int
 _sharednsitem_init(struct _sharednsitem *item, PyObject *key, PyObject *value)
 {
@@ -79,6 +81,7 @@ _sharednsitem_init(struct _sharednsitem *item, PyObject *key, PyObject *value)
         return -1;
     }
     if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
+        _sharednsitem_clear(item);
         return -1;
     }
     return 0;
@@ -89,6 +92,7 @@ _sharednsitem_clear(struct _sharednsitem *item)
 {
     if (item->name != NULL) {
         PyMem_Free(item->name);
+        item->name = NULL;
     }
     _PyCrossInterpreterData_Release(&item->data);
 }
@@ -1339,8 +1343,8 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
         return -1;
     }
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
-        PyMem_Free(data);
         PyThread_release_lock(mutex);
+        PyMem_Free(data);
         return -1;
     }
 
