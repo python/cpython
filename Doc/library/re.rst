@@ -368,6 +368,8 @@ The special characters are:
 ``(?#...)``
    A comment; the contents of the parentheses are simply ignored.
 
+.. index:: single: (?=; in regular expressions
+
 ``(?=...)``
    Matches if ``...`` matches next, but doesn't consume any of the string.  This is
    called a :dfn:`lookahead assertion`.  For example, ``Isaac (?=Asimov)`` will match
