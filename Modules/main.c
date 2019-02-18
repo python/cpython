@@ -9,6 +9,13 @@
 #include "pycore_pystate.h"
 
 #include <locale.h>
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#include <stdio.h>
+#if defined(HAVE_GETPID) && defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #  include <windows.h>
@@ -1829,6 +1836,29 @@ pymain_main(_PyMain *pymain)
     }
 
     pymain_free(pymain);
+
+    if (_Py_UnhandledKeyboardInterrupt) {
+        /* https://bugs.python.org/issue1054041 - We need to exit via the
+         * SIG_DFL handler for SIGINT if KeyboardInterrupt went unhandled.
+         * If we don't, a calling process such as a shell may not know
+         * about the user's ^C.  https://www.cons.org/cracauer/sigint.html */
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
+        if (PyOS_setsig(SIGINT, SIG_DFL) == SIG_ERR) {
+            perror("signal");  /* Impossible in normal environments. */
+        } else {
+            kill(getpid(), SIGINT);
+        }
+        /* If setting SIG_DFL failed, or kill failed to terminate us,
+         * there isn't much else we can do aside from an error code. */
+#endif  /* HAVE_GETPID && !MS_WINDOWS */
+#ifdef MS_WINDOWS
+        /* cmd.exe detects this, prints ^C, and offers to terminate. */
+        /* https://msdn.microsoft.com/en-us/library/cc704588.aspx */
+        pymain->status = STATUS_CONTROL_C_EXIT;
+#else
+        pymain->status = SIGINT + 128;
+#endif  /* !MS_WINDOWS */
+    }
 
     return pymain->status;
 }

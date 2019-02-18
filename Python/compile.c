@@ -175,7 +175,7 @@ static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
 static int compiler_error(struct compiler *, const char *);
-static int compiler_warn(struct compiler *, const char *);
+static int compiler_warn(struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
@@ -2404,11 +2404,11 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         return 1;
     }
     case Compare_kind: {
-        if (!check_compare(c, e)) {
-            return 0;
-        }
         Py_ssize_t i, n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
+            if (!check_compare(c, e)) {
+                return 0;
+            }
             basicblock *cleanup = compiler_new_block(c);
             if (cleanup == NULL)
                 return 0;
@@ -3766,6 +3766,122 @@ compiler_compare(struct compiler *c, expr_ty e)
     return 1;
 }
 
+static PyTypeObject *
+infer_type(expr_ty e)
+{
+    switch (e->kind) {
+    case Tuple_kind:
+        return &PyTuple_Type;
+    case List_kind:
+    case ListComp_kind:
+        return &PyList_Type;
+    case Dict_kind:
+    case DictComp_kind:
+        return &PyDict_Type;
+    case Set_kind:
+    case SetComp_kind:
+        return &PySet_Type;
+    case GeneratorExp_kind:
+        return &PyGen_Type;
+    case Lambda_kind:
+        return &PyFunction_Type;
+    case JoinedStr_kind:
+    case FormattedValue_kind:
+        return &PyUnicode_Type;
+    case Constant_kind:
+        return e->v.Constant.value->ob_type;
+    default:
+        return NULL;
+    }
+}
+
+static int
+check_caller(struct compiler *c, expr_ty e)
+{
+    switch (e->kind) {
+    case Constant_kind:
+    case Tuple_kind:
+    case List_kind:
+    case ListComp_kind:
+    case Dict_kind:
+    case DictComp_kind:
+    case Set_kind:
+    case SetComp_kind:
+    case GeneratorExp_kind:
+    case JoinedStr_kind:
+    case FormattedValue_kind:
+        return compiler_warn(c, "'%.200s' object is not callable; "
+                                "perhaps you missed a comma?",
+                                infer_type(e)->tp_name);
+    default:
+        return 1;
+    }
+}
+
+static int
+check_subscripter(struct compiler *c, expr_ty e)
+{
+    PyObject *v;
+
+    switch (e->kind) {
+    case Constant_kind:
+        v = e->v.Constant.value;
+        if (!(v == Py_None || v == Py_Ellipsis ||
+              PyLong_Check(v) || PyFloat_Check(v) || PyComplex_Check(v) ||
+              PyAnySet_Check(v)))
+        {
+            return 1;
+        }
+        /* fall through */
+    case Set_kind:
+    case SetComp_kind:
+    case GeneratorExp_kind:
+    case Lambda_kind:
+        return compiler_warn(c, "'%.200s' object is not subscriptable; "
+                                "perhaps you missed a comma?",
+                                infer_type(e)->tp_name);
+    default:
+        return 1;
+    }
+}
+
+static int
+check_index(struct compiler *c, expr_ty e, slice_ty s)
+{
+    PyObject *v;
+
+    if (s->kind != Index_kind) {
+        return 1;
+    }
+    PyTypeObject *index_type = infer_type(s->v.Index.value);
+    if (index_type == NULL
+        || PyType_FastSubclass(index_type, Py_TPFLAGS_LONG_SUBCLASS)
+        || index_type == &PySlice_Type) {
+        return 1;
+    }
+
+    switch (e->kind) {
+    case Constant_kind:
+        v = e->v.Constant.value;
+        if (!(PyUnicode_Check(v) || PyBytes_Check(v) || PyTuple_Check(v))) {
+            return 1;
+        }
+        /* fall through */
+    case Tuple_kind:
+    case List_kind:
+    case ListComp_kind:
+    case JoinedStr_kind:
+    case FormattedValue_kind:
+        return compiler_warn(c, "%.200s indices must be integers or slices, "
+                                "not %.200s; "
+                                "perhaps you missed a comma?",
+                                infer_type(e)->tp_name,
+                                index_type->tp_name);
+    default:
+        return 1;
+    }
+}
+
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
@@ -3801,7 +3917,9 @@ compiler_call(struct compiler *c, expr_ty e)
 {
     if (maybe_optimize_method_call(c, e) > 0)
         return 1;
-
+    if (!check_caller(c, e->v.Call.func)) {
+        return 0;
+    }
     VISIT(c, expr, e->v.Call.func);
     return compiler_call_helper(c, 0,
                                 e->v.Call.args,
@@ -4694,6 +4812,12 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             VISIT_SLICE(c, e->v.Subscript.slice, AugLoad);
             break;
         case Load:
+            if (!check_subscripter(c, e->v.Subscript.value)) {
+                return 0;
+            }
+            if (!check_index(c, e->v.Subscript.value, e->v.Subscript.slice)) {
+                return 0;
+            }
             VISIT(c, expr, e->v.Subscript.value);
             VISIT_SLICE(c, e->v.Subscript.slice, Load);
             break;
@@ -4987,20 +5111,30 @@ compiler_error(struct compiler *c, const char *errstr)
    and returns 0.
 */
 static int
-compiler_warn(struct compiler *c, const char *errstr)
+compiler_warn(struct compiler *c, const char *format, ...)
 {
-    PyObject *msg = PyUnicode_FromString(errstr);
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    PyObject *msg = PyUnicode_FromFormatV(format, vargs);
+    va_end(vargs);
     if (msg == NULL) {
         return 0;
     }
     if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
                                  c->u->u_lineno, NULL, NULL) < 0)
     {
-        Py_DECREF(msg);
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
+               to get a more accurate error report */
             PyErr_Clear();
-            return compiler_error(c, errstr);
+            assert(PyUnicode_AsUTF8(msg) != NULL);
+            compiler_error(c, PyUnicode_AsUTF8(msg));
         }
+        Py_DECREF(msg);
         return 0;
     }
     Py_DECREF(msg);
