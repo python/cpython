@@ -10,13 +10,12 @@ __all__ = [ 'SharedMemory', 'PosixSharedMemory', 'WindowsNamedSharedMemory',
             'SharedMemoryServer', 'SharedMemoryManager' ]
 
 
-from functools import partial, reduce
+from functools import partial
 import mmap
 from .managers import dispatch, BaseManager, Server, State, ProcessError
 from . import util
 import os
 import struct
-import sys
 import secrets
 try:
     import  _posixshmem
