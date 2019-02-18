@@ -2986,4 +2986,3 @@ def collision_stats(nbins, nballs):
         collisions = k - occupied
         var = dn*(dn-1)*((dn-2)/dn)**k + meanempty * (1 - meanempty)
         return float(collisions), float(var.sqrt())
-

@@ -6141,24 +6141,26 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
     def test_tcp4(self):
         port = support.find_unused_port()
-        with socket.create_server(("localhost", port)) as sock:
+        with socket.create_server(("", port)) as sock:
             self.echo_server(sock)
             self.echo_client(("127.0.0.1", port), socket.AF_INET)
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
     def test_tcp6(self):
         port = support.find_unused_port()
-        with socket.create_server(("::1", port),
+        with socket.create_server(("", port),
                                   family=socket.AF_INET6) as sock:
             self.echo_server(sock)
             self.echo_client(("::1", port), socket.AF_INET6)
 
+    # --- dual stack tests
+
     @unittest.skipIf(not socket.has_dualstack_ipv6(),
                      "dualstack_ipv6 not supported")
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
-    def test_dual_stack_tcp4(self):
+    def test_dual_stack_client_v4(self):
         port = support.find_unused_port()
-        with socket.create_server(("::", port), family=socket.AF_INET6,
+        with socket.create_server(("", port), family=socket.AF_INET6,
                                   dualstack_ipv6=True) as sock:
             self.echo_server(sock)
             self.echo_client(("127.0.0.1", port), socket.AF_INET)
@@ -6166,12 +6168,12 @@ class CreateServerFunctionalTest(unittest.TestCase):
     @unittest.skipIf(not socket.has_dualstack_ipv6(),
                      "dualstack_ipv6 not supported")
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test')
-    def test_dual_stack_tcp6(self):
+    def test_dual_stack_client_v6(self):
         port = support.find_unused_port()
-        with socket.create_server(("::", port), family=socket.AF_INET6,
+        with socket.create_server(("", port), family=socket.AF_INET6,
                                   dualstack_ipv6=True) as sock:
             self.echo_server(sock)
-            self.echo_client(("127.0.0.1", port), socket.AF_INET)
+            self.echo_client(("::1", port), socket.AF_INET6)
 
 
 def test_main():
