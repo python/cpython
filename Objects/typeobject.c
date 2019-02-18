@@ -3290,6 +3290,13 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     }
     res = _PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL);
     if (res == 0) {
+        /* Clear the VALID_VERSION flag of 'type' and all its
+           subclasses.  This could possibly be unified with the
+           update_subclasses() recursion in update_slot(), but carefully:
+           they each have their own conditions on which to stop
+           recursing into subclasses. */
+        PyType_Modified(type);
+
         if (is_dunder_name(name)) {
             res = update_slot(type, name);
         }
@@ -7254,13 +7261,6 @@ update_slot(PyTypeObject *type, PyObject *name)
     assert(PyUnicode_CheckExact(name));
     assert(PyUnicode_CHECK_INTERNED(name));
 
-    /* Clear the VALID_VERSION flag of 'type' and all its
-       subclasses.  This could possibly be unified with the
-       update_subclasses() recursion below, but carefully:
-       they each have their own conditions on which to stop
-       recursing into subclasses. */
-    PyType_Modified(type);
-
     init_slotdefs();
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
@@ -7298,6 +7298,9 @@ static void
 update_all_slots(PyTypeObject* type)
 {
     slotdef *p;
+
+    /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
+    PyType_Modified(type);
 
     init_slotdefs();
     for (p = slotdefs; p->name; p++) {
