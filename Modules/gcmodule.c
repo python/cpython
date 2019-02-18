@@ -1529,7 +1529,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
             PyErr_Format(PyExc_ValueError,
                          "generation parameter must be less than the number of "
                          "available generations (%i)",
-                     NUM_GENERATIONS);
+                          NUM_GENERATIONS);
             goto error;
         }
 
