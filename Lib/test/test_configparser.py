@@ -428,6 +428,11 @@ boolean {0[0]} NO
                 },
             })
 
+    def test_string_conversion(self):
+        cf = self.newconfig()
+        cf[123] = {}
+        self.assertEqual(cf[123], {})
+
     def test_case_sensitivity(self):
         cf = self.newconfig()
         cf.add_section("A")
