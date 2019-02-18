@@ -607,10 +607,10 @@ def getoutput(cmd):
     return getstatusoutput(cmd)[1]
 
 
-def _use_posix_spawn():
-    """Check if posix_spawn() can be used for subprocess.
+def _use_posix_spawnp():
+    """Check if posix_spawnp() can be used for subprocess.
 
-    subprocess requires a posix_spawn() implementation that properly reports
+    subprocess requires a posix_spawnp() implementation that properly reports
     errors to the parent process, & sets errno on the following failures:
 
     * Process attribute actions failed.
@@ -620,12 +620,12 @@ def _use_posix_spawn():
     Prefer an implementation which can use vfork() in some cases for best
     performance.
     """
-    if _mswindows or not hasattr(os, 'posix_spawn'):
-        # os.posix_spawn() is not available
+    if _mswindows or not hasattr(os, 'posix_spawnp'):
+        # os.posix_spawnp() is not available
         return False
 
     if sys.platform == 'darwin':
-        # posix_spawn() is a syscall on macOS and properly reports errors
+        # posix_spawnp() is a syscall on macOS and properly reports errors
         return True
 
     # Check libc name and runtime libc version
@@ -640,8 +640,6 @@ def _use_posix_spawn():
         version = tuple(map(int, parts[1].split('.')))
 
         if sys.platform == 'linux' and libc == 'glibc' and version >= (2, 24):
-            # glibc 2.24 has a new Linux posix_spawn implementation using vfork
-            # which properly reports errors to the parent process.
             return True
         # Note: Don't use the implementation in earlier glibc because it doesn't
         # use vfork (even if glibc 2.26 added a pipe to properly report errors
@@ -650,11 +648,11 @@ def _use_posix_spawn():
         # os.confstr() or CS_GNU_LIBC_VERSION value not available
         pass
 
-    # By default, assume that posix_spawn() does not properly report errors.
+    # By default, assume that posix_spawnp() does not properly report errors.
     return False
 
 
-_USE_POSIX_SPAWN = _use_posix_spawn()
+_USE_POSIX_SPAWNP = _use_posix_spawnp()
 
 
 class Popen(object):
@@ -1461,11 +1459,11 @@ class Popen(object):
                     errread, errwrite)
 
 
-        def _posix_spawn(self, args, executable, env, restore_signals,
+        def _posix_spawnp(self, args, executable, env, restore_signals,
                          p2cread, p2cwrite,
                          c2pread, c2pwrite,
                          errread, errwrite):
-            """Execute program using os.posix_spawn()."""
+            """Execute program using os.posix_spawnp()."""
             if env is None:
                 env = os.environ
 
@@ -1493,7 +1491,7 @@ class Popen(object):
             if file_actions:
                 kwargs['file_actions'] = file_actions
 
-            self.pid = os.posix_spawn(executable, args, env, **kwargs)
+            self.pid = os.posix_spawnp(executable, args, env, **kwargs)
             self._child_created = True
 
             self._close_pipe_fds(p2cread, p2cwrite,
@@ -1525,7 +1523,7 @@ class Popen(object):
             if executable is None:
                 executable = args[0]
 
-            if (_USE_POSIX_SPAWN
+            if (_USE_POSIX_SPAWNP
                     and os.path.dirname(executable)
                     and preexec_fn is None
                     and not close_fds
@@ -1535,7 +1533,7 @@ class Popen(object):
                     and (c2pwrite == -1 or c2pwrite > 2)
                     and (errwrite == -1 or errwrite > 2)
                     and not start_new_session):
-                self._posix_spawn(args, executable, env, restore_signals,
+                self._posix_spawnp(args, executable, env, restore_signals,
                                   p2cread, p2cwrite,
                                   c2pread, c2pwrite,
                                   errread, errwrite)
