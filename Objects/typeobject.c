@@ -2108,7 +2108,6 @@ static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
 static int set_names(PyTypeObject *);
 static int init_subclass(PyTypeObject *, PyObject *);
-static int is_dunder_name(PyObject *name);
 
 /*
  * Helpers for  __dict__ descriptor.  We don't want to expose the dicts
@@ -3163,6 +3162,25 @@ _PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name)
     if (oname == NULL)
         return NULL;
     return _PyType_Lookup(type, oname);
+}
+
+/* Check if the "readied" PyUnicode name
+   is a double-underscore special name. */
+static int
+is_dunder_name(PyObject *name)
+{
+    Py_ssize_t length = PyUnicode_GET_LENGTH(name);
+    int kind = PyUnicode_KIND(name);
+    /* Special names contain at least "__x__" and are always ASCII. */
+    if (length > 4 && kind == PyUnicode_1BYTE_KIND) {
+        Py_UCS1 *characters = PyUnicode_1BYTE_DATA(name);
+        /* Allow the C compiler to read 2 bytes instead of two times 1 byte. */
+        return (
+            ((characters[0] == '_') & (characters[1] == '_')) &
+            ((characters[length-2] == '_') & (characters[length-1] == '_'))
+        );
+    }
+    return 0;
 }
 
 /* This is similar to PyObject_GenericGetAttr(),
@@ -7009,23 +7027,6 @@ static slotdef slotdefs[] = {
 
     {NULL}
 };
-
-
-/* Check if the PyUnicode name is a double-underscore special name. */
-static int is_dunder_name(PyObject *name) {
-    Py_ssize_t length = PyUnicode_GET_LENGTH(name);
-    int kind = PyUnicode_KIND(name);
-    /* Special names contain at least "__x__" and are always ASCII. */
-    if (length > 4 && kind == PyUnicode_1BYTE_KIND) {
-        Py_UCS1 *characters = PyUnicode_1BYTE_DATA(name);
-        /* Allow the C compiler to read 2 bytes instead of two times 1 byte. */
-        return (
-            ((characters[0] == '_') & (characters[1] == '_')) &
-            ((characters[length-2] == '_') & (characters[length-1] == '_'))
-        );
-    }
-    return 0;
-}
 
 
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
