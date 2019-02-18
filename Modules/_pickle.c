@@ -6636,13 +6636,13 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         }
     }
 
-    module = PyImport_GetModule(module_name);
+    /*
+     * we don't use PyImport_GetModule here, because it can return partially-
+     * initialised modules, which then cause the getattribute to fail.
+     */
+    module = PyImport_Import(module_name);
     if (module == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
-        module = PyImport_Import(module_name);
-        if (module == NULL)
-            return NULL;
+        return NULL;
     }
     global = getattribute(module, global_name, self->proto >= 4);
     Py_DECREF(module);
