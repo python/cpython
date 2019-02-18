@@ -44,7 +44,10 @@ if os.name == "nt":
         )
 
     PMEMORY_BASIC_INFORMATION = ctypes.POINTER(MEMORY_BASIC_INFORMATION)
-    FILE_MAP_READ = 0x0004
+    PAGE_READONLY = 0x02
+    PAGE_EXECUTE_READWRITE = 0x04
+    INVALID_HANDLE_VALUE = -1
+    FILE_ALREADY_EXISTS = 183
 
     def _errcheck_bool(result, func, args):
         if not result:
@@ -66,6 +69,20 @@ if os.name == "nt":
         wintypes.BOOL,
         wintypes.LPCWSTR
     )
+
+    kernel32.CreateFileMappingW.errcheck = _errcheck_bool
+    kernel32.CreateFileMappingW.restype = wintypes.HANDLE
+    kernel32.CreateFileMappingW.argtypes = (
+        wintypes.HANDLE,
+        wintypes.LPCVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPCWSTR
+    )
+
+    kernel32.GetLastError.restype = wintypes.DWORD
+    kernel32.GetLastError.argtypes = ()
 
     kernel32.MapViewOfFile.errcheck = _errcheck_bool
     kernel32.MapViewOfFile.restype = wintypes.LPVOID
@@ -91,11 +108,11 @@ class WindowsNamedSharedMemory:
             # Attempt to dynamically determine the existing named shared
             # memory block's size which is likely a multiple of mmap.PAGESIZE.
             try:
-                h_map = kernel32.OpenFileMappingW(FILE_MAP_READ, False, name)
+                h_map = kernel32.OpenFileMappingW(PAGE_READONLY, False, name)
             except OSError:
                 raise FileNotFoundError(name)
             try:
-                p_buf = kernel32.MapViewOfFile(h_map, FILE_MAP_READ, 0, 0, 0)
+                p_buf = kernel32.MapViewOfFile(h_map, PAGE_READONLY, 0, 0, 0)
             finally:
                 kernel32.CloseHandle(h_map)
             mbi = MEMORY_BASIC_INFORMATION()
@@ -103,17 +120,27 @@ class WindowsNamedSharedMemory:
             size = mbi.RegionSize
 
         if flags == O_CREX:
-            # Verify no named shared memory block already exists by this name.
+            # Create and reserve shared memory block with this name until
+            # it can be attached to by mmap.
+            h_map = kernel32.CreateFileMappingW(
+                INVALID_HANDLE_VALUE,
+                None,
+                PAGE_EXECUTE_READWRITE,
+                size >> 32,
+                size & 0xFFFFFFFF,
+                name
+            )
             try:
-                h_map = kernel32.OpenFileMappingW(FILE_MAP_READ, False, name)
+                last_error_code = kernel32.GetLastError()
+                if last_error_code == FILE_ALREADY_EXISTS:
+                    raise FileExistsError(f"File exists: {name!r}")
+                self._mmap = mmap.mmap(-1, size, tagname=name)
+            finally:
                 kernel32.CloseHandle(h_map)
-                name_collision = True
-            except OSError as ose:
-                name_collision = False
-            if name_collision:
-                raise FileExistsError(name)
 
-        self._mmap = mmap.mmap(-1, size, tagname=name)
+        else:
+            self._mmap = mmap.mmap(-1, size, tagname=name)
+
         self._buf = memoryview(self._mmap)
         self.name = name
         self.mode = mode
