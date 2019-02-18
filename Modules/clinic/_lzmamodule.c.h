@@ -96,14 +96,44 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "max_length", NULL};
-    static _PyArg_Parser _parser = {"y*|n:decompress", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &data, &max_length)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("decompress", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        max_length = ival;
+    }
+skip_optional_pos:
     return_value = _lzma_LZMADecompressor_decompress_impl(self, &data, max_length);
 
 exit:
@@ -147,15 +177,44 @@ _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
 {
     int return_value = -1;
     static const char * const _keywords[] = {"format", "memlimit", "filters", NULL};
-    static _PyArg_Parser _parser = {"|iOO:LZMADecompressor", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "LZMADecompressor", 0};
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     int format = FORMAT_AUTO;
     PyObject *memlimit = Py_None;
     PyObject *filters = Py_None;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &format, &memlimit, &filters)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        if (PyFloat_Check(fastargs[0])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        format = _PyLong_AsInt(fastargs[0]);
+        if (format == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[1]) {
+        memlimit = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    filters = fastargs[2];
+skip_optional_pos:
     return_value = _lzma_LZMADecompressor___init___impl((Decompressor *)self, format, memlimit, filters);
 
 exit:
@@ -275,4 +334,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=47e4732df79509ad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a290aa478603107 input=a9049054013a1b77]*/
