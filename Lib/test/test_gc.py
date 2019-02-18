@@ -786,8 +786,9 @@ class GCTests(unittest.TestCase):
         self.assertNotIn(l, gc.get_objects(generation=1))
         self.assertIn(l, gc.get_objects(generation=2))
         del l
+        gc.collect()
 
-        # Check argument values
+    def test_get_objects_arguments(self):
         gc.collect()
         self.assertEqual(len(gc.get_objects()),
                          len(gc.get_objects(generation=None)))
