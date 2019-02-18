@@ -347,7 +347,7 @@ _sre_unicode_tolower_impl(PyObject *module, int character)
 LOCAL(void)
 state_reset(SRE_STATE* state)
 {
-    /* FIXME: dynamic! */
+    /* state->mark will be set to 0 in SRE_OP_MARK dynamically. */
     /*memset(state->mark, 0, sizeof(*state->mark) * SRE_MARK_SIZE);*/
 
     state->lastmark = -1;
