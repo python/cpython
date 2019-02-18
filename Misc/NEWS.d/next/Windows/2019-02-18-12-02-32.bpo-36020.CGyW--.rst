@@ -1,0 +1,2 @@
+Define snprintf in pyerrors.h for the previous versions of MSVC++ 14.0.
+Patch by Stéphane Wirtel
