@@ -1715,8 +1715,8 @@ impl_definition block
         self.verify = verify
         self.force = force
         self.filename = filename
-        self.modules = collections.OrderedDict()
-        self.classes = collections.OrderedDict()
+        self.modules = {}
+        self.classes = {}
         self.functions = []
 
         self.line_prefix = self.line_suffix = ''
@@ -1729,7 +1729,7 @@ impl_definition block
             self.add_destination("file", "file", "{dirname}/clinic/{basename}.h")
 
         d = self.get_destination_buffer
-        self.destination_buffers = collections.OrderedDict((
+        self.destination_buffers = dict((
             ('cpp_if', d('file')),
             ('docstring_prototype', d('suppress')),
             ('docstring_definition', d('file')),
@@ -1753,7 +1753,7 @@ impl_definition block
                 continue
             name, value, *options = line.split()
             if name == 'preset':
-                self.presets[value] = preset = collections.OrderedDict()
+                self.presets[value] = preset = {}
                 continue
 
             if len(options):
@@ -1958,8 +1958,8 @@ class Module:
         self.name = name
         self.module = self.parent = module
 
-        self.modules = collections.OrderedDict()
-        self.classes = collections.OrderedDict()
+        self.modules = {}
+        self.classes = {}
         self.functions = []
 
     def __repr__(self):
@@ -1974,7 +1974,7 @@ class Class:
         self.type_object = type_object
         self.parent = cls or module
 
-        self.classes = collections.OrderedDict()
+        self.classes = {}
         self.functions = []
 
     def __repr__(self):
@@ -2077,7 +2077,7 @@ class Function:
                  return_converter, return_annotation=_empty,
                  docstring=None, kind=CALLABLE, coexist=False,
                  docstring_only=False):
-        self.parameters = parameters or collections.OrderedDict()
+        self.parameters = parameters or {}
         self.return_annotation = return_annotation
         self.name = name
         self.full_name = full_name
@@ -2139,7 +2139,7 @@ class Function:
         kwargs.update(overrides)
         f = Function(**kwargs)
 
-        parameters = collections.OrderedDict()
+        parameters = {}
         for name, value in f.parameters.items():
             value = value.copy(function=f)
             parameters[name] = value

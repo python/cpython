@@ -4,7 +4,6 @@
 
 from test import support
 from unittest import TestCase
-import collections
 import inspect
 import os.path
 import sys
@@ -54,8 +53,8 @@ class FakeClinic:
         self.filename = None
         self.destination_buffers = {}
         self.block_parser = clinic.BlockParser('', self.language)
-        self.modules = collections.OrderedDict()
-        self.classes = collections.OrderedDict()
+        self.modules = {}
+        self.classes = {}
         clinic.clinic = self
         self.name = "FakeClinic"
         self.line_prefix = self.line_suffix = ''
@@ -64,7 +63,7 @@ class FakeClinic:
         self.add_destination("file", "buffer")
         self.add_destination("suppress", "suppress")
         d = self.destinations.get
-        self.field_destinations = collections.OrderedDict((
+        self.field_destinations = dict((
             ('docstring_prototype', d('suppress')),
             ('docstring_definition', d('block')),
             ('methoddef_define', d('block')),
