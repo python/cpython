@@ -1546,7 +1546,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
         return result;
     }
 
-    /* If generation is not passed, get all objects from all generations */
+    /* If generation is not passed or None, get all objects from all generations */
     for (i = 0; i < NUM_GENERATIONS; i++) {
         if (append_objects(result, GEN_HEAD(i))) {
             goto error;
