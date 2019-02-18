@@ -1,0 +1,2 @@
+``shutil.copystat`` now implements flag copy behavior from ``copyfile(3)``
+on macOS 10.10 and above. Patch by Ryan Govostes.

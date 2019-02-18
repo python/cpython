@@ -5,6 +5,7 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 """
 
 import os
+import platform
 import sys
 import stat
 import fnmatch
@@ -323,6 +324,31 @@ else:
     def _copyxattr(*args, **kwargs):
         pass
 
+if sys.platform == 'darwin':
+    # As of macOS 10.10, the `copyfile` API changed to not copy certain flags.
+    # This corresponds to kernel version 14.0.
+    mac_ver = tuple(int(x) for x in os.uname().release.split('.'))
+    if mac_ver >= (14, 0, 0):
+        def _fix_flags(dst, flags, follow_symlinks):
+            """Perform any modifications to `flags` before they can be applied
+            to `dst` with `chflags()`.
+
+            """
+            # Based on copyfile's copyfile_stat()
+            omit_flags = (stat.UF_TRACKED | stat.SF_RESTRICTED)
+            add_flags  = 0
+
+            # If the kernel automatically put SF_RESTRICTED on the destination
+            # already, we don't want to clear it
+            st = os.stat(dst, follow_symlinks=follow_symlinks)
+            add_flags |= (st.st_flags & stat.SF_RESTRICTED)
+
+            return (flags & ~omit_flags) | add_flags
+
+if '_fix_flags' not in vars():
+    def _fix_flags(dst, flags, *args, **kwargs):
+        return flags
+
 def copystat(src, dst, *, follow_symlinks=True):
     """Copy file metadata
 
@@ -375,7 +401,8 @@ def copystat(src, dst, *, follow_symlinks=True):
         pass
     if hasattr(st, 'st_flags'):
         try:
-            lookup("chflags")(dst, st.st_flags, follow_symlinks=follow)
+            flags = _fix_flags(dst, st.st_flags, follow_symlinks=follow)
+            lookup("chflags")(dst, flags, follow_symlinks=follow)
         except OSError as why:
             for err in 'EOPNOTSUPP', 'ENOTSUP':
                 if hasattr(errno, err) and why.errno == getattr(errno, err):
