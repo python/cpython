@@ -2067,6 +2067,40 @@ ELSE
         self.assertEqual(m.group(), b'xyz')
         self.assertEqual(m2.group(), b'')
 
+    def test_bug_34294(self):
+        # Issue 34294: wrong capturing groups
+
+        # exists since Python 2
+        s = "a\tx"
+        p = r"\b(?=(\t)|(x))x"
+        self.assertEqual(re.search(p, s).groups(), (None, 'x'))
+
+        # introduced in Python 3.7.0
+        s = "ab"
+        p = r"(?=(.)(.)?)"
+        self.assertEqual(re.findall(p, s),
+                         [('a', 'b'), ('b', '')])
+        self.assertEqual([m.groups() for m in re.finditer(p, s)],
+                         [('a', 'b'), ('b', None)])
+
+        # test-cases provided by issue34294, introduced in Python 3.7.0
+        p = r"(?=<(?P<tag>\w+)/?>(?:(?P<text>.+?)</(?P=tag)>)?)"
+        s = "<test><foo2/></test>"
+        self.assertEqual(re.findall(p, s),
+                         [('test', '<foo2/>'), ('foo2', '')])
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': '<foo2/>'},
+                          {'tag': 'foo2', 'text': None}])
+        s = "<test>Hello</test><foo/>"
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': 'Hello'},
+                          {'tag': 'foo', 'text': None}])
+        s = "<test>Hello</test><foo/><foo/>"
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': 'Hello'},
+                          {'tag': 'foo', 'text': None},
+                          {'tag': 'foo', 'text': None}])
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):

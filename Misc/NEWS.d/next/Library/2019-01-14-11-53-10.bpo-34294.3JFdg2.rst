@@ -1,0 +1,4 @@
+re module, fix wrong capturing groups in rare cases. :func:`re.search`,
+:func:`re.findall`, :func:`re.sub` and other functions that scan through
+string looking for a match, should reset capturing groups between two match
+attempts. Patch by Ma Lin.
