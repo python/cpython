@@ -33,6 +33,7 @@ typedef struct {
 PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(PyInterpreterState *);
 PyAPI_FUNC(_PyMainInterpreterConfig *) _PyInterpreterState_GetMainConfig(PyInterpreterState *);
 
+PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 
 /* State unique per thread */
 

@@ -440,6 +440,16 @@ _PyInterpreterState_GetMainConfig(PyInterpreterState *interp)
     return &interp->config;
 }
 
+PyObject *
+_PyInterpreterState_GetMainModule(PyInterpreterState *interp)
+{
+    if (interp->modules == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
+        return NULL;
+    }
+    return PyMapping_GetItemString(interp->modules, "__main__");
+}
+
 /* Default implementation for _PyThreadState_GetFrame */
 static struct _frame *
 threadstate_getframe(PyThreadState *self)
