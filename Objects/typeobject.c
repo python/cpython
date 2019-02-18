@@ -2108,7 +2108,7 @@ static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
 static int set_names(PyTypeObject *);
 static int init_subclass(PyTypeObject *, PyObject *);
-static int name_looks_like_slot(PyObject *name);
+static int is_dunder_name(PyObject *name);
 
 /*
  * Helpers for  __dict__ descriptor.  We don't want to expose the dicts
@@ -3290,10 +3290,8 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     }
     res = _PyObject_GenericSetAttrWithDict((PyObject *)type, name, value, NULL);
     if (res == 0) {
-        if (name_looks_like_slot(name)) {
+        if (is_dunder_name(name)) {
             res = update_slot(type, name);
-        } else {
-            PyType_Modified(type);
         }
         assert(_PyType_CheckConsistency(type));
     }
@@ -7006,29 +7004,19 @@ static slotdef slotdefs[] = {
 };
 
 
-/* Since searching slotdefs[] is expensive and assigning to slots is rare,
-   do a quick probability check if the PyUnicode name could be a slot name
-   at all. */
-static int name_looks_like_slot(PyObject *name) {
+/* Check if the PyUnicode name is a double-underscore special name. */
+static int is_dunder_name(PyObject *name) {
     Py_ssize_t length = PyUnicode_GET_LENGTH(name);
-    /* The longest slot name is currently "__getattribute__": 16 characters */
-    if (length >= 6 && length <= 16) {
-        /* All slot names are pure ASCII. */
-        int kind = PyUnicode_KIND(name);
-        if (kind == PyUnicode_1BYTE_KIND) {
-            void *data = PyUnicode_DATA(name);
-            /* Allow the C compiler to read 2 bytes instead of two times 1 byte. */
-            if ((PyUnicode_READ(kind, data, 0) == '_') &
-                    (PyUnicode_READ(kind, data, 1) == '_')) {
-                if ((PyUnicode_READ(kind, data, length-2) == '_') &
-                        (PyUnicode_READ(kind, data, length-1) == '_')) {
-                    /* Might be a slot name: "__x...y__" */
-                    return 1;
-                }
-            }
-        }
+    int kind = PyUnicode_KIND(name);
+    /* Special names contain at least "__x__" and are always ASCII. */
+    if (length > 4 && kind == PyUnicode_1BYTE_KIND) {
+        Py_UCS1 *characters = PyUnicode_1BYTE_DATA(name);
+        /* Allow the C compiler to read 2 bytes instead of two times 1 byte. */
+        return (
+            ((characters[0] == '_') & (characters[1] == '_')) &
+            ((characters[length-2] == '_') & (characters[length-1] == '_'))
+        );
     }
-    /* Definitely not a slot name. */
     return 0;
 }
 
