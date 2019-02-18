@@ -216,7 +216,7 @@ gc_get_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(gc_get_objects__doc__,
-"get_objects($module, /, generation=-1)\n"
+"get_objects($module, /, generation=None)\n"
 "--\n"
 "\n"
 "Return a list of objects tracked by the collector (excluding the list returned).\n"
@@ -238,11 +238,11 @@ gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"generation", NULL};
-    static _PyArg_Parser _parser = {"|O&:get_objects", _keywords, 0};
+    static _PyArg_Parser _parser = {"|n:get_objects", _keywords, 0};
     Py_ssize_t generation = -1;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        _Py_convert_optional_to_ssize_t, &generation)) {
+        &generation)) {
         goto exit;
     }
     return_value = gc_get_objects_impl(module, generation);
@@ -349,4 +349,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ff74593fc54c8168 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65e0cb98089d2505 input=a9049054013a1b77]*/

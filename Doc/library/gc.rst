@@ -66,11 +66,11 @@ The :mod:`gc` module provides the following functions:
 .. function:: get_objects(generation=None)
 
    Returns a list of all objects tracked by the collector, excluding the list
-   returned.
+   returned. If *generation* is not None, return only the objects tracked by
+   the collector that are in that generation.
 
-   .. versionchanged:: 3.8
-      If generation is not None, return only the objects tracked by the
-      collector that are in that generation.
+   .. versionadded:: 3.8
+      The optional *generation* parameter is added.
 
 .. function:: get_stats()
 
