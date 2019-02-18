@@ -1345,7 +1345,7 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
     }
 
     // Add the data to the channel.
-    int res = _channel_add(chan, interp->id, data);
+    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data);
     PyThread_release_lock(mutex);
     if (res != 0) {
         _PyCrossInterpreterData_Release(data);
@@ -1373,7 +1373,7 @@ _channel_recv(_channels *channels, int64_t id)
     // Past this point we are responsible for releasing the mutex.
 
     // Pop off the next item from the channel.
-    _PyCrossInterpreterData *data = _channel_next(chan, interp->id);
+    _PyCrossInterpreterData *data = _channel_next(chan, PyInterpreterState_GetID(interp));
     PyThread_release_lock(mutex);
     if (data == NULL) {
         if (!PyErr_Occurred()) {
@@ -1410,7 +1410,7 @@ _channel_drop(_channels *channels, int64_t id, int send, int recv)
     // Past this point we are responsible for releasing the mutex.
 
     // Close one or both of the two ends.
-    int res = _channel_close_interpreter(chan, interp->id, send-recv);
+    int res = _channel_close_interpreter(chan, PyInterpreterState_GetID(interp), send-recv);
     PyThread_release_lock(mutex);
     return res;
 }
