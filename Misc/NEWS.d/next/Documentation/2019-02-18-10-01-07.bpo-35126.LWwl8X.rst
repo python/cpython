@@ -1,0 +1,2 @@
+Improve the examples in the "How do I convert a number to string?" question
+of the "Programming" section of the FAQ.  Contributed by Stéphane Wirtel.
