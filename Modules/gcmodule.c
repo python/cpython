@@ -1524,7 +1524,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     /* If generation is passed, we extract only that generation */
-    if (generation != -1){
+    if (generation != -1) { 
         if (generation >= NUM_GENERATIONS) {
             PyErr_Format(PyExc_ValueError,
                          "generation parameter must be less than the number of "
