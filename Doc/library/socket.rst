@@ -595,25 +595,27 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
+.. function:: create_server(address, *, family=AF_INET, backlog=0, reuse_port=False, dualstack_ipv6=False)
 
    Convenience function which creates a :data:`SOCK_STREAM` type socket
    bound to *address* (a 2-tuple ``(host, port)``) and return the socket
    object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
-   *backlog* is the queue size passed to :meth:`socket.listen`.
+   *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
+   a default reasonable value is chosen.
    *reuse_port* dictates whether to set :data:`SO_REUSEPORT` socket option.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will
-   be able to accept both IPv4 and IPv6 connections.
-   In this case the address returned by :meth:`socket.getpeername` when an IPv4
-   connection occurs will be an IPv6 address represented as an IPv4-mapped IPv6
-   address.
+   be able to accept both IPv4 and IPv6 connections, else it will raise
+   :exc:`ValueError`. Most POSIX platforms are supposed to support this option.
+   When this option is enabled the address returned by :meth:`socket.getpeername`
+   when an IPv4 connection occurs will be an IPv6 address represented as an
+   IPv4-mapped IPv6 address.
    If *dualstack_ipv6* is false it will explicitly disable this functionality
    on platforms that enable it by default (e.g. Linux).
    For platforms not supporting this functionality natively you could use this
-   `MultipleSocketsListener recipe <http://code.activestate.com/recipes/578504/>`__.
+   `MultipleSocketsListener recipe <https://code.activestate.com/recipes/578504/>`__.
    This parameter can be used in conjunction with :func:`has_dualstack_ipv6`:
 
    ::
@@ -1822,44 +1824,6 @@ sends traffic to the first one connected successfully. ::
        s.sendall(b'Hello, world')
        data = s.recv(1024)
    print('Received', repr(data))
-
-
-The two examples above can be rewritten by using :meth:`socket.create_server`
-and :meth:`socket.create_connection` convenience functions.
-If supported by the platform, :meth:`socket.create_server` has the extra
-advantage of accepting both IPv4 or IPv6 connections on the same socket.
-
-::
-
-   # Echo server program
-   import socket
-
-   HOST = ""
-   PORT = 50007
-   if socket.has_dualstack_ipv6():
-       s = socket.create_server((HOST, PORT), family=socket.AF_INET6, dualstack_ipv6=True)
-   else:
-       s = socket.create_server((HOST, PORT))
-   conn, addr = s.accept()
-   with conn:
-       print('Connected by', addr)
-       while True:
-           data = conn.recv(1024)
-           if not data: break
-           conn.send(data)
-
-::
-
-   # Echo client program
-   import socket
-
-   HOST = 'daring.cwi.nl'
-   PORT = 50007
-   with socket.create_connection((HOST, PORT)) as s:
-       s.sendall(b'Hello, world')
-       data = s.recv(1024)
-   print('Received', repr(data))
-
 
 The next example shows how to write a very simple network sniffer with raw
 sockets on Windows. The example requires administrator privileges to modify
