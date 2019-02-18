@@ -1524,7 +1524,6 @@ class Popen(object):
                 executable = args[0]
 
             if (_USE_POSIX_SPAWNP
-                    and os.path.dirname(executable)
                     and preexec_fn is None
                     and not close_fds
                     and not pass_fds
