@@ -1,0 +1,3 @@
+The error message emmited when returning invalid types from ``__fspath__``
+in interfaces that allow passing :class:`~os.PathLike` objects has been
+improved and now it does explain the origin of the error.

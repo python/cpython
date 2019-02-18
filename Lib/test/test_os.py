@@ -3344,7 +3344,7 @@ class PathTConverterTests(unittest.TestCase):
                             cleanup_fn(result)
 
                 with self.assertRaisesRegex(
-                        TypeError, 'should be string, bytes'):
+                        TypeError, 'to return str or bytes'):
                     fn(int_fspath, *extra_args)
 
                 if allow_fd:
@@ -3356,6 +3356,23 @@ class PathTConverterTests(unittest.TestCase):
                             TypeError,
                             'os.PathLike'):
                         fn(fd, *extra_args)
+
+    def test_path_t_converter_and_custom_class(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                '__fspath__\(\) to return str or bytes, not int'
+            ):
+            os.stat(FakePath(2))
+        with self.assertRaisesRegex(
+                TypeError,
+                '__fspath__\(\) to return str or bytes, not float'
+            ):
+            os.stat(FakePath(2.34))
+        with self.assertRaisesRegex(
+                TypeError,
+                '__fspath__\(\) to return str or bytes, not object'
+            ):
+            os.stat(FakePath(object()))
 
 
 @unittest.skipUnless(hasattr(os, 'get_blocking'),
