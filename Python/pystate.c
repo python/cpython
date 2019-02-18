@@ -1510,6 +1510,7 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 
     // "Release" the data and/or the object.
     struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
+    // XXX Use _Py_AddPendingCall().
     _call_in_interpreter(gilstate, interp, _release_xidata, data);
 }
 
