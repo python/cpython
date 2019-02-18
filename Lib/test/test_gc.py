@@ -790,6 +790,16 @@ class GCTests(unittest.TestCase):
         del l
         self.assertEqual(gc.collect(), 1)
 
+        # Check argument values
+        gc.collect()
+        self.assertEqual(len(gc.get_objects()),
+                         len(gc.get_objects(generation=None)))
+
+        self.assertRaises(ValueError, gc.get_objects, 1000)
+        self.assertRaises(ValueError, gc.get_objects, -1000)
+        self.assertRaises(TypeError, gc.get_objects, "1")
+        self.assertRaises(TypeError, gc.get_objects, 1.234)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):

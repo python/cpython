@@ -69,8 +69,8 @@ The :mod:`gc` module provides the following functions:
    returned. If *generation* is not None, return only the objects tracked by
    the collector that are in that generation.
 
-   .. versionadded:: 3.8
-      The optional *generation* parameter is added.
+   .. versionchanged:: 3.8
+      New *generation* parameter.
 
 .. function:: get_stats()
 

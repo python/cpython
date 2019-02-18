@@ -1502,7 +1502,7 @@ gc_get_referents(PyObject *self, PyObject *args)
 
 /*[clinic input]
 gc.get_objects
-    generation: Py_ssize_t(c_default="-1") = None
+    generation: Py_ssize_t(accept={int, NoneType}, c_default="-1") = None
         Generation to extract the objects from.
 
 Return a list of objects tracked by the collector (excluding the list returned).
@@ -1513,7 +1513,7 @@ that are in that generation.
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
-/*[clinic end generated code: output=48b35fea4ba6cb0e input=726f9bb9b3874c7d]*/
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=ef7da9df9806754c]*/
 {
     int i;
     PyObject* result;
