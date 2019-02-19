@@ -3175,8 +3175,8 @@ is_dunder_name(PyObject *name)
     if (length > 4 && kind == PyUnicode_1BYTE_KIND) {
         Py_UCS1 *characters = PyUnicode_1BYTE_DATA(name);
         return (
-            ((characters[0] == '_') && (characters[1] == '_')) &&
-            ((characters[length-2] == '_') && (characters[length-1] == '_'))
+            ((characters[length-2] == '_') && (characters[length-1] == '_')) &&
+            ((characters[0] == '_') && (characters[1] == '_'))
         );
     }
     return 0;
