@@ -1,6 +1,7 @@
 /* Built-in functions */
 
 #include "Python.h"
+#include "pycore_listobject.h"
 #include <ctype.h>
 #include "ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
@@ -27,7 +28,7 @@ static PyObject*
 update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t i, j;
-    PyObject *base, *meth, *new_base, *result, *new_bases = NULL;
+    PyObject *base, *meth, *new_base, *new_bases = NULL;
     PyObject *stack[1] = {bases};
     assert(PyTuple_Check(bases));
 
@@ -86,9 +87,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
     if (!new_bases) {
         return bases;
     }
-    result = PyList_AsTuple(new_bases);
-    Py_DECREF(new_bases);
-    return result;
+    return _PyList_ConvertToTuple(new_bases);
 
 error:
     Py_XDECREF(new_bases);

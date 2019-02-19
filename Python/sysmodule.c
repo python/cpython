@@ -17,6 +17,7 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
+#include "pycore_listobject.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
@@ -1713,9 +1714,7 @@ list_builtin_module_names(void)
         list = NULL;
     }
     if (list) {
-        PyObject *v = PyList_AsTuple(list);
-        Py_DECREF(list);
-        list = v;
+        list = _PyList_ConvertToTuple(list);
     }
     return list;
 }

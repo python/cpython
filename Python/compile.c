@@ -22,6 +22,7 @@
  */
 
 #include "Python.h"
+#include "pycore_listobject.h"
 
 #include "Python-ast.h"
 #include "ast.h"
@@ -1904,8 +1905,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
     }
     if (keys != NULL) {
         Py_ssize_t default_count = PyList_GET_SIZE(keys);
-        PyObject *keys_tuple = PyList_AsTuple(keys);
-        Py_DECREF(keys);
+        PyObject *keys_tuple = _PyList_ConvertToTuple(keys);
         ADDOP_LOAD_CONST_NEW(c, keys_tuple);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, default_count);
         assert(default_count > 0);
@@ -2008,8 +2008,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
     len = PyList_GET_SIZE(names);
     if (len) {
-        PyObject *keytuple = PyList_AsTuple(names);
-        Py_DECREF(names);
+        PyObject *keytuple = _PyList_ConvertToTuple(names);
         ADDOP_LOAD_CONST_NEW(c, keytuple);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, len);
         return 1;
@@ -5731,7 +5730,6 @@ merge_const_tuple(struct compiler *c, PyObject **tuple)
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a)
 {
-    PyObject *tmp;
     PyCodeObject *co = NULL;
     PyObject *consts = NULL;
     PyObject *names = NULL;
@@ -5778,11 +5776,10 @@ makecode(struct compiler *c, struct assembler *a)
     if (!bytecode)
         goto error;
 
-    tmp = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
-    if (!tmp)
+    consts = _PyList_ConvertToTuple(consts); /* PyCode_New requires a tuple */
+    if (!consts) {
         goto error;
-    Py_DECREF(consts);
-    consts = tmp;
+    }
     if (!merge_const_tuple(c, &consts)) {
         goto error;
     }

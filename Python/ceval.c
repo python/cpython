@@ -10,6 +10,7 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
+#include "pycore_listobject.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
@@ -2458,8 +2459,7 @@ main_loop:
             }
 
             if (convert_to_tuple) {
-                return_value = PyList_AsTuple(sum);
-                Py_DECREF(sum);
+                return_value = _PyList_ConvertToTuple(sum);
                 if (return_value == NULL)
                     goto error;
             }

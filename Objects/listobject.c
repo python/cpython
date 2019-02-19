@@ -2516,6 +2516,29 @@ PyList_AsTuple(PyObject *v)
     return w;
 }
 
+PyObject *
+_PyList_ConvertToTuple(PyObject *v)
+{
+    assert(PyList_Check(v));
+    assert(Py_REFCNT(v) == 1);
+
+    Py_ssize_t n = Py_SIZE(v);
+    PyObject *result = PyTuple_New(n);
+    if (result != NULL && n) {
+        PyListObject *list = (PyListObject *)v;
+        memcpy(
+            ((PyTupleObject *)result)->ob_item,
+            list->ob_item,
+            sizeof(PyObject *) * n
+        );
+        PyMem_FREE(list->ob_item);
+        list->ob_item = NULL;
+        Py_SIZE(list) = list->allocated = 0;
+    }
+    Py_DECREF(v);
+    return result;
+}
+
 /*[clinic input]
 list.index
 

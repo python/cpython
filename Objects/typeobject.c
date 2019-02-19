@@ -1,6 +1,7 @@
 /* Type object implementation */
 
 #include "Python.h"
+#include "pycore_listobject.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
@@ -2557,8 +2558,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             Py_DECREF(newslots);
             goto error;
         }
-        slots = PyList_AsTuple(newslots);
-        Py_DECREF(newslots);
+        slots = _PyList_ConvertToTuple(newslots);
         if (slots == NULL)
             goto error;
 
