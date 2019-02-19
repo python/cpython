@@ -26,10 +26,11 @@ except ImportError as ie:
 O_CREX = O_CREAT | O_EXCL
 
 if os.name == "nt":
+    import _winapi
     import ctypes
     from ctypes import wintypes
 
-    kernel32 = ctypes.windll.kernel32
+    kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 
     class MEMORY_BASIC_INFORMATION(ctypes.Structure):
         _fields_ = (
@@ -46,7 +47,7 @@ if os.name == "nt":
     PAGE_READONLY = 0x02
     PAGE_EXECUTE_READWRITE = 0x04
     INVALID_HANDLE_VALUE = -1
-    FILE_ALREADY_EXISTS = 183
+    ERROR_ALREADY_EXISTS = 183
 
     def _errcheck_bool(result, func, args):
         if not result:
@@ -80,9 +81,6 @@ if os.name == "nt":
         wintypes.LPCWSTR
     )
 
-    kernel32.GetLastError.restype = wintypes.DWORD
-    kernel32.GetLastError.argtypes = ()
-
     kernel32.MapViewOfFile.errcheck = _errcheck_bool
     kernel32.MapViewOfFile.restype = wintypes.LPVOID
     kernel32.MapViewOfFile.argtypes = (
@@ -92,9 +90,6 @@ if os.name == "nt":
         wintypes.DWORD,
         ctypes.c_size_t
     )
-
-    kernel32.CloseHandle.errcheck = _errcheck_bool
-    kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
 
 
 class WindowsNamedSharedMemory:
@@ -113,7 +108,7 @@ class WindowsNamedSharedMemory:
             try:
                 p_buf = kernel32.MapViewOfFile(h_map, PAGE_READONLY, 0, 0, 0)
             finally:
-                kernel32.CloseHandle(h_map)
+                _winapi.CloseHandle(h_map)
             mbi = MEMORY_BASIC_INFORMATION()
             kernel32.VirtualQuery(p_buf, ctypes.byref(mbi), mmap.PAGESIZE)
             size = mbi.RegionSize
@@ -130,12 +125,12 @@ class WindowsNamedSharedMemory:
                 name
             )
             try:
-                last_error_code = kernel32.GetLastError()
-                if last_error_code == FILE_ALREADY_EXISTS:
+                last_error_code = ctypes.get_last_error()
+                if last_error_code == ERROR_ALREADY_EXISTS:
                     raise FileExistsError(f"File exists: {name!r}")
                 self._mmap = mmap.mmap(-1, size, tagname=name)
             finally:
-                kernel32.CloseHandle(h_map)
+                _winapi.CloseHandle(h_map)
 
         else:
             self._mmap = mmap.mmap(-1, size, tagname=name)
