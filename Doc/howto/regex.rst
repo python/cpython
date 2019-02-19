@@ -98,7 +98,7 @@ You can match the characters not listed within the class by :dfn:`complementing`
 the set.  This is indicated by including a ``'^'`` as the first character of the
 class. For example, ``[^5]`` will match any character except ``'5'``.  If the
 caret appears elsewhere in a character class, it does not have special meaning.
-For example: ``[5^]`` will match either a ``'5'`` or a ``'^'``.The behaviour of
+For example: ``[5^]`` will match either a ``'5'`` or a ``'^'``. The behaviour of
 ``'^'`` outside of a character class will be introduced in
 section :ref:`more-metacharacters`.
 
