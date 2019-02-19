@@ -73,7 +73,7 @@ The following classes are provided:
 
    .. versionchanged:: 3.8
 
-      The filename parameter supports a :class:`~pathlib.Path` instance.
+      The filename parameter supports a :term:`path-like object`.
 
 
 .. class:: CookiePolicy()
@@ -347,7 +347,7 @@ writing.
 
    .. versionchanged:: 3.8
 
-      The filename parameter supports a :class:`~pathlib.Path` instance.
+      The filename parameter supports a :term:`path-like object`.
 
 .. _cookie-policy-objects:
 

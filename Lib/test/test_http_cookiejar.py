@@ -320,11 +320,11 @@ class FileCookieJarTests(unittest.TestCase):
         self.assertEqual(c.filename, filename)
         self.assertIsInstance(c.filename, str)
 
-    def test_constructor_with_pathlib(self):
+    def test_constructor_with_path_like(self):
         filename = pathlib.Path(test.support.TESTFN)
         c = LWPCookieJar(filename)
-        self.assertEqual(c.filename, filename)
-        self.assertIsInstance(c.filename, pathlib.Path)
+        self.assertEqual(c.filename, str(filename))
+        self.assertIsInstance(c.filename, str)
 
     def test_constructor_with_none(self):
         c = LWPCookieJar(None)

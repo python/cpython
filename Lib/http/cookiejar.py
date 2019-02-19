@@ -28,6 +28,7 @@ http://wwwsearch.sf.net/):
 __all__ = ['Cookie', 'CookieJar', 'CookiePolicy', 'DefaultCookiePolicy',
            'FileCookieJar', 'LWPCookieJar', 'LoadError', 'MozillaCookieJar']
 
+import os
 import copy
 import datetime
 import re
@@ -1762,8 +1763,11 @@ class FileCookieJar(CookieJar):
 
         """
         CookieJar.__init__(self, policy)
-        if filename is not None and not isinstance(filename, (str, pathlib.Path)):
-            raise ValueError("filename must be string-like or PathLike")
+        try:
+            if filename is not None and isinstance(filename, os.PathLike):
+                filename = os.fspath(filename)
+        except TypeError:
+            raise ValueError("filename must be string-like or path-like object")
         self.filename = filename
         self.delayload = bool(delayload)
 
