@@ -345,6 +345,9 @@ writing.
    compatible with the libwww-perl library's ``Set-Cookie3`` file format.  This is
    convenient if you want to store cookies in a human-readable file.
 
+   .. versionchanged:: 3.8
+
+      The filename parameter supports a :class:`~pathlib.Path` instance.
 
 .. _cookie-policy-objects:
 

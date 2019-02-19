@@ -1,1 +1,1 @@
-FileCookieJar supports pathlib.Path. Contributed by Stéphane Wirtel
+:class:`FileCookieJar` supports path-like object. Contributed by Stéphane Wirtel
