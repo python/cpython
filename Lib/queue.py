@@ -234,6 +234,9 @@ class PriorityQueue(Queue):
 
     def _get(self):
         return heappop(self.queue)
+    
+    def __repr__(self):
+        return str(self.queue)
 
 
 class LifoQueue(Queue):
@@ -250,6 +253,9 @@ class LifoQueue(Queue):
 
     def _get(self):
         return self.queue.pop()
+    
+    def __repr__(self):
+        return str(self.queue)
 
 
 class _PySimpleQueue:
