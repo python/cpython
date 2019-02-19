@@ -56,7 +56,7 @@ typedef struct SRE_REPEAT_T {
     Py_ssize_t count;
     SRE_CODE* pattern; /* points to REPEAT operator arguments */
     void* last_ptr; /* helper to check for infinite loops */
-    struct SRE_REPEAT_T *prev; /* points to previous repeat context */
+    Py_ssize_t prev; /* points to previous repeat context in stack */
 } SRE_REPEAT;
 
 typedef struct {
@@ -82,7 +82,7 @@ typedef struct {
     size_t data_stack_size;
     size_t data_stack_base;
     /* current repeat context */
-    SRE_REPEAT *repeat;
+    Py_ssize_t repeat;
 } SRE_STATE;
 
 typedef struct {

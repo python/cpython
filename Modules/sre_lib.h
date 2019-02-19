@@ -538,7 +538,7 @@ typedef struct {
     Py_ssize_t lastindex;
     union {
         SRE_CODE chr;
-        SRE_REPEAT* rep;
+        Py_ssize_t rep;
     } u;
     int toplevel;
 } SRE(match_context);
@@ -556,6 +556,7 @@ SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int toplevel)
 
     SRE(match_context)* ctx;
     SRE(match_context)* nextctx;
+    SRE_REPEAT* temp_repeat;
 
     TRACE(("|%p|%p|ENTER\n", pattern, state->ptr));
 
@@ -798,7 +799,7 @@ entrance:
             TRACE(("|%p|%p|BRANCH\n", ctx->pattern, ctx->ptr));
             LASTMARK_SAVE();
             ctx->u.rep = state->repeat;
-            if (ctx->u.rep)
+            if (ctx->u.rep >= 0)
                 MARK_PUSH(ctx->lastmark);
             for (; ctx->pattern[0]; ctx->pattern += ctx->pattern[0]) {
                 if (ctx->pattern[1] == SRE_OP_LITERAL &&
@@ -813,16 +814,16 @@ entrance:
                 state->ptr = ctx->ptr;
                 DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1);
                 if (ret) {
-                    if (ctx->u.rep)
+                    if (ctx->u.rep >= 0)
                         MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
-                if (ctx->u.rep)
+                if (ctx->u.rep >= 0)
                     MARK_POP_KEEP(ctx->lastmark);
                 LASTMARK_RESTORE();
             }
-            if (ctx->u.rep)
+            if (ctx->u.rep >= 0)
                 MARK_POP_DISCARD(ctx->lastmark);
             RETURN_FAILURE;
 
@@ -988,21 +989,19 @@ entrance:
                    ctx->pattern[1], ctx->pattern[2]));
 
             /* install new repeat context */
-            ctx->u.rep = (SRE_REPEAT*) PyObject_MALLOC(sizeof(*ctx->u.rep));
-            if (!ctx->u.rep) {
-                PyErr_NoMemory();
-                RETURN_FAILURE;
-            }
-            ctx->u.rep->count = -1;
-            ctx->u.rep->pattern = ctx->pattern;
-            ctx->u.rep->prev = state->repeat;
-            ctx->u.rep->last_ptr = NULL;
+            DATA_ALLOC(SRE_REPEAT, temp_repeat);
+            ctx->u.rep = alloc_pos;
+            temp_repeat->count = -1;
+            temp_repeat->pattern = ctx->pattern;
+            temp_repeat->prev = state->repeat;
+            temp_repeat->last_ptr = NULL;
             state->repeat = ctx->u.rep;
 
             state->ptr = ctx->ptr;
             DO_JUMP(JUMP_REPEAT, jump_repeat, ctx->pattern+ctx->pattern[0]);
-            state->repeat = ctx->u.rep->prev;
-            PyObject_FREE(ctx->u.rep);
+            DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
+            state->repeat = temp_repeat->prev;
+            DATA_POP_DISCARD(temp_repeat);
 
             if (ret) {
                 RETURN_ON_ERROR(ret);
@@ -1018,44 +1017,47 @@ entrance:
                matches in here... */
 
             ctx->u.rep = state->repeat;
-            if (!ctx->u.rep)
+            if (ctx->u.rep < 0)
                 RETURN_ERROR(SRE_ERROR_STATE);
+            DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
 
             state->ptr = ctx->ptr;
 
-            ctx->count = ctx->u.rep->count+1;
+            ctx->count = temp_repeat->count+1;
 
             TRACE(("|%p|%p|MAX_UNTIL %" PY_FORMAT_SIZE_T "d\n", ctx->pattern,
                    ctx->ptr, ctx->count));
 
-            if (ctx->count < (Py_ssize_t) ctx->u.rep->pattern[1]) {
+            if (ctx->count < (Py_ssize_t) temp_repeat->pattern[1]) {
                 /* not enough matches */
-                ctx->u.rep->count = ctx->count;
+                temp_repeat->count = ctx->count;
                 DO_JUMP(JUMP_MAX_UNTIL_1, jump_max_until_1,
-                        ctx->u.rep->pattern+3);
+                        temp_repeat->pattern+3);
+                DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
-                ctx->u.rep->count = ctx->count-1;
+                temp_repeat->count = ctx->count-1;
                 state->ptr = ctx->ptr;
                 RETURN_FAILURE;
             }
 
-            if ((ctx->count < (Py_ssize_t) ctx->u.rep->pattern[2] ||
-                ctx->u.rep->pattern[2] == SRE_MAXREPEAT) &&
-                state->ptr != ctx->u.rep->last_ptr) {
+            if ((ctx->count < (Py_ssize_t) temp_repeat->pattern[2] ||
+                temp_repeat->pattern[2] == SRE_MAXREPEAT) &&
+                state->ptr != temp_repeat->last_ptr) {
                 /* we may have enough matches, but if we can
                    match another item, do so */
-                ctx->u.rep->count = ctx->count;
+                temp_repeat->count = ctx->count;
                 LASTMARK_SAVE();
                 MARK_PUSH(ctx->lastmark);
                 /* zero-width match protection */
-                DATA_PUSH(&ctx->u.rep->last_ptr);
-                ctx->u.rep->last_ptr = state->ptr;
+                DATA_PUSH(&temp_repeat->last_ptr);
+                temp_repeat->last_ptr = state->ptr;
                 DO_JUMP(JUMP_MAX_UNTIL_2, jump_max_until_2,
-                        ctx->u.rep->pattern+3);
-                DATA_POP(&ctx->u.rep->last_ptr);
+                        temp_repeat->pattern+3);
+                DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
+                DATA_POP(&temp_repeat->last_ptr);
                 if (ret) {
                     MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
@@ -1063,14 +1065,15 @@ entrance:
                 }
                 MARK_POP(ctx->lastmark);
                 LASTMARK_RESTORE();
-                ctx->u.rep->count = ctx->count-1;
+                temp_repeat->count = ctx->count-1;
                 state->ptr = ctx->ptr;
             }
 
             /* cannot match more repeated items here.  make sure the
                tail matches */
-            state->repeat = ctx->u.rep->prev;
+            state->repeat = temp_repeat->prev;
             DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern);
+            DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
             RETURN_ON_SUCCESS(ret);
             state->repeat = ctx->u.rep;
             state->ptr = ctx->ptr;
@@ -1081,26 +1084,28 @@ entrance:
             /* <REPEAT> <skip> <1=min> <2=max> item <MIN_UNTIL> tail */
 
             ctx->u.rep = state->repeat;
-            if (!ctx->u.rep)
+            if (ctx->u.rep < 0)
                 RETURN_ERROR(SRE_ERROR_STATE);
+            DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
 
             state->ptr = ctx->ptr;
 
-            ctx->count = ctx->u.rep->count+1;
+            ctx->count = temp_repeat->count+1;
 
             TRACE(("|%p|%p|MIN_UNTIL %" PY_FORMAT_SIZE_T "d %p\n", ctx->pattern,
-                   ctx->ptr, ctx->count, ctx->u.rep->pattern));
+                   ctx->ptr, ctx->count, temp_repeat->pattern));
 
-            if (ctx->count < (Py_ssize_t) ctx->u.rep->pattern[1]) {
+            if (ctx->count < (Py_ssize_t) temp_repeat->pattern[1]) {
                 /* not enough matches */
-                ctx->u.rep->count = ctx->count;
+                temp_repeat->count = ctx->count;
                 DO_JUMP(JUMP_MIN_UNTIL_1, jump_min_until_1,
-                        ctx->u.rep->pattern+3);
+                        temp_repeat->pattern+3);
+                DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
-                ctx->u.rep->count = ctx->count-1;
+                temp_repeat->count = ctx->count-1;
                 state->ptr = ctx->ptr;
                 RETURN_FAILURE;
             }
@@ -1108,8 +1113,9 @@ entrance:
             LASTMARK_SAVE();
 
             /* see if the tail matches */
-            state->repeat = ctx->u.rep->prev;
+            state->repeat = temp_repeat->prev;
             DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern);
+            DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
             if (ret) {
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
@@ -1120,23 +1126,24 @@ entrance:
 
             LASTMARK_RESTORE();
 
-            if ((ctx->count >= (Py_ssize_t) ctx->u.rep->pattern[2]
-                && ctx->u.rep->pattern[2] != SRE_MAXREPEAT) ||
-                state->ptr == ctx->u.rep->last_ptr)
+            if ((ctx->count >= (Py_ssize_t) temp_repeat->pattern[2]
+                && temp_repeat->pattern[2] != SRE_MAXREPEAT) ||
+                state->ptr == temp_repeat->last_ptr)
                 RETURN_FAILURE;
 
-            ctx->u.rep->count = ctx->count;
+            temp_repeat->count = ctx->count;
             /* zero-width match protection */
-            DATA_PUSH(&ctx->u.rep->last_ptr);
-            ctx->u.rep->last_ptr = state->ptr;
+            DATA_PUSH(&temp_repeat->last_ptr);
+            temp_repeat->last_ptr = state->ptr;
             DO_JUMP(JUMP_MIN_UNTIL_3,jump_min_until_3,
-                    ctx->u.rep->pattern+3);
-            DATA_POP(&ctx->u.rep->last_ptr);
+                    temp_repeat->pattern+3);
+            DATA_LOOKUP_AT(SRE_REPEAT, temp_repeat, ctx->u.rep);
+            DATA_POP(&temp_repeat->last_ptr);
             if (ret) {
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
             }
-            ctx->u.rep->count = ctx->count-1;
+            temp_repeat->count = ctx->count-1;
             state->ptr = ctx->ptr;
             RETURN_FAILURE;
 

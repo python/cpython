@@ -346,7 +346,7 @@ state_reset(SRE_STATE* state)
     state->lastmark = -1;
     state->lastindex = -1;
 
-    state->repeat = NULL;
+    state->repeat = -1;
 
     data_stack_dealloc(state);
 }
@@ -409,6 +409,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     }
     state->lastmark = -1;
     state->lastindex = -1;
+    state->repeat = -1;
 
     state->buffer.buf = NULL;
     ptr = getstring(string, &length, &isbytes, &charsize, &state->buffer);
