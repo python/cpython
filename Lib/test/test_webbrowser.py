@@ -331,13 +331,13 @@ class ImportTest(unittest.TestCase):
 @unittest.skipIf(sys.platform[:3] != 'win', 'requires Windows')
 class TestWindowsDefault(unittest.TestCase):
     @mock.patch('os.startfile')
-    def test_do_not_run_startfile_for_local(self, mock_startfile):
+    def test_do_run_startfile_for_local(self, mock_startfile):
         webbrowser.WindowsDefault().open('file:///tmp/test.txt')
-        mock_startfile.assert_not_called()
+        mock_startfile.assert_called()
 
     @mock.patch('os.startfile')
     def test_do_not_run_startfile_for_local_calc(self, mock_startfile):
-        webbrowser.WindowsDefault().open('c:\\windows\\system32\\calc.exe')
+        webbrowser.WindowsDefault().open(sys.executable)
         mock_startfile.assert_not_called()
 
     @mock.patch('os.startfile')
