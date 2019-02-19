@@ -712,7 +712,7 @@ FF
 
         with self.assertRaises(urllib.error.ContentTooShortError):
             try:
-                urllib.request.urlretrieve('http://example.com/',
+                urllib.request.urlretrieve('http://www.pythontest.net/',
                                            reporthook=_reporthook)
             finally:
                 self.unfakehttp()
@@ -729,7 +729,7 @@ FF
 ''')
         with self.assertRaises(urllib.error.ContentTooShortError):
             try:
-                urllib.request.urlretrieve('http://example.com/')
+                urllib.request.urlretrieve('http://www.pythontest.net/')
             finally:
                 self.unfakehttp()
 
