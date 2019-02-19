@@ -2601,9 +2601,12 @@ class ElementFindTest(unittest.TestCase):
         self.assertEqual(e.find('./concat[@class=concat("x")]').attrib['class'], 'x')
 
         self.assertRaisesRegex(SyntaxError, 'invalid predicate', e.find, './tag[@class=concat"d"]')
-        self.assertRaisesRegex(SyntaxError, 'concat missing opening paranthese', e.find, './tag[@class=concat()]')
-        self.assertRaisesRegex(SyntaxError, 'invalid close paranthese for concat', e.find, './tag[@class=concat("d",)]')
-        self.assertRaisesRegex(SyntaxError, 'incomplete concat', e.find, './tag[@class=concat("d"')
+        self.assertRaisesRegex(SyntaxError, 'concat missing opening paranthesis', e.find, './tag[@class=concat "d"]')
+        self.assertRaisesRegex(SyntaxError, 'concat with no parameters not allowed', e.find, './tag[@class=concat()]')
+        self.assertRaisesRegex(SyntaxError, 'incomplete parameter list for concat', e.find, './tag[@class=concat( )]')
+        self.assertRaisesRegex(SyntaxError, 'incomplete parameter list for concat', e.find, './tag[@class=concat("d",)]')
+        self.assertRaisesRegex(SyntaxError, 'comma separator in concat without preceding string', e.find, './tag[@class=concat(,"d")]')
+        self.assertRaisesRegex(SyntaxError, 'missing closing parathesis for concat', e.find, './tag[@class=concat("d"')
         self.assertRaisesRegex(SyntaxError, "invalid string '.' in concat", e.find, './tag[@class=concat("d". "e"]')
 
     def test_findall(self):

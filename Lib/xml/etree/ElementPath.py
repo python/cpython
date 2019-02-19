@@ -231,22 +231,24 @@ def prepare_predicate_concat(next):
         try:
             token = next()
         except StopIteration:
-            raise SyntaxError("incomplete concat")
+            raise SyntaxError("missing closing parathesis for concat")
         if token == ('', ''):
             continue
         if not started:
-            if token[0] == '(':
+            if token[0] and token[0][0] == '(':
                 started = True
+                if len(token[0]) > 1 and token[0][1] == ')':
+                    raise SyntaxError("concat with no parameters not allowed")
                 continue
             else:
-                raise SyntaxError("concat missing opening paranthese")
+                raise SyntaxError("concat missing opening paranthesis")
         if token[0] == ')':
             if needstr:
-                raise SyntaxError("invalid close paranthese for concat")
+                raise SyntaxError("incomplete parameter list for concat")
             return constr
         if token[0] == ',':
             if needstr:
-                raise SyntaxError("comma separator in concat without string")
+                raise SyntaxError("comma separator in concat without preceding string")
             needstr = True
             continue
         if token[0] and token[0][0] in "'\"" and token[0][0] == token[0][-1]:
