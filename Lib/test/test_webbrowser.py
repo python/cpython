@@ -328,5 +328,18 @@ class ImportTest(unittest.TestCase):
             self.assertEqual(webbrowser.get().name, sys.executable)
 
 
+@unittest.skipIf(sys.platform[:3] != 'win', 'requires Windows')
+class TestWindowsDefault(unittest.TestCase):
+    @mock.patch('os.startfile')
+    def test_do_not_run_startfile_for_local(self, mock_startfile):
+        webbrowser.WindowsDefault().open('file:///tmp/test.txt')
+        self.assertFalse(mock_startfile.assert_called())
+
+    @mock.patch('os.startfile')
+    def test_do_run_startfile_with_external_resource(self, mock_startfile):
+        webbrowser.WindowsDefault().open('https://pythontest.net')
+        self.assertTrue(mock_startfile.assert_called())
+
+
 if __name__=='__main__':
     unittest.main()

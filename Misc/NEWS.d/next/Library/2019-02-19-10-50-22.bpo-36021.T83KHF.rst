@@ -1,0 +1,2 @@
+WindowsDefault does not use os.startfile() when the location of the resource is
+local file. Contributed by Stéphane Wirtel

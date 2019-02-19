@@ -8,6 +8,7 @@ import shutil
 import sys
 import subprocess
 import threading
+from urllib.parse import urlparse
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
@@ -578,7 +579,9 @@ if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             try:
-                os.startfile(url)
+                parsed_url = urlparse(url)
+                if parsed_url.scheme != 'file':
+                    os.startfile(url)
             except OSError:
                 # [Error 22] No application is associated with the specified
                 # file for this operation: '<URL>'
