@@ -1,13 +1,12 @@
 "Test colorizer, coverage 93%."
 
-from functools import partial
-
 from idlelib import colorizer
+from test.support import requires
 import unittest
 from unittest import mock
-from test.support import requires
-from tkinter import Tk, Text
 
+from functools import partial
+from tkinter import Tk, Text
 from idlelib import config
 from idlelib.percolator import Percolator
 
@@ -143,6 +142,7 @@ class ColorDelegatorTest(unittest.TestCase):
         # Called in setUp.
         color = self.color
         self.assertIsInstance(color.delegate, colorizer.Delegator)
+        # It is too late to mock notify_range, so test side effect.
         self.assertEqual(self.root.tk.call(
             'after', 'info', color.after_id)[1], 'timer')
 
