@@ -331,7 +331,9 @@ class ImportTest(unittest.TestCase):
 @unittest.skipIf(sys.platform[:3] != 'win', 'requires Windows')
 class TestWindowsDefault(unittest.TestCase):
     @mock.patch('os.startfile')
-    def test_do_run_startfile_for_local(self, mock_startfile):
+    @mock.patch('os.access', return_value=False)
+    @mock.patch('os.path.isfile', return_value=True)
+    def test_do_run_startfile_for_local(self, mock_isfile, mock_access, mock_startfile):
         webbrowser.WindowsDefault().open('file:///tmp/test.txt')
         mock_startfile.assert_called()
 
