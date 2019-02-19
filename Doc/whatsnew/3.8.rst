@@ -379,7 +379,7 @@ Optimizations
   was updated, there was an unnecessary call to update slots.
   (Contributed by Stefan Behnel, Pablo Galindo Salgado, Raymond Hettinger,
   and Serhiy Storchaka in :issue:`36012`.)
-  
+
 
 Build and C API Changes
 =======================
