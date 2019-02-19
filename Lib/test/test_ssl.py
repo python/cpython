@@ -2628,6 +2628,9 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
 
     min_version = PROTOCOL_TO_TLS_VERSION.get(client_protocol, None)
     if (min_version is not None
+    # SSLContext.minimum_version is only available on recent OpenSSL
+    # (setter added in OpenSSL 1.1.0, getter added in OpenSSL 1.1.1)
+    and hasattr(server_context, 'minimum_version')
     and server_protocol == ssl.PROTOCOL_TLS
     and server_context.minimum_version > min_version):
         # If OpenSSL configuration is strict and requires more recent TLS
