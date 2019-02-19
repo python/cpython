@@ -31,9 +31,15 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(a, b)
 
     def test_getitem_error(self):
+        a = []
         msg = "list indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            a = []
+            a['a']
+
+    def test_setitem_error(self):
+        a = []
+        msg = "list indices must be integers or slices"
+        with self.assertRaisesRegex(TypeError, msg):
             a['a'] = "python"
 
     def test_repr(self):
