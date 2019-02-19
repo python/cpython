@@ -1,0 +1,2 @@
+Replace http://example.com by http://pythontest.net for some tests.
+Contributed by Stéphane Wirtel
