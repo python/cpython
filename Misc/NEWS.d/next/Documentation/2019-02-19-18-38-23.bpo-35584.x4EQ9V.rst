@@ -1,0 +1,1 @@
+Update regex howto to note ^ outside of character classes will not just match literal ^
