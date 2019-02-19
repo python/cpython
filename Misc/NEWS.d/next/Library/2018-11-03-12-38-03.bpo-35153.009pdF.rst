@@ -1,0 +1,3 @@
+Add *headers* optional keyword-only parameter to
+:class:`xmlrpc.client.ServerProxy`, :class:`xmlrpc.client.Transport` and
+:class:`xmlrpc.client.SafeTransport`.  Patch by Cédric Krier.
