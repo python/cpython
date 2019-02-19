@@ -96,9 +96,15 @@ special nature.
 
 You can match the characters not listed within the class by :dfn:`complementing`
 the set.  This is indicated by including a ``'^'`` as the first character of the
+<<<<<<< HEAD
 class. For example, ``[^5]`` will match any character except ``'5'``.
 The behaviour of ``'^'`` outside of a character class will be introduced in
 section :ref:`more-metacharacters`.
+=======
+class. For example, ``[^5]`` will match any character except ``'5'``.  If the
+caret appears elsewhere in a character class, it does not have special meaning.
+For example: ``[5^]`` will match either a ``'5'`` or a ``'^'``.
+>>>>>>> 3bacf6126522a9b3bcb6be0c4f3ee6a895dfe772
 
 Perhaps the most important metacharacter is the backslash, ``\``.   As in Python
 string literals, the backslash can be followed by various characters to signal
