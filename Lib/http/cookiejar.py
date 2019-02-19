@@ -36,6 +36,7 @@ import urllib.parse, urllib.request
 import threading as _threading
 import http.client  # only for the default HTTP port
 from calendar import timegm
+import pathlib
 
 debug = False   # set to True to enable debugging via the logging module
 logger = None
@@ -1761,11 +1762,8 @@ class FileCookieJar(CookieJar):
 
         """
         CookieJar.__init__(self, policy)
-        if filename is not None:
-            try:
-                filename+""
-            except:
-                raise ValueError("filename must be string-like")
+        if filename is not None and not isinstance(filename, (str, pathlib.Path)):
+            raise ValueError("filename must be string-like")
         self.filename = filename
         self.delayload = bool(delayload)
 

@@ -1,0 +1,1 @@
+FileCookieJar supports pathlib.Path. Contributed by Stéphane Wirtel
