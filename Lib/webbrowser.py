@@ -576,6 +576,9 @@ def register_standard_browsers():
 #
 
 if sys.platform[:3] == "win":
+    def is_executable(path):
+        return os.path.isfile(path) and os.access(path, os.X_OK)
+
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             try:
@@ -585,8 +588,14 @@ if sys.platform[:3] == "win":
                     urllib.parse.uses_params) - set(['file', ''])
 
                 parsed_url = urllib.parse.urlparse(url)
-                if parsed_url.scheme in allowed_schemes:
+                if parsed_url.scheme not in allowed_schemes:
+                    path = parsed_url.path if parsed_url.scheme == 'file' else url
+
+                    if not is_executable(path):
+                        os.startfile(url)
+                else:
                     os.startfile(url)
+
             except OSError:
                 # [Error 22] No application is associated with the specified
                 # file for this operation: '<URL>'
