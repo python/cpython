@@ -5400,54 +5400,46 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
     return retval;
 }
 
-/*
-  This function collects the system certificate stores listed in
-  system_stores into a collection certificate store for being
-  enumerated. The store must be readable to be added to the
-  store collection.
-*/
 static HCERTSTORE
 ssl_collect_certificates(const char *store_name)
 {
-    HCERTSTORE hCollectionStore = NULL;
-    HCERTSTORE hSystemStore = NULL;
-    DWORD system_stores[] = {CERT_SYSTEM_STORE_LOCAL_MACHINE,
+/* this function collects the system certificate stores listed in
+ * system_stores into a collection certificate store for being
+ * enumerated. The store must be readable to be added to the
+ * store collection.
+ */
+
+    HCERTSTORE hCollectionStore = NULL, hSystemStore = NULL;
+    static DWORD system_stores[] = {
+        CERT_SYSTEM_STORE_LOCAL_MACHINE,
         CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
         CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
         CERT_SYSTEM_STORE_CURRENT_USER,
         CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY,
         CERT_SYSTEM_STORE_SERVICES,
         CERT_SYSTEM_STORE_USERS};
-    unsigned int i;
-    unsigned int storesAdded;
+    size_t i, storesAdded;
+    BOOL result;
 
-    if (!(hCollectionStore = CertOpenStore(
-        CERT_STORE_PROV_COLLECTION,
-        0,
-        (HCRYPTPROV)NULL,
-        0,
-        NULL)))
-    {
+    hCollectionStore = CertOpenStore(CERT_STORE_PROV_COLLECTION, 0,
+                                     (HCRYPTPROV)NULL, 0, NULL);
+    if (!hCollectionStore) {
         return NULL;
     }
-
     storesAdded = 0;
-    for (i=0;i<sizeof(system_stores)/sizeof(DWORD);i++)
-    {
-        if (hSystemStore = CertOpenStore(
-            CERT_STORE_PROV_SYSTEM_A,
-            0,
-            (HCRYPTPROV)NULL,
-            CERT_STORE_READONLY_FLAG | system_stores[i],
-            store_name))
-        {
-            if (CertAddStoreToCollection(hCollectionStore, hSystemStore,
-                CERT_PHYSICAL_STORE_ADD_ENABLE_FLAG, 0)) {
+    for (i = 0; i < sizeof(system_stores) / sizeof(DWORD); i++) {
+        hSystemStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0,
+                                     (HCRYPTPROV)NULL,
+                                     CERT_STORE_READONLY_FLAG |
+                                     system_stores[i], store_name);
+        if (hSystemStore) {
+            result = CertAddStoreToCollection(hCollectionStore, hSystemStore,
+                                     CERT_PHYSICAL_STORE_ADD_ENABLE_FLAG, 0);
+            if (result) {
                 ++storesAdded;
             }
         }
     }
-
     if (storesAdded == 0) {
         CertCloseStore(hCollectionStore, CERT_CLOSE_STORE_FORCE_FLAG);
         return NULL;
@@ -5456,7 +5448,8 @@ ssl_collect_certificates(const char *store_name)
     return hCollectionStore;
 }
 
-/* code from Objects/listobject.c*/
+/* code from Objects/listobject.c */
+
 static int
 list_contains(PyListObject *a, PyObject *el)
 {
@@ -5495,7 +5488,6 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     if (result == NULL) {
         return NULL;
     }
-
     hCollectionStore = ssl_collect_certificates(store_name);
     if (hCollectionStore == NULL) {
         Py_DECREF(result);
