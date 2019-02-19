@@ -96,8 +96,8 @@ special nature.
 
 You can match the characters not listed within the class by :dfn:`complementing`
 the set.  This is indicated by including a ``'^'`` as the first character of the
-class. For example, ``[^5]`` will match any character except ``'5'``. 
-The behaviour of ``'^'`` outside of a character class will be introduced in 
+class. For example, ``[^5]`` will match any character except ``'5'``.
+The behaviour of ``'^'`` outside of a character class will be introduced in
 section :ref:`more-metacharacters`.
 
 Perhaps the most important metacharacter is the backslash, ``\``.   As in Python
