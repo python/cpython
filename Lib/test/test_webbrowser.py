@@ -336,6 +336,11 @@ class TestWindowsDefault(unittest.TestCase):
         self.assertFalse(mock_startfile.assert_called())
 
     @mock.patch('os.startfile')
+    def test_do_not_run_startfile_for_local_calc(self, mock_startfile):
+        webbrowser.WindowsDefault().open('c:\\windows\\system32\\calc.exe')
+        self.assertFalse(mock_startfile.assert_called())
+
+    @mock.patch('os.startfile')
     def test_do_run_startfile_with_external_resource(self, mock_startfile):
         webbrowser.WindowsDefault().open('https://pythontest.net')
         self.assertTrue(mock_startfile.assert_called())
