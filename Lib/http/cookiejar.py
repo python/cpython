@@ -1763,7 +1763,7 @@ class FileCookieJar(CookieJar):
         """
         CookieJar.__init__(self, policy)
         if filename is not None and not isinstance(filename, (str, pathlib.Path)):
-            raise ValueError("filename must be string-like")
+            raise ValueError("filename must be string-like or PathLike")
         self.filename = filename
         self.delayload = bool(delayload)
 

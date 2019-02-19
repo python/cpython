@@ -71,6 +71,10 @@ The following classes are provided:
    :meth:`load` or :meth:`revert` method is called.  Subclasses of this class are
    documented in section :ref:`file-cookie-jar-classes`.
 
+   .. versionchanged:: 3.8
+
+      The filename parameter supports a :class:`~pathlib.Path` instance.
+
 
 .. class:: CookiePolicy()
 
