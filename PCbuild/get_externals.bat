@@ -49,7 +49,7 @@ echo.Fetching external libraries...
 
 set libraries=
 set libraries=%libraries%                                       bzip2-1.0.6
-set libraries=%libraries%                                       libffi
+set libraries=%libraries%                                       libffi-3.3.0-rc0-r1
 if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-1.1.0j
 set libraries=%libraries%                                       sqlite-3.21.0.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.9.0
