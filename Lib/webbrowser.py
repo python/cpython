@@ -577,7 +577,14 @@ def register_standard_browsers():
 
 if sys.platform[:3] == "win":
     def is_executable(path):
-        return os.path.isfile(path) and os.access(path, os.X_OK)
+        import struct
+
+        is_exe = False
+        with open(path, 'rb') as fp:
+            s = fp.read(2)
+            is_exe = s != b'MZ'
+
+        return os.path.isfile(path) and is_exe
 
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
