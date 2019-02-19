@@ -420,8 +420,10 @@ do { \
     if (sizeof(type) > state->data_stack_size - alloc_pos) { \
         int j = data_stack_grow(state, sizeof(type)); \
         if (j < 0) return j; \
-        if (ctx_pos != -1) \
+        if (ctx_pos >= 0) \
             DATA_STACK_LOOKUP_AT(state, SRE(match_context), ctx, ctx_pos); \
+        if (ctx->u.rep >= 0) \
+            DATA_STACK_LOOKUP_AT(state, SRE_REPEAT, temp_repeat, ctx->u.rep); \
     } \
     ptr = (type*)(state->data_stack+alloc_pos); \
     state->data_stack_base += sizeof(type); \
@@ -441,8 +443,10 @@ do { \
     if (size > state->data_stack_size - state->data_stack_base) { \
         int j = data_stack_grow(state, size); \
         if (j < 0) return j; \
-        if (ctx_pos != -1) \
+        if (ctx_pos >= 0) \
             DATA_STACK_LOOKUP_AT(state, SRE(match_context), ctx, ctx_pos); \
+        if (ctx->u.rep >= 0) \
+            DATA_STACK_LOOKUP_AT(state, SRE_REPEAT, temp_repeat, ctx->u.rep); \
     } \
     memcpy(state->data_stack+state->data_stack_base, data, size); \
     state->data_stack_base += size; \
