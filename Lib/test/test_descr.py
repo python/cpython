@@ -1952,6 +1952,43 @@ order (MRO) for bases """
         self.assertEqual(E().foo.__func__, C.foo) # i.e., unbound
         self.assertTrue(repr(C.foo.__get__(C(1))).startswith("<bound method "))
 
+    def test_methoddescriptor(self):
+        set_add = set.add
+
+        expected_errmsg = "descriptor 'add' of 'set' object needs an argument"
+
+        with self.assertRaises(TypeError) as cm:
+            set_add()
+        self.assertEqual(cm.exception.args[0], expected_errmsg)
+
+        expected_errmsg = "descriptor 'add' for 'set' objects doesn't apply to a 'int' object"
+
+        with self.assertRaises(TypeError) as cm:
+            set_add(0)
+        self.assertEqual(cm.exception.args[0], expected_errmsg)
+
+        with self.assertRaises(TypeError) as cm:
+            set_add.__get__(0)
+        self.assertEqual(cm.exception.args[0], expected_errmsg)
+
+    def test_classmethoddescriptor(self):
+        dict_fromkeys = dict.__dict__['fromkeys']
+
+        expected_errmsg = "descriptor 'fromkeys' of 'dict' object needs an argument"
+
+        with self.assertRaises(TypeError) as cm:
+            dict_fromkeys()
+
+        expected_errmsg = "descriptor 'fromkeys' for type 'dict' doesn't apply to a 'int' type"
+
+        with self.assertRaises(TypeError) as cm:
+            dict_fromkeys(int)
+        self.assertEqual(cm.exception.args[0], expected_errmsg)
+
+        with self.assertRaises(TypeError) as cm:
+            dict_fromkeys.__get__(None, int)
+        self.assertEqual(cm.exception.args[0], expected_errmsg)
+
     def test_special_method_lookup(self):
         # The lookup of special methods bypasses __getattr__ and
         # __getattribute__, but they still can be descriptors.
