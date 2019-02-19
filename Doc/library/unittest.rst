@@ -27,7 +27,7 @@ object-oriented way:
 
 test fixture
    A :dfn:`test fixture` represents the preparation needed to perform one or more
-   tests, and any associate cleanup actions.  This may involve, for example,
+   tests, and any associated cleanup actions.  This may involve, for example,
    creating temporary or proxy databases, directories, or starting a server
    process.
 
