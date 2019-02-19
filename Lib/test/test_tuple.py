@@ -19,9 +19,10 @@ class TupleTest(seq_tests.CommonTest):
     type2test = tuple
 
     def test_getitem_error(self):
+        t = ()
         msg = "tuple indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            ()['a']
+            t['a']
 
     def test_constructors(self):
         super().test_constructors()
