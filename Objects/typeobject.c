@@ -7027,7 +7027,6 @@ static slotdef slotdefs[] = {
     {NULL}
 };
 
-
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
    the offset to the type pointer, since it takes care to indirect through the
