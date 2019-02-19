@@ -264,6 +264,13 @@ class TestClassGetitem(unittest.TestCase):
                 return 'from __class_getitem__'
         self.assertEqual(C[int], 'from metaclass')
 
+    def test_class_getitem_in_runtime(self):
+        class C:
+            pass
+
+        C.__class_getitem__ = lambda cls, item: f'{cls.__name__}[{item.__name__}]'
+
+        self.assertEqual(C[int], 'C[int]')
 
 @support.cpython_only
 class CAPITest(unittest.TestCase):

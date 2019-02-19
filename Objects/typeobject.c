@@ -3264,6 +3264,16 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             type->tp_name);
         return -1;
     }
+    
+    if (PyUnicode_Check (name)
+        && (!strcmp (PyUnicode_AsUTF8 (name), "__init_subclass__")
+        || !strcmp (PyUnicode_AsUTF8 (name), "__class_getitem__"))
+        && PyFunction_Check (value))
+    {
+        value = PyClassMethod_New (value);
+    } 
+
+    
     if (PyUnicode_Check(name)) {
         if (PyUnicode_CheckExact(name)) {
             if (PyUnicode_READY(name) == -1)
