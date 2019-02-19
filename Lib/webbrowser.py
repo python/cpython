@@ -576,17 +576,14 @@ def register_standard_browsers():
 #
 
 if sys.platform[:3] == "win":
-    def is_executable(path):
-        import struct
-
-        is_exe = False
-        with open(path, 'rb') as fp:
-            s = fp.read(2)
-            is_exe = s != b'MZ'
-
-        return os.path.isfile(path) and is_exe
-
     class WindowsDefault(BaseBrowser):
+        def _is_html(self, path):
+            HTML_EXTENSIONS = (
+                '.html', '.htm', '.mht', '.mhtml', '.shtml',
+                '.xht', '.xhtml'
+            )
+            return os.path.splitext(path)[-1] in HTML_EXTENSIONS
+
         def open(self, url, new=0, autoraise=True):
             try:
                 allowed_schemes = set(
@@ -598,7 +595,7 @@ if sys.platform[:3] == "win":
                 if parsed_url.scheme not in allowed_schemes:
                     path = parsed_url.path if parsed_url.scheme == 'file' else url
 
-                    if not is_executable(path):
+                    if self._is_html(path):
                         os.startfile(url)
                 else:
                     os.startfile(url)

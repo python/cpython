@@ -334,7 +334,7 @@ class TestWindowsDefault(unittest.TestCase):
     @mock.patch('os.access', return_value=False)
     @mock.patch('os.path.isfile', return_value=True)
     def test_do_run_startfile_for_local(self, mock_isfile, mock_access, mock_startfile):
-        webbrowser.WindowsDefault().open('file:///tmp/test.txt')
+        webbrowser.WindowsDefault().open('file:///tmp/test.html')
         mock_startfile.assert_called()
 
     @mock.patch('os.startfile')
