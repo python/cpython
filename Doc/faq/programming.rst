@@ -997,9 +997,27 @@ To convert, e.g., the number 144 to the string '144', use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
 the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
 the :ref:`formatstrings` section, e.g. ``"{:04d}".format(144)`` yields
-``'0144'`` and ``"{:.3f}".format(1/3)`` yields ``'0.333'``.  You may also use
-:ref:`the % operator <string-formatting>` on strings.  See the library reference
-manual for details.
+``'0144'`` and ``"{:.3f}".format(1.0/3.0)`` yields ``'0.333'``. In Python 2, the
+division (/) operator returns the floor of the mathematical result of division
+if the arguments are ints or longs, but it returns a reasonable approximation of
+the division result if the arguments are floats or complex::
+
+   >>> print('{:.3f}'.format(1/3))
+   0.000
+   >>> print('{:.3f}'.format(1.0/3))
+   0.333
+
+In Python 3, the default behaviour of the division operator (see :pep:`238`) has
+been changed but you can have the same behaviour in Python 2 if you import
+``division`` from :mod:`__future__`::
+
+   >>> from __future__ import division
+   >>> print('{:.3f}'.format(1/3))
+   0.333
+
+
+You may also use :ref:`the % operator <string-formatting>` on strings.  See the
+library reference manual for details.
 
 
 How do I modify a string in place?
