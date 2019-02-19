@@ -2407,7 +2407,7 @@ main_loop:
         }
 
         case TARGET(BUILD_TUPLE): {
-            PyObject *tup = PyTuple_New(oparg);
+            PyObject *tup = _PyTuple_NewUnsafe(oparg);
             if (tup == NULL)
                 goto error;
             while (--oparg >= 0) {

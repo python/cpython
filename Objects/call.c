@@ -339,7 +339,7 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
 
         /* bpo-29318, bpo-27840: Caller and callee functions must not share
            the dictionary: kwargs must be copied. */
-        kwtuple = PyTuple_New(2 * nk);
+        kwtuple = _PyTuple_NewUnsafe(2 * nk);
         if (kwtuple == NULL) {
             return NULL;
         }
@@ -1279,7 +1279,7 @@ _PyStack_AsTuple(PyObject *const *stack, Py_ssize_t nargs)
     PyObject *args;
     Py_ssize_t i;
 
-    args = PyTuple_New(nargs);
+    args = _PyTuple_NewUnsafe(nargs);
     if (args == NULL) {
         return NULL;
     }
@@ -1304,7 +1304,7 @@ _PyStack_AsTupleSlice(PyObject *const *stack, Py_ssize_t nargs,
     assert(end <= nargs);
     assert(start <= end);
 
-    args = PyTuple_New(end - start);
+    args = _PyTuple_NewUnsafe(end - start);
     if (args == NULL) {
         return NULL;
     }
@@ -1375,7 +1375,7 @@ _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
         return -1;
     }
 
-    kwnames = PyTuple_New(nkwargs);
+    kwnames = _PyTuple_NewUnsafe(nkwargs);
     if (kwnames == NULL) {
         PyMem_Free(stack);
         return -1;

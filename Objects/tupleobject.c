@@ -76,11 +76,10 @@ _PyTuple_DebugMallocStats(FILE *out)
 #endif
 }
 
-PyObject *
-PyTuple_New(Py_ssize_t size)
+static PyObject *
+tuple_new_internal(Py_ssize_t size, int initialize)
 {
     PyTupleObject *op;
-    Py_ssize_t i;
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
@@ -119,8 +118,9 @@ PyTuple_New(Py_ssize_t size)
         if (op == NULL)
             return NULL;
     }
-    for (i=0; i < size; i++)
-        op->ob_item[i] = NULL;
+    if (initialize) {
+        memset(op->ob_item, 0, sizeof(PyObject *) * size);
+    }
 #if PyTuple_MAXSAVESIZE > 0
     if (size == 0) {
         free_list[0] = op;
@@ -133,6 +133,18 @@ PyTuple_New(Py_ssize_t size)
 #endif
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
+}
+
+PyObject *
+_PyTuple_NewUnsafe(Py_ssize_t size)
+{
+    return tuple_new_internal(size, 0);
+}
+
+PyObject *
+PyTuple_New(Py_ssize_t size)
+{
+    return tuple_new_internal(size, 1);
 }
 
 Py_ssize_t
@@ -216,7 +228,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
     va_list vargs;
 
     va_start(vargs, n);
-    result = PyTuple_New(n);
+    result = _PyTuple_NewUnsafe(n);
     if (result == NULL) {
         va_end(vargs);
         return NULL;
@@ -438,7 +450,7 @@ tupleslice(PyTupleObject *a, Py_ssize_t ilow,
         return (PyObject *)a;
     }
     len = ihigh - ilow;
-    np = (PyTupleObject *)PyTuple_New(len);
+    np = (PyTupleObject *)_PyTuple_NewUnsafe(len);
     if (np == NULL)
         return NULL;
     src = a->ob_item + ilow;
@@ -486,7 +498,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
         return PyErr_NoMemory();
     size = Py_SIZE(a) + Py_SIZE(b);
-    np = (PyTupleObject *) PyTuple_New(size);
+    np = (PyTupleObject *) _PyTuple_NewUnsafe(size);
     if (np == NULL) {
         return NULL;
     }
@@ -530,7 +542,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
         return PyErr_NoMemory();
     size = Py_SIZE(a) * n;
-    np = (PyTupleObject *) PyTuple_New(size);
+    np = (PyTupleObject *) _PyTuple_NewUnsafe(size);
     if (np == NULL)
         return NULL;
     p = np->ob_item;
@@ -773,7 +785,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             return (PyObject *)self;
         }
         else {
-            result = PyTuple_New(slicelength);
+            result = _PyTuple_NewUnsafe(slicelength);
             if (!result) return NULL;
 
             src = self->ob_item;

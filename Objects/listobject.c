@@ -4,6 +4,7 @@
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_accu.h"
+#include "pycore_tupleobject.h"
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
@@ -2502,7 +2503,7 @@ PyList_AsTuple(PyObject *v)
         return NULL;
     }
     n = Py_SIZE(v);
-    w = PyTuple_New(n);
+    w = _PyTuple_NewUnsafe(n);
     if (w == NULL)
         return NULL;
     p = ((PyTupleObject *)w)->ob_item;
