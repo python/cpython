@@ -3293,12 +3293,14 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
             if (name == NULL)
                 return -1;
         }
-        PyUnicode_InternInPlace(&name);
         if (!PyUnicode_CHECK_INTERNED(name)) {
-            PyErr_SetString(PyExc_MemoryError,
-                            "Out of memory interning an attribute name");
-            Py_DECREF(name);
-            return -1;
+            PyUnicode_InternInPlace(&name);
+            if (!PyUnicode_CHECK_INTERNED(name)) {
+                PyErr_SetString(PyExc_MemoryError,
+                                "Out of memory interning an attribute name");
+                Py_DECREF(name);
+                return -1;
+            }
         }
     }
     else {
