@@ -1270,7 +1270,7 @@ every :class:`Request`.  To change this::
 
    import urllib.request
    opener = urllib.request.build_opener()
-   opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+   opener.addheaders = [('User-Agent', 'Mozilla/5.0')]
    opener.open('http://www.example.com/')
 
 Also, remember that a few standard headers (:mailheader:`Content-Length`,

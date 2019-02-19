@@ -433,7 +433,7 @@ class Request:
 class OpenerDirector:
     def __init__(self):
         client_version = "Python-urllib/%s" % __version__
-        self.addheaders = [('User-agent', client_version)]
+        self.addheaders = [('User-Agent', client_version)]
         # self.handlers is retained only for backward compatibility
         self.handlers = []
         # manage the individual handlers

@@ -237,7 +237,7 @@ class Entry:
     def __str__(self):
         ret = []
         for agent in self.useragents:
-            ret.append(f"User-agent: {agent}")
+            ret.append(f"User-Agent: {agent}")
         if self.delay is not None:
             ret.append(f"Crawl-delay: {self.delay}")
         if self.req_rate is not None:
