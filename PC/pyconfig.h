@@ -178,7 +178,7 @@ typedef _W64 int ssize_t;
 #define PYD_PLATFORM_TAG "win32"
 #elif defined(_M_ARM)
 #define COMPILER _Py_PASTE_VERSION("32 bit (ARM)")
-#define PYD_PLATFORM_TAG "win_arm"
+#define PYD_PLATFORM_TAG "win_arm32"
 #else
 #define COMPILER _Py_PASTE_VERSION("32 bit (Unknown)")
 #endif

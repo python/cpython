@@ -162,6 +162,13 @@ Functions for sequences
    with the :class:`float` values returned by :func:`random` (that includes
    integers, floats, and fractions but excludes decimals).
 
+   For a given seed, the :func:`choices` function with equal weighting
+   typically produces a different sequence than repeated calls to
+   :func:`choice`.  The algorithm used by :func:`choices` uses floating
+   point arithmetic for internal consistency and speed.  The algorithm used
+   by :func:`choice` defaults to integer arithmetic with repeated selections
+   to avoid small biases from round-off error.
+
    .. versionadded:: 3.6
 
 
@@ -378,12 +385,16 @@ Simulations::
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
    >>> # of a biased coin that settles on heads 60% of the time.
-   >>> trial = lambda: choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
+   >>> def trial():
+   ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
+   ...
    >>> sum(trial() for i in range(10000)) / 10000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
-   >>> trial = lambda : 2500 <= sorted(choices(range(10000), k=5))[2]  < 7500
+   >>> def trial():
+   ...     return 2500 <= sorted(choices(range(10000), k=5))[2] < 7500
+   ...
    >>> sum(trial() for i in range(10000)) / 10000
    0.7958
 

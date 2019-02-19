@@ -141,10 +141,13 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         modulepath = PyUnicode_FromString("builtins");
         attrname = envar;
     }
-    else {
+    else if (last_dot != envar) {
         /* Split on the last dot; */
         modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
         attrname = last_dot + 1;
+    }
+    else {
+        goto warn;
     }
     if (modulepath == NULL) {
         PyMem_RawFree(envar);
@@ -155,21 +158,29 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_DECREF(modulepath);
 
     if (module == NULL) {
-        goto error;
+        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+            goto warn;
+        }
+        PyMem_RawFree(envar);
+        return NULL;
     }
 
     PyObject *hook = PyObject_GetAttrString(module, attrname);
     Py_DECREF(module);
 
     if (hook == NULL) {
-        goto error;
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            goto warn;
+        }
+        PyMem_RawFree(envar);
+        return NULL;
     }
     PyMem_RawFree(envar);
     PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 
-  error:
+  warn:
     /* If any of the imports went wrong, then warn and ignore. */
     PyErr_Clear();
     int status = PyErr_WarnFormat(
@@ -1115,7 +1126,7 @@ sys_getwindowsversion_impl(PyObject *module)
 {
     PyObject *version;
     int pos = 0;
-    OSVERSIONINFOEX ver;
+    OSVERSIONINFOEXW ver;
     DWORD realMajor, realMinor, realBuild;
     HANDLE hKernel32;
     wchar_t kernel32_path[MAX_PATH];
@@ -1123,7 +1134,7 @@ sys_getwindowsversion_impl(PyObject *module)
     DWORD verblock_size;
 
     ver.dwOSVersionInfoSize = sizeof(ver);
-    if (!GetVersionEx((OSVERSIONINFO*) &ver))
+    if (!GetVersionExW((OSVERSIONINFOW*) &ver))
         return PyErr_SetFromWindowsErr(0);
 
     version = PyStructSequence_New(&WindowsVersionType);
@@ -1134,7 +1145,7 @@ sys_getwindowsversion_impl(PyObject *module)
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwMinorVersion));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwBuildNumber));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwPlatformId));
-    PyStructSequence_SET_ITEM(version, pos++, PyUnicode_FromString(ver.szCSDVersion));
+    PyStructSequence_SET_ITEM(version, pos++, PyUnicode_FromWideChar(ver.szCSDVersion, -1));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wServicePackMajor));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wServicePackMinor));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
@@ -1148,7 +1159,9 @@ sys_getwindowsversion_impl(PyObject *module)
     // We need to read the version info from a system file resource
     // to accurately identify the OS version. If we fail for any reason,
     // just return whatever GetVersion said.
+    Py_BEGIN_ALLOW_THREADS
     hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    Py_END_ALLOW_THREADS
     if (hKernel32 && GetModuleFileNameW(hKernel32, kernel32_path, MAX_PATH) &&
         (verblock_size = GetFileVersionInfoSizeW(kernel32_path, NULL)) &&
         (verblock = PyMem_RawMalloc(verblock_size))) {
@@ -1593,10 +1606,6 @@ sys__clear_type_cache_impl(PyObject *module)
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(sys_clear_type_cache__doc__,
-"_clear_type_cache() -> None\n\
-Clear the internal type lookup cache.");
 
 /*[clinic input]
 sys.is_finalizing
@@ -2361,34 +2370,11 @@ static struct PyModuleDef sysmodule = {
         }                                                  \
     } while (0)
 
-
-_PyInitError
-_PySys_BeginInit(PyObject **sysmod)
+static _PyInitError
+_PySys_InitCore(PyObject *sysdict)
 {
-    PyObject *m, *sysdict, *version_info;
+    PyObject *version_info;
     int res;
-
-    m = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
-    if (m == NULL) {
-        return _Py_INIT_ERR("failed to create a module object");
-    }
-    sysdict = PyModule_GetDict(m);
-
-    /* Check that stdin is not a directory
-       Using shell redirection, you can redirect stdin to a directory,
-       crashing the Python interpreter. Catch this common mistake here
-       and output a useful error message. Note that under MS Windows,
-       the shell already prevents that. */
-#ifndef MS_WINDOWS
-    {
-        struct _Py_stat_struct sb;
-        if (_Py_fstat_noraise(fileno(stdin), &sb) == 0 &&
-            S_ISDIR(sb.st_mode)) {
-            return _Py_INIT_USER_ERR("<stdin> is a directory, "
-                                     "cannot continue");
-        }
-    }
-#endif
 
     /* stdin/stdout/stderr are set in pylifecycle.c */
 
@@ -2517,9 +2503,6 @@ _PySys_BeginInit(PyObject **sysmod)
     if (PyErr_Occurred()) {
         goto err_occurred;
     }
-
-    *sysmod = m;
-
     return _Py_INIT_OK();
 
 type_init_failed:
@@ -2545,8 +2528,9 @@ err_occurred:
     } while (0)
 
 int
-_PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
+_PySys_InitMain(PyInterpreterState *interp)
 {
+    PyObject *sysdict = interp->sysdict;
     const _PyCoreConfig *core_config = &interp->core_config;
     const _PyMainInterpreterConfig *config = &interp->config;
     int res;
@@ -2561,9 +2545,8 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
 
 #define COPY_LIST(KEY, ATTR) \
     do { \
-        assert(PyList_Check(config->ATTR)); \
-        PyObject *list = PyList_GetSlice(config->ATTR, \
-                                         0, PyList_GET_SIZE(config->ATTR)); \
+        assert(PyList_Check(ATTR)); \
+        PyObject *list = PyList_GetSlice(ATTR, 0, PyList_GET_SIZE(ATTR)); \
         if (list == NULL) { \
             return -1; \
         } \
@@ -2571,7 +2554,7 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
         Py_DECREF(list); \
     } while (0)
 
-    COPY_LIST("path", module_search_path);
+    COPY_LIST("path", config->module_search_path);
 
     SET_SYS_FROM_STRING_BORROW("executable", config->executable);
     SET_SYS_FROM_STRING_BORROW("prefix", config->prefix);
@@ -2589,7 +2572,7 @@ _PySys_EndInit(PyObject *sysdict, PyInterpreterState *interp)
         SET_SYS_FROM_STRING_BORROW("argv", config->argv);
     }
     if (config->warnoptions != NULL) {
-        COPY_LIST("warnoptions", warnoptions);
+        COPY_LIST("warnoptions", config->warnoptions);
     }
     if (config->xoptions != NULL) {
         PyObject *dict = PyDict_Copy(config->xoptions);
@@ -2639,6 +2622,77 @@ err_occurred:
 
 #undef SET_SYS_FROM_STRING_BORROW
 #undef SET_SYS_FROM_STRING_INT_RESULT
+
+
+/* Set up a preliminary stderr printer until we have enough
+   infrastructure for the io module in place.
+
+   Use UTF-8/surrogateescape and ignore EAGAIN errors. */
+_PyInitError
+_PySys_SetPreliminaryStderr(PyObject *sysdict)
+{
+    PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
+    if (pstderr == NULL) {
+        goto error;
+    }
+    if (_PyDict_SetItemId(sysdict, &PyId_stderr, pstderr) < 0) {
+        goto error;
+    }
+    if (PyDict_SetItemString(sysdict, "__stderr__", pstderr) < 0) {
+        goto error;
+    }
+    Py_DECREF(pstderr);
+    return _Py_INIT_OK();
+
+error:
+    Py_XDECREF(pstderr);
+    return _Py_INIT_ERR("can't set preliminary stderr");
+}
+
+
+/* Create sys module without all attributes: _PySys_InitMain() should be called
+   later to add remaining attributes. */
+_PyInitError
+_PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
+{
+    PyObject *modules = PyDict_New();
+    if (modules == NULL) {
+        return _Py_INIT_ERR("can't make modules dictionary");
+    }
+    interp->modules = modules;
+
+    PyObject *sysmod = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
+    if (sysmod == NULL) {
+        return _Py_INIT_ERR("failed to create a module object");
+    }
+
+    PyObject *sysdict = PyModule_GetDict(sysmod);
+    if (sysdict == NULL) {
+        return _Py_INIT_ERR("can't initialize sys dict");
+    }
+    Py_INCREF(sysdict);
+    interp->sysdict = sysdict;
+
+    if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
+        return _Py_INIT_ERR("can't initialize sys module");
+    }
+
+    _PyInitError err = _PySys_SetPreliminaryStderr(sysdict);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = _PySys_InitCore(sysdict);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    _PyImport_FixupBuiltin(sysmod, "sys", interp->modules);
+
+    *sysmod_p = sysmod;
+    return _Py_INIT_OK();
+}
+
 
 static PyObject *
 makepathobject(const wchar_t *path, wchar_t delim)

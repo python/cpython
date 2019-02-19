@@ -21,11 +21,11 @@ math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *a;
     PyObject *b;
 
-    if (!_PyArg_UnpackStack(args, nargs, "gcd",
-        2, 2,
-        &a, &b)) {
+    if (!_PyArg_CheckPositional("gcd", nargs, 2, 2)) {
         goto exit;
     }
+    a = args[0];
+    b = args[1];
     return_value = math_gcd_impl(module, a, b);
 
 exit:
@@ -139,10 +139,14 @@ math_ldexp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double x;
     PyObject *i;
 
-    if (!_PyArg_ParseStack(args, nargs, "dO:ldexp",
-        &x, &i)) {
+    if (!_PyArg_CheckPositional("ldexp", nargs, 2, 2)) {
         goto exit;
     }
+    x = PyFloat_AsDouble(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    i = args[1];
     return_value = math_ldexp_impl(module, x, i);
 
 exit:
@@ -261,8 +265,15 @@ math_fmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double x;
     double y;
 
-    if (!_PyArg_ParseStack(args, nargs, "dd:fmod",
-        &x, &y)) {
+    if (!_PyArg_CheckPositional("fmod", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = PyFloat_AsDouble(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    y = PyFloat_AsDouble(args[1]);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_fmod_impl(module, x, y);
@@ -296,11 +307,19 @@ math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *p;
     PyObject *q;
 
-    if (!_PyArg_UnpackStack(args, nargs, "dist",
-        2, 2,
-        &p, &q)) {
+    if (!_PyArg_CheckPositional("dist", nargs, 2, 2)) {
         goto exit;
     }
+    if (!PyTuple_Check(args[0])) {
+        _PyArg_BadArgument("dist", 1, "tuple", args[0]);
+        goto exit;
+    }
+    p = args[0];
+    if (!PyTuple_Check(args[1])) {
+        _PyArg_BadArgument("dist", 2, "tuple", args[1]);
+        goto exit;
+    }
+    q = args[1];
     return_value = math_dist_impl(module, p, q);
 
 exit:
@@ -326,8 +345,15 @@ math_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double x;
     double y;
 
-    if (!_PyArg_ParseStack(args, nargs, "dd:pow",
-        &x, &y)) {
+    if (!_PyArg_CheckPositional("pow", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = PyFloat_AsDouble(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    y = PyFloat_AsDouble(args[1]);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = math_pow_impl(module, x, y);
@@ -530,4 +556,41 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=da4b9940a5cb0188 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(math_prod__doc__,
+"prod($module, iterable, /, *, start=1)\n"
+"--\n"
+"\n"
+"Calculate the product of all the elements in the input iterable.\n"
+"\n"
+"The default start value for the product is 1.\n"
+"\n"
+"When the iterable is empty, return the start value.  This function is\n"
+"intended specifically for use with numeric values and may reject\n"
+"non-numeric types.");
+
+#define MATH_PROD_METHODDEF    \
+    {"prod", (PyCFunction)(void(*)(void))math_prod, METH_FASTCALL|METH_KEYWORDS, math_prod__doc__},
+
+static PyObject *
+math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start);
+
+static PyObject *
+math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "start", NULL};
+    static _PyArg_Parser _parser = {"O|$O:prod", _keywords, 0};
+    PyObject *iterable;
+    PyObject *start = NULL;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &iterable, &start)) {
+        goto exit;
+    }
+    return_value = math_prod_impl(module, iterable, start);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=20505690ca6fe402 input=a9049054013a1b77]*/

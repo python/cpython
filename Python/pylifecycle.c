@@ -66,6 +66,7 @@ static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
 
+int _Py_UnhandledKeyboardInterrupt = 0;
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
 
 _PyInitError
@@ -464,9 +465,22 @@ _Py_SetLocaleFromEnv(int category)
 */
 
 static _PyInitError
-_Py_Initialize_ReconfigureCore(PyInterpreterState *interp,
+_Py_Initialize_ReconfigureCore(PyInterpreterState **interp_p,
                                const _PyCoreConfig *core_config)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!tstate) {
+        return _Py_INIT_ERR("failed to read thread state");
+    }
+
+    PyInterpreterState *interp = tstate->interp;
+    if (interp == NULL) {
+        return _Py_INIT_ERR("can't make main interpreter");
+    }
+    *interp_p = interp;
+
+    /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
+       Py_Initialize() ignores the new configuration. */
     if (core_config->allocator != NULL) {
         const char *allocator = _PyMem_GetAllocatorsName();
         if (allocator == NULL || strcmp(core_config->allocator, allocator) != 0) {
@@ -492,57 +506,16 @@ _Py_Initialize_ReconfigureCore(PyInterpreterState *interp,
 }
 
 
-/* Begin interpreter initialization
- *
- * On return, the first thread and interpreter state have been created,
- * but the compiler, signal handling, multithreading and
- * multiple interpreter support, and codec infrastructure are not yet
- * available.
- *
- * The import system will support builtin and frozen modules only.
- * The only supported io is writing to sys.stderr
- *
- * If any operation invoked by this function fails, a fatal error is
- * issued and the function does not return.
- *
- * Any code invoked from this function should *not* assume it has access
- * to the Python C API (unless the API is explicitly listed as being
- * safe to call without calling Py_Initialize first)
- *
- * The caller is responsible to call _PyCoreConfig_Read().
- */
-
 static _PyInitError
-_Py_InitializeCore_impl(PyInterpreterState **interp_p,
-                        const _PyCoreConfig *core_config)
+pycore_init_runtime(const _PyCoreConfig *core_config)
 {
-    PyInterpreterState *interp;
-    _PyInitError err;
-
-    /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
-       Py_Initialize() ignores the new configuration. */
-    if (_PyRuntime.core_initialized) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (!tstate) {
-            return _Py_INIT_ERR("failed to read thread state");
-        }
-
-        interp = tstate->interp;
-        if (interp == NULL) {
-            return _Py_INIT_ERR("can't make main interpreter");
-        }
-        *interp_p = interp;
-
-        return _Py_Initialize_ReconfigureCore(interp, core_config);
-    }
-
     if (_PyRuntime.initialized) {
         return _Py_INIT_ERR("main interpreter already initialized");
     }
 
     _PyCoreConfig_SetGlobalConfig(core_config);
 
-    err = _PyRuntime_Initialize();
+    _PyInitError err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -573,8 +546,15 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
+    return _Py_INIT_OK();
+}
 
-    interp = PyInterpreterState_New();
+
+static _PyInitError
+pycore_create_interpreter(const _PyCoreConfig *core_config,
+                          PyInterpreterState **interp_p)
+{
+    PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
         return _Py_INIT_ERR("can't make main interpreter");
     }
@@ -603,66 +583,74 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     /* Create the GIL */
     PyEval_InitThreads();
 
-    _Py_ReadyTypes();
+    return _Py_INIT_OK();
+}
 
-    if (!_PyLong_Init())
-        return _Py_INIT_ERR("can't init longs");
 
-    if (!PyByteArray_Init())
-        return _Py_INIT_ERR("can't init bytearray");
-
-    if (!_PyFloat_Init())
-        return _Py_INIT_ERR("can't init float");
-
-    PyObject *modules = PyDict_New();
-    if (modules == NULL)
-        return _Py_INIT_ERR("can't make modules dictionary");
-    interp->modules = modules;
-
-    PyObject *sysmod;
-    err = _PySys_BeginInit(&sysmod);
+static _PyInitError
+pycore_init_types(void)
+{
+    _PyInitError err = _PyTypes_Init();
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    interp->sysdict = PyModule_GetDict(sysmod);
-    if (interp->sysdict == NULL) {
-        return _Py_INIT_ERR("can't initialize sys dict");
+    err = _PyUnicode_Init();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
 
-    Py_INCREF(interp->sysdict);
-    PyDict_SetItemString(interp->sysdict, "modules", modules);
-    _PyImport_FixupBuiltin(sysmod, "sys", modules);
-
-    /* Init Unicode implementation; relies on the codec registry */
-    if (_PyUnicode_Init() < 0)
-        return _Py_INIT_ERR("can't initialize unicode");
-
-    if (_PyStructSequence_Init() < 0)
+    if (_PyStructSequence_Init() < 0) {
         return _Py_INIT_ERR("can't initialize structseq");
+    }
 
+    if (!_PyLong_Init()) {
+        return _Py_INIT_ERR("can't init longs");
+    }
+
+    err = _PyExc_Init();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    if (!_PyFloat_Init()) {
+        return _Py_INIT_ERR("can't init float");
+    }
+
+    if (!_PyContext_Init()) {
+        return _Py_INIT_ERR("can't init context");
+    }
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+pycore_init_builtins(PyInterpreterState *interp)
+{
     PyObject *bimod = _PyBuiltin_Init();
-    if (bimod == NULL)
+    if (bimod == NULL) {
         return _Py_INIT_ERR("can't initialize builtins modules");
-    _PyImport_FixupBuiltin(bimod, "builtins", modules);
+    }
+    _PyImport_FixupBuiltin(bimod, "builtins", interp->modules);
+
     interp->builtins = PyModule_GetDict(bimod);
-    if (interp->builtins == NULL)
+    if (interp->builtins == NULL) {
         return _Py_INIT_ERR("can't initialize builtins dict");
+    }
     Py_INCREF(interp->builtins);
 
-    /* initialize builtin exceptions */
-    _PyExc_Init(bimod);
+    _PyInitError err = _PyBuiltins_AddExceptions(bimod);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    return _Py_INIT_OK();
+}
 
-    /* Set up a preliminary stderr printer until we have enough
-       infrastructure for the io module in place. */
-    PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
-    if (pstderr == NULL)
-        return _Py_INIT_ERR("can't set preliminary stderr");
-    _PySys_SetObjectId(&PyId_stderr, pstderr);
-    PySys_SetObject("__stderr__", pstderr);
-    Py_DECREF(pstderr);
 
-    err = _PyImport_Init(interp);
+static _PyInitError
+pycore_init_import_warnings(PyInterpreterState *interp, PyObject *sysmod)
+{
+    _PyInitError err = _PyImport_Init(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -677,22 +665,61 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
         return _Py_INIT_ERR("can't initialize warnings");
     }
 
-    if (!_PyContext_Init())
-        return _Py_INIT_ERR("can't init context");
-
-    if (core_config->_install_importlib) {
-        err = _PyCoreConfig_SetPathConfig(core_config);
+    if (interp->core_config._install_importlib) {
+        err = _PyCoreConfig_SetPathConfig(&interp->core_config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
     }
 
     /* This call sets up builtin and frozen import support */
-    if (core_config->_install_importlib) {
+    if (interp->core_config._install_importlib) {
         err = initimport(interp, sysmod);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
+    }
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+_Py_InitializeCore_impl(PyInterpreterState **interp_p,
+                        const _PyCoreConfig *core_config)
+{
+    PyInterpreterState *interp;
+
+    _PyInitError err = pycore_init_runtime(core_config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = pycore_create_interpreter(core_config, &interp);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    core_config = &interp->core_config;
+    *interp_p = interp;
+
+    err = pycore_init_types();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    PyObject *sysmod;
+    err = _PySys_Create(interp, &sysmod);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = pycore_init_builtins(interp);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = pycore_init_import_warnings(interp, sysmod);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
 
     /* Only when we get here is the runtime core fully initialized */
@@ -700,6 +727,23 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
     return _Py_INIT_OK();
 }
 
+/* Begin interpreter initialization
+ *
+ * On return, the first thread and interpreter state have been created,
+ * but the compiler, signal handling, multithreading and
+ * multiple interpreter support, and codec infrastructure are not yet
+ * available.
+ *
+ * The import system will support builtin and frozen modules only.
+ * The only supported io is writing to sys.stderr
+ *
+ * If any operation invoked by this function fails, a fatal error is
+ * issued and the function does not return.
+ *
+ * Any code invoked from this function should *not* assume it has access
+ * to the Python C API (unless the API is explicitly listed as being
+ * safe to call without calling Py_Initialize first)
+ */
 _PyInitError
 _Py_InitializeCore(PyInterpreterState **interp_p,
                    const _PyCoreConfig *src_config)
@@ -729,7 +773,12 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
         goto done;
     }
 
-    err = _Py_InitializeCore_impl(interp_p, &config);
+    if (!_PyRuntime.core_initialized) {
+        err = _Py_InitializeCore_impl(interp_p, &config);
+    }
+    else {
+        err = _Py_Initialize_ReconfigureCore(interp_p, &config);
+    }
 
 done:
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -799,7 +848,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
         return _Py_INIT_ERR("can't initialize time");
     }
 
-    if (_PySys_EndInit(interp->sysdict, interp) < 0) {
+    if (_PySys_InitMain(interp) < 0) {
         return _Py_INIT_ERR("can't finish initializing sys");
     }
 
@@ -1146,7 +1195,6 @@ Py_FinalizeEx(void)
     PyList_Fini();
     PySet_Fini();
     PyBytes_Fini();
-    PyByteArray_Fini();
     PyLong_Fini();
     PyFloat_Fini();
     PyDict_Fini();
@@ -1270,6 +1318,11 @@ new_interpreter(PyThreadState **tstate_p)
         return _Py_INIT_ERR("failed to copy main interpreter config");
     }
 
+    err = _PyExc_Init();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
@@ -1284,7 +1337,9 @@ new_interpreter(PyThreadState **tstate_p)
             goto handle_error;
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        _PySys_EndInit(interp->sysdict, interp);
+        if (_PySys_InitMain(interp) < 0) {
+            return _Py_INIT_ERR("can't finish initializing sys");
+        }
     }
     else if (PyErr_Occurred()) {
         goto handle_error;
@@ -1301,21 +1356,16 @@ new_interpreter(PyThreadState **tstate_p)
         goto handle_error;
     }
 
-    /* initialize builtin exceptions */
-    _PyExc_Init(bimod);
-
     if (bimod != NULL && sysmod != NULL) {
-        PyObject *pstderr;
-
-        /* Set up a preliminary stderr printer until we have enough
-           infrastructure for the io module in place. */
-        pstderr = PyFile_NewStdPrinter(fileno(stderr));
-        if (pstderr == NULL) {
-            return _Py_INIT_ERR("can't set preliminary stderr");
+        err = _PyBuiltins_AddExceptions(bimod);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
         }
-        _PySys_SetObjectId(&PyId_stderr, pstderr);
-        PySys_SetObject("__stderr__", pstderr);
-        Py_DECREF(pstderr);
+
+        err = _PySys_SetPreliminaryStderr(interp->sysdict);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
 
         err = _PyImportHooks_Init();
         if (_Py_INIT_FAILED(err)) {
@@ -1681,6 +1731,20 @@ init_sys_streams(PyInterpreterState *interp)
     PyObject * encoding_attr;
     _PyInitError res = _Py_INIT_OK();
     _PyCoreConfig *config = &interp->core_config;
+
+    /* Check that stdin is not a directory
+       Using shell redirection, you can redirect stdin to a directory,
+       crashing the Python interpreter. Catch this common mistake here
+       and output a useful error message. Note that under MS Windows,
+       the shell already prevents that. */
+#ifndef MS_WINDOWS
+    struct _Py_stat_struct sb;
+    if (_Py_fstat_noraise(fileno(stdin), &sb) == 0 &&
+        S_ISDIR(sb.st_mode)) {
+        return _Py_INIT_USER_ERR("<stdin> is a directory, "
+                                 "cannot continue");
+    }
+#endif
 
     char *codec_name = get_codec_name(config->stdio_encoding);
     if (codec_name == NULL) {

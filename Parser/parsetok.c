@@ -15,6 +15,42 @@
 static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int *);
 static int initerr(perrdetail *err_ret, PyObject * filename);
 
+typedef struct {
+    int *items;
+    size_t size;
+    size_t num_items;
+} growable_int_array;
+
+static int
+growable_int_array_init(growable_int_array *arr, size_t initial_size) {
+    assert(initial_size > 0);
+    arr->items = malloc(initial_size * sizeof(*arr->items));
+    arr->size = initial_size;
+    arr->num_items = 0;
+
+    return arr->items != NULL;
+}
+
+static int
+growable_int_array_add(growable_int_array *arr, int item) {
+    if (arr->num_items >= arr->size) {
+        arr->size *= 2;
+        arr->items = realloc(arr->items, arr->size * sizeof(*arr->items));
+        if (!arr->items) {
+            return 0;
+        }
+    }
+
+    arr->items[arr->num_items] = item;
+    arr->num_items++;
+    return 1;
+}
+
+static void
+growable_int_array_deallocate(growable_int_array *arr) {
+    free(arr->items);
+}
+
 /* Parse input coming from a string.  Return error code, print some errors. */
 node *
 PyParser_ParseString(const char *s, grammar *g, int start, perrdetail *err_ret)
@@ -58,6 +94,9 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
     if (tok == NULL) {
         err_ret->error = PyErr_Occurred() ? E_DECODE : E_NOMEM;
         return NULL;
+    }
+    if (*flags & PyPARSE_TYPE_COMMENTS) {
+        tok->type_comments = 1;
     }
 
 #ifndef PGEN
@@ -127,6 +166,9 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
         err_ret->error = E_NOMEM;
         return NULL;
     }
+    if (*flags & PyPARSE_TYPE_COMMENTS) {
+        tok->type_comments = 1;
+    }
 #ifndef PGEN
     Py_INCREF(err_ret->filename);
     tok->filename = err_ret->filename;
@@ -187,7 +229,14 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     parser_state *ps;
     node *n;
     int started = 0;
-    int col_offset;
+    int col_offset, end_col_offset;
+    growable_int_array type_ignores;
+
+    if (!growable_int_array_init(&type_ignores, 10)) {
+        err_ret->error = E_NOMEM;
+        PyTokenizer_Free(tok);
+        return NULL;
+    }
 
     if ((ps = PyParser_New(g, start)) == NULL) {
         err_ret->error = E_NOMEM;
@@ -197,6 +246,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
     if (*flags & PyPARSE_BARRY_AS_BDFL)
         ps->p_flags |= CO_FUTURE_BARRY_AS_BDFL;
+    if (*flags & PyPARSE_TYPE_COMMENTS)
+        ps->p_flags |= PyCF_TYPE_COMMENTS;
 #endif
 
     for (;;) {
@@ -205,6 +256,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         size_t len;
         char *str;
         col_offset = -1;
+        int lineno;
+        const char *line_start;
 
         type = PyTokenizer_Get(tok, &a, &b);
         if (type == ERRORTOKEN) {
@@ -253,17 +306,41 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             }
         }
 #endif
-        if (a != NULL && a >= tok->line_start) {
-            col_offset = Py_SAFE_DOWNCAST(a - tok->line_start,
+
+        /* Nodes of type STRING, especially multi line strings
+           must be handled differently in order to get both
+           the starting line number and the column offset right.
+           (cf. issue 16806) */
+        lineno = type == STRING ? tok->first_lineno : tok->lineno;
+        line_start = type == STRING ? tok->multi_line_start : tok->line_start;
+        if (a != NULL && a >= line_start) {
+            col_offset = Py_SAFE_DOWNCAST(a - line_start,
                                           intptr_t, int);
         }
         else {
             col_offset = -1;
         }
 
+        if (b != NULL && b >= tok->line_start) {
+            end_col_offset = Py_SAFE_DOWNCAST(b - tok->line_start,
+                                              intptr_t, int);
+        }
+        else {
+            end_col_offset = -1;
+        }
+
+        if (type == TYPE_IGNORE) {
+            PyObject_FREE(str);
+            if (!growable_int_array_add(&type_ignores, tok->lineno)) {
+                err_ret->error = E_NOMEM;
+                break;
+            }
+            continue;
+        }
+
         if ((err_ret->error =
              PyParser_AddToken(ps, (int)type, str,
-                               tok->lineno, col_offset,
+                               lineno, col_offset, tok->lineno, end_col_offset,
                                &(err_ret->expected))) != E_OK) {
             if (err_ret->error != E_DONE) {
                 PyObject_FREE(str);
@@ -276,6 +353,23 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     if (err_ret->error == E_DONE) {
         n = ps->p_tree;
         ps->p_tree = NULL;
+
+        if (n->n_type == file_input) {
+            /* Put type_ignore nodes in the ENDMARKER of file_input. */
+            int num;
+            node *ch;
+            size_t i;
+
+            num = NCH(n);
+            ch = CHILD(n, num - 1);
+            REQ(ch, ENDMARKER);
+
+            for (i = 0; i < type_ignores.num_items; i++) {
+                PyNode_AddChild(ch, TYPE_IGNORE, NULL,
+                                type_ignores.items[i], 0,
+                                type_ignores.items[i], 0);
+            }
+        }
 
 #ifndef PGEN
         /* Check that the source for a single input statement really
@@ -309,6 +403,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
     }
     else
         n = NULL;
+
+    growable_int_array_deallocate(&type_ignores);
 
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
     *flags = ps->p_flags;
@@ -359,6 +455,9 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 done:
     PyTokenizer_Free(tok);
 
+    if (n != NULL) {
+        _PyNode_FinalizeEndPos(n);
+    }
     return n;
 }
 

@@ -772,7 +772,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
    hardware-based time that is not subject to NTP adjustments.
 
-   Availability: Linux 2.6.28 or later.
+   .. availability:: Linux 2.6.28 and newer, macOS 10.12 and newer.
 
    .. versionadded:: 3.3
 
@@ -799,7 +799,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    Thread-specific CPU-time clock.
 
-   Availability: Unix.
+   .. availability::  Unix.
 
    .. versionadded:: 3.3
 
@@ -815,8 +815,20 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.7
 
 
+.. data:: CLOCK_UPTIME_RAW
+
+   Clock that increments monotonically, tracking the time since an arbitrary
+   point, unaffected by frequency or time adjustments and not incremented while
+   the system is asleep.
+
+   .. availability:: macOS 10.12 and newer.
+
+   .. versionadded:: 3.8
+
+
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
+
 
 .. data:: CLOCK_REALTIME
 

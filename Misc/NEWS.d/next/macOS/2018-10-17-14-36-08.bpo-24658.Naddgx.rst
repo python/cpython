@@ -1,1 +1,0 @@
-On macOS, fix reading from and writing into a file with a size larger than 2 GiB.

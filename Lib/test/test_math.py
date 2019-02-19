@@ -766,6 +766,9 @@ class MathTests(unittest.TestCase):
             hypot(x=1)
         with self.assertRaises(TypeError):         # Reject values without __float__
             hypot(1.1, 'string', 2.2)
+        int_too_big_for_float = 10 ** (sys.float_info.max_10_exp + 5)
+        with self.assertRaises((ValueError, OverflowError)):
+            hypot(1, int_too_big_for_float)
 
         # Any infinity gives positive infinity.
         self.assertEqual(hypot(INF), INF)
@@ -805,7 +808,8 @@ class MathTests(unittest.TestCase):
         dist = math.dist
         sqrt = math.sqrt
 
-        # Simple exact case
+        # Simple exact cases
+        self.assertEqual(dist((1.0, 2.0, 3.0), (4.0, 2.0, -1.0)), 5.0)
         self.assertEqual(dist((1, 2, 3), (4, 2, -1)), 5.0)
 
         # Test different numbers of arguments (from zero to nine)
@@ -867,6 +871,13 @@ class MathTests(unittest.TestCase):
             dist((1, 2, 3, 4), (5, 6, 7))
         with self.assertRaises(ValueError):        # Check dimension agree
             dist((1, 2, 3), (4, 5, 6, 7))
+        with self.assertRaises(TypeError):         # Rejects invalid types
+            dist("abc", "xyz")
+        int_too_big_for_float = 10 ** (sys.float_info.max_10_exp + 5)
+        with self.assertRaises((ValueError, OverflowError)):
+            dist((1, int_too_big_for_float), (2, 3))
+        with self.assertRaises((ValueError, OverflowError)):
+            dist((2, 3), (1, int_too_big_for_float))
 
         # Verify that the one dimensional case is equivalent to abs()
         for i in range(20):
@@ -1713,6 +1724,41 @@ class IsCloseTests(unittest.TestCase):
         self.assertAllClose(fraction_examples, rel_tol=1e-8)
         self.assertAllNotClose(fraction_examples, rel_tol=1e-9)
 
+    def test_prod(self):
+        prod = math.prod
+        self.assertEqual(prod([]), 1)
+        self.assertEqual(prod([], start=5), 5)
+        self.assertEqual(prod(list(range(2,8))), 5040)
+        self.assertEqual(prod(iter(list(range(2,8)))), 5040)
+        self.assertEqual(prod(range(1, 10), start=10), 3628800)
+
+        self.assertEqual(prod([1, 2, 3, 4, 5]), 120)
+        self.assertEqual(prod([1.0, 2.0, 3.0, 4.0, 5.0]), 120.0)
+        self.assertEqual(prod([1, 2, 3, 4.0, 5.0]), 120.0)
+        self.assertEqual(prod([1.0, 2.0, 3.0, 4, 5]), 120.0)
+
+        # Test overflow in fast-path for integers
+        self.assertEqual(prod([1, 1, 2**32, 1, 1]), 2**32)
+        # Test overflow in fast-path for floats
+        self.assertEqual(prod([1.0, 1.0, 2**32, 1, 1]), float(2**32))
+
+        self.assertRaises(TypeError, prod)
+        self.assertRaises(TypeError, prod, 42)
+        self.assertRaises(TypeError, prod, ['a', 'b', 'c'])
+        self.assertRaises(TypeError, prod, ['a', 'b', 'c'], '')
+        self.assertRaises(TypeError, prod, [b'a', b'c'], b'')
+        values = [bytearray(b'a'), bytearray(b'b')]
+        self.assertRaises(TypeError, prod, values, bytearray(b''))
+        self.assertRaises(TypeError, prod, [[1], [2], [3]])
+        self.assertRaises(TypeError, prod, [{2:3}])
+        self.assertRaises(TypeError, prod, [{2:3}]*2, {2:3})
+        self.assertRaises(TypeError, prod, [[1], [2], [3]], [])
+        with self.assertRaises(TypeError):
+            prod([10, 20], [30, 40])     # start is a keyword-only argument
+
+        self.assertEqual(prod([0, 1, 2, 3]), 0)
+        self.assertEqual(prod([1, 0, 2, 3]), 0)
+        self.assertEqual(prod(range(10)), 0)
 
 def test_main():
     from doctest import DocFileSuite

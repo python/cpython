@@ -3,6 +3,33 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-35833: Revise IDLE doc for control codes sent to Shell.
+Add a code example block.
+
+bpo-35770: IDLE macosx deletes Options => Configure IDLE.
+It previously deleted Window => Zoom Height by mistake.
+(Zoom Height is now on the Options menu).  On Mac, the settings
+dialog is accessed via Preferences on the IDLE menu.
+
+bpo-35769: Change new file name from 'Untitled' to 'untitled'.
+
+bpo-35660: Fix imports in window module.
+
+bpo-35641: Properly format calltip for function without docstring.
+
+bpo-33987: Use ttk Frame for ttk widgets.
+
+bpo-34055: Fix erroneous 'smart' indents and newlines in IDLE Shell.
+
+bpo-28097: Add Previous/Next History entries to Shell menu.
+
+bpo-35591: Find Selection now works when selection not found.
+
+bpo-35598: Update config_key: use PEP 8 names and ttk widgets,
+make some objects global, and add tests.
+
+bpo-35196: Speed up squeezer line counting.
+
 bpo-35208: Squeezer now counts wrapped lines before newlines.
 
 bpo-35555: Gray out Code Context menu entry when it's not applicable.

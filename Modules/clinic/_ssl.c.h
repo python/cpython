@@ -71,10 +71,17 @@ _ssl__SSLSocket_getpeercert(PySSLSocket *self, PyObject *const *args, Py_ssize_t
     PyObject *return_value = NULL;
     int binary_mode = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "|p:getpeercert",
-        &binary_mode)) {
+    if (!_PyArg_CheckPositional("getpeercert", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    binary_mode = PyObject_IsTrue(args[0]);
+    if (binary_mode < 0) {
+        goto exit;
+    }
+skip_optional:
     return_value = _ssl__SSLSocket_getpeercert_impl(self, binary_mode);
 
 exit:
@@ -215,7 +222,7 @@ _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "contiguous buffer", arg);
+        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLSocket_write_impl(self, &b);
@@ -377,8 +384,16 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
-    if (!PyArg_ParseTuple(args, "i:_SSLContext",
-        &proto_version)) {
+    if (!_PyArg_CheckPositional("_SSLContext", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    if (PyFloat_Check(PyTuple_GET_ITEM(args, 0))) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    proto_version = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    if (proto_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _ssl__SSLContext_impl(type, proto_version);
@@ -405,7 +420,7 @@ _ssl__SSLContext_set_ciphers(PySSLContext *self, PyObject *arg)
     const char *cipherlist;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("set_ciphers", "str", arg);
+        _PyArg_BadArgument("set_ciphers", 0, "str", arg);
         goto exit;
     }
     Py_ssize_t cipherlist_length;
@@ -466,7 +481,7 @@ _ssl__SSLContext__set_npn_protocols(PySSLContext *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&protos, 'C')) {
-        _PyArg_BadArgument("_set_npn_protocols", "contiguous buffer", arg);
+        _PyArg_BadArgument("_set_npn_protocols", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLContext__set_npn_protocols_impl(self, &protos);
@@ -502,7 +517,7 @@ _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&protos, 'C')) {
-        _PyArg_BadArgument("_set_alpn_protocols", "contiguous buffer", arg);
+        _PyArg_BadArgument("_set_alpn_protocols", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLContext__set_alpn_protocols_impl(self, &protos);
@@ -815,10 +830,22 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t narg
     PyObject *return_value = NULL;
     int len = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:read",
-        &len)) {
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    len = _PyLong_AsInt(args[0]);
+    if (len == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _ssl_MemoryBIO_read_impl(self, len);
 
 exit:
@@ -849,7 +876,7 @@ _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "contiguous buffer", arg);
+        _PyArg_BadArgument("write", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl_MemoryBIO_write_impl(self, &b);
@@ -905,8 +932,28 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer view = {NULL, NULL};
     double entropy;
 
-    if (!_PyArg_ParseStack(args, nargs, "s*d:RAND_add",
-        &view, &entropy)) {
+    if (!_PyArg_CheckPositional("RAND_add", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyUnicode_Check(args[0])) {
+        Py_ssize_t len;
+        const char *ptr = PyUnicode_AsUTF8AndSize(args[0], &len);
+        if (ptr == NULL) {
+            goto exit;
+        }
+        PyBuffer_FillInfo(&view, args[0], (void *)ptr, len, 1, 0);
+    }
+    else { /* any bytes-like object */
+        if (PyObject_GetBuffer(args[0], &view, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&view, 'C')) {
+            _PyArg_BadArgument("RAND_add", 1, "contiguous buffer", args[0]);
+            goto exit;
+        }
+    }
+    entropy = PyFloat_AsDouble(args[1]);
+    if (PyErr_Occurred()) {
         goto exit;
     }
     return_value = _ssl_RAND_add_impl(module, &view, entropy);
@@ -1237,4 +1284,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=c2dca2ef4cbef4e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ac3fb15ca27500f2 input=a9049054013a1b77]*/
