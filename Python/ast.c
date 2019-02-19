@@ -3872,7 +3872,7 @@ ast_for_suite(struct compiling *c, const node *n)
 static void
 get_last_end_pos(asdl_seq *s, int *end_lineno, int *end_col_offset)
 {
-    int tot = asdl_seq_LEN(s);
+    Py_ssize_t tot = asdl_seq_LEN(s);
     // There must be no empty suites.
     assert(tot > 0);
     stmt_ty last = asdl_seq_GET(s, tot - 1);
