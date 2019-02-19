@@ -3358,20 +3358,12 @@ class PathTConverterTests(unittest.TestCase):
                         fn(fd, *extra_args)
 
     def test_path_t_converter_and_custom_class(self):
-        with self.assertRaisesRegex(
-                TypeError,
-                '__fspath__\(\) to return str or bytes, not int'
-            ):
+        msg = r'__fspath__\(\) to return str or bytes, not %s'
+        with self.assertRaisesRegex(TypeError, msg % r'int'):
             os.stat(FakePath(2))
-        with self.assertRaisesRegex(
-                TypeError,
-                '__fspath__\(\) to return str or bytes, not float'
-            ):
+        with self.assertRaisesRegex(TypeError, msg % r'float'):
             os.stat(FakePath(2.34))
-        with self.assertRaisesRegex(
-                TypeError,
-                '__fspath__\(\) to return str or bytes, not object'
-            ):
+        with self.assertRaisesRegex(TypeError, msg % r'object'):
             os.stat(FakePath(object()))
 
 
