@@ -1348,13 +1348,30 @@ always available.
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The character encoding is platform-dependent.  Under Windows, if the stream
-     is interactive (that is, if its :meth:`isatty` method returns ``True``), the
-     console codepage is used, otherwise the ANSI code page.  Under other
-     platforms, the locale encoding is used (see :meth:`locale.getpreferredencoding`).
+   * The character encoding is platform-dependent.  Non-Windows
+     platforms use the locale encoding (see
+     :meth:`locale.getpreferredencoding()`).
 
-     Under all platforms though, you can override this value by setting the
-     :envvar:`PYTHONIOENCODING` environment variable before starting Python.
+     On Windows, UTF-8 is used for the console device.  Non-character
+     devices such as disk files and pipes use the system locale
+     encoding (i.e. the ANSI codepage).  Non-console character
+     devices such as NUL (i.e. where isatty() returns True) use the
+     value of the console input and output codepages at startup,
+     respectively for stdin and stdout/stderr. This defaults to the
+     system locale encoding if the process is not initially attached
+     to a console.
+
+     The special behaviour of the console can be overridden
+     by setting the environment variable PYTHONLEGACYWINDOWSSTDIO
+     before starting Python. In that case, the console codepages are
+     used as for any other character device.
+
+     Under all platforms, you can override the character encoding by
+     setting the :envvar:`PYTHONIOENCODING` environment variable before
+     starting Python or by using the new :option:`-X` ``utf8`` command
+     line option and :envvar:`PYTHONUTF8` environment variable.  However,
+     for the Windows console, this only applies when
+     :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also set.
 
    * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
      Otherwise, they are block-buffered like regular text files.  You can
