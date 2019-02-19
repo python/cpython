@@ -110,6 +110,7 @@ class ColorDelegatorTest(unittest.TestCase):
         root.withdraw()
         text = cls.text = Text(root)
         cls.percolator = Percolator(text)
+        # Delegator stack = [Delagator(text)]
 
     @classmethod
     def tearDownClass(cls):
@@ -122,6 +123,7 @@ class ColorDelegatorTest(unittest.TestCase):
     def setUp(self):
         self.color = colorizer.ColorDelegator()
         self.percolator.insertfilter(self.color)
+        # Calls color.setdelagate(Delagator(text)).
 
     def tearDown(self):
         self.color.close()
@@ -130,12 +132,17 @@ class ColorDelegatorTest(unittest.TestCase):
         self.color.resetcache()
         del self.color
 
-    def test_setdelegate(self):
+    def test_init(self):
         color = self.color
         self.assertIsInstance(color, colorizer.ColorDelegator)
         # The following are class variables.
         self.assertTrue(color.allow_colorizing)
         self.assertFalse(color.colorizing)
+
+    def test_setdelegate(self):
+        # Called in setUp.
+        color = self.color
+        self.assertIsInstance(color.delegate, colorizer.Delegator)
         self.assertEqual(self.root.tk.call(
             'after', 'info', color.after_id)[1], 'timer')
 
