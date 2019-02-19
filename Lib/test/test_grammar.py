@@ -1,7 +1,7 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error
+from test.support import check_syntax_error, check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -101,7 +101,7 @@ INVALID_UNDERSCORE_LITERALS = [
 
 class TokenTests(unittest.TestCase):
 
-    check_syntax_error = check_syntax_error
+    from test.support import check_syntax_error
 
     def test_backslash(self):
         # Backslash means line continuation:
@@ -276,7 +276,7 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
-    check_syntax_error = check_syntax_error
+    from test.support import check_syntax_error, check_syntax_warning
 
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
@@ -1109,12 +1109,10 @@ class GrammarTests(unittest.TestCase):
         else:
             self.fail("AssertionError not raised by 'assert False'")
 
-        with self.assertWarnsRegex(SyntaxWarning, 'assertion is always true'):
-            compile('assert(x, "msg")', '<testcase>', 'exec')
+        self.check_syntax_warning('assert(x, "msg")',
+                                  'assertion is always true')
         with warnings.catch_warnings():
-            warnings.filterwarnings('error', category=SyntaxWarning)
-            with self.assertRaisesRegex(SyntaxError, 'assertion is always true'):
-                compile('assert(x, "msg")', '<testcase>', 'exec')
+            warnings.simplefilter('error', SyntaxWarning)
             compile('assert x, "msg"', '<testcase>', 'exec')
 
 
@@ -1243,12 +1241,7 @@ class GrammarTests(unittest.TestCase):
 
     def test_comparison_is_literal(self):
         def check(test, msg='"is" with a literal'):
-            with self.assertWarnsRegex(SyntaxWarning, msg):
-                compile(test, '<testcase>', 'exec')
-            with warnings.catch_warnings():
-                warnings.filterwarnings('error', category=SyntaxWarning)
-                with self.assertRaisesRegex(SyntaxError, msg):
-                    compile(test, '<testcase>', 'exec')
+            self.check_syntax_warning(test, msg)
 
         check('x is 1')
         check('x is "thing"')
@@ -1257,7 +1250,7 @@ class GrammarTests(unittest.TestCase):
         check('x is not 1', '"is not" with a literal')
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('error', category=SyntaxWarning)
+            warnings.simplefilter('error', SyntaxWarning)
             compile('x is None', '<testcase>', 'exec')
             compile('x is False', '<testcase>', 'exec')
             compile('x is True', '<testcase>', 'exec')
@@ -1265,12 +1258,7 @@ class GrammarTests(unittest.TestCase):
 
     def test_warn_missed_comma(self):
         def check(test):
-            with self.assertWarnsRegex(SyntaxWarning, msg):
-                compile(test, '<testcase>', 'exec')
-            with warnings.catch_warnings():
-                warnings.filterwarnings('error', category=SyntaxWarning)
-                with self.assertRaisesRegex(SyntaxError, msg):
-                    compile(test, '<testcase>', 'exec')
+            self.check_syntax_warning(test, msg)
 
         msg=r'is not callable; perhaps you missed a comma\?'
         check('[(1, 2) (3, 4)]')
@@ -1342,7 +1330,7 @@ class GrammarTests(unittest.TestCase):
         check('[[1, 2] [...]]')
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('error', category=SyntaxWarning)
+            warnings.simplefilter('error', SyntaxWarning)
             compile('[(lambda x, y: x) (3, 4)]', '<testcase>', 'exec')
             compile('[[1, 2] [i]]', '<testcase>', 'exec')
             compile('[[1, 2] [0]]', '<testcase>', 'exec')
