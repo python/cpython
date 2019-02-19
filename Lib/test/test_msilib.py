@@ -1,8 +1,48 @@
 """ Test suite for the code in msilib """
 import unittest
-import os
-from test_support import run_unittest, import_module
+from test_support import TESTFN, import_module, run_unittest, unlink
 msilib = import_module('msilib')
+import msilib.schema
+
+
+def init_database():
+    path = TESTFN + '.msi'
+    db = msilib.init_database(
+        path,
+        msilib.schema,
+        'Python Tests',
+        'product_code',
+        '1.0',
+        'PSF',
+    )
+    return db, path
+
+
+class MsiDatabaseTestCase(unittest.TestCase):
+
+    def test_summaryinfo_getproperty_issue1104(self):
+        db, db_path = init_database()
+        try:
+            sum_info = db.GetSummaryInformation(99)
+            title = sum_info.GetProperty(msilib.PID_TITLE)
+            self.assertEqual(title, b"Installation Database")
+
+            sum_info.SetProperty(msilib.PID_TITLE, "a" * 999)
+            title = sum_info.GetProperty(msilib.PID_TITLE)
+            self.assertEqual(title, b"a" * 999)
+
+            sum_info.SetProperty(msilib.PID_TITLE, "a" * 1000)
+            title = sum_info.GetProperty(msilib.PID_TITLE)
+            self.assertEqual(title, b"a" * 1000)
+
+            sum_info.SetProperty(msilib.PID_TITLE, "a" * 1001)
+            title = sum_info.GetProperty(msilib.PID_TITLE)
+            self.assertEqual(title, b"a" * 1001)
+        finally:
+            db = None
+            sum_info = None
+            unlink(db_path)
+
 
 class Test_make_id(unittest.TestCase):
     #http://msdn.microsoft.com/en-us/library/aa369212(v=vs.85).aspx
@@ -35,12 +75,13 @@ class Test_make_id(unittest.TestCase):
     def test_invalid_any_char(self):
         self.assertEqual(
             msilib.make_id(".s\x82ort"), "_.s_ort")
-        self.assertEqual    (
+        self.assertEqual(
             msilib.make_id(".s\x82o?*+rt"), "_.s_o___rt")
 
 
 def test_main():
     run_unittest(__name__)
+
 
 if __name__ == '__main__':
     test_main()
