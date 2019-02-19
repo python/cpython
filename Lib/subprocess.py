@@ -1532,10 +1532,8 @@ class Popen(object):
                     and (c2pwrite == -1 or c2pwrite > 2)
                     and (errwrite == -1 or errwrite > 2)
                     and not start_new_session):
-                self._posix_spawnp(args, executable, env, restore_signals,
-                                  p2cread, p2cwrite,
-                                  c2pread, c2pwrite,
-                                  errread, errwrite)
+                self._posix_spawnp(args, executable, env, restore_signals, p2cread,
+                                   p2cwrite, c2pread, c2pwrite, errread, errwrite)
                 return
 
             orig_executable = executable
