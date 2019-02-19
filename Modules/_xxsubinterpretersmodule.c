@@ -1989,17 +1989,15 @@ interp_create(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
         return NULL;
     }
-    if (_PyInterpreterState_IDInitref(tstate->interp) != 0) {
-        goto error;
-    };
-    return _PyInterpreterState_GetIDObject(tstate->interp);
-
-error:
-    // XXX Possible GILState issues?
-    save_tstate = PyThreadState_Swap(tstate);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(save_tstate);
-    return NULL;
+    PyObject *idobj = _PyInterpreterState_GetIDObject(tstate->interp);
+    if (idobj == NULL) {
+        // XXX Possible GILState issues?
+        save_tstate = PyThreadState_Swap(tstate);
+        Py_EndInterpreter(tstate);
+        PyThreadState_Swap(save_tstate);
+        return NULL;
+    }
+    return idobj;
 }
 
 PyDoc_STRVAR(create_doc,
