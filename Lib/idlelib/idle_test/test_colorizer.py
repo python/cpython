@@ -46,6 +46,7 @@ class FunctionTest(unittest.TestCase):
                          '(?P<test>a|b|cd)')
 
     def test_make_pat(self):
+        # Tested in more detail by testing prog.
         self.assertTrue(colorizer.make_pat())
 
     def test_prog(self):
