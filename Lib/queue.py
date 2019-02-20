@@ -19,6 +19,7 @@ except AttributeError:
         'Exception raised by Queue.get(block=0)/get_nowait().'
         pass
 
+
 class Full(Exception):
     'Exception raised by Queue.put(block=0)/put_nowait().'
     pass
@@ -26,7 +27,6 @@ class Full(Exception):
 
 class Queue:
     '''Create a queue object with a given maximum size.
-
     If maxsize is <= 0, the queue size is infinite.
     '''
 
@@ -55,15 +55,12 @@ class Queue:
 
     def task_done(self):
         '''Indicate that a formerly enqueued task is complete.
-
         Used by Queue consumer threads.  For each get() used to fetch a task,
         a subsequent call to task_done() tells the queue that the processing
         on the task is complete.
-
         If a join() is currently blocking, it will resume when all items
         have been processed (meaning that a task_done() call was received
         for every item that had been put() into the queue).
-
         Raises a ValueError if called more times than there were items
         placed in the queue.
         '''
@@ -77,11 +74,9 @@ class Queue:
 
     def join(self):
         '''Blocks until all items in the Queue have been gotten and processed.
-
         The count of unfinished tasks goes up whenever an item is added to the
         queue. The count goes down whenever a consumer thread calls task_done()
         to indicate the item was retrieved and all work on it is complete.
-
         When the count of unfinished tasks drops to zero, join() unblocks.
         '''
         with self.all_tasks_done:
@@ -95,12 +90,10 @@ class Queue:
 
     def empty(self):
         '''Return True if the queue is empty, False otherwise (not reliable!).
-
         This method is likely to be removed at some point.  Use qsize() == 0
         as a direct substitute, but be aware that either approach risks a race
         condition where a queue can grow before the result of empty() or
         qsize() can be used.
-
         To create code that needs to wait for all queued tasks to be
         completed, the preferred technique is to use the join() method.
         '''
@@ -109,7 +102,6 @@ class Queue:
 
     def full(self):
         '''Return True if the queue is full, False otherwise (not reliable!).
-
         This method is likely to be removed at some point.  Use qsize() >= n
         as a direct substitute, but be aware that either approach risks a race
         condition where a queue can shrink before the result of full() or
@@ -120,7 +112,6 @@ class Queue:
 
     def put(self, item, block=True, timeout=None):
         '''Put an item into the queue.
-
         If optional args 'block' is true and 'timeout' is None (the default),
         block if necessary until a free slot is available. If 'timeout' is
         a non-negative number, it blocks at most 'timeout' seconds and raises
@@ -152,7 +143,6 @@ class Queue:
 
     def get(self, block=True, timeout=None):
         '''Remove and return an item from the queue.
-
         If optional args 'block' is true and 'timeout' is None (the default),
         block if necessary until an item is available. If 'timeout' is
         a non-negative number, it blocks at most 'timeout' seconds and raises
@@ -183,7 +173,6 @@ class Queue:
 
     def put_nowait(self, item):
         '''Put an item into the queue without blocking.
-
         Only enqueue the item if a free slot is immediately available.
         Otherwise raise the Full exception.
         '''
@@ -191,7 +180,6 @@ class Queue:
 
     def get_nowait(self):
         '''Remove and return an item from the queue without blocking.
-
         Only get an item if one is immediately available. Otherwise
         raise the Empty exception.
         '''
@@ -219,7 +207,6 @@ class Queue:
 
 class PriorityQueue(Queue):
     '''Variant of Queue that retrieves open entries in priority order (lowest first).
-
     Entries are typically tuples of the form:  (priority number, data).
     '''
 
@@ -234,7 +221,7 @@ class PriorityQueue(Queue):
 
     def _get(self):
         return heappop(self.queue)
-    
+
     def __repr__(self):
         max_length_to_display = 20
         if len(self.queue) > max_length_to_display:
@@ -257,7 +244,7 @@ class LifoQueue(Queue):
 
     def _get(self):
         return self.queue.pop()
-    
+
     def __repr__(self):
         max_length_to_display = 20
         if len(self.queue) > max_length_to_display:
@@ -268,7 +255,6 @@ class LifoQueue(Queue):
 
 class _PySimpleQueue:
     '''Simple, unbounded FIFO queue.
-
     This pure Python implementation is not reentrant.
     '''
     # Note: while this pure Python version provides fairness
@@ -282,7 +268,6 @@ class _PySimpleQueue:
 
     def put(self, item, block=True, timeout=None):
         '''Put the item on the queue.
-
         The optional 'block' and 'timeout' arguments are ignored, as this method
         never blocks.  They are provided for compatibility with the Queue class.
         '''
@@ -291,7 +276,6 @@ class _PySimpleQueue:
 
     def get(self, block=True, timeout=None):
         '''Remove and return an item from the queue.
-
         If optional args 'block' is true and 'timeout' is None (the default),
         block if necessary until an item is available. If 'timeout' is
         a non-negative number, it blocks at most 'timeout' seconds and raises
@@ -308,7 +292,6 @@ class _PySimpleQueue:
 
     def put_nowait(self, item):
         '''Put an item into the queue without blocking.
-
         This is exactly equivalent to `put(item)` and is only provided
         for compatibility with the Queue class.
         '''
@@ -316,7 +299,6 @@ class _PySimpleQueue:
 
     def get_nowait(self):
         '''Remove and return an item from the queue without blocking.
-
         Only get an item if one is immediately available. Otherwise
         raise the Empty exception.
         '''
