@@ -939,7 +939,8 @@ regen-opcode-targets:
 		$(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h
+Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
+		$(srcdir)/Python/condvar.h
 
 Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
 		$(srcdir)/Python/importlib_zipimport.h
@@ -1838,7 +1839,7 @@ patchcheck: @DEF_MAKE_RULE@
 
 # Dependencies
 
-Python/thread.o: @THREADHEADERS@
+Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
 .PHONY: all build_all sharedmods check-clean-src oldsharedmods test quicktest

@@ -765,6 +765,9 @@
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
 
+/* Define to 1 if you have the `pthread_condattr_setclock' function. */
+#undef HAVE_PTHREAD_CONDATTR_SETCLOCK
+
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
 
