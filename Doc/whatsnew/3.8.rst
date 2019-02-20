@@ -375,6 +375,11 @@ Optimizations
   This makes the created list 12% smaller on average. (Contributed by
   Raymond Hettinger and Pablo Galindo in :issue:`33234`.)
 
+* Doubled the speed of class variable writes.  When a non-dunder attribute
+  was updated, there was an unnecessary call to update slots.
+  (Contributed by Stefan Behnel, Pablo Galindo Salgado, Raymond Hettinger,
+  Neil Schemenauer, and Serhiy Storchaka in :issue:`36012`.)
+
 
 Build and C API Changes
 =======================
