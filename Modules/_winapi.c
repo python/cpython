@@ -475,7 +475,7 @@ _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
 }
 
 /*[clinic input]
-_winapi.CreateFileMappingW -> HANDLE
+_winapi.CreateFileMapping -> HANDLE
 
     file_handle: HANDLE
     security_attributes: LPSECURITY_ATTRIBUTES
@@ -487,11 +487,11 @@ _winapi.CreateFileMappingW -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateFileMappingW_impl(PyObject *module, HANDLE file_handle,
-                                LPSECURITY_ATTRIBUTES security_attributes,
-                                DWORD protect, DWORD max_size_high,
-                                DWORD max_size_low, LPCWSTR name)
-/*[clinic end generated code: output=c6b017501c929de1 input=35cadabe53b3b4da]*/
+_winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
+                               LPSECURITY_ATTRIBUTES security_attributes,
+                               DWORD protect, DWORD max_size_high,
+                               DWORD max_size_low, LPCWSTR name)
+/*[clinic end generated code: output=6c0a4d5cf7f6fcc6 input=3dc5cf762a74dee8]*/
 {
     HANDLE handle;
 
@@ -502,7 +502,7 @@ _winapi_CreateFileMappingW_impl(PyObject *module, HANDLE file_handle,
     Py_END_ALLOW_THREADS
 
     if (handle == NULL) {
-        PyErr_SetFromWindowsErr(0);
+        PyErr_SetFromWindowsErrWithUnicodeFilename(0, name);
         handle = INVALID_HANDLE_VALUE;
     }
 
@@ -1371,7 +1371,7 @@ _winapi_MapViewOfFile_impl(PyObject *module, HANDLE file_map,
 }
 
 /*[clinic input]
-_winapi.OpenFileMappingW -> HANDLE
+_winapi.OpenFileMapping -> HANDLE
 
     desired_access: DWORD
     inherit_handle: BOOL
@@ -1380,9 +1380,9 @@ _winapi.OpenFileMappingW -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_OpenFileMappingW_impl(PyObject *module, DWORD desired_access,
-                              BOOL inherit_handle, LPCWSTR name)
-/*[clinic end generated code: output=ad829d0e68cac379 input=68fa4e0f2d5d5c42]*/
+_winapi_OpenFileMapping_impl(PyObject *module, DWORD desired_access,
+                             BOOL inherit_handle, LPCWSTR name)
+/*[clinic end generated code: output=08cc44def1cb11f1 input=131f2a405359de7f]*/
 {
     HANDLE handle;
 
@@ -1848,7 +1848,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
     _WINAPI_CREATEFILE_METHODDEF
-    _WINAPI_CREATEFILEMAPPINGW_METHODDEF
+    _WINAPI_CREATEFILEMAPPING_METHODDEF
     _WINAPI_CREATENAMEDPIPE_METHODDEF
     _WINAPI_CREATEPIPE_METHODDEF
     _WINAPI_CREATEPROCESS_METHODDEF
@@ -1862,7 +1862,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETSTDHANDLE_METHODDEF
     _WINAPI_GETVERSION_METHODDEF
     _WINAPI_MAPVIEWOFFILE_METHODDEF
-    _WINAPI_OPENFILEMAPPINGW_METHODDEF
+    _WINAPI_OPENFILEMAPPING_METHODDEF
     _WINAPI_OPENPROCESS_METHODDEF
     _WINAPI_PEEKNAMEDPIPE_METHODDEF
     _WINAPI_READFILE_METHODDEF
@@ -1932,11 +1932,34 @@ PyInit__winapi(void)
     WINAPI_CONSTANT(F_DWORD, FILE_FLAG_OVERLAPPED);
     WINAPI_CONSTANT(F_DWORD, FILE_GENERIC_READ);
     WINAPI_CONSTANT(F_DWORD, FILE_GENERIC_WRITE);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_ALL_ACCESS);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_COPY);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_EXECUTE);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_READ);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_WRITE);
     WINAPI_CONSTANT(F_DWORD, GENERIC_READ);
     WINAPI_CONSTANT(F_DWORD, GENERIC_WRITE);
     WINAPI_CONSTANT(F_DWORD, INFINITE);
+    WINAPI_CONSTANT(F_HANDLE, INVALID_HANDLE_VALUE);
+    WINAPI_CONSTANT(F_DWORD, MEM_COMMIT);
+    WINAPI_CONSTANT(F_DWORD, MEM_FREE);
+    WINAPI_CONSTANT(F_DWORD, MEM_IMAGE);
+    WINAPI_CONSTANT(F_DWORD, MEM_MAPPED);
+    WINAPI_CONSTANT(F_DWORD, MEM_PRIVATE);
+    WINAPI_CONSTANT(F_DWORD, MEM_RESERVE);
     WINAPI_CONSTANT(F_DWORD, NMPWAIT_WAIT_FOREVER);
     WINAPI_CONSTANT(F_DWORD, OPEN_EXISTING);
+    WINAPI_CONSTANT(F_DWORD, PAGE_EXECUTE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_EXECUTE_READ);
+    WINAPI_CONSTANT(F_DWORD, PAGE_EXECUTE_READWRITE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_EXECUTE_WRITECOPY);
+    WINAPI_CONSTANT(F_DWORD, PAGE_GUARD);
+    WINAPI_CONSTANT(F_DWORD, PAGE_NOACCESS);
+    WINAPI_CONSTANT(F_DWORD, PAGE_NOCACHE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_READONLY);
+    WINAPI_CONSTANT(F_DWORD, PAGE_READWRITE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_WRITECOMBINE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_WRITECOPY);
     WINAPI_CONSTANT(F_DWORD, PIPE_ACCESS_DUPLEX);
     WINAPI_CONSTANT(F_DWORD, PIPE_ACCESS_INBOUND);
     WINAPI_CONSTANT(F_DWORD, PIPE_READMODE_MESSAGE);
@@ -1945,6 +1968,12 @@ PyInit__winapi(void)
     WINAPI_CONSTANT(F_DWORD, PIPE_WAIT);
     WINAPI_CONSTANT(F_DWORD, PROCESS_ALL_ACCESS);
     WINAPI_CONSTANT(F_DWORD, PROCESS_DUP_HANDLE);
+    WINAPI_CONSTANT(F_DWORD, SEC_COMMIT);
+    WINAPI_CONSTANT(F_DWORD, SEC_IMAGE);
+    WINAPI_CONSTANT(F_DWORD, SEC_LARGE_PAGES);
+    WINAPI_CONSTANT(F_DWORD, SEC_NOCACHE);
+    WINAPI_CONSTANT(F_DWORD, SEC_RESERVE);
+    WINAPI_CONSTANT(F_DWORD, SEC_WRITECOMBINE);
     WINAPI_CONSTANT(F_DWORD, STARTF_USESHOWWINDOW);
     WINAPI_CONSTANT(F_DWORD, STARTF_USESTDHANDLES);
     WINAPI_CONSTANT(F_DWORD, STD_INPUT_HANDLE);

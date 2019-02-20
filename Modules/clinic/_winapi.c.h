@@ -168,23 +168,23 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_winapi_CreateFileMappingW__doc__,
-"CreateFileMappingW($module, file_handle, security_attributes, protect,\n"
-"                   max_size_high, max_size_low, name, /)\n"
+PyDoc_STRVAR(_winapi_CreateFileMapping__doc__,
+"CreateFileMapping($module, file_handle, security_attributes, protect,\n"
+"                  max_size_high, max_size_low, name, /)\n"
 "--\n"
 "\n");
 
-#define _WINAPI_CREATEFILEMAPPINGW_METHODDEF    \
-    {"CreateFileMappingW", (PyCFunction)(void(*)(void))_winapi_CreateFileMappingW, METH_FASTCALL, _winapi_CreateFileMappingW__doc__},
+#define _WINAPI_CREATEFILEMAPPING_METHODDEF    \
+    {"CreateFileMapping", (PyCFunction)(void(*)(void))_winapi_CreateFileMapping, METH_FASTCALL, _winapi_CreateFileMapping__doc__},
 
 static HANDLE
-_winapi_CreateFileMappingW_impl(PyObject *module, HANDLE file_handle,
-                                LPSECURITY_ATTRIBUTES security_attributes,
-                                DWORD protect, DWORD max_size_high,
-                                DWORD max_size_low, LPCWSTR name);
+_winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
+                               LPSECURITY_ATTRIBUTES security_attributes,
+                               DWORD protect, DWORD max_size_high,
+                               DWORD max_size_low, LPCWSTR name);
 
 static PyObject *
-_winapi_CreateFileMappingW(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_winapi_CreateFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE file_handle;
@@ -195,11 +195,11 @@ _winapi_CreateFileMappingW(PyObject *module, PyObject *const *args, Py_ssize_t n
     LPCWSTR name;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_POINTER "kkku:CreateFileMappingW",
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_POINTER "kkku:CreateFileMapping",
         &file_handle, &security_attributes, &protect, &max_size_high, &max_size_low, &name)) {
         goto exit;
     }
-    _return_value = _winapi_CreateFileMappingW_impl(module, file_handle, security_attributes, protect, max_size_high, max_size_low, name);
+    _return_value = _winapi_CreateFileMapping_impl(module, file_handle, security_attributes, protect, max_size_high, max_size_low, name);
     if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
     }
@@ -685,20 +685,20 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_winapi_OpenFileMappingW__doc__,
-"OpenFileMappingW($module, desired_access, inherit_handle, name, /)\n"
+PyDoc_STRVAR(_winapi_OpenFileMapping__doc__,
+"OpenFileMapping($module, desired_access, inherit_handle, name, /)\n"
 "--\n"
 "\n");
 
-#define _WINAPI_OPENFILEMAPPINGW_METHODDEF    \
-    {"OpenFileMappingW", (PyCFunction)(void(*)(void))_winapi_OpenFileMappingW, METH_FASTCALL, _winapi_OpenFileMappingW__doc__},
+#define _WINAPI_OPENFILEMAPPING_METHODDEF    \
+    {"OpenFileMapping", (PyCFunction)(void(*)(void))_winapi_OpenFileMapping, METH_FASTCALL, _winapi_OpenFileMapping__doc__},
 
 static HANDLE
-_winapi_OpenFileMappingW_impl(PyObject *module, DWORD desired_access,
-                              BOOL inherit_handle, LPCWSTR name);
+_winapi_OpenFileMapping_impl(PyObject *module, DWORD desired_access,
+                             BOOL inherit_handle, LPCWSTR name);
 
 static PyObject *
-_winapi_OpenFileMappingW(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+_winapi_OpenFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     DWORD desired_access;
@@ -706,11 +706,11 @@ _winapi_OpenFileMappingW(PyObject *module, PyObject *const *args, Py_ssize_t nar
     LPCWSTR name;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "kiu:OpenFileMappingW",
+    if (!_PyArg_ParseStack(args, nargs, "kiu:OpenFileMapping",
         &desired_access, &inherit_handle, &name)) {
         goto exit;
     }
-    _return_value = _winapi_OpenFileMappingW_impl(module, desired_access, inherit_handle, name);
+    _return_value = _winapi_OpenFileMapping_impl(module, desired_access, inherit_handle, name);
     if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1097,4 +1097,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=392caab421348fe7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3897898ea1da99d input=a9049054013a1b77]*/

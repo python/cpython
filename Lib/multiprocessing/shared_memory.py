@@ -15,6 +15,7 @@ import mmap
 from .managers import dispatch, BaseManager, Server, State, ProcessError
 from . import util
 import os
+import errno
 import struct
 import secrets
 try:
@@ -28,10 +29,6 @@ O_CREX = O_CREAT | O_EXCL
 if os.name == "nt":
     import _winapi
 
-    PAGE_READONLY = 0x02
-    PAGE_EXECUTE_READWRITE = 0x04
-    INVALID_HANDLE_VALUE = -1
-
 
 class WindowsNamedSharedMemory:
 
@@ -42,12 +39,15 @@ class WindowsNamedSharedMemory:
         if size == 0:
             # Attempt to dynamically determine the existing named shared
             # memory block's size which is likely a multiple of mmap.PAGESIZE.
+            h_map = _winapi.OpenFileMapping(_winapi.FILE_MAP_READ, False, name)
             try:
-                h_map = _winapi.OpenFileMappingW(PAGE_READONLY, False, name)
-            except OSError:
-                raise FileNotFoundError(name)
-            try:
-                p_buf = _winapi.MapViewOfFile(h_map, PAGE_READONLY, 0, 0, 0)
+                p_buf = _winapi.MapViewOfFile(
+                    h_map,
+                    _winapi.FILE_MAP_READ,
+                    0,
+                    0,
+                    0
+                )
             finally:
                 _winapi.CloseHandle(h_map)
             size = _winapi.VirtualQuerySize(p_buf)
@@ -55,10 +55,10 @@ class WindowsNamedSharedMemory:
         if flags == O_CREX:
             # Create and reserve shared memory block with this name until
             # it can be attached to by mmap.
-            h_map = _winapi.CreateFileMappingW(
-                INVALID_HANDLE_VALUE,
+            h_map = _winapi.CreateFileMapping(
+                _winapi.INVALID_HANDLE_VALUE,
                 _winapi.NULL,
-                PAGE_EXECUTE_READWRITE,
+                _winapi.PAGE_READWRITE,
                 (size >> 32) & 0xFFFFFFFF,
                 size & 0xFFFFFFFF,
                 name
@@ -66,7 +66,12 @@ class WindowsNamedSharedMemory:
             try:
                 last_error_code = _winapi.GetLastError()
                 if last_error_code == _winapi.ERROR_ALREADY_EXISTS:
-                    raise FileExistsError(f"File exists: {name!r}")
+                    raise FileExistsError(
+                        errno.EEXIST,
+                        os.strerror(errno.EEXIST),
+                        name,
+                        _winapi.ERROR_ALREADY_EXISTS
+                    )
                 self._mmap = mmap.mmap(-1, size, tagname=name)
             finally:
                 _winapi.CloseHandle(h_map)
