@@ -239,6 +239,17 @@ class BaseQueueTestMixin(BlockingTestMixin):
         with self.assertRaises(queue.Full):
             q.put_nowait(4)
 
+    def test_repr(self):
+        q = self.type2test(3)
+        class_name = q.__class__.__name__
+        self.assertEqual(f'{class_name}()', repr(q))
+        q.put('a')
+        self.assertEqual(f"{class_name}('a')", repr(q))
+        q.put('b')
+        self.assertEqual(f"{class_name}('a','b')", repr(q))
+        q.put('c')
+        self.assertEqual(f"{class_name}('a'...'c')", repr(q))
+
 class QueueTest(BaseQueueTestMixin, unittest.TestCase):
     type2test = queue.Queue
 
