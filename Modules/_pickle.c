@@ -6233,7 +6233,7 @@ load_build(UnpicklerObject *self)
         slotstate = NULL;
 
     /* Set inst.__dict__ from the state dict (if any). */
-    if (state != Py_None) {
+    if (PyObject_IsTrue(state)) {
         PyObject *dict;
         PyObject *d_key, *d_value;
         Py_ssize_t i;
