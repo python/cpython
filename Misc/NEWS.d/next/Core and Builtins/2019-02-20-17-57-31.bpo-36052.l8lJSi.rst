@@ -1,2 +1,2 @@
 Raise a SyntaxError when we try to assign a value to `__debug__` with the
-Assignment Operator. Contributed by Stéphane Wirtel.
+Assignment Operator. Contributed by Stéphane Wirtel and Pablo Galindo.
