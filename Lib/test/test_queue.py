@@ -17,10 +17,13 @@ except ImportError:
 
 QUEUE_SIZE = 5
 
+
 def qfull(q):
     return q.maxsize > 0 and q.qsize() == q.maxsize
 
 # A thread to run a function that unclogs a blocked Queue.
+
+
 class _TriggerThread(threading.Thread):
     def __init__(self, fn, args):
         self.fn = fn
@@ -66,11 +69,11 @@ class BlockingTestMixin:
                           block_func)
             return self.result
         finally:
-            support.join_thread(thread, 10) # make sure the thread terminates
+            support.join_thread(thread, 10)  # make sure the thread terminates
 
     # Call this instead if block_func is supposed to raise an exception.
-    def do_exceptional_blocking_test(self,block_func, block_args, trigger_func,
-                                   trigger_args, expected_exception_class):
+    def do_exceptional_blocking_test(self, block_func, block_args, trigger_func,
+                                     trigger_args, expected_exception_class):
         thread = _TriggerThread(trigger_func, trigger_args)
         thread.start()
         try:
@@ -80,9 +83,9 @@ class BlockingTestMixin:
                 raise
             else:
                 self.fail("expected exception of kind %r" %
-                                 expected_exception_class)
+                          expected_exception_class)
         finally:
-            support.join_thread(thread, 10) # make sure the thread terminates
+            support.join_thread(thread, 10)  # make sure the thread terminates
             if not thread.startedEvent.is_set():
                 self.fail("trigger thread ended but event never set")
 
@@ -101,13 +104,13 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.put(111)
         q.put(333)
         q.put(222)
-        target_order = dict(Queue = [111, 333, 222],
-                            LifoQueue = [222, 333, 111],
-                            PriorityQueue = [111, 222, 333])
+        target_order = dict(Queue=[111, 333, 222],
+                            LifoQueue=[222, 333, 111],
+                            PriorityQueue=[111, 222, 333])
         actual_order = [q.get(), q.get(), q.get()]
         self.assertEqual(actual_order, target_order[q.__class__.__name__],
                          "Didn't seem to queue the correct data!")
-        for i in range(QUEUE_SIZE-1):
+        for i in range(QUEUE_SIZE - 1):
             q.put(i)
             self.assertTrue(q.qsize(), "Queue should not be empty")
         self.assertTrue(not qfull(q), "Queue should not be full")
@@ -148,7 +151,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         self.do_blocking_test(q.get, (), q.put, ('empty',))
         self.do_blocking_test(q.get, (True, 10), q.put, ('empty',))
 
-
     def worker(self, q):
         while True:
             x = q.get()
@@ -162,7 +164,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
     def queue_join_test(self, q):
         self.cum = 0
         threads = []
-        for i in (0,1):
+        for i in (0, 1):
             thread = threading.Thread(target=self.worker, args=(q,))
             thread.start()
             threads.append(thread)
@@ -171,7 +173,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.join()
         self.assertEqual(self.cum, sum(range(100)),
                          "q.join() did not block until all tasks were done")
-        for i in (0,1):
+        for i in (0, 1):
             q.put(-1)         # instruct the threads to close
         q.join()                # verify that you can join twice
         for thread in threads:
@@ -240,55 +242,61 @@ class BaseQueueTestMixin(BlockingTestMixin):
             q.put_nowait(4)
 
     def test_repr(self):
-            q = self.type2test(3)
-            class_name = q.__class__.__name__
-            self.assertEqual("{}([])".format(class_name), repr(q))
-            q.put([1, 'a'])
-            self.assertEqual("{}([[1, 'a']])".format(class_name), repr(q))
-            q.put([2, 'b'])
-            self.assertEqual("{}([[1, 'a'], [2, 'b']])".format(class_name), repr(q))
-            
-            for i in range(20):
-	            q.put([i, str(i)])
-            self.assertEqual("{}([[0, '0'], [1, '1'], [1, 'a'], [2, 'b'], [2, '2'], [3, '3'], [4, '4'], [5, '5'], [6, '6'], [7, '7'], [8, '8'], [9, '9'], [10, '10'], [11, '11'], [12, '12'], [13, '13'], [14, '14'], [15, '15'], [16, '16']].........[19, '19'])".format(class_name), repr(q))
+        q = self.type2test(3)
+        class_name = q.__class__.__name__
+        self.assertEqual("{}([])".format(class_name), repr(q))
+        q.put([1, 'a'])
+        self.assertEqual("{}([[1, 'a']])".format(class_name), repr(q))
+        q.put([2, 'b'])
+        self.assertEqual("{}([[1, 'a'], [2, 'b']])".format(class_name), repr(q))
+
+        for i in range(20):
+            q.put([i, str(i)])
+        self.assertEqual("{}([[0, '0'], [1, '1'], [1, 'a'], [2, 'b'], [2, '2'], [3, '3'], [4, '4'], [5, '5'], [6, '6'], [7, '7'], [8, '8'], [9, '9'], [10, '10'], [11, '11'], [12, '12'], [13, '13'], [14, '14'], [15, '15'], [16, '16']].........[19, '19'])".format(class_name), repr(q))
+
 
 class QueueTest(BaseQueueTestMixin, unittest.TestCase):
     type2test = queue.Queue
 
+
 class LifoQueueTest(BaseQueueTestMixin, unittest.TestCase):
     type2test = queue.LifoQueue
 
+
 class PriorityQueueTest(BaseQueueTestMixin, unittest.TestCase):
     type2test = queue.PriorityQueue
-
 
 
 # A Queue subclass that can provoke failure at a moment's notice :)
 class FailingQueueException(Exception):
     pass
 
+
 class FailingQueue(queue.Queue):
     def __init__(self, *args):
         self.fail_next_put = False
         self.fail_next_get = False
         queue.Queue.__init__(self, *args)
+
     def _put(self, item):
         if self.fail_next_put:
             self.fail_next_put = False
             raise FailingQueueException("You Lose")
         return queue.Queue._put(self, item)
+
     def _get(self):
         if self.fail_next_get:
             self.fail_next_get = False
             raise FailingQueueException("You Lose")
         return queue.Queue._get(self)
 
+
 class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
 
     def failing_queue_test(self, q):
         if q.qsize():
             raise RuntimeError("Call this function with an empty queue")
-        for i in range(QUEUE_SIZE-1):
+        for i in range(QUEUE_SIZE - 1):
             q.put(i)
         # Test a failing non-blocking put.
         q.fail_next_put = True
@@ -431,6 +439,7 @@ class BaseSimpleQueueTest:
         rnd = random.Random(42)
 
         exceptions = []
+
         def log_exceptions(f):
             def wrapper(*args, **kwargs):
                 try:
