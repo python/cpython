@@ -336,7 +336,7 @@ class FileCookieJarTests(unittest.TestCase):
 
         for type_ in (int, float, A):
             with self.subTest(filename=type_):
-                with self.assertRaises(ValueError):
+                with self.assertRaises(TypeError):
                     instance = type_()
                     c = LWPCookieJar(filename=instance)
 
