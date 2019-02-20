@@ -626,6 +626,9 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
+>>> (__debug__ := 'spam')
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 """
 
 import re
