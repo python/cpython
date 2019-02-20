@@ -1209,10 +1209,11 @@ struct s_MergeState {
      * In the pre-sort check it is set equal to key->ob_type->tp_richcompare */
     PyObject *(*key_richcompare)(PyObject *, PyObject *, int);
 
-    /* This function is used by unsafe_tuple_compare to compare the first elements
-     * of tuples. It may be set to safe_object_compare, but the idea is that hopefully
-     * we can assume more, and use one of the special-case compares. */
-    int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
+    /* This function is used by unsafe_tuple_compare and unsafe_list_compare to
+     * compare their first elements. It may be set to safe_object_compare, but the
+     * idea is that hopefully we can assume more, and use one of the special-case
+     * compares. */
+    int (*elem_compare)(PyObject *, PyObject *, MergeState *);
 };
 
 /* binarysort is the best method for sorting small arrays: it does
@@ -2143,7 +2144,7 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
 }
 
 /* Tuple compare: compare *any* two tuples, using
- * ms->tuple_elem_compare to compare the first elements, which is set
+ * ms->elem_compare to compare the first elements, which is set
  * using the same pre-sort check as we use for ms->key_compare,
  * but run on the list [x[0] for x in L]. This allows us to optimize compares
  * on two levels (as long as [x[0] for x in L] is type-homogeneous.) The idea is
@@ -2179,7 +2180,44 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
         return vlen < wlen;
 
     if (i == 0)
-        return ms->tuple_elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
+        return ms->elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
+    else
+        return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
+}
+
+/* Same as unsafe_tuple_compare, but for lists. */
+static int
+unsafe_list_compare(PyObject *v, PyObject *w, MergeState *ms)
+{
+    PyListObject *vt, *wt;
+    Py_ssize_t i, vlen, wlen;
+    int k;
+
+    /* Modified from Objects/tupleobject.c:tuplerichcompare, assuming: */
+    assert(v->ob_type == w->ob_type);
+    assert(v->ob_type == &PyList_Type);
+    assert(Py_SIZE(v) > 0);
+    assert(Py_SIZE(w) > 0);
+
+    vt = (PyListObject *)v;
+    wt = (PyListObject *)w;
+
+    vlen = Py_SIZE(vt);
+    wlen = Py_SIZE(wt);
+
+    for (i = 0; i < vlen && i < wlen; i++) {
+        k = PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_EQ);
+        if (k < 0)
+            return -1;
+        if (!k)
+            break;
+    }
+
+    if (i >= vlen || i >= wlen)
+        return vlen < wlen;
+
+    if (i == 0)
+        return ms->elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
     else
         return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
 }
@@ -2273,8 +2311,11 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         /* Assume the first element is representative of the whole list. */
         int keys_are_in_tuples = (lo.keys[0]->ob_type == &PyTuple_Type &&
                                   Py_SIZE(lo.keys[0]) > 0);
+        
+        int keys_are_in_lists = (lo.keys[0]->ob_type == &PyList_Type &&
+                                  Py_SIZE(lo.keys[0]) > 0);
 
-        PyTypeObject* key_type = (keys_are_in_tuples ?
+        PyTypeObject* key_type = (keys_are_in_tuples || keys_are_in_lists ?
                                   PyTuple_GET_ITEM(lo.keys[0], 0)->ob_type :
                                   lo.keys[0]->ob_type);
 
@@ -2292,10 +2333,17 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 break;
             }
 
-            /* Note: for lists of tuples, key is the first element of the tuple
-             * lo.keys[i], not lo.keys[i] itself! We verify type-homogeneity
-             * for lists of tuples in the if-statement directly above. */
-            PyObject *key = (keys_are_in_tuples ?
+            if (keys_are_in_lists &&
+                !(lo.keys[i]->ob_type == &PyList_Type && Py_SIZE(lo.keys[i]) != 0)) {
+                keys_are_in_lists = 0;
+                keys_are_all_same_type = 0;
+                break;
+            }
+
+            /* Note: for lists of tuples/lists, key is the first element of lo.keys[i],
+             * not lo.keys[i] itself! We verify type-homogeneity for lists of
+             * tuples/lists in the if-statements directly above. */
+            PyObject *key = (keys_are_in_tuples || keys_are_in_lists ?
                              PyTuple_GET_ITEM(lo.keys[i], 0) :
                              lo.keys[i]);
 
@@ -2336,14 +2384,24 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         }
 
         if (keys_are_in_tuples) {
-            /* Make sure we're not dealing with tuples of tuples
+            /* Make sure we're not dealing with tuples of tuples/lists
              * (remember: here, key_type refers list [key[0] for key in keys]) */
-            if (key_type == &PyTuple_Type)
-                ms.tuple_elem_compare = safe_object_compare;
+            if (key_type == &PyTuple_Type || key_type == &PyList_Type)
+                ms.elem_compare = safe_object_compare;
             else
-                ms.tuple_elem_compare = ms.key_compare;
+                ms.elem_compare = ms.key_compare;
 
             ms.key_compare = unsafe_tuple_compare;
+        }
+        else if (keys_are_in_lists) {
+            /* Make sure we're not dealing with lists of lists/tuples
+             * (remember: here, key_type refers list [key[0] for key in keys]) */
+            if (key_type == &PyList_Type || key_type == &PyTuple_Type)
+                ms.elem_compare = safe_object_compare;
+            else
+                ms.elem_compare = ms.key_compare;
+
+            ms.key_compare = unsafe_list_compare;
         }
     }
     /* End of pre-sort check: ms is now set properly! */
