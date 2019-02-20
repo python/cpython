@@ -220,14 +220,36 @@ fail:
 
 /* Pickling support */
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
+BaseException_reduce_ex(PyBaseExceptionObject *self, PyObject *arg)
 {
-    if (self->args && self->dict) {
-        return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
+    int proto = _PyLong_AsInt(arg);
+    if (proto == -1 && PyErr_Occurred()) {
+        return NULL;
     }
-    else {
-        return PyTuple_Pack(2, Py_TYPE(self), self->args);
+
+    _Py_IDENTIFIER(__reduce_ex__);
+    PyObject *objreduce_ex = _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
+                                               &PyId___reduce_ex__);
+    if (objreduce_ex == NULL) {
+        return NULL;
     }
+
+    if (proto < 2) {
+        if (self->args && self->dict) {
+            return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
+        }
+        else {
+            return PyTuple_Pack(2, Py_TYPE(self), self->args);
+        }
+    }
+
+    PyObject *args = PyTuple_Pack(2, self, arg);
+    if (args == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyObject_Call(objreduce_ex, args, NULL);
+    Py_DECREF(args);
+    return result;
 }
 
 static PyObject *
@@ -241,6 +263,60 @@ BaseException_getnewargs_ex(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ign
     }
 
     return Py_BuildValue("(OO)", args, kwargs);
+}
+
+static PyObject *
+BaseException_getstate(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
+{
+    _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__slots__);
+    PyObject *dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *result = PyDict_Copy(dict);
+    Py_DECREF(dict);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    PyObject *slots = _PyObject_GetAttrId((PyObject *)self, &PyId___slots__);
+
+    if (slots == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+            return result;
+        }
+        else {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+
+    PyObject *iter = PyObject_GetIter(slots);
+    Py_DECREF(slots);
+    if (iter == NULL) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    PyObject *name;
+    while ((name = PyIter_Next(iter))) {
+        PyObject *value = PyObject_GetAttr((PyObject *)self, name);
+        if (value != NULL) {
+            if (PyDict_SetItem(result, name, value) < 0) {
+                Py_DECREF(name);
+                Py_DECREF(value);
+                Py_DECREF(result);
+                Py_DECREF(iter);
+                return NULL;
+            }
+        }
+        Py_DECREF(name);
+        Py_DECREF(value);
+    }
+    Py_DECREF(iter);
+    return result;
 }
 
 /*
@@ -282,8 +358,9 @@ PyDoc_STRVAR(with_traceback_doc,
 
 
 static PyMethodDef BaseException_methods[] = {
-   {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
+   {"__reduce_ex__", (PyCFunction)BaseException_reduce_ex, METH_O },
    {"__getnewargs_ex__", (PyCFunction)BaseException_getnewargs_ex, METH_NOARGS },
+   {"__getstate__", (PyCFunction)BaseException_getstate, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
    {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
     with_traceback_doc},
@@ -330,8 +407,8 @@ BaseException_set_kwargs(PyBaseExceptionObject *self, PyObject *val, void *Py_UN
         PyErr_SetString(PyExc_TypeError, "kwargs may not be deleted");
         return -1;
     }
+    Py_XSETREF(self->kwargs, val);
     Py_INCREF(val);
-    self->kwargs = val;
     return 0;
 }
 
@@ -728,14 +805,77 @@ SystemExit_traverse(PySystemExitObject *self, visitproc visit, void *arg)
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
+
+/* Pickling support */
+static PyObject *
+SystemExit_getstate(PySystemExitObject *self)
+{
+    PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
+    if (self->code) {
+        _Py_IDENTIFIER(code);
+        if (dict == NULL) {
+            dict = PyDict_New();
+        }
+        else {
+            dict = PyDict_Copy(dict);
+        }
+        if (dict == NULL) {
+            return NULL;
+        }
+        if (_PyDict_SetItemId(dict, &PyId_code, self->code) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        return dict;
+    }
+    else if (dict != NULL) {
+        Py_INCREF(dict);
+        return dict;
+    }
+    else {
+        Py_RETURN_NONE;
+    }
+}
+
+static PyObject *
+SystemExit_reduce_ex(PySystemExitObject *self, PyObject *protocol)
+{
+    PyObject *res;
+    PyObject *state = SystemExit_getstate(self);
+    if (state == NULL) {
+        return NULL;
+    }
+    PyObject *reduce = BaseException_reduce_ex((PyBaseExceptionObject *) self, protocol);
+    if (reduce == NULL) {
+        Py_DECREF(state);
+        return NULL;
+    }
+    if (state == Py_None) {
+        return reduce;
+    }
+    else {
+        PyObject *func = PyTuple_GetItem(reduce, 0);
+        PyObject *args = PyTuple_GetItem(reduce, 1);
+        res = PyTuple_Pack(3, func, args, state);
+    }
+    Py_DECREF(state);
+    Py_DECREF(reduce);
+    return res;
+}
+
 static PyMemberDef SystemExit_members[] = {
     {"code", T_OBJECT, offsetof(PySystemExitObject, code), 0,
         PyDoc_STR("exception code")},
     {NULL}  /* Sentinel */
 };
 
+static PyMethodDef SystemExit_methods[] = {
+    {"__reduce_ex__", (PyCFunction)SystemExit_reduce_ex, METH_O},
+    {NULL}
+};
+
 ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
-                        0, 0, SystemExit_members, 0, 0,
+                        0, SystemExit_methods, SystemExit_members, 0, 0,
                         "Request to exit from the interpreter.");
 
 /*
@@ -828,12 +968,17 @@ static PyObject *
 ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
-    if (self->name || self->path) {
+    if (self->msg || self->name || self->path) {
+        _Py_IDENTIFIER(msg);
         _Py_IDENTIFIER(name);
         _Py_IDENTIFIER(path);
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;
+        if (self->msg && _PyDict_SetItemId(dict, &PyId_msg, self->msg) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
         if (self->name && _PyDict_SetItemId(dict, &PyId_name, self->name) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -855,19 +1000,28 @@ ImportError_getstate(PyImportErrorObject *self)
 
 /* Pickling support */
 static PyObject *
-ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
+ImportError_reduce_ex(PyImportErrorObject *self, PyObject *protocol)
 {
     PyObject *res;
-    PyObject *args;
     PyObject *state = ImportError_getstate(self);
-    if (state == NULL)
+    if (state == NULL) {
         return NULL;
-    args = ((PyBaseExceptionObject *)self)->args;
-    if (state == Py_None)
-        res = PyTuple_Pack(2, Py_TYPE(self), args);
-    else
-        res = PyTuple_Pack(3, Py_TYPE(self), args, state);
+    }
+    PyObject *reduce = BaseException_reduce_ex((PyBaseExceptionObject *) self, protocol);
+    if (reduce == NULL) {
+        Py_DECREF(state);
+        return NULL;
+    }
+    if (state == Py_None) {
+        return reduce;
+    }
+    else {
+        PyObject *func = PyTuple_GetItem(reduce, 0);
+        PyObject *args = PyTuple_GetItem(reduce, 1);
+        res = PyTuple_Pack(3, func, args, state);
+    }
     Py_DECREF(state);
+    Py_DECREF(reduce);
     return res;
 }
 
@@ -882,7 +1036,7 @@ static PyMemberDef ImportError_members[] = {
 };
 
 static PyMethodDef ImportError_methods[] = {
-    {"__reduce__", (PyCFunction)ImportError_reduce, METH_NOARGS},
+    {"__reduce_ex__", (PyCFunction)ImportError_reduce_ex, METH_O},
     {NULL}
 };
 
@@ -1265,7 +1419,7 @@ OSError_str(PyOSErrorObject *self)
 }
 
 static PyObject *
-OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
+OSError_reduce_ex(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
@@ -1359,7 +1513,7 @@ static PyMemberDef OSError_members[] = {
 };
 
 static PyMethodDef OSError_methods[] = {
-    {"__reduce__", (PyCFunction)OSError_reduce, METH_NOARGS},
+    {"__reduce_ex__", (PyCFunction)OSError_reduce_ex, METH_VARARGS},
     {NULL}
 };
 
@@ -1621,6 +1775,89 @@ SyntaxError_str(PySyntaxErrorObject *self)
     return result;
 }
 
+/* Pickling support */
+static PyObject *
+SyntaxError_getstate(PySyntaxErrorObject *self)
+{
+    PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
+    if (self->msg || self->filename || self->lineno ||
+        self->offset || self->text || self->print_file_and_line) {
+        _Py_IDENTIFIER(msg);
+        _Py_IDENTIFIER(filename);
+        _Py_IDENTIFIER(lineno);
+        _Py_IDENTIFIER(offset);
+        _Py_IDENTIFIER(text);
+        _Py_IDENTIFIER(print_file_and_line);
+        if (dict == NULL) {
+            dict = PyDict_New();
+        }
+        else {
+            dict = PyDict_Copy(dict);
+        }
+        if (dict == NULL) {
+            return NULL;
+        }
+        if (self->msg && _PyDict_SetItemId(dict, &PyId_msg, self->msg) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (self->filename && _PyDict_SetItemId(dict, &PyId_filename, self->filename) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (self->lineno && _PyDict_SetItemId(dict, &PyId_lineno, self->lineno) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (self->offset && _PyDict_SetItemId(dict, &PyId_offset, self->offset) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (self->text && _PyDict_SetItemId(dict, &PyId_text, self->text) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (self->print_file_and_line && _PyDict_SetItemId(dict, &PyId_print_file_and_line, self->print_file_and_line) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        return dict;
+    }
+    else if (dict != NULL) {
+        Py_INCREF(dict);
+        return dict;
+    }
+    else {
+        Py_RETURN_NONE;
+    }
+}
+
+static PyObject *
+SyntaxError_reduce_ex(PySyntaxErrorObject *self, PyObject *protocol)
+{
+    PyObject *res;
+    PyObject *state = SyntaxError_getstate(self);
+    if (state == NULL) {
+        return NULL;
+    }
+    PyObject *reduce = BaseException_reduce_ex((PyBaseExceptionObject *) self, protocol);
+    if (reduce == NULL) {
+        Py_DECREF(state);
+        return NULL;
+    }
+    if (state == Py_None) {
+        return reduce;
+    }
+    else {
+        PyObject *func = PyTuple_GetItem(reduce, 0);
+        PyObject *args = PyTuple_GetItem(reduce, 1);
+        res = PyTuple_Pack(3, func, args, state);
+    }
+    Py_DECREF(state);
+    Py_DECREF(reduce);
+    return res;
+}
+
 static PyMemberDef SyntaxError_members[] = {
     {"msg", T_OBJECT, offsetof(PySyntaxErrorObject, msg), 0,
         PyDoc_STR("exception msg")},
@@ -1638,8 +1875,13 @@ static PyMemberDef SyntaxError_members[] = {
     {NULL}  /* Sentinel */
 };
 
+static PyMethodDef SyntaxError_methods[] = {
+    {"__reduce_ex__", (PyCFunction)SyntaxError_reduce_ex, METH_O},
+    {NULL}
+};
+
 ComplexExtendsException(PyExc_Exception, SyntaxError, SyntaxError,
-                        0, 0, SyntaxError_members, 0,
+                        0, SyntaxError_methods, SyntaxError_members, 0,
                         SyntaxError_str, "Invalid syntax.");
 
 
@@ -1988,6 +2230,88 @@ UnicodeError_traverse(PyUnicodeErrorObject *self, visitproc visit, void *arg)
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
+/* Pickling support */
+static PyObject *
+UnicodeError_getstate(PyUnicodeErrorObject *self)
+{
+    PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
+    if (self->encoding || self->object || self->start ||
+        self->end || self->reason) {
+        _Py_IDENTIFIER(encoding);
+        _Py_IDENTIFIER(object);
+        _Py_IDENTIFIER(start);
+        _Py_IDENTIFIER(end);
+        _Py_IDENTIFIER(reason);
+        if (dict == NULL) {
+            dict = PyDict_New();
+        }
+        else {
+            dict = PyDict_Copy(dict);
+        }
+        if (dict == NULL) {
+            return NULL;
+        }
+        if (self->encoding && _PyDict_SetItemId(dict, &PyId_encoding, self->encoding) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (self->object && _PyDict_SetItemId(dict, &PyId_object, self->object) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        PyObject *start = PyLong_FromSsize_t(self->start);
+        if (start == NULL || _PyDict_SetItemId(dict, &PyId_start, start) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        Py_DECREF(start);
+        PyObject *end = PyLong_FromSsize_t(self->end);
+        if (end == NULL || _PyDict_SetItemId(dict, &PyId_end, end) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        Py_DECREF(end);
+        if (self->reason && _PyDict_SetItemId(dict, &PyId_reason, self->reason) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        return dict;
+    }
+    else if (dict != NULL) {
+        Py_INCREF(dict);
+        return dict;
+    }
+    else {
+        Py_RETURN_NONE;
+    }
+}
+
+static PyObject *
+UnicodeError_reduce_ex(PyUnicodeErrorObject *self, PyObject *protocol)
+{
+    PyObject *res;
+    PyObject *state = UnicodeError_getstate(self);
+    if (state == NULL) {
+        return NULL;
+    }
+    PyObject *reduce = BaseException_reduce_ex((PyBaseExceptionObject *) self, protocol);
+    if (reduce == NULL) {
+        Py_DECREF(state);
+        return NULL;
+    }
+    if (state == Py_None) {
+        return reduce;
+    }
+    else {
+        PyObject *func = PyTuple_GetItem(reduce, 0);
+        PyObject *args = PyTuple_GetItem(reduce, 1);
+        res = PyTuple_Pack(3, func, args, state);
+    }
+    Py_DECREF(state);
+    Py_DECREF(reduce);
+    return res;
+}
+
 static PyMemberDef UnicodeError_members[] = {
     {"encoding", T_OBJECT, offsetof(PyUnicodeErrorObject, encoding), 0,
         PyDoc_STR("exception encoding")},
@@ -2002,6 +2326,10 @@ static PyMemberDef UnicodeError_members[] = {
     {NULL}  /* Sentinel */
 };
 
+static PyMethodDef UnicodeError_methods[] = {
+    {"__reduce_ex__", (PyCFunction)UnicodeError_reduce_ex, METH_O},
+    {NULL}
+};
 
 /*
  *    UnicodeEncodeError extends UnicodeError
@@ -2094,7 +2422,7 @@ static PyTypeObject _PyExc_UnicodeEncodeError = {
     (reprfunc)UnicodeEncodeError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Unicode encoding error."), (traverseproc)UnicodeError_traverse,
-    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    (inquiry)UnicodeError_clear, 0, 0, 0, 0, UnicodeError_methods, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
     (initproc)UnicodeEncodeError_init, 0, BaseException_new,
 };
@@ -2210,7 +2538,7 @@ static PyTypeObject _PyExc_UnicodeDecodeError = {
     (reprfunc)UnicodeDecodeError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Unicode decoding error."), (traverseproc)UnicodeError_traverse,
-    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    (inquiry)UnicodeError_clear, 0, 0, 0, 0, UnicodeError_methods, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
     (initproc)UnicodeDecodeError_init, 0, BaseException_new,
 };
@@ -2307,7 +2635,7 @@ static PyTypeObject _PyExc_UnicodeTranslateError = {
     (reprfunc)UnicodeTranslateError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Unicode translation error."), (traverseproc)UnicodeError_traverse,
-    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    (inquiry)UnicodeError_clear, 0, 0, 0, 0, UnicodeError_methods, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
     (initproc)UnicodeTranslateError_init, 0, BaseException_new,
 };

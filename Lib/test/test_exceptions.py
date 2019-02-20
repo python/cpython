@@ -439,16 +439,15 @@ class ExceptionTests(unittest.TestCase):
                                      value, expected[checkArgName]))
 
                 # test for pickling support
-                for p in [pickle]:
-                    for protocol in range(p.HIGHEST_PROTOCOL + 1):
-                        s = p.dumps(e, protocol)
-                        new = p.loads(s)
-                        for checkArgName in expected:
-                            got = repr(getattr(new, checkArgName))
-                            want = repr(expected[checkArgName])
-                            self.assertEqual(got, want,
-                                             'pickled "%r", attribute "%s' %
-                                             (e, checkArgName))
+                for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+                    s = pickle.dumps(e, protocol)
+                    new = pickle.loads(s)
+                    for checkArgName in expected:
+                        got = repr(getattr(new, checkArgName))
+                        want = repr(expected[checkArgName])
+                        self.assertEqual(got, want,
+                                            'pickled "%r", attribute "%s"' %
+                                            (e, checkArgName))
 
     def testWithTraceback(self):
         try:
@@ -1417,8 +1416,14 @@ class ImportErrorTests(unittest.TestCase):
         # Issue #27015
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             orig = NaiveException(x='foo')
-            exc = pickle.loads(pickle.dumps(orig, proto))
-            self.assertEqual(orig.x, exc.x)
+            if proto in (0, 1):
+                # Pickling excpetions keyword arguments is not supported for
+                # protocol 0 and 1
+                with self.assertRaises(TypeError):
+                    pickle.loads(pickle.dumps(orig, proto))
+            else:
+                exc = pickle.loads(pickle.dumps(orig, proto))
+                self.assertEqual(orig.x, exc.x)
 
 
 if __name__ == '__main__':
