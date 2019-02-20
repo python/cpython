@@ -232,7 +232,7 @@ class Queue:
             else:
                 output = ','.join(map(repr, items))
 
-        return f'{self.__class__.__name__}({output})'
+        return f'<{self.__class__.__name__}({output})>'
 
 
 class PriorityQueue(Queue):
