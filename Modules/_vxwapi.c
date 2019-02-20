@@ -292,7 +292,6 @@ _vxwapi.rtp_spawn
 Spawn a real time process in the vxWorks OS
 [clinic start generated code]*/
 
-
 static PyObject *
 _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
                        PyObject *executable_list, int close_fds,
