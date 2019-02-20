@@ -1132,6 +1132,10 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
         slice->values += n;
 }
 
+/* Shorthand for use in NaN-aware comparisons: */
+
+#define ISNAN(N) (N->ob_type == &PyFloat_Type && Py_IS_NAN(PyFloat_AsDouble(N)))
+
 /* Comparison function: ms->key_compare, which is set at run-time in
  * listsort_impl to optimize for various special cases.
  * Returns -1 on error, 1 if x < y, 0 if x >= y.
@@ -2133,13 +2137,17 @@ static int
 unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
     int res;
+    double dv, dw;
 
     /* Modified from Objects/floatobject.c:float_richcompare, assuming: */
     assert(v->ob_type == w->ob_type);
     assert(v->ob_type == &PyFloat_Type);
 
-    res = PyFloat_AS_DOUBLE(v) < PyFloat_AS_DOUBLE(w);
-    assert(res == PyObject_RichCompareBool(v, w, Py_LT));
+    dv = PyFloat_AS_DOUBLE(v);
+    dw = PyFloat_AS_DOUBLE(w);
+
+    res = !(dv >= dw || Py_IS_NAN(dv));
+    assert(res == PyObject_RichCompareBool(v, w, Py_LT) ? : !ISNAN(v) && ISNAN(w));
     return res;
 }
 
@@ -2505,6 +2513,7 @@ keyfunc_fail:
 }
 #undef IFLT
 #undef ISLT
+#undef ISNAN
 
 int
 PyList_Sort(PyObject *v)
