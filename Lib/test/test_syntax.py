@@ -51,6 +51,10 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
+>>> (__debug__ := 1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
 >>> f() = 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
@@ -625,10 +629,6 @@ Corner-cases that used to crash:
     >>> def f(*xx, __debug__): pass
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
-
->>> (__debug__ := 'spam')
-Traceback (most recent call last):
-SyntaxError: cannot assign to __debug__
 """
 
 import re
