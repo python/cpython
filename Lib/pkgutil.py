@@ -88,8 +88,9 @@ def walk_packages(path=None, prefix='', onerror=None):
         yield info
 
         if info.ispkg:
+            loader = info.module_finder.find_module(info.name)
             try:
-                __import__(info.name)
+                module = loader.load_module(info.name)
             except ImportError:
                 if onerror is not None:
                     onerror(info.name)
@@ -99,7 +100,7 @@ def walk_packages(path=None, prefix='', onerror=None):
                 else:
                     raise
             else:
-                path = getattr(sys.modules[info.name], '__path__', None) or []
+                path = module.__path__
 
                 # don't traverse path items we've seen before
                 path = [p for p in path if not seen(p)]

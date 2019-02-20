@@ -1,0 +1,1 @@
+Fix ``pkgutil.walk_packages()`` jumping outside given path if a package with the same name is available inside ``sys.path``. Patch by Piotr Karkut.
