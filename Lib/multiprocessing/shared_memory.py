@@ -502,14 +502,6 @@ class ShareableList:
     def _offset_back_transform_codes(self):
         return self._offset_packing_formats + self._list_len * 8
 
-    def copy(self, *, name=None):
-        "L.copy() -> ShareableList -- a shallow copy of L."
-
-        if name is None:
-            return self.__class__(self)
-        else:
-            return self.__class__(self, name=name)
-
     def count(self, value):
         "L.count(value) -> integer -- return number of occurrences of value."
 

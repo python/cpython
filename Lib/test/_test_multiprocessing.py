@@ -3823,7 +3823,7 @@ class _TestSharedMemory(BaseTestCase):
             self.assertEqual(sl.count(b'adios'), 0)
 
         # Exercise creating a duplicate.
-        sl_copy = sl.copy(name='test03_duplicate')
+        sl_copy = shared_memory.ShareableList(sl, name='test03_duplicate')
         try:
             self.assertNotEqual(sl.shm.name, sl_copy.shm.name)
             self.assertEqual('test03_duplicate', sl_copy.shm.name)

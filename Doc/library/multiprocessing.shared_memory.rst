@@ -285,11 +285,6 @@ shared memory blocks created using that manager are all released when the
    existing ``ShareableList``, specify its shared memory block's unique
    name while leaving ``sequence`` set to ``None``.
 
-   .. method:: copy()
-
-      Returns a shallow copy as a new instance backed by a new and distinct
-      shared memory block.
-
    .. method:: count(value)
 
       Returns the number of occurrences of ``value``.
