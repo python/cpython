@@ -1763,11 +1763,11 @@ class FileCookieJar(CookieJar):
 
         """
         CookieJar.__init__(self, policy)
-        try:
-            if filename is not None:
+        if filename is not None:
+            try:
                 filename = os.fspath(filename)
-        except TypeError:
-            raise ValueError("filename must be string-like or path-like object")
+            except TypeError:
+                raise ValueError("filename must be string-like or path-like object")
         self.filename = filename
         self.delayload = bool(delayload)
 
