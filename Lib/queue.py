@@ -223,14 +223,14 @@ class Queue:
             len_items = len(items)
 
             if len_items > 1:
-                items = repr(items[0]), repr(items[-1])
+                items = items[0], items[-1]
             else:
-                items = repr(items[0])
+                items = items[0]
 
             if len_items > 2:
-                output = ''.join([items[0], '...', items[1]])
+                output = ''.join([repr(items[0]), '...', repr(items[1])])
             else:
-                output = ','.join(items)
+                output = ','.join(map(repr, items))
 
         return f'{self.__class__.__name__}({output})'
 
