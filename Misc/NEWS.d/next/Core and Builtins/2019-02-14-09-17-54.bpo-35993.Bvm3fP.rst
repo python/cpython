@@ -1,0 +1,1 @@
+Fix a crash on fork when using subinterpreters. Contributed by Stéphane Wirtel
