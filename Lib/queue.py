@@ -236,7 +236,11 @@ class PriorityQueue(Queue):
         return heappop(self.queue)
     
     def __repr__(self):
-        return str(self.queue)
+        max_length_to_display = 20
+        if len(self.queue) > max_length_to_display:
+            return "PriorityQueue(" + str(self.queue[:max_length_to_display - 1]) + " ..... " + str(self.queue[-1]) + ")"
+        else:
+            return "PriorityQueue(" + str(self.queue) + ")"
 
 
 class LifoQueue(Queue):
@@ -255,7 +259,11 @@ class LifoQueue(Queue):
         return self.queue.pop()
     
     def __repr__(self):
-        return str(self.queue)
+        max_length_to_display = 20
+        if len(self.queue) > max_length_to_display:
+            return "LifoQueue(" + str(self.queue[:max_length_to_display - 1]) + " ..... " + str(self.queue[-1]) + ")"
+        else:
+            return "LifoQueue(" + str(self.queue) + ")"
 
 
 class _PySimpleQueue:
