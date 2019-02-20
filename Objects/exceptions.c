@@ -222,54 +222,25 @@ fail:
 static PyObject *
 BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *functools;
-    PyObject *partial;
-    PyObject *constructor;
-    PyObject *result;
-    PyObject **newargs;
+    if (self->args && self->dict) {
+        return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
+    }
+    else {
+        return PyTuple_Pack(2, Py_TYPE(self), self->args);
+    }
+}
 
-    _Py_IDENTIFIER(partial);
-    functools = PyImport_ImportModule("functools");
-    if (functools == NULL) {
+static PyObject *
+BaseException_getnewargs_ex(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *args = PyObject_GetAttrString((PyObject *) self, "args");
+    PyObject *kwargs = PyObject_GetAttrString((PyObject *) self, "kwargs");
+
+    if (args == NULL || kwargs == NULL) {
         return NULL;
     }
-    partial = _PyObject_GetAttrId(functools, &PyId_partial);
-    Py_DECREF(functools);
-    if (partial == NULL) {
-        return NULL;
-    }
 
-    Py_ssize_t len = 1;
-    if (PyTuple_Check(self->args)) {
-        len += PyTuple_GET_SIZE(self->args);
-    }
-    newargs = PyMem_New(PyObject *, len);
-    if (newargs == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    newargs[0] = (PyObject *)Py_TYPE(self);
-
-    for (Py_ssize_t i=1; i < len; i++) {
-        newargs[i] = PyTuple_GetItem(self->args, i-1);
-    }
-    constructor = _PyObject_FastCallDict(partial, newargs, len, self->kwargs);
-    PyMem_Free(newargs);
-
-    Py_DECREF(partial);
-
-    PyObject *args = PyTuple_New(0);
-    if (args == NULL) {
-        return NULL;
-    }
-    if (self->args && self->dict){
-        result = PyTuple_Pack(3, constructor, args, self->dict);
-    } else {
-        result = PyTuple_Pack(2, constructor, args);
-    }
-    Py_DECREF(constructor);
-    Py_DECREF(args);
-    return result;
+    return Py_BuildValue("(OO)", args, kwargs);
 }
 
 /*
@@ -312,6 +283,7 @@ PyDoc_STRVAR(with_traceback_doc,
 
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
+   {"__getnewargs_ex__", (PyCFunction)BaseException_getnewargs_ex, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
    {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
     with_traceback_doc},
