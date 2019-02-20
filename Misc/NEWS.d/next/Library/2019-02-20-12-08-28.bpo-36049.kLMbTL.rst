@@ -1,2 +1,2 @@
-Add __repr__ for Queue, PriorityQueue and LifoQueue. Contributed by Stéphane
+Add ``_repr__`` for Queue, PriorityQueue and LifoQueue. Contributed by Stéphane
 Wirtel
