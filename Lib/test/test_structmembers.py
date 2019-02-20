@@ -106,6 +106,14 @@ class ReadWriteTests(unittest.TestCase):
         for nonint in None, 3.2j, "full of eels", {}, []:
             for attr in integer_attributes:
                 self.assertRaises(TypeError, setattr, ts, attr, nonint)
+        #for nonint in 3.2j,:
+            #for attr in integer_attributes:
+                #if attr not in ('T_BOOL', 'T_PYSSIZET'):
+                  #with self.subTest(xx=attr):
+                    #with self.assertWarns(DeprecationWarning):
+                        #self.assertRaises(TypeError, setattr, ts, attr, nonint)
+            #for attr in ('T_BOOL', 'T_PYSSIZET'):
+                #self.assertRaises(TypeError, setattr, ts, attr, nonint)
 
     def test_inplace_string(self):
         self.assertEqual(ts.T_STRING_INPLACE, "hi")
