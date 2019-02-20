@@ -181,7 +181,7 @@ PyAPI_FUNC(PyObject *) _PyLong_FromNbInt(PyObject *);
 
 /* Convert the given object to a PyLongObject using the nb_index or
    nb_int slots, if available (the latter is deprecated).
-   Raise TypeError if either the nb_index and nb_int slots are not
+   Raise TypeError if either nb_index and nb_int slots are not
    available or the result of the call to nb_index or nb_int
    returns something not of type int.
    Should be replaced with PyNumber_Index after the end of the

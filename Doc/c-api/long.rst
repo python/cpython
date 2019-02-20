@@ -281,9 +281,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: unsigned long PyLong_AsUnsignedLongMask(PyObject *obj)
 
    Return a C :c:type:`unsigned long` representation of *obj*.  If *obj*
-   instance of :c:type:`PyLongObject`, first call its :meth:`__index__` or
-   :meth:`__int__` method (if present) to convert it to a
-   :c:type:`PyLongObject`.
+   is not an instance of :c:type:`PyLongObject`, first call its
+   :meth:`__index__` or :meth:`__int__` method (if present) to convert
+   it to a :c:type:`PyLongObject`.
 
    If the value of *obj* is out of range for an :c:type:`unsigned long`,
    return the reduction of that value modulo ``ULONG_MAX + 1``.
@@ -300,9 +300,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: unsigned long long PyLong_AsUnsignedLongLongMask(PyObject *obj)
 
    Return a C :c:type:`unsigned long long` representation of *obj*.  If *obj*
-   instance of :c:type:`PyLongObject`, first call its :meth:`__index__` or
-   :meth:`__int__` method (if present) to convert it to a
-   :c:type:`PyLongObject`.
+   is not an instance of :c:type:`PyLongObject`, first call its
+   :meth:`__index__` or :meth:`__int__` method (if present) to convert
+   it to a :c:type:`PyLongObject`.
 
    If the value of *obj* is out of range for an :c:type:`unsigned long long`,
    return the reduction of that value modulo ``PY_ULLONG_MAX + 1``.
