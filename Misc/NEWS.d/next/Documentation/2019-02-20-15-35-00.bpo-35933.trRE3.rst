@@ -1,0 +1,3 @@
+* Mention in the documentation that ``pickle`` can natively preserve a class
+  ``__slots__`` if the state returned by a custom ``__getstate__`` or
+  ``__reduce__`` contains member descriptors attribute in a second dictionary.
