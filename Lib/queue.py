@@ -225,8 +225,8 @@ class Queue:
             if len_items > 1:
                 items = repr(items[0]), repr(items[-1])
             else:
-                items = repr(items[0]),
-            
+                items = repr(items[0])
+
             if len_items > 2:
                 output = ''.join([items[0], '...', items[1]])
             else:
