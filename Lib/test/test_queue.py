@@ -241,15 +241,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         with self.assertRaises(queue.Full):
             q.put_nowait(4)
 
-    def test_repr(self):
-        q = self.type2test(3)
-        class_name = q.__class__.__name__
-        self.assertEqual("{}([])".format(class_name), repr(q))
-        q.put([1, 'a'])
-        self.assertEqual("{}([[1, 'a']])".format(class_name), repr(q))
-        q.put([2, 'b'])
-        self.assertEqual("{}([[1, 'a'], [2, 'b']])".format(class_name), repr(q))
-
 
 class QueueTest(BaseQueueTestMixin, unittest.TestCase):
     type2test = queue.Queue
