@@ -613,7 +613,12 @@ or both.
    * Optionally, the object's state, which will be passed to the object's
      :meth:`__setstate__` method as previously described.  If the object has no
      such method then, the value must be a dictionary and it will be added to
-     the object's :attr:`~object.__dict__` attribute.
+     the object's :attr:`~object.__dict__` attribute. If the object has
+     attributes living outside of its :attr:`~object.__dict__` attribute (for
+     instance if its class has :attr:`~object.__slots__`), the state must be a
+     tuple ``(state, slotstate)`` of two dictionnaries. Items of the first one
+     will be added to the object's :attr:`~object.__dict__`, while items of the
+     latter will try to update ``object``'s data members first.
 
    * Optionally, an iterator (and not a sequence) yielding successive items.
      These items will be appended to the object either using
