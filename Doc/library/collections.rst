@@ -163,8 +163,8 @@ contexts::
         e.maps[-1]            # Root context -- like Python's globals()
         e.parents             # Enclosing context chain -- like Python's nonlocals
 
-        d['x']                # Get first key in the chain of contexts
         d['x'] = 1            # Set value in current context
+        d['x']                # Get first key in the chain of contexts
         del d['x']            # Delete from current context
         list(d)               # All nested values
         k in d                # Check all nested values
