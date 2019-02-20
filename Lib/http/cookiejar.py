@@ -37,7 +37,6 @@ import urllib.parse, urllib.request
 import threading as _threading
 import http.client  # only for the default HTTP port
 from calendar import timegm
-import pathlib
 
 debug = False   # set to True to enable debugging via the logging module
 logger = None
