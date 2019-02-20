@@ -31,7 +31,10 @@ def generate_opmap(tokens):
             continue
 
         name, op = pieces
-
         yield (op.strip("'"), name)
 
+    # Yield independently <>. This is needed so it does not collide
+    # with the token generation in "generate_tokens" because if this
+    # symbol is included in Grammar/Tokens, it will collide with !=
+    # as it has the same name (NOTEQUAL).
     yield ('<>', 'NOTEQUAL')
