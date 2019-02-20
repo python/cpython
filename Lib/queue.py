@@ -216,6 +216,24 @@ class Queue:
     def _get(self):
         return self.queue.popleft()
 
+    def __repr__(self):
+        items = list(self.queue)
+        output = ''
+        if items:
+            len_items = len(items)
+
+            if len_items > 1:
+                items = repr(items[0]), repr(items[-1])
+            else:
+                items = repr(items[0]),
+            
+            if len_items > 2:
+                output = ''.join([items[0], '...', items[1]])
+            else:
+                output = ','.join(items)
+
+        return f'{self.__class__.__name__}({output})'
+
 
 class PriorityQueue(Queue):
     '''Variant of Queue that retrieves open entries in priority order (lowest first).
