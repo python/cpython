@@ -27,69 +27,10 @@ O_CREX = O_CREAT | O_EXCL
 
 if os.name == "nt":
     import _winapi
-    import ctypes
-    from ctypes import wintypes
 
-    kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-
-    class MEMORY_BASIC_INFORMATION(ctypes.Structure):
-        _fields_ = (
-            ('BaseAddress',       ctypes.c_void_p),
-            ('AllocationBase',    ctypes.c_void_p),
-            ('AllocationProtect', wintypes.DWORD),
-            ('RegionSize',        ctypes.c_size_t),
-            ('State',             wintypes.DWORD),
-            ('Protect',           wintypes.DWORD),
-            ('Type',              wintypes.DWORD)
-        )
-
-    PMEMORY_BASIC_INFORMATION = ctypes.POINTER(MEMORY_BASIC_INFORMATION)
     PAGE_READONLY = 0x02
     PAGE_EXECUTE_READWRITE = 0x04
     INVALID_HANDLE_VALUE = -1
-    ERROR_ALREADY_EXISTS = 183
-
-    def _errcheck_bool(result, func, args):
-        if not result:
-            raise ctypes.WinError(ctypes.get_last_error())
-        return args
-
-    kernel32.VirtualQuery.errcheck = _errcheck_bool
-    kernel32.VirtualQuery.restype = ctypes.c_size_t
-    kernel32.VirtualQuery.argtypes = (
-        wintypes.LPCVOID,
-        PMEMORY_BASIC_INFORMATION,
-        ctypes.c_size_t
-    )
-
-    kernel32.OpenFileMappingW.errcheck = _errcheck_bool
-    kernel32.OpenFileMappingW.restype = wintypes.HANDLE
-    kernel32.OpenFileMappingW.argtypes = (
-        wintypes.DWORD,
-        wintypes.BOOL,
-        wintypes.LPCWSTR
-    )
-
-    kernel32.CreateFileMappingW.errcheck = _errcheck_bool
-    kernel32.CreateFileMappingW.restype = wintypes.HANDLE
-    kernel32.CreateFileMappingW.argtypes = (
-        wintypes.HANDLE,
-        wintypes.LPCVOID,
-        wintypes.DWORD,
-        wintypes.DWORD,
-        wintypes.DWORD,
-        wintypes.LPCWSTR
-    )
-
-    kernel32.MapViewOfFile.errcheck = _errcheck_bool
-    kernel32.MapViewOfFile.restype = wintypes.LPVOID
-    kernel32.MapViewOfFile.argtypes = (
-        wintypes.HANDLE,
-        wintypes.DWORD,
-        wintypes.DWORD,
-        wintypes.DWORD,
-        ctypes.c_size_t
-    )
 
 
 class WindowsNamedSharedMemory:
@@ -102,31 +43,29 @@ class WindowsNamedSharedMemory:
             # Attempt to dynamically determine the existing named shared
             # memory block's size which is likely a multiple of mmap.PAGESIZE.
             try:
-                h_map = kernel32.OpenFileMappingW(PAGE_READONLY, False, name)
+                h_map = _winapi.OpenFileMappingW(PAGE_READONLY, False, name)
             except OSError:
                 raise FileNotFoundError(name)
             try:
-                p_buf = kernel32.MapViewOfFile(h_map, PAGE_READONLY, 0, 0, 0)
+                p_buf = _winapi.MapViewOfFile(h_map, PAGE_READONLY, 0, 0, 0)
             finally:
                 _winapi.CloseHandle(h_map)
-            mbi = MEMORY_BASIC_INFORMATION()
-            kernel32.VirtualQuery(p_buf, ctypes.byref(mbi), mmap.PAGESIZE)
-            size = mbi.RegionSize
+            size = _winapi.VirtualQuerySize(p_buf)
 
         if flags == O_CREX:
             # Create and reserve shared memory block with this name until
             # it can be attached to by mmap.
-            h_map = kernel32.CreateFileMappingW(
+            h_map = _winapi.CreateFileMappingW(
                 INVALID_HANDLE_VALUE,
-                None,
+                _winapi.NULL,
                 PAGE_EXECUTE_READWRITE,
-                size >> 32,
+                (size >> 32) & 0xFFFFFFFF,
                 size & 0xFFFFFFFF,
                 name
             )
             try:
-                last_error_code = ctypes.get_last_error()
-                if last_error_code == ERROR_ALREADY_EXISTS:
+                last_error_code = _winapi.GetLastError()
+                if last_error_code == _winapi.ERROR_ALREADY_EXISTS:
                     raise FileExistsError(f"File exists: {name!r}")
                 self._mmap = mmap.mmap(-1, size, tagname=name)
             finally:
