@@ -1,1 +1,1 @@
-Fix an incorrect use of released memory. Contributed by Stéphane Wirtel
+Fix a crash on fork when using subinterpreters. Contributed by Stéphane Wirtel
