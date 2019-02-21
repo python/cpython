@@ -25,7 +25,7 @@ class URLTimeoutTest(unittest.TestCase):
 
     def testURLread(self):
         with support.transient_internet("www.pythontest.net"):
-            f = urllib.request.urlopen(support.TEST_HTTP_URL)
+            f = urllib.request.urlopen("http://www.pythontest.net")
             f.read()
 
 
@@ -38,13 +38,13 @@ class urlopenNetworkTests(unittest.TestCase):
     for transparent redirection have been written.
 
     setUp is not used for always constructing a connection to
-    test.support.TEST_HTTP_URL since there a few tests that don't use that address
+    http://www.pythontest.net since there a few tests that don't use that address
     and making a connection is expensive enough to warrant minimizing unneeded
     connections.
 
     """
 
-    url = support.TEST_HTTP_URL
+    url = "http://www.pythontest.net/"
 
     @contextlib.contextmanager
     def urlopen(self, *args, **kwargs):
@@ -90,7 +90,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_getcode(self):
         # test getcode() with the fancy opener to get 404 error codes
-        URL = self.url + "/XXXinvalidXXX"
+        URL = self.url + "XXXinvalidXXX"
         with support.transient_internet(URL):
             with self.assertWarns(DeprecationWarning):
                 open_url = urllib.request.FancyURLopener().open(URL)
@@ -176,7 +176,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
             self.assertIsInstance(info, email.message.Message,
                                   "info is not an instance of email.message.Message")
 
-    logo = support.TEST_HTTP_URL
+    logo = "http://www.pythontest.net/"
 
     def test_data_header(self):
         with self.urlretrieve(self.logo) as (file_location, fileheaders):

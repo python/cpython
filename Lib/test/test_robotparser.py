@@ -335,8 +335,8 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
 
 class NetworkTestCase(unittest.TestCase):
 
-    base_url = support.TEST_HTTP_URL
-    robots_txt = '{}/elsewhere/robots.txt'.format(base_url)
+    base_url = "http://www.pythontest.net/"
+    robots_txt = '{}elsewhere/robots.txt'.format(base_url)
 
     @classmethod
     def setUpClass(cls):
@@ -346,7 +346,7 @@ class NetworkTestCase(unittest.TestCase):
             cls.parser.read()
 
     def url(self, path):
-        return '{}/{}{}'.format(
+        return '{}{}{}'.format(
             self.base_url, path, '/' if not os.path.splitext(path)[1] else ''
         )
 
