@@ -335,7 +335,7 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
 
 class NetworkTestCase(unittest.TestCase):
 
-    base_url = 'http://www.pythontest.net/'
+    base_url = f'{support.TEST_HTTP_URL}/'
     robots_txt = '{}elsewhere/robots.txt'.format(base_url)
 
     @classmethod

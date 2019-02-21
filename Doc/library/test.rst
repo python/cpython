@@ -356,6 +356,11 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
+.. data:: TEST_HTTP_URL
+
+   Define the URL of a dedicated HTTP server for the network tests
+   (http://www.pythontest.net).
+
 
 
 The :mod:`test.support` module defines the following functions:

@@ -172,8 +172,8 @@ class UnicodeNamesTest(unittest.TestCase):
 
     def test_named_sequences_full(self):
         # Check all the named sequences
-        url = ("http://www.pythontest.net/unicode/%s/NamedSequences.txt" %
-               unicodedata.unidata_version)
+        url = (f"{support.TEST_HTTP_URL}/unicode/"
+               f"{unicodedata.unidata_version}/NamedSequences.txt")
         try:
             testdata = support.open_urlresource(url, encoding="utf-8",
                                                 check=check_version)

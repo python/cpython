@@ -1,0 +1,2 @@
+Add test.support.TEST_HTTP_URL (http://www.pythontest.net) for the tests.
+Contributed by Stéphane Wirtel.

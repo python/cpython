@@ -17,7 +17,7 @@ import threading
 import unittest
 import warnings
 from test import support
-from test.support import _4G, bigmemtest, import_fresh_module
+from test.support import _4G, bigmemtest, import_fresh_module, TEST_HTTP_URL
 from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -50,7 +50,7 @@ def hexstr(s):
     return r
 
 
-URL = "http://www.pythontest.net/hashlib/{}.txt"
+URL = f"{TEST_HTTP_URL}/hashlib/{{}}.txt"
 
 def read_vectors(hash_name):
     url = URL.format(hash_name)

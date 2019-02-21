@@ -25,7 +25,7 @@ class URLTimeoutTest(unittest.TestCase):
 
     def testURLread(self):
         with support.transient_internet("www.pythontest.net"):
-            f = urllib.request.urlopen("http://www.pythontest.net/")
+            f = urllib.request.urlopen(f"{support.HTTP_TEST_URL}/")
             f.read()
 
 
@@ -38,13 +38,13 @@ class urlopenNetworkTests(unittest.TestCase):
     for transparent redirection have been written.
 
     setUp is not used for always constructing a connection to
-    http://www.pythontest.net/ since there a few tests that don't use that address
+    :data:`test.support.TEST_HTTP_URL` since there a few tests that don't use that address
     and making a connection is expensive enough to warrant minimizing unneeded
     connections.
 
     """
 
-    url = 'http://www.pythontest.net/'
+    url = f'{support.TEST_HTTP_URL}/'
 
     @contextlib.contextmanager
     def urlopen(self, *args, **kwargs):
@@ -176,7 +176,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
             self.assertIsInstance(info, email.message.Message,
                                   "info is not an instance of email.message.Message")
 
-    logo = "http://www.pythontest.net/"
+    logo = f"{support.TEST_HTTP_URL}/"
 
     def test_data_header(self):
         with self.urlretrieve(self.logo) as (file_location, fileheaders):

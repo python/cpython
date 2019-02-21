@@ -4,22 +4,23 @@
 #
 
 from test import multibytecodec_support
+from test import support
 import unittest
 
 class TestGB2312Map(multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'gb2312'
-    mapfileurl = 'http://www.pythontest.net/unicode/EUC-CN.TXT'
+    mapfileurl = f'{support.TEST_HTTP_URL}/unicode/EUC-CN.TXT'
 
 class TestGBKMap(multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'gbk'
-    mapfileurl = 'http://www.pythontest.net/unicode/CP936.TXT'
+    mapfileurl = f'{support.TEST_HTTP_URL}/unicode/CP936.TXT'
 
 class TestGB18030Map(multibytecodec_support.TestBase_Mapping,
                      unittest.TestCase):
     encoding = 'gb18030'
-    mapfileurl = 'http://www.pythontest.net/unicode/gb-18030-2000.xml'
+    mapfileurl = f'{support.TEST_HTTP_URL}/unicode/gb-18030-2000.xml'
 
 
 if __name__ == "__main__":
