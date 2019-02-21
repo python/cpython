@@ -1027,38 +1027,30 @@ customize a prototype instance:
 Ordered dictionaries are just like regular dictionaries but have some extra
 capabilities relating to ordering operations.  They have become less
 important now that the built-in :class:`dict` class gained the ability
-to remember insertion order (this new behavior became guaranteed as of
+to remember insertion order (this new behavior became guaranteed in
 Python 3.7).
 
 Some differences from :class:`dict` still remain:
 
-* A regular :class:`dict` was designed to be very good at mapping
-  operations.  Tracking insertion order was secondary.  In contrast,
-  :class:`OrderedDict` was designed to be good at reordering operations.
-  Efficient mapping iteration and update operations were secondary.
+* The regular :class:`dict` was designed to be very good at mapping
+  operations.  Tracking insertion order was secondary.
 
-* :class:`OrderedDict` takes more memory and is slower than :class:`dict`
-  for dictionary iteration and mutation.
+* The :class:`OrderedDict` was designed to be good at reordering operations.
+  Space efficiency, iteration speed, and the performance of update
+  operations were secondary.
 
-* Algorithmically, the :class:`OrderedDict` class can handle frequent
-  reordering operations better than :class:`dict`.  This makes it suitable for
-  tracking recent accesses (for example in an
-  `LRU cache
+* Algorithmically, :class:`OrderedDict` can handle frequent reordering
+  operations better than :class:`dict`.  This makes it suitable for tracking
+  recent accesses (for example in an `LRU cache
   <https://medium.com/@krishankantsinghal/my-first-blog-on-medium-583159139237>`_).
 
-* The equality operation for :class:`OrderedDict` has a special case for
-  comparison with other instances of *OrderedDict*.  It requires that the
-  other *OrderedDict* have the same contents and the same order.  In contrast,
-  the equality operation for :class:`dict` only requires equal contents
-  regardless of order.
+* The equality operation for :class:`OrderedDict` checks for matching order.
 
-* The :meth:`popitem` method of :class:`OrderedDict` accepts an
-  optional argument that controls whether the pop occurs from the beginning or
-  the end.  The :meth:`popitem` method for :class:`dict` does not take
-  any arguments.
+* The :meth:`popitem` method of :class:`OrderedDict` has a different
+  signature.  It accepts an optional argument to specify which item is popped.
 
-* The :class:`OrderedDict` class has a :meth:`move_to_end` method that
-  efficiently re-positions an element to the beginning or the end.
+* :class:`OrderedDict` has a :meth:`move_to_end` method to
+  efficiently reposition an element to an endpoint.
 
 * Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
 
