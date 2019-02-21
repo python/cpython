@@ -157,20 +157,20 @@ class OtherNetworkTests(unittest.TestCase):
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
     def test_urlwithfrag(self):
-        urlwith_frag = f"http://www.pythontest.net/index.html#frag"
+        urlwith_frag = "http://www.pythontest.net/index.html#frag"
         with support.transient_internet(urlwith_frag):
             req = urllib.request.Request(urlwith_frag)
             res = urllib.request.urlopen(req)
             self.assertEqual(res.geturl(),
-                    f"http://www.pythontest.net/index.html#frag")
+                    "http://www.pythontest.net/index.html#frag")
 
     def test_redirect_url_withfrag(self):
-        redirect_url_with_frag = f"http://www.pythontest.net/redir/with_frag/"
+        redirect_url_with_frag = "http://www.pythontest.net/redir/with_frag/"
         with support.transient_internet(redirect_url_with_frag):
             req = urllib.request.Request(redirect_url_with_frag)
             res = urllib.request.urlopen(req)
             self.assertEqual(res.geturl(),
-                    f"http://www.pythontest.net/elsewhere/#frag")
+                    "http://www.pythontest.net/elsewhere/#frag")
 
     def test_custom_headers(self):
         url = support.TEST_HTTP_URL
