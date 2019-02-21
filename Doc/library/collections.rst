@@ -103,7 +103,6 @@ The class can be used to simulate nested scopes and is useful in templating.
     Note, the iteration order of a :class:`ChainMap()` is determined by
     scanning the mappings last to first::
 
-
         >>> baseline = {'music': 'bach', 'art': 'rembrandt'}
         >>> adjustments = {'art': 'van gogh', 'opera': 'carmen'}
         >>> list(ChainMap(adjustments, baseline))
