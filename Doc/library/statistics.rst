@@ -39,6 +39,7 @@ or sample.
 
 =======================  =============================================
 :func:`mean`             Arithmetic mean ("average") of data.
+:func:`fmean`            Fast, floating point arithmetic mean.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
@@ -109,6 +110,23 @@ However, for reading convenience, most of the examples show sorted sequences.
       ``mean(sample)`` converges on the true mean of the entire population.  If
       *data* represents the entire population rather than a sample, then
       ``mean(data)`` is equivalent to calculating the true population mean μ.
+
+
+.. function:: fmean(data)
+
+   Convert *data* to floats and compute the arithmetic mean.
+
+   This runs faster than the :func:`mean` function and it always returns a
+   :class:`float`.  The result is highly accurate but not as perfect as
+   :func:`mean`.  If the input dataset is empty, raises a
+   :exc:`StatisticsError`.
+
+   .. doctest::
+
+      >>> fmean([3.5, 4.0, 5.25])
+      4.25
+
+   .. versionadded:: 3.8
 
 
 .. function:: harmonic_mean(data)
