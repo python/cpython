@@ -1,4 +1,4 @@
-from test.support import open_urlresource, TEST_HTTP_URL
+from test.support import open_urlresource
 import unittest
 
 from http.client import HTTPException
@@ -6,7 +6,7 @@ import sys
 from unicodedata import normalize, is_normalized, unidata_version
 
 TESTDATAFILE = "NormalizationTest.txt"
-TESTDATAURL = f"{TEST_HTTP_URL}/unicode/{unidata_version}/{TESTDATAFILE}"
+TESTDATAURL = "http://www.pythontest.net/unicode/" + unidata_version + "/" + TESTDATAFILE
 
 def check_version(testfile):
     hdr = testfile.readline()
