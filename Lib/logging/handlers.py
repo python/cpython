@@ -1023,7 +1023,7 @@ class SMTPHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
-class SMTPSSLHandler(SMTPHandler):
+class SMTPSSLhandler(SMTPHandler):
     """
     A handler sends an email by smtplib.SMTP_SSL for each logging event.
     """
