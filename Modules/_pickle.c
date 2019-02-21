@@ -3662,6 +3662,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     PyObject *state = NULL;
     PyObject *listitems = Py_None;
     PyObject *dictitems = Py_None;
+    PyObject *state_setter = Py_None;
     PickleState *st = _Pickle_GetGlobalState();
     Py_ssize_t size;
     int use_newobj = 0, use_newobj_ex = 0;
@@ -3672,14 +3673,15 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     const char newobj_ex_op = NEWOBJ_EX;
 
     size = PyTuple_Size(args);
-    if (size < 2 || size > 5) {
+    if (size < 2 || size > 6) {
         PyErr_SetString(st->PicklingError, "tuple returned by "
                         "__reduce__ must contain 2 through 5 elements");
         return -1;
     }
 
-    if (!PyArg_UnpackTuple(args, "save_reduce", 2, 5,
-                           &callable, &argtup, &state, &listitems, &dictitems))
+    if (!PyArg_UnpackTuple(args, "save_reduce", 2, 6,
+                           &callable, &argtup, &state, &listitems, &dictitems,
+                           &state_setter))
         return -1;
 
     if (!PyCallable_Check(callable)) {
@@ -3711,6 +3713,15 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         PyErr_Format(st->PicklingError, "fifth element of the tuple "
                      "returned by __reduce__ must be an iterator, not %s",
                      Py_TYPE(dictitems)->tp_name);
+        return -1;
+    }
+
+    if (state_setter == Py_None)
+        state_setter = NULL;
+    else if (!PyFunction_Check(state_setter)) {
+        PyErr_Format(st->PicklingError, "sixth element of the tuple "
+                     "returned by __reduce__ must be an function, not %s",
+                     Py_TYPE(state_setter)->tp_name);
         return -1;
     }
 
@@ -3933,11 +3944,48 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         return -1;
 
     if (state) {
-        if (save(self, state, 0) < 0 ||
-            _Pickler_Write(self, &build_op, 1) < 0)
-            return -1;
-    }
+        if (state_setter == NULL) {
+            if (save(self, state, 0) < 0 ||
+                _Pickler_Write(self, &build_op, 1) < 0)
+                return -1;
+        }
+        else {
+            PyObject *statetup = NULL;
 
+
+            /* If a state_setter is specified, and state is a dict, we could be
+             * tempted to save a (state_setter, state) as state, but this would
+             * collide with load_build's (state, slotstate) special handling.
+             * Therefore, create a new format for state saving: (state_setter,
+             * state, slotstate)
+             */
+            if PyDict_Check(state)
+                statetup = Py_BuildValue("(OOO)", state_setter, state,
+                                         Py_None);
+            else if PyTuple_Check(state) {
+                if (PyTuple_GET_SIZE(state) == 2){
+                    statetup = Py_BuildValue("(OOO)", state_setter,
+                                             PyTuple_GetItem(state, 0),
+                                             PyTuple_GetItem(state, 1));
+                }
+            }
+
+            if (statetup == NULL) {
+                PyErr_SetString(st->PicklingError,
+                                "state must be either a dict or a tuple of"
+                                " length 2");
+                return -1;
+            }
+
+            if (save(self, statetup, 0) < 0 ||
+                _Pickler_Write(self, &build_op, 1) < 0){
+                Py_DECREF(statetup);
+                return -1;
+            }
+            Py_DECREF(statetup);
+        }
+
+    }
     return 0;
 }
 
@@ -6234,6 +6282,30 @@ load_build(UnpicklerObject *self)
         Py_INCREF(state);
         Py_INCREF(slotstate);
         Py_DECREF(tmp);
+    }
+    /* proto 5 addition: state can embed a callable state setter */
+    else if (PyTuple_Check(state) && PyTuple_GET_SIZE(state) == 3) {
+        /* borrowed reference*/
+        PyObject *tmp = state;
+
+        setstate = PyTuple_GET_ITEM(tmp, 0);
+        state = PyTuple_GET_ITEM(tmp, 1);
+        slotstate = PyTuple_GET_ITEM(tmp, 2);
+
+        Py_INCREF(setstate);
+        Py_INCREF(state);
+        Py_INCREF(slotstate);
+        Py_DECREF(tmp);
+        /* call the setstate function */
+        if (PyObject_CallFunctionObjArgs(setstate, inst, state,
+                                         slotstate, NULL) == NULL){
+            return -1;
+        }
+
+        Py_DECREF(setstate);
+        Py_DECREF(state);
+        Py_DECREF(slotstate);
+        return 0;
     }
     else
         slotstate = NULL;
