@@ -961,7 +961,7 @@ class SMTPHandler(logging.Handler):
         only be used when authentication credentials are supplied. The tuple
         will be either an empty tuple, or a single-value tuple with the name
         of a keyfile, or a 2-value tuple with the names of the keyfile and
-        certificate file. (This tuple is passed to the `starttls` method).
+        certificate file. (This tuple is passed to the `ssl._create_stdlib_context` method).
         A timeout in seconds can be specified for the SMTP connection (the
         default is one second).
         """
@@ -1005,60 +1005,16 @@ class SMTPHandler(logging.Handler):
             port = self.mailport
             if not port:
                 port = smtplib.SMTP_PORT
-            smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
-            msg = EmailMessage()
-            msg['From'] = self.fromaddr
-            msg['To'] = ','.join(self.toaddrs)
-            msg['Subject'] = self.getSubject(record)
-            msg['Date'] = email.utils.localtime()
-            msg.set_content(self.format(record))
-            if self.username:
-                if self.secure is not None:
-                    smtp.ehlo()
-                    smtp.starttls(*self.secure)
-                    smtp.ehlo()
-                smtp.login(self.username, self.password)
-            smtp.send_message(msg)
-            smtp.quit()
-        except Exception:
-            self.handleError(record)
-
-class SMTPSSLhandler(SMTPHandler):
-    """
-    A handler sends an email by smtplib.SMTP_SSL for each logging event.
-    """
-    def __init__(self, *args, **kwargs):
-        """
-        Initialize the handler.
-
-        Initialized by the super handler (SMTPHandler) and
-        default argument secure is a empty tuple
-        """
-        kwargs.setdefault('secure', ())
-        SMTPHandler.__init__(self, *args, **kwargs)
-
-    def emit(self, record):
-        """
-        Emit a record.
-
-        Format the record and send it to the specified addressees.
-        """
-        try:
-            import smtplib
-            from email.message import EmailMessage
-            import email.utils
-
-            port = self.mailport
-            if not port:
-                port = smtplib.SMTP_SSL_PORT
-            keyfile, certfile = None, None
-            if isinstance(self.secure, (tuple, list, set)):
-                keyfile = self.secure[0] if len(self.secure) > 0 else None
-                certfile = self.secure[1] if len(self.secure) > 1 else None
-            smtp = smtplib.SMTP_SSL(self.mailhost, port, timeout=self.timeout,
-                                    keyfile=keyfile, certfile=certfile)
+            if self.username and self.secure is not None:
+                keyfile = self.secure[0] if len(self.secure) >= 1 else None
+                certfile = self.secure[1] if len(self.secure) >= 2 else None
+                smtp = smtplib.SMTP_SSL(self.mailhost, port, timeout=self.timeout,
+                                        keyfile=keyfile, certfile=certfile)
+            else:
+                smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
             if self.username:
                 smtp.login(self.username, self.password)
+
             msg = EmailMessage()
             msg['From'] = self.fromaddr
             msg['To'] = ','.join(self.toaddrs)
