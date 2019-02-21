@@ -25,7 +25,7 @@ class URLTimeoutTest(unittest.TestCase):
 
     def testURLread(self):
         with support.transient_internet("www.pythontest.net"):
-            f = urllib.request.urlopen(f"{support.HTTP_TEST_URL}/")
+            f = urllib.request.urlopen(f"{support.TEST_HTTP_TEST}/")
             f.read()
 
 
