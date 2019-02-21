@@ -368,7 +368,7 @@ Optimizations
 * Sped-up field lookups in :func:`collections.namedtuple`.  They are now more
   than two times faster, making them the fastest form of instance variable
   lookup in Python. (Contributed by Raymond Hettinger, Pablo Galindo, and
-  Serhiy Storchaka in :issue:`32492`.)
+  Joe Jevnik, Serhiy Storchaka in :issue:`32492`.)
 
 * The :class:`list` constructor does not overallocate the internal item buffer
   if the input iterable has a known length (the input implements ``__len__``).
