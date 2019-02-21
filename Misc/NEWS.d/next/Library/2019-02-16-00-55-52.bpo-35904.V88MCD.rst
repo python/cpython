@@ -1,0 +1,2 @@
+Added statistics.fmean() as a faster, floating point variant of the existing
+mean() function.

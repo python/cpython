@@ -1810,6 +1810,51 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # counts, this should raise.
         self.assertRaises(statistics.StatisticsError, self.func, data)
 
+class TestFMean(unittest.TestCase):
+
+    def test_basics(self):
+        fmean = statistics.fmean
+        D = Decimal
+        F = Fraction
+        for data, expected_mean, kind in [
+            ([3.5, 4.0, 5.25], 4.25, 'floats'),
+            ([D('3.5'), D('4.0'), D('5.25')], 4.25, 'decimals'),
+            ([F(7, 2), F(4, 1), F(21, 4)], 4.25, 'fractions'),
+            ([True, False, True, True, False], 0.60, 'booleans'),
+            ([3.5, 4, F(21, 4)], 4.25, 'mixed types'),
+            ((3.5, 4.0, 5.25), 4.25, 'tuple'),
+            (iter([3.5, 4.0, 5.25]), 4.25, 'iterator'),
+                ]:
+            actual_mean = fmean(data)
+            self.assertIs(type(actual_mean), float, kind)
+            self.assertEqual(actual_mean, expected_mean, kind)
+
+    def test_error_cases(self):
+        fmean = statistics.fmean
+        StatisticsError = statistics.StatisticsError
+        with self.assertRaises(StatisticsError):
+            fmean([])                               # empty input
+        with self.assertRaises(StatisticsError):
+            fmean(iter([]))                         # empty iterator
+        with self.assertRaises(TypeError):
+            fmean(None)                             # non-iterable input
+        with self.assertRaises(TypeError):
+            fmean([10, None, 20])                   # non-numeric input
+        with self.assertRaises(TypeError):
+            fmean()                                 # missing data argument
+        with self.assertRaises(TypeError):
+            fmean([10, 20, 60], 70)                 # too many arguments
+
+    def test_special_values(self):
+        # Rules for special values are inherited from math.fsum()
+        fmean = statistics.fmean
+        NaN = float('Nan')
+        Inf = float('Inf')
+        self.assertTrue(math.isnan(fmean([10, NaN])), 'nan')
+        self.assertTrue(math.isnan(fmean([NaN, Inf])), 'nan and infinity')
+        self.assertTrue(math.isinf(fmean([10, Inf])), 'infinity')
+        with self.assertRaises(ValueError):
+            fmean([Inf, -Inf])
 
 
 # === Tests for variances and standard deviations ===
