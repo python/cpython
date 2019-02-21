@@ -699,8 +699,6 @@ def pstdev(data, mu=None):
 
 ## Normal Distribution #####################################################
 
-fmean = lambda s: mean(map(float, s)) # XXX take this out when fmean() lands
-
 class NormalDist:
     'Normal distribution of a random variable'
     # https://en.wikipedia.org/wiki/Normal_distribution
@@ -712,8 +710,8 @@ class NormalDist:
         'NormalDist where mu is the mean and sigma is the standard deviation'
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
-        self.mu = mu
-        self.sigma = sigma
+        object.__setattr__(self, 'mu', mu)
+        object.__setattr__(self, 'sigma', sigma)
 
     @classmethod
     def from_samples(cls, data):
@@ -776,16 +774,18 @@ class NormalDist:
 
     __rmul__ = __mul__
 
-    def __setattr__(self, attr, value):
-        if attr not in ('mu', 'sigma'):
-            raise AttributeError(f"can't set attribute {attr}")
-        super().__setattr__(attr, value)
-
     def __eq__(x1, x2):
-        return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
+        if x1.__class__ is x2.__class__:
+            return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
+        return NotImplemented
 
     def __hash__(x1):
-        return hash((x1.mu, x2.sigma))
+        return hash((x1.mu, x1.sigma))
+
+    def __setattr__(self, attr, value):
+        if type(self) is NormalDist or attr in ('mu', 'sigma'):
+            raise AttributeError(f"cannot set attribute {attr!r}")
+        super().__setattr__(attr, value)
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self.mu!r}, sigma={self.sigma!r})'
