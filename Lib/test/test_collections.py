@@ -116,7 +116,7 @@ class TestChainMap(unittest.TestCase):
     def test_ordering(self):
         # The combined order is the same a series of dict updates from last to first.
         # This test relies on the ordering of the underlying dicts.
-        
+
         baseline = {'music': 'bach', 'art': 'rembrandt'}
         adjustments = {'art': 'van gogh', 'opera': 'carmen'}
 
