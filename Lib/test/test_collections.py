@@ -13,7 +13,7 @@ from test import support
 import types
 import unittest
 
-from collections import namedtuple, Counter, OrderedDict, _count_elements
+from collections import namedtuple, Counter, OrderedDict, _count_elements, _tuplegetter
 from collections import UserDict, UserString, UserList
 from collections import ChainMap
 from collections import deque
@@ -572,6 +572,15 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.x.__get__(p), 11)
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
+
+        class NewPoint(tuple):
+            x = pickle.loads(pickle.dumps(Point.x))
+            y = pickle.loads(pickle.dumps(Point.y))
+
+        np = NewPoint([1, 2])
+
+        self.assertEqual(np.x, 1)
+        self.assertEqual(np.y, 2)
 
 
 ################################################################################
