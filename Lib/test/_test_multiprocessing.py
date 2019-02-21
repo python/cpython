@@ -3650,6 +3650,11 @@ class _TestSharedMemory(BaseTestCase):
         self.assertEqual(also_sms.buf[0], 42)
         also_sms.close()
 
+        # Attach to existing shared memory segment but specify a new size.
+        same_sms = shared_memory.SharedMemory('test01_tsmb', size=20*sms.size)
+        self.assertEqual(same_sms.size, sms.size)  # Size was ignored.
+        same_sms.close()
+
         if shared_memory._USE_POSIX:
             # Posix Shared Memory can only be unlinked once.  Here we
             # test an implementation detail that is not observed across
@@ -3674,9 +3679,6 @@ class _TestSharedMemory(BaseTestCase):
 
                 finally:
                     sms_uno.unlink()  # A second shm_unlink() call is bad.
-
-        # Enforcement of `mode` and `read_only` is OS platform dependent
-        # and as such will not be tested here.
 
         with self.assertRaises(FileExistsError):
             # Attempting to create a new shared memory segment with a

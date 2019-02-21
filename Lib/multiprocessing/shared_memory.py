@@ -49,6 +49,20 @@ def _make_filename():
 
 
 class SharedMemory:
+    """Creates a new shared memory block or attaches to an existing
+    shared memory block.
+
+    Every shared memory block is assigned a unique name.  This enables
+    one process to create a shared memory block with a particular name 
+    so that a different process can attach to that same shared memory
+    block using that same name.
+
+    As a resource for sharing data across processes, shared memory blocks
+    may outlive the original process that created them.  When one process
+    no longer needs access to a shared memory block that might still be
+    needed by other processes, the close() method should be called.
+    When a shared memory block is no longer needed by any process, the
+    unlink() method should be called to ensure proper cleanup."""
 
     # Defaults; enables close() and unlink() to run without errors.
     _name = None
