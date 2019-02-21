@@ -1,0 +1,2 @@
+Fix the encoding when sending an iterable object via urllib.request.Request.
+Contributed by Stéphane Wirtel.

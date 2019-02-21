@@ -1050,6 +1050,8 @@ class HTTPConnection:
 
                 if encode_chunked and self._http_vsn == 11:
                     # chunked encoding
+                    if isinstance(chunk, str):
+                        chunk = chunk.encode('ascii')
                     chunk = f'{len(chunk):X}\r\n'.encode('ascii') + chunk \
                         + b'\r\n'
                 self.send(chunk)
