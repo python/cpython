@@ -404,7 +404,7 @@ with replacement to estimate a confidence interval for the mean of a sample of
 size five::
 
    # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
-   from statistics import mean
+   from statistics import fmean as mean
    from random import choices
 
    data = 1, 2, 4, 4, 10
@@ -419,7 +419,7 @@ to determine the statistical significance or `p-value
 between the effects of a drug versus a placebo::
 
     # Example from "Statistics is Easy" by Dennis Shasha and Manda Wilson
-    from statistics import mean
+    from statistics import fmean as mean
     from random import shuffle
 
     drug = [54, 73, 53, 70, 73, 68, 52, 65, 65]
