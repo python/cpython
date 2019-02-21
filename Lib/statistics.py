@@ -747,9 +747,6 @@ class NormalDist:
         'Square of the standard deviation'
         return self.sigma ** 2.0
 
-    def __repr__(self):
-        return f'{type(self).__name__}(mu={self.mu!r}, sigma={self.sigma!r})'
-
     def __add__(x1, x2):
         if isinstance(x2, NormalDist):
             return NormalDist(x1.mu + x2.mu, hypot(x1.sigma, x2.sigma))
@@ -778,6 +775,20 @@ class NormalDist:
         return -(x1 - x2)
 
     __rmul__ = __mul__
+
+    def __setattr__(self, attr, value):
+        if attr not in ('mu', 'sigma'):
+            raise AttributeError(f"can't set attribute {attr}")
+        super().__setattr__(attr, value)
+
+    def __eq__(x1, x2):
+        return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
+
+    def __hash__(x1):
+        return hash((x1.mu, x2.sigma))
+
+    def __repr__(self):
+        return f'{type(self).__name__}(mu={self.mu!r}, sigma={self.sigma!r})'
 
 
 if __name__ == '__main__':
