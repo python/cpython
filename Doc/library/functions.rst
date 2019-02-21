@@ -816,7 +816,7 @@ are always available.  They are listed here in alphabetical order.
 
       from functools import partial
       with open('mydata.db', 'rb') as f:
-          for block in iter(partial(f.read, 64), ''):
+          for block in iter(partial(f.read, 64), b''):
               process_block(block)
 
 
