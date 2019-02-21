@@ -1084,7 +1084,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
                 return 0;
             break;
         case Name_kind:
-            if (ctx == Store) {
+            if (ctx == Store || ctx == NamedStore) {
                 if (forbidden_name(c, e->v.Name.id, n, 0))
                     return 0; /* forbidden_name() calls ast_error() */
             }
