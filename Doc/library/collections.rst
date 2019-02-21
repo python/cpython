@@ -254,7 +254,7 @@ For example::
     .. versionadded:: 3.1
 
     .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
-       inherited the capability to remember insertion order.  Math operations
+       Inherited the capability to remember insertion order.  Math operations
        on *Counter* objects also preserve order.  Results are ordered
        according to when an element is first encountered in the left operand
        and then by the order encountered in the right operand.
@@ -280,7 +280,7 @@ For example::
         Elements with equal counts are ordered in the order first encountered:
 
             >>> Counter('abracadabra').most_common(3)
-            [('a', 5), ('r', 2), ('b', 2)]
+            [('a', 5), ('b', 2), ('r', 2)]
 
     .. method:: subtract([iterable-or-mapping])
 
