@@ -2033,12 +2033,42 @@ reverse_sortslice(sortslice *s, Py_ssize_t n)
 /* These are the special case compare functions.
  * ms->key_compare will always point to one of these: */
 
+static int unsafe_float_compare(PyObject*, PyObject*, MergeState*);
+static int unsafe_tuple_compare(PyObject*, PyObject*, MergeState*);
+static int unsafe_list_compare(PyObject*, PyObject*, MergeState*);
+static int unsafe_object_compare(PyObject*, PyObject*, MergeState*);
+
 /* Heterogeneous compare: default, always safe to fall back on. */
 static int
 safe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
-    /* No assumptions necessary! */
-    return PyObject_RichCompareBool(v, w, Py_LT);
+
+    /* First, check to see if both of the objects are the same type.
+     * This is necessary to properly handle lists and tuples which could 
+     * contain NaNs, but also allows us to dispatch to optimized comparison
+     * functions for other types as a bonus. */
+
+    if (v->ob_type == w->ob_type) {
+
+        if (v->ob_type == &PyFloat_Type)
+            return unsafe_float_compare(v, w, ms);
+
+        if (v->ob_type == &PyTuple_Type) {
+            ms->elem_compare = safe_object_compare;
+            return unsafe_tuple_compare(v, w, ms);
+        }
+
+        if (v->ob_type == &PyList_Type) {
+            ms->elem_compare = safe_object_compare;
+            return unsafe_list_compare(v, w, ms);
+        }
+
+        ms->key_richcompare = v->ob_type->tp_richcompare;
+        return unsafe_object_compare(v, w, ms);
+    }
+
+    /* Otherwise, no assumptions: */
+    return PyObject_RichCompareBool(v, w, Py_LT) ? : (ISNAN(w) && !ISNAN(v));
 }
 
 /* Homogeneous compare: safe for any two compareable objects of the same type.
@@ -2190,7 +2220,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
     if (i == 0)
         return ms->elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
     else
-        return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
+        return safe_object_compare(vt->ob_item[i], wt->ob_item[i], ms);
 }
 
 /* Same as unsafe_tuple_compare, but for lists. */
@@ -2227,7 +2257,7 @@ unsafe_list_compare(PyObject *v, PyObject *w, MergeState *ms)
     if (i == 0)
         return ms->elem_compare(vt->ob_item[i], wt->ob_item[i], ms);
     else
-        return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
+        return safe_object_compare(vt->ob_item[i], wt->ob_item[i], ms);
 }
 
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
