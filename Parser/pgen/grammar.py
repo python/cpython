@@ -1,8 +1,5 @@
 from lib2to3.pgen2 import grammar
 
-from . import token
-
-
 class Grammar(grammar.Grammar):
 
     def produce_graminit_h(self, writer):

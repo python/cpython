@@ -1,17 +1,38 @@
+import os
+import sys
 import collections
-from lib2to3.pgen2 import tokenize
+import importlib.machinery
 
-from . import token, grammar
+# Use Lib/token.py and Lib/tokenize.py to obtain the tokens. To maintain this
+# compatible with older versions of Python, we need to make sure that we only
+# import these two files (and not any of the dependencies of these files).
+
+CURRENT_FOLDER_LOCATION = os.path.dirname(os.path.realpath(__file__))
+LIB_LOCATION = os.path.realpath(os.path.join(CURRENT_FOLDER_LOCATION, '..', '..', 'Lib'))
+TOKEN_LOCATION = os.path.join(LIB_LOCATION, 'token.py')
+TOKENIZE_LOCATION = os.path.join(LIB_LOCATION, 'tokenize.py')
+
+token = importlib.machinery.SourceFileLoader('token',
+                                             TOKEN_LOCATION).load_module()
+# Add token to the module cache so tokenize.py uses that excact one instead of
+# the one in the stdlib of the interpreter executing this file.
+sys.modules['token'] = token
+tokenize = importlib.machinery.SourceFileLoader('tokenize',
+                                                TOKENIZE_LOCATION).load_module()
+
+from . import grammar
 
 class ParserGenerator(object):
 
-    def __init__(self, filename, tokens, stream=None, verbose=False):
+    def __init__(self, filename, stream=None, verbose=False):
         close_stream = None
         if stream is None:
             stream = open(filename)
             close_stream = stream.close
-        self.tokens = dict(token.generate_tokens(tokens))
-        self.opmap = dict(token.generate_opmap(tokens))
+        self.tokens = token
+        self.opmap = token.EXACT_TOKEN_TYPES
+        # Manually add <> so it does not collide with !=
+        self.opmap['<>'] = self.tokens.NOTEQUAL
         self.verbose = verbose
         self.filename = filename
         self.stream = stream
@@ -87,9 +108,9 @@ class ParserGenerator(object):
                     return ilabel
             else:
                 # A named token (NAME, NUMBER, STRING)
-                itoken = self.tokens.get(label, None)
+                itoken = getattr(self.tokens, label, None)
                 assert isinstance(itoken, int), label
-                assert itoken in self.tokens.values(), label
+                assert itoken in self.tokens.tok_name, label
                 if itoken in c.tokens:
                     return c.tokens[itoken]
                 else:
@@ -105,12 +126,12 @@ class ParserGenerator(object):
                 if value in c.keywords:
                     return c.keywords[value]
                 else:
-                    c.labels.append((self.tokens['NAME'], value))
+                    c.labels.append((self.tokens.NAME, value))
                     c.keywords[value] = ilabel
                     return ilabel
             else:
                 # An operator (any non-numeric token)
-                itoken = self.tokens[self.opmap[value]] # Fails if unknown token
+                itoken = self.opmap[value] # Fails if unknown token
                 if itoken in c.tokens:
                     return c.tokens[itoken]
                 else:
@@ -163,16 +184,16 @@ class ParserGenerator(object):
         dfas = collections.OrderedDict()
         startsymbol = None
         # MSTART: (NEWLINE | RULE)* ENDMARKER
-        while self.type != self.tokens['ENDMARKER']:
-            while self.type == self.tokens['NEWLINE']:
+        while self.type != self.tokens.ENDMARKER:
+            while self.type == self.tokens.NEWLINE:
                 self.gettoken()
             # RULE: NAME ':' RHS NEWLINE
-            name = self.expect(self.tokens['NAME'])
+            name = self.expect(self.tokens.NAME)
             if self.verbose:
                 print("Processing rule {dfa_name}".format(dfa_name=name))
-            self.expect(self.tokens['OP'], ":")
+            self.expect(self.tokens.OP, ":")
             a, z = self.parse_rhs()
-            self.expect(self.tokens['NEWLINE'])
+            self.expect(self.tokens.NEWLINE)
             if self.verbose:
                 self.dump_nfa(name, a, z)
             dfa = self.make_dfa(a, z)
@@ -288,7 +309,7 @@ class ParserGenerator(object):
         # ALT: ITEM+
         a, b = self.parse_item()
         while (self.value in ("(", "[") or
-               self.type in (self.tokens['NAME'], self.tokens['STRING'])):
+               self.type in (self.tokens.NAME, self.tokens.STRING)):
             c, d = self.parse_item()
             b.addarc(c)
             b = d
@@ -299,7 +320,7 @@ class ParserGenerator(object):
         if self.value == "[":
             self.gettoken()
             a, z = self.parse_rhs()
-            self.expect(self.tokens['OP'], "]")
+            self.expect(self.tokens.OP, "]")
             a.addarc(z)
             return a, z
         else:
@@ -319,9 +340,9 @@ class ParserGenerator(object):
         if self.value == "(":
             self.gettoken()
             a, z = self.parse_rhs()
-            self.expect(self.tokens['OP'], ")")
+            self.expect(self.tokens.OP, ")")
             return a, z
-        elif self.type in (self.tokens['NAME'], self.tokens['STRING']):
+        elif self.type in (self.tokens.NAME, self.tokens.STRING):
             a = NFAState()
             z = NFAState()
             a.addarc(z, self.value)
