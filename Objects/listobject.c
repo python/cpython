@@ -2279,6 +2279,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             else if ((ms.key_richcompare = key_type->tp_richcompare) != NULL) {
                 ms.key_compare = unsafe_object_compare;
             }
+            else {
+                ms.key_compare = safe_object_compare;
+            }
         }
         else {
             ms.key_compare = safe_object_compare;
