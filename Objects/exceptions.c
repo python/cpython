@@ -259,10 +259,15 @@ BaseException_getnewargs_ex(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ign
     PyObject *kwargs = PyObject_GetAttrString((PyObject *) self, "kwargs");
 
     if (args == NULL || kwargs == NULL) {
+        Py_XDECREF(args);
+        Py_XDECREF(kwargs);
         return NULL;
     }
 
-    return Py_BuildValue("(OO)", args, kwargs);
+    PyObject *res = Py_BuildValue("(OO)", args, kwargs);
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    return res;
 }
 
 static PyObject *
