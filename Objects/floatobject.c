@@ -246,6 +246,15 @@ PyFloat_AsDouble(PyObject *op)
 
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
+        if (nb && nb->nb_index) {
+            PyObject *res = PyNumber_Index(op);
+            if (!res) {
+                return -1;
+            }
+            double val = PyLong_AsDouble(res);
+            Py_DECREF(res);
+            return val;
+        }
         PyErr_Format(PyExc_TypeError, "must be real number, not %.50s",
                      op->ob_type->tp_name);
         return -1;

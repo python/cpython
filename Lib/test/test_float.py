@@ -223,6 +223,18 @@ class GeneralFloatCases(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIs(type(FloatSubclass(F())), FloatSubclass)
 
+        class MyIndex:
+            def __index__(self):
+                return 42
+
+        self.assertEqual(float(MyIndex()), 42.0)
+
+        class MyInt:
+            def __int__(self):
+                return 42
+
+        self.assertRaises(TypeError, float, MyInt())
+
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             float(x='3.14')
