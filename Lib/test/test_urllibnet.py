@@ -38,13 +38,13 @@ class urlopenNetworkTests(unittest.TestCase):
     for transparent redirection have been written.
 
     setUp is not used for always constructing a connection to
-    http://www.pythontest.net since there a few tests that don't use that address
+    http://www.pythontest.net/ since there a few tests that don't use that address
     and making a connection is expensive enough to warrant minimizing unneeded
     connections.
 
     """
 
-    url = "http://www.pythontest.net/"
+    url = 'http://www.pythontest.net/'
 
     @contextlib.contextmanager
     def urlopen(self, *args, **kwargs):
