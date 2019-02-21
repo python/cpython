@@ -1,2 +1,2 @@
-Add test.support.TEST_HTTP_URL (http://www.pythontest.net) for the tests.
-Contributed by Stéphane Wirtel.
+Add test.support.TEST_HTTP_URL and replace references of http://www.example.com
+by this new constant. Contributed by Stéphane Wirtel.
