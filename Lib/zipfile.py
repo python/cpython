@@ -1088,6 +1088,8 @@ class ZipFile(object):
             # remove trailing dots
             arcname = (x.rstrip('.') for x in arcname.split(os.path.sep))
             arcname = os.path.sep.join(x for x in arcname if x)
+            # Filename encodings use cp437 on Windows
+            arcname = arcname.decode('cp437')
 
         targetpath = os.path.join(targetpath, arcname)
         targetpath = os.path.normpath(targetpath)
