@@ -516,6 +516,7 @@ class PyBuildExt(build_ext):
             os.makedirs(self.build_temp)
         ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (gcc, tmpfile))
         is_gcc = False
+        is_clang = False
         in_incdirs = False
         inc_dirs = []
         lib_dirs = []
@@ -525,17 +526,19 @@ class PyBuildExt(build_ext):
                     for line in fp.readlines():
                         if line.startswith("gcc version"):
                             is_gcc = True
+                        if line.startswith("clang version"):
+                            is_clang = True
                         elif line.startswith("#include <...>"):
                             in_incdirs = True
                         elif line.startswith("End of search list"):
                             in_incdirs = False
-                        elif is_gcc and line.startswith("LIBRARY_PATH"):
+                        elif (is_gcc or is_clang) and line.startswith("LIBRARY_PATH"):
                             for d in line.strip().split("=")[1].split(":"):
                                 d = os.path.normpath(d)
                                 if '/gcc/' not in d:
                                     add_dir_to_list(self.compiler.library_dirs,
                                                     d)
-                        elif is_gcc and in_incdirs and '/gcc/' not in line:
+                        elif (is_gcc or is_clang) and in_incdirs and '/gcc/' not in line and '/clang/' not in line:
                             add_dir_to_list(self.compiler.include_dirs,
                                             line.strip())
         finally:
@@ -722,7 +725,8 @@ class PyBuildExt(build_ext):
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
-        exts.append( Extension('grp', ['grpmodule.c']) )
+        if 'vxworks' not in host_platform:
+            exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords
         if (config_h_vars.get('HAVE_GETSPNAM', False) or
                 config_h_vars.get('HAVE_GETSPENT', False)):
@@ -859,17 +863,31 @@ class PyBuildExt(build_ext):
             libs = ['crypt']
         else:
             libs = []
-        exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
+
+        if 'vxworks' not in host_platform:
+            exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
+        elif self.compiler.find_library_file(lib_dirs, 'OPENSSL'):
+            libs = ['OPENSSL']
+            exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
 
         # CSV files
         exts.append( Extension('_csv', ['_csv.c']) )
 
         # POSIX subprocess module helper.
-        exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
+        if 'vxworks' in host_platform :
+            exts.append( Extension('_vxwapi', ['_vxwapi.c']) )
+        else:
+            exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
 
         # socket(2)
-        exts.append( Extension('_socket', ['socketmodule.c'],
-                               depends = ['socketmodule.h']) )
+        if 'vxworks' not in host_platform :
+            exts.append( Extension('_socket', ['socketmodule.c'],
+                                   depends = ['socketmodule.h']) )
+        elif self.compiler.find_library_file(lib_dirs, 'net'):
+            libs = ['net']
+            exts.append( Extension('_socket', ['socketmodule.c'],
+                                   depends = ['socketmodule.h'], libraries=libs) )
+
         # Detect SSL support for the socket module (via _ssl)
         ssl_ext, hashlib_ext = self._detect_openssl(inc_dirs, lib_dirs)
         if ssl_ext is not None:
@@ -1319,9 +1337,10 @@ class PyBuildExt(build_ext):
 
         # Unix-only modules
         if host_platform != 'win32':
-            # Steen Lumholt's termios module
-            exts.append( Extension('termios', ['termios.c']) )
-            # Jeremy Hylton's rlimit interface
+            if 'vxworks' not in host_platform :
+                # Steen Lumholt's termios module
+                exts.append( Extension('termios', ['termios.c']) )
+                # Jeremy Hylton's rlimit interface
             exts.append( Extension('resource', ['resource.c']) )
         else:
             missing.extend(['resource', 'termios'])
