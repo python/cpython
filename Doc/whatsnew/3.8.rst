@@ -254,6 +254,15 @@ Added :attr:`SSLContext.post_handshake_auth` to enable and
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
 
+
+statistics
+----------
+
+Added :func:`statistics.fmean` as a faster, floating point variant of
+:func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
+Steven D'Aprano in :issue:`35904`.)
+
+
 tokenize
 --------
 

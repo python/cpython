@@ -79,7 +79,7 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [ 'StatisticsError',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
-            'mean', 'mode', 'harmonic_mean',
+            'mean', 'mode', 'harmonic_mean', 'fmean',
           ]
 
 import collections
@@ -312,6 +312,33 @@ def mean(data):
     assert count == n
     return _convert(total/n, T)
 
+def fmean(data):
+    """ Convert data to floats and compute the arithmetic mean.
+
+    This runs faster than the mean() function and it always returns a float.
+    The result is highly accurate but not as perfect as mean().
+    If the input dataset is empty, it raises a StatisticsError.
+
+    >>> fmean([3.5, 4.0, 5.25])
+    4.25
+
+    """
+    try:
+        n = len(data)
+    except TypeError:
+        # Handle iterators that do not define __len__().
+        n = 0
+        def count(x):
+            nonlocal n
+            n += 1
+            return x
+        total = math.fsum(map(count, data))
+    else:
+        total = math.fsum(data)
+    try:
+        return total / n
+    except ZeroDivisionError:
+        raise StatisticsError('fmean requires at least one data point') from None
 
 def harmonic_mean(data):
     """Return the harmonic mean of data.
