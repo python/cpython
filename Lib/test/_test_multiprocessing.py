@@ -3633,18 +3633,13 @@ class _TestSharedMemory(BaseTestCase):
         local_sms.close()
 
     def test_shared_memory_basics(self):
-        sms = shared_memory.SharedMemory(
-            'test01_tsmb',
-            flags=shared_memory.O_CREX,
-            size=512
-        )
+        sms = shared_memory.SharedMemory('test01_tsmb', create=True, size=512)
         self.addCleanup(sms.unlink)
 
         # Verify attributes are readable.
         self.assertEqual(sms.name, 'test01_tsmb')
         self.assertGreaterEqual(sms.size, 512)
         self.assertGreaterEqual(len(sms.buf), sms.size)
-        self.assertEqual(sms.mode, 0o600)
 
         # Modify contents of shared memory segment through memoryview.
         sms.buf[0] = 42
@@ -3655,7 +3650,7 @@ class _TestSharedMemory(BaseTestCase):
         self.assertEqual(also_sms.buf[0], 42)
         also_sms.close()
 
-        if isinstance(sms, shared_memory.PosixSharedMemory):
+        if shared_memory._USE_POSIX:
             # Posix Shared Memory can only be unlinked once.  Here we
             # test an implementation detail that is not observed across
             # all supported platforms (since WindowsNamedSharedMemory
@@ -3665,7 +3660,7 @@ class _TestSharedMemory(BaseTestCase):
             with self.assertRaises(FileNotFoundError):
                 sms_uno = shared_memory.SharedMemory(
                     'test01_dblunlink',
-                    flags=shared_memory.O_CREX,
+                    create=True,
                     size=5000
                 )
 
@@ -3688,23 +3683,22 @@ class _TestSharedMemory(BaseTestCase):
             # name that is already in use triggers an exception.
             there_can_only_be_one_sms = shared_memory.SharedMemory(
                 'test01_tsmb',
-                flags=shared_memory.O_CREX,
+                create=True,
                 size=512
             )
 
-        # Requesting creation of a shared memory segment with the option
-        # to attach to an existing segment, if that name is currently in
-        # use, should not trigger an exception.
-        # Note:  Using a smaller size could possibly cause truncation of
-        # the existing segment but is OS platform dependent.  In the
-        # case of MacOS/darwin, requesting a smaller size is disallowed.
-        ok_if_exists_sms = shared_memory.SharedMemory(
-            'test01_tsmb',
-            flags=shared_memory.O_CREAT,
-            size=sms.size if sys.platform != 'darwin' else 0
-        )
-        self.assertEqual(ok_if_exists_sms.size, sms.size)
-        ok_if_exists_sms.close()
+        if shared_memory._USE_POSIX:
+            # Requesting creation of a shared memory segment with the option
+            # to attach to an existing segment, if that name is currently in
+            # use, should not trigger an exception.
+            # Note:  Using a smaller size could possibly cause truncation of
+            # the existing segment but is OS platform dependent.  In the
+            # case of MacOS/darwin, requesting a smaller size is disallowed.
+            class OptionalAttachSharedMemory(shared_memory.SharedMemory):
+                _flags = os.O_CREAT | os.O_RDWR
+            ok_if_exists_sms = OptionalAttachSharedMemory('test01_tsmb')
+            self.assertEqual(ok_if_exists_sms.size, sms.size)
+            ok_if_exists_sms.close()
 
         # Attempting to attach to an existing shared memory segment when
         # no segment exists with the supplied name triggers an exception.
@@ -3715,11 +3709,7 @@ class _TestSharedMemory(BaseTestCase):
         sms.close()
 
     def test_shared_memory_across_processes(self):
-        sms = shared_memory.SharedMemory(
-            'test02_tsmap',
-            flags=shared_memory.O_CREX,
-            size=512
-        )
+        sms = shared_memory.SharedMemory('test02_tsmap', True, size=512)
         self.addCleanup(sms.unlink)
 
         # Verify remote attachment to existing block by name is working.

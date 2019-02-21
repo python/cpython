@@ -35,41 +35,33 @@ or other communications requiring the serialization/deserialization and
 copying of data.
 
 
-.. class:: SharedMemory(name, flags=None, mode=0o600, size=0, read_only=False)
+.. class:: SharedMemory(name=None, create=False, size=0)
 
-   This class creates and returns an instance of either a
-   :class:`PosixSharedMemory` or :class:`NamedSharedMemory` class depending
-   upon their availability on the local system.
+   Creates a new shared memory block or attaches to an existing shared
+   memory block.  Each shared memory block is assigned a unique name.
+   In this way, one process can create a shared memory block with a
+   particular name and a different process can attach to that same shared
+   memory block using that same name.
+
+   As a resource for sharing data across processes, shared memory blocks
+   may outlive the original process that created them.  When one process
+   no longer needs access to a shared memory block that might still be
+   needed by other processes, the :meth:`close()` method should be called.
+   When a shared memory block is no longer needed by any process, the
+   :meth:`unlink()` method should be called to ensure proper cleanup.
 
    *name* is the unique name for the requested shared memory, specified as
-   a string.  If ``None`` is supplied for the name, a new shared memory
-   block with a novel name will be created without needing to also specify
-   ``flags``.
+   a string.  When creating a new shared memory block, if ``None`` (the
+   default) is supplied for the name, a novel name will be generated.
 
-   *flags* is set to ``None`` when attempting to attach to an existing shared
-   memory block by its unique name but if no existing block has that name, an
-   exception will be raised.  To request the creation of a new shared
-   memory block, set to ``O_CREX``.  To request the optional creation of a
-   new shared memory block or attach to an existing one by the same name,
-   set to ``O_CREAT``.
+   *create* controls whether a new shared memory block is created (``True``)
+   or an existing shared memory block is attached (``False``).
 
-   *mode* controls user/group/all-based read/write permissions on the
-   shared memory block.  Its specification is not enforceable on all platforms.
-
-   *size* specifies the number of bytes requested for a shared memory block.
-   Because some platforms choose to allocate chunks of memory based upon
-   that platform's memory page size, the exact size of the shared memory
-   block may be larger or equal to the size requested.  When attaching to an
-   existing shared memory block, set to ``0`` (which is the default).
-   Requesting a size greater than the original when attaching to an existing
-   shared memory block will attempt a resize of the shared memory block
-   which may or may not be successful.  Requesting a size smaller than the
-   original will attempt to attach to the first N bytes of the existing
-   shared memory block but may still give access to the full allocated size.
-
-   *read_only* controls whether a shared memory block is to be available
-   for only reading or for both reading and writing.  Its specification is
-   not enforceable on all platforms.
+   *size* specifies the requested number of bytes when creating a new shared
+   memory block.  Because some platforms choose to allocate chunks of memory
+   based upon that platform's memory page size, the exact size of the shared
+   memory block may be larger or equal to the size requested.  When attaching
+   to an existing shared memory block, the ``size`` parameter is ignored.
 
    .. method:: close()
 
@@ -100,10 +92,6 @@ copying of data.
 
       Read-only access to the unique name of the shared memory block.
 
-   .. attribute:: mode
-
-      Read-only access to access permissions mode of the shared memory block.
-
    .. attribute:: size
 
       Read-only access to size in bytes of the shared memory block.
@@ -113,7 +101,7 @@ The following example demonstrates low-level use of :class:`SharedMemory`
 instances::
 
    >>> from multiprocessing import shared_memory
-   >>> shm_a = shared_memory.SharedMemory(None, size=10)
+   >>> shm_a = shared_memory.SharedMemory(create=True, size=10)
    >>> type(shm_a.buf)
    <class 'memoryview'>
    >>> buffer = shm_a.buf
@@ -146,7 +134,7 @@ same ``numpy.ndarray`` from two distinct Python shells:
    >>> import numpy as np
    >>> a = np.array([1, 1, 2, 3, 5, 8])  # Start with an existing NumPy array
    >>> from multiprocessing import shared_memory
-   >>> shm = shared_memory.SharedMemory(None, size=a.nbytes)
+   >>> shm = shared_memory.SharedMemory(create=True, size=a.nbytes)
    >>> # Now create a NumPy array backed by shared memory
    >>> b = np.ndarray(a.shape, dtype=a.dtype, buffer=shm.buf)
    >>> b[:] = a[:]  # Copy the original data into shared memory
@@ -163,7 +151,7 @@ same ``numpy.ndarray`` from two distinct Python shells:
    >>> import numpy as np
    >>> from multiprocessing import shared_memory
    >>> # Attach to the existing shared memory block
-   >>> existing_shm = shared_memory.SharedMemory('psm_21467_46075')
+   >>> existing_shm = shared_memory.SharedMemory(name='psm_21467_46075')
    >>> # Note that a.shape is (6,) and a.dtype is np.int64 in this example
    >>> c = np.ndarray((6,), dtype=np.int64, buffer=existing_shm.buf)
    >>> c
@@ -252,8 +240,8 @@ needed:
    >>> with shared_memory.SharedMemoryManager() as smm:
    ...     sl = smm.ShareableList(range(2000))
    ...     # Divide the work among two processes, storing partial results in sl
-   ...     p1 = Process(target=do_work, args=(sl.shm.name, 0, 1000))
-   ...     p2 = Process(target=do_work, args=(sl.shm.name, 1000, 2000))
+   ...     p1 = Process(target=do_work, args=(sl, 0, 1000))
+   ...     p2 = Process(target=do_work, args=(sl, 1000, 2000))
    ...     p1.start()
    ...     p2.start()  # A multiprocessing.Pool might be more efficient
    ...     p1.join()

@@ -5,8 +5,7 @@ documentation for details.
 """
 
 
-__all__ = [ 'SharedMemory', 'PosixSharedMemory', 'WindowsNamedSharedMemory',
-            'ShareableList',
+__all__ = [ 'SharedMemory', 'ShareableList',
             'SharedMemoryServer', 'SharedMemoryManager' ]
 
 
@@ -18,124 +17,29 @@ import os
 import errno
 import struct
 import secrets
-try:
-    import  _posixshmem
-    from os import O_CREAT, O_EXCL, O_TRUNC
-except ImportError as ie:
-    O_CREAT, O_EXCL, O_TRUNC = 64, 128, 512
-
-O_CREX = O_CREAT | O_EXCL
 
 if os.name == "nt":
     import _winapi
+    _USE_POSIX = False
+else:
+    import _posixshmem
+    _USE_POSIX = True
 
 
-class WindowsNamedSharedMemory:
-
-    def __init__(self, name, flags=None, mode=384, size=0, read_only=False):
-        if name is None:
-            name = _make_filename()
-
-        if size == 0:
-            # Attempt to dynamically determine the existing named shared
-            # memory block's size which is likely a multiple of mmap.PAGESIZE.
-            h_map = _winapi.OpenFileMapping(_winapi.FILE_MAP_READ, False, name)
-            try:
-                p_buf = _winapi.MapViewOfFile(
-                    h_map,
-                    _winapi.FILE_MAP_READ,
-                    0,
-                    0,
-                    0
-                )
-            finally:
-                _winapi.CloseHandle(h_map)
-            size = _winapi.VirtualQuerySize(p_buf)
-
-        if flags == O_CREX:
-            # Create and reserve shared memory block with this name until
-            # it can be attached to by mmap.
-            h_map = _winapi.CreateFileMapping(
-                _winapi.INVALID_HANDLE_VALUE,
-                _winapi.NULL,
-                _winapi.PAGE_READWRITE,
-                (size >> 32) & 0xFFFFFFFF,
-                size & 0xFFFFFFFF,
-                name
-            )
-            try:
-                last_error_code = _winapi.GetLastError()
-                if last_error_code == _winapi.ERROR_ALREADY_EXISTS:
-                    raise FileExistsError(
-                        errno.EEXIST,
-                        os.strerror(errno.EEXIST),
-                        name,
-                        _winapi.ERROR_ALREADY_EXISTS
-                    )
-                self._mmap = mmap.mmap(-1, size, tagname=name)
-            finally:
-                _winapi.CloseHandle(h_map)
-
-        else:
-            self._mmap = mmap.mmap(-1, size, tagname=name)
-
-        self._buf = memoryview(self._mmap)
-        self.name = name
-        self.mode = mode
-        self._size = size
-
-    @property
-    def size(self):
-        "Size in bytes."
-        return self._size
-
-    @property
-    def buf(self):
-        "A memoryview of contents of the shared memory block."
-        return self._buf
-
-    def __reduce__(self):
-        return (
-            self.__class__,
-            (
-                self.name,
-                None,
-                self.mode,
-                0,
-                False,
-            ),
-        )
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({self.name!r}, size={self.size})'
-
-    def close(self):
-        if self._buf is not None:
-            self._buf.release()
-            self._buf = None
-        if self._mmap is not None:
-            self._mmap.close()
-            self._mmap = None
-
-    def unlink(self):
-        """Windows ensures that destruction of the last reference to this
-        named shared memory block will result in the release of this memory."""
-        pass
-
+O_CREX = os.O_CREAT | os.O_EXCL
 
 # FreeBSD (and perhaps other BSDs) limit names to 14 characters.
 _SHM_SAFE_NAME_LENGTH = 14
 
-# shared object name prefix
-if os.name == "nt":
-    _SHM_NAME_PREFIX = 'wnsm_'
+# Shared memory block name prefix
+if _USE_POSIX:
+    _SHM_NAME_PREFIX = 'psm_'
 else:
-    _SHM_NAME_PREFIX = '/psm_'
+    _SHM_NAME_PREFIX = 'wnsm_'
 
 
 def _make_filename():
-    """Create a random filename for the shared memory object.
-    """
+    "Create a random filename for the shared memory object."
     # number of random bytes to use for name
     nbytes = (_SHM_SAFE_NAME_LENGTH - len(_SHM_NAME_PREFIX)) // 2
     assert nbytes >= 2, '_SHM_NAME_PREFIX too long'
@@ -144,96 +48,117 @@ def _make_filename():
     return name
 
 
-class PosixSharedMemory:
+class SharedMemory:
 
-    # defaults so close() and unlink() can run without errors
-    fd = -1
-    name = None
+    # Defaults; enables close() and unlink() to run without errors.
+    _name = None
+    _fd = -1
     _mmap = None
     _buf = None
+    _flags = os.O_RDWR
+    _mode = 0o600
 
-    def __init__(self, name, flags=None, mode=384, size=0, read_only=False):
-        if name and (flags is None):
-            flags = 0
-        else:
-            flags = O_CREX if flags is None else flags
-        if flags & O_EXCL and not flags & O_CREAT:
-            raise ValueError("O_EXCL must be combined with O_CREAT")
-        if name is None and not flags & O_EXCL:
-            raise ValueError("'name' can only be None if O_EXCL is set")
-        flags |= os.O_RDONLY if read_only else os.O_RDWR
-        self.flags = flags
-        self.mode = mode
+    def __init__(self, name=None, create=False, size=0):
         if not size >= 0:
             raise ValueError("'size' must be a positive integer")
-        if name is None:
-            self._open_retry()
-        else:
-            self.name = name
-            self.fd = _posixshmem.shm_open(name, flags, mode=mode)
-        if size:
+        if create:
+            self._flags = O_CREX | os.O_RDWR
+        if name is None and not self._flags & os.O_EXCL:
+            raise ValueError("'name' can only be None if create=True")
+
+        if _USE_POSIX:
+
+            # POSIX Shared Memory
+
+            if name is None:
+                while True:
+                    name = _make_filename()
+                    try:
+                        self._fd = _posixshmem.shm_open(
+                            name,
+                            self._flags,
+                            mode=self._mode
+                        )
+                    except FileExistsError:
+                        continue
+                    self._name = name
+                    break
+            else:
+                self._fd = _posixshmem.shm_open(
+                    name,
+                    self._flags,
+                    mode=self._mode
+                )
+                self._name = name
             try:
-                os.ftruncate(self.fd, size)
+                if create and size:
+                    os.ftruncate(self._fd, size)
+                stats = os.fstat(self._fd)
+                size = stats.st_size
+                self._mmap = mmap.mmap(self._fd, size)
             except OSError:
                 self.unlink()
                 raise
-        self._mmap = mmap.mmap(self.fd, self.size)
-        self._buf = memoryview(self._mmap)
 
-    @property
-    def size(self):
-        "Size in bytes."
-        if self.fd >= 0:
-            return os.fstat(self.fd).st_size
         else:
-            return 0
 
-    @property
-    def buf(self):
-        "A memoryview of contents of the shared memory block."
-        return self._buf
+            # Windows Named Shared Memory
 
-    def _open_retry(self):
-        # generate a random name, open, retry if it exists
-        while True:
-            name = _make_filename()
-            try:
-                self.fd = _posixshmem.shm_open(name, self.flags,
-                                               mode=self.mode)
-            except FileExistsError:
-                continue
-            self.name = name
-            break
+            if create:
+                while True:
+                    temp_name = _make_filename() if name is None else name
+                    # Create and reserve shared memory block with this name
+                    # until it can be attached to by mmap.
+                    h_map = _winapi.CreateFileMapping(
+                        _winapi.INVALID_HANDLE_VALUE,
+                        _winapi.NULL,
+                        _winapi.PAGE_READWRITE,
+                        (size >> 32) & 0xFFFFFFFF,
+                        size & 0xFFFFFFFF,
+                        temp_name
+                    )
+                    try:
+                        last_error_code = _winapi.GetLastError()
+                        if last_error_code == _winapi.ERROR_ALREADY_EXISTS:
+                            if name is not None:
+                                raise FileExistsError(
+                                    errno.EEXIST,
+                                    os.strerror(errno.EEXIST),
+                                    name,
+                                    _winapi.ERROR_ALREADY_EXISTS
+                                )
+                            else:
+                                continue
+                        self._mmap = mmap.mmap(-1, size, tagname=temp_name)
+                    finally:
+                        _winapi.CloseHandle(h_map)
+                    self._name = temp_name
+                    break
 
-    def __reduce__(self):
-        return (
-            self.__class__,
-            (
-                self.name,
-                None,
-                self.mode,
-                0,
-                False,
-            ),
-        )
+            else:
+                self._name = name
+                # Dynamically determine the existing named shared memory
+                # block's size which is likely a multiple of mmap.PAGESIZE.
+                h_map = _winapi.OpenFileMapping(
+                    _winapi.FILE_MAP_READ,
+                    False,
+                    name
+                )
+                try:
+                    p_buf = _winapi.MapViewOfFile(
+                        h_map,
+                        _winapi.FILE_MAP_READ,
+                        0,
+                        0,
+                        0
+                    )
+                finally:
+                    _winapi.CloseHandle(h_map)
+                size = _winapi.VirtualQuerySize(p_buf)
+                self._mmap = mmap.mmap(-1, size, tagname=name)
 
-    def __repr__(self):
-        return f'{self.__class__.__name__}({self.name!r}, size={self.size})'
-
-    def unlink(self):
-        if self.name:
-            _posixshmem.shm_unlink(self.name)
-
-    def close(self):
-        if self._buf is not None:
-            self._buf.release()
-            self._buf = None
-        if self._mmap is not None:
-            self._mmap.close()
-            self._mmap = None
-        if self.fd >= 0:
-            os.close(self.fd)
-            self.fd = -1
+        self._size = size
+        self._buf = memoryview(self._mmap)
 
     def __del__(self):
         try:
@@ -241,15 +166,55 @@ class PosixSharedMemory:
         except OSError:
             pass
 
+    def __reduce__(self):
+        return (
+            self.__class__,
+            (
+                self.name,
+                False,
+                self.size,
+            ),
+        )
 
-class SharedMemory:
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.name!r}, size={self.size})'
 
-    def __new__(cls, *args, **kwargs):
-        if os.name == 'nt':
-            cls = WindowsNamedSharedMemory
-        else:
-            cls = PosixSharedMemory
-        return cls(*args, **kwargs)
+    @property
+    def buf(self):
+        "A memoryview of contents of the shared memory block."
+        return self._buf
+
+    @property
+    def name(self):
+        "Unique name that identifies the shared memory block."
+        return self._name
+
+    @property
+    def size(self):
+        "Size in bytes."
+        return self._size
+
+    def close(self):
+        """Closes access to the shared memory from this instance but does
+        not destroy the shared memory block."""
+        if self._buf is not None:
+            self._buf.release()
+            self._buf = None
+        if self._mmap is not None:
+            self._mmap.close()
+            self._mmap = None
+        if _USE_POSIX and self._fd >= 0:
+            os.close(self._fd)
+            self._fd = -1
+
+    def unlink(self):
+        """Requests that the underlying shared memory block be destroyed.
+
+        In order to ensure proper cleanup of resources, unlink should be
+        called once (and only once) across all processes which have access
+        to the shared memory block."""
+        if _USE_POSIX and self.name:
+            _posixshmem.shm_unlink(self.name)
 
 
 encoding = "utf8"
@@ -326,7 +291,7 @@ class ShareableList:
         if name is not None and sequence is None:
             self.shm = SharedMemory(name)
         else:
-            self.shm = SharedMemory(name, flags=O_CREX, size=requested_size)
+            self.shm = SharedMemory(name, create=True, size=requested_size)
 
         if sequence is not None:
             _enc = encoding
@@ -638,7 +603,7 @@ class SharedMemoryManager(BaseManager):
         """Returns a new SharedMemory instance with the specified size in
         bytes, to be tracked by the manager."""
         with self._Client(self._address, authkey=self._authkey) as conn:
-            sms = SharedMemory(None, flags=O_CREX, size=size)
+            sms = SharedMemory(None, create=True, size=size)
             try:
                 dispatch(conn, None, 'track_segment', (sms.name,))
             except BaseException as e:
