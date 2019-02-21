@@ -100,6 +100,21 @@ The class can be used to simulate nested scopes and is useful in templating.
         :func:`super` function.  A reference to ``d.parents`` is equivalent to:
         ``ChainMap(*d.maps[1:])``.
 
+    Note, the iteration order of a :class:`ChainMap()` is determined by
+    scanning the mappings last to first::
+
+        >>> baseline = {'music': 'bach', 'art': 'rembrandt'}
+        >>> adjustments = {'art': 'van gogh', 'opera': 'carmen'}
+        >>> list(ChainMap(adjustments, baseline))
+        ['music', 'art', 'opera']
+
+    This gives the same ordering as a series of :meth:`dict.update` calls
+    starting with the last mapping::
+
+        >>> combined = baseline.copy()
+        >>> combined.update(adjustments)
+        >>> list(combined)
+        ['music', 'art', 'opera']
 
 .. seealso::
 
