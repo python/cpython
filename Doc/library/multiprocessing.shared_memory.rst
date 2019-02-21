@@ -20,7 +20,8 @@ and management of shared memory to be accessed by one or more processes
 on a multicore or symmetric multiprocessor (SMP) machine.  To assist with
 the life-cycle management of shared memory especially across distinct
 processes, a :class:`~multiprocessing.managers.BaseManager` subclass,
-:class:`SharedMemoryManager`, is also provided.
+:class:`SharedMemoryManager`, is also provided in the
+``multiprocessing.managers`` module.
 
 In this module, shared memory refers to "System V style" shared memory blocks
 (though is not necessarily implemented explicitly as such) and does not refer

@@ -3652,7 +3652,7 @@ class _TestSharedMemory(BaseTestCase):
 
         # Attach to existing shared memory segment but specify a new size.
         same_sms = shared_memory.SharedMemory('test01_tsmb', size=20*sms.size)
-        self.assertEqual(same_sms.size, sms.size)  # Size was ignored.
+        self.assertLess(same_sms.size, 20*sms.size)  # Size was ignored.
         same_sms.close()
 
         if shared_memory._USE_POSIX:
@@ -3737,7 +3737,7 @@ class _TestSharedMemory(BaseTestCase):
         sms.close()
 
     def test_shared_memory_SharedMemoryManager_basics(self):
-        smm1 = shared_memory.SharedMemoryManager()
+        smm1 = multiprocessing.managers.SharedMemoryManager()
         with self.assertRaises(ValueError):
             smm1.SharedMemory(size=9)  # Fails if SharedMemoryServer not started
         smm1.start()
@@ -3756,7 +3756,7 @@ class _TestSharedMemory(BaseTestCase):
                 # No longer there to be attached to again.
                 absent_shm = shared_memory.SharedMemory(name=held_name)
 
-        with shared_memory.SharedMemoryManager() as smm2:
+        with multiprocessing.managers.SharedMemoryManager() as smm2:
             sl = smm2.ShareableList("howdy")
             shm = smm2.SharedMemory(size=128)
             held_name = sl.shm.name
