@@ -1,0 +1,2 @@
+Ignoring ELOOP error on pathlib to avoid raise exceptions when symlinks are
+broken.
