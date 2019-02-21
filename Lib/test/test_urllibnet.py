@@ -38,7 +38,7 @@ class urlopenNetworkTests(unittest.TestCase):
     for transparent redirection have been written.
 
     setUp is not used for always constructing a connection to
-    :data:`test.support.TEST_HTTP_URL` since there a few tests that don't use that address
+    test.support.TEST_HTTP_URL since there a few tests that don't use that address
     and making a connection is expensive enough to warrant minimizing unneeded
     connections.
 
