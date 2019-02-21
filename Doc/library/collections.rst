@@ -1035,10 +1035,10 @@ Some differences from :class:`dict` still remain:
 * A regular :class:`dict` was designed to be very good at mapping
   operations.  Tracking insertion order was secondary.  In contrast,
   :class:`OrderedDict` was designed to be good at reordering operations.
-  Efficient mapping operations were secondary.
+  Efficient mapping iteration and update operations were secondary.
 
 * :class:`OrderedDict` takes more memory and is slower than :class:`dict`
-  for regular dictionary operations.
+  for dictionary iteration and mutation.
 
 * Algorithmically, the :class:`OrderedDict` class can handle frequent
   reordering operations better than :class:`dict`.  This makes it suitable for
@@ -1052,9 +1052,10 @@ Some differences from :class:`dict` still remain:
   the equality operation for :class:`dict` only requires equal contents
   regardless of order.
 
-* The :class:`OrderedDict` class has a :meth:`popitem` method that accepts an
+* The :meth:`popitem` method of :class:`OrderedDict` accepts an
   optional argument that controls whether the pop occurs from the beginning or
-  the end.
+  the end.  The :meth:`popitem` method for :class:`dict` does not take
+  any arguments.
 
 * The :class:`OrderedDict` class has a :meth:`move_to_end` method that
   efficiently re-positions an element to the beginning or the end.
@@ -1140,6 +1141,7 @@ variants of :func:`functools.lru_cache`::
         def __getitem__(self, key):
             value = super().__getitem__(key)
             self.move_to_end(key)
+            return value
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)
