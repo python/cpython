@@ -25,7 +25,7 @@ class URLTimeoutTest(unittest.TestCase):
 
     def testURLread(self):
         with support.transient_internet("www.pythontest.net"):
-            f = urllib.request.urlopen(f"{support.TEST_HTTP_URL}/")
+            f = urllib.request.urlopen(support.TEST_HTTP_URL)
             f.read()
 
 
@@ -44,7 +44,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     """
 
-    url = f'{support.TEST_HTTP_URL}/'
+    url = support.TEST_HTTP_URL
 
     @contextlib.contextmanager
     def urlopen(self, *args, **kwargs):
@@ -90,7 +90,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_getcode(self):
         # test getcode() with the fancy opener to get 404 error codes
-        URL = self.url + "XXXinvalidXXX"
+        URL = self.url + "/XXXinvalidXXX"
         with support.transient_internet(URL):
             with self.assertWarns(DeprecationWarning):
                 open_url = urllib.request.FancyURLopener().open(URL)
@@ -176,7 +176,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
             self.assertIsInstance(info, email.message.Message,
                                   "info is not an instance of email.message.Message")
 
-    logo = f"{support.TEST_HTTP_URL}/"
+    logo = support.TEST_HTTP_URL
 
     def test_data_header(self):
         with self.urlretrieve(self.logo) as (file_location, fileheaders):

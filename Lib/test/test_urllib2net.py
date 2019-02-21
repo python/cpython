@@ -84,7 +84,7 @@ class CloseSocketTest(unittest.TestCase):
     def test_close(self):
         # calling .close() on urllib2's response objects should close the
         # underlying socket
-        url = f"{support.TEST_HTTP_URL}/"
+        url = support.TEST_HTTP_URL
         with support.transient_internet(url):
             response = _urlopen_with_retry(url)
             sock = response.fp
@@ -157,20 +157,20 @@ class OtherNetworkTests(unittest.TestCase):
 ##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
 
     def test_urlwithfrag(self):
-        urlwith_frag = f"{support.TEST_HTTP_URL}/index.html#frag"
+        urlwith_frag = f"http://www.pythontest.net/index.html#frag"
         with support.transient_internet(urlwith_frag):
             req = urllib.request.Request(urlwith_frag)
             res = urllib.request.urlopen(req)
             self.assertEqual(res.geturl(),
-                    f"{support.TEST_HTTP_URL}/index.html#frag")
+                    f"http://www.pythontest.net/index.html#frag")
 
     def test_redirect_url_withfrag(self):
-        redirect_url_with_frag = f"{support.TEST_HTTP_URL}/redir/with_frag/"
+        redirect_url_with_frag = f"http://www.pythontest.net/redir/with_frag/"
         with support.transient_internet(redirect_url_with_frag):
             req = urllib.request.Request(redirect_url_with_frag)
             res = urllib.request.urlopen(req)
             self.assertEqual(res.geturl(),
-                    f"{support.TEST_HTTP_URL}/elsewhere/#frag")
+                    f"http://www.pythontest.net/elsewhere/#frag")
 
     def test_custom_headers(self):
         url = support.TEST_HTTP_URL
