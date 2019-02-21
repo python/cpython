@@ -1,0 +1,2 @@
+Fix a possible crash in :meth:`list.sort` when sorting objects with
+``ob_type->tp_richcompare == NULL``.  Patch by Zackery Spytz.
