@@ -143,6 +143,8 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
 
 unsigned long PyThread_get_thread_ident(void);
 
+unsigned long PyThread_get_thread_id(void);
+
 /*
  * Initialization of the C package, should not be needed.
  */
@@ -225,6 +227,16 @@ PyThread_get_thread_ident(void)
         PyThread_init_thread();
 
     return GetCurrentThreadId();
+}
+
+/*
+ * TODO: Return the TID of the thread.
+ * Currently, this just returns NULL.
+ */
+unsigned long
+PyThread_get_thread_id(void)
+{
+    return NULL;
 }
 
 void
