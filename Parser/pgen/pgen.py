@@ -1,40 +1,23 @@
-import os
-import sys
 import collections
-import importlib.machinery
+import tokenize  # from stdlib
 
-# Use Lib/token.py and Lib/tokenize.py to obtain the tokens. To maintain this
-# compatible with older versions of Python, we need to make sure that we only
-# import these two files (and not any of the dependencies of these files).
-
-CURRENT_FOLDER_LOCATION = os.path.dirname(os.path.realpath(__file__))
-LIB_LOCATION = os.path.realpath(os.path.join(CURRENT_FOLDER_LOCATION, '..', '..', 'Lib'))
-TOKEN_LOCATION = os.path.join(LIB_LOCATION, 'token.py')
-TOKENIZE_LOCATION = os.path.join(LIB_LOCATION, 'tokenize.py')
-
-token = importlib.machinery.SourceFileLoader('token',
-                                             TOKEN_LOCATION).load_module()
-# Add token to the module cache so tokenize.py uses that excact one instead of
-# the one in the stdlib of the interpreter executing this file.
-sys.modules['token'] = token
-tokenize = importlib.machinery.SourceFileLoader('tokenize',
-                                                TOKENIZE_LOCATION).load_module()
-
-from . import grammar
+from . import grammar, token
 
 class ParserGenerator(object):
 
-    def __init__(self, filename, stream=None, verbose=False):
+    def __init__(self, grammar_file, token_file, stream=None, verbose=False):
         close_stream = None
         if stream is None:
-            stream = open(filename)
+            stream = open(grammar_file)
             close_stream = stream.close
-        self.tokens = token
-        self.opmap = token.EXACT_TOKEN_TYPES
+        with open(token_file) as tok_file:
+            token_lines = tok_file.readlines()
+        self.tokens = dict(token.generate_tokens(token_lines))
+        self.opmap = dict(token.generate_opmap(token_lines))
         # Manually add <> so it does not collide with !=
-        self.opmap['<>'] = self.tokens.NOTEQUAL
+        self.opmap['<>'] = "NOTEQUAL"
         self.verbose = verbose
-        self.filename = filename
+        self.filename = grammar_file
         self.stream = stream
         self.generator = tokenize.generate_tokens(stream.readline)
         self.gettoken() # Initialize lookahead
@@ -108,9 +91,9 @@ class ParserGenerator(object):
                     return ilabel
             else:
                 # A named token (NAME, NUMBER, STRING)
-                itoken = getattr(self.tokens, label, None)
+                itoken = self.tokens.get(label, None)
                 assert isinstance(itoken, int), label
-                assert itoken in self.tokens.tok_name, label
+                assert itoken in self.tokens.values(), label
                 if itoken in c.tokens:
                     return c.tokens[itoken]
                 else:
@@ -126,12 +109,13 @@ class ParserGenerator(object):
                 if value in c.keywords:
                     return c.keywords[value]
                 else:
-                    c.labels.append((self.tokens.NAME, value))
+                    c.labels.append((self.tokens["NAME"], value))
                     c.keywords[value] = ilabel
                     return ilabel
             else:
                 # An operator (any non-numeric token)
-                itoken = self.opmap[value] # Fails if unknown token
+                tok_name = self.opmap[value] # Fails if unknown token
+                itoken = self.tokens[tok_name]
                 if itoken in c.tokens:
                     return c.tokens[itoken]
                 else:
@@ -184,16 +168,16 @@ class ParserGenerator(object):
         dfas = collections.OrderedDict()
         startsymbol = None
         # MSTART: (NEWLINE | RULE)* ENDMARKER
-        while self.type != self.tokens.ENDMARKER:
-            while self.type == self.tokens.NEWLINE:
+        while self.type != tokenize.ENDMARKER:
+            while self.type == tokenize.NEWLINE:
                 self.gettoken()
             # RULE: NAME ':' RHS NEWLINE
-            name = self.expect(self.tokens.NAME)
+            name = self.expect(tokenize.NAME)
             if self.verbose:
                 print("Processing rule {dfa_name}".format(dfa_name=name))
-            self.expect(self.tokens.OP, ":")
+            self.expect(tokenize.OP, ":")
             a, z = self.parse_rhs()
-            self.expect(self.tokens.NEWLINE)
+            self.expect(tokenize.NEWLINE)
             if self.verbose:
                 self.dump_nfa(name, a, z)
             dfa = self.make_dfa(a, z)
@@ -309,7 +293,7 @@ class ParserGenerator(object):
         # ALT: ITEM+
         a, b = self.parse_item()
         while (self.value in ("(", "[") or
-               self.type in (self.tokens.NAME, self.tokens.STRING)):
+               self.type in (tokenize.NAME, tokenize.STRING)):
             c, d = self.parse_item()
             b.addarc(c)
             b = d
@@ -320,7 +304,7 @@ class ParserGenerator(object):
         if self.value == "[":
             self.gettoken()
             a, z = self.parse_rhs()
-            self.expect(self.tokens.OP, "]")
+            self.expect(tokenize.OP, "]")
             a.addarc(z)
             return a, z
         else:
@@ -340,9 +324,9 @@ class ParserGenerator(object):
         if self.value == "(":
             self.gettoken()
             a, z = self.parse_rhs()
-            self.expect(self.tokens.OP, ")")
+            self.expect(tokenize.OP, ")")
             return a, z
-        elif self.type in (self.tokens.NAME, self.tokens.STRING):
+        elif self.type in (tokenize.NAME, tokenize.STRING):
             a = NFAState()
             z = NFAState()
             a.addarc(z, self.value)
@@ -365,7 +349,7 @@ class ParserGenerator(object):
         while tup[0] in (tokenize.COMMENT, tokenize.NL):
             tup = next(self.generator)
         self.type, self.value, self.begin, self.end, self.line = tup
-        #print self.tokens['tok_name'][self.type], repr(self.value)
+        # print(getattr(tokenize, 'tok_name')[self.type], repr(self.value))
 
     def raise_error(self, msg, *args):
         if args:
