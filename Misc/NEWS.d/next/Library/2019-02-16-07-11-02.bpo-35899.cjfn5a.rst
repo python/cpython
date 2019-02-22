@@ -1,0 +1,1 @@
+Enum has been fixed to correctly handle empty strings and strings with "weird" characters (ie. '!') without crashing. Original patch contributed by Maxwell. Assisted by Stéphane Wirtel.
