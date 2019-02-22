@@ -2737,13 +2737,13 @@ class TestEmptyAndNonLatinStrings(unittest.TestCase):
             empty_abc = Enum('empty_abc', ('', 'B', 'C'))
 
     def test_non_latin_character_string(self):
-        greek_abc = Enum('greek_abc', ('α', 'B', 'C'))
-        item = getattr(greek_abc, 'α')
+        greek_abc = Enum('greek_abc', ('\u03B1', 'B', 'C'))
+        item = getattr(greek_abc, '\u03B1')
         self.assertEqual(item.value, 1)
 
     def test_non_latin_number_string(self):
-        hebrew_123 = Enum('hebrew_123', ('א', '2', '3'))
-        item = getattr(hebrew_123, 'א')
+        hebrew_123 = Enum('hebrew_123', ('\u05D0', '2', '3'))
+        item = getattr(hebrew_123, '\u05D0')
         self.assertEqual(item.value, 1)
 
 
