@@ -508,7 +508,7 @@ of applications in statistics, including simulations and hypothesis testing.
        Class method that makes a normal distribution instance
        from sample data.  The *data* can be any :term:`iterable`
        and should consist of values that can be converted to type
-       :class:`float` values.
+       :class:`float`.
 
        If *data* does not contain at least two elements, raises
        :exc:`StatisticsError` because it takes at least one point to estimate
@@ -608,7 +608,7 @@ is to guess a person's gender from measurements of normally distributed
 features including height, weight, and foot size.
 
 The `prior probability <https://en.wikipedia.org/wiki/Prior_probability>`_ of
-male or female is 50%::
+being male or female is 50%::
 
     >>> prior_male = 0.5
     >>> prior_female = 0.5
@@ -627,20 +627,20 @@ with :class:`NormalDist`::
 We observe a new person whose feature measurements are known but whose gender
 is unknown::
 
-    >>> h = 6.0
-    >>> w = 130
-    >>> f = 8
+    >>> ht = 6.0        # height
+    >>> wt = 130        # weight
+    >>> fs = 8          # foot size
 
-The posterior is the product of the prior times each the likelihoods of the
-gender given a feature measurement::
+The posterior is the product of the prior times each likelihood of a
+feature measurement given the gender::
 
-   >>> posterior_male = (prior_male * height_male.pdf(h) *
-                         weight_male.pdf(w) * foot_size_male.pdf(f))
-   >>> posterior_female = (prior_female * height_female.pdf(6) *
-                           weight_female.pdf(130) * foot_size_female.pdf(8))
+   >>> posterior_male = (prior_male * height_male.pdf(ht) *
+                         weight_male.pdf(wt) * foot_size_male.pdf(fs))
+   >>> posterior_female = (prior_female * height_female.pdf(ht) *
+                           weight_female.pdf(wt) * foot_size_female.pdf(fs))
 
-The final prediction is given to the largest posterior -- this is known as the
-`maximum a posterior
+The final prediction is awarded to the largest posterior -- this is known as
+the `maximum a posteriori
 <https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation>`_ or MAP::
 
   >>> 'male' if posterior_male > posterior_female else 'female'
