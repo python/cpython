@@ -472,40 +472,40 @@ A single exception is defined:
 ===========================
 
 A :class:`NormalDist` is a a composite class that treats the mean and standard
-deviation of data measurements as single entity.  It is tool for creating and
-manipulating normal distributions of a random variable.
+deviation of data measurements as a single entity.  It is a tool for creating
+and manipulating normal distributions of a random variable.
 
 Normal distributions arise from the `Central Limit Theorem
 <https://en.wikipedia.org/wiki/Central_limit_theorem>`_ and have a wide range
-of applications in statistics, including hypothesis testing.
+of applications in statistics, including simulations and hypothesis testing.
 
 .. class:: NormalDist(mu, sigma=0.0)
 
     Returns a new *NormalDist* object where *mu* represents the `arithmetic
     mean <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of data and *sigma*
-    represented the `standard deviation
+    represents the `standard deviation
     <https://en.wikipedia.org/wiki/Standard_deviation>`_ of the data.
 
     If *sigma* is negative, raises :exc:`StatisticsError`.
 
     .. attribute:: mu
 
-        A read-only attribute representing the mean of the normal distribution.
+        A read-only attribute for the mean of a normal distribution.
 
     .. attribute:: sigma
 
-        A read-only attribute representing the standard deviation of the
-        normal distribution.
+        A read-only attribute for the standard deviation of a normal
+        distribution.
 
     .. attribute:: variance
 
        A read-only property representing the `variance
-       <https://en.wikipedia.org/wiki/Variance>`_ of the normal
+       <https://en.wikipedia.org/wiki/Variance>`_ of a normal
        distribution. Equal to the square of the standard deviation.
 
     .. classmethod:: NormalDist.from_samples(data)
 
-       Class method that makes an normal distribution instance
+       Class method that makes a normal distribution instance
        from sample data.  The *data* can be any :term:`iterable`
        and should consist of values that can be converted to type
        :class:`float` values.
@@ -517,7 +517,7 @@ of applications in statistics, including hypothesis testing.
     .. method:: NormalDist.samples(n, seed=None)
 
        Generates *n* random samples for a given mean and standard deviation.
-       Returns a :class:`list` of :class:`float`.
+       Returns a :class:`list` of :class:`float` values.
 
        If *seed* is given, creates a new instance of the underlying random
        number generator.  This is useful for creating reproducible results,
@@ -531,18 +531,18 @@ of applications in statistics, including hypothesis testing.
        the given value *x*.  Mathematically, it is the ratio ``P(x <= X <
        x+dx) / dx``.
 
-       Note, the relative likelihood of *x* can be greater than `1.0`.  The
-       probability of a specific point on a continuous distribution is `0.0`,
+       Note the relative likelihood of *x* can be greater than `1.0`.  The
+       probability for a specific point on a continuous distribution is `0.0`,
        so the :func:`pdf` is used instead.  It gives the probability of a
-       sample in a narrow range around *x* and then dividing that probability
-       by the width of the range (hence the word "density").
+       sample occurring in a narrow range around *x* and then dividing that
+       probability by the width of the range (hence the word "density").
 
     .. method:: NormalDist.cdf(x)
 
        Using a `cumulative distribution function (cdf)
        <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_,
-       compute probability that a random sample *X* will be less than or equal
-       to *x*.  Mathematically, it is written ``P(X <= x)``.
+       compute the probability that a random sample *X* will be less than or
+       equal to *x*.  Mathematically, it is written ``P(X <= x)``.
 
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
@@ -586,8 +586,8 @@ determine the percentage of students with scores between 1100 and 1200::
 
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
-Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_ of a
-complex model::
+Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_ of the
+model::
 
     >>> n = 100_000
     >>> X = NormalDist(350, 15).samples(n)
@@ -599,9 +599,9 @@ complex model::
 
 Normal distributions commonly arise in machine learning problems.
 
-Wikipedia has a `nice example with Naive Bayesian Classifier
+Wikipedia has a `nice example with a Naive Bayesian Classifier
 <https://en.wikipedia.org/wiki/Naive_Bayes_classifier>`_.  The challenge
-is guess a person's gender from measurements of normally distributed
+is to guess a person's gender from measurements of normally distributed
 features including height, weight, and foot size.
 
 The `prior probability <https://en.wikipedia.org/wiki/Prior_probability>`_ of
@@ -636,9 +636,9 @@ gender given a feature measurement::
    >>> posterior_female = (prior_female * height_female.pdf(6) *
                            weight_female.pdf(130) * foot_size_female.pdf(8))
 
-The final prediction is given to the largest posterior (this is known as the
+The final prediction is given to the largest posterior -- this is known as the
 `maximum a posterior
-<https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation>`_ (MAP)::
+<https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation>`_ or MAP::
 
   >>> 'male' if posterior_male > posterior_female else 'female'
   'female'
