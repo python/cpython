@@ -23,7 +23,7 @@ else:
     _USE_POSIX = True
 
 
-O_CREX = os.O_CREAT | os.O_EXCL
+_O_CREX = os.O_CREAT | os.O_EXCL
 
 # FreeBSD (and perhaps other BSDs) limit names to 14 characters.
 _SHM_SAFE_NAME_LENGTH = 14
@@ -73,7 +73,7 @@ class SharedMemory:
         if not size >= 0:
             raise ValueError("'size' must be a positive integer")
         if create:
-            self._flags = O_CREX | os.O_RDWR
+            self._flags = _O_CREX | os.O_RDWR
         if name is None and not self._flags & os.O_EXCL:
             raise ValueError("'name' can only be None if create=True")
 
@@ -228,7 +228,7 @@ class SharedMemory:
             _posixshmem.shm_unlink(self.name)
 
 
-encoding = "utf8"
+_encoding = "utf8"
 
 class ShareableList:
     """Pattern for a mutable list-like object shareable via a shared
@@ -251,7 +251,7 @@ class ShareableList:
     _alignment = 8
     _back_transforms_mapping = {
         0: lambda value: value,                   # int, float, bool
-        1: lambda value: value.rstrip(b'\x00').decode(encoding),  # str
+        1: lambda value: value.rstrip(b'\x00').decode(_encoding),  # str
         2: lambda value: value.rstrip(b'\x00'),   # bytes
         3: lambda _value: None,                   # None
     }
@@ -305,7 +305,7 @@ class ShareableList:
             self.shm = SharedMemory(name, create=True, size=requested_size)
 
         if sequence is not None:
-            _enc = encoding
+            _enc = _encoding
             struct.pack_into(
                 "q" + self._format_size_metainfo,
                 self.shm.buf,
@@ -352,7 +352,7 @@ class ShareableList:
             self._offset_packing_formats + position * 8
         )[0]
         fmt = v.rstrip(b'\x00')
-        fmt_as_str = fmt.decode(encoding)
+        fmt_as_str = fmt.decode(_encoding)
 
         return fmt_as_str
 
@@ -384,7 +384,7 @@ class ShareableList:
             "8s",
             self.shm.buf,
             self._offset_packing_formats + position * 8,
-            fmt_as_str.encode(encoding)
+            fmt_as_str.encode(_encoding)
         )
 
         transform_code = self._extract_recreation_code(value)
@@ -437,7 +437,7 @@ class ShareableList:
             new_format,
             value
         )
-        value = value.encode(encoding) if isinstance(value, str) else value
+        value = value.encode(_encoding) if isinstance(value, str) else value
         struct.pack_into(new_format, self.shm.buf, offset, value)
 
     def __reduce__(self):
