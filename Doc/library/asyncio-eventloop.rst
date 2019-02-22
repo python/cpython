@@ -1394,8 +1394,7 @@ Do not instantiate the class directly.
 
    .. attribute:: sockets
 
-      List of :class:`socket.socket` objects the server is listening on,
-      or ``None`` if the server is closed.
+      List of :class:`socket.socket` objects the server is listening on.
 
       .. versionchanged:: 3.7
          Prior to Python 3.7 ``Server.sockets`` used to return an
