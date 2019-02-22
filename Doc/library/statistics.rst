@@ -569,6 +569,9 @@ of applications in statistics, including simulations and hypothesis testing.
     Instances of :class:`NormalDist` are :term:`immutable` and
     :term:`hashable`.
 
+    .. versionadded:: 3.8
+
+
 :class:`NormalDist` Examples and Recipes
 ----------------------------------------
 

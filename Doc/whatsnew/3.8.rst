@@ -262,6 +262,10 @@ Added :func:`statistics.fmean` as a faster, floating point variant of
 :func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
 
+Added :class:`statistics.NormalDist`, a tool for creating
+and manipulating normal distributions of a random variable.
+(Contributed by Raymond Hettinger in :issue:`36018`.)
+
 
 tokenize
 --------
