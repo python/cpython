@@ -787,6 +787,9 @@ class NormalDist:
             raise AttributeError(f"cannot set attribute {attr!r}")
         super().__setattr__(attr, value)
 
+    def __reduce__(self):
+        return (type(self), (self.mu, self.sigma))
+
     def __repr__(self):
         return f'{type(self).__name__}(mu={self.mu!r}, sigma={self.sigma!r})'
 

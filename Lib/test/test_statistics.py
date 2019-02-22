@@ -5,9 +5,11 @@ approx_equal function.
 
 import collections
 import collections.abc
+import copy
 import decimal
 import doctest
 import math
+import pickle
 import random
 import sys
 import unittest
@@ -2190,6 +2192,15 @@ class TestNormalDist(unittest.TestCase):
     def test_repr(self):
         nd = statistics.NormalDist(37.5, 5.625)
         self.assertEqual(repr(nd), 'NormalDist(mu=37.5, sigma=5.625)')
+
+    def test_pickle_and_copy(self):
+        nd = statistics.NormalDist(37.5, 5.625)
+        nd1 = copy.copy(nd)
+        self.assertEqual(nd, nd1)
+        nd2 = copy.deepcopy(nd)
+        self.assertEqual(nd, nd2)
+        nd3 = pickle.loads(pickle.dumps(nd))
+        self.assertEqual(nd, nd3)
 
 
 # === Run tests ===
