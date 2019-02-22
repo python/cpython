@@ -659,6 +659,8 @@ Glossary
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
 
    magic method
+      .. index:: pair: magic; method
+
       An informal synonym for :term:`special method`.
 
    mapping
@@ -1002,6 +1004,8 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    special method
+      .. index:: pair: special; method
+
       A method that is called implicitly by Python to execute a certain
       operation on a type, such as addition.  Such methods have names starting
       and ending with double underscores.  Special methods are documented in
