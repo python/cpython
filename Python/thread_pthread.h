@@ -12,13 +12,7 @@
 #endif
 #include <signal.h>
 
-#if defined(HAVE_SYS_TYPES_H)
-#include <sys/types.h>
-#endif
-
-#if defined(__APPLE__)
-#include <stdint.h>
-#elif defined(__linux__)
+#if defined(__linux__)
 #include <sys/syscall.h>
 #endif
 
