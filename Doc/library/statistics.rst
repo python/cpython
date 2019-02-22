@@ -546,7 +546,9 @@ of applications in statistics, including simulations and hypothesis testing.
 
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
-    are used for translation and scaling.  For example::
+    are used for translation and scaling.  For example:
+
+    .. doctest::
 
         >>> temperature_february = NormalDist(5, 2.5)             # Celsius
         >>> temperature_february * (9/5) + 32                     # Fahrenheit
@@ -558,7 +560,9 @@ of applications in statistics, including simulations and hypothesis testing.
     variables, it is possible to `add and subtract two normally distributed
     random variables
     <https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables>`_
-    represented as instances of :class:`NormalDist`.  For example::
+    represented as instances of :class:`NormalDist`.  For example:
+
+    .. doctest::
 
         >>> birth_weights = NormalDist.from_samples([2.5, 3.1, 2.1, 2.4, 2.7, 3.5])
         >>> drug_effects = NormalDist(0.4, 0.15)
@@ -580,24 +584,28 @@ A :class:`NormalDist` readily solves classic probability problems.
 For example, given `historical data for SAT exams
 <https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
 are normally distributed with a mean of 1060 and standard deviation of 192,
-determine the percentage of students with scores between 1100 and 1200::
+determine the percentage of students with scores between 1100 and 1200:
+
+.. doctest::
 
     >>> sat = NormalDist(1060, 195)
     >>> fraction = sat.cdf(1200) - sat.cdf(1100)
     >>> f'{fraction * 100 :.1f}% score between 1100 and 1200'
-    '18.2% score between 1100 and 1200
+    '18.2% score between 1100 and 1200'
 
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
 Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_ of the
-model::
+model:
+
+.. doctest::
 
     >>> n = 100_000
     >>> X = NormalDist(350, 15).samples(n)
     >>> Y = NormalDist(47, 17).samples(n)
     >>> Z = NormalDist(62, 6).samples(n)
     >>> model_simulation = [x * y / z for x, y, z in zip(X, Y, Z)]
-    >>> NormalDist.from_samples(model_simulation)
+    >>> NormalDist.from_samples(model_simulation)           # doctest: +SKIP
     NormalDist(mu=267.6516398754636, sigma=101.357284306067)
 
 Normal distributions commonly arise in machine learning problems.
@@ -608,14 +616,18 @@ is to guess a person's gender from measurements of normally distributed
 features including height, weight, and foot size.
 
 The `prior probability <https://en.wikipedia.org/wiki/Prior_probability>`_ of
-being male or female is 50%::
+being male or female is 50%:
+
+.. doctest::
 
     >>> prior_male = 0.5
     >>> prior_female = 0.5
 
 We also have a training dataset with measurements for eight people.  These
 measurements are assumed to be normally distributed, so we summarize the data
-with :class:`NormalDist`::
+with :class:`NormalDist`:
+
+.. doctest::
 
     >>> height_male = NormalDist.from_samples([6, 5.92, 5.58, 5.92])
     >>> height_female = NormalDist.from_samples([5, 5.5, 5.42, 5.75])
@@ -625,23 +637,30 @@ with :class:`NormalDist`::
     >>> foot_size_female = NormalDist.from_samples([6, 8, 7, 9])
 
 We observe a new person whose feature measurements are known but whose gender
-is unknown::
+is unknown:
+
+.. doctest::
 
     >>> ht = 6.0        # height
     >>> wt = 130        # weight
     >>> fs = 8          # foot size
 
 The posterior is the product of the prior times each likelihood of a
-feature measurement given the gender::
+feature measurement given the gender:
+
+.. doctest::
 
    >>> posterior_male = (prior_male * height_male.pdf(ht) *
-                         weight_male.pdf(wt) * foot_size_male.pdf(fs))
+   ...                   weight_male.pdf(wt) * foot_size_male.pdf(fs))
+
    >>> posterior_female = (prior_female * height_female.pdf(ht) *
-                           weight_female.pdf(wt) * foot_size_female.pdf(fs))
+   ...                     weight_female.pdf(wt) * foot_size_female.pdf(fs))
 
 The final prediction is awarded to the largest posterior -- this is known as
 the `maximum a posteriori
-<https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation>`_ or MAP::
+<https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation>`_ or MAP:
+
+.. doctest::
 
   >>> 'male' if posterior_male > posterior_female else 'female'
   'female'
