@@ -409,7 +409,8 @@ Build and C API Changes
   :meth:`~object.__int__`, if available.  The deprecation warning will be
   emitted for objects with the ``__int__()`` method but without the
   ``__index__()`` method (like :class:`~decimal.Decimal` and
-  :class:`~fractions.Fraction`).
+  :class:`~fractions.Fraction`).  :c:func:`PyNumber_Check` will now return
+  ``1`` for objects implementing ``__index__()``.
   (Contributed by Serhiy Storchaka in :issue:`36048`.)
 
 
