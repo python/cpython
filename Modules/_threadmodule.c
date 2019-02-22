@@ -1154,6 +1154,19 @@ be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.");
 
 static PyObject *
+thread_get_tid(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    unsigned long tid = PyThread_get_thread_id();
+    return PyLong_FromUnsignedLong(tid);
+}
+
+PyDoc_STRVAR(get_tid_doc,
+"get_tid() -> integer\n\
+\n\
+Return a non-negative integer identifying the thread as reported by the kernel.\n\
+This may be used to identify thread resource utilization within a system.");
+
+static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
@@ -1304,6 +1317,8 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, interrupt_doc},
     {"get_ident",               thread_get_ident,
      METH_NOARGS, get_ident_doc},
+    {"get_tid",                 thread_get_tid,
+     METH_NOARGS, get_tid_doc},
     {"_count",                  thread__count,
      METH_NOARGS, _count_doc},
     {"stack_size",              (PyCFunction)thread_stack_size,

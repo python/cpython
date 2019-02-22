@@ -23,7 +23,7 @@ except ImportError:
 # with the multiprocessing module, which doesn't provide the old
 # Java inspired names.
 
-__all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
+__all__ = ['get_ident', 'get_tid', 'active_count', 'Condition', 'current_thread',
            'enumerate', 'main_thread', 'TIMEOUT_MAX',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
@@ -34,6 +34,7 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+get_tid = _thread.get_tid
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -790,6 +791,7 @@ class Thread:
         else:
             self._daemonic = current_thread().daemon
         self._ident = None
+        self._tid = None
         self._tstate_lock = None
         self._started = Event()
         self._is_stopped = False
@@ -891,6 +893,9 @@ class Thread:
     def _set_ident(self):
         self._ident = get_ident()
 
+    def _set_tid(self):
+        self._tid = get_tid()
+
     def _set_tstate_lock(self):
         """
         Set a lock object which will be released by the interpreter when
@@ -903,6 +908,7 @@ class Thread:
         try:
             self._set_ident()
             self._set_tstate_lock()
+            self._set_tid()
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -1077,6 +1083,17 @@ class Thread:
         assert self._initialized, "Thread.__init__() not called"
         return self._ident
 
+    @property
+    def tid(self):
+        """Thread ID of this thread or None if it has not been started.
+
+        This is a nonzero integer. See the get_tid() function.
+        This represents the Thread ID as reported by the kernel.
+
+        """
+        assert self._initialized, "Thread.__init__() not called"
+        return self._tid
+
     def is_alive(self):
         """Return whether the thread is alive.
 
@@ -1176,6 +1193,7 @@ class _MainThread(Thread):
         self._set_tstate_lock()
         self._started.set()
         self._set_ident()
+        self._set_tid()
         with _active_limbo_lock:
             _active[self._ident] = self
 
@@ -1195,6 +1213,7 @@ class _DummyThread(Thread):
 
         self._started.set()
         self._set_ident()
+        self._set_tid()
         with _active_limbo_lock:
             _active[self._ident] = self
 

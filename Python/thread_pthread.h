@@ -12,6 +12,16 @@
 #endif
 #include <signal.h>
 
+#if defined(HAVE_SYS_TYPES_H)
+#include <sys/types.h>
+#endif
+
+#if defined(__APPLE__)
+#include <stdint.h>
+#elif defined(__linux__)
+#include <sys/syscall.h>
+#endif
+
 /* The POSIX spec requires that use of pthread_attr_setstacksize
    be conditional on _POSIX_THREAD_ATTR_STACKSIZE being defined. */
 #ifdef _POSIX_THREAD_ATTR_STACKSIZE
@@ -300,6 +310,23 @@ PyThread_get_thread_ident(void)
         PyThread_init_thread();
     threadid = pthread_self();
     return (unsigned long) threadid;
+}
+
+unsigned long
+PyThread_get_thread_id(void)
+{
+    if (!initialized)
+        PyThread_init_thread();
+#ifdef __APPLE__
+    volatile uint64_t tid;
+    pthread_threadid_np(NULL, &tid);
+#elif defined(__linux__)
+    volatile pid_t tid;
+    tid = syscall(__NR_gettid);
+#else
+    tid = NULL;
+#endif
+    return (unsigned long) tid;
 }
 
 void
