@@ -1221,7 +1221,8 @@ class _BasePathTest(object):
     #  |-- dirE  # No permissions
     #  |-- fileA
     #  |-- linkA -> fileA
-    #  `-- linkB -> dirB
+    #  |-- linkB -> dirB
+    #  `-- brokenLinkLoop -> brokenLinkLoop
     #
 
     def setUp(self):
@@ -1252,6 +1253,8 @@ class _BasePathTest(object):
             self.dirlink(os.path.join('..', 'dirB'), join('dirA', 'linkC'))
             # This one goes upwards, creating a loop.
             self.dirlink(os.path.join('..', 'dirB'), join('dirB', 'linkD'))
+            # Broken symlink (pointing to itself).
+            os.symlink('brokenLinkLoop',  join('brokenLinkLoop'))
 
     if os.name == 'nt':
         # Workaround for http://bugs.python.org/issue13772.
@@ -1384,7 +1387,7 @@ class _BasePathTest(object):
         paths = set(it)
         expected = ['dirA', 'dirB', 'dirC', 'dirE', 'fileA']
         if support.can_symlink():
-            expected += ['linkA', 'linkB', 'brokenLink']
+            expected += ['linkA', 'linkB', 'brokenLink', 'brokenLinkLoop']
         self.assertEqual(paths, { P(BASE, q) for q in expected })
 
     @support.skip_unless_symlink
@@ -1465,6 +1468,7 @@ class _BasePathTest(object):
                   'fileA',
                   'linkA',
                   'linkB',
+                  'brokenLinkLoop',
                   }
         self.assertEqual(given, {p / x for x in expect})
 
