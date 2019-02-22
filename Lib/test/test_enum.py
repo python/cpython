@@ -2730,16 +2730,20 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(256, len(seen), 'too many composite members created')
 
 
-class TestEmptyAndWeirdString(unittest.TestCase):
+class TestEmptyAndNonLatinStrings(unittest.TestCase):
 
     def test_empty_string(self):
-        empty_abc = Enum('empty_abc', ('', 'B', 'C'))
-        item = getattr(empty_abc, '')
+        with self.assertRaises(ValueError):
+            empty_abc = Enum('empty_abc', ('', 'B', 'C'))
+
+    def test_non_latin_character_string(self):
+        greek_abc = Enum('greek_abc', ('α', 'B', 'C'))
+        item = getattr(greek_abc, 'α')
         self.assertEqual(item.value, 1)
 
-    def test_weird_character_string(self):
-        weird_abc = Enum('weird_abc', ('!', 'B', 'C'))
-        item = getattr(weird_abc, '!')
+    def test_non_latin_number_string(self):
+        hebrew_123 = Enum('hebrew_123', ('א', '2', '3'))
+        item = getattr(hebrew_123, 'א')
         self.assertEqual(item.value, 1)
 
 
