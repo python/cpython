@@ -467,6 +467,109 @@ A single exception is defined:
 
    Subclass of :exc:`ValueError` for statistics-related exceptions.
 
+
+:class:`NormalDist` objects
+===========================
+
+A :class:`NormalDist` is a a composite class that treats the mean and standard
+deviation of data measurements as single entity.  It is tool for creating and
+manipulating normal distributions of a random variable.
+
+Normal distributions arise from the `Central Limit Theorem
+<https://en.wikipedia.org/wiki/Central_limit_theorem>`_ and have a wide range
+of applications in statistics, including hypothesis testing.
+
+.. class:: NormalDist(mu, sigma=0.0)
+
+    Returns a new *NormalDist* object where *mu* represents the `arithmetic
+    mean <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of data and *sigma*
+    represented the `standard deviation
+    <https://en.wikipedia.org/wiki/Standard_deviation>`_ of the data.
+
+    If *sigma* is negative, raises :exc:`StatisticsError`.
+
+    .. attribute:: mu
+
+        A read-only attribute representing the mean of the normal distribution.
+
+    .. attribute:: sigma
+
+        A read-only attribute representing the standard deviation of the
+        normal distribution.
+
+    .. attribute:: variance
+
+       A read-only property representing the `variance
+       <https://en.wikipedia.org/wiki/Variance>`_ of the normal
+       distribution. Equal to the square of the standard deviation.
+
+    .. classmethod:: NormalDist.from_samples(data)
+
+       Class method that makes an normal distribution instance
+       from sample data.  The *data* can be any :term:`iterable`
+       and should consist of values that can be converted to type
+       :class:`float` values.
+
+       If *data* does not contain at least two elements, raises
+       :exc:`StatisticsError` because it takes at least one point to estimate
+       a central value and at least two points to estimate dispersion.
+
+    .. method:: NormalDist.samples(n, seed=None)
+
+       Generates *n* random samples for a given mean and standard deviation.
+       Returns a :class:`list` of :class:`float`.
+
+       If *seed* is given, creates a new instance of the underlying random
+       number generator.  This is useful for creating reproducible results,
+       even in a multi-threading context.
+
+    .. method:: NormalDist.pdf(x)
+
+       Using a `probability density function (pdf)
+       <https://en.wikipedia.org/wiki/Probability_density_function>`_,
+       compute the relative likelihood that a random sample *X* will be near
+       the given value *x*.  Mathematically, it is the ratio ``P(x <= X <
+       x+dx) / dx``.
+
+       Note, the relative likelihood of *x* can be greater than `1.0`.  The
+       probability of a specific point on a continuous distribution is `0.0`,
+       so the :func:`pdf` is used instead.  It gives the probability of a
+       sample in a narrow range around *x* and then dividing that probability
+       by the width of the range (hence the word "density").
+
+    .. method:: NormalDist.cdf(x)
+
+       Using a `cumulative distribution function (cdf)
+       <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_,
+       compute probability that a random sample *X* will be less than or equal
+       to *x*.  Mathematically, it is written ``P(X <= x)``.
+
+    Instances of :class:`NormalDist` support addition, subtraction,
+    multiplication and division by a constant.  These operations
+    are used for translation and scaling.  For example::
+
+        >>> temperature_february = NormalDist(5, 2.5)             # Celsius
+        >>> temperature_february * (9/5) + 32                     # Fahrenheit
+        NormalDist(mu=41.0, sigma=4.5)
+
+    Dividing a constant by an instance of :class:`NormalDist` is not supported.
+
+    Since normal distributions arise from additive effects of independent
+    variables, it is possible to `add and subtract two normally distributed
+    random variables
+    <https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables>`_
+    represented as instances of :class:`NormalDist`.  For example::
+
+        >>> birth_weights = NormalDist.from_samples([2.5, 3.1, 2.1, 2.4, 2.7, 3.5])
+        >>> drug_effects = NormalDist(0.4, 0.15)
+        >>> combined = birth_weights + drug_effects
+        >>> f'mu={combined.mu :.1f}   sigma={combined.sigma :.1f}'
+        'mu=3.1   sigma=0.5'
+
+    Instances of :class:`NormalDist` are :term:`immutable` and
+    :term:`hashable`.
+
+
 ..
    # This modelines must appear within the last ten lines of the file.
    kate: indent-width 3; remove-trailing-space on; replace-tabs on; encoding utf-8;
