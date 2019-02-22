@@ -1400,7 +1400,8 @@ Do not instantiate the class directly.
       .. versionchanged:: 3.7
          Prior to Python 3.7 ``Server.sockets`` used to return an
          internal list of server sockets directly.  In 3.7 a copy
-         of that list is returned.
+         of that list is returned. `None` is still returned when
+         the server is closed.
 
 
 .. _asyncio-event-loops:
