@@ -2039,11 +2039,11 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(nd.sigma, 17)
         self.assertEqual(nd.variance, 17**2)
 
-        # default argument
-        nd = statistics.NormalDist(400)
-        self.assertEqual(nd.mu, 400)
-        self.assertEqual(nd.sigma, 0)
-        self.assertEqual(nd.variance, 0**2)
+        # default arguments
+        nd = statistics.NormalDist()
+        self.assertEqual(nd.mu, 0)
+        self.assertEqual(nd.sigma, 1)
+        self.assertEqual(nd.variance, 1**2)
 
         # error case: negative sigma
         with self.assertRaises(statistics.StatisticsError):

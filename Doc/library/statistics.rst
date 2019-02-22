@@ -479,7 +479,7 @@ Normal distributions arise from the `Central Limit Theorem
 <https://en.wikipedia.org/wiki/Central_limit_theorem>`_ and have a wide range
 of applications in statistics, including simulations and hypothesis testing.
 
-.. class:: NormalDist(mu, sigma=0.0)
+.. class:: NormalDist(mu=0.0, sigma=1.0)
 
     Returns a new *NormalDist* object where *mu* represents the `arithmetic
     mean <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of data and *sigma*
