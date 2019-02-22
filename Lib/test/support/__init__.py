@@ -835,6 +835,10 @@ else:
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 
+# Define the URL of a dedicated HTTP server for the network tests.
+# The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
+TEST_HTTP_URL = "http://www.pythontest.net"
+
 # FS_NONASCII: non-ASCII character encodable by os.fsencode(),
 # or None if there is no such character.
 FS_NONASCII = None
