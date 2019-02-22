@@ -322,6 +322,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'stdio_encoding': GET_DEFAULT_CONFIG,
         'stdio_errors': GET_DEFAULT_CONFIG,
 
+        'skip_source_first_line': 0,
+        'run_command': None,
+        'run_module': None,
+        'run_filename': None,
+
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
         '_frozen': 0,

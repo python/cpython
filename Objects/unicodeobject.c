@@ -3507,7 +3507,7 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
 #if defined(__APPLE__)
-    return _PyUnicode_AsUTF8String(unicode, config->filesystem_errors);
+    return _PyUnicode_AsUTF8String(unicode, config->preconfig.filesystem_errors);
 #else
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
        cannot use it to encode and decode filenames before it is loaded. Load
@@ -3516,12 +3516,12 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
        initialized and the Python codec is loaded. See initfsencoding(). */
     if (interp->fscodec_initialized) {
         return PyUnicode_AsEncodedString(unicode,
-                                         config->filesystem_encoding,
-                                         config->filesystem_errors);
+                                         config->preconfig.filesystem_encoding,
+                                         config->preconfig.filesystem_errors);
     }
     else {
         return unicode_encode_locale(unicode,
-                                     config->filesystem_errors, 0);
+                                     config->preconfig.filesystem_errors, 0);
     }
 #endif
 }
@@ -3731,7 +3731,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
 #if defined(__APPLE__)
-    return PyUnicode_DecodeUTF8Stateful(s, size, config->filesystem_errors, NULL);
+    return PyUnicode_DecodeUTF8Stateful(s, size, config->preconfig.filesystem_errors, NULL);
 #else
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
        cannot use it to encode and decode filenames before it is loaded. Load
@@ -3740,12 +3740,12 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
        initialized and the Python codec is loaded. See initfsencoding(). */
     if (interp->fscodec_initialized) {
         return PyUnicode_Decode(s, size,
-                                config->filesystem_encoding,
-                                config->filesystem_errors);
+                                config->preconfig.filesystem_encoding,
+                                config->preconfig.filesystem_errors);
     }
     else {
         return unicode_decode_locale(s, size,
-                                     config->filesystem_errors, 0);
+                                     config->preconfig.filesystem_errors, 0);
     }
 #endif
 }

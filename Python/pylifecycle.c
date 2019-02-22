@@ -5,6 +5,7 @@
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_context.h"
+#include "pycore_coreconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_hamt.h"
 #include "pycore_pathconfig.h"
@@ -261,7 +262,7 @@ initexternalimport(PyInterpreterState *interp)
  */
 
 int
-_Py_LegacyLocaleDetected(void)
+_Py_LegacyLocaleDetected(const char *ctype_locale)
 {
 #ifndef MS_WINDOWS
     /* On non-Windows systems, the C locale is considered a legacy locale */
@@ -269,8 +270,7 @@ _Py_LegacyLocaleDetected(void)
      *                 the POSIX locale as a simple alias for the C locale, so
      *                 we may also want to check for that explicitly.
      */
-    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    return ctype_loc != NULL && strcmp(ctype_loc, "C") == 0;
+    return (ctype_locale != NULL && strcmp(ctype_locale, "C") == 0);
 #else
     /* Windows uses code pages instead of locales, so no locale is legacy */
     return 0;
@@ -286,7 +286,8 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_legacy_locale(const _PyCoreConfig *core_config)
 {
-    if (core_config->coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
+    const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+    if (core_config->preconfig.coerce_c_locale_warn && _Py_LegacyLocaleDetected(ctype_loc)) {
         PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
@@ -479,16 +480,6 @@ _Py_Initialize_ReconfigureCore(PyInterpreterState **interp_p,
     }
     *interp_p = interp;
 
-    /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
-       Py_Initialize() ignores the new configuration. */
-    if (core_config->allocator != NULL) {
-        const char *allocator = _PyMem_GetAllocatorsName();
-        if (allocator == NULL || strcmp(core_config->allocator, allocator) != 0) {
-            return _Py_INIT_USER_ERR("cannot modify memory allocator "
-                                     "after first Py_Initialize()");
-        }
-    }
-
     _PyCoreConfig_SetGlobalConfig(core_config);
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
@@ -518,12 +509,6 @@ pycore_init_runtime(const _PyCoreConfig *core_config)
     _PyInitError err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
         return err;
-    }
-
-    if (core_config->allocator != NULL) {
-        if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
-            return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
-        }
     }
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
@@ -750,25 +735,20 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
 {
     assert(src_config != NULL);
 
-    PyMemAllocatorEx old_alloc;
-    _PyInitError err;
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
 
     /* Copy the configuration, since _PyCoreConfig_Read() modifies it
        (and the input configuration is read only). */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
-
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
-        err = _PyCoreConfig_Read(&config);
-    }
-    else {
+    _PyInitError err;
+    if (_PyCoreConfig_Copy(&config, src_config) < 0) {
         err = _Py_INIT_ERR("failed to copy core config");
+        goto done;
     }
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    err = _PyCoreConfig_Read(&config, NULL);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -781,10 +761,7 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
     }
 
 done:
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     _PyCoreConfig_Clear(&config);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     return err;
 }
 
@@ -959,7 +936,7 @@ Py_InitializeEx(int install_sigs)
     _PyCoreConfig_Clear(&config);
 
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
 }
 
@@ -1431,7 +1408,7 @@ Py_NewInterpreter(void)
     PyThreadState *tstate;
     _PyInitError err = new_interpreter(&tstate);
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
     return tstate;
 
@@ -1551,7 +1528,7 @@ initfsencoding(PyInterpreterState *interp)
 {
     _PyCoreConfig *config = &interp->core_config;
 
-    char *encoding = get_codec_name(config->filesystem_encoding);
+    char *encoding = get_codec_name(config->preconfig.filesystem_encoding);
     if (encoding == NULL) {
         /* Such error can only occurs in critical situations: no more
            memory, import a module of the standard library failed, etc. */
@@ -1562,13 +1539,13 @@ initfsencoding(PyInterpreterState *interp)
     /* Update the filesystem encoding to the normalized Python codec name.
        For example, replace "ANSI_X3.4-1968" (locale encoding) with "ascii"
        (Python codec name). */
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
+    PyMem_RawFree(config->preconfig.filesystem_encoding);
+    config->preconfig.filesystem_encoding = encoding;
 
     /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
        global configuration variables. */
-    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
-                                  config->filesystem_errors) < 0) {
+    if (_Py_SetFileSystemEncoding(config->preconfig.filesystem_encoding,
+                                  config->preconfig.filesystem_errors) < 0) {
         return _Py_INIT_NO_MEMORY();
     }
 
@@ -1770,13 +1747,13 @@ init_sys_streams(PyInterpreterState *interp)
     }
 #endif
 
-    char *codec_name = get_codec_name(config->stdio_encoding);
+    char *codec_name = get_codec_name(config->preconfig.stdio_encoding);
     if (codec_name == NULL) {
         return _Py_INIT_ERR("failed to get the Python codec name "
                             "of the stdio encoding");
     }
-    PyMem_RawFree(config->stdio_encoding);
-    config->stdio_encoding = codec_name;
+    PyMem_RawFree(config->preconfig.stdio_encoding);
+    config->preconfig.stdio_encoding = codec_name;
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
        in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -1815,8 +1792,8 @@ init_sys_streams(PyInterpreterState *interp)
      * GUI apps don't have valid standard streams by default.
      */
     std = create_stdio(config, iomod, fd, 0, "<stdin>",
-                       config->stdio_encoding,
-                       config->stdio_errors);
+                       config->preconfig.stdio_encoding,
+                       config->preconfig.stdio_errors);
     if (std == NULL)
         goto error;
     PySys_SetObject("__stdin__", std);
@@ -1826,8 +1803,8 @@ init_sys_streams(PyInterpreterState *interp)
     /* Set sys.stdout */
     fd = fileno(stdout);
     std = create_stdio(config, iomod, fd, 1, "<stdout>",
-                       config->stdio_encoding,
-                       config->stdio_errors);
+                       config->preconfig.stdio_encoding,
+                       config->preconfig.stdio_errors);
     if (std == NULL)
         goto error;
     PySys_SetObject("__stdout__", std);
@@ -1838,7 +1815,7 @@ init_sys_streams(PyInterpreterState *interp)
     /* Set sys.stderr, replaces the preliminary stderr */
     fd = fileno(stderr);
     std = create_stdio(config, iomod, fd, 1, "<stderr>",
-                       config->stdio_encoding,
+                       config->preconfig.stdio_encoding,
                        "backslashreplace");
     if (std == NULL)
         goto error;
@@ -2072,12 +2049,17 @@ Py_FatalError(const char *msg)
 }
 
 void _Py_NO_RETURN
-_Py_FatalInitError(_PyInitError err)
+_Py_ExitInitError(_PyInitError err)
 {
-    /* On "user" error: exit with status 1.
-       For all other errors, call abort(). */
-    int status = err.user_err ? 1 : -1;
-    fatal_error(err.prefix, err.msg, status);
+    if (err.exitcode >= 0) {
+        exit(err.exitcode);
+    }
+    else {
+        /* On "user" error: exit with status 1.
+           For all other errors, call abort(). */
+        int status = err.user_err ? 1 : -1;
+        fatal_error(err.prefix, err.msg, status);
+    }
 }
 
 /* Clean up and exit */

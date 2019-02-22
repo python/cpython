@@ -13,7 +13,7 @@ PyAPI_FUNC(void) _Py_wstrlist_clear(
     wchar_t **list);
 PyAPI_FUNC(wchar_t**) _Py_wstrlist_copy(
     int len,
-    wchar_t **list);
+    wchar_t * const * list);
 PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
     int *len,
     wchar_t ***list,

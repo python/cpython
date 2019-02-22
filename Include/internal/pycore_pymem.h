@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_MEM_H
-#define Py_INTERNAL_MEM_H
+#ifndef Py_INTERNAL_PYMEM_H
+#define Py_INTERNAL_PYMEM_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -158,4 +158,4 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_MEM_H */
+#endif /* !Py_INTERNAL_PYMEM_H */

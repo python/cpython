@@ -1,17 +1,17 @@
 #include "Python.h"
+#include "osdefs.h"
+#include "pycore_coreconfig.h"
 #include "pycore_fileutils.h"
+#include "pycore_getopt.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pystate.h"
-#include <locale.h>
-#ifdef HAVE_LANGINFO_H
-#  include <langinfo.h>
-#endif
 
-#include <locale.h>     /* setlocale() */
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>   /* nl_langinfo(CODESET) */
+#ifdef MS_WINDOWS
+#  define WCSTOK wcstok_s
+#else
+#  define WCSTOK wcstok
 #endif
 
 
@@ -22,13 +22,6 @@
 
 
 /* Global configuration variables */
-
-/* The filesystem encoding is chosen by config_init_fs_encoding(),
-   see also initfsencoding(). */
-const char *Py_FileSystemDefaultEncoding = NULL;
-int Py_HasFileSystemDefaultEncoding = 0;
-const char *Py_FileSystemDefaultEncodeErrors = NULL;
-static int _Py_HasFileSystemDefaultEncodeErrors = 0;
 
 /* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
    stdin and stdout error handler to "surrogateescape". It is equal to
@@ -53,6 +46,136 @@ int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
+
+
+/* For Py_GetArgcArgv(); set by _Py_SetArgcArgv() */
+static wchar_t **orig_argv = NULL;
+static int orig_argc = 0;
+
+
+void
+_Py_wstrlist_clear(int len, wchar_t **list)
+{
+    for (int i=0; i < len; i++) {
+        PyMem_RawFree(list[i]);
+    }
+    PyMem_RawFree(list);
+}
+
+
+wchar_t**
+_Py_wstrlist_copy(int len, wchar_t * const *list)
+{
+    assert((len > 0 && list != NULL) || len == 0);
+    size_t size = len * sizeof(list[0]);
+    wchar_t **list_copy = PyMem_RawMalloc(size);
+    if (list_copy == NULL) {
+        return NULL;
+    }
+    for (int i=0; i < len; i++) {
+        wchar_t* arg = _PyMem_RawWcsdup(list[i]);
+        if (arg == NULL) {
+            _Py_wstrlist_clear(i, list_copy);
+            return NULL;
+        }
+        list_copy[i] = arg;
+    }
+    return list_copy;
+}
+
+
+_PyInitError
+_Py_wstrlist_append(int *len, wchar_t ***list, const wchar_t *str)
+{
+    if (*len == INT_MAX) {
+        /* len+1 would overflow */
+        return _Py_INIT_NO_MEMORY();
+    }
+    wchar_t *str2 = _PyMem_RawWcsdup(str);
+    if (str2 == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    size_t size = (*len + 1) * sizeof(list[0]);
+    wchar_t **list2 = (wchar_t **)PyMem_RawRealloc(*list, size);
+    if (list2 == NULL) {
+        PyMem_RawFree(str2);
+        return _Py_INIT_NO_MEMORY();
+    }
+    list2[*len] = str2;
+    *list = list2;
+    (*len)++;
+    return _Py_INIT_OK();
+}
+
+
+PyObject*
+_Py_wstrlist_as_pylist(int len, wchar_t **list)
+{
+    assert(list != NULL || len < 1);
+
+    PyObject *pylist = PyList_New(len);
+    if (pylist == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < len; i++) {
+        PyObject *v = PyUnicode_FromWideChar(list[i], -1);
+        if (v == NULL) {
+            Py_DECREF(pylist);
+            return NULL;
+        }
+        PyList_SET_ITEM(pylist, i, v);
+    }
+    return pylist;
+}
+
+
+void
+_Py_ClearArgcArgv(void)
+{
+    /* Force the allocator used by _Py_SetArgcArgv() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    _Py_wstrlist_clear(orig_argc, orig_argv);
+    orig_argc = 0;
+    orig_argv = NULL;
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
+
+static int
+_Py_SetArgcArgv(int argc, wchar_t * const * argv)
+{
+    /* _Py_SetArgcArgv() is only called once */
+    assert(orig_argv == NULL);
+
+    int res = 0;
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    wchar_t **argv_copy = _Py_wstrlist_copy(argc, argv);
+    if (argv_copy == NULL) {
+        res = -1;
+    }
+    orig_argv = argv_copy;
+    orig_argc = argc;
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return res;
+}
+
+
+/* Make the *original* argc/argv available to other modules.
+   This is rare, but it is needed by the secureware extension. */
+void
+Py_GetArgcArgv(int *argc, wchar_t ***argv)
+{
+    *argc = orig_argc;
+    *argv = orig_argv;
+}
 
 
 PyObject *
@@ -127,164 +250,12 @@ fail:
 }
 
 
-void
-_Py_wstrlist_clear(int len, wchar_t **list)
-{
-    for (int i=0; i < len; i++) {
-        PyMem_RawFree(list[i]);
-    }
-    PyMem_RawFree(list);
-}
-
-
-wchar_t**
-_Py_wstrlist_copy(int len, wchar_t **list)
-{
-    assert((len > 0 && list != NULL) || len == 0);
-    size_t size = len * sizeof(list[0]);
-    wchar_t **list_copy = PyMem_RawMalloc(size);
-    if (list_copy == NULL) {
-        return NULL;
-    }
-    for (int i=0; i < len; i++) {
-        wchar_t* arg = _PyMem_RawWcsdup(list[i]);
-        if (arg == NULL) {
-            _Py_wstrlist_clear(i, list_copy);
-            return NULL;
-        }
-        list_copy[i] = arg;
-    }
-    return list_copy;
-}
-
-
-void
-_Py_ClearFileSystemEncoding(void)
-{
-    if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
-        PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
-        Py_FileSystemDefaultEncoding = NULL;
-    }
-    if (!_Py_HasFileSystemDefaultEncodeErrors && Py_FileSystemDefaultEncodeErrors) {
-        PyMem_RawFree((char*)Py_FileSystemDefaultEncodeErrors);
-        Py_FileSystemDefaultEncodeErrors = NULL;
-    }
-}
-
-
-/* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-   global configuration variables. */
-int
-_Py_SetFileSystemEncoding(const char *encoding, const char *errors)
-{
-    char *encoding2 = _PyMem_RawStrdup(encoding);
-    if (encoding2 == NULL) {
-        return -1;
-    }
-
-    char *errors2 = _PyMem_RawStrdup(errors);
-    if (errors2 == NULL) {
-        PyMem_RawFree(encoding2);
-        return -1;
-    }
-
-    _Py_ClearFileSystemEncoding();
-
-    Py_FileSystemDefaultEncoding = encoding2;
-    Py_HasFileSystemDefaultEncoding = 0;
-
-    Py_FileSystemDefaultEncodeErrors = errors2;
-    _Py_HasFileSystemDefaultEncodeErrors = 0;
-    return 0;
-}
-
-
-/* Helper to allow an embedding application to override the normal
- * mechanism that attempts to figure out an appropriate IO encoding
- */
-
-static char *_Py_StandardStreamEncoding = NULL;
-static char *_Py_StandardStreamErrors = NULL;
-
-int
-Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
-{
-    if (Py_IsInitialized()) {
-        /* This is too late to have any effect */
-        return -1;
-    }
-
-    int res = 0;
-
-    /* Py_SetStandardStreamEncoding() can be called before Py_Initialize(),
-       but Py_Initialize() can change the allocator. Use a known allocator
-       to be able to release the memory later. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
-     * initialised yet.
-     *
-     * However, the raw memory allocators are initialised appropriately
-     * as C static variables, so _PyMem_RawStrdup is OK even though
-     * Py_Initialize hasn't been called yet.
-     */
-    if (encoding) {
-        _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
-        if (!_Py_StandardStreamEncoding) {
-            res = -2;
-            goto done;
-        }
-    }
-    if (errors) {
-        _Py_StandardStreamErrors = _PyMem_RawStrdup(errors);
-        if (!_Py_StandardStreamErrors) {
-            if (_Py_StandardStreamEncoding) {
-                PyMem_RawFree(_Py_StandardStreamEncoding);
-            }
-            res = -3;
-            goto done;
-        }
-    }
-#ifdef MS_WINDOWS
-    if (_Py_StandardStreamEncoding) {
-        /* Overriding the stream encoding implies legacy streams */
-        Py_LegacyWindowsStdioFlag = 1;
-    }
-#endif
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    return res;
-}
-
-
-void
-_Py_ClearStandardStreamEncoding(void)
-{
-    /* Use the same allocator than Py_SetStandardStreamEncoding() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* We won't need them anymore. */
-    if (_Py_StandardStreamEncoding) {
-        PyMem_RawFree(_Py_StandardStreamEncoding);
-        _Py_StandardStreamEncoding = NULL;
-    }
-    if (_Py_StandardStreamErrors) {
-        PyMem_RawFree(_Py_StandardStreamErrors);
-        _Py_StandardStreamErrors = NULL;
-    }
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-}
-
-
 /* Free memory allocated in config, but don't clear all attributes */
 void
 _PyCoreConfig_Clear(_PyCoreConfig *config)
 {
+    _PyPreConfig_Clear(&config->preconfig);
+
 #define CLEAR(ATTR) \
     do { \
         PyMem_RawFree(ATTR); \
@@ -320,10 +291,9 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
 #endif
     CLEAR(config->base_exec_prefix);
 
-    CLEAR(config->filesystem_encoding);
-    CLEAR(config->filesystem_errors);
-    CLEAR(config->stdio_encoding);
-    CLEAR(config->stdio_errors);
+    CLEAR(config->run_command);
+    CLEAR(config->run_module);
+    CLEAR(config->run_filename);
 #undef CLEAR
 #undef CLEAR_WSTRLIST
 }
@@ -333,6 +303,10 @@ int
 _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 {
     _PyCoreConfig_Clear(config);
+
+    if (_PyPreConfig_Copy(&config->preconfig, &config2->preconfig) < 0) {
+        return -1;
+    }
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 #define COPY_STR_ATTR(ATTR) \
@@ -365,12 +339,9 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     } while (0)
 
     COPY_ATTR(install_signal_handlers);
-    COPY_ATTR(use_environment);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
     COPY_ATTR(_install_importlib);
-    COPY_ATTR(allocator);
-    COPY_ATTR(dev_mode);
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
@@ -378,10 +349,6 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(show_alloc_count);
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
-
-    COPY_ATTR(coerce_c_locale);
-    COPY_ATTR(coerce_c_locale_warn);
-    COPY_ATTR(utf8_mode);
 
     COPY_WSTR_ATTR(pycache_prefix);
     COPY_WSTR_ATTR(module_search_path_env);
@@ -403,7 +370,6 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 #endif
     COPY_WSTR_ATTR(base_exec_prefix);
 
-    COPY_ATTR(isolated);
     COPY_ATTR(site_import);
     COPY_ATTR(bytes_warning);
     COPY_ATTR(inspect);
@@ -415,14 +381,12 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(quiet);
     COPY_ATTR(user_site_directory);
     COPY_ATTR(buffered_stdio);
-    COPY_STR_ATTR(filesystem_encoding);
-    COPY_STR_ATTR(filesystem_errors);
-    COPY_STR_ATTR(stdio_encoding);
-    COPY_STR_ATTR(stdio_errors);
-#ifdef MS_WINDOWS
-    COPY_ATTR(legacy_windows_fs_encoding);
-    COPY_ATTR(legacy_windows_stdio);
-#endif
+
+    COPY_ATTR(skip_source_first_line);
+    COPY_WSTR_ATTR(run_command);
+    COPY_WSTR_ATTR(run_module);
+    COPY_WSTR_ATTR(run_filename);
+
     COPY_ATTR(_check_hash_pycs_mode);
     COPY_ATTR(_frozen);
 
@@ -437,19 +401,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 const char*
 _PyCoreConfig_GetEnv(const _PyCoreConfig *config, const char *name)
 {
-    assert(config->use_environment >= 0);
-
-    if (!config->use_environment) {
-        return NULL;
-    }
-
-    const char *var = getenv(name);
-    if (var && var[0] != '\0') {
-        return var;
-    }
-    else {
-        return NULL;
-    }
+    return _PyPreConfig_GetEnv(&config->preconfig, name);
 }
 
 
@@ -458,9 +410,9 @@ _PyCoreConfig_GetEnvDup(const _PyCoreConfig *config,
                         wchar_t **dest,
                         wchar_t *wname, char *name)
 {
-    assert(config->use_environment >= 0);
+    assert(config->preconfig.use_environment >= 0);
 
-    if (!config->use_environment) {
+    if (!config->preconfig.use_environment) {
         *dest = NULL;
         return 0;
     }
@@ -513,8 +465,8 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
             config->ATTR = !(VALUE); \
         }
 
-    COPY_FLAG(utf8_mode, Py_UTF8Mode);
-    COPY_FLAG(isolated, Py_IsolatedFlag);
+    _PyPreConfig_GetGlobalConfig(&config->preconfig);
+
     COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
     COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
@@ -522,13 +474,8 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
     COPY_FLAG(parser_debug, Py_DebugFlag);
     COPY_FLAG(verbose, Py_VerboseFlag);
     COPY_FLAG(quiet, Py_QuietFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
     COPY_FLAG(_frozen, Py_FrozenFlag);
 
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
@@ -552,8 +499,8 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
             VAR = !config->ATTR; \
         }
 
-    COPY_FLAG(utf8_mode, Py_UTF8Mode);
-    COPY_FLAG(isolated, Py_IsolatedFlag);
+    _PyPreConfig_SetGlobalConfig(&config->preconfig);
+
     COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
     COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
@@ -561,13 +508,8 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
     COPY_FLAG(parser_debug, Py_DebugFlag);
     COPY_FLAG(verbose, Py_VerboseFlag);
     COPY_FLAG(quiet, Py_QuietFlag);
-#ifdef MS_WINDOWS
-    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
-    COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
-#endif
     COPY_FLAG(_frozen, Py_FrozenFlag);
 
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
@@ -662,6 +604,7 @@ config_init_program_name(_PyCoreConfig *config)
     return _Py_INIT_OK();
 }
 
+
 static _PyInitError
 config_init_executable(_PyCoreConfig *config)
 {
@@ -680,26 +623,11 @@ config_init_executable(_PyCoreConfig *config)
     return _Py_INIT_OK();
 }
 
+
 static const wchar_t*
 config_get_xoption(const _PyCoreConfig *config, wchar_t *name)
 {
-    int nxoption = config->nxoption;
-    wchar_t **xoptions = config->xoptions;
-    for (int i=0; i < nxoption; i++) {
-        wchar_t *option = xoptions[i];
-        size_t len;
-        wchar_t *sep = wcschr(option, L'=');
-        if (sep != NULL) {
-            len = (sep - option);
-        }
-        else {
-            len = wcslen(option);
-        }
-        if (wcsncmp(option, name, len) == 0 && name[len] == L'\0') {
-            return option;
-        }
-    }
-    return NULL;
+    return _Py_GetXOption(config->nxoption, config->xoptions, name);
 }
 
 
@@ -760,49 +688,6 @@ config_init_hash_seed(_PyCoreConfig *config)
 }
 
 
-static _PyInitError
-config_init_utf8_mode(_PyCoreConfig *config)
-{
-    const wchar_t *xopt = config_get_xoption(config, L"utf8");
-    if (xopt) {
-        wchar_t *sep = wcschr(xopt, L'=');
-        if (sep) {
-            xopt = sep + 1;
-            if (wcscmp(xopt, L"1") == 0) {
-                config->utf8_mode = 1;
-            }
-            else if (wcscmp(xopt, L"0") == 0) {
-                config->utf8_mode = 0;
-            }
-            else {
-                return _Py_INIT_USER_ERR("invalid -X utf8 option value");
-            }
-        }
-        else {
-            config->utf8_mode = 1;
-        }
-        return _Py_INIT_OK();
-    }
-
-    const char *opt = _PyCoreConfig_GetEnv(config, "PYTHONUTF8");
-    if (opt) {
-        if (strcmp(opt, "1") == 0) {
-            config->utf8_mode = 1;
-        }
-        else if (strcmp(opt, "0") == 0) {
-            config->utf8_mode = 0;
-        }
-        else {
-            return _Py_INIT_USER_ERR("invalid PYTHONUTF8 environment "
-                                     "variable value");
-        }
-        return _Py_INIT_OK();
-    }
-
-    return _Py_INIT_OK();
-}
-
-
 static int
 config_str_to_int(const char *str, int *result)
 {
@@ -840,9 +725,9 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
 
 
 static void
-get_env_flag(_PyCoreConfig *config, int *flag, const char *name)
+get_env_flag(_PyPreConfig *config, int *flag, const char *name)
 {
-    const char *var = _PyCoreConfig_GetEnv(config, name);
+    const char *var = _PyPreConfig_GetEnv(config, name);
     if (!var) {
         return;
     }
@@ -860,39 +745,30 @@ get_env_flag(_PyCoreConfig *config, int *flag, const char *name)
 static _PyInitError
 config_read_env_vars(_PyCoreConfig *config)
 {
+    _PyPreConfig *preconfig = &config->preconfig;
+
     /* Get environment variables */
-    get_env_flag(config, &config->parser_debug, "PYTHONDEBUG");
-    get_env_flag(config, &config->verbose, "PYTHONVERBOSE");
-    get_env_flag(config, &config->optimization_level, "PYTHONOPTIMIZE");
-    get_env_flag(config, &config->inspect, "PYTHONINSPECT");
+    get_env_flag(preconfig, &config->parser_debug, "PYTHONDEBUG");
+    get_env_flag(preconfig, &config->verbose, "PYTHONVERBOSE");
+    get_env_flag(preconfig, &config->optimization_level, "PYTHONOPTIMIZE");
+    get_env_flag(preconfig, &config->inspect, "PYTHONINSPECT");
 
     int dont_write_bytecode = 0;
-    get_env_flag(config, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
+    get_env_flag(preconfig, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
     if (dont_write_bytecode) {
         config->write_bytecode = 0;
     }
 
     int no_user_site_directory = 0;
-    get_env_flag(config, &no_user_site_directory, "PYTHONNOUSERSITE");
+    get_env_flag(preconfig, &no_user_site_directory, "PYTHONNOUSERSITE");
     if (no_user_site_directory) {
         config->user_site_directory = 0;
     }
 
     int unbuffered_stdio = 0;
-    get_env_flag(config, &unbuffered_stdio, "PYTHONUNBUFFERED");
+    get_env_flag(preconfig, &unbuffered_stdio, "PYTHONUNBUFFERED");
     if (unbuffered_stdio) {
         config->buffered_stdio = 0;
-    }
-
-#ifdef MS_WINDOWS
-    get_env_flag(config, &config->legacy_windows_fs_encoding,
-                 "PYTHONLEGACYWINDOWSFSENCODING");
-    get_env_flag(config, &config->legacy_windows_stdio,
-                 "PYTHONLEGACYWINDOWSSTDIO");
-#endif
-
-    if (config->allocator == NULL) {
-        config->allocator = _PyCoreConfig_GetEnv(config, "PYTHONMALLOC");
     }
 
     if (_PyCoreConfig_GetEnv(config, "PYTHONDUMPREFS")) {
@@ -900,23 +776,6 @@ config_read_env_vars(_PyCoreConfig *config)
     }
     if (_PyCoreConfig_GetEnv(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
-    }
-
-    const char *env = _PyCoreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
-    if (env) {
-        if (strcmp(env, "0") == 0) {
-            if (config->coerce_c_locale < 0) {
-                config->coerce_c_locale = 0;
-            }
-        }
-        else if (strcmp(env, "warn") == 0) {
-            config->coerce_c_locale_warn = 1;
-        }
-        else {
-            if (config->coerce_c_locale < 0) {
-                config->coerce_c_locale = 1;
-            }
-        }
     }
 
     wchar_t *path;
@@ -1034,11 +893,6 @@ config_read_complex_options(_PyCoreConfig *config)
        || config_get_xoption(config, L"importtime")) {
         config->import_time = 1;
     }
-    if (config_get_xoption(config, L"dev" ) ||
-        _PyCoreConfig_GetEnv(config, "PYTHONDEVMODE"))
-    {
-        config->dev_mode = 1;
-    }
 
     _PyInitError err;
     if (config->tracemalloc < 0) {
@@ -1058,269 +912,6 @@ config_read_complex_options(_PyCoreConfig *config)
 }
 
 
-static void
-config_init_locale(_PyCoreConfig *config)
-{
-    /* Test also if coerce_c_locale equals 1: PYTHONCOERCECLOCALE=1 doesn't
-       imply that the C locale is always coerced. It is only coerced if
-       if the LC_CTYPE locale is "C". */
-    if (config->coerce_c_locale != 0) {
-        /* The C locale enables the C locale coercion (PEP 538) */
-        if (_Py_LegacyLocaleDetected()) {
-            config->coerce_c_locale = 1;
-        }
-        else {
-            config->coerce_c_locale = 0;
-        }
-    }
-
-#ifndef MS_WINDOWS
-    if (config->utf8_mode < 0) {
-        /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
-        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-        if (ctype_loc != NULL
-           && (strcmp(ctype_loc, "C") == 0
-               || strcmp(ctype_loc, "POSIX") == 0))
-        {
-            config->utf8_mode = 1;
-        }
-    }
-#endif
-}
-
-
-static const char *
-get_stdio_errors(const _PyCoreConfig *config)
-{
-#ifndef MS_WINDOWS
-    const char *loc = setlocale(LC_CTYPE, NULL);
-    if (loc != NULL) {
-        /* surrogateescape is the default in the legacy C and POSIX locales */
-        if (strcmp(loc, "C") == 0 || strcmp(loc, "POSIX") == 0) {
-            return "surrogateescape";
-        }
-
-#ifdef PY_COERCE_C_LOCALE
-        /* surrogateescape is the default in locale coercion target locales */
-        if (_Py_IsLocaleCoercionTarget(loc)) {
-            return "surrogateescape";
-        }
-#endif
-    }
-
-    return "strict";
-#else
-    /* On Windows, always use surrogateescape by default */
-    return "surrogateescape";
-#endif
-}
-
-
-static _PyInitError
-get_locale_encoding(char **locale_encoding)
-{
-#ifdef MS_WINDOWS
-    char encoding[20];
-    PyOS_snprintf(encoding, sizeof(encoding), "cp%d", GetACP());
-#elif defined(__ANDROID__)
-    const char *encoding = "UTF-8";
-#else
-    const char *encoding = nl_langinfo(CODESET);
-    if (!encoding || encoding[0] == '\0') {
-        return _Py_INIT_USER_ERR("failed to get the locale encoding: "
-                                 "nl_langinfo(CODESET) failed");
-    }
-#endif
-    *locale_encoding = _PyMem_RawStrdup(encoding);
-    if (*locale_encoding == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
-}
-
-
-static _PyInitError
-config_init_stdio_encoding(_PyCoreConfig *config)
-{
-    /* If Py_SetStandardStreamEncoding() have been called, use these
-        parameters. */
-    if (config->stdio_encoding == NULL && _Py_StandardStreamEncoding != NULL) {
-        config->stdio_encoding = _PyMem_RawStrdup(_Py_StandardStreamEncoding);
-        if (config->stdio_encoding == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (config->stdio_errors == NULL && _Py_StandardStreamErrors != NULL) {
-        config->stdio_errors = _PyMem_RawStrdup(_Py_StandardStreamErrors);
-        if (config->stdio_errors == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (config->stdio_encoding != NULL && config->stdio_errors != NULL) {
-        return _Py_INIT_OK();
-    }
-
-    /* PYTHONIOENCODING environment variable */
-    const char *opt = _PyCoreConfig_GetEnv(config, "PYTHONIOENCODING");
-    if (opt) {
-        char *pythonioencoding = _PyMem_RawStrdup(opt);
-        if (pythonioencoding == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-
-        char *err = strchr(pythonioencoding, ':');
-        if (err) {
-            *err = '\0';
-            err++;
-            if (!err[0]) {
-                err = NULL;
-            }
-        }
-
-        /* Does PYTHONIOENCODING contain an encoding? */
-        if (pythonioencoding[0]) {
-            if (config->stdio_encoding == NULL) {
-                config->stdio_encoding = _PyMem_RawStrdup(pythonioencoding);
-                if (config->stdio_encoding == NULL) {
-                    PyMem_RawFree(pythonioencoding);
-                    return _Py_INIT_NO_MEMORY();
-                }
-            }
-
-            /* If the encoding is set but not the error handler,
-               use "strict" error handler by default.
-               PYTHONIOENCODING=latin1 behaves as
-               PYTHONIOENCODING=latin1:strict. */
-            if (!err) {
-                err = "strict";
-            }
-        }
-
-        if (config->stdio_errors == NULL && err != NULL) {
-            config->stdio_errors = _PyMem_RawStrdup(err);
-            if (config->stdio_errors == NULL) {
-                PyMem_RawFree(pythonioencoding);
-                return _Py_INIT_NO_MEMORY();
-            }
-        }
-
-        PyMem_RawFree(pythonioencoding);
-    }
-
-    /* UTF-8 Mode uses UTF-8/surrogateescape */
-    if (config->utf8_mode) {
-        if (config->stdio_encoding == NULL) {
-            config->stdio_encoding = _PyMem_RawStrdup("utf-8");
-            if (config->stdio_encoding == NULL) {
-                return _Py_INIT_NO_MEMORY();
-            }
-        }
-        if (config->stdio_errors == NULL) {
-            config->stdio_errors = _PyMem_RawStrdup("surrogateescape");
-            if (config->stdio_errors == NULL) {
-                return _Py_INIT_NO_MEMORY();
-            }
-        }
-    }
-
-    /* Choose the default error handler based on the current locale. */
-    if (config->stdio_encoding == NULL) {
-        _PyInitError err = get_locale_encoding(&config->stdio_encoding);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
-    if (config->stdio_errors == NULL) {
-        const char *errors = get_stdio_errors(config);
-        config->stdio_errors = _PyMem_RawStrdup(errors);
-        if (config->stdio_errors == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    return _Py_INIT_OK();
-}
-
-
-static _PyInitError
-config_init_fs_encoding(_PyCoreConfig *config)
-{
-#ifdef MS_WINDOWS
-    if (config->legacy_windows_fs_encoding) {
-        /* Legacy Windows filesystem encoding: mbcs/replace */
-        if (config->filesystem_encoding == NULL) {
-            config->filesystem_encoding = _PyMem_RawStrdup("mbcs");
-            if (config->filesystem_encoding == NULL) {
-                return _Py_INIT_NO_MEMORY();
-            }
-        }
-        if (config->filesystem_errors == NULL) {
-            config->filesystem_errors = _PyMem_RawStrdup("replace");
-            if (config->filesystem_errors == NULL) {
-                return _Py_INIT_NO_MEMORY();
-            }
-        }
-    }
-
-    /* Windows defaults to utf-8/surrogatepass (PEP 529).
-
-       Note: UTF-8 Mode takes the same code path and the Legacy Windows FS
-             encoding has the priortiy over UTF-8 Mode. */
-    if (config->filesystem_encoding == NULL) {
-        config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
-        if (config->filesystem_encoding == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (config->filesystem_errors == NULL) {
-        config->filesystem_errors = _PyMem_RawStrdup("surrogatepass");
-        if (config->filesystem_errors == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-#else
-    if (config->filesystem_encoding == NULL) {
-        if (config->utf8_mode) {
-            /* UTF-8 Mode use: utf-8/surrogateescape */
-            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
-            /* errors defaults to surrogateescape above */
-        }
-        else if (_Py_GetForceASCII()) {
-            config->filesystem_encoding = _PyMem_RawStrdup("ascii");
-        }
-        else {
-            /* macOS and Android use UTF-8,
-               other platforms use the locale encoding. */
-#if defined(__APPLE__) || defined(__ANDROID__)
-            config->filesystem_encoding = _PyMem_RawStrdup("utf-8");
-#else
-            _PyInitError err = get_locale_encoding(&config->filesystem_encoding);
-            if (_Py_INIT_FAILED(err)) {
-                return err;
-            }
-#endif
-        }
-
-        if (config->filesystem_encoding == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-    if (config->filesystem_errors == NULL) {
-        /* by default, use the "surrogateescape" error handler */
-        config->filesystem_errors = _PyMem_RawStrdup("surrogateescape");
-        if (config->filesystem_errors == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-#endif
-    return _Py_INIT_OK();
-}
-
-
 /* Read configuration settings from standard locations
  *
  * This function doesn't make any changes to the interpreter state - it
@@ -1333,26 +924,59 @@ config_init_fs_encoding(_PyCoreConfig *config)
  * this function multiple times with various preconfigured settings.
  */
 
+static _PyInitError
+_PyCoreConfig_ReadPreConfig(_PyCoreConfig *config)
+{
+    _PyInitError err;
+    _PyPreConfig local_preconfig = _PyPreConfig_INIT;
+    _PyPreConfig_GetGlobalConfig(&local_preconfig);
+
+    if (_PyPreConfig_Copy(&local_preconfig, &config->preconfig) < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    err = _PyPreConfig_Read(&local_preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    if (_PyPreConfig_Copy(&config->preconfig, &local_preconfig) < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+    err = _Py_INIT_OK();
+
+done:
+    _PyPreConfig_Clear(&local_preconfig);
+    return err;
+}
+
 _PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config)
+_PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
 {
     _PyInitError err;
 
     _PyCoreConfig_GetGlobalConfig(config);
-    assert(config->use_environment >= 0);
 
-    if (config->isolated > 0) {
-        config->use_environment = 0;
+    if (preconfig) {
+        if (_PyPreConfig_Copy(&config->preconfig, preconfig) < 0) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+    else {
+        err = _PyCoreConfig_ReadPreConfig(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+
+    if (config->preconfig.isolated > 0) {
         config->user_site_directory = 0;
     }
 
-#ifdef MS_WINDOWS
-    if (config->legacy_windows_fs_encoding) {
-        config->utf8_mode = 0;
-    }
-#endif
-
-    if (config->use_environment) {
+    if (config->preconfig.use_environment) {
         err = config_read_env_vars(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -1370,13 +994,6 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     err = config_read_complex_options(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
-    }
-
-    if (config->utf8_mode < 0) {
-        err = config_init_utf8_mode(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
     }
 
     if (config->home == NULL) {
@@ -1400,10 +1017,6 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
-    if (config->coerce_c_locale != 0 || config->utf8_mode < 0) {
-        config_init_locale(config);
-    }
-
     if (config->_install_importlib) {
         err = _PyCoreConfig_InitPathConfig(config);
         if (_Py_INIT_FAILED(err)) {
@@ -1412,12 +1025,9 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 
     /* default values */
-    if (config->dev_mode) {
+    if (config->preconfig.dev_mode) {
         if (config->faulthandler < 0) {
             config->faulthandler = 1;
-        }
-        if (config->allocator == NULL) {
-            config->allocator = "debug";
         }
     }
     if (config->use_hash_seed < 0) {
@@ -1430,55 +1040,21 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
     }
-    if (config->coerce_c_locale < 0) {
-        config->coerce_c_locale = 0;
-    }
-    if (config->utf8_mode < 0) {
-        config->utf8_mode = 0;
-    }
     if (config->argc < 0) {
         config->argc = 0;
     }
 
-    if (config->filesystem_encoding == NULL || config->filesystem_errors == NULL) {
-        err = config_init_fs_encoding(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
-
-    err = config_init_stdio_encoding(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    assert(config->coerce_c_locale >= 0);
-    assert(config->use_environment >= 0);
-    assert(config->filesystem_encoding != NULL);
-    assert(config->filesystem_errors != NULL);
-    assert(config->stdio_encoding != NULL);
-    assert(config->stdio_errors != NULL);
     assert(config->_check_hash_pycs_mode != NULL);
 
     return _Py_INIT_OK();
 }
 
 
-PyObject *
-_PyCoreConfig_AsDict(const _PyCoreConfig *config)
-{
-    PyObject *dict, *obj;
-
-    dict = PyDict_New();
-    if (dict == NULL) {
-        return NULL;
-    }
-
 #define SET_ITEM(KEY, EXPR) \
         do { \
-            obj = (EXPR); \
+            PyObject *obj = (EXPR); \
             if (obj == NULL) { \
-                return NULL; \
+                goto fail; \
             } \
             int res = PyDict_SetItemString(dict, (KEY), obj); \
             Py_DECREF(obj); \
@@ -1505,12 +1081,49 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
 #define SET_ITEM_WSTRLIST(NOPTION, OPTIONS) \
     SET_ITEM(#OPTIONS, _Py_wstrlist_as_pylist(config->NOPTION, config->OPTIONS))
 
-    SET_ITEM_INT(install_signal_handlers);
-    SET_ITEM_INT(use_environment);
-    SET_ITEM_INT(use_hash_seed);
-    SET_ITEM_UINT(hash_seed);
+static int
+_PyPreConfig_AsDict(const _PyPreConfig *config, PyObject *dict)
+{
     SET_ITEM_STR(allocator);
     SET_ITEM_INT(dev_mode);
+    SET_ITEM_INT(use_environment);
+    SET_ITEM_INT(isolated);
+    SET_ITEM_INT(utf8_mode);
+    SET_ITEM_INT(coerce_c_locale);
+    SET_ITEM_INT(coerce_c_locale_warn);
+    SET_ITEM_STR(filesystem_encoding);
+    SET_ITEM_STR(filesystem_errors);
+    SET_ITEM_STR(stdio_encoding);
+    SET_ITEM_STR(stdio_errors);
+#ifdef MS_WINDOWS
+    SET_ITEM_INT(legacy_windows_fs_encoding);
+    SET_ITEM_INT(legacy_windows_stdio);
+#endif
+    return 0;
+
+fail:
+    return -1;
+}
+
+
+PyObject *
+_PyCoreConfig_AsDict(const _PyCoreConfig *config)
+{
+    PyObject *dict;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    if (_PyPreConfig_AsDict(&config->preconfig, dict) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+
+    SET_ITEM_INT(install_signal_handlers);
+    SET_ITEM_INT(use_hash_seed);
+    SET_ITEM_UINT(hash_seed);
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
@@ -1518,11 +1131,6 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(show_alloc_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
-    SET_ITEM_INT(coerce_c_locale);
-    SET_ITEM_INT(coerce_c_locale_warn);
-    SET_ITEM_STR(filesystem_encoding);
-    SET_ITEM_STR(filesystem_errors);
-    SET_ITEM_INT(utf8_mode);
     SET_ITEM_WSTR(pycache_prefix);
     SET_ITEM_WSTR(program_name);
     SET_ITEM_WSTRLIST(argc, argv);
@@ -1540,7 +1148,6 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
 #ifdef MS_WINDOWS
     SET_ITEM_WSTR(dll_path);
 #endif
-    SET_ITEM_INT(isolated);
     SET_ITEM_INT(site_import);
     SET_ITEM_INT(bytes_warning);
     SET_ITEM_INT(inspect);
@@ -1552,12 +1159,10 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(quiet);
     SET_ITEM_INT(user_site_directory);
     SET_ITEM_INT(buffered_stdio);
-    SET_ITEM_STR(stdio_encoding);
-    SET_ITEM_STR(stdio_errors);
-#ifdef MS_WINDOWS
-    SET_ITEM_INT(legacy_windows_fs_encoding);
-    SET_ITEM_INT(legacy_windows_stdio);
-#endif
+    SET_ITEM_INT(skip_source_first_line);
+    SET_ITEM_WSTR(run_command);
+    SET_ITEM_WSTR(run_module);
+    SET_ITEM_WSTR(run_filename);
     SET_ITEM_INT(_install_importlib);
     SET_ITEM_STR(_check_hash_pycs_mode);
     SET_ITEM_INT(_frozen);
@@ -1567,6 +1172,7 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
 fail:
     Py_DECREF(dict);
     return NULL;
+}
 
 #undef FROM_STRING
 #undef FROM_WSTRING
@@ -1576,4 +1182,591 @@ fail:
 #undef SET_ITEM_STR
 #undef SET_ITEM_WSTR
 #undef SET_ITEM_WSTRLIST
+
+
+typedef struct {
+    int argc;
+    wchar_t **argv;
+    int nwarnoption;             /* Number of -W command line options */
+    wchar_t **warnoptions;       /* Command line -W options */
+    int nenv_warnoption;         /* Number of PYTHONWARNINGS environment variables */
+    wchar_t **env_warnoptions;   /* PYTHONWARNINGS environment variables */
+    int print_help;              /* -h, -? options */
+    int print_version;           /* -V option */
+} _PyCmdline;
+
+
+static void
+cmdline_clear(_PyCmdline *cmdline)
+{
+    _Py_wstrlist_clear(cmdline->argc, cmdline->argv);
+    cmdline->argc = 0;
+    cmdline->argv = NULL;
+
+    _Py_wstrlist_clear(cmdline->nwarnoption, cmdline->warnoptions);
+    cmdline->nwarnoption = 0;
+    cmdline->warnoptions = NULL;
+
+    _Py_wstrlist_clear(cmdline->nenv_warnoption, cmdline->env_warnoptions);
+    cmdline->nenv_warnoption = 0;
+    cmdline->env_warnoptions = NULL;
+}
+
+
+#if defined(MS_WINDOWS)
+#  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
+#else
+#  define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
+#endif
+
+/* Short usage message (with %s for argv0) */
+static const char usage_line[] =
+"usage: %ls [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
+
+/* Long usage message, split into parts < 512 bytes */
+static const char usage_1[] = "\
+Options and arguments (and corresponding environment variables):\n\
+-b     : issue warnings about str(bytes_instance), str(bytearray_instance)\n\
+         and comparing bytes/bytearray with str. (-bb: issue errors)\n\
+-B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
+-c cmd : program passed in as string (terminates option list)\n\
+-d     : debug output from parser; also PYTHONDEBUG=x\n\
+-E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
+-h     : print this help message and exit (also --help)\n\
+";
+static const char usage_2[] = "\
+-i     : inspect interactively after running script; forces a prompt even\n\
+         if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
+-I     : isolate Python from the user's environment (implies -E and -s)\n\
+-m mod : run library module as a script (terminates option list)\n\
+-O     : remove assert and __debug__-dependent statements; add .opt-1 before\n\
+         .pyc extension; also PYTHONOPTIMIZE=x\n\
+-OO    : do -O changes and also discard docstrings; add .opt-2 before\n\
+         .pyc extension\n\
+-q     : don't print version and copyright messages on interactive startup\n\
+-s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
+-S     : don't imply 'import site' on initialization\n\
+";
+static const char usage_3[] = "\
+-u     : force the stdout and stderr streams to be unbuffered;\n\
+         this option has no effect on stdin; also PYTHONUNBUFFERED=x\n\
+-v     : verbose (trace import statements); also PYTHONVERBOSE=x\n\
+         can be supplied multiple times to increase verbosity\n\
+-V     : print the Python version number and exit (also --version)\n\
+         when given twice, print more information about the build\n\
+-W arg : warning control; arg is action:message:category:module:lineno\n\
+         also PYTHONWARNINGS=arg\n\
+-x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
+-X opt : set implementation-specific option\n\
+--check-hash-based-pycs always|default|never:\n\
+    control how Python invalidates hash-based .pyc files\n\
+";
+static const char usage_4[] = "\
+file   : program read from script file\n\
+-      : program read from stdin (default; interactive mode if a tty)\n\
+arg ...: arguments passed to program in sys.argv[1:]\n\n\
+Other environment variables:\n\
+PYTHONSTARTUP: file executed on interactive startup (no default)\n\
+PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
+               default module search path.  The result is sys.path.\n\
+";
+static const char usage_5[] =
+"PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
+"               The default module search path uses %s.\n"
+"PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
+"PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
+"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
+static const char usage_6[] =
+"PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
+"   to seed the hashes of str, bytes and datetime objects.  It can also be\n"
+"   set to an integer in the range [0,4294967295] to get hash values with a\n"
+"   predictable seed.\n"
+"PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
+"   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
+"   hooks.\n"
+"PYTHONCOERCECLOCALE: if this variable is set to 0, it disables the locale\n"
+"   coercion behavior. Use PYTHONCOERCECLOCALE=warn to request display of\n"
+"   locale coercion and locale compatibility warnings on stderr.\n"
+"PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
+"   debugger. It can be set to the callable of your debugger of choice.\n"
+"PYTHONDEVMODE: enable the development mode.\n"
+"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n";
+
+
+static void
+python_cmdline_usage(const wchar_t* program, int error)
+{
+    FILE *f = error ? stderr : stdout;
+
+    fprintf(f, usage_line, program);
+    if (error)
+        fprintf(f, "Try `python -h' for more information.\n");
+    else {
+        fputs(usage_1, f);
+        fputs(usage_2, f);
+        fputs(usage_3, f);
+        fprintf(f, usage_4, (wint_t)DELIM);
+        fprintf(f, usage_5, (wint_t)DELIM, PYTHONHOMEHELP);
+        fputs(usage_6, f);
+    }
+}
+
+
+/* Parse the command line arguments. */
+static _PyInitError
+config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline, int *need_usage)
+{
+    _PyInitError err;
+    _PyOS_ResetGetOpt();
+    do {
+        int longindex = -1;
+        int c = _PyOS_GetOpt(cmdline->argc, cmdline->argv, &longindex);
+        if (c == EOF) {
+            break;
+        }
+
+        if (c == 'c') {
+            /* -c is the last option; following arguments
+               that look like options are left for the
+               command to interpret. */
+            size_t len = wcslen(_PyOS_optarg) + 1 + 1;
+            wchar_t *command = PyMem_RawMalloc(sizeof(wchar_t) * len);
+            if (command == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+            memcpy(command, _PyOS_optarg, (len - 2) * sizeof(wchar_t));
+            command[len - 2] = '\n';
+            command[len - 1] = 0;
+            config->run_command = command;
+            break;
+        }
+
+        if (c == 'm') {
+            /* -m is the last option; following arguments
+               that look like options are left for the
+               module to interpret. */
+            config->run_module = _PyMem_RawWcsdup(_PyOS_optarg);
+            if (config->run_module == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+            break;
+        }
+
+        switch (c) {
+        case 0:
+            // Handle long option.
+            assert(longindex == 0); // Only one long option now.
+            if (!wcscmp(_PyOS_optarg, L"always")) {
+                config->_check_hash_pycs_mode = "always";
+            } else if (!wcscmp(_PyOS_optarg, L"never")) {
+                config->_check_hash_pycs_mode = "never";
+            } else if (!wcscmp(_PyOS_optarg, L"default")) {
+                config->_check_hash_pycs_mode = "default";
+            } else {
+                fprintf(stderr, "--check-hash-based-pycs must be one of "
+                        "'default', 'always', or 'never'\n");
+                *need_usage = 1;
+                return _Py_INIT_OK();
+            }
+            break;
+
+        case 'I':
+        case 'E':
+            /* arguments parsed by preconfig_parse_cmdline() */
+            break;
+
+        case 'b':
+            config->bytes_warning++;
+            break;
+
+        case 'd':
+            config->parser_debug++;
+            break;
+
+        case 'i':
+            config->inspect++;
+            config->interactive++;
+            break;
+
+        /* case 'J': reserved for Jython */
+
+        case 'O':
+            config->optimization_level++;
+            break;
+
+        case 'B':
+            config->write_bytecode = 0;
+            break;
+
+        case 's':
+            config->user_site_directory = 0;
+            break;
+
+        case 'S':
+            config->site_import = 0;
+            break;
+
+        case 't':
+            /* ignored for backwards compatibility */
+            break;
+
+        case 'u':
+            config->buffered_stdio = 0;
+            break;
+
+        case 'v':
+            config->verbose++;
+            break;
+
+        case 'x':
+            config->skip_source_first_line = 1;
+            break;
+
+        case 'h':
+        case '?':
+            cmdline->print_help++;
+            break;
+
+        case 'V':
+            cmdline->print_version++;
+            break;
+
+        case 'W':
+            err = _Py_wstrlist_append(&cmdline->nwarnoption,
+                                      &cmdline->warnoptions,
+                                      _PyOS_optarg);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+            break;
+
+        case 'X':
+            err = _Py_wstrlist_append(&config->nxoption,
+                                      &config->xoptions,
+                                      _PyOS_optarg);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+            break;
+
+        case 'q':
+            config->quiet++;
+            break;
+
+        case 'R':
+            config->use_hash_seed = 0;
+            break;
+
+        /* This space reserved for other options */
+
+        default:
+            /* unknown argument: parsing failed */
+            *need_usage = 1;
+            return _Py_INIT_OK();
+        }
+    } while (1);
+
+    if (config->run_command == NULL && config->run_module == NULL
+        && _PyOS_optind < cmdline->argc
+        && wcscmp(cmdline->argv[_PyOS_optind], L"-") != 0)
+    {
+        config->run_filename = _PyMem_RawWcsdup(cmdline->argv[_PyOS_optind]);
+        if (config->run_filename == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->run_command != NULL || config->run_module != NULL) {
+        /* Backup _PyOS_optind */
+        _PyOS_optind--;
+    }
+
+    /* -c and -m options are exclusive */
+    assert(!(config->run_command != NULL && config->run_module != NULL));
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_init_argv(_PyCoreConfig *config, _PyCmdline *cmdline)
+{
+    /* Copy argv to be able to modify it (to force -c/-m) */
+    int argc = cmdline->argc - _PyOS_optind;
+    wchar_t **argv;
+
+    if (argc <= 0 || cmdline->argv == NULL) {
+        /* Ensure at least one (empty) argument is seen */
+        static wchar_t *empty_argv[1] = {L""};
+        argc = 1;
+        argv = _Py_wstrlist_copy(1, empty_argv);
+    }
+    else {
+        argv = _Py_wstrlist_copy(argc, &cmdline->argv[_PyOS_optind]);
+    }
+
+    if (argv == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    wchar_t *arg0 = NULL;
+    if (config->run_command != NULL) {
+        /* Force sys.argv[0] = '-c' */
+        arg0 = L"-c";
+    }
+    else if (config->run_module != NULL) {
+        /* Force sys.argv[0] = '-m'*/
+        arg0 = L"-m";
+    }
+    if (arg0 != NULL) {
+        arg0 = _PyMem_RawWcsdup(arg0);
+        if (arg0 == NULL) {
+            _Py_wstrlist_clear(argc, argv);
+            return _Py_INIT_NO_MEMORY();
+        }
+
+        assert(argc >= 1);
+        PyMem_RawFree(argv[0]);
+        argv[0] = arg0;
+    }
+
+    config->argc = argc;
+    config->argv = argv;
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_init_program(_PyCoreConfig *config, _PyCmdline *cmdline)
+{
+    const wchar_t *program = _Py_GetProgramFromArgv(cmdline->argc, cmdline->argv);
+    config->program = _PyMem_RawWcsdup(program);
+    if (config->program == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    return _Py_INIT_OK();
+}
+
+
+/* Get warning options from PYTHONWARNINGS environment variable.
+   Return 0 on success.
+   Set pymain->err and return -1 on error. */
+static _PyInitError
+cmdline_init_env_warnoptions(const _PyCoreConfig *config, _PyCmdline *cmdline)
+{
+    wchar_t *env;
+    int res = _PyCoreConfig_GetEnvDup(config, &env,
+                                      L"PYTHONWARNINGS", "PYTHONWARNINGS");
+    if (res < 0) {
+        return DECODE_LOCALE_ERR("PYTHONWARNINGS", res);
+    }
+
+    if (env == NULL) {
+        return _Py_INIT_OK();
+    }
+
+
+    wchar_t *warning, *context = NULL;
+    for (warning = WCSTOK(env, L",", &context);
+         warning != NULL;
+         warning = WCSTOK(NULL, L",", &context))
+    {
+        _PyInitError err = _Py_wstrlist_append(&cmdline->nenv_warnoption,
+                                               &cmdline->env_warnoptions,
+                                               warning);
+        if (_Py_INIT_FAILED(err)) {
+            PyMem_RawFree(env);
+            return err;
+        }
+    }
+    PyMem_RawFree(env);
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_add_warnings_optlist(_PyCoreConfig *config, int len, wchar_t **options)
+{
+    for (int i = 0; i < len; i++) {
+        _PyInitError err = _Py_wstrlist_append(&config->nwarnoption,
+                                               &config->warnoptions,
+                                               options[i]);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_init_warnoptions(_PyCoreConfig *config, _PyCmdline *cmdline)
+{
+    _PyInitError err;
+
+    assert(config->nwarnoption == 0);
+
+    /* The priority order for warnings configuration is (highest precedence
+     * first):
+     *
+     * - the BytesWarning filter, if needed ('-b', '-bb')
+     * - any '-W' command line options; then
+     * - the 'PYTHONWARNINGS' environment variable; then
+     * - the dev mode filter ('-X dev', 'PYTHONDEVMODE'); then
+     * - any implicit filters added by _warnings.c/warnings.py
+     *
+     * All settings except the last are passed to the warnings module via
+     * the `sys.warnoptions` list. Since the warnings module works on the basis
+     * of "the most recently added filter will be checked first", we add
+     * the lowest precedence entries first so that later entries override them.
+     */
+
+    if (config->preconfig.dev_mode) {
+        err = _Py_wstrlist_append(&config->nwarnoption,
+                                  &config->warnoptions,
+                                  L"default");
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    err = config_add_warnings_optlist(config,
+                                      cmdline->nenv_warnoption,
+                                      cmdline->env_warnoptions);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = config_add_warnings_optlist(config,
+                                      cmdline->nwarnoption,
+                                      cmdline->warnoptions);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    /* If the bytes_warning_flag isn't set, bytesobject.c and bytearrayobject.c
+     * don't even try to emit a warning, so we skip setting the filter in that
+     * case.
+     */
+    if (config->bytes_warning) {
+        wchar_t *filter;
+        if (config->bytes_warning> 1) {
+            filter = L"error::BytesWarning";
+        }
+        else {
+            filter = L"default::BytesWarning";
+        }
+        err = _Py_wstrlist_append(&config->nwarnoption,
+                                  &config->warnoptions,
+                                  filter);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
+                    const _PyPreConfig *preconfig)
+{
+    _PyInitError err;
+
+    int need_usage = 0;
+    err = config_parse_cmdline(config, cmdline, &need_usage);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    if (need_usage) {
+        const wchar_t *program = _Py_GetProgramFromArgv(cmdline->argc, cmdline->argv);
+        python_cmdline_usage(program, 1);
+        return _Py_INIT_EXIT(2);
+    }
+
+    if (cmdline->print_help) {
+        const wchar_t *program = _Py_GetProgramFromArgv(cmdline->argc, cmdline->argv);
+        python_cmdline_usage(program, 0);
+        return _Py_INIT_EXIT(0);
+    }
+
+    if (cmdline->print_version) {
+        printf("Python %s\n",
+               (cmdline->print_version >= 2) ? Py_GetVersion() : PY_VERSION);
+        return _Py_INIT_EXIT(0);
+    }
+
+    err = config_init_argv(config, cmdline);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = config_init_program(config, cmdline);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = _PyCoreConfig_Read(config, preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    if (config->preconfig.use_environment) {
+        err = cmdline_init_env_warnoptions(config, cmdline);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    err = config_init_warnoptions(config, cmdline);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_fromargv(_PyCoreConfig *config, const _PyArgv *args,
+                const _PyPreConfig *preconfig)
+{
+    _PyInitError err;
+
+    _PyCmdline cmdline;
+    memset(&cmdline, 0, sizeof(cmdline));
+
+    err = _PyArgv_Decode(args, &cmdline.argc, &cmdline.argv);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = config_from_cmdline(config, &cmdline, preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    if (_Py_SetArgcArgv(cmdline.argc, cmdline.argv)) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    err = _Py_INIT_OK();
+
+done:
+    cmdline_clear(&cmdline);
+    return err;
+}
+
+
+/* Read the configuration into _PyCoreConfig. */
+_PyInitError
+_PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
+                           const _PyArgv *args,
+                           const _PyPreConfig *preconfig)
+{
+    _PyInitError err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    return config_fromargv(config, args, preconfig);
 }

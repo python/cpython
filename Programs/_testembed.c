@@ -139,6 +139,9 @@ static int test_forced_io_encoding(void)
 
 static int test_pre_initialization_api(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* Leading "./" ensures getpath.c can still find the standard library */
     _Py_EMBED_PREINIT_CHECK("Checking Py_DecodeLocale\n");
     wchar_t *program = Py_DecodeLocale("./spam", NULL);
@@ -235,6 +238,9 @@ static void bpo20891_thread(void *lockp)
 
 static int test_bpo20891(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
        call PyEval_InitThreads() for us in this case. */
@@ -437,7 +443,7 @@ static int test_init_from_config(void)
     config.hash_seed = 123;
 
     putenv("PYTHONMALLOC=malloc");
-    config.allocator = "malloc_debug";
+    config.preconfig.allocator = "malloc_debug";
 
     /* dev_mode=1 is tested in test_init_dev_mode() */
 
@@ -461,7 +467,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
-    config.utf8_mode = 1;
+    config.preconfig.utf8_mode = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config.pycache_prefix = L"conf_pycache_prefix";
@@ -536,10 +542,10 @@ static int test_init_from_config(void)
 #ifdef MS_WINDOWS
     /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
        Force it to 0 through the config. */
-    config.legacy_windows_stdio = 0;
+    config.preconfig.legacy_windows_stdio = 0;
 #endif
-    config.stdio_encoding = "iso8859-1";
-    config.stdio_errors = "replace";
+    config.preconfig.stdio_encoding = "iso8859-1";
+    config.preconfig.stdio_errors = "replace";
 
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;
@@ -553,7 +559,7 @@ static int test_init_from_config(void)
     _PyInitError err = _Py_InitializeFromConfig(&config);
     /* Don't call _PyCoreConfig_Clear() since all strings are static */
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
     dump_config();
     Py_Finalize();
@@ -607,18 +613,18 @@ static int test_init_isolated(void)
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
     /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.coerce_c_locale = 0;
-    config.utf8_mode = 0;
+    config.preconfig.coerce_c_locale = 0;
+    config.preconfig.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";
 
     Py_IsolatedFlag = 0;
-    config.isolated = 1;
+    config.preconfig.isolated = 1;
 
     test_init_env_putenvs();
     _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
     dump_config();
     Py_Finalize();
@@ -631,11 +637,11 @@ static int test_init_dev_mode(void)
     _PyCoreConfig config = _PyCoreConfig_INIT;
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
-    config.dev_mode = 1;
+    config.preconfig.dev_mode = 1;
     config.program_name = L"./_testembed";
     _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
     dump_config();
     Py_Finalize();

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "osdefs.h"
+#include "pycore_coreconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
@@ -35,12 +36,6 @@ copy_wstr(wchar_t **dst, const wchar_t *src)
 static void
 _PyPathConfig_Clear(_PyPathConfig *config)
 {
-    /* _PyMem_SetDefaultAllocator() is needed to get a known memory allocator,
-       since Py_SetPath(), Py_SetPythonHome() and Py_SetProgramName() can be
-       called before Py_Initialize() which can changes the memory allocator. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
 #define CLEAR(ATTR) \
     do { \
         PyMem_RawFree(ATTR); \
@@ -57,8 +52,6 @@ _PyPathConfig_Clear(_PyPathConfig *config)
     CLEAR(config->home);
     CLEAR(config->program_name);
 #undef CLEAR
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
@@ -70,37 +63,29 @@ _PyPathConfig_Calculate(_PyPathConfig *path_config,
     _PyInitError err;
     _PyPathConfig new_config = _PyPathConfig_INIT;
 
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     /* Calculate program_full_path, prefix, exec_prefix,
        dll_path (Windows), and module_search_path */
     err = _PyPathConfig_Calculate_impl(&new_config, core_config);
     if (_Py_INIT_FAILED(err)) {
-        goto err;
+        goto fail;
     }
 
     /* Copy home and program_name from core_config */
     if (copy_wstr(&new_config.home, core_config->home) < 0) {
         err = _Py_INIT_NO_MEMORY();
-        goto err;
+        goto fail;
     }
     if (copy_wstr(&new_config.program_name, core_config->program_name) < 0) {
         err = _Py_INIT_NO_MEMORY();
-        goto err;
+        goto fail;
     }
 
     _PyPathConfig_Clear(path_config);
     *path_config = new_config;
+    return _Py_INIT_OK();
 
-    err = _Py_INIT_OK();
-    goto done;
-
-err:
+fail:
     _PyPathConfig_Clear(&new_config);
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return err;
 }
 
@@ -148,7 +133,15 @@ done:
 void
 _PyPathConfig_ClearGlobal(void)
 {
+    /* _PyMem_SetDefaultAllocator() is needed to get a known memory allocator,
+       since Py_SetPath(), Py_SetPythonHome() and Py_SetProgramName() can be
+       called before Py_Initialize() which can changes the memory allocator. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     _PyPathConfig_Clear(&_Py_path_config);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
@@ -187,9 +180,6 @@ wstrlist_join(wchar_t sep, int count, wchar_t **list)
 _PyInitError
 _PyCoreConfig_SetPathConfig(const _PyCoreConfig *core_config)
 {
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     _PyInitError err;
     _PyPathConfig path_config = _PyPathConfig_INIT;
 
@@ -234,7 +224,6 @@ no_memory:
 
 done:
     _PyPathConfig_Clear(&path_config);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return err;
 }
 
@@ -329,7 +318,7 @@ _PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
 #endif
 
     if (path_config.isolated != -1) {
-        config->isolated = path_config.isolated;
+        config->preconfig.isolated = path_config.isolated;
     }
     if (path_config.site_import != -1) {
         config->site_import = path_config.site_import;
@@ -392,7 +381,7 @@ pathconfig_global_init(void)
     _PyInitError err;
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    err = _PyCoreConfig_Read(&config);
+    err = _PyCoreConfig_Read(&config, NULL);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
@@ -407,7 +396,7 @@ pathconfig_global_init(void)
 
 error:
     _PyCoreConfig_Clear(&config);
-    _Py_FatalInitError(err);
+    _Py_ExitInitError(err);
 }
 
 
@@ -417,7 +406,7 @@ void
 Py_SetPath(const wchar_t *path)
 {
     if (path == NULL) {
-        _PyPathConfig_Clear(&_Py_path_config);
+        _PyPathConfig_ClearGlobal();
         return;
     }
 

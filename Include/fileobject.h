@@ -27,6 +27,9 @@ PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
 PyAPI_DATA(const char *) Py_FileSystemDefaultEncodeErrors;
 #endif
 PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
+#ifdef Py_BUILD_CORE
+PyAPI_DATA(int) _Py_HasFileSystemDefaultEncodeErrors;
+#endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 PyAPI_DATA(int) Py_UTF8Mode;
