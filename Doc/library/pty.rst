@@ -45,9 +45,12 @@ The :mod:`pty` module defines the following functions:
    process's standard io. This is often used to baffle programs which insist on
    reading from the controlling terminal.
 
-   The functions *master_read* and *stdin_read* should be functions which read from
-   a file descriptor. The defaults try to read 1024 bytes each time they are
-   called.
+   The functions *master_read* and *stdin_read* are passed a file
+   descriptor which they should read from, and should return a byte
+   string. The default implementation for both functions will read up
+   to 1024 bytes each time the function is called. Returning an empty
+   byte string is interpreted as an end of file (EOF) condition, and
+   that *_read* function will no longer be called.
 
    .. versionchanged:: 3.4
       :func:`spawn` now returns the status value from :func:`os.waitpid`
