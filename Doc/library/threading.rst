@@ -50,20 +50,25 @@ This module defines the following functions:
 
 .. function:: get_tid()
 
-   Return the Thread ID as reported by the kernel. This is a non-negative integer.
-   Its value may be used to identify a particular thread's resource utilization
-   within a system.
+   Return the Thread ID of the current thread as reported by the OS (kernel).
+   This is a non-negative integer. Its value may be used to uniquely identify a
+   particular thread within a system.
 
    .. note::
 
-      The behavior of this function varies on different operating systems:
+      The behavior of this function varies between operating systems:
 
-      *  Unix: Returns the `TID` assigned to the thread instance (LWP) by the kernel.
-      *  Mac: Returns the system-wide unique integral ID of the calling thread.
+      *  Unix: Returns the Thread ID assigned to the thread
+         instance by the OS. This represents the thread identifier (``TID``),
+         similar to the ``PID`` of a process.
+      *  Mac: Returns the unique integral ID of the thread instance,
+         assigned by the Mach kernel during bootstrap.
+         This is reflected in various debugging utilities (e.g. ``lldb``,
+         Activity Monitor).
 
    .. availability:: Unix, Mac.
 
-   .. versionadded:: TBD
+   .. versionadded:: *TBD*
 
 
 .. function:: enumerate()
@@ -318,10 +323,13 @@ since it is impossible to detect the termination of alien threads.
 
       The thread ID of this thread or ``None`` if the thread has not
       been started.  This is a non-negative integer.  See the :func:`get_tid`
-      function.  This represents the thread ID (LWP PID) as given by the OS.
-      Like Process IDs, Thread IDs may be reused by new processes or threads
-      after the thread exits. However, they are guaranteed to be unique during
-      the lifetime of the thread.
+      function.  This represents the Thread ID (``TID``) assigned to the thread
+      instance by the OS. Like Process IDs, Thread IDs
+      may be reused by new processes or threads after the thread exits.
+      However, they are guaranteed to be unique system-wide
+      during the lifetime of the thread's execution.
+
+      .. versionadded:: *TBD*
 
    .. method:: is_alive()
 
