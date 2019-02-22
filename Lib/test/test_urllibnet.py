@@ -3,6 +3,7 @@ from test import support
 
 import contextlib
 import socket
+import urllib.parse
 import urllib.request
 import os
 import email.message
@@ -24,7 +25,8 @@ class URLTimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
-        with support.transient_internet("www.pythontest.net"):
+        domain = urllib.parse.urlparse(support.TEST_HTTP_URL).netloc
+        with support.transient_internet(domain):
             f = urllib.request.urlopen(support.TEST_HTTP_URL)
             f.read()
 
