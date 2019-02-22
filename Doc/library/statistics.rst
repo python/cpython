@@ -569,6 +569,80 @@ of applications in statistics, including hypothesis testing.
     Instances of :class:`NormalDist` are :term:`immutable` and
     :term:`hashable`.
 
+:class:`NormalDist` Examples and Recipes
+----------------------------------------
+
+A :class:`NormalDist` readily solves classic probability problems.
+
+For example, given `historical data for SAT exams
+<https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
+are normally distributed with a mean of 1060 and standard deviation of 192,
+determine the percentage of students with scores between 1100 and 1200::
+
+    >>> sat = NormalDist(1060, 195)
+    >>> fraction = sat.cdf(1200) - sat.cdf(1100)
+    >>> f'{fraction * 100 :.1f}% score between 1100 and 1200'
+    '18.2% score between 1100 and 1200
+
+To estimate the distribution for a model than isn't easy to solve
+analytically, :class:`NormalDist` can generate input samples for a `Monte
+Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_ of a
+complex model::
+
+    >>> n = 100_000
+    >>> X = NormalDist(350, 15).samples(n)
+    >>> Y = NormalDist(47, 17).samples(n)
+    >>> Z = NormalDist(62, 6).samples(n)
+    >>> model_simulation = [x * y / z for x, y, z in zip(X, Y, Z)]
+    >>> NormalDist.from_samples(model_simulation)
+    NormalDist(mu=267.6516398754636, sigma=101.357284306067)
+
+Normal distributions commonly arise in machine learning problems.
+
+Wikipedia has a `nice example with Naive Bayesian Classifier
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier>`_.  The challenge
+is guess a person's gender from measurements of normally distributed
+features including height, weight, and foot size.
+
+The `prior probability <https://en.wikipedia.org/wiki/Prior_probability>`_ of
+male or female is 50%::
+
+    >>> prior_male = 0.5
+    >>> prior_female = 0.5
+
+We also have a training dataset with measurements for eight people.  These
+measurements are assumed to be normally distributed, so we summarize the data
+with :class:`NormalDist`::
+
+    >>> height_male = NormalDist.from_samples([6, 5.92, 5.58, 5.92])
+    >>> height_female = NormalDist.from_samples([5, 5.5, 5.42, 5.75])
+    >>> weight_male = NormalDist.from_samples([180, 190, 170, 165])
+    >>> weight_female = NormalDist.from_samples([100, 150, 130, 150])
+    >>> foot_size_male = NormalDist.from_samples([12, 11, 12, 10])
+    >>> foot_size_female = NormalDist.from_samples([6, 8, 7, 9])
+
+We observe a new person whose feature measurements are known but whose gender
+is unknown::
+
+    >>> h = 6.0
+    >>> w = 130
+    >>> f = 8
+
+The posterior is the product of the prior times each the likelihoods of the
+gender given a feature measurement::
+
+   >>> posterior_male = (prior_male * height_male.pdf(h) *
+                         weight_male.pdf(w) * foot_size_male.pdf(f))
+   >>> posterior_female = (prior_female * height_female.pdf(6) *
+                           weight_female.pdf(130) * foot_size_female.pdf(8))
+
+The final prediction is given to the largest posterior (this is known as the
+`maximum a posterior
+<https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation>`_ (MAP)::
+
+  >>> 'male' if posterior_male > posterior_female else 'female'
+  'female'
+
 
 ..
    # This modelines must appear within the last ten lines of the file.

@@ -793,6 +793,9 @@ class NormalDist:
 
 if __name__ == '__main__':
 
+    # Show math operations computed analytically in comparsion
+    # to a monte carlo simulation of the same operations
+
     from math import isclose
     from operator import add, sub, mul, truediv
     from itertools import repeat
@@ -853,51 +856,3 @@ if __name__ == '__main__':
     S = NormalDist.from_samples([x - y for x, y in zip(X.samples(n),
                                                        Y.samples(n))])
     assert_close(X - Y, S)
-
-
-    ######### Examples #####################################################
-
-    # Simple scaling and translation
-    temperature_february = NormalDist(5, 2.5)            # Celsius
-    print(temperature_february * (9/5) + 32)             # Fahrenheit
-
-
-    # Classic probability problems
-    # https://blog.prepscholar.com/sat-standard-deviation
-    # The mean score on a SAT exam is 1060 with a standard deviation of 195
-    # What percentage of students score between 1100 and 1200?
-    sat = NormalDist(1060, 195)
-    fraction = sat.cdf(1200) - sat.cdf(1100)
-    print(f'{fraction * 100 :.1f}% score between 1100 and 1200')
-
-
-    # Combination of normal distributions by summing variances
-    birth_weights = NormalDist.from_samples([2.5, 3.1, 2.1, 2.4, 2.7, 3.5])
-    drug_effects = NormalDist(0.4, 0.15)
-    print(birth_weights + drug_effects)
-
-
-    # Statistical calculation estimates using simulations
-    # Estimate the distribution of X * Y / Z
-    n = 100_000
-    X = NormalDist(350, 15).samples(n)
-    Y = NormalDist(47, 17).samples(n)
-    Z = NormalDist(62, 6).samples(n)
-    print(NormalDist.from_samples(x * y / z for x, y, z in zip(X, Y, Z)))
-
-
-    # Naive Bayesian Classifier
-    # https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Sex_classification
-
-    height_male = NormalDist.from_samples([6, 5.92, 5.58, 5.92])
-    height_female = NormalDist.from_samples([5, 5.5, 5.42, 5.75])
-    weight_male = NormalDist.from_samples([180, 190, 170, 165])
-    weight_female = NormalDist.from_samples([100, 150, 130, 150])
-    foot_size_male = NormalDist.from_samples([12, 11, 12, 10])
-    foot_size_female = NormalDist.from_samples([6, 8, 7, 9])
-
-    prior_male = 0.5
-    prior_female = 0.5
-    posterior_male = prior_male * height_male.pdf(6) * weight_male.pdf(130) * foot_size_male.pdf(8)
-    posterior_female = prior_female * height_female.pdf(6) * weight_female.pdf(130) * foot_size_female.pdf(8)
-    print('Predict', 'male' if posterior_male > posterior_female else 'female')
