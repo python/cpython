@@ -2151,6 +2151,44 @@ class TestNormalDist(unittest.TestCase):
         with self.assertRaises(TypeError):
             y / X
 
+    def test_equality(self):
+        NormalDist = statistics.NormalDist
+        nd1 = NormalDist()
+        nd2 = NormalDist(2, 4)
+        nd3 = NormalDist()
+        self.assertNotEqual(nd1, nd2)
+        self.assertEqual(nd1, nd3)
+
+        # Test NotImplemented when types are different
+        class A:
+            def __eq__(self, other):
+                return 10
+        a = A()
+        self.assertEqual(nd1.__eq__(a), NotImplemented)
+        self.assertEqual(nd1 == a, 10)
+        self.assertEqual(a == nd1, 10)
+
+        # All subclasses to compare equal giving the same behavior
+        # as list, tuple, int, float, complex, str, dict, set, etc.
+        class SizedNormalDist(NormalDist):
+            def __init__(self, mu, sigma, n):
+                super().__init__(mu, sigma)
+                self.n = n
+        s = SizedNormalDist(100, 15, 57)
+        nd4 = NormalDist(100, 15)
+        self.assertEqual(s, nd4)
+
+        # Don't allow duck type equality because we wouldn't
+        # want a lognormal distribution to compare equal
+        # to a normal distribution with the same parameters
+        class LognormalDist:
+            def __init__(self, mu, sigma):
+                self.mu = mu
+                self.sigma = sigma
+        lnd = LognormalDist(100, 15)
+        nd = NormalDist(100, 15)
+        self.assertNotEqual(nd, lnd)
+
     def test_immutability_hashability(self):
         # Attributes and property are not writeable
         nd = statistics.NormalDist(500, 17)
@@ -2178,20 +2216,11 @@ class TestNormalDist(unittest.TestCase):
         sd.n = 95
         self.assertEqual(sd.n, 95)
 
-        # Distinct types compare as distinct
-        self.assertEqual(len({nd, sd}), 2)
-        sd2 = SD(nd.mu, nd.sigma, 105)
-        self.assertEqual(len({nd, sd2}), 2)
-
         # Within a type, both components must agree to be considered the same
         nd2 = statistics.NormalDist(nd.mu - 1, nd.sigma)
         nd3 = statistics.NormalDist(nd.mu, nd.sigma + 1)
         nd4 = statistics.NormalDist(nd.mu, nd.sigma)
         self.assertEqual(len({nd, nd2, nd3, nd4}), 3)
-
-    def test_repr(self):
-        nd = statistics.NormalDist(37.5, 5.625)
-        self.assertEqual(repr(nd), 'NormalDist(mu=37.5, sigma=5.625)')
 
     def test_pickle_and_copy(self):
         nd = statistics.NormalDist(37.5, 5.625)
@@ -2201,6 +2230,10 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(nd, nd2)
         nd3 = pickle.loads(pickle.dumps(nd))
         self.assertEqual(nd, nd3)
+
+    def test_repr(self):
+        nd = statistics.NormalDist(37.5, 5.625)
+        self.assertEqual(repr(nd), 'NormalDist(mu=37.5, sigma=5.625)')
 
 
 # === Run tests ===

@@ -775,9 +775,9 @@ class NormalDist:
     __rmul__ = __mul__
 
     def __eq__(x1, x2):
-        if x1.__class__ is x2.__class__:
-            return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
-        return NotImplemented
+        if not isinstance(x2, NormalDist):
+            return NotImplemented
+        return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
 
     def __hash__(x1):
         return hash((x1.mu, x1.sigma))
