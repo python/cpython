@@ -24,7 +24,7 @@ class URLTimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
-        with support.transient_internet(support.TEST_HOSTNAME):
+        with support.transient_internet("www.pythontest.net"):
             f = urllib.request.urlopen(support.TEST_HTTP_URL)
             f.read()
 

@@ -356,10 +356,6 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
-.. data:: TEST_HOSTNAME
-
-   Define the hostname used for the network tests.
-
 .. data:: TEST_HTTP_URL
 
    Define the URL of a dedicated HTTP server for the network tests.
