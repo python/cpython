@@ -213,7 +213,7 @@ are always available.  They are listed here in alphabetical order.
    :ref:`function` for details.
 
    A class method can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).  The instance is ignored except for its class.  If a class
+   as ``C().f()``).  The instance is ignored except for its class. If a class
    method is called for a derived class, the derived class object is passed as the
    implied first argument.
 
