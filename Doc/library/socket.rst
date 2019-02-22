@@ -753,7 +753,7 @@ The :mod:`socket` module also offers various network-related services:
    contains meaningful *scopeid*. Usually this happens for multicast addresses.
 
    For more information about *flags* you can consult the
-   `manpage <http://man7.org/linux/man-pages/man3/getnameinfo.3.html>`_.
+   `getnameinfo manpage <http://man7.org/linux/man-pages/man3/getnameinfo.3.html>`_.
 
 .. function:: getprotobyname(protocolname)
 
