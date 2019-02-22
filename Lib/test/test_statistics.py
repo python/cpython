@@ -2025,6 +2025,172 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         expected = math.sqrt(statistics.variance(data))
         self.assertEqual(self.func(data), expected)
 
+class TestNormalDist(unittest.TestCase):
+
+    def test_slots(self):
+        nd = statistics.NormalDist(300, 23)
+        with self.assertRaises(TypeError):
+            vars(nd)
+        self.assertEqual(nd.__slots__, ('mu', 'sigma'))
+
+    def test_instantiation_and_attributes(self):
+        nd = statistics.NormalDist(500, 17)
+        self.assertEqual(nd.mu, 500)
+        self.assertEqual(nd.sigma, 17)
+        self.assertEqual(nd.variance, 17**2)
+
+        # default argument
+        nd = statistics.NormalDist(400)
+        self.assertEqual(nd.mu, 400)
+        self.assertEqual(nd.sigma, 0)
+        self.assertEqual(nd.variance, 0**2)
+
+        # error case: negative sigma
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.NormalDist(500, -10)
+
+    def test_alternative_constructor(self):
+        NormalDist = statistics.NormalDist
+        data = [96, 107, 90, 92, 110]
+        # list input
+        self.assertEqual(NormalDist.from_samples(data), NormalDist(99, 9))
+        # tuple input
+        self.assertEqual(NormalDist.from_samples(tuple(data)), NormalDist(99, 9))
+        # iterator input
+        self.assertEqual(NormalDist.from_samples(iter(data)), NormalDist(99, 9))
+        # error cases
+        with self.assertRaises(statistics.StatisticsError):
+            NormalDist.from_samples([])                      # empty input
+        with self.assertRaises(statistics.StatisticsError):
+            NormalDist.from_samples([10])                    # only one input
+
+    def test_sample_generation(self):
+        NormalDist = statistics.NormalDist
+        mu, sigma = 10_000, 3.0
+        X = NormalDist(mu, sigma)
+        n = 1_000
+        data = X.samples(n)
+        self.assertEqual(len(data), n)
+        self.assertEqual(set(map(type, data)), {float})
+        # mean(data) expected to fall within 8 standard deviations
+        xbar = statistics.mean(data)
+        self.assertTrue(mu - sigma*8 <= xbar <= mu + sigma*8)
+
+        # verify that seeding makes reproducible sequences
+        n = 100
+        data1 = X.samples(n, seed='happiness and joy')
+        data2 = X.samples(n, seed='trouble and despair')
+        data3 = X.samples(n, seed='happiness and joy')
+        data4 = X.samples(n, seed='trouble and despair')
+        self.assertEqual(data1, data3)
+        self.assertEqual(data2, data4)
+        self.assertNotEqual(data1, data2)
+
+        # verify that subclass type is honored
+        class NewNormalDist(NormalDist):
+            pass
+        nnd = NewNormalDist(200, 5)
+        self.assertEqual(type(nnd), NewNormalDist)
+
+    def test_pdf(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        # Verify peak around center
+        self.assertLess(X.pdf(99), X.pdf(100))
+        self.assertLess(X.pdf(101), X.pdf(100))
+        # Test symmetry
+        self.assertAlmostEqual(X.pdf(99), X.pdf(101))
+        self.assertAlmostEqual(X.pdf(98), X.pdf(102))
+        self.assertAlmostEqual(X.pdf(97), X.pdf(103))
+        # Test vs CDF
+        dx = 2.0 ** -10
+        for x in range(90, 111):
+            est_pdf = (X.cdf(x + dx) - X.cdf(x)) / dx
+            self.assertAlmostEqual(X.pdf(x), est_pdf, places=4)
+        # Error case: variance is zero
+        Y = NormalDist(100, 0)
+        with self.assertRaises(statistics.StatisticsError):
+            Y.pdf(90)
+
+    def test_cdf(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        cdfs = [X.cdf(x) for x in range(1, 200)]
+        self.assertEqual(set(map(type, cdfs)), {float})
+        # Verify montonic
+        self.assertEqual(cdfs, sorted(cdfs))
+        # Verify center
+        self.assertAlmostEqual(X.cdf(100), 0.50)
+        # Error case: variance is zero
+        Y = NormalDist(100, 0)
+        with self.assertRaises(statistics.StatisticsError):
+            Y.cdf(90)
+
+    def test_same_type_addition_and_subtraction(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 12)
+        Y = NormalDist(40, 5)
+        self.assertEqual(X + Y, NormalDist(140, 13))        # __add__
+        self.assertEqual(X - Y, NormalDist(60, 13))         # __sub__
+
+    def test_translation_and_scaling(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        y = 10
+        self.assertEqual(+X, NormalDist(100, 15))           # __pos__
+        self.assertEqual(-X, NormalDist(-100, 15))          # __neg__
+        self.assertEqual(X + y, NormalDist(110, 15))        # __add__
+        self.assertEqual(y + X, NormalDist(110, 15))        # __radd__
+        self.assertEqual(X - y, NormalDist(90, 15))         # __sub__
+        self.assertEqual(y - X, NormalDist(-90, 15))        # __rsub__
+        self.assertEqual(X * y, NormalDist(1000, 150))      # __mul__
+        self.assertEqual(y * X, NormalDist(1000, 150))      # __rmul__
+        self.assertEqual(X / y, NormalDist(10, 1.5))        # __truediv__
+        with self.assertRaises(TypeError):
+            y / X
+
+    def test_immutability_hashability(self):
+        # Attributes and property are not writeable
+        nd = statistics.NormalDist(500, 17)
+        with self.assertRaises(AttributeError):
+            nd.mu = 600
+        with self.assertRaises(AttributeError):
+            nd.sigma = 34
+        with self.assertRaises(AttributeError):
+            nd.variance = 40
+
+        # Subclasses can write additional attributes
+        # but cannot write to the parent attributes
+        class SD(statistics.NormalDist):
+            def __init__(self, mu, sigma, n):
+                super().__init__(mu, sigma)
+                self.n = n
+        sd = SD(700, 25, 85)
+        with self.assertRaises(AttributeError):
+            sd.mu = 600
+        with self.assertRaises(AttributeError):
+            sd.sigma = 34
+        with self.assertRaises(AttributeError):
+            sd.variance = 40
+        self.assertEqual(sd.n, 85)
+        sd.n = 95
+        self.assertEqual(sd.n, 95)
+
+        # Distinct types compare as distinct
+        self.assertEqual(len({nd, sd}), 2)
+        sd2 = SD(nd.mu, nd.sigma, 105)
+        self.assertEqual(len({nd, sd2}), 2)
+
+        # Within a type, both components must agree to be considered the same
+        nd2 = statistics.NormalDist(nd.mu - 1, nd.sigma)
+        nd3 = statistics.NormalDist(nd.mu, nd.sigma + 1)
+        nd4 = statistics.NormalDist(nd.mu, nd.sigma)
+        self.assertEqual(len({nd, nd2, nd3, nd4}), 3)
+
+    def test_repr(self):
+        nd = statistics.NormalDist(37.5, 5.625)
+        self.assertEqual(repr(nd), 'NormalDist(mu=37.5, sigma=5.625)')
+
 
 # === Run tests ===
 
