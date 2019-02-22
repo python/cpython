@@ -48,6 +48,23 @@ This module defines the following functions:
 
    .. versionadded:: 3.3
 
+.. function:: get_tid()
+
+   Return the Thread ID as reported by the kernel. This is a non-negative integer.
+   Its value may be used to identify a particular thread's resource utilization
+   within a system.
+
+   .. note::
+
+      The behavior of this function varies on different operating systems:
+
+      *  Unix: Returns the `TID` assigned to the thread instance (LWP) by the kernel.
+      *  Mac: Returns the system-wide unique integral ID of the calling thread.
+
+   .. availability:: Unix, Mac.
+
+   .. versionadded:: TBD
+
 
 .. function:: enumerate()
 
@@ -296,6 +313,15 @@ since it is impossible to detect the termination of alien threads.
       function.  Thread identifiers may be recycled when a thread exits and
       another thread is created.  The identifier is available even after the
       thread has exited.
+
+   .. attribute:: tid
+
+      The thread ID of this thread or ``None`` if the thread has not
+      been started.  This is a non-negative integer.  See the :func:`get_tid`
+      function.  This represents the thread ID (LWP PID) as given by the OS.
+      Like Process IDs, Thread IDs may be reused by new processes or threads
+      after the thread exits. However, they are guaranteed to be unique during
+      the lifetime of the thread.
 
    .. method:: is_alive()
 

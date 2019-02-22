@@ -1163,8 +1163,13 @@ thread_get_tid(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(get_tid_doc,
 "get_tid() -> integer\n\
 \n\
-Return a non-negative integer identifying the thread as reported by the kernel.\n\
-This may be used to identify thread resource utilization within a system.");
+Return a non-negative integer identifying the thread as reported\n\
+by the kernel. This may be used to identify a particular thread's\n\
+resource utilization within a system.\n\
+\n\
+The behavior of this function varies on different operating systems:\n\
+\tUnix: Returns the ID assigned to the thread instance (LWP) by the kernel.\n\
+\tMac: Returns the system-wide unique integral ID of the calling thread.");
 
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
