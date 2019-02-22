@@ -212,10 +212,10 @@ are always available.  They are listed here in alphabetical order.
    The ``@classmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
 
-   A class method can be called either on the class (such as ``C.f()``) or on an
-   instance (such as ``C().f()``).  The instance is ignored except for its
-   class.  If a class method is called for a derived class, the derived class
-   object is passed as the implied first argument.
+   A class method can be called either on the class (such as ``C.f()``) or on an instance (such
+   as ``C().f()``).  The instance is ignored except for its class.  If a class
+   method is called for a derived class, the derived class object is passed as the
+   implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
    see :func:`staticmethod`.
@@ -1425,8 +1425,8 @@ are always available.  They are listed here in alphabetical order.
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
 
-   A static method can be called either on the class (such as ``C.f()``) or on
-   an instance (such as ``C().f()``).
+   A static method can be called either on the class (such as ``C.f()``) or on an instance (such
+   as ``C().f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also see
    :func:`classmethod` for a variant that is useful for creating alternate class
