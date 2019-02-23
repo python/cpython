@@ -13,7 +13,7 @@
 
 .. warning::
 
-   mod:`SimpleHTTServer` is not recommended for production. It only implements
+   :mod:`SimpleHTTPServer` is not recommended for production. It only implements
    basic security checks.
 
 The :mod:`SimpleHTTPServer` module defines a single class,
