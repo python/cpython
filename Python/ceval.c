@@ -379,9 +379,16 @@ handle_signals(void)
     {
         return 0;
     }
+    /*
+     * Ensure that the thread isn't currently running some other
+     * interpreter.
+     */
+    if (_PyInterpreterState_GET_UNSAFE() != _PyRuntime.interpreters.main) {
+        return 0;
+    }
 
     UNSIGNAL_PENDING_SIGNALS();
-    if (PyErr_CheckSignals() < 0) {
+    if (_PyErr_CheckSignals() < 0) {
         SIGNAL_PENDING_SIGNALS(); /* We're not done yet */
         return -1;
     }
