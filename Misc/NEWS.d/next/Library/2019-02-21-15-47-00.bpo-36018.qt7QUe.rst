@@ -1,0 +1,3 @@
+Add statistics.NormalDist, a tool for creating and manipulating normal
+distributions of random variable.  Features a composite class that treats
+the mean and standard deviation of measurement data as single entity.

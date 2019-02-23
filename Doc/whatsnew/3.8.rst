@@ -278,6 +278,32 @@ Added :func:`statistics.fmean` as a faster, floating point variant of
 :func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
 
+Added :class:`statistics.NormalDist`, a tool for creating
+and manipulating normal distributions of a random variable.
+(Contributed by Raymond Hettinger in :issue:`36018`.)
+
+::
+
+    >>> temperature_feb = NormalDist.from_samples([4, 12, -3, 2, 7, 14])
+    >>> temperature_feb
+    NormalDist(mu=6.0, sigma=6.356099432828281)
+
+    >>> temperature_feb.cdf(3)            # Chance of being under 3 degrees
+    0.3184678262814532
+    >>> # Relative chance of being 7 degrees versus 10 degrees
+    >>> temperature_feb.pdf(7) / temperature_feb.pdf(10)
+    1.2039930378537762
+
+    >>> el_nino = NormalDist(4, 2.5)
+    >>> temperature_feb += el_nino        # Add in a climate effect
+    >>> temperature_feb
+    NormalDist(mu=10.0, sigma=6.830080526611674)
+
+    >>> temperature_feb * (9/5) + 32      # Convert to Fahrenheit
+    NormalDist(mu=50.0, sigma=12.294144947901014)
+    >>> temperature_feb.samples(3)        # Generate random samples
+    [7.672102882379219, 12.000027119750287, 4.647488369766392]
+
 
 tokenize
 --------
