@@ -138,6 +138,7 @@ Other Language Changes
   now exits via a `SIGINT` signal or with the correct exit code such that the
   calling process can detect that it died due to a Ctrl-C.  Shells on POSIX
   and Windows use this to properly terminate scripts in interactive sessions.
+  (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
 
 New Modules
