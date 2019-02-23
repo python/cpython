@@ -232,7 +232,7 @@ PyDoc_STRVAR(interpid_doc,
 
 PyTypeObject _PyInterpreterID_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "interpreters.InterpreterID",   /* tp_name */
+    "InterpreterID",   /* tp_name */
     sizeof(interpid),               /* tp_basicsize */
     0,                              /* tp_itemsize */
     (destructor)interpid_dealloc,   /* tp_dealloc */
