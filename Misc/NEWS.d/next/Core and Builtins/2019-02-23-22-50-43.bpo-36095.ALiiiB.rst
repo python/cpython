@@ -1,0 +1,2 @@
+Sorting is no longer mangled by ``NaN`` values; they are now stably pushed to the end of the fully-sorted list.
+Patch by Brandt Bucher.
