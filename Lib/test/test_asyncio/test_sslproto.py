@@ -275,6 +275,10 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             self.loop.run_until_complete(
                 asyncio.wait_for(client(srv.addr), timeout=10))
 
+        # No garbage is left if SSL is closed uncleanly
+        client_context = weakref.ref(client_context)
+        self.assertIsNone(client_context())
+
     def test_start_tls_client_buf_proto_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 

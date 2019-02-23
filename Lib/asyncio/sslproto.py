@@ -501,6 +501,7 @@ class SSLProtocol(protocols.Protocol):
         if getattr(self, '_handshake_timeout_handle', None):
             self._handshake_timeout_handle.cancel()
         self._wakeup_waiter(exc)
+        self._sslpipe = None
 
     def pause_writing(self):
         """Called when the low-level transport's buffer goes over
