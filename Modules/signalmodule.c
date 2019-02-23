@@ -186,7 +186,7 @@ itimer_retval(struct itimerval *iv)
 }
 #endif
 
-int
+static int
 is_main(void)
 {
     return PyThread_get_thread_ident() == main_thread &&
