@@ -823,6 +823,7 @@ class Element(Node):
         # Restore this since the node is still useful and otherwise
         # unlinked
         node.ownerDocument = self.ownerDocument
+        return node
 
     removeAttributeNodeNS = removeAttributeNode
 
@@ -853,9 +854,8 @@ class Element(Node):
         writer.write(indent+"<" + self.tagName)
 
         attrs = self._get_attributes()
-        a_names = sorted(attrs.keys())
 
-        for a_name in a_names:
+        for a_name in attrs.keys():
             writer.write(" %s=\"" % a_name)
             _write_data(writer, attrs[a_name].value)
             writer.write("\"")
@@ -1318,7 +1318,7 @@ class DocumentType(Identified, Childless, Node):
                     entity.encoding = e.encoding
                     entity.version = e.version
                     clone.entities._seq.append(entity)
-                    e._call_user_data_handler(operation, n, entity)
+                    e._call_user_data_handler(operation, e, entity)
             self._call_user_data_handler(operation, self, clone)
             return clone
         else:
@@ -1921,7 +1921,7 @@ def _clone_node(node, deep, newOwnerDocument):
                 entity.ownerDocument = newOwnerDocument
                 clone.entities._seq.append(entity)
                 if hasattr(e, '_call_user_data_handler'):
-                    e._call_user_data_handler(operation, n, entity)
+                    e._call_user_data_handler(operation, e, entity)
     else:
         # Note the cloning of Document and DocumentType nodes is
         # implementation specific.  minidom handles those cases

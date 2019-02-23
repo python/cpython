@@ -1,5 +1,0 @@
-Implement ``asyncio.current_task()`` and ``asyncio.all_tasks()``. Add
-helpers intended to be used by alternative task implementations:
-``asyncio._register_task``, ``asyncio._enter_task``, ``asyncio._leave_task``
-and ``asyncio._unregister_task``. Deprecate ``asyncio.Task.current_task()``
-and ``asyncio.Task.all_tasks()``.

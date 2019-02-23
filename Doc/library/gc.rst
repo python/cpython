@@ -181,7 +181,7 @@ The :mod:`gc` module provides the following functions:
    fork() call to make the gc copy-on-write friendly or to speed up collection.
    Also collection before a POSIX fork() call may free pages for future
    allocation which can cause copy-on-write too so it's advised to disable gc
-   in master process and freeze before fork and enable gc in child process.
+   in parent process and freeze before fork and enable gc in child process.
 
    .. versionadded:: 3.7
 

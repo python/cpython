@@ -1,1 +1,0 @@
-Fix ``stop_serving`` in asyncio proactor loop kill all listening servers

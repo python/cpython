@@ -1,5 +1,0 @@
-The :option:`-R` option now turns on hash randomization when the
-:envvar:`PYTHONHASHSEED` environment variable is set to ``0``. Previously,
-the option was ignored. Moreover, ``sys.flags.hash_randomization`` is now
-properly set to 0 when hash randomization is turned off by
-``PYTHONHASHSEED=0``.

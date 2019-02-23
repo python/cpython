@@ -575,11 +575,11 @@ range_repr(rangeobject *r)
     Py_ssize_t istep;
 
     /* Check for special case values for printing.  We don't always
-       need the step value.  We don't care about errors
-       (it means overflow), so clear the errors. */
+       need the step value.  We don't care about overflow. */
     istep = PyNumber_AsSsize_t(r->step, NULL);
-    if (istep != 1 || (istep == -1 && PyErr_Occurred())) {
-        PyErr_Clear();
+    if (istep == -1 && PyErr_Occurred()) {
+        assert(!PyErr_ExceptionMatches(PyExc_OverflowError));
+        return NULL;
     }
 
     if (istep == 1)
@@ -636,7 +636,7 @@ static PyNumberMethods range_as_number = {
 };
 
 static PyObject * range_iter(PyObject *seq);
-static PyObject * range_reverse(PyObject *seq);
+static PyObject * range_reverse(PyObject *seq, PyObject *Py_UNUSED(ignored));
 
 PyDoc_STRVAR(reverse_doc,
 "Return a reverse iterator.");
@@ -649,7 +649,7 @@ PyDoc_STRVAR(index_doc,
 "Raise ValueError if the value is not present.");
 
 static PyMethodDef range_methods[] = {
-    {"__reversed__",    (PyCFunction)range_reverse, METH_NOARGS, reverse_doc},
+    {"__reversed__",    range_reverse,              METH_NOARGS, reverse_doc},
     {"__reduce__",      (PyCFunction)range_reduce,  METH_VARARGS},
     {"count",           (PyCFunction)range_count,   METH_O,      count_doc},
     {"index",           (PyCFunction)range_index,   METH_O,      index_doc},
@@ -731,7 +731,7 @@ rangeiter_next(rangeiterobject *r)
 }
 
 static PyObject *
-rangeiter_len(rangeiterobject *r)
+rangeiter_len(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(r->len - r->index);
 }
@@ -740,8 +740,9 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-rangeiter_reduce(rangeiterobject *r)
+rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
 
@@ -760,7 +761,8 @@ rangeiter_reduce(rangeiterobject *r)
     if (range == NULL)
         goto err;
     /* return the result */
-    return Py_BuildValue("N(N)i", _PyObject_GetBuiltin("iter"), range, r->index);
+    return Py_BuildValue("N(N)i", _PyEval_GetBuiltinId(&PyId_iter),
+                         range, r->index);
 err:
     Py_XDECREF(start);
     Py_XDECREF(stop);
@@ -896,8 +898,9 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 }
 
 static PyObject *
-longrangeiter_reduce(longrangeiterobject *r)
+longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     PyObject *product, *stop=NULL;
     PyObject *range;
 
@@ -921,7 +924,8 @@ longrangeiter_reduce(longrangeiterobject *r)
     }
 
     /* return the result */
-    return Py_BuildValue("N(N)O", _PyObject_GetBuiltin("iter"), range, r->index);
+    return Py_BuildValue("N(N)O", _PyEval_GetBuiltinId(&PyId_iter),
+                         range, r->index);
 }
 
 static PyObject *
@@ -1081,7 +1085,7 @@ range_iter(PyObject *seq)
 }
 
 static PyObject *
-range_reverse(PyObject *seq)
+range_reverse(PyObject *seq, PyObject *Py_UNUSED(ignored))
 {
     rangeobject *range = (rangeobject*) seq;
     longrangeiterobject *it;
@@ -1154,6 +1158,7 @@ long_range:
     it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
     if (it == NULL)
         return NULL;
+    it->index = it->start = it->step = NULL;
 
     /* start + (len - 1) * step */
     it->len = range->length;

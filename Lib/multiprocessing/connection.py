@@ -57,10 +57,10 @@ if sys.platform == 'win32':
 
 
 def _init_timeout(timeout=CONNECTION_TIMEOUT):
-    return time.time() + timeout
+    return time.monotonic() + timeout
 
 def _check_timeout(t):
-    return time.time() > t
+    return time.monotonic() > t
 
 #
 #
@@ -389,23 +389,33 @@ class Connection(_ConnectionBase):
 
     def _send_bytes(self, buf):
         n = len(buf)
-        # For wire compatibility with 3.2 and lower
-        header = struct.pack("!i", n)
-        if n > 16384:
-            # The payload is large so Nagle's algorithm won't be triggered
-            # and we'd better avoid the cost of concatenation.
+        if n > 0x7fffffff:
+            pre_header = struct.pack("!i", -1)
+            header = struct.pack("!Q", n)
+            self._send(pre_header)
             self._send(header)
             self._send(buf)
         else:
-            # Issue #20540: concatenate before sending, to avoid delays due
-            # to Nagle's algorithm on a TCP socket.
-            # Also note we want to avoid sending a 0-length buffer separately,
-            # to avoid "broken pipe" errors if the other end closed the pipe.
-            self._send(header + buf)
+            # For wire compatibility with 3.7 and lower
+            header = struct.pack("!i", n)
+            if n > 16384:
+                # The payload is large so Nagle's algorithm won't be triggered
+                # and we'd better avoid the cost of concatenation.
+                self._send(header)
+                self._send(buf)
+            else:
+                # Issue #20540: concatenate before sending, to avoid delays due
+                # to Nagle's algorithm on a TCP socket.
+                # Also note we want to avoid sending a 0-length buffer separately,
+                # to avoid "broken pipe" errors if the other end closed the pipe.
+                self._send(header + buf)
 
     def _recv_bytes(self, maxsize=None):
         buf = self._recv(4)
         size, = struct.unpack("!i", buf.getvalue())
+        if size == -1:
+            buf = self._recv(8)
+            size, = struct.unpack("!Q", buf.getvalue())
         if maxsize is not None and size > maxsize:
             return None
         return self._recv(size)
@@ -914,7 +924,7 @@ else:
                 selector.register(obj, selectors.EVENT_READ)
 
             if timeout is not None:
-                deadline = time.time() + timeout
+                deadline = time.monotonic() + timeout
 
             while True:
                 ready = selector.select(timeout)
@@ -922,7 +932,7 @@ else:
                     return [key.fileobj for (key, events) in ready]
                 else:
                     if timeout is not None:
-                        timeout = deadline - time.time()
+                        timeout = deadline - time.monotonic()
                         if timeout < 0:
                             return ready
 

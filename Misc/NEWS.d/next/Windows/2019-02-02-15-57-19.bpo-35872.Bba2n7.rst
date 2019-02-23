@@ -1,0 +1,1 @@
+Uses the base Python executable when invoking venv in a virtual environment

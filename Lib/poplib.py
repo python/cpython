@@ -308,7 +308,7 @@ class POP3:
         return self._shortcmd('RPOP %s' % user)
 
 
-    timestamp = re.compile(br'\+OK.*(<[^>]+>)')
+    timestamp = re.compile(br'\+OK.[^<]*(<.*>)')
 
     def apop(self, user, password):
         """Authorisation
@@ -436,7 +436,7 @@ if HAVE_SSL:
                                  "exclusive")
             if keyfile is not None or certfile is not None:
                 import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a"
+                warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile

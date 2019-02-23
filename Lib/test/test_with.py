@@ -458,8 +458,8 @@ class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
             with cm():
                 raise StopIteration("from with")
 
-        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-            self.assertRaises(StopIteration, shouldThrow)
+        with self.assertRaisesRegex(StopIteration, 'from with'):
+            shouldThrow()
 
     def testRaisedStopIteration2(self):
         # From bug 1462485
@@ -473,7 +473,8 @@ class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
             with cm():
                 raise StopIteration("from with")
 
-        self.assertRaises(StopIteration, shouldThrow)
+        with self.assertRaisesRegex(StopIteration, 'from with'):
+            shouldThrow()
 
     def testRaisedStopIteration3(self):
         # Another variant where the exception hasn't been instantiated
@@ -486,8 +487,8 @@ class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
             with cm():
                 raise next(iter([]))
 
-        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-            self.assertRaises(StopIteration, shouldThrow)
+        with self.assertRaises(StopIteration):
+            shouldThrow()
 
     def testRaisedGeneratorExit1(self):
         # From bug 1462485

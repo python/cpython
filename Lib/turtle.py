@@ -1352,7 +1352,7 @@ class TurtleScreen(TurtleScreenBase):
         Arguments:
         fun -- a function with two arguments, the coordinates of the
                clicked point on the canvas.
-        num -- the number of the mouse-button, defaults to 1
+        btn -- the number of the mouse-button, defaults to 1
 
         Example (for a TurtleScreen instance named screen)
 
@@ -3526,7 +3526,7 @@ class RawTurtle(TPen, TNavigator):
         Arguments:
         fun --  a function with two arguments, to which will be assigned
                 the coordinates of the clicked point on the canvas.
-        num --  number of the mouse-button defaults to 1 (left mouse button).
+        btn --  number of the mouse-button defaults to 1 (left mouse button).
         add --  True or False. If True, new binding will be added, otherwise
                 it will replace a former binding.
 
@@ -3547,7 +3547,7 @@ class RawTurtle(TPen, TNavigator):
         Arguments:
         fun -- a function with two arguments, to which will be assigned
                 the coordinates of the clicked point on the canvas.
-        num --  number of the mouse-button defaults to 1 (left mouse button).
+        btn --  number of the mouse-button defaults to 1 (left mouse button).
 
         Example (for a MyTurtle instance named joe):
         >>> class MyTurtle(Turtle):
@@ -3572,7 +3572,7 @@ class RawTurtle(TPen, TNavigator):
         Arguments:
         fun -- a function with two arguments, to which will be assigned
                the coordinates of the clicked point on the canvas.
-        num -- number of the mouse-button defaults to 1 (left mouse button).
+        btn -- number of the mouse-button defaults to 1 (left mouse button).
 
         Every sequence of mouse-move-events on a turtle is preceded by a
         mouse-click event on that turtle.
@@ -3839,7 +3839,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
         docsdict[key] = eval(key).__doc__
 
     with open("%s.py" % filename,"w") as f:
-        keys = sorted(x for x in docsdict.keys()
+        keys = sorted(x for x in docsdict
                       if x.split('.')[1] not in _alias_list)
         f.write('docsdict = {\n\n')
         for key in keys[:-1]:

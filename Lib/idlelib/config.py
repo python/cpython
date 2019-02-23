@@ -360,6 +360,8 @@ class IdleConf:
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
                 'console-background':'#ffffff',
+                'context-foreground':'#000000',
+                'context-background':'#ffffff',
                 }
         for element in theme:
             if not cfgParser.has_option(themeName, element):
@@ -560,12 +562,11 @@ class IdleConf:
         result = self.GetKeySet(self.CurrentKeys())
 
         if sys.platform == "darwin":
-            # OS X Tk variants do not support the "Alt" keyboard modifier.
-            # So replace all keybingings that use "Alt" with ones that
-            # use the "Option" keyboard modifier.
-            # TODO (Ned?): the "Option" modifier does not work properly for
-            #        Cocoa Tk and XQuartz Tk so we should not use it
-            #        in default OS X KeySets.
+            # macOS (OS X) Tk variants do not support the "Alt"
+            # keyboard modifier.  Replace it with "Option".
+            # TODO (Ned?): the "Option" modifier does not work properly
+            #     for Cocoa Tk and XQuartz Tk so we should not use it
+            #     in the default 'OSX' keyset.
             for k, v in result.items():
                 v2 = [ x.replace('<Alt-', '<Option-') for x in v ]
                 if v != v2:
@@ -923,7 +924,7 @@ def _dump():  # htest # (not really, but ignore in coverage)
     print('\nlines = ', line, ', crc = ', crc, sep='')
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_config',
-                  verbosity=2, exit=False)
-    #_dump()
+    from unittest import main
+    main('idlelib.idle_test.test_config', verbosity=2, exit=False)
+
+    # Run revised _dump() as htest?

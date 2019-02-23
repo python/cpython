@@ -1,3 +1,0 @@
-A single empty field is now always quoted when written into a CSV file.
-This allows to distinguish an empty row from a row consisting of a single empty field.
-Patch by Licht Takeuchi.

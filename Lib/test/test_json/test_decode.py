@@ -58,7 +58,9 @@ class TestDecode:
     def test_keys_reuse(self):
         s = '[{"a_key": 1, "b_\xe9": 2}, {"a_key": 3, "b_\xe9": 4}]'
         self.check_keys_reuse(s, self.loads)
-        self.check_keys_reuse(s, self.json.decoder.JSONDecoder().decode)
+        decoder = self.json.decoder.JSONDecoder()
+        self.check_keys_reuse(s, decoder.decode)
+        self.assertFalse(decoder.memo)
 
     def test_extra_data(self):
         s = '[1, 2, 3]5'

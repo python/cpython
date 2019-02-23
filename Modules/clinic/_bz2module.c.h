@@ -25,7 +25,11 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:compress", &data)) {
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&data, 'C')) {
+        _PyArg_BadArgument("compress", 0, "contiguous buffer", arg);
         goto exit;
     }
     return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
@@ -85,10 +89,22 @@ _bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
         goto exit;
     }
-    if (!PyArg_ParseTuple(args, "|i:BZ2Compressor",
-        &compresslevel)) {
+    if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(PyTuple_GET_ITEM(args, 0))) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    if (compresslevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _bz2_BZ2Compressor___init___impl((BZ2Compressor *)self, compresslevel);
 
 exit:
@@ -115,7 +131,7 @@ PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)_bz2_BZ2Decompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
+    {"decompress", (PyCFunction)(void(*)(void))_bz2_BZ2Decompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
@@ -174,4 +190,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=564a0313177fff63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=892c6133e97ff840 input=a9049054013a1b77]*/

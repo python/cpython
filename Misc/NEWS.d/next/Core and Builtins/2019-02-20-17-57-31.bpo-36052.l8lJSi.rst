@@ -1,0 +1,2 @@
+Raise a :exc:`SyntaxError` when assigning a value to `__debug__` with the
+Assignment Operator. Contributed by Stéphane Wirtel and Pablo Galindo.

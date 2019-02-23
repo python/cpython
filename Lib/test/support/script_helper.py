@@ -36,6 +36,11 @@ def interpreter_requires_environment():
     """
     global __cached_interp_requires_environment
     if __cached_interp_requires_environment is None:
+        # If PYTHONHOME is set, assume that we need it
+        if 'PYTHONHOME' in os.environ:
+            __cached_interp_requires_environment = True
+            return True
+
         # Try running an interpreter with -E to see if it works or not.
         try:
             subprocess.check_call([sys.executable, '-E',
@@ -82,6 +87,7 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
 # Executing the interpreter in a subprocess
 def run_python_until_end(*args, **env_vars):
     env_required = interpreter_requires_environment()
+    cwd = env_vars.pop('__cwd', None)
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')
     else:
@@ -120,7 +126,7 @@ def run_python_until_end(*args, **env_vars):
     cmd_line.extend(args)
     proc = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         env=env)
+                         env=env, cwd=cwd)
     with proc:
         try:
             out, err = proc.communicate()
@@ -166,7 +172,9 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
     object.
     """
-    cmd_line = [sys.executable, '-E']
+    cmd_line = [sys.executable]
+    if not interpreter_requires_environment():
+        cmd_line.append('-E')
     cmd_line.extend(args)
     # Under Fedora (?), GNU readline can output junk on stderr when initialized,
     # depending on the TERM setting.  Setting TERM=vt100 is supposed to disable

@@ -1,9 +1,8 @@
 #
 # (re)generate unicode property and type databases
 #
-# this script converts a unicode 3.2 database file to
-# Modules/unicodedata_db.h, Modules/unicodename_db.h,
-# and Objects/unicodetype_db.h
+# This script converts Unicode database files to Modules/unicodedata_db.h,
+# Modules/unicodename_db.h, and Objects/unicodetype_db.h
 #
 # history:
 # 2000-09-24 fl   created (based on bits and pieces from unidb)
@@ -34,7 +33,7 @@ import zipfile
 from textwrap import dedent
 
 SCRIPT = sys.argv[0]
-VERSION = "3.2"
+VERSION = "3.3"
 
 # The Unicode Database
 # --------------------
@@ -42,7 +41,7 @@ VERSION = "3.2"
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (two occurrences)
-UNIDATA_VERSION = "10.0.0"
+UNIDATA_VERSION = "11.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -99,7 +98,7 @@ EXTENDED_CASE_MASK = 0x4000
 # these ranges need to match unicodedata.c:is_unified_ideograph
 cjk_ranges = [
     ('3400', '4DB5'),
-    ('4E00', '9FEA'),
+    ('4E00', '9FEF'),
     ('20000', '2A6D6'),
     ('2A700', '2B734'),
     ('2B740', '2B81D'),
@@ -276,8 +275,8 @@ def makeunicodedata(unicode, trace):
     print("struct reindex{int start;short count,index;};", file=fp)
     print("static struct reindex nfc_first[] = {", file=fp)
     for start,end in comp_first_ranges:
-        print("  { %d, %d, %d}," % (start,end-start,comp_first[start]), file=fp)
-    print("  {0,0,0}", file=fp)
+        print("    { %d, %d, %d}," % (start,end-start,comp_first[start]), file=fp)
+    print("    {0,0,0}", file=fp)
     print("};\n", file=fp)
     print("static struct reindex nfc_last[] = {", file=fp)
     for start,end in comp_last_ranges:
@@ -353,28 +352,28 @@ def makeunicodedata(unicode, trace):
         index1, index2, shift = splitbins(index, trace)
         print("static const change_record change_records_%s[] = {" % cversion, file=fp)
         for record in records:
-            print("\t{ %s }," % ", ".join(map(str,record)), file=fp)
+            print("    { %s }," % ", ".join(map(str,record)), file=fp)
         print("};", file=fp)
         Array("changes_%s_index" % cversion, index1).dump(fp, trace)
         Array("changes_%s_data" % cversion, index2).dump(fp, trace)
         print("static const change_record* get_change_%s(Py_UCS4 n)" % cversion, file=fp)
         print("{", file=fp)
-        print("\tint index;", file=fp)
-        print("\tif (n >= 0x110000) index = 0;", file=fp)
-        print("\telse {", file=fp)
-        print("\t\tindex = changes_%s_index[n>>%d];" % (cversion, shift), file=fp)
-        print("\t\tindex = changes_%s_data[(index<<%d)+(n & %d)];" % \
+        print("    int index;", file=fp)
+        print("    if (n >= 0x110000) index = 0;", file=fp)
+        print("    else {", file=fp)
+        print("        index = changes_%s_index[n>>%d];" % (cversion, shift), file=fp)
+        print("        index = changes_%s_data[(index<<%d)+(n & %d)];" % \
               (cversion, shift, ((1<<shift)-1)), file=fp)
-        print("\t}", file=fp)
-        print("\treturn change_records_%s+index;" % cversion, file=fp)
+        print("    }", file=fp)
+        print("    return change_records_%s+index;" % cversion, file=fp)
         print("}\n", file=fp)
         print("static Py_UCS4 normalization_%s(Py_UCS4 n)" % cversion, file=fp)
         print("{", file=fp)
-        print("\tswitch(n) {", file=fp)
+        print("    switch(n) {", file=fp)
         for k, v in normalization:
-            print("\tcase %s: return 0x%s;" % (hex(k), v), file=fp)
-        print("\tdefault: return 0;", file=fp)
-        print("\t}\n}\n", file=fp)
+            print("    case %s: return 0x%s;" % (hex(k), v), file=fp)
+        print("    default: return 0;", file=fp)
+        print("    }\n}\n", file=fp)
 
     fp.close()
 

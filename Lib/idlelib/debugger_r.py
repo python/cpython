@@ -157,7 +157,7 @@ class IdbAdapter:
     #----------called by a DictProxy----------
 
     def dict_keys(self, did):
-        raise NotImplemented("dict_keys not public or pickleable")
+        raise NotImplementedError("dict_keys not public or pickleable")
 ##         dict = dicttable[did]
 ##         return dict.keys()
 
@@ -386,3 +386,8 @@ def restart_subprocess_debugger(rpcclt):
     idb_adap_oid_ret = rpcclt.remotecall("exec", "start_the_debugger",\
                                          (gui_adap_oid,), {})
     assert idb_adap_oid_ret == idb_adap_oid, 'Idb restarted with different oid'
+
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_debugger', verbosity=2, exit=False)

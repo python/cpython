@@ -1,1 +1,0 @@
-Add a new UTF-8 mode: implementation of the :pep:`540`.

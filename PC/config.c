@@ -5,6 +5,7 @@
 
 #include "Python.h"
 
+extern PyObject* PyInit__abc(void);
 extern PyObject* PyInit_array(void);
 extern PyObject* PyInit_audioop(void);
 extern PyObject* PyInit_binascii(void);
@@ -31,8 +32,9 @@ extern PyObject* PyInit__locale(void);
 #endif
 extern PyObject* PyInit__codecs(void);
 extern PyObject* PyInit__weakref(void);
+/* XXX: These two should really be extracted to standalone extensions. */
 extern PyObject* PyInit_xxsubtype(void);
-extern PyObject* PyInit_zipimport(void);
+extern PyObject* PyInit__xxsubinterpreters(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
 extern PyObject* PyInit__collections(void);
@@ -69,16 +71,18 @@ extern PyObject* _PyWarnings_Init(void);
 extern PyObject* PyInit__string(void);
 extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
-extern PyObject* PyInit__findvs(void);
+
+extern PyObject* PyInit__contextvars(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
 
 extern PyObject* PyMarshal_Init(void);
-extern PyObject* PyInit_imp(void);
+extern PyObject* PyInit__imp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 
+    {"_abc", PyInit__abc},
     {"array", PyInit_array},
     {"_ast", PyInit__ast},
     {"audioop", PyInit_audioop},
@@ -127,7 +131,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_json", PyInit__json},
 
     {"xxsubtype", PyInit_xxsubtype},
-    {"zipimport", PyInit_zipimport},
+    {"_xxsubinterpreters", PyInit__xxsubinterpreters},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
 #endif
@@ -148,7 +152,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"marshal", PyMarshal_Init},
 
     /* This lives it with import.c */
-    {"_imp", PyInit_imp},
+    {"_imp", PyInit__imp},
 
     /* These entries are here for sys.builtin_module_names */
     {"builtins", NULL},
@@ -162,7 +166,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_stat", PyInit__stat},
     {"_opcode", PyInit__opcode},
 
-    {"_findvs", PyInit__findvs},
+    {"_contextvars", PyInit__contextvars},
 
     /* Sentinel */
     {0, 0}

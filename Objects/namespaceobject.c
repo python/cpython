@@ -103,15 +103,15 @@ namespace_repr(PyObject *ns)
             PyObject *value, *item;
 
             value = PyDict_GetItem(d, key);
-            assert(value != NULL);
-
-            item = PyUnicode_FromFormat("%S=%R", key, value);
-            if (item == NULL) {
-                loop_error = 1;
-            }
-            else {
-                loop_error = PyList_Append(pairs, item);
-                Py_DECREF(item);
+            if (value != NULL) {
+                item = PyUnicode_FromFormat("%S=%R", key, value);
+                if (item == NULL) {
+                    loop_error = 1;
+                }
+                else {
+                    loop_error = PyList_Append(pairs, item);
+                    Py_DECREF(item);
+                }
             }
         }
 
@@ -173,7 +173,7 @@ namespace_richcompare(PyObject *self, PyObject *other, int op)
 PyDoc_STRVAR(namespace_reduce__doc__, "Return state information for pickling");
 
 static PyObject *
-namespace_reduce(_PyNamespaceObject *ns)
+namespace_reduce(_PyNamespaceObject *ns, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result, *args = PyTuple_New(0);
 
@@ -201,7 +201,7 @@ SimpleNamespace(**kwargs)");
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "types.SimpleNamespace",                    /* tp_name */
-    sizeof(_PyNamespaceObject),                 /* tp_size */
+    sizeof(_PyNamespaceObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)namespace_dealloc,              /* tp_dealloc */
     0,                                          /* tp_print */

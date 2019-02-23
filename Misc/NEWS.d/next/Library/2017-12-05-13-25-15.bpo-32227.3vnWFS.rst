@@ -1,2 +1,0 @@
-``functools.singledispatch`` now supports registering implementations using
-type annotations.

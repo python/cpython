@@ -65,6 +65,7 @@ autocomplete_w.AutoCompleteWindow
 outwin.OutputWindow (indirectly being tested with grep test)
 '''
 
+import idlelib.pyshell  # Set Windows DPI awareness before Tk().
 from importlib import import_module
 import tkinter as tk
 from tkinter.ttk import Scrollbar
@@ -79,11 +80,14 @@ AboutDialog_spec = {
            "are correctly displayed.\n [Close] to exit.",
     }
 
+# TODO implement ^\; adding '<Control-Key-\\>' to function does not work.
 _calltip_window_spec = {
     'file': 'calltip_w',
     'kwds': {},
     'msg': "Typing '(' should display a calltip.\n"
            "Typing ') should hide the calltip.\n"
+           "So should moving cursor out of argument area.\n"
+           "Force-open-calltip does not work here.\n"
     }
 
 _module_browser_spec = {
@@ -113,7 +117,7 @@ ConfigDialog_spec = {
            "font face of the text in the area below it.\nIn the "
            "'Highlighting' tab, try different color schemes. Clicking "
            "items in the sample program should update the choices above it."
-           "\nIn the 'Keys', 'General' and 'Extensions' tabs, test settings"
+           "\nIn the 'Keys', 'General' and 'Extensions' tabs, test settings "
            "of interest."
            "\n[Ok] to close the dialog.[Apply] to apply the settings and "
            "and [Cancel] to revert all changes.\nRe-run the test to ensure "
@@ -137,18 +141,17 @@ _editor_window_spec = {
            "Best to close editor first."
     }
 
-# Update once issue21519 is resolved.
 GetKeysDialog_spec = {
     'file': 'config_key',
     'kwds': {'title': 'Test keybindings',
              'action': 'find-again',
-             'currentKeySequences': [''] ,
+             'current_key_sequences': [['<Control-Key-g>', '<Key-F3>', '<Control-Key-G>']],
              '_htest': True,
              },
     'msg': "Test for different key modifier sequences.\n"
            "<nothing> is invalid.\n"
            "No modifier key is invalid.\n"
-           "Shift key with [a-z],[0-9], function key, move key, tab, space"
+           "Shift key with [a-z],[0-9], function key, move key, tab, space "
            "is invalid.\nNo validity checking if advanced key binding "
            "entry is used."
     }
@@ -159,7 +162,7 @@ _grep_dialog_spec = {
     'msg': "Click the 'Show GrepDialog' button.\n"
            "Test the various 'Find-in-files' functions.\n"
            "The results should be displayed in a new '*Output*' window.\n"
-           "'Right-click'->'Goto file/line' anywhere in the search results "
+           "'Right-click'->'Go to file/line' anywhere in the search results "
            "should open that file \nin a new EditorWindow."
     }
 
@@ -230,7 +233,7 @@ _percolator_spec = {
     'file': 'percolator',
     'kwds': {},
     'msg': "There are two tracers which can be toggled using a checkbox.\n"
-           "Toggling a tracer 'on' by checking it should print tracer"
+           "Toggling a tracer 'on' by checking it should print tracer "
            "output to the console or to the IDLE shell.\n"
            "If both the tracers are 'on', the output from the tracer which "
            "was switched 'on' later, should be printed first\n"
@@ -296,16 +299,6 @@ _stack_viewer_spec = {
            "Check that exc_value, exc_tb, and exc_type are correct.\n"
     }
 
-_tabbed_pages_spec = {
-    'file': 'tabbedpages',
-    'kwds': {},
-    'msg': "Toggle between the two tabs 'foo' and 'bar'\n"
-           "Add a tab by entering a suitable name for it.\n"
-           "Remove an existing tab by entering its name.\n"
-           "Remove all existing tabs.\n"
-           "<nothing> is an invalid add page and remove page name.\n"
-    }
-
 _tooltip_spec = {
     'file': 'tooltip',
     'kwds': {},
@@ -341,7 +334,7 @@ ViewWindow_spec = {
 _widget_redirector_spec = {
     'file': 'redirector',
     'kwds': {},
-    'msg': "Every text insert should be printed to the console."
+    'msg': "Every text insert should be printed to the console "
            "or the IDLE shell."
     }
 

@@ -1,1 +1,0 @@
-Ensure TCP_NODELAY is set on Linux. Tests by Victor Stinner.

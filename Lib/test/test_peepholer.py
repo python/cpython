@@ -3,6 +3,19 @@ import unittest
 
 from test.bytecode_helper import BytecodeTestCase
 
+def count_instr_recursively(f, opname):
+    count = 0
+    for instr in dis.get_instructions(f):
+        if instr.opname == opname:
+            count += 1
+    if hasattr(f, '__code__'):
+        f = f.__code__
+    for c in f.co_consts:
+        if hasattr(c, 'co_code'):
+            count += count_instr_recursively(c, opname)
+    return count
+
+
 class TestTranforms(BytecodeTestCase):
 
     def test_unot(self):
@@ -268,7 +281,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertNotInBytecode(f, 'JUMP_ABSOLUTE')
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
-        self.assertEqual(len(returns), 6)
+        self.assertLessEqual(len(returns), 6)
 
     def test_elim_jump_after_return2(self):
         # Eliminate dead code: jumps immediately after returns can't be reached
@@ -282,7 +295,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(len(returns), 1)
         returns = [instr for instr in dis.get_instructions(f)
                           if instr.opname == 'RETURN_VALUE']
-        self.assertEqual(len(returns), 2)
+        self.assertLessEqual(len(returns), 2)
 
     def test_make_function_doesnt_bail(self):
         def f():
@@ -310,6 +323,17 @@ class TestTranforms(BytecodeTestCase):
                 self.assertFalse(instr.opname.startswith('UNARY_'))
                 self.assertFalse(instr.opname.startswith('BINARY_'))
                 self.assertFalse(instr.opname.startswith('BUILD_'))
+
+    def test_in_literal_list(self):
+        def containtest():
+            return x in [a, b]
+        self.assertEqual(count_instr_recursively(containtest, 'BUILD_LIST'), 0)
+
+    def test_iterate_literal_list(self):
+        def forloop():
+            for x in [a, b]:
+                pass
+        self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
 
 
 class TestBuglets(unittest.TestCase):

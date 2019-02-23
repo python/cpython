@@ -58,9 +58,14 @@ int___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", 0, "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = int___format___impl(self, format_spec);
 
 exit:
@@ -118,6 +123,34 @@ int_bit_length(PyObject *self, PyObject *Py_UNUSED(ignored))
     return int_bit_length_impl(self);
 }
 
+PyDoc_STRVAR(int_as_integer_ratio__doc__,
+"as_integer_ratio($self, /)\n"
+"--\n"
+"\n"
+"Return integer ratio.\n"
+"\n"
+"Return a pair of integers, whose ratio is exactly equal to the original int\n"
+"and with a positive denominator.\n"
+"\n"
+">>> (10).as_integer_ratio()\n"
+"(10, 1)\n"
+">>> (-10).as_integer_ratio()\n"
+"(-10, 1)\n"
+">>> (0).as_integer_ratio()\n"
+"(0, 1)");
+
+#define INT_AS_INTEGER_RATIO_METHODDEF    \
+    {"as_integer_ratio", (PyCFunction)int_as_integer_ratio, METH_NOARGS, int_as_integer_ratio__doc__},
+
+static PyObject *
+int_as_integer_ratio_impl(PyObject *self);
+
+static PyObject *
+int_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return int_as_integer_ratio_impl(self);
+}
+
 PyDoc_STRVAR(int_to_bytes__doc__,
 "to_bytes($self, /, length, byteorder, *, signed=False)\n"
 "--\n"
@@ -139,7 +172,7 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    is raised.");
 
 #define INT_TO_BYTES_METHODDEF    \
-    {"to_bytes", (PyCFunction)int_to_bytes, METH_FASTCALL|METH_KEYWORDS, int_to_bytes__doc__},
+    {"to_bytes", (PyCFunction)(void(*)(void))int_to_bytes, METH_FASTCALL|METH_KEYWORDS, int_to_bytes__doc__},
 
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
@@ -186,7 +219,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    Indicates whether two\'s complement is used to represent the integer.");
 
 #define INT_FROM_BYTES_METHODDEF    \
-    {"from_bytes", (PyCFunction)int_from_bytes, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, int_from_bytes__doc__},
+    {"from_bytes", (PyCFunction)(void(*)(void))int_from_bytes, METH_FASTCALL|METH_KEYWORDS|METH_CLASS, int_from_bytes__doc__},
 
 static PyObject *
 int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
@@ -211,4 +244,4 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fd64beb83bd16df3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b91cda9d83abaa2 input=a9049054013a1b77]*/

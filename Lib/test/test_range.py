@@ -39,7 +39,7 @@ class RangeTest(unittest.TestCase):
                 self.fail('{}: unexpected excess element {} at '
                           'position {}'.format(test_id, x, i))
             else:
-                self.fail('{}: wrong element at position {};'
+                self.fail('{}: wrong element at position {}; '
                           'expected {}, got {}'.format(test_id, i, y, x))
 
     def test_range(self):

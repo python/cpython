@@ -973,16 +973,21 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
     def _fs_supports_holes():
         # Return True if the platform knows the st_blocks stat attribute and
         # uses st_blocks units of 512 bytes, and if the filesystem is able to
-        # store holes in files.
+        # store holes of 4 KiB in files.
+        #
+        # The function returns False if page size is larger than 4 KiB.
+        # For example, ppc64 uses pages of 64 KiB.
         if sys.platform.startswith("linux"):
             # Linux evidentially has 512 byte st_blocks units.
             name = os.path.join(TEMPDIR, "sparse-test")
             with open(name, "wb") as fobj:
+                # Seek to "punch a hole" of 4 KiB
                 fobj.seek(4096)
+                fobj.write(b'x' * 4096)
                 fobj.truncate()
             s = os.stat(name)
             support.unlink(name)
-            return s.st_blocks == 0
+            return (s.st_blocks * 512 < s.st_size)
         else:
             return False
 
@@ -1127,6 +1132,30 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             finally:
                 tar.close()
         finally:
+            support.rmdir(path)
+
+    # mock the following:
+    #  os.listdir: so we know that files are in the wrong order
+    def test_ordered_recursion(self):
+        path = os.path.join(TEMPDIR, "directory")
+        os.mkdir(path)
+        open(os.path.join(path, "1"), "a").close()
+        open(os.path.join(path, "2"), "a").close()
+        try:
+            tar = tarfile.open(tmpname, self.mode)
+            try:
+                with unittest.mock.patch('os.listdir') as mock_listdir:
+                    mock_listdir.return_value = ["2", "1"]
+                    tar.add(path)
+                paths = []
+                for m in tar.getmembers():
+                    paths.append(os.path.split(m.name)[-1])
+                self.assertEqual(paths, ["directory", "1", "2"]);
+            finally:
+                tar.close()
+        finally:
+            support.unlink(os.path.join(path, "1"))
+            support.unlink(os.path.join(path, "2"))
             support.rmdir(path)
 
     def test_gettarinfo_pathlike_name(self):
@@ -2124,6 +2153,14 @@ class MiscTest(unittest.TestCase):
                          b"\xff\xff\xff\xff\xff\xff\xff\x9c")
         self.assertEqual(tarfile.itn(-0x100000000000000),
                          b"\xff\x00\x00\x00\x00\x00\x00\x00")
+
+        # Issue 32713: Test if itn() supports float values outside the
+        # non-GNU format range
+        self.assertEqual(tarfile.itn(-100.0, format=tarfile.GNU_FORMAT),
+                         b"\xff\xff\xff\xff\xff\xff\xff\x9c")
+        self.assertEqual(tarfile.itn(8 ** 12 + 0.0, format=tarfile.GNU_FORMAT),
+                         b"\x80\x00\x00\x10\x00\x00\x00\x00")
+        self.assertEqual(tarfile.nti(tarfile.itn(-0.1, format=tarfile.GNU_FORMAT)), 0)
 
     def test_number_field_limits(self):
         with self.assertRaises(ValueError):

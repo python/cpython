@@ -15,11 +15,11 @@ way.  Functions such as :func:`importlib.import_module` and built-in
 
 The :keyword:`import` statement combines two operations; it searches for the
 named module, then it binds the results of that search to a name in the local
-scope.  The search operation of the :keyword:`import` statement is defined as
+scope.  The search operation of the :keyword:`!import` statement is defined as
 a call to the :func:`__import__` function, with the appropriate arguments.
 The return value of :func:`__import__` is used to perform the name
-binding operation of the :keyword:`import` statement.  See the
-:keyword:`import` statement for the exact details of that name binding
+binding operation of the :keyword:`!import` statement.  See the
+:keyword:`!import` statement for the exact details of that name binding
 operation.
 
 A direct call to :func:`__import__` performs only the module search and, if
@@ -127,8 +127,8 @@ Namespace packages
 ------------------
 
 .. index::
-    pair:: package; namespace
-    pair:: package; portion
+    pair: package; namespace
+    pair: package; portion
 
 A namespace package is a composite of various :term:`portions <portion>`,
 where each portion contributes a subpackage to the parent package.  Portions
@@ -616,8 +616,7 @@ the module.
 module.__path__
 ---------------
 
-By definition, if a module has a ``__path__`` attribute, it is a package,
-regardless of its value.
+By definition, if a module has a ``__path__`` attribute, it is a package.
 
 A package's ``__path__`` attribute is used during imports of its subpackages.
 Within the import machinery, it functions much the same as :data:`sys.path`,
@@ -952,7 +951,7 @@ In :ref:`the remaining cases <using-on-interface-options>`
 :mod:`__main__` does not correspond directly with an importable module:
 
 - interactive prompt
-- -c switch
+- :option:`-c` option
 - running from stdin
 - running directly from a source or bytecode file
 
