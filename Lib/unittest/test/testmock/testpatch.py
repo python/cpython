@@ -664,6 +664,21 @@ class PatchTest(unittest.TestCase):
         test()
 
 
+    def test_patch_dict_decorator_resolution(self):
+        # bpo-35512: Ensure that patch with a string target resolves to
+        # the new dictionary during function call
+        @patch.dict('unittest.test.testmock.support.target', {'bar': 'BAR'})
+        def test():
+            self.assertEqual(support.target['foo'], 'BAZ')
+            self.assertEqual(support.target['bar'], 'BAR')
+
+        support.target = {'foo': 'BAZ'}
+        test()
+
+        self.assertEqual(support.target['foo'], 'BAZ')
+        self.assertNotIn('bar', support.target)
+
+
     def test_patch_descriptor(self):
         # would be some effort to fix this - we could special case the
         # builtin descriptors: classmethod, property, staticmethod
