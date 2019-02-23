@@ -2189,39 +2189,6 @@ class TestNormalDist(unittest.TestCase):
         nd = NormalDist(100, 15)
         self.assertNotEqual(nd, lnd)
 
-    def test_immutability_hashability(self):
-        # Attributes and property are not writeable
-        nd = statistics.NormalDist(500, 17)
-        with self.assertRaises(AttributeError):
-            nd.mu = 600
-        with self.assertRaises(AttributeError):
-            nd.sigma = 34
-        with self.assertRaises(AttributeError):
-            nd.variance = 40
-
-        # Subclasses can write additional attributes
-        # but cannot write to the parent attributes
-        class SD(statistics.NormalDist):
-            def __init__(self, mu, sigma, n):
-                super().__init__(mu, sigma)
-                self.n = n
-        sd = SD(700, 25, 85)
-        with self.assertRaises(AttributeError):
-            sd.mu = 600
-        with self.assertRaises(AttributeError):
-            sd.sigma = 34
-        with self.assertRaises(AttributeError):
-            sd.variance = 40
-        self.assertEqual(sd.n, 85)
-        sd.n = 95
-        self.assertEqual(sd.n, 95)
-
-        # Within a type, both components must agree to be considered the same
-        nd2 = statistics.NormalDist(nd.mu - 1, nd.sigma)
-        nd3 = statistics.NormalDist(nd.mu, nd.sigma + 1)
-        nd4 = statistics.NormalDist(nd.mu, nd.sigma)
-        self.assertEqual(len({nd, nd2, nd3, nd4}), 3)
-
     def test_pickle_and_copy(self):
         nd = statistics.NormalDist(37.5, 5.625)
         nd1 = copy.copy(nd)

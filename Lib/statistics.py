@@ -710,8 +710,8 @@ class NormalDist:
         'NormalDist where mu is the mean and sigma is the standard deviation'
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
-        object.__setattr__(self, 'mu', mu)
-        object.__setattr__(self, 'sigma', sigma)
+        self.mu = mu
+        self.sigma = sigma
 
     @classmethod
     def from_samples(cls, data):
@@ -778,17 +778,6 @@ class NormalDist:
         if not isinstance(x2, NormalDist):
             return NotImplemented
         return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
-
-    def __hash__(x1):
-        return hash((x1.mu, x1.sigma))
-
-    def __setattr__(self, attr, value):
-        if type(self) is NormalDist or attr in ('mu', 'sigma'):
-            raise AttributeError(f"cannot set attribute {attr!r}")
-        super().__setattr__(attr, value)
-
-    def __reduce__(self):
-        return (type(self), (self.mu, self.sigma))
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self.mu!r}, sigma={self.sigma!r})'

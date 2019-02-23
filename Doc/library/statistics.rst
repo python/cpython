@@ -490,12 +490,11 @@ of applications in statistics, including simulations and hypothesis testing.
 
     .. attribute:: mu
 
-        A read-only attribute for the mean of a normal distribution.
+        The mean of a normal distribution.
 
     .. attribute:: sigma
 
-        A read-only attribute for the standard deviation of a normal
-        distribution.
+        The standard deviation of a normal distribution.
 
     .. attribute:: variance
 
@@ -569,9 +568,6 @@ of applications in statistics, including simulations and hypothesis testing.
         >>> combined = birth_weights + drug_effects
         >>> f'mu={combined.mu :.1f}   sigma={combined.sigma :.1f}'
         'mu=3.1   sigma=0.5'
-
-    Instances of :class:`NormalDist` are :term:`immutable` and
-    :term:`hashable`.
 
     .. versionadded:: 3.8
 
