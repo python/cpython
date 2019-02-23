@@ -163,6 +163,15 @@ gettext
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
 
+
+gc
+--
+
+:func:`~gc.get_objects` can now receive an optional *generation* parameter
+indicating a generation to get objects from. Contributed in
+:issue:`36016` by Pablo Galindo.
+
+
 gzip
 ----
 
