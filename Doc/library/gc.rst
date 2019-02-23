@@ -63,11 +63,14 @@ The :mod:`gc` module provides the following functions:
    Return the debugging flags currently set.
 
 
-.. function:: get_objects()
+.. function:: get_objects(generation=None)
 
    Returns a list of all objects tracked by the collector, excluding the list
-   returned.
+   returned. If *generation* is not None, return only the objects tracked by
+   the collector that are in that generation.
 
+   .. versionchanged:: 3.8
+      New *generation* parameter.
 
 .. function:: get_stats()
 
