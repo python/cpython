@@ -978,6 +978,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/funcobject.h \
 		$(srcdir)/Include/genobject.h \
 		$(srcdir)/Include/import.h \
+		$(srcdir)/Include//interpreteridobject.h \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
