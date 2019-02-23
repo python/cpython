@@ -1038,7 +1038,7 @@ if _have_ssl:
             new_socket = socket.create_connection((host, port), timeout,
                     self.source_address)
             new_socket = self.context.wrap_socket(new_socket,
-                                                  server_hostname=self._host)
+                                                  server_hostname=host)
             return new_socket
 
     __all__.append("SMTP_SSL")
