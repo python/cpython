@@ -270,7 +270,7 @@ class TestDecorateSortUndecorate(unittest.TestCase):
                 lambda x: x,
                 lambda x: (x,), lambda x: ((x,),),
                 lambda x: [x], lambda x: [[x]],
-                lambda x: ([x],), lambda x: [(x,)], 
+                lambda x: ([x],), lambda x: [(x,)],
         )
 
         for nesting in nestings:

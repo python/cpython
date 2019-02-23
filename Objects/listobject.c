@@ -2053,12 +2053,12 @@ safe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
         if (v->ob_type == &PyFloat_Type)
             return unsafe_float_compare(v, w, ms);
 
-        if (v->ob_type == &PyTuple_Type) {
+        if (v->ob_type == &PyTuple_Type && Py_SIZE(v) && Py_SIZE(w)) {
             ms->elem_compare = safe_object_compare;
             return unsafe_tuple_compare(v, w, ms);
         }
 
-        if (v->ob_type == &PyList_Type) {
+        if (v->ob_type == &PyList_Type && Py_SIZE(v) && Py_SIZE(w)) {
             ms->elem_compare = safe_object_compare;
             return unsafe_list_compare(v, w, ms);
         }
