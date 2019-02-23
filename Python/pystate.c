@@ -407,6 +407,17 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     }
 }
 
+_PyCoreConfig *
+_PyInterpreterState_GetCoreConfig(PyInterpreterState *interp)
+{
+    return &interp->core_config;
+}
+
+_PyMainInterpreterConfig *
+_PyInterpreterState_GetMainConfig(PyInterpreterState *interp)
+{
+    return &interp->config;
+}
 
 /* Default implementation for _PyThreadState_GetFrame */
 static struct _frame *

@@ -571,6 +571,16 @@ Changes in the Python API
 * ``PyGC_Head`` struct is changed completely.  All code touched the
   struct member should be rewritten.  (See :issue:`33597`)
 
+* The ``PyInterpreterState`` struct has been moved into the "internal"
+  header files (specifically Include/internal/pycore_pystate.h).  An
+  opaque ``PyInterpreterState`` is still available as part of the public
+  API (and stable ABI).  The docs indicate that none of the struct's
+  fields are public, so we hope no one has been using them.  However,
+  if you do rely on one or more of those private fields and have no
+  alternative then please open a BPO issue.  We'll work on helping
+  you adjust (possibly including adding accessor functions to the
+  public API).  (See :issue:`35886`.)
+
 * Asyncio tasks can now be named, either by passing the ``name`` keyword
   argument to :func:`asyncio.create_task` or
   the :meth:`~asyncio.loop.create_task` event loop method, or by

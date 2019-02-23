@@ -315,7 +315,7 @@ dump_config_impl(void)
 
     /* core config */
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyCoreConfig *core_config = &interp->core_config;
+    const _PyCoreConfig *core_config = _PyInterpreterState_GetCoreConfig(interp);
     dict = _PyCoreConfig_AsDict(core_config);
     if (dict == NULL) {
         goto error;
@@ -326,7 +326,7 @@ dump_config_impl(void)
     Py_CLEAR(dict);
 
     /* main config */
-    const _PyMainInterpreterConfig *main_config = &interp->config;
+    const _PyMainInterpreterConfig *main_config = _PyInterpreterState_GetMainConfig(interp);
     dict = _PyMainInterpreterConfig_AsDict(main_config);
     if (dict == NULL) {
         goto error;
