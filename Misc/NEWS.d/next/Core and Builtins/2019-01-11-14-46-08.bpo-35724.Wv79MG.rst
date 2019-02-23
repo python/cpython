@@ -1,0 +1,2 @@
+Signal-handling is now guaranteed to happen relative to the main
+interpreter.
