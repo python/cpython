@@ -133,6 +133,13 @@ Other Language Changes
   :meth:`datetime.datetime.astimezone`.
   (Contributed by Paul Ganssle in :issue:`32417`.)
 
+* When the Python interpreter is interrupted by Ctrl-C (SIGINT) and the
+  resulting :exc:`KeyboardInterrupt` exception is not caught, the Python process
+  now exits via a SIGINT signal or with the correct exit code such that the
+  calling process can detect that it died due to a Ctrl-C.  Shells on POSIX
+  and Windows use this to properly terminate scripts in interactive sessions.
+  (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
+
 
 New Modules
 ===========
