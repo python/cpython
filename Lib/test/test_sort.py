@@ -259,6 +259,23 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         copy2.sort(key=lambda x: x[0], reverse=True)
         self.assertEqual(data, copy2)
 
+    def test_stable_nan_sorting(self):
+
+        nan = float('nan')
+
+        data = (3, 1, 2, nan, 2.0, 2, 2.0)
+        correct = (1, 2, 2.0, 2, 2.0, 3, nan)
+
+        nestings = (
+                lambda x: x,
+                lambda x: (x,), lambda x: ((x,),),
+                lambda x: [x], lambda x: [[x]],
+                lambda x: ([x],), lambda x: [(x,)], 
+        )
+
+        for nesting in nestings:
+            self.assertEqual(sorted(map(nesting, data)), list(map(nesting, correct)))
+
 #==============================================================================
 def check_against_PyObject_RichCompareBool(self, L):
     ## The idea here is to exploit the fact that unsafe_tuple_compare uses
