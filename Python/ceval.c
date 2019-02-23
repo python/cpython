@@ -240,10 +240,11 @@ PyEval_ReInitThreads(void)
     if (!gil_created())
         return;
     recreate_gil();
-    _PyRuntime.main_thread = PyThread_get_thread_ident();
-    // XXX Set for every interpreter.
-    current_tstate->interp->ceval.pending.lock = PyThread_allocate_lock();
+    // This will be reset in make_pending_calls() below.
+    current_tstate->interp->ceval.pending.lock = NULL;
+
     take_gil(current_tstate);
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
