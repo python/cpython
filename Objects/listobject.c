@@ -2042,6 +2042,7 @@ static int unsafe_object_compare(PyObject*, PyObject*, MergeState*);
 static int
 safe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
+    int res;
 
     /* First, check to see if both of the objects are the same type.
      * This is necessary to properly handle lists and tuples which could 
@@ -2068,7 +2069,10 @@ safe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
     }
 
     /* Otherwise, no assumptions: */
-    return PyObject_RichCompareBool(v, w, Py_LT) ? : (ISNAN(w) && !ISNAN(v));
+    if ((res = PyObject_RichCompareBool(v, w, Py_LT)))
+        return res;
+
+    return ISNAN(w) && !ISNAN(v);
 }
 
 /* Homogeneous compare: safe for any two compareable objects of the same type.
@@ -2177,7 +2181,7 @@ unsafe_float_compare(PyObject *v, PyObject *w, MergeState *ms)
     dw = PyFloat_AS_DOUBLE(w);
 
     res = !(dv >= dw || Py_IS_NAN(dv));
-    assert(res == PyObject_RichCompareBool(v, w, Py_LT) ? : !ISNAN(v) && ISNAN(w));
+    assert(res == (!ISNAN(v) && ISNAN(w) ? 1 : PyObject_RichCompareBool(v, w, Py_LT)));
     return res;
 }
 
@@ -2352,9 +2356,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         
         int keys_are_in_lists = (lo.keys[0]->ob_type == &PyList_Type &&
                                   Py_SIZE(lo.keys[0]) > 0);
-
+        
         PyTypeObject* key_type = (keys_are_in_tuples || keys_are_in_lists ?
-                                  PyTuple_GET_ITEM(lo.keys[0], 0)->ob_type :
+                                  PySequence_Fast_GET_ITEM(lo.keys[0], 0)->ob_type :
                                   lo.keys[0]->ob_type);
 
         int keys_are_all_same_type = 1;
@@ -2382,7 +2386,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
              * not lo.keys[i] itself! We verify type-homogeneity for lists of
              * tuples/lists in the if-statements directly above. */
             PyObject *key = (keys_are_in_tuples || keys_are_in_lists ?
-                             PyTuple_GET_ITEM(lo.keys[i], 0) :
+                             PySequence_Fast_GET_ITEM(lo.keys[i], 0) :
                              lo.keys[i]);
 
             if (key->ob_type != key_type) {
