@@ -109,10 +109,7 @@ class ClearTest(unittest.TestCase):
             self.assertIs(None, wr())
 
 
-class FrameLocalsTest(unittest.TestCase):
-    """
-    Tests for the .f_locals attribute.
-    """
+class FrameAttrsTest(unittest.TestCase):
 
     def make_frames(self):
         def outer():
@@ -158,6 +155,11 @@ class FrameLocalsTest(unittest.TestCase):
         inner.clear()
         self.assertEqual(outer.f_locals, {})
         self.assertEqual(inner.f_locals, {})
+
+    def test_f_lineno_del_segfault(self):
+        f, _, _ = self.make_frames()
+        with self.assertRaises(AttributeError):
+            del f.f_lineno
 
 
 class ReprTest(unittest.TestCase):

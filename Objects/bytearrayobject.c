@@ -17,17 +17,6 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 
 char _PyByteArray_empty_string[] = "";
 
-void
-PyByteArray_Fini(void)
-{
-}
-
-int
-PyByteArray_Init(void)
-{
-    return 1;
-}
-
 /* end nullbytes support */
 
 /* Helpers */

@@ -1339,6 +1339,7 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
         return -1;
     }
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
+        PyMem_Free(data);
         PyThread_release_lock(mutex);
         return -1;
     }

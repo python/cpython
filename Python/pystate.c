@@ -281,10 +281,11 @@ _PyInterpreterState_DeleteExceptMain()
     HEAD_LOCK();
     PyInterpreterState *interp = _PyRuntime.interpreters.head;
     _PyRuntime.interpreters.head = NULL;
-    for (; interp != NULL; interp = interp->next) {
+    while (interp != NULL) {
         if (interp == _PyRuntime.interpreters.main) {
             _PyRuntime.interpreters.main->next = NULL;
             _PyRuntime.interpreters.head = interp;
+            interp = interp->next;
             continue;
         }
 
@@ -293,7 +294,9 @@ _PyInterpreterState_DeleteExceptMain()
         if (interp->id_mutex != NULL) {
             PyThread_free_lock(interp->id_mutex);
         }
-        PyMem_RawFree(interp);
+        PyInterpreterState *prev_interp = interp;
+        interp = interp->next;
+        PyMem_RawFree(prev_interp);
     }
     HEAD_UNLOCK();
 
@@ -1467,13 +1470,17 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
 static PyObject *
 _new_long_object(_PyCrossInterpreterData *data)
 {
-    return PyLong_FromLongLong((int64_t)(data->data));
+    return PyLong_FromSsize_t((Py_ssize_t)(data->data));
 }
 
 static int
 _long_shared(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    int64_t value = PyLong_AsLongLong(obj);
+    /* Note that this means the size of shareable ints is bounded by
+     * sys.maxsize.  Hence on 32-bit architectures that is half the
+     * size of maximum shareable ints on 64-bit.
+     */
+    Py_ssize_t value = PyLong_AsSsize_t(obj);
     if (value == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_SetString(PyExc_OverflowError, "try sending as bytes");

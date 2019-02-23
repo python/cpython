@@ -249,7 +249,7 @@ I/O Base Classes
 
    :class:`IOBase` is also a context manager and therefore supports the
    :keyword:`with` statement.  In this example, *file* is closed after the
-   :keyword:`with` statement's suite is finished---even if an exception occurs::
+   :keyword:`!with` statement's suite is finished---even if an exception occurs::
 
       with open('spam.txt', 'w') as file:
           file.write('Spam and eggs!')
@@ -349,8 +349,8 @@ I/O Base Classes
       (on most systems, additional bytes are zero-filled).  The new file size
       is returned.
 
-   .. versionchanged:: 3.5
-      Windows will now zero-fill files when extending.
+      .. versionchanged:: 3.5
+         Windows will now zero-fill files when extending.
 
    .. method:: writable()
 

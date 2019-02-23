@@ -19,7 +19,8 @@ _winapi_Overlapped_GetOverlappedResult(OverlappedObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int wait;
 
-    if (!PyArg_Parse(arg, "p:GetOverlappedResult", &wait)) {
+    wait = PyObject_IsTrue(arg);
+    if (wait < 0) {
         goto exit;
     }
     return_value = _winapi_Overlapped_GetOverlappedResult_impl(self, wait);
@@ -944,4 +945,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=145d0d362167c1b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5063c84b2d125488 input=a9049054013a1b77]*/

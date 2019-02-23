@@ -1,0 +1,2 @@
+Add test.support.TEST_HTTP_URL and replace references of http://www.example.com
+by this new constant. Contributed by Stéphane Wirtel.

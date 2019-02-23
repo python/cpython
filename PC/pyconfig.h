@@ -178,7 +178,7 @@ typedef _W64 int ssize_t;
 #define PYD_PLATFORM_TAG "win32"
 #elif defined(_M_ARM)
 #define COMPILER _Py_PASTE_VERSION("32 bit (ARM)")
-#define PYD_PLATFORM_TAG "win_arm"
+#define PYD_PLATFORM_TAG "win_arm32"
 #else
 #define COMPILER _Py_PASTE_VERSION("32 bit (Unknown)")
 #endif
@@ -191,11 +191,6 @@ typedef int pid_t;
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
 #define Py_IS_FINITE(X) _finite(X)
 #define copysign _copysign
-
-/* VS 2010 and above already defines hypot as _hypot */
-#if _MSC_VER < 1600
-#define hypot _hypot
-#endif
 
 /* VS 2015 defines these names with a leading underscore */
 #if _MSC_VER >= 1900
@@ -231,7 +226,6 @@ typedef int pid_t;
 #endif
 
 #define COMPILER "[gcc]"
-#define hypot _hypot
 #define PY_LONG_LONG long long
 #define PY_LLONG_MIN LLONG_MIN
 #define PY_LLONG_MAX LLONG_MAX

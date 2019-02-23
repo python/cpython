@@ -115,6 +115,24 @@ Other Language Changes
   a :exc:`SyntaxWarning` instead.
   (Contributed by Serhiy Storchaka in :issue:`32912`.)
 
+* The compiler now produces a :exc:`SyntaxWarning` in some cases when a comma
+  is missed before tuple or list.  For example::
+
+     data = [
+         (1, 2, 3) # oops, missing comma!
+         (4, 5, 6)
+     ]
+
+  (Contributed by Serhiy Storchaka in :issue:`15248`.)
+
+* Arithmetic operations between subclasses of :class:`datetime.date` or
+  :class:`datetime.datetime` and :class:`datetime.timedelta` objects now return
+  an instance of the subclass, rather than the base class. This also affects
+  the return type of operations whose implementation (directly or indirectly)
+  uses :class:`datetime.timedelta` arithmetic, such as
+  :meth:`datetime.datetime.astimezone`.
+  (Contributed by Paul Ganssle in :issue:`32417`.)
+
 
 New Modules
 ===========
@@ -124,6 +142,14 @@ New Modules
 
 Improved Modules
 ================
+
+* The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
+  a :class:`dict` instead of a :class:`collections.OrderedDict`.  This works because
+  regular dicts have guaranteed ordering in since Python 3.7.  If the extra
+  features of :class:`OrderedDict` are required, the suggested remediation is
+  to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
+  (Contributed by Raymond Hettinger in :issue:`35864`.)
+
 
 asyncio
 -------
@@ -136,6 +162,15 @@ gettext
 
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
+
+
+gc
+--
+
+:func:`~gc.get_objects` can now receive an optional *generation* parameter
+indicating a generation to get objects from. Contributed in
+:issue:`36016` by Pablo Galindo.
+
 
 gzip
 ----
@@ -162,6 +197,22 @@ json.tool
 
 Add option ``--json-lines`` to parse every input line as separate JSON object.
 (Contributed by Weipeng Hong in :issue:`31553`.)
+
+
+math
+----
+
+Added new function :func:`math.dist` for computing Euclidean distance
+between two points.  (Contributed by Raymond Hettinger in :issue:`33089`.)
+
+Expanded the :func:`math.hypot` function to handle multiple dimensions.
+Formerly, it only supported the 2-D case.
+(Contributed by Raymond Hettinger in :issue:`33089`.)
+
+Added new function, :func:`math.prod`, as analogous function to :func:`sum`
+that returns the product of a 'start' value (default: 1) times an iterable of
+numbers. (Contributed by Pablo Galindo in :issue:`35606`)
+
 
 os.path
 -------
@@ -196,6 +247,14 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+
+shutil
+------
+
+:func:`shutil.copytree` now accepts a new ``dirs_exist_ok`` keyword argument.
+(Contributed by Josh Bronson in :issue:`20849`.)
+
+
 ssl
 ---
 
@@ -203,6 +262,15 @@ Added :attr:`SSLContext.post_handshake_auth` to enable and
 :meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
+
+
+statistics
+----------
+
+Added :func:`statistics.fmean` as a faster, floating point variant of
+:func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
+Steven D'Aprano in :issue:`35904`.)
+
 
 tokenize
 --------
@@ -225,6 +293,12 @@ in the :class:`tkinter.Spinbox` class.
 Added method :meth:`~tkinter.Canvas.moveto`
 in the :class:`tkinter.Canvas` class.
 (Contributed by Juliette Monsel in :issue:`23831`.)
+
+time
+----
+
+Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
+(Contributed by Joannah Nanjekye in :issue:`35702`.)
 
 unicodedata
 -----------
@@ -261,6 +335,15 @@ xml
 Optimizations
 =============
 
+* The :mod:`subprocess` module can now use the :func:`os.posix_spawn` function
+  in some cases for better performance. Currently, it is only used on macOS
+  and Linux (using glibc 2.24 or newer) if all these conditions are met:
+
+  * *close_fds* is false;
+  * *preexec_fn*, *pass_fds*, *cwd* and *start_new_session* parameters
+    are not set;
+  * the *executable* path contains a directory.
+
 * :func:`shutil.copyfile`, :func:`shutil.copy`, :func:`shutil.copy2`,
   :func:`shutil.copytree` and :func:`shutil.move` use platform-specific
   "fast-copy" syscalls on Linux, macOS and Solaris in order to copy the file
@@ -284,7 +367,6 @@ Optimizations
   syscalls is reduced by 38% making :func:`shutil.copytree` especially faster
   on network filesystems. (Contributed by Giampaolo Rodola' in :issue:`33695`.)
 
-
 * The default protocol in the :mod:`pickle` module is now Protocol 4,
   first introduced in Python 3.4.  It offers better performance and smaller
   size compared to Protocol 3 available since Python 3.0.
@@ -294,17 +376,35 @@ Optimizations
   (Contributed by Inada Naoki in :issue:`33597`)
 
 * :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
-  Note that this means that instances can no longer be weak-referenced and
-  that arbitrary attributes can no longer be added to them.
+
+* Improved performance of :func:`operator.itemgetter` by 33%.  Optimized
+  argument handling and added a fast path for the common case of a single
+  non-negative integer index into a tuple (which is the typical use case in
+  the standard library).  (Contributed by Raymond Hettinger in
+  :issue:`35664`.)
+
+* Sped-up field lookups in :func:`collections.namedtuple`.  They are now more
+  than two times faster, making them the fastest form of instance variable
+  lookup in Python. (Contributed by Raymond Hettinger, Pablo Galindo, and
+  Joe Jevnik, Serhiy Storchaka in :issue:`32492`.)
 
 * The :class:`list` constructor does not overallocate the internal item buffer
   if the input iterable has a known length (the input implements ``__len__``).
-  This makes the created list 12% smaller on average. (Contributed by Pablo
-  Galindo in :issue:`33234`.)
+  This makes the created list 12% smaller on average. (Contributed by
+  Raymond Hettinger and Pablo Galindo in :issue:`33234`.)
+
+* Doubled the speed of class variable writes.  When a non-dunder attribute
+  was updated, there was an unnecessary call to update slots.
+  (Contributed by Stefan Behnel, Pablo Galindo Salgado, Raymond Hettinger,
+  Neil Schemenauer, and Serhiy Storchaka in :issue:`36012`.)
 
 
 Build and C API Changes
 =======================
+
+* The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+  been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
+  excluded from the limited API (stable ABI), and were not documented.
 
 * The result of :c:func:`PyExceptionClass_Name` is now of type
   ``const char *`` rather of ``char *``.
@@ -372,6 +472,8 @@ Deprecated
 
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
+* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread` has been deprecated.
+  (Contributed by Dong-hee Na in :issue:`35283`.)
 
 API and Feature Removals
 ========================
@@ -415,8 +517,15 @@ Changes in Python behavior
 
 * Yield expressions (both ``yield`` and ``yield from`` clauses) are now disallowed
   in comprehensions and generator expressions (aside from the iterable expression
-  in the leftmost :keyword:`for` clause).
+  in the leftmost :keyword:`!for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
+
+* The compiler now produces a :exc:`SyntaxWarning` when identity checks
+  (``is`` and ``is not``) are used with certain types of literals
+  (e.g. strings, ints).  These can often work by accident in CPython,
+  but are not guaranteed by the language spec.  The warning advises users
+  to use equality tests (``==`` and ``!=``) instead.
+  (Contributed by Serhiy Storchaka in :issue:`34850`.)
 
 
 Changes in the Python API
@@ -479,9 +588,6 @@ Changes in the Python API
 * The function :func:`math.factorial` no longer accepts arguments that are not
   int-like. (Contributed by Pablo Galindo in :issue:`33083`.)
 
-* :class:`uuid.UUID` now uses ``__slots__``, therefore instances can no longer
-  be weak-referenced and attributes can no longer be added.
-
 * :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
@@ -513,3 +619,11 @@ CPython bytecode changes
 * Added new opcode :opcode:`END_ASYNC_FOR` for handling exceptions raised
   when awaiting a next item in an :keyword:`async for` loop.
   (Contributed by Serhiy Storchaka in :issue:`33041`.)
+
+
+Demos and Tools
+---------------
+
+* Added a benchmark script for timing various ways to access variables:
+  ``Tools/scripts/var_access_benchmark.py``.
+  (Contributed by Raymond Hettinger in :issue:`35884`.)

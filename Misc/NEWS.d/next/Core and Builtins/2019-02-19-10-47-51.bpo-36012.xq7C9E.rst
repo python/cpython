@@ -1,0 +1,2 @@
+Doubled the speed of class variable writes.  When a non-dunder attribute was
+updated, there was an unnecessary call to update slots.

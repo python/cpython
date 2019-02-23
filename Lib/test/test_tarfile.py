@@ -973,16 +973,21 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
     def _fs_supports_holes():
         # Return True if the platform knows the st_blocks stat attribute and
         # uses st_blocks units of 512 bytes, and if the filesystem is able to
-        # store holes in files.
+        # store holes of 4 KiB in files.
+        #
+        # The function returns False if page size is larger than 4 KiB.
+        # For example, ppc64 uses pages of 64 KiB.
         if sys.platform.startswith("linux"):
             # Linux evidentially has 512 byte st_blocks units.
             name = os.path.join(TEMPDIR, "sparse-test")
             with open(name, "wb") as fobj:
+                # Seek to "punch a hole" of 4 KiB
                 fobj.seek(4096)
+                fobj.write(b'x' * 4096)
                 fobj.truncate()
             s = os.stat(name)
             support.unlink(name)
-            return s.st_blocks == 0
+            return (s.st_blocks * 512 < s.st_size)
         else:
             return False
 

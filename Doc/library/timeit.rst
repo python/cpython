@@ -292,7 +292,7 @@ The same can be done using the :class:`Timer` class and its methods::
    >>> t.timeit()
    0.3955516149999312
    >>> t.repeat()
-   [0.40193588800002544, 0.3960157959998014, 0.39594301399984033]
+   [0.40183617287970225, 0.37027556854118704, 0.38344867356679524, 0.3712595970846668, 0.37866875250654886]
 
 
 The following examples show how to time expressions that contain multiple lines.

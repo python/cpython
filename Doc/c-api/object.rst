@@ -33,12 +33,21 @@ Object Protocol
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
    always succeeds.
 
+   Note that exceptions which occur while calling :meth:`__getattr__` and
+   :meth:`__getattribute__` methods will get suppressed.
+   To get error reporting use :c:func:`PyObject_GetAttr()` instead.
+
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
    always succeeds.
+
+   Note that exceptions which occur while calling :meth:`__getattr__` and
+   :meth:`__getattribute__` methods and creating a temporary string object
+   will get suppressed.
+   To get error reporting use :c:func:`PyObject_GetAttrString()` instead.
 
 
 .. c:function:: PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name)
