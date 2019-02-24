@@ -66,7 +66,7 @@ PyDoc_STRVAR(abc_data_doc,
 "Internal state held by ABC machinery.");
 
 static PyTypeObject _abc_data_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_abc_data",                        /*tp_name*/
     sizeof(_abc_data),                  /*tp_basicsize*/
     .tp_dealloc = (destructor)abc_data_dealloc,
