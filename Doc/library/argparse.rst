@@ -891,7 +891,7 @@ For more details, see :class:`Action`.
 
 
 .. _nargs:
-	
+
 nargs
 ^^^^^
 
@@ -1169,9 +1169,9 @@ Any object that supports the ``in`` operator can be passed as the *choices*
 value, so :class:`dict` objects, :class:`set` objects, custom containers,
 etc. are all supported.
 
-		      
+
 .. _required:
-		       
+
 required
 ^^^^^^^^
 
