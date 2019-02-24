@@ -187,9 +187,11 @@ def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
             else:
                 fdst_write(mv)
 
-def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+def copyfileobj(fsrc, fdst, length=0):
     """copy data from file-like object fsrc to file-like object fdst"""
     # Localize variable access to minimize overhead.
+    if not length:
+        length = COPY_BUFSIZE
     fsrc_read = fsrc.read
     fdst_write = fdst.write
     while True:
