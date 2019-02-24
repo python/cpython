@@ -3,6 +3,8 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-24310: Document settings dialog font tab sample.
+
 bpo-35689: Add docstrings and tests for colorizer.
 
 bpo-35833: Revise IDLE doc for control codes sent to Shell.
