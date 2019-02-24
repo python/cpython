@@ -37,12 +37,12 @@ The :mod:`argparse` module's support for command-line interfaces is built from t
 The :class:`argparse.ArgumentParser` creates a new :class:`ArgumentParser` object. Commonly used arguments include `prog`_, `description`_, and `formatter_class`_. For example, the user can create an instance of :class:`ArgumentParser` through the following::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', description='DESC',
-   ...		   			formatter_class=argparse.RawDescriptionHelpFormatter)
+   ...                                  formatter_class=argparse.RawDescriptionHelpFormatter)
 
 The :func:`ArgumentParser.add_argument` is a function that is used to define how a single command-line argument should be parsed. Commonly used arguments include `name or flags`_, `action`_, `default`_, `type`_, `required`_, and `help`_. An example of the function :func:`ArgumentParser.add_argument` is as follows::
 
    >>> parser.add_argument('-v', '--verbose', action='store_true',
-   ...		   	   help='Show various debugging information')
+   ...                     help='Show various debugging information')
 
 
 Basic Usage of :func:`add_argument`
