@@ -159,6 +159,7 @@ def create_converter(type_, format_unit):
 create_converter('HANDLE', '" F_HANDLE "')
 create_converter('HMODULE', '" F_HANDLE "')
 create_converter('LPSECURITY_ATTRIBUTES', '" F_POINTER "')
+create_converter('LPCVOID', '" F_POINTER "')
 
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
@@ -186,8 +187,17 @@ class DWORD_return_converter(CReturnConverter):
         self.err_occurred_if("_return_value == PY_DWORD_MAX", data)
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
+
+class LPVOID_return_converter(CReturnConverter):
+    type = 'LPVOID'
+
+    def render(self, function, data):
+        self.declare(data)
+        self.err_occurred_if("_return_value == NULL", data)
+        data.return_conversion.append(
+            'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=27456f8555228b62]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=79464c61a31ae932]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -460,6 +470,41 @@ _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
 
     if (handle == INVALID_HANDLE_VALUE)
         PyErr_SetFromWindowsErr(0);
+
+    return handle;
+}
+
+/*[clinic input]
+_winapi.CreateFileMapping -> HANDLE
+
+    file_handle: HANDLE
+    security_attributes: LPSECURITY_ATTRIBUTES
+    protect: DWORD
+    max_size_high: DWORD
+    max_size_low: DWORD
+    name: LPCWSTR
+    /
+[clinic start generated code]*/
+
+static HANDLE
+_winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
+                               LPSECURITY_ATTRIBUTES security_attributes,
+                               DWORD protect, DWORD max_size_high,
+                               DWORD max_size_low, LPCWSTR name)
+/*[clinic end generated code: output=6c0a4d5cf7f6fcc6 input=3dc5cf762a74dee8]*/
+{
+    HANDLE handle;
+
+    Py_BEGIN_ALLOW_THREADS
+    handle = CreateFileMappingW(file_handle, security_attributes,
+                                protect, max_size_high, max_size_low,
+                                name);
+    Py_END_ALLOW_THREADS
+
+    if (handle == NULL) {
+        PyErr_SetFromWindowsErrWithUnicodeFilename(0, name);
+        handle = INVALID_HANDLE_VALUE;
+    }
 
     return handle;
 }
@@ -1296,6 +1341,64 @@ _winapi_GetVersion_impl(PyObject *module)
 #pragma warning(pop)
 
 /*[clinic input]
+_winapi.MapViewOfFile -> LPVOID
+
+    file_map: HANDLE
+    desired_access: DWORD
+    file_offset_high: DWORD
+    file_offset_low: DWORD
+    number_bytes: size_t
+    /
+[clinic start generated code]*/
+
+static LPVOID
+_winapi_MapViewOfFile_impl(PyObject *module, HANDLE file_map,
+                           DWORD desired_access, DWORD file_offset_high,
+                           DWORD file_offset_low, size_t number_bytes)
+/*[clinic end generated code: output=f23b1ee4823663e3 input=177471073be1a103]*/
+{
+    LPVOID address;
+
+    Py_BEGIN_ALLOW_THREADS
+    address = MapViewOfFile(file_map, desired_access, file_offset_high,
+                            file_offset_low, number_bytes);
+    Py_END_ALLOW_THREADS
+
+    if (address == NULL)
+        PyErr_SetFromWindowsErr(0);
+
+    return address;
+}
+
+/*[clinic input]
+_winapi.OpenFileMapping -> HANDLE
+
+    desired_access: DWORD
+    inherit_handle: BOOL
+    name: LPCWSTR
+    /
+[clinic start generated code]*/
+
+static HANDLE
+_winapi_OpenFileMapping_impl(PyObject *module, DWORD desired_access,
+                             BOOL inherit_handle, LPCWSTR name)
+/*[clinic end generated code: output=08cc44def1cb11f1 input=131f2a405359de7f]*/
+{
+    HANDLE handle;
+
+    Py_BEGIN_ALLOW_THREADS
+    handle = OpenFileMappingW(desired_access, inherit_handle, name);
+    Py_END_ALLOW_THREADS
+
+    if (handle == NULL) {
+        PyErr_SetFromWindowsErrWithUnicodeFilename(0, name);
+        handle = INVALID_HANDLE_VALUE;
+    }
+
+    return handle;
+}
+
+/*[clinic input]
 _winapi.OpenProcess -> HANDLE
 
     desired_access: DWORD
@@ -1488,6 +1591,32 @@ _winapi_TerminateProcess_impl(PyObject *module, HANDLE handle,
         return PyErr_SetFromWindowsErr(GetLastError());
 
     Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_winapi.VirtualQuerySize -> size_t
+
+    address: LPCVOID
+    /
+[clinic start generated code]*/
+
+static size_t
+_winapi_VirtualQuerySize_impl(PyObject *module, LPCVOID address)
+/*[clinic end generated code: output=40c8e0ff5ec964df input=6b784a69755d0bb6]*/
+{
+    SIZE_T size_of_buf;
+    MEMORY_BASIC_INFORMATION mem_basic_info;
+    SIZE_T region_size;
+
+    Py_BEGIN_ALLOW_THREADS
+    size_of_buf = VirtualQuery(address, &mem_basic_info, sizeof(mem_basic_info));
+    Py_END_ALLOW_THREADS
+
+    if (size_of_buf == 0)
+        PyErr_SetFromWindowsErr(0);
+
+    region_size = mem_basic_info.RegionSize;
+    return region_size;
 }
 
 /*[clinic input]
@@ -1719,6 +1848,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
     _WINAPI_CREATEFILE_METHODDEF
+    _WINAPI_CREATEFILEMAPPING_METHODDEF
     _WINAPI_CREATENAMEDPIPE_METHODDEF
     _WINAPI_CREATEPIPE_METHODDEF
     _WINAPI_CREATEPROCESS_METHODDEF
@@ -1731,11 +1861,14 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETMODULEFILENAME_METHODDEF
     _WINAPI_GETSTDHANDLE_METHODDEF
     _WINAPI_GETVERSION_METHODDEF
+    _WINAPI_MAPVIEWOFFILE_METHODDEF
+    _WINAPI_OPENFILEMAPPING_METHODDEF
     _WINAPI_OPENPROCESS_METHODDEF
     _WINAPI_PEEKNAMEDPIPE_METHODDEF
     _WINAPI_READFILE_METHODDEF
     _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF
     _WINAPI_TERMINATEPROCESS_METHODDEF
+    _WINAPI_VIRTUALQUERYSIZE_METHODDEF
     _WINAPI_WAITNAMEDPIPE_METHODDEF
     _WINAPI_WAITFORMULTIPLEOBJECTS_METHODDEF
     _WINAPI_WAITFORSINGLEOBJECT_METHODDEF
@@ -1799,11 +1932,34 @@ PyInit__winapi(void)
     WINAPI_CONSTANT(F_DWORD, FILE_FLAG_OVERLAPPED);
     WINAPI_CONSTANT(F_DWORD, FILE_GENERIC_READ);
     WINAPI_CONSTANT(F_DWORD, FILE_GENERIC_WRITE);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_ALL_ACCESS);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_COPY);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_EXECUTE);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_READ);
+    WINAPI_CONSTANT(F_DWORD, FILE_MAP_WRITE);
     WINAPI_CONSTANT(F_DWORD, GENERIC_READ);
     WINAPI_CONSTANT(F_DWORD, GENERIC_WRITE);
     WINAPI_CONSTANT(F_DWORD, INFINITE);
+    WINAPI_CONSTANT(F_HANDLE, INVALID_HANDLE_VALUE);
+    WINAPI_CONSTANT(F_DWORD, MEM_COMMIT);
+    WINAPI_CONSTANT(F_DWORD, MEM_FREE);
+    WINAPI_CONSTANT(F_DWORD, MEM_IMAGE);
+    WINAPI_CONSTANT(F_DWORD, MEM_MAPPED);
+    WINAPI_CONSTANT(F_DWORD, MEM_PRIVATE);
+    WINAPI_CONSTANT(F_DWORD, MEM_RESERVE);
     WINAPI_CONSTANT(F_DWORD, NMPWAIT_WAIT_FOREVER);
     WINAPI_CONSTANT(F_DWORD, OPEN_EXISTING);
+    WINAPI_CONSTANT(F_DWORD, PAGE_EXECUTE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_EXECUTE_READ);
+    WINAPI_CONSTANT(F_DWORD, PAGE_EXECUTE_READWRITE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_EXECUTE_WRITECOPY);
+    WINAPI_CONSTANT(F_DWORD, PAGE_GUARD);
+    WINAPI_CONSTANT(F_DWORD, PAGE_NOACCESS);
+    WINAPI_CONSTANT(F_DWORD, PAGE_NOCACHE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_READONLY);
+    WINAPI_CONSTANT(F_DWORD, PAGE_READWRITE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_WRITECOMBINE);
+    WINAPI_CONSTANT(F_DWORD, PAGE_WRITECOPY);
     WINAPI_CONSTANT(F_DWORD, PIPE_ACCESS_DUPLEX);
     WINAPI_CONSTANT(F_DWORD, PIPE_ACCESS_INBOUND);
     WINAPI_CONSTANT(F_DWORD, PIPE_READMODE_MESSAGE);
@@ -1812,6 +1968,12 @@ PyInit__winapi(void)
     WINAPI_CONSTANT(F_DWORD, PIPE_WAIT);
     WINAPI_CONSTANT(F_DWORD, PROCESS_ALL_ACCESS);
     WINAPI_CONSTANT(F_DWORD, PROCESS_DUP_HANDLE);
+    WINAPI_CONSTANT(F_DWORD, SEC_COMMIT);
+    WINAPI_CONSTANT(F_DWORD, SEC_IMAGE);
+    WINAPI_CONSTANT(F_DWORD, SEC_LARGE_PAGES);
+    WINAPI_CONSTANT(F_DWORD, SEC_NOCACHE);
+    WINAPI_CONSTANT(F_DWORD, SEC_RESERVE);
+    WINAPI_CONSTANT(F_DWORD, SEC_WRITECOMBINE);
     WINAPI_CONSTANT(F_DWORD, STARTF_USESHOWWINDOW);
     WINAPI_CONSTANT(F_DWORD, STARTF_USESTDHANDLES);
     WINAPI_CONSTANT(F_DWORD, STD_INPUT_HANDLE);
