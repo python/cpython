@@ -2128,6 +2128,12 @@ class TestNormalDist(unittest.TestCase):
         with self.assertRaises(statistics.StatisticsError):
             Y.cdf(90)
 
+    def test_properties(self):
+        X = statistics.NormalDist(100, 15)
+        self.assertEqual(X.mean, 100)
+        self.assertEqual(X.stdev, 15)
+        self.assertEqual(X.variance, 225)
+
     def test_unary_operations(self):
         NormalDist = statistics.NormalDist
         X = NormalDist(100, 12)
