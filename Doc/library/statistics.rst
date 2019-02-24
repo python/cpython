@@ -488,13 +488,17 @@ of applications in statistics, including simulations and hypothesis testing.
 
     If *sigma* is negative, raises :exc:`StatisticsError`.
 
-    .. attribute:: mu
+    .. attribute:: mean
 
-        The mean of a normal distribution.
+       A read-only property representing the `arithmetic mean
+       <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of a normal
+       distribution.
 
-    .. attribute:: sigma
+    .. attribute:: stdev
 
-        The standard deviation of a normal distribution.
+       A read-only property representing the `standard deviation
+       <https://en.wikipedia.org/wiki/Standard_deviation>`_ of a normal
+       distribution.
 
     .. attribute:: variance
 
@@ -566,8 +570,8 @@ of applications in statistics, including simulations and hypothesis testing.
         >>> birth_weights = NormalDist.from_samples([2.5, 3.1, 2.1, 2.4, 2.7, 3.5])
         >>> drug_effects = NormalDist(0.4, 0.15)
         >>> combined = birth_weights + drug_effects
-        >>> f'mu={combined.mu :.1f}   sigma={combined.sigma :.1f}'
-        'mu=3.1   sigma=0.5'
+        >>> f'mean: {combined.mean :.1f}   standard deviation: {combined.stdev :.1f}'
+        'mean: 3.1   standard deviation: 0.5'
 
     .. versionadded:: 3.8
 
