@@ -852,6 +852,13 @@ Non-default user settings are saved in a .idlerc directory in the user's
 home directory.  Problems caused by bad user configuration files are solved
 by editing or deleting one or more of the files in .idlerc.
 
+On the Font tab, see the text sample for the effect of font face and size
+on multiple characters in multiple languages.  Edit the sample to add
+other characters of personal interest.  Use the sample to select
+monospaced fonts.  If particular characters have problems in Shell or an
+editor, add them to the top of the sample and try changing first size
+and then font.
+
 On the Highlights and Keys tab, select a built-in or custom color theme
 and key set.  To use a newer built-in color theme or key set with older
 IDLEs, save it as a new custom theme or key set and it well be accessible
