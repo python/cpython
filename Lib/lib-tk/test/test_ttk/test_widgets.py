@@ -1675,9 +1675,5 @@ tests_gui = (
         SizegripTest, TreeviewTest, WidgetTest,
         )
 
-tests_gui = (
-        TreeviewTest,
-        )
-
 if __name__ == "__main__":
     run_unittest(*tests_gui)
