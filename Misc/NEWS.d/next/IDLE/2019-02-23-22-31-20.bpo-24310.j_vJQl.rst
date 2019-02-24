@@ -1,0 +1,1 @@
+IDLE -- Document settings dialog font tab sample.
