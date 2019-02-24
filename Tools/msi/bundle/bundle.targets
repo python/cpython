@@ -69,6 +69,7 @@
         <Package Include="..\path\path*.wixproj" />
         <Package Include="..\pip\pip*.wixproj" />
         <Package Include="..\tcltk\tcltk*.wixproj" />
+        <Package Include="..\idle\idle*.wixproj" />
         <Package Include="..\test\test*.wixproj" />
         <Package Include="..\tools\tools*.wixproj" />
         <Package Include="..\ucrt\ucrt*.wixproj" />

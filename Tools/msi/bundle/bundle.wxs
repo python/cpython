@@ -70,6 +70,7 @@
     <Variable Name="Include_doc" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_idle" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="Include_launcher" Value="1" bal:Overridable="yes" />
@@ -103,6 +104,7 @@
       <PackageGroupRef Id="doc" />
       <PackageGroupRef Id="tools" />
       <PackageGroupRef Id="tcltk" />
+      <PackageGroupRef Id="idle" />
       <PackageGroupRef Id="launcher" />
       <PackageGroupRef Id="pip" />
       <PackageGroupRef Id="packageinstall" />

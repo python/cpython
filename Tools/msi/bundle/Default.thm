@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Theme xmlns="http://wixtoolset.org/schemas/thmutil/2010">
-    <Window Width="670" Height="412" HexStyle="100a0000" FontId="0">#(loc.Caption)</Window>
+    <Window Width="670" Height="425" HexStyle="100a0000" FontId="0">#(loc.Caption)</Window>
     <Font Id="0" Height="-14" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
     <Font Id="1" Height="-26" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
     <Font Id="2" Height="-24" Weight="500" Foreground="808080" Background="ffffff">Segoe UI</Font>
@@ -60,13 +60,16 @@
         
         <Checkbox Name="Include_tcltk" X="185" Y="151" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_tcltkLabel)</Checkbox>
         <Text X="205" Y="176" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_tcltkHelpLabel)</Text>
-        
-        <Checkbox Name="Include_test" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_testLabel)</Checkbox>
-        <Text X="205" Y="226" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_testHelpLabel)</Text>
 
-        <Checkbox Name="Include_launcher" X="185" Y="251" Width="100" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_launcherLabel)</Checkbox>
-        <Checkbox Name="CustomInstallLauncherAllUsers" X="285" Y="251" Width="-11" Height="24" TabStop="yes" FontId="3">#(loc.InstallLauncherAllUsersLabel)</Checkbox>
-        <Text Name="Include_launcherHelp" X="205" Y="276" Width="-11" Height="24" TabStop="no" FontId="5"></Text>
+        <Checkbox Name="Include_idle" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_idleLabel)</Checkbox>
+        <Text X="205" Y="226" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_idleHelpLabel)</Text>
+        
+        <Checkbox Name="Include_test" X="185" Y="251" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_testLabel)</Checkbox>
+        <Text X="205" Y="276" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_testHelpLabel)</Text>
+
+        <Checkbox Name="Include_launcher" X="185" Y="301" Width="100" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_launcherLabel)</Checkbox>
+        <Checkbox Name="CustomInstallLauncherAllUsers" X="285" Y="301" Width="-11" Height="24" TabStop="yes" FontId="3">#(loc.InstallLauncherAllUsersLabel)</Checkbox>
+        <Text Name="Include_launcherHelp" X="205" Y="326" Width="-11" Height="24" TabStop="no" FontId="5"></Text>
 
         <Button Name="Custom1BackButton" X="185" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0">#(loc.CustomBackButton)</Button>
         <Button Name="CustomNextButton" X="-101" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0">#(loc.CustomNextButton)</Button>

@@ -46,6 +46,7 @@ FILES = [
     "tcltk.msi",
     "tcltk_d.msi",
     "tcltk_pdb.msi",
+    "idle.msi",
     "test.msi",
     "test_d.msi",
     "test_pdb.msi",

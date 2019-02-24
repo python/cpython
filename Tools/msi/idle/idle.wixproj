@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{DB350600-186C-4E52-BA98-26A7CECB067F}</ProjectGuid>
+        <ProjectGuid>{F43264F7-05DF-4F8B-9E41-85E7165E732C}</ProjectGuid>
         <SchemaVersion>2.0</SchemaVersion>
-        <OutputName>tcltk</OutputName>
+        <OutputName>idle</OutputName>
         <OutputType>Package</OutputType>
     </PropertyGroup>
     <PropertyGroup>
@@ -12,28 +12,21 @@
     </PropertyGroup>
     <Import Project="..\msi.props" />
     <ItemGroup>
-        <Compile Include="tcltk.wxs" />
-        <Compile Include="tcltk_files.wxs" />
+        <Compile Include="idle.wxs" />
+        <Compile Include="idle_reg.wxs" />
     </ItemGroup>
     <ItemGroup>
         <WxlTemplate Include="*.wxl_template" />
     </ItemGroup>
     <ItemGroup>
-        <InstallFiles Include="$(tcltkDir)lib\**\*">
-            <SourceBase>$(tcltkDir)</SourceBase>
-            <Source>!(bindpath.tcltk)</Source>
-            <TargetBase>$(tcltkDir)lib</TargetBase>
-            <Target_>tcl\</Target_>
-            <Group>tcltk_lib</Group>
-        </InstallFiles>
 
-        <InstallFiles Include="$(PySourcePath)Lib\tkinter\**\*;$(PySourcePath)Lib\turtledemo\**\*"
+        <InstallFiles Include="$(PySourcePath)Lib\idlelib\**\*"
                       Exclude="$(PySourcePath)Lib\**\*.pyc;$(PySourcePath)Lib\**\*.pyo">
             <SourceBase>$(PySourcePath)</SourceBase>
             <Source>!(bindpath.src)</Source>
             <TargetBase>$(PySourcePath)</TargetBase>
             <Target_></Target_>
-            <Group>tkinter_lib</Group>
+            <Group>idle_lib</Group>
         </InstallFiles>
     </ItemGroup>
     

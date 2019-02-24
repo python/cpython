@@ -207,6 +207,7 @@ static struct { LPCWSTR regName; LPCWSTR variableName; } OPTIONAL_FEATURES[] = {
     { L"path", L"PrependPath" },
     { L"pip", L"Include_pip" },
     { L"tcltk", L"Include_tcltk" },
+	{ L"idle", L"Include_idle" },
     { L"test", L"Include_test" },
     { L"tools", L"Include_tools" },
     { L"Shortcuts", L"Shortcuts" },
