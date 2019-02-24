@@ -615,6 +615,9 @@ class CLanguage(Language):
         return self.render_function(clinic, function)
 
     def docstring_for_c_string(self, f):
+        if re.search(r'[^\x00-\x7F]', f.docstring):
+            warn("Non-ascii character appear in docstring.")
+
         text, add, output = _text_accumulator()
         # turn docstring into a properly quoted C string
         for line in f.docstring.split('\n'):
