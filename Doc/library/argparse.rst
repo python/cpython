@@ -32,11 +32,17 @@ Summary
 Core Functionality
 ^^^^^^^^^^^^^^^^^^
 
-.. csv-table::
-    :header: "Name", "Commonly Used Arguments", "Example"
+The :mod:`argparse` module's support for command-line interfaces is built from the following:
 
-    ":class:`argparse.ArgumentParser`", "`prog`_, `description`_, `formatter_class`_", "``parser = argparse.ArgumentParser(prog='PROG', description='DESC', formatter_class=argparse.RawDescriptionHelpFormatter)``"
-    ":func:`ArgumentParser.add_argument`", "`name or flags`_, `action`_, `default`_, `type`_, `required`_, `help`_", "``parser.add_argument('-v', '--verbose', action='store_true', help='Show various debugging information')``"
+The :class:`argparse.ArgumentParser` creates a new :class:`ArgumentParser` object. Commonly used arguments include `prog`_, `description`_, and `formatter_class`_. For example, the user can create an instance of :class:`ArgumentParser` through the following::
+
+   >>> parser = argparse.ArgumentParser(prog='PROG', description='DESC',
+   ...		   			formatter_class=argparse.RawDescriptionHelpFormatter)
+
+The :func:`ArgumentParser.add_argument` is a function that is used to define how a single command-line argument should be parsed. Commonly used arguments include `name or flags`_, `action`_, `default`_, `type`_, `required`_, and `help`_. An example of the function :func:`ArgumentParser.add_argument` is as follows::
+
+   >>> parser.add_argument('-v', '--verbose', action='store_true',
+   ...		   	   help='Show various debugging information')
 
 
 Basic Usage of :func:`add_argument`
@@ -744,7 +750,7 @@ The add_argument() method
 The following sections describe how each of these are used.
 
 
-.. _name or flags:
+.. ref:`name or flags`
 
 name or flags
 ^^^^^^^^^^^^^
