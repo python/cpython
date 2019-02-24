@@ -667,16 +667,17 @@ class PatchTest(unittest.TestCase):
     def test_patch_dict_decorator_resolution(self):
         # bpo-35512: Ensure that patch with a string target resolves to
         # the new dictionary during function call
+        original = support.target.copy()
+
         @patch.dict('unittest.test.testmock.support.target', {'bar': 'BAR'})
         def test():
-            self.assertEqual(support.target['foo'], 'BAZ')
-            self.assertEqual(support.target['bar'], 'BAR')
+            self.assertEqual(support.target, {'foo': 'BAZ', 'bar': 'BAR'})
 
-        support.target = {'foo': 'BAZ'}
-        test()
-
-        self.assertEqual(support.target['foo'], 'BAZ')
-        self.assertNotIn('bar', support.target)
+        try:
+            support.target = {'foo': 'BAZ'}
+            test()
+        finally:
+            support.target = original
 
 
     def test_patch_descriptor(self):
