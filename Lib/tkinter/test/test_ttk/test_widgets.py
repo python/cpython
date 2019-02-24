@@ -329,7 +329,12 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.entry.wait_visibility()
         self.entry.update_idletasks()
 
-        self.assertEqual(self.entry.identify(5, 5), "textarea")
+        # bpo-27313: macOS Cocoa widget differs from X, allow either
+        if sys.platform == 'darwin':
+            self.assertIn(self.entry.identify(5, 5),
+                ("textarea", "Combobox.button") )
+        else:
+            self.assertEqual(self.entry.identify(5, 5), "textarea")
         self.assertEqual(self.entry.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.entry.identify, None, 5)
