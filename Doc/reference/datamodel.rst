@@ -1725,6 +1725,7 @@ properties) and deny the creation of *__dict__* and *__weakref__*
 (unless explicitly declared in *__slots__* or available in a parent.)
 
 The space saved over using *__dict__* can be significant.
+Attribute lookup speed can be significantly improved as well.
 
 .. data:: object.__slots__
 
