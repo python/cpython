@@ -676,6 +676,7 @@ class PatchTest(unittest.TestCase):
         try:
             support.target = {'foo': 'BAZ'}
             test()
+            self.assertEqual(support.target, {'foo': 'BAZ'})
         finally:
             support.target = original
 
