@@ -2128,6 +2128,18 @@ class TestNormalDist(unittest.TestCase):
         with self.assertRaises(statistics.StatisticsError):
             Y.cdf(90)
 
+    def test_unary_operations(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 12)
+        Y = +X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mu, Y.mu)
+        self.assertEqual(X.sigma, Y.sigma)
+        Y = -X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mu, -Y.mu)
+        self.assertEqual(X.sigma, Y.sigma)
+
     def test_same_type_addition_and_subtraction(self):
         NormalDist = statistics.NormalDist
         X = NormalDist(100, 12)

@@ -762,7 +762,7 @@ class NormalDist:
         return NormalDist(x1.mu / x2, x1.sigma / fabs(x2))
 
     def __pos__(x1):
-        return x1
+        return NormalDist(x1.mu, x1.sigma)
 
     def __neg__(x1):
         return NormalDist(-x1.mu, x1.sigma)
