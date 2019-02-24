@@ -319,6 +319,7 @@ class SMTP:
         specified during instantiation.
 
         """
+        self._host = host
 
         if source_address:
             self.source_address = source_address
@@ -1038,7 +1039,7 @@ if _have_ssl:
             new_socket = socket.create_connection((host, port), timeout,
                     self.source_address)
             new_socket = self.context.wrap_socket(new_socket,
-                                                  server_hostname=host)
+                                                  server_hostname=self._host)
             return new_socket
 
     __all__.append("SMTP_SSL")
