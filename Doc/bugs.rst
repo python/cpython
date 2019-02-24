@@ -25,7 +25,15 @@ docs@python.org (behavioral bugs can be sent to python-list@python.org).
 though it may take a while to be processed.
 
 .. seealso::
-   `Documentation bugs`_ on the Python issue tracker
+
+   `Documentation bugs`_
+      Link to the Python issue tracker. Provides a list of documentation bugs that have been submitted.
+
+   `Issue Tracking <https://devguide.python.org/tracker/>`_
+      Overview of the process involved in reporting an improvement on the tracker.
+
+   `Helping with Documentation <https://devguide.python.org/docquality/#helping-with-documentation>`_
+      Comprehensive guide for individuals that are interested in contributing to Python documentation.
 
 .. _using-the-tracker:
 
