@@ -4418,6 +4418,7 @@ static PyTypeObject ziplongest_type;
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    _Py_IDENTIFIER(fillvalue);
     ziplongestobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
@@ -4426,10 +4427,15 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t tuplesize;
 
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
-        fillvalue = PyDict_GetItemString(kwds, "fillvalue");
-        if (fillvalue == NULL || PyDict_GET_SIZE(kwds) > 1) {
-            PyErr_SetString(PyExc_TypeError,
-                "zip_longest() got an unexpected keyword argument");
+        fillvalue = NULL;
+        if (PyDict_GET_SIZE(kwds) == 1) {
+            fillvalue = _PyDict_GetItemIdWithError(kwds, &PyId_fillvalue);
+        }
+        if (fillvalue == NULL) {
+            if (!PyErr_Occurred()) {
+                PyErr_SetString(PyExc_TypeError,
+                    "zip_longest() got an unexpected keyword argument");
+            }
             return NULL;
         }
     }
