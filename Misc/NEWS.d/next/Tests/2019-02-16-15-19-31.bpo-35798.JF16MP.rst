@@ -1,1 +1,0 @@
-Added :func:`test.support.check_syntax_warning`.

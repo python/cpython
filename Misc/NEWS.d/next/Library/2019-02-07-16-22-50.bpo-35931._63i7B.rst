@@ -1,1 +1,0 @@
-The :mod:`pdb` ``debug`` command now gracefully handles syntax errors.

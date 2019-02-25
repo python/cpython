@@ -1,1 +1,0 @@
-Fix formatting of --check-hash-based-pycs options in the manpage Synopsis.

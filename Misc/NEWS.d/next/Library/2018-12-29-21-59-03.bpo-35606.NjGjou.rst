@@ -1,3 +1,0 @@
-Implement :func:`math.prod` as analogous function to :func:`sum` that
-returns the product of a 'start' value (default: 1) times an iterable of
-numbers. Patch by Pablo Galindo.
