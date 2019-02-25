@@ -121,9 +121,13 @@ VERSION=PYTHON_VERSION
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
-# The later defininition of _XOPEN_SOURCE disables certain features
-# on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
-AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
+ifdef([AC_USE_SYSTEM_EXTENSIONS], [
+AC_USE_SYSTEM_EXTENSIONS
+], [
+AC_AIX
+AC_GNU_SOURCE
+AC_MINIX
+])
 
 # The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on NetBSD, so we need _NETBSD_SOURCE to re-enable
