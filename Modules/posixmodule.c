@@ -20,6 +20,8 @@
 #  pragma weak statvfs
 #  pragma weak fstatvfs
 
+#include <util.h> /* needed for forkpty() and openpty(). */
+
 #endif /* __APPLE__ */
 
 #define PY_SSIZE_T_CLEAN
@@ -1260,7 +1262,7 @@ _Py_Sigset_Converter(PyObject *obj, void *addr)
     long signum;
     int overflow;
 
-    if (sigemptyset(mask)) {
+    if (sigemptyset(mask) == -1) {
         /* Probably only if mask == NULL. */
         PyErr_SetFromErrno(PyExc_OSError);
         return 0;
