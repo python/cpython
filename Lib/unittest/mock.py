@@ -321,6 +321,14 @@ class _CallList(list):
 
 
 def _check_and_set_parent(parent, value, name, new_name):
+    # function passed to create_autospec will have mock
+    # attribute attached to which parent must be set
+    if isinstance(value, FunctionTypes):
+        try:
+            value = value.mock
+        except AttributeError:
+            pass
+
     if not _is_instance_mock(value):
         return False
     if ((value._mock_name or value._mock_new_name) or
