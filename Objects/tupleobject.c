@@ -419,14 +419,26 @@ tupleitem(PyTupleObject *a, Py_ssize_t i)
     return a->ob_item[i];
 }
 
+PyObject *
+_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
+{
+    PyTupleObject *tuple = (PyTupleObject *)PyTuple_New(n);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject **dst = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = src[i];
+        Py_INCREF(item);
+        dst[i] = item;
+    }
+    return (PyObject *)tuple;
+}
+
 static PyObject *
 tupleslice(PyTupleObject *a, Py_ssize_t ilow,
            Py_ssize_t ihigh)
 {
-    PyTupleObject *np;
-    PyObject **src, **dest;
-    Py_ssize_t i;
-    Py_ssize_t len;
     if (ilow < 0)
         ilow = 0;
     if (ihigh > Py_SIZE(a))
@@ -437,18 +449,7 @@ tupleslice(PyTupleObject *a, Py_ssize_t ilow,
         Py_INCREF(a);
         return (PyObject *)a;
     }
-    len = ihigh - ilow;
-    np = (PyTupleObject *)PyTuple_New(len);
-    if (np == NULL)
-        return NULL;
-    src = a->ob_item + ilow;
-    dest = np->ob_item;
-    for (i = 0; i < len; i++) {
-        PyObject *v = src[i];
-        Py_INCREF(v);
-        dest[i] = v;
-    }
-    return (PyObject *)np;
+    return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
 }
 
 PyObject *
