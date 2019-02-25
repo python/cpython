@@ -1,2 +1,0 @@
-The implementation of PyInterpreterState has been moved into the internal
-header files (guarded by Py_BUILD_CORE).
