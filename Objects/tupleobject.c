@@ -419,26 +419,20 @@ tupleitem(PyTupleObject *a, Py_ssize_t i)
     return a->ob_item[i];
 }
 
-static PyObject *
-tuple_from_array(PyObject *const *src, Py_ssize_t n, Py_ssize_t step)
+PyObject *
+_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 {
     PyTupleObject *tuple = (PyTupleObject *)PyTuple_New(n);
     if (tuple == NULL) {
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
-    for (Py_ssize_t i = 0, cur = 0; i < n; i++, cur += step) {
-        PyObject *item = src[cur];
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = src[i];
         Py_INCREF(item);
         dst[i] = item;
     }
     return (PyObject *)tuple;
-}
-
-PyObject *
-_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
-{
-    return tuple_from_array(src, n, 1);
 }
 
 static PyObject *
@@ -759,7 +753,10 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
         return tupleitem(self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength;
+        Py_ssize_t start, stop, step, slicelength, cur, i;
+        PyObject* result;
+        PyObject* it;
+        PyObject **src, **dest;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
@@ -776,7 +773,21 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             Py_INCREF(self);
             return (PyObject *)self;
         }
-        return tuple_from_array(self->ob_item + start, slicelength, step);
+        else {
+            result = PyTuple_New(slicelength);
+            if (!result) return NULL;
+
+            src = self->ob_item;
+            dest = ((PyTupleObject *)result)->ob_item;
+            for (cur = start, i = 0; i < slicelength;
+                 cur += step, i++) {
+                it = src[cur];
+                Py_INCREF(it);
+                dest[i] = it;
+            }
+
+            return result;
+        }
     }
     else {
         PyErr_Format(PyExc_TypeError,
