@@ -1,1 +1,0 @@
-Prevents venv paths being inherited by child processes
