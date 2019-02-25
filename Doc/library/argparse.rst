@@ -750,7 +750,7 @@ The add_argument() method
 The following sections describe how each of these are used.
 
 
-.. ref:`name or flags`
+.. _name_or_flags:
 
 name or flags
 ^^^^^^^^^^^^^
