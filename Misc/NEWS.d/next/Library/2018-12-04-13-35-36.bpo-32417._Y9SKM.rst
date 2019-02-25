@@ -1,6 +1,0 @@
-Performing arithmetic between :class:`datetime.datetime` subclasses and
-:class:`datetime.timedelta` now returns an object of the same type as the
-:class:`datetime.datetime` subclass. As a result,
-:meth:`datetime.datetime.astimezone` and alternate constructors like
-:meth:`datetime.datetime.now` and :meth:`datetime.fromtimestamp` called with
-a ``tz`` argument now *also* retain their subclass.
