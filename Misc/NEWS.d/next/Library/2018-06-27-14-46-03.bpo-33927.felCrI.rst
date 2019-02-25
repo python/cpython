@@ -1,2 +1,2 @@
-`json.tool` can now take the same file as input and ouput. Patch by Rémi
-Lapeyre.
+`json.tool` can now take the same file as input and ouput with the `--in-place`
+flag. Patch by Rémi Lapeyre.

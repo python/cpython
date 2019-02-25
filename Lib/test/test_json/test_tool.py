@@ -92,11 +92,13 @@ class TestTool(unittest.TestCase):
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, b'')
 
-    def _create_infile(self):
+    def _create_infile(self, data=None):
+        if data is None:
+            data = self.data
         infile = support.TESTFN
         with open(infile, "w") as fp:
             self.addCleanup(os.remove, infile)
-            fp.write(self.data)
+            fp.write(data)
         return infile
 
     def test_infile_stdout(self):
@@ -117,7 +119,7 @@ class TestTool(unittest.TestCase):
 
     def test_infile_same_outfile(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', 'json.tool', infile, infile)
+        rc, out, err = assert_python_ok('-m', 'json.tool', '-i', infile)
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
@@ -130,14 +132,36 @@ class TestTool(unittest.TestCase):
 
     def test_jsonlines(self):
         args = sys.executable, '-m', 'json.tool', '--json-lines'
-        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
-            out, err = proc.communicate(self.jsonlines_raw.encode())
-        self.assertEqual(out.splitlines(), self.jsonlines_expect.encode().splitlines())
+        proc = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        out, err = proc.communicate(self.jsonlines_raw.encode())
+        proc.wait()
+        self.assertEqual(proc.returncode, 0)
         self.assertEqual(err, b'')
+        self.assertEqual(out.splitlines(), self.jsonlines_expect.encode().splitlines())
 
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', 'json.tool', '-h')
         self.assertTrue(out.startswith(b'usage: '))
+        self.assertEqual(err, b'')
+
+    def test_inplace_flag(self):
+        rc, out, err = assert_python_failure('-m', 'json.tool', '-i')
+        self.assertEqual(out, b'')
+        self.assertIn(b"error: infile must be set when -i / --in-place is used", err)
+
+        rc, out, err = assert_python_failure('-m', 'json.tool', '-i', '-')
+        self.assertEqual(out, b'')
+        self.assertIn(b"error: infile must be set when -i / --in-place is used", err)
+
+        infile = self._create_infile()
+        rc, out, err = assert_python_failure('-m', 'json.tool', '-i', infile, 'test.json')
+        self.assertEqual(out, b'')
+        self.assertIn(b"error: outfile cannot be set when -i / --in-place is used", err)
+
+    def test_inplace_jsonlines(self):
+        infile = self._create_infile(data=self.jsonlines_raw)
+        rc, out, err = assert_python_ok('-m', 'json.tool', '--json-lines', '-i', infile)
+        self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
     def test_sort_keys_flag(self):
@@ -156,14 +180,15 @@ class TestTool(unittest.TestCase):
                 json.tool.main()
 
         os.unlink(infile + '.out')
-        self.assertEqual(opened, closed)
-        self.assertEqual(len(opened), len(closed))
+        self.assertEqual(set(opened), set(closed))
+        self.assertEqual(len(opened), 2)
+        self.assertEqual(len(opened), 2)
 
     def test_no_fd_leak_same_infile_outfile(self):
         infile = self._create_infile()
         closed, opened, open = mock_open()
         with mock.patch('builtins.open', side_effect=open):
-            with mock.patch.object(sys, 'argv', ['tool.py', infile, infile]):
+            with mock.patch.object(sys, 'argv', ['tool.py', '-i', infile]):
                 try:
                     import json.tool
                     json.tool.main()
@@ -171,7 +196,8 @@ class TestTool(unittest.TestCase):
                     pass
 
         self.assertEqual(opened, closed)
-        self.assertEqual(len(opened), len(closed))
+        self.assertEqual(len(opened), 2)
+        self.assertEqual(len(opened), 2)
 
 def mock_open():
     closed = []
