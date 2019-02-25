@@ -38,6 +38,16 @@
 # include <sanitizer/msan_interface.h>
 #endif
 
+#ifdef _MSC_VER
+#define _Py_timezone _timezone
+#define _Py_daylight _daylight
+#define _Py_tzname _tzname
+#else
+#define _Py_timezone timezone
+#define _Py_daylight daylight
+#define _Py_tzname tzname
+#endif
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 /* Forward declarations */
@@ -1600,18 +1610,18 @@ init_timezone(PyObject *m)
 #ifdef HAVE_DECL_TZNAME
     PyObject *otz0, *otz1;
     tzset();
-    PyModule_AddIntConstant(m, "timezone", timezone);
+    PyModule_AddIntConstant(m, "timezone", _Py_timezone);
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);
 #else
-    PyModule_AddIntConstant(m, "altzone", timezone-3600);
+    PyModule_AddIntConstant(m, "altzone", _Py_timezone-3600);
 #endif
-    PyModule_AddIntConstant(m, "daylight", daylight);
-    otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
+    PyModule_AddIntConstant(m, "daylight", _Py_daylight);
+    otz0 = PyUnicode_DecodeLocale(_Py_tzname[0], "surrogateescape");
     if (otz0 == NULL) {
         return -1;
     }
-    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
+    otz1 = PyUnicode_DecodeLocale(_Py_tzname[1], "surrogateescape");
     if (otz1 == NULL) {
         Py_DECREF(otz0);
         return -1;
