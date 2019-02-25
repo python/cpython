@@ -2266,7 +2266,6 @@ class PyBuildInstallLib(install_lib):
         return outfiles
 
     def set_file_modes(self, files, defaultMode, sharedLibMode):
-        if not self.is_chmod_supported(): return
         if not files: return
 
         for filename in files:
@@ -2277,15 +2276,11 @@ class PyBuildInstallLib(install_lib):
             if not self.dry_run: os.chmod(filename, mode)
 
     def set_dir_modes(self, dirname, mode):
-        if not self.is_chmod_supported(): return
         for dirpath, dirnames, fnames in os.walk(dirname):
             if os.path.islink(dirpath):
                 continue
             log.info("changing mode of %s to %o", dirpath, mode)
             if not self.dry_run: os.chmod(dirpath, mode)
-
-    def is_chmod_supported(self):
-        return hasattr(os, 'chmod')
 
 class PyBuildScripts(build_scripts):
     def copy_scripts(self):
