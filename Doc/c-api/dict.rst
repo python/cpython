@@ -119,7 +119,7 @@ Dictionary Objects
    To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
 
 
-.. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *default)
+.. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)
 
    This is the same as the Python-level :meth:`dict.setdefault`.  If present, it
    returns the value corresponding to *key* from the dictionary *p*.  If the key
