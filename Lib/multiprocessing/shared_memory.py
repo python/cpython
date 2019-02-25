@@ -30,7 +30,7 @@ _SHM_SAFE_NAME_LENGTH = 14
 
 # Shared memory block name prefix
 if _USE_POSIX:
-    _SHM_NAME_PREFIX = 'psm_'
+    _SHM_NAME_PREFIX = '/psm_'
 else:
     _SHM_NAME_PREFIX = 'wnsm_'
 
@@ -68,6 +68,7 @@ class SharedMemory:
     _buf = None
     _flags = os.O_RDWR
     _mode = 0o600
+    _prepend_leading_slash = True if _USE_POSIX else False
 
     def __init__(self, name=None, create=False, size=0):
         if not size >= 0:
@@ -95,6 +96,7 @@ class SharedMemory:
                     self._name = name
                     break
             else:
+                name = "/" + name if self._prepend_leading_slash else name
                 self._fd = _posixshmem.shm_open(
                     name,
                     self._flags,
@@ -198,7 +200,11 @@ class SharedMemory:
     @property
     def name(self):
         "Unique name that identifies the shared memory block."
-        return self._name
+        reported_name = self._name
+        if _USE_POSIX and self._prepend_leading_slash:
+            if self._name.startswith("/"):
+                reported_name = self._name[1:]
+        return reported_name
 
     @property
     def size(self):
@@ -224,8 +230,8 @@ class SharedMemory:
         In order to ensure proper cleanup of resources, unlink should be
         called once (and only once) across all processes which have access
         to the shared memory block."""
-        if _USE_POSIX and self.name:
-            _posixshmem.shm_unlink(self.name)
+        if _USE_POSIX and self._name:
+            _posixshmem.shm_unlink(self._name)
 
 
 _encoding = "utf8"
