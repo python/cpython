@@ -1317,9 +1317,6 @@ The ``__iadd__`` succeeds, and thus the list is extended, but even though
 that final assignment still results in an error, because tuples are immutable.
 
 
-Dictionaries
-============
-
 I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 ------------------------------------------------------------------------------
 
