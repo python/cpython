@@ -508,10 +508,14 @@ pymain_free(_PyMain *pymain)
 static int
 pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 {
+    _Py_IDENTIFIER(path);
     PyObject *sys_path;
     PyObject *sysdict = interp->sysdict;
     if (sysdict != NULL) {
-        sys_path = PyDict_GetItemString(sysdict, "path");
+        sys_path = _PyDict_GetItemIdWithError(sysdict, &PyId_path);
+        if (sys_path == NULL && PyErr_Occurred()) {
+            goto error;
+        }
     }
     else {
         sys_path = NULL;
