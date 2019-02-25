@@ -5,6 +5,7 @@
 #include "ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
@@ -121,7 +122,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__build_class__: name is not a string");
         return NULL;
     }
-    orig_bases = _PyStack_AsTupleSlice(args, nargs, 2, nargs);
+    orig_bases = _PyTuple_FromArray(args + 2, nargs - 2);
     if (orig_bases == NULL)
         return NULL;
 
