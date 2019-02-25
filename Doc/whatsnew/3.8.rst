@@ -458,6 +458,17 @@ Build and C API Changes
 
   (Contributed by Antoine Pitrou in :issue:`32430`.)
 
+* Functions that convert Python number to C integer like
+  :c:func:`PyLong_AsLong` and argument parsing functions like
+  :c:func:`PyArg_ParseTuple` with integer converting format units like ``'i'``
+  will now use the :meth:`~object.__index__` special method instead of
+  :meth:`~object.__int__`, if available.  The deprecation warning will be
+  emitted for objects with the ``__int__()`` method but without the
+  ``__index__()`` method (like :class:`~decimal.Decimal` and
+  :class:`~fractions.Fraction`).  :c:func:`PyNumber_Check` will now return
+  ``1`` for objects implementing ``__index__()``.
+  (Contributed by Serhiy Storchaka in :issue:`36048`.)
+
 
 Deprecated
 ==========
@@ -507,6 +518,15 @@ Deprecated
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread` has been deprecated.
   (Contributed by Dong-hee Na in :issue:`35283`.)
+
+* Many builtin and extension functions that take integer arguments will
+  now emit a deprecation warning for :class:`~decimal.Decimal`\ s,
+  :class:`~fractions.Fraction`\ s and any other objects that can be converted
+  to integers only with a loss (e.g. that have the :meth:`~object.__int__`
+  method but do not have the :meth:`~object.__index__` method).  In future
+  version they will be errors.
+  (Contributed by Serhiy Storchaka in :issue:`36048`.)
+
 
 API and Feature Removals
 ========================
