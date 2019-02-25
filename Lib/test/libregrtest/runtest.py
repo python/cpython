@@ -249,10 +249,8 @@ def cleanup_test_droppings(testname, verbose):
         if verbose:
             print("%r left behind %s %r" % (testname, kind, name))
         try:
-            # if we have chmod, fix possible permissions problems
-            # that might prevent cleanup
-            if (hasattr(os, 'chmod')):
-                os.chmod(name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            # fix possible permissions problems that might prevent cleanup
+            os.chmod(name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
             nuker(name)
         except Exception as msg:
             print(("%r left behind %s %r and it couldn't be "

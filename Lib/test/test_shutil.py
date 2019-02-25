@@ -262,7 +262,6 @@ class TestShutil(unittest.TestCase):
         self.assertIn(errors[1][2][1].filename, possible_args)
 
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod()')
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
@@ -337,7 +336,6 @@ class TestShutil(unittest.TestCase):
         finally:
             os.lstat = orig_lstat
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     @support.skip_unless_symlink
     def test_copymode_follow_symlinks(self):
         tmp_dir = self.mkdtemp()
@@ -1022,14 +1020,12 @@ class TestShutil(unittest.TestCase):
         file2 = os.path.join(tmpdir2, fname)
         return (file1, file2)
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     def test_copy(self):
         # Ensure that the copied file exists and has the same mode bits.
         file1, file2 = self._copy_file(shutil.copy)
         self.assertTrue(os.path.exists(file2))
         self.assertEqual(os.stat(file1).st_mode, os.stat(file2).st_mode)
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     @unittest.skipUnless(hasattr(os, 'utime'), 'requires os.utime')
     def test_copy2(self):
         # Ensure that the copied file exists and has the same mode and

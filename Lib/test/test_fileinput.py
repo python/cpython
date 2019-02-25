@@ -428,7 +428,6 @@ class FileInputTests(BaseTests, unittest.TestCase):
         self.assertTrue(os_fstat_replacement.invoked,
                         "os.fstat() was not invoked")
 
-    @unittest.skipIf(not hasattr(os, "chmod"), "os.chmod does not exist")
     def test_readline_os_chmod_raises_OSError(self):
         """Tests invoking FileInput.readline() when os.chmod() raises OSError.
            This exception should be silently discarded."""
