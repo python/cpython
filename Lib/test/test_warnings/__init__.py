@@ -877,6 +877,18 @@ class WarningsDisplayTests(BaseTest):
                                 file_object, expected_file_line)
         self.assertEqual(expect, file_object.getvalue())
 
+        # bpo-35178: Test custom formatwarning can receive line as positional
+        def formatwarning(message, category, filename, lineno, text):
+            return text
+
+        file_object = StringIO()
+        original = self.module.formatwarning
+        self.module.formatwarning = formatwarning
+        self.module.showwarning(message, category, file_name, line_num,
+                                file_object, expected_file_line)
+        self.assertEqual(file_object.getvalue(), expected_file_line)
+        self.addCleanup(setattr, self.module, 'formatwarning', original)
+
 
 class CWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = c_warnings
