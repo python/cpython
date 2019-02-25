@@ -759,8 +759,9 @@ int
 PyNumber_Check(PyObject *o)
 {
     return o && o->ob_type->tp_as_number &&
-           (o->ob_type->tp_as_number->nb_int ||
-        o->ob_type->tp_as_number->nb_float);
+           (o->ob_type->tp_as_number->nb_index ||
+            o->ob_type->tp_as_number->nb_int ||
+            o->ob_type->tp_as_number->nb_float);
 }
 
 /* Binary operators */
@@ -1366,7 +1367,7 @@ PyNumber_Long(PyObject *o)
     }
     m = o->ob_type->tp_as_number;
     if (m && m->nb_int) { /* This should include subclasses of int */
-        result = (PyObject *)_PyLong_FromNbInt(o);
+        result = _PyLong_FromNbInt(o);
         if (result != NULL && !PyLong_CheckExact(result)) {
             Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         }
@@ -1386,7 +1387,7 @@ PyNumber_Long(PyObject *o)
         /* __trunc__ is specified to return an Integral type,
            but int() needs to return an int. */
         m = result->ob_type->tp_as_number;
-        if (m == NULL || m->nb_int == NULL) {
+        if (m == NULL || (m->nb_index == NULL && m->nb_int == NULL)) {
             PyErr_Format(
                 PyExc_TypeError,
                 "__trunc__ returned non-Integral (type %.200s)",
@@ -1394,7 +1395,7 @@ PyNumber_Long(PyObject *o)
             Py_DECREF(result);
             return NULL;
         }
-        Py_SETREF(result, (PyObject *)_PyLong_FromNbInt(result));
+        Py_SETREF(result, _PyLong_FromNbIndexOrNbInt(result));
         if (result != NULL && !PyLong_CheckExact(result)) {
             Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         }
