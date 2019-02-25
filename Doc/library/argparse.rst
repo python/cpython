@@ -32,14 +32,22 @@ Summary
 Core Functionality
 ^^^^^^^^^^^^^^^^^^
 
-The :mod:`argparse` module's support for command-line interfaces is built from the following:
+The :mod:`argparse` module's support for command-line interfaces is built
+from the following:
 
-The :class:`argparse.ArgumentParser` creates a new :class:`ArgumentParser` object. Commonly used arguments include `prog`_, `description`_, and `formatter_class`_. For example, the user can create an instance of :class:`ArgumentParser` through the following::
+The :class:`argparse.ArgumentParser` creates a new :class:`ArgumentParser`
+object. Commonly used arguments include prog_, description_, and
+formatter_class_. For example, the user can create an instance of
+:class:`ArgumentParser` through the following::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', description='DESC',
    ...                                  formatter_class=argparse.RawDescriptionHelpFormatter)
 
-The :func:`ArgumentParser.add_argument` is a function that is used to define how a single command-line argument should be parsed. Commonly used arguments include `name or flags`_, `action`_, `default`_, `type`_, `required`_, and `help`_. An example of the function :func:`ArgumentParser.add_argument` is as follows::
+The :func:`ArgumentParser.add_argument` is a function that is used
+to define how a single command-line argument should be parsed. Commonly used
+arguments include `name or flags`_, action_, default_, type_, required_,
+and help_. An example of the function :func:`ArgumentParser.add_argument`
+is as follows::
 
    >>> parser.add_argument('-v', '--verbose', action='store_true',
    ...                     help='Show various debugging information')
@@ -64,10 +72,10 @@ Optional               ``'-v'``, ``'--verbose'``
 ====================== =========================================================== =========================================================================================================================
 Name                   Description                                                 Keywords
 ====================== =========================================================== =========================================================================================================================
-`action`_              Specifies how an argument should be handled                 ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
-`default`_             Default value used when an argument is not provided
-`type`_                Automatically converts an argument to the given type        :class:`int`, :class:`float`, :class:`bool`, ``argparse.FileType('w')``, ``callable function``
-`help`_                Help message of an argument
+action_                Specifies how an argument should be handled                 ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
+default_               Default value used when an argument is not provided
+type_                  Automatically converts an argument to the given type        :class:`int`, :class:`float`, :class:`bool`, ``argparse.FileType('w')``, ``callable function``
+help_                  Help message of an argument
 ====================== =========================================================== =========================================================================================================================
 
 
@@ -77,12 +85,12 @@ Name                   Description                                              
 ====================== =========================================================== =======================================================================================================================
 Name                   Description                                                 Keywords
 ====================== =========================================================== =======================================================================================================================
-`nargs`_               Associates a single action with the number of arguments     ``N`` (:class:`int`), ``'?'``, ``'*'``, ``'+'``, ``argparse.REMAINDER``
-`const`_               Stores constant values of names or flags
-`choices`_             A container that lists the possible values                  ``['foo', 'bar']``, ``range(1, 10)``, Any object that supports ``in`` operator
-`required`_            Indicates if an optional argument is required or not        ``True``, ``False``
-`metavar`_             An alternative display name for the argument
-`dest`_                Specifies name of attribute to be used in ``parse_args()``
+nargs_                 Associates a single action with the number of arguments     ``N`` (:class:`int`), ``'?'``, ``'*'``, ``'+'``, ``argparse.REMAINDER``
+const_                 Stores constant values of names or flags
+choices_               A container that lists the possible values                  ``['foo', 'bar']``, ``range(1, 10)``, Any object that supports ``in`` operator
+required_              Indicates if an optional argument is required or not        ``True``, ``False``
+metavar_               An alternative display name for the argument
+dest_                  Specifies name of attribute to be used in ``parse_args()``
 ====================== =========================================================== =======================================================================================================================
 
 
