@@ -616,7 +616,7 @@ or both.
      the object's :attr:`~object.__dict__` attribute. If the object has
      attributes living outside of its :attr:`~object.__dict__` attribute (for
      instance if its class has :attr:`~object.__slots__`), the state must be a
-     tuple ``(state, slotstate)`` of two dictionnaries. Items of the first one
+     tuple ``(state, slotstate)`` of two dictionaries. Items of the first one
      will be added to the object's :attr:`~object.__dict__`, while items of the
      latter will try to update ``object``'s data members first.
 
