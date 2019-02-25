@@ -650,7 +650,9 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
 #define CONV_UNICODE "(unicode conversion error)"
 
 /* Explicitly check for float arguments when integers are expected.
-   Return 1 for error, 0 if ok. */
+   Return 1 for error, 0 if ok.
+   XXX Should be removed after the end of the deprecation period in
+   _PyLong_FromNbIndexOrNbInt. */
 static int
 float_argument_error(PyObject *arg)
 {

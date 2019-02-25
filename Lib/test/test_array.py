@@ -1242,6 +1242,8 @@ class IntegerNumberTest(NumberTest):
 class Intable:
     def __init__(self, num):
         self._num = num
+    def __index__(self):
+        return self._num
     def __int__(self):
         return self._num
     def __sub__(self, other):

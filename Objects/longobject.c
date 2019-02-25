@@ -140,7 +140,7 @@ long_normalize(PyLongObject *v)
    nb_int slot is not available or the result of the call to nb_int
    returns something not of type int.
 */
-PyLongObject *
+PyObject *
 _PyLong_FromNbInt(PyObject *integral)
 {
     PyNumberMethods *nb;
@@ -149,7 +149,7 @@ _PyLong_FromNbInt(PyObject *integral)
     /* Fast path for the case that we already have an int. */
     if (PyLong_CheckExact(integral)) {
         Py_INCREF(integral);
-        return (PyLongObject *)integral;
+        return integral;
     }
 
     nb = Py_TYPE(integral)->tp_as_number;
@@ -164,7 +164,7 @@ _PyLong_FromNbInt(PyObject *integral)
        of exact type int. */
     result = nb->nb_int(integral);
     if (!result || PyLong_CheckExact(result))
-        return (PyLongObject *)result;
+        return result;
     if (!PyLong_Check(result)) {
         PyErr_Format(PyExc_TypeError,
                      "__int__ returned non-int (type %.200s)",
@@ -181,7 +181,74 @@ _PyLong_FromNbInt(PyObject *integral)
         Py_DECREF(result);
         return NULL;
     }
-    return (PyLongObject *)result;
+    return result;
+}
+
+/* Convert the given object to a PyLongObject using the nb_index or
+   nb_int slots, if available (the latter is deprecated).
+   Raise TypeError if either nb_index and nb_int slots are not
+   available or the result of the call to nb_index or nb_int
+   returns something not of type int.
+   Should be replaced with PyNumber_Index after the end of the
+   deprecation period.
+*/
+PyObject *
+_PyLong_FromNbIndexOrNbInt(PyObject *integral)
+{
+    PyNumberMethods *nb;
+    PyObject *result;
+
+    /* Fast path for the case that we already have an int. */
+    if (PyLong_CheckExact(integral)) {
+        Py_INCREF(integral);
+        return integral;
+    }
+
+    nb = Py_TYPE(integral)->tp_as_number;
+    if (nb == NULL || (nb->nb_index == NULL && nb->nb_int == NULL)) {
+        PyErr_Format(PyExc_TypeError,
+                     "an integer is required (got type %.200s)",
+                     Py_TYPE(integral)->tp_name);
+        return NULL;
+    }
+
+    if (nb->nb_index) {
+    /* Convert using the nb_index slot, which should return something
+       of exact type int. */
+        result = nb->nb_index(integral);
+        if (!result || PyLong_CheckExact(result))
+            return result;
+        if (!PyLong_Check(result)) {
+            PyErr_Format(PyExc_TypeError,
+                         "__index__ returned non-int (type %.200s)",
+                         result->ob_type->tp_name);
+            Py_DECREF(result);
+            return NULL;
+        }
+        /* Issue #17576: warn if 'result' not of exact type int. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "__index__ returned non-int (type %.200s).  "
+                "The ability to return an instance of a strict subclass of int "
+                "is deprecated, and may be removed in a future version of Python.",
+                result->ob_type->tp_name))
+        {
+            Py_DECREF(result);
+            return NULL;
+        }
+        return result;
+    }
+
+    result = _PyLong_FromNbInt(integral);
+    if (result && PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "an integer is required (got type %.200s).  "
+            "Implicit conversion to integers using __int__ is deprecated, "
+            "and may be removed in a future version of Python.",
+            Py_TYPE(integral)->tp_name))
+    {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
 }
 
 
@@ -420,7 +487,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = _PyLong_FromNbInt(vv);
+        v = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -700,7 +767,7 @@ PyLong_AsUnsignedLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongMask(op);
     }
 
-    lo = _PyLong_FromNbInt(op);
+    lo = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(op);
     if (lo == NULL)
         return (unsigned long)-1;
 
@@ -1229,7 +1296,7 @@ PyLong_AsLongLong(PyObject *vv)
         v = (PyLongObject *)vv;
     }
     else {
-        v = _PyLong_FromNbInt(vv);
+        v = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -1344,7 +1411,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongLongMask(op);
     }
 
-    lo = _PyLong_FromNbInt(op);
+    lo = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(op);
     if (lo == NULL)
         return (unsigned long long)-1;
 
@@ -1384,7 +1451,7 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = _PyLong_FromNbInt(vv);
+        v = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;

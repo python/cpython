@@ -291,7 +291,9 @@ ssize_t_converter(PyObject *obj, void *ptr)
     PyObject *long_obj;
     Py_ssize_t val;
 
-    long_obj = (PyObject *)_PyLong_FromNbInt(obj);
+    /* XXX Should be replaced with PyNumber_AsSsize_t after the end of the
+       deprecation period. */
+    long_obj = _PyLong_FromNbIndexOrNbInt(obj);
     if (long_obj == NULL) {
         return 0;
     }
