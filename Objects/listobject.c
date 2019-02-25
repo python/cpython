@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "pycore_accu.h"
 
 #ifdef STDC_HEADERS
@@ -2501,26 +2502,11 @@ PyList_Reverse(PyObject *v)
 PyObject *
 PyList_AsTuple(PyObject *v)
 {
-    PyObject *w;
-    PyObject **p, **q;
-    Py_ssize_t n;
     if (v == NULL || !PyList_Check(v)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    n = Py_SIZE(v);
-    w = PyTuple_New(n);
-    if (w == NULL)
-        return NULL;
-    p = ((PyTupleObject *)w)->ob_item;
-    q = ((PyListObject *)v)->ob_item;
-    while (--n >= 0) {
-        Py_INCREF(*q);
-        *p = *q;
-        p++;
-        q++;
-    }
-    return w;
+    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
 /*[clinic input]

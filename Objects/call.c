@@ -1276,20 +1276,7 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 _Py_NO_INLINE PyObject *
 _PyStack_AsTuple(PyObject *const *stack, Py_ssize_t nargs)
 {
-    PyObject *args;
-    Py_ssize_t i;
-
-    args = PyTuple_New(nargs);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    for (i=0; i < nargs; i++) {
-        PyObject *item = stack[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(args, i, item);
-    }
-    return args;
+    return _PyTuple_FromArray(stack, nargs);
 }
 
 
@@ -1297,24 +1284,11 @@ PyObject*
 _PyStack_AsTupleSlice(PyObject *const *stack, Py_ssize_t nargs,
                       Py_ssize_t start, Py_ssize_t end)
 {
-    PyObject *args;
-    Py_ssize_t i;
-
     assert(0 <= start);
     assert(end <= nargs);
     assert(start <= end);
 
-    args = PyTuple_New(end - start);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    for (i=start; i < end; i++) {
-        PyObject *item = stack[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(args, i - start, item);
-    }
-    return args;
+    return _PyTuple_FromArray(stack + start, end - start);
 }
 
 
