@@ -613,7 +613,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     }
 #endif
     if (back == NULL || back->f_globals != globals) {
-        builtins = _PyDict_GetItemId(globals, &PyId___builtins__);
+        builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
         if (builtins) {
             if (PyModule_Check(builtins)) {
                 builtins = PyModule_GetDict(builtins);
@@ -621,6 +621,9 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
             }
         }
         if (builtins == NULL) {
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
             /* No builtins!              Make up a minimal one
                Give them 'None', at least. */
             builtins = PyDict_New();
