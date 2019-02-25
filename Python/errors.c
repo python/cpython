@@ -858,6 +858,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 PyObject *
 PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
+    _Py_IDENTIFIER(__module__);
     const char *dot;
     PyObject *modulename = NULL;
     PyObject *classname = NULL;
@@ -877,12 +878,15 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
         if (dict == NULL)
             goto failure;
     }
-    if (PyDict_GetItemString(dict, "__module__") == NULL) {
+    if (_PyDict_GetItemIdWithError(dict, &PyId___module__) == NULL) {
+        if (PyErr_Occurred()) {
+            goto failure;
+        }
         modulename = PyUnicode_FromStringAndSize(name,
                                              (Py_ssize_t)(dot-name));
         if (modulename == NULL)
             goto failure;
-        if (PyDict_SetItemString(dict, "__module__", modulename) != 0)
+        if (_PyDict_SetItemId(dict, &PyId___module__, modulename) != 0)
             goto failure;
     }
     if (PyTuple_Check(base)) {

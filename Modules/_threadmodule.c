@@ -814,8 +814,11 @@ _ldict(localobject *self)
         return NULL;
     }
 
-    dummy = PyDict_GetItem(tdict, self->key);
+    dummy = PyDict_GetItemWithError(tdict, self->key);
     if (dummy == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
         ldict = _local_create_dummy(self);
         if (ldict == NULL)
             return NULL;
@@ -931,14 +934,17 @@ local_getattro(localobject *self, PyObject *name)
             (PyObject *)self, name, ldict, 0);
 
     /* Optimization: just look in dict ourselves */
-    value = PyDict_GetItem(ldict, name);
-    if (value == NULL)
-        /* Fall back on generic to get __class__ and __dict__ */
-        return _PyObject_GenericGetAttrWithDict(
-            (PyObject *)self, name, ldict, 0);
-
-    Py_INCREF(value);
-    return value;
+    value = PyDict_GetItemWithError(ldict, name);
+    if (value != NULL) {
+        Py_INCREF(value);
+        return value;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
+    /* Fall back on generic to get __class__ and __dict__ */
+    return _PyObject_GenericGetAttrWithDict(
+        (PyObject *)self, name, ldict, 0);
 }
 
 /* Called when a dummy is destroyed. */
@@ -958,7 +964,7 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
     self = (localobject *) obj;
     if (self->dummies != NULL) {
         PyObject *ldict;
-        ldict = PyDict_GetItem(self->dummies, dummyweakref);
+        ldict = PyDict_GetItemWithError(self->dummies, dummyweakref);
         if (ldict != NULL) {
             PyDict_DelItem(self->dummies, dummyweakref);
         }

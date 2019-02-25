@@ -54,10 +54,14 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 
     /* __module__: If module name is in globals, use it.
        Otherwise, use None. */
-    module = PyDict_GetItem(globals, __name__);
+    module = PyDict_GetItemWithError(globals, __name__);
     if (module) {
         Py_INCREF(module);
         op->func_module = module;
+    }
+    else if (PyErr_Occurred()) {
+        Py_DECREF(op);
+        return NULL;
     }
     if (qualname)
         op->func_qualname = qualname;
