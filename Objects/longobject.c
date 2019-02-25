@@ -240,7 +240,9 @@ _PyLong_FromNbIndexOrNbInt(PyObject *integral)
 
     result = _PyLong_FromNbInt(integral);
     if (result && PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "an integer is required (got type %.200s)",
+            "an integer is required (got type %.200s).  "
+            "Implicit conversion to integers using __int__ is deprecated, "
+            "and may be removed in a future version of Python.",
             Py_TYPE(integral)->tp_name))
     {
         Py_DECREF(result);
