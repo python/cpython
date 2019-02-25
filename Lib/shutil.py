@@ -290,10 +290,8 @@ def copymode(src, dst, *, follow_symlinks=True):
             stat_func, chmod_func = os.lstat, os.lchmod
         else:
             return
-    elif hasattr(os, 'chmod'):
-        stat_func, chmod_func = _stat, os.chmod
     else:
-        return
+        stat_func, chmod_func = _stat, os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))

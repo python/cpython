@@ -1568,11 +1568,10 @@ class AbstractPickleTests(unittest.TestCase):
             s = self.dumps(t, proto)
             u = self.loads(s)
             self.assert_is_copy(t, u)
-            if hasattr(os, "stat"):
-                t = os.stat(os.curdir)
-                s = self.dumps(t, proto)
-                u = self.loads(s)
-                self.assert_is_copy(t, u)
+            t = os.stat(os.curdir)
+            s = self.dumps(t, proto)
+            u = self.loads(s)
+            self.assert_is_copy(t, u)
             if hasattr(os, "statvfs"):
                 t = os.statvfs(os.curdir)
                 s = self.dumps(t, proto)
