@@ -75,7 +75,11 @@ python \- an interpreted, interactive, object-oriented programming language
 .br
        [
 .B \--check-hash-based-pycs
-\'default\'|\'always\'|\'never\'
+.I default
+|
+.I always
+|
+.I never
 ]
 .br
        [
