@@ -43,14 +43,28 @@ The :mod:`pty` module defines the following functions:
 
    Spawn a process, and connect its controlling terminal with the current
    process's standard io. This is often used to baffle programs which insist on
-   reading from the controlling terminal.
+   reading from the controlling terminal. It is expected that the process
+   spawned behind the pty will eventually terminate, and when it does *spawn*
+   will return.
 
-   The functions *master_read* and *stdin_read* are passed a file
-   descriptor which they should read from, and should return a byte
-   string. The default implementation for both functions will read up
-   to 1024 bytes each time the function is called. Returning an empty
-   byte string is interpreted as an end of file (EOF) condition, and
-   that *_read* function will no longer be called.
+   The functions *master_read* and *stdin_read* are passed a file descriptor
+   which they should read from, and they should always return a byte
+   string. Returning an empty byte string from either callback is interpreted as
+   an end-of-file (EOF) condition, and that callback will not be called after
+   that.
+
+   In general, manually signaling EOF from one of the read callback will not
+   behave well. If *stdin_read* returns EOF the controlling terminal can no
+   longer communicate with.
+
+   If both callbacks signal EOF then *spawn* will block indefinitely. This
+   is a bug, documented in `issue 26228 <https://bugs.python.org/issue26228>`_.
+
+   The default implementation for both functions will read and return up to 1024
+   bytes each time the function is called. *Master_read* is passed the
+   pseudoterminal’s master file descriptor to read output from the child
+   process, and *stdin_read* is passed file descriptor 0, to read from the
+   parent process's standard input.
 
    .. versionchanged:: 3.4
       :func:`spawn` now returns the status value from :func:`os.waitpid`
