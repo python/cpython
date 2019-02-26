@@ -591,8 +591,6 @@ class FractionTest(unittest.TestCase):
 
     def testBigComplexComparisons(self):
         self.assertFalse(F(10**23) == complex(10**23))
-        self.assertRaises(TypeError, operator.gt, F(10**23), complex(10**23))
-        self.assertRaises(TypeError, operator.le, F(10**23), complex(10**23))
 
         x = F(3, 8)
         z = complex(0.375, 0.0)
@@ -601,9 +599,11 @@ class FractionTest(unittest.TestCase):
         self.assertFalse(x != z)
         self.assertFalse(x == w)
         self.assertTrue(x != w)
+        self.assertFalse(x > z)
+        self.assertFalse(x < z)
+        self.assertTrue(x >= z)
+        self.assertTrue(x <= z)
         for op in operator.lt, operator.le, operator.gt, operator.ge:
-            self.assertRaises(TypeError, op, x, z)
-            self.assertRaises(TypeError, op, z, x)
             self.assertRaises(TypeError, op, x, w)
             self.assertRaises(TypeError, op, w, x)
 

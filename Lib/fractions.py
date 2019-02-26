@@ -593,8 +593,8 @@ class Fraction(numbers.Rational):
 
         Implement comparison between a Rational instance `self`, and
         either another Rational instance or a float `other`.  If
-        `other` is not a Rational instance or a float, return
-        NotImplemented. `op` should be one of the six standard
+        `other` is not a Rational instance, a float, or a real complex,
+        return NotImplemented. `op` should be one of the six standard
         comparison operators.
 
         """
@@ -602,6 +602,11 @@ class Fraction(numbers.Rational):
         if isinstance(other, numbers.Rational):
             return op(self._numerator * other.denominator,
                       self._denominator * other.numerator)
+        if isinstance(other, complex):
+            if other.imag:
+                return NotImplemented
+            else:
+                other = float(other.real)
         if isinstance(other, float):
             if math.isnan(other) or math.isinf(other):
                 return op(0.0, other)
