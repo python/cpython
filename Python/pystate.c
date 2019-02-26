@@ -1402,7 +1402,7 @@ _register_xidata(PyTypeObject *cls, crossinterpdatafunc getdata)
 static void _register_builtins_for_crossinterpreter_data(void);
 
 int
-_PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
+_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
                                        crossinterpdatafunc getdata)
 {
     if (!PyType_Check(cls)) {
