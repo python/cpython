@@ -877,17 +877,23 @@ class WarningsDisplayTests(BaseTest):
                                 file_object, expected_file_line)
         self.assertEqual(expect, file_object.getvalue())
 
+    def test_formatwarning_override(self):
         # bpo-35178: Test custom formatwarning can receive line as positional
-        def formatwarning(message, category, filename, lineno, text):
-            return text
+        def myformatwarning(message, category, filename, lineno, text):
+            return f'm={message}:c={category}:f={filename}:l={lineno}:t={text}'
 
+        file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
+        line_num = 3
+        file_line = linecache.getline(file_name, line_num).strip()
+        message = 'msg'
+        category = Warning
         file_object = StringIO()
-        original = self.module.formatwarning
-        self.module.formatwarning = formatwarning
-        self.module.showwarning(message, category, file_name, line_num,
-                                file_object, expected_file_line)
-        self.assertEqual(file_object.getvalue(), expected_file_line)
-        self.addCleanup(setattr, self.module, 'formatwarning', original)
+        expected = f'm={message}:c={category}:f={file_name}:l={line_num}' + \
+                   f':t={file_line}'
+        with support.swap_attr(self.module, 'formatwarning', myformatwarning):
+            self.module.showwarning(message, category, file_name, line_num,
+                                    file_object, file_line)
+            self.assertEqual(file_object.getvalue(), expected)
 
 
 class CWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
