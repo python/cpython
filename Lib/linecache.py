@@ -63,10 +63,12 @@ def checkcache(filename=None):
         try:
             stat = os.stat(fullname)
         except os.error:
-            del cache[filename]
+            # Use pop instead of del because in a multithreaded case, this
+            # could have been deleted by another thread.
+            cache.pop(filename, None)
             continue
         if size != stat.st_size or mtime != stat.st_mtime:
-            del cache[filename]
+            cache.pop(filename, None)   # likewise
 
 
 def updatecache(filename, module_globals=None):
