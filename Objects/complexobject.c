@@ -628,14 +628,10 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     Py_complex i;
     int equal;
 
-    if (op != Py_EQ && op != Py_NE) {
-        goto Unimplemented;
-    }
-
     assert(PyComplex_Check(v));
     TO_COMPLEX(v, i);
 
-    if (PyLong_Check(w)) {
+    if (PyLong_Check(w) || PyFloat_Check(w)) {
         /* Check for 0.0 imaginary part first to avoid the rich
          * comparison when possible.
          */
@@ -649,18 +645,41 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
             Py_DECREF(j);
             return sub_res;
         }
+        else if (op != Py_EQ && op != Py_NE) {
+            goto Unimplemented;
+        }
         else {
             equal = 0;
         }
-    }
-    else if (PyFloat_Check(w)) {
-        equal = (i.real == PyFloat_AsDouble(w) && i.imag == 0.0);
     }
     else if (PyComplex_Check(w)) {
         Py_complex j;
 
         TO_COMPLEX(w, j);
-        equal = (i.real == j.real && i.imag == j.imag);
+
+        /* Any comparison is legal if both values are real.
+         * If so, we use PyFloat's rich comparison.
+         */
+        if (i.imag == 0.0 && j.imag == 0.0) {
+            PyObject *x, *y, *sub_res;
+            x = PyFloat_FromDouble(i.real);
+            if (x == NULL)
+                return NULL;
+            y = PyFloat_FromDouble(j.real);
+            if (y == NULL)
+                return NULL;
+
+            sub_res = PyObject_RichCompare(x, y, op);
+            Py_DECREF(x);
+            Py_DECREF(y);
+            return sub_res;
+        }
+        else if (op != Py_EQ && op != Py_NE) {
+            goto Unimplemented;
+        }
+        else {
+            equal = (i.real == j.real && i.imag == j.imag);
+        }
     }
     else {
         goto Unimplemented;
