@@ -71,7 +71,7 @@ static const double pi = 3.141592653589793238462643383279502884197;
 static const double sqrtpi = 1.772453850905516027298167483341145182798;
 
 static double
-sinpi(double x)
+m_sinpi(double x)
 {
     double y, r;
     int n;
@@ -270,7 +270,7 @@ m_tgamma(double x)
        integer. */
     if (absx > 200.0) {
         if (x < 0.0) {
-            return 0.0/sinpi(x);
+            return 0.0/m_sinpi(x);
         }
         else {
             errno = ERANGE;
@@ -294,7 +294,7 @@ m_tgamma(double x)
     }
     z = z * lanczos_g / y;
     if (x < 0.0) {
-        r = -pi / sinpi(absx) / absx * exp(y) / lanczos_sum(absx);
+        r = -pi / m_sinpi(absx) / absx * exp(y) / lanczos_sum(absx);
         r -= z * r;
         if (absx < 140.0) {
             r /= pow(y, absx - 0.5);
@@ -366,7 +366,7 @@ m_lgamma(double x)
             (x-0.5)*(log(x+lanczos_g-0.5)-1);
     }
     else {
-        r = log(pi) - log(fabs(sinpi(absx))) - log(absx) -
+        r = log(pi) - log(fabs(m_sinpi(absx))) - log(absx) -
             (log(lanczos_sum(absx)) - lanczos_g +
              (absx-0.5)*(log(absx+lanczos_g-0.5)-1));
     }
