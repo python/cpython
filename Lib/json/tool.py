@@ -15,13 +15,13 @@ import json
 import sys
 
 def _read(infile, json_lines):
-            try:
-                if json_lines:
-                    return (json.loads(line) for line in infile)
-                else:
-                    return (json.load(infile), )
-            except ValueError as e:
-                raise SystemExit(e)
+    try:
+        if json_lines:
+            return (json.loads(line) for line in infile)
+        else:
+            return (json.load(infile), )
+    except ValueError as e:
+        raise SystemExit(e)
 
 def _open_outfile(outfile, parser):
     try:
