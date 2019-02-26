@@ -5603,7 +5603,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
         support.unlink(support.TESTFN)
 
     def accept_conn(self):
-        self.serv.settimeout(self.TIMEOUT)
+        self.serv.settimeout(MAIN_TIMEOUT)
         conn, addr = self.serv.accept()
         conn.settimeout(self.TIMEOUT)
         self.addCleanup(conn.close)
