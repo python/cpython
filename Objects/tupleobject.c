@@ -57,6 +57,10 @@ show_track(void)
     fprintf(stderr, "%.2f%% tuple tracking rate\n\n",
         (100.0*count_tracked/(count_untracked+count_tracked)));
 }
+
+#   define TUPLE_GC_TRACK(op) (count_tracked++, _PyObject_GC_TRACK(op))
+#else
+#   define TUPLE_GC_TRACK(op) (_PyObject_GC_TRACK(op))
 #endif
 
 /* Print summary info about the state of the optimized allocator */
@@ -76,25 +80,25 @@ _PyTuple_DebugMallocStats(FILE *out)
 #endif
 }
 
-PyObject *
-PyTuple_New(Py_ssize_t size)
+/* Return half baked tuple. Before making it public following steps must be
+   done:
+   - initialize its items
+   - call TUPLE_GC_TRACK() on it
+   Because the empty tuple is always reused and it's already tracked by GC,
+   this function must not be called with size == 0 (unless from PyTuple_New()
+   which wraps this function).
+*/
+static PyObject *
+tuple_new_untracked(Py_ssize_t size)
 {
     PyTupleObject *op;
-    Py_ssize_t i;
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
 #if PyTuple_MAXSAVESIZE > 0
-    if (size == 0 && free_list[0]) {
-        op = free_list[0];
-        Py_INCREF(op);
-#ifdef COUNT_ALLOCS
-        _Py_tuple_zero_allocs++;
-#endif
-        return (PyObject *) op;
-    }
     if (size < PyTuple_MAXSAVESIZE && (op = free_list[size]) != NULL) {
+        assert(size != 0);
         free_list[size] = (PyTupleObject *) op->ob_item[0];
         numfree[size]--;
 #ifdef COUNT_ALLOCS
@@ -119,8 +123,27 @@ PyTuple_New(Py_ssize_t size)
         if (op == NULL)
             return NULL;
     }
-    for (i=0; i < size; i++)
+    return (PyObject *) op;
+}
+
+PyObject *
+PyTuple_New(Py_ssize_t size)
+{
+    PyTupleObject *op;
+#if PyTuple_MAXSAVESIZE > 0
+    if (size == 0 && free_list[0]) {
+        op = free_list[0];
+        Py_INCREF(op);
+#ifdef COUNT_ALLOCS
+        _Py_tuple_zero_allocs++;
+#endif
+        return (PyObject *) op;
+    }
+#endif
+    op = (PyTupleObject *)tuple_new_untracked(size);
+    for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
+    }
 #if PyTuple_MAXSAVESIZE > 0
     if (size == 0) {
         free_list[0] = op;
@@ -128,10 +151,7 @@ PyTuple_New(Py_ssize_t size)
         Py_INCREF(op);          /* extra INCREF so that this is never freed */
     }
 #endif
-#ifdef SHOW_TRACK_COUNT
-    count_tracked++;
-#endif
-    _PyObject_GC_TRACK(op);
+    TUPLE_GC_TRACK(op);
     return (PyObject *) op;
 }
 
@@ -215,8 +235,12 @@ PyTuple_Pack(Py_ssize_t n, ...)
     PyObject **items;
     va_list vargs;
 
+    if (n == 0) {
+        return PyTuple_New(0);
+    }
+
     va_start(vargs, n);
-    result = PyTuple_New(n);
+    result = tuple_new_untracked(n);
     if (result == NULL) {
         va_end(vargs);
         return NULL;
@@ -228,6 +252,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
         items[i] = o;
     }
     va_end(vargs);
+    TUPLE_GC_TRACK(result);
     return result;
 }
 
@@ -421,7 +446,10 @@ tupleitem(PyTupleObject *a, Py_ssize_t i)
 PyObject *
 _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 {
-    PyTupleObject *tuple = (PyTupleObject *)PyTuple_New(n);
+    if (n == 0) {
+        return PyTuple_New(0);
+    }
+    PyTupleObject *tuple = (PyTupleObject *)tuple_new_untracked(n);
     if (tuple == NULL) {
         return NULL;
     }
@@ -431,6 +459,7 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         Py_INCREF(item);
         dst[i] = item;
     }
+    TUPLE_GC_TRACK(tuple);
     return (PyObject *)tuple;
 }
 
@@ -486,7 +515,10 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
         return PyErr_NoMemory();
     size = Py_SIZE(a) + Py_SIZE(b);
-    np = (PyTupleObject *) PyTuple_New(size);
+    if (size == 0) {
+        return PyTuple_New(0);
+    }
+    np = (PyTupleObject *) tuple_new_untracked(size);
     if (np == NULL) {
         return NULL;
     }
@@ -504,6 +536,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         Py_INCREF(v);
         dest[i] = v;
     }
+    TUPLE_GC_TRACK(np);
     return (PyObject *)np;
 #undef b
 }
@@ -515,8 +548,6 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     Py_ssize_t size;
     PyTupleObject *np;
     PyObject **p, **items;
-    if (n < 0)
-        n = 0;
     if (Py_SIZE(a) == 0 || n == 1) {
         if (PyTuple_CheckExact(a)) {
             /* Since tuples are immutable, we can return a shared
@@ -524,13 +555,14 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             Py_INCREF(a);
             return (PyObject *)a;
         }
-        if (Py_SIZE(a) == 0)
-            return PyTuple_New(0);
+    }
+    if (Py_SIZE(a) == 0 || n <= 0) {
+        return PyTuple_New(0);
     }
     if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
         return PyErr_NoMemory();
     size = Py_SIZE(a) * n;
-    np = (PyTupleObject *) PyTuple_New(size);
+    np = (PyTupleObject *) tuple_new_untracked(size);
     if (np == NULL)
         return NULL;
     p = np->ob_item;
@@ -542,6 +574,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
             p++;
         }
     }
+    TUPLE_GC_TRACK(np);
     return (PyObject *) np;
 }
 
@@ -774,7 +807,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             return (PyObject *)self;
         }
         else {
-            result = PyTuple_New(slicelength);
+            result = tuple_new_untracked(slicelength);
             if (!result) return NULL;
 
             src = self->ob_item;
@@ -786,6 +819,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
                 dest[i] = it;
             }
 
+            TUPLE_GC_TRACK(result);
             return result;
         }
     }
