@@ -327,8 +327,8 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
 }
 
 
-PyInterpreterState *
-interp_lookup_id(PY_INT64_T requested_id)
+static PyInterpreterState *
+interp_look_up_id(PY_INT64_T requested_id)
 {
     PyInterpreterState *interp = PyInterpreterState_Head();
     while (interp != NULL) {
@@ -350,7 +350,7 @@ _PyInterpreterState_LookUpID(PY_INT64_T requested_id)
     PyInterpreterState *interp = NULL;
     if (requested_id >= 0) {
         HEAD_UNLOCK();
-        interp = interp_lookup_id(requested_id);
+        interp = interp_look_up_id(requested_id);
         HEAD_UNLOCK();
     }
     if (interp == NULL && !PyErr_Occurred()) {
