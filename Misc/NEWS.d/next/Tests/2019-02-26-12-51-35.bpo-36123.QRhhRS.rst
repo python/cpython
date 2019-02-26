@@ -1,0 +1,2 @@
+timeout is now set once the socket is created in :_testWithTimeoutTriggeredSend(self) rather than on the
+connection.
