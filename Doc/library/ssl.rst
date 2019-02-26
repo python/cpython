@@ -1922,6 +1922,8 @@ to speed up repeated connections from the same clients.
      This attribute is not available unless the ssl module is compiled
      with OpenSSL 1.1.0g or newer.
 
+   .. versionadded:: 3.7
+
 .. attribute:: SSLContext.minimum_version
 
    Like :attr:`SSLContext.maximum_version` except it is the lowest
@@ -1931,6 +1933,8 @@ to speed up repeated connections from the same clients.
 
      This attribute is not available unless the ssl module is compiled
      with OpenSSL 1.1.0g or newer.
+
+   .. versionadded:: 3.7
 
 .. attribute:: SSLContext.options
 
