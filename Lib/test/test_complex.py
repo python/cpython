@@ -140,6 +140,20 @@ class ComplexTest(unittest.TestCase):
         self.assertIs(operator.eq(1+1j, 2+2j), False)
         self.assertIs(operator.ne(1+1j, 1+1j), False)
         self.assertIs(operator.ne(1+1j, 2+2j), True)
+        for n in range(100):
+            for f in (int(n), float(n), complex(n)):
+                self.assertIs(complex.__lt__(complex(f), f), False)
+                self.assertIs(complex.__gt__(complex(f), f), False)
+                self.assertIs(complex.__le__(complex(f), f), True)
+                self.assertIs(complex.__ge__(complex(f), f), True)
+                self.assertIs(complex.__lt__(complex(f-1), f), True)
+                self.assertIs(complex.__gt__(complex(f-1), f), False)
+                self.assertIs(complex.__le__(complex(f-1), f), True)
+                self.assertIs(complex.__ge__(complex(f-1), f), False)
+                self.assertIs(complex.__lt__(complex(f), f-1), False)
+                self.assertIs(complex.__gt__(complex(f), f-1), True)
+                self.assertIs(complex.__le__(complex(f), f-1), False)
+                self.assertIs(complex.__ge__(complex(f), f-1), True)
 
     def test_richcompare_boundaries(self):
         def check(n, deltas, is_equal, imag = 0.0):
