@@ -49,12 +49,12 @@ The :mod:`pty` module defines the following functions:
 
    The functions *master_read* and *stdin_read* are passed a file descriptor
    which they should read from, and they should always return a byte string. In
-   order to force spawn to return before the child process exits an *OsError*
-   should be thrown.
+   order to force spawn to return before the child process exits an
+   :exc:`OSError` should be thrown.
 
    The default implementation for both functions will read and return up to 1024
-   bytes each time the function is called. *Master_read* is passed the
-   pseudoterminal’s master file descriptor to read output from the child
+   bytes each time the function is called. The *master_read* callback is passed
+   the pseudoterminal’s master file descriptor to read output from the child
    process, and *stdin_read* is passed file descriptor 0, to read from the
    parent process's standard input.
 
