@@ -51,13 +51,18 @@ The :mod:`pty` module defines the following functions:
    which they should read from, and they should always return a byte
    string. Returning an empty byte string from either callback is interpreted as
    an end-of-file (EOF) condition, and that callback will not be called after
-   that.
+   that. This is not recommended. Instead, the graceful way to force the *spawn*
+   to return before the child process exits is to raise *OsError*.
 
-   In general, manually signaling EOF from one of the read callback will not
-   behave well. If *stdin_read* returns EOF the controlling terminal can no
-   longer communicate with.
+   In general, manually signaling EOF without receiving it from the underlying
+   file descriptor from one or both of the read callbacks will not behave
+   well. If *stdin_read* signals EOF the controlling terminal can no longer
+   communicate with the parent process OR the child process. Unless the child
+   process will quit without any input, *spawn* will then loop forever. If
+   *master_read* signals EOF the same behavior results (on linux at least).
 
-   If both callbacks signal EOF then *spawn* will block indefinitely. This
+   If both callbacks signal EOF then *spawn* will probably never return, unless
+   *select* throws an error on your platform when passed three empty lists. This
    is a bug, documented in `issue 26228 <https://bugs.python.org/issue26228>`_.
 
    The default implementation for both functions will read and return up to 1024
