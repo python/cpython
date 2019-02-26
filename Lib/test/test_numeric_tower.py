@@ -177,7 +177,8 @@ class ComparisonTest(unittest.TestCase):
     def test_complex(self):
         # comparisons with complex are special:  equality and inequality
         # comparisons should always succeed, but order comparisons should
-        # raise TypeError.
+        # raise TypeError if the complex object has a nonzero imaginary
+        # component.
         z = 1.0 + 0j
         w = -3.14 + 2.7j
 
@@ -191,11 +192,17 @@ class ComparisonTest(unittest.TestCase):
             self.assertNotEqual(w, v)
             self.assertNotEqual(v, w)
 
-        for v in (1, 1.0, F(1), D(1), complex(1),
-                  2, 2.0, F(2), D(2), complex(2), w):
-            for op in operator.le, operator.lt, operator.ge, operator.gt:
-                self.assertRaises(TypeError, op, z, v)
-                self.assertRaises(TypeError, op, v, z)
+        for i in (1, 1.0, F(1), D(1), complex(1)):
+            for j in (2, 2.0, F(2), D(2), complex(2)):
+                for op in operator.le, operator.lt, operator.ge, operator.gt:
+                    self.assertLess(i, j)
+                    self.assertLessEqual(i, j)
+                    self.assertGreater(j, i)
+                    self.assertGreaterEqual(j, i)
+                    self.assertRaises(TypeError, op, w, i)
+                    self.assertRaises(TypeError, op, i, w)
+                    self.assertRaises(TypeError, op, w, j)
+                    self.assertRaises(TypeError, op, j, w)
 
 
 if __name__ == '__main__':
