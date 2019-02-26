@@ -6050,8 +6050,9 @@ def _convert_for_comparison(self, other, equality_op=False):
 
     # Comparisons with float and complex types.  == and != comparisons
     # with complex numbers should succeed, returning either True or False
-    # as appropriate.  Other comparisons return NotImplemented.
-    if equality_op and isinstance(other, _numbers.Complex) and other.imag == 0:
+    # as appropriate.  Other comparisons return NotImplemented if the
+    # complex object has an imaginary component.
+    if isinstance(other, _numbers.Complex) and other.imag == 0:
         other = other.real
     if isinstance(other, float):
         context = getcontext()

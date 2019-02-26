@@ -1705,10 +1705,14 @@ class UsabilityTest(unittest.TestCase):
         self.assertNotEqual(db, (3.0+1j))
         self.assertNotEqual((3.0+1j), db)
 
-        self.assertIs(db.__lt__(3.0+0j), NotImplemented)
-        self.assertIs(db.__le__(3.0+0j), NotImplemented)
-        self.assertIs(db.__gt__(3.0+0j), NotImplemented)
-        self.assertIs(db.__le__(3.0+0j), NotImplemented)
+        self.assertIs(db.__lt__(0+3.0j), NotImplemented)
+        self.assertIs(db.__le__(0+3.0j), NotImplemented)
+        self.assertIs(db.__gt__(0+3.0j), NotImplemented)
+        self.assertIs(db.__le__(0+3.0j), NotImplemented)
+        self.assertIs(db.__lt__(3.0+0j), False)
+        self.assertIs(db.__le__(3.0+0j), True)
+        self.assertIs(db.__gt__(3.0+0j), False)
+        self.assertIs(db.__le__(3.0+0j), True)
 
     def test_decimal_fraction_comparison(self):
         D = self.decimal.Decimal

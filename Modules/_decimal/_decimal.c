@@ -2875,7 +2875,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
             *wcmp = PyDec_FromFloatExact(w, context);
         }
     }
-    else if (PyComplex_Check(w) && (op == Py_EQ || op == Py_NE)) {
+    else if (PyComplex_Check(w)) {
         Py_complex c = PyComplex_AsCComplex(w);
         if (c.real == -1.0 && PyErr_Occurred()) {
             *wcmp = NULL;
