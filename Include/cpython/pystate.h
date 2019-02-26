@@ -240,7 +240,9 @@ typedef struct _xid {
     // be set by the cross-interpreter machinery.
     //
     // We use the ID rather than the PyInterpreterState to avoid issues
-    // with deleted interpreters.
+    // with deleted interpreters.  Note that IDs are never re-used, so
+    // each one will always correspond to a specific interpreter
+    // (whether still alive or not).
     int64_t interp;
     // new_object is a function that returns a new object in the current
     // interpreter given the data.  The resulting object (a new
