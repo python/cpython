@@ -472,7 +472,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                          dirs_exist_ok=dirs_exist_ok)
             else:
                 # Will raise a SpecialFileError for unsupported file types
-                copy_function(srcentry, dstname)
+                copy_function(srcobj, dstname)
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except Error as err:
