@@ -859,6 +859,24 @@ class TestShutil(unittest.TestCase):
         with self.assertRaises(shutil.Error):
             shutil.copytree(src_dir, dst_dir)
 
+    def test_copytree_custom_copy_function(self):
+        # See: https://bugs.python.org/issue35648
+        def custom_cpfun(a, b):
+            flag.append(None)
+            self.assertIsInstance(a, str)
+            self.assertIsInstance(b, str)
+            self.assertEqual(a, os.path.join(src, 'foo'))
+            self.assertEqual(b, os.path.join(dst, 'foo'))
+
+        flag = []
+        src = tempfile.mkdtemp()
+        dst = tempfile.mktemp()
+        self.addCleanup(shutil.rmtree, src)
+        with open(os.path.join(src, 'foo'), 'w') as f:
+            f.close()
+        shutil.copytree(src, dst, copy_function=custom_cpfun)
+        self.assertEqual(len(flag), 1)
+
     @unittest.skipIf(os.name == 'nt', 'temporarily disabled on Windows')
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_dont_copy_file_onto_link_to_itself(self):
