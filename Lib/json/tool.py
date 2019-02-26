@@ -29,7 +29,7 @@ def _open_outfile(outfile, parser):
     except IOError as e:
         parser.error(f"can't open '{outfile}': {str(e)}")
 
-def _write(parser, outfile, objs, sort_keys):
+def _write(outfile, objs, sort_keys):
     for obj in objs:
         json.dump(obj, outfile, sort_keys=sort_keys, indent=4)
         outfile.write('\n')
@@ -70,13 +70,13 @@ def main():
         outfile = _open_outfile(outfile, parser)
 
         with outfile:
-            _write(parser, outfile, objs, sort_keys)
+            _write(outfile, objs, sort_keys)
 
     else:
         outfile = _open_outfile(outfile, parser)
         with infile, outfile:
             objs = _read(infile, json_lines)
-            _write(parser, outfile, objs, sort_keys)
+            _write(outfile, objs, sort_keys)
 
 if __name__ == '__main__':
     main()
