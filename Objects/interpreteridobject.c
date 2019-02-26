@@ -125,7 +125,7 @@ interpid_str(PyObject *self)
     return PyUnicode_FromFormat("%" PRId64 "", id->id);
 }
 
-PyObject *
+static PyObject *
 interpid_int(PyObject *self)
 {
     interpid *id = (interpid *)self;
