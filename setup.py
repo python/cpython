@@ -44,6 +44,8 @@ def get_platform():
     return sys.platform
 host_platform = get_platform()
 
+_vxworks = ('vxworks' in host_platform)
+
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_ARGS"))
 
@@ -509,12 +511,12 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
-    def add_gcc_paths(self):
-        gcc = sysconfig.get_config_var('CC')
-        tmpfile = os.path.join(self.build_temp, 'gccpaths')
+    def add_cross_compiling_paths(self):
+        cc = sysconfig.get_config_var('CC')
+        tmpfile = os.path.join(self.build_temp, 'ccpaths')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (gcc, tmpfile))
+        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
         is_gcc = False
         is_clang = False
         in_incdirs = False
@@ -526,7 +528,7 @@ class PyBuildExt(build_ext):
                     for line in fp.readlines():
                         if line.startswith("gcc version"):
                             is_gcc = True
-                        if line.startswith("clang version"):
+                        elif line.startswith("clang version"):
                             is_clang = True
                         elif line.startswith("#include <...>"):
                             in_incdirs = True
@@ -553,7 +555,7 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
         # only change this for cross builds for 3.3, issues on Mageia
         if cross_compiling:
-            self.add_gcc_paths()
+            self.add_cross_compiling_paths()
         self.add_multiarch_paths()
 
         # Add paths specified in the environment variables LDFLAGS and
@@ -725,7 +727,7 @@ class PyBuildExt(build_ext):
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
-        if 'vxworks' not in host_platform:
+        if not _vxworks:
             exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords
         if (config_h_vars.get('HAVE_GETSPNAM', False) or
@@ -864,7 +866,7 @@ class PyBuildExt(build_ext):
         else:
             libs = []
 
-        if 'vxworks' not in host_platform:
+        if not _vxworks:
             exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
         elif self.compiler.find_library_file(lib_dirs, 'OPENSSL'):
             libs = ['OPENSSL']
@@ -877,7 +879,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
 
         # socket(2)
-        if 'vxworks' not in host_platform :
+        if not _vxworks:
             exts.append( Extension('_socket', ['socketmodule.c'],
                                    depends = ['socketmodule.h']) )
         elif self.compiler.find_library_file(lib_dirs, 'net'):
@@ -1334,7 +1336,7 @@ class PyBuildExt(build_ext):
 
         # Unix-only modules
         if host_platform != 'win32':
-            if 'vxworks' not in host_platform :
+            if not _vxworks:
                 # Steen Lumholt's termios module
                 exts.append( Extension('termios', ['termios.c']) )
                 # Jeremy Hylton's rlimit interface
