@@ -144,18 +144,6 @@
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
 
-/* Define to 1 if you must link with -lrt for shm_open(). */
-#undef SHM_NEEDS_LIBRT
-
-/* Define to 1 if you have the <sys/mman.h> header file. */
-#undef HAVE_SYS_MMAN_H
-
-/* Define to 1 if you have the shm_open syscall */
-#undef HAVE_SHM_OPEN
-
-/* Define to 1 if you have the shm_unlink syscall */
-#undef HAVE_SHM_UNLINK
-
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 
@@ -930,6 +918,12 @@
 /* Define to 1 if you have the <shadow.h> header file. */
 #undef HAVE_SHADOW_H
 
+/* Define to 1 if you have the `shm_open' function. */
+#undef HAVE_SHM_OPEN
+
+/* Define to 1 if you have the `shm_unlink' function. */
+#undef HAVE_SHM_UNLINK
+
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION
 
@@ -1108,6 +1102,9 @@
 
 /* Define to 1 if you have the <sys/mkdev.h> header file. */
 #undef HAVE_SYS_MKDEV_H
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#undef HAVE_SYS_MMAN_H
 
 /* Define to 1 if you have the <sys/modem.h> header file. */
 #undef HAVE_SYS_MODEM_H
@@ -1382,6 +1379,9 @@
 
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
+
+/* Define to 1 if you must link with -lrt for shm_open(). */
+#undef SHM_NEEDS_LIBRT
 
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
