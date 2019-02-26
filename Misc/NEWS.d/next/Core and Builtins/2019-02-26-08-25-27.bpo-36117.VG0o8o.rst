@@ -1,0 +1,2 @@
+Rich comparisons of real-valued :class:`complex` objects with other numeric types no longer fail.
+Patch by Brandt Bucher.
