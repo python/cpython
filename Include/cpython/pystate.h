@@ -269,7 +269,7 @@ PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 
 typedef int (*crossinterpdatafunc)(PyObject *, struct _xid *);
 
-PyAPI_FUNC(int) _PyCrossInterpreterData_Register_Class(PyTypeObject *, crossinterpdatafunc);
+PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
 #ifdef __cplusplus

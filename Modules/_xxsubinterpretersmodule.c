@@ -2567,7 +2567,7 @@ PyInit__xxsubinterpreters(void)
         return NULL;
     }
 
-    if (_PyCrossInterpreterData_Register_Class(&ChannelIDtype, _channelid_shared)) {
+    if (_PyCrossInterpreterData_RegisterClass(&ChannelIDtype, _channelid_shared)) {
         return NULL;
     }
 
