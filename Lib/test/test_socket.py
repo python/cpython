@@ -5603,7 +5603,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
         support.unlink(support.TESTFN)
 
     def accept_conn(self):
-        self.serv.settimeout(self.TIMEOUT)
+        self.serv.settimeout(MAIN_TIMEOUT)
         conn, addr = self.serv.accept()
         conn.settimeout(self.TIMEOUT)
         self.addCleanup(conn.close)
@@ -5788,7 +5788,8 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def _testWithTimeoutTriggeredSend(self):
         address = self.serv.getsockname()
         with open(support.TESTFN, 'rb') as file:
-            with socket.create_connection(address, timeout=0.01) as sock:
+            with socket.create_connection(address) as sock:
+                sock.settimeout(0.01)
                 meth = self.meth_from_sock(sock)
                 self.assertRaises(socket.timeout, meth, file)
 
