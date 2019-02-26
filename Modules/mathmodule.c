@@ -76,8 +76,31 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 static const double sqrtpi = 1.772453850905516027298167483341145182798;
 #endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
 
+
+/* Version of PyFloat_AsDouble() with in-line fast paths
+   for exact floats and integers.  Gives a substantial
+   speed improvement for extracting float arguments.
+*/
+
+#define ASSIGN_DOUBLE(target_var, obj, error_label)        \
+    if (PyFloat_CheckExact(obj)) {                         \
+        target_var = PyFloat_AS_DOUBLE(obj);               \
+    }                                                      \
+    else if (PyLong_CheckExact(obj)) {                     \
+        target_var = PyLong_AsDouble(obj);                 \
+        if (target_var == -1.0 && PyErr_Occurred()) {      \
+            goto error_label;                              \
+        }                                                  \
+    }                                                      \
+    else {                                                 \
+        target_var = PyFloat_AsDouble(obj);                \
+        if (target_var == -1.0 && PyErr_Occurred()) {      \
+            goto error_label;                              \
+        }                                                  \
+    }
+
 static double
-sinpi(double x)
+m_sinpi(double x)
 {
     double y, r;
     int n;
@@ -305,7 +328,7 @@ m_tgamma(double x)
        integer. */
     if (absx > 200.0) {
         if (x < 0.0) {
-            return 0.0/sinpi(x);
+            return 0.0/m_sinpi(x);
         }
         else {
             errno = ERANGE;
@@ -329,7 +352,7 @@ m_tgamma(double x)
     }
     z = z * lanczos_g / y;
     if (x < 0.0) {
-        r = -pi / sinpi(absx) / absx * exp(y) / lanczos_sum(absx);
+        r = -pi / m_sinpi(absx) / absx * exp(y) / lanczos_sum(absx);
         r -= z * r;
         if (absx < 140.0) {
             r /= pow(y, absx - 0.5);
@@ -400,7 +423,7 @@ m_lgamma(double x)
     r += (absx - 0.5) * (log(absx + lanczos_g - 0.5) - 1);
     if (x < 0.0)
         /* Use reflection formula to get value for negative x. */
-        r = logpi - log(fabs(sinpi(absx))) - log(absx) - r;
+        r = logpi - log(fabs(m_sinpi(absx))) - log(absx) - r;
     if (Py_IS_INFINITY(r))
         errno = ERANGE;
     return r;
@@ -1323,10 +1346,8 @@ math_fsum(PyObject *module, PyObject *seq)
                 goto _fsum_error;
             break;
         }
-        x = PyFloat_AsDouble(item);
+        ASSIGN_DOUBLE(x, item, error_with_item);
         Py_DECREF(item);
-        if (PyErr_Occurred())
-            goto _fsum_error;
 
         xsave = x;
         for (i = j = 0; j < n; j++) {       /* for y in partials */
@@ -1407,12 +1428,16 @@ math_fsum(PyObject *module, PyObject *seq)
     }
     sum = PyFloat_FromDouble(hi);
 
-_fsum_error:
+  _fsum_error:
     PyFPE_END_PROTECT(hi)
     Py_DECREF(iter);
     if (p != ps)
         PyMem_Free(p);
     return sum;
+
+  error_with_item:
+    Py_DECREF(item);
+    goto _fsum_error;
 }
 
 #undef NUM_PARTIALS
@@ -2142,23 +2167,9 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     }
     for (i=0 ; i<n ; i++) {
         item = PyTuple_GET_ITEM(p, i);
-        if (PyFloat_CheckExact(item)) {
-            px = PyFloat_AS_DOUBLE(item);
-        } else {
-            px = PyFloat_AsDouble(item);
-            if (px == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
+        ASSIGN_DOUBLE(px, item, error_exit);
         item = PyTuple_GET_ITEM(q, i);
-        if (PyFloat_CheckExact(item)) {
-            qx = PyFloat_AS_DOUBLE(item);
-        } else {
-            qx = PyFloat_AsDouble(item);
-            if (qx == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
+        ASSIGN_DOUBLE(qx, item, error_exit);
         x = fabs(px - qx);
         diffs[i] = x;
         found_nan |= Py_IS_NAN(x);
@@ -2199,14 +2210,7 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     for (i = 0; i < nargs; i++) {
         item = args[i];
-        if (PyFloat_CheckExact(item)) {
-            x = PyFloat_AS_DOUBLE(item);
-        } else {
-            x = PyFloat_AsDouble(item);
-            if (x == -1.0 && PyErr_Occurred()) {
-                goto error_exit;
-            }
-        }
+        ASSIGN_DOUBLE(x, item, error_exit);
         x = fabs(x);
         coordinates[i] = x;
         found_nan |= Py_IS_NAN(x);
@@ -2490,6 +2494,172 @@ math_isclose_impl(PyObject *module, double a, double b, double rel_tol,
 }
 
 
+/*[clinic input]
+math.prod
+
+    iterable: object
+    /
+    *
+    start: object(c_default="NULL") = 1
+
+Calculate the product of all the elements in the input iterable.
+
+The default start value for the product is 1.
+
+When the iterable is empty, return the start value.  This function is
+intended specifically for use with numeric values and may reject
+non-numeric types.
+[clinic start generated code]*/
+
+static PyObject *
+math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
+/*[clinic end generated code: output=36153bedac74a198 input=4c5ab0682782ed54]*/
+{
+    PyObject *result = start;
+    PyObject *temp, *item, *iter;
+
+    iter = PyObject_GetIter(iterable);
+    if (iter == NULL) {
+        return NULL;
+    }
+
+    if (result == NULL) {
+        result = PyLong_FromLong(1);
+        if (result == NULL) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+    } else {
+        Py_INCREF(result);
+    }
+#ifndef SLOW_PROD
+    /* Fast paths for integers keeping temporary products in C.
+     * Assumes all inputs are the same type.
+     * If the assumption fails, default to use PyObjects instead.
+    */
+    if (PyLong_CheckExact(result)) {
+        int overflow;
+        long i_result = PyLong_AsLongAndOverflow(result, &overflow);
+        /* If this already overflowed, don't even enter the loop. */
+        if (overflow == 0) {
+            Py_DECREF(result);
+            result = NULL;
+        }
+        /* Loop over all the items in the iterable until we finish, we overflow
+         * or we found a non integer element */
+        while(result == NULL) {
+            item = PyIter_Next(iter);
+            if (item == NULL) {
+                Py_DECREF(iter);
+                if (PyErr_Occurred()) {
+                    return NULL;
+                }
+                return PyLong_FromLong(i_result);
+            }
+            if (PyLong_CheckExact(item)) {
+                long b = PyLong_AsLongAndOverflow(item, &overflow);
+                long x = i_result * b;
+                /* Continue if there is no overflow */
+                if (overflow == 0
+                    && x < LONG_MAX && x > LONG_MIN
+                    && !(b != 0 && x / b != i_result)) {
+                    i_result = x;
+                    Py_DECREF(item);
+                    continue;
+                }
+            }
+            /* Either overflowed or is not an int.
+             * Restore real objects and process normally */
+            result = PyLong_FromLong(i_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
+            temp = PyNumber_Multiply(result, item);
+            Py_DECREF(result);
+            Py_DECREF(item);
+            result = temp;
+            if (result == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+        }
+    }
+
+    /* Fast paths for floats keeping temporary products in C.
+     * Assumes all inputs are the same type.
+     * If the assumption fails, default to use PyObjects instead.
+    */
+    if (PyFloat_CheckExact(result)) {
+        double f_result = PyFloat_AS_DOUBLE(result);
+        Py_DECREF(result);
+        result = NULL;
+        while(result == NULL) {
+            item = PyIter_Next(iter);
+            if (item == NULL) {
+                Py_DECREF(iter);
+                if (PyErr_Occurred()) {
+                    return NULL;
+                }
+                return PyFloat_FromDouble(f_result);
+            }
+            if (PyFloat_CheckExact(item)) {
+                f_result *= PyFloat_AS_DOUBLE(item);
+                Py_DECREF(item);
+                continue;
+            }
+            if (PyLong_CheckExact(item)) {
+                long value;
+                int overflow;
+                value = PyLong_AsLongAndOverflow(item, &overflow);
+                if (!overflow) {
+                    f_result *= (double)value;
+                    Py_DECREF(item);
+                    continue;
+                }
+            }
+            result = PyFloat_FromDouble(f_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
+            temp = PyNumber_Multiply(result, item);
+            Py_DECREF(result);
+            Py_DECREF(item);
+            result = temp;
+            if (result == NULL) {
+                Py_DECREF(iter);
+                return NULL;
+            }
+        }
+    }
+#endif
+    /* Consume rest of the iterable (if any) that could not be handled
+     * by specialized functions above.*/
+    for(;;) {
+        item = PyIter_Next(iter);
+        if (item == NULL) {
+            /* error, or end-of-sequence */
+            if (PyErr_Occurred()) {
+                Py_DECREF(result);
+                result = NULL;
+            }
+            break;
+        }
+        temp = PyNumber_Multiply(result, item);
+        Py_DECREF(result);
+        Py_DECREF(item);
+        result = temp;
+        if (result == NULL)
+            break;
+    }
+    Py_DECREF(iter);
+    return result;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -2537,6 +2707,7 @@ static PyMethodDef math_methods[] = {
     {"tan",             math_tan,       METH_O,         math_tan_doc},
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
+    MATH_PROD_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

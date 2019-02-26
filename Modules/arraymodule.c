@@ -340,7 +340,7 @@ get_int_unless_float(PyObject *v)
                         "array item must be integer");
         return NULL;
     }
-    return (PyObject *)_PyLong_FromNbInt(v);
+    return _PyLong_FromNbIndexOrNbInt(v);
 }
 
 static int

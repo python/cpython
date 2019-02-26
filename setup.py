@@ -1592,6 +1592,18 @@ class PyBuildExt(build_ext):
             if (sysconfig.get_config_var('HAVE_SEM_OPEN') and not
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
+            if (sysconfig.get_config_var('HAVE_SHM_OPEN') and
+                sysconfig.get_config_var('HAVE_SHM_UNLINK')):
+                posixshmem_srcs = [ '_multiprocessing/posixshmem.c',
+                                  ]
+                libs = []
+                if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
+                    # need to link with librt to get shm_open()
+                    libs.append('rt')
+                exts.append( Extension('_posixshmem', posixshmem_srcs,
+                                       define_macros={},
+                                       libraries=libs,
+                                       include_dirs=["Modules/_multiprocessing"]))
 
         exts.append ( Extension('_multiprocessing', multiprocessing_srcs,
                                 define_macros=list(macros.items()),
@@ -2254,7 +2266,6 @@ class PyBuildInstallLib(install_lib):
         return outfiles
 
     def set_file_modes(self, files, defaultMode, sharedLibMode):
-        if not self.is_chmod_supported(): return
         if not files: return
 
         for filename in files:
@@ -2265,15 +2276,11 @@ class PyBuildInstallLib(install_lib):
             if not self.dry_run: os.chmod(filename, mode)
 
     def set_dir_modes(self, dirname, mode):
-        if not self.is_chmod_supported(): return
         for dirpath, dirnames, fnames in os.walk(dirname):
             if os.path.islink(dirpath):
                 continue
             log.info("changing mode of %s to %o", dirpath, mode)
             if not self.dry_run: os.chmod(dirpath, mode)
-
-    def is_chmod_supported(self):
-        return hasattr(os, 'chmod')
 
 class PyBuildScripts(build_scripts):
     def copy_scripts(self):

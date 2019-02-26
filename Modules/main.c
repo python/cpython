@@ -9,6 +9,13 @@
 #include "pycore_pystate.h"
 
 #include <locale.h>
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#include <stdio.h>
+#if defined(HAVE_GETPID) && defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #  include <windows.h>
@@ -501,10 +508,14 @@ pymain_free(_PyMain *pymain)
 static int
 pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 {
+    _Py_IDENTIFIER(path);
     PyObject *sys_path;
     PyObject *sysdict = interp->sysdict;
     if (sysdict != NULL) {
-        sys_path = PyDict_GetItemString(sysdict, "path");
+        sys_path = _PyDict_GetItemIdWithError(sysdict, &PyId_path);
+        if (sys_path == NULL && PyErr_Occurred()) {
+            goto error;
+        }
     }
     else {
         sys_path = NULL;
@@ -1376,6 +1387,7 @@ pymain_read_conf(_PyMain *pymain, _PyCoreConfig *config,
             goto done;
         }
         pymain_clear_cmdline(pymain, cmdline);
+        pymain_clear_pymain(pymain);
         memset(cmdline, 0, sizeof(*cmdline));
         config->utf8_mode = new_utf8_mode;
         config->coerce_c_locale = new_coerce_c_locale;
@@ -1828,6 +1840,29 @@ pymain_main(_PyMain *pymain)
     }
 
     pymain_free(pymain);
+
+    if (_Py_UnhandledKeyboardInterrupt) {
+        /* https://bugs.python.org/issue1054041 - We need to exit via the
+         * SIG_DFL handler for SIGINT if KeyboardInterrupt went unhandled.
+         * If we don't, a calling process such as a shell may not know
+         * about the user's ^C.  https://www.cons.org/cracauer/sigint.html */
+#if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
+        if (PyOS_setsig(SIGINT, SIG_DFL) == SIG_ERR) {
+            perror("signal");  /* Impossible in normal environments. */
+        } else {
+            kill(getpid(), SIGINT);
+        }
+        /* If setting SIG_DFL failed, or kill failed to terminate us,
+         * there isn't much else we can do aside from an error code. */
+#endif  /* HAVE_GETPID && !MS_WINDOWS */
+#ifdef MS_WINDOWS
+        /* cmd.exe detects this, prints ^C, and offers to terminate. */
+        /* https://msdn.microsoft.com/en-us/library/cc704588.aspx */
+        pymain->status = STATUS_CONTROL_C_EXIT;
+#else
+        pymain->status = SIGINT + 128;
+#endif  /* !MS_WINDOWS */
+    }
 
     return pymain->status;
 }

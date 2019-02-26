@@ -5,9 +5,11 @@ approx_equal function.
 
 import collections
 import collections.abc
+import copy
 import decimal
 import doctest
 import math
+import pickle
 import random
 import sys
 import unittest
@@ -1810,6 +1812,51 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # counts, this should raise.
         self.assertRaises(statistics.StatisticsError, self.func, data)
 
+class TestFMean(unittest.TestCase):
+
+    def test_basics(self):
+        fmean = statistics.fmean
+        D = Decimal
+        F = Fraction
+        for data, expected_mean, kind in [
+            ([3.5, 4.0, 5.25], 4.25, 'floats'),
+            ([D('3.5'), D('4.0'), D('5.25')], 4.25, 'decimals'),
+            ([F(7, 2), F(4, 1), F(21, 4)], 4.25, 'fractions'),
+            ([True, False, True, True, False], 0.60, 'booleans'),
+            ([3.5, 4, F(21, 4)], 4.25, 'mixed types'),
+            ((3.5, 4.0, 5.25), 4.25, 'tuple'),
+            (iter([3.5, 4.0, 5.25]), 4.25, 'iterator'),
+                ]:
+            actual_mean = fmean(data)
+            self.assertIs(type(actual_mean), float, kind)
+            self.assertEqual(actual_mean, expected_mean, kind)
+
+    def test_error_cases(self):
+        fmean = statistics.fmean
+        StatisticsError = statistics.StatisticsError
+        with self.assertRaises(StatisticsError):
+            fmean([])                               # empty input
+        with self.assertRaises(StatisticsError):
+            fmean(iter([]))                         # empty iterator
+        with self.assertRaises(TypeError):
+            fmean(None)                             # non-iterable input
+        with self.assertRaises(TypeError):
+            fmean([10, None, 20])                   # non-numeric input
+        with self.assertRaises(TypeError):
+            fmean()                                 # missing data argument
+        with self.assertRaises(TypeError):
+            fmean([10, 20, 60], 70)                 # too many arguments
+
+    def test_special_values(self):
+        # Rules for special values are inherited from math.fsum()
+        fmean = statistics.fmean
+        NaN = float('Nan')
+        Inf = float('Inf')
+        self.assertTrue(math.isnan(fmean([10, NaN])), 'nan')
+        self.assertTrue(math.isnan(fmean([NaN, Inf])), 'nan and infinity')
+        self.assertTrue(math.isinf(fmean([10, Inf])), 'infinity')
+        with self.assertRaises(ValueError):
+            fmean([Inf, -Inf])
 
 
 # === Tests for variances and standard deviations ===
@@ -1979,6 +2026,199 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         data = [random.uniform(-2, 9) for _ in range(1000)]
         expected = math.sqrt(statistics.variance(data))
         self.assertEqual(self.func(data), expected)
+
+class TestNormalDist(unittest.TestCase):
+
+    def test_slots(self):
+        nd = statistics.NormalDist(300, 23)
+        with self.assertRaises(TypeError):
+            vars(nd)
+        self.assertEqual(nd.__slots__, ('mu', 'sigma'))
+
+    def test_instantiation_and_attributes(self):
+        nd = statistics.NormalDist(500, 17)
+        self.assertEqual(nd.mu, 500)
+        self.assertEqual(nd.sigma, 17)
+        self.assertEqual(nd.variance, 17**2)
+
+        # default arguments
+        nd = statistics.NormalDist()
+        self.assertEqual(nd.mu, 0)
+        self.assertEqual(nd.sigma, 1)
+        self.assertEqual(nd.variance, 1**2)
+
+        # error case: negative sigma
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.NormalDist(500, -10)
+
+    def test_alternative_constructor(self):
+        NormalDist = statistics.NormalDist
+        data = [96, 107, 90, 92, 110]
+        # list input
+        self.assertEqual(NormalDist.from_samples(data), NormalDist(99, 9))
+        # tuple input
+        self.assertEqual(NormalDist.from_samples(tuple(data)), NormalDist(99, 9))
+        # iterator input
+        self.assertEqual(NormalDist.from_samples(iter(data)), NormalDist(99, 9))
+        # error cases
+        with self.assertRaises(statistics.StatisticsError):
+            NormalDist.from_samples([])                      # empty input
+        with self.assertRaises(statistics.StatisticsError):
+            NormalDist.from_samples([10])                    # only one input
+
+    def test_sample_generation(self):
+        NormalDist = statistics.NormalDist
+        mu, sigma = 10_000, 3.0
+        X = NormalDist(mu, sigma)
+        n = 1_000
+        data = X.samples(n)
+        self.assertEqual(len(data), n)
+        self.assertEqual(set(map(type, data)), {float})
+        # mean(data) expected to fall within 8 standard deviations
+        xbar = statistics.mean(data)
+        self.assertTrue(mu - sigma*8 <= xbar <= mu + sigma*8)
+
+        # verify that seeding makes reproducible sequences
+        n = 100
+        data1 = X.samples(n, seed='happiness and joy')
+        data2 = X.samples(n, seed='trouble and despair')
+        data3 = X.samples(n, seed='happiness and joy')
+        data4 = X.samples(n, seed='trouble and despair')
+        self.assertEqual(data1, data3)
+        self.assertEqual(data2, data4)
+        self.assertNotEqual(data1, data2)
+
+        # verify that subclass type is honored
+        class NewNormalDist(NormalDist):
+            pass
+        nnd = NewNormalDist(200, 5)
+        self.assertEqual(type(nnd), NewNormalDist)
+
+    def test_pdf(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        # Verify peak around center
+        self.assertLess(X.pdf(99), X.pdf(100))
+        self.assertLess(X.pdf(101), X.pdf(100))
+        # Test symmetry
+        self.assertAlmostEqual(X.pdf(99), X.pdf(101))
+        self.assertAlmostEqual(X.pdf(98), X.pdf(102))
+        self.assertAlmostEqual(X.pdf(97), X.pdf(103))
+        # Test vs CDF
+        dx = 2.0 ** -10
+        for x in range(90, 111):
+            est_pdf = (X.cdf(x + dx) - X.cdf(x)) / dx
+            self.assertAlmostEqual(X.pdf(x), est_pdf, places=4)
+        # Error case: variance is zero
+        Y = NormalDist(100, 0)
+        with self.assertRaises(statistics.StatisticsError):
+            Y.pdf(90)
+
+    def test_cdf(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        cdfs = [X.cdf(x) for x in range(1, 200)]
+        self.assertEqual(set(map(type, cdfs)), {float})
+        # Verify montonic
+        self.assertEqual(cdfs, sorted(cdfs))
+        # Verify center
+        self.assertAlmostEqual(X.cdf(100), 0.50)
+        # Error case: variance is zero
+        Y = NormalDist(100, 0)
+        with self.assertRaises(statistics.StatisticsError):
+            Y.cdf(90)
+
+    def test_properties(self):
+        X = statistics.NormalDist(100, 15)
+        self.assertEqual(X.mean, 100)
+        self.assertEqual(X.stdev, 15)
+        self.assertEqual(X.variance, 225)
+
+    def test_unary_operations(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 12)
+        Y = +X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mu, Y.mu)
+        self.assertEqual(X.sigma, Y.sigma)
+        Y = -X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mu, -Y.mu)
+        self.assertEqual(X.sigma, Y.sigma)
+
+    def test_same_type_addition_and_subtraction(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 12)
+        Y = NormalDist(40, 5)
+        self.assertEqual(X + Y, NormalDist(140, 13))        # __add__
+        self.assertEqual(X - Y, NormalDist(60, 13))         # __sub__
+
+    def test_translation_and_scaling(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        y = 10
+        self.assertEqual(+X, NormalDist(100, 15))           # __pos__
+        self.assertEqual(-X, NormalDist(-100, 15))          # __neg__
+        self.assertEqual(X + y, NormalDist(110, 15))        # __add__
+        self.assertEqual(y + X, NormalDist(110, 15))        # __radd__
+        self.assertEqual(X - y, NormalDist(90, 15))         # __sub__
+        self.assertEqual(y - X, NormalDist(-90, 15))        # __rsub__
+        self.assertEqual(X * y, NormalDist(1000, 150))      # __mul__
+        self.assertEqual(y * X, NormalDist(1000, 150))      # __rmul__
+        self.assertEqual(X / y, NormalDist(10, 1.5))        # __truediv__
+        with self.assertRaises(TypeError):
+            y / X
+
+    def test_equality(self):
+        NormalDist = statistics.NormalDist
+        nd1 = NormalDist()
+        nd2 = NormalDist(2, 4)
+        nd3 = NormalDist()
+        self.assertNotEqual(nd1, nd2)
+        self.assertEqual(nd1, nd3)
+
+        # Test NotImplemented when types are different
+        class A:
+            def __eq__(self, other):
+                return 10
+        a = A()
+        self.assertEqual(nd1.__eq__(a), NotImplemented)
+        self.assertEqual(nd1 == a, 10)
+        self.assertEqual(a == nd1, 10)
+
+        # All subclasses to compare equal giving the same behavior
+        # as list, tuple, int, float, complex, str, dict, set, etc.
+        class SizedNormalDist(NormalDist):
+            def __init__(self, mu, sigma, n):
+                super().__init__(mu, sigma)
+                self.n = n
+        s = SizedNormalDist(100, 15, 57)
+        nd4 = NormalDist(100, 15)
+        self.assertEqual(s, nd4)
+
+        # Don't allow duck type equality because we wouldn't
+        # want a lognormal distribution to compare equal
+        # to a normal distribution with the same parameters
+        class LognormalDist:
+            def __init__(self, mu, sigma):
+                self.mu = mu
+                self.sigma = sigma
+        lnd = LognormalDist(100, 15)
+        nd = NormalDist(100, 15)
+        self.assertNotEqual(nd, lnd)
+
+    def test_pickle_and_copy(self):
+        nd = statistics.NormalDist(37.5, 5.625)
+        nd1 = copy.copy(nd)
+        self.assertEqual(nd, nd1)
+        nd2 = copy.deepcopy(nd)
+        self.assertEqual(nd, nd2)
+        nd3 = pickle.loads(pickle.dumps(nd))
+        self.assertEqual(nd, nd3)
+
+    def test_repr(self):
+        nd = statistics.NormalDist(37.5, 5.625)
+        self.assertEqual(repr(nd), 'NormalDist(mu=37.5, sigma=5.625)')
 
 
 # === Run tests ===

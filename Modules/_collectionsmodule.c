@@ -1463,9 +1463,13 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
     Py_ssize_t maxlen = -1;
     char *kwlist[] = {"iterable", "maxlen", 0};
 
-    if (kwdargs == NULL) {
-        if (!PyArg_UnpackTuple(args, "deque()", 0, 2, &iterable, &maxlenobj))
-            return -1;
+    if (kwdargs == NULL && PyTuple_GET_SIZE(args) <= 2) {
+        if (PyTuple_GET_SIZE(args) > 0) {
+            iterable = PyTuple_GET_ITEM(args, 0);
+        }
+        if (PyTuple_GET_SIZE(args) > 1) {
+            maxlenobj = PyTuple_GET_ITEM(args, 1);
+        }
     } else {
         if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist,
                                          &iterable, &maxlenobj))
@@ -2436,10 +2440,21 @@ tuplegetter_dealloc(_tuplegetterobject *self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+static PyObject*
+tuplegetter_reduce(_tuplegetterobject *self)
+{
+    return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
+}
+
 
 static PyMemberDef tuplegetter_members[] = {
     {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
     {0}
+};
+
+static PyMethodDef tuplegetter_methods[] = {
+    {"__reduce__", (PyCFunction) tuplegetter_reduce, METH_NOARGS, NULL},
+    {NULL},
 };
 
 static PyTypeObject tuplegetter_type = {
@@ -2471,7 +2486,7 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    tuplegetter_methods,                        /* tp_methods */
     tuplegetter_members,                        /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */

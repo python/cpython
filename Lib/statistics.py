@@ -76,20 +76,22 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 
 """
 
-__all__ = [ 'StatisticsError',
+__all__ = [ 'StatisticsError', 'NormalDist',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
-            'mean', 'mode', 'harmonic_mean',
+            'mean', 'mode', 'harmonic_mean', 'fmean',
           ]
 
 import collections
 import math
 import numbers
+import random
 
 from fractions import Fraction
 from decimal import Decimal
 from itertools import groupby
 from bisect import bisect_left, bisect_right
+from math import hypot, sqrt, fabs, exp, erf, tau
 
 
 
@@ -312,6 +314,33 @@ def mean(data):
     assert count == n
     return _convert(total/n, T)
 
+def fmean(data):
+    """ Convert data to floats and compute the arithmetic mean.
+
+    This runs faster than the mean() function and it always returns a float.
+    The result is highly accurate but not as perfect as mean().
+    If the input dataset is empty, it raises a StatisticsError.
+
+    >>> fmean([3.5, 4.0, 5.25])
+    4.25
+
+    """
+    try:
+        n = len(data)
+    except TypeError:
+        # Handle iterators that do not define __len__().
+        n = 0
+        def count(x):
+            nonlocal n
+            n += 1
+            return x
+        total = math.fsum(map(count, data))
+    else:
+        total = math.fsum(data)
+    try:
+        return total / n
+    except ZeroDivisionError:
+        raise StatisticsError('fmean requires at least one data point') from None
 
 def harmonic_mean(data):
     """Return the harmonic mean of data.
@@ -667,3 +696,165 @@ def pstdev(data, mu=None):
         return var.sqrt()
     except AttributeError:
         return math.sqrt(var)
+
+## Normal Distribution #####################################################
+
+class NormalDist:
+    'Normal distribution of a random variable'
+    # https://en.wikipedia.org/wiki/Normal_distribution
+    # https://en.wikipedia.org/wiki/Variance#Properties
+
+    __slots__ = ('mu', 'sigma')
+
+    def __init__(self, mu=0.0, sigma=1.0):
+        'NormalDist where mu is the mean and sigma is the standard deviation'
+        if sigma < 0.0:
+            raise StatisticsError('sigma must be non-negative')
+        self.mu = mu
+        self.sigma = sigma
+
+    @classmethod
+    def from_samples(cls, data):
+        'Make a normal distribution instance from sample data'
+        if not isinstance(data, (list, tuple)):
+            data = list(data)
+        xbar = fmean(data)
+        return cls(xbar, stdev(data, xbar))
+
+    def samples(self, n, seed=None):
+        'Generate *n* samples for a given mean and standard deviation'
+        gauss = random.gauss if seed is None else random.Random(seed).gauss
+        mu, sigma = self.mu, self.sigma
+        return [gauss(mu, sigma) for i in range(n)]
+
+    def pdf(self, x):
+        'Probability density function:  P(x <= X < x+dx) / dx'
+        variance = self.sigma ** 2.0
+        if not variance:
+            raise StatisticsError('pdf() not defined when sigma is zero')
+        return exp((x - self.mu)**2.0 / (-2.0*variance)) / sqrt(tau * variance)
+
+    def cdf(self, x):
+        'Cumulative density function:  P(X <= x)'
+        if not self.sigma:
+            raise StatisticsError('cdf() not defined when sigma is zero')
+        return 0.5 * (1.0 + erf((x - self.mu) / (self.sigma * sqrt(2.0))))
+
+    @property
+    def mean(self):
+        'Arithmetic mean of the normal distribution'
+        return self.mu
+
+    @property
+    def stdev(self):
+        'Standard deviation of the normal distribution'
+        return self.sigma
+
+    @property
+    def variance(self):
+        'Square of the standard deviation'
+        return self.sigma ** 2.0
+
+    def __add__(x1, x2):
+        if isinstance(x2, NormalDist):
+            return NormalDist(x1.mu + x2.mu, hypot(x1.sigma, x2.sigma))
+        return NormalDist(x1.mu + x2, x1.sigma)
+
+    def __sub__(x1, x2):
+        if isinstance(x2, NormalDist):
+            return NormalDist(x1.mu - x2.mu, hypot(x1.sigma, x2.sigma))
+        return NormalDist(x1.mu - x2, x1.sigma)
+
+    def __mul__(x1, x2):
+        return NormalDist(x1.mu * x2, x1.sigma * fabs(x2))
+
+    def __truediv__(x1, x2):
+        return NormalDist(x1.mu / x2, x1.sigma / fabs(x2))
+
+    def __pos__(x1):
+        return NormalDist(x1.mu, x1.sigma)
+
+    def __neg__(x1):
+        return NormalDist(-x1.mu, x1.sigma)
+
+    __radd__ = __add__
+
+    def __rsub__(x1, x2):
+        return -(x1 - x2)
+
+    __rmul__ = __mul__
+
+    def __eq__(x1, x2):
+        if not isinstance(x2, NormalDist):
+            return NotImplemented
+        return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
+
+    def __repr__(self):
+        return f'{type(self).__name__}(mu={self.mu!r}, sigma={self.sigma!r})'
+
+
+if __name__ == '__main__':
+
+    # Show math operations computed analytically in comparsion
+    # to a monte carlo simulation of the same operations
+
+    from math import isclose
+    from operator import add, sub, mul, truediv
+    from itertools import repeat
+
+    g1 = NormalDist(10, 20)
+    g2 = NormalDist(-5, 25)
+
+    # Test scaling by a constant
+    assert (g1 * 5 / 5).mu == g1.mu
+    assert (g1 * 5 / 5).sigma == g1.sigma
+
+    n = 100_000
+    G1 = g1.samples(n)
+    G2 = g2.samples(n)
+
+    for func in (add, sub):
+        print(f'\nTest {func.__name__} with another NormalDist:')
+        print(func(g1, g2))
+        print(NormalDist.from_samples(map(func, G1, G2)))
+
+    const = 11
+    for func in (add, sub, mul, truediv):
+        print(f'\nTest {func.__name__} with a constant:')
+        print(func(g1, const))
+        print(NormalDist.from_samples(map(func, G1, repeat(const))))
+
+    const = 19
+    for func in (add, sub, mul):
+        print(f'\nTest constant with {func.__name__}:')
+        print(func(const, g1))
+        print(NormalDist.from_samples(map(func, repeat(const), G1)))
+
+    def assert_close(G1, G2):
+        assert isclose(G1.mu, G1.mu, rel_tol=0.01), (G1, G2)
+        assert isclose(G1.sigma, G2.sigma, rel_tol=0.01), (G1, G2)
+
+    X = NormalDist(-105, 73)
+    Y = NormalDist(31, 47)
+    s = 32.75
+    n = 100_000
+
+    S = NormalDist.from_samples([x + s for x in X.samples(n)])
+    assert_close(X + s, S)
+
+    S = NormalDist.from_samples([x - s for x in X.samples(n)])
+    assert_close(X - s, S)
+
+    S = NormalDist.from_samples([x * s for x in X.samples(n)])
+    assert_close(X * s, S)
+
+    S = NormalDist.from_samples([x / s for x in X.samples(n)])
+    assert_close(X / s, S)
+
+    S = NormalDist.from_samples([x + y for x, y in zip(X.samples(n),
+                                                       Y.samples(n))])
+    assert_close(X + Y, S)
+
+    S = NormalDist.from_samples([x - y for x, y in zip(X.samples(n),
+                                                       Y.samples(n))])
+    assert_close(X - Y, S)

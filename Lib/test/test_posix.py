@@ -606,8 +606,6 @@ class PosixTester(unittest.TestCase):
         finally:
             fp.close()
 
-    @unittest.skipUnless(hasattr(posix, 'stat'),
-                         'test needs posix.stat()')
     def test_stat(self):
         self.assertTrue(posix.stat(support.TESTFN))
         self.assertTrue(posix.stat(os.fsencode(support.TESTFN)))
@@ -658,7 +656,6 @@ class PosixTester(unittest.TestCase):
         except OSError as e:
             self.assertIn(e.errno, (errno.EPERM, errno.EINVAL, errno.EACCES))
 
-    @unittest.skipUnless(hasattr(posix, 'stat'), 'test needs posix.stat()')
     @unittest.skipUnless(hasattr(posix, 'makedev'), 'test needs posix.makedev()')
     def test_makedev(self):
         st = posix.stat(support.TESTFN)
@@ -755,8 +752,7 @@ class PosixTester(unittest.TestCase):
 
         # re-create the file
         support.create_empty_file(support.TESTFN)
-        self._test_all_chown_common(posix.chown, support.TESTFN,
-                                    getattr(posix, 'stat', None))
+        self._test_all_chown_common(posix.chown, support.TESTFN, posix.stat)
 
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
     def test_fchown(self):
@@ -1522,7 +1518,9 @@ class _PosixSpawnMixin:
             pid = self.spawn_func(no_such_executable,
                                   [no_such_executable],
                                   os.environ)
-        except FileNotFoundError as exc:
+        # bpo-35794: PermissionError can be raised if there are
+        # directories in the $PATH that are not accessible.
+        except (FileNotFoundError, PermissionError) as exc:
             self.assertEqual(exc.filename, no_such_executable)
         else:
             pid2, status = os.waitpid(pid, 0)
@@ -1621,6 +1619,24 @@ class _PosixSpawnMixin:
                             [sys.executable, "-c", "pass"],
                             os.environ, setsigmask=[signal.NSIG,
                                                     signal.NSIG+1])
+
+    @unittest.skipIf(True,
+                     "FIXME: bpo-35537: test fails is setsid is supported")
+    def test_start_new_session(self):
+        # For code coverage of calling setsid().  We don't care if we get an
+        # EPERM error from it depending on the test execution environment, that
+        # still indicates that it was called.
+        code = "import os; print(os.getpgid(os.getpid()))"
+        try:
+            self.spawn_func(sys.executable,
+                            [sys.executable, "-c", code],
+                            os.environ, setsid=True)
+        except NotImplementedError as exc:
+            self.skipTest("setsid is not supported: %s" % exc)
+        else:
+            parent_pgid = os.getpgid(os.getpid())
+            child_pgid = int(output)
+            self.assertNotEqual(parent_pgid, child_pgid)
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')

@@ -2445,6 +2445,7 @@ pending_threadfunc(PyObject *self, PyObject *arg)
     Py_INCREF(callable);
 
     Py_BEGIN_ALLOW_THREADS
+    /* XXX Use the internal _Py_AddPendingCall(). */
     r = Py_AddPendingCall(&_pending_callback, callable);
     Py_END_ALLOW_THREADS
 
@@ -4685,7 +4686,7 @@ static PyObject *
 get_core_config(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyCoreConfig *config = &interp->core_config;
+    const _PyCoreConfig *config = _PyInterpreterState_GetCoreConfig(interp);
     return _PyCoreConfig_AsDict(config);
 }
 
@@ -4694,7 +4695,7 @@ static PyObject *
 get_main_config(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyMainInterpreterConfig *config = &interp->config;
+    const _PyMainInterpreterConfig *config = _PyInterpreterState_GetMainConfig(interp);
     return _PyMainInterpreterConfig_AsDict(config);
 }
 

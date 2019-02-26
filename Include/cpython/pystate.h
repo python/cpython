@@ -6,8 +6,6 @@
 extern "C" {
 #endif
 
-typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
-
 /* Placeholders while working on the new configuration API
  *
  * See PEP 432 for final anticipated contents
@@ -30,63 +28,9 @@ typedef struct {
     (_PyMainInterpreterConfig){.install_signal_handlers = -1}
 /* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
-typedef struct _is {
+PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(PyInterpreterState *);
+PyAPI_FUNC(_PyMainInterpreterConfig *) _PyInterpreterState_GetMainConfig(PyInterpreterState *);
 
-    struct _is *next;
-    struct _ts *tstate_head;
-
-    int64_t id;
-    int64_t id_refcount;
-    PyThread_type_lock id_mutex;
-
-    PyObject *modules;
-    PyObject *modules_by_index;
-    PyObject *sysdict;
-    PyObject *builtins;
-    PyObject *importlib;
-
-    /* Used in Python/sysmodule.c. */
-    int check_interval;
-
-    /* Used in Modules/_threadmodule.c. */
-    long num_threads;
-    /* Support for runtime thread stack size tuning.
-       A value of 0 means using the platform's default stack size
-       or the size specified by the THREAD_STACK_SIZE macro. */
-    /* Used in Python/thread.c. */
-    size_t pythread_stacksize;
-
-    PyObject *codec_search_path;
-    PyObject *codec_search_cache;
-    PyObject *codec_error_registry;
-    int codecs_initialized;
-    int fscodec_initialized;
-
-    _PyCoreConfig core_config;
-    _PyMainInterpreterConfig config;
-#ifdef HAVE_DLOPEN
-    int dlopenflags;
-#endif
-
-    PyObject *builtins_copy;
-    PyObject *import_func;
-    /* Initialized to PyEval_EvalFrameDefault(). */
-    _PyFrameEvalFunction eval_frame;
-
-    Py_ssize_t co_extra_user_count;
-    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
-
-#ifdef HAVE_FORK
-    PyObject *before_forkers;
-    PyObject *after_forkers_parent;
-    PyObject *after_forkers_child;
-#endif
-    /* AtExit module */
-    void (*pyexitfunc)(PyObject *);
-    PyObject *pyexitmodule;
-
-    uint64_t tstate_next_unique_id;
-} PyInterpreterState;
 
 /* State unique per thread */
 
@@ -122,7 +66,8 @@ typedef struct _err_stackitem {
 } _PyErr_StackItem;
 
 
-typedef struct _ts {
+// The PyThreadState typedef is in Include/pystate.h.
+struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
     struct _ts *prev;
@@ -214,7 +159,7 @@ typedef struct _ts {
 
     /* XXX signal handlers should also be here */
 
-} PyThreadState;
+};
 
 /* Get the current interpreter state.
 

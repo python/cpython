@@ -1170,6 +1170,67 @@ class GzipUtilTestCase(unittest.TestCase):
         xmlrpclib.gzip_decode(encoded, max_decode=-1)
 
 
+class HeadersServerTestCase(BaseServerTestCase):
+    class RequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
+        test_headers = None
+
+        def do_POST(self):
+            self.__class__.test_headers = self.headers
+            return super().do_POST()
+    requestHandler = RequestHandler
+    standard_headers = [
+        'Host', 'Accept-Encoding', 'Content-Type', 'User-Agent',
+        'Content-Length']
+
+    def setUp(self):
+        self.RequestHandler.test_headers = None
+        return super().setUp()
+
+    def assertContainsAdditionalHeaders(self, headers, additional):
+        expected_keys = sorted(self.standard_headers + list(additional.keys()))
+        self.assertListEqual(sorted(headers.keys()), expected_keys)
+
+        for key, value in additional.items():
+            self.assertEqual(headers.get(key), value)
+
+    def test_header(self):
+        p = xmlrpclib.ServerProxy(URL, headers=[('X-Test', 'foo')])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+    def test_header_many(self):
+        p = xmlrpclib.ServerProxy(
+            URL, headers=[('X-Test', 'foo'), ('X-Test-Second', 'bar')])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(
+            headers, {'X-Test': 'foo', 'X-Test-Second': 'bar'})
+
+    def test_header_empty(self):
+        p = xmlrpclib.ServerProxy(URL, headers=[])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {})
+
+    def test_header_tuple(self):
+        p = xmlrpclib.ServerProxy(URL, headers=(('X-Test', 'foo'),))
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+    def test_header_items(self):
+        p = xmlrpclib.ServerProxy(URL, headers={'X-Test': 'foo'}.items())
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+
 #Test special attributes of the ServerProxy object
 class ServerProxyTestCase(unittest.TestCase):
     def setUp(self):
@@ -1396,7 +1457,7 @@ def test_main():
             BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
             SimpleServerTestCase, SimpleServerEncodingTestCase,
             KeepaliveServerTestCase1, KeepaliveServerTestCase2,
-            GzipServerTestCase, GzipUtilTestCase,
+            GzipServerTestCase, GzipUtilTestCase, HeadersServerTestCase,
             MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
             CGIHandlerTestCase, SimpleXMLRPCDispatcherTestCase)
 

@@ -650,7 +650,9 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
 #define CONV_UNICODE "(unicode conversion error)"
 
 /* Explicitly check for float arguments when integers are expected.
-   Return 1 for error, 0 if ok. */
+   Return 1 for error, 0 if ok.
+   XXX Should be removed after the end of the deprecation period in
+   _PyLong_FromNbIndexOrNbInt. */
 static int
 float_argument_error(PyObject *arg)
 {
@@ -1761,9 +1763,13 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 current_arg = PyTuple_GET_ITEM(args, i);
             }
             else if (nkwargs && i >= pos) {
-                current_arg = PyDict_GetItemString(kwargs, kwlist[i]);
-                if (current_arg)
+                current_arg = _PyDict_GetItemStringWithError(kwargs, kwlist[i]);
+                if (current_arg) {
                     --nkwargs;
+                }
+                else if (PyErr_Occurred()) {
+                    return cleanreturn(0, &freelist);
+                }
             }
             else {
                 current_arg = NULL;
@@ -1842,7 +1848,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
         Py_ssize_t j;
         /* make sure there are no arguments given by name and position */
         for (i = pos; i < nargs; i++) {
-            current_arg = PyDict_GetItemString(kwargs, kwlist[i]);
+            current_arg = _PyDict_GetItemStringWithError(kwargs, kwlist[i]);
             if (current_arg) {
                 /* arg present in tuple and in dict */
                 PyErr_Format(PyExc_TypeError,
@@ -1851,6 +1857,9 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                              (fname == NULL) ? "function" : fname,
                              (fname == NULL) ? "" : "()",
                              kwlist[i], i+1);
+                return cleanreturn(0, &freelist);
+            }
+            else if (PyErr_Occurred()) {
                 return cleanreturn(0, &freelist);
             }
         }
@@ -2014,13 +2023,10 @@ parser_clear(struct _PyArg_Parser *parser)
 }
 
 static PyObject*
-find_keyword(PyObject *kwargs, PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
+find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
 {
     Py_ssize_t i, nkwargs;
 
-    if (kwargs != NULL) {
-        return PyDict_GetItem(kwargs, key);
-    }
     nkwargs = PyTuple_GET_SIZE(kwnames);
     for (i=0; i < nkwargs; i++) {
         PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
@@ -2155,9 +2161,18 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         }
         else if (nkwargs && i >= pos) {
             keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
-            current_arg = find_keyword(kwargs, kwnames, kwstack, keyword);
-            if (current_arg)
+            if (kwargs != NULL) {
+                current_arg = PyDict_GetItemWithError(kwargs, keyword);
+                if (!current_arg && PyErr_Occurred()) {
+                    return cleanreturn(0, &freelist);
+                }
+            }
+            else {
+                current_arg = find_keyword(kwnames, kwstack, keyword);
+            }
+            if (current_arg) {
                 --nkwargs;
+            }
         }
         else {
             current_arg = NULL;
@@ -2218,7 +2233,15 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         /* make sure there are no arguments given by name and position */
         for (i = pos; i < nargs; i++) {
             keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
-            current_arg = find_keyword(kwargs, kwnames, kwstack, keyword);
+            if (kwargs != NULL) {
+                current_arg = PyDict_GetItemWithError(kwargs, keyword);
+                if (!current_arg && PyErr_Occurred()) {
+                    return cleanreturn(0, &freelist);
+                }
+            }
+            else {
+                current_arg = find_keyword(kwnames, kwstack, keyword);
+            }
             if (current_arg) {
                 /* arg present in tuple and in dict */
                 PyErr_Format(PyExc_TypeError,

@@ -156,6 +156,8 @@ def get_layout(ns):
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
         yield dest, src
 
+    yield "LICENSE.txt", ns.source / "LICENSE"
+
     for dest, src in rglob(ns.build, ("*.pyd", "*.dll")):
         if src.stem.endswith("_d") != bool(ns.debug) and src not in REQUIRED_DLLS:
             continue

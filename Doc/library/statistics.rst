@@ -39,6 +39,7 @@ or sample.
 
 =======================  =============================================
 :func:`mean`             Arithmetic mean ("average") of data.
+:func:`fmean`            Fast, floating point arithmetic mean.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
@@ -109,6 +110,23 @@ However, for reading convenience, most of the examples show sorted sequences.
       ``mean(sample)`` converges on the true mean of the entire population.  If
       *data* represents the entire population rather than a sample, then
       ``mean(data)`` is equivalent to calculating the true population mean μ.
+
+
+.. function:: fmean(data)
+
+   Convert *data* to floats and compute the arithmetic mean.
+
+   This runs faster than the :func:`mean` function and it always returns a
+   :class:`float`.  The result is highly accurate but not as perfect as
+   :func:`mean`.  If the input dataset is empty, raises a
+   :exc:`StatisticsError`.
+
+   .. doctest::
+
+      >>> fmean([3.5, 4.0, 5.25])
+      4.25
+
+   .. versionadded:: 3.8
 
 
 .. function:: harmonic_mean(data)
@@ -448,6 +466,205 @@ A single exception is defined:
 .. exception:: StatisticsError
 
    Subclass of :exc:`ValueError` for statistics-related exceptions.
+
+
+:class:`NormalDist` objects
+===========================
+
+A :class:`NormalDist` is a a composite class that treats the mean and standard
+deviation of data measurements as a single entity.  It is a tool for creating
+and manipulating normal distributions of a random variable.
+
+Normal distributions arise from the `Central Limit Theorem
+<https://en.wikipedia.org/wiki/Central_limit_theorem>`_ and have a wide range
+of applications in statistics, including simulations and hypothesis testing.
+
+.. class:: NormalDist(mu=0.0, sigma=1.0)
+
+    Returns a new *NormalDist* object where *mu* represents the `arithmetic
+    mean <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of data and *sigma*
+    represents the `standard deviation
+    <https://en.wikipedia.org/wiki/Standard_deviation>`_ of the data.
+
+    If *sigma* is negative, raises :exc:`StatisticsError`.
+
+    .. attribute:: mean
+
+       A read-only property representing the `arithmetic mean
+       <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of a normal
+       distribution.
+
+    .. attribute:: stdev
+
+       A read-only property representing the `standard deviation
+       <https://en.wikipedia.org/wiki/Standard_deviation>`_ of a normal
+       distribution.
+
+    .. attribute:: variance
+
+       A read-only property representing the `variance
+       <https://en.wikipedia.org/wiki/Variance>`_ of a normal
+       distribution. Equal to the square of the standard deviation.
+
+    .. classmethod:: NormalDist.from_samples(data)
+
+       Class method that makes a normal distribution instance
+       from sample data.  The *data* can be any :term:`iterable`
+       and should consist of values that can be converted to type
+       :class:`float`.
+
+       If *data* does not contain at least two elements, raises
+       :exc:`StatisticsError` because it takes at least one point to estimate
+       a central value and at least two points to estimate dispersion.
+
+    .. method:: NormalDist.samples(n, seed=None)
+
+       Generates *n* random samples for a given mean and standard deviation.
+       Returns a :class:`list` of :class:`float` values.
+
+       If *seed* is given, creates a new instance of the underlying random
+       number generator.  This is useful for creating reproducible results,
+       even in a multi-threading context.
+
+    .. method:: NormalDist.pdf(x)
+
+       Using a `probability density function (pdf)
+       <https://en.wikipedia.org/wiki/Probability_density_function>`_,
+       compute the relative likelihood that a random sample *X* will be near
+       the given value *x*.  Mathematically, it is the ratio ``P(x <= X <
+       x+dx) / dx``.
+
+       Note the relative likelihood of *x* can be greater than `1.0`.  The
+       probability for a specific point on a continuous distribution is `0.0`,
+       so the :func:`pdf` is used instead.  It gives the probability of a
+       sample occurring in a narrow range around *x* and then dividing that
+       probability by the width of the range (hence the word "density").
+
+    .. method:: NormalDist.cdf(x)
+
+       Using a `cumulative distribution function (cdf)
+       <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_,
+       compute the probability that a random sample *X* will be less than or
+       equal to *x*.  Mathematically, it is written ``P(X <= x)``.
+
+    Instances of :class:`NormalDist` support addition, subtraction,
+    multiplication and division by a constant.  These operations
+    are used for translation and scaling.  For example:
+
+    .. doctest::
+
+        >>> temperature_february = NormalDist(5, 2.5)             # Celsius
+        >>> temperature_february * (9/5) + 32                     # Fahrenheit
+        NormalDist(mu=41.0, sigma=4.5)
+
+    Dividing a constant by an instance of :class:`NormalDist` is not supported.
+
+    Since normal distributions arise from additive effects of independent
+    variables, it is possible to `add and subtract two normally distributed
+    random variables
+    <https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables>`_
+    represented as instances of :class:`NormalDist`.  For example:
+
+    .. doctest::
+
+        >>> birth_weights = NormalDist.from_samples([2.5, 3.1, 2.1, 2.4, 2.7, 3.5])
+        >>> drug_effects = NormalDist(0.4, 0.15)
+        >>> combined = birth_weights + drug_effects
+        >>> f'mean: {combined.mean :.1f}   standard deviation: {combined.stdev :.1f}'
+        'mean: 3.1   standard deviation: 0.5'
+
+    .. versionadded:: 3.8
+
+
+:class:`NormalDist` Examples and Recipes
+----------------------------------------
+
+A :class:`NormalDist` readily solves classic probability problems.
+
+For example, given `historical data for SAT exams
+<https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
+are normally distributed with a mean of 1060 and standard deviation of 192,
+determine the percentage of students with scores between 1100 and 1200:
+
+.. doctest::
+
+    >>> sat = NormalDist(1060, 195)
+    >>> fraction = sat.cdf(1200) - sat.cdf(1100)
+    >>> f'{fraction * 100 :.1f}% score between 1100 and 1200'
+    '18.2% score between 1100 and 1200'
+
+To estimate the distribution for a model than isn't easy to solve
+analytically, :class:`NormalDist` can generate input samples for a `Monte
+Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_ of the
+model:
+
+.. doctest::
+
+    >>> n = 100_000
+    >>> X = NormalDist(350, 15).samples(n)
+    >>> Y = NormalDist(47, 17).samples(n)
+    >>> Z = NormalDist(62, 6).samples(n)
+    >>> model_simulation = [x * y / z for x, y, z in zip(X, Y, Z)]
+    >>> NormalDist.from_samples(model_simulation)           # doctest: +SKIP
+    NormalDist(mu=267.6516398754636, sigma=101.357284306067)
+
+Normal distributions commonly arise in machine learning problems.
+
+Wikipedia has a `nice example with a Naive Bayesian Classifier
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier>`_.  The challenge
+is to guess a person's gender from measurements of normally distributed
+features including height, weight, and foot size.
+
+The `prior probability <https://en.wikipedia.org/wiki/Prior_probability>`_ of
+being male or female is 50%:
+
+.. doctest::
+
+    >>> prior_male = 0.5
+    >>> prior_female = 0.5
+
+We also have a training dataset with measurements for eight people.  These
+measurements are assumed to be normally distributed, so we summarize the data
+with :class:`NormalDist`:
+
+.. doctest::
+
+    >>> height_male = NormalDist.from_samples([6, 5.92, 5.58, 5.92])
+    >>> height_female = NormalDist.from_samples([5, 5.5, 5.42, 5.75])
+    >>> weight_male = NormalDist.from_samples([180, 190, 170, 165])
+    >>> weight_female = NormalDist.from_samples([100, 150, 130, 150])
+    >>> foot_size_male = NormalDist.from_samples([12, 11, 12, 10])
+    >>> foot_size_female = NormalDist.from_samples([6, 8, 7, 9])
+
+We observe a new person whose feature measurements are known but whose gender
+is unknown:
+
+.. doctest::
+
+    >>> ht = 6.0        # height
+    >>> wt = 130        # weight
+    >>> fs = 8          # foot size
+
+The posterior is the product of the prior times each likelihood of a
+feature measurement given the gender:
+
+.. doctest::
+
+   >>> posterior_male = (prior_male * height_male.pdf(ht) *
+   ...                   weight_male.pdf(wt) * foot_size_male.pdf(fs))
+
+   >>> posterior_female = (prior_female * height_female.pdf(ht) *
+   ...                     weight_female.pdf(wt) * foot_size_female.pdf(fs))
+
+The final prediction is awarded to the largest posterior -- this is known as
+the `maximum a posteriori
+<https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation>`_ or MAP:
+
+.. doctest::
+
+  >>> 'male' if posterior_male > posterior_female else 'female'
+  'female'
+
 
 ..
    # This modelines must appear within the last ten lines of the file.

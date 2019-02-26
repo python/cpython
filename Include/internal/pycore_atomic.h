@@ -19,7 +19,9 @@ extern "C" {
 
 #if defined(_MSC_VER)
 #include <intrin.h>
-#include <immintrin.h>
+#if defined(_M_IX86) || defined(_M_X64)
+#  include <immintrin.h>
+#endif
 #endif
 
 /* This is modeled after the atomics interface from C1x, according to

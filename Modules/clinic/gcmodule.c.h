@@ -216,21 +216,39 @@ gc_get_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(gc_get_objects__doc__,
-"get_objects($module, /)\n"
+"get_objects($module, /, generation=None)\n"
 "--\n"
 "\n"
-"Return a list of objects tracked by the collector (excluding the list returned).");
+"Return a list of objects tracked by the collector (excluding the list returned).\n"
+"\n"
+"  generation\n"
+"    Generation to extract the objects from.\n"
+"\n"
+"If generation is not None, return only the objects tracked by the collector\n"
+"that are in that generation.");
 
 #define GC_GET_OBJECTS_METHODDEF    \
-    {"get_objects", (PyCFunction)gc_get_objects, METH_NOARGS, gc_get_objects__doc__},
+    {"get_objects", (PyCFunction)(void(*)(void))gc_get_objects, METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
 
 static PyObject *
-gc_get_objects_impl(PyObject *module);
+gc_get_objects_impl(PyObject *module, Py_ssize_t generation);
 
 static PyObject *
-gc_get_objects(PyObject *module, PyObject *Py_UNUSED(ignored))
+gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return gc_get_objects_impl(module);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"generation", NULL};
+    static _PyArg_Parser _parser = {"|O&:get_objects", _keywords, 0};
+    Py_ssize_t generation = -1;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        _Py_convert_optional_to_ssize_t, &generation)) {
+        goto exit;
+    }
+    return_value = gc_get_objects_impl(module, generation);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(gc_get_stats__doc__,
@@ -331,4 +349,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5aa5fdc259503d5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d692bf475f0bb096 input=a9049054013a1b77]*/

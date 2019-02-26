@@ -379,19 +379,34 @@ def _check_utc_offset(name, offset):
 def _check_int_field(value):
     if isinstance(value, int):
         return value
-    if not isinstance(value, float):
-        try:
-            value = value.__int__()
-        except AttributeError:
-            pass
-        else:
-            if isinstance(value, int):
-                return value
+    if isinstance(value, float):
+        raise TypeError('integer argument expected, got float')
+    try:
+        value = value.__index__()
+    except AttributeError:
+        pass
+    else:
+        if not isinstance(value, int):
+            raise TypeError('__index__ returned non-int (type %s)' %
+                            type(value).__name__)
+        return value
+    orig = value
+    try:
+        value = value.__int__()
+    except AttributeError:
+        pass
+    else:
+        if not isinstance(value, int):
             raise TypeError('__int__ returned non-int (type %s)' %
                             type(value).__name__)
-        raise TypeError('an integer is required (got type %s)' %
-                        type(value).__name__)
-    raise TypeError('integer argument expected, got float')
+        import warnings
+        warnings.warn("an integer is required (got type %s)"  %
+                      type(orig).__name__,
+                      DeprecationWarning,
+                      stacklevel=2)
+        return value
+    raise TypeError('an integer is required (got type %s)' %
+                    type(value).__name__)
 
 def _check_date_fields(year, month, day):
     year = _check_int_field(year)
@@ -1014,7 +1029,7 @@ class date:
         if isinstance(other, timedelta):
             o = self.toordinal() + other.days
             if 0 < o <= _MAXORDINAL:
-                return date.fromordinal(o)
+                return type(self).fromordinal(o)
             raise OverflowError("result out of range")
         return NotImplemented
 
@@ -2024,10 +2039,10 @@ class datetime(date):
         hour, rem = divmod(delta.seconds, 3600)
         minute, second = divmod(rem, 60)
         if 0 < delta.days <= _MAXORDINAL:
-            return datetime.combine(date.fromordinal(delta.days),
-                                    time(hour, minute, second,
-                                         delta.microseconds,
-                                         tzinfo=self._tzinfo))
+            return type(self).combine(date.fromordinal(delta.days),
+                                      time(hour, minute, second,
+                                           delta.microseconds,
+                                           tzinfo=self._tzinfo))
         raise OverflowError("result out of range")
 
     __radd__ = __add__

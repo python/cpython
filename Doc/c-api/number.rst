@@ -11,6 +11,9 @@ Number Protocol
    Returns ``1`` if the object *o* provides numeric protocols, and false otherwise.
    This function always succeeds.
 
+   .. versionchanged:: 3.8
+      Returns ``1`` if *o* is an index integer.
+
 
 .. c:function:: PyObject* PyNumber_Add(PyObject *o1, PyObject *o2)
 

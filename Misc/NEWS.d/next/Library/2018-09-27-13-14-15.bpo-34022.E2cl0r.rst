@@ -1,3 +1,0 @@
-The :envvar:`SOURCE_DATE_EPOCH` environment variable no longer overrides the
-value of the *invalidation_mode* argument to :func:`py_compile.compile`, and
-determines its default value instead.
