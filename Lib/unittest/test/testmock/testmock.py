@@ -1416,7 +1416,9 @@ class MockTest(unittest.TestCase):
     #Issue23078
     def test_create_autospec_classmethod(self):
         class TestClass:
-            method = classmethod(lambda cls: None)
+            @classmethod
+            def method(cls):
+                pass
         mock_bound_meth = mock.create_autospec(TestClass.method)
         mock_bound_meth()
         mock_bound_meth.assert_called_once_with()
@@ -1425,7 +1427,9 @@ class MockTest(unittest.TestCase):
     #Issue23078
     def test_create_autospec_staticmethod(self):
         class TestClass:
-            method = staticmethod(lambda: None)
+            @staticmethod
+            def method():
+                pass
         mock_meth = mock.create_autospec(TestClass.method)
         mock_meth()
         mock_meth.assert_called_once_with()
