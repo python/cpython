@@ -132,7 +132,9 @@ mmap_object_dealloc(mmap_object *m_obj)
     if (m_obj->fd >= 0)
         (void) close(m_obj->fd);
     if (m_obj->data!=NULL) {
+        Py_BEGIN_ALLOW_THREADS
         munmap(m_obj->data, m_obj->size);
+        Py_END_ALLOW_THREADS
     }
 #endif /* UNIX */
 
