@@ -10,7 +10,7 @@ from select import select
 import os
 import tty
 
-__all__ = ["openpty","fork","spawn"]
+__all__ = ["openpty", "fork", "spawn"]
 
 STDIN_FILENO = 0
 STDOUT_FILENO = 1
@@ -50,12 +50,12 @@ def _open_terminal():
     """Open pty master and return (master_fd, tty_name)."""
     for x in 'pqrstuvwxyzPQRST':
         for y in '0123456789abcdef':
-            pty_name = '/dev/pty' + x + y
+            pty_name = f'/dev/pty{x}{y}'
             try:
                 fd = os.open(pty_name, os.O_RDWR)
             except OSError:
                 continue
-            return (fd, '/dev/tty' + x + y)
+            return (fd, f'/dev/tty{x}{y}')
     raise OSError('out of pty devices')
 
 def slave_open(tty_name):
@@ -105,7 +105,7 @@ def fork():
         os.dup2(slave_fd, STDOUT_FILENO)
         os.dup2(slave_fd, STDERR_FILENO)
         if (slave_fd > STDERR_FILENO):
-            os.close (slave_fd)
+            os.close(slave_fd)
 
         # Explicitly open the tty to make it become a controlling tty.
         tmp_fd = os.open(os.ttyname(STDOUT_FILENO), os.O_RDWR)
