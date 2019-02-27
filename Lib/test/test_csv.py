@@ -319,6 +319,36 @@ class Test_Csv(unittest.TestCase):
         finally:
             csv.field_size_limit(limit)
 
+    def test_override_size_limit(self):
+        line = ',,,'
+        reader = csv.reader([line])
+        self.assertEqual(reader.field_size_limit, None)
+        reader = csv.reader([line], field_size_limit=None)
+        self.assertEqual(reader.field_size_limit, None)
+
+        reader = csv.reader([line], field_size_limit=5)
+        self.assertEqual(reader.field_size_limit, 5)
+        reader.field_size_limit = None
+        self.assertEqual(reader.field_size_limit, None)
+        reader.field_size_limit = 6
+        self.assertEqual(reader.field_size_limit, 6)
+        del reader.field_size_limit
+        self.assertEqual(reader.field_size_limit, None)
+
+        with self.assertRaises(ValueError):
+            csv.reader([line], field_size_limit=-1)
+
+        with self.assertRaises(TypeError):
+            csv.reader([line], field_size_limit="string")
+
+        line = 'long_field,3,4,5'
+        reader = csv.reader([line, line], field_size_limit=4)
+        with self.assertRaises(csv.Error):
+            list(reader)
+        reader.field_size_limit = 50
+        self.assertEqual(list(reader), [['long_field', '3', '4', '5']])
+
+
     def test_read_linenum(self):
         r = csv.reader(['line,1', 'line,2', 'line,3'])
         self.assertEqual(r.line_num, 0)
