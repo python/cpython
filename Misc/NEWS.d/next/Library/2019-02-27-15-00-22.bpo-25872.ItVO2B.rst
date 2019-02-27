@@ -1,0 +1,2 @@
+Fixed a race condition in linecache.checkcache() that sometimes caused an
+exception if two threads generated a traceback simultaneously.
