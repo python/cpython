@@ -1,0 +1,3 @@
+Add asummary of applicable parameters of the
+:meth:`~ArgumentParser.add_argument`. Original patch by Xavier Morel,
+updated by Tina Zhang. Contributed by Stéphane Wirtel.

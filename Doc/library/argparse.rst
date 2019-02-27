@@ -23,8 +23,48 @@ The :mod:`argparse` module makes it easy to write user-friendly command-line
 interfaces. The program defines what arguments it requires, and :mod:`argparse`
 will figure out how to parse those out of :data:`sys.argv`.  The :mod:`argparse`
 module also automatically generates help and usage messages and issues errors
-when users give the program invalid arguments.
+when users give the program invalid arguments.  See the `Quick Reference`_ for a
+summary table of applicable parameters for each action_ in
+:meth:`~ArgumentParser.add_argument`.
 
+Quick Reference
+---------------
+
+The table below provides a summary of applicable parameters (columns) of the
+add_argument() method for each functional action_ (rows).
+
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+|                 |``nargs``|``const``       |``default``|``type``|``choices``|``required``|``help``|``metavar``|``dest``|``version``|
++=================+=========+================+===========+========+===========+============+========+===========+========+===========+
+|``store``        |x        |if ``nargs='?'``|x          |x       |x          |x           |x       |x          |x       |           |
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+|``store_const``  |         |x               |x          |        |           |x           |x       |x          |x       |           |
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+|``store_true``   |         |x               |x          |        |           |x           |x       |x          |x       |           |
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+|``store_false``  |         |x               |x          |        |           |x           |x       |x          |x       |           |
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+|``append``       |x        |if ``nargs='?'``|x          |x       |x          |x           |x       |x          |x       |           |
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+|``append_const`` |         |x               |x          |        |           |x           |x       |x          |x       |           |
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+|``count``        |         |                |           |        |           |            |x       |x          |x       |           |
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+|``version``      |         |                |           |        |           |            |        |           |        |x          |
++-----------------+---------+----------------+-----------+--------+-----------+------------+--------+-----------+--------+-----------+
+
+.. note::
+
+    * ``default`` can be set to ``argparse.SUPPRESS`` to prevent the
+      attribute from being added
+
+    * ``nargs='?'`` will use ``default`` if the argument is not
+      specified, but ``const`` if the argument is specified with no
+      value provided
+
+    * list-type ``nargs`` (an ``int``, ``'*'`` or ``'+'``) causes a
+      list to be used: ``store`` becomes a list and ``append`` becomes
+      a list of lists
 
 Example
 -------
