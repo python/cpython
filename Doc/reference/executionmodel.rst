@@ -21,10 +21,10 @@ A :dfn:`block` is a piece of Python program text that is executed as a unit.
 The following are blocks: a module, a function body, and a class definition.
 Each command typed interactively is a block.  A script file (a file given as
 standard input to the interpreter or specified as a command line argument to the
-interpreter) is a code block.  A script command (a command specified on the
-interpreter command line with the :option:`-c` option) is a code block.  The string
+interpreter) is a block.  A script command (a command specified on the
+interpreter command line with the :option:`-c` option) is a block.  The string
 argument passed to the built-in functions :func:`eval` and :func:`exec` is a
-code block.
+block.
 
 .. index:: pair: execution; frame
 
