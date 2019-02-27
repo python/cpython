@@ -26,45 +26,47 @@
 #  define RESTORE_LOCALE(sl)
 #endif
 
+#ifdef WITH_EDITLINE
+#  include <editline/readline.h>
+#else
 /* GNU readline definitions */
-#undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
-#include <readline/readline.h>
-#include <readline/history.h>
+#  undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
+#  include <readline/readline.h>
+#  include <readline/history.h>
+#endif
 
+/* Readline 4.2 deprecated completion_matches() in favour of
++rl_completion_matches() */
 #ifdef HAVE_RL_COMPLETION_MATCHES
 #define completion_matches(x, y) \
     rl_completion_matches((x), ((rl_compentry_func_t *)(y)))
-#else
-#if defined(_RL_FUNCTION_TYPEDEF)
-extern char **completion_matches(char *, rl_compentry_func_t *);
-#else
-
-#if !defined(__APPLE__)
-extern char **completion_matches(char *, CPFunction *);
-#endif
-#endif
 #endif
 
-#ifdef __APPLE__
 /*
  * It is possible to link the readline module to the readline
  * emulation library of editline/libedit.
  *
  * On OSX this emulation library is not 100% API compatible
- * with the "real" readline and cannot be detected at compile-time,
+ * with the "real" readline and if WITH_EDITLINE
+ * was not specified, cannot be detected at compile-time,
  * hence we use a runtime check to detect if we're using libedit
- *
- * Currently there is one known API incompatibility:
+ */
+#if defined(__APPLE__) && !defined(WITH_EDITLINE)
+#  define DETECT_EDITLINE
+static int using_libedit_emulation = 0;
+static const char libedit_version_tag[] = "EditLine wrapper";
+#endif
+
+#if defined(WITH_EDITLINE) || defined(__APPLE__)
+#  define SUPPORT_EDITLINE
+/* One incompatibility of Editline:
  * - 'get_history' has a 1-based index with GNU readline, and a 0-based
  *   index with older versions of libedit's emulation.
  * - Note that replace_history and remove_history use a 0-based index
  *   with both implementations.
  */
-static int using_libedit_emulation = 0;
-static const char libedit_version_tag[] = "EditLine wrapper";
-
 static int libedit_history_start = 0;
-#endif /* __APPLE__ */
+#endif
 
 #ifdef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
 static void
@@ -664,25 +666,6 @@ PyDoc_STRVAR(doc_get_completer,
 \n\
 Returns current completer function.");
 
-/* Private function to get current length of history.  XXX It may be
- * possible to replace this with a direct use of history_length instead,
- * but it's not clear whether BSD's libedit keeps history_length up to date.
- * See issue #8065.*/
-
-static int
-_py_get_history_length(void)
-{
-    HISTORY_STATE *hist_st = history_get_history_state();
-    int length = hist_st->length;
-    /* the history docs don't say so, but the address of hist_st changes each
-       time history_get_history_state is called which makes me think it's
-       freshly malloc'd memory...  on the other hand, the address of the last
-       line stays the same as long as history isn't extended, so it appears to
-       be malloc'd but managed by the history package... */
-    free(hist_st);
-    return length;
-}
-
 /* Exported function to get any element of history */
 
 static PyObject *
@@ -693,27 +676,20 @@ get_history_item(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "i:get_history_item", &idx))
         return NULL;
-#ifdef  __APPLE__
-    if (using_libedit_emulation) {
-        /* Older versions of libedit's readline emulation
-         * use 0-based indexes, while readline and newer
-         * versions of libedit use 1-based indexes.
-         */
-        int length = _py_get_history_length();
 
-        idx = idx - 1 + libedit_history_start;
+#ifdef SUPPORT_EDITLINE
+    idx = idx - 1 + libedit_history_start;
 
-        /*
-         * Apple's readline emulation crashes when
-         * the index is out of range, therefore
-         * test for that and fail gracefully.
-         */
-        if (idx < (0 + libedit_history_start)
-                || idx >= (length + libedit_history_start)) {
-            Py_RETURN_NONE;
-        }
+    /*
+     * Apple's readline emulation crashes when
+     * the index is out of range, therefore
+     * test for that and fail gracefully.
+     */
+    if (idx < libedit_history_start
+            || idx >= (history_length + libedit_history_start)) {
+        Py_RETURN_NONE;
     }
-#endif /* __APPLE__ */
+#endif /* SUPPORT_EDITLINE */
     if ((hist_ent = history_get(idx)))
         return decode(hist_ent->line);
     else {
@@ -731,7 +707,7 @@ return the current contents of history item at index.");
 static PyObject *
 get_current_history_length(PyObject *self, PyObject *noarg)
 {
-    return PyLong_FromLong((long)_py_get_history_length());
+    return PyLong_FromLong(history_length);
 }
 
 PyDoc_STRVAR(doc_get_current_history_length,
@@ -1080,14 +1056,16 @@ setup_readline(readlinestate *mod_state)
     /* The name must be defined before initialization */
     rl_readline_name = "python";
 
-#ifdef __APPLE__
+#ifdef SUPPORT_EDITLINE
     /* the libedit readline emulation resets key bindings etc
-     * when calling rl_initialize.  So call it upfront
+     * when calling rl_initialize.  So call it before making those settings.
      */
+#  ifdef DETECT_EDITLINE
     if (using_libedit_emulation)
+#  endif
         rl_initialize();
 
-    /* Detect if libedit's readline emulation uses 0-based
+    /* Detect if the backend library uses 0-based
      * indexing or 1-based indexing.
      */
     add_history("1");
@@ -1097,7 +1075,7 @@ setup_readline(readlinestate *mod_state)
         libedit_history_start = 1;
     }
     clear_history();
-#endif /* __APPLE__ */
+#endif /* SUPPORT_EDITLINE */
 
     using_history();
 
@@ -1126,7 +1104,7 @@ setup_readline(readlinestate *mod_state)
     mod_state->begidx = PyLong_FromLong(0L);
     mod_state->endidx = PyLong_FromLong(0L);
 
-#ifdef __APPLE__
+#ifdef SUPPORT_EDITLINE
     if (!using_libedit_emulation)
 #endif
     {
@@ -1147,13 +1125,20 @@ setup_readline(readlinestate *mod_state)
      *
      * XXX: A bug in the readline-2.2 library causes a memory leak
      * inside this function.  Nothing we can do about it.
+     *
+     * For Editline, just invoke the user configuration; initialization was
+     * already done above.
      */
-#ifdef __APPLE__
+#ifdef DETECT_EDITLINE
     if (using_libedit_emulation)
         rl_read_init_file(NULL);
     else
-#endif /* __APPLE__ */
         rl_initialize();
+#elif defined(WITH_EDITLINE)
+        rl_read_init_file(NULL);
+#else
+        rl_initialize();
+#endif
 
     RESTORE_LOCALE(saved_locale)
 }
@@ -1278,16 +1263,13 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     n = strlen(p);
     if (should_auto_add_history && n > 0) {
         const char *line;
-        int length = _py_get_history_length();
-        if (length > 0) {
+        if (history_length > 0) {
             HIST_ENTRY *hist_ent;
-#ifdef __APPLE__
-            if (using_libedit_emulation) {
-                /* handle older 0-based or newer 1-based indexing */
-                hist_ent = history_get(length + libedit_history_start - 1);
-            } else
-#endif /* __APPLE__ */
-                hist_ent = history_get(length);
+#ifdef SUPPORT_EDITLINE
+            hist_ent = history_get(history_length + libedit_history_start - 1);
+#else
+            hist_ent = history_get(history_length);
+#endif
             line = hist_ent ? hist_ent->line : "";
         } else
             line = "";
@@ -1312,12 +1294,15 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 /* Initialize the module */
 
 PyDoc_STRVAR(doc_module,
+#ifndef WITH_EDITLINE
 "Importing this module enables command line editing using GNU readline.");
-
-#ifdef __APPLE__
+#endif
+#ifdef DETECT_EDITLINE
 PyDoc_STRVAR(doc_module_le,
+#endif
+#ifdef SUPPORT_EDITLINE
 "Importing this module enables command line editing using libedit readline.");
-#endif /* __APPLE__ */
+#endif
 
 static struct PyModuleDef readlinemodule = {
     PyModuleDef_HEAD_INIT,
@@ -1338,15 +1323,14 @@ PyInit_readline(void)
     PyObject *m;
     readlinestate *mod_state;
 
-#ifdef __APPLE__
+#ifdef DETECT_EDITLINE
     if (strncmp(rl_library_version, libedit_version_tag, strlen(libedit_version_tag)) == 0) {
         using_libedit_emulation = 1;
     }
 
     if (using_libedit_emulation)
         readlinemodule.m_doc = doc_module_le;
-
-#endif /* __APPLE__ */
+#endif /* DETECT_EDITLINE */
 
     m = PyModule_Create(&readlinemodule);
 
