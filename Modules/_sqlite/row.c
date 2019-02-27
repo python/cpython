@@ -158,20 +158,14 @@ pysqlite_row_length(pysqlite_Row* self)
 
 PyObject* pysqlite_row_keys(pysqlite_Row* self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject* list;
-    Py_ssize_t nitems, i;
-
-    list = PyList_New(0);
+    Py_ssize_t nitems = PyTuple_GET_SIZE(self->description);
+    PyObject* list = PyList_New(nitems);
     if (!list) {
         return NULL;
     }
-    nitems = PyTuple_Size(self->description);
-
-    for (i = 0; i < nitems; i++) {
-        if (PyList_Append(list, PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0)) != 0) {
-            Py_DECREF(list);
-            return NULL;
-        }
+    for (Py_ssize_t i = 0; i < nitems; i++) {
+        PyObject *colname = PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0);
+        PyList_SET_ITEM(list, colname, i);
     }
 
     return list;
