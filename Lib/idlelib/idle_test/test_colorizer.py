@@ -100,6 +100,45 @@ class ColorConfigTest(unittest.TestCase):
         eq(text['inactiveselectbackground'], 'gray')
 
 
+class ColorDelegatorInstantiationTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        root = cls.root = Tk()
+        root.withdraw()
+        text = cls.text = Text(root)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.text
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def setUp(self):
+        self.color = colorizer.ColorDelegator()
+
+    def tearDown(self):
+        self.color.close()
+        self.text.delete('1.0', 'end')
+        self.color.resetcache()
+        del self.color
+
+    def test_init(self):
+        color = self.color
+        self.assertIsInstance(color, colorizer.ColorDelegator)
+
+    def test_init_state(self):
+        # init_state() is called during the instantiation of
+        # ColorDelegator in setUp().
+        color = self.color
+        self.assertIsNone(color.after_id)
+        self.assertTrue(color.allow_colorizing)
+        self.assertFalse(color.colorizing)
+        self.assertFalse(color.stop_colorizing)
+
+
 class ColorDelegatorTest(unittest.TestCase):
 
     @classmethod
@@ -109,7 +148,7 @@ class ColorDelegatorTest(unittest.TestCase):
         root.withdraw()
         text = cls.text = Text(root)
         cls.percolator = Percolator(text)
-        # Delegator stack = [Delagator(text)]
+        # Delegator stack = [Delegator(text)]
 
     @classmethod
     def tearDownClass(cls):
@@ -122,7 +161,7 @@ class ColorDelegatorTest(unittest.TestCase):
     def setUp(self):
         self.color = colorizer.ColorDelegator()
         self.percolator.insertfilter(self.color)
-        # Calls color.setdelagate(Delagator(text)).
+        # Calls color.setdelegate(Delegator(text)).
 
     def tearDown(self):
         self.color.close()
@@ -131,15 +170,8 @@ class ColorDelegatorTest(unittest.TestCase):
         self.color.resetcache()
         del self.color
 
-    def test_init(self):
-        color = self.color
-        self.assertIsInstance(color, colorizer.ColorDelegator)
-        # The following are class variables.
-        self.assertTrue(color.allow_colorizing)
-        self.assertFalse(color.colorizing)
-
     def test_setdelegate(self):
-        # Called in setUp.
+        # Called in setUp when filter is attached to percolator.
         color = self.color
         self.assertIsInstance(color.delegate, colorizer.Delegator)
         # It is too late to mock notify_range, so test side effect.
