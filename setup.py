@@ -44,7 +44,7 @@ def get_platform():
     return sys.platform
 host_platform = get_platform()
 
-_vxworks = ('vxworks' in host_platform)
+VXWORKS = ('vxworks' in host_platform)
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_ARGS"))
@@ -727,7 +727,7 @@ class PyBuildExt(build_ext):
         # pwd(3)
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
-        if not _vxworks:
+        if not VXWORKS:
             exts.append( Extension('grp', ['grpmodule.c']) )
         # spwd, shadow passwords
         if (config_h_vars.get('HAVE_GETSPNAM', False) or
@@ -866,7 +866,7 @@ class PyBuildExt(build_ext):
         else:
             libs = []
 
-        if not _vxworks:
+        if not VXWORKS:
             exts.append( Extension('_crypt', ['_cryptmodule.c'], libraries=libs) )
         elif self.compiler.find_library_file(lib_dirs, 'OPENSSL'):
             libs = ['OPENSSL']
@@ -879,7 +879,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_posixsubprocess', ['_posixsubprocess.c']) )
 
         # socket(2)
-        if not _vxworks:
+        if not VXWORKS:
             exts.append( Extension('_socket', ['socketmodule.c'],
                                    depends = ['socketmodule.h']) )
         elif self.compiler.find_library_file(lib_dirs, 'net'):
@@ -1336,7 +1336,7 @@ class PyBuildExt(build_ext):
 
         # Unix-only modules
         if host_platform != 'win32':
-            if not _vxworks:
+            if not VXWORKS:
                 # Steen Lumholt's termios module
                 exts.append( Extension('termios', ['termios.c']) )
                 # Jeremy Hylton's rlimit interface
