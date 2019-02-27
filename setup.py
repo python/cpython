@@ -38,6 +38,7 @@ CROSS_COMPILING = ("_PYTHON_HOST_PLATFORM" in os.environ)
 HOST_PLATFORM = get_platform()
 MACOS = (HOST_PLATFORM == 'darwin')
 MS_WINDOWS = (HOST_PLATFORM == 'win32')
+CYGWIN = (HOST_PLATFORM == 'cygwin')
 VXWORKS = ('vxworks' in HOST_PLATFORM)
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -477,7 +478,7 @@ class PyBuildExt(build_ext):
 
         # Workaround for Cygwin: Cygwin currently has fork issues when many
         # modules have been imported
-        if HOST_PLATFORM == 'cygwin':
+        if CYGWIN:
             self.announce('WARNING: skipping import check for Cygwin-based "%s"'
                 % ext.name)
             return
@@ -1267,7 +1268,7 @@ class PyBuildExt(build_ext):
         dbm_setup_debug = False   # verbose debug prints from this script?
         dbm_order = ['gdbm']
         # The standard Unix dbm module:
-        if HOST_PLATFORM not in ['cygwin']:
+        if not CYGWIN:
             config_args = [arg.strip("'")
                            for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
             dbm_args = [arg for arg in config_args
@@ -1872,7 +1873,7 @@ class PyBuildExt(build_ext):
             added_lib_dirs.append('/usr/X11/lib')
 
         # If Cygwin, then verify that X is installed before proceeding
-        if HOST_PLATFORM == 'cygwin':
+        if CYGWIN:
             x11_inc = find_file('X11/Xlib.h', [], include_dirs)
             if x11_inc is None:
                 self.missing.append('_tkinter')
@@ -1896,7 +1897,7 @@ class PyBuildExt(build_ext):
             libs.append('ld')
 
         # Finally, link with the X11 libraries (not appropriate on cygwin)
-        if HOST_PLATFORM != "cygwin":
+        if not CYGWIN:
             libs.append('X11')
 
         ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
@@ -2243,7 +2244,7 @@ class PyBuildExt(build_ext):
                                depends=sha3_deps))
 
     def detect_nis(self):
-        if MS_WINDOWS or HOST_PLATFORM in {'cygwin', 'qnx6'}:
+        if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':
             self.missing.append('nis')
             return
 
