@@ -1216,6 +1216,11 @@ ast_for_augassign(struct compiling *c, const node *n)
             else
                 return Mult;
         case '@':
+            if (c->c_feature_version < 5) {
+                ast_error(c, n,
+                        "The '@' operator is only supported in Python 3.5 and greater");
+                return (operator_ty)0;
+            }
             return MatMult;
         default:
             PyErr_Format(PyExc_SystemError, "invalid augassign: %s", STR(n));
@@ -1726,6 +1731,12 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
     node *tc;
     string type_comment = NULL;
 
+    if (is_async && c->c_feature_version < 5) {
+        ast_error(c, n,
+                  "Async functions are only supported in Python 3.5 and greater");
+        return NULL;
+    }
+
     REQ(n, funcdef);
 
     name = NEW_IDENTIFIER(CHILD(n, name_i));
@@ -2050,6 +2061,13 @@ ast_for_comprehension(struct compiling *c, const node *n)
         }
         REQ(sync_n, sync_comp_for);
 
+        /* Async comprehensions only allowed in Python 3.6 and greater */
+        if (is_async && c->c_feature_version < 6) {
+            ast_error(c, n,
+                    "Async comprehensions are only supported in Python 3.6 and greater");
+            return NULL;
+        }
+
         for_ch = CHILD(sync_n, 1);
         t = ast_for_exprlist(c, for_ch, Store);
         if (!t)
@@ -2344,7 +2362,15 @@ ast_for_atom(struct compiling *c, const node *n)
         return str;
     }
     case NUMBER: {
-        PyObject *pynum = parsenumber(c, STR(ch));
+        PyObject *pynum;
+        /* Underscores in numeric literals are only allowed in Python 3.6 or greater */
+        /* Check for underscores here rather than in parse_number so we can report a line number on error */
+        if (c->c_feature_version < 6 && strchr(STR(ch), '_') != NULL) {
+            ast_error(c, ch,
+                    "Underscores in numeric literals are only supported in Python 3.6 and greater");
+            return NULL;
+        }
+        pynum = parsenumber(c, STR(ch));
         if (!pynum)
             return NULL;
 
@@ -3240,6 +3266,13 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         node *deep, *ann = CHILD(n, 1);
         int simple = 1;
 
+        /* AnnAssigns are only allowed in Python 3.6 or greater */
+        if (c->c_feature_version < 6) {
+            ast_error(c, ch,
+                    "Variable annotation syntax is only supported in Python 3.6 and greater");
+            return NULL;
+        }
+
         /* we keep track of parens to qualify (x) as expression not name */
         deep = ch;
         while (NCH(deep) == 1) {
@@ -4057,6 +4090,13 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
     int end_lineno, end_col_offset;
     int has_type_comment;
     string type_comment;
+
+    if (is_async && c->c_feature_version < 5) {
+        ast_error(c, n,
+                "Async for loops are only supported in Python 3.5 and greater");
+        return NULL;
+    }
+
     /* for_stmt: 'for' exprlist 'in' testlist ':' [TYPE_COMMENT] suite ['else' ':' suite] */
     REQ(n, for_stmt);
 
@@ -4284,6 +4324,12 @@ ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
     int i, n_items, nch_minus_type, has_type_comment, end_lineno, end_col_offset;
     asdl_seq *items, *body;
     string type_comment;
+
+    if (is_async && c->c_feature_version < 5) {
+        ast_error(c, n,
+                "Async with statements are only supported in Python 3.5 and greater");
+        return NULL;
+    }
 
     REQ(n, with_stmt);
 
@@ -5576,6 +5622,13 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *rawmode,
             }
         }
     }
+
+    /* fstrings are only allowed in Python 3.6 and greater */
+    if (fmode && c->c_feature_version < 6) {
+        ast_error(c, n, "Format strings are only supported in Python 3.6 and greater");
+        return -1;
+    }
+
     if (fmode && *bytesmode) {
         PyErr_BadInternalCall();
         return -1;
