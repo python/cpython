@@ -1200,6 +1200,8 @@ PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
     PyCompilerFlags localflags;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
+    if (flags->cf_feature_version < 7)
+        iflags |= PyPARSE_ASYNC_HACKS;
 
     node *n = PyParser_ParseStringObject(s, filename,
                                          &_PyParser_Grammar, start, &err,

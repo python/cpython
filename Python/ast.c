@@ -1790,10 +1790,9 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
 static stmt_ty
 ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
-    /* async_funcdef: 'async' funcdef */
+    /* async_funcdef: ASYNC funcdef */
     REQ(n, async_funcdef);
-    REQ(CHILD(n, 0), NAME);
-    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+    REQ(CHILD(n, 0), ASYNC);
     REQ(CHILD(n, 1), funcdef);
 
     return ast_for_funcdef_impl(c, n, decorator_seq,
@@ -1812,10 +1811,9 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 static stmt_ty
 ast_for_async_stmt(struct compiling *c, const node *n)
 {
-    /* async_stmt: 'async' (funcdef | with_stmt | for_stmt) */
+    /* async_stmt: ASYNC (funcdef | with_stmt | for_stmt) */
     REQ(n, async_stmt);
-    REQ(CHILD(n, 0), NAME);
-    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+    REQ(CHILD(n, 0), ASYNC);
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
@@ -1966,8 +1964,7 @@ count_comp_fors(struct compiling *c, const node *n)
     n_fors++;
     REQ(n, comp_for);
     if (NCH(n) == 2) {
-        REQ(CHILD(n, 0), NAME);
-        assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+        REQ(CHILD(n, 0), ASYNC);
         n = CHILD(n, 1);
     }
     else if (NCH(n) == 1) {
@@ -2052,8 +2049,7 @@ ast_for_comprehension(struct compiling *c, const node *n)
 
         if (NCH(n) == 2) {
             is_async = 1;
-            REQ(CHILD(n, 0), NAME);
-            assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+            REQ(CHILD(n, 0), ASYNC);
             sync_n = CHILD(n, 1);
         }
         else {
@@ -2711,7 +2707,12 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     REQ(n, atom_expr);
     nch = NCH(n);
 
-    if (TYPE(CHILD(n, 0)) == NAME && strcmp(STR(CHILD(n, 0)), "await") == 0) {
+    if (TYPE(CHILD(n, 0)) == AWAIT) {
+        if (c->c_feature_version < 5) {
+            ast_error(c, n,
+                    "Await expressions are only supported in Python 3.5 and greater");
+            return NULL;
+        }
         start = 1;
         assert(nch > 1);
     }
@@ -2808,7 +2809,7 @@ ast_for_expr(struct compiling *c, const node *n)
        term: factor (('*'|'@'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
        power: atom_expr ['**' factor]
-       atom_expr: ['await'] atom trailer*
+       atom_expr: [AWAIT] atom trailer*
        yield_expr: 'yield' [yield_arg]
     */
 
