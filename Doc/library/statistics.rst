@@ -482,9 +482,9 @@ of applications in statistics, including simulations and hypothesis testing.
 .. class:: NormalDist(mu=0.0, sigma=1.0)
 
     Returns a new *NormalDist* object where *mu* represents the `arithmetic
-    mean <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of data and *sigma*
+    mean <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ and *sigma*
     represents the `standard deviation
-    <https://en.wikipedia.org/wiki/Standard_deviation>`_ of the data.
+    <https://en.wikipedia.org/wiki/Standard_deviation>`_.
 
     If *sigma* is negative, raises :exc:`StatisticsError`.
 
@@ -579,7 +579,7 @@ of applications in statistics, including simulations and hypothesis testing.
 :class:`NormalDist` Examples and Recipes
 ----------------------------------------
 
-A :class:`NormalDist` readily solves classic probability problems.
+:class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
 <https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
