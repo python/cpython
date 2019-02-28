@@ -12,7 +12,7 @@
   <PropertyGroup>
     <_DLLSuffix>-1_1</_DLLSuffix>
     <_DLLSuffix Condition="$(Platform) == 'ARM'">$(_DLLSuffix)-arm</_DLLSuffix>
-    <_DLLSuffix Condition="$(Platform) == 'ARM'">$(_DLLSuffix)-arm64</_DLLSuffix>
+    <_DLLSuffix Condition="$(Platform) == 'ARM64'">$(_DLLSuffix)-arm64</_DLLSuffix>
   </PropertyGroup>
   <ItemGroup>
     <_SSLDLL Include="$(opensslOutDir)\libcrypto$(_DLLSuffix).dll" />
