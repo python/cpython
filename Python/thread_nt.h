@@ -230,13 +230,17 @@ PyThread_get_thread_ident(void)
 }
 
 /*
- * TODO: Return the TID of the thread.
- * Currently, this just returns NULL.
+ * Return the Thread ID (TID) of the calling thread.
+ * The TID of a thread is valid (unique system-wide) from the time the thread is created
+ * until the thread has been terminated.
  */
 unsigned long
 PyThread_get_thread_id(void)
 {
-    return NULL;
+    if (!initialized)
+        PyThread_init_thread();
+
+    return GetCurrentThreadId();
 }
 
 void
