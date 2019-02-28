@@ -318,6 +318,7 @@ PyThread_get_thread_id(void)
     volatile pid_t tid;
     tid = syscall(__NR_gettid);
 #else
+    volatile unsigned long tid;
     tid = NULL;
 #endif
     return (unsigned long) tid;
