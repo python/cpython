@@ -1,0 +1,1 @@
+Added startup code debugging with the PYTHONSITEDEBUG environment variable

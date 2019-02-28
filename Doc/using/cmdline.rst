@@ -917,6 +917,15 @@ conflict.
       See :pep:`540` for more details.
 
 
+.. envvar:: PYTHONSITEDEBUG
+
+   If set to a non-empty string, drop into the :mod:`pdb` prompt
+   at the start of the :mod:`site` module.
+   This is useful to diagnose issues in 3rd-party code that runs at startup.
+
+   .. versionadded:: 3.8
+
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 

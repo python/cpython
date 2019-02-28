@@ -74,6 +74,12 @@ import os
 import builtins
 import _sitebuiltins
 
+
+if os.environ.get("PYTHONSITEDEBUG", ""):
+    import pdb
+    pdb.set_trace()
+
+
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
 # Enable per user site-packages directory
@@ -635,6 +641,7 @@ def _script():
         import textwrap
         print(textwrap.dedent(help % (sys.argv[0], os.pathsep)))
         sys.exit(10)
+
 
 if __name__ == '__main__':
     _script()
