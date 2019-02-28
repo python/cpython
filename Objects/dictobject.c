@@ -3083,6 +3083,44 @@ dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
 }
 
+static PyObject *
+dict_add(PyDictObject *self, PyObject *other)
+{
+    PyObject *new;
+
+    if (!PyDict_Check(self) || !PyDict_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    new = PyDict_Copy((PyObject *)self);
+
+    if (new == NULL) {
+        return NULL;
+    }
+
+    if (PyDict_Update(new, other)) {
+        Py_DECREF(new);
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    return new;
+}
+
+static PyObject *
+dict_iadd(PyDictObject *self, PyObject *other)
+{
+    if (!PyDict_Check(self) || !PyDict_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (PyDict_Update((PyObject *)self, other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    Py_INCREF((PyObject *)self);
+    return (PyObject *)self;
+}
+
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 
 PyDoc_STRVAR(sizeof__doc__,
@@ -3237,6 +3275,29 @@ dict_iter(PyDictObject *dict)
     return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
+static PyNumberMethods dict_as_number = {
+    (binaryfunc)dict_add,               /*nb_add*/
+    0,                                  /*nb_subtract*/
+    0,                                  /*nb_multiply*/
+    0,                                  /*nb_remainder*/
+    0,                                  /*nb_divmod*/
+    0,                                  /*nb_power*/
+    0,                                  /*nb_negative*/
+    0,                                  /*nb_positive*/
+    0,                                  /*nb_absolute*/
+    0,                                  /*nb_bool*/
+    0,                                  /*nb_invert*/
+    0,                                  /*nb_lshift*/
+    0,                                  /*nb_rshift*/
+    0,                                  /*nb_and*/
+    0,                                  /*nb_xor*/
+    0,                                  /*nb_or*/
+    0,                                  /*nb_int*/
+    0,                                  /*nb_reserved*/
+    0,                                  /*nb_float*/
+    (binaryfunc)dict_iadd,              /*nb_inplace_add*/
+};
+
 PyDoc_STRVAR(dictionary_doc,
 "dict() -> new empty dictionary\n"
 "dict(mapping) -> new dictionary initialized from a mapping object's\n"
@@ -3259,7 +3320,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
     (reprfunc)dict_repr,                        /* tp_repr */
-    0,                                          /* tp_as_number */
+    &dict_as_number,                            /* tp_as_number */
     &dict_as_sequence,                          /* tp_as_sequence */
     &dict_as_mapping,                           /* tp_as_mapping */
     PyObject_HashNotImplemented,                /* tp_hash */
