@@ -266,6 +266,7 @@ structseq_repr(PyStructSequence *obj)
 
         val = PyTuple_GetItem(tup, i);
         if (cname == NULL || val == NULL) {
+            Py_DECREF(tup);
             return NULL;
         }
         repr = PyObject_Repr(val);
