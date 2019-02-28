@@ -1516,8 +1516,7 @@ class ReTests(unittest.TestCase):
         self.assertRaises(re.error, re.compile, r'(?au)\w')
 
     def test_locale_flag(self):
-        import locale
-        _, enc = locale.getlocale(locale.LC_CTYPE)
+        enc = locale.getpreferredencoding()
         # Search non-ASCII letter
         for i in range(128, 256):
             try:
