@@ -53,7 +53,7 @@ Printing and clearing
 .. c:function:: void PyErr_PrintEx(int set_sys_last_vars)
 
    Print a standard traceback to ``sys.stderr`` and clear the error indicator.
-   **Unless** the error is a ``SystemExit``.  In that case no traceback is
+   **Unless** the error is a ``SystemExit``, in that case no traceback is
    printed and the Python process will exit with the error code specified by
    the ``SystemExit`` instance.
 
