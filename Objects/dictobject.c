@@ -3100,7 +3100,7 @@ dict_add(PyDictObject *self, PyObject *other)
 
     if (PyDict_Update(new, other)) {
         Py_DECREF(new);
-        Py_RETURN_NOTIMPLEMENTED;
+        return NULL;
     }
 
     return new;
@@ -3114,7 +3114,7 @@ dict_iadd(PyDictObject *self, PyObject *other)
     }
 
     if (PyDict_Update((PyObject *)self, other)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        return NULL;
     }
 
     Py_INCREF((PyObject *)self);
