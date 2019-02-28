@@ -2113,6 +2113,10 @@ class TestNormalDist(unittest.TestCase):
         Y = NormalDist(100, 0)
         with self.assertRaises(statistics.StatisticsError):
             Y.pdf(90)
+        # Special values
+        self.assertEqual(X.pdf(float('-Inf')), 0.0)
+        self.assertEqual(X.pdf(float('Inf')), 0.0)
+        self.assertTrue(math.isnan(X.pdf(float('NaN'))))
 
     def test_cdf(self):
         NormalDist = statistics.NormalDist
@@ -2127,6 +2131,10 @@ class TestNormalDist(unittest.TestCase):
         Y = NormalDist(100, 0)
         with self.assertRaises(statistics.StatisticsError):
             Y.cdf(90)
+        # Special values
+        self.assertEqual(X.cdf(float('-Inf')), 0.0)
+        self.assertEqual(X.cdf(float('Inf')), 1.0)
+        self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
     def test_properties(self):
         X = statistics.NormalDist(100, 15)
