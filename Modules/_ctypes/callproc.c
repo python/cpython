@@ -1831,6 +1831,7 @@ POINTER(PyObject *self, PyObject *cls)
                                        "s(O){}",
                                        buf,
                                        &PyCPointer_Type);
+        PyMem_Free(buf);
         if (result == NULL)
             return result;
         key = PyLong_FromVoidPtr(result);
