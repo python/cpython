@@ -149,12 +149,12 @@ supported.
    raised for general mapping errors like specifying an incorrect key.
 
 
-.. function:: open(filename[, flag[, mode]])
+.. function:: open(filename[, flags[, mode]])
 
    Open a ``gdbm`` database and return a :class:`gdbm` object.  The *filename*
    argument is the name of the database file.
 
-   The optional *flag* argument can be:
+   The optional *flags* argument can be:
 
    +---------+-------------------------------------------+
    | Value   | Meaning                                   |
@@ -172,8 +172,8 @@ supported.
    |         | for reading and writing                   |
    +---------+-------------------------------------------+
 
-   The following additional characters may be appended to the flag to control
-   how the database is opened:
+   The following additional characters may be appended to the *flags* argument
+   to control how the database is opened:
 
    +---------+--------------------------------------------+
    | Value   | Meaning                                    |
@@ -382,4 +382,3 @@ The module defines the following:
    .. method:: dumbdbm.close()
 
       Close the ``dumbdbm`` database.
-
