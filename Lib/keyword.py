@@ -50,6 +50,10 @@ kwlist = [
 #--end keywords--
         ]
 
+kwlist.append('async')
+kwlist.append('await')
+kwlist.sort()
+
 iskeyword = frozenset(kwlist).__contains__
 
 def main():
