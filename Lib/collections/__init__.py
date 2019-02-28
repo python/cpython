@@ -1034,6 +1034,17 @@ class UserDict(_collections_abc.MutableMapping):
 
     # Now, add the methods in dicts but not in MutableMapping
     def __repr__(self): return repr(self.data)
+        
+    def __add__(self, other):
+        return UserDict(self.data + other)
+
+    def __radd__(self, other):
+        return UserDict(other + self.data)
+
+    def __iadd__(self, other):
+        self.data += other
+        return self
+
     def copy(self):
         if self.__class__ is UserDict:
             return UserDict(self.data.copy())
