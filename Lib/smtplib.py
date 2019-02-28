@@ -248,6 +248,7 @@ class SMTP:
         self.esmtp_features = {}
         self.command_encoding = 'ascii'
         self.source_address = source_address
+        self.mta_status_code = None
 
         if host:
             (code, msg) = self.connect(host, port)
@@ -888,6 +889,7 @@ class SMTP:
             else:
                 self._rset()
             raise SMTPDataError(code, resp)
+        self.mta_status_code = (code, resp)
         #if we got here then somebody got our mail
         return senderrs
 
