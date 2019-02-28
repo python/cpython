@@ -48,27 +48,14 @@ This module defines the following functions:
 
    .. versionadded:: 3.3
 
+
 .. function:: get_tid()
 
-   Return the Thread ID of the current thread as reported by the OS (kernel).
-   This is a non-negative integer. Its value may be used to uniquely identify a
-   particular thread within a system.
+   Return the Thread ID of the current thread. This is a non-negative integer.
+   Its value may be used to uniquely identify this particular thread system-wide
+   (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. note::
-
-      The behavior of this function varies between operating systems:
-
-      *  Unix: Returns the Thread ID assigned to the thread
-         instance by the OS. This represents the thread identifier (``TID``),
-         similar to the ``PID`` of a process.
-      *  Mac: Returns the unique integral ID of the thread instance,
-         assigned by the Mach kernel during bootstrap.
-         This is reflected in various debugging utilities (e.g. ``lldb``,
-         Activity Monitor).
-
-   .. availability:: Unix, Mac.
-
-   .. versionadded:: *TBD*
+   .. versionadded:: 3.8
 
 
 .. function:: enumerate()
@@ -323,13 +310,17 @@ since it is impossible to detect the termination of alien threads.
 
       The thread ID of this thread or ``None`` if the thread has not
       been started.  This is a non-negative integer.  See the :func:`get_tid`
-      function.  This represents the Thread ID (``TID``) assigned to the thread
-      instance by the OS. Like Process IDs, Thread IDs
-      may be reused by new processes or threads after the thread exits.
-      However, they are guaranteed to be unique system-wide
-      during the lifetime of the thread's execution.
+      function.  This represents the Thread ID (``TID``) as assigned to the
+      thread by the OS (kernel). Its value may be used to uniquely identify
+      this particular thread system-wide.
 
-      .. versionadded:: *TBD*
+      .. note::
+
+         Similar to Process IDs, Thread IDs are only valid (guaranteed unique
+         system-wide) from the time the thread is created until the thread
+         has been terminated.
+
+      .. versionadded:: 3.8
 
    .. method:: is_alive()
 
