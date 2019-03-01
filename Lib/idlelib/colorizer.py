@@ -66,8 +66,6 @@ class ColorDelegator(Delegator):
         colorizing: Boolean flag when colorizing is in process.
         stop_colorizing: Boolean flag to end an active colorizing
                 process.
-        close_when_done: Widget to destroy after colorizing process
-                completes (doesn't seem to be used by IDLE).
     """
 
     def __init__(self):
@@ -157,9 +155,7 @@ class ColorDelegator(Delegator):
             self.after_id = self.after(1, self.recolorize)
         return
 
-    close_when_done = None  # Window to be closed when done colorizing.
-
-    def close(self, close_when_done=None):
+    def close(self):
         if self.after_id:
             after_id = self.after_id
             self.after_id = None
@@ -167,11 +163,6 @@ class ColorDelegator(Delegator):
             self.after_cancel(after_id)
         self.allow_colorizing = False
         self.stop_colorizing = True
-        if close_when_done:
-            if not self.colorizing:
-                close_when_done.destroy()
-            else:
-                self.close_when_done = close_when_done
 
     def toggle_colorize_event(self, event=None):
         """Toggle colorizing on and off.
@@ -205,9 +196,7 @@ class ColorDelegator(Delegator):
         process is not already running.
 
         After colorizing is complete, some cleanup is done to
-        make sure that all the text has been colorized and to close
-        the window if the close event had been called while the
-        process was running.
+        make sure that all the text has been colorized.
         """
         self.after_id = None
         if not self.delegate:
@@ -232,10 +221,6 @@ class ColorDelegator(Delegator):
         if self.allow_colorizing and self.tag_nextrange("TODO", "1.0"):
             if DEBUG: print("reschedule colorizing")
             self.after_id = self.after(1, self.recolorize)
-        if self.close_when_done:
-            top = self.close_when_done
-            self.close_when_done = None
-            top.destroy()
 
     def recolorize_main(self):
         "Evaluate text and apply colorizing tags."
