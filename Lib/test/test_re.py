@@ -2141,6 +2141,8 @@ ELSE
         self.assertEqual(re.match(r'(?!(..)c)', 'ab').groups(), (None,))
         # negative assertion in a repeat
         self.assertEqual(re.match(r'(?:(?!(ab)c).)*', 'ab').groups(), (None,))
+        self.assertEqual(re.match(r'((?!(bc)d)(.))*', 'abc').groups(),
+                         ('c', None, 'c'))
 
         # =============================================================
         # below asserts didn't fail before fix, just prevent regression
