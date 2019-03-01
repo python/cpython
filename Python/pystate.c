@@ -2,6 +2,7 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 

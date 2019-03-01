@@ -81,10 +81,10 @@
     <ClInclude Include="..\Include\context.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\coreconfig.h">
+    <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\abstract.h">
+    <ClInclude Include="..\Include\cpython\coreconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\dictobject.h">
@@ -172,6 +172,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_context.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_coreconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">

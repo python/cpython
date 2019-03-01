@@ -1,11 +1,12 @@
 #ifndef Py_PYCORECONFIG_H
 #define Py_PYCORECONFIG_H
+#ifndef Py_LIMITED_API
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* _PyInitError */
 
-#ifndef Py_LIMITED_API
 typedef struct {
     const char *prefix;
     const char *msg;
@@ -32,8 +33,7 @@ typedef struct {
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL)
 
-#endif   /* !defined(Py_LIMITED_API) */
-
+/* _PyCoreConfig */
 
 typedef struct {
     /* Install signal handlers? Yes by default. */
@@ -339,32 +339,12 @@ typedef struct {
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
-PyAPI_FUNC(int) _PyCoreConfig_Copy(
-    _PyCoreConfig *config,
-    const _PyCoreConfig *config2);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
-    const _PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config);
-PyAPI_FUNC(const char*) _PyCoreConfig_GetEnv(
-    const _PyCoreConfig *config,
-    const char *name);
-PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
-    const _PyCoreConfig *config,
-    wchar_t **dest,
-    wchar_t *wname,
-    char *name);
-
-/* Used by _testcapi.get_global_config() and _testcapi.get_core_config() */
+/* Functions used for testing */
 PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
 PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
-#endif
 
 #ifdef __cplusplus
 }
 #endif
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */
