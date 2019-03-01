@@ -36,7 +36,8 @@ class Version:
     """
 
     def __init__ (self, vstring=None):
-        if vstring:
+        self.version = None
+        if vstring is not None:
             self.parse(vstring)
 
     def __repr__ (self):
@@ -130,7 +131,6 @@ class StrictVersion (Version):
     version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
                             re.VERBOSE | re.ASCII)
 
-
     def parse (self, vstring):
         match = self.version_re.match(vstring)
         if not match:
@@ -151,6 +151,8 @@ class StrictVersion (Version):
 
 
     def __str__ (self):
+        if self.version is None:
+            return 'None'
 
         if self.version[2] == 0:
             vstring = '.'.join(map(str, self.version[0:2]))
@@ -166,6 +168,9 @@ class StrictVersion (Version):
     def _cmp (self, other):
         if isinstance(other, str):
             other = StrictVersion(other)
+
+        if self.version is None:
+            raise ValueError("invalid version number 'None'")
 
         if self.version != other.version:
             # numeric versions don't match
@@ -299,9 +304,9 @@ class LooseVersion (Version):
 
     component_re = re.compile(r'(\d+ | [a-z]+ | \.)', re.VERBOSE)
 
-    def __init__ (self, vstring=None):
-        if vstring:
-            self.parse(vstring)
+    def __init__(self, vstring=None):
+        self.vstring = None
+        super(LooseVersion, self).__init__(vstring)
 
 
     def parse (self, vstring):
@@ -321,16 +326,17 @@ class LooseVersion (Version):
 
 
     def __str__ (self):
+        if self.vstring is None:
+            return 'None'
         return self.vstring
-
-
-    def __repr__ (self):
-        return "LooseVersion ('%s')" % str(self)
 
 
     def _cmp (self, other):
         if isinstance(other, str):
             other = LooseVersion(other)
+
+        if self.version is None:
+            raise ValueError("invalid version number 'None'")
 
         if self.version == other.version:
             return 0

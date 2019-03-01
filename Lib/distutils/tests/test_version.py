@@ -30,7 +30,9 @@ class VersionTestCase(unittest.TestCase):
                     ('1.2.2', '1.2', 1),
                     ('1.2', '1.2.2', -1),
                     ('0.4.0', '0.4', 0),
-                    ('1.13++', '5.5.kw', ValueError))
+                    ('1.13++', '5.5.kw', ValueError),
+                    ('', '1.1', ValueError),
+                    (None, '1.1', ValueError))
 
         for v1, v2, wanted in versions:
             try:
@@ -55,7 +57,8 @@ class VersionTestCase(unittest.TestCase):
                     ('3.2.pl0', '3.1.1.6', 1),
                     ('2g6', '11g', -1),
                     ('0.960923', '2.2beta29', -1),
-                    ('1.13++', '5.5.kw', -1))
+                    ('1.13++', '5.5.kw', -1),
+                    ('', '1.1', -1))
 
 
         for v1, v2, wanted in versions:
