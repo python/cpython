@@ -586,15 +586,16 @@ readline_file(Unpicklerobject *self, char **s)
     while (1) {
         Py_ssize_t bigger;
         char *newbuf;
-        int newchar;
         while (i < (self->buf_size - 1)) {
-            if (feof(self->fp))
-                goto done;
-            if ((newchar = getc(self->fp)) == EOF)
-                goto done;
-            self->buf[i++] = newchar;
-            if (newchar == '\n')
-                goto done;
+            int newchar = getc(self->fp);
+            if (newchar != EOF) {
+                self->buf[i++] = newchar;
+            }
+            if (newchar == EOF || newchar == '\n') {
+                self->buf[i] = '\0';
+                *s = self->buf;
+                return i;
+            }
         }
         if (self->buf_size > (PY_SSIZE_T_MAX >> 1)) {
             PyErr_NoMemory();
@@ -609,10 +610,6 @@ readline_file(Unpicklerobject *self, char **s)
         self->buf = newbuf;
         self->buf_size = bigger;
     }
-done:
-    self->buf[i] = '\0';
-    *s = self->buf;
-    return i;
 }
 
 
