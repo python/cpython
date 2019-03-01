@@ -1,3 +1,5 @@
+REM Based on https://github.com/libffi/libffi/blob/master/.appveyor.yml
+
 REM tested with cygwin-x86 from https://www.cygwin.com/install.html
 REM select http://mirrors.kernel.org as the download site
 REM include the following packages: make, autoconf, automake, libtool
