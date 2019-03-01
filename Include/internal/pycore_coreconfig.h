@@ -8,6 +8,29 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN defined"
 #endif
 
+/* _Py_wstrlist */
+
+PyAPI_FUNC(void) _Py_wstrlist_clear(
+    int len,
+    wchar_t **list);
+PyAPI_FUNC(wchar_t**) _Py_wstrlist_copy(
+    int len,
+    wchar_t * const *list);
+PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
+    int *len,
+    wchar_t ***list,
+    const wchar_t *str);
+PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(
+    int len,
+    wchar_t **list);
+
+/* Py_GetArgcArgv() helpers */
+
+PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
+PyAPI_FUNC(int) _Py_SetArgcArgv(int argc, wchar_t * const *argv);
+
+/* _PyCoreConfig */
+
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
@@ -26,6 +49,9 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
+    const _PyArgv *args);
+PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
 
 #ifdef __cplusplus
 }

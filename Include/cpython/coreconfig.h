@@ -5,6 +5,16 @@
 extern "C" {
 #endif
 
+/* _PyArgv */
+
+typedef struct {
+    int argc;
+    int use_bytes_argv;
+    char **bytes_argv;
+    wchar_t **wchar_argv;
+} _PyArgv;
+
+
 /* _PyInitError */
 
 typedef struct {
