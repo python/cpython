@@ -2003,16 +2003,17 @@ class PyBuildExt(build_ext):
                      libraries=['m'])
         self.extensions.extend([ext, ext_test])
 
+        ffi_inc_dirs = inc_dirs.copy()
         if MACOS:
             if '--with-system-ffi' not in sysconfig.get_config_var("CONFIG_ARGS"):
                 return
             # OS X 10.5 comes with libffi.dylib; the include files are
             # in /usr/include/ffi
-            inc_dirs.append('/usr/include/ffi')
+            ffi_inc_dirs.append('/usr/include/ffi')
 
         ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
         if not ffi_inc or ffi_inc[0] == '':
-            ffi_inc = find_file('ffi.h', [], inc_dirs)
+            ffi_inc = find_file('ffi.h', [], ffi_inc_dirs)
         if ffi_inc is not None:
             ffi_h = ffi_inc[0] + '/ffi.h'
             if not os.path.exists(ffi_h):
