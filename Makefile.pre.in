@@ -978,7 +978,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/funcobject.h \
 		$(srcdir)/Include/genobject.h \
 		$(srcdir)/Include/import.h \
-		$(srcdir)/Include//interpreteridobject.h \
+		$(srcdir)/Include/interpreteridobject.h \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
@@ -1041,6 +1041,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/abstract.h \
 		$(srcdir)/Include/cpython/coreconfig.h \
 		$(srcdir)/Include/cpython/dictobject.h \
+		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
