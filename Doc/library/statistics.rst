@@ -471,9 +471,11 @@ A single exception is defined:
 :class:`NormalDist` objects
 ===========================
 
-A :class:`NormalDist` is a a composite class that treats the mean and standard
-deviation of data measurements as a single entity.  It is a tool for creating
-and manipulating normal distributions of a random variable.
+:class:`NormalDist` is a tool for creating and manipulating normal
+distributions of a `random variable
+<http://www.stat.yale.edu/Courses/1997-98/101/ranvar.htm>`_.  It is a
+composite class that treats the mean and standard deviation of data
+measurements as a single entity.
 
 Normal distributions arise from the `Central Limit Theorem
 <https://en.wikipedia.org/wiki/Central_limit_theorem>`_ and have a wide range
@@ -530,7 +532,7 @@ of applications in statistics, including simulations and hypothesis testing.
 
        Using a `probability density function (pdf)
        <https://en.wikipedia.org/wiki/Probability_density_function>`_,
-       compute the relative likelihood that a random sample *X* will be near
+       compute the relative likelihood that a random variable *X* will be near
        the given value *x*.  Mathematically, it is the ratio ``P(x <= X <
        x+dx) / dx``.
 
@@ -544,7 +546,7 @@ of applications in statistics, including simulations and hypothesis testing.
 
        Using a `cumulative distribution function (cdf)
        <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_,
-       compute the probability that a random sample *X* will be less than or
+       compute the probability that a random variable *X* will be less than or
        equal to *x*.  Mathematically, it is written ``P(X <= x)``.
 
     Instances of :class:`NormalDist` support addition, subtraction,
