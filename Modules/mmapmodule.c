@@ -117,6 +117,7 @@ typedef struct {
 static void
 mmap_object_dealloc(mmap_object *m_obj)
 {
+    Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
     if (m_obj->data != NULL)
         UnmapViewOfFile (m_obj->data);
@@ -132,11 +133,10 @@ mmap_object_dealloc(mmap_object *m_obj)
     if (m_obj->fd >= 0)
         (void) close(m_obj->fd);
     if (m_obj->data!=NULL) {
-        Py_BEGIN_ALLOW_THREADS
         munmap(m_obj->data, m_obj->size);
-        Py_END_ALLOW_THREADS
     }
 #endif /* UNIX */
+    Py_END_ALLOW_THREADS
 
     if (m_obj->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m_obj);
@@ -151,6 +151,7 @@ mmap_close_method(mmap_object *self, PyObject *unused)
                         "exported pointers exist");
         return NULL;
     }
+    Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
     /* For each resource we maintain, we need to check
        the value is valid, and if so, free the resource
@@ -182,6 +183,7 @@ mmap_close_method(mmap_object *self, PyObject *unused)
         self->data = NULL;
     }
 #endif
+    Py_END_ALLOW_THREADS
 
     Py_RETURN_NONE;
 }
