@@ -310,6 +310,15 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
 
+    def test_trace(self):
+        import io
+        message="bla-bla-bla"
+        for verbose, out in (True, message+"\n"), (False, ""):
+            with mock.patch('sys.flags', mock.Mock(verbose=verbose)),\
+                    mock.patch('sys.stderr', io.StringIO()):
+                site._trace(message)
+                self.assertEqual(sys.stderr.getvalue(), out)
+
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""

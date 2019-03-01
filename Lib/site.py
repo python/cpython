@@ -87,6 +87,10 @@ USER_SITE = None
 USER_BASE = None
 
 
+def _trace(message):
+    if sys.flags.verbose:
+        print(message,file=sys.stderr)
+
 def makepath(*paths):
     dir = os.path.join(*paths)
     try:
@@ -155,6 +159,7 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
     fullname = os.path.join(sitedir, name)
+    _trace("Processing .pth file: %r" % fullname)
     try:
         f = open(fullname, "r")
     except OSError:
@@ -189,6 +194,7 @@ def addpackage(sitedir, name, known_paths):
 def addsitedir(sitedir, known_paths=None):
     """Add 'sitedir' argument to sys.path if missing and handle .pth files in
     'sitedir'"""
+    _trace("Adding directory: %r" % sitedir)
     if known_paths is None:
         known_paths = _init_pathinfo()
         reset = True
@@ -309,6 +315,7 @@ def addusersitepackages(known_paths):
     """
     # get the per user site-package path
     # this call will also make sure USER_BASE and USER_SITE are set
+    _trace("Processing user site-packages")
     user_site = getusersitepackages()
 
     if ENABLE_USER_SITE and os.path.isdir(user_site):
@@ -344,6 +351,7 @@ def getsitepackages(prefixes=None):
 
 def addsitepackages(known_paths, prefixes=None):
     """Add site-packages to sys.path"""
+    _trace("Processing global site-packages")
     for sitedir in getsitepackages(prefixes):
         if os.path.isdir(sitedir):
             addsitedir(sitedir, known_paths)
