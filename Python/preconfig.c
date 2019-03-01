@@ -1,4 +1,5 @@
 #include <Python.h>
+#include "pycore_coreconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_getopt.h"
 #include "pycore_pylifecycle.h"
@@ -707,6 +708,24 @@ preconfig_init_stdio_encoding(_PyPreConfig *config)
 }
 
 
+void
+_PreConfig_GetEnvFlag(_PyPreConfig *config, int *flag, const char *name)
+{
+    const char *var = _PyPreConfig_GetEnv(config, name);
+    if (!var) {
+        return;
+    }
+    int value;
+    if (_Py_str_to_int(var, &value) < 0 || value < 0) {
+        /* PYTHONDEBUG=text and PYTHONDEBUG=-2 behave as PYTHONDEBUG=1 */
+        value = 1;
+    }
+    if (*flag < value) {
+        *flag = value;
+    }
+}
+
+
 static _PyInitError
 preconfig_read_env_vars(_PyPreConfig *config)
 {
@@ -721,9 +740,9 @@ preconfig_read_env_vars(_PyPreConfig *config)
     }
 
 #ifdef MS_WINDOWS
-    get_env_flag(config, &config->legacy_windows_fs_encoding,
+    _PreConfig_GetEnvFlag(config, &config->legacy_windows_fs_encoding,
                  "PYTHONLEGACYWINDOWSFSENCODING");
-    get_env_flag(config, &config->legacy_windows_stdio,
+    _PreConfig_GetEnvFlag(config, &config->legacy_windows_stdio,
                  "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 

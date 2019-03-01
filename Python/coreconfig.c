@@ -688,8 +688,8 @@ config_init_hash_seed(_PyCoreConfig *config)
 }
 
 
-static int
-config_str_to_int(const char *str, int *result)
+int
+_Py_str_to_int(const char *str, int *result)
 {
     const char *endptr = str;
     errno = 0;
@@ -724,49 +724,31 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
 }
 
 
-static void
-get_env_flag(_PyPreConfig *config, int *flag, const char *name)
-{
-    const char *var = _PyPreConfig_GetEnv(config, name);
-    if (!var) {
-        return;
-    }
-    int value;
-    if (config_str_to_int(var, &value) < 0 || value < 0) {
-        /* PYTHONDEBUG=text and PYTHONDEBUG=-2 behave as PYTHONDEBUG=1 */
-        value = 1;
-    }
-    if (*flag < value) {
-        *flag = value;
-    }
-}
-
-
 static _PyInitError
 config_read_env_vars(_PyCoreConfig *config)
 {
     _PyPreConfig *preconfig = &config->preconfig;
 
     /* Get environment variables */
-    get_env_flag(preconfig, &config->parser_debug, "PYTHONDEBUG");
-    get_env_flag(preconfig, &config->verbose, "PYTHONVERBOSE");
-    get_env_flag(preconfig, &config->optimization_level, "PYTHONOPTIMIZE");
-    get_env_flag(preconfig, &config->inspect, "PYTHONINSPECT");
+    _PreConfig_GetEnvFlag(preconfig, &config->parser_debug, "PYTHONDEBUG");
+    _PreConfig_GetEnvFlag(preconfig, &config->verbose, "PYTHONVERBOSE");
+    _PreConfig_GetEnvFlag(preconfig, &config->optimization_level, "PYTHONOPTIMIZE");
+    _PreConfig_GetEnvFlag(preconfig, &config->inspect, "PYTHONINSPECT");
 
     int dont_write_bytecode = 0;
-    get_env_flag(preconfig, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
+    _PreConfig_GetEnvFlag(preconfig, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
     if (dont_write_bytecode) {
         config->write_bytecode = 0;
     }
 
     int no_user_site_directory = 0;
-    get_env_flag(preconfig, &no_user_site_directory, "PYTHONNOUSERSITE");
+    _PreConfig_GetEnvFlag(preconfig, &no_user_site_directory, "PYTHONNOUSERSITE");
     if (no_user_site_directory) {
         config->user_site_directory = 0;
     }
 
     int unbuffered_stdio = 0;
-    get_env_flag(preconfig, &unbuffered_stdio, "PYTHONUNBUFFERED");
+    _PreConfig_GetEnvFlag(preconfig, &unbuffered_stdio, "PYTHONUNBUFFERED");
     if (unbuffered_stdio) {
         config->buffered_stdio = 0;
     }
@@ -805,7 +787,7 @@ config_init_tracemalloc(_PyCoreConfig *config)
 
     const char *env = _PyCoreConfig_GetEnv(config, "PYTHONTRACEMALLOC");
     if (env) {
-        if (!config_str_to_int(env, &nframe)) {
+        if (!_Py_str_to_int(env, &nframe)) {
             valid = (nframe >= 0);
         }
         else {

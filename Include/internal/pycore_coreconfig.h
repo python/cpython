@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 /* helpers */
+PyAPI_FUNC(int) _Py_str_to_int(const char *str, int *result);
 PyAPI_FUNC(const wchar_t*) _Py_GetXOption(int nxoption, wchar_t **xoptions, wchar_t *name);
 PyAPI_FUNC(const wchar_t*) _Py_GetProgramFromArgv(int argc, wchar_t * const *argv);
 PyAPI_FUNC(_PyInitError) _PyArgv_Decode(const _PyArgv *args, int *argc_p, wchar_t*** argv_p);
@@ -22,6 +23,7 @@ PyAPI_FUNC(void) _PyPreConfig_GetGlobalConfig(_PyPreConfig *config);
 PyAPI_FUNC(void) _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_InitFromArgv(_PyPreConfig *config, const _PyArgv *args);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_SetAllocator(_PyPreConfig *config);
+PyAPI_FUNC(void) _PreConfig_GetEnvFlag(_PyPreConfig *config, int *flag, const char *name);
 
 /* _PyCoreConfig */
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig);
