@@ -424,6 +424,10 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(legacy_windows_fs_encoding);
     COPY_ATTR(legacy_windows_stdio);
 #endif
+    COPY_ATTR(skip_source_first_line);
+    COPY_WSTR_ATTR(run_command);
+    COPY_WSTR_ATTR(run_module);
+    COPY_WSTR_ATTR(run_filename);
     COPY_ATTR(_check_hash_pycs_mode);
     COPY_ATTR(_frozen);
 
@@ -1559,6 +1563,10 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(legacy_windows_fs_encoding);
     SET_ITEM_INT(legacy_windows_stdio);
 #endif
+    SET_ITEM_INT(skip_source_first_line);
+    SET_ITEM_WSTR(run_command);
+    SET_ITEM_WSTR(run_module);
+    SET_ITEM_WSTR(run_filename);
     SET_ITEM_INT(_install_importlib);
     SET_ITEM_STR(_check_hash_pycs_mode);
     SET_ITEM_INT(_frozen);

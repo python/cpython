@@ -276,7 +276,19 @@ typedef struct {
     int legacy_windows_stdio;
 #endif
 
-    /* --- Private fields -------- */
+    /* --- Parameter only used by Py_Main() ---------- */
+
+    /* Skip the first line of the source ('run_filename' parameter), allowing use of non-Unix forms of
+       "#!cmd".  This is intended for a DOS specific hack only.
+
+       Set by the -x command line option. */
+    int skip_source_first_line;
+
+    wchar_t *run_command;   /* -c command line argument */
+    wchar_t *run_module;    /* -m command line argument */
+    wchar_t *run_filename;  /* Trailing command line argument without -c or -m */
+
+    /* --- Private fields ---------------------------- */
 
     /* Install importlib? If set to 0, importlib is not initialized at all.
        Needed by freeze_importlib. */
