@@ -1033,7 +1033,7 @@ class EditorWindow(object):
         self.io = None
         self.undo = None
         if self.color:
-            self.color.close(False)
+            self.color.close()
             self.color = None
         self.text = None
         self.tkinter_vars = None
