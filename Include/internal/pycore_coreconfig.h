@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN defined"
 #endif
 
-/* _Py_wstrlist */
+/* --- _Py_wstrlist ----------------------------------------------- */
 
 PyAPI_FUNC(void) _Py_wstrlist_clear(
     int len,
@@ -24,12 +24,17 @@ PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(
     int len,
     wchar_t **list);
 
-/* Py_GetArgcArgv() helpers */
+/* --- _PyArgv ---------------------------------------------------- */
+
+PyAPI_FUNC(_PyInitError) _PyArgv_Decode(const _PyArgv *args,
+    wchar_t*** argv_p);
+
+/* --- Py_GetArgcArgv() helpers ----------------------------------- */
 
 PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
 PyAPI_FUNC(int) _Py_SetArgcArgv(int argc, wchar_t * const *argv);
 
-/* _PyCoreConfig */
+/* --- _PyCoreConfig ---------------------------------------------- */
 
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
