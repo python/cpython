@@ -6,33 +6,22 @@
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 
-/* includes for exit_sigint() */
-#ifdef HAVE_SIGNAL_H
-#  include <signal.h>
-#endif
-#include <stdio.h>
-#if defined(HAVE_GETPID) && defined(HAVE_UNISTD_H)
-#  include <unistd.h>
-#endif
-
-#if defined(MS_WINDOWS) || defined(__CYGWIN__)
-#  include <windows.h>
-#  ifdef HAVE_IO_H
-#    include <io.h>
-#  endif
-#  ifdef HAVE_FCNTL_H
-#    include <fcntl.h>
-#  endif
-#endif
-
-#ifdef _MSC_VER
-#  include <crtdbg.h>
-#endif
-/* end of includes for exit_sigint() */
-
 #ifdef __FreeBSD__
-#  include <fenv.h>   /* fedisableexcept() */
+#  include <fenv.h>     /* fedisableexcept() */
 #endif
+
+/* Includes for exit_sigint() */
+#include <stdio.h>      /* perror() */
+#ifdef HAVE_SIGNAL_H
+#  include <signal.h>   /* SIGINT */
+#endif
+#if defined(HAVE_GETPID) && defined(HAVE_UNISTD_H)
+#  include <unistd.h>   /* getpid() */
+#endif
+#ifdef _MSC_VER
+#  include <crtdbg.h>   /* STATUS_CONTROL_C_EXIT */
+#endif
+/* End of includes for exit_sigint() */
 
 #define COPYRIGHT \
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
