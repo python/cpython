@@ -408,7 +408,7 @@ pathconfig_global_init(void)
 
 error:
     _PyCoreConfig_Clear(&config);
-    _Py_FatalInitError(err);
+    _Py_ExitInitError(err);
 }
 
 

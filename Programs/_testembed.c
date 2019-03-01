@@ -553,7 +553,7 @@ static int test_init_from_config(void)
     _PyInitError err = _Py_InitializeFromConfig(&config);
     /* Don't call _PyCoreConfig_Clear() since all strings are static */
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
     dump_config();
     Py_Finalize();
@@ -618,7 +618,7 @@ static int test_init_isolated(void)
     test_init_env_putenvs();
     _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
     dump_config();
     Py_Finalize();
@@ -635,7 +635,7 @@ static int test_init_dev_mode(void)
     config.program_name = L"./_testembed";
     _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
     dump_config();
     Py_Finalize();
