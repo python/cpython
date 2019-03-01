@@ -1221,13 +1221,13 @@ sys__enablelegacywindowsfsencoding_impl(PyObject *module)
         return NULL;
     }
 
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
-    PyMem_RawFree(config->filesystem_errors);
-    config->filesystem_errors = errors;
+    PyMem_RawFree(config->preconfig.filesystem_encoding);
+    config->preconfig.filesystem_encoding = encoding;
+    PyMem_RawFree(config->preconfig.filesystem_errors);
+    config->preconfig.filesystem_errors = errors;
 
-    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
-                                  config->filesystem_errors) < 0) {
+    if (_Py_SetFileSystemEncoding(config->preconfig.filesystem_encoding,
+                                  config->preconfig.filesystem_errors) < 0) {
         PyErr_NoMemory();
         return NULL;
     }
