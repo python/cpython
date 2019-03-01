@@ -730,25 +730,25 @@ config_read_env_vars(_PyCoreConfig *config)
     _PyPreConfig *preconfig = &config->preconfig;
 
     /* Get environment variables */
-    _PreConfig_GetEnvFlag(preconfig, &config->parser_debug, "PYTHONDEBUG");
-    _PreConfig_GetEnvFlag(preconfig, &config->verbose, "PYTHONVERBOSE");
-    _PreConfig_GetEnvFlag(preconfig, &config->optimization_level, "PYTHONOPTIMIZE");
-    _PreConfig_GetEnvFlag(preconfig, &config->inspect, "PYTHONINSPECT");
+    _PyPreConfig_GetEnvFlag(preconfig, &config->parser_debug, "PYTHONDEBUG");
+    _PyPreConfig_GetEnvFlag(preconfig, &config->verbose, "PYTHONVERBOSE");
+    _PyPreConfig_GetEnvFlag(preconfig, &config->optimization_level, "PYTHONOPTIMIZE");
+    _PyPreConfig_GetEnvFlag(preconfig, &config->inspect, "PYTHONINSPECT");
 
     int dont_write_bytecode = 0;
-    _PreConfig_GetEnvFlag(preconfig, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
+    _PyPreConfig_GetEnvFlag(preconfig, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
     if (dont_write_bytecode) {
         config->write_bytecode = 0;
     }
 
     int no_user_site_directory = 0;
-    _PreConfig_GetEnvFlag(preconfig, &no_user_site_directory, "PYTHONNOUSERSITE");
+    _PyPreConfig_GetEnvFlag(preconfig, &no_user_site_directory, "PYTHONNOUSERSITE");
     if (no_user_site_directory) {
         config->user_site_directory = 0;
     }
 
     int unbuffered_stdio = 0;
-    _PreConfig_GetEnvFlag(preconfig, &unbuffered_stdio, "PYTHONUNBUFFERED");
+    _PyPreConfig_GetEnvFlag(preconfig, &unbuffered_stdio, "PYTHONUNBUFFERED");
     if (unbuffered_stdio) {
         config->buffered_stdio = 0;
     }

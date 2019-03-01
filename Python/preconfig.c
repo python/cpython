@@ -709,7 +709,7 @@ preconfig_init_stdio_encoding(_PyPreConfig *config)
 
 
 void
-_PreConfig_GetEnvFlag(_PyPreConfig *config, int *flag, const char *name)
+_PyPreConfig_GetEnvFlag(_PyPreConfig *config, int *flag, const char *name)
 {
     const char *var = _PyPreConfig_GetEnv(config, name);
     if (!var) {
@@ -740,9 +740,9 @@ preconfig_read_env_vars(_PyPreConfig *config)
     }
 
 #ifdef MS_WINDOWS
-    _PreConfig_GetEnvFlag(config, &config->legacy_windows_fs_encoding,
+    _PyPreConfig_GetEnvFlag(config, &config->legacy_windows_fs_encoding,
                  "PYTHONLEGACYWINDOWSFSENCODING");
-    _PreConfig_GetEnvFlag(config, &config->legacy_windows_stdio,
+    _PyPreConfig_GetEnvFlag(config, &config->legacy_windows_stdio,
                  "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 

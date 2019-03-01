@@ -23,7 +23,7 @@ PyAPI_FUNC(void) _PyPreConfig_GetGlobalConfig(_PyPreConfig *config);
 PyAPI_FUNC(void) _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_InitFromArgv(_PyPreConfig *config, const _PyArgv *args);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_SetAllocator(_PyPreConfig *config);
-PyAPI_FUNC(void) _PreConfig_GetEnvFlag(_PyPreConfig *config, int *flag, const char *name);
+PyAPI_FUNC(void) _PyPreConfig_GetEnvFlag(_PyPreConfig *config, int *flag, const char *name);
 
 /* _PyCoreConfig */
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig);
