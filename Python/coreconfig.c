@@ -136,13 +136,6 @@ int Py_LegacyWindowsFSEncodingFlag = 0; /* Uses mbcs instead of utf-8 */
 int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
 
-/* The filesystem encoding is chosen by config_init_fs_encoding(),
-   see also initfsencoding(). */
-const char *Py_FileSystemDefaultEncoding = NULL;
-int Py_HasFileSystemDefaultEncoding = 0;
-const char *Py_FileSystemDefaultEncodeErrors = NULL;
-static int _Py_HasFileSystemDefaultEncodeErrors = 0;
-
 
 PyObject *
 _Py_GetGlobalVariablesAsDict(void)
@@ -293,49 +286,6 @@ _Py_wstrlist_as_pylist(int len, wchar_t **list)
         PyList_SET_ITEM(pylist, i, v);
     }
     return pylist;
-}
-
-
-void
-_Py_ClearFileSystemEncoding(void)
-{
-    if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
-        PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
-        Py_FileSystemDefaultEncoding = NULL;
-    }
-    if (!_Py_HasFileSystemDefaultEncodeErrors && Py_FileSystemDefaultEncodeErrors) {
-        PyMem_RawFree((char*)Py_FileSystemDefaultEncodeErrors);
-        Py_FileSystemDefaultEncodeErrors = NULL;
-    }
-}
-
-
-/* --- File system encoding/errors -------------------------------- */
-
-/* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-   global configuration variables. */
-int
-_Py_SetFileSystemEncoding(const char *encoding, const char *errors)
-{
-    char *encoding2 = _PyMem_RawStrdup(encoding);
-    if (encoding2 == NULL) {
-        return -1;
-    }
-
-    char *errors2 = _PyMem_RawStrdup(errors);
-    if (errors2 == NULL) {
-        PyMem_RawFree(encoding2);
-        return -1;
-    }
-
-    _Py_ClearFileSystemEncoding();
-
-    Py_FileSystemDefaultEncoding = encoding2;
-    Py_HasFileSystemDefaultEncoding = 0;
-
-    Py_FileSystemDefaultEncodeErrors = errors2;
-    _Py_HasFileSystemDefaultEncodeErrors = 0;
-    return 0;
 }
 
 
@@ -1849,6 +1799,7 @@ fail:
 
 typedef struct {
     const _PyArgv *args;
+    int argc;
     wchar_t **argv;
     int nwarnoption;             /* Number of -W command line options */
     wchar_t **warnoptions;       /* Command line -W options */
@@ -1881,35 +1832,7 @@ static _PyInitError
 cmdline_decode_argv(_PyCmdline *cmdline)
 {
     assert(cmdline->argv == NULL);
-
-    const _PyArgv *args = cmdline->args;
-
-    if (args->use_bytes_argv) {
-        /* +1 for a the NULL terminator */
-        size_t size = sizeof(wchar_t*) * (args->argc + 1);
-        wchar_t** argv = (wchar_t **)PyMem_RawMalloc(size);
-        if (argv == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-
-        for (int i = 0; i < args->argc; i++) {
-            size_t len;
-            wchar_t *arg = Py_DecodeLocale(args->bytes_argv[i], &len);
-            if (arg == NULL) {
-                _Py_wstrlist_clear(i, argv);
-                return DECODE_LOCALE_ERR("command line arguments",
-                                         (Py_ssize_t)len);
-            }
-            argv[i] = arg;
-        }
-        argv[args->argc] = NULL;
-
-        cmdline->argv = argv;
-    }
-    else {
-        cmdline->argv = args->wchar_argv;
-    }
-    return _Py_INIT_OK();
+    return _PyArgv_Decode(cmdline->args, &cmdline->argv);
 }
 
 
@@ -2377,7 +2300,7 @@ config_read_from_argv_impl(_PyCoreConfig *config, const _PyArgv *args)
     memset(&cmdline, 0, sizeof(cmdline));
     cmdline.args = args;
 
-    err = cmdline_decode_argv(&cmdline);
+    err = _PyArgv_Decode(cmdline.args, &cmdline.argv);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }

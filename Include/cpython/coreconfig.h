@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-/* _PyArgv */
+/* --- _PyArgv ---------------------------------------------------- */
 
 typedef struct {
     int argc;
@@ -15,7 +15,7 @@ typedef struct {
 } _PyArgv;
 
 
-/* _PyInitError */
+/* --- _PyInitError ----------------------------------------------- */
 
 typedef struct {
     const char *prefix;
@@ -46,7 +46,7 @@ typedef struct {
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL || err.exitcode != -1)
 
-/* _PyCoreConfig */
+/* --- _PyCoreConfig ---------------------------------------------- */
 
 typedef struct {
     /* Install signal handlers? Yes by default. */
@@ -364,7 +364,8 @@ typedef struct {
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 
-/* Functions used for testing */
+/* --- Function used for testing ---------------------------------- */
+
 PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
 PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
 
