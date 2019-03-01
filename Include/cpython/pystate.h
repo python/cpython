@@ -30,6 +30,9 @@ typedef struct {
     (_PyMainInterpreterConfig){.install_signal_handlers = -1}
 /* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
 
+PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
+
 PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(PyInterpreterState *);
 PyAPI_FUNC(_PyMainInterpreterConfig *) _PyInterpreterState_GetMainConfig(PyInterpreterState *);
 

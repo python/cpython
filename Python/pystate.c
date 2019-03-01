@@ -418,7 +418,7 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     int64_t refcount = interp->id_refcount;
     PyThread_release_lock(interp->id_mutex);
 
-    if (refcount == 0) {
+    if (refcount == 0 && interp->requires_idref) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?
@@ -426,6 +426,18 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
         Py_EndInterpreter(tstate);
         PyThreadState_Swap(save_tstate);
     }
+}
+
+int
+_PyInterpreterState_RequiresIDRef(PyInterpreterState *interp)
+{
+    return interp->requires_idref;
+}
+
+void
+_PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
+{
+    interp->requires_idref = required ? 1 : 0;
 }
 
 _PyCoreConfig *

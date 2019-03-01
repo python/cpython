@@ -29,6 +29,7 @@ struct _is {
 
     int64_t id;
     int64_t id_refcount;
+    int requires_idref;
     PyThread_type_lock id_mutex;
 
     int finalizing;
