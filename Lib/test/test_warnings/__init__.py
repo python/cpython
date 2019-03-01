@@ -878,7 +878,8 @@ class WarningsDisplayTests(BaseTest):
         self.assertEqual(expect, file_object.getvalue())
 
     def test_formatwarning_override(self):
-        # bpo-35178: Test custom formatwarning can receive line as positional
+        # bpo-35178: Test that a custom formatwarning function gets the 'line'
+        # argument as a positional argument, and not only as a keyword argument
         def myformatwarning(message, category, filename, lineno, text):
             return f'm={message}:c={category}:f={filename}:l={lineno}:t={text}'
 
