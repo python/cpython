@@ -234,6 +234,7 @@ class PyBuildExt(build_ext):
         self.srcdir = None
         self.lib_dirs = None
         self.inc_dirs = None
+        self.config_h_vars = None
         self.failed = []
         self.failed_on_import = []
         self.missing = []
@@ -558,7 +559,7 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
-    def detect_modules(self):
+    def add_compiler_directories(self):
         # Ensure that /usr/local is always used, but the local build
         # directories (i.e. '.' and 'Include') must be first.  See issue
         # 10520.
@@ -589,6 +590,7 @@ class PyBuildExt(build_ext):
                     for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
 
+    def init_inc_lib_dirs(self):
         if (not CROSS_COMPILING and
                 os.path.normpath(sys.base_prefix) != '/usr' and
                 not sysconfig.get_config_var('PYTHONFRAMEWORK')):
@@ -621,7 +623,7 @@ class PyBuildExt(build_ext):
 
         config_h = sysconfig.get_config_h_filename()
         with open(config_h) as file:
-            config_h_vars = sysconfig.parse_config_h(file)
+            self.config_h_vars = sysconfig.parse_config_h(file)
 
         # OSF/1 and Unixware have some stuff in /usr/ccs/lib (like -ldb)
         if HOST_PLATFORM in ['osf1', 'unixware7', 'openunix8']:
@@ -649,6 +651,7 @@ class PyBuildExt(build_ext):
                 if item.startswith('-L'):
                     self.lib_dirs.append(item[2:])
 
+    def detect_simple_extensions(self):
         #
         # The following modules are all pretty straightforward, and compile
         # on pretty much any POSIXish platform.
@@ -728,7 +731,7 @@ class PyBuildExt(build_ext):
 
         # fcntl(2) and ioctl(2)
         libs = []
-        if (config_h_vars.get('FLOCK_NEEDS_LIBBSD', False)):
+        if (self.config_h_vars.get('FLOCK_NEEDS_LIBBSD', False)):
             # May be necessary on AIX for flock function
             libs = ['bsd']
         self.add(Extension('fcntl', ['fcntlmodule.c'],
@@ -739,8 +742,8 @@ class PyBuildExt(build_ext):
         if not VXWORKS:
             self.add(Extension('grp', ['grpmodule.c']))
         # spwd, shadow passwords
-        if (config_h_vars.get('HAVE_GETSPNAM', False) or
-                config_h_vars.get('HAVE_GETSPENT', False)):
+        if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
+                self.config_h_vars.get('HAVE_GETSPENT', False)):
             self.add(Extension('spwd', ['spwdmodule.c']))
         else:
             self.missing.append('spwd')
@@ -785,6 +788,13 @@ class PyBuildExt(build_ext):
         self.add(Extension('audioop', ['audioop.c'],
                            libraries=['m']))
 
+        # CSV files
+        self.add(Extension('_csv', ['_csv.c']))
+
+        # POSIX subprocess module helper.
+        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
+
+    def detect_readline_curses(self):
         # readline
         do_readline = self.compiler.find_library_file(self.lib_dirs, 'readline')
         readline_termcap_library = ""
@@ -868,8 +878,65 @@ class PyBuildExt(build_ext):
         else:
             self.missing.append('readline')
 
-        # crypt module.
+        # Curses support, requiring the System V version of curses, often
+        # provided by the ncurses library.
+        curses_defines = []
+        curses_includes = []
+        panel_library = 'panel'
+        if curses_library == 'ncursesw':
+            curses_defines.append(('HAVE_NCURSESW', '1'))
+            if not CROSS_COMPILING:
+                curses_includes.append('/usr/include/ncursesw')
+            # Bug 1464056: If _curses.so links with ncursesw,
+            # _curses_panel.so must link with panelw.
+            panel_library = 'panelw'
+            if MACOS:
+                # On OS X, there is no separate /usr/lib/libncursesw nor
+                # libpanelw.  If we are here, we found a locally-supplied
+                # version of libncursesw.  There should also be a
+                # libpanelw.  _XOPEN_SOURCE defines are usually excluded
+                # for OS X but we need _XOPEN_SOURCE_EXTENDED here for
+                # ncurses wide char support
+                curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
+        elif MACOS and curses_library == 'ncurses':
+            # Building with the system-suppied combined libncurses/libpanel
+            curses_defines.append(('HAVE_NCURSESW', '1'))
+            curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
 
+        if curses_library.startswith('ncurses'):
+            curses_libs = [curses_library]
+            self.add(Extension('_curses', ['_cursesmodule.c'],
+                               include_dirs=curses_includes,
+                               define_macros=curses_defines,
+                               libraries=curses_libs))
+        elif curses_library == 'curses' and not MACOS:
+                # OSX has an old Berkeley curses, not good enough for
+                # the _curses module.
+            if (self.compiler.find_library_file(self.lib_dirs, 'terminfo')):
+                curses_libs = ['curses', 'terminfo']
+            elif (self.compiler.find_library_file(self.lib_dirs, 'termcap')):
+                curses_libs = ['curses', 'termcap']
+            else:
+                curses_libs = ['curses']
+
+            self.add(Extension('_curses', ['_cursesmodule.c'],
+                               define_macros=curses_defines,
+                               libraries=curses_libs))
+        else:
+            self.missing.append('_curses')
+
+        # If the curses module is enabled, check for the panel module
+        if (module_enabled(self.extensions, '_curses') and
+            self.compiler.find_library_file(self.lib_dirs, panel_library)):
+            self.add(Extension('_curses_panel', ['_curses_panel.c'],
+                               include_dirs=curses_includes,
+                               define_macros=curses_defines,
+                               libraries=[panel_library, *curses_libs]))
+        else:
+            self.missing.append('_curses_panel')
+
+    def detect_crypt(self):
+        # crypt module.
         if self.compiler.find_library_file(self.lib_dirs, 'crypt'):
             libs = ['crypt']
         else:
@@ -883,12 +950,7 @@ class PyBuildExt(build_ext):
             self.add(Extension('_crypt', ['_cryptmodule.c'],
                                libraries=libs))
 
-        # CSV files
-        self.add(Extension('_csv', ['_csv.c']))
-
-        # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
-
+    def detect_socket(self):
         # socket(2)
         if not VXWORKS:
             self.add(Extension('_socket', ['socketmodule.c'],
@@ -899,38 +961,7 @@ class PyBuildExt(build_ext):
                                depends=['socketmodule.h'],
                                libraries=libs))
 
-        # Detect SSL support for the socket module (via _ssl)
-        self._detect_openssl()
-
-        # We always compile these even when OpenSSL is available (issue #14693).
-        # It's harmless and the object code is tiny (40-50 KiB per module,
-        # only loaded when actually used).
-        self.add(Extension('_sha256', ['sha256module.c'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_sha512', ['sha512module.c'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_md5', ['md5module.c'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_sha1', ['sha1module.c'],
-                           depends=['hashlib.h']))
-
-        blake2_deps = glob(os.path.join(self.srcdir,
-                                        'Modules/_blake2/impl/*'))
-        blake2_deps.append('hashlib.h')
-
-        self.add(Extension('_blake2',
-                           ['_blake2/blake2module.c',
-                            '_blake2/blake2b_impl.c',
-                            '_blake2/blake2s_impl.c'],
-                           depends=blake2_deps))
-
-        sha3_deps = glob(os.path.join(self.srcdir,
-                                      'Modules/_sha3/kcp/*'))
-        sha3_deps.append('hashlib.h')
-        self.add(Extension('_sha3',
-                           ['_sha3/sha3module.c'],
-                           depends=sha3_deps))
-
+    def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
         # your machine, though none are defined by default because of library
@@ -1138,6 +1169,91 @@ class PyBuildExt(build_ext):
             dblibs = []
             dblib_dir = None
 
+        dbm_setup_debug = False   # verbose debug prints from this script?
+        dbm_order = ['gdbm']
+        # The standard Unix dbm module:
+        if not CYGWIN:
+            config_args = [arg.strip("'")
+                           for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
+            dbm_args = [arg for arg in config_args
+                        if arg.startswith('--with-dbmliborder=')]
+            if dbm_args:
+                dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
+            else:
+                dbm_order = "ndbm:gdbm:bdb".split(":")
+            dbmext = None
+            for cand in dbm_order:
+                if cand == "ndbm":
+                    if find_file("ndbm.h", self.inc_dirs, []) is not None:
+                        # Some systems have -lndbm, others have -lgdbm_compat,
+                        # others don't have either
+                        if self.compiler.find_library_file(self.lib_dirs,
+                                                               'ndbm'):
+                            ndbm_libs = ['ndbm']
+                        elif self.compiler.find_library_file(self.lib_dirs,
+                                                             'gdbm_compat'):
+                            ndbm_libs = ['gdbm_compat']
+                        else:
+                            ndbm_libs = []
+                        if dbm_setup_debug: print("building dbm using ndbm")
+                        dbmext = Extension('_dbm', ['_dbmmodule.c'],
+                                           define_macros=[
+                                               ('HAVE_NDBM_H',None),
+                                               ],
+                                           libraries=ndbm_libs)
+                        break
+
+                elif cand == "gdbm":
+                    if self.compiler.find_library_file(self.lib_dirs, 'gdbm'):
+                        gdbm_libs = ['gdbm']
+                        if self.compiler.find_library_file(self.lib_dirs,
+                                                               'gdbm_compat'):
+                            gdbm_libs.append('gdbm_compat')
+                        if find_file("gdbm/ndbm.h", self.inc_dirs, []) is not None:
+                            if dbm_setup_debug: print("building dbm using gdbm")
+                            dbmext = Extension(
+                                '_dbm', ['_dbmmodule.c'],
+                                define_macros=[
+                                    ('HAVE_GDBM_NDBM_H', None),
+                                    ],
+                                libraries = gdbm_libs)
+                            break
+                        if find_file("gdbm-ndbm.h", self.inc_dirs, []) is not None:
+                            if dbm_setup_debug: print("building dbm using gdbm")
+                            dbmext = Extension(
+                                '_dbm', ['_dbmmodule.c'],
+                                define_macros=[
+                                    ('HAVE_GDBM_DASH_NDBM_H', None),
+                                    ],
+                                libraries = gdbm_libs)
+                            break
+                elif cand == "bdb":
+                    if dblibs:
+                        if dbm_setup_debug: print("building dbm using bdb")
+                        dbmext = Extension('_dbm', ['_dbmmodule.c'],
+                                           library_dirs=dblib_dir,
+                                           runtime_library_dirs=dblib_dir,
+                                           include_dirs=db_incs,
+                                           define_macros=[
+                                               ('HAVE_BERKDB_H', None),
+                                               ('DB_DBM_HSEARCH', None),
+                                               ],
+                                           libraries=dblibs)
+                        break
+            if dbmext is not None:
+                self.add(dbmext)
+            else:
+                self.missing.append('_dbm')
+
+        # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
+        if ('gdbm' in dbm_order and
+            self.compiler.find_library_file(self.lib_dirs, 'gdbm')):
+            self.add(Extension('_gdbm', ['_gdbmmodule.c'],
+                               libraries=['gdbm']))
+        else:
+            self.missing.append('_gdbm')
+
+    def detect_sqlite(self):
         # The sqlite interface
         sqlite_setup_debug = False   # verbose debug prints from this script?
 
@@ -1254,90 +1370,7 @@ class PyBuildExt(build_ext):
         else:
             self.missing.append('_sqlite3')
 
-        dbm_setup_debug = False   # verbose debug prints from this script?
-        dbm_order = ['gdbm']
-        # The standard Unix dbm module:
-        if not CYGWIN:
-            config_args = [arg.strip("'")
-                           for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
-            dbm_args = [arg for arg in config_args
-                        if arg.startswith('--with-dbmliborder=')]
-            if dbm_args:
-                dbm_order = [arg.split('=')[-1] for arg in dbm_args][-1].split(":")
-            else:
-                dbm_order = "ndbm:gdbm:bdb".split(":")
-            dbmext = None
-            for cand in dbm_order:
-                if cand == "ndbm":
-                    if find_file("ndbm.h", self.inc_dirs, []) is not None:
-                        # Some systems have -lndbm, others have -lgdbm_compat,
-                        # others don't have either
-                        if self.compiler.find_library_file(self.lib_dirs,
-                                                               'ndbm'):
-                            ndbm_libs = ['ndbm']
-                        elif self.compiler.find_library_file(self.lib_dirs,
-                                                             'gdbm_compat'):
-                            ndbm_libs = ['gdbm_compat']
-                        else:
-                            ndbm_libs = []
-                        if dbm_setup_debug: print("building dbm using ndbm")
-                        dbmext = Extension('_dbm', ['_dbmmodule.c'],
-                                           define_macros=[
-                                               ('HAVE_NDBM_H',None),
-                                               ],
-                                           libraries=ndbm_libs)
-                        break
-
-                elif cand == "gdbm":
-                    if self.compiler.find_library_file(self.lib_dirs, 'gdbm'):
-                        gdbm_libs = ['gdbm']
-                        if self.compiler.find_library_file(self.lib_dirs,
-                                                               'gdbm_compat'):
-                            gdbm_libs.append('gdbm_compat')
-                        if find_file("gdbm/ndbm.h", self.inc_dirs, []) is not None:
-                            if dbm_setup_debug: print("building dbm using gdbm")
-                            dbmext = Extension(
-                                '_dbm', ['_dbmmodule.c'],
-                                define_macros=[
-                                    ('HAVE_GDBM_NDBM_H', None),
-                                    ],
-                                libraries = gdbm_libs)
-                            break
-                        if find_file("gdbm-ndbm.h", self.inc_dirs, []) is not None:
-                            if dbm_setup_debug: print("building dbm using gdbm")
-                            dbmext = Extension(
-                                '_dbm', ['_dbmmodule.c'],
-                                define_macros=[
-                                    ('HAVE_GDBM_DASH_NDBM_H', None),
-                                    ],
-                                libraries = gdbm_libs)
-                            break
-                elif cand == "bdb":
-                    if dblibs:
-                        if dbm_setup_debug: print("building dbm using bdb")
-                        dbmext = Extension('_dbm', ['_dbmmodule.c'],
-                                           library_dirs=dblib_dir,
-                                           runtime_library_dirs=dblib_dir,
-                                           include_dirs=db_incs,
-                                           define_macros=[
-                                               ('HAVE_BERKDB_H', None),
-                                               ('DB_DBM_HSEARCH', None),
-                                               ],
-                                           libraries=dblibs)
-                        break
-            if dbmext is not None:
-                self.add(dbmext)
-            else:
-                self.missing.append('_dbm')
-
-        # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
-        if ('gdbm' in dbm_order and
-            self.compiler.find_library_file(self.lib_dirs, 'gdbm')):
-            self.add(Extension('_gdbm', ['_gdbmmodule.c'],
-                               libraries=['gdbm']))
-        else:
-            self.missing.append('_gdbm')
-
+    def detect_platform_specific_exts(self):
         # Unix-only modules
         if not MS_WINDOWS:
             if not VXWORKS:
@@ -1348,65 +1381,19 @@ class PyBuildExt(build_ext):
         else:
             self.missing.extend(['resource', 'termios'])
 
-        self._detect_nis()
-
-        # Curses support, requiring the System V version of curses, often
-        # provided by the ncurses library.
-        curses_defines = []
-        curses_includes = []
-        panel_library = 'panel'
-        if curses_library == 'ncursesw':
-            curses_defines.append(('HAVE_NCURSESW', '1'))
-            if not CROSS_COMPILING:
-                curses_includes.append('/usr/include/ncursesw')
-            # Bug 1464056: If _curses.so links with ncursesw,
-            # _curses_panel.so must link with panelw.
-            panel_library = 'panelw'
-            if MACOS:
-                # On OS X, there is no separate /usr/lib/libncursesw nor
-                # libpanelw.  If we are here, we found a locally-supplied
-                # version of libncursesw.  There should also be a
-                # libpanelw.  _XOPEN_SOURCE defines are usually excluded
-                # for OS X but we need _XOPEN_SOURCE_EXTENDED here for
-                # ncurses wide char support
-                curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
-        elif MACOS and curses_library == 'ncurses':
-            # Building with the system-suppied combined libncurses/libpanel
-            curses_defines.append(('HAVE_NCURSESW', '1'))
-            curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
-
-        if curses_library.startswith('ncurses'):
-            curses_libs = [curses_library]
-            self.add(Extension('_curses', ['_cursesmodule.c'],
-                               include_dirs=curses_includes,
-                               define_macros=curses_defines,
-                               libraries=curses_libs))
-        elif curses_library == 'curses' and not MACOS:
-                # OSX has an old Berkeley curses, not good enough for
-                # the _curses module.
-            if (self.compiler.find_library_file(self.lib_dirs, 'terminfo')):
-                curses_libs = ['curses', 'terminfo']
-            elif (self.compiler.find_library_file(self.lib_dirs, 'termcap')):
-                curses_libs = ['curses', 'termcap']
-            else:
-                curses_libs = ['curses']
-
-            self.add(Extension('_curses', ['_cursesmodule.c'],
-                               define_macros=curses_defines,
-                               libraries=curses_libs))
+        # Platform-specific libraries
+        if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
+            self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
         else:
-            self.missing.append('_curses')
+            self.missing.append('ossaudiodev')
 
-        # If the curses module is enabled, check for the panel module
-        if (module_enabled(self.extensions, '_curses') and
-            self.compiler.find_library_file(self.lib_dirs, panel_library)):
-            self.add(Extension('_curses_panel', ['_curses_panel.c'],
-                               include_dirs=curses_includes,
-                               define_macros=curses_defines,
-                               libraries=[panel_library, *curses_libs]))
-        else:
-            self.missing.append('_curses_panel')
+        if MACOS:
+            self.add(Extension('_scproxy', ['_scproxy.c'],
+                               extra_link_args=[
+                                   '-framework', 'SystemConfiguration',
+                                   '-framework', 'CoreFoundation']))
 
+    def detect_compress_exts(self):
         # Andrew Kuchling's zlib module.  Note that some versions of zlib
         # 1.1.3 have security problems.  See CERT Advisory CA-2002-07:
         # http://www.cert.org/advisories/CA-2002-07.html
@@ -1486,6 +1473,7 @@ class PyBuildExt(build_ext):
         else:
             self.missing.append('_lzma')
 
+    def detect_expat_elementtree(self):
         # Interface to the Expat XML parser
         #
         # Expat was written by James Clark and is now maintained by a group of
@@ -1559,6 +1547,7 @@ class PyBuildExt(build_ext):
         else:
             self.missing.append('_elementtree')
 
+    def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
         self.add(Extension('_multibytecodec',
                            ['cjkcodecs/multibytecodec.c']))
@@ -1566,12 +1555,7 @@ class PyBuildExt(build_ext):
             self.add(Extension('_codecs_%s' % loc,
                                ['cjkcodecs/_codecs_%s.c' % loc]))
 
-        # Stefan Krah's _decimal module
-        self._detect_decimal()
-
-        # Thomas Heller's _ctypes module
-        self.detect_ctypes()
-
+    def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
         if MS_WINDOWS:
             macros = dict()
@@ -1624,26 +1608,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_multiprocessing', multiprocessing_srcs,
                            define_macros=list(macros.items()),
                            include_dirs=["Modules/_multiprocessing"]))
-        # End multiprocessing
 
-        # Platform-specific libraries
-        if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
-            self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        else:
-            self.missing.append('ossaudiodev')
-
-        if MACOS:
-            self.add(Extension('_scproxy', ['_scproxy.c'],
-                               extra_link_args=[
-                                   '-framework', 'SystemConfiguration',
-                                   '-framework', 'CoreFoundation']))
-
-        # Call the method for detecting whether _tkinter can be compiled
-        self.detect_tkinter()
-
-        if '_tkinter' not in [e.name for e in self.extensions]:
-            self.missing.append('_tkinter')
-
+    def detect_uuid(self):
         # Build the _uuid module if possible
         uuid_incs = find_file("uuid.h", self.inc_dirs, ["/usr/include/uuid"])
         if uuid_incs is not None:
@@ -1656,6 +1622,29 @@ class PyBuildExt(build_ext):
                                    include_dirs=uuid_incs))
         else:
             self.missing.append('_uuid')
+
+    def detect_modules(self):
+        self.add_compiler_directories()
+        self.init_inc_lib_dirs()
+
+        self.detect_simple_extensions()
+        self.detect_readline_curses()
+        self.detect_crypt()
+        self.detect_socket()
+        self.detect_openssl_hashlib()
+        self.detect_dbm_gdbm()
+        self.detect_sqlite()
+        self.detect_platform_specific_exts()
+        self.detect_nis()
+        self.detect_compress_exts()
+        self.detect_expat_elementtree()
+        self.detect_multibytecodecs()
+        self.detect_decimal()
+        self.detect_ctypes()
+        self.detect_multiprocessing()
+        if not self.detect_tkinter():
+            self.missing.append('_tkinter')
+        self.detect_uuid()
 
 ##         # Uncomment these lines if you want to play with xxmodule.c
 ##         ext = Extension('xx', ['xxmodule.c'])
@@ -1798,14 +1787,13 @@ class PyBuildExt(build_ext):
         # to build tkinter and bypass the searches for Tcl and TK in standard
         # locations.
         if self.detect_tkinter_explicitly():
-            return
+            return True
 
         # Rather than complicate the code below, detecting and building
         # AquaTk is a separate method. Only one Tkinter will be built on
         # Darwin - either AquaTk, if it is found, or X11 based Tk.
-        if (MACOS and
-            self.detect_tkinter_darwin()):
-            return
+        if (MACOS and self.detect_tkinter_darwin()):
+            return True
 
         # Assume we haven't found any of the libraries or include files
         # The versions with dots are used on Unix, and the versions without
@@ -1842,7 +1830,7 @@ class PyBuildExt(build_ext):
         if (tcllib is None or tklib is None or
             tcl_includes is None or tk_includes is None):
             self.announce("INFO: Can't locate Tcl/Tk libs and/or headers", 2)
-            return
+            return False
 
         # OK... everything seems to be present for Tcl/Tk.
 
@@ -1871,7 +1859,7 @@ class PyBuildExt(build_ext):
         if CYGWIN:
             x11_inc = find_file('X11/Xlib.h', [], include_dirs)
             if x11_inc is None:
-                return
+                return False
 
         # Check for BLT extension
         if self.compiler.find_library_file(self.lib_dirs + added_lib_dirs,
@@ -1894,14 +1882,6 @@ class PyBuildExt(build_ext):
         if not CYGWIN:
             libs.append('X11')
 
-        ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                        define_macros=[('WITH_APPINIT', 1)] + defs,
-                        include_dirs = include_dirs,
-                        libraries = libs,
-                        library_dirs = added_lib_dirs,
-                        )
-        self.extensions.append(ext)
-
         # XXX handle these, but how to detect?
         # *** Uncomment and edit for PIL (TkImaging) extension only:
         #       -DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
@@ -1909,6 +1889,15 @@ class PyBuildExt(build_ext):
         #       -DWITH_TOGL togl.c \
         # *** Uncomment these for TOGL extension only:
         #       -lGL -lGLU -lXext -lXmu \
+
+        ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
+                        define_macros=[('WITH_APPINIT', 1)] + defs,
+                        include_dirs = include_dirs,
+                        libraries = libs,
+                        library_dirs = added_lib_dirs,
+                        )
+        self.extensions.append(ext)
+        return True
 
     def configure_ctypes_darwin(self, ext):
         # Darwin (OS X) uses preconfigured files, in
@@ -1945,6 +1934,7 @@ class PyBuildExt(build_ext):
         return True
 
     def detect_ctypes(self):
+        # Thomas Heller's _ctypes module
         self.use_system_libffi = False
         include_dirs = []
         extra_compile_args = []
@@ -1961,8 +1951,8 @@ class PyBuildExt(build_ext):
             sources.append('_ctypes/darwin/dlfcn_simple.c')
             extra_compile_args.append('-DMACOSX')
             include_dirs.append('_ctypes/darwin')
-# XXX Is this still needed?
-##            extra_link_args.extend(['-read_only_relocs', 'warning'])
+            # XXX Is this still needed?
+            # extra_link_args.extend(['-read_only_relocs', 'warning'])
 
         elif HOST_PLATFORM == 'sunos5':
             # XXX This shouldn't be necessary; it appears that some
@@ -2023,7 +2013,8 @@ class PyBuildExt(build_ext):
             # for dlopen, see bpo-32647
             ext.libraries.append('dl')
 
-    def _detect_decimal(self):
+    def detect_decimal(self):
+        # Stefan Krah's _decimal module
         extra_compile_args = []
         undef_macros = []
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
@@ -2138,7 +2129,8 @@ class PyBuildExt(build_ext):
                            sources=sources,
                            depends=depends))
 
-    def _detect_openssl(self):
+    def detect_openssl_hashlib(self):
+        # Detect SSL support for the socket module (via _ssl)
         config_vars = sysconfig.get_config_vars()
 
         def split_var(name, sep):
@@ -2189,7 +2181,36 @@ class PyBuildExt(build_ext):
                            library_dirs=openssl_libdirs,
                            libraries=openssl_libs))
 
-    def _detect_nis(self):
+        # We always compile these even when OpenSSL is available (issue #14693).
+        # It's harmless and the object code is tiny (40-50 KiB per module,
+        # only loaded when actually used).
+        self.add(Extension('_sha256', ['sha256module.c'],
+                           depends=['hashlib.h']))
+        self.add(Extension('_sha512', ['sha512module.c'],
+                           depends=['hashlib.h']))
+        self.add(Extension('_md5', ['md5module.c'],
+                           depends=['hashlib.h']))
+        self.add(Extension('_sha1', ['sha1module.c'],
+                           depends=['hashlib.h']))
+
+        blake2_deps = glob(os.path.join(self.srcdir,
+                                        'Modules/_blake2/impl/*'))
+        blake2_deps.append('hashlib.h')
+
+        self.add(Extension('_blake2',
+                           ['_blake2/blake2module.c',
+                            '_blake2/blake2b_impl.c',
+                            '_blake2/blake2s_impl.c'],
+                           depends=blake2_deps))
+
+        sha3_deps = glob(os.path.join(self.srcdir,
+                                      'Modules/_sha3/kcp/*'))
+        sha3_deps.append('hashlib.h')
+        self.add(Extension('_sha3',
+                           ['_sha3/sha3module.c'],
+                           depends=sha3_deps))
+
+    def detect_nis(self):
         if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':
             self.missing.append('nis')
             return
