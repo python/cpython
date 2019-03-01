@@ -1,3 +1,7 @@
+REM tested with cygwin-x86 from https://www.cygwin.com/install.html
+REM select http://mirrors.kernel.org as the download site
+REM include the following packages: make, autoconf, automake, libtool
+
 if not exist c:\cygwin\bin\sh.exe (echo ERROR cygwin-x86 is required to run this script)
 set LIBFFI_SOURCE=e:\git\libffi
 set MSVCC=/cygdrive/e/git/libffi/msvcc.sh
