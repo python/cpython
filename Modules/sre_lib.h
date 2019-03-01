@@ -478,20 +478,20 @@ do { \
     DATA_STACK_LOOKUP_AT(state,t,p,pos)
 
 #define MARK_PUSH(lastmark) \
-    do if (lastmark > 0) { \
+    do if (lastmark >= 0) { \
         i = lastmark; /* ctx->lastmark may change if reallocated */ \
         DATA_STACK_PUSH(state, state->mark, (i+1)*sizeof(void*)); \
     } while (0)
 #define MARK_POP(lastmark) \
-    do if (lastmark > 0) { \
+    do if (lastmark >= 0) { \
         DATA_STACK_POP(state, state->mark, (lastmark+1)*sizeof(void*), 1); \
     } while (0)
 #define MARK_POP_KEEP(lastmark) \
-    do if (lastmark > 0) { \
+    do if (lastmark >= 0) { \
         DATA_STACK_POP(state, state->mark, (lastmark+1)*sizeof(void*), 0); \
     } while (0)
 #define MARK_POP_DISCARD(lastmark) \
-    do if (lastmark > 0) { \
+    do if (lastmark >= 0) { \
         DATA_STACK_POP_DISCARD(state, (lastmark+1)*sizeof(void*)); \
     } while (0)
 

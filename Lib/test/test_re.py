@@ -2106,10 +2106,10 @@ ELSE
         # =====================================================
         # macro MARK_PUSH(lastmark) bug, reported in issue35859
         # =====================================================
-        self.assertEqual(re.match(r'(ab|a)*?b', 'ab').groups(), ('',))
-        self.assertEqual(re.match(r'(ab|a)+?b', 'ab').groups(), ('',))
-        self.assertEqual(re.match(r'(ab|a){0,2}?b', 'ab').groups(), ('',))
-        self.assertEqual(re.match(r'(.b|a)*?b', 'ab').groups(), ('',))
+        self.assertEqual(re.match(r'(ab|a)*?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(ab|a)+?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(ab|a){0,2}?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(.b|a)*?b', 'ab').groups(), ('a',))
 
         # =======================================================
         # JUMP_MIN_UNTIL_3 should LASTMARK_SAVE() and MARK_PUSH()
