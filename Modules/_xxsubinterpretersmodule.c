@@ -1997,6 +1997,7 @@ interp_create(PyObject *self, PyObject *args)
         PyThreadState_Swap(save_tstate);
         return NULL;
     }
+    _PyInterpreterState_RequireIDRef(tstate->interp, 1);
     return idobj;
 }
 
