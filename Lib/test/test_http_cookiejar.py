@@ -6,6 +6,7 @@ import test.support
 import time
 import unittest
 import urllib.request
+import pathlib
 
 from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      parse_ns_headers, join_header_words, split_header_words, Cookie,
@@ -313,6 +314,30 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
 
 
 class FileCookieJarTests(unittest.TestCase):
+    def test_constructor_with_str(self):
+        filename = test.support.TESTFN
+        c = LWPCookieJar(filename)
+        self.assertEqual(c.filename, filename)
+
+    def test_constructor_with_path_like(self):
+        filename = pathlib.Path(test.support.TESTFN)
+        c = LWPCookieJar(filename)
+        self.assertEqual(c.filename, os.fspath(filename))
+
+    def test_constructor_with_none(self):
+        c = LWPCookieJar(None)
+        self.assertIsNone(c.filename)
+
+    def test_constructor_with_other_types(self):
+        class A:
+            pass
+
+        for type_ in (int, float, A):
+            with self.subTest(filename=type_):
+                with self.assertRaises(TypeError):
+                    instance = type_()
+                    c = LWPCookieJar(filename=instance)
+
     def test_lwp_valueless_cookie(self):
         # cookies with no value should be saved and loaded consistently
         filename = test.support.TESTFN
