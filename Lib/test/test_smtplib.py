@@ -1373,5 +1373,70 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
         self.assertEqual(code, 235)
 
 
+class SMTPLibTest(unittest.TestCase):
+
+    """ Tested with local Postfix MTA with different setups.
+    `root` is a valid to_addr while `inv@l.id` is not.
+
+    bpo-36148 won't change `sendmail`-methods behaviour as it
+    just adds an instance attribute named `mta_status_code`
+    to collect the session status codes which will be returned by
+    MTAs."""
+
+    # local postfix instance, default configuration
+    mta = 'localhost'
+    message = 'This is a test'
+    from_addr = 'example@example.com'
+    to_addr = 'root'
+    invalid_to = 'inv@l.id'
+
+    def test_mta_status_code_not_none(self):
+        with smtplib.SMTP(self.mta) as session:
+            session.sendmail(self.from_addr, self.to_addr, self.message)
+            self.assertIsNotNone(session.mta_status_code)
+
+    def test_single_recipient_valid(self):
+        with smtplib.SMTP(self.mta) as session:
+            result = session.sendmail(
+                self.from_addr, self.to_addr, self.message
+            )
+            self.assertEqual(result, {})
+
+    def test_single_recipient_invalid(self):
+        with self.assertRaises(smtplib.SMTPRecipientsRefused):
+            with smtplib.SMTP(self.mta) as session:
+                session.sendmail(
+                    self.from_addr, self.invalid_to, self.message
+                )
+
+    def test_multiple_recipients_valid(self):
+        with smtplib.SMTP(self.mta) as session:
+            result = session.sendmail(
+                self.from_addr, [self.to_addr, self.to_addr], self.message
+            )
+            self.assertEqual(result, {})
+
+    def test_multiple_recipients_invalid(self):
+        with self.assertRaises(smtplib.SMTPRecipientsRefused):
+            with smtplib.SMTP(self.mta) as session:
+                session.sendmail(
+                    self.from_addr, ['recipient1', 'recipient2'], self.message
+                )
+
+    def test_mixed_recipients(self):
+        with smtplib.SMTP(self.mta) as session:
+            result = session.sendmail(
+                self.from_addr,
+                [self.to_addr, self.invalid_to, self.to_addr],
+                self.message
+            )
+            self.assertGreater(len(result), 0)
+
+    def test_missing_arg(self):
+        with self.assertRaises(TypeError):
+            with smtplib.SMTP(self.mta) as session:
+                session.sendmail(self.to_addr, self.message,)
+
+
 if __name__ == '__main__':
     unittest.main()
