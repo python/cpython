@@ -140,16 +140,16 @@ typedef struct {
 } _PyPreConfig;
 
 #ifdef MS_WINDOWS
-#  define _PyCoreConfig_WINDOWS_INIT \
+#  define _PyPreConfig_WINDOWS_INIT \
         .legacy_windows_fs_encoding = -1, \
         .legacy_windows_stdio = -1,
 #else
-#  define _PyCoreConfig_WINDOWS_INIT
+#  define _PyPreConfig_WINDOWS_INIT
 #endif
 
 #define _PyPreConfig_INIT \
     (_PyPreConfig){ \
-        _PyCoreConfig_WINDOWS_INIT \
+        _PyPreConfig_WINDOWS_INIT \
         .use_environment = -1, \
         .isolated = -1, \
         .utf8_mode = -1, \
@@ -360,7 +360,6 @@ typedef struct {
         .quiet = -1, \
         .user_site_directory = -1, \
         .buffered_stdio = -1, \
-        _PyCoreConfig_WINDOWS_INIT \
         ._install_importlib = 1, \
         ._check_hash_pycs_mode = "default", \
         ._frozen = -1}
