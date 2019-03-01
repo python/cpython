@@ -1636,6 +1636,31 @@ sys_getandroidapilevel_impl(PyObject *module)
 #endif   /* ANDROID_API_LEVEL */
 
 
+
+
+/*[clinic input]
+sys.setinspectflag
+
+    flag as new_val: bool
+    /
+
+Set True to inspect interactively after running script.
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_setinspectflag_impl(PyObject *module, int new_val)
+/*[clinic end generated code: output=12e1c926420f9717 input=d21b6f13f637b3a1]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+
+    _PyCoreConfig *config = &interp->core_config;
+    config->inspect = new_val;
+    Py_InspectFlag = new_val;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
@@ -1690,6 +1715,7 @@ static PyMethodDef sys_methods[] = {
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
+    SYS_SETINSPECTFLAG_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

@@ -1019,6 +1019,34 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(ANDROID_API_LEVEL) */
 
+PyDoc_STRVAR(sys_setinspectflag__doc__,
+"setinspectflag($module, flag, /)\n"
+"--\n"
+"\n"
+"Set True to inspect interactively after running script.");
+
+#define SYS_SETINSPECTFLAG_METHODDEF    \
+    {"setinspectflag", (PyCFunction)sys_setinspectflag, METH_O, sys_setinspectflag__doc__},
+
+static PyObject *
+sys_setinspectflag_impl(PyObject *module, int new_val);
+
+static PyObject *
+sys_setinspectflag(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int new_val;
+
+    new_val = PyObject_IsTrue(arg);
+    if (new_val < 0) {
+        goto exit;
+    }
+    return_value = sys_setinspectflag_impl(module, new_val);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1050,4 +1078,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=109787af3401cd27 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=380cc462a417837c input=a9049054013a1b77]*/
