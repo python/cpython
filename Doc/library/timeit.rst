@@ -129,7 +129,7 @@ The module defines three convenience functions and a public class:
 
          By default, :meth:`.timeit` temporarily turns off :term:`garbage
          collection` during the timing.  The advantage of this approach is that
-         it makes independent timings more comparable.  This disadvantage is
+         it makes independent timings more comparable.  The disadvantage is
          that GC may be an important component of the performance of the
          function being measured.  If so, GC can be re-enabled as the first
          statement in the *setup* string.  For example::
