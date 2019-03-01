@@ -48,7 +48,9 @@ def setUpModule():
         except PermissionError as exc:
             raise unittest.SkipTest('unable to create user site directory (%r): %s'
                                     % (site.USER_SITE, exc))
-
+    
+    # sysconfig._CONFIG_VARS is None until the first call to this function
+    sysconfig.get_config_vars()
 
 def tearDownModule():
     sys.path[:] = OLD_SYS_PATH
