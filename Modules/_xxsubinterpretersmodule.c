@@ -2541,10 +2541,6 @@ PyInit__xxsubinterpreters(void)
     if (PyType_Ready(&ChannelIDtype) != 0) {
         return NULL;
     }
-    _PyInterpreterID_Type.tp_base = &PyLong_Type;
-    if (PyType_Ready(&_PyInterpreterID_Type) != 0) {
-        return NULL;
-    }
 
     /* Create the module */
     PyObject *module = PyModule_Create(&interpretersmodule);
