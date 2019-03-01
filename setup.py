@@ -20,6 +20,13 @@ from distutils.errors import CCompilerError, DistutilsError
 from distutils.spawn import find_executable
 
 
+# Compile extensions used to test Python?
+TEST_EXTENSIONS = True
+
+# This global variable is used to hold the list of modules to be disabled.
+DISABLED_MODULE_LIST = []
+
+
 def get_platform():
     # Cross compiling
     if "_PYTHON_HOST_PLATFORM" in os.environ:
@@ -36,14 +43,7 @@ HOST_PLATFORM = get_platform()
 MS_WINDOWS = (HOST_PLATFORM == 'win32')
 CYGWIN = (HOST_PLATFORM == 'cygwin')
 MACOS = (HOST_PLATFORM == 'darwin')
-
 VXWORKS = ('vxworks' in HOST_PLATFORM)
-
-# Were we compiled --with-pydebug or with #define Py_DEBUG?
-COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_ARGS"))
-
-# This global variable is used to hold the list of modules to be disabled.
-DISABLED_MODULE_LIST = []
 
 
 SUMMARY = """
@@ -240,13 +240,6 @@ def find_library_file(compiler, libname, std_dirs, paths):
             return [p]
     else:
         assert False, "Internal error: Path not found in std_dirs or paths"
-
-
-def module_enabled(extlist, modname):
-    """Returns whether the module 'modname' is present in the list
-    of extensions 'extlist'."""
-    extlist = [ext for ext in extlist if ext.name == modname]
-    return len(extlist)
 
 
 def find_module_file(module, dirlist):
@@ -592,18 +585,7 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
-    def add_compiler_directories(self):
-        # Ensure that /usr/local is always used, but the local build
-        # directories (i.e. '.' and 'Include') must be first.  See issue
-        # 10520.
-        if not CROSS_COMPILING:
-            add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
-            add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
-        # only change this for cross builds for 3.3, issues on Mageia
-        if CROSS_COMPILING:
-            self.add_cross_compiling_paths()
-        self.add_multiarch_paths()
-
+    def add_ldflags_cppflags(self):
         # Add paths specified in the environment variables LDFLAGS and
         # CPPFLAGS for header and library files.
         # We must get the values from the Makefile and not the environment
@@ -622,6 +604,19 @@ class PyBuildExt(build_ext):
                 if options.dirs:
                     for directory in reversed(options.dirs):
                         add_dir_to_list(dir_list, directory)
+
+    def configure_compiler(self):
+        # Ensure that /usr/local is always used, but the local build
+        # directories (i.e. '.' and 'Include') must be first.  See issue
+        # 10520.
+        if not CROSS_COMPILING:
+            add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
+            add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
+        # only change this for cross builds for 3.3, issues on Mageia
+        if CROSS_COMPILING:
+            self.add_cross_compiling_paths()
+        self.add_multiarch_paths()
+        self.add_ldflags_cppflags()
 
     def init_inc_lib_dirs(self):
         if (not CROSS_COMPILING and
@@ -697,13 +692,15 @@ class PyBuildExt(build_ext):
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
 
         shared_math = 'Modules/_math.o'
-        # complex math library functions
-        self.add(Extension('cmath', ['cmathmodule.c'],
+
+        # math library functions, e.g. sin()
+        self.add(Extension('math',  ['mathmodule.c'],
                            extra_objects=[shared_math],
                            depends=['_math.h', shared_math],
                            libraries=['m']))
-        # math library functions, e.g. sin()
-        self.add(Extension('math',  ['mathmodule.c'],
+
+        # complex math library functions
+        self.add(Extension('cmath', ['cmathmodule.c'],
                            extra_objects=[shared_math],
                            depends=['_math.h', shared_math],
                            libraries=['m']))
@@ -735,15 +732,7 @@ class PyBuildExt(build_ext):
         self.add(Extension("_json", ["_json.c"],
                            # pycore_accu.h requires Py_BUILD_CORE_BUILTIN
                            extra_compile_args=['-DPy_BUILD_CORE_BUILTIN']))
-        # Python C API test module
-        self.add(Extension('_testcapi', ['_testcapimodule.c'],
-                           depends=['testcapi_long.h']))
-        # Python PEP-3118 (buffer protocol) test module
-        self.add(Extension('_testbuffer', ['_testbuffer.c']))
-        # Test loading multiple modules from one compiled file (http://bugs.python.org/issue16421)
-        self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
-        # Test multi-phase extension module init (PEP 489)
-        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
@@ -794,11 +783,6 @@ class PyBuildExt(build_ext):
         # syslog daemon interface
         self.add(Extension('syslog', ['syslogmodule.c']))
 
-        # Fuzz tests.
-        self.add(Extension('_xxtestfuzz',
-                           ['_xxtestfuzz/_xxtestfuzz.c',
-                            '_xxtestfuzz/fuzzer.c']))
-
         # Python interface to subinterpreter C-API.
         self.add(Extension('_xxsubinterpreters',
                            ['_xxsubinterpretersmodule.c'],
@@ -826,6 +810,25 @@ class PyBuildExt(build_ext):
 
         # POSIX subprocess module helper.
         self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
+
+    def detect_test_extensions(self):
+        # Python C API test module
+        self.add(Extension('_testcapi', ['_testcapimodule.c'],
+                           depends=['testcapi_long.h']))
+
+        # Python PEP-3118 (buffer protocol) test module
+        self.add(Extension('_testbuffer', ['_testbuffer.c']))
+
+        # Test loading multiple modules from one compiled file (http://bugs.python.org/issue16421)
+        self.add(Extension('_testimportmultiple', ['_testimportmultiple.c']))
+
+        # Test multi-phase extension module init (PEP 489)
+        self.add(Extension('_testmultiphase', ['_testmultiphase.c']))
+
+        # Fuzz tests.
+        self.add(Extension('_xxtestfuzz',
+                           ['_xxtestfuzz/_xxtestfuzz.c',
+                            '_xxtestfuzz/fuzzer.c']))
 
     def detect_readline_curses(self):
         # readline
@@ -936,6 +939,7 @@ class PyBuildExt(build_ext):
             curses_defines.append(('HAVE_NCURSESW', '1'))
             curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
 
+        curses_enabled = True
         if curses_library.startswith('ncurses'):
             curses_libs = [curses_library]
             self.add(Extension('_curses', ['_cursesmodule.c'],
@@ -956,10 +960,11 @@ class PyBuildExt(build_ext):
                                define_macros=curses_defines,
                                libraries=curses_libs))
         else:
+            curses_enabled = False
             self.missing.append('_curses')
 
         # If the curses module is enabled, check for the panel module
-        if (module_enabled(self.extensions, '_curses') and
+        if (curses_enabled and
             self.compiler.find_library_file(self.lib_dirs, panel_library)):
             self.add(Extension('_curses_panel', ['_curses_panel.c'],
                                include_dirs=curses_includes,
@@ -1622,17 +1627,19 @@ class PyBuildExt(build_ext):
                 uuid_libs = ['uuid']
             else:
                 uuid_libs = []
-            self.extensions.append(Extension('_uuid', ['_uuidmodule.c'],
-                                   libraries=uuid_libs,
-                                   include_dirs=uuid_incs))
+            self.add(Extension('_uuid', ['_uuidmodule.c'],
+                               libraries=uuid_libs,
+                               include_dirs=uuid_incs))
         else:
             self.missing.append('_uuid')
 
     def detect_modules(self):
-        self.add_compiler_directories()
+        self.configure_compiler()
         self.init_inc_lib_dirs()
 
         self.detect_simple_extensions()
+        if TEST_EXTENSIONS:
+            self.detect_test_extensions()
         self.detect_readline_curses()
         self.detect_crypt()
         self.detect_socket()
@@ -1652,13 +1659,11 @@ class PyBuildExt(build_ext):
         self.detect_uuid()
 
 ##         # Uncomment these lines if you want to play with xxmodule.c
-##         ext = Extension('xx', ['xxmodule.c'])
-##         self.extensions.append(ext)
+##         self.add(Extension('xx', ['xxmodule.c']))
 
         if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
-            ext = Extension('xxlimited', ['xxlimited.c'],
-                            define_macros=[('Py_LIMITED_API', '0x03050000')])
-            self.extensions.append(ext)
+            self.add(Extension('xxlimited', ['xxlimited.c'],
+                               define_macros=[('Py_LIMITED_API', '0x03050000')]))
 
     def detect_tkinter_explicitly(self):
         # Build _tkinter using explicit locations for Tcl/Tk.
@@ -1687,12 +1692,10 @@ class PyBuildExt(build_ext):
 
         extra_compile_args = tcltk_includes.split()
         extra_link_args = tcltk_libs.split()
-        ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                        define_macros=[('WITH_APPINIT', 1)],
-                        extra_compile_args = extra_compile_args,
-                        extra_link_args = extra_link_args,
-                        )
-        self.extensions.append(ext)
+        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
+                           define_macros=[('WITH_APPINIT', 1)],
+                           extra_compile_args = extra_compile_args,
+                           extra_link_args = extra_link_args))
         return True
 
     def detect_tkinter_darwin(self):
@@ -1774,14 +1777,12 @@ class PyBuildExt(build_ext):
             frameworks.append('-arch')
             frameworks.append(a)
 
-        ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                        define_macros=[('WITH_APPINIT', 1)],
-                        include_dirs = include_dirs,
-                        libraries = [],
-                        extra_compile_args = frameworks[2:],
-                        extra_link_args = frameworks,
-                        )
-        self.extensions.append(ext)
+        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
+                           define_macros=[('WITH_APPINIT', 1)],
+                           include_dirs=include_dirs,
+                           libraries=[],
+                           extra_compile_args=frameworks[2:],
+                           extra_link_args=frameworks))
         return True
 
     def detect_tkinter(self):
@@ -1839,7 +1840,10 @@ class PyBuildExt(build_ext):
 
         # OK... everything seems to be present for Tcl/Tk.
 
-        include_dirs = [] ; libs = [] ; defs = [] ; added_lib_dirs = []
+        include_dirs = []
+        libs = []
+        defs = []
+        added_lib_dirs = []
         for dir in tcl_includes + tk_includes:
             if dir not in include_dirs:
                 include_dirs.append(dir)
@@ -1895,13 +1899,11 @@ class PyBuildExt(build_ext):
         # *** Uncomment these for TOGL extension only:
         #       -lGL -lGLU -lXext -lXmu \
 
-        ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                        define_macros=[('WITH_APPINIT', 1)] + defs,
-                        include_dirs = include_dirs,
-                        libraries = libs,
-                        library_dirs = added_lib_dirs,
-                        )
-        self.extensions.append(ext)
+        self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
+                           define_macros=[('WITH_APPINIT', 1)] + defs,
+                           include_dirs=include_dirs,
+                           libraries=libs,
+                           library_dirs=added_lib_dirs))
         return True
 
     def configure_ctypes_darwin(self, ext):
@@ -1980,11 +1982,12 @@ class PyBuildExt(build_ext):
                         libraries=[],
                         sources=sources,
                         depends=depends)
-        # function my_sqrt() needs libm for sqrt()
-        ext_test = Extension('_ctypes_test',
-                     sources=['_ctypes/_ctypes_test.c'],
-                     libraries=['m'])
-        self.extensions.extend([ext, ext_test])
+        self.add(ext)
+        if TEST_EXTENSIONS:
+            # function my_sqrt() needs libm for sqrt()
+            self.add(Extension('_ctypes_test',
+                               sources=['_ctypes/_ctypes_test.c'],
+                               libraries=['m']))
 
         ffi_inc_dirs = self.inc_dirs.copy()
         if MACOS:
