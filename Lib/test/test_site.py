@@ -310,6 +310,27 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
 
+    def test_debug(self):
+        def _run(input_):
+            p = subprocess.Popen([sys.executable, "-c", "pass"], env=environ,
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
+            out, _ = p.communicate(b"c\n" if input_ else b"")
+            return out
+        re_pdb_prompt = rb"(?m)^\(Pdb\)\s*$"
+        envvar = 'PYTHONSITEDEBUG'
+        environ = os.environ.copy()
+
+        environ[envvar]="1"
+        self.assertRegex(_run(True), re_pdb_prompt)
+        environ[envvar]=""
+        self.assertNotRegex(_run(False), re_pdb_prompt)
+        del environ[envvar]
+        self.assertNotRegex(_run(False), re_pdb_prompt)
+
+
+
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
