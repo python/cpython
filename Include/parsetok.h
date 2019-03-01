@@ -12,10 +12,7 @@ extern "C" {
 
 typedef struct {
     int error;
-#ifndef PGEN
-    /* The filename is useless for pgen, see comment in tok_state structure */
     PyObject *filename;
-#endif
     int lineno;
     int offset;
     char *text;                 /* UTF-8-encoded string */

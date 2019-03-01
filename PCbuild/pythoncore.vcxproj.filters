@@ -234,9 +234,6 @@
     <ClInclude Include="..\Include\memoryobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\metagrammar.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\methodobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -268,9 +265,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\patchlevel.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\pgen.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pgenheaders.h">
@@ -836,22 +830,10 @@
     <ClCompile Include="..\Parser\acceler.c">
       <Filter>Parser</Filter>
     </ClCompile>
-    <ClCompile Include="..\Parser\bitset.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\firstsets.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\grammar.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
     <ClCompile Include="..\Parser\grammar1.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\listnode.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\metagrammar.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\myreadline.c">

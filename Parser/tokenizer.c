@@ -10,13 +10,11 @@
 #include "tokenizer.h"
 #include "errcode.h"
 
-#ifndef PGEN
 #include "unicodeobject.h"
 #include "bytesobject.h"
 #include "fileobject.h"
 #include "codecs.h"
 #include "abstract.h"
-#endif /* PGEN */
 
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
@@ -81,11 +79,9 @@ tok_new(void)
     tok->enc = NULL;
     tok->encoding = NULL;
     tok->cont_line = 0;
-#ifndef PGEN
     tok->filename = NULL;
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
-#endif
     tok->type_comments = 0;
 
     return tok;
@@ -103,28 +99,6 @@ new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
     result[len] = '\0';
     return result;
 }
-
-#ifdef PGEN
-
-static char *
-decoding_fgets(char *s, int size, struct tok_state *tok)
-{
-    return fgets(s, size, tok->fp);
-}
-
-static int
-decoding_feof(struct tok_state *tok)
-{
-    return feof(tok->fp);
-}
-
-static char *
-decode_str(const char *str, int exec_input, struct tok_state *tok)
-{
-    return new_string(str, strlen(str), tok);
-}
-
-#else /* PGEN */
 
 static char *
 error_ret(struct tok_state *tok) /* XXX */
@@ -551,7 +525,6 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
             return error_ret(tok);
         }
     }
-#ifndef PGEN
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
     if (line && !tok->encoding) {
@@ -574,7 +547,6 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
                 badchar, tok->filename, tok->lineno + 1);
         return error_ret(tok);
     }
-#endif
     return line;
 }
 
@@ -738,8 +710,6 @@ decode_str(const char *input, int single, struct tok_state *tok)
     return str;
 }
 
-#endif /* PGEN */
-
 /* Set up tokenizer for string */
 
 struct tok_state *
@@ -765,9 +735,7 @@ PyTokenizer_FromUTF8(const char *str, int exec_input)
     struct tok_state *tok = tok_new();
     if (tok == NULL)
         return NULL;
-#ifndef PGEN
     tok->input = str = translate_newlines(str, exec_input, tok);
-#endif
     if (str == NULL) {
         PyTokenizer_Free(tok);
         return NULL;
@@ -828,11 +796,9 @@ PyTokenizer_Free(struct tok_state *tok)
 {
     if (tok->encoding != NULL)
         PyMem_FREE(tok->encoding);
-#ifndef PGEN
     Py_XDECREF(tok->decoding_readline);
     Py_XDECREF(tok->decoding_buffer);
     Py_XDECREF(tok->filename);
-#endif
     if (tok->fp != NULL && tok->buf != NULL)
         PyMem_FREE(tok->buf);
     if (tok->input)
@@ -871,7 +837,6 @@ tok_nextc(struct tok_state *tok)
         }
         if (tok->prompt != NULL) {
             char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
-#ifndef PGEN
             if (newtok != NULL) {
                 char *translated = translate_newlines(newtok, 0, tok);
                 PyMem_FREE(newtok);
@@ -900,7 +865,6 @@ tok_nextc(struct tok_state *tok)
                 strcpy(newtok, buf);
                 Py_DECREF(u);
             }
-#endif
             if (tok->nextprompt != NULL)
                 tok->prompt = tok->nextprompt;
             if (newtok == NULL)
@@ -1056,7 +1020,6 @@ tok_backup(struct tok_state *tok, int c)
 static int
 syntaxerror(struct tok_state *tok, const char *format, ...)
 {
-#ifndef PGEN
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
@@ -1069,9 +1032,6 @@ syntaxerror(struct tok_state *tok, const char *format, ...)
                                tok->lineno,
                                (int)(tok->cur - tok->line_start));
     tok->done = E_ERROR;
-#else
-    tok->done = E_TOKEN;
-#endif
     return ERRORTOKEN;
 }
 
@@ -1083,9 +1043,6 @@ indenterror(struct tok_state *tok)
     return ERRORTOKEN;
 }
 
-#ifdef PGEN
-#define verify_identifier(tok) 1
-#else
 /* Verify that the identifier follows PEP 3131.
    All identifier strings are guaranteed to be "ready" unicode objects.
  */
@@ -1112,7 +1069,6 @@ verify_identifier(struct tok_state *tok)
         tok->done = E_IDENTIFIER;
     return result;
 }
-#endif
 
 static int
 tok_decimal_tail(struct tok_state *tok)
@@ -1667,25 +1623,20 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     case '(':
     case '[':
     case '{':
-#ifndef PGEN
         if (tok->level >= MAXLEVEL) {
             return syntaxerror(tok, "too many nested parentheses");
         }
         tok->parenstack[tok->level] = c;
         tok->parenlinenostack[tok->level] = tok->lineno;
-#endif
         tok->level++;
         break;
     case ')':
     case ']':
     case '}':
-#ifndef PGEN
         if (!tok->level) {
             return syntaxerror(tok, "unmatched '%c'", c);
         }
-#endif
         tok->level--;
-#ifndef PGEN
         int opening = tok->parenstack[tok->level];
         if (!((opening == '(' && c == ')') ||
               (opening == '[' && c == ']') ||
@@ -1704,7 +1655,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                         c, opening);
             }
         }
-#endif
         break;
     }
 
@@ -1742,11 +1692,7 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     FILE *fp;
     char *p_start =NULL , *p_end =NULL , *encoding = NULL;
 
-#ifndef PGEN
     fd = _Py_dup(fd);
-#else
-    fd = dup(fd);
-#endif
     if (fd < 0) {
         return NULL;
     }
@@ -1760,7 +1706,6 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         fclose(fp);
         return NULL;
     }
-#ifndef PGEN
     if (filename != NULL) {
         Py_INCREF(filename);
         tok->filename = filename;
@@ -1773,7 +1718,6 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
             return encoding;
         }
     }
-#endif
     while (tok->lineno < 2 && tok->done == E_OK) {
         PyTokenizer_Get(tok, &p_start, &p_end);
     }
