@@ -1,0 +1,2 @@
+re module, fix wrong capturing groups in rare cases. The span of capturing
+group may be lost when backtracking. Patch by Ma Lin.
