@@ -10,6 +10,8 @@ extern "C" {
 
 #include <locale.h>   /* struct lconv */
 
+PyAPI_DATA(int) _Py_HasFileSystemDefaultEncodeErrors;
+
 PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
     const char *arg,
     Py_ssize_t arglen,

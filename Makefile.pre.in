@@ -357,6 +357,7 @@ PYTHON_OBJS=	\
 		Python/mystrtoul.o \
 		Python/pathconfig.o \
 		Python/peephole.o \
+		Python/preconfig.o \
 		Python/pyarena.o \
 		Python/pyctype.o \
 		Python/pyfpe.o \
