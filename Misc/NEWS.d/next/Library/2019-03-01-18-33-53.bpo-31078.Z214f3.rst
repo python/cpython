@@ -1,0 +1,2 @@
+Propogate ``use_rawinput`` to recursive pdb (pdb's debug command).  Patch by
+Segev Finer.
