@@ -1868,7 +1868,7 @@ exit:
 
 #endif /* defined(HAVE_POSIX_SPAWNP) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN))
 
 PyDoc_STRVAR(os_spawnv__doc__,
 "spawnv($module, mode, path, argv, /)\n"
@@ -1922,9 +1922,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN))
 
 PyDoc_STRVAR(os_spawnve__doc__,
 "spawnve($module, mode, path, argv, env, /)\n"
@@ -1983,7 +1983,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)) */
 
 #if defined(HAVE_FORK)
 
@@ -7339,4 +7339,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=bb677205c036deca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c53cf1beabfc3ee1 input=a9049054013a1b77]*/
