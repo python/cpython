@@ -1560,7 +1560,7 @@ def main():
     if system() == 'Windows':
         iconfile = os.path.join(icondir, 'idle.ico')
         root.wm_iconbitmap(default=iconfile)
-    elif TkVersion >= 8.5:
+    elif TkVersion >= 8.5 and sys.platform != 'darwin':
         ext = '.png' if TkVersion >= 8.6 else '.gif'
         iconfiles = [os.path.join(icondir, 'idle_%d%s' % (size, ext))
                      for size in (16, 32, 48)]
