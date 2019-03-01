@@ -1,5 +1,4 @@
 # Autodetecting setup.py script for building the Python extensions
-#
 
 import argparse
 import importlib._bootstrap
@@ -20,32 +19,19 @@ from distutils.core import Extension, setup
 from distutils.errors import CCompilerError, DistutilsError
 from distutils.spawn import find_executable
 
-CROSS_COMPILING = "_PYTHON_HOST_PLATFORM" in os.environ
-
-# Set common compiler and linker flags derived from the Makefile,
-# reserved for building the interpreter and the stdlib modules.
-# See bpo-21121 and bpo-35257
-def set_compiler_flags(compiler_flags, compiler_py_flags_nodist):
-    flags = sysconfig.get_config_var(compiler_flags)
-    py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
-    sysconfig.get_config_vars()[compiler_flags] = flags + ' ' + py_flags_nodist
-
-set_compiler_flags('CFLAGS', 'PY_CFLAGS_NODIST')
-set_compiler_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
-
-class Dummy:
-    """Hack for parallel build"""
-    ProcessPoolExecutor = None
-sys.modules['concurrent.futures.process'] = Dummy
 
 def get_platform():
-    # cross build
+    # Cross compiling
     if "_PYTHON_HOST_PLATFORM" in os.environ:
         return os.environ["_PYTHON_HOST_PLATFORM"]
+
     # Get value of sys.platform
     if sys.platform.startswith('osf1'):
         return 'osf1'
     return sys.platform
+
+
+CROSS_COMPILING = ("_PYTHON_HOST_PLATFORM" in os.environ)
 HOST_PLATFORM = get_platform()
 MS_WINDOWS = (HOST_PLATFORM == 'win32')
 CYGWIN = (HOST_PLATFORM == 'cygwin')
@@ -58,6 +44,45 @@ COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_AR
 
 # This global variable is used to hold the list of modules to be disabled.
 DISABLED_MODULE_LIST = []
+
+
+SUMMARY = """
+Python is an interpreted, interactive, object-oriented programming
+language. It is often compared to Tcl, Perl, Scheme or Java.
+
+Python combines remarkable power with very clear syntax. It has
+modules, classes, exceptions, very high level dynamic data types, and
+dynamic typing. There are interfaces to many system calls and
+libraries, as well as to various windowing systems (X11, Motif, Tk,
+Mac, MFC). New built-in modules are easily written in C or C++. Python
+is also usable as an extension language for applications that need a
+programmable interface.
+
+The Python implementation is portable: it runs on many brands of UNIX,
+on Windows, DOS, Mac, Amiga... If your favorite system isn't
+listed here, it may still be supported, if there's a C compiler for
+it. Ask around on comp.lang.python -- or just try compiling Python
+yourself.
+"""
+
+CLASSIFIERS = """
+Development Status :: 6 - Mature
+License :: OSI Approved :: Python Software Foundation License
+Natural Language :: English
+Programming Language :: C
+Programming Language :: Python
+Topic :: Software Development
+"""
+
+
+# Set common compiler and linker flags derived from the Makefile,
+# reserved for building the interpreter and the stdlib modules.
+# See bpo-21121 and bpo-35257
+def set_compiler_flags(compiler_flags, compiler_py_flags_nodist):
+    flags = sysconfig.get_config_var(compiler_flags)
+    py_flags_nodist = sysconfig.get_config_var(compiler_py_flags_nodist)
+    sysconfig.get_config_vars()[compiler_flags] = flags + ' ' + py_flags_nodist
+
 
 def add_dir_to_list(dirlist, dir):
     """Add the directory 'dir' to the list 'dirlist' (after any relative
@@ -73,6 +98,7 @@ def add_dir_to_list(dirlist, dir):
             dirlist.insert(i + 1, dir)
             return
     dirlist.insert(0, dir)
+
 
 def sysroot_paths(make_vars, subdirs):
     """Get the paths of sysroot sub-directories.
@@ -99,6 +125,7 @@ def sysroot_paths(make_vars, subdirs):
                 break
     return dirs
 
+
 def macosx_sdk_root():
     """
     Return the directory of the current OSX SDK,
@@ -112,6 +139,7 @@ def macosx_sdk_root():
         sysroot = m.group(1)
     return sysroot
 
+
 def is_macosx_sdk_path(path):
     """
     Returns True if 'path' can be located in an OSX SDK
@@ -119,6 +147,7 @@ def is_macosx_sdk_path(path):
     return ( (path.startswith('/usr/') and not path.startswith('/usr/local'))
                 or path.startswith('/System/')
                 or path.startswith('/Library/') )
+
 
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
@@ -158,6 +187,7 @@ def find_file(filename, std_dirs, paths):
 
     # Not found anywhere
     return None
+
 
 def find_library_file(compiler, libname, std_dirs, paths):
     result = compiler.find_library_file(std_dirs + paths, libname)
@@ -211,11 +241,13 @@ def find_library_file(compiler, libname, std_dirs, paths):
     else:
         assert False, "Internal error: Path not found in std_dirs or paths"
 
+
 def module_enabled(extlist, modname):
     """Returns whether the module 'modname' is present in the list
     of extensions 'extlist'."""
     extlist = [ext for ext in extlist if ext.name == modname]
     return len(extlist)
+
 
 def find_module_file(module, dirlist):
     """Find a module in a set of possible folders. If it is not found
@@ -226,6 +258,7 @@ def find_module_file(module, dirlist):
     if len(list) > 1:
         log.info("WARNING: multiple copies of %s found", module)
     return os.path.join(list[0], module)
+
 
 class PyBuildExt(build_ext):
 
@@ -1558,44 +1591,17 @@ class PyBuildExt(build_ext):
     def detect_multiprocessing(self):
         # Richard Oudkerk's multiprocessing module
         if MS_WINDOWS:
-            macros = dict()
-            libraries = ['ws2_32']
-
-        elif MACOS:     # Mac OSX
-            macros = dict()
-            libraries = []
-
-        elif CYGWIN:
-            macros = dict()
-            libraries = []
-
-        elif HOST_PLATFORM.startswith('openbsd'):
-            macros = dict()
-            libraries = []
-
-        elif HOST_PLATFORM.startswith('netbsd'):
-            macros = dict()
-            libraries = []
-
-        else:                                   # Linux and other unices
-            macros = dict()
-            libraries = ['rt']
-
-        if MS_WINDOWS:
-            multiprocessing_srcs = [ '_multiprocessing/multiprocessing.c',
-                                     '_multiprocessing/semaphore.c',
-                                   ]
+            multiprocessing_srcs = ['_multiprocessing/multiprocessing.c',
+                                    '_multiprocessing/semaphore.c']
 
         else:
-            multiprocessing_srcs = [ '_multiprocessing/multiprocessing.c',
-                                   ]
+            multiprocessing_srcs = ['_multiprocessing/multiprocessing.c']
             if (sysconfig.get_config_var('HAVE_SEM_OPEN') and not
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
             if (sysconfig.get_config_var('HAVE_SHM_OPEN') and
                 sysconfig.get_config_var('HAVE_SHM_UNLINK')):
-                posixshmem_srcs = [ '_multiprocessing/posixshmem.c',
-                                  ]
+                posixshmem_srcs = ['_multiprocessing/posixshmem.c']
                 libs = []
                 if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
                     # need to link with librt to get shm_open()
@@ -1606,7 +1612,6 @@ class PyBuildExt(build_ext):
                                    include_dirs=["Modules/_multiprocessing"]))
 
         self.add(Extension('_multiprocessing', multiprocessing_srcs,
-                           define_macros=list(macros.items()),
                            include_dirs=["Modules/_multiprocessing"]))
 
     def detect_uuid(self):
@@ -2303,6 +2308,7 @@ class PyBuildInstallLib(install_lib):
             log.info("changing mode of %s to %o", dirpath, mode)
             if not self.dry_run: os.chmod(dirpath, mode)
 
+
 class PyBuildScripts(build_scripts):
     def copy_scripts(self):
         outfiles, updated_files = build_scripts.copy_scripts(self)
@@ -2322,35 +2328,17 @@ class PyBuildScripts(build_scripts):
                 newupdated_files.append(newfilename)
         return newoutfiles, newupdated_files
 
-SUMMARY = """
-Python is an interpreted, interactive, object-oriented programming
-language. It is often compared to Tcl, Perl, Scheme or Java.
-
-Python combines remarkable power with very clear syntax. It has
-modules, classes, exceptions, very high level dynamic data types, and
-dynamic typing. There are interfaces to many system calls and
-libraries, as well as to various windowing systems (X11, Motif, Tk,
-Mac, MFC). New built-in modules are easily written in C or C++. Python
-is also usable as an extension language for applications that need a
-programmable interface.
-
-The Python implementation is portable: it runs on many brands of UNIX,
-on Windows, DOS, Mac, Amiga... If your favorite system isn't
-listed here, it may still be supported, if there's a C compiler for
-it. Ask around on comp.lang.python -- or just try compiling Python
-yourself.
-"""
-
-CLASSIFIERS = """
-Development Status :: 6 - Mature
-License :: OSI Approved :: Python Software Foundation License
-Natural Language :: English
-Programming Language :: C
-Programming Language :: Python
-Topic :: Software Development
-"""
 
 def main():
+    set_compiler_flags('CFLAGS', 'PY_CFLAGS_NODIST')
+    set_compiler_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
+
+    class DummyProcess:
+        """Hack for parallel build"""
+        ProcessPoolExecutor = None
+
+    sys.modules['concurrent.futures.process'] = DummyProcess
+
     # turn off warnings when deprecated modules are imported
     import warnings
     warnings.filterwarnings("ignore",category=DeprecationWarning)
