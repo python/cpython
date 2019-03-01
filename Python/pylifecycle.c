@@ -960,7 +960,7 @@ Py_InitializeEx(int install_sigs)
     _PyCoreConfig_Clear(&config);
 
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
 }
 
@@ -1432,7 +1432,7 @@ Py_NewInterpreter(void)
     PyThreadState *tstate;
     _PyInitError err = new_interpreter(&tstate);
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
     return tstate;
 
@@ -2073,12 +2073,17 @@ Py_FatalError(const char *msg)
 }
 
 void _Py_NO_RETURN
-_Py_FatalInitError(_PyInitError err)
+_Py_ExitInitError(_PyInitError err)
 {
-    /* On "user" error: exit with status 1.
-       For all other errors, call abort(). */
-    int status = err.user_err ? 1 : -1;
-    fatal_error(err.prefix, err.msg, status);
+    if (err.exitcode >= 0) {
+        exit(err.exitcode);
+    }
+    else {
+        /* On "user" error: exit with status 1.
+           For all other errors, call abort(). */
+        int status = err.user_err ? 1 : -1;
+        fatal_error(err.prefix, err.msg, status);
+    }
 }
 
 /* Clean up and exit */

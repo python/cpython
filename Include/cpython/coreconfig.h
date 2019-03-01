@@ -11,6 +11,7 @@ typedef struct {
     const char *prefix;
     const char *msg;
     int user_err;
+    int exitcode;
 } _PyInitError;
 
 /* Almost all errors causing Python initialization to fail */
@@ -22,16 +23,18 @@ typedef struct {
 #endif
 
 #define _Py_INIT_OK() \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0}
+    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = -1}
 #define _Py_INIT_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 0}
+    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 0, .exitcode = -1}
 /* Error that can be fixed by the user like invalid input parameter.
    Don't abort() the process on such error. */
 #define _Py_INIT_USER_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1}
+    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1, .exitcode = -1}
 #define _Py_INIT_NO_MEMORY() _Py_INIT_USER_ERR("memory allocation failed")
+#define _Py_INIT_EXIT(EXITCODE) \
+    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = (EXITCODE)}
 #define _Py_INIT_FAILED(err) \
-    (err.msg != NULL)
+    (err.msg != NULL || err.exitcode != -1)
 
 /* _PyCoreConfig */
 
