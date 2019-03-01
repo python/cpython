@@ -11,7 +11,7 @@ set OLDPWD=%LIBFFI_SOURCE%
 cd /d %LIBFFI_SOURCE%
 
 call :BuildOne x86 i686-pc-cygwin
-call :BuildOne amd64 x86_64-w64-cygwin
+call :BuildOne x64 x86_64-w64-cygwin
 goto :EOF
 
 :BuildOne
@@ -27,8 +27,8 @@ if /I "%VCVARS_PLATFORM%" EQU "amd64" (set ML=-m64)
 call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %VCVARS_PLATFORM%
 
 REM just configure the build to fficonfig.h and ffi.h
-c:\cygwin\bin\sh -lc "(cd $OLDPWD; ./autogen.sh;)"
-c:\cygwin\bin\sh -lc "(cd $OLDPWD; ./configure CC='$MSVCC $ML' CXX='$MSVCC $ML' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
+::c:\cygwin\bin\sh -lc "(cd $OLDPWD; ./autogen.sh;)"
+::c:\cygwin\bin\sh -lc "(cd $OLDPWD; ./configure CC='$MSVCC $ML' CXX='$MSVCC $ML' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
 
 REM There is no support for building .DLLs currently.  It looks possible to get a static library.
 REM c:\cygwin\bin\sh -lc "(cd $OLDPWD; cp src/x86/ffitarget.h include; make; find .;)"
@@ -41,6 +41,10 @@ REM # FIXME: "make check" currently fails.  It just looks like msvcc needs
 REM # to learn about -L and -l options.  If you add "make check; cat `find
 REM # ./ -name libffi.log" to the end of that build command you'll see
 REM # what I mean.
+
+md %LIBFFI_SOURCE%\include\%VCVARS_PLATFORM% 2>&1 > NUL
+copy %LIBFFI_SOURCE%\%BUILD%\fficonfig.h  %LIBFFI_SOURCE%\include\%VCVARS_PLATFORM%
+copy %LIBFFI_SOURCE%\%BUILD%\include\ffi.h  %LIBFFI_SOURCE%\include\%VCVARS_PLATFORM%
 
 endlocal
 exit /b
