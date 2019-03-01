@@ -462,6 +462,19 @@ _PyInterpreterState_GetMainModule(PyInterpreterState *interp)
     return PyMapping_GetItemString(interp->modules, "__main__");
 }
 
+PyObject *
+PyInterpreterState_GetDict(PyInterpreterState *interp)
+{
+    if (interp->dict == NULL) {
+        interp->dict = PyDict_New();
+        if (interp->dict == NULL) {
+            PyErr_Clear();
+        }
+    }
+    /* Returning NULL means no per-interpreter dict is available. */
+    return interp->dict;
+}
+
 /* Default implementation for _PyThreadState_GetFrame */
 static struct _frame *
 threadstate_getframe(PyThreadState *self)
