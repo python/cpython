@@ -226,7 +226,7 @@ pysqlite_row_repr(pysqlite_Row *self)
         goto error;
     }
 
-    nitems = PyTuple_Size(self->description);
+    nitems = PyTuple_GET_SIZE(self->description);
     for (i = 0; i < nitems; i++) {
         if (i > 0) {
             if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
