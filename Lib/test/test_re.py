@@ -1219,22 +1219,22 @@ subpattern None
         # =======================================================
 
         # 1, triggered by SRE_OP_REPEAT_ONE, b? in this pattern
-        self.assertEqual(re.match(r'(ab?)*?b', 'ab').groups(), ('',))
+        self.assertEqual(re.match(r'(ab?)*?b', 'ab').groups(), ('a',))
 
         # 2, triggered by SRE_OP_MIN_REPEAT_ONE, a*? in this pattern
         s = 'axxzaz'
         p = r'(?:a*?(xx)??z)*'
-        self.assertEqual(re.match(p, s).groups(), ('',))
+        self.assertEqual(re.match(p, s).groups(), ('xx',))
 
         # 3, triggered by SRE_OP_MIN_UNTIL (JUMP_MIN_UNTIL_2)
         #    (?:a|bc)*? in this pattern
         s = 'axxzbcz'
         p = r'(?:(?:a|bc)*?(xx)??z)*'
-        self.assertEqual(re.match(p, s).groups(), ('',))
+        self.assertEqual(re.match(p, s).groups(), ('xx',))
         #    test-case provided by issue9134
         s = 'xtcxyzxc'
         p = r'((x|yz)+?(t)??c)*'
-        self.assertEqual(re.match(p, s).groups(), ('xyzxc', 'x', ''))
+        self.assertEqual(re.match(p, s).groups(), ('xyzxc', 'x', 't'))
 
         # ======================================================
         # JUMP_ASSERT_NOT should LASTMARK_SAVE() and MARK_PUSH()
