@@ -159,7 +159,7 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
     fullname = os.path.join(sitedir, name)
-    _trace("Processing .pth file: %r" % fullname)
+    _trace(f"Processing .pth file: {fullname!r}")
     try:
         f = open(fullname, "r")
     except OSError:
