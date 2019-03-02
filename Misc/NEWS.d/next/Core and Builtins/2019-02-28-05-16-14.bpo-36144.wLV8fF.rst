@@ -1,2 +1,0 @@
-:class:`dict` objects now support addition operations, with semantics similar to :meth:`dict.update`.
-Patch by Brandt Bucher.

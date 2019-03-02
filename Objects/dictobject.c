@@ -2264,9 +2264,60 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
 
+static int
+dict_diff_arg(PyObject *self, PyObject *arg) 
+{
+    PyObject *iter_arg;
+    PyObject *item;
+    PyObject *keys;
+    int in;
+
+    /* This first block might need to be removed.
+     * See "Bug or feature?" in PEP 584 draft.
+     */
+
+    keys = PyObject_GetAttrString(arg, "keys");
+
+    if (keys != NULL) {
+        arg = _PyObject_CallNoArg(keys);
+        Py_DECREF(keys);
+
+        if (arg == NULL) {
+            return -1;
+        }
+    }
+    else {
+        PyErr_Clear();
+    }
+
+    iter_arg = PyObject_GetIter(arg);
+
+    if (iter_arg == NULL) {
+        return -1;
+    }
+
+    while ((item = PyIter_Next(iter_arg)) != NULL) {
+
+        in = PyDict_Contains(self, item);
+
+        if (in < 0 || (in && PyDict_DelItem(self, item))) {
+            Py_DECREF(iter_arg);
+            Py_DECREF(item);
+            return -1;
+        }
+
+        Py_DECREF(item);
+    }
+
+    Py_DECREF(iter_arg);
+    return 0;
+}
+
+
 /* Single-arg dict update; used by dict_update_common and addition ops. */
 static int
-dict_update_arg(PyObject *self, PyObject *arg) {
+dict_update_arg(PyObject *self, PyObject *arg)
+{
 
     PyObject *func;
     _Py_IDENTIFIER(keys);
@@ -3138,6 +3189,49 @@ dict_iadd(PyDictObject *self, PyObject *other)
     return (PyObject *)self;
 }
 
+static PyObject *
+dict_sub(PyObject *self, PyObject *other)
+{
+    PyObject *new;
+
+    if (!PyDict_Check(self) || !PyDict_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    /* See dict_add for limitations of this construction: */
+
+    new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
+
+    if (new == NULL) {
+        return NULL;
+    }
+
+    if (dict_update_arg(new, self) || dict_diff_arg(new, other)) {
+        Py_DECREF(new);
+        return NULL;
+    }
+
+    return new;
+}
+
+static PyObject *
+dict_isub(PyDictObject *self, PyObject *other)
+{
+    /* See dict_iadd for this removal:
+     *
+     * if (!PyDict_Check(other)) {
+     *     Py_RETURN_NOTIMPLEMENTED;
+     * }
+     */
+
+    if (dict_diff_arg((PyObject *)self, other)) {
+        return NULL;
+    }
+
+    Py_INCREF((PyObject *)self);
+    return (PyObject *)self;
+}
+
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 
 PyDoc_STRVAR(sizeof__doc__,
@@ -3294,7 +3388,7 @@ dict_iter(PyDictObject *dict)
 
 static PyNumberMethods dict_as_number = {
     (binaryfunc)dict_add,               /*nb_add*/
-    0,                                  /*nb_subtract*/
+    (binaryfunc)dict_sub,               /*nb_subtract*/
     0,                                  /*nb_multiply*/
     0,                                  /*nb_remainder*/
     0,                                  /*nb_divmod*/
@@ -3313,6 +3407,7 @@ static PyNumberMethods dict_as_number = {
     0,                                  /*nb_reserved*/
     0,                                  /*nb_float*/
     (binaryfunc)dict_iadd,              /*nb_inplace_add*/
+    (binaryfunc)dict_isub,              /*nb_inplace_subtract*/
 };
 
 PyDoc_STRVAR(dictionary_doc,
