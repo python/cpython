@@ -1039,10 +1039,20 @@ class UserDict(_collections_abc.MutableMapping):
         return UserDict(self.data + other)
 
     def __radd__(self, other):
-        return UserDict(other + self.data)
+        return other + self.data
 
     def __iadd__(self, other):
         self.data += other
+        return self
+
+    def __sub__(self, other):
+        return UserDict(self.data - other)
+
+    def __rsub__(self, other):
+        return other - self.data
+
+    def __isub__(self, other):
+        self.data -= other
         return self
 
     def copy(self):
