@@ -76,8 +76,7 @@ import _sitebuiltins
 
 
 if os.environ.get("PYTHONSITEDEBUG", ""):
-    import pdb
-    pdb.set_trace()
+    breakpoint()
 
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here

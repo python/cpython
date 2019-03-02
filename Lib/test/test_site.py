@@ -320,7 +320,10 @@ class HelperFunctionsTests(unittest.TestCase):
             return out
         re_pdb_prompt = rb"(?m)^\(Pdb\)\s*$"
         envvar = 'PYTHONSITEDEBUG'
+
         environ = os.environ.copy()
+        try: del environ['PYTHONBREAKPOINT']
+        except KeyError: pass
 
         environ[envvar]="1"
         self.assertRegex(_run(True), re_pdb_prompt)
