@@ -54,9 +54,22 @@ class DictTest(unittest.TestCase):
         self.assertEqual(b + a, {1: 1, 2: 1, 3: 3, 0: 0})
         self.assertEqual(c, {1: 1, 2: 1, 3: 3, 0: 0})
 
+        c = a.copy()
+        c += [(1, 1), (2, 2), (3, 3)]
+        
+        self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
+
         self.assertIs(a.__add__(None), NotImplemented)
+        self.assertIs(a.__add__(()), NotImplemented)
+        self.assertIs(a.__add__("BAD"), NotImplemented)
+
+        self.assertIs(a.__radd__(None), NotImplemented)
+        self.assertIs(a.__radd__(()), NotImplemented)
         self.assertIs(a.__radd__("BAD"), NotImplemented)
-        self.assertIs(a.__iadd__([]), NotImplemented)
+
+        self.assertRaises(TypeError, a.__iadd__, None)
+        self.assertEqual(a.__iadd__(()), {0: 0, 1: 1, 2: 1})
+        self.assertRaises(ValueError, a.__iadd__, "BAD")
 
     def test_bool(self):
         self.assertIs(not {}, True)

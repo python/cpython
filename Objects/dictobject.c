@@ -2264,6 +2264,25 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
 
+/* Single-arg dict update; used by dict_update_common and addition ops. */
+static int
+dict_update_arg(PyObject *self, PyObject *arg) {
+
+    PyObject *func;
+    _Py_IDENTIFIER(keys);
+    
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+        return -1;
+    }
+
+    if (func != NULL) {
+        Py_DECREF(func);
+        return PyDict_Merge(self, arg, 1);
+    }
+
+    return PyDict_MergeFromSeq2(self, arg, 1);
+}
+
 static int
 dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
                    const char *methname)
@@ -2275,18 +2294,7 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
         result = -1;
     }
     else if (arg != NULL) {
-        _Py_IDENTIFIER(keys);
-        PyObject *func;
-        if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-            result = -1;
-        }
-        else if (func != NULL) {
-            Py_DECREF(func);
-            result = PyDict_Merge(self, arg, 1);
-        }
-        else {
-            result = PyDict_MergeFromSeq2(self, arg, 1);
-        }
+        result = dict_update_arg(self, arg);
     }
 
     if (result == 0 && kwds != NULL) {
@@ -3084,7 +3092,7 @@ dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dict_add(PyDictObject *self, PyObject *other)
+dict_add(PyObject *self, PyObject *other)
 {
     PyObject *new;
 
@@ -3092,13 +3100,18 @@ dict_add(PyDictObject *self, PyObject *other)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    new = PyDict_Copy((PyObject *)self);
+    /* If subclass constructors/initializers have been overridden to require
+     * at least one arg, this next bit could fail with a confusing TypeError...
+     * dict.fromkeys currently has this issue, though, so nothing new.
+     */
+
+    new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
 
     if (new == NULL) {
         return NULL;
     }
 
-    if (PyDict_Update(new, other)) {
+    if (dict_update_arg(new, self) || dict_update_arg(new, other)) {
         Py_DECREF(new);
         return NULL;
     }
@@ -3109,11 +3122,15 @@ dict_add(PyDictObject *self, PyObject *other)
 static PyObject *
 dict_iadd(PyDictObject *self, PyObject *other)
 {
-    if (!PyDict_Check(self) || !PyDict_Check(other)) {
-        Py_RETURN_NOTIMPLEMENTED;
-    }
+    /* Don't delegate to __add__ here? Could be confusing for subclasses...
+     * https://mail.python.org/pipermail/python-ideas/2019-March/055581.html
+     * 
+     * if (!PyMapping_Check(other)) {
+     *     Py_RETURN_NOTIMPLEMENTED;
+     * }
+     */ 
 
-    if (PyDict_Update((PyObject *)self, other)) {
+    if (dict_update_arg((PyObject *)self, other)) {
         return NULL;
     }
 
