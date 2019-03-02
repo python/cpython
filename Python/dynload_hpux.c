@@ -36,9 +36,9 @@ dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
         char buf[256];
         PyOS_snprintf(buf, sizeof(buf), "Failed to load %.200s",
                       pathname);
-        PyObject *buf_ob = PyUnicode_FromString(buf);
+        PyObject *buf_ob = PyUnicode_DecodeFSDefault(buf);
         PyObject *shortname_ob = PyUnicode_FromString(shortname);
-        PyObject *pathname_ob = PyUnicode_FromString(pathname);
+        PyObject *pathname_ob = PyUnicode_DecodeFSDefault(pathname);
         PyErr_SetImportError(buf_ob, shortname_ob, pathname_ob);
         Py_DECREF(buf_ob);
         Py_DECREF(shortname_ob);
