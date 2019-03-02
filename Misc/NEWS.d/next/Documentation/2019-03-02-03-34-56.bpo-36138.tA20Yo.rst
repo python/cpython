@@ -1,0 +1,1 @@
+Improve documentation about converting datetime.timedelta to scalars.
