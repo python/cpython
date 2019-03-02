@@ -1497,6 +1497,10 @@ exit:
     return ret; /* should never get here */
 }
 
+/* need to reset capturing groups between two SRE(match) callings in loops */
+#define RESET_CAPTURE_GROUP() \
+    do { state->lastmark = state->lastindex = -1; } while (0)
+
 LOCAL(Py_ssize_t)
 SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 {
@@ -1575,6 +1579,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
                         status = SRE_MATCH(state, pattern + 2*prefix_skip);
                         if (status != 0)
                             return status;
+                        RESET_CAPTURE_GROUP();
                         /* close but no cigar -- try again */
                         i = overlap[i];
                     }
@@ -1605,6 +1610,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             status = SRE_MATCH(state, pattern + 2);
             if (status != 0)
                 break;
+            RESET_CAPTURE_GROUP();
         }
     } else if (charset) {
         /* pattern starts with a character from a known set */
@@ -1620,6 +1626,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             status = SRE_MATCH(state, pattern);
             if (status != 0)
                 break;
+            RESET_CAPTURE_GROUP();
             ptr++;
         }
     } else {
@@ -1631,6 +1638,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             status = SRE_MATCH(state, pattern);
             if (status != 0 || ptr >= end)
                 break;
+            RESET_CAPTURE_GROUP();
             ptr++;
         }
     }

@@ -1203,7 +1203,7 @@ subpattern None
         # found in issue34294
         s = "a\tx"
         p = r"\b(?=(\t)|(x))x"
-        self.assertEqual(re.search(p, s).groups(), ('', 'x'))
+        self.assertEqual(re.search(p, s).groups(), (None, 'x'))
 
         # =============================
         # macro MARK_PUSH(lastmark) bug
