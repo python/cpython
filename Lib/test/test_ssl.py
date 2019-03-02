@@ -1826,7 +1826,7 @@ class SimpleBackgroundTests(unittest.TestCase):
                 s.connect(self.server_addr)
                 self.assertTrue(s.getpeercert())
                 self.assertFalse(s.server_side)
-            except ConnectionResetError as e:
+            except (ConnectionResetError, ConnectionAbortedError) as e:
                 # sometimes windows throws ConnectionResetError during the handshake
                 sys.stdout.write(repr(e))
 
