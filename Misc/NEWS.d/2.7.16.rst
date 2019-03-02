@@ -1,0 +1,8 @@
+.. bpo: 32129
+.. date: 2019-02-25-12-59-24
+.. nonce: 4qVCzD
+.. release date: 2019-03-02
+.. section: IDLE
+
+Avoid blurry IDLE application icon on macOS with Tk 8.6. Patch by Kevin
+Walzer.
