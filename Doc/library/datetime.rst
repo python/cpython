@@ -254,8 +254,8 @@ Supported operations:
 |                                | rounded to the nearest multiple of            |
 |                                | timedelta.resolution using round-half-to-even.|
 +--------------------------------+-----------------------------------------------+
-| ``f = t2 / t3``                | Division (3) of overall duration t2 by        |
-|                                | interval unit t3. Returns a :class:`float`    |
+| ``f = t2 / t3``                | Division (3) of overall duration *t2* by      |
+|                                | interval unit *t3*. Returns a :class:`float`  |
 |                                | object.                                       |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 / f or t1 = t2 / i`` | Delta divided by a float or an int. The result|
