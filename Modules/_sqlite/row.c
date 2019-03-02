@@ -235,13 +235,7 @@ pysqlite_row_repr(pysqlite_Row *self)
         }
 
         name = PyTuple_GET_ITEM(self->description, i);
-        if (name == NULL) {
-            goto error;
-        }
         name = PyTuple_GET_ITEM(name, 0);
-        if (name == NULL) {
-            goto error;
-        }
         name = PyObject_Repr(name);
         if (name == NULL) {
             goto error;
@@ -257,9 +251,6 @@ pysqlite_row_repr(pysqlite_Row *self)
         }
 
         value = PyTuple_GET_ITEM(self->data, i);
-        if (value == NULL) {
-            goto error;
-        }
         value = PyObject_Repr(value);
         if (value == NULL) {
             goto error;
