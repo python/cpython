@@ -223,6 +223,89 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
     return 0;
 }
 
+
+/* memory pool functions for SRE_REPEAT, this can avoid memory
+   leak when SRE(match) function terminates abruptly.
+   state->pool_used_repeats is a doubled linked list, so that we
+   can remove a SRE_REPEAT node from it.
+   state->pool_unused_repeats is a single linked list, we put/get
+   node at the head. */
+
+static SRE_REPEAT*
+mempool_repeat_malloc(SRE_STATE *state)
+{
+    SRE_REPEAT *repeat, *temp;
+
+    if (state->pool_unused_repeats) {
+        /* unused pool has slot */
+        repeat = state->pool_unused_repeats;
+
+        /* remove from unused pool */
+        state->pool_unused_repeats = repeat->mem_next;
+    } else {
+        repeat = PyObject_MALLOC(sizeof(SRE_REPEAT));
+        if (!repeat)
+            return NULL;
+    }
+
+    /* add to used pool */
+    temp = state->pool_used_repeats;
+    if (temp)
+        temp->mem_prev = repeat;
+    repeat->mem_prev = NULL;
+    repeat->mem_next = temp;
+    state->pool_used_repeats = repeat;
+
+    return repeat;
+}
+
+static void
+mempool_repeat_free(SRE_STATE *state, SRE_REPEAT *repeat)
+{
+    SRE_REPEAT *prev, *next;
+
+    /* remove from used pool */
+    prev = repeat->mem_prev;
+    next = repeat->mem_next;
+
+    if (prev) {
+        prev->mem_next = next;
+    } else {
+        state->pool_used_repeats = next;
+    }
+    if (next)
+        next->mem_prev = prev;
+
+    /* add to unused pool */
+    repeat->mem_next = state->pool_unused_repeats;
+    state->pool_unused_repeats = repeat;
+}
+
+static void
+mempool_repeat_clear(SRE_STATE *state)
+{
+    SRE_REPEAT *next, *temp;
+
+    /* clear used pool */
+    next = state->pool_used_repeats;
+    while (next) {
+        temp = next;
+        next = temp->mem_next;
+        PyObject_FREE(temp);
+    }
+    state->pool_used_repeats = NULL;
+
+    /* clear unused pool */
+    next = state->pool_unused_repeats;
+    while (next) {
+        temp = next;
+        next = temp->mem_next;
+        PyObject_FREE(temp);
+    }
+    state->pool_unused_repeats = NULL;
+}
+
+
 /* generate 8-bit version */
 
 #define SRE_CHAR Py_UCS1
@@ -348,7 +431,12 @@ state_reset(SRE_STATE* state)
 
     state->repeat = NULL;
 
-    data_stack_dealloc(state);
+    /* reuse stack if stack_size <= 16 KiB,
+       to avoid frequent memory alloc/free. */
+    if (state->data_stack_size <= 16*1024)
+        state->data_stack_base = 0;
+    else
+        data_stack_dealloc(state);
 }
 
 static void*
@@ -442,6 +530,10 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->match_all = 0;
     state->must_advance = 0;
 
+    state->repeat = NULL;
+    state->pool_used_repeats = NULL;
+    state->pool_unused_repeats = NULL;
+
     state->beginning = ptr;
 
     state->start = (void*) ((char*) ptr + start * state->charsize);
@@ -470,6 +562,7 @@ state_fini(SRE_STATE* state)
     data_stack_dealloc(state);
     PyMem_Del(state->mark);
     state->mark = NULL;
+    mempool_repeat_clear(state);
 }
 
 /* calculate offset from start of string */

@@ -57,6 +57,9 @@ typedef struct SRE_REPEAT_T {
     SRE_CODE* pattern; /* points to REPEAT operator arguments */
     void* last_ptr; /* helper to check for infinite loops */
     struct SRE_REPEAT_T *prev; /* points to previous repeat context */
+    /* for memory pool */
+    struct SRE_REPEAT_T *mem_prev;
+    struct SRE_REPEAT_T *mem_next;
 } SRE_REPEAT;
 
 typedef struct {
@@ -83,6 +86,9 @@ typedef struct {
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
+    /* memory pool for SRE_REPEAT object */
+    SRE_REPEAT *pool_used_repeats;
+    SRE_REPEAT *pool_unused_repeats;
 } SRE_STATE;
 
 typedef struct {
