@@ -2269,30 +2269,35 @@ dict_diff_arg(PyObject *self, PyObject *arg)
 {
     PyObject *iter_arg;
     PyObject *item;
-    PyObject *keys;
+    PyObject *func;
     int in;
 
-    /* This first block might need to be removed.
+    _Py_IDENTIFIER(keys);
+
+    /* These first two blocks might need to be removed.
      * See "Bug or feature?" in PEP 584 draft.
      */
+    
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+        return -1;
+    }
 
-    keys = PyObject_GetAttrString(arg, "keys");
+    if (func != NULL) {
 
-    if (keys != NULL) {
-        arg = _PyObject_CallNoArg(keys);
-        Py_DECREF(keys);
+        arg = _PyObject_CallNoArg(func);
+        Py_DECREF(func);
 
         if (arg == NULL) {
             return -1;
         }
     }
-    else {
-        PyErr_Clear();
-    }
 
     iter_arg = PyObject_GetIter(arg);
 
     if (iter_arg == NULL) {
+        if (func != NULL) {
+            Py_DECREF(arg);
+        }
         return -1;
     }
 
@@ -2301,8 +2306,11 @@ dict_diff_arg(PyObject *self, PyObject *arg)
         in = PyDict_Contains(self, item);
 
         if (in < 0 || (in && PyDict_DelItem(self, item))) {
-            Py_DECREF(iter_arg);
             Py_DECREF(item);
+            Py_DECREF(iter_arg);
+            if (func != NULL) {
+                Py_DECREF(arg);
+            }
             return -1;
         }
 
@@ -2310,6 +2318,14 @@ dict_diff_arg(PyObject *self, PyObject *arg)
     }
 
     Py_DECREF(iter_arg);
+    if (func != NULL) {
+        Py_DECREF(arg);
+    }
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -2318,7 +2334,6 @@ dict_diff_arg(PyObject *self, PyObject *arg)
 static int
 dict_update_arg(PyObject *self, PyObject *arg)
 {
-
     PyObject *func;
     _Py_IDENTIFIER(keys);
     
@@ -3151,12 +3166,18 @@ dict_add(PyObject *self, PyObject *other)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    /* If subclass constructors/initializers have been overridden to require
-     * at least one arg, this next bit could fail with a confusing TypeError...
-     * dict.fromkeys currently has this issue, though, so nothing new.
-     */
+    if (PyDict_CheckExact(self)) {
+        new = PyDict_New();
+    }
+    else {
 
-    new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
+        /* If subclass constructors/initializers have been overridden to require
+        * at least one arg, this next bit could fail with a confusing TypeError...
+        * dict.fromkeys currently has this issue, though, so nothing new.
+        */
+
+        new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
+    }
 
     if (new == NULL) {
         return NULL;
@@ -3198,9 +3219,15 @@ dict_sub(PyObject *self, PyObject *other)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    /* See dict_add for limitations of this construction: */
+    if (PyDict_CheckExact(self)) {
+        new = PyDict_New();
+    }
+    else {
 
-    new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
+        /* See dict_add for limitations of this construction: */
+        
+        new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
+    }
 
     if (new == NULL) {
         return NULL;
