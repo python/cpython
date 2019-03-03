@@ -760,6 +760,8 @@ class NormalDist:
         if not isinstance(other, NormalDist):
             raise TypeError('Expected another NormalDist instance')
         X, Y = self, other
+        if (Y.sigma, Y.mu) < (X.sigma, X.mu):   # sort to assure commutativity
+            X, Y = Y, X
         X_var, Y_var = X.variance, Y.variance
         if not X_var or not Y_var:
             raise StatisticsError('overlap() not defined when sigma is zero')
