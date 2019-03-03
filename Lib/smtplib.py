@@ -248,7 +248,6 @@ class SMTP:
         self.esmtp_features = {}
         self.command_encoding = 'ascii'
         self.source_address = source_address
-        self.mta_status_code = None
 
         if host:
             (code, msg) = self.connect(host, port)
