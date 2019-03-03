@@ -815,11 +815,6 @@ class SMTP:
         accompanying message sent by the server, which includes both errors
         and success messages.
 
-        This method will return normally if the mail is accepted for at least
-        one recipient.  It returns a dictionary, with one entry for each
-        recipient that was refused.  Each entry contains a tuple of the SMTP
-        error code and the accompanying error message sent by the server.
-
         This method may raise the following exceptions:
 
          SMTPHeloError          The server didn't reply properly to
