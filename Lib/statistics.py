@@ -913,8 +913,8 @@ if __name__ == '__main__':
     ]:
         print('X1:', X1)
         print('X2:', X2)
-        ovl1 = X1.overlap(X2)
-        ovl2 = overlap_numeric(X1, X2)
+        ovl1 = overlap_numeric(X1, X2)
+        ovl2 = X1.overlap(X2)
         print('Expected', ovl1)
         print('Actual', ovl2)
         print('Reversed', X2.overlap(X1))
@@ -930,8 +930,8 @@ if __name__ == '__main__':
     ]:
         print('X1:', X1)
         print('X2:', X2)
-        ovl1 = X1.overlap(X2)
-        ovl2 = overlap_numeric(X1, X2)
+        ovl1 = overlap_numeric(X1, X2)
+        ovl2 = X1.overlap(X2)
         print('Expected', ovl1)
         print('Actual', ovl2)
         print('Reversed', X2.overlap(X1))
