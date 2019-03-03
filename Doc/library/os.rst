@@ -3465,7 +3465,7 @@ written in Python, such as a mail server's external command delivery program.
    :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
    .. availability:: Unix.
 
