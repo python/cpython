@@ -757,7 +757,6 @@ class NormalDist:
         # probability distributions and point estimation of the overlap of two
         # normal densities" -- Henry F. Inman and Edwin L. Bradley Jr
         # http://dx.doi.org/10.1080/03610928908830127
-
         if not isinstance(other, NormalDist):
             raise TypeError('Expected another NormalDist instance')
         X, Y = self, other
@@ -892,48 +891,3 @@ if __name__ == '__main__':
     S = NormalDist.from_samples([x - y for x, y in zip(X.samples(n),
                                                        Y.samples(n))])
     assert_close(X - Y, S)
-
-    def overlap_numeric(X, Y, *, steps=8_192, z=5):
-        'Numerical integration cross-check for overlap() '
-        center = (X.mu + Y.mu) / 2.0
-        width = z * max(X.sigma, Y.sigma)
-        start = center - width
-        dx = 2.0 * width / steps
-        x_arr = [start + i*dx for i in range(steps)]
-        xp = list(map(X.pdf, x_arr))
-        yp = list(map(Y.pdf, x_arr))
-        total = max(fsum(xp), fsum(yp))
-        return fsum(map(min, xp, yp)) / total
-
-    print('\nOverlap with equal standard deviations:')
-    for X1, X2 in [
-            (NormalDist(100, 15), NormalDist(110, 15)),
-            # Example from Imman and Bradley (ovl=0.80258):
-            (NormalDist(0.0, 2.0), NormalDist(1.0, 2.0)),
-    ]:
-        print('X1:', X1)
-        print('X2:', X2)
-        ovl1 = overlap_numeric(X1, X2)
-        ovl2 = X1.overlap(X2)
-        print('Expected', ovl1)
-        print('Actual', ovl2)
-        print('Reversed', X2.overlap(X1))
-        print()
-        assert isclose(ovl1, ovl2, rel_tol=0.00001)
-
-    print('Overlap with unequal standard deviations:')
-    for X1, X2 in [
-            # Example from https://www.rasch.org/rmt/rmt101r.htm (ovl=80%)
-            (NormalDist(2.4, 1.6), NormalDist(3.2, 2.0)),
-            # Example from Imman and Bradley (ovl=0.60993):
-            (NormalDist(0.0, 1.0), NormalDist(1.0, 2.0)),
-    ]:
-        print('X1:', X1)
-        print('X2:', X2)
-        ovl1 = overlap_numeric(X1, X2)
-        ovl2 = X1.overlap(X2)
-        print('Expected', ovl1)
-        print('Actual', ovl2)
-        print('Reversed', X2.overlap(X1))
-        print()
-        assert isclose(ovl1, ovl2, rel_tol=0.00001)
