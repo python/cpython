@@ -2363,6 +2363,8 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         cookieObj = _PyObject_CallMethodId((PyObject *)self, &PyId_tell, NULL);
         if (cookieObj == NULL)
             goto fail;
+        break;
+
     case SEEK_END:
         /* seek relative to end of file */
         cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
@@ -2401,8 +2403,10 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             }
         }
         return res;
+
     case SEEK_SET:
         break;
+
     default:
         PyErr_Format(PyExc_ValueError,
                      "invalid whence (%d, should be %d, %d or %d)", whence,
