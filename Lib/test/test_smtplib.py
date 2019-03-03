@@ -1373,5 +1373,80 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
         self.assertEqual(code, 235)
 
 
+class SMTPLibTest(unittest.TestCase):
+
+    """ Tests for bpo-29539
+    To run the following tests successfully, you need to adjust
+    the class attributes based on your MTA configuration."""
+
+    mta = 'localhost'
+    message = 'This is a test message'
+
+    # sender
+    valid_from_addr = 'test@localhost'
+    invalid_from_addr = "blacklisted@localhost"
+
+    # recipients
+    valid_to_addr1 = 'example1@localhost'
+    valid_to_addr2 = 'example2@localhost'
+    invalid_to_addr = 'invalid@localhost'
+
+
+    def test_mta_status_not_empty_rcpt_valid(self):
+        with smtplib.SMTP(self.mta) as session:
+            result = session.sendmail(
+                self.valid_from_addr, self.valid_to_addr1, self.message)
+        self.assertEqual(len(result), 1)
+
+    def test_mta_status_multiple_rcpt_valid(self):
+        with smtplib.SMTP(self.mta) as session:
+            result = session.sendmail(
+                self.valid_from_addr,
+                [self.valid_to_addr1, self.valid_to_addr2],
+                self.message
+            )
+        self.assertEqual(len(result), 2)
+
+    def test_mta_status_code_ok(self):
+        with smtplib.SMTP(self.mta) as session:
+            result = session.sendmail(
+                self.valid_from_addr, self.valid_to_addr1, self.message
+            )
+        self.assertEqual(result[self.valid_to_addr1][0], 250 or 251)
+
+    def test_mta_status_code_err(self):
+        with self.assertRaises(smtplib.SMTPRecipientsRefused):
+            with smtplib.SMTP(self.mta) as session:
+                session.sendmail(
+                    self.valid_from_addr, self.invalid_to_addr, self.message
+                )
+
+    def test_smtp_sender_refused(self):
+        """Catch `SMTPSenderRefused` if MTA returns sender check immediately.
+        Otherwise it returns always `250 Ok`."""
+        # with self.assertRaises(smtplib.SMTPSenderRefused):
+        with self.assertRaises(smtplib.SMTPRecipientsRefused):
+            with smtplib.SMTP(self.mta) as session:
+                session.sendmail(
+                    self.invalid_from_addr, self.valid_to_addr1, self.message
+                )
+
+    def test_mta_status_mixed_valid_invalid_rcpt(self):
+        with smtplib.SMTP(self.mta) as session:
+            result = session.sendmail(
+                self.valid_from_addr,
+                [self.valid_to_addr1, self.invalid_to_addr],
+                self.message
+            )
+            return_codes = result[self.invalid_to_addr][0], \
+                           result[self.valid_to_addr1][0]
+            self.assertEqual((550 or 421 or 451, 250 or 251), return_codes)
+
+    def test_missing_arg(self):
+        with self.assertRaises(TypeError):
+            with smtplib.SMTP(self.mta) as session:
+                session.sendmail(self.valid_to_addr1, self.message, )
+
+
 if __name__ == '__main__':
     unittest.main()

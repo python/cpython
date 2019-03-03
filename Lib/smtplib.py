@@ -811,6 +811,11 @@ class SMTP:
         and each of the specified options will be passed to it.  If EHLO
         fails, HELO will be tried and ESMTP options suppressed.
 
+        This method returns a dictionary with one entry for each recipient.
+        Each entry will contain a tuple of the SMTP return code and the
+        accompanying message sent by the server, which includes both errors
+        and success messages.
+
         This method will return normally if the mail is accepted for at least
         one recipient.  It returns a dictionary, with one entry for each
         recipient that was refused.  Each entry contains a tuple of the SMTP
@@ -868,30 +873,35 @@ class SMTP:
             else:
                 self._rset()
             raise SMTPSenderRefused(code, resp, from_addr)
-        senderrs = {}
+        mta_result = {}
         if isinstance(to_addrs, str):
             to_addrs = [to_addrs]
-        for each in to_addrs:
-            (code, resp) = self.rcpt(each, rcpt_options)
+        for to_addr in to_addrs:
+            (code, resp) = self.rcpt(to_addr, rcpt_options)
             if (code != 250) and (code != 251):
-                senderrs[each] = (code, resp)
+                mta_result[to_addr] = (code, resp)
             if code == 421:
                 self.close()
-                raise SMTPRecipientsRefused(senderrs)
-        if len(senderrs) == len(to_addrs):
+                raise SMTPRecipientsRefused(mta_result)
+        if len(mta_result) == len(to_addrs):
             # the server refused all our recipients
             self._rset()
-            raise SMTPRecipientsRefused(senderrs)
+            raise SMTPRecipientsRefused(mta_result)
+
         (code, resp) = self.data(msg)
+
+        for to_addr in to_addrs:
+            if not to_addr in mta_result:
+                mta_result[to_addr] = (code, resp)
+
         if code != 250:
             if code == 421:
                 self.close()
             else:
                 self._rset()
             raise SMTPDataError(code, resp)
-        self.mta_status_code = (code, resp)
         #if we got here then somebody got our mail
-        return senderrs
+        return mta_result
 
     def send_message(self, msg, from_addr=None, to_addrs=None,
                      mail_options=(), rcpt_options=()):
