@@ -1,19 +1,8 @@
 import collections
 
+
 class Grammar:
-    """Pgen parsing tables conversion class.
-
-    Once initialized, this class supplies the grammar tables for the
-    parsing engine implemented by parse.py.  The parsing engine
-    accesses the instance variables directly.  The class here does not
-    provide initialization of the tables; several subclasses exist to
-    do this (see the conv and pgen modules).
-
-    The load() method reads the tables from a pickle file, which is
-    much faster than the other ways offered by subclasses.  The pickle
-    file is written by calling dump() (after loading the grammar
-    tables using a subclass).  The report() method prints a readable
-    representation of the tables to stdout, for debugging.
+    """Pgen parsing tables class.
 
     The instance variables are as follows:
 
@@ -36,8 +25,7 @@ class Grammar:
     dfas          -- a dict mapping symbol numbers to (DFA, first)
                      pairs, where DFA is an item from the states list
                      above, and first is a set of tokens that can
-                     begin this grammar rule (represented by a dict
-                     whose values are always 1).
+                     begin this grammar rule.
 
     labels        -- a list of (x, y) pairs where x is either a token
                      number or a symbol number, and y is either None
@@ -92,14 +80,12 @@ class Grammar:
             "static label labels[{n_labels}] = {{\n".format(n_labels=len(self.labels))
         )
         for label, name in self.labels:
-            if name is None:
-                writer("    {{{label}, 0}},\n".format(label=label))
-            else:
-                writer(
-                    '    {{{label}, "{label_name}"}},\n'.format(
-                        label=label, label_name=name
-                    )
+            label_name = '"{}"'.format(name) if name is not None else 0
+            writer(
+                '    {{{label}, {label_name}}},\n'.format(
+                    label=label, label_name=label_name
                 )
+            )
         writer("};\n")
 
     def print_dfas(self, writer):
@@ -114,10 +100,9 @@ class Grammar:
                 + "0, {n_states}, states_{dfa_index},\n".format(
                     n_states=len(dfa), dfa_index=dfaindex
                 )
+                + '     "'
             )
-            writer('     "')
 
-            k = [name for label, name in self.labels if label in first_sets]
             bitset = bytearray((len(self.labels) >> 3) + 1)
             for token in first_sets:
                 bitset[token >> 3] |= 1 << (token & 7)
