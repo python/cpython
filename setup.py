@@ -784,7 +784,9 @@ class PyBuildExt(build_ext):
         self.add(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
-        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
+        self.add(Extension('_xxsubinterpreters',
+                           ['_xxsubinterpretersmodule.c'],
+                           define_macros=[('Py_BUILD_CORE', '')]))
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
