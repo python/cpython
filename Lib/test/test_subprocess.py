@@ -49,7 +49,7 @@ if vxworks:
 
     no_shell = True
     no_preexec_fn = True
-elif not mswindows:
+else:
     import _posixsubprocess
     mock_modname = "subprocess._posixsubprocess.fork_exec"
     mock_submod  = subprocess._posixsubprocess
