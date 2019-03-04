@@ -1,0 +1,2 @@
+Fix two unlikely reference leaks in _hashopenssl. The leaks only occur in
+out-of-memory cases.
