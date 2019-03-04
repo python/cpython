@@ -1,0 +1,49 @@
+.. bpo: 35746
+.. date: 2019-01-15-18-16-05
+.. nonce: nMSd0j
+.. release date: 2019-03-03
+.. section: Security
+
+[CVE-2019-5010] Fix a NULL pointer deref in ssl module. The cert parser did
+not handle CRL distribution points with empty DP or URI correctly. A
+malicious or buggy certificate can result into segfault. Vulnerability
+(TALOS-2018-0758) reported by Colin Read and Nicolas Edet of Cisco.
+
+..
+
+.. bpo: 34791
+.. date: 2018-09-24-18-49-25
+.. nonce: 78GmIG
+.. section: Security
+
+The xml.sax and xml.dom.domreg no longer use environment variables to
+override parser implementations when sys.flags.ignore_environment is set by
+-E or -I arguments.
+
+..
+
+.. bpo: 34623
+.. date: 2018-09-10-16-05-39
+.. nonce: Ua9jMv
+.. section: Security
+
+CVE-2018-14647: The C accelerated _elementtree module now initializes hash
+randomization salt from _Py_HashSecret instead of libexpat's default CSPRNG.
+
+..
+
+.. bpo: 33329
+.. date: 2018-04-23-13-21-39
+.. nonce: lQ-Eod
+.. section: Library
+
+Fix multiprocessing regression on newer glibcs
+
+..
+
+.. bpo: 33127
+.. date: 2018-03-24-15-08-24
+.. nonce: olJmHv
+.. section: Library
+
+The ssl module now compiles with LibreSSL 2.7.1.
