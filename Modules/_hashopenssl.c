@@ -109,16 +109,17 @@ newEVPobject(PyObject *name)
         return NULL;
     }
 
-    retval->ctx = EVP_MD_CTX_new();
-    if (retval->ctx == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     /* save the name for .name to return */
     Py_INCREF(name);
     retval->name = name;
     retval->lock = NULL;
+
+    retval->ctx = EVP_MD_CTX_new();
+    if (retval->ctx == NULL) {
+        Py_DECREF(retval);
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     return retval;
 }
@@ -182,6 +183,7 @@ EVP_copy_impl(EVPobject *self)
         return NULL;
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
+        Py_DECREF(newobj);
         return _setException(PyExc_ValueError);
     }
     return (PyObject *)newobj;
