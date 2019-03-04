@@ -290,39 +290,20 @@ LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 ##########################################################################
 # Parser
-PGEN=		Parser/pgen$(EXE)
-
 POBJS=		\
 		Parser/acceler.o \
 		Parser/grammar1.o \
 		Parser/listnode.o \
 		Parser/node.o \
 		Parser/parser.o \
-		Parser/bitset.o \
-		Parser/metagrammar.o \
-		Parser/firstsets.o \
-		Parser/grammar.o \
 		Parser/token.o \
-		Parser/pgen.o
 
 PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
-
-PGOBJS=		\
-		Objects/obmalloc.o \
-		Python/dynamic_annotations.o \
-		Python/mysnprintf.o \
-		Python/pyctype.o \
-		Parser/tokenizer_pgen.o \
-		Parser/printgrammar.o \
-		Parser/parsetok_pgen.o \
-		Parser/pgenmain.o
 
 PARSER_HEADERS= \
 		$(srcdir)/Parser/parser.h \
 		$(srcdir)/Include/parsetok.h \
 		$(srcdir)/Parser/tokenizer.h
-
-PGENOBJS=	$(POBJS) $(PGOBJS)
 
 ##########################################################################
 # Python
@@ -357,6 +338,7 @@ PYTHON_OBJS=	\
 		Python/mystrtoul.o \
 		Python/pathconfig.o \
 		Python/peephole.o \
+		Python/preconfig.o \
 		Python/pyarena.o \
 		Python/pyctype.o \
 		Python/pyfpe.o \
@@ -409,6 +391,7 @@ OBJECT_OBJS=	\
 		Objects/floatobject.o \
 		Objects/frameobject.o \
 		Objects/funcobject.o \
+		Objects/interpreteridobject.o \
 		Objects/iterobject.o \
 		Objects/listobject.o \
 		Objects/longobject.o \
@@ -801,30 +784,17 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
 
 $(IO_OBJS): $(IO_H)
 
-$(PGEN): $(PGENOBJS)
-		$(CC) $(OPT) $(PY_CORE_LDFLAGS) $(PGENOBJS) $(LIBS) -o $(PGEN)
-
 .PHONY: regen-grammar
-regen-grammar: $(PGEN)
+regen-grammar: regen-token
 	# Regenerate Include/graminit.h and Python/graminit.c
 	# from Grammar/Grammar using pgen
 	@$(MKDIR_P) Include
-	$(PGEN) $(srcdir)/Grammar/Grammar \
+	$(PYTHON_FOR_REGEN) -m Parser.pgen $(srcdir)/Grammar/Grammar \
+		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Include/graminit.h.new \
 		$(srcdir)/Python/graminit.c.new
 	$(UPDATE_FILE) $(srcdir)/Include/graminit.h $(srcdir)/Include/graminit.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/graminit.c $(srcdir)/Python/graminit.c.new
-
-Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
-				$(srcdir)/Include/token.h \
-				$(srcdir)/Include/grammar.h
-Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
-
-Parser/tokenizer_pgen.o:	$(srcdir)/Parser/tokenizer.c
-Parser/parsetok_pgen.o:	$(srcdir)/Parser/parsetok.c
-Parser/printgrammar.o: $(srcdir)/Parser/printgrammar.c
-
-Parser/pgenmain.o:	$(srcdir)/Include/parsetok.h
 
 .PHONY=regen-ast
 regen-ast:
@@ -994,7 +964,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
-		$(srcdir)/Include/coreconfig.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dtoa.h \
@@ -1009,6 +978,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/funcobject.h \
 		$(srcdir)/Include/genobject.h \
 		$(srcdir)/Include/import.h \
+		$(srcdir)/Include/interpreteridobject.h \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
@@ -1016,7 +986,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/longobject.h \
 		$(srcdir)/Include/marshal.h \
 		$(srcdir)/Include/memoryobject.h \
-		$(srcdir)/Include/metagrammar.h \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
@@ -1028,7 +997,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
-		$(srcdir)/Include/pgen.h \
 		$(srcdir)/Include/pgenheaders.h \
 		$(srcdir)/Include/pyarena.h \
 		$(srcdir)/Include/pycapsule.h \
@@ -1071,7 +1039,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/Python-ast.h \
 		\
 		$(srcdir)/Include/cpython/abstract.h \
+		$(srcdir)/Include/cpython/coreconfig.h \
 		$(srcdir)/Include/cpython/dictobject.h \
+		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
@@ -1085,6 +1055,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_coreconfig.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
@@ -1769,7 +1740,7 @@ profile-removal:
 	rm -f profile-run-stamp
 
 clobber: clean profile-removal
-	-rm -f $(BUILDPYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
+	-rm -f $(BUILDPYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform

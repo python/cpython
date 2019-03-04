@@ -81,10 +81,10 @@
     <ClInclude Include="..\Include\context.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\coreconfig.h">
+    <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\abstract.h">
+    <ClInclude Include="..\Include\cpython\coreconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\dictobject.h">
@@ -174,6 +174,9 @@
     <ClInclude Include="..\Include\internal\pycore_context.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_coreconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -231,9 +234,6 @@
     <ClInclude Include="..\Include\memoryobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\metagrammar.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\methodobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -265,9 +265,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\patchlevel.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\pgen.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pgenheaders.h">
@@ -484,6 +481,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\namespaceobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\interpreteridobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\hashtable.h">
@@ -833,22 +833,10 @@
     <ClCompile Include="..\Parser\acceler.c">
       <Filter>Parser</Filter>
     </ClCompile>
-    <ClCompile Include="..\Parser\bitset.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\firstsets.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\grammar.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
     <ClCompile Include="..\Parser\grammar1.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\listnode.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\metagrammar.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\myreadline.c">
@@ -986,6 +974,9 @@
     <ClCompile Include="..\Python\peephole.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\preconfig.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pyarena.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1053,6 +1044,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\namespaceobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\interpreteridobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_opcode.c">

@@ -2,6 +2,7 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 
@@ -327,26 +328,37 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
 }
 
 
-PyInterpreterState *
-_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+static PyInterpreterState *
+interp_look_up_id(PY_INT64_T requested_id)
 {
-    if (requested_id < 0)
-        goto error;
-
     PyInterpreterState *interp = PyInterpreterState_Head();
     while (interp != NULL) {
         PY_INT64_T id = PyInterpreterState_GetID(interp);
-        if (id < 0)
+        if (id < 0) {
             return NULL;
-        if (requested_id == id)
+        }
+        if (requested_id == id) {
             return interp;
+        }
         interp = PyInterpreterState_Next(interp);
     }
-
-error:
-    PyErr_Format(PyExc_RuntimeError,
-                 "unrecognized interpreter ID %lld", requested_id);
     return NULL;
+}
+
+PyInterpreterState *
+_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+{
+    PyInterpreterState *interp = NULL;
+    if (requested_id >= 0) {
+        HEAD_UNLOCK();
+        interp = interp_look_up_id(requested_id);
+        HEAD_UNLOCK();
+    }
+    if (interp == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unrecognized interpreter ID %lld", requested_id);
+    }
+    return interp;
 }
 
 
@@ -391,7 +403,7 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     int64_t refcount = interp->id_refcount;
     PyThread_release_lock(interp->id_mutex);
 
-    if (refcount == 0) {
+    if (refcount == 0 && interp->requires_idref) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?
@@ -399,6 +411,18 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
         Py_EndInterpreter(tstate);
         PyThreadState_Swap(save_tstate);
     }
+}
+
+int
+_PyInterpreterState_RequiresIDRef(PyInterpreterState *interp)
+{
+    return interp->requires_idref;
+}
+
+void
+_PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
+{
+    interp->requires_idref = required ? 1 : 0;
 }
 
 _PyCoreConfig *
@@ -411,6 +435,16 @@ _PyMainInterpreterConfig *
 _PyInterpreterState_GetMainConfig(PyInterpreterState *interp)
 {
     return &interp->config;
+}
+
+PyObject *
+_PyInterpreterState_GetMainModule(PyInterpreterState *interp)
+{
+    if (interp->modules == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
+        return NULL;
+    }
+    return PyMapping_GetItemString(interp->modules, "__main__");
 }
 
 /* Default implementation for _PyThreadState_GetFrame */
@@ -1279,7 +1313,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     return 0;
 }
 
-static void
+static int
 _release_xidata(void *arg)
 {
     _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
@@ -1287,30 +1321,8 @@ _release_xidata(void *arg)
         data->free(data->data);
     }
     Py_XDECREF(data->obj);
-}
-
-static void
-_call_in_interpreter(PyInterpreterState *interp,
-                     void (*func)(void *), void *arg)
-{
-    /* We would use Py_AddPendingCall() if it weren't specific to the
-     * main interpreter (see bpo-33608).  In the meantime we take a
-     * naive approach.
-     */
-    PyThreadState *save_tstate = NULL;
-    if (interp != _PyInterpreterState_Get()) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        // XXX Possible GILState issues?
-        save_tstate = PyThreadState_Swap(tstate);
-    }
-
-    func(arg);
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        PyThreadState_Swap(save_tstate);
-    }
+    PyMem_Free(data);
+    return 0;
 }
 
 void
@@ -1321,7 +1333,7 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         return;
     }
 
-    // Switch to the original interpreter.
+    // Get the original interpreter.
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interp);
     if (interp == NULL) {
         // The intepreter was already destroyed.
@@ -1330,10 +1342,24 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         }
         return;
     }
+    // XXX There's an ever-so-slight race here...
+    if (interp->finalizing) {
+        // XXX Someone leaked some memory...
+        return;
+    }
 
     // "Release" the data and/or the object.
-    // XXX Use _Py_AddPendingCall().
-    _call_in_interpreter(interp, _release_xidata, data);
+    _PyCrossInterpreterData *copied = PyMem_Malloc(sizeof(_PyCrossInterpreterData));
+    if (copied == NULL) {
+        PyErr_SetString(PyExc_MemoryError,
+                        "Not enough memory to preserve cross-interpreter data");
+        PyErr_Print();
+        return;
+    }
+    memcpy(copied, data, sizeof(_PyCrossInterpreterData));
+    if (_Py_AddPendingCall(interp, 0, _release_xidata, copied) != 0) {
+        // XXX Queue full or couldn't get lock.  Try again somehow?
+    }
 }
 
 PyObject *
@@ -1366,7 +1392,7 @@ _register_xidata(PyTypeObject *cls, crossinterpdatafunc getdata)
 static void _register_builtins_for_crossinterpreter_data(void);
 
 int
-_PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
+_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
                                        crossinterpdatafunc getdata)
 {
     if (!PyType_Check(cls)) {

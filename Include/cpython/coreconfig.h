@@ -1,15 +1,27 @@
 #ifndef Py_PYCORECONFIG_H
 #define Py_PYCORECONFIG_H
+#ifndef Py_LIMITED_API
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* --- _PyArgv ---------------------------------------------------- */
 
-#ifndef Py_LIMITED_API
+typedef struct {
+    int argc;
+    int use_bytes_argv;
+    char **bytes_argv;
+    wchar_t **wchar_argv;
+} _PyArgv;
+
+
+/* --- _PyInitError ----------------------------------------------- */
+
 typedef struct {
     const char *prefix;
     const char *msg;
     int user_err;
+    int exitcode;
 } _PyInitError;
 
 /* Almost all errors causing Python initialization to fail */
@@ -21,19 +33,20 @@ typedef struct {
 #endif
 
 #define _Py_INIT_OK() \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0}
+    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = -1}
 #define _Py_INIT_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 0}
+    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 0, .exitcode = -1}
 /* Error that can be fixed by the user like invalid input parameter.
    Don't abort() the process on such error. */
 #define _Py_INIT_USER_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1}
+    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1, .exitcode = -1}
 #define _Py_INIT_NO_MEMORY() _Py_INIT_USER_ERR("memory allocation failed")
+#define _Py_INIT_EXIT(EXITCODE) \
+    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = (EXITCODE)}
 #define _Py_INIT_FAILED(err) \
-    (err.msg != NULL)
+    (err.msg != NULL || err.exitcode != -1)
 
-#endif   /* !defined(Py_LIMITED_API) */
-
+/* --- _PyCoreConfig ---------------------------------------------- */
 
 typedef struct {
     /* Install signal handlers? Yes by default. */
@@ -273,7 +286,19 @@ typedef struct {
     int legacy_windows_stdio;
 #endif
 
-    /* --- Private fields -------- */
+    /* --- Parameter only used by Py_Main() ---------- */
+
+    /* Skip the first line of the source ('run_filename' parameter), allowing use of non-Unix forms of
+       "#!cmd".  This is intended for a DOS specific hack only.
+
+       Set by the -x command line option. */
+    int skip_source_first_line;
+
+    wchar_t *run_command;   /* -c command line argument */
+    wchar_t *run_module;    /* -m command line argument */
+    wchar_t *run_filename;  /* Trailing command line argument without -c or -m */
+
+    /* --- Private fields ---------------------------- */
 
     /* Install importlib? If set to 0, importlib is not initialized at all.
        Needed by freeze_importlib. */
@@ -339,32 +364,13 @@ typedef struct {
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
-PyAPI_FUNC(int) _PyCoreConfig_Copy(
-    _PyCoreConfig *config,
-    const _PyCoreConfig *config2);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
-    const _PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config);
-PyAPI_FUNC(const char*) _PyCoreConfig_GetEnv(
-    const _PyCoreConfig *config,
-    const char *name);
-PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
-    const _PyCoreConfig *config,
-    wchar_t **dest,
-    wchar_t *wname,
-    char *name);
+/* --- Function used for testing ---------------------------------- */
 
-/* Used by _testcapi.get_global_config() and _testcapi.get_core_config() */
 PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
 PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
-#endif
 
 #ifdef __cplusplus
 }
 #endif
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "osdefs.h"
+#include "pycore_coreconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
@@ -407,7 +408,7 @@ pathconfig_global_init(void)
 
 error:
     _PyCoreConfig_Clear(&config);
-    _Py_FatalInitError(err);
+    _Py_ExitInitError(err);
 }
 
 

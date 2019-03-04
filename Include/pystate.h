@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 #include "pythread.h"
-#include "coreconfig.h"
 
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
