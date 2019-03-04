@@ -531,13 +531,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
-   archive; for example, we typically chdir into *root_dir* before creating the
-   archive.  This also means that all paths in the archive will be relative to
-   *root_dir*.
+   archive, all paths in the archive will be relative to it; for example,
+   we typically chdir into *root_dir* before creating the archive.
 
    *base_dir* is the directory where we start archiving from;
    i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.  *base_dir* must be given realative
+   directories in the archive.  *base_dir* must be given relative
    to *root_dir*.
 
    *root_dir* and *base_dir* both default to the current directory.
@@ -687,12 +686,11 @@ The resulting archive contains:
 Archiving example with *base_dir*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this example, we try to make the use of *base_dir* a bit more clear.  We
-have a file :file:`please_add.txt` within the directory structure
-:file:`tmp/root/structure/content`, which we want to add to the archive along
-with the directories :file:`structure` and :file:`content`, and a second file
-:file:`do_not_add.txt` in :file:`tmp/root/structure`, which we don't want to have
-in the archive. Therefore we use the following::
+In this example, we have a file :file:`please_add.txt` within the directory
+structure :file:`tmp/root/structure/content`, which we want to add to the
+archive along with the directories :file:`structure` and :file:`content`, and a
+second file :file:`do_not_add.txt` in :file:`tmp/root/structure`, which we don't
+want to have in the archive. Therefore we use the following::
 
     >>> from shutil import make_archive
     >>> make_archive(base_name='tmp/archive',
