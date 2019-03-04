@@ -66,7 +66,11 @@ try:
     _mswindows = True
 except ModuleNotFoundError:
     _mswindows = False
-    import _posixsubprocess
+    _vxworks = (sys.platform == "vxworks")
+    if _vxworks:
+        import _vxwapi
+    else:
+        import _posixsubprocess
     import select
     import selectors
 else:
@@ -733,6 +737,14 @@ class Popen(object):
                 raise ValueError("preexec_fn is not supported on Windows "
                                  "platforms")
         else:
+            if _vxworks:
+                if shell:
+                    raise ValueError("shell is not supported on VxWorks")
+                if preexec_fn is not None:
+                    raise ValueError("Preexecution function is not supported"
+                                     "on VxWorks");
+                if start_new_session:
+                    raise ValueError("VxWorks does not support sessions");
             # POSIX
             if pass_fds and not close_fds:
                 warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
@@ -1580,7 +1592,17 @@ class Popen(object):
                             for dir in os.get_exec_path(env))
                     fds_to_keep = set(pass_fds)
                     fds_to_keep.add(errpipe_write)
-                    self.pid = _posixsubprocess.fork_exec(
+                    if _vxworks:
+                        self.pid = _vxwapi.rtp_spawn(
+                            args, executable_list,
+                            close_fds, tuple(sorted(map(int, fds_to_keep))),
+                            cwd, env_list,
+                            p2cread, p2cwrite, c2pread, c2pwrite,
+                            errread, errwrite,
+                            errpipe_read, errpipe_write,
+                            restore_signals, start_new_session, preexec_fn)
+                    else:
+                        self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
                             close_fds, tuple(sorted(map(int, fds_to_keep))),
                             cwd, env_list,
@@ -1589,6 +1611,8 @@ class Popen(object):
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session, preexec_fn)
                     self._child_created = True
+                    if _vxworks and self.pid == -1:
+                        self._child_created = False
                 finally:
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
