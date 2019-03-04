@@ -1,5 +1,6 @@
 import itertools
 
+
 def generate_tokens(tokens):
     numbers = itertools.count(0)
     for line in tokens:
@@ -15,6 +16,7 @@ def generate_tokens(tokens):
 
     yield ('N_TOKENS', next(numbers))
     yield ('NT_OFFSET', 256)
+
 
 def generate_opmap(tokens):
     for line in tokens:

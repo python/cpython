@@ -3,6 +3,7 @@ import tokenize  # from stdlib
 
 from . import grammar, token
 
+
 class ParserGenerator(object):
 
     def __init__(self, grammar_file, token_file, stream=None, verbose=False):
@@ -183,11 +184,8 @@ class ParserGenerator(object):
             dfa = self.make_dfa(a, z)
             if self.verbose:
                 self.dump_dfa(name, dfa)
-            oldlen = len(dfa)
             self.simplify_dfa(dfa)
-            newlen = len(dfa)
             dfas[name] = dfa
-            #print name, oldlen, newlen
             if startsymbol is None:
                 startsymbol = name
         return dfas, startsymbol
@@ -355,7 +353,7 @@ class ParserGenerator(object):
         if args:
             try:
                 msg = msg % args
-            except:
+            except Exception:
                 msg = " ".join([msg] + list(map(str, args)))
         raise SyntaxError(msg, (self.filename, self.end[0],
                                 self.end[1], self.line))
