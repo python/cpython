@@ -637,7 +637,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
     PyThreadState *tstate = _PyThreadState_GET();
-    _Py_atomic_int *eval_breaker = &tstate->interp->ceval.eval_breaker;
     PyCodeObject *co;
 
     /* when tracing we set things up so that
@@ -723,7 +722,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
 #define DISPATCH() \
     { \
-        if (!_Py_atomic_load_relaxed(eval_breaker)) { \
+        if (!_Py_atomic_load_relaxed(&tstate->interp->ceval.eval_breaker)) { \
                     FAST_DISPATCH(); \
         } \
         continue; \
@@ -1025,7 +1024,7 @@ main_loop:
            async I/O handler); see Py_AddPendingCall() and
            Py_MakePendingCalls() above. */
 
-        if (_Py_atomic_load_relaxed(eval_breaker)) {
+        if (_Py_atomic_load_relaxed(&(tstate->interp->ceval.eval_breaker))) {
             opcode = _Py_OPCODE(*next_instr);
             if (opcode == SETUP_FINALLY ||
                 opcode == SETUP_WITH ||
