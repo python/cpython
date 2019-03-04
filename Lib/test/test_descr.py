@@ -5353,9 +5353,9 @@ class SharedKeyTests(unittest.TestCase):
         self.assertNotEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
         a2 = A()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
-        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
         b.u, b.v, b.w, b.t, b.s, b.r = range(6)
-        self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({}))
+        self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({"a":1}))
 
 
 class DebugHelperMeta(type):
