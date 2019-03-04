@@ -90,8 +90,8 @@ typedef struct {
        * The UTF-8 Mode uses UTF-8/surrogateescape;
        * If Python forces the usage of the ASCII encoding (ex: C locale
          or POSIX locale on FreeBSD or HP-UX), use ASCII/surrogateescape;
-       * locale encoding: ANSI code page on Windows, UTF-8 on Android,
-         LC_CTYPE locale encoding on other platforms;
+       * locale encoding: ANSI code page on Windows, UTF-8 on Android and
+         VxWorks, LC_CTYPE locale encoding on other platforms;
        * On Windows, "surrogateescape" error handler;
        * "surrogateescape" error handler if the LC_CTYPE locale is "C" or "POSIX";
        * "surrogateescape" error handler if the LC_CTYPE locale has been coerced
