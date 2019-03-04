@@ -394,6 +394,8 @@ functions.
 
       Popen(['/bin/sh', '-c', args[0], args[1], ...])
 
+   VxWorks does not support shell argument.
+
    On Windows with ``shell=True``, the :envvar:`COMSPEC` environment variable
    specifies the default shell.  The only time you need to specify
    ``shell=True`` on Windows is when the command you wish to execute is built
@@ -448,6 +450,8 @@ functions.
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
    (POSIX only)
+
+   VxWorks does not support preexec_fn argument.
 
    .. warning::
 
@@ -508,6 +512,8 @@ functions.
 
    If *start_new_session* is true the setsid() system call will be made in the
    child process prior to the execution of the subprocess.  (POSIX only)
+
+   VxWorks does not support start_new_session argument.
 
    .. versionchanged:: 3.2
       *start_new_session* was added.

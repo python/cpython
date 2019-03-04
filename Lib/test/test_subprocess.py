@@ -36,6 +36,24 @@ if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
 mswindows = (sys.platform == "win32")
+vxworks   = (sys.platform == "vxworks")
+
+no_shell = False
+no_preexec_fn = False
+
+if vxworks:
+    import _vxwapi
+    mock_modname = "subprocess._vxwapi.rtp_spawn"
+    mock_submod  = subprocess._vxwapi
+    mock_func    = _vxwapi.rtp_spawn
+
+    no_shell = True
+    no_preexec_fn = True
+elif not mswindows:
+    import _posixsubprocess
+    mock_modname = "subprocess._posixsubprocess.fork_exec"
+    mock_submod  = subprocess._posixsubprocess
+    mock_func    = _posixsubprocess.fork_exec
 
 #
 # Depends on the following external programs: Python
@@ -315,6 +333,7 @@ class ProcessTestCase(BaseTestCase):
                           executable=NONEXISTING_CMD[0])
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_executable_replaces_shell(self):
         # Check that the executable argument replaces the default shell
         # when shell=True.
@@ -1581,8 +1600,8 @@ class POSIXProcessTestCase(BaseTestCase):
         def __del__(self):
             pass
 
-    @mock.patch("subprocess._posixsubprocess.fork_exec")
-    def test_exception_errpipe_normal(self, fork_exec):
+    @mock.patch(mock_modname)
+    def test_exception_errpipe_normal(self, mock_func):
         """Test error passing done through errpipe_write in the good case"""
         def proper_error(*args):
             errpipe_write = args[13]
@@ -1591,15 +1610,15 @@ class POSIXProcessTestCase(BaseTestCase):
             os.write(errpipe_write, b"OSError:" + err_code + b":")
             return 0
 
-        fork_exec.side_effect = proper_error
+        mock_func.side_effect = proper_error
 
         with mock.patch("subprocess.os.waitpid",
                         side_effect=ChildProcessError):
             with self.assertRaises(IsADirectoryError):
                 self.PopenNoDestructor(["non_existent_command"])
 
-    @mock.patch("subprocess._posixsubprocess.fork_exec")
-    def test_exception_errpipe_bad_data(self, fork_exec):
+    @mock.patch(mock_modname)
+    def test_exception_errpipe_bad_data(self, mock_func):
         """Test error passing done through errpipe_write where its not
         in the expected format"""
         error_data = b"\xFF\x00\xDE\xAD"
@@ -1611,7 +1630,7 @@ class POSIXProcessTestCase(BaseTestCase):
             os.write(errpipe_write, error_data)
             return 0
 
-        fork_exec.side_effect = bad_error
+        mock_func.side_effect = bad_error
 
         with mock.patch("subprocess.os.waitpid",
                         side_effect=ChildProcessError):
@@ -1644,6 +1663,8 @@ class POSIXProcessTestCase(BaseTestCase):
                             msg="restore_signals=True should've unblocked "
                             "SIGPIPE and friends.")
 
+    @unittest.skipUnless(os is not None and hasattr(os, 'setsid'),
+                         'need os.setsid')
     def test_start_new_session(self):
         # For code coverage of calling setsid().  We don't care if we get an
         # EPERM error from it depending on the test execution environment, that
@@ -1690,6 +1711,7 @@ class POSIXProcessTestCase(BaseTestCase):
         error_string = str(err)
         self.assertIn("non-zero exit status 2.", error_string)
 
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
         # of a preexec_fn.  This is merely a test.
@@ -1701,6 +1723,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stdout.read(), b"apple")
 
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_preexec_exception(self):
         def raise_it():
             raise ValueError("What if two swallows carried a coconut?")
@@ -1709,7 +1732,7 @@ class POSIXProcessTestCase(BaseTestCase):
                                  preexec_fn=raise_it)
         except subprocess.SubprocessError as e:
             self.assertTrue(
-                    subprocess._posixsubprocess,
+                    mock_submod,
                     "Expected a ValueError from the preexec_fn")
         except ValueError as e:
             self.assertIn("coconut", e.args[0])
@@ -1743,6 +1766,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         os.close(fd)
 
     @unittest.skipIf(not os.path.exists("/dev/zero"), "/dev/zero required.")
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_preexec_errpipe_does_not_double_close_pipes(self):
         """Issue16140: Don't double close pipes on preexec error."""
 
@@ -1756,6 +1780,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE, preexec_fn=raise_it)
 
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_preexec_gc_module_failure(self):
         # This tests the code that disables garbage collection if the child
         # process will execute any Python.
@@ -1795,6 +1820,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(
         sys.platform == 'darwin', 'setrlimit() seems to fail on OS X')
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_preexec_fork_failure(self):
         # The internal code did not preserve the previous exception when
         # re-enabling garbage collection
@@ -1840,6 +1866,7 @@ class POSIXProcessTestCase(BaseTestCase):
                            "import sys; sys.exit(47)"],
                           creationflags=47)
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_sequence(self):
         # Run command through the shell (sequence)
         newenv = os.environ.copy()
@@ -1850,6 +1877,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with p:
             self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_string(self):
         # Run command through the shell (string)
         newenv = os.environ.copy()
@@ -1873,6 +1901,7 @@ class POSIXProcessTestCase(BaseTestCase):
         os.remove(fname)
         self.assertEqual(rc, 47)
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_specific_shell(self):
         # Issue #9265: Incorrect name passed as arg[0].
         shells = []
@@ -2203,6 +2232,7 @@ class POSIXProcessTestCase(BaseTestCase):
             for to_fds in itertools.permutations(range(3), 2):
                 self._check_swap_std_fds_with_one_closed(from_fds, to_fds)
 
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_surrogates_error_message(self):
         def prepare():
             raise ValueError("surrogate:\uDCff")
@@ -2213,11 +2243,11 @@ class POSIXProcessTestCase(BaseTestCase):
                 preexec_fn=prepare)
         except ValueError as err:
             # Pure Python implementations keeps the message
-            self.assertIsNone(subprocess._posixsubprocess)
+            self.assertIsNone(mock_submod)
             self.assertEqual(str(err), "surrogate:\uDCff")
         except subprocess.SubprocessError as err:
             # _posixsubprocess uses a default message
-            self.assertIsNotNone(subprocess._posixsubprocess)
+            self.assertIsNotNone(mock_submod)
             self.assertEqual(str(err), "Exception occurred in preexec_fn.")
         else:
             self.fail("Expected ValueError or subprocess.SubprocessError")
@@ -2251,6 +2281,7 @@ class POSIXProcessTestCase(BaseTestCase):
             stdout = stdout.rstrip(b'\n\r')
             self.assertEqual(stdout.decode('ascii'), ascii(encoded_value))
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_bytes_program(self):
         abs_program = os.fsencode(sys.executable)
         path, program = os.path.split(sys.executable)
@@ -2662,6 +2693,7 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertRaises(OSError, os.waitpid, pid, 0)
         self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_close_fds_after_preexec(self):
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
 
@@ -2680,6 +2712,7 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertNotIn(fd, remaining_fds)
 
     @support.cpython_only
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_fork_exec(self):
         # Issue #22290: fork_exec() must not crash on memory allocation failure
         # or other errors
@@ -2712,7 +2745,6 @@ class POSIXProcessTestCase(BaseTestCase):
     @support.cpython_only
     def test_fork_exec_sorted_fd_sanity_check(self):
         # Issue #23564: sanity check the fork_exec() fds_to_keep sanity check.
-        import _posixsubprocess
         class BadInt:
             first = True
             def __init__(self, value):
@@ -2738,7 +2770,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 with self.assertRaises(
                         ValueError,
                         msg='fds_to_keep={}'.format(fds_to_keep)) as c:
-                    _posixsubprocess.fork_exec(
+                    mock_func(
                         [b"false"], [b"false"],
                         True, fds_to_keep, None, [b"env"],
                         -1, -1, -1, -1,
@@ -2884,6 +2916,7 @@ class Win32ProcessTestCase(BaseTestCase):
                         ' -c "import time; time.sleep(0.25)"',
                         creationflags=CREATE_NEW_CONSOLE)
 
+    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_invalid_args(self):
         # invalid arguments should raise ValueError
         self.assertRaises(ValueError, subprocess.call,
@@ -2968,6 +3001,7 @@ class Win32ProcessTestCase(BaseTestCase):
         subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
                         startupinfo=startupinfo)
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_sequence(self):
         # Run command through the shell (sequence)
         newenv = os.environ.copy()
@@ -2978,6 +3012,7 @@ class Win32ProcessTestCase(BaseTestCase):
         with p:
             self.assertIn(b"physalis", p.stdout.read())
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_string(self):
         # Run command through the shell (string)
         newenv = os.environ.copy()
@@ -2988,6 +3023,7 @@ class Win32ProcessTestCase(BaseTestCase):
         with p:
             self.assertIn(b"physalis", p.stdout.read())
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_encodings(self):
         # Run command through the shell (string)
         for enc in ['ansi', 'oem']:
@@ -3134,6 +3170,7 @@ class MiscTests(unittest.TestCase):
                 raise KeyboardInterrupt  # Test how __exit__ handles ^C.
         self._test_keyboardinterrupt_no_kill(popen_via_context_manager)
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_getoutput(self):
         self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
         self.assertEqual(subprocess.getstatusoutput('echo xyzzy'),
@@ -3206,11 +3243,13 @@ class CommandsWithSpaces (BaseTestCase):
               "2 [%r, 'ab cd']" % self.fname
             )
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_string_with_spaces(self):
         # call() function with string argument with spaces on Windows
         self.with_spaces('"%s" "%s" "%s"' % (sys.executable, self.fname,
                                              "ab cd"), shell=1)
 
+    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_sequence_with_spaces(self):
         # call() function with sequence argument with spaces on Windows
         self.with_spaces([sys.executable, self.fname, "ab cd"], shell=1)
