@@ -959,7 +959,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: CREATE_NO_WINDOW
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will not create a window
+   will not create a window.
 
    .. versionadded:: 3.7
 
@@ -1295,7 +1295,7 @@ Replacing functions from the :mod:`popen2` module
 
 * :class:`Popen` raises an exception if the execution fails.
 
-* the *capturestderr* argument is replaced with the *stderr* argument.
+* The *capturestderr* argument is replaced with the *stderr* argument.
 
 * ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
 
