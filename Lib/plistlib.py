@@ -179,6 +179,10 @@ class UID:
     def __init__(self, data):
         if not isinstance(data, int):
             raise TypeError("data must be an int")
+        if data >= 1 << 64:
+            raise ValueError("UIDs cannot be >= 2**64")
+        if data < 0:
+            raise ValueError("UIDs must be positive")
         self.data = data
 
     def __index__(self):
@@ -191,7 +195,12 @@ class UID:
         return self.__class__, (self.data,)
 
     def __eq__(self, other):
+        if not isinstance(other, UID):
+            return NotImplemented
         return self.data == other.data
+
+    def __hash__(self):
+        return hash(self.data)
 
 
 #
@@ -895,7 +904,18 @@ class _BinaryPlistWriter (object):
             self._fp.write(t)
 
         elif isinstance(value, UID):
-            self._fp.write(struct.pack('>BB', 0x80, value))
+            if value.data < 0:
+                raise ValueError("UIDs must be positive")
+            elif value.data < 1 << 8:
+                self._fp.write(struct.pack('>BB', 0x80, value))
+            elif value.data < 1 << 16:
+                self._fp.write(struct.pack('>BH', 0x81, value))
+            elif value.data < 1 << 32:
+                self._fp.write(struct.pack('>BL', 0x83, value))
+            elif value.data < 1 << 64:
+                self._fp.write(struct.pack('>BQ', 0x87, value))
+            else:
+                raise OverflowError(value)
 
         elif isinstance(value, (list, tuple)):
             refs = [self._getrefnum(o) for o in value]

@@ -1,5 +1,7 @@
 # Copyright (C) 2003-2013 Python Software Foundation
-
+import copy
+import operator
+import pickle
 import unittest
 import plistlib
 import os
@@ -167,6 +169,10 @@ class TestPlistlib(unittest.TestCase):
     def test_invalid_uid(self):
         with self.assertRaises(TypeError):
             UID("not an int")
+        with self.assertRaises(ValueError):
+            UID(2 ** 64)
+        with self.assertRaises(ValueError):
+            UID(-19)
 
     def test_int(self):
         for pl in [0, 2**8-1, 2**8, 2**16-1, 2**16, 2**32-1, 2**32,
@@ -220,8 +226,41 @@ class TestPlistlib(unittest.TestCase):
     def test_uid(self):
         data = UID(1)
         self.assertEqual(plistlib.loads(plistlib.dumps(data, fmt=plistlib.FMT_BINARY)), data)
-        dict_data = {'uid2': UID(2), 'uid3': UID(3)}
+        dict_data = {
+            'uid0': UID(0),
+            'uid2': UID(2),
+            'uid8': UID(2 ** 8),
+            'uid16': UID(2 ** 16),
+            'uid32': UID(2 ** 32),
+            'uid63': UID(2 ** 63)
+        }
         self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=plistlib.FMT_BINARY)), dict_data)
+
+    def test_uid_data(self):
+        uid = UID(1)
+        self.assertEqual(uid.data, 1)
+
+    def test_uid_eq(self):
+        self.assertEqual(UID(1), UID(1))
+        self.assertNotEqual(UID(1), UID(2))
+        self.assertNotEqual(UID(1), "not uid")
+
+    def test_uid_hash(self):
+        self.assertEqual(hash(UID(1)), hash(UID(1)))
+
+    def test_uid_repr(self):
+        self.assertEqual(repr(UID(1)), "UID(1)")
+
+    def test_uid_index(self):
+        self.assertEqual(operator.index(UID(1)), 1)
+
+    def test_uid_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertEqual(pickle.loads(pickle.dumps(UID(19), protocol=proto)), UID(19))
+
+    def test_uid_copy(self):
+        self.assertEqual(copy.copy(UID(1)), UID(1))
+        self.assertEqual(copy.deepcopy(UID(1)), UID(1))
 
     def test_appleformatting(self):
         for use_builtin_types in (True, False):
@@ -673,7 +712,7 @@ class TestPlistlibDeprecated(unittest.TestCase):
 
 class TestKeyedArchive(unittest.TestCase):
     def test_keyed_archive_data(self):
-        # This data format uses the structure
+        # This is the structure of a NSKeyedArchive packed plist
         data = {
             '$version': 100000,
             '$objects': [
