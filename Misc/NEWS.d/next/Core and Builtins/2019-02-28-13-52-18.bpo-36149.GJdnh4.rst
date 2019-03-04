@@ -1,0 +1,2 @@
+Fix use of uninitialized memory in cPickle when reading a truncated pickle
+from a file object.

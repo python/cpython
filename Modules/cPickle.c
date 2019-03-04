@@ -586,12 +586,15 @@ readline_file(Unpicklerobject *self, char **s)
     while (1) {
         Py_ssize_t bigger;
         char *newbuf;
-        for (; i < (self->buf_size - 1); i++) {
-            if (feof(self->fp) ||
-                (self->buf[i] = getc(self->fp)) == '\n') {
-                self->buf[i + 1] = '\0';
+        while (i < (self->buf_size - 1)) {
+            int newchar = getc(self->fp);
+            if (newchar != EOF) {
+                self->buf[i++] = newchar;
+            }
+            if (newchar == EOF || newchar == '\n') {
+                self->buf[i] = '\0';
                 *s = self->buf;
-                return i + 1;
+                return i;
             }
         }
         if (self->buf_size > (PY_SSIZE_T_MAX >> 1)) {
