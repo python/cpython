@@ -10,6 +10,8 @@ import collections
 from test import support
 from io import BytesIO
 
+from plistlib import UID
+
 ALL_FORMATS=(plistlib.FMT_XML, plistlib.FMT_BINARY)
 
 # The testdata is generated using Mac/Tools/plistlib_generate_testdata.py
@@ -88,6 +90,17 @@ TESTDATA={
         ZwB0AHwAiACUAJoApQCuALsAygDTAOQA7QD4AQQBDwEdASsBNgE3ATgBTwFn
         AW4BcAFyAXQBdgF/AYMBhQGHAYwBlQGbAZ0BnwGhAaUBpwGwAbkBwAHBAcIB
         xQHHAsQC0gAAAAAAAAIBAAAAAAAAADkAAAAAAAAAAAAAAAAAAALs'''),
+    'KEYED_ARCHIVE': binascii.a2b_base64(b'''
+        YnBsaXN0MDDUAQIDBAUGHB1YJHZlcnNpb25YJG9iamVjdHNZJGFyY2hpdmVy
+        VCR0b3ASAAGGoKMHCA9VJG51bGzTCQoLDA0OVnB5dHlwZVYkY2xhc3NZTlMu
+        c3RyaW5nEAGAAl8QE0tleUFyY2hpdmUgVUlEIFRlc3TTEBESExQZWiRjbGFz
+        c25hbWVYJGNsYXNzZXNbJGNsYXNzaGludHNfEBdPQ19CdWlsdGluUHl0aG9u
+        VW5pY29kZaQVFhcYXxAXT0NfQnVpbHRpblB5dGhvblVuaWNvZGVfEBBPQ19Q
+        eXRob25Vbmljb2RlWE5TU3RyaW5nWE5TT2JqZWN0ohobXxAPT0NfUHl0aG9u
+        U3RyaW5nWE5TU3RyaW5nXxAPTlNLZXllZEFyY2hpdmVy0R4fVHJvb3SAAQAI
+        ABEAGgAjAC0AMgA3ADsAQQBIAE8AVgBgAGIAZAB6AIEAjACVAKEAuwDAANoA
+        7QD2AP8BAgEUAR0BLwEyATcAAAAAAAACAQAAAAAAAAAgAAAAAAAAAAAAAAAA
+        AAABOQ=='''),
 }
 
 
@@ -151,6 +164,10 @@ class TestPlistlib(unittest.TestCase):
             with self.subTest(fmt=fmt):
                 self.assertRaises(TypeError, plistlib.dumps, pl, fmt=fmt)
 
+    def test_invalid_uid(self):
+        with self.assertRaises(TypeError):
+            UID("not an int")
+
     def test_int(self):
         for pl in [0, 2**8-1, 2**8, 2**16-1, 2**16, 2**32-1, 2**32,
                    2**63-1, 2**64-1, 1, -2**63]:
@@ -199,6 +216,12 @@ class TestPlistlib(unittest.TestCase):
     def test_indentation_dict_mix(self):
         data = {'1': {'2': [{'3': [[[[[{'test': b'aaaaaa'}]]]]]}]}}
         self.assertEqual(plistlib.loads(plistlib.dumps(data)), data)
+
+    def test_uid(self):
+        data = UID(1)
+        self.assertEqual(plistlib.loads(plistlib.dumps(data, fmt=plistlib.FMT_BINARY)), data)
+        dict_data = {'uid2': UID(2), 'uid3': UID(3)}
+        self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=plistlib.FMT_BINARY)), dict_data)
 
     def test_appleformatting(self):
         for use_builtin_types in (True, False):
@@ -648,6 +671,38 @@ class TestPlistlibDeprecated(unittest.TestCase):
         self.assertEqual(cur, in_data)
 
 
+class TestKeyedArchive(unittest.TestCase):
+    def test_keyed_archive_data(self):
+        # This data format uses the structure
+        data = {
+            '$version': 100000,
+            '$objects': [
+                '$null', {
+                    'pytype': 1,
+                    '$class': UID(2),
+                    'NS.string': 'KeyArchive UID Test'
+                },
+                {
+                    '$classname': 'OC_BuiltinPythonUnicode',
+                    '$classes': [
+                        'OC_BuiltinPythonUnicode',
+                        'OC_PythonUnicode',
+                        'NSString',
+                        'NSObject'
+                    ],
+                    '$classhints': [
+                        'OC_PythonString', 'NSString'
+                    ]
+                }
+            ],
+            '$archiver': 'NSKeyedArchiver',
+            '$top': {
+                'root': UID(1)
+            }
+        }
+        self.assertEqual(plistlib.loads(TESTDATA["KEYED_ARCHIVE"]), data)
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         blacklist = {"PlistFormat", "PLISTHEADER"}
@@ -655,7 +710,7 @@ class MiscTestCase(unittest.TestCase):
 
 
 def test_main():
-    support.run_unittest(TestPlistlib, TestPlistlibDeprecated, MiscTestCase)
+    support.run_unittest(TestPlistlib, TestPlistlibDeprecated, TestKeyedArchive, MiscTestCase)
 
 
 if __name__ == '__main__':
