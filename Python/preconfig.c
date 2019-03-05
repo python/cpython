@@ -125,6 +125,15 @@ precmdline_clear(_PyPreCmdline *cmdline)
 void
 _PyPreConfig_Clear(_PyPreConfig *config)
 {
+#define CLEAR(ATTR) \
+    do { \
+        PyMem_RawFree(ATTR); \
+        ATTR = NULL; \
+    } while (0)
+
+    CLEAR(config->allocator);
+
+#undef CLEAR
 }
 
 
@@ -134,6 +143,15 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
     _PyPreConfig_Clear(config);
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+#define COPY_STR_ATTR(ATTR) \
+    do { \
+        if (config2->ATTR != NULL) { \
+            config->ATTR = _PyMem_RawStrdup(config2->ATTR); \
+            if (config->ATTR == NULL) { \
+                return -1; \
+            } \
+        } \
+    } while (0)
 
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
@@ -143,8 +161,11 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
     COPY_ATTR(legacy_windows_fs_encoding);
 #endif
     COPY_ATTR(utf8_mode);
+    COPY_ATTR(dev_mode);
+    COPY_STR_ATTR(allocator);
 
 #undef COPY_ATTR
+#undef COPY_STR_ATTR
     return 0;
 }
 
@@ -345,6 +366,7 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 {
     _PyPreConfig_GetGlobalConfig(config);
 
+    /* isolated and use_environment */
     if (config->isolated > 0) {
         config->use_environment = 0;
     }
@@ -354,6 +376,7 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
         config->use_environment = 0;
     }
 
+    /* legacy_windows_fs_encoding, utf8_mode, coerce_c_locale */
     if (config->use_environment) {
 #ifdef MS_WINDOWS
         _Py_get_env_flag(config, &config->legacy_windows_fs_encoding,
@@ -414,11 +437,43 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
     }
+    if (config->coerce_c_locale < 0) {
+        config->coerce_c_locale = 0;
+    }
+
+    /* dev_mode */
+    if ((cmdline && _Py_get_xoption(cmdline->nxoption, cmdline->xoptions, L"dev"))
+        || _PyPreConfig_GetEnv(config, "PYTHONDEVMODE"))
+    {
+        config->dev_mode = 1;
+    }
+    if (config->dev_mode < 0) {
+        config->dev_mode = 0;
+    }
+
+    /* allocator */
+    if (config->dev_mode && config->allocator == NULL) {
+        config->allocator = _PyMem_RawStrdup("debug");
+        if (config->allocator == NULL) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
+    if (config->allocator == NULL) {
+        const char *allocator = _PyPreConfig_GetEnv(config, "PYTHONMALLOC");
+        if (allocator) {
+            config->allocator = _PyMem_RawStrdup(allocator);
+            if (config->allocator == NULL) {
+                return _Py_INIT_NO_MEMORY();
+            }
+        }
+    }
 
     assert(config->coerce_c_locale >= 0);
     assert(config->utf8_mode >= 0);
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
+    assert(config->dev_mode >= 0);
 
     return _Py_INIT_OK();
 }
@@ -448,6 +503,12 @@ _PyPreConfig_AsDict(const _PyPreConfig *config, PyObject *dict)
         } while (0)
 #define SET_ITEM_INT(ATTR) \
     SET_ITEM(#ATTR, PyLong_FromLong(config->ATTR))
+#define FROM_STRING(STR) \
+    ((STR != NULL) ? \
+        PyUnicode_FromString(STR) \
+        : (Py_INCREF(Py_None), Py_None))
+#define SET_ITEM_STR(ATTR) \
+    SET_ITEM(#ATTR, FROM_STRING(config->ATTR))
 
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
@@ -457,13 +518,17 @@ _PyPreConfig_AsDict(const _PyPreConfig *config, PyObject *dict)
 #ifdef MS_WINDOWS
     SET_ITEM_INT(legacy_windows_fs_encoding);
 #endif
+    SET_ITEM_INT(dev_mode);
+    SET_ITEM_STR(allocator);
     return 0;
 
 fail:
     return -1;
 
+#undef FROM_STRING
 #undef SET_ITEM
 #undef SET_ITEM_INT
+#undef SET_ITEM_STR
 }
 
 
