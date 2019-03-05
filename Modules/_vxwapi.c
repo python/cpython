@@ -117,8 +117,7 @@ rtp_spawn_impl(
            int c2pread, int c2pwrite,
            int errread, int errwrite,
            int errpipe_read, int errpipe_write,
-           int close_fds, int restore_signals,
-           PyObject *py_fds_to_keep)
+           int close_fds, PyObject *py_fds_to_keep)
 {
     int priority = 0;
     unsigned int uStackSize = 0;
@@ -243,7 +242,6 @@ rtp_spawn_impl(
 
     reached_preexec = 1;
 
-    /* close FDs after executing preexec_fn, which might open FDs */
     if (close_fds) {
         _close_open_fds(3, py_fds_to_keep);
     }
@@ -387,9 +385,6 @@ _vxwapi.rtp_spawn
     errwrite: int
     errpipe_read: int
     errpipe_write: int
-    restore_signals: int
-    call_setsid: int
-    preexec_fn: object
     /
 
 Spawn a real time process in the vxWorks OS
@@ -401,10 +396,9 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
                        PyObject *py_fds_to_keep, PyObject *cwd_obj,
                        PyObject *env_list, int p2cread, int p2cwrite,
                        int c2pread, int c2pwrite, int errread, int errwrite,
-                       int errpipe_read, int errpipe_write,
-                       int restore_signals, int call_setsid,
-                       PyObject *preexec_fn)
-/*[clinic end generated code: output=5f98889b783df975 input=30419f3fea045213]*/
+                       int errpipe_read, int errpipe_write)
+/*[clinic end generated code: output=e398e7eafdf8ce1e input=76a69d261378fad9]*/
+
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     char *const *argv = NULL, *const *envp = NULL;
@@ -423,16 +417,6 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
 
     if (_sanity_check_python_fd_sequence(py_fds_to_keep)) {
         PyErr_SetString(PyExc_ValueError, "bad value(s) in fds_to_keep");
-        return NULL;
-    }
-
-    if (preexec_fn != Py_None) {
-        PyErr_SetString(PyExc_RuntimeError, "Preexecution function is not supported on VxWorks");
-        return NULL;
-    }
-
-    if (call_setsid != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "VxWorks does not support sessions");
         return NULL;
     }
 
@@ -483,7 +467,7 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
                         executable_list, argv, envp, cwd_obj,
                         p2cread, p2cwrite, c2pread, c2pwrite,
                         errread, errwrite, errpipe_read, errpipe_write,
-                        close_fds, restore_signals, py_fds_to_keep);
+                        close_fds, py_fds_to_keep);
 
     _restore_fds (saved_fd);
 

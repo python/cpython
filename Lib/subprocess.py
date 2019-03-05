@@ -741,10 +741,10 @@ class Popen(object):
                 if shell:
                     raise ValueError("shell is not supported on VxWorks")
                 if preexec_fn is not None:
-                    raise ValueError("Preexecution function is not supported"
-                                     "on VxWorks");
+                    raise ValueError("preexec_fn is not supported on VxWorks")
                 if start_new_session:
-                    raise ValueError("VxWorks does not support sessions");
+                    raise ValueError("start_new_session is not supported"
+                                      "on VxWorks")
             # POSIX
             if pass_fds and not close_fds:
                 warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
@@ -1599,8 +1599,9 @@ class Popen(object):
                             cwd, env_list,
                             p2cread, p2cwrite, c2pread, c2pwrite,
                             errread, errwrite,
-                            errpipe_read, errpipe_write,
-                            restore_signals, start_new_session, preexec_fn)
+                            errpipe_read, errpipe_write)
+                        if self.pid != -1:
+                            self._child_created = True
                     else:
                         self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
@@ -1610,9 +1611,7 @@ class Popen(object):
                             errread, errwrite,
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session, preexec_fn)
-                    self._child_created = True
-                    if _vxworks and self.pid == -1:
-                        self._child_created = False
+                        self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)

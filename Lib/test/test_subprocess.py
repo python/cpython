@@ -42,18 +42,15 @@ no_shell = False
 no_preexec_fn = False
 
 if vxworks:
-    import _vxwapi
-    mock_modname = "subprocess._vxwapi.rtp_spawn"
-    mock_submod  = subprocess._vxwapi
-    mock_func    = _vxwapi.rtp_spawn
+    mock_fork_exec_or_spawn_fn_name      = "subprocess._vxwapi.rtp_spawn"
+    platform_specific_fork_exec_or_spawn = subprocess._vxwapi.rtp_spawn
 
     no_shell = True
     no_preexec_fn = True
 else:
-    import _posixsubprocess
-    mock_modname = "subprocess._posixsubprocess.fork_exec"
-    mock_submod  = subprocess._posixsubprocess
-    mock_func    = _posixsubprocess.fork_exec
+    mock_fork_exec_or_spawn_fn_name = "subprocess._posixsubprocess.fork_exec"
+    if not mswindows:
+        platform_specific_fork_exec_or_spawn = subprocess._posixsubprocess.fork_exec
 
 #
 # Depends on the following external programs: Python
@@ -1600,8 +1597,8 @@ class POSIXProcessTestCase(BaseTestCase):
         def __del__(self):
             pass
 
-    @mock.patch(mock_modname)
-    def test_exception_errpipe_normal(self, mock_func):
+    @mock.patch(mock_fork_exec_or_spawn_fn_name)
+    def test_exception_errpipe_normal(self, platform_specific_fork_exec_or_spawn):
         """Test error passing done through errpipe_write in the good case"""
         def proper_error(*args):
             errpipe_write = args[13]
@@ -1610,15 +1607,15 @@ class POSIXProcessTestCase(BaseTestCase):
             os.write(errpipe_write, b"OSError:" + err_code + b":")
             return 0
 
-        mock_func.side_effect = proper_error
+        platform_specific_fork_exec_or_spawn.side_effect = proper_error
 
         with mock.patch("subprocess.os.waitpid",
                         side_effect=ChildProcessError):
             with self.assertRaises(IsADirectoryError):
                 self.PopenNoDestructor(["non_existent_command"])
 
-    @mock.patch(mock_modname)
-    def test_exception_errpipe_bad_data(self, mock_func):
+    @mock.patch(mock_fork_exec_or_spawn_fn_name)
+    def test_exception_errpipe_bad_data(self, platform_specific_fork_exec_or_spawn):
         """Test error passing done through errpipe_write where its not
         in the expected format"""
         error_data = b"\xFF\x00\xDE\xAD"
@@ -1630,7 +1627,7 @@ class POSIXProcessTestCase(BaseTestCase):
             os.write(errpipe_write, error_data)
             return 0
 
-        mock_func.side_effect = bad_error
+        platform_specific_fork_exec_or_spawn.side_effect = bad_error
 
         with mock.patch("subprocess.os.waitpid",
                         side_effect=ChildProcessError):
@@ -1732,7 +1729,7 @@ class POSIXProcessTestCase(BaseTestCase):
                                  preexec_fn=raise_it)
         except subprocess.SubprocessError as e:
             self.assertTrue(
-                    mock_submod,
+                    subprocess._posixsubprocess,
                     "Expected a ValueError from the preexec_fn")
         except ValueError as e:
             self.assertIn("coconut", e.args[0])
@@ -2243,11 +2240,11 @@ class POSIXProcessTestCase(BaseTestCase):
                 preexec_fn=prepare)
         except ValueError as err:
             # Pure Python implementations keeps the message
-            self.assertIsNone(mock_submod)
+            self.assertIsNone(subprocess._posixsubprocess)
             self.assertEqual(str(err), "surrogate:\uDCff")
         except subprocess.SubprocessError as err:
             # _posixsubprocess uses a default message
-            self.assertIsNotNone(mock_submod)
+            self.assertIsNotNone(subprocess._posixsubprocess)
             self.assertEqual(str(err), "Exception occurred in preexec_fn.")
         else:
             self.fail("Expected ValueError or subprocess.SubprocessError")
@@ -2770,12 +2767,19 @@ class POSIXProcessTestCase(BaseTestCase):
                 with self.assertRaises(
                         ValueError,
                         msg='fds_to_keep={}'.format(fds_to_keep)) as c:
-                    mock_func(
-                        [b"false"], [b"false"],
-                        True, fds_to_keep, None, [b"env"],
-                        -1, -1, -1, -1,
-                        1, 2, 3, 4,
-                        True, True, None)
+                    if vxworks:
+                        platform_specific_fork_exec_or_spawn(
+                            [b"false"], [b"false"],
+                            True, fds_to_keep, None, [b"env"],
+                            -1, -1, -1, -1,
+                            1, 2, 3, 4)
+                    else:
+                        platform_specific_fork_exec_or_spawn(
+                            [b"false"], [b"false"],
+                            True, fds_to_keep, None, [b"env"],
+                            -1, -1, -1, -1,
+                            1, 2, 3, 4,
+                            True, True, None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
@@ -2916,7 +2920,6 @@ class Win32ProcessTestCase(BaseTestCase):
                         ' -c "import time; time.sleep(0.25)"',
                         creationflags=CREATE_NEW_CONSOLE)
 
-    @unittest.skipIf(no_preexec_fn, "preexec_fn argument is not supported")
     def test_invalid_args(self):
         # invalid arguments should raise ValueError
         self.assertRaises(ValueError, subprocess.call,
@@ -3001,7 +3004,6 @@ class Win32ProcessTestCase(BaseTestCase):
         subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
                         startupinfo=startupinfo)
 
-    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_sequence(self):
         # Run command through the shell (sequence)
         newenv = os.environ.copy()
@@ -3012,7 +3014,6 @@ class Win32ProcessTestCase(BaseTestCase):
         with p:
             self.assertIn(b"physalis", p.stdout.read())
 
-    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_string(self):
         # Run command through the shell (string)
         newenv = os.environ.copy()
@@ -3023,7 +3024,6 @@ class Win32ProcessTestCase(BaseTestCase):
         with p:
             self.assertIn(b"physalis", p.stdout.read())
 
-    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_encodings(self):
         # Run command through the shell (string)
         for enc in ['ansi', 'oem']:
@@ -3243,13 +3243,11 @@ class CommandsWithSpaces (BaseTestCase):
               "2 [%r, 'ab cd']" % self.fname
             )
 
-    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_string_with_spaces(self):
         # call() function with string argument with spaces on Windows
         self.with_spaces('"%s" "%s" "%s"' % (sys.executable, self.fname,
                                              "ab cd"), shell=1)
 
-    @unittest.skipIf(no_shell, "shell argument is not supported")
     def test_shell_sequence_with_spaces(self):
         # call() function with sequence argument with spaces on Windows
         self.with_spaces([sys.executable, self.fname, "ab cd"], shell=1)

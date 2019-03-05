@@ -6,7 +6,7 @@ PyDoc_STRVAR(_vxwapi_rtp_spawn__doc__,
 "rtp_spawn($module, process_args, executable_list, close_fds,\n"
 "          py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite,\n"
 "          c2pread, c2pwrite, errread, errwrite, errpipe_read,\n"
-"          errpipe_write, restore_signals, call_setsid, preexec_fn, /)\n"
+"          errpipe_write, /)\n"
 "--\n"
 "\n"
 "Spawn a real time process in the vxWorks OS");
@@ -20,9 +20,7 @@ _vxwapi_rtp_spawn_impl(PyObject *module, PyObject *process_args,
                        PyObject *py_fds_to_keep, PyObject *cwd_obj,
                        PyObject *env_list, int p2cread, int p2cwrite,
                        int c2pread, int c2pwrite, int errread, int errwrite,
-                       int errpipe_read, int errpipe_write,
-                       int restore_signals, int call_setsid,
-                       PyObject *preexec_fn);
+                       int errpipe_read, int errpipe_write);
 
 static PyObject *
 _vxwapi_rtp_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -42,11 +40,8 @@ _vxwapi_rtp_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int errwrite;
     int errpipe_read;
     int errpipe_write;
-    int restore_signals;
-    int call_setsid;
-    PyObject *preexec_fn;
 
-    if (!_PyArg_CheckPositional("rtp_spawn", nargs, 17, 17)) {
+    if (!_PyArg_CheckPositional("rtp_spawn", nargs, 14, 14)) {
         goto exit;
     }
     process_args = args[0];
@@ -139,28 +134,9 @@ _vxwapi_rtp_spawn(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (errpipe_write == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(args[14])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    restore_signals = _PyLong_AsInt(args[14]);
-    if (restore_signals == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[15])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    call_setsid = _PyLong_AsInt(args[15]);
-    if (call_setsid == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    preexec_fn = args[16];
-    return_value = _vxwapi_rtp_spawn_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write, restore_signals, call_setsid, preexec_fn);
+    return_value = _vxwapi_rtp_spawn_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=216bc865460f7764 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44ceb0e8de454bd6 input=a9049054013a1b77]*/
