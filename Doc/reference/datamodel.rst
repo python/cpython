@@ -578,12 +578,6 @@ Callable types
       to be bound.  The new method's :attr:`__func__` attribute is the original
       function object.
 
-      When a user-defined method object is created by retrieving another method
-      object from a class or instance, the behaviour is the same as for a
-      function object, except that the :attr:`__func__` attribute of the new
-      instance is not the original method object but its :attr:`__func__`
-      attribute.
-
       When an instance method object is created by retrieving a class method
       object from a class or instance, its :attr:`__self__` attribute is the
       class itself, and its :attr:`__func__` attribute is the function object
