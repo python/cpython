@@ -1451,6 +1451,10 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     }
     switch (e->kind) {
     case NamedExpr_kind:
+        if (st->st_cur->ste_comprehension) {
+            if (!symtable_extend_namedexpr_scope(st, e->v.NamedExpr.target))
+                VISIT_QUIT(st, 0);
+        }
         VISIT(st, expr, e->v.NamedExpr.value);
         VISIT(st, expr, e->v.NamedExpr.target);
         break;
@@ -1562,11 +1566,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT(st, expr, e->v.Slice.step)
         break;
     case Name_kind:
-        /* Special-case: named expr */
-        if (e->v.Name.ctx == NamedStore && st->st_cur->ste_comprehension) {
-            if(!symtable_extend_namedexpr_scope(st, e))
-                VISIT_QUIT(st, 0);
-        }
         if (!symtable_add_def(st, e->v.Name.id,
                               e->v.Name.ctx == Load ? USE : DEF_LOCAL))
             VISIT_QUIT(st, 0);
