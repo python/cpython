@@ -38,10 +38,7 @@ def parse(source, filename='<unknown>', mode='exec', *,
     if type_comments:
         flags |= PyCF_TYPE_COMMENTS
     return compile(source, filename, mode, flags,
-                   dont_inherit=False,
-                   optimize=-1,
-                   feature_version=feature_version,
-                   )
+                   feature_version=feature_version)
 
 
 def literal_eval(node_or_string):
