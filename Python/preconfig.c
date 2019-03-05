@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_coreconfig.h"
+#include "pycore_getopt.h"
 
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
@@ -92,6 +93,25 @@ _PyArgv_Decode(const _PyArgv *args, wchar_t*** argv_p)
 }
 
 
+/* --- _PyPreCmdline ------------------------------------------------- */
+
+typedef struct {
+    const _PyArgv *args;
+    int argc;
+    wchar_t **argv;
+} _PyPreCmdline;
+
+
+static void
+precmdline_clear(_PyPreCmdline *cmdline)
+{
+    if (cmdline->args->use_bytes_argv && cmdline->argv != NULL) {
+        _Py_wstrlist_clear(cmdline->args->argc, cmdline->argv);
+    }
+    cmdline->argv = NULL;
+}
+
+
 /* --- _PyPreConfig ----------------------------------------------- */
 
 void
@@ -169,6 +189,7 @@ _PyPreConfig_Read(_PyPreConfig *config)
         config->use_environment = 0;
     }
 
+    assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
 
     return _Py_INIT_OK();
@@ -202,4 +223,77 @@ fail:
 
 #undef SET_ITEM
 #undef SET_ITEM_INT
+}
+
+
+/* Parse the command line arguments */
+static _PyInitError
+preconfig_parse_cmdline(_PyPreConfig *config, _PyPreCmdline *cmdline)
+{
+    _PyOS_ResetGetOpt();
+    /* Don't log parsing errors into stderr here: _PyCoreConfig_ReadFromArgv()
+       is responsible for that */
+    _PyOS_opterr = 0;
+    do {
+        int longindex = -1;
+        int c = _PyOS_GetOpt(cmdline->args->argc, cmdline->argv, &longindex);
+
+        if (c == EOF || c == 'c' || c == 'm') {
+            break;
+        }
+
+        switch (c) {
+        case 'E':
+            config->use_environment = 0;
+            break;
+
+        case 'I':
+            config->isolated++;
+            break;
+
+        default:
+            /* ignore other argument:
+               handled by _PyCoreConfig_ReadFromArgv() */
+            break;
+        }
+    } while (1);
+
+    return _Py_INIT_OK();
+}
+
+
+_PyInitError
+_PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
+{
+    _PyInitError err;
+
+    _PyPreCmdline cmdline;
+    memset(&cmdline, 0, sizeof(cmdline));
+    cmdline.args = args;
+
+    err = _PyArgv_Decode(cmdline.args, &cmdline.argv);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = preconfig_parse_cmdline(config, &cmdline);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _PyPreConfig_Read(config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+    err = _Py_INIT_OK();
+
+done:
+    precmdline_clear(&cmdline);
+    return err;
+}
+
+
+void
+_PyPreConfig_Write(const _PyPreConfig *config)
+{
 }

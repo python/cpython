@@ -763,7 +763,7 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
 
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
-        err = _PyCoreConfig_Read(&config);
+        err = _PyCoreConfig_Read(&config, NULL);
     }
     else {
         err = _Py_INIT_ERR("failed to copy core config");
