@@ -36,11 +36,24 @@ PyAPI_FUNC(int) _Py_SetArgcArgv(int argc, wchar_t * const *argv);
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
+PyAPI_FUNC(int) _Py_str_to_int(
+    const char *str,
+    int *result);
+PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
+    int nxoption,
+    wchar_t * const *xoptions,
+    const wchar_t *name);
+
 PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
 PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
 PyAPI_FUNC(void) _PyPreConfig_GetGlobalConfig(_PyPreConfig *config);
 PyAPI_FUNC(void) _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config);
+PyAPI_FUNC(const char*) _PyPreConfig_GetEnv(const _PyPreConfig *config,
+    const char *name);
+PyAPI_FUNC(void) _Py_get_env_flag(_PyPreConfig *config,
+    int *flag,
+    const char *name);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config);
 PyAPI_FUNC(int) _PyPreConfig_AsDict(const _PyPreConfig *config,
     PyObject *dict);
