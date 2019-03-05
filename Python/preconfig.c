@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "pycore_coreconfig.h"
 #include "pycore_getopt.h"
+#include "pycore_pystate.h"   /* _PyRuntime_Initialize() */
+#include <locale.h>       /* setlocale() */
 
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
@@ -99,6 +101,8 @@ typedef struct {
     const _PyArgv *args;
     int argc;
     wchar_t **argv;
+    int nxoption;           /* Number of -X options */
+    wchar_t **xoptions;     /* -X options */
 } _PyPreCmdline;
 
 
@@ -109,6 +113,10 @@ precmdline_clear(_PyPreCmdline *cmdline)
         _Py_wstrlist_clear(cmdline->args->argc, cmdline->argv);
     }
     cmdline->argv = NULL;
+
+    _Py_wstrlist_clear(cmdline->nxoption, cmdline->xoptions);
+    cmdline->nxoption = 0;
+    cmdline->xoptions = NULL;
 }
 
 
@@ -129,6 +137,12 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
+    COPY_ATTR(coerce_c_locale);
+    COPY_ATTR(coerce_c_locale_warn);
+#ifdef MS_WINDOWS
+    COPY_ATTR(legacy_windows_fs_encoding);
+#endif
+    COPY_ATTR(utf8_mode);
 
 #undef COPY_ATTR
     return 0;
@@ -149,6 +163,10 @@ _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+#ifdef MS_WINDOWS
+    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
+#endif
+    COPY_FLAG(utf8_mode, Py_UTF8Mode);
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -169,14 +187,161 @@ _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config)
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+#ifdef MS_WINDOWS
+    COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
+#endif
+    COPY_FLAG(utf8_mode, Py_UTF8Mode);
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
 }
 
 
-_PyInitError
-_PyPreConfig_Read(_PyPreConfig *config)
+const char*
+_PyPreConfig_GetEnv(const _PyPreConfig *config, const char *name)
+{
+    assert(config->use_environment >= 0);
+
+    if (!config->use_environment) {
+        return NULL;
+    }
+
+    const char *var = getenv(name);
+    if (var && var[0] != '\0') {
+        return var;
+    }
+    else {
+        return NULL;
+    }
+}
+
+
+int
+_Py_str_to_int(const char *str, int *result)
+{
+    const char *endptr = str;
+    errno = 0;
+    long value = strtol(str, (char **)&endptr, 10);
+    if (*endptr != '\0' || errno == ERANGE) {
+        return -1;
+    }
+    if (value < INT_MIN || value > INT_MAX) {
+        return -1;
+    }
+
+    *result = (int)value;
+    return 0;
+}
+
+
+void
+_Py_get_env_flag(_PyPreConfig *config, int *flag, const char *name)
+{
+    const char *var = _PyPreConfig_GetEnv(config, name);
+    if (!var) {
+        return;
+    }
+    int value;
+    if (_Py_str_to_int(var, &value) < 0 || value < 0) {
+        /* PYTHONDEBUG=text and PYTHONDEBUG=-2 behave as PYTHONDEBUG=1 */
+        value = 1;
+    }
+    if (*flag < value) {
+        *flag = value;
+    }
+}
+
+
+const wchar_t*
+_Py_get_xoption(int nxoption, wchar_t * const *xoptions, const wchar_t *name)
+{
+    for (int i=0; i < nxoption; i++) {
+        const wchar_t *option = xoptions[i];
+        size_t len;
+        wchar_t *sep = wcschr(option, L'=');
+        if (sep != NULL) {
+            len = (sep - option);
+        }
+        else {
+            len = wcslen(option);
+        }
+        if (wcsncmp(option, name, len) == 0 && name[len] == L'\0') {
+            return option;
+        }
+    }
+    return NULL;
+}
+
+
+static _PyInitError
+preconfig_init_utf8_mode(_PyPreConfig *config, const _PyPreCmdline *cmdline)
+{
+    const wchar_t *xopt;
+    if (cmdline) {
+        xopt = _Py_get_xoption(cmdline->nxoption, cmdline->xoptions, L"utf8");
+    }
+    else {
+        xopt = NULL;
+    }
+    if (xopt) {
+        wchar_t *sep = wcschr(xopt, L'=');
+        if (sep) {
+            xopt = sep + 1;
+            if (wcscmp(xopt, L"1") == 0) {
+                config->utf8_mode = 1;
+            }
+            else if (wcscmp(xopt, L"0") == 0) {
+                config->utf8_mode = 0;
+            }
+            else {
+                return _Py_INIT_USER_ERR("invalid -X utf8 option value");
+            }
+        }
+        else {
+            config->utf8_mode = 1;
+        }
+        return _Py_INIT_OK();
+    }
+
+    const char *opt = _PyPreConfig_GetEnv(config, "PYTHONUTF8");
+    if (opt) {
+        if (strcmp(opt, "1") == 0) {
+            config->utf8_mode = 1;
+        }
+        else if (strcmp(opt, "0") == 0) {
+            config->utf8_mode = 0;
+        }
+        else {
+            return _Py_INIT_USER_ERR("invalid PYTHONUTF8 environment "
+                                     "variable value");
+        }
+        return _Py_INIT_OK();
+    }
+
+    return _Py_INIT_OK();
+}
+
+
+static void
+preconfig_init_locale(_PyPreConfig *config)
+{
+    /* Test also if coerce_c_locale equals 1: PYTHONCOERCECLOCALE=1 doesn't
+       imply that the C locale is always coerced. It is only coerced if
+       if the LC_CTYPE locale is "C". */
+    if (config->coerce_c_locale != 0) {
+        /* The C locale enables the C locale coercion (PEP 538) */
+        if (_Py_LegacyLocaleDetected()) {
+            config->coerce_c_locale = 1;
+        }
+        else {
+            config->coerce_c_locale = 0;
+        }
+    }
+}
+
+
+static _PyInitError
+preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 {
     _PyPreConfig_GetGlobalConfig(config);
 
@@ -189,10 +354,80 @@ _PyPreConfig_Read(_PyPreConfig *config)
         config->use_environment = 0;
     }
 
+    if (config->use_environment) {
+#ifdef MS_WINDOWS
+        _Py_get_env_flag(config, &config->legacy_windows_fs_encoding,
+                "PYTHONLEGACYWINDOWSFSENCODING");
+#endif
+
+        const char *env = _PyPreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
+        if (env) {
+            if (strcmp(env, "0") == 0) {
+                if (config->coerce_c_locale < 0) {
+                    config->coerce_c_locale = 0;
+                }
+            }
+            else if (strcmp(env, "warn") == 0) {
+                config->coerce_c_locale_warn = 1;
+            }
+            else {
+                if (config->coerce_c_locale < 0) {
+                    config->coerce_c_locale = 1;
+                }
+            }
+        }
+    }
+
+#ifdef MS_WINDOWS
+    if (config->legacy_windows_fs_encoding) {
+        config->utf8_mode = 0;
+    }
+#endif
+
+    if (config->utf8_mode < 0) {
+        _PyInitError err = preconfig_init_utf8_mode(config, cmdline);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    if (config->coerce_c_locale != 0) {
+        preconfig_init_locale(config);
+    }
+
+#ifndef MS_WINDOWS
+    if (config->utf8_mode < 0) {
+        /* The C locale and the POSIX locale enable the UTF-8 Mode (PEP 540) */
+        const char *ctype_loc = setlocale(LC_CTYPE, NULL);
+        if (ctype_loc != NULL
+           && (strcmp(ctype_loc, "C") == 0
+               || strcmp(ctype_loc, "POSIX") == 0))
+        {
+            config->utf8_mode = 1;
+        }
+    }
+#endif
+
+    if (config->coerce_c_locale < 0) {
+        config->coerce_c_locale = 0;
+    }
+    if (config->utf8_mode < 0) {
+        config->utf8_mode = 0;
+    }
+
+    assert(config->coerce_c_locale >= 0);
+    assert(config->utf8_mode >= 0);
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
 
     return _Py_INIT_OK();
+}
+
+
+_PyInitError
+_PyPreConfig_Read(_PyPreConfig *config)
+{
+    return preconfig_read(config, NULL);
 }
 
 
@@ -216,6 +451,12 @@ _PyPreConfig_AsDict(const _PyPreConfig *config, PyObject *dict)
 
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
+    SET_ITEM_INT(coerce_c_locale);
+    SET_ITEM_INT(coerce_c_locale_warn);
+    SET_ITEM_INT(utf8_mode);
+#ifdef MS_WINDOWS
+    SET_ITEM_INT(legacy_windows_fs_encoding);
+#endif
     return 0;
 
 fail:
@@ -251,6 +492,18 @@ preconfig_parse_cmdline(_PyPreConfig *config, _PyPreCmdline *cmdline)
             config->isolated++;
             break;
 
+        case 'X':
+        {
+            _PyInitError err;
+            err = _Py_wstrlist_append(&cmdline->nxoption,
+                                      &cmdline->xoptions,
+                                      _PyOS_optarg);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+            break;
+        }
+
         default:
             /* ignore other argument:
                handled by _PyCoreConfig_ReadFromArgv() */
@@ -262,8 +515,8 @@ preconfig_parse_cmdline(_PyPreConfig *config, _PyPreCmdline *cmdline)
 }
 
 
-_PyInitError
-_PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
+static _PyInitError
+preconfig_from_argv(_PyPreConfig *config, const _PyArgv *args)
 {
     _PyInitError err;
 
@@ -281,7 +534,7 @@ _PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
         goto done;
     }
 
-    err = _PyPreConfig_Read(config);
+    err = preconfig_read(config, &cmdline);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -293,7 +546,144 @@ done:
 }
 
 
+/* Read the preconfiguration. */
+_PyInitError
+_PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
+{
+    _PyInitError err;
+
+    err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    char *init_ctype_locale = NULL;
+    int init_utf8_mode = Py_UTF8Mode;
+#ifdef MS_WINDOWS
+    int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
+#endif
+    _PyPreConfig save_config = _PyPreConfig_INIT;
+    int locale_coerced = 0;
+    int loops = 0;
+
+    /* copy LC_CTYPE locale */
+    const char *loc = setlocale(LC_CTYPE, NULL);
+    if (loc == NULL) {
+        err = _Py_INIT_ERR("failed to LC_CTYPE locale");
+        goto done;
+    }
+    init_ctype_locale = _PyMem_RawStrdup(loc);
+    if (init_ctype_locale == NULL) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    if (_PyPreConfig_Copy(&save_config, config) < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
+
+    while (1) {
+        int utf8_mode = config->utf8_mode;
+
+        /* Watchdog to prevent an infinite loop */
+        loops++;
+        if (loops == 3) {
+            err = _Py_INIT_ERR("Encoding changed twice while "
+                               "reading the configuration");
+            goto done;
+        }
+
+        /* bpo-34207: Py_DecodeLocale() and Py_EncodeLocale() depend
+           on Py_UTF8Mode and Py_LegacyWindowsFSEncodingFlag. */
+        Py_UTF8Mode = config->utf8_mode;
+#ifdef MS_WINDOWS
+        Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
+#endif
+
+        err = preconfig_from_argv(config, args);
+        if (_Py_INIT_FAILED(err)) {
+            goto done;
+        }
+
+        if (locale_coerced) {
+            config->coerce_c_locale = 1;
+        }
+
+        /* The legacy C locale assumes ASCII as the default text encoding, which
+         * causes problems not only for the CPython runtime, but also other
+         * components like GNU readline.
+         *
+         * Accordingly, when the CLI detects it, it attempts to coerce it to a
+         * more capable UTF-8 based alternative.
+         *
+         * See the documentation of the PYTHONCOERCECLOCALE setting for more
+         * details.
+         */
+        int encoding_changed = 0;
+        if (config->coerce_c_locale && !locale_coerced) {
+            locale_coerced = 1;
+            _Py_CoerceLegacyLocale(0);
+            encoding_changed = 1;
+        }
+
+        if (utf8_mode == -1) {
+            if (config->utf8_mode == 1) {
+                /* UTF-8 Mode enabled */
+                encoding_changed = 1;
+            }
+        }
+        else {
+            if (config->utf8_mode != utf8_mode) {
+                encoding_changed = 1;
+            }
+        }
+
+        if (!encoding_changed) {
+            break;
+        }
+
+        /* Reset the configuration before reading again the configuration,
+           just keep UTF-8 Mode value. */
+        int new_utf8_mode = config->utf8_mode;
+        int new_coerce_c_locale = config->coerce_c_locale;
+        if (_PyPreConfig_Copy(config, &save_config) < 0) {
+            err = _Py_INIT_NO_MEMORY();
+            goto done;
+        }
+        config->utf8_mode = new_utf8_mode;
+        config->coerce_c_locale = new_coerce_c_locale;
+
+        /* The encoding changed: read again the configuration
+           with the new encoding */
+    }
+    err = _Py_INIT_OK();
+
+done:
+    if (init_ctype_locale != NULL) {
+        setlocale(LC_CTYPE, init_ctype_locale);
+    }
+    _PyPreConfig_Clear(&save_config);
+    Py_UTF8Mode = init_utf8_mode ;
+#ifdef MS_WINDOWS
+    Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
+#endif
+    return err;
+}
+
+
 void
 _PyPreConfig_Write(const _PyPreConfig *config)
 {
+    _PyPreConfig_SetGlobalConfig(config);
+
+    if (config->coerce_c_locale) {
+        _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
+    }
+
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
 }
