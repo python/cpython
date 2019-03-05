@@ -23,13 +23,6 @@
 
 /* --- Command line options --------------------------------------- */
 
-#define PROGRAM_OPTS L"bBc:dEhiIJm:OqRsStuvVW:xX:?"
-
-static const _PyOS_LongOption longoptions[] = {
-    {L"check-hash-based-pycs", 1, 0},
-    {NULL, 0, 0},
-};
-
 /* Short usage message (with %s for argv0) */
 static const char usage_line[] =
 "usage: %ls [option] ... [-c cmd | -m mod | file | -] [arg] ...\n";
@@ -1483,28 +1476,61 @@ config_init_fs_encoding(_PyCoreConfig *config)
 }
 
 
-/* Read configuration settings from standard locations
- *
- * This function doesn't make any changes to the interpreter state - it
- * merely populates any missing configuration settings. This allows an
- * embedding application to completely override a config option by
- * setting it before calling this function, or else modify the default
- * setting before passing the fully populated config to Py_EndInitialization.
- *
- * More advanced selective initialization tricks are possible by calling
- * this function multiple times with various preconfigured settings.
- */
+static _PyInitError
+_PyCoreConfig_ReadPreConfig(_PyCoreConfig *config)
+{
+    _PyInitError err;
+    _PyPreConfig local_preconfig = _PyPreConfig_INIT;
+    _PyPreConfig_GetGlobalConfig(&local_preconfig);
 
+    if (_PyPreConfig_Copy(&local_preconfig, &config->preconfig) < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    err = _PyPreConfig_Read(&local_preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    if (_PyPreConfig_Copy(&config->preconfig, &local_preconfig) < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+    err = _Py_INIT_OK();
+
+done:
+    _PyPreConfig_Clear(&local_preconfig);
+    return err;
+}
+
+
+/* Read the configuration into _PyCoreConfig and initialize the LC_CTYPE
+   locale: enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538).
+
+   Read the configuration from:
+
+   * Environment variables
+   * Py_xxx global configuration variables
+
+   See _PyCoreConfig_ReadFromArgv() to parse also command line arguments. */
 _PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config)
+_PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
 {
     _PyInitError err;
 
     _PyCoreConfig_GetGlobalConfig(config);
 
-    err = _PyPreConfig_Read(&config->preconfig);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (preconfig != NULL) {
+        if (_PyPreConfig_Copy(&config->preconfig, preconfig) < 0) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+    else {
+        err = _PyCoreConfig_ReadPreConfig(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
     assert(config->preconfig.use_environment >= 0);
@@ -1851,8 +1877,7 @@ config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
     _PyOS_ResetGetOpt();
     do {
         int longindex = -1;
-        int c = _PyOS_GetOpt(cmdline->args->argc, cmdline->argv, PROGRAM_OPTS,
-                             longoptions, &longindex);
+        int c = _PyOS_GetOpt(cmdline->args->argc, cmdline->argv, &longindex);
         if (c == EOF) {
             break;
         }
@@ -1915,8 +1940,9 @@ config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
             config->interactive++;
             break;
 
+        case 'E':
         case 'I':
-            config->preconfig.isolated++;
+            /* option handled by _PyPreConfig_ReadFromArgv() */
             break;
 
         /* case 'J': reserved for Jython */
@@ -1935,10 +1961,6 @@ config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
 
         case 'S':
             config->site_import = 0;
-            break;
-
-        case 'E':
-            config->preconfig.use_environment = 0;
             break;
 
         case 't':
@@ -2235,7 +2257,8 @@ config_usage(int error, const wchar_t* program)
 
 /* Parse command line options and environment variables. */
 static _PyInitError
-config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline)
+config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
+                    const _PyPreConfig *preconfig)
 {
     int need_usage = 0;
     _PyInitError err;
@@ -2271,7 +2294,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline)
         return err;
     }
 
-    err = _PyCoreConfig_Read(config);
+    err = _PyCoreConfig_Read(config, preconfig);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -2296,7 +2319,8 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline)
 
 
 static _PyInitError
-config_read_from_argv_impl(_PyCoreConfig *config, const _PyArgv *args)
+config_read_from_argv_impl(_PyCoreConfig *config, const _PyArgv *args,
+                           const _PyPreConfig *preconfig)
 {
     _PyInitError err;
 
@@ -2309,7 +2333,7 @@ config_read_from_argv_impl(_PyCoreConfig *config, const _PyArgv *args)
         goto done;
     }
 
-    err = config_from_cmdline(config, &cmdline);
+    err = config_from_cmdline(config, &cmdline, preconfig);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -2330,7 +2354,8 @@ done:
    * Environment variables
    * Py_xxx global configuration variables */
 _PyInitError
-_PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args)
+_PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args,
+                           const _PyPreConfig *preconfig)
 {
     _PyInitError err;
     int init_utf8_mode = Py_UTF8Mode;
@@ -2381,7 +2406,7 @@ _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args)
         Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
 #endif
 
-        err = config_read_from_argv_impl(config, args);
+        err = config_read_from_argv_impl(config, args, preconfig);
         if (_Py_INIT_FAILED(err)) {
             goto done;
         }
