@@ -741,9 +741,35 @@ done:
 }
 
 
-void
+static _PyInitError
+_PyPreConfig_Reconfigure(const _PyPreConfig *config)
+{
+    if (config->allocator != NULL) {
+        const char *allocator = _PyMem_GetAllocatorsName();
+        if (allocator == NULL || strcmp(config->allocator, allocator) != 0) {
+            return _Py_INIT_USER_ERR("cannot modify memory allocator "
+                                     "after first Py_Initialize()");
+        }
+    }
+    return _Py_INIT_OK();
+}
+
+
+_PyInitError
 _PyPreConfig_Write(const _PyPreConfig *config)
 {
+    if (_PyRuntime.core_initialized) {
+        /* bpo-34008: Calling Py_Main() after Py_Initialize() ignores
+           the new configuration. */
+        return _PyPreConfig_Reconfigure(config);
+    }
+
+    if (config->allocator != NULL) {
+        if (_PyMem_SetupAllocators(config->allocator) < 0) {
+            return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
+        }
+    }
+
     _PyPreConfig_SetGlobalConfig(config);
 
     if (config->coerce_c_locale) {
@@ -752,4 +778,6 @@ _PyPreConfig_Write(const _PyPreConfig *config)
 
     /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
+
+    return _Py_INIT_OK();
 }

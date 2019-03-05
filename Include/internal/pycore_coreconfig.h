@@ -59,7 +59,7 @@ PyAPI_FUNC(int) _PyPreConfig_AsDict(const _PyPreConfig *config,
     PyObject *dict);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_ReadFromArgv(_PyPreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(void) _PyPreConfig_Write(const _PyPreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(const _PyPreConfig *config);
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */

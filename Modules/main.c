@@ -304,8 +304,7 @@ preconfig_read_write(_PyPreConfig *config, const _PyArgv *args)
         return err;
     }
 
-    _PyPreConfig_Write(config);
-    return _Py_INIT_OK();
+    return _PyPreConfig_Write(config);
 }
 
 
