@@ -3109,7 +3109,7 @@ Return a readonly version of the memoryview.");
 
 static PyMethodDef memory_methods[] = {
     {"release",     (PyCFunction)memory_release, METH_NOARGS, memory_release_doc},
-    {"tobytes",     (PyCFunction)memory_tobytes, METH_VARARGS|METH_KEYWORDS, memory_tobytes_doc},
+    {"tobytes",     (PyCFunction)(void(*)(void))memory_tobytes, METH_VARARGS|METH_KEYWORDS, memory_tobytes_doc},
     {"hex",         (PyCFunction)memory_hex, METH_NOARGS, memory_hex_doc},
     {"tolist",      (PyCFunction)memory_tolist, METH_NOARGS, memory_tolist_doc},
     {"cast",        (PyCFunction)(void(*)(void))memory_cast, METH_VARARGS|METH_KEYWORDS, memory_cast_doc},
