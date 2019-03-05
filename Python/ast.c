@@ -979,7 +979,7 @@ get_operator(struct compiling *c, const node *n)
         case AT:
             if (c->c_feature_version < 5) {
                 ast_error(c, n,
-                        "The '@' operator is only supported in Python 3.5 and greater");
+                          "The '@' operator is only supported in Python 3.5 and greater");
                 return (operator_ty)0;
             }
             return MatMult;
@@ -1218,7 +1218,7 @@ ast_for_augassign(struct compiling *c, const node *n)
         case '@':
             if (c->c_feature_version < 5) {
                 ast_error(c, n,
-                        "The '@' operator is only supported in Python 3.5 and greater");
+                          "The '@' operator is only supported in Python 3.5 and greater");
                 return (operator_ty)0;
             }
             return MatMult;
@@ -1530,7 +1530,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 }
                 else if (found_default) {
                     ast_error(c, n,
-                             "non-default argument follows default argument");
+                              "non-default argument follows default argument");
                     return NULL;
                 }
                 arg = ast_for_arg(c, ch);
@@ -2060,7 +2060,7 @@ ast_for_comprehension(struct compiling *c, const node *n)
         /* Async comprehensions only allowed in Python 3.6 and greater */
         if (is_async && c->c_feature_version < 6) {
             ast_error(c, n,
-                    "Async comprehensions are only supported in Python 3.6 and greater");
+                      "Async comprehensions are only supported in Python 3.6 and greater");
             return NULL;
         }
 
@@ -2363,7 +2363,7 @@ ast_for_atom(struct compiling *c, const node *n)
         /* Check for underscores here rather than in parse_number so we can report a line number on error */
         if (c->c_feature_version < 6 && strchr(STR(ch), '_') != NULL) {
             ast_error(c, ch,
-                    "Underscores in numeric literals are only supported in Python 3.6 and greater");
+                      "Underscores in numeric literals are only supported in Python 3.6 and greater");
             return NULL;
         }
         pynum = parsenumber(c, STR(ch));
@@ -2449,8 +2449,8 @@ ast_for_atom(struct compiling *c, const node *n)
                     TYPE(CHILD(ch, 3 - is_dict)) == comp_for) {
                 /* It's a dictionary comprehension. */
                 if (is_dict) {
-                    ast_error(c, n, "dict unpacking cannot be used in "
-                              "dict comprehension");
+                    ast_error(c, n,
+                              "dict unpacking cannot be used in dict comprehension");
                     return NULL;
                 }
                 res = ast_for_dictcomp(c, ch);
@@ -2710,7 +2710,7 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     if (TYPE(CHILD(n, 0)) == AWAIT) {
         if (c->c_feature_version < 5) {
             ast_error(c, n,
-                    "Await expressions are only supported in Python 3.5 and greater");
+                      "Await expressions are only supported in Python 3.5 and greater");
             return NULL;
         }
         start = 1;
@@ -3270,7 +3270,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         /* AnnAssigns are only allowed in Python 3.6 or greater */
         if (c->c_feature_version < 6) {
             ast_error(c, ch,
-                    "Variable annotation syntax is only supported in Python 3.6 and greater");
+                      "Variable annotation syntax is only supported in Python 3.6 and greater");
             return NULL;
         }
 
@@ -4094,7 +4094,7 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
 
     if (is_async && c->c_feature_version < 5) {
         ast_error(c, n,
-                "Async for loops are only supported in Python 3.5 and greater");
+                  "Async for loops are only supported in Python 3.5 and greater");
         return NULL;
     }
 
@@ -4328,7 +4328,7 @@ ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
 
     if (is_async && c->c_feature_version < 5) {
         ast_error(c, n,
-                "Async with statements are only supported in Python 3.5 and greater");
+                  "Async with statements are only supported in Python 3.5 and greater");
         return NULL;
     }
 
