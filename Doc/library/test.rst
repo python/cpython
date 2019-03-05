@@ -246,6 +246,11 @@ The :mod:`test.support` module defines the following constants:
    Set to a name that is safe to use as the name of a temporary file.  Any
    temporary file that is created should be closed and unlinked (removed).
 
+
+.. data:: TEST_HTTP_URL
+
+    Define the URL of a dedicated HTTP server for the network tests.
+
 The :mod:`test.support` module defines the following functions:
 
 
