@@ -875,6 +875,26 @@ class GeneralModuleTests(unittest.TestCase):
         socket.SOCK_SEQPACKET
         socket.SOL_SOCKET
         socket.SO_REUSEADDR
+        if socket.has_ipv6:
+            socket.AF_INET6
+
+    def testCrucialIpProtoConstants(self):
+        socket.IPPROTO_TCP
+        socket.IPPROTO_UDP
+        socket.IPPROTO_IPV4
+        if socket.has_ipv6:
+            socket.IPPROTO_IPV6
+
+    @unittest.skipUnless(os.name == "nt", "Windows specific")
+    def testWindowsSpecificConstants(self):
+        socket.IPPROTO_ICLFXBM
+        socket.IPPROTO_ST
+        socket.IPPROTO_CBT
+        socket.IPPROTO_IGP
+        socket.IPPROTO_RDP
+        socket.IPPROTO_PGM
+        socket.IPPROTO_L2TP
+        socket.IPPROTO_SCTP
 
     def testHostnameRes(self):
         # Testing hostname resolution mechanisms

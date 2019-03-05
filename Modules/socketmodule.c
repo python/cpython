@@ -308,6 +308,40 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #  include <fcntl.h>
 # endif
 
+/* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
+#ifdef MS_WINDOWS
+#define IPPROTO_ICMP IPPROTO_ICMP
+#define IPPROTO_IGMP IPPROTO_IGMP
+#define IPPROTO_GGP IPPROTO_GGP
+#define IPPROTO_TCP IPPROTO_TCP
+#define IPPROTO_PUP IPPROTO_PUP
+#define IPPROTO_UDP IPPROTO_UDP
+#define IPPROTO_IDP IPPROTO_IDP
+#define IPPROTO_ND IPPROTO_ND
+#define IPPROTO_RAW IPPROTO_RAW
+#define IPPROTO_MAX IPPROTO_MAX
+#define IPPROTO_HOPOPTS IPPROTO_HOPOPTS
+#define IPPROTO_IPV4 IPPROTO_IPV4
+#define IPPROTO_IPV6 IPPROTO_IPV6
+#define IPPROTO_ROUTING IPPROTO_ROUTING
+#define IPPROTO_FRAGMENT IPPROTO_FRAGMENT
+#define IPPROTO_ESP IPPROTO_ESP
+#define IPPROTO_AH IPPROTO_AH
+#define IPPROTO_ICMPV6 IPPROTO_ICMPV6
+#define IPPROTO_NONE IPPROTO_NONE
+#define IPPROTO_DSTOPTS IPPROTO_DSTOPTS
+#define IPPROTO_EGP IPPROTO_EGP
+#define IPPROTO_PIM IPPROTO_PIM
+#define IPPROTO_ICLFXBM IPPROTO_ICLFXBM  // Windows only
+#define IPPROTO_ST IPPROTO_ST  // Windows only
+#define IPPROTO_CBT IPPROTO_CBT  // Windows only
+#define IPPROTO_IGP IPPROTO_IGP  // Windows only
+#define IPPROTO_RDP IPPROTO_RDP  // Windows only
+#define IPPROTO_PGM IPPROTO_PGM  // Windows only
+#define IPPROTO_L2TP IPPROTO_L2TP  // Windows only
+#define IPPROTO_SCTP IPPROTO_SCTP  // Windows only
+#endif /* MS_WINDOWS */
+
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <versionhelpers.h>
 
@@ -355,7 +389,7 @@ remove_unusable_flags(PyObject *m)
 
     for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
         info.dwBuildNumber = win_runtime_flags[i].build_number;
-        /* greater than or equal to the specified version? 
+        /* greater than or equal to the specified version?
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
         if (VerifyVersionInfo(
                 &info,
@@ -7656,6 +7690,32 @@ PyInit__socket(void)
 #endif
 #ifdef  IPPROTO_MAX
     PyModule_AddIntMacro(m, IPPROTO_MAX);
+#endif
+
+/* IPPROTO_* Windows only */
+#ifdef IPPROTO_ICLFXBM
+    PyModule_AddIntMacro(m, IPPROTO_ICLFXBM);
+#endif
+#ifdef IPPROTO_ST
+    PyModule_AddIntMacro(m, IPPROTO_ST);
+#endif
+#ifdef IPPROTO_CBT
+    PyModule_AddIntMacro(m, IPPROTO_CBT);
+#endif
+#ifdef IPPROTO_IGP
+    PyModule_AddIntMacro(m, IPPROTO_IGP);
+#endif
+#ifdef IPPROTO_RDP
+    PyModule_AddIntMacro(m, IPPROTO_RDP);
+#endif
+#ifdef IPPROTO_PGM
+    PyModule_AddIntMacro(m, IPPROTO_PGM);
+#endif
+#ifdef IPPROTO_L2TP
+    PyModule_AddIntMacro(m, IPPROTO_L2TP);
+#endif
+#ifdef IPPROTO_SCTP
+    PyModule_AddIntMacro(m, IPPROTO_SCTP);
 #endif
 
 #ifdef  SYSPROTO_CONTROL
