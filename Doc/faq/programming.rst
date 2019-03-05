@@ -738,7 +738,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
 
    from functools import reduce
 
@@ -1316,9 +1316,6 @@ The ``__iadd__`` succeeds, and thus the list is extended, but even though
 ``result`` points to the same object that ``a_tuple[0]`` already points to,
 that final assignment still results in an error, because tuples are immutable.
 
-
-Dictionaries
-============
 
 I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 ------------------------------------------------------------------------------

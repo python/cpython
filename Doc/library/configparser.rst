@@ -476,9 +476,9 @@ the :meth:`__init__` options:
      ...                                'bar': 'y',
      ...                                'baz': 'z'}
      ... })
-     >>> parser.sections()  # doctest: +SKIP
+     >>> parser.sections()
      ['section1', 'section2', 'section3']
-     >>> [option for option in parser['section3']]  # doctest: +SKIP
+     >>> [option for option in parser['section3']]
      ['foo', 'bar', 'baz']
 
 * *allow_no_value*, default value: ``False``
@@ -921,7 +921,7 @@ ConfigParser Objects
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 
@@ -1199,7 +1199,7 @@ RawConfigParser Objects
    names, and values via its unsafe ``add_section`` and ``set`` methods,
    as well as the legacy ``defaults=`` keyword argument handling.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 

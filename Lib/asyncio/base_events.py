@@ -168,6 +168,17 @@ def _run_until_complete_cb(fut):
     futures._get_loop(fut).stop()
 
 
+if hasattr(socket, 'TCP_NODELAY'):
+    def _set_nodelay(sock):
+        if (sock.family in {socket.AF_INET, socket.AF_INET6} and
+                sock.type == socket.SOCK_STREAM and
+                sock.proto == socket.IPPROTO_TCP):
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+else:
+    def _set_nodelay(sock):
+        pass
+
+
 class _SendfileFallbackProtocol(protocols.Protocol):
     def __init__(self, transp):
         if not isinstance(transp, transports._FlowControlMixin):
@@ -611,10 +622,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Returns True if the event loop was closed."""
         return self._closed
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if not self.is_closed():
-            warnings.warn(f"unclosed event loop {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
             if not self.is_running():
                 self.close()
 
@@ -1177,7 +1187,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                     (local_addr, remote_addr)), )
             else:
                 # join address by (family, protocol)
-                addr_infos = collections.OrderedDict()
+                addr_infos = {}  # Using order preserving dict
                 for idx, addr in ((0, local_addr), (1, remote_addr)):
                     if addr is not None:
                         assert isinstance(addr, tuple) and len(addr) == 2, (

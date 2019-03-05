@@ -414,8 +414,15 @@ EXPORT(long long) last_tf_arg_s = 0;
 EXPORT(unsigned long long) last_tf_arg_u = 0;
 
 struct BITS {
-    int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
-    short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+    signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
+/*
+ * The test case needs/uses "signed short" bitfields, but the
+ * IBM XLC compiler does not support this
+ */
+#ifndef __xlc__
+#define SIGNED_SHORT_BITFIELDS
+     short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+#endif
 };
 
 EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
@@ -430,7 +437,7 @@ EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
     case 'G': bits->G = value; break;
     case 'H': bits->H = value; break;
     case 'I': bits->I = value; break;
-
+#ifdef SIGNED_SHORT_BITFIELDS
     case 'M': bits->M = value; break;
     case 'N': bits->N = value; break;
     case 'O': bits->O = value; break;
@@ -438,6 +445,7 @@ EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
     case 'Q': bits->Q = value; break;
     case 'R': bits->R = value; break;
     case 'S': bits->S = value; break;
+#endif
     }
 }
 
@@ -454,6 +462,7 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     case 'H': return bits->H;
     case 'I': return bits->I;
 
+#ifdef SIGNED_SHORT_BITFIELDS
     case 'M': return bits->M;
     case 'N': return bits->N;
     case 'O': return bits->O;
@@ -461,8 +470,9 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     case 'Q': return bits->Q;
     case 'R': return bits->R;
     case 'S': return bits->S;
+#endif
     }
-    return 0;
+    return 999;
 }
 
 static PyMethodDef module_methods[] = {

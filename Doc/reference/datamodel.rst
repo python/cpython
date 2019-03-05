@@ -539,7 +539,9 @@ Callable types
       the value of the cell, as well as set the value.
 
       Additional information about a function's definition can be retrieved from its
-      code object; see the description of internal types below.
+      code object; see the description of internal types below. The
+      :data:`cell <types.CellType>` type can be accessed in the :mod:`types`
+      module.
 
    Instance methods
       .. index::
@@ -575,12 +577,6 @@ Callable types
       :attr:`__self__` attribute is the instance, and the method object is said
       to be bound.  The new method's :attr:`__func__` attribute is the original
       function object.
-
-      When a user-defined method object is created by retrieving another method
-      object from a class or instance, the behaviour is the same as for a
-      function object, except that the :attr:`__func__` attribute of the new
-      instance is not the original method object but its :attr:`__func__`
-      attribute.
 
       When an instance method object is created by retrieving a class method
       object from a class or instance, its :attr:`__self__` attribute is the
@@ -620,7 +616,7 @@ Callable types
       called, always returns an iterator object which can be used to execute the
       body of the function:  calling the iterator's :meth:`iterator.__next__`
       method will cause the function to execute until it provides a value
-      using the :keyword:`yield` statement.  When the function executes a
+      using the :keyword:`!yield` statement.  When the function executes a
       :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
       exception is raised and the iterator will have reached the end of the set of
       values to be returned.
@@ -700,7 +696,7 @@ Modules
 
    Modules are a basic organizational unit of Python code, and are created by
    the :ref:`import system <importsystem>` as invoked either by the
-   :keyword:`import` statement (see :keyword:`import`), or by calling
+   :keyword:`import` statement, or by calling
    functions such as :func:`importlib.import_module` and built-in
    :func:`__import__`.  A module object has a namespace implemented by a
    dictionary object (this is the dictionary referenced by the ``__globals__``
@@ -1725,6 +1721,7 @@ properties) and deny the creation of *__dict__* and *__weakref__*
 (unless explicitly declared in *__slots__* or available in a parent.)
 
 The space saved over using *__dict__* can be significant.
+Attribute lookup speed can be significantly improved as well.
 
 .. data:: object.__slots__
 
@@ -2146,6 +2143,8 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    .. versionadded:: 3.4
 
 
+.. index:: object: slice
+
 .. note::
 
    Slicing is done exclusively with the following three methods.  A call like ::
@@ -2161,8 +2160,6 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
 .. method:: object.__getitem__(self, key)
 
-   .. index:: object: slice
-
    Called to implement evaluation of ``self[key]``. For sequence types, the
    accepted keys should be integers and slice objects.  Note that the special
    interpretation of negative indexes (if the class wishes to emulate a sequence
@@ -2176,12 +2173,6 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
       :keyword:`for` loops expect that an :exc:`IndexError` will be raised for illegal
       indexes to allow proper detection of the end of the sequence.
-
-
-.. method:: object.__missing__(self, key)
-
-   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
-   when key is not in the dictionary.
 
 
 .. method:: object.__setitem__(self, key, value)
@@ -2200,6 +2191,12 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    objects support removal of keys, or for sequences if elements can be removed
    from the sequence.  The same exceptions should be raised for improper *key*
    values as for the :meth:`__getitem__` method.
+
+
+.. method:: object.__missing__(self, key)
+
+   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
+   when key is not in the dictionary.
 
 
 .. method:: object.__iter__(self)
@@ -2423,7 +2420,7 @@ A :dfn:`context manager` is an object that defines the runtime context to be
 established when executing a :keyword:`with` statement. The context manager
 handles the entry into, and the exit from, the desired runtime context for the
 execution of the block of code.  Context managers are normally invoked using the
-:keyword:`with` statement (described in section :ref:`with`), but can also be
+:keyword:`!with` statement (described in section :ref:`with`), but can also be
 used by directly invoking their methods.
 
 .. index::
@@ -2440,7 +2437,7 @@ For more information on context managers, see :ref:`typecontextmanager`.
 
    Enter the runtime context related to this object. The :keyword:`with` statement
    will bind this method's return value to the target(s) specified in the
-   :keyword:`as` clause of the statement, if any.
+   :keyword:`!as` clause of the statement, if any.
 
 
 .. method:: object.__exit__(self, exc_type, exc_value, traceback)

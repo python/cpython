@@ -1,0 +1,2 @@
+The whole coreconfig.h header is now excluded from Py_LIMITED_API. Move
+functions definitions into a new internal pycore_coreconfig.h header.

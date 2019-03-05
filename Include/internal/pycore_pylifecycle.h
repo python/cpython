@@ -8,6 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
 #endif
 
+/* True if the main interpreter thread exited due to an unhandled
+ * KeyboardInterrupt exception, suggesting the user pressed ^C. */
+PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
+
 PyAPI_FUNC(int) _Py_UnixMain(int argc, char **argv);
 
 PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
@@ -19,20 +23,49 @@ PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
 
 PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
-extern int _PyUnicode_Init(void);
+/* Various one-time initializers */
+
+extern _PyInitError _PyUnicode_Init(void);
 extern int _PyStructSequence_Init(void);
 extern int _PyLong_Init(void);
 extern _PyInitError _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
+extern PyObject * _PyBuiltin_Init(void);
+extern _PyInitError _PySys_Create(
+    PyInterpreterState *interp,
+    PyObject **sysmod_p);
+extern _PyInitError _PySys_SetPreliminaryStderr(PyObject *sysdict);
+extern int _PySys_InitMain(PyInterpreterState *interp);
+extern _PyInitError _PyImport_Init(PyInterpreterState *interp);
+extern _PyInitError _PyExc_Init(void);
+extern _PyInitError _PyBuiltins_AddExceptions(PyObject * bltinmod);
+extern _PyInitError _PyImportHooks_Init(void);
+extern int _PyFloat_Init(void);
+extern _PyInitError _Py_HashRandomization_Init(const _PyCoreConfig *);
 
-extern void _Py_ReadyTypes(void);
+extern _PyInitError _PyTypes_Init(void);
 
-PyAPI_FUNC(void) _PyExc_Fini(void);
-PyAPI_FUNC(void) _PyImport_Fini(void);
-PyAPI_FUNC(void) _PyImport_Fini2(void);
-PyAPI_FUNC(void) _PyGC_Fini(void);
-PyAPI_FUNC(void) _PyType_Fini(void);
-PyAPI_FUNC(void) _Py_HashRandomization_Fini(void);
+/* Various internal finalizers */
+
+extern void PyMethod_Fini(void);
+extern void PyFrame_Fini(void);
+extern void PyCFunction_Fini(void);
+extern void PyDict_Fini(void);
+extern void PyTuple_Fini(void);
+extern void PyList_Fini(void);
+extern void PySet_Fini(void);
+extern void PyBytes_Fini(void);
+extern void PyFloat_Fini(void);
+extern void PyOS_FiniInterrupts(void);
+extern void PySlice_Fini(void);
+extern void PyAsyncGen_Fini(void);
+
+extern void _PyExc_Fini(void);
+extern void _PyImport_Fini(void);
+extern void _PyImport_Fini2(void);
+extern void _PyGC_Fini(void);
+extern void _PyType_Fini(void);
+extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(void);
 extern void PyLong_Fini(void);
 extern void _PyFaulthandler_Fini(void);

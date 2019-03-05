@@ -356,6 +356,10 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
+.. data:: TEST_HTTP_URL
+
+   Define the URL of a dedicated HTTP server for the network tests.
+
 
 
 The :mod:`test.support` module defines the following functions:
@@ -936,9 +940,24 @@ The :mod:`test.support` module defines the following functions:
 
    Test for syntax errors in *statement* by attempting to compile *statement*.
    *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
-   text of the error raised by :exc:`SyntaxError`.  If *lineno* is not None,
-   compares to the line of the :exc:`SyntaxError`.  If *offset* is not None,
-   compares to the offset of the :exc:`SyntaxError`.
+   regular expression which should match the string representation of the
+   raised :exc:`SyntaxError`.  If *lineno* is not ``None``, compares to
+   the line of the exception.  If *offset* is not ``None``, compares to
+   the offset of the exception.
+
+
+.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
+
+   Test for syntax warning in *statement* by attempting to compile *statement*.
+   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
+   will be converted to a :exc:`SyntaxError` when turned into error.
+   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
+   regular expression which should match the string representation of the
+   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
+   is not ``None``, compares to the line of the warning and exception.
+   If *offset* is not ``None``, compares to the offset of the exception.
+
+   .. versionadded:: 3.8
 
 
 .. function:: open_urlresource(url, *args, **kw)

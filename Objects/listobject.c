@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "pycore_accu.h"
 
 #ifdef STDC_HEADERS
@@ -81,26 +82,15 @@ static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
     assert(self->ob_item == NULL);
+    assert(size > 0);
 
-    PyObject **items;
-    size_t allocated;
-
-    allocated = (size_t)size;
-    if (allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    if (size == 0) {
-        allocated = 0;
-    }
-    items = (PyObject **)PyMem_New(PyObject*, allocated);
+    PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
     self->ob_item = items;
-    self->allocated = allocated;
+    self->allocated = size;
     return 0;
 }
 
@@ -487,14 +477,6 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     PyListObject *np;
     PyObject **src, **dest;
     Py_ssize_t i, len;
-    if (ilow < 0)
-        ilow = 0;
-    else if (ilow > Py_SIZE(a))
-        ilow = Py_SIZE(a);
-    if (ihigh < ilow)
-        ihigh = ilow;
-    else if (ihigh > Py_SIZE(a))
-        ihigh = Py_SIZE(a);
     len = ihigh - ilow;
     np = (PyListObject *) list_new_prealloc(len);
     if (np == NULL)
@@ -517,6 +499,18 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     if (!PyList_Check(a)) {
         PyErr_BadInternalCall();
         return NULL;
+    }
+    if (ilow < 0) {
+        ilow = 0;
+    }
+    else if (ilow > Py_SIZE(a)) {
+        ilow = Py_SIZE(a);
+    }
+    if (ihigh < ilow) {
+        ihigh = ilow;
+    }
+    else if (ihigh > Py_SIZE(a)) {
+        ihigh = Py_SIZE(a);
     }
     return list_slice((PyListObject *)a, ilow, ihigh);
 }
@@ -2294,7 +2288,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         int ints_are_bounded = 1;
 
         /* Prove that assumption by checking every key. */
-        int i;
         for (i=0; i < saved_ob_size; i++) {
 
             if (keys_are_in_tuples &&
@@ -2341,6 +2334,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             }
             else if ((ms.key_richcompare = key_type->tp_richcompare) != NULL) {
                 ms.key_compare = unsafe_object_compare;
+            }
+            else {
+                ms.key_compare = safe_object_compare;
             }
         }
         else {
@@ -2506,26 +2502,11 @@ PyList_Reverse(PyObject *v)
 PyObject *
 PyList_AsTuple(PyObject *v)
 {
-    PyObject *w;
-    PyObject **p, **q;
-    Py_ssize_t n;
     if (v == NULL || !PyList_Check(v)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    n = Py_SIZE(v);
-    w = PyTuple_New(n);
-    if (w == NULL)
-        return NULL;
-    p = ((PyTupleObject *)w)->ob_item;
-    q = ((PyListObject *)v)->ob_item;
-    while (--n >= 0) {
-        Py_INCREF(*q);
-        *p = *q;
-        p++;
-        q++;
-    }
-    return w;
+    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
 /*[clinic input]
@@ -3356,23 +3337,25 @@ listreviter_setstate(listreviterobject *it, PyObject *state)
 static PyObject *
 listiter_reduce_general(void *_it, int forward)
 {
+    _Py_IDENTIFIER(iter);
+    _Py_IDENTIFIER(reversed);
     PyObject *list;
 
     /* the objects are not the same, index is of different types! */
     if (forward) {
         listiterobject *it = (listiterobject *)_it;
         if (it->it_seq)
-            return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                                  it->it_seq, it->it_index);
     } else {
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq)
-            return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("reversed"),
+            return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_reversed),
                                  it->it_seq, it->it_index);
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
 }

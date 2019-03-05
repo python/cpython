@@ -31,29 +31,130 @@
 # The parameter names are as they appear in the API manual, not the source
 # code.
 
+PyAnySet_Check:int:::
+PyAnySet_Check:PyObject*:p:0:
+
+PyAnySet_CheckExact:int:::
+PyAnySet_CheckExact:PyObject*:p:0:
+
+PyBool_Check:int:::
+PyBool_Check:PyObject*:o:0:
+
 PyBool_FromLong:PyObject*::+1:
-PyBool_FromLong:long:v:0:
+PyBool_FromLong:long:v::
 
-PyBuffer_FromObject:PyObject*::+1:
-PyBuffer_FromObject:PyObject*:base:+1:
-PyBuffer_FromObject:int:offset::
-PyBuffer_FromObject:int:size::
+PyBuffer_FillContiguousStrides:void:::
+PyBuffer_FillContiguousStrides:int:ndims::
+PyBuffer_FillContiguousStrides:Py_ssize_t*:shape::
+PyBuffer_FillContiguousStrides:Py_ssize_t*:strides::
+PyBuffer_FillContiguousStrides:int:itemsize::
+PyBuffer_FillContiguousStrides:char:order::
 
-PyBuffer_FromReadWriteObject:PyObject*::+1:
-PyBuffer_FromReadWriteObject:PyObject*:base:+1:
-PyBuffer_FromReadWriteObject:int:offset::
-PyBuffer_FromReadWriteObject:int:size::
+PyBuffer_FillInfo:int:::
+PyBuffer_FillInfo:Py_buffer*:view::
+PyBuffer_FillInfo:PyObject*:exporter:0:
+PyBuffer_FillInfo:void*:buf::
+PyBuffer_FillInfo:Py_ssize_t:len::
+PyBuffer_FillInfo:int:readonly::
+PyBuffer_FillInfo:int:flags::
 
-PyBuffer_FromMemory:PyObject*::+1:
-PyBuffer_FromMemory:void*:ptr::
-PyBuffer_FromMemory:int:size::
+PyBuffer_IsContiguous:int:::
+PyBuffer_IsContiguous:Py_buffer*:view::
+PyBuffer_IsContiguous:char:order::
 
-PyBuffer_FromReadWriteMemory:PyObject*::+1:
-PyBuffer_FromReadWriteMemory:void*:ptr::
-PyBuffer_FromReadWriteMemory:int:size::
+PyBuffer_Release:void:::
+PyBuffer_Release:Py_buffer*:view::
 
-PyBuffer_New:PyObject*::+1:
-PyBuffer_New:int:size::
+PyBuffer_ToContiguous:int:::
+PyBuffer_ToContiguous:void*:buf::
+PyBuffer_ToContiguous:Py_buffer*:src::
+PyBuffer_ToContiguous:Py_ssize_t:len::
+PyBuffer_ToContiguous:char:order::
+
+PyByteArray_AS_STRING:char*:::
+PyByteArray_AS_STRING:PyObject*:bytearray:0:
+
+PyByteArray_AsString:char*:::
+PyByteArray_AsString:PyObject*:bytearray:0:
+
+PyByteArray_Check:int:::
+PyByteArray_Check:PyObject*:o:0:
+
+PyByteArray_CheckExact:int:::
+PyByteArray_CheckExact:PyObject*:o:0:
+
+PyByteArray_Concat:PyObject*::+1:
+PyByteArray_Concat:PyObject*:a:0:
+PyByteArray_Concat:PyObject*:b:0:
+
+PyByteArray_FromObject:PyObject*::+1:
+PyByteArray_FromObject:PyObject*:o:0:
+
+PyByteArray_FromStringAndSize:PyObject*::+1:
+PyByteArray_FromStringAndSize:const char*:string::
+PyByteArray_FromStringAndSize:Py_ssize_t:len::
+
+PyByteArray_GET_SIZE:Py_ssize_t:::
+PyByteArray_GET_SIZE:PyObject*:bytearray:0:
+
+PyByteArray_Resize:int:::
+PyByteArray_Resize:PyObject*:bytearray:0:
+PyByteArray_Resize:Py_ssize_t:len::
+
+PyByteArray_Size:Py_ssize_t:::
+PyByteArray_Size:PyObject*:bytearray:0:
+
+PyBytes_AS_STRING:char*:::
+PyBytes_AS_STRING:PyObject*:string:0:
+
+PyBytes_AsString:char*:::
+PyBytes_AsString:PyObject*:o:0:
+
+PyBytes_AsStringAndSize:int:::
+PyBytes_AsStringAndSize:PyObject*:obj:0:
+PyBytes_AsStringAndSize:char**:buffer::
+PyBytes_AsStringAndSize:Py_ssize_t*:length::
+
+PyBytes_Check:int:::
+PyBytes_Check:PyObject*:o:0:
+
+PyBytes_CheckExact:int:::
+PyBytes_CheckExact:PyObject*:o:0:
+
+PyBytes_Concat:void:::
+PyBytes_Concat:PyObject**:bytes:0:
+PyBytes_Concat:PyObject*:newpart:0:
+
+PyBytes_ConcatAndDel:void:::
+PyBytes_ConcatAndDel:PyObject**:bytes:0:
+PyBytes_ConcatAndDel:PyObject*:newpart:-1:
+
+PyBytes_FromString:PyObject*::+1:
+PyBytes_FromString:const char*:v::
+
+PyBytes_FromStringAndSize:PyObject*::+1:
+PyBytes_FromStringAndSize:const char*:v::
+PyBytes_FromStringAndSize:Py_ssize_t:len::
+
+PyBytes_FromFormat:PyObject*::+1:
+PyBytes_FromFormat:const char*:format::
+PyBytes_FromFormat::...::
+
+PyBytes_FromFormatV:PyObject*::+1:
+PyBytes_FromFormatV:const char*:format::
+PyBytes_FromFormatV:va_list:vargs::
+
+PyBytes_FromObject:PyObject*::+1:
+PyBytes_FromObject:PyObject*:o:0:
+
+PyBytes_GET_SIZE:Py_ssize_t:::
+PyBytes_GET_SIZE:PyObject*:o:0:
+
+PyBytes_Size:Py_ssize_t:::
+PyBytes_Size:PyObject*:o:0:
+
+PyCapsule_CheckExact:int:::
+PyCapsule_CheckExact:PyObject*:p:0:
 
 PyCapsule_GetContext:void *:::
 PyCapsule_GetContext:PyObject*:self:0:
@@ -71,6 +172,10 @@ PyCapsule_GetPointer:const char *:name::
 PyCapsule_Import:void *:::
 PyCapsule_Import:const char *:name::
 PyCapsule_Import:int:no_block::
+
+PyCapsule_IsValid:int:::
+PyCapsule_IsValid:PyObject*:capsule:0:
+PyCapsule_IsValid:const char*:name::
 
 PyCapsule_New:PyObject*::+1:
 PyCapsule_New:void*:pointer::
@@ -93,21 +198,8 @@ PyCapsule_SetPointer:int:::
 PyCapsule_SetPointer:PyObject*:self:0:
 PyCapsule_SetPointer:void*:pointer::
 
-
-PyCObject_AsVoidPtr:void*:::
-PyCObject_AsVoidPtr:PyObject*:self:0:
-
-PyCObject_FromVoidPtr:PyObject*::+1:
-PyCObject_FromVoidPtr:void*:cobj::
-PyCObject_FromVoidPtr::void (* destr)(void* )::
-
-PyCObject_FromVoidPtrAndDesc:PyObject*::+1:
-PyCObject_FromVoidPtrAndDesc:void*:cobj::
-PyCObject_FromVoidPtrAndDesc:void*:desc::
-PyCObject_FromVoidPtrAndDesc:void(*)(void*,void*):destr::
-
-PyCObject_GetDesc:void*:::
-PyCObject_GetDesc:PyObject*:self:0:
+PyCell_Check:int:::
+PyCell_Check::ob::
 
 PyCell_New:PyObject*::+1:
 PyCell_New:PyObject*:ob:0:
@@ -126,18 +218,117 @@ PyCell_Set:int:::
 PyCell_Set:PyObject*:cell:0:
 PyCell_Set:PyObject*:value:0:
 
+PyCallIter_Check:int:::
+PyCallIter_Check::op::
+
 PyCallIter_New:PyObject*::+1:
-PyCallIter_New:PyObject*:callable::
-PyCallIter_New:PyObject*:sentinel::
+PyCallIter_New:PyObject*:callable:+1:
+PyCallIter_New:PyObject*:sentinel:+1:
 
 PyCallable_Check:int:::
 PyCallable_Check:PyObject*:o:0:
+
+PyCode_Check:int:::
+PyCode_Check:PyObject*:co:0:
+
+PyCode_GetNumFree:int:::
+PyCode_GetNumFree:PyCodeObject*:co:0:
+
+PyCode_New:PyCodeObject*::+1:
+PyCode_New:int:argcount::
+PyCode_New:int:kwonlyargcount::
+PyCode_New:int:nlocals::
+PyCode_New:int:stacksize::
+PyCode_New:int:flags::
+PyCode_New:PyObject*:code:0:
+PyCode_New:PyObject*:consts:0:
+PyCode_New:PyObject*:names:0:
+PyCode_New:PyObject*:varnames:0:
+PyCode_New:PyObject*:freevars:0:
+PyCode_New:PyObject*:cellvars:0:
+PyCode_New:PyObject*:filename:0:
+PyCode_New:PyObject*:name:0:
+PyCode_New:int:firstlineno::
+PyCode_New:PyObject*:lnotab:0:
+
+PyCode_NewEmpty:PyCodeObject*::+1:
+PyCode_NewEmpty:const char*:filename::
+PyCode_NewEmpty:const char*:funcname::
+PyCode_NewEmpty:int:firstlineno::
+
+PyCodec_Register:int:::
+PyCodec_Register:PyObject*:search_function:+1:
+
+PyCodec_KnownEncoding:int:::
+PyCodec_KnownEncoding:const char*:encoding::
+
+PyCodec_Encode:PyObject*::+1:
+PyCodec_Encode:PyObject*:object:0:
+PyCodec_Encode:const char*:encoding::
+PyCodec_Encode:const char*:errors::
+
+PyCodec_Decode:PyObject*::+1:
+PyCodec_Decode:PyObject*:object:0:
+PyCodec_Decode:const char*:encoding::
+PyCodec_Decode:const char*:errors::
+
+PyCodec_Encoder:PyObject*::+1:
+PyCodec_Encoder:const char*:encoding::
+
+PyCodec_Decoder:PyObject*::+1:
+PyCodec_Decoder:const char*:encoding::
+
+PyCodec_IncrementalEncoder:PyObject*::+1:
+PyCodec_IncrementalEncoder:const char*:encoding::
+PyCodec_IncrementalEncoder:const char*:errors::
+
+PyCodec_IncrementalDecoder:PyObject*::+1:
+PyCodec_IncrementalDecoder:const char*:encoding::
+PyCodec_IncrementalDecoder:const char*:errors::
+
+PyCodec_StreamReader:PyObject*::+1:
+PyCodec_StreamReader:const char*:encoding::
+PyCodec_StreamReader:PyObject*:stream:0:
+PyCodec_StreamReader:const char*:errors::
+
+PyCodec_StreamWriter:PyObject*::+1:
+PyCodec_StreamWriter:const char*:encoding::
+PyCodec_StreamWriter:PyObject*:stream:0:
+PyCodec_StreamWriter:const char*:errors::
+
+PyCodec_RegisterError:int:::
+PyCodec_RegisterError:const char*:name::
+PyCodec_RegisterError:PyObject*:error:+1:
+
+PyCodec_LookupError:PyObject*::+1:
+PyCodec_LookupError:const char*:name::
+
+PyCodec_StrictErrors:PyObject*::null:
+PyCodec_StrictErrors:PyObject*:exc:0:
+
+PyCodec_IgnoreErrors:PyObject*::+1:
+PyCodec_IgnoreErrors:PyObject*:exc:0:
+
+PyCodec_ReplaceErrors:PyObject*::+1:
+PyCodec_ReplaceErrors:PyObject*:exc:0:
+
+PyCodec_XMLCharRefReplaceErrors:PyObject*::+1:
+PyCodec_XMLCharRefReplaceErrors:PyObject*:exc:0:
+
+PyCodec_BackslashReplaceErrors:PyObject*::+1:
+PyCodec_BackslashReplaceErrors:PyObject*:exc:0:
+
+PyCodec_NameReplaceErrors:PyObject*::+1:
+PyCodec_NameReplaceErrors:PyObject*:exc:0:
 
 PyComplex_AsCComplex:Py_complex:::
 PyComplex_AsCComplex:PyObject*:op:0:
 
 PyComplex_Check:int:::
 PyComplex_Check:PyObject*:p:0:
+
+PyComplex_CheckExact:int:::
+PyComplex_CheckExact:PyObject*:p:0:
 
 PyComplex_FromCComplex:PyObject*::+1:
 PyComplex_FromCComplex::Py_complex v::
@@ -193,6 +384,12 @@ PyContextVar_Reset:int:::
 PyContextVar_Reset:PyObject*:var:0:
 PyContextVar_Reset:PyObject*:token:-1:
 
+PyDate_Check:int:::
+PyDate_Check:PyObject*:ob:0:
+
+PyDate_CheckExact:int:::
+PyDate_CheckExact:PyObject*:ob:0:
+
 PyDate_FromDate:PyObject*::+1:
 PyDate_FromDate:int:year::
 PyDate_FromDate:int:month::
@@ -200,6 +397,12 @@ PyDate_FromDate:int:day::
 
 PyDate_FromTimestamp:PyObject*::+1:
 PyDate_FromTimestamp:PyObject*:args:0:
+
+PyDateTime_Check:int:::
+PyDateTime_Check:PyObject*:ob:0:
+
+PyDateTime_CheckExact:int:::
+PyDateTime_CheckExact:PyObject*:ob:0:
 
 PyDateTime_FromDateAndTime:PyObject*::+1:
 PyDateTime_FromDateAndTime:int:year::
@@ -213,45 +416,61 @@ PyDateTime_FromDateAndTime:int:usecond::
 PyDateTime_FromTimestamp:PyObject*::+1:
 PyDateTime_FromTimestamp:PyObject*:args:0:
 
+PyDelta_Check:int:::
+PyDelta_Check:PyObject*:ob:0:
+
+PyDelta_CheckExact:int:::
+PyDelta_CheckExact:PyObject*:ob:0:
+
 PyDelta_FromDSU:PyObject*::+1:
 PyDelta_FromDSU:int:days::
 PyDelta_FromDSU:int:seconds::
 PyDelta_FromDSU:int:useconds::
 
 PyTimeZone_FromOffset:PyObject*::+1:
-PyTimeZone_FromOffset:PyDateTime_DeltaType*:offset:+1:Reference count not increased if offset is +00:00
+PyTimeZone_FromOffset:PyObject*:offset:+1:Reference count not increased if offset is +00:00
 
 PyTimeZone_FromOffsetAndName:PyObject*::+1:
-PyTimeZone_FromOffsetAndName:PyDateTime_DeltaType*:offset:+1:Reference count not increased if offset is +00:00 and name == NULL
-PyTimeZone_FromOffsetAndName:PyUnicode*:name:+1:
+PyTimeZone_FromOffsetAndName:PyObject*:offset:+1:Reference count not increased if offset is +00:00 and name == NULL
+PyTimeZone_FromOffsetAndName:PyObject*:name:+1:
 
+
+PyDescr_IsData:int:::
+PyDescr_IsData:PyObject*:descr:0:
 
 PyDescr_NewClassMethod:PyObject*::+1:
-PyDescr_NewClassMethod:PyTypeObject*:type::
+PyDescr_NewClassMethod:PyTypeObject*:type:+1:
 PyDescr_NewClassMethod:PyMethodDef*:method::
 
 PyDescr_NewGetSet:PyObject*::+1:
-PyDescr_NewGetSet:PyTypeObject*:type::
+PyDescr_NewGetSet:PyTypeObject*:type:+1:
 PyDescr_NewGetSet:PyGetSetDef*:getset::
 
 PyDescr_NewMember:PyObject*::+1:
-PyDescr_NewMember:PyTypeObject*:type::
+PyDescr_NewMember:PyTypeObject*:type:+1:
 PyDescr_NewMember:PyMemberDef*:member::
 
 PyDescr_NewMethod:PyObject*::+1:
-PyDescr_NewMethod:PyTypeObject*:type::
+PyDescr_NewMethod:PyTypeObject*:type:+1:
 PyDescr_NewMethod:PyMethodDef*:meth::
 
 PyDescr_NewWrapper:PyObject*::+1:
-PyDescr_NewWrapper:PyTypeObject*:type::
+PyDescr_NewWrapper:PyTypeObject*:type:+1:
 PyDescr_NewWrapper:struct wrapperbase*:base::
 PyDescr_NewWrapper:void*:wrapped::
 
 PyDict_Check:int:::
 PyDict_Check:PyObject*:p:0:
 
+PyDict_CheckExact:int:::
+PyDict_CheckExact:PyObject*:p:0:
+
 PyDict_Clear:void:::
 PyDict_Clear:PyObject*:p:0:
+
+PyDict_Contains:int:::
+PyDict_Contains:PyObject*:p:0:
+PyDict_Contains:PyObject*:key:0:
 
 PyDict_DelItem:int:::
 PyDict_DelItem:PyObject*:p:0:
@@ -261,7 +480,7 @@ PyDict_DelItemString:int:::
 PyDict_DelItemString:PyObject*:p:0:
 PyDict_DelItemString:const char*:key::
 
-PyDict_GetItem:PyObject*::0:0
+PyDict_GetItem:PyObject*::0:
 PyDict_GetItem:PyObject*:p:0:
 PyDict_GetItem:PyObject*:key:0:
 
@@ -289,9 +508,19 @@ PyDict_New:PyObject*::+1:
 PyDict_Copy:PyObject*::+1:
 PyDict_Copy:PyObject*:p:0:
 
+PyDict_Merge:int:::
+PyDict_Merge:PyObject*:a:0:
+PyDict_Merge:PyObject*:b:0:
+PyDict_Merge:int:override::
+
+PyDict_MergeFromSeq2:int:::
+PyDict_MergeFromSeq2:PyObject*:a:0:
+PyDict_MergeFromSeq2:PyObject*:seq2:0:
+PyDict_MergeFromSeq2:int:override::
+
 PyDict_Next:int:::
 PyDict_Next:PyObject*:p:0:
-PyDict_Next:int:ppos::
+PyDict_Next:Py_ssize_t:ppos::
 PyDict_Next:PyObject**:pkey:0:
 PyDict_Next:PyObject**:pvalue:0:
 
@@ -305,8 +534,12 @@ PyDict_SetItemString:PyObject*:p:0:
 PyDict_SetItemString:const char*:key::
 PyDict_SetItemString:PyObject*:val:+1:
 
-PyDict_Size:int:::
-PyDict_Size:PyObject*:p::
+PyDict_Size:Py_ssize_t:::
+PyDict_Size:PyObject*:p:0:
+
+PyDict_Update:int:::
+PyDict_Update:PyObject*:a:0:
+PyDict_Update:PyObject*:b:0:
 
 PyDict_Values:PyObject*::+1:
 PyDict_Values:PyObject*:p:0:
@@ -329,6 +562,21 @@ PyErr_Fetch:void:::
 PyErr_Fetch:PyObject**:ptype:0:
 PyErr_Fetch:PyObject**:pvalue:0:
 PyErr_Fetch:PyObject**:ptraceback:0:
+
+PyErr_Format:PyObject*::null:
+PyErr_Format:PyObject*:exception:+1:
+PyErr_Format:const char*:format::
+PyErr_Format::...::
+
+PyErr_FormatV:PyObject*::null:
+PyErr_FormatV:PyObject*:exception:+1:
+PyErr_FormatV:const char*:format::
+PyErr_FormatV:va_list:vargs::
+
+PyErr_GetExcInfo:void:::
+PyErr_GetExcInfo:PyObject**:ptype:+1:
+PyErr_GetExcInfo:PyObject**:pvalue:+1:
+PyErr_GetExcInfo:PyObject**:ptraceback:+1:
 
 PyErr_GivenExceptionMatches:int:::
 PyErr_GivenExceptionMatches:PyObject*:given:0:
@@ -356,26 +604,60 @@ PyErr_Occurred:PyObject*::0:
 
 PyErr_Print:void:::
 
+PyErr_PrintEx:void:::
+PyErr_PrintEx:int:set_sys_last_vars::
+
+PyErr_ResourceWarning:int:::
+PyErr_ResourceWarning:PyObject*:source:0:
+PyErr_ResourceWarning:Py_ssize_t:stack_level::
+PyErr_ResourceWarning:const char*:format::
+PyErr_ResourceWarning::...::
+
 PyErr_Restore:void:::
 PyErr_Restore:PyObject*:type:-1:
 PyErr_Restore:PyObject*:value:-1:
 PyErr_Restore:PyObject*:traceback:-1:
 
 PyErr_SetExcFromWindowsErr:PyObject*::null:
-PyErr_SetExcFromWindowsErr:PyObject*:type:0:
+PyErr_SetExcFromWindowsErr:PyObject*:type:+1:
 PyErr_SetExcFromWindowsErr:int:ierr::
 
 PyErr_SetExcFromWindowsErrWithFilename:PyObject*::null:
-PyErr_SetExcFromWindowsErrWithFilename:PyObject*:type:0:
+PyErr_SetExcFromWindowsErrWithFilename:PyObject*:type:+1:
 PyErr_SetExcFromWindowsErrWithFilename:int:ierr::
 PyErr_SetExcFromWindowsErrWithFilename:const char*:filename::
 
+PyErr_SetExcFromWindowsErrWithFilenameObject:PyObject*::null:
+PyErr_SetExcFromWindowsErrWithFilenameObject:PyObject*:type:+1:
+PyErr_SetExcFromWindowsErrWithFilenameObject:int:ierr::
+PyErr_SetExcFromWindowsErrWithFilenameObject:PyObject*:filename:+1:
+
+PyErr_SetExcFromWindowsErrWithFilenameObjects:PyObject*::null:
+PyErr_SetExcFromWindowsErrWithFilenameObjects:PyObject*:type:+1:
+PyErr_SetExcFromWindowsErrWithFilenameObjects:int:ierr::
+PyErr_SetExcFromWindowsErrWithFilenameObjects:PyObject*:filename:+1:
+PyErr_SetExcFromWindowsErrWithFilenameObjects:PyObject*:filename2:+1:
+
+PyErr_SetExcInfo:void:::
+PyErr_SetExcInfo:PyObject*:type:0:
+PyErr_SetExcInfo:PyObject*:value:0:
+PyErr_SetExcInfo:PyObject*:traceback:0:
+
 PyErr_SetFromErrno:PyObject*::null:
-PyErr_SetFromErrno:PyObject*:type:0:
+PyErr_SetFromErrno:PyObject*:type:+1:
 
 PyErr_SetFromErrnoWithFilename:PyObject*::null:
-PyErr_SetFromErrnoWithFilename:PyObject*:type:0:
+PyErr_SetFromErrnoWithFilename:PyObject*:type:+1:
 PyErr_SetFromErrnoWithFilename:const char*:filename::
+
+PyErr_SetFromErrnoWithFilenameObject:PyObject*::null:
+PyErr_SetFromErrnoWithFilenameObject:PyObject*:type:+1:
+PyErr_SetFromErrnoWithFilenameObject:PyObject*:filenameObject:+1:
+
+PyErr_SetFromErrnoWithFilenameObjects:PyObject*::null:
+PyErr_SetFromErrnoWithFilenameObjects:PyObject*:type:+1:
+PyErr_SetFromErrnoWithFilenameObjects:PyObject*:filenameObject:+1:
+PyErr_SetFromErrnoWithFilenameObjects:PyObject*:filenameObject2:+1:
 
 PyErr_SetFromWindowsErr:PyObject*::null:
 PyErr_SetFromWindowsErr:int:ierr::
@@ -383,6 +665,16 @@ PyErr_SetFromWindowsErr:int:ierr::
 PyErr_SetFromWindowsErrWithFilename:PyObject*::null:
 PyErr_SetFromWindowsErrWithFilename:int:ierr::
 PyErr_SetFromWindowsErrWithFilename:const char*:filename::
+
+PyErr_SetImportError:PyObject*::null:
+PyErr_SetImportError:PyObject*:msg:+1:
+PyErr_SetImportError:PyObject*:name:+1:
+PyErr_SetImportError:PyObject*:path:+1:
+
+PyErr_SetImportErrorSubclass:PyObject*::null:
+PyErr_SetImportErrorSubclass:PyObject*:msg:+1:
+PyErr_SetImportErrorSubclass:PyObject*:name:+1:
+PyErr_SetImportErrorSubclass:PyObject*:path:+1:
 
 PyErr_SetInterrupt:void:::
 
@@ -397,20 +689,49 @@ PyErr_SetString:void:::
 PyErr_SetString:PyObject*:type:+1:
 PyErr_SetString:const char*:message::
 
-PyErr_Format:PyObject*::null:
-PyErr_Format:PyObject*:exception:+1:
-PyErr_Format:const char*:format::
-PyErr_Format::...::
+PyErr_SyntaxLocation:void:::
+PyErr_SyntaxLocation:const char*:filename::
+PyErr_SyntaxLocation:int:lineno::
 
-PyErr_FormatV:PyObject*::null:
-PyErr_FormatV:PyObject*:exception:+1:
-PyErr_FormatV:const char*:format::
-PyErr_FormatV:va_list:vargs::
+PyErr_SyntaxLocationEx:void:::
+PyErr_SyntaxLocationEx:const char*:filename::
+PyErr_SyntaxLocationEx:int:lineno::
+PyErr_SyntaxLocationEx:int:col_offset::
+
+PyErr_SyntaxLocationObject:void:::
+PyErr_SyntaxLocationObject:PyObject*:filename:+1:
+PyErr_SyntaxLocationObject:int:lineno::
+PyErr_SyntaxLocationObject:int:col_offset::
 
 PyErr_WarnEx:int:::
 PyErr_WarnEx:PyObject*:category:0:
 PyErr_WarnEx:const char*:message::
 PyErr_WarnEx:Py_ssize_t:stack_level::
+
+PyErr_WarnExplicit:int:::
+PyErr_WarnExplicit:PyObject*:category:0:
+PyErr_WarnExplicit:const char*:message::
+PyErr_WarnExplicit:const char*:filename::
+PyErr_WarnExplicit:int:lineno::
+PyErr_WarnExplicit:const char*:module::
+PyErr_WarnExplicit:PyObject*:registry:0:
+
+PyErr_WarnExplicitObject:int:::
+PyErr_WarnExplicitObject:PyObject*:category:0:
+PyErr_WarnExplicitObject:PyObject*:message:0:
+PyErr_WarnExplicitObject:PyObject*:filename:0:
+PyErr_WarnExplicitObject:int:lineno::
+PyErr_WarnExplicitObject:PyObject*:module:0:
+PyErr_WarnExplicitObject:PyObject*:registry:0:
+
+PyErr_WarnFormat:int:::
+PyErr_WarnFormat:PyObject*:category:0:
+PyErr_WarnFormat:Py_ssize_t:stack_level::
+PyErr_WarnFormat:const char*:format::
+PyErr_WarnFormat::...::
+
+PyErr_WriteUnraisable:void:::
+PyErr_WriteUnraisable:PyObject*:obj:0:
 
 PyEval_AcquireLock:void:::
 
@@ -418,9 +739,18 @@ PyEval_AcquireThread:void:::
 PyEval_AcquireThread:PyThreadState*:tstate::
 
 PyEval_GetBuiltins:PyObject*::0:
+
 PyEval_GetLocals:PyObject*::0:
+
 PyEval_GetGlobals:PyObject*::0:
+
 PyEval_GetFrame:PyObject*::0:
+
+PyEval_GetFuncDesc:const char*:::
+PyEval_GetFuncDesc:PyObject*:func:0:
+
+PyEval_GetFuncName:const char*:::
+PyEval_GetFuncName:PyObject*:func:0:
 
 PyEval_InitThreads:void:::
 
@@ -434,61 +764,85 @@ PyEval_RestoreThread:PyThreadState*:tstate::
 
 PyEval_SaveThread:PyThreadState*:::
 
+PyEval_SetProfile:void:::
+PyEval_SetProfile:Py_tracefunc:func::
+PyEval_SetProfile:PyObject*:obj:+1:
+
+PyEval_SetTrace:void:::
+PyEval_SetTrace:Py_tracefunc:func::
+PyEval_SetTrace:PyObject*:obj:+1:
+
 PyEval_EvalCode:PyObject*::+1:
-PyEval_EvalCode:PyCodeObject*:co:0:
+PyEval_EvalCode:PyObject*:co:0:
 PyEval_EvalCode:PyObject*:globals:0:
 PyEval_EvalCode:PyObject*:locals:0:
 
+PyEval_EvalCodeEx:PyObject*::+1:
+PyEval_EvalCodeEx:PyObject*:co:0:
+PyEval_EvalCodeEx:PyObject*:globals:0:
+PyEval_EvalCodeEx:PyObject*:locals:0:
+PyEval_EvalCodeEx:PyObject*const*:args::
+PyEval_EvalCodeEx:int:argcount::
+PyEval_EvalCodeEx:PyObject*const*:kws::
+PyEval_EvalCodeEx:int:kwcount::
+PyEval_EvalCodeEx:PyObject*const*:defs::
+PyEval_EvalCodeEx:int:defcount::
+PyEval_EvalCodeEx:PyObject*:kwdefs:0:
+PyEval_EvalCodeEx:PyObject*:closure:0:
+
+PyEval_EvalFrame:PyObject*::+1:
+PyEval_EvalFrame:PyFrameObject*:f:0:
+
+PyEval_EvalFrameEx:PyObject*::+1:
+PyEval_EvalFrameEx:PyFrameObject*:f:0:
+PyEval_EvalFrameEx:int:throwflag::
+
+PyEval_MergeCompilerFlags:int:::
+PyEval_MergeCompilerFlags:PyCompilerFlags*:cf::
+
+PyException_GetCause:PyObject*::+1:
+PyException_GetCause:PyObject*:ex:0:
+
+PyException_GetContext:PyObject*::+1:
+PyException_GetContext:PyObject*:ex:0:
+
 PyException_GetTraceback:PyObject*::+1:
+PyException_GetTraceback:PyObject*:ex:0:
 
-PyFile_AsFile:FILE*:::
-PyFile_AsFile:PyFileObject*:p:0:
+PyException_SetCause:void:::
+PyException_SetCause:PyObject*:ex:0:
+PyException_SetCause:PyObject*:cause:+1:
 
-PyFile_Check:int:::
-PyFile_Check:PyObject*:p:0:
+PyException_SetContext:void:::
+PyException_SetContext:PyObject*:ex:0:
+PyException_SetContext:PyObject*:ctx:+1:
 
-PyFile_FromFile:PyObject*::+1:
-PyFile_FromFile:FILE*:fp::
-PyFile_FromFile:const char*:name::
-PyFile_FromFile:const char*:mode::
-PyFile_FromFile:int(*:close)::
+PyException_SetTraceback:int:::
+PyException_SetTraceback:PyObject*:ex:0:
+PyException_SetTraceback:PyObject*:tb:+1:
 
-PyFile_FromFileEx:PyObject*::+1:
-PyFile_FromFileEx:FILE*:fp::
-PyFile_FromFileEx:const char*:name::
-PyFile_FromFileEx:const char*:mode::
-PyFile_FromFileEx:int(*:close)::
-PyFile_FromFileEx:int:buffering::
-PyFile_FromFileEx:const char*:encoding::
-PyFile_FromFileEx:const char*:newline::
-
-PyFile_FromString:PyObject*::+1:
-PyFile_FromString:const char*:name::
-PyFile_FromString:const char*:mode::
+PyFile_FromFd:PyObject*::+1:
+PyFile_FromFd:int:fd::
+PyFile_FromFd:const char*:name::
+PyFile_FromFd:const char*:mode::
+PyFile_FromFd:int:buffering::
+PyFile_FromFd:const char*:encoding::
+PyFile_FromFd:const char*:errors::
+PyFile_FromFd:const char*:newline::
+PyFile_FromFd:int:closefd::
 
 PyFile_GetLine:PyObject*::+1:
-PyFile_GetLine:PyObject*:p::
+PyFile_GetLine:PyObject*:p:0:
 PyFile_GetLine:int:n::
-
-PyFile_Name:PyObject*::0:
-PyFile_Name:PyObject*:p:0:
-
-PyFile_SetBufSize:void:::
-PyFile_SetBufSize:PyFileObject*:p:0:
-PyFile_SetBufSize:int:n::
-
-PyFile_SoftSpace:int:::
-PyFile_SoftSpace:PyFileObject*:p:0:
-PyFile_SoftSpace:int:newflag::
 
 PyFile_WriteObject:int:::
 PyFile_WriteObject:PyObject*:obj:0:
-PyFile_WriteObject:PyFileObject*:p:0:
+PyFile_WriteObject:PyObject*:p:0:
 PyFile_WriteObject:int:flags::
 
 PyFile_WriteString:int:::
 PyFile_WriteString:const char*:s::
-PyFile_WriteString:PyFileObject*:p:0:
+PyFile_WriteString:PyObject*:p:0:
 PyFile_WriteString:int:flags::
 
 PyFloat_AS_DOUBLE:double:::
@@ -500,14 +854,32 @@ PyFloat_AsDouble:PyObject*:pyfloat:0:
 PyFloat_Check:int:::
 PyFloat_Check:PyObject*:p:0:
 
+PyFloat_CheckExact:int:::
+PyFloat_CheckExact:PyObject*:p:0:
+
 PyFloat_FromDouble:PyObject*::+1:
 PyFloat_FromDouble:double:v::
 
 PyFloat_FromString:PyObject*::+1:
 PyFloat_FromString:PyObject*:str:0:
 
+PyFloat_GetInfo:PyObject*::+1:
+PyFloat_GetInfo::void::
+
+PyFrozenSet_Check:int:::
+PyFrozenSet_Check:PyObject*:p:0:
+
+PyFrozenSet_CheckExact:int:::
+PyFrozenSet_CheckExact:PyObject*:p:0:
+
 PyFrozenSet_New:PyObject*::+1:
 PyFrozenSet_New:PyObject*:iterable:0:
+
+PyFunction_Check:int:::
+PyFunction_Check:PyObject*:o:0:
+
+PyFunction_GetAnnotations:PyObject*::0:
+PyFunction_GetAnnotations:PyObject*:op:0:
 
 PyFunction_GetClosure:PyObject*::0:
 PyFunction_GetClosure:PyObject*:op:0:
@@ -533,6 +905,10 @@ PyFunction_NewWithQualName:PyObject*:code:+1:
 PyFunction_NewWithQualName:PyObject*:globals:+1:
 PyFunction_NewWithQualName:PyObject*:qualname:+1:
 
+PyFunction_SetAnnotations:int:::
+PyFunction_SetAnnotations:PyObject*:op:0:
+PyFunction_SetAnnotations:PyObject*:annotations:+1:
+
 PyFunction_SetClosure:int:::
 PyFunction_SetClosure:PyObject*:op:0:
 PyFunction_SetClosure:PyObject*:closure:+1:
@@ -541,33 +917,33 @@ PyFunction_SetDefaults:int:::
 PyFunction_SetDefaults:PyObject*:op:0:
 PyFunction_SetDefaults:PyObject*:defaults:+1:
 
+PyGen_Check:int:::
+PyGen_Check:PyObject*:ob:0:
+
+PyGen_CheckExact:int:::
+PyGen_CheckExact:PyObject*:ob:0:
+
 PyGen_New:PyObject*::+1:
 PyGen_New:PyFrameObject*:frame:0:
 
 PyGen_NewWithQualName:PyObject*::+1:
 PyGen_NewWithQualName:PyFrameObject*:frame:0:
+PyGen_NewWithQualName:PyObject*:name:0:
+PyGen_NewWithQualName:PyObject*:qualname:0:
+
+PyCoro_CheckExact:int:::
+PyCoro_CheckExact:PyObject*:ob:0:
 
 PyCoro_New:PyObject*::+1:
 PyCoro_New:PyFrameObject*:frame:0:
-
-Py_InitModule:PyObject*::0:
-Py_InitModule:const char*:name::
-Py_InitModule:PyMethodDef[]:methods::
-
-Py_InitModule3:PyObject*::0:
-Py_InitModule3:const char*:name::
-Py_InitModule3:PyMethodDef[]:methods::
-Py_InitModule3:const char*:doc::
-
-Py_InitModule4:PyObject*::0:
-Py_InitModule4:const char*:name::
-Py_InitModule4:PyMethodDef[]:methods::
-Py_InitModule4:const char*:doc::
-Py_InitModule4:PyObject*:self::
-Py_InitModule4:int:apiver::usually provided by Py_InitModule or Py_InitModule3
+PyCoro_New:PyObject*:name:0:
+PyCoro_New:PyObject*:qualname:0:
 
 PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:const char*:name::
+
+PyImport_AddModuleObject:PyObject*::0:reference borrowed from sys.modules
+PyImport_AddModuleObject:PyObject*:name:0:
 
 PyImport_Cleanup:void:::
 
@@ -579,6 +955,21 @@ PyImport_ExecCodeModuleEx:PyObject*::+1:
 PyImport_ExecCodeModuleEx:const char*:name::
 PyImport_ExecCodeModuleEx:PyObject*:co:0:
 PyImport_ExecCodeModuleEx:const char*:pathname::
+
+PyImport_ExecCodeModuleObject:PyObject*::+1:
+PyImport_ExecCodeModuleObject:const char*:name::
+PyImport_ExecCodeModuleObject:PyObject*:co:0:
+PyImport_ExecCodeModuleObject:PyObject*:pathname:0:
+PyImport_ExecCodeModuleObject:PyObject*:cpathname:0:
+
+PyImport_ExecCodeModuleWithPathnames:PyObject*::+1:
+PyImport_ExecCodeModuleWithPathnames:const char*:name::
+PyImport_ExecCodeModuleWithPathnames:PyObject*:co:0:
+PyImport_ExecCodeModuleWithPathnames:const char*:pathname::
+PyImport_ExecCodeModuleWithPathnames:const char*:cpathname::
+
+PyImport_GetImporter:PyObject*::+1:
+PyImport_GetImporter:PyObject*:path:0:
 
 PyImport_GetMagicNumber:long:::
 
@@ -592,6 +983,9 @@ PyImport_Import:PyObject*:name:0:
 
 PyImport_ImportFrozenModule:int:::
 PyImport_ImportFrozenModule:const char*:::
+
+PyImport_ImportFrozenModuleObject:int:::
+PyImport_ImportFrozenModuleObject:PyObject*::+1:
 
 PyImport_ImportModule:PyObject*::+1:
 PyImport_ImportModule:const char*:name::
@@ -609,39 +1003,33 @@ PyImport_ImportModuleLevel:PyObject*:locals:0:???
 PyImport_ImportModuleLevel:PyObject*:fromlist:0:???
 PyImport_ImportModuleLevel:int:level::
 
+PyImport_ImportModuleLevelObject:PyObject*::+1:
+PyImport_ImportModuleLevelObject:PyObject*:name:0:
+PyImport_ImportModuleLevelObject:PyObject*:globals:0:???
+PyImport_ImportModuleLevelObject:PyObject*:locals:0:???
+PyImport_ImportModuleLevelObject:PyObject*:fromlist:0:???
+PyImport_ImportModuleLevelObject:int:level::
+
+PyImport_ImportModuleNoBlock:PyObject*::+1:
+PyImport_ImportModuleNoBlock:const char*:name::
+
 PyImport_ReloadModule:PyObject*::+1:
 PyImport_ReloadModule:PyObject*:m:0:
 
-PyInstance_New:PyObject*::+1:
-PyInstance_New:PyObject*:klass:+1:
-PyInstance_New:PyObject*:arg:0:
-PyInstance_New:PyObject*:kw:0:
+PyIndex_Check:int:::
+PyIndex_Check:PyObject*:o:0:
 
-PyInstance_NewRaw:PyObject*::+1:
-PyInstance_NewRaw:PyObject*:klass:+1:
-PyInstance_NewRaw:PyObject*:dict:+1:
+PyInstanceMethod_Check:int:::
+PyInstanceMethod_Check:PyObject*:o:0:
 
-PyInt_AS_LONG:long:::
-PyInt_AS_LONG:PyIntObject*:io:0:
+PyInstanceMethod_Function:PyObject*::0:
+PyInstanceMethod_Function:PyObject*:im:0:
 
-PyInt_AsLong:long:::
-PyInt_AsLong:PyObject*:io:0:
+PyInstanceMethod_GET_FUNCTION:PyObject*::0:
+PyInstanceMethod_GET_FUNCTION:PyObject*:im:0:
 
-PyInt_Check:int:::
-PyInt_Check:PyObject*:op:0:
-
-PyInt_FromLong:PyObject*::+1:
-PyInt_FromLong:long:ival::
-
-PyInt_FromString:PyObject*::+1:
-PyInt_FromString:char*:str:0:
-PyInt_FromString:char**:pend:0:
-PyInt_FromString:int:base:0:
-
-PyInt_FromSsize_t:PyObject*::+1:
-PyInt_FromSsize_t:Py_ssize_t:ival::
-
-PyInt_GetMax:long:::
+PyInstanceMethod_New:PyObject*::+1:
+PyInstanceMethod_New:PyObject*:func:0:
 
 PyInterpreterState_Clear:void:::
 PyInterpreterState_Clear:PyInterpreterState*:interp::
@@ -654,7 +1042,8 @@ PyInterpreterState_GetID:PyInterpreterState*:interp::
 
 PyInterpreterState_New:PyInterpreterState*:::
 
-PyIter_Check:int:o:0:
+PyIter_Check:int:::
+PyIter_Check:PyObject*:o:0:
 
 PyIter_Next:PyObject*::+1:
 PyIter_Next:PyObject*:o:0:
@@ -669,50 +1058,53 @@ PyList_AsTuple:PyObject*:list:0:
 PyList_Check:int:::
 PyList_Check:PyObject*:p:0:
 
+PyList_CheckExact:int:::
+PyList_CheckExact:PyObject*:p:0:
+
 PyList_GET_ITEM:PyObject*::0:
 PyList_GET_ITEM:PyObject*:list:0:
-PyList_GET_ITEM:int:i:0:
+PyList_GET_ITEM:Py_ssize_t:i::
 
-PyList_GET_SIZE:int:::
+PyList_GET_SIZE:Py_ssize_t:::
 PyList_GET_SIZE:PyObject*:list:0:
 
 PyList_GetItem:PyObject*::0:
 PyList_GetItem:PyObject*:list:0:
-PyList_GetItem:int:index::
+PyList_GetItem:Py_ssize_t:index::
 
 PyList_GetSlice:PyObject*::+1:
 PyList_GetSlice:PyObject*:list:0:
-PyList_GetSlice:int:low::
-PyList_GetSlice:int:high::
+PyList_GetSlice:Py_ssize_t:low::
+PyList_GetSlice:Py_ssize_t:high::
 
 PyList_Insert:int:::
 PyList_Insert:PyObject*:list:0:
-PyList_Insert:int:index::
+PyList_Insert:Py_ssize_t:index::
 PyList_Insert:PyObject*:item:+1:
 
 PyList_New:PyObject*::+1:
-PyList_New:int:len::
+PyList_New:Py_ssize_t:len::
 
 PyList_Reverse:int:::
 PyList_Reverse:PyObject*:list:0:
 
 PyList_SET_ITEM:void:::
 PyList_SET_ITEM:PyObject*:list:0:
-PyList_SET_ITEM:int:i::
+PyList_SET_ITEM:Py_ssize_t:i::
 PyList_SET_ITEM:PyObject*:o:0:
 
 PyList_SetItem:int:::
 PyList_SetItem:PyObject*:list:0:
-PyList_SetItem:int:index::
+PyList_SetItem:Py_ssize_t:index::
 PyList_SetItem:PyObject*:item:0:
 
 PyList_SetSlice:int:::
 PyList_SetSlice:PyObject*:list:0:
-PyList_SetSlice:int:low::
-PyList_SetSlice:int:high::
+PyList_SetSlice:Py_ssize_t:low::
+PyList_SetSlice:Py_ssize_t:high::
 PyList_SetSlice:PyObject*:itemlist:0:but increfs its elements?
 
-PyList_Size:int:::
+PyList_Size:Py_ssize_t:::
 PyList_Size:PyObject*:list:0:
 
 PyList_Sort:int:::
@@ -724,11 +1116,43 @@ PyLong_AsDouble:PyObject*:pylong:0:
 PyLong_AsLong:long:::
 PyLong_AsLong:PyObject*:pylong:0:
 
+PyLong_AsLongAndOverflow:long:::
+PyLong_AsLongAndOverflow:PyObject*:obj:0:
+PyLong_AsLongAndOverflow:int*:overflow::
+
+PyLong_AsLongLong:long long:::
+PyLong_AsLongLong:PyObject*:obj:0:
+
+PyLong_AsLongLongAndOverflow:long long:::
+PyLong_AsLongLongAndOverflow:PyObject*:obj:0:
+PyLong_AsLongLongAndOverflow:int*:overflow::
+
+PyLong_AsSize_t:size_t:::
+PyLong_AsSize_t:PyObject*:pylong:0:
+
+PyLong_AsSsize_t:Py_ssize_t:::
+PyLong_AsSsize_t:PyObject*:pylong:0:
+
 PyLong_AsUnsignedLong:unsigned long:::
 PyLong_AsUnsignedLong:PyObject*:pylong:0:
 
+PyLong_AsUnsignedLongLong:unsigned long long:::
+PyLong_AsUnsignedLongLong:PyObject*:pylong:0:
+
+PyLong_AsUnsignedLongMask:unsigned long:::
+PyLong_AsUnsignedLongMask:PyObject*:obj:0:
+
+PyLong_AsUnsignedLongLongMask:unsigned long long:::
+PyLong_AsUnsignedLongLongMask:PyObject*:obj:0:
+
+PyLong_AsVoidPtr:void*:::
+PyLong_AsVoidPtr:PyObject*:pylong:0:
+
 PyLong_Check:int:::
 PyLong_Check:PyObject*:p:0:
+
+PyLong_CheckExact:int:::
+PyLong_CheckExact:PyObject*:p:0:
 
 PyLong_FromDouble:PyObject*::+1:
 PyLong_FromDouble:double:v::
@@ -742,15 +1166,25 @@ PyLong_FromLongLong:long long:v::
 PyLong_FromUnsignedLongLong:PyObject*::+1:
 PyLong_FromUnsignedLongLong:unsigned long long:v::
 
+PyLong_FromSize_t:PyObject*::+1:
+PyLong_FromSize_t:size_t:v::
+
+PyLong_FromSsize_t:PyObject*::+1:
+PyLong_FromSsize_t:Py_ssize_t:v::
+
 PyLong_FromString:PyObject*::+1:
 PyLong_FromString:const char*:str::
 PyLong_FromString:char**:pend::
 PyLong_FromString:int:base::
 
 PyLong_FromUnicode:PyObject*::+1:
-PyLong_FromUnicode:Py_UNICODE:u::
-PyLong_FromUnicode:int:length::
+PyLong_FromUnicode:Py_UNICODE*:u::
+PyLong_FromUnicode:Py_ssize_t:length::
 PyLong_FromUnicode:int:base::
+
+PyLong_FromUnicodeObject:PyObject*::+1:
+PyLong_FromUnicodeObject:PyObject*:u:0:
+PyLong_FromUnicodeObject:int:base::
 
 PyLong_FromUnsignedLong:PyObject*::+1:
 PyLong_FromUnsignedLong:unsignedlong:v::
@@ -787,13 +1221,16 @@ PyMapping_Items:PyObject*:o:0:
 PyMapping_Keys:PyObject*::+1:
 PyMapping_Keys:PyObject*:o:0:
 
-PyMapping_Length:int:::
+PyMapping_Length:Py_ssize_t:::
 PyMapping_Length:PyObject*:o:0:
 
 PyMapping_SetItemString:int:::
 PyMapping_SetItemString:PyObject*:o:0:
 PyMapping_SetItemString:const char*:key::
 PyMapping_SetItemString:PyObject*:v:+1:
+
+PyMapping_Size:Py_ssize_t:::
+PyMapping_Size:PyObject*:o:0:
 
 PyMapping_Values:PyObject*::+1:
 PyMapping_Values:PyObject*:o:0:
@@ -806,19 +1243,42 @@ PyMarshal_ReadObjectFromFile:FILE*:file::
 
 PyMarshal_ReadObjectFromString:PyObject*::+1:
 PyMarshal_ReadObjectFromString:const char*:string::
-PyMarshal_ReadObjectFromString:int:len::
+PyMarshal_ReadObjectFromString:Py_ssize_t:len::
 
 PyMarshal_WriteObjectToString:PyObject*::+1:
 PyMarshal_WriteObjectToString:PyObject*:value:0:
+PyMarshal_WriteObjectToString:int:version::
 
-PyMethod_Class:PyObject*::0:
-PyMethod_Class:PyObject*:im:0:
+PyMemoryView_Check:int:::
+PyMemoryView_Check:PyObject*:obj:0:
+
+PyMemoryView_FromBuffer:PyObject*::+1:
+PyMemoryView_FromBuffer:Py_buffer*:view::
+
+PyMemoryView_FromMemory:PyObject*::+1:
+PyMemoryView_FromMemory:char*:mem::
+PyMemoryView_FromMemory:Py_ssize_t:size::
+PyMemoryView_FromMemory:int:flags::
+
+PyMemoryView_FromObject:PyObject*::+1:
+PyMemoryView_FromObject:PyObject*:obj:0:
+
+PyMemoryView_GET_BASE:Py_buffer*:::
+PyMemoryView_GET_BASE:PyObject*:mview:0:
+
+PyMemoryView_GET_BUFFER:Py_buffer*:::
+PyMemoryView_GET_BUFFER:PyObject*:mview:0:
+
+PyMemoryView_GetContiguous:PyObject*::+1:
+PyMemoryView_GetContiguous:PyObject*:obj:0:
+PyMemoryView_GetContiguous:int:buffertype::
+PyMemoryView_GetContiguous:char:order::
+
+PyMethod_Check:int:::
+PyMethod_Check:PyObject*:o:0:
 
 PyMethod_Function:PyObject*::0:
 PyMethod_Function:PyObject*:im:0:
-
-PyMethod_GET_CLASS:PyObject*::0:
-PyMethod_GET_CLASS:PyObject*:im:0:
 
 PyMethod_GET_FUNCTION:PyObject*::0:
 PyMethod_GET_FUNCTION:PyObject*:im:0:
@@ -834,17 +1294,92 @@ PyMethod_New:PyObject*:class:0:
 PyMethod_Self:PyObject*::0:
 PyMethod_Self:PyObject*:im:0:
 
+PyModule_AddFunctions:int:::
+PyModule_AddFunctions:PyObject*:module:0:
+PyModule_AddFunctions:PyMethodDef*:functions::
+
+PyModule_AddIntConstant:int:::
+PyModule_AddIntConstant:PyObject*:module:0:
+PyModule_AddIntConstant:const char*:name::
+PyModule_AddIntConstant:long:value::
+
+PyModule_AddIntMacro:int:::
+PyModule_AddIntMacro:PyObject*:module:0:
+PyModule_AddIntMacro::macro::
+
+PyModule_AddObject:int:::
+PyModule_AddObject:PyObject*:module:0:
+PyModule_AddObject:const char*:name::
+PyModule_AddObject:PyObject*:value:+1:
+
+PyModule_AddStringConstant:int:::
+PyModule_AddStringConstant:PyObject*:module:0:
+PyModule_AddStringConstant:const char*:name::
+PyModule_AddStringConstant:const char*:value::
+
+PyModule_AddStringMacro:int:::
+PyModule_AddStringMacro:PyObject*:module:0:
+PyModule_AddStringMacro::macro::
+
+PyModule_Check:int:::
+PyModule_Check:PyObject*:p:0:
+
+PyModule_CheckExact:int:::
+PyModule_CheckExact:PyObject*:p:0:
+
+PyModule_Create:PyObject*::+1:
+PyModule_Create:PyModuleDef*:def::
+
+PyModule_Create2:PyObject*::+1:
+PyModule_Create2:PyModuleDef*:def::
+PyModule_Create2:int:module_api_version::
+
+PyModule_ExecDef:int:::
+PyModule_ExecDef:PyObject*:module:0:
+PyModule_ExecDef:PyModuleDef*:def::
+
+PyModule_FromDefAndSpec:PyObject*::+1:
+PyModule_FromDefAndSpec:PyModuleDef*:def::
+PyModule_FromDefAndSpec:PyObject*:spec:0:
+
+PyModule_FromDefAndSpec2:PyObject*::+1:
+PyModule_FromDefAndSpec2:PyModuleDef*:def::
+PyModule_FromDefAndSpec2:PyObject*:spec:0:
+PyModule_FromDefAndSpec2:int:module_api_version::
+
+PyModule_GetDef:PyModuleDef*::0:
+PyModule_GetDef:PyObject*:module:0:
+
 PyModule_GetDict:PyObject*::0:
-PyModule_GetDict::PyObject* module:0:
+PyModule_GetDict:PyObject*:module:0:
 
 PyModule_GetFilename:const char*:::
 PyModule_GetFilename:PyObject*:module:0:
 
+PyModule_GetFilenameObject:PyObject*::+1:
+PyModule_GetFilenameObject:PyObject*:module:0:
+
 PyModule_GetName:const char*:::
 PyModule_GetName:PyObject*:module:0:
 
+PyModule_GetNameObject:PyObject*::+1:
+PyModule_GetNameObject:PyObject*:module:0:
+
+PyModule_GetState:void*:::
+PyModule_GetState:PyObject*:module:0:
+
 PyModule_New:PyObject*::+1:
 PyModule_New::char* name::
+
+PyModule_NewObject:PyObject*::+1:
+PyModule_NewObject:PyObject*:name:+1:
+
+PyModule_SetDocString:int:::
+PyModule_SetDocString:PyObject*:module:0:
+PyModule_SetDocString:const char*:docstring::
+
+PyModuleDef_Init:PyObject*::0:
+PyModuleDef_Init:PyModuleDef*:def:0:
 
 PyNumber_Absolute:PyObject*::+1:
 PyNumber_Absolute:PyObject*:o:0:
@@ -857,12 +1392,12 @@ PyNumber_And:PyObject*::+1:
 PyNumber_And:PyObject*:o1:0:
 PyNumber_And:PyObject*:o2:0:
 
-PyNumber_Check:PyObject*:o:0:
-PyNumber_Check:int:::
+PyNumber_AsSsize_t:Py_ssize_t:::
+PyNumber_AsSsize_t:PyObject*:o:0:
+PyNumber_AsSsize_t:PyObject*:exc:0:
 
-PyNumber_Divide:PyObject*::+1:
-PyNumber_Divide:PyObject*:o1:0:
-PyNumber_Divide:PyObject*:o2:0:
+PyNumber_Check:int:::
+PyNumber_Check:PyObject*:o:0:
 
 PyNumber_Divmod:PyObject*::+1:
 PyNumber_Divmod:PyObject*:o1:0:
@@ -875,6 +1410,9 @@ PyNumber_FloorDivide:PyObject*::+1:
 PyNumber_FloorDivide:PyObject*:v:0:
 PyNumber_FloorDivide:PyObject*:w:0:
 
+PyNumber_Index:PyObject*::+1:
+PyNumber_Index:PyObject*:o:0:
+
 PyNumber_InPlaceAdd:PyObject*::+1:
 PyNumber_InPlaceAdd:PyObject*:v:0:
 PyNumber_InPlaceAdd:PyObject*:w:0:
@@ -883,10 +1421,6 @@ PyNumber_InPlaceAnd:PyObject*::+1:
 PyNumber_InPlaceAnd:PyObject*:v:0:
 PyNumber_InPlaceAnd:PyObject*:w:0:
 
-PyNumber_InPlaceDivide:PyObject*::+1:
-PyNumber_InPlaceDivide:PyObject*:v:0:
-PyNumber_InPlaceDivide:PyObject*:w:0:
-
 PyNumber_InPlaceFloorDivide:PyObject*::+1:
 PyNumber_InPlaceFloorDivide:PyObject*:v:0:
 PyNumber_InPlaceFloorDivide:PyObject*:w:0:
@@ -894,6 +1428,10 @@ PyNumber_InPlaceFloorDivide:PyObject*:w:0:
 PyNumber_InPlaceLshift:PyObject*::+1:
 PyNumber_InPlaceLshift:PyObject*:v:0:
 PyNumber_InPlaceLshift:PyObject*:w:0:
+
+PyNumber_InPlaceMatrixMultiply:PyObject*::+1:
+PyNumber_InPlaceMatrixMultiply:PyObject*:o1:0:
+PyNumber_InPlaceMatrixMultiply:PyObject*:o2:0:
 
 PyNumber_InPlaceMultiply:PyObject*::+1:
 PyNumber_InPlaceMultiply:PyObject*:v:0:
@@ -938,6 +1476,10 @@ PyNumber_Lshift:PyObject*::+1:
 PyNumber_Lshift:PyObject*:o1:0:
 PyNumber_Lshift:PyObject*:o2:0:
 
+PyNumber_MatrixMultiply:PyObject*::+1:
+PyNumber_MatrixMultiply:PyObject*:o1:0:
+PyNumber_MatrixMultiply:PyObject*:o2:0:
+
 PyNumber_Multiply:PyObject*::+1:
 PyNumber_Multiply:PyObject*:o1:0:
 PyNumber_Multiply:PyObject*:o2:0:
@@ -969,6 +1511,10 @@ PyNumber_Subtract:PyObject*::+1:
 PyNumber_Subtract:PyObject*:o1:0:
 PyNumber_Subtract:PyObject*:o2:0:
 
+PyNumber_ToBase:PyObject*::+1:
+PyNumber_ToBase:PyObject*:n:0:
+PyNumber_ToBase:int:base::
+
 PyNumber_TrueDivide:PyObject*::+1:
 PyNumber_TrueDivide:PyObject*:v:0:
 PyNumber_TrueDivide:PyObject*:w:0:
@@ -990,6 +1536,27 @@ PyOS_BeforeFork:void:::
 
 PyOS_FSPath:PyObject*::+1:
 PyOS_FSPath:PyObject*:path:0:
+
+PyObject_ASCII:PyObject*::+1:
+PyObject_ASCII:PyObject*:o:0:
+
+PyObject_AsCharBuffer:int:::
+PyObject_AsCharBuffer:PyObject*:obj:0:
+PyObject_AsCharBuffer:const char**:buffer::
+PyObject_AsCharBuffer:Py_ssize_t*:buffer_len::
+
+PyObject_AsReadBuffer:int:::
+PyObject_AsReadBuffer:PyObject*:obj:0:
+PyObject_AsReadBuffer:const void**:buffer::
+PyObject_AsReadBuffer:Py_ssize_t*:buffer_len::
+
+PyObject_AsWriteBuffer:int:::
+PyObject_AsWriteBuffer:PyObject*:obj:0:
+PyObject_AsWriteBuffer:void**:buffer::
+PyObject_AsWriteBuffer:Py_ssize_t*:buffer_len::
+
+PyObject_Bytes:PyObject*::+1:
+PyObject_Bytes:PyObject*:o:0:
 
 PyObject_Call:PyObject*::+1:
 PyObject_Call:PyObject*:callable_object:0:
@@ -1020,14 +1587,11 @@ PyObject_CallObject:PyObject*::+1:
 PyObject_CallObject:PyObject*:callable_object:0:
 PyObject_CallObject:PyObject*:args:0:
 
-PyObject_Cmp:int:::
-PyObject_Cmp:PyObject*:o1:0:
-PyObject_Cmp:PyObject*:o2:0:
-PyObject_Cmp:int*:result::
+PyObject_CheckBuffer:int:::
+PyObject_CheckBuffer:PyObject*:obj:0:
 
-PyObject_Compare:int:::
-PyObject_Compare:PyObject*:o1:0:
-PyObject_Compare:PyObject*:o2:0:
+PyObject_CheckReadBuffer:int:::
+PyObject_CheckReadBuffer:PyObject*:o:0:
 
 PyObject_DelAttr:int:::
 PyObject_DelAttr:PyObject*:o:0:
@@ -1044,6 +1608,46 @@ PyObject_DelItem:PyObject*:key:0:
 PyObject_Dir:PyObject*::+1:
 PyObject_Dir:PyObject*:o:0:
 
+PyObject_GC_Del:void:::
+PyObject_GC_Del:void*:op::
+
+PyObject_GC_New:TYPE*::+1:
+PyObject_GC_New::TYPE::
+PyObject_GC_New:PyTypeObject*:type:0:
+
+PyObject_GC_NewVar:TYPE*::+1:
+PyObject_GC_NewVar::TYPE::
+PyObject_GC_NewVar:PyTypeObject*:type:0:
+PyObject_GC_NewVar:Py_ssize_t:size::
+
+PyObject_GC_Resize:TYPE*::0:
+PyObject_GC_Resize::TYPE::
+PyObject_GC_Resize:PyVarObject*:op:0:
+PyObject_GC_Resize:Py_ssize_t:newsize::
+
+PyObject_GC_Track:void:::
+PyObject_GC_Track:PyObject*:op:0:
+
+PyObject_GC_UnTrack:void:::
+PyObject_GC_UnTrack:void*:op::
+
+PyObject_GenericGetAttr:PyObject*::+1:
+PyObject_GenericGetAttr:PyObject*:o:0:
+PyObject_GenericGetAttr:PyObject*:name:0:
+
+PyObject_GenericGetDict:PyObject*::+1:
+PyObject_GenericGetDict:PyObject*:o:0:
+PyObject_GenericGetDict:void*:context::
+
+PyObject_GenericSetAttr:int:::
+PyObject_GenericSetAttr:PyObject*:o:0:
+PyObject_GenericSetAttr:PyObject*:name:0:
+PyObject_GenericSetAttr:PyObject*:value:+1:
+
+PyObject_GenericSetDict:int:::
+PyObject_GenericSetDict:PyObject*:o:+1:
+PyObject_GenericSetDict:void*:context::
+
 PyObject_GetAttr:PyObject*::+1:
 PyObject_GetAttr:PyObject*:o:0:
 PyObject_GetAttr:PyObject*:attr_name:0:
@@ -1051,6 +1655,11 @@ PyObject_GetAttr:PyObject*:attr_name:0:
 PyObject_GetAttrString:PyObject*::+1:
 PyObject_GetAttrString:PyObject*:o:0:
 PyObject_GetAttrString:const char*:attr_name::
+
+PyObject_GetBuffer:int:::
+PyObject_GetBuffer:PyObject*:exporter:0:
+PyObject_GetBuffer:Py_buffer*:view::
+PyObject_GetBuffer:int:flags::
 
 PyObject_GetItem:PyObject*::+1:
 PyObject_GetItem:PyObject*:o:0:
@@ -1065,30 +1674,59 @@ PyObject_HasAttr:PyObject*:attr_name:0:
 
 PyObject_HasAttrString:int:::
 PyObject_HasAttrString:PyObject*:o:0:
-PyObject_HasAttrString:const char*:attr_name:0:
+PyObject_HasAttrString:const char*:attr_name::
 
 PyObject_Hash:int:::
 PyObject_Hash:PyObject*:o:0:
+
+PyObject_HashNotImplemented:Py_hash_t:::
+PyObject_HashNotImplemented:PyObject*:o:0:
+
+PyObject_IsInstance:int:::
+PyObject_IsInstance:PyObject*:inst:0:
+PyObject_IsInstance:PyObject*:cls:0:
+
+PyObject_IsSubclass:int:::
+PyObject_IsSubclass:PyObject*:derived:0:
+PyObject_IsSubclass:PyObject*:cls:0:
 
 PyObject_IsTrue:int:::
 PyObject_IsTrue:PyObject*:o:0:
 
 PyObject_Init:PyObject*::0:
 PyObject_Init:PyObject*:op:0:
+PyObject_Init:PyTypeObject*:type:0:
 
 PyObject_InitVar:PyVarObject*::0:
 PyObject_InitVar:PyVarObject*:op:0:
 
-PyObject_Length:int:::
+PyObject_Length:Py_ssize_t:::
 PyObject_Length:PyObject*:o:0:
 
+PyObject_LengthHint:Py_ssize_t:::
+PyObject_LengthHint:PyObject*:o:0:
+PyObject_LengthHint:Py_ssize_t:default::
+
 PyObject_NEW:PyObject*::+1:
+PyObject_NEW::TYPE::
+PyObject_NEW:PyTypeObject*:type:0:
 
 PyObject_New:PyObject*::+1:
+PyObject_New::TYPE::
+PyObject_New:PyTypeObject*:type:0:
 
 PyObject_NEW_VAR:PyObject*::+1:
+PyObject_NEW_VAR::TYPE::
+PyObject_NEW_VAR:PyTypeObject*:type:0:
+PyObject_NEW_VAR:Py_ssize_t:size::
 
 PyObject_NewVar:PyObject*::+1:
+PyObject_NewVar::TYPE::
+PyObject_NewVar:PyTypeObject*:type:0:
+PyObject_NewVar:Py_ssize_t:size::
+
+PyObject_Not:int:::
+PyObject_Not:PyObject*:o:0:
 
 PyObject_Print:int:::
 PyObject_Print:PyObject*:o:0:
@@ -1123,27 +1761,64 @@ PyObject_SetItem:PyObject*:o:0:
 PyObject_SetItem:PyObject*:key:0:
 PyObject_SetItem:PyObject*:v:+1:
 
+PyObject_Size:Py_ssize_t:::
+PyObject_Size:PyObject*:o:0:
+
 PyObject_Str:PyObject*::+1:
 PyObject_Str:PyObject*:o:0:
 
 PyObject_Type:PyObject*::+1:
 PyObject_Type:PyObject*:o:0:
 
-PyObject_Unicode:PyObject*::+1:
-PyObject_Unicode:PyObject*:o:0:
+PyObject_TypeCheck:int:::
+PyObject_TypeCheck:PyObject*:o:0:
+PyObject_TypeCheck:PyTypeObject*:type:0:
 
 PyParser_SimpleParseFile:struct _node*:::
 PyParser_SimpleParseFile:FILE*:fp::
 PyParser_SimpleParseFile:const char*:filename::
 PyParser_SimpleParseFile:int:start::
 
+PyParser_SimpleParseFileFlags:struct _node*:::
+PyParser_SimpleParseFileFlags:FILE*:fp::
+PyParser_SimpleParseFileFlags:const char*:filename::
+PyParser_SimpleParseFileFlags:int:start::
+PyParser_SimpleParseFileFlags:int:flags::
+
 PyParser_SimpleParseString:struct _node*:::
 PyParser_SimpleParseString:const char*:str::
 PyParser_SimpleParseString:int:start::
 
+PyParser_SimpleParseStringFlags:struct _node*:::
+PyParser_SimpleParseStringFlags:const char*:str::
+PyParser_SimpleParseStringFlags:int:start::
+PyParser_SimpleParseStringFlags:int:flags::
+
+PyParser_SimpleParseStringFlagsFilename:struct _node*:::
+PyParser_SimpleParseStringFlagsFilename:const char*:str::
+PyParser_SimpleParseStringFlagsFilename:const char*:filename::
+PyParser_SimpleParseStringFlagsFilename:int:start::
+PyParser_SimpleParseStringFlagsFilename:int:flags::
+
 PyRun_AnyFile:int:::
 PyRun_AnyFile:FILE*:fp::
 PyRun_AnyFile:const char*:filename::
+
+PyRun_AnyFileFlags:int:::
+PyRun_AnyFileFlags:FILE*:fp::
+PyRun_AnyFileFlags:const char*:filename::
+PyRun_AnyFileFlags:PyCompilerFlags*:flags::
+
+PyRun_AnyFileEx:int:::
+PyRun_AnyFileEx:FILE*:fp::
+PyRun_AnyFileEx:const char*:filename::
+PyRun_AnyFileEx:int:closeit::
+
+PyRun_AnyFileExFlags:int:::
+PyRun_AnyFileExFlags:FILE*:fp::
+PyRun_AnyFileExFlags:const char*:filename::
+PyRun_AnyFileExFlags:int:closeit::
+PyRun_AnyFileExFlags:PyCompilerFlags*:flags::
 
 PyRun_File:PyObject*::+1:??? -- same as eval_code2()
 PyRun_File:FILE*:fp::
@@ -1181,16 +1856,41 @@ PyRun_InteractiveLoop:int:::
 PyRun_InteractiveLoop:FILE*:fp::
 PyRun_InteractiveLoop:const char*:filename::
 
+PyRun_InteractiveLoopFlags:int:::
+PyRun_InteractiveLoopFlags:FILE*:fp::
+PyRun_InteractiveLoopFlags:const char*:filename::
+PyRun_InteractiveLoopFlags:PyCompilerFlags*:flags::
+
 PyRun_InteractiveOne:int:::
 PyRun_InteractiveOne:FILE*:fp::
 PyRun_InteractiveOne:const char*:filename::
+
+PyRun_InteractiveOneFlags:int:::
+PyRun_InteractiveOneFlags:FILE*:fp::
+PyRun_InteractiveOneFlags:const char*:filename::
+PyRun_InteractiveOneFlags:PyCompilerFlags*:flags::
 
 PyRun_SimpleFile:int:::
 PyRun_SimpleFile:FILE*:fp::
 PyRun_SimpleFile:const char*:filename::
 
+PyRun_SimpleFileEx:int:::
+PyRun_SimpleFileEx:FILE*:fp::
+PyRun_SimpleFileEx:const char*:filename::
+PyRun_SimpleFileEx:int:closeit::
+
+PyRun_SimpleFileExFlags:int:::
+PyRun_SimpleFileExFlags:FILE*:fp::
+PyRun_SimpleFileExFlags:const char*:filename::
+PyRun_SimpleFileExFlags:int:closeit::
+PyRun_SimpleFileExFlags:PyCompilerFlags*:flags::
+
 PyRun_SimpleString:int:::
 PyRun_SimpleString:const char*:command::
+
+PyRun_SimpleStringFlags:int:::
+PyRun_SimpleStringFlags:const char*:command::
+PyRun_SimpleStringFlags:PyCompilerFlags*:flags::
 
 PyRun_String:PyObject*::+1:??? -- same as eval_code2()
 PyRun_String:const char*:str::
@@ -1205,6 +1905,9 @@ PyRun_StringFlags:PyObject*:globals:0:
 PyRun_StringFlags:PyObject*:locals:0:
 PyRun_StringFlags:PyCompilerFlags*:flags::
 
+PySeqIter_Check:int:::
+PySeqIter_Check::op::
+
 PySeqIter_New:PyObject*::+1:
 PySeqIter_New:PyObject*:seq::
 
@@ -1215,18 +1918,22 @@ PySequence_Concat:PyObject*::+1:
 PySequence_Concat:PyObject*:o1:0:
 PySequence_Concat:PyObject*:o2:0:
 
-PySequence_Count:int:::
+PySequence_Contains:int:::
+PySequence_Contains:PyObject*:o:0:
+PySequence_Contains:PyObject*:value:0:
+
+PySequence_Count:Py_ssize_t:::
 PySequence_Count:PyObject*:o:0:
 PySequence_Count:PyObject*:value:0:
 
 PySequence_DelItem:int:::
 PySequence_DelItem:PyObject*:o:0:
-PySequence_DelItem:int:i::
+PySequence_DelItem:Py_ssize_t:i::
 
 PySequence_DelSlice:int:::
 PySequence_DelSlice:PyObject*:o:0:
-PySequence_DelSlice:int:i1::
-PySequence_DelSlice:int:i2::
+PySequence_DelSlice:Py_ssize_t:i1::
+PySequence_DelSlice:Py_ssize_t:i2::
 
 PySequence_Fast:PyObject*::+1:
 PySequence_Fast:PyObject*:v:0:
@@ -1234,22 +1941,28 @@ PySequence_Fast:const char*:m::
 
 PySequence_Fast_GET_ITEM:PyObject*::0:
 PySequence_Fast_GET_ITEM:PyObject*:o:0:
-PySequence_Fast_GET_ITEM:int:i::
+PySequence_Fast_GET_ITEM:Py_ssize_t:i::
+
+PySequence_Fast_GET_SIZE:Py_ssize_t:::
+PySequence_Fast_GET_SIZE:PyObject*:o:0:
+
+PySequence_Fast_ITEMS:PyObject**:::
+PySequence_Fast_ITEMS:PyObject*:o:0:
 
 PySequence_GetItem:PyObject*::+1:
 PySequence_GetItem:PyObject*:o:0:
-PySequence_GetItem:int:i::
+PySequence_GetItem:Py_ssize_t:i::
 
 PySequence_GetSlice:PyObject*::+1:
 PySequence_GetSlice:PyObject*:o:0:
-PySequence_GetSlice:int:i1::
-PySequence_GetSlice:int:i2::
+PySequence_GetSlice:Py_ssize_t:i1::
+PySequence_GetSlice:Py_ssize_t:i2::
 
 PySequence_In:int:::
 PySequence_In:PyObject*:o:0:
 PySequence_In:PyObject*:value:0:
 
-PySequence_Index:int:::
+PySequence_Index:Py_ssize_t:::
 PySequence_Index:PyObject*:o:0:
 PySequence_Index:PyObject*:value:0:
 
@@ -1263,22 +1976,25 @@ PySequence_InPlaceRepeat:PyObject*:o:0:
 
 PySequence_ITEM:PyObject*::+1:
 PySequence_ITEM:PyObject*:o:0:
-PySequence_ITEM:int:i::
+PySequence_ITEM:Py_ssize_t:i::
 
 PySequence_Repeat:PyObject*::+1:
 PySequence_Repeat:PyObject*:o:0:
-PySequence_Repeat:int:count::
+PySequence_Repeat:Py_ssize_t:count::
 
 PySequence_SetItem:int:::
 PySequence_SetItem:PyObject*:o:0:
-PySequence_SetItem:int:i::
+PySequence_SetItem:Py_ssize_t:i::
 PySequence_SetItem:PyObject*:v:+1:
 
 PySequence_SetSlice:int:::
 PySequence_SetSlice:PyObject*:o:0:
-PySequence_SetSlice:int:i1::
-PySequence_SetSlice:int:i2::
-PySequence_SetSlice:PyObject*:v:+1:
+PySequence_SetSlice:Py_ssize_t:i1::
+PySequence_SetSlice:Py_ssize_t:i2::
+PySequence_SetSlice:PyObject*:v:0:
+
+PySequence_Size:Py_ssize_t:::
+PySequence_Size:PyObject*:o:0:
 
 PySequence_List:PyObject*::+1:
 PySequence_List:PyObject*:o:0:
@@ -1286,9 +2002,15 @@ PySequence_List:PyObject*:o:0:
 PySequence_Tuple:PyObject*::+1:
 PySequence_Tuple:PyObject*:o:0:
 
-PySet_Append:int:::
-PySet_Append:PyObject*:set:0:
-PySet_Append:PyObject*:key:+1:
+PySet_Add:int:::
+PySet_Add:PyObject*:set:0:
+PySet_Add:PyObject*:key:+1:
+
+PySet_Check:int:::
+PySet_Check:PyObject*:p:0:
+
+PySet_Clear:int:::
+PySet_Clear:PyObject*:set:0:
 
 PySet_Contains:int:::
 PySet_Contains:PyObject*:anyset:0:
@@ -1298,14 +2020,20 @@ PySet_Discard:int:::
 PySet_Discard:PyObject*:set:0:
 PySet_Discard:PyObject*:key:-1:no effect if key not found
 
+PySet_GET_SIZE:Py_ssize_t:::
+PySet_GET_SIZE:PyObject*:anyset:0:
+
 PySet_New:PyObject*::+1:
 PySet_New:PyObject*:iterable:0:
 
 PySet_Pop:PyObject*::+1:or returns NULL and raises KeyError if set is empty
 PySet_Pop:PyObject*:set:0:
 
-PySet_Size:int:::
+PySet_Size:Py_ssize_t:::
 PySet_Size:PyObject*:anyset:0:
+
+PySignal_SetWakeupFd:int:::
+PySignal_SetWakeupFd:int:fd::
 
 PySlice_AdjustIndices:Py_ssize_t:::
 PySlice_AdjustIndices:Py_ssize_t:length::
@@ -1315,6 +2043,21 @@ PySlice_AdjustIndices:Py_ssize_t*:step::
 
 PySlice_Check:int:::
 PySlice_Check:PyObject*:ob:0:
+
+PySlice_GetIndices:int:::
+PySlice_GetIndices:PyObject*:slice:0:
+PySlice_GetIndices:Py_ssize_t:length::
+PySlice_GetIndices:Py_ssize_t*:start::
+PySlice_GetIndices:Py_ssize_t*:stop::
+PySlice_GetIndices:Py_ssize_t*:step::
+
+PySlice_GetIndicesEx:int:::
+PySlice_GetIndicesEx:PyObject*:slice:0:
+PySlice_GetIndicesEx:Py_ssize_t:length::
+PySlice_GetIndicesEx:Py_ssize_t*:start::
+PySlice_GetIndicesEx:Py_ssize_t*:stop::
+PySlice_GetIndicesEx:Py_ssize_t*:step::
+PySlice_GetIndicesEx:Py_ssize_t*:slicelength::
 
 PySlice_New:PyObject*::+1:
 PySlice_New:PyObject*:start:0:
@@ -1327,100 +2070,78 @@ PySlice_Unpack:Py_ssize_t*:start::
 PySlice_Unpack:Py_ssize_t*:stop::
 PySlice_Unpack:Py_ssize_t*:step::
 
-PyString_AS_STRING:const char*:::
-PyString_AS_STRING:PyObject*:string:0:
+PyState_AddModule:int:::
+PyState_AddModule:PyObject*:module:+1:
+PyState_AddModule:PyModuleDef*:def::
 
-PyString_AsDecodedObject:PyObject*::+1:
-PyString_AsDecodedObject:PyObject*:str:0:
-PyString_AsDecodedObject:const char*:encoding::
-PyString_AsDecodedObject:const char*:errors::
+PyState_FindModule:PyObject*::0:
+PyState_FindModule:PyModuleDef*:def::
 
-PyString_AsEncodedObject:PyObject*::+1:
-PyString_AsEncodedObject:PyObject*:str:0:
-PyString_AsEncodedObject:const char*:encoding::
-PyString_AsEncodedObject:const char*:errors::
+PyState_RemoveModule:int:::
+PyState_RemoveModule:PyModuleDef*:def::
 
-PyString_AsString:const char*:::
-PyString_AsString:PyObject*:string:0:
+PyStructSequence_GET_ITEM:PyObject*::0:
+PyStructSequence_GET_ITEM:PyObject*:p:0:
+PyStructSequence_GET_ITEM:Py_ssize_t:pos::
 
-PyString_AsStringAndSize:int:::
-PyString_AsStringAndSize:PyObject*:obj:0:
-PyString_AsStringAndSize:char**:buffer::
-PyString_AsStringAndSize:int*:length::
+PyStructSequence_GetItem:PyObject*::0:
+PyStructSequence_GetItem:PyObject*:p:0:
+PyStructSequence_GetItem:Py_ssize_t:pos::
 
-PyString_Check:int:::
-PyString_Check:PyObject*:o:0:
+PyStructSequence_InitType:void:::
+PyStructSequence_InitType:PyTypeObject*:type:+1:
+PyStructSequence_InitType:PyStructSequence_Desc*:desc::
 
-PyString_Concat:void:::
-PyString_Concat:PyObject**:string:0:??? -- replaces w/ new string or NULL
-PyString_Concat:PyObject*:newpart:0:
+PyStructSequence_InitType2:int:::
+PyStructSequence_InitType2:PyTypeObject*:type:+1:
+PyStructSequence_InitType2:PyStructSequence_Desc*:desc::
 
-PyString_ConcatAndDel:void:::
-PyString_ConcatAndDel:PyObject**:string:0:??? -- replaces w/ new string or NULL
-PyString_ConcatAndDel:PyObject*:newpart:-1:
+PyStructSequence_New:PyObject*::+1:
+PyStructSequence_New:PyTypeObject*:type:0:
 
-PyString_Format:PyObject*::+1:
-PyString_Format:PyObject*:format:0:
-PyString_Format:PyObject*:args:0:
+PyStructSequence_NewType:PyTypeObject*::+1:
+PyStructSequence_NewType:PyStructSequence_Desc*:desc::
 
-PyString_FromString:PyObject*::+1:
-PyString_FromString:const char*:v::
+PyStructSequence_SET_ITEM:void:::
+PyStructSequence_SET_ITEM:PyObject*:p:0:
+PyStructSequence_SET_ITEM:Py_ssize_t*:pos::
+PyStructSequence_SET_ITEM:PyObject*:o:0:
 
-PyString_FromStringAndSize:PyObject*::+1:
-PyString_FromStringAndSize:const char*:v::
-PyString_FromStringAndSize:int:len::
-
-PyString_FromFormat:PyObject*::+1:
-PyString_FromFormat:const char*:format::
-PyString_FromFormat::...::
-
-PyString_FromFormatV:PyObject*::+1:
-PyString_FromFormatV:const char*:format::
-PyString_FromFormatV:va_list:vargs::
-
-PyString_GET_SIZE:int:::
-PyString_GET_SIZE:PyObject*:string:0:
-
-PyString_InternFromString:PyObject*::+1:
-PyString_InternFromString:const char*:v::
-
-PyString_InternInPlace:void:::
-PyString_InternInPlace:PyObject**:string:+1:???
-
-PyString_Size:int:::
-PyString_Size:PyObject*:string:0:
-
-PyString_Decode:PyObject*::+1:
-PyString_Decode:const char*:s::
-PyString_Decode:int:size::
-PyString_Decode:const char*:encoding::
-PyString_Decode:const char*:errors::
-
-PyString_Encode:PyObject*::+1:
-PyString_Encode:const char*:s::
-PyString_Encode:int:size::
-PyString_Encode:const char*:encoding::
-PyString_Encode:const char*:errors::
-
-PyString_AsEncodedString:PyObject*::+1:
-PyString_AsEncodedString:PyObject*:str::
-PyString_AsEncodedString:const char*:encoding::
-PyString_AsEncodedString:const char*:errors::
+PyStructSequence_SetItem:void:::
+PyStructSequence_SetItem:PyObject*:p:0:
+PyStructSequence_SetItem:Py_ssize_t:pos::
+PyStructSequence_SetItem:PyObject*:o:0:
 
 PySys_AddWarnOption:void:::
-PySys_AddWarnOption:const char*:s::
+PySys_AddWarnOption:const wchar_t*:s::
+
+PySys_AddWarnOptionUnicode:void:::
+PySys_AddWarnOptionUnicode:PyObject*:unicode:0:
 
 PySys_AddXOption:void:::
 PySys_AddXOption:const wchar_t*:s::
+
+PySys_FormatStderr:void:::
+PySys_FormatStderr:const char*:format::
+PySys_FormatStderr::...::
+
+PySys_FormatStdout:void:::
+PySys_FormatStdout:const char*:format::
+PySys_FormatStdout::...::
 
 PySys_GetObject:PyObject*::0:
 PySys_GetObject:const char*:name::
 
 PySys_GetXOptions:PyObject*::0:
 
-PySys_SetArgv:int:::
+PySys_SetArgv:void:::
 PySys_SetArgv:int:argc::
-PySys_SetArgv:char**:argv::
+PySys_SetArgv:wchar_t**:argv::
+
+PySys_SetArgvEx:void:::
+PySys_SetArgvEx:int:argc::
+PySys_SetArgvEx:wchar_t**:argv::
+PySys_SetArgvEx:int:updatepath::
 
 PySys_SetObject:int:::
 PySys_SetObject:const char*:name::
@@ -1430,9 +2151,11 @@ PySys_ResetWarnOptions:void:::
 
 PySys_WriteStdout:void:::
 PySys_WriteStdout:const char*:format::
+PySys_WriteStdout::...::
 
 PySys_WriteStderr:void:::
 PySys_WriteStderr:const char*:format::
+PySys_WriteStderr::...::
 
 PyThreadState_Clear:void:::
 PyThreadState_Clear:PyThreadState*:tstate::
@@ -1446,6 +2169,10 @@ PyThreadState_GetDict:PyObject*::0:
 
 PyThreadState_New:PyThreadState*:::
 PyThreadState_New:PyInterpreterState*:interp::
+
+PyThreadState_SetAsyncExc:int:::
+PyThreadState_SetAsyncExc:unsigned long:id::
+PyThreadState_SetAsyncExc:PyObject*:exc:+1:
 
 PyThreadState_Swap:PyThreadState*:::
 PyThreadState_Swap:PyThreadState*:tstate::
@@ -1471,6 +2198,12 @@ PyThread_tss_set:int:::
 PyThread_tss_set:Py_tss_t*:key::
 PyThread_tss_set:void*:value::
 
+PyTime_Check:int:::
+PyTime_Check:PyObject*:ob:0:
+
+PyTime_CheckExact:int:::
+PyTime_CheckExact:PyObject*:ob:0:
+
 PyTime_FromTime:PyObject*::+1:
 PyTime_FromTime:int:hour::
 PyTime_FromTime:int:minute::
@@ -1489,62 +2222,129 @@ PyTraceMalloc_Untrack:uintptr_t:ptr::
 PyTuple_Check:int:::
 PyTuple_Check:PyObject*:p:0:
 
+PyTuple_CheckExact:int:::
+PyTuple_CheckExact:PyObject*:p:0:
+
 PyTuple_GET_ITEM:PyObject*::0:
-PyTuple_GET_ITEM:PyTupleObject*:p:0:
-PyTuple_GET_ITEM:int:pos::
+PyTuple_GET_ITEM:PyObject*:p:0:
+PyTuple_GET_ITEM:Py_ssize_t:pos::
 
 PyTuple_GetItem:PyObject*::0:
-PyTuple_GetItem:PyTupleObject*:p:0:
-PyTuple_GetItem:int:pos::
+PyTuple_GetItem:PyObject*:p:0:
+PyTuple_GetItem:Py_ssize_t:pos::
+
+PyTuple_GET_SIZE:Py_ssize_t:::
+PyTuple_GET_SIZE:PyObject*:p:0:
 
 PyTuple_GetSlice:PyObject*::+1:
-PyTuple_GetSlice:PyTupleObject*:p:0:
-PyTuple_GetSlice:int:low::
-PyTuple_GetSlice:int:high::
+PyTuple_GetSlice:PyObject*:p:0:
+PyTuple_GetSlice:Py_ssize_t:low::
+PyTuple_GetSlice:Py_ssize_t:high::
 
 PyTuple_New:PyObject*::+1:
-PyTuple_New:int:len::
+PyTuple_New:Py_ssize_t:len::
 
 PyTuple_Pack:PyObject*::+1:
-PyTuple_Pack:int:len::
+PyTuple_Pack:Py_ssize_t:len::
 PyTuple_Pack:PyObject*:...:0:
 
 PyTuple_SET_ITEM:void:::
-PyTuple_SET_ITEM:PyTupleObject*:p:0:
-PyTuple_SET_ITEM:int:pos::
+PyTuple_SET_ITEM:PyObject*:p:0:
+PyTuple_SET_ITEM:Py_ssize_t:pos::
 PyTuple_SET_ITEM:PyObject*:o:0:
 
 PyTuple_SetItem:int:::
-PyTuple_SetItem:PyTupleObject*:p:0:
-PyTuple_SetItem:int:pos::
+PyTuple_SetItem:PyObject*:p:0:
+PyTuple_SetItem:Py_ssize_t:pos::
 PyTuple_SetItem:PyObject*:o:0:
 
-PyTuple_Size:int:::
-PyTuple_Size:PyTupleObject*:p:0:
+PyTuple_Size:Py_ssize_t:::
+PyTuple_Size:PyObject*:p:0:
+
+PyType_Check:int:::
+PyType_Check:PyObject*:o:0:
+
+PyType_CheckExact:int:::
+PyType_CheckExact:PyObject*:o:0:
+
+PyType_FromSpec:PyObject*::+1:
+PyType_FromSpec:PyType_Spec*:spec::
+
+PyType_FromSpecWithBases:PyObject*::+1:
+PyType_FromSpecWithBases:PyType_Spec*:spec::
+PyType_FromSpecWithBases:PyObject*:bases:0:
 
 PyType_GenericAlloc:PyObject*::+1:
 PyType_GenericAlloc:PyObject*:type:0:
-PyType_GenericAlloc:int:nitems:0:
+PyType_GenericAlloc:Py_ssize_t:nitems::
 
 PyType_GenericNew:PyObject*::+1:
 PyType_GenericNew:PyObject*:type:0:
 PyType_GenericNew:PyObject*:args:0:
 PyType_GenericNew:PyObject*:kwds:0:
 
+PyType_GetFlags:unsigned long:::
+PyType_GetFlags:PyTypeObject*:type:0:
+
+PyType_GetSlot:void*:::
+PyType_GetSlot:PyTypeObject*:type:0:
+PyType_GetSlot:int:slot::
+
+PyType_HasFeature:int:::
+PyType_HasFeature:PyTypeObject*:o:0:
+PyType_HasFeature:int:feature::
+
+PyType_IS_GC:int:::
+PyType_IS_GC:PyTypeObject*:o:0:
+
+PyType_IsSubtype:int:::
+PyType_IsSubtype:PyTypeObject*:a:0:
+PyType_IsSubtype:PyTypeObject*:b:0:
+
+PyType_Modified:void:::
+PyType_Modified:PyTypeObject*:type:0:
+
+PyType_Ready:int:::
+PyType_Ready:PyTypeObject*:type:0:
+
+PyUnicode_1BYTE_DATA:Py_UCS1*:::
+PyUnicode_1BYTE_DATA:PyObject*:o:0:
+
 PyUnicode_Check:int:::
 PyUnicode_Check:PyObject*:o:0:
 
-PyUnicode_GET_SIZE:int:::
+PyUnicode_CheckExact:int:::
+PyUnicode_CheckExact:PyObject*:o:0:
+
+PyUnicode_DATA:void*:::
+PyUnicode_DATA:PyObject*:o:0:
+
+PyUnicode_GET_LENGTH:Py_ssize_t:::
+PyUnicode_GET_LENGTH:PyObject*:o:0:
+
+PyUnicode_GET_SIZE:Py_ssize_t:::
 PyUnicode_GET_SIZE:PyObject*:o:0:
 
-PyUnicode_GET_DATA_SIZE:int:::
+PyUnicode_GET_DATA_SIZE:Py_ssize_t:::
 PyUnicode_GET_DATA_SIZE:PyObject*:o:0:
+
+PyUnicode_KIND:int:::
+PyUnicode_KIND:PyObject*:o:0:
+
+PyUnicode_MAX_CHAR_VALUE::::
+PyUnicode_MAX_CHAR_VALUE:PyObject*:o:0:
 
 PyUnicode_AS_UNICODE:Py_UNICODE*:::
 PyUnicode_AS_UNICODE:PyObject*:o:0:
 
 PyUnicode_AS_DATA:const char*:::
 PyUnicode_AS_DATA:PyObject*:o:0:
+
+Py_UNICODE_ISALNUM:int:::
+Py_UNICODE_ISALNUM:Py_UNICODE:ch::
+
+Py_UNICODE_ISALPHA:int:::
+Py_UNICODE_ISALPHA:Py_UNICODE:ch::
 
 Py_UNICODE_ISSPACE:int:::
 Py_UNICODE_ISSPACE:Py_UNICODE:ch::
@@ -1570,6 +2370,9 @@ Py_UNICODE_ISDIGIT:Py_UNICODE:ch::
 Py_UNICODE_ISNUMERIC:int:::
 Py_UNICODE_ISNUMERIC:Py_UNICODE:ch::
 
+Py_UNICODE_ISPRINTABLE:int:::
+Py_UNICODE_ISPRINTABLE:Py_UNICODE:ch::
+
 Py_UNICODE_TOLOWER:Py_UNICODE:::
 Py_UNICODE_TOLOWER:Py_UNICODE:ch::
 
@@ -1590,150 +2393,210 @@ Py_UNICODE_TONUMERIC:Py_UNICODE:ch::
 
 PyUnicode_FromUnicode:PyObject*::+1:
 PyUnicode_FromUnicode:const Py_UNICODE*:u::
-PyUnicode_FromUnicode:int:size::
+PyUnicode_FromUnicode:Py_ssize_t:size::
 
 PyUnicode_AsUnicode:Py_UNICODE*:::
-PyUnicode_AsUnicode:PyObject :*unicode:0:
+PyUnicode_AsUnicode:PyObject*:unicode:0:
 
-PyUnicode_GetSize:int:::
-PyUnicode_GetSize:PyObject :*unicode:0:
+PyUnicode_TransformDecimalToASCII:PyObject*::+1:
+PyUnicode_TransformDecimalToASCII:Py_UNICODE*:s::
+PyUnicode_TransformDecimalToASCII:Py_ssize_t:size::
+
+PyUnicode_AsUnicodeAndSize:Py_UNICODE*:::
+PyUnicode_AsUnicodeAndSize:PyObject*:unicode:0:
+PyUnicode_AsUnicodeAndSize:Py_ssize_t*:size::
+
+PyUnicode_AsUnicodeCopy:Py_UNICODE*:::
+PyUnicode_AsUnicodeCopy:PyObject*:unicode:0:
+
+PyUnicode_GetSize:Py_ssize_t:::
+PyUnicode_GetSize:PyObject*:unicode:0:
 
 PyUnicode_FromObject:PyObject*::+1:
-PyUnicode_FromObject:PyObject*:*obj:0:
+PyUnicode_FromObject:PyObject*:obj:0:
 
 PyUnicode_FromEncodedObject:PyObject*::+1:
-PyUnicode_FromEncodedObject:PyObject*:*obj:0:
+PyUnicode_FromEncodedObject:PyObject*:obj:0:
 PyUnicode_FromEncodedObject:const char*:encoding::
 PyUnicode_FromEncodedObject:const char*:errors::
 
 PyUnicode_FromWideChar:PyObject*::+1:
 PyUnicode_FromWideChar:const wchar_t*:w::
-PyUnicode_FromWideChar:int:size::
+PyUnicode_FromWideChar:Py_ssize_t:size::
 
-PyUnicode_AsWideChar:int:::
+PyUnicode_AsWideChar:Py_ssize_t:::
 PyUnicode_AsWideChar:PyObject*:*unicode:0:
 PyUnicode_AsWideChar:wchar_t*:w::
-PyUnicode_AsWideChar:int:size::
+PyUnicode_AsWideChar:Pyssize_t:size::
+
+PyUnicode_AsWideCharString:wchar_t*:::
+PyUnicode_AsWideCharString:PyObject*:unicode:0:
+PyUnicode_AsWideCharString:Py_ssize_t*:size::
 
 PyUnicode_Decode:PyObject*::+1:
 PyUnicode_Decode:const char*:s::
-PyUnicode_Decode:int:size::
+PyUnicode_Decode:Py_ssize_t:size::
 PyUnicode_Decode:const char*:encoding::
 PyUnicode_Decode:const char*:errors::
 
 PyUnicode_DecodeUTF16Stateful:PyObject*::+1:
 PyUnicode_DecodeUTF16Stateful:const char*:s::
-PyUnicode_DecodeUTF16Stateful:int:size::
+PyUnicode_DecodeUTF16Stateful:Py_ssize_t:size::
 PyUnicode_DecodeUTF16Stateful:const char*:errors::
 PyUnicode_DecodeUTF16Stateful:int*:byteorder::
-PyUnicode_DecodeUTF16Stateful:int*:consumed::
+PyUnicode_DecodeUTF16Stateful:Py_ssize_t*:consumed::
 
 PyUnicode_DecodeUTF8Stateful:PyObject*::+1:
 PyUnicode_DecodeUTF8Stateful:const char*:s::
-PyUnicode_DecodeUTF8Stateful:int:size::
+PyUnicode_DecodeUTF8Stateful:Py_ssize_t:size::
 PyUnicode_DecodeUTF8Stateful:const char*:errors::
-PyUnicode_DecodeUTF8Stateful:int*:consumed::
+PyUnicode_DecodeUTF8Stateful:Py_ssize_t*:consumed::
 
 PyUnicode_Encode:PyObject*::+1:
 PyUnicode_Encode:const Py_UNICODE*:s::
-PyUnicode_Encode:int:size::
+PyUnicode_Encode:Py_ssize_t:size::
 PyUnicode_Encode:const char*:encoding::
 PyUnicode_Encode:const char*:errors::
 
 PyUnicode_AsEncodedString:PyObject*::+1:
-PyUnicode_AsEncodedString:PyObject*:unicode::
+PyUnicode_AsEncodedString:PyObject*:unicode:0:
 PyUnicode_AsEncodedString:const char*:encoding::
 PyUnicode_AsEncodedString:const char*:errors::
 
+PyUnicode_DecodeUTF7:PyObject*::+1:
+PyUnicode_DecodeUTF7:const char*:s::
+PyUnicode_DecodeUTF7:Py_ssize_t:size::
+PyUnicode_DecodeUTF7:const char*:errors::
+
+PyUnicode_DecodeUTF7Stateful:PyObject*::+1:
+PyUnicode_DecodeUTF7Stateful:const char*:s::
+PyUnicode_DecodeUTF7Stateful:Py_ssize_t:size::
+PyUnicode_DecodeUTF7Stateful:const char*:errors::
+PyUnicode_DecodeUTF7Stateful:Py_ssize_t*:consumed::
+
+PyUnicode_EncodeUTF7:PyObject*::+1:
+PyUnicode_EncodeUTF7:const Py_UNICODE*:s::
+PyUnicode_EncodeUTF7:Py_ssize_t:size::
+PyUnicode_EncodeUTF7:int:base64SetO::
+PyUnicode_EncodeUTF7:int:base64WhiteSpace::
+PyUnicode_EncodeUTF7:const char*:errors::
+
 PyUnicode_DecodeUTF8:PyObject*::+1:
 PyUnicode_DecodeUTF8:const char*:s::
-PyUnicode_DecodeUTF8:int:size::
+PyUnicode_DecodeUTF8:Py_ssize_t:size::
 PyUnicode_DecodeUTF8:const char*:errors::
 
 PyUnicode_EncodeUTF8:PyObject*::+1:
 PyUnicode_EncodeUTF8:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF8:int:size::
+PyUnicode_EncodeUTF8:Py_ssize_t:size::
 PyUnicode_EncodeUTF8:const char*:errors::
 
 PyUnicode_AsUTF8String:PyObject*::+1:
-PyUnicode_AsUTF8String:PyObject*:unicode::
+PyUnicode_AsUTF8String:PyObject*:unicode:0:
+
+PyUnicode_AsUTF8AndSize:const char*:::
+PyUnicode_AsUTF8AndSize:PyObject*:unicode:0:
+PyUnicode_AsUTF8AndSize:Py_ssize_t*:size:0:
+
+PyUnicode_AsUTF8:const char*:::
+PyUnicode_AsUTF8:PyObject*:unicode:0:
 
 PyUnicode_DecodeUTF16:PyObject*::+1:
 PyUnicode_DecodeUTF16:const char*:s::
-PyUnicode_DecodeUTF16:int:size::
+PyUnicode_DecodeUTF16:Py_ssize_t:size::
 PyUnicode_DecodeUTF16:const char*:errors::
 PyUnicode_DecodeUTF16:int*:byteorder::
 
 PyUnicode_EncodeUTF16:PyObject*::+1:
 PyUnicode_EncodeUTF16:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF16:int:size::
+PyUnicode_EncodeUTF16:Py_ssize_t:size::
 PyUnicode_EncodeUTF16:const char*:errors::
 PyUnicode_EncodeUTF16:int:byteorder::
 
 PyUnicode_AsUTF16String:PyObject*::+1:
-PyUnicode_AsUTF16String:PyObject*:unicode::
+PyUnicode_AsUTF16String:PyObject*:unicode:0:
+
+PyUnicode_DecodeUTF32:PyObject*::+1:
+PyUnicode_DecodeUTF32:const char*:s::
+PyUnicode_DecodeUTF32:Py_ssize_t:size::
+PyUnicode_DecodeUTF32:const char*:errors::
+PyUnicode_DecodeUTF32:int*:byteorder::
+
+PyUnicode_DecodeUTF32Stateful:PyObject*::+1:
+PyUnicode_DecodeUTF32Stateful:const char*:s::
+PyUnicode_DecodeUTF32Stateful:Py_ssize_t:size::
+PyUnicode_DecodeUTF32Stateful:const char*:errors::
+PyUnicode_DecodeUTF32Stateful:int*:byteorder::
+PyUnicode_DecodeUTF32Stateful:Py_ssize_t*:consumed::
+
+PyUnicode_AsUTF32String:PyObject*::+1:
+PyUnicode_AsUTF32String:PyObject*:unicode:0:
+
+PyUnicode_EncodeUTF32:PyObject*::+1:
+PyUnicode_EncodeUTF32:const Py_UNICODE*:s::
+PyUnicode_EncodeUTF32:Py_ssize_t:size::
+PyUnicode_EncodeUTF32:const char*:errors::
+PyUnicode_EncodeUTF32:int:byteorder::
 
 PyUnicode_DecodeUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeUnicodeEscape:const char*:s::
-PyUnicode_DecodeUnicodeEscape:int:size::
+PyUnicode_DecodeUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeUnicodeEscape:const char*:errors::
 
 PyUnicode_EncodeUnicodeEscape:PyObject*::+1:
 PyUnicode_EncodeUnicodeEscape:const Py_UNICODE*:s::
-PyUnicode_EncodeUnicodeEscape:int:size::
-PyUnicode_EncodeUnicodeEscape:const char*:errors::
+PyUnicode_EncodeUnicodeEscape:Py_ssize_t:size::
 
 PyUnicode_AsUnicodeEscapeString:PyObject*::+1:
-PyUnicode_AsUnicodeEscapeString:PyObject*:unicode::
+PyUnicode_AsUnicodeEscapeString:PyObject*:unicode:0:
 
 PyUnicode_DecodeRawUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeRawUnicodeEscape:const char*:s::
-PyUnicode_DecodeRawUnicodeEscape:int:size::
+PyUnicode_DecodeRawUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeRawUnicodeEscape:const char*:errors::
 
 PyUnicode_EncodeRawUnicodeEscape:PyObject*::+1:
 PyUnicode_EncodeRawUnicodeEscape:const Py_UNICODE*:s::
-PyUnicode_EncodeRawUnicodeEscape:int:size::
-PyUnicode_EncodeRawUnicodeEscape:const char*:errors::
+PyUnicode_EncodeRawUnicodeEscape:Py_ssize_t:size::
 
 PyUnicode_AsRawUnicodeEscapeString:PyObject*::+1:
-PyUnicode_AsRawUnicodeEscapeString:PyObject*:unicode::
+PyUnicode_AsRawUnicodeEscapeString:PyObject*:unicode:0:
 
 PyUnicode_DecodeLatin1:PyObject*::+1:
 PyUnicode_DecodeLatin1:const char*:s::
-PyUnicode_DecodeLatin1:int:size::
+PyUnicode_DecodeLatin1:Py_ssize_t:size::
 PyUnicode_DecodeLatin1:const char*:errors::
 
 PyUnicode_EncodeLatin1:PyObject*::+1:
 PyUnicode_EncodeLatin1:const Py_UNICODE*:s::
-PyUnicode_EncodeLatin1:int:size::
+PyUnicode_EncodeLatin1:Py_ssize_t:size::
 PyUnicode_EncodeLatin1:const char*:errors::
 
 PyUnicode_AsLatin1String:PyObject*::+1:
-PyUnicode_AsLatin1String:PyObject*:unicode::
+PyUnicode_AsLatin1String:PyObject*:unicode:0:
 
 PyUnicode_DecodeASCII:PyObject*::+1:
 PyUnicode_DecodeASCII:const char*:s::
-PyUnicode_DecodeASCII:int:size::
+PyUnicode_DecodeASCII:Py_ssize_t:size::
 PyUnicode_DecodeASCII:const char*:errors::
 
 PyUnicode_EncodeASCII:PyObject*::+1:
 PyUnicode_EncodeASCII:const Py_UNICODE*:s::
-PyUnicode_EncodeASCII:int:size::
+PyUnicode_EncodeASCII:Py_ssize_t:size::
 PyUnicode_EncodeASCII:const char*:errors::
 
 PyUnicode_AsASCIIString:PyObject*::+1:
-PyUnicode_AsASCIIString:PyObject*:unicode::
+PyUnicode_AsASCIIString:PyObject*:unicode:0:
 
 PyUnicode_DecodeCharmap:PyObject*::+1:
 PyUnicode_DecodeCharmap:const char*:s::
-PyUnicode_DecodeCharmap:int:size::
+PyUnicode_DecodeCharmap:Py_ssize_t:size::
 PyUnicode_DecodeCharmap:PyObject*:mapping:0:
 PyUnicode_DecodeCharmap:const char*:errors::
 
 PyUnicode_EncodeCharmap:PyObject*::+1:
 PyUnicode_EncodeCharmap:const Py_UNICODE*:s::
-PyUnicode_EncodeCharmap:int:size::
+PyUnicode_EncodeCharmap:Py_ssize_t:size::
 PyUnicode_EncodeCharmap:PyObject*:mapping:0:
 PyUnicode_EncodeCharmap:const char*:errors::
 
@@ -1743,22 +2606,33 @@ PyUnicode_AsCharmapString:PyObject*:mapping:0:
 
 PyUnicode_TranslateCharmap:PyObject*::+1:
 PyUnicode_TranslateCharmap:const Py_UNICODE*:s::
-PyUnicode_TranslateCharmap:int:size::
-PyUnicode_TranslateCharmap:PyObject*:table:0:
+PyUnicode_TranslateCharmap:Py_ssize_t:size::
+PyUnicode_TranslateCharmap:PyObject*:mapping:0:
 PyUnicode_TranslateCharmap:const char*:errors::
 
 PyUnicode_DecodeMBCS:PyObject*::+1:
 PyUnicode_DecodeMBCS:const char*:s::
-PyUnicode_DecodeMBCS:int:size::
+PyUnicode_DecodeMBCS:Py_ssize_t:size::
 PyUnicode_DecodeMBCS:const char*:errors::
+
+PyUnicode_DecodeMBCSStateful:PyObject*::+1:
+PyUnicode_DecodeMBCSStateful:const char*:s::
+PyUnicode_DecodeMBCSStateful:Py_ssize_t:size::
+PyUnicode_DecodeMBCSStateful:const char*:errors::
+PyUnicode_DecodeMBCSStateful:Py_ssize_t*:consumed::
+
+PyUnicode_EncodeCodePage:PyObject*::+1:
+PyUnicode_EncodeCodePage:int:code_page::
+PyUnicode_EncodeCodePage:PyObject*:unicode:0:
+PyUnicode_EncodeCodePage:const char*:errors::
 
 PyUnicode_EncodeMBCS:PyObject*::+1:
 PyUnicode_EncodeMBCS:const Py_UNICODE*:s::
-PyUnicode_EncodeMBCS:int:size::
+PyUnicode_EncodeMBCS:Py_ssize_t:size::
 PyUnicode_EncodeMBCS:const char*:errors::
 
 PyUnicode_AsMBCSString:PyObject*::+1:
-PyUnicode_AsMBCSString:PyObject*:unicode::
+PyUnicode_AsMBCSString:PyObject*:unicode:0:
 
 PyUnicode_Concat:PyObject*::+1:
 PyUnicode_Concat:PyObject*:left:0:
@@ -1767,11 +2641,11 @@ PyUnicode_Concat:PyObject*:right:0:
 PyUnicode_Split:PyObject*::+1:
 PyUnicode_Split:PyObject*:left:0:
 PyUnicode_Split:PyObject*:right:0:
-PyUnicode_Split:int:maxsplit::
+PyUnicode_Split:Py_ssize_t:maxsplit::
 
 PyUnicode_Splitlines:PyObject*::+1:
 PyUnicode_Splitlines:PyObject*:s:0:
-PyUnicode_Splitlines:int:maxsplit::
+PyUnicode_Splitlines:int:keepend::
 
 PyUnicode_Translate:PyObject*::+1:
 PyUnicode_Translate:PyObject*:str:0:
@@ -1782,35 +2656,51 @@ PyUnicode_Join:PyObject*::+1:
 PyUnicode_Join:PyObject*:separator:0:
 PyUnicode_Join:PyObject*:seq:0:
 
-PyUnicode_Tailmatch:int:::
+PyUnicode_Tailmatch:Py_ssize_t:::
 PyUnicode_Tailmatch:PyObject*:str:0:
 PyUnicode_Tailmatch:PyObject*:substr:0:
-PyUnicode_Tailmatch:int:start::
-PyUnicode_Tailmatch:int:end::
+PyUnicode_Tailmatch:Py_ssize_t:start::
+PyUnicode_Tailmatch:Py_ssize_t:end::
 PyUnicode_Tailmatch:int:direction::
 
-PyUnicode_Find:int:::
+PyUnicode_Find:Py_ssize_t:::
 PyUnicode_Find:PyObject*:str:0:
 PyUnicode_Find:PyObject*:substr:0:
-PyUnicode_Find:int:start::
-PyUnicode_Find:int:end::
+PyUnicode_Find:Py_ssize_t:start::
+PyUnicode_Find:Py_ssize_t:end::
 PyUnicode_Find:int:direction::
 
-PyUnicode_Count:int:::
+PyUnicode_FindChar:Py_ssize_t:::
+PyUnicode_FindChar:PyObject*:str:0:
+PyUnicode_FindChar:Py_UCS4:ch::
+PyUnicode_FindChar:Py_ssize_t:start::
+PyUnicode_FindChar:Py_ssize_t:end::
+PyUnicode_FindChar:int:direction::
+
+PyUnicode_Count:Py_ssize_t:::
 PyUnicode_Count:PyObject*:str:0:
 PyUnicode_Count:PyObject*:substr:0:
-PyUnicode_Count:int:start::
-PyUnicode_Count:int:end::
+PyUnicode_Count:Py_ssize_t:start::
+PyUnicode_Count:Py_ssize_t:end::
 
 PyUnicode_Replace:PyObject*::+1:
 PyUnicode_Replace:PyObject*:str:0:
 PyUnicode_Replace:PyObject*:substr:0:
 PyUnicode_Replace:PyObject*:replstr:0:
-PyUnicode_Replace:int:maxcount::
+PyUnicode_Replace:Py_ssize_t:maxcount::
 
 PyUnicode_Compare:int:::
 PyUnicode_Compare:PyObject*:left:0:
 PyUnicode_Compare:PyObject*:right:0:
+
+PyUnicode_CompareWithASCIIString:int:::
+PyUnicode_CompareWithASCIIString:PyObject*:uni:0:
+PyUnicode_CompareWithASCIIString:const char*:string::
+
+PyUnicode_RichCompare:PyObject*::+1:
+PyUnicode_RichCompare:PyObject*:left:0:
+PyUnicode_RichCompare:PyObject*:right:0:
+PyUnicode_RichCompare:int:op::
 
 PyUnicode_Format:PyObject*::+1:
 PyUnicode_Format:PyObject*:format:0:
@@ -1819,6 +2709,185 @@ PyUnicode_Format:PyObject*:args:0:
 PyUnicode_Contains:int:::
 PyUnicode_Contains:PyObject*:container:0:
 PyUnicode_Contains:PyObject*:element:0:
+
+PyUnicode_InternInPlace:void:::
+PyUnicode_InternInPlace:PyObject**:string:+1:
+
+PyUnicode_InternFromString:PyObject*::+1:
+PyUnicode_InternFromString:const char*:v::
+
+PyUnicode_New:PyObject*::+1:
+PyUnicode_New:Py_ssize_t:size::
+PyUnicode_New:Py_UCS4:maxchar::
+
+PyUnicode_FromKindAndData:PyObject*::+1:
+PyUnicode_FromKindAndData:int:kind::
+PyUnicode_FromKindAndData:const void*:buffer::
+PyUnicode_FromKindAndData:Py_ssize_t:size::
+
+PyUnicode_FromStringAndSize:PyObject*::+1:
+PyUnicode_FromStringAndSize:const char*:u::
+PyUnicode_FromStringAndSize:Py_ssize_t:size::
+
+PyUnicode_FromString:PyObject*::+1:
+PyUnicode_FromString:const char*:u::
+
+PyUnicode_FromFormat:PyObject*::+1:
+PyUnicode_FromFormat:const char*:format::
+PyUnicode_FromFormat::...::
+
+PyUnicode_FromFormatV:PyObject*::+1:
+PyUnicode_FromFormatV:const char*:format::
+PyUnicode_FromFormatV:va_list:args::
+
+PyUnicode_GetLength:Py_ssize_t:::
+PyUnicode_GetLength:PyObject*:unicode:0:
+
+PyUnicode_CopyCharacters:Py_ssize_t:::
+PyUnicode_CopyCharacters:PyObject*:to:0:
+PyUnicode_CopyCharacters:Py_ssize_t:to_start::
+PyUnicode_CopyCharacters:PyObject*:from:0:
+PyUnicode_CopyCharacters:Py_ssize_t:from_start::
+PyUnicode_CopyCharacters:Py_ssize_t:how_many::
+
+PyUnicode_Fill:Py_ssize_t:::
+PyUnicode_Fill:PyObject*:unicode:0:
+PyUnicode_Fill:Py_ssize_t:start::
+PyUnicode_Fill:Py_ssize_t:length::
+PyUnicode_Fill:Py_UCS4:fill_char::
+
+PyUnicode_READ:Py_UCS4:::
+PyUnicode_READ:int:kind::
+PyUnicode_READ:void*:data::
+PyUnicode_READ:Py_ssize_t:index::
+
+PyUnicode_READ_CHAR:Py_UCS4:::
+PyUnicode_READ_CHAR:PyObject*:o:0:
+PyUnicode_READ_CHAR:Py_ssize_t:index::
+
+PyUnicode_ReadChar:Py_UCS4:::
+PyUnicode_ReadChar:PyObject*:unicode:0:
+PyUnicode_ReadChar:Py_ssize_t:index::
+
+PyUnicode_WRITE:void:::
+PyUnicode_WRITE:int:kind::
+PyUnicode_WRITE:void*:data::
+PyUnicode_WRITE:Py_ssize_t:index::
+PyUnicode_WRITE:Py_UCS4:value::
+
+PyUnicode_WriteChar:int:::
+PyUnicode_WriteChar:PyObject*:unicode:0:
+PyUnicode_WriteChar:Py_ssize_t:index::
+PyUnicode_WriteChar:Py_UCS4:character::
+
+PyUnicode_READY:int:::
+PyUnicode_READY:PyObject*:o:0:
+
+PyUnicode_Substring:PyObject*::+1:
+PyUnicode_Substring:PyObject*:str:0:
+PyUnicode_Substring:Py_ssize_t:start::
+PyUnicode_Substring:Py_ssize_t:end::
+
+PyUnicode_AsUCS4:Py_UCS4*:::
+PyUnicode_AsUCS4:PyObject*:u:0:
+PyUnicode_AsUCS4:Py_UCS4*:buffer::
+PyUnicode_AsUCS4:Py_ssize_t:buflen::
+PyUnicode_AsUCS4:int:copy_null::
+
+PyUnicode_AsUCS4Copy:Py_UCS4*:::
+PyUnicode_AsUCS4Copy:PyObject*:u:0:
+
+PyUnicode_DecodeLocaleAndSize:PyObject*::+1:
+PyUnicode_DecodeLocaleAndSize:const char*:str::
+PyUnicode_DecodeLocaleAndSize:Py_ssize_t:len::
+PyUnicode_DecodeLocaleAndSize:const char*:errors::
+
+PyUnicode_DecodeLocale:PyObject*::+1:
+PyUnicode_DecodeLocale:const char*:str::
+PyUnicode_DecodeLocale:const char*:errors::
+
+PyUnicode_EncodeLocale:PyObject*::+1:
+PyUnicode_EncodeLocale:PyObject*:unicode:0:
+PyUnicode_EncodeLocale:const char*:errors::
+
+PyUnicode_FSConverter:int:::
+PyUnicode_FSConverter:PyObject*:obj:0:
+PyUnicode_FSConverter:void*:result::
+
+PyUnicode_FSDecoder:int:::
+PyUnicode_FSDecoder:PyObject*:obj:0:
+PyUnicode_FSDecoder:void*:result::
+
+PyUnicode_DecodeFSDefaultAndSize:PyObject*::+1:
+PyUnicode_DecodeFSDefaultAndSize:const char*:s::
+PyUnicode_DecodeFSDefaultAndSize:Py_ssize_t:size::
+
+PyUnicode_DecodeFSDefault:PyObject*::+1:
+PyUnicode_DecodeFSDefault:const char*:s::
+
+PyUnicode_EncodeFSDefault:PyObject*::+1:
+PyUnicode_EncodeFSDefault:PyObject*:unicode:0:
+
+PyUnicodeDecodeError_Create:PyObject*::+1:
+PyUnicodeDecodeError_Create:const char*:encoding::
+PyUnicodeDecodeError_Create:const char*:object::
+PyUnicodeDecodeError_Create:Py_ssize_t:length::
+PyUnicodeDecodeError_Create:Py_ssize_t:start::
+PyUnicodeDecodeError_Create:Py_ssize_t:end::
+PyUnicodeDecodeError_Create:const char*:reason::
+
+PyUnicodeDecodeError_GetEncoding:PyObject*::+1:
+PyUnicodeDecodeError_GetEncoding:PyObject*:exc:0:
+
+PyUnicodeDecodeError_GetEnd:Py_ssize_t:::
+PyUnicodeDecodeError_GetEnd:PyObject*:exc:0:
+PyUnicodeDecodeError_GetEnd:Py_ssize_t*:end::
+
+PyUnicodeDecodeError_GetObject:PyObject*::+1:
+PyUnicodeDecodeError_GetObject:PyObject*:exc:0:
+
+PyUnicodeDecodeError_GetReason:PyObject*::+1:
+PyUnicodeDecodeError_GetReason:PyObject*:exc:0:
+
+PyUnicodeDecodeError_GetStart:Py_ssize_t:::
+PyUnicodeDecodeError_GetStart:PyObject*:exc:0:
+PyUnicodeDecodeError_GetStart:Py_ssize_t*:start::
+
+PyUnicodeDecodeError_SetEnd:int:::
+PyUnicodeDecodeError_SetEnd:PyObject*:exc:0:
+PyUnicodeDecodeError_SetEnd:Py_ssize_t:end::
+
+PyUnicodeDecodeError_SetReason:int:::
+PyUnicodeDecodeError_SetReason:PyObject*:exc:0:
+PyUnicodeDecodeError_SetReason:const char*:reason::
+
+PyUnicodeDecodeError_SetStart:int:::
+PyUnicodeDecodeError_SetStart:PyObject*:exc:0:
+PyUnicodeDecodeError_SetStart:Py_ssize_t:start::
+
+PyUnicodeEncodeError_Create:PyObject*::+1:
+PyUnicodeEncodeError_Create:const char*:encoding::
+PyUnicodeEncodeError_Create:const Py_UNICODE*:object::
+PyUnicodeEncodeError_Create:Py_ssize_t:length::
+PyUnicodeEncodeError_Create:Py_ssize_t:start::
+PyUnicodeEncodeError_Create:Py_ssize_t:end::
+PyUnicodeEncodeError_Create:const char*:reason::
+
+PyUnicodeTranslateError_Create:PyObject*::+1:
+PyUnicodeTranslateError_Create:const Py_UNICODE*:object::
+PyUnicodeTranslateError_Create:Py_ssize_t:length::
+PyUnicodeTranslateError_Create:Py_ssize_t:start::
+PyUnicodeTranslateError_Create:Py_ssize_t:end::
+PyUnicodeTranslateError_Create:const char*:reason::
+
+PyWeakref_Check:int:::
+PyWeakref_Check:PyObject*:ob::
+
+PyWeakref_CheckProxy:int:::
+PyWeakref_CheckProxy:PyObject*:ob::
+
+PyWeakref_CheckRef:int:::
+PyWeakref_CheckRef:PyObject*:ob::
 
 PyWeakref_GET_OBJECT:PyObject*::0:
 PyWeakref_GET_OBJECT:PyObject*:ref:0:
@@ -1843,17 +2912,39 @@ Py_AtExit:void (*)():func::
 
 Py_BuildValue:PyObject*::+1:
 Py_BuildValue:const char*:format::
+Py_BuildValue::...::
+
+Py_VaBuildValue:PyObject*::+1:
+Py_VaBuildValue:const char*:format::
+Py_VaBuildValue:va_list:vargs::
+
+Py_CLEAR:void:::
+Py_CLEAR:PyObject*:o:-1:
 
 Py_CompileString:PyObject*::+1:
 Py_CompileString:const char*:str::
 Py_CompileString:const char*:filename::
 Py_CompileString:int:start::
 
+Py_CompileStringExFlags:PyObject*::+1:
+Py_CompileStringExFlags:const char*:str::
+Py_CompileStringExFlags:const char*:filename::
+Py_CompileStringExFlags:int:start::
+Py_CompileStringExFlags:PyCompilerFlags*:flags::
+Py_CompileStringExFlags:int:optimize::
+
 Py_CompileStringFlags:PyObject*::+1:
 Py_CompileStringFlags:const char*:str::
 Py_CompileStringFlags:const char*:filename::
 Py_CompileStringFlags:int:start::
 Py_CompileStringFlags:PyCompilerFlags*:flags::
+
+Py_CompileStringObject:PyObject*::+1:
+Py_CompileStringObject:const char*:str::
+Py_CompileStringObject:PyObject*:filename:0:
+Py_CompileStringObject:int:start::
+Py_CompileStringObject:PyCompilerFlags*:flags::
+Py_CompileStringObject:int:optimize::
 
 Py_DECREF:void:::
 Py_DECREF:PyObject*:o:-1:
@@ -1873,25 +2964,25 @@ Py_FdIsInteractive:const char*:filename::
 
 Py_Finalize:void:::
 
-Py_GetBuildInfoconst:const char*:::
+Py_GetBuildInfo:const char*:::
 
-Py_GetCompilerconst:const char*:::
+Py_GetCompiler:const char*:::
 
-Py_GetCopyrightconst:const char*:::
+Py_GetCopyright:const char*:::
 
-Py_GetExecPrefix:const char*:::
+Py_GetExecPrefix:wchar_t*:::
 
-Py_GetPath:const char*:::
+Py_GetPath:wchar_t*:::
 
-Py_GetPlatformconst:const char*:::
+Py_GetPlatform:const char*:::
 
-Py_GetPrefix:const char*:::
+Py_GetPrefix:wchar_t*:::
 
-Py_GetProgramFullPath:const char*:::
+Py_GetProgramFullPath:wchar_t*:::
 
-Py_GetProgramName:const char*:::
+Py_GetProgramName:wchar_t*:::
 
-Py_GetVersionconst:const char*:::
+Py_GetVersion:const char*:::
 
 Py_INCREF:void:::
 Py_INCREF:PyObject*:o:+1:
@@ -1902,8 +2993,14 @@ Py_IsInitialized:int:::
 
 Py_NewInterpreter:PyThreadState*:::
 
+Py_ReprEnter:int:::
+Py_ReprEnter:PyObject*:object:+1:
+
+Py_ReprLeave:void:::
+Py_ReprLeave:PyObject*:object:-1:
+
 Py_SetProgramName:void:::
-Py_SetProgramName:const char*:name::
+Py_SetProgramName:const wchar_t*:name::
 
 Py_XDECREF:void:::
 Py_XDECREF:PyObject*:o:-1:if o is not NULL
@@ -1911,32 +3008,24 @@ Py_XDECREF:PyObject*:o:-1:if o is not NULL
 Py_XINCREF:void:::
 Py_XINCREF:PyObject*:o:+1:if o is not NULL
 
-_PyImport_FindExtension:PyObject*::0:??? see PyImport_AddModule
-_PyImport_FindExtension:const char*:::
-_PyImport_FindExtension:const char*:::
-
 _PyImport_Fini:void:::
-
-_PyImport_FixupExtension:PyObject*:::???
-_PyImport_FixupExtension:const char*:::
-_PyImport_FixupExtension:const char*:::
 
 _PyImport_Init:void:::
 
 _PyObject_New:PyObject*::+1:
 _PyObject_New:PyTypeObject*:type:0:
 
-_PyObject_NewVar:PyObject*::+1:
+_PyObject_NewVar:PyVarObject*::+1:
 _PyObject_NewVar:PyTypeObject*:type:0:
-_PyObject_NewVar:int:size::
+_PyObject_NewVar:Py_ssize_t:size::
 
-_PyString_Resize:int:::
-_PyString_Resize:PyObject**:string:+1:
-_PyString_Resize:int:newsize::
+_PyBytes_Resize:int:::
+_PyBytes_Resize:PyObject**:bytes:0:
+_PyBytes_Resize:Py_ssize_t:newsize::
 
 _PyTuple_Resize:int:::
-_PyTuple_Resize:PyTupleObject**:p:+1:
-_PyTuple_Resize:int:new::
+_PyTuple_Resize:PyObject**:p:0:
+_PyTuple_Resize:Py_ssize_t:new::
 
 _Py_c_diff:Py_complex:::
 _Py_c_diff:Py_complex:left::

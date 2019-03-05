@@ -209,19 +209,15 @@ _Pickle_ClearState(PickleState *st)
 static int
 _Pickle_InitState(PickleState *st)
 {
-    PyObject *builtins;
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
     PyObject *codecs = NULL;
     PyObject *functools = NULL;
+    _Py_IDENTIFIER(getattr);
 
-    builtins = PyEval_GetBuiltins();
-    if (builtins == NULL)
-        goto error;
-    st->getattr = PyDict_GetItemString(builtins, "getattr");
+    st->getattr = _PyEval_GetBuiltinId(&PyId_getattr);
     if (st->getattr == NULL)
         goto error;
-    Py_INCREF(st->getattr);
 
     copyreg = PyImport_ImportModule("copyreg");
     if (!copyreg)
@@ -3840,7 +3836,10 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
         if (obj != NULL) {
             obj_class = get_class(obj);
-            p = obj_class != cls;    /* true iff a problem */
+            if (obj_class == NULL) {
+                return -1;
+            }
+            p = obj_class != cls;
             Py_DECREF(obj_class);
             if (p) {
                 PyErr_SetString(st->PicklingError, "args[0] from "
@@ -6637,13 +6636,13 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
         }
     }
 
-    module = PyImport_GetModule(module_name);
+    /*
+     * we don't use PyImport_GetModule here, because it can return partially-
+     * initialised modules, which then cause the getattribute to fail.
+     */
+    module = PyImport_Import(module_name);
     if (module == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
-        module = PyImport_Import(module_name);
-        if (module == NULL)
-            return NULL;
+        return NULL;
     }
     global = getattribute(module, global_name, self->proto >= 4);
     Py_DECREF(module);

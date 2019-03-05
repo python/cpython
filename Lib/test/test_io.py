@@ -28,6 +28,7 @@ import pickle
 import random
 import signal
 import sys
+import sysconfig
 import threading
 import time
 import unittest
@@ -58,6 +59,13 @@ else:
         return obj
     class EmptyStruct(ctypes.Structure):
         pass
+
+_cflags = sysconfig.get_config_var('CFLAGS') or ''
+_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+MEMORY_SANITIZER = (
+    '-fsanitize=memory' in _cflags or
+    '--with-memory-sanitizer' in _config_args
+)
 
 def _default_chunk_size():
     """Get the default TextIOWrapper chunk size"""
@@ -1496,6 +1504,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
+    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -1840,6 +1850,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
 
+    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -2314,6 +2326,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
 
+    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -3663,6 +3677,11 @@ class CTextIOWrapperTest(TextIOWrapperTest):
             t2.buddy = t1
         support.gc_collect()
 
+    def test_del__CHUNK_SIZE_SystemError(self):
+        t = self.TextIOWrapper(self.BytesIO(), encoding='ascii')
+        with self.assertRaises(AttributeError):
+            del t._CHUNK_SIZE
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
@@ -4144,10 +4163,9 @@ class SignalsTest(unittest.TestCase):
         in the latter."""
         read_results = []
         def _read():
-            if hasattr(signal, 'pthread_sigmask'):
-                signal.pthread_sigmask(signal.SIG_BLOCK, [signal.SIGALRM])
             s = os.read(r, 1)
             read_results.append(s)
+
         t = threading.Thread(target=_read)
         t.daemon = True
         r, w = os.pipe()
@@ -4155,7 +4173,14 @@ class SignalsTest(unittest.TestCase):
         large_data = item * (support.PIPE_MAX_SIZE // len(item) + 1)
         try:
             wio = self.io.open(w, **fdopen_kwargs)
-            t.start()
+            if hasattr(signal, 'pthread_sigmask'):
+                # create the thread with SIGALRM signal blocked
+                signal.pthread_sigmask(signal.SIG_BLOCK, [signal.SIGALRM])
+                t.start()
+                signal.pthread_sigmask(signal.SIG_UNBLOCK, [signal.SIGALRM])
+            else:
+                t.start()
+
             # Fill the pipe enough that the write will be blocking.
             # It will be interrupted by the timer armed above.  Since the
             # other thread has read one byte, the low-level write will
