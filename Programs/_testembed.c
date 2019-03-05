@@ -606,14 +606,14 @@ static int test_init_isolated(void)
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
+    Py_IsolatedFlag = 0;
+    config.preconfig.isolated = 1;
+
     /* Set coerce_c_locale and utf8_mode to not depend on the locale */
     config.coerce_c_locale = 0;
     config.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";
-
-    Py_IsolatedFlag = 0;
-    config.isolated = 1;
 
     test_init_env_putenvs();
     _PyInitError err = _Py_InitializeFromConfig(&config);

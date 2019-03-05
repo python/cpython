@@ -439,6 +439,8 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
 void
 _PyCoreConfig_Clear(_PyCoreConfig *config)
 {
+    _PyPreConfig_Clear(&config->preconfig);
+
 #define CLEAR(ATTR) \
     do { \
         PyMem_RawFree(ATTR); \
@@ -488,6 +490,10 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 {
     _PyCoreConfig_Clear(config);
 
+    if (_PyPreConfig_Copy(&config->preconfig, &config2->preconfig) < 0) {
+        return -1;
+    }
+
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 #define COPY_STR_ATTR(ATTR) \
     do { \
@@ -519,7 +525,6 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     } while (0)
 
     COPY_ATTR(install_signal_handlers);
-    COPY_ATTR(use_environment);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
     COPY_ATTR(_install_importlib);
@@ -557,7 +562,6 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 #endif
     COPY_WSTR_ATTR(base_exec_prefix);
 
-    COPY_ATTR(isolated);
     COPY_ATTR(site_import);
     COPY_ATTR(bytes_warning);
     COPY_ATTR(inspect);
@@ -595,9 +599,9 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 const char*
 _PyCoreConfig_GetEnv(const _PyCoreConfig *config, const char *name)
 {
-    assert(config->use_environment >= 0);
+    assert(config->preconfig.use_environment >= 0);
 
-    if (!config->use_environment) {
+    if (!config->preconfig.use_environment) {
         return NULL;
     }
 
@@ -616,9 +620,9 @@ _PyCoreConfig_GetEnvDup(const _PyCoreConfig *config,
                         wchar_t **dest,
                         wchar_t *wname, char *name)
 {
-    assert(config->use_environment >= 0);
+    assert(config->preconfig.use_environment >= 0);
 
-    if (!config->use_environment) {
+    if (!config->preconfig.use_environment) {
         *dest = NULL;
         return 0;
     }
@@ -662,6 +666,8 @@ _PyCoreConfig_GetEnvDup(const _PyCoreConfig *config,
 void
 _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
 {
+    _PyPreConfig_GetGlobalConfig(&config->preconfig);
+
 #define COPY_FLAG(ATTR, VALUE) \
         if (config->ATTR == -1) { \
             config->ATTR = VALUE; \
@@ -672,7 +678,6 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
         }
 
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
-    COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
     COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
@@ -686,7 +691,6 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
 #endif
     COPY_FLAG(_frozen, Py_FrozenFlag);
 
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
@@ -701,6 +705,8 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
 void
 _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
 {
+    _PyPreConfig_SetGlobalConfig(&config->preconfig);
+
 #define COPY_FLAG(ATTR, VAR) \
         if (config->ATTR != -1) { \
             VAR = config->ATTR; \
@@ -711,7 +717,6 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
         }
 
     COPY_FLAG(utf8_mode, Py_UTF8Mode);
-    COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_FLAG(bytes_warning, Py_BytesWarningFlag);
     COPY_FLAG(inspect, Py_InspectFlag);
     COPY_FLAG(interactive, Py_InteractiveFlag);
@@ -725,7 +730,6 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
 #endif
     COPY_FLAG(_frozen, Py_FrozenFlag);
 
-    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
     COPY_NOT_FLAG(write_bytecode, Py_DontWriteBytecodeFlag);
@@ -1497,10 +1501,15 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     _PyInitError err;
 
     _PyCoreConfig_GetGlobalConfig(config);
-    assert(config->use_environment >= 0);
 
-    if (config->isolated > 0) {
-        config->use_environment = 0;
+    err = _PyPreConfig_Read(&config->preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    assert(config->preconfig.use_environment >= 0);
+
+    if (config->preconfig.isolated > 0) {
         config->user_site_directory = 0;
     }
 
@@ -1510,7 +1519,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 #endif
 
-    if (config->use_environment) {
+    if (config->preconfig.use_environment) {
         err = config_read_env_vars(config);
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -1611,7 +1620,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 
     assert(config->coerce_c_locale >= 0);
-    assert(config->use_environment >= 0);
+    assert(config->preconfig.use_environment >= 0);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
     assert(config->stdio_encoding != NULL);
@@ -1679,18 +1688,23 @@ _PyCoreConfig_Write(const _PyCoreConfig *config)
 PyObject *
 _PyCoreConfig_AsDict(const _PyCoreConfig *config)
 {
-    PyObject *dict, *obj;
+    PyObject *dict;
 
     dict = PyDict_New();
     if (dict == NULL) {
         return NULL;
     }
 
+    if (_PyPreConfig_AsDict(&config->preconfig, dict) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+
 #define SET_ITEM(KEY, EXPR) \
         do { \
-            obj = (EXPR); \
+            PyObject *obj = (EXPR); \
             if (obj == NULL) { \
-                return NULL; \
+                goto fail; \
             } \
             int res = PyDict_SetItemString(dict, (KEY), obj); \
             Py_DECREF(obj); \
@@ -1718,7 +1732,6 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM(#OPTIONS, _Py_wstrlist_as_pylist(config->NOPTION, config->OPTIONS))
 
     SET_ITEM_INT(install_signal_handlers);
-    SET_ITEM_INT(use_environment);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
     SET_ITEM_STR(allocator);
@@ -1752,7 +1765,6 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
 #ifdef MS_WINDOWS
     SET_ITEM_WSTR(dll_path);
 #endif
-    SET_ITEM_INT(isolated);
     SET_ITEM_INT(site_import);
     SET_ITEM_INT(bytes_warning);
     SET_ITEM_INT(inspect);
@@ -1825,14 +1837,6 @@ cmdline_clear(_PyCmdline *cmdline)
         _Py_wstrlist_clear(cmdline->args->argc, cmdline->argv);
     }
     cmdline->argv = NULL;
-}
-
-
-static _PyInitError
-cmdline_decode_argv(_PyCmdline *cmdline)
-{
-    assert(cmdline->argv == NULL);
-    return _PyArgv_Decode(cmdline->args, &cmdline->argv);
 }
 
 
@@ -1912,7 +1916,7 @@ config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
             break;
 
         case 'I':
-            config->isolated++;
+            config->preconfig.isolated++;
             break;
 
         /* case 'J': reserved for Jython */
@@ -1934,7 +1938,7 @@ config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
             break;
 
         case 'E':
-            config->use_environment = 0;
+            config->preconfig.use_environment = 0;
             break;
 
         case 't':
@@ -2272,7 +2276,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline)
         return err;
     }
 
-    if (config->use_environment) {
+    if (config->preconfig.use_environment) {
         err = cmdline_init_env_warnoptions(cmdline, config);
         if (_Py_INIT_FAILED(err)) {
             return err;

@@ -487,7 +487,7 @@ pymain_header(const _PyCoreConfig *config)
 static void
 pymain_import_readline(const _PyCoreConfig *config)
 {
-    if (config->isolated) {
+    if (config->preconfig.isolated) {
         return;
     }
     if (!config->inspect && RUN_CODE(config)) {
@@ -779,7 +779,7 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
             goto done;
         }
     }
-    else if (!config->isolated) {
+    else if (!config->preconfig.isolated) {
         PyObject *path0 = _PyPathConfig_ComputeArgv0(config->argc,
                                                      config->argv);
         if (path0 == NULL) {

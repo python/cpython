@@ -2172,14 +2172,14 @@ make_flags(void)
     SetFlag(!config->write_bytecode);
     SetFlag(!config->user_site_directory);
     SetFlag(!config->site_import);
-    SetFlag(!config->use_environment);
+    SetFlag(!config->preconfig.use_environment);
     SetFlag(config->verbose);
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
     SetFlag(config->bytes_warning);
     SetFlag(config->quiet);
     SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
-    SetFlag(config->isolated);
+    SetFlag(config->preconfig.isolated);
     PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
     SetFlag(config->utf8_mode);
 #undef SetFlag
