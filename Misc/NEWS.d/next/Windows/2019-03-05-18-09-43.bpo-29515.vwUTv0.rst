@@ -1,0 +1,1 @@
+socket module is missing many IPPROTO_* constants on Windows
