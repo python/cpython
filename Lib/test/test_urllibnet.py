@@ -1,5 +1,4 @@
 import unittest
-from test import support
 from test import test_support
 
 import socket
@@ -44,7 +43,7 @@ class URLTimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
-        f = _open_with_retry(urllib.urlopen, support.TEST_HTTP_URL)
+        f = _open_with_retry(urllib.urlopen, test_support.TEST_HTTP_URL)
         x = f.read()
 
 class urlopenNetworkTests(unittest.TestCase):
@@ -67,7 +66,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_basic(self):
         # Simple test expected to pass.
-        open_url = self.urlopen(support.TEST_HTTP_URL)
+        open_url = self.urlopen(test_support.TEST_HTTP_URL)
         for attr in ("read", "readline", "readlines", "fileno", "close",
                      "info", "geturl"):
             self.assertTrue(hasattr(open_url, attr), "object returned from "
@@ -79,7 +78,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_readlines(self):
         # Test both readline and readlines.
-        open_url = self.urlopen(support.TEST_HTTP_URL)
+        open_url = self.urlopen(test_support.TEST_HTTP_URL)
         try:
             self.assertIsInstance(open_url.readline(), basestring,
                                   "readline did not return a string")
@@ -90,7 +89,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_info(self):
         # Test 'info'.
-        open_url = self.urlopen(support.TEST_HTTP_URL)
+        open_url = self.urlopen(test_support.TEST_HTTP_URL)
         try:
             info_obj = open_url.info()
         finally:
@@ -102,12 +101,12 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
-        open_url = self.urlopen(support.TEST_HTTP_URL)
+        open_url = self.urlopen(test_support.TEST_HTTP_URL)
         try:
             gotten_url = open_url.geturl()
         finally:
             open_url.close()
-        self.assertEqual(gotten_url, support.TEST_HTTP_URL)
+        self.assertEqual(gotten_url, test_support.TEST_HTTP_URL)
 
     def test_getcode(self):
         # test getcode() with the fancy opener to get 404 error codes
@@ -123,7 +122,7 @@ class urlopenNetworkTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'fdopen'), 'os.fdopen not available')
     def test_fileno(self):
         # Make sure fd returned by fileno is valid.
-        open_url = self.urlopen(support.TEST_HTTP_URL)
+        open_url = self.urlopen(test_support.TEST_HTTP_URL)
         fd = open_url.fileno()
         FILE = os.fdopen(fd)
         try:
@@ -162,7 +161,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_basic(self):
         # Test basic functionality.
-        file_location,info = self.urlretrieve(support.TEST_HTTP_URL)
+        file_location,info = self.urlretrieve(test_support.TEST_HTTP_URL)
         self.assertTrue(os.path.exists(file_location), "file location returned by"
                         " urlretrieve is not a valid path")
         FILE = file(file_location)
@@ -175,7 +174,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_specified_path(self):
         # Make sure that specifying the location of the file to write to works.
-        file_location,info = self.urlretrieve(support.TEST_HTTP_URL,
+        file_location,info = self.urlretrieve(test_support.TEST_HTTP_URL,
                                               test_support.TESTFN)
         self.assertEqual(file_location, test_support.TESTFN)
         self.assertTrue(os.path.exists(file_location))
@@ -188,13 +187,13 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_header(self):
         # Make sure header returned as 2nd value from urlretrieve is good.
-        file_location, header = self.urlretrieve(support.TEST_HTTP_URL)
+        file_location, header = self.urlretrieve(test_support.TEST_HTTP_URL)
         os.unlink(file_location)
         self.assertIsInstance(header, mimetools.Message,
                               "header is not an instance of mimetools.Message")
 
     def test_data_header(self):
-        logo = "http://www.example.com/"
+        logo = test_support.TEST_HTTP_URL
         file_location, fileheaders = self.urlretrieve(logo)
         os.unlink(file_location)
         datevalue = fileheaders.getheader('Date')

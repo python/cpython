@@ -517,7 +517,7 @@ FF
 
         try:
             self.assertRaises(urllib.ContentTooShortError, urllib.urlretrieve,
-                    'http://example.com', reporthook=_reporthook)
+                    test_support.TEST_HTTP_URL, reporthook=_reporthook)
         finally:
             self.unfakehttp()
 
@@ -532,7 +532,7 @@ Content-Type: text/html; charset=iso-8859-1
 FF
 ''')
         try:
-            self.assertRaises(urllib.ContentTooShortError, urllib.urlretrieve, 'http://example.com/')
+            self.assertRaises(urllib.ContentTooShortError, urllib.urlretrieve, test_support.TEST_HTTP_URL)
         finally:
             self.unfakehttp()
 

@@ -85,7 +85,7 @@ class CloseSocketTest(unittest.TestCase):
         # underlying socket
 
         # delve deep into response to fetch socket._socketobject
-        response = _urlopen_with_retry("http://www.example.com/")
+        response = _urlopen_with_retry(test_support.TEST_HTTP_URL)
         abused_fileobject = response.fp
         self.assertIs(abused_fileobject.__class__, socket._fileobject)
         httpresponse = abused_fileobject._sock
@@ -169,7 +169,7 @@ class OtherNetworkTests(unittest.TestCase):
                     "http://www.pythontest.net/index.html#frag")
 
     def test_fileno(self):
-        req = urllib2.Request("http://www.example.com")
+        req = urllib2.Request(test_support.TEST_HTTP_URL)
         opener = urllib2.build_opener()
         res = opener.open(req)
         try:
@@ -180,7 +180,7 @@ class OtherNetworkTests(unittest.TestCase):
             res.close()
 
     def test_custom_headers(self):
-        url = "http://www.example.com"
+        url = test_support.TEST_HTTP_URL
         with test_support.transient_internet(url):
             opener = urllib2.build_opener()
             request = urllib2.Request(url)
@@ -258,14 +258,14 @@ class OtherNetworkTests(unittest.TestCase):
 class TimeoutTest(unittest.TestCase):
     def test_http_basic(self):
         self.assertIsNone(socket.getdefaulttimeout())
-        url = "http://www.example.com"
+        url = test_support.TEST_HTTP_URL
         with test_support.transient_internet(url, timeout=None):
             u = _urlopen_with_retry(url)
             self.assertIsNone(u.fp._sock.fp._sock.gettimeout())
 
     def test_http_default_timeout(self):
         self.assertIsNone(socket.getdefaulttimeout())
-        url = "http://www.example.com"
+        url = test_support.TEST_HTTP_URL
         with test_support.transient_internet(url):
             socket.setdefaulttimeout(60)
             try:
@@ -276,7 +276,7 @@ class TimeoutTest(unittest.TestCase):
 
     def test_http_no_timeout(self):
         self.assertIsNone(socket.getdefaulttimeout())
-        url = "http://www.example.com"
+        url = test_support.TEST_HTTP_URL
         with test_support.transient_internet(url):
             socket.setdefaulttimeout(60)
             try:
@@ -286,7 +286,7 @@ class TimeoutTest(unittest.TestCase):
             self.assertIsNone(u.fp._sock.fp._sock.gettimeout())
 
     def test_http_timeout(self):
-        url = "http://www.example.com"
+        url = test_support.TEST_HTTP_URL
         with test_support.transient_internet(url):
             u = _urlopen_with_retry(url, timeout=120)
             self.assertEqual(u.fp._sock.fp._sock.gettimeout(), 120)
