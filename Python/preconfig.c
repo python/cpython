@@ -453,7 +453,8 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 
     /* allocator */
     if (config->dev_mode && config->allocator == NULL) {
-        config->allocator = _PyMem_RawStrdup("debug");
+        const char *allocator = _PyMem_GetDebugAllocatorsName();
+        config->allocator = _PyMem_RawStrdup(allocator);
         if (config->allocator == NULL) {
             return _Py_INIT_NO_MEMORY();
         }

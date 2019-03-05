@@ -139,6 +139,9 @@ static int test_forced_io_encoding(void)
 
 static int test_pre_initialization_api(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* Leading "./" ensures getpath.c can still find the standard library */
     _Py_EMBED_PREINIT_CHECK("Checking Py_DecodeLocale\n");
     wchar_t *program = Py_DecodeLocale("./spam", NULL);
@@ -235,6 +238,9 @@ static void bpo20891_thread(void *lockp)
 
 static int test_bpo20891(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
        call PyEval_InitThreads() for us in this case. */
