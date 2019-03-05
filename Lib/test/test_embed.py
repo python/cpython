@@ -561,30 +561,36 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_config("init_from_config", config)
 
+    INIT_ENV_CONFIG = {
+        'use_hash_seed': 1,
+        'hash_seed': 42,
+        'allocator': 'malloc_debug',
+        'tracemalloc': 2,
+        'import_time': 1,
+        'malloc_stats': 1,
+        'utf8_mode': 1,
+        'filesystem_encoding': 'utf-8',
+        'filesystem_errors': UTF8_MODE_ERRORS,
+        'inspect': 1,
+        'optimization_level': 2,
+        'pycache_prefix': 'env_pycache_prefix',
+        'write_bytecode': 0,
+        'verbose': 1,
+        'buffered_stdio': 0,
+        'stdio_encoding': 'iso8859-1',
+        'stdio_errors': 'replace',
+        'user_site_directory': 0,
+        'faulthandler': 1,
+    }
+
     def test_init_env(self):
-        config = {
-            'use_hash_seed': 1,
-            'hash_seed': 42,
-            'allocator': 'malloc_debug',
-            'tracemalloc': 2,
-            'import_time': 1,
-            'malloc_stats': 1,
-            'utf8_mode': 1,
-            'filesystem_encoding': 'utf-8',
-            'filesystem_errors': self.UTF8_MODE_ERRORS,
-            'inspect': 1,
-            'optimization_level': 2,
-            'pycache_prefix': 'env_pycache_prefix',
-            'write_bytecode': 0,
-            'verbose': 1,
-            'buffered_stdio': 0,
-            'stdio_encoding': 'iso8859-1',
-            'stdio_errors': 'replace',
-            'user_site_directory': 0,
-            'faulthandler': 1,
-            'dev_mode': 1,
-        }
-        self.check_config("init_env", config)
+        self.check_config("init_env", self.INIT_ENV_CONFIG)
+
+    def test_init_env_dev_mode(self):
+        config = dict(self.INIT_ENV_CONFIG,
+                      allocator='debug',
+                      dev_mode=1)
+        self.check_config("init_env_dev_mode", config)
 
     def test_init_dev_mode(self):
         config = {

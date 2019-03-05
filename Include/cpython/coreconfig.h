@@ -80,6 +80,9 @@ typedef struct {
        Set by -X utf8 command line option and PYTHONUTF8 environment variable.
        If set to -1 (default), inherit Py_UTF8Mode value. */
     int utf8_mode;
+
+    int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
+    char *allocator;        /* Memory allocator: PYTHONMALLOC */
 } _PyPreConfig;
 
 #ifdef MS_WINDOWS
@@ -108,9 +111,6 @@ typedef struct {
 
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
-
-    const char *allocator;  /* Memory allocator: PYTHONMALLOC */
-    int dev_mode;           /* PYTHONDEVMODE, -X dev */
 
     /* Enable faulthandler?
        Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */
