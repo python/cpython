@@ -125,10 +125,9 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir = os.path.abspath(pth_dir)
         pth_basename = pth_name + '.pth'
         pth_fn = os.path.join(pth_dir, pth_basename)
-        pth_file = open(pth_fn, 'w', encoding='utf-8')
-        self.addCleanup(lambda: os.remove(pth_fn))
-        pth_file.write(contents)
-        pth_file.close()
+        with open(pth_fn, 'w', encoding='utf-8') as pth_file:
+            self.addCleanup(lambda: os.remove(pth_fn))
+            pth_file.write(contents)
         return pth_dir, pth_basename
 
     def test_addpackage_import_bad_syntax(self):
