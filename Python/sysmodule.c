@@ -2180,7 +2180,7 @@ make_flags(void)
     SetFlag(config->quiet);
     SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
     SetFlag(config->preconfig.isolated);
-    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
+    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->preconfig.dev_mode));
     SetFlag(config->preconfig.utf8_mode);
 #undef SetFlag
 

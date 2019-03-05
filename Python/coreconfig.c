@@ -521,8 +521,6 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
     COPY_ATTR(_install_importlib);
-    COPY_ATTR(allocator);
-    COPY_ATTR(dev_mode);
     COPY_ATTR(faulthandler);
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
@@ -931,10 +929,6 @@ config_read_env_vars(_PyCoreConfig *config)
                  "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 
-    if (config->allocator == NULL) {
-        config->allocator = _PyCoreConfig_GetEnv(config, "PYTHONMALLOC");
-    }
-
     if (_PyCoreConfig_GetEnv(config, "PYTHONDUMPREFS")) {
         config->dump_refs = 1;
     }
@@ -1058,11 +1052,6 @@ config_read_complex_options(_PyCoreConfig *config)
     if (_PyCoreConfig_GetEnv(config, "PYTHONPROFILEIMPORTTIME")
        || config_get_xoption(config, L"importtime")) {
         config->import_time = 1;
-    }
-    if (config_get_xoption(config, L"dev" ) ||
-        _PyCoreConfig_GetEnv(config, "PYTHONDEVMODE"))
-    {
-        config->dev_mode = 1;
     }
 
     _PyInitError err;
@@ -1427,12 +1416,9 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
     }
 
     /* default values */
-    if (config->dev_mode) {
+    if (config->preconfig.dev_mode) {
         if (config->faulthandler < 0) {
             config->faulthandler = 1;
-        }
-        if (config->allocator == NULL) {
-            config->allocator = "debug";
         }
     }
     if (config->use_hash_seed < 0) {
@@ -1572,8 +1558,6 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
-    SET_ITEM_STR(allocator);
-    SET_ITEM_INT(dev_mode);
     SET_ITEM_INT(faulthandler);
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
@@ -1950,7 +1934,7 @@ config_init_warnoptions(_PyCoreConfig *config, const _PyCmdline *cmdline)
      * the lowest precedence entries first so that later entries override them.
      */
 
-    if (config->dev_mode) {
+    if (config->preconfig.dev_mode) {
         err = _Py_wstrlist_append(&config->nwarnoption,
                                   &config->warnoptions,
                                   L"default");
