@@ -267,10 +267,7 @@ static Py_hash_t
 method_hash(PyMethodObject *a)
 {
     Py_hash_t x, y;
-    if (a->im_self == NULL)
-        x = _Py_HashPointer(Py_None);
-    else
-        x = _Py_HashPointer(a->im_self);
+    x = _Py_HashPointer(a->im_self);
     y = PyObject_Hash(a->im_func);
     if (y == -1)
         return -1;
@@ -294,11 +291,6 @@ method_call(PyObject *method, PyObject *args, PyObject *kwargs)
     PyObject *self, *func;
 
     self = PyMethod_GET_SELF(method);
-    if (self == NULL) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
     func = PyMethod_GET_FUNCTION(method);
 
     return _PyObject_Call_Prepend(func, self, args, kwargs);
@@ -307,15 +299,8 @@ method_call(PyObject *method, PyObject *args, PyObject *kwargs)
 static PyObject *
 method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 {
-    /* Don't rebind an already bound method of a class that's not a base
-       class of cls. */
-    if (PyMethod_GET_SELF(meth) != NULL) {
-        /* Already bound */
-        Py_INCREF(meth);
-        return meth;
-    }
-    /* Bind it to obj */
-    return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj);
+    Py_INCREF(meth);
+    return meth;
 }
 
 PyTypeObject PyMethod_Type = {
