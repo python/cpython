@@ -437,7 +437,7 @@ static int test_init_from_config(void)
     config.hash_seed = 123;
 
     putenv("PYTHONMALLOC=malloc");
-    config.allocator = "malloc_debug";
+    config.preconfig.allocator = "malloc_debug";
 
     /* dev_mode=1 is tested in test_init_dev_mode() */
 
@@ -461,7 +461,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
-    config.utf8_mode = 1;
+    config.preconfig.utf8_mode = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config.pycache_prefix = L"conf_pycache_prefix";
@@ -577,7 +577,6 @@ static void test_init_env_putenvs(void)
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
-    putenv("PYTHONDEVMODE=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
     /* FIXME: test PYTHONWARNINGS */
     /* FIXME: test PYTHONEXECUTABLE */
@@ -586,6 +585,15 @@ static void test_init_env_putenvs(void)
     /* FIXME: test PYTHONDUMPREFS */
     /* FIXME: test PYTHONCOERCECLOCALE */
     /* FIXME: test PYTHONPATH */
+}
+
+
+static void test_init_env_dev_mode_putenvs(void)
+{
+    test_init_env_putenvs();
+    putenv("PYTHONMALLOC=malloc");
+    putenv("PYTHONFAULTHANDLER=");
+    putenv("PYTHONDEVMODE=1");
 }
 
 
@@ -601,21 +609,33 @@ static int test_init_env(void)
 }
 
 
+static int test_init_env_dev_mode(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    test_init_env_dev_mode_putenvs();
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static int test_init_isolated(void)
 {
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
+    Py_IsolatedFlag = 0;
+    config.preconfig.isolated = 1;
+
     /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.coerce_c_locale = 0;
-    config.utf8_mode = 0;
+    config.preconfig.coerce_c_locale = 0;
+    config.preconfig.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";
 
-    Py_IsolatedFlag = 0;
-    config.isolated = 1;
-
-    test_init_env_putenvs();
+    test_init_env_dev_mode_putenvs();
     _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
@@ -631,7 +651,7 @@ static int test_init_dev_mode(void)
     _PyCoreConfig config = _PyCoreConfig_INIT;
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
-    config.dev_mode = 1;
+    config.preconfig.dev_mode = 1;
     config.program_name = L"./_testembed";
     _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
@@ -673,6 +693,7 @@ static struct TestCase TestCases[] = {
     { "init_global_config", test_init_global_config },
     { "init_from_config", test_init_from_config },
     { "init_env", test_init_env },
+    { "init_env_dev_mode", test_init_env_dev_mode },
     { "init_dev_mode", test_init_dev_mode },
     { "init_isolated", test_init_isolated },
     { NULL, NULL }

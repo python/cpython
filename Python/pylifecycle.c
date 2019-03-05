@@ -287,7 +287,7 @@ static const char *_C_LOCALE_WARNING =
 static void
 _emit_stderr_warning_for_legacy_locale(const _PyCoreConfig *core_config)
 {
-    if (core_config->coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
+    if (core_config->preconfig.coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
         PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
@@ -482,9 +482,9 @@ _Py_Initialize_ReconfigureCore(PyInterpreterState **interp_p,
 
     /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
        Py_Initialize() ignores the new configuration. */
-    if (core_config->allocator != NULL) {
+    if (core_config->preconfig.allocator != NULL) {
         const char *allocator = _PyMem_GetAllocatorsName();
-        if (allocator == NULL || strcmp(core_config->allocator, allocator) != 0) {
+        if (allocator == NULL || strcmp(core_config->preconfig.allocator, allocator) != 0) {
             return _Py_INIT_USER_ERR("cannot modify memory allocator "
                                      "after first Py_Initialize()");
         }
@@ -521,8 +521,8 @@ pycore_init_runtime(const _PyCoreConfig *core_config)
         return err;
     }
 
-    if (core_config->allocator != NULL) {
-        if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
+    if (core_config->preconfig.allocator != NULL) {
+        if (_PyMem_SetupAllocators(core_config->preconfig.allocator) < 0) {
             return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
         }
     }
@@ -763,7 +763,7 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
 
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     if (_PyCoreConfig_Copy(&config, src_config) >= 0) {
-        err = _PyCoreConfig_Read(&config);
+        err = _PyCoreConfig_Read(&config, NULL);
     }
     else {
         err = _Py_INIT_ERR("failed to copy core config");
@@ -1460,31 +1460,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate->frame != NULL)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
 
-    // Mark as finalizing.
-    if (interp->ceval.pending.lock != NULL) {
-        PyThread_acquire_lock(interp->ceval.pending.lock, 1);
-    }
-    interp->finalizing = 1;
-    if (interp->ceval.pending.lock != NULL) {
-        PyThread_release_lock(interp->ceval.pending.lock);
-    }
-
-    // Wrap up existing threads.
     wait_for_thread_shutdown();
-
-    // Make any pending calls.
-    if (_Py_atomic_load_relaxed(
-                &(interp->ceval.pending.calls_to_do)))
-    {
-        // XXX Ensure that the interpreter is running in the current thread?
-        if (_Py_MakePendingCalls(interp) < 0) {
-            PyObject *exc, *val, *tb;
-            PyErr_Fetch(&exc, &val, &tb);
-            PyErr_BadInternalCall();
-            _PyErr_ChainExceptions(exc, val, tb);
-            PyErr_Print();
-        }
-    }
 
     call_py_exitfuncs(interp);
 

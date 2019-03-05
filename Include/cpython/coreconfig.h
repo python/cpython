@@ -46,22 +46,71 @@ typedef struct {
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL || err.exitcode != -1)
 
-/* --- _PyCoreConfig ---------------------------------------------- */
+/* --- _PyPreConfig ----------------------------------------------- */
 
 typedef struct {
-    /* Install signal handlers? Yes by default. */
-    int install_signal_handlers;
+    /* If greater than 0, enable isolated mode: sys.path contains
+       neither the script's directory nor the user's site-packages directory.
+
+       Set to 1 by the -I command line option. If set to -1 (default), inherit
+       Py_IsolatedFlag value. */
+    int isolated;
 
     /* If greater than 0: use environment variables.
        Set to 0 by -E command line option. If set to -1 (default), it is
        set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
 
+    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+
+#ifdef MS_WINDOWS
+    /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
+       encoding for the filesystem encoding.
+
+       Set to 1 if the PYTHONLEGACYWINDOWSFSENCODING environment variable is
+       set to a non-empty string. If set to -1 (default), inherit
+       Py_LegacyWindowsFSEncodingFlag value.
+
+       See PEP 529 for more details. */
+    int legacy_windows_fs_encoding;
+#endif
+
+    /* Enable UTF-8 mode?
+       Set by -X utf8 command line option and PYTHONUTF8 environment variable.
+       If set to -1 (default), inherit Py_UTF8Mode value. */
+    int utf8_mode;
+
+    int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
+    char *allocator;        /* Memory allocator: PYTHONMALLOC */
+} _PyPreConfig;
+
+#ifdef MS_WINDOWS
+#  define _PyPreConfig_WINDOWS_INIT \
+        .legacy_windows_fs_encoding = -1,
+#else
+#  define _PyPreConfig_WINDOWS_INIT
+#endif
+
+#define _PyPreConfig_INIT \
+    (_PyPreConfig){ \
+        _PyPreConfig_WINDOWS_INIT \
+        .isolated = -1, \
+        .use_environment = -1, \
+        .coerce_c_locale = -1, \
+        .utf8_mode = -1}
+
+
+/* --- _PyCoreConfig ---------------------------------------------- */
+
+typedef struct {
+    _PyPreConfig preconfig;
+
+    /* Install signal handlers? Yes by default. */
+    int install_signal_handlers;
+
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
-
-    const char *allocator;  /* Memory allocator: PYTHONMALLOC */
-    int dev_mode;           /* PYTHONDEVMODE, -X dev */
 
     /* Enable faulthandler?
        Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */
@@ -76,8 +125,6 @@ typedef struct {
     int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
 
     /* Python filesystem encoding and error handler:
        sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().
@@ -90,8 +137,8 @@ typedef struct {
        * The UTF-8 Mode uses UTF-8/surrogateescape;
        * If Python forces the usage of the ASCII encoding (ex: C locale
          or POSIX locale on FreeBSD or HP-UX), use ASCII/surrogateescape;
-       * locale encoding: ANSI code page on Windows, UTF-8 on Android,
-         LC_CTYPE locale encoding on other platforms;
+       * locale encoding: ANSI code page on Windows, UTF-8 on Android and
+         VxWorks, LC_CTYPE locale encoding on other platforms;
        * On Windows, "surrogateescape" error handler;
        * "surrogateescape" error handler if the LC_CTYPE locale is "C" or "POSIX";
        * "surrogateescape" error handler if the LC_CTYPE locale has been coerced
@@ -114,11 +161,6 @@ typedef struct {
        */
     char *filesystem_encoding;
     char *filesystem_errors;
-
-    /* Enable UTF-8 mode?
-       Set by -X utf8 command line option and PYTHONUTF8 environment variable.
-       If set to -1 (default), inherit Py_UTF8Mode value. */
-    int utf8_mode;
 
     wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
 
@@ -151,13 +193,6 @@ typedef struct {
 #ifdef MS_WINDOWS
     wchar_t *dll_path;      /* Windows DLL path */
 #endif
-
-    /* If greater than 0, enable isolated mode: sys.path contains
-       neither the script's directory nor the user's site-packages directory.
-
-       Set to 1 by the -I command line option. If set to -1 (default), inherit
-       Py_IsolatedFlag value. */
-    int isolated;
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -265,16 +300,6 @@ typedef struct {
     char *stdio_errors;
 
 #ifdef MS_WINDOWS
-    /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
-       encoding for the filesystem encoding.
-
-       Set to 1 if the PYTHONLEGACYWINDOWSFSENCODING environment variable is
-       set to a non-empty string. If set to -1 (default), inherit
-       Py_LegacyWindowsFSEncodingFlag value.
-
-       See PEP 529 for more details. */
-    int legacy_windows_fs_encoding;
-
     /* If greater than zero, use io.FileIO instead of WindowsConsoleIO for sys
        standard streams.
 
@@ -328,7 +353,6 @@ typedef struct {
 
 #ifdef MS_WINDOWS
 #  define _PyCoreConfig_WINDOWS_INIT \
-        .legacy_windows_fs_encoding = -1, \
         .legacy_windows_stdio = -1,
 #else
 #  define _PyCoreConfig_WINDOWS_INIT
@@ -336,16 +360,14 @@ typedef struct {
 
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
+        _PyCoreConfig_WINDOWS_INIT \
+        .preconfig = _PyPreConfig_INIT, \
         .install_signal_handlers = 1, \
-        .use_environment = -1, \
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
-        .coerce_c_locale = -1, \
-        .utf8_mode = -1, \
         .argc = -1, \
         .nmodule_search_path = -1, \
-        .isolated = -1, \
         .site_import = -1, \
         .bytes_warning = -1, \
         .inspect = -1, \
@@ -357,7 +379,6 @@ typedef struct {
         .quiet = -1, \
         .user_site_directory = -1, \
         .buffered_stdio = -1, \
-        _PyCoreConfig_WINDOWS_INIT \
         ._install_importlib = 1, \
         ._check_hash_pycs_mode = "default", \
         ._frozen = -1}

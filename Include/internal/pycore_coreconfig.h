@@ -34,9 +34,36 @@ PyAPI_FUNC(_PyInitError) _PyArgv_Decode(const _PyArgv *args,
 PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
 PyAPI_FUNC(int) _Py_SetArgcArgv(int argc, wchar_t * const *argv);
 
+/* --- _PyPreConfig ----------------------------------------------- */
+
+PyAPI_FUNC(int) _Py_str_to_int(
+    const char *str,
+    int *result);
+PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
+    int nxoption,
+    wchar_t * const *xoptions,
+    const wchar_t *name);
+
+PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
+PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
+    const _PyPreConfig *config2);
+PyAPI_FUNC(void) _PyPreConfig_GetGlobalConfig(_PyPreConfig *config);
+PyAPI_FUNC(void) _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config);
+PyAPI_FUNC(const char*) _PyPreConfig_GetEnv(const _PyPreConfig *config,
+    const char *name);
+PyAPI_FUNC(void) _Py_get_env_flag(_PyPreConfig *config,
+    int *flag,
+    const char *name);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config);
+PyAPI_FUNC(int) _PyPreConfig_AsDict(const _PyPreConfig *config,
+    PyObject *dict);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_ReadFromArgv(_PyPreConfig *config,
+    const _PyArgv *args);
+PyAPI_FUNC(void) _PyPreConfig_Write(const _PyPreConfig *config);
+
+
 /* --- _PyCoreConfig ---------------------------------------------- */
 
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(int) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
@@ -54,8 +81,11 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
+    const _PyPreConfig *preconfig);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
-    const _PyArgv *args);
+    const _PyArgv *args,
+    const _PyPreConfig *preconfig);
 PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
 
 #ifdef __cplusplus

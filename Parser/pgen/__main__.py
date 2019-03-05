@@ -2,6 +2,7 @@ import argparse
 
 from .pgen import ParserGenerator
 
+
 def main():
     parser = argparse.ArgumentParser(description="Parser generator main program.")
     parser.add_argument(
