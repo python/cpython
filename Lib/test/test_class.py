@@ -618,19 +618,21 @@ class ClassTests(unittest.TestCase):
         class C:
             pass
 
+        error_msg = r'C.__init__\(\) takes exactly one argument \(the instance to initialize\)'
+
         with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
             C(42)
 
         with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
             C.__new__(C, 42)
 
-        with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             C().__init__(42)
 
         with self.assertRaisesRegex(TypeError, r'C\(\) takes no arguments'):
             object.__new__(C, 42)
 
-        with self.assertRaisesRegex(TypeError, r'C\(\).__init__\(\) takes no arguments'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             object.__init__(C(), 42)
 
         # Class with both `__init__` & `__new__` method overridden
@@ -640,13 +642,15 @@ class ClassTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+        error_msg =  r'object.__new__\(\) takes exactly one argument \(the type to instantiate\)'
+
+        with self.assertRaisesRegex(TypeError, error_msg):
             D(42)
 
-        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             D.__new__(D, 42)
 
-        with self.assertRaisesRegex(TypeError, r'object.__new__\(\) takes no argument'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             object.__new__(D, 42)
 
         # Class that only overrides __init__
@@ -654,10 +658,12 @@ class ClassTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-        with self.assertRaisesRegex(TypeError, r'object.__init__\(\) takes no argument'):
+        error_msg = r'object.__init__\(\) takes exactly one argument \(the instance to initialize\)'
+
+        with self.assertRaisesRegex(TypeError, error_msg):
             E().__init__(42)
 
-        with self.assertRaisesRegex(TypeError, r'object.__init__\(\) takes no argument'):
+        with self.assertRaisesRegex(TypeError, error_msg):
             object.__init__(E(), 42)
 
 if __name__ == '__main__':

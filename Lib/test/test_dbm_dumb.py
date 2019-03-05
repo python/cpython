@@ -40,7 +40,6 @@ class DumbDBMTestCase(unittest.TestCase):
         f.close()
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'test needs os.chmod()')
     def test_dumbdbm_creation_mode(self):
         try:
             old_umask = os.umask(0o002)
@@ -82,10 +81,10 @@ class DumbDBMTestCase(unittest.TestCase):
         self.init_db()
         f = dumbdbm.open(_fname, 'r')
         self.read_helper(f)
-        with self.assertRaisesRegex(ValueError,
+        with self.assertRaisesRegex(dumbdbm.error,
                                    'The database is opened for reading only'):
             f[b'g'] = b'x'
-        with self.assertRaisesRegex(ValueError,
+        with self.assertRaisesRegex(dumbdbm.error,
                                    'The database is opened for reading only'):
             del f[b'a']
         # get() works as in the dict interface
@@ -275,7 +274,6 @@ class DumbDBMTestCase(unittest.TestCase):
                                         "'r', 'w', 'c', or 'n'"):
                 dumbdbm.open(_fname, flag)
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'test needs os.chmod()')
     def test_readonly_files(self):
         with support.temp_dir() as dir:
             fname = os.path.join(dir, 'db')

@@ -9,6 +9,7 @@
     <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
+    <IncludeUwp Condition="'$(IncludeUwp)' == ''">false</IncludeUwp>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -49,9 +50,11 @@
     <!-- pyshellext.dll -->
     <Projects Include="pyshellext.vcxproj" />
     <!-- Extension modules -->
-    <ExtensionModules Include="_asyncio;_contextvars;_ctypes;_decimal;_distutils_findvs;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound" />
+    <ExtensionModules Include="_asyncio;_ctypes;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound" />
     <!-- Extension modules that require external sources -->
     <ExternalModules Include="_bz2;_lzma;_sqlite3" />
+    <!-- venv launchers -->
+    <Projects Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
     <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
@@ -67,9 +70,12 @@
     </Projects>
     
     <!-- _freeze_importlib -->
-    <Projects2 Include="_freeze_importlib.vcxproj" />
+    <Projects2 Condition="$(Platform) != 'ARM'" Include="_freeze_importlib.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
+    <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />
+    <!-- venv[w]launcher.exe -->
+    <Projects2 Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
   </ItemGroup>
 
   <Target Name="Build">

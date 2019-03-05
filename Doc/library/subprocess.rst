@@ -39,7 +39,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   capture_output=False, shell=False, cwd=None, timeout=None, \
-                  check=False, encoding=None, errors=None, text=None, env=None)
+                  check=False, encoding=None, errors=None, text=None, env=None, \
+                  universal_newlines=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -334,7 +335,7 @@ functions.
 
 .. class:: Popen(args, bufsize=-1, executable=None, stdin=None, stdout=None, \
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
-                 cwd=None, env=None, universal_newlines=False, \
+                 cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), *, \
                  encoding=None, errors=None, text=None)
@@ -571,9 +572,7 @@ Exceptions
 ^^^^^^^^^^
 
 Exceptions raised in the child process, before the new program has started to
-execute, will be re-raised in the parent.  Additionally, the exception object
-will have one extra attribute called :attr:`child_traceback`, which is a string
-containing traceback information from the child's point of view.
+execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
@@ -960,7 +959,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: CREATE_NO_WINDOW
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will not create a window
+   will not create a window.
 
    .. versionadded:: 3.7
 
@@ -1055,7 +1054,7 @@ calls these functions.
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
                            cwd=None, encoding=None, errors=None, \
-                           universal_newlines=False, timeout=None)
+                           universal_newlines=None, timeout=None, text=None)
 
    Run command with arguments and return its output.
 
@@ -1100,6 +1099,10 @@ calls these functions.
 
    .. versionchanged:: 3.6
       *encoding* and *errors* were added.  See :func:`run` for details.
+
+   .. versionadded:: 3.7
+      *text* was added as a more readable alias for *universal_newlines*.
+
 
 .. _subprocess-replacements:
 
@@ -1292,7 +1295,7 @@ Replacing functions from the :mod:`popen2` module
 
 * :class:`Popen` raises an exception if the execution fails.
 
-* the *capturestderr* argument is replaced with the *stderr* argument.
+* The *capturestderr* argument is replaced with the *stderr* argument.
 
 * ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
 
@@ -1330,7 +1333,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   Availability: POSIX & Windows
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
@@ -1350,7 +1353,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   Availability: POSIX & Windows
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added

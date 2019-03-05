@@ -66,6 +66,13 @@ PyAPI_FUNC(int) _PyArg_NoPositional(const char *funcname, PyObject *args);
 #define _PyArg_NoPositional(funcname, args) \
     ((args) == NULL || _PyArg_NoPositional((funcname), (args)))
 
+PyAPI_FUNC(void) _PyArg_BadArgument(const char *, int, const char *, PyObject *);
+PyAPI_FUNC(int) _PyArg_CheckPositional(const char *, Py_ssize_t,
+                                       Py_ssize_t, Py_ssize_t);
+#define _PyArg_CheckPositional(funcname, nargs, min, max) \
+    (((min) <= (nargs) && (nargs) <= (max)) \
+     || _PyArg_CheckPositional((funcname), (nargs), (min), (max)))
+
 #endif
 
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);

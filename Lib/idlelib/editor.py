@@ -2,9 +2,7 @@ import importlib.abc
 import importlib.util
 import os
 import platform
-import re
 import string
-import sys
 import tokenize
 import traceback
 import webbrowser
@@ -50,7 +48,6 @@ class EditorWindow(object):
     from idlelib.undo import UndoDelegator
     from idlelib.iomenu import IOBinding, encoding
     from idlelib import mainmenu
-    from tkinter import Toplevel, EventType
     from idlelib.statusbar import MultiStatusBar
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
@@ -59,6 +56,7 @@ class EditorWindow(object):
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
     from idlelib.rstrip import Rstrip
+    from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
@@ -444,6 +442,16 @@ class EditorWindow(object):
         if end > self.wmenu_end:
             menu.delete(self.wmenu_end+1, end)
         window.add_windows_to_menu(menu)
+
+    def update_menu_label(self, menu, index, label):
+        "Update label for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, label=label)
+
+    def update_menu_state(self, menu, index, state):
+        "Update state for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, state=state)
 
     def handle_yview(self, event, *args):
         "Handle scrollbar."
@@ -935,7 +943,7 @@ class EditorWindow(object):
         elif long:
             title = long
         else:
-            title = "Untitled"
+            title = "untitled"
         icon = short or long or title
         if not self.get_saved():
             title = "*%s*" % title
@@ -957,7 +965,7 @@ class EditorWindow(object):
         if filename:
             filename = os.path.basename(filename)
         else:
-            filename = "Untitled"
+            filename = "untitled"
         # return unicode string to display non-ASCII chars correctly
         return self._filename_to_unicode(filename)
 
@@ -1025,7 +1033,7 @@ class EditorWindow(object):
         self.io = None
         self.undo = None
         if self.color:
-            self.color.close(False)
+            self.color.close()
             self.color = None
         self.text = None
         self.tkinter_vars = None

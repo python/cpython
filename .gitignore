@@ -69,11 +69,10 @@ PCbuild/*.VC.db
 PCbuild/*.VC.opendb
 PCbuild/.vs/
 PCbuild/amd64/
+PCbuild/arm32/
 PCbuild/obj/
 PCbuild/win32/
 .purify
-Parser/pgen
-Parser/pgen.exe
 __pycache__
 autom4te.cache
 build/

@@ -1,0 +1,162 @@
+variables:
+  manylinux: false
+  coverage: false
+
+resources:
+  containers:
+  - container: manylinux1
+    image: pyca/cryptography-manylinux1:x86_64
+
+jobs:
+- job: Prebuild
+  displayName: Pre-build checks
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  steps:
+  - template: ./prebuild-checks.yml
+
+
+- job: Docs_PR
+  displayName: Docs PR
+  dependsOn: Prebuild
+  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['docs.run'], 'true'))
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  steps:
+  - template: ./docs-steps.yml
+    parameters:
+      upload: true
+
+
+- job: macOS_CI_Tests
+  displayName: macOS CI Tests
+  dependsOn: Prebuild
+  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+
+  variables:
+    testRunTitle: '$(build.sourceBranchName)-macos'
+    testRunPlatform: macos
+
+  pool:
+    vmImage: xcode9-macos10.13
+
+  steps:
+  - template: ./macos-steps.yml
+
+
+- job: Ubuntu_CI_Tests
+  displayName: Ubuntu CI Tests
+  dependsOn: Prebuild
+  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  variables:
+    testRunTitle: '$(build.sourceBranchName)-linux'
+    testRunPlatform: linux
+    openssl_version: 1.1.0j
+
+  steps:
+  - template: ./posix-steps.yml
+    parameters:
+      dependencies: apt
+
+
+- job: ManyLinux1_CI_Tests
+  displayName: ManyLinux1 CI Tests
+  dependsOn: Prebuild
+  condition: |
+    and(
+        and(
+            succeeded(),
+            eq(variables['manylinux'], 'true')
+        ),
+        eq(dependencies.Prebuild.outputs['tests.run'], 'true')
+    )
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  container: manylinux1
+
+  variables:
+    testRunTitle: '$(build.sourceBranchName)-manylinux1'
+    testRunPlatform: manylinux1
+    openssl_version: ''
+
+  steps:
+  - template: ./posix-steps.yml
+    parameters:
+      dependencies: yum
+      sudo_dependencies: ''
+      xvfb: false
+      patchcheck: false
+
+
+- job: Ubuntu_Coverage_CI_Tests
+  displayName: Ubuntu CI Tests (coverage)
+  dependsOn: Prebuild
+  condition: |
+    and(
+        and(
+            succeeded(),
+            eq(variables['coverage'], 'true')
+        ),
+        eq(dependencies.Prebuild.outputs['tests.run'], 'true')
+    )
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  variables:
+    testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
+    testRunPlatform: linux-coverage
+    openssl_version: 1.1.0j
+
+  steps:
+  - template: ./posix-steps.yml
+    parameters:
+      dependencies: apt
+      coverage: true
+
+
+- job: Windows_CI_Tests
+  displayName: Windows CI Tests
+  dependsOn: Prebuild
+  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+
+  pool:
+    vmImage: vs2017-win2016
+
+  strategy:
+    matrix:
+      win32:
+        arch: win32
+        buildOpt:
+        testRunTitle: '$(Build.SourceBranchName)-win32'
+        testRunPlatform: win32
+      win64:
+        arch: amd64
+        buildOpt: '-p x64'
+        testRunTitle: '$(Build.SourceBranchName)-win64'
+        testRunPlatform: win64
+    maxParallel: 2
+
+  steps:
+  - template: ./windows-steps.yml
+
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: nuget
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: embed
+  - template: ./windows-layout-steps.yml
+    parameters:
+      kind: appx
+      fulltest: true

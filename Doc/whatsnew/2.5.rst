@@ -256,7 +256,7 @@ Package uploading was implemented by Martin von Löwis and Richard Jones.
 PEP 328: Absolute and Relative Imports
 ======================================
 
-The simpler part of PEP 328 was implemented in Python 2.4: parentheses could now
+The simpler part of :pep:`328` was implemented in Python 2.4: parentheses could now
 be used to enclose the names imported from a module using the ``from ... import
 ...`` statement, making it easier to import many different names.
 
@@ -370,7 +370,7 @@ PEP 341: Unified try/except/finally
 Until Python 2.5, the :keyword:`try` statement came in two flavours. You could
 use a :keyword:`finally` block to ensure that code is always executed, or one or
 more :keyword:`except` blocks to catch  specific exceptions.  You couldn't
-combine both :keyword:`except` blocks and a :keyword:`finally` block, because
+combine both :keyword:`!except` blocks and a :keyword:`!finally` block, because
 generating the right bytecode for the combined version was complicated and it
 wasn't clear what the semantics of the combined statement should be.
 
@@ -435,10 +435,10 @@ When you call ``counter(10)``, the result is an iterator that returns the values
 from 0 up to 9.  On encountering the :keyword:`yield` statement, the iterator
 returns the provided value and suspends the function's execution, preserving the
 local variables. Execution resumes on the following call to the iterator's
-:meth:`next` method, picking up after the :keyword:`yield` statement.
+:meth:`next` method, picking up after the :keyword:`!yield` statement.
 
 In Python 2.3, :keyword:`yield` was a statement; it didn't return any value.  In
-2.5, :keyword:`yield` is now an expression, returning a value that can be
+2.5, :keyword:`!yield` is now an expression, returning a value that can be
 assigned to a variable or otherwise operated on::
 
    val = (yield i)
@@ -448,8 +448,9 @@ when you're doing something with the returned value, as in the above example.
 The parentheses aren't always necessary, but it's easier to always add them
 instead of having to remember when they're needed.
 
-(:pep:`342` explains the exact rules, which are that a :keyword:`yield`\
--expression must always be parenthesized except when it occurs at the top-level
+(:pep:`342` explains the exact rules, which are that a
+:keyword:`yield`\ -expression must always be parenthesized except when it
+occurs at the top-level
 expression on the right-hand side of an assignment.  This means you can write
 ``val = yield i`` but have to use parentheses when there's an operation, as in
 ``val = (yield i) + 12``.)
@@ -457,7 +458,7 @@ expression on the right-hand side of an assignment.  This means you can write
 Values are sent into a generator by calling its ``send(value)`` method.  The
 generator's code is then resumed and the :keyword:`yield` expression returns the
 specified *value*.  If the regular :meth:`next` method is called, the
-:keyword:`yield` returns :const:`None`.
+:keyword:`!yield` returns :const:`None`.
 
 Here's the previous example, modified to allow changing the value of the
 internal counter. ::
@@ -529,7 +530,7 @@ chance to run.  The syntactic restriction that you couldn't mix :keyword:`yield`
 statements with a ``try...finally`` suite has therefore been removed.  This
 seems like a minor bit of language trivia, but using generators and
 ``try...finally`` is actually necessary in order to implement the
-:keyword:`with` statement described by PEP 343.  I'll look at this new statement
+:keyword:`with` statement described by :pep:`343`.  I'll look at this new statement
 in the following  section.
 
 Another even more esoteric effect of this change: previously, the
@@ -643,7 +644,7 @@ Writing Context Managers
 ------------------------
 
 Under the hood, the ':keyword:`with`' statement is fairly complicated. Most
-people will only use ':keyword:`with`' in company with existing objects and
+people will only use ':keyword:`!with`' in company with existing objects and
 don't need to know these details, so you can skip the rest of this section if
 you like.  Authors of new objects will need to understand the details of the
 underlying implementation and should keep reading.
@@ -749,9 +750,9 @@ generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
 :meth:`__enter__` method, and the value yielded will be the method's return
 value that will get bound to the variable in the ':keyword:`with`' statement's
-:keyword:`as` clause, if any.  The code after the :keyword:`yield` will be
+:keyword:`!as` clause, if any.  The code after the :keyword:`yield` will be
 executed in the :meth:`__exit__` method.  Any exception raised in the block will
-be raised by the :keyword:`yield` statement.
+be raised by the :keyword:`!yield` statement.
 
 Our database example from the previous section could be written  using this
 decorator as::
@@ -775,7 +776,7 @@ decorator as::
 
 The :mod:`contextlib` module also has a ``nested(mgr1, mgr2, ...)`` function
 that combines a number of context managers so you don't need to write nested
-':keyword:`with`' statements.  In this example, the single ':keyword:`with`'
+':keyword:`with`' statements.  In this example, the single ':keyword:`!with`'
 statement both starts a database transaction and acquires a thread lock::
 
    lock = threading.Lock()
@@ -1483,7 +1484,7 @@ complete list of changes, or look through the SVN logs for all the details.
   2.4, so this completes the removal of the feature.
 
 * The :mod:`pkgutil` module, containing various utility functions for finding
-  packages, was enhanced to support PEP 302's import hooks and now also works for
+  packages, was enhanced to support :pep:`302`'s import hooks and now also works for
   packages stored in ZIP-format archives. (Contributed by Phillip J. Eby.)
 
 * The pybench benchmark suite by Marc-André Lemburg is now included in the
@@ -2043,7 +2044,7 @@ between web servers and Python web applications and is described in :pep:`333`.
 The :mod:`wsgiref` package is a reference implementation of the WSGI
 specification.
 
-.. XXX should this be in a PEP 333 section instead?
+.. XXX should this be in a :pep:`333` section instead?
 
 The package includes a basic HTTP server that will run a WSGI application; this
 server is useful for debugging but isn't intended for  production use.  Setting

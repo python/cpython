@@ -27,7 +27,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)PC;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)PC;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
       
       <Optimization>MaxSpeed</Optimization>
@@ -42,6 +42,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <EnableEnhancedInstructionSet Condition="'$(Platform)'=='Win32'">NoExtensions</EnableEnhancedInstructionSet>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">OnlyExplicitInline</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
       <Optimization>Disabled</Optimization>
@@ -62,10 +64,12 @@
       <IgnoreSpecificDefaultLibraries>LIBC;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <TargetMachine>MachineX86</TargetMachine>
       <TargetMachine Condition="'$(Platform)' == 'x64'">MachineX64</TargetMachine>
+      <TargetMachine Condition="'$(Platform)'=='ARM'">MachineARM</TargetMachine>
       <ProfileGuidedDatabase Condition="$(SupportPGO)">$(OutDir)$(TargetName).pgd</ProfileGuidedDatabase>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">PGInstrument</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">PGUpdate</LinkTimeCodeGeneration>
+      <AdditionalDependencies>advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
@@ -109,19 +113,34 @@
       <FileName Required="true" />
     </ParameterGroup>
     <Task>
-      <Code Type="Fragment" Language="cs">
+      <Using Namespace="System.Diagnostics"/>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.Runtime.InteropServices"/>
+      <Using Namespace="System.Text"/>
+      <Code Type="Method" Language="cs">
 <![CDATA[
-string fullPath = System.IO.Path.GetFullPath(FileName);
-Log.LogMessage("Looking for " + fullPath, MessageImportance.Normal);
-foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses()) {
-    try {
-        Log.LogMessage("Found running process: " + p.MainModule.FileName, MessageImportance.Low);
-        if (fullPath.Equals(System.IO.Path.GetFullPath(p.MainModule.FileName), StringComparison.OrdinalIgnoreCase)) {
-            Log.LogMessage("Terminating " + p.MainModule.FileName, MessageImportance.High);
-            p.Kill();
+[DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+public static extern bool QueryFullProcessImageName([In]IntPtr hProcess, [In]int dwFlags,
+                                                    [Out]StringBuilder lpExeName, ref int lpdwSize);
+public override bool Execute() {
+    string fullPath = Path.GetFullPath(FileName);
+    Log.LogMessage("Looking for " + fullPath, MessageImportance.Normal);
+    foreach (Process p in Process.GetProcesses()) {
+        try {
+            int pathLength = 32768;
+            StringBuilder pathBuilder = new StringBuilder(pathLength);
+            if (QueryFullProcessImageName(p.Handle, 0, pathBuilder, ref pathLength)) {
+                string exeName = Path.GetFullPath(pathBuilder.ToString());
+                Log.LogMessage("Found running process: " + exeName, MessageImportance.Low);
+                if (fullPath.Equals(exeName, StringComparison.OrdinalIgnoreCase)) {
+                    Log.LogMessage("Terminating " + exeName, MessageImportance.High);
+                    p.Kill();
+                }
+            }
+        } catch {
         }
-    } catch {
     }
+    return true;
 }
 ]]>
       </Code>
@@ -170,10 +189,11 @@ foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A@InstallationFolder)\Bin\</SdkBinPath>
     <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /q /a /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificateSha1)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /q /a /sha1 "$(SigningCertificateSha1)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
     <_MakeCatCommand Condition="Exists($(SdkBinPath))">"$(SdkBinPath)\makecat.exe"</_MakeCatCommand>
   </PropertyGroup>
-  
-  <Target Name="_SignBuild" AfterTargets="AfterBuild" Condition="'$(SigningCertificate)' != '' and $(SupportSigning)">
+
+  <Target Name="_SignBuild" AfterTargets="AfterBuild" Condition="'$(_SignCommand)' != '' and $(SupportSigning)">
     <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
     <Exec Command='$(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)"' ContinueOnError="false" />
   </Target>

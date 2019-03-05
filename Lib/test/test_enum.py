@@ -3,7 +3,6 @@ import inspect
 import pydoc
 import sys
 import unittest
-import sys
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
@@ -12,10 +11,6 @@ from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from datetime import timedelta
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 # for pickle tests
 try:
@@ -1842,6 +1837,36 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(ConfusedColor.RED.social(), "what's up?")
         self.assertTrue(issubclass(ReformedColor, int))
 
+    def test_multiple_inherited_mixin(self):
+        class StrEnum(str, Enum):
+            def __new__(cls, *args, **kwargs):
+                for a in args:
+                    if not isinstance(a, str):
+                        raise TypeError("Enumeration '%s' (%s) is not"
+                                        " a string" % (a, type(a).__name__))
+                return str.__new__(cls, *args, **kwargs)
+        @unique
+        class Decision1(StrEnum):
+            REVERT = "REVERT"
+            REVERT_ALL = "REVERT_ALL"
+            RETRY = "RETRY"
+        class MyEnum(StrEnum):
+            pass
+        @unique
+        class Decision2(MyEnum):
+            REVERT = "REVERT"
+            REVERT_ALL = "REVERT_ALL"
+            RETRY = "RETRY"
+
+    def test_empty_globals(self):
+        # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
+        # when using compile and exec because f_globals is empty
+        code = "from enum import Enum; Enum('Animal', 'ANT BEE CAT DOG')"
+        code = compile(code, "<string>", "exec")
+        global_ns = {}
+        local_ls = {}
+        exec(code, global_ns, local_ls)
+
 
 class TestOrder(unittest.TestCase):
 
@@ -2703,6 +2728,23 @@ class TestIntFlag(unittest.TestCase):
                 failed,
                 'at least one thread failed while creating composite members')
         self.assertEqual(256, len(seen), 'too many composite members created')
+
+
+class TestEmptyAndNonLatinStrings(unittest.TestCase):
+
+    def test_empty_string(self):
+        with self.assertRaises(ValueError):
+            empty_abc = Enum('empty_abc', ('', 'B', 'C'))
+
+    def test_non_latin_character_string(self):
+        greek_abc = Enum('greek_abc', ('\u03B1', 'B', 'C'))
+        item = getattr(greek_abc, '\u03B1')
+        self.assertEqual(item.value, 1)
+
+    def test_non_latin_number_string(self):
+        hebrew_123 = Enum('hebrew_123', ('\u05D0', '2', '3'))
+        item = getattr(hebrew_123, '\u05D0')
+        self.assertEqual(item.value, 1)
 
 
 class TestUnique(unittest.TestCase):

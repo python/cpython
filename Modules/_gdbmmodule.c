@@ -75,7 +75,7 @@ newdbmobject(const char *file, int flags, int mode)
     errno = 0;
     if ((dp->di_dbm = gdbm_open((char *)file, 0, flags, mode, NULL)) == 0) {
         if (errno != 0)
-            PyErr_SetFromErrno(DbmError);
+            PyErr_SetFromErrnoWithFilename(DbmError, file);
         else
             PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
         Py_DECREF(dp);
@@ -186,14 +186,19 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     dp->di_size = -1;
     if (w == NULL) {
         if (gdbm_delete(dp->di_dbm, krec) < 0) {
-            PyErr_SetObject(PyExc_KeyError, v);
+            if (gdbm_errno == GDBM_ITEM_NOT_FOUND) {
+                PyErr_SetObject(PyExc_KeyError, v);
+            }
+            else {
+                PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
+            }
             return -1;
         }
     }
     else {
         if (!PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize)) {
             PyErr_SetString(PyExc_TypeError,
-                            "gdbm mappings have byte or string elements only");
+                            "gdbm mappings have bytes or string elements only");
             return -1;
         }
         errno = 0;
@@ -484,7 +489,6 @@ static PyMethodDef dbm_methods[] = {
     _GDBM_GDBM_NEXTKEY_METHODDEF
     _GDBM_GDBM_REORGANIZE_METHODDEF
     _GDBM_GDBM_SYNC_METHODDEF
-    _GDBM_GDBM_GET_METHODDEF
     _GDBM_GDBM_GET_METHODDEF
     _GDBM_GDBM_SETDEFAULT_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},

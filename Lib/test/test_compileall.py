@@ -22,7 +22,11 @@ except ImportError:
 from test import support
 from test.support import script_helper
 
-class CompileallTests(unittest.TestCase):
+from .test_py_compile import without_source_date_epoch
+from .test_py_compile import SourceDateEpochTestMeta
+
+
+class CompileallTestsBase:
 
     def setUp(self):
         self.directory = tempfile.mkdtemp()
@@ -46,27 +50,28 @@ class CompileallTests(unittest.TestCase):
         with open(self.bad_source_path, 'w') as file:
             file.write('x (\n')
 
-    def data(self):
+    def timestamp_metadata(self):
         with open(self.bc_path, 'rb') as file:
             data = file.read(12)
         mtime = int(os.stat(self.source_path).st_mtime)
         compare = struct.pack('<4sll', importlib.util.MAGIC_NUMBER, 0, mtime)
         return data, compare
 
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def recreation_check(self, metadata):
         """Check that compileall recreates bytecode when the new metadata is
         used."""
+        if os.environ.get('SOURCE_DATE_EPOCH'):
+            raise unittest.SkipTest('SOURCE_DATE_EPOCH is set')
         py_compile.compile(self.source_path)
-        self.assertEqual(*self.data())
+        self.assertEqual(*self.timestamp_metadata())
         with open(self.bc_path, 'rb') as file:
             bc = file.read()[len(metadata):]
         with open(self.bc_path, 'wb') as file:
             file.write(metadata)
             file.write(bc)
-        self.assertNotEqual(*self.data())
+        self.assertNotEqual(*self.timestamp_metadata())
         compileall.compile_dir(self.directory, force=False, quiet=True)
-        self.assertTrue(*self.data())
+        self.assertTrue(*self.timestamp_metadata())
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
@@ -161,7 +166,7 @@ class CompileallTests(unittest.TestCase):
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
-    @mock.patch('compileall.ProcessPoolExecutor')
+    @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_pool_called(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(pool_mock.called)
@@ -171,23 +176,38 @@ class CompileallTests(unittest.TestCase):
                                     "workers must be greater or equal to 0"):
             compileall.compile_dir(self.directory, workers=-1)
 
-    @mock.patch('compileall.ProcessPoolExecutor')
+    @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_workers_cpu_count(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=0)
         self.assertEqual(pool_mock.call_args[1]['max_workers'], None)
 
-    @mock.patch('compileall.ProcessPoolExecutor')
+    @mock.patch('concurrent.futures.ProcessPoolExecutor')
     @mock.patch('compileall.compile_file')
     def test_compile_one_worker(self, compile_file_mock, pool_mock):
         compileall.compile_dir(self.directory, quiet=True)
         self.assertFalse(pool_mock.called)
         self.assertTrue(compile_file_mock.called)
 
-    @mock.patch('compileall.ProcessPoolExecutor', new=None)
+    @mock.patch('concurrent.futures.ProcessPoolExecutor', new=None)
     @mock.patch('compileall.compile_file')
     def test_compile_missing_multiprocessing(self, compile_file_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(compile_file_mock.called)
+
+
+class CompileallTestsWithSourceEpoch(CompileallTestsBase,
+                                     unittest.TestCase,
+                                     metaclass=SourceDateEpochTestMeta,
+                                     source_date_epoch=True):
+    pass
+
+
+class CompileallTestsWithoutSourceEpoch(CompileallTestsBase,
+                                        unittest.TestCase,
+                                        metaclass=SourceDateEpochTestMeta,
+                                        source_date_epoch=False):
+    pass
+
 
 class EncodingTest(unittest.TestCase):
     """Issue 6716: compileall should escape source code when printing errors
@@ -212,7 +232,7 @@ class EncodingTest(unittest.TestCase):
             sys.stdout = orig_stdout
 
 
-class CommandLineTests(unittest.TestCase):
+class CommandLineTestsBase:
     """Test compileall's CLI."""
 
     @classmethod
@@ -285,6 +305,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertNotCompiled(self.initfn)
         self.assertNotCompiled(self.barfn)
 
+    @without_source_date_epoch  # timestamp invalidation test
     def test_no_args_respects_force_flag(self):
         self._skip_if_sys_path_not_writable()
         bazfn = script_helper.make_script(self.directory, 'baz', '')
@@ -353,6 +374,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertTrue(os.path.exists(self.pkgdir_cachedir))
         self.assertFalse(os.path.exists(cachecachedir))
 
+    @without_source_date_epoch  # timestamp invalidation test
     def test_force(self):
         self.assertRunOK('-q', self.pkgdir)
         pycpath = importlib.util.cache_from_source(self.barfn)
@@ -554,6 +576,21 @@ class CommandLineTests(unittest.TestCase):
             compileall.main()
             self.assertTrue(compile_dir.called)
             self.assertEqual(compile_dir.call_args[-1]['workers'], None)
+
+
+class CommmandLineTestsWithSourceEpoch(CommandLineTestsBase,
+                                       unittest.TestCase,
+                                       metaclass=SourceDateEpochTestMeta,
+                                       source_date_epoch=True):
+    pass
+
+
+class CommmandLineTestsNoSourceEpoch(CommandLineTestsBase,
+                                     unittest.TestCase,
+                                     metaclass=SourceDateEpochTestMeta,
+                                     source_date_epoch=False):
+    pass
+
 
 
 if __name__ == "__main__":
