@@ -482,9 +482,9 @@ _Py_Initialize_ReconfigureCore(PyInterpreterState **interp_p,
 
     /* bpo-34008: For backward compatibility reasons, calling Py_Main() after
        Py_Initialize() ignores the new configuration. */
-    if (core_config->allocator != NULL) {
+    if (core_config->preconfig.allocator != NULL) {
         const char *allocator = _PyMem_GetAllocatorsName();
-        if (allocator == NULL || strcmp(core_config->allocator, allocator) != 0) {
+        if (allocator == NULL || strcmp(core_config->preconfig.allocator, allocator) != 0) {
             return _Py_INIT_USER_ERR("cannot modify memory allocator "
                                      "after first Py_Initialize()");
         }
@@ -521,8 +521,8 @@ pycore_init_runtime(const _PyCoreConfig *core_config)
         return err;
     }
 
-    if (core_config->allocator != NULL) {
-        if (_PyMem_SetupAllocators(core_config->allocator) < 0) {
+    if (core_config->preconfig.allocator != NULL) {
+        if (_PyMem_SetupAllocators(core_config->preconfig.allocator) < 0) {
             return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
         }
     }
