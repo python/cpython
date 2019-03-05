@@ -286,20 +286,32 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 
 /* --- pymain_init() ---------------------------------------------- */
 
-static void
-config_clear(_PyCoreConfig *config)
+static _PyInitError
+preconfig_read_write(_PyPreConfig *config, const _PyArgv *args)
 {
+    _PyInitError err;
+
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyCoreConfig_Clear(config);
+    _PyPreConfig_GetGlobalConfig(config);
+
+    err = _PyPreConfig_ReadFromArgv(config, args);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    _PyPreConfig_Write(config);
+    return _Py_INIT_OK();
 }
 
 
 static _PyInitError
-config_read_write(_PyCoreConfig *config, const _PyArgv *args)
+config_read_write(_PyCoreConfig *config, const _PyArgv *args,
+                  const _PyPreConfig *preconfig)
 {
     _PyInitError err;
 
@@ -308,7 +320,7 @@ config_read_write(_PyCoreConfig *config, const _PyArgv *args)
 
     _PyCoreConfig_GetGlobalConfig(config);
 
-    err = _PyCoreConfig_ReadFromArgv(config, args);
+    err = _PyCoreConfig_ReadFromArgv(config, args, preconfig);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
@@ -344,6 +356,7 @@ static _PyInitError
 pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
 {
     _PyInitError err;
+    PyMemAllocatorEx old_alloc;
 
     err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
@@ -359,10 +372,18 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
+    _PyPreConfig local_preconfig = _PyPreConfig_INIT;
+    _PyPreConfig *preconfig = &local_preconfig;
+
     _PyCoreConfig local_config = _PyCoreConfig_INIT;
     _PyCoreConfig *config = &local_config;
 
-    err = config_read_write(config, args);
+    err = preconfig_read_write(preconfig, args);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = config_read_write(config, args, preconfig);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -382,7 +403,12 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     err = _Py_INIT_OK();
 
 done:
-    config_clear(config);
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    _PyPreConfig_Clear(preconfig);
+    _PyCoreConfig_Clear(config);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return err;
 }
 
