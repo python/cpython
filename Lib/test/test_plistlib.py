@@ -204,8 +204,7 @@ class TestPlistlib(unittest.TestCase):
         for use_builtin_types in (True, False):
             for fmt in ALL_FORMATS:
                 with self.subTest(fmt=fmt, use_builtin_types=use_builtin_types):
-                    pl = plistlib.loads(TESTDATA[fmt],
-                        use_builtin_types=use_builtin_types)
+                    pl = plistlib.loads(TESTDATA[fmt])
                     data = plistlib.dumps(pl, fmt=fmt)
                     self.assertEqual(data, TESTDATA[fmt],
                         "generated data was not identical to Apple's output")
@@ -462,8 +461,7 @@ class TestBinaryPlistlib(unittest.TestCase):
         # Test effectiveness of saving duplicated objects
         for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
                   datetime.datetime(2004, 10, 26, 10, 33, 33),
-                  plistlib.Data(b'abcde'), bytearray(b'abcde'),
-                  [12, 345], (12, 345), {'12': 345}):
+                  bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
             with self.subTest(x=x):
                 data = plistlib.dumps([x]*1000, fmt=plistlib.FMT_BINARY)
                 self.assertLess(len(data), 1100, repr(data))
@@ -471,8 +469,7 @@ class TestBinaryPlistlib(unittest.TestCase):
     def test_identity(self):
         for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
                   datetime.datetime(2004, 10, 26, 10, 33, 33),
-                  plistlib.Data(b'abcde'), bytearray(b'abcde'),
-                  [12, 345], (12, 345), {'12': 345}):
+                  bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
             with self.subTest(x=x):
                 data = plistlib.dumps([x]*2, fmt=plistlib.FMT_BINARY)
                 a, b = plistlib.loads(data)
@@ -559,95 +556,6 @@ class TestBinaryPlistlib(unittest.TestCase):
                 plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
 
 
-class TestPlistlibDeprecated(unittest.TestCase):
-    def test_io_deprecated(self):
-        pl_in = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': b'buffer',
-            }
-        }
-        pl_out = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': plistlib.Data(b'buffer'),
-            }
-        }
-
-        self.addCleanup(support.unlink, support.TESTFN)
-        with self.assertWarns(DeprecationWarning):
-            plistlib.writePlist(pl_in, support.TESTFN)
-
-        with self.assertWarns(DeprecationWarning):
-            pl2 = plistlib.readPlist(support.TESTFN)
-
-        self.assertEqual(pl_out, pl2)
-
-        os.unlink(support.TESTFN)
-
-        with open(support.TESTFN, 'wb') as fp:
-            with self.assertWarns(DeprecationWarning):
-                plistlib.writePlist(pl_in, fp)
-
-        with open(support.TESTFN, 'rb') as fp:
-            with self.assertWarns(DeprecationWarning):
-                pl2 = plistlib.readPlist(fp)
-
-        self.assertEqual(pl_out, pl2)
-
-    def test_bytes_deprecated(self):
-        pl = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': b'buffer',
-            }
-        }
-        with self.assertWarns(DeprecationWarning):
-            data = plistlib.writePlistToBytes(pl)
-
-        with self.assertWarns(DeprecationWarning):
-            pl2 = plistlib.readPlistFromBytes(data)
-
-        self.assertIsInstance(pl2, dict)
-        self.assertEqual(pl2, dict(
-            key=42,
-            sub=dict(
-                key=9,
-                alt='value',
-                data=plistlib.Data(b'buffer'),
-            )
-        ))
-
-        with self.assertWarns(DeprecationWarning):
-            data2 = plistlib.writePlistToBytes(pl2)
-        self.assertEqual(data, data2)
-
-    def test_dataobject_deprecated(self):
-        in_data = { 'key': plistlib.Data(b'hello') }
-        out_data = { 'key': b'hello' }
-
-        buf = plistlib.dumps(in_data)
-
-        cur = plistlib.loads(buf)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
-
-        cur = plistlib.loads(buf, use_builtin_types=False)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
-
-        with self.assertWarns(DeprecationWarning):
-            cur = plistlib.readPlistFromBytes(buf)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
-
-
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         blacklist = {"PlistFormat", "PLISTHEADER"}
@@ -655,7 +563,7 @@ class MiscTestCase(unittest.TestCase):
 
 
 def test_main():
-    support.run_unittest(TestPlistlib, TestPlistlibDeprecated, MiscTestCase)
+    support.run_unittest(TestPlistlib, MiscTestCase)
 
 
 if __name__ == '__main__':

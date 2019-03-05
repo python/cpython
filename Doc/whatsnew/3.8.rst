@@ -590,6 +590,10 @@ The following features and APIs have been removed from Python 3.8:
 * "unicode_internal" codec is removed.
   (Contributed by Inada Naoki in :issue:`36297`.)
 
+* The old :mod:`plistlib` API has been removed, it was deprecated since Python
+  3.4: use :func:`load`, :func:`loads`, :func:`dump`, :func:`dumps`, and
+  standard :class:`bytes` objects instead.
+  (Contributed by Jon Janzen)
 
 Porting to Python 3.8
 =====================
