@@ -125,15 +125,8 @@ precmdline_clear(_PyPreCmdline *cmdline)
 void
 _PyPreConfig_Clear(_PyPreConfig *config)
 {
-#define CLEAR(ATTR) \
-    do { \
-        PyMem_RawFree(ATTR); \
-        ATTR = NULL; \
-    } while (0)
-
-    CLEAR(config->allocator);
-
-#undef CLEAR
+    PyMem_RawFree(config->allocator);
+    config->allocator = NULL;
 }
 
 
@@ -453,8 +446,7 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 
     /* allocator */
     if (config->dev_mode && config->allocator == NULL) {
-        const char *allocator = _PyMem_GetDebugAllocatorsName();
-        config->allocator = _PyMem_RawStrdup(allocator);
+        config->allocator = _PyMem_RawStrdup("debug");
         if (config->allocator == NULL) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -742,31 +734,56 @@ done:
 
 
 static _PyInitError
-_PyPreConfig_Reconfigure(const _PyPreConfig *config)
+_PyPreConfig_SetAllocator(_PyPreConfig *config)
 {
-    if (config->allocator != NULL) {
-        const char *allocator = _PyMem_GetAllocatorsName();
-        if (allocator == NULL || strcmp(config->allocator, allocator) != 0) {
-            return _Py_INIT_USER_ERR("cannot modify memory allocator "
-                                     "after first Py_Initialize()");
-        }
+    assert(!_PyRuntime.core_initialized);
+
+    PyMemAllocatorEx old_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_PyMem_SetupAllocators(config->allocator) < 0) {
+        return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
     }
+
+    /* Copy the pre-configuration with the new allocator */
+    _PyPreConfig config2 = _PyPreConfig_INIT;
+    if (_PyPreConfig_Copy(&config2, config) < 0) {
+        _PyPreConfig_Clear(&config2);
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    /* Free the old config and replace config with config2. Since config now
+       owns the data, don't free config2. */
+    PyMemAllocatorEx new_alloc;
+    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &new_alloc);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    _PyPreConfig_Clear(config);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &new_alloc);
+
+    *config = config2;
+
     return _Py_INIT_OK();
 }
 
 
+/* Write the pre-configuration.
+
+   If the memory allocator is changed, config is re-allocated with new
+   allocator. So calling _PyPreConfig_Clear(config) is safe after this call. */
 _PyInitError
-_PyPreConfig_Write(const _PyPreConfig *config)
+_PyPreConfig_Write(_PyPreConfig *config)
 {
     if (_PyRuntime.core_initialized) {
         /* bpo-34008: Calling Py_Main() after Py_Initialize() ignores
            the new configuration. */
-        return _PyPreConfig_Reconfigure(config);
+        return _Py_INIT_OK();
     }
 
     if (config->allocator != NULL) {
-        if (_PyMem_SetupAllocators(config->allocator) < 0) {
-            return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
+        _PyInitError err = _PyPreConfig_SetAllocator(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
         }
     }
 
