@@ -2096,6 +2096,16 @@ class TarFile(object):
         else:
             self._dbg(1, tarinfo.name)
 
+        if os.path.exists(targetpath) and \
+                (not os.path.isdir(targetpath) or os.path.islink(targetpath)):
+            os.remove(targetpath)
+        else:
+            # File should be able to overwrite empty directory
+            try:
+                os.rmdir(targetpath)
+            except OSError:
+                pass
+
         if tarinfo.isreg():
             self.makefile(tarinfo, targetpath)
         elif tarinfo.isdir():
@@ -2187,7 +2197,10 @@ class TarFile(object):
         try:
             # For systems that support symbolic and hard links.
             if tarinfo.issym():
-                os.symlink(tarinfo.linkname, targetpath)
+                if os.name == 'nt' and os.path.isdir(tarinfo.linkname):
+                    os.symlink(tarinfo.linkname, targetpath, target_is_directory=True)
+                else:
+                    os.symlink(tarinfo.linkname, targetpath)
             else:
                 # See extract().
                 if os.path.exists(tarinfo._link_target):
