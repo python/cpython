@@ -332,14 +332,14 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 #define IPPROTO_DSTOPTS IPPROTO_DSTOPTS
 #define IPPROTO_EGP IPPROTO_EGP
 #define IPPROTO_PIM IPPROTO_PIM
-#define IPPROTO_ICLFXBM IPPROTO_ICLFXBM  // Windows only
-#define IPPROTO_ST IPPROTO_ST  // Windows only
-#define IPPROTO_CBT IPPROTO_CBT  // Windows only
-#define IPPROTO_IGP IPPROTO_IGP  // Windows only
-#define IPPROTO_RDP IPPROTO_RDP  // Windows only
-#define IPPROTO_PGM IPPROTO_PGM  // Windows only
-#define IPPROTO_L2TP IPPROTO_L2TP  // Windows only
-#define IPPROTO_SCTP IPPROTO_SCTP  // Windows only
+#define IPPROTO_ICLFXBM IPPROTO_ICLFXBM  // WinSock2 only
+#define IPPROTO_ST IPPROTO_ST  // WinSock2 only
+#define IPPROTO_CBT IPPROTO_CBT  // WinSock2 only
+#define IPPROTO_IGP IPPROTO_IGP  // WinSock2 only
+#define IPPROTO_RDP IPPROTO_RDP  // WinSock2 only
+#define IPPROTO_PGM IPPROTO_PGM  // WinSock2 only
+#define IPPROTO_L2TP IPPROTO_L2TP  // WinSock2 only
+#define IPPROTO_SCTP IPPROTO_SCTP  // WinSock2 only
 #endif /* MS_WINDOWS */
 
 /* Provides the IsWindows7SP1OrGreater() function */
@@ -389,7 +389,7 @@ remove_unusable_flags(PyObject *m)
 
     for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
         info.dwBuildNumber = win_runtime_flags[i].build_number;
-        /* greater than or equal to the specified version? 
+        /* greater than or equal to the specified version?
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
         if (VerifyVersionInfo(
                 &info,
@@ -7692,29 +7692,14 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, IPPROTO_MAX);
 #endif
 
-/* IPPROTO_* Windows only */
-#ifdef IPPROTO_ICLFXBM
+#ifdef MS_WINDOWS
     PyModule_AddIntMacro(m, IPPROTO_ICLFXBM);
-#endif
-#ifdef IPPROTO_ST
     PyModule_AddIntMacro(m, IPPROTO_ST);
-#endif
-#ifdef IPPROTO_CBT
     PyModule_AddIntMacro(m, IPPROTO_CBT);
-#endif
-#ifdef IPPROTO_IGP
     PyModule_AddIntMacro(m, IPPROTO_IGP);
-#endif
-#ifdef IPPROTO_RDP
     PyModule_AddIntMacro(m, IPPROTO_RDP);
-#endif
-#ifdef IPPROTO_PGM
     PyModule_AddIntMacro(m, IPPROTO_PGM);
-#endif
-#ifdef IPPROTO_L2TP
     PyModule_AddIntMacro(m, IPPROTO_L2TP);
-#endif
-#ifdef IPPROTO_SCTP
     PyModule_AddIntMacro(m, IPPROTO_SCTP);
 #endif
 
