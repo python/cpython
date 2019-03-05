@@ -90,3 +90,116 @@ _PyArgv_Decode(const _PyArgv *args, wchar_t*** argv_p)
     *argv_p = argv;
     return _Py_INIT_OK();
 }
+
+
+/* --- _PyPreConfig ----------------------------------------------- */
+
+void
+_PyPreConfig_Clear(_PyPreConfig *config)
+{
+}
+
+
+int
+_PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
+{
+    _PyPreConfig_Clear(config);
+
+#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
+
+    COPY_ATTR(isolated);
+    COPY_ATTR(use_environment);
+
+#undef COPY_ATTR
+    return 0;
+}
+
+
+void
+_PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
+{
+#define COPY_FLAG(ATTR, VALUE) \
+        if (config->ATTR == -1) { \
+            config->ATTR = VALUE; \
+        }
+#define COPY_NOT_FLAG(ATTR, VALUE) \
+        if (config->ATTR == -1) { \
+            config->ATTR = !(VALUE); \
+        }
+
+    COPY_FLAG(isolated, Py_IsolatedFlag);
+    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+
+#undef COPY_FLAG
+#undef COPY_NOT_FLAG
+}
+
+
+void
+_PyPreConfig_SetGlobalConfig(const _PyPreConfig *config)
+{
+#define COPY_FLAG(ATTR, VAR) \
+        if (config->ATTR != -1) { \
+            VAR = config->ATTR; \
+        }
+#define COPY_NOT_FLAG(ATTR, VAR) \
+        if (config->ATTR != -1) { \
+            VAR = !config->ATTR; \
+        }
+
+    COPY_FLAG(isolated, Py_IsolatedFlag);
+    COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+
+#undef COPY_FLAG
+#undef COPY_NOT_FLAG
+}
+
+
+_PyInitError
+_PyPreConfig_Read(_PyPreConfig *config)
+{
+    _PyPreConfig_GetGlobalConfig(config);
+
+    if (config->isolated > 0) {
+        config->use_environment = 0;
+    }
+
+    /* Default values */
+    if (config->use_environment < 0) {
+        config->use_environment = 0;
+    }
+
+    assert(config->use_environment >= 0);
+
+    return _Py_INIT_OK();
+}
+
+
+int
+_PyPreConfig_AsDict(const _PyPreConfig *config, PyObject *dict)
+{
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            PyObject *obj = (EXPR); \
+            if (obj == NULL) { \
+                goto fail; \
+            } \
+            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+#define SET_ITEM_INT(ATTR) \
+    SET_ITEM(#ATTR, PyLong_FromLong(config->ATTR))
+
+    SET_ITEM_INT(isolated);
+    SET_ITEM_INT(use_environment);
+    return 0;
+
+fail:
+    return -1;
+
+#undef SET_ITEM
+#undef SET_ITEM_INT
+}

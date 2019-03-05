@@ -46,16 +46,35 @@ typedef struct {
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL || err.exitcode != -1)
 
-/* --- _PyCoreConfig ---------------------------------------------- */
+/* --- _PyPreConfig ----------------------------------------------- */
 
 typedef struct {
-    /* Install signal handlers? Yes by default. */
-    int install_signal_handlers;
+    /* If greater than 0, enable isolated mode: sys.path contains
+       neither the script's directory nor the user's site-packages directory.
+
+       Set to 1 by the -I command line option. If set to -1 (default), inherit
+       Py_IsolatedFlag value. */
+    int isolated;
 
     /* If greater than 0: use environment variables.
        Set to 0 by -E command line option. If set to -1 (default), it is
        set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
+} _PyPreConfig;
+
+#define _PyPreConfig_INIT \
+    (_PyPreConfig){ \
+        .isolated = -1, \
+        .use_environment = -1}
+
+
+/* --- _PyCoreConfig ---------------------------------------------- */
+
+typedef struct {
+    _PyPreConfig preconfig;
+
+    /* Install signal handlers? Yes by default. */
+    int install_signal_handlers;
 
     int use_hash_seed;      /* PYTHONHASHSEED=x */
     unsigned long hash_seed;
@@ -151,13 +170,6 @@ typedef struct {
 #ifdef MS_WINDOWS
     wchar_t *dll_path;      /* Windows DLL path */
 #endif
-
-    /* If greater than 0, enable isolated mode: sys.path contains
-       neither the script's directory nor the user's site-packages directory.
-
-       Set to 1 by the -I command line option. If set to -1 (default), inherit
-       Py_IsolatedFlag value. */
-    int isolated;
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -336,8 +348,8 @@ typedef struct {
 
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
+        .preconfig = _PyPreConfig_INIT, \
         .install_signal_handlers = 1, \
-        .use_environment = -1, \
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
@@ -345,7 +357,6 @@ typedef struct {
         .utf8_mode = -1, \
         .argc = -1, \
         .nmodule_search_path = -1, \
-        .isolated = -1, \
         .site_import = -1, \
         .bytes_warning = -1, \
         .inspect = -1, \
