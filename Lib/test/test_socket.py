@@ -880,7 +880,6 @@ class GeneralModuleTests(unittest.TestCase):
     def testCrucialIpProtoConstants(self):
         socket.IPPROTO_TCP
         socket.IPPROTO_UDP
-        socket.IPPROTO_IPV4
         if socket.has_ipv6:
             socket.IPPROTO_IPV6
 
