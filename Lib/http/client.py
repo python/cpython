@@ -211,7 +211,7 @@ def parse_headers(fp, _class=HTTPMessage):
         if line in (b'\r\n', b'\n', b''):
             break
     hstring = b''.join(headers).decode('iso-8859-1')
-    return email.parser.Parser(_class=_class).parsestr(hstring)
+    return email.parser.Parser(_class=_class).parsestr(hstring, headersonly=True)
 
 
 class HTTPResponse(io.BufferedIOBase):

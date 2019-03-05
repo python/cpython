@@ -359,6 +359,11 @@ class HeaderTests(TestCase):
         self.assertEqual(lines[1], "header: First: val")
         self.assertEqual(lines[2], "header: Second: val")
 
+    def test_parse_valid_multipart_header(self):
+        header = b'Content-Type: multipart/related; boundary="==="\r\n\r\n'
+        fp = io.BytesIO(header)
+        message = client.parse_headers(fp)
+        self.assertListEqual(message.defects, [])
 
 class TransferEncodingTest(TestCase):
     expected_body = b"It's just a flesh wound"
