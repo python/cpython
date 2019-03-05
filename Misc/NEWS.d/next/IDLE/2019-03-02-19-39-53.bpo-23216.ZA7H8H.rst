@@ -1,1 +1,1 @@
-Add docstrings to replace.py.
+Add docstrings to IDLE search modules.
