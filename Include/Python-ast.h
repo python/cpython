@@ -17,7 +17,7 @@ typedef struct _stmt *stmt_ty;
 typedef struct _expr *expr_ty;
 
 typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5,
-                             Param=6, NamedStore=7 } expr_context_ty;
+                             Param=6 } expr_context_ty;
 
 typedef struct _slice *slice_ty;
 

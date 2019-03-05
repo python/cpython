@@ -3429,7 +3429,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
             op = (c->u->u_ste->ste_type == ClassBlock) ? LOAD_CLASSDEREF : LOAD_DEREF;
             break;
         case Store:
-        case NamedStore:
             op = STORE_DEREF;
             break;
         case AugLoad:
@@ -3447,7 +3446,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         switch (ctx) {
         case Load: op = LOAD_FAST; break;
         case Store:
-        case NamedStore:
             op = STORE_FAST;
             break;
         case Del: op = DELETE_FAST; break;
@@ -3466,7 +3464,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         switch (ctx) {
         case Load: op = LOAD_GLOBAL; break;
         case Store:
-        case NamedStore:
             op = STORE_GLOBAL;
             break;
         case Del: op = DELETE_GLOBAL; break;
@@ -3484,7 +3481,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         switch (ctx) {
         case Load: op = LOAD_NAME; break;
         case Store:
-        case NamedStore:
             op = STORE_NAME;
             break;
         case Del: op = DELETE_NAME; break;
@@ -3604,7 +3600,7 @@ static int
 compiler_list(struct compiler *c, expr_ty e)
 {
     asdl_seq *elts = e->v.List.elts;
-    if (e->v.List.ctx == Store || e->v.List.ctx == NamedStore) {
+    if (e->v.List.ctx == Store) {
         return assignment_helper(c, elts);
     }
     else if (e->v.List.ctx == Load) {
@@ -3620,7 +3616,7 @@ static int
 compiler_tuple(struct compiler *c, expr_ty e)
 {
     asdl_seq *elts = e->v.Tuple.elts;
-    if (e->v.Tuple.ctx == Store || e->v.Tuple.ctx == NamedStore) {
+    if (e->v.Tuple.ctx == Store) {
         return assignment_helper(c, elts);
     }
     else if (e->v.Tuple.ctx == Load) {
@@ -5154,7 +5150,6 @@ compiler_handle_subscr(struct compiler *c, const char *kind,
         case AugStore:/* fall through to Store */
         case Store:   op = STORE_SUBSCR; break;
         case Del:     op = DELETE_SUBSCR; break;
-        case NamedStore:
         case Param:
             PyErr_Format(PyExc_SystemError,
                          "invalid %s kind %d in subscript\n",
