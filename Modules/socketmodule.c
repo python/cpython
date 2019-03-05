@@ -7692,7 +7692,7 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, IPPROTO_MAX);
 #endif
 
-#ifdef MS_WINDOWS
+#ifdef  MS_WINDOWS
     PyModule_AddIntMacro(m, IPPROTO_ICLFXBM);
     PyModule_AddIntMacro(m, IPPROTO_ST);
     PyModule_AddIntMacro(m, IPPROTO_CBT);
