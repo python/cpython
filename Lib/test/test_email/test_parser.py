@@ -5,6 +5,12 @@ from email.message import Message, EmailMessage
 from email.policy import default
 from test.test_email import TestEmailBase
 
+class TestFeedParser(TestEmailBase):
+    def test_multipart_message_with_headers_only(self):
+        import email.parser
+        header = 'Content-Type: multipart/related; boundary="==="\r\n\r\n'
+        msg = email.parser.Parser().parsestr(header, headersonly=True)
+        self.assertDefectsEqual(msg.defects, [])
 
 class TestCustomMessage(TestEmailBase):
 
