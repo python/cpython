@@ -330,7 +330,7 @@ _PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
 #endif
 
     if (path_config.isolated != -1) {
-        config->isolated = path_config.isolated;
+        config->preconfig.isolated = path_config.isolated;
     }
     if (path_config.site_import != -1) {
         config->site_import = path_config.site_import;
