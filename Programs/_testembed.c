@@ -461,7 +461,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
-    config.utf8_mode = 1;
+    config.preconfig.utf8_mode = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config.pycache_prefix = L"conf_pycache_prefix";
@@ -610,8 +610,8 @@ static int test_init_isolated(void)
     config.preconfig.isolated = 1;
 
     /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.coerce_c_locale = 0;
-    config.utf8_mode = 0;
+    config.preconfig.coerce_c_locale = 0;
+    config.preconfig.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";
 
