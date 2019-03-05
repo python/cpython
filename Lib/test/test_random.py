@@ -268,9 +268,8 @@ class TestBasicOps:
                  ("randv2_64.pck", 866),
                  ("randv3.pck", 343)]
         for file, value in files:
-            f = open(support.findfile(file),"rb")
-            r = pickle.load(f)
-            f.close()
+            with open(support.findfile(file),"rb") as f:
+                r = pickle.load(f)
             self.assertEqual(int(r.random()*1000), value)
 
     def test_bug_9025(self):

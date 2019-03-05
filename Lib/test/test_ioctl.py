@@ -11,9 +11,9 @@ try:
 except OSError:
     raise unittest.SkipTest("Unable to open /dev/tty")
 else:
-    # Skip if another process is in foreground
-    r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
-    tty.close()
+    with tty:
+        # Skip if another process is in foreground
+        r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
     rpgrp = struct.unpack("i", r)[0]
     if rpgrp not in (os.getpgrp(), os.getsid(0)):
         raise unittest.SkipTest("Neither the process group nor the session "

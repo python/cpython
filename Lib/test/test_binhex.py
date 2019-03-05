@@ -23,17 +23,15 @@ class BinHexTestCase(unittest.TestCase):
     DATA = b'Jack is my hero'
 
     def test_binhex(self):
-        f = open(self.fname1, 'wb')
-        f.write(self.DATA)
-        f.close()
+        with open(self.fname1, 'wb') as f:
+            f.write(self.DATA)
 
         binhex.binhex(self.fname1, self.fname2)
 
         binhex.hexbin(self.fname2, self.fname1)
 
-        f = open(self.fname1, 'rb')
-        finish = f.readline()
-        f.close()
+        with open(self.fname1, 'rb') as f:
+            finish = f.readline()
 
         self.assertEqual(self.DATA, finish)
 

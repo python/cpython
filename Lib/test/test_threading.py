@@ -788,13 +788,11 @@ class ThreadJoinOnShutdown(BaseTestCase):
             def random_io():
                 '''Loop for a while sleeping random tiny amounts and doing some I/O.'''
                 while True:
-                    in_f = open(os.__file__, 'rb')
-                    stuff = in_f.read(200)
-                    null_f = open(os.devnull, 'wb')
-                    null_f.write(stuff)
-                    time.sleep(random.random() / 1995)
-                    null_f.close()
-                    in_f.close()
+                    with open(os.__file__, 'rb') as in_f:
+                        stuff = in_f.read(200)
+                        with open(os.devnull, 'wb') as null_f:
+                            null_f.write(stuff)
+                            time.sleep(random.random() / 1995)
                     thread_has_run.add(threading.current_thread())
 
             def main():

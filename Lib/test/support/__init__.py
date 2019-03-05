@@ -706,9 +706,8 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     issue if/when we come across it.
     """
 
-    tempsock = socket.socket(family, socktype)
-    port = bind_port(tempsock)
-    tempsock.close()
+    with socket.socket(family, socktype) as tempsock:
+        port = bind_port(tempsock)
     del tempsock
     return port
 
@@ -1785,10 +1784,11 @@ class _MemoryWatchdog:
             sys.stderr.flush()
             return
 
-        watchdog_script = findfile("memory_watchdog.py")
-        self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
-                                             stdin=f, stderr=subprocess.DEVNULL)
-        f.close()
+        with f:
+            watchdog_script = findfile("memory_watchdog.py")
+            self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
+                                                 stdin=f,
+                                                 stderr=subprocess.DEVNULL)
         self.started = True
 
     def stop(self):

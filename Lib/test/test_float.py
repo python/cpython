@@ -722,15 +722,14 @@ class FormatTestCase(unittest.TestCase):
 
 class ReprTestCase(unittest.TestCase):
     def test_repr(self):
-        floats_file = open(os.path.join(os.path.split(__file__)[0],
-                           'floating_points.txt'))
-        for line in floats_file:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            v = eval(line)
-            self.assertEqual(v, eval(repr(v)))
-        floats_file.close()
+        with open(os.path.join(os.path.split(__file__)[0],
+                  'floating_points.txt')) as floats_file:
+            for line in floats_file:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                v = eval(line)
+                self.assertEqual(v, eval(repr(v)))
 
     @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
                          "applies only when using short float repr style")

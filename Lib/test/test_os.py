@@ -1200,9 +1200,8 @@ class MakedirTests(unittest.TestCase):
     def test_exist_ok_existing_regular_file(self):
         base = support.TESTFN
         path = os.path.join(support.TESTFN, 'dir1')
-        f = open(path, 'w')
-        f.write('abc')
-        f.close()
+        with open(path, 'w') as f:
+            f.write('abc')
         self.assertRaises(OSError, os.makedirs, path)
         self.assertRaises(OSError, os.makedirs, path, exist_ok=False)
         self.assertRaises(OSError, os.makedirs, path, exist_ok=True)
