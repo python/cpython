@@ -1461,11 +1461,11 @@ class EndPositionTests(unittest.TestCase):
         ''').strip()
         i1, i2, im = map(self._parse_value, (s1, s2, sm))
         self._check_content(s1, i1.value, 'f()[1, 2]')
-        self._check_content(s1, i1.value.slice.value, '1, 2')
+        self._check_content(s1, i1.value.slice, '1, 2')
         self._check_content(s2, i2.slice.lower, 'a.b')
         self._check_content(s2, i2.slice.upper, 'c.d')
-        self._check_content(sm, im.slice.dims[0].upper, 'f ()')
-        self._check_content(sm, im.slice.dims[1].lower, 'g ()')
+        self._check_content(sm, im.slice.elts[0].upper, 'f ()')
+        self._check_content(sm, im.slice.elts[1].lower, 'g ()')
         self._check_end_pos(im, 3, 3)
 
     def test_binop(self):
