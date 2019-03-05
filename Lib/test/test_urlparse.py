@@ -1,6 +1,5 @@
 import unittest
 import urllib.parse
-import warnings
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"

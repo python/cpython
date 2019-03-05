@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
 
@@ -252,10 +252,14 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
     if (key == NULL)
         return -1;
 
-    version_obj = _PyDict_GetItemId(registry, &PyId_version);
+    version_obj = _PyDict_GetItemIdWithError(registry, &PyId_version);
     if (version_obj == NULL
         || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version) {
+        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version)
+    {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(_PyRuntime.warnings.filters_version);
         if (version_obj == NULL)
@@ -267,11 +271,14 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
         Py_DECREF(version_obj);
     }
     else {
-        already_warned = PyDict_GetItem(registry, key);
+        already_warned = PyDict_GetItemWithError(registry, key);
         if (already_warned != NULL) {
             int rc = PyObject_IsTrue(already_warned);
             if (rc != 0)
                 return rc;
+        }
+        else if (PyErr_Occurred()) {
+            return -1;
         }
     }
 
@@ -668,10 +675,12 @@ static int
 setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
               PyObject **module, PyObject **registry)
 {
+    _Py_IDENTIFIER(__warningregistry__);
+    _Py_IDENTIFIER(__name__);
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
-    PyFrameObject *f = PyThreadState_GET()->frame;
+    PyFrameObject *f = _PyThreadState_GET()->frame;
     // Stack level comparisons to Python code is off by one as there is no
     // warnings-related stack level to avoid.
     if (stack_level <= 0 || is_internal_frame(f)) {
@@ -702,15 +711,18 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup registry. */
     assert(globals != NULL);
     assert(PyDict_Check(globals));
-    *registry = PyDict_GetItemString(globals, "__warningregistry__");
+    *registry = _PyDict_GetItemIdWithError(globals, &PyId___warningregistry__);
     if (*registry == NULL) {
         int rc;
 
+        if (PyErr_Occurred()) {
+            return 0;
+        }
         *registry = PyDict_New();
         if (*registry == NULL)
             return 0;
 
-         rc = PyDict_SetItemString(globals, "__warningregistry__", *registry);
+         rc = _PyDict_SetItemId(globals, &PyId___warningregistry__, *registry);
          if (rc < 0)
             goto handle_error;
     }
@@ -718,9 +730,12 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         Py_INCREF(*registry);
 
     /* Setup module. */
-    *module = PyDict_GetItemString(globals, "__name__");
+    *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
     if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
         Py_INCREF(*module);
+    }
+    else if (PyErr_Occurred()) {
+        goto handle_error;
     }
     else {
         *module = PyUnicode_FromString("<string>");
@@ -1150,7 +1165,7 @@ PyDoc_STRVAR(warn_explicit_doc,
 
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
-    {"warn_explicit", (PyCFunction)warnings_warn_explicit,
+    {"warn_explicit", (PyCFunction)(void(*)(void))warnings_warn_explicit,
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
     {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
         NULL},

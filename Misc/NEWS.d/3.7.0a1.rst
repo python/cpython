@@ -426,7 +426,7 @@ expression, and generator expressions and comprehensions.
 .. nonce: f_IHor
 .. section: Core and Builtins
 
-Implement PEP 538 (legacy C locale coercion). This means that when a
+Implement :pep:`538` (legacy C locale coercion). This means that when a
 suitable coercion target locale is available, both the core interpreter and
 locale-aware C extensions will assume the use of UTF-8 as the default text
 encoding, rather than ASCII.
@@ -948,7 +948,7 @@ The preferred encoding is UTF-8 on Android. Patch written by Chi Hsuan Yen.
 .. nonce: 2a8zxB
 .. section: Core and Builtins
 
-Clean up interpreter startup (see PEP 432).
+Clean up interpreter startup (see :pep:`432`).
 
 ..
 
@@ -1774,7 +1774,7 @@ Fix ``fileinput.FileInput(files, inplace=True)`` when ``files`` contain
 .. nonce: nmAvfu
 .. section: Library
 
-Fix ctypes producing wrong PEP 3118 type codes for integer types.
+Fix ctypes producing wrong :pep:`3118` type codes for integer types.
 
 ..
 
@@ -4877,7 +4877,7 @@ Fix Python 2 syntax in code for building the documentation.
 
 The data model reference and the porting section in the 3.6 What's New guide
 now cover the additional ``__classcell__`` handling needed for custom
-metaclasses to fully support PEP 487 and zero-argument ``super()``.
+metaclasses to fully support :pep:`487` and zero-argument ``super()``.
 
 ..
 
@@ -5106,7 +5106,7 @@ difficult to maintain low-level internal code.
 .. nonce: XLuZFk
 .. section: Build
 
-Per PEP 11, support for the IRIX operating system was removed.
+Per :pep:`11`, support for the IRIX operating system was removed.
 
 ..
 
@@ -6225,7 +6225,7 @@ description of the configuration system.
 .. section: Tools/Demos
 
 gdb integration commands (py-bt, etc.) work on optimized shared builds now,
-too.  PEP 523 introduced _PyEval_EvalFrameDefault which inlines
+too.  :pep:`523` introduced _PyEval_EvalFrameDefault which inlines
 PyEval_EvalFrameEx on non-debug shared builds.  This broke the ability to
 use py-bt, py-up, and a few other Python-specific gdb integrations. The
 problem is fixed by only looking for _PyEval_EvalFrameDefault frames in

@@ -741,7 +741,7 @@ Some smaller changes made to the core Python language are:
 
 * A ``global`` or ``nonlocal`` statement must now textually appear
   before the first use of the affected name in the same scope.
-  Previously this was a ``SyntaxWarning``.
+  Previously this was a :exc:`SyntaxWarning`.
 
 * It is now possible to set a :ref:`special method <specialnames>` to
   ``None`` to indicate that the corresponding operation is not available.
@@ -2315,6 +2315,17 @@ Changes in the Python API
   up to ``type.__new__`` for initialisation. Failing to do so will result in
   a :exc:`DeprecationWarning` in Python 3.6 and a :exc:`RuntimeError` in
   Python 3.8.
+
+* With the introduction of :exc:`ModuleNotFoundError`, import system consumers
+  may start expecting import system replacements to raise that more specific
+  exception when appropriate, rather than the less-specific :exc:`ImportError`.
+  To provide future compatibility with such consumers, implementors of
+  alternative import systems that completely replace :func:`__import__` will
+  need to update their implementations to raise the new subclass when a module
+  can't be found at all. Implementors of compliant plugins to the default
+  import system shouldn't need to make any changes, as the default import
+  system will raise the new subclass when appropriate.
+
 
 Changes in the C API
 --------------------

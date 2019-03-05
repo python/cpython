@@ -115,6 +115,25 @@ The module provides the following classes:
       The *strict* parameter was removed. HTTP 0.9 style "Simple Responses" are
       no longer supported.
 
+This module provides the following function:
+
+.. function:: parse_headers(fp)
+
+   Parse the headers from a file pointer *fp* representing a HTTP
+   request/response. The file has to be a :class:`BufferedIOBase` reader
+   (i.e. not text) and must provide a valid :rfc:`2822` style header.
+
+   This function returns an instance of :class:`http.client.HTTPMessage`
+   that holds the header fields, but no payload
+   (the same as :attr:`HTTPResponse.msg`
+   and :attr:`http.server.BaseHTTPRequestHandler.headers`).
+   After returning, the file pointer *fp* is ready to read the HTTP body.
+
+   .. note::
+      :meth:`parse_headers` does not parse the start-line of a HTTP message;
+      it only parses the ``Name: value`` lines. The file has to be ready to
+      read these field lines, so the first line should already be consumed
+      before calling the function.
 
 The following exceptions are raised as appropriate:
 
@@ -497,6 +516,7 @@ Here is an example session that uses the ``GET`` method::
    b'<!doctype html>\n<!--[if"...
    ...
    >>> # Example of an invalid request
+   >>> conn = http.client.HTTPSConnection("docs.python.org")
    >>> conn.request("GET", "/parrot.spam")
    >>> r2 = conn.getresponse()
    >>> print(r2.status, r2.reason)

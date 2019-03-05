@@ -7,9 +7,9 @@ work. One should use importlib as the public-facing version of this module.
 
 """
 #
-# IMPORTANT: Whenever making changes to this module, be sure to run
-# a top-level make in order to get the frozen version of the module
-# updated. Not doing so will result in the Makefile to fail for
+# IMPORTANT: Whenever making changes to this module, be sure to run a top-level
+# `make regen-importlib` followed by `make` in order to get the frozen version
+# of the module updated. Not doing so will result in the Makefile to fail for
 # all others who don't have a ./python around to freeze the module
 # in the early stages of compilation.
 #
@@ -302,33 +302,6 @@ def _module_repr(module):
         return '<module {!r} from {!r}>'.format(name, filename)
 
 
-class _installed_safely:
-
-    def __init__(self, module):
-        self._module = module
-        self._spec = module.__spec__
-
-    def __enter__(self):
-        # This must be done before putting the module in sys.modules
-        # (otherwise an optimization shortcut in import.c becomes
-        # wrong)
-        self._spec._initializing = True
-        sys.modules[self._spec.name] = self._module
-
-    def __exit__(self, *args):
-        try:
-            spec = self._spec
-            if any(arg is not None for arg in args):
-                try:
-                    del sys.modules[spec.name]
-                except KeyError:
-                    pass
-            else:
-                _verbose_message('import {!r} # {!r}', spec.name, spec.loader)
-        finally:
-            self._spec._initializing = False
-
-
 class ModuleSpec:
     """The specification for a module, used for loading.
 
@@ -614,30 +587,44 @@ def _exec(spec, module):
         if sys.modules.get(name) is not module:
             msg = 'module {!r} not in sys.modules'.format(name)
             raise ImportError(msg, name=name)
-        if spec.loader is None:
-            if spec.submodule_search_locations is None:
-                raise ImportError('missing loader', name=spec.name)
-            # namespace package
-            _init_module_attrs(spec, module, override=True)
-            return module
-        _init_module_attrs(spec, module, override=True)
-        if not hasattr(spec.loader, 'exec_module'):
-            # (issue19713) Once BuiltinImporter and ExtensionFileLoader
-            # have exec_module() implemented, we can add a deprecation
-            # warning here.
-            spec.loader.load_module(name)
-        else:
-            spec.loader.exec_module(module)
-    return sys.modules[name]
+        try:
+            if spec.loader is None:
+                if spec.submodule_search_locations is None:
+                    raise ImportError('missing loader', name=spec.name)
+                # Namespace package.
+                _init_module_attrs(spec, module, override=True)
+            else:
+                _init_module_attrs(spec, module, override=True)
+                if not hasattr(spec.loader, 'exec_module'):
+                    # (issue19713) Once BuiltinImporter and ExtensionFileLoader
+                    # have exec_module() implemented, we can add a deprecation
+                    # warning here.
+                    spec.loader.load_module(name)
+                else:
+                    spec.loader.exec_module(module)
+        finally:
+            # Update the order of insertion into sys.modules for module
+            # clean-up at shutdown.
+            module = sys.modules.pop(spec.name)
+            sys.modules[spec.name] = module
+    return module
 
 
 def _load_backward_compatible(spec):
     # (issue19713) Once BuiltinImporter and ExtensionFileLoader
     # have exec_module() implemented, we can add a deprecation
     # warning here.
-    spec.loader.load_module(spec.name)
+    try:
+        spec.loader.load_module(spec.name)
+    except:
+        if spec.name in sys.modules:
+            module = sys.modules.pop(spec.name)
+            sys.modules[spec.name] = module
+        raise
     # The module must be in sys.modules at this point!
-    module = sys.modules[spec.name]
+    # Move it to the end of sys.modules.
+    module = sys.modules.pop(spec.name)
+    sys.modules[spec.name] = module
     if getattr(module, '__loader__', None) is None:
         try:
             module.__loader__ = spec.loader
@@ -663,23 +650,42 @@ def _load_backward_compatible(spec):
 def _load_unlocked(spec):
     # A helper for direct use by the import system.
     if spec.loader is not None:
-        # not a namespace package
+        # Not a namespace package.
         if not hasattr(spec.loader, 'exec_module'):
             return _load_backward_compatible(spec)
 
     module = module_from_spec(spec)
-    with _installed_safely(module):
-        if spec.loader is None:
-            if spec.submodule_search_locations is None:
-                raise ImportError('missing loader', name=spec.name)
-            # A namespace package so do nothing.
-        else:
-            spec.loader.exec_module(module)
 
-    # We don't ensure that the import-related module attributes get
-    # set in the sys.modules replacement case.  Such modules are on
-    # their own.
-    return sys.modules[spec.name]
+    # This must be done before putting the module in sys.modules
+    # (otherwise an optimization shortcut in import.c becomes
+    # wrong).
+    spec._initializing = True
+    try:
+        sys.modules[spec.name] = module
+        try:
+            if spec.loader is None:
+                if spec.submodule_search_locations is None:
+                    raise ImportError('missing loader', name=spec.name)
+                # A namespace package so do nothing.
+            else:
+                spec.loader.exec_module(module)
+        except:
+            try:
+                del sys.modules[spec.name]
+            except KeyError:
+                pass
+            raise
+        # Move the module to the end of sys.modules.
+        # We don't ensure that the import-related module attributes get
+        # set in the sys.modules replacement case.  Such modules are on
+        # their own.
+        module = sys.modules.pop(spec.name)
+        sys.modules[spec.name] = module
+        _verbose_message('import {!r} # {!r}', spec.name, spec.loader)
+    finally:
+        spec._initializing = False
+
+    return module
 
 # A method used during testing of _load_unlocked() and by
 # _load_module_shim().
@@ -780,6 +786,8 @@ class FrozenImporter:
 
     """
 
+    _ORIGIN = "frozen"
+
     @staticmethod
     def module_repr(m):
         """Return repr for the module.
@@ -787,12 +795,12 @@ class FrozenImporter:
         The method is deprecated.  The import machinery does the job itself.
 
         """
-        return '<module {!r} (frozen)>'.format(m.__name__)
+        return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
         if _imp.is_frozen(fullname):
-            return spec_from_loader(fullname, cls, origin='frozen')
+            return spec_from_loader(fullname, cls, origin=cls._ORIGIN)
         else:
             return None
 

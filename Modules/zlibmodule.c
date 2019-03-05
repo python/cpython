@@ -117,11 +117,11 @@ newcompobject(PyTypeObject *type)
 static void*
 PyZlib_Malloc(voidpf ctx, uInt items, uInt size)
 {
-    if (items > (size_t)PY_SSIZE_T_MAX / size)
+    if (size != 0 && items > (size_t)PY_SSIZE_T_MAX / size)
         return NULL;
     /* PyMem_Malloc() cannot be used: the GIL is not held when
        inflate() and deflate() are called */
-    return PyMem_RawMalloc(items * size);
+    return PyMem_RawMalloc((size_t)items * (size_t)size);
 }
 
 static void
@@ -291,7 +291,9 @@ ssize_t_converter(PyObject *obj, void *ptr)
     PyObject *long_obj;
     Py_ssize_t val;
 
-    long_obj = (PyObject *)_PyLong_FromNbInt(obj);
+    /* XXX Should be replaced with PyNumber_AsSsize_t after the end of the
+       deprecation period. */
+    long_obj = _PyLong_FromNbIndexOrNbInt(obj);
     if (long_obj == NULL) {
         return 0;
     }

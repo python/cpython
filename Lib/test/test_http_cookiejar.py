@@ -6,6 +6,7 @@ import test.support
 import time
 import unittest
 import urllib.request
+import pathlib
 
 from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      parse_ns_headers, join_header_words, split_header_words, Cookie,
@@ -174,12 +175,10 @@ class DateTimeTests(unittest.TestCase):
             '1980-01-01 00:61:00',
             '01-01-1980 00:00:62',
             '01-01-1980T00:00:62',
-            '19800101T250000Z'
-            '1980-01-01 00:00:00 -2500',
+            '19800101T250000Z',
             ]:
             self.assertIsNone(iso2time(test),
-                              "iso2time(%s) is not None\n"
-                              "iso2time(test) %s" % (test, iso2time(test)))
+                              "iso2time(%r)" % test)
 
 
 class HeaderTests(unittest.TestCase):
@@ -315,6 +314,30 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
 
 
 class FileCookieJarTests(unittest.TestCase):
+    def test_constructor_with_str(self):
+        filename = test.support.TESTFN
+        c = LWPCookieJar(filename)
+        self.assertEqual(c.filename, filename)
+
+    def test_constructor_with_path_like(self):
+        filename = pathlib.Path(test.support.TESTFN)
+        c = LWPCookieJar(filename)
+        self.assertEqual(c.filename, os.fspath(filename))
+
+    def test_constructor_with_none(self):
+        c = LWPCookieJar(None)
+        self.assertIsNone(c.filename)
+
+    def test_constructor_with_other_types(self):
+        class A:
+            pass
+
+        for type_ in (int, float, A):
+            with self.subTest(filename=type_):
+                with self.assertRaises(TypeError):
+                    instance = type_()
+                    c = LWPCookieJar(filename=instance)
+
     def test_lwp_valueless_cookie(self):
         # cookies with no value should be saved and loaded consistently
         filename = test.support.TESTFN

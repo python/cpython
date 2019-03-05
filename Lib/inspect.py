@@ -168,30 +168,33 @@ def isfunction(object):
         __kwdefaults__  dict of keyword only parameters with defaults"""
     return isinstance(object, types.FunctionType)
 
-def isgeneratorfunction(object):
+def isgeneratorfunction(obj):
     """Return true if the object is a user-defined generator function.
 
     Generator function objects provide the same attributes as functions.
     See help(isfunction) for a list of attributes."""
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_GENERATOR)
+    obj = functools._unwrap_partial(obj)
+    return bool((isfunction(obj) or ismethod(obj)) and
+                obj.__code__.co_flags & CO_GENERATOR)
 
-def iscoroutinefunction(object):
+def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
     Coroutine functions are defined with "async def" syntax.
     """
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_COROUTINE)
+    obj = functools._unwrap_partial(obj)
+    return bool(((isfunction(obj) or ismethod(obj)) and
+                obj.__code__.co_flags & CO_COROUTINE))
 
-def isasyncgenfunction(object):
+def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.
 
     Asynchronous generator functions are defined with "async def"
     syntax and have "yield" expressions in their body.
     """
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_ASYNC_GENERATOR)
+    obj = functools._unwrap_partial(obj)
+    return bool((isfunction(obj) or ismethod(obj)) and
+                obj.__code__.co_flags & CO_ASYNC_GENERATOR)
 
 def isasyncgen(object):
     """Return true if the object is an asynchronous generator."""

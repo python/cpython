@@ -32,15 +32,15 @@
 
 #include "Python.h"                     /* general Python API             */
 #include "Python-ast.h"                 /* mod_ty */
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "ast.h"
 #include "graminit.h"                   /* symbols defined in the grammar */
 #include "node.h"                       /* internal parser structure      */
 #include "errcode.h"                    /* error codes for PyNode_*()     */
 #include "token.h"                      /* token definitions              */
+                                        /* ISTERMINAL() / ISNONTERMINAL() */
 #include "grammar.h"
 #include "parsetok.h"
-                                        /* ISTERMINAL() / ISNONTERMINAL() */
-#undef Yield
-#include "ast.h"
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
@@ -206,15 +206,15 @@ static PyObject* parser_st2tuple(PyST_Object *, PyObject *, PyObject *);
 #define PUBLIC_METHOD_TYPE (METH_VARARGS|METH_KEYWORDS)
 
 static PyMethodDef parser_methods[] = {
-    {"compile",         (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
+    {"compile",         (PyCFunction)(void(*)(void))parser_compilest,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compile this ST object into a code object.")},
-    {"isexpr",          (PyCFunction)parser_isexpr,     PUBLIC_METHOD_TYPE,
+    {"isexpr",          (PyCFunction)(void(*)(void))parser_isexpr,     PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if this ST object was created from an expression.")},
-    {"issuite",         (PyCFunction)parser_issuite,    PUBLIC_METHOD_TYPE,
+    {"issuite",         (PyCFunction)(void(*)(void))parser_issuite,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if this ST object was created from a suite.")},
-    {"tolist",          (PyCFunction)parser_st2list,    PUBLIC_METHOD_TYPE,
+    {"tolist",          (PyCFunction)(void(*)(void))parser_st2list,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of this ST.")},
-    {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
+    {"totuple",         (PyCFunction)(void(*)(void))parser_st2tuple,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of this ST.")},
     {"__sizeof__",      (PyCFunction)parser_sizeof,     METH_NOARGS,
         PyDoc_STR("Returns size in memory, in bytes.")},
@@ -663,6 +663,12 @@ validate_node(node *tree)
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
+        if (ch_type == suite && TYPE(tree) == funcdef) {
+            /* This is the opposite hack of what we do in parser.c
+               (search for func_body_suite), except we don't ever
+               support type comments here. */
+            ch_type = func_body_suite;
+        }
         for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
             short a_label = dfa_state->s_arc[arc].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
@@ -920,7 +926,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             Py_DECREF(elem);
             return NULL;
         }
-        err = PyNode_AddChild(root, type, strn, *line_num, 0);
+        err = PyNode_AddChild(root, type, strn, *line_num, 0, *line_num, 0);
         if (err == E_NOMEM) {
             Py_DECREF(elem);
             PyObject_FREE(strn);
@@ -1087,23 +1093,23 @@ parser__pickler(PyObject *self, PyObject *args)
  *  inheritance.
  */
 static PyMethodDef parser_functions[] =  {
-    {"compilest",      (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
+    {"compilest",      (PyCFunction)(void(*)(void))parser_compilest,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compiles an ST object into a code object.")},
-    {"expr",            (PyCFunction)parser_expr,      PUBLIC_METHOD_TYPE,
+    {"expr",            (PyCFunction)(void(*)(void))parser_expr,      PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from an expression.")},
-    {"isexpr",          (PyCFunction)parser_isexpr,    PUBLIC_METHOD_TYPE,
+    {"isexpr",          (PyCFunction)(void(*)(void))parser_isexpr,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if an ST object was created from an expression.")},
-    {"issuite",         (PyCFunction)parser_issuite,   PUBLIC_METHOD_TYPE,
+    {"issuite",         (PyCFunction)(void(*)(void))parser_issuite,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if an ST object was created from a suite.")},
-    {"suite",           (PyCFunction)parser_suite,     PUBLIC_METHOD_TYPE,
+    {"suite",           (PyCFunction)(void(*)(void))parser_suite,     PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a suite.")},
-    {"sequence2st",     (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
+    {"sequence2st",     (PyCFunction)(void(*)(void))parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
-    {"st2tuple",        (PyCFunction)parser_st2tuple,  PUBLIC_METHOD_TYPE,
+    {"st2tuple",        (PyCFunction)(void(*)(void))parser_st2tuple,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of an ST.")},
-    {"st2list",         (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
+    {"st2list",         (PyCFunction)(void(*)(void))parser_st2list,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of an ST.")},
-    {"tuple2st",        (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
+    {"tuple2st",        (PyCFunction)(void(*)(void))parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
 
     /* private stuff: support pickle module */

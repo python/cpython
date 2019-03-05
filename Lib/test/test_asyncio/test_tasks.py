@@ -440,8 +440,8 @@ class BaseTaskTests:
 
         coro_repr = repr(task._coro)
         expected = (
-            r'<CoroWrapper \w+.test_task_repr_partial_corowrapper'
-            r'\.<locals>\.func\(1\)\(\) running, '
+            r'<coroutine object \w+\.test_task_repr_partial_corowrapper'
+            r'\.<locals>\.func at'
         )
         self.assertRegex(coro_repr, expected)
 
@@ -2545,6 +2545,15 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
             task.__init__(coro(), loop=self.loop)
             self.loop.run_until_complete(task)
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    def test_del__log_destroy_pending_segfault(self):
+        @asyncio.coroutine
+        def coro():
+            pass
+        task = self.new_task(self.loop, coro())
+        self.loop.run_until_complete(task)
+        with self.assertRaises(AttributeError):
+            del task._log_destroy_pending
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture') and

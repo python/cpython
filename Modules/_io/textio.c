@@ -8,6 +8,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -261,7 +262,7 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
     }
     Py_INCREF(self->errors);
 
-    self->translate = translate;
+    self->translate = translate ? 1 : 0;
     self->seennl = 0;
     self->pendingcr = 0;
 
@@ -1313,7 +1314,7 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
     /* Check if something is in the read buffer */
     if (self->decoded_chars != NULL) {
         if (encoding != Py_None || errors != Py_None || newline_obj != NULL) {
-            _unsupported("It is not possible to set the encoding or newline"
+            _unsupported("It is not possible to set the encoding or newline "
                          "of stream after the first read");
             return NULL;
         }
@@ -2343,7 +2344,8 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
-    if (whence == 1) {
+    switch (whence) {
+    case SEEK_CUR:
         /* seek relative to current position */
         cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
@@ -2361,8 +2363,9 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         cookieObj = _PyObject_CallMethodId((PyObject *)self, &PyId_tell, NULL);
         if (cookieObj == NULL)
             goto fail;
-    }
-    else if (whence == 2) {
+        break;
+
+    case SEEK_END:
         /* seek relative to end of file */
         cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
@@ -2400,10 +2403,14 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             }
         }
         return res;
-    }
-    else if (whence != 0) {
+
+    case SEEK_SET:
+        break;
+
+    default:
         PyErr_Format(PyExc_ValueError,
-                     "invalid whence (%d, should be 0, 1 or 2)", whence);
+                     "invalid whence (%d, should be %d, %d or %d)", whence,
+                     SEEK_SET, SEEK_CUR, SEEK_END);
         goto fail;
     }
 
@@ -2891,14 +2898,6 @@ _io_TextIOWrapper_isatty_impl(textio *self)
     return _PyObject_CallMethodId(self->buffer, &PyId_isatty, NULL);
 }
 
-static PyObject *
-textiowrapper_getstate(textio *self, PyObject *args)
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 /*[clinic input]
 _io.TextIOWrapper.flush
 [clinic start generated code]*/
@@ -3049,6 +3048,10 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
+    if (arg == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;
@@ -3132,7 +3135,6 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_READABLE_METHODDEF
     _IO_TEXTIOWRAPPER_WRITABLE_METHODDEF
     _IO_TEXTIOWRAPPER_ISATTY_METHODDEF
-    {"__getstate__", (PyCFunction)textiowrapper_getstate, METH_NOARGS},
 
     _IO_TEXTIOWRAPPER_SEEK_METHODDEF
     _IO_TEXTIOWRAPPER_TELL_METHODDEF

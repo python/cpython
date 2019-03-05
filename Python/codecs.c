@@ -9,7 +9,7 @@ Copyright (c) Corporation for National Research Initiatives.
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "ucnhash.h"
 #include <ctype.h>
 
@@ -120,17 +120,23 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     PyUnicode_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
-    result = PyDict_GetItem(interp->codec_search_cache, v);
+    result = PyDict_GetItemWithError(interp->codec_search_cache, v);
     if (result != NULL) {
         Py_INCREF(result);
         Py_DECREF(v);
         return result;
     }
+    else if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
 
     /* Next, scan the search functions in order of registration */
     args = PyTuple_New(1);
-    if (args == NULL)
-        goto onError;
+    if (args == NULL) {
+        Py_DECREF(v);
+        return NULL;
+    }
     PyTuple_SET_ITEM(args,0,v);
 
     len = PyList_Size(interp->codec_search_path);
@@ -646,11 +652,13 @@ PyObject *PyCodec_LookupError(const char *name)
 
     if (name==NULL)
         name = "strict";
-    handler = PyDict_GetItemString(interp->codec_error_registry, name);
-    if (!handler)
-        PyErr_Format(PyExc_LookupError, "unknown error handler name '%.400s'", name);
-    else
+    handler = _PyDict_GetItemStringWithError(interp->codec_error_registry, name);
+    if (handler) {
         Py_INCREF(handler);
+    }
+    else if (!PyErr_Occurred()) {
+        PyErr_Format(PyExc_LookupError, "unknown error handler name '%.400s'", name);
+    }
     return handler;
 }
 

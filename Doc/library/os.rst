@@ -2697,7 +2697,7 @@ features:
    morph to the target dynamically.  If the target is present, the type of the
    symlink will be created to match. Otherwise, the symlink will be created
    as a directory if *target_is_directory* is ``True`` or a file symlink (the
-   default) otherwise.  On non-Window platforms, *target_is_directory* is ignored.
+   default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
    Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
    will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
@@ -3386,7 +3386,7 @@ written in Python, such as a mail server's external command delivery program.
 
 
 .. function:: posix_spawn(path, argv, env, *, file_actions=None, \
-                          setpgroup=None, resetids=False, setsigmask=(), \
+                          setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
    Wraps the :c:func:`posix_spawn` C library API for use from Python.
@@ -3395,6 +3395,10 @@ written in Python, such as a mail server's external command delivery program.
 
    The positional-only arguments *path*, *args*, and *env* are similar to
    :func:`execve`.
+
+   The *path* parameter is the path to the executable file.The *path* should
+   contain a directory.Use :func:`posix_spawnp` to pass an executable file
+   without directory.
 
    The *file_actions* argument may be a sequence of tuples describing actions
    to take on specific file descriptors in the child process between the C
@@ -3440,6 +3444,11 @@ written in Python, such as a mail server's external command delivery program.
    setting of the effective UID and GID. This argument corresponds to the C
    library :c:data:`POSIX_SPAWN_RESETIDS` flag.
 
+   If the *setsid* argument is ``True``, it will create a new session ID
+   for `posix_spawn`. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
+   or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
+   is raised.
+
    The *setsigmask* argument will set the signal mask to the signal set
    specified. If the parameter is not used, then the child inherits the
    parent's signal mask. This argument corresponds to the C library
@@ -3456,7 +3465,23 @@ written in Python, such as a mail server's external command delivery program.
    :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
+
+   .. availability:: Unix.
+
+.. function:: posix_spawnp(path, argv, env, *, file_actions=None, \
+                          setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
+                          setsigdef=(), scheduler=None)
+
+   Wraps the :c:func:`posix_spawnp` C library API for use from Python.
+
+   Similar to :func:`posix_spawn` except that the system searches
+   for the *executable* file in the list of directories specified by the
+   :envvar:`PATH` environment variable (in the same way as for ``execvp(3)``).
+
+   .. versionadded:: 3.8
+
+   .. availability:: See :func:`posix_spawn` documentation.
 
 
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \
@@ -3776,11 +3801,11 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: wait3(options)
 
    Similar to :func:`waitpid`, except no process id argument is given and a
-   3-element tuple containing the child's process id, exit status indication, and
-   resource usage information is returned.  Refer to :mod:`resource`.\
-   :func:`~resource.getrusage` for details on resource usage information.  The
-   option argument is the same as that provided to :func:`waitpid` and
-   :func:`wait4`.
+   3-element tuple containing the child's process id, exit status indication,
+   and resource usage information is returned.  Refer to
+   :mod:`resource`.\ :func:`~resource.getrusage` for details on resource usage
+   information.  The option argument is the same as that provided to
+   :func:`waitpid` and :func:`wait4`.
 
    .. availability:: Unix.
 
@@ -4086,6 +4111,7 @@ are defined for all platforms.
 Higher-level operations on pathnames are defined in the :mod:`os.path` module.
 
 
+.. index:: single: . (dot); in pathnames
 .. data:: curdir
 
    The constant string used by the operating system to refer to the current
@@ -4093,6 +4119,7 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: ..; in pathnames
 .. data:: pardir
 
    The constant string used by the operating system to refer to the parent
@@ -4100,6 +4127,8 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: / (slash); in pathnames
+.. index:: single: \ (backslash); in pathnames (Windows)
 .. data:: sep
 
    The character used by the operating system to separate pathname components.
@@ -4109,6 +4138,7 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    useful. Also available via :mod:`os.path`.
 
 
+.. index:: single: / (slash); in pathnames
 .. data:: altsep
 
    An alternative character used by the operating system to separate pathname
@@ -4117,12 +4147,15 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    :mod:`os.path`.
 
 
+.. index:: single: . (dot); in pathnames
 .. data:: extsep
 
    The character which separates the base filename from the extension; for example,
    the ``'.'`` in :file:`os.py`. Also available via :mod:`os.path`.
 
 
+.. index:: single: : (colon); path separator (POSIX)
+   single: ; (semicolon)
 .. data:: pathsep
 
    The character conventionally used by the operating system to separate search

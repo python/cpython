@@ -1,14 +1,15 @@
 # Tests the attempted automatic coercion of the C locale to a UTF-8 locale
 
-import unittest
 import locale
 import os
+import shutil
+import subprocess
 import sys
 import sysconfig
-import shutil
+import unittest
 from collections import namedtuple
 
-import test.support
+from test import support
 from test.support.script_helper import (
     run_python_until_end,
     interpreter_requires_environment,
@@ -25,9 +26,11 @@ EXPECTED_C_LOCALE_FS_ENCODING = "ascii"
 # Set our expectation for the default locale used when none is specified
 EXPECT_COERCION_IN_DEFAULT_LOCALE = True
 
+TARGET_LOCALES = ["C.UTF-8", "C.utf8", "UTF-8"]
+
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
-    if test.support.is_android:
+    if support.is_android:
         # Android defaults to using UTF-8 for all system interfaces
         EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
         EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
@@ -203,6 +206,15 @@ def setUpModule():
         CLI_COERCION_TARGET = AVAILABLE_TARGETS[0]
         CLI_COERCION_WARNING = CLI_COERCION_WARNING_FMT.format(CLI_COERCION_TARGET)
 
+    if support.verbose:
+        print(f"AVAILABLE_TARGETS = {AVAILABLE_TARGETS!r}")
+        print(f"EXPECTED_C_LOCALE_EQUIVALENTS = {EXPECTED_C_LOCALE_EQUIVALENTS!r}")
+        print(f"EXPECTED_C_LOCALE_STREAM_ENCODING = {EXPECTED_C_LOCALE_STREAM_ENCODING!r}")
+        print(f"EXPECTED_C_LOCALE_FS_ENCODING = {EXPECTED_C_LOCALE_FS_ENCODING!r}")
+        print(f"EXPECT_COERCION_IN_DEFAULT_LOCALE = {EXPECT_COERCION_IN_DEFAULT_LOCALE!r}")
+        print(f"_C_UTF8_LOCALES = {_C_UTF8_LOCALES!r}")
+        print(f"_check_nl_langinfo_CODESET = {_check_nl_langinfo_CODESET!r}")
+
 
 class _LocaleHandlingTestCase(unittest.TestCase):
     # Base class to check expected locale handling behaviour
@@ -279,7 +291,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
 
 
 
-@test.support.cpython_only
+@support.cpython_only
 @unittest.skipUnless(sysconfig.get_config_var("PY_COERCE_C_LOCALE"),
                      "C locale coercion disabled at build time")
 class LocaleCoercionTests(_LocaleHandlingTestCase):
@@ -335,7 +347,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             # locale environment variables are undefined or empty. When
             # this code path is run with environ['LC_ALL'] == 'C', then
             # LEGACY_LOCALE_WARNING is printed.
-            if (test.support.is_android and
+            if (support.is_android and
                     _expected_warnings == [CLI_COERCION_WARNING]):
                 _expected_warnings = None
             self._check_child_encoding_details(base_var_dict,
@@ -404,12 +416,33 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                                       expected_warnings=[LEGACY_LOCALE_WARNING],
                                       coercion_expected=False)
 
+    def test_PYTHONCOERCECLOCALE_set_to_one(self):
+        # skip the test if the LC_CTYPE locale is C or coerced
+        old_loc = locale.setlocale(locale.LC_CTYPE, None)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, old_loc)
+        loc = locale.setlocale(locale.LC_CTYPE, "")
+        if loc == "C":
+            self.skipTest("test requires LC_CTYPE locale different than C")
+        if loc in TARGET_LOCALES :
+            self.skipTest("coerced LC_CTYPE locale: %s" % loc)
+
+        # bpo-35336: PYTHONCOERCECLOCALE=1 must not coerce the LC_CTYPE locale
+        # if it's not equal to "C"
+        code = 'import locale; print(locale.setlocale(locale.LC_CTYPE, None))'
+        env = dict(os.environ, PYTHONCOERCECLOCALE='1')
+        cmd = subprocess.run([sys.executable, '-c', code],
+                             stdout=subprocess.PIPE,
+                             env=env,
+                             text=True)
+        self.assertEqual(cmd.stdout.rstrip(), loc)
+
+
 def test_main():
-    test.support.run_unittest(
+    support.run_unittest(
         LocaleConfigurationTests,
         LocaleCoercionTests
     )
-    test.support.reap_children()
+    support.reap_children()
 
 if __name__ == "__main__":
     test_main()

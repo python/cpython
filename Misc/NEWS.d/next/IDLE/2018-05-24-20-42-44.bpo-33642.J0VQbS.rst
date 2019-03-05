@@ -1,2 +1,0 @@
-Display up to maxlines non-blank lines for Code Context.
-If there is no current context, show a single blank line.

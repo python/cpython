@@ -248,7 +248,7 @@ class BaseTest:
         a = array.array(self.typecode, self.example)
         for protocol in range(3):
             self.assertIs(a.__reduce_ex__(protocol)[0], array.array)
-        for protocol in range(3, pickle.HIGHEST_PROTOCOL):
+        for protocol in range(3, pickle.HIGHEST_PROTOCOL + 1):
             self.assertIs(a.__reduce_ex__(protocol)[0], array_reconstructor)
 
     def test_pickle(self):
@@ -1242,6 +1242,8 @@ class IntegerNumberTest(NumberTest):
 class Intable:
     def __init__(self, num):
         self._num = num
+    def __index__(self):
+        return self._num
     def __int__(self):
         return self._num
     def __sub__(self, other):

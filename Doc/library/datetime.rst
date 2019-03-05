@@ -276,9 +276,10 @@ Supported operations:
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
 +--------------------------------+-----------------------------------------------+
-| ``-t1``                        | equivalent to :class:`timedelta`\             |
-|                                | (-*t1.days*, -*t1.seconds*,                   |
-|                                | -*t1.microseconds*), and to *t1*\* -1. (1)(4) |
+| ``-t1``                        | equivalent to                                 |
+|                                | :class:`timedelta`\ (-*t1.days*,              |
+|                                | -*t1.seconds*, -*t1.microseconds*),           |
+|                                | and to *t1*\* -1. (1)(4)                      |
 +--------------------------------+-----------------------------------------------+
 | ``abs(t)``                     | equivalent to +\ *t* when ``t.days >= 0``, and|
 |                                | to -*t* when ``t.days < 0``. (2)              |
@@ -1999,6 +2000,9 @@ Class attributes:
    The UTC timezone, ``timezone(timedelta(0))``.
 
 
+.. index::
+   single: % (percent); datetime format
+
 .. _strftime-strptime-behavior:
 
 :meth:`strftime` and :meth:`strptime` Behavior
@@ -2013,7 +2017,9 @@ although not all objects support a :meth:`timetuple` method.
 Conversely, the :meth:`datetime.strptime` class method creates a
 :class:`.datetime` object from a string representing a date and time and a
 corresponding format string. ``datetime.strptime(date_string, format)`` is
-equivalent to ``datetime(*(time.strptime(date_string, format)[0:6]))``.
+equivalent to ``datetime(*(time.strptime(date_string, format)[0:6]))``, except
+when the format includes sub-second components or timezone offset information,
+which are supported in ``datetime.strptime`` but are discarded by ``time.strptime``.
 
 For :class:`.time` objects, the format codes for year, month, and day should not
 be used, as time objects have no such values.  If they're used anyway, ``1900``
@@ -2027,6 +2033,12 @@ The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common.  To see the full set of format codes supported on your
 platform, consult the :manpage:`strftime(3)` documentation.
+
+For the same reason, handling of format strings containing Unicode code points
+that can't be represented in the charset of the current locale is also
+platform-dependent. On some platforms such code points are preserved intact in
+the output, while on others ``strftime`` may raise :exc:`UnicodeError` or return
+an empty string instead.
 
 The following is a list of all the format codes that the C standard (1989
 version) requires, and these work on all platforms with a standard C

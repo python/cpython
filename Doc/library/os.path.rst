@@ -4,9 +4,8 @@
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/posixpath.py` (for POSIX),
-:source:`Lib/ntpath.py` (for Windows NT),
-and :source:`Lib/macpath.py` (for Macintosh)
+**Source code:** :source:`Lib/posixpath.py` (for POSIX) and
+:source:`Lib/ntpath.py` (for Windows NT).
 
 .. index:: single: path; operations
 
@@ -52,7 +51,6 @@ the :mod:`glob` module.)
 
    * :mod:`posixpath` for UNIX-style paths
    * :mod:`ntpath` for Windows paths
-   * :mod:`macpath` for old-style MacOS paths
 
 
 .. versionchanged:: 3.8
@@ -160,6 +158,8 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. index:: single: ~ (tilde); home directory expansion
+
 .. function:: expanduser(path)
 
    On Unix and Windows, return the argument with an initial component of ``~`` or
@@ -183,6 +183,9 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+.. index::
+   single: $ (dollar); environment variables expansion
+   single: % (percent); environment variables expansion (Windows)
 
 .. function:: expandvars(path)
 
@@ -280,10 +283,11 @@ the :mod:`glob` module.)
 
    Return ``True`` if pathname *path* is a :dfn:`mount point`: a point in a
    file system where a different file system has been mounted.  On POSIX, the
-   function checks whether *path*'s parent, :file:`path/..`, is on a different
-   device than *path*, or whether :file:`path/..` and *path* point to the same
+   function checks whether *path*'s parent, :file:`{path}/..`, is on a different
+   device than *path*, or whether :file:`{path}/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
-   and POSIX variants.  On Windows, a drive letter root and a share UNC are
+   and POSIX variants.  It is not able to reliably detect bind mounts on the
+   same filesystem.  On Windows, a drive letter root and a share UNC are
    always mount points, and for any other path ``GetVolumePathName`` is called
    to see if it is different from the input path.
 
@@ -320,7 +324,7 @@ the :mod:`glob` module.)
    Normalize the case of a pathname.  On Unix and Mac OS X, this returns the
    path unchanged; on case-insensitive filesystems, it converts the path to
    lowercase.  On Windows, it also converts forward slashes to backward slashes.
-   Raise a TypeError if the type of *path* is not ``str`` or ``bytes`` (directly
+   Raise a :exc:`TypeError` if the type of *path* is not ``str`` or ``bytes`` (directly
    or indirectly through the :class:`os.PathLike` interface).
 
    .. versionchanged:: 3.6
