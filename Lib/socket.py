@@ -806,7 +806,7 @@ def create_server(address, *, family=AF_INET, backlog=0, reuse_port=False,
             raise error(err.errno, msg) from None
         sock.listen(backlog)
         return sock
-    except Exception:
+    except error:
         sock.close()
         raise
 

@@ -604,7 +604,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
    *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
    a default reasonable value is chosen.
-   *reuse_port* dictates whether to set :data:`SO_REUSEPORT` socket option.
+   *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will
    be able to accept both IPv4 and IPv6 connections, else it will raise
@@ -629,7 +629,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
          s = socket.create_server(addr)
 
    .. note::
-    On POSIX platforms :data:`SO_REUSEADDR` socket option is set in order to
+    On POSIX platforms the :data:`SO_REUSEADDR` socket option is set in order to
     immediately reuse previous sockets which were bound on the same *address*
     and remained in TIME_WAIT state.
 
@@ -637,9 +637,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: has_dualstack_ipv6()
 
-   Return ``True`` if the platform supports creating a :data:`SOCK_STREAM`
-   socket which can handle both :data:`AF_INET` or :data:`AF_INET6`
-   (IPv4 / IPv6) connections.
+   Return ``True`` if the platform supports creating a TCP socket which can
+   handle both IPv4 and IPv6 connections.
 
    .. versionadded:: 3.8
 
