@@ -117,26 +117,28 @@ typedef struct {
 static void
 mmap_object_dealloc(mmap_object *m_obj)
 {
-    Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
+    Py_BEGIN_ALLOW_THREADS
     if (m_obj->data != NULL)
         UnmapViewOfFile (m_obj->data);
     if (m_obj->map_handle != NULL)
         CloseHandle (m_obj->map_handle);
     if (m_obj->file_handle != INVALID_HANDLE_VALUE)
         CloseHandle (m_obj->file_handle);
+    Py_END_ALLOW_THREADS
     if (m_obj->tagname)
         PyMem_Free(m_obj->tagname);
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
+    Py_BEGIN_ALLOW_THREADS
     if (m_obj->fd >= 0)
         (void) close(m_obj->fd);
     if (m_obj->data!=NULL) {
         munmap(m_obj->data, m_obj->size);
     }
-#endif /* UNIX */
     Py_END_ALLOW_THREADS
+#endif /* UNIX */
 
     if (m_obj->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m_obj);
