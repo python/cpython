@@ -36,29 +36,25 @@ def grep(text, io=None, flist=None):
     dialog.open(text, searchphrase, io)
 
 
-def findfiles(dir, base, rec):
-    """Return list of files in the dir that match the base pattern.
+def walk_error(msg):
+    "Handle os.walk error."
+    print(msg)
 
-    If rec is True, recursively iterate through subdirectories.
+
+def findfiles(folder, pattern, recursive):
+    """Generate file names in dir that match pattern.
+
+    Args:
+    folder: Root directory to search.
+    pattern: File pattern to match.
+    recursive: True to include subdirectories.
     """
-    try:
-        names = os.listdir(dir or os.curdir)
-    except OSError as msg:
-        print(msg)
-        return []
-    list = []
-    subdirs = []
-    for name in names:
-        fn = os.path.join(dir, name)
-        if os.path.isdir(fn):
-            subdirs.append(fn)
-        else:
-            if fnmatch.fnmatch(name, base):
-                list.append(fn)
-    if rec:
-        for subdir in subdirs:
-            list.extend(findfiles(subdir, base, rec))
-    return list
+    for dirpath, _, filenames in os.walk(folder, onerror=walk_error):
+        yield from (os.path.join(dirpath, name)
+                    for name in filenames
+                    if fnmatch.fnmatch(name, pattern))
+        if not recursive:
+            break
 
 
 class GrepDialog(SearchDialogBase):
@@ -145,15 +141,16 @@ class GrepDialog(SearchDialogBase):
         found,  write the file and line information to stdout (which
         is an OutputWindow).
         """
-        dir, base = os.path.split(path)
-        list = findfiles(dir, base, self.recvar.get())
-        list.sort()
+        folder, filepat = os.path.split(path)
+        if not folder:
+            folder = os.curdir
+        filelist = sorted(findfiles(folder, filepat, self.recvar.get()))
         self.close()
         pat = self.engine.getpat()
         print(f"Searching {pat!r} in {path} ...")
         hits = 0
         try:
-            for fn in list:
+            for fn in filelist:
                 try:
                     with open(fn, errors='replace') as f:
                         for lineno, line in enumerate(f, 1):
