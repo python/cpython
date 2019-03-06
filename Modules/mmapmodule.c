@@ -161,7 +161,7 @@ mmap_close_method(mmap_object *self, PyObject *unused)
     */
     HANDLE map_handle = self->map_handle;
     HANDLE file_handle = self->file_handle;
-    char * data = self->data;
+    char *data = self->data;
     self->map_handle = NULL;
     self->file_handle = INVALID_HANDLE_VALUE;
     self->data = NULL;
@@ -180,7 +180,7 @@ mmap_close_method(mmap_object *self, PyObject *unused)
 
 #ifdef UNIX
     int fd = self->fd;
-    char * data = self->data;
+    char *data = self->data;
     self->fd = -1;
     self->data = NULL;
     Py_BEGIN_ALLOW_THREADS
