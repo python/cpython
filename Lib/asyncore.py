@@ -229,8 +229,8 @@ class dispatcher:
             # Set to nonblocking just to make sure for cases where we
             # get a socket from a blocking source.
             sock.setblocking(0)
-            self.set_socket(sock, map)
             self.connected = True
+            self.set_socket(sock, map)
             # The constructor no longer requires that the socket
             # passed be connected.
             try:
@@ -288,7 +288,8 @@ class dispatcher:
     def set_socket(self, sock, map=None):
         self.socket = sock
         self._fileno = sock.fileno()
-        self.add_channel(map)
+        if self.connected:
+            self.add_channel(map)
 
     def set_reuse_addr(self):
         # try to re-use a server port if possible
@@ -331,6 +332,7 @@ class dispatcher:
         self.connected = False
         self.connecting = True
         err = self.socket.connect_ex(address)
+        self.add_channel()
         if err in (EINPROGRESS, EALREADY, EWOULDBLOCK) \
         or err == EINVAL and os.name == 'nt':
             self.addr = address
