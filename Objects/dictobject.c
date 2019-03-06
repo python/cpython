@@ -2264,63 +2264,61 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
 
+/* Used for dict subtraction. */
 static int
 dict_diff_arg(PyObject *self, PyObject *arg) 
 {
-    PyObject *iter_arg;
-    PyObject *item;
-    PyObject *func;
+    PyObject *keys, *key;
+    PyObject *keys_method;
     int in;
 
     _Py_IDENTIFIER(keys);
 
-    /* These first two blocks might need to be removed.
-     * See "Bug or feature?" in PEP 584 draft.
-     */
-    
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+    // XXX: PEP 584
+
+    // This keys() lookup stuff is a bit complex... it mirrors dict.update:
+    // https://mail.python.org/pipermail/python-ideas/2019-March/055687.html
+
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &keys_method) < 0) {
         return -1;
     }
 
-    if (func != NULL) {
+    if (keys_method && (!PyDict_Check(arg) || 
+                        Py_TYPE(arg)->tp_iter != (getiterfunc)dict_iter))
+    {
 
-        arg = _PyObject_CallNoArg(func);
-        Py_DECREF(func);
+        arg = _PyObject_CallNoArg(keys_method);
+        Py_DECREF(keys_method);
 
         if (arg == NULL) {
             return -1;
         }
+
+        keys = PyObject_GetIter(arg);
+        Py_DECREF(arg);
+    }
+    else {
+        keys = PyObject_GetIter(arg);
     }
 
-    iter_arg = PyObject_GetIter(arg);
-
-    if (iter_arg == NULL) {
-        if (func != NULL) {
-            Py_DECREF(arg);
-        }
+    if (keys == NULL) {
         return -1;
     }
 
-    while ((item = PyIter_Next(iter_arg)) != NULL) {
+    while ((key = PyIter_Next(keys))) {
 
-        in = PyDict_Contains(self, item);
+        in = PyDict_Contains(self, key);
 
-        if (in < 0 || (in && PyDict_DelItem(self, item))) {
-            Py_DECREF(item);
-            Py_DECREF(iter_arg);
-            if (func != NULL) {
-                Py_DECREF(arg);
-            }
+        if (in < 0 || (in && PyDict_DelItem(self, key))) {
+            Py_DECREF(keys);
+            Py_DECREF(key);
             return -1;
         }
 
-        Py_DECREF(item);
+        Py_DECREF(key);
     }
 
-    Py_DECREF(iter_arg);
-    if (func != NULL) {
-        Py_DECREF(arg);
-    }
+    Py_DECREF(keys);
 
     if (PyErr_Occurred()) {
         return -1;
@@ -2334,15 +2332,15 @@ dict_diff_arg(PyObject *self, PyObject *arg)
 static int
 dict_update_arg(PyObject *self, PyObject *arg)
 {
-    PyObject *func;
+    PyObject *keys_method;
     _Py_IDENTIFIER(keys);
     
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &keys_method) < 0) {
         return -1;
     }
 
-    if (func != NULL) {
-        Py_DECREF(func);
+    if (keys_method) {
+        Py_DECREF(keys_method);
         return PyDict_Merge(self, arg, 1);
     }
 
@@ -3171,11 +3169,12 @@ dict_add(PyObject *self, PyObject *other)
     }
     else {
 
-        /* If subclass constructors/initializers have been overridden to require
-        * at least one arg, this next bit could fail with a confusing TypeError...
-        * dict.fromkeys currently has this issue, though, so nothing new.
-        */
+        // XXX: PEP 584
 
+        // If subclass constructors/initializers have been overridden to require
+        // at least one arg, this next bit could fail with a confusing TypeError...
+        // dict.fromkeys currently has this issue, though, so nothing new.
+        
         new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
     }
 
@@ -3194,19 +3193,21 @@ dict_add(PyObject *self, PyObject *other)
 static PyObject *
 dict_iadd(PyDictObject *self, PyObject *other)
 {
-    /* Don't delegate to __add__ here? Could be confusing for subclasses...
-     * https://mail.python.org/pipermail/python-ideas/2019-March/055581.html
-     * 
-     * if (!PyMapping_Check(other)) {
-     *     Py_RETURN_NOTIMPLEMENTED;
-     * }
-     */ 
+    // XXX: PEP 584
+
+    // Don't fall back to __add__ here? Could be confusing for subclasses...
+    // https://mail.python.org/pipermail/python-ideas/2019-March/055581.html
+    
+    // if (!PyMapping_Check(other)) {
+    //     Py_RETURN_NOTIMPLEMENTED;
+    // }
 
     if (dict_update_arg((PyObject *)self, other)) {
         return NULL;
     }
 
     Py_INCREF((PyObject *)self);
+
     return (PyObject *)self;
 }
 
@@ -3224,8 +3225,10 @@ dict_sub(PyObject *self, PyObject *other)
     }
     else {
 
-        /* See dict_add for limitations of this construction: */
-        
+        // XXX: PEP 584
+
+        // See dict_add for limitations of this construction:
+
         new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
     }
 
@@ -3244,18 +3247,20 @@ dict_sub(PyObject *self, PyObject *other)
 static PyObject *
 dict_isub(PyDictObject *self, PyObject *other)
 {
-    /* See dict_iadd for this removal:
-     *
-     * if (!PyDict_Check(other)) {
-     *     Py_RETURN_NOTIMPLEMENTED;
-     * }
-     */
+    // XXX: PEP 584
+
+    // See dict_iadd for this removal:
+    
+    // if (!PyDict_Check(other)) {
+    //     Py_RETURN_NOTIMPLEMENTED;
+    // }
 
     if (dict_diff_arg((PyObject *)self, other)) {
         return NULL;
     }
 
     Py_INCREF((PyObject *)self);
+
     return (PyObject *)self;
 }
 
