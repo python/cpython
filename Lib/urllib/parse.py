@@ -30,7 +30,6 @@ test_urlparse.py provides a good indicator of parsing behavior.
 import re
 import sys
 import collections
-import unicodedata
 import warnings
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
@@ -402,6 +401,7 @@ def _checknetloc(netloc):
         return
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
+    import unicodedata
     netloc2 = unicodedata.normalize('NFKC', netloc)
     if netloc == netloc2:
         return
