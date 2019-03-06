@@ -117,6 +117,7 @@ typedef struct {
 static void
 mmap_object_dealloc(mmap_object *m_obj)
 {
+    Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
     if (m_obj->data != NULL)
         UnmapViewOfFile (m_obj->data);
@@ -135,6 +136,7 @@ mmap_object_dealloc(mmap_object *m_obj)
         munmap(m_obj->data, m_obj->size);
     }
 #endif /* UNIX */
+    Py_END_ALLOW_THREADS
 
     if (m_obj->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m_obj);
@@ -157,28 +159,37 @@ mmap_close_method(mmap_object *self, PyObject *unused)
        again.
        TODO - should we check for errors in the close operations???
     */
-    if (self->data != NULL) {
-        UnmapViewOfFile(self->data);
-        self->data = NULL;
+    HANDLE map_handle = self->map_handle;
+    HANDLE file_handle = self->file_handle;
+    char *data = self->data;
+    self->map_handle = NULL;
+    self->file_handle = INVALID_HANDLE_VALUE;
+    self->data = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    if (data != NULL) {
+        UnmapViewOfFile(data);
     }
-    if (self->map_handle != NULL) {
-        CloseHandle(self->map_handle);
-        self->map_handle = NULL;
+    if (map_handle != NULL) {
+        CloseHandle(map_handle);
     }
-    if (self->file_handle != INVALID_HANDLE_VALUE) {
-        CloseHandle(self->file_handle);
-        self->file_handle = INVALID_HANDLE_VALUE;
+    if (file_handle != INVALID_HANDLE_VALUE) {
+        CloseHandle(file_handle);
     }
+    Py_END_ALLOW_THREADS
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-    if (0 <= self->fd)
-        (void) close(self->fd);
+    int fd = self->fd;
+    char *data = self->data;
     self->fd = -1;
-    if (self->data != NULL) {
-        munmap(self->data, self->size);
-        self->data = NULL;
+    self->data = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    if (0 <= fd)
+        (void) close(fd);
+    if (data != NULL) {
+        munmap(data, self->size);
     }
+    Py_END_ALLOW_THREADS
 #endif
 
     Py_RETURN_NONE;

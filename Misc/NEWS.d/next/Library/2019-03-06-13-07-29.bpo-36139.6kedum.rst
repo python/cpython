@@ -1,0 +1,1 @@
+Release GIL when closing :class:`~mmap.mmap` objects.
