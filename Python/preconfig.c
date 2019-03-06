@@ -445,20 +445,24 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
     }
 
     /* allocator */
-    if (config->dev_mode && config->allocator == NULL) {
-        config->allocator = _PyMem_RawStrdup("debug");
-        if (config->allocator == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
     if (config->allocator == NULL) {
+        /* bpo-34247. The PYTHONMALLOC environment variable has the priority
+           over PYTHONDEV env var and "-X dev" command line option.
+           For example, PYTHONMALLOC=malloc PYTHONDEVMODE=1 sets the memory
+           allocators to "malloc" (and not to "debug"). */
         const char *allocator = _PyPreConfig_GetEnv(config, "PYTHONMALLOC");
         if (allocator) {
             config->allocator = _PyMem_RawStrdup(allocator);
             if (config->allocator == NULL) {
                 return _Py_INIT_NO_MEMORY();
             }
+        }
+    }
+
+    if (config->dev_mode && config->allocator == NULL) {
+        config->allocator = _PyMem_RawStrdup("debug");
+        if (config->allocator == NULL) {
+            return _Py_INIT_NO_MEMORY();
         }
     }
 
