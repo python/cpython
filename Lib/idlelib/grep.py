@@ -36,6 +36,31 @@ def grep(text, io=None, flist=None):
     dialog.open(text, searchphrase, io)
 
 
+def findfiles(dir, base, rec):
+    """Return list of files in the dir that match the base pattern.
+
+    If rec is True, recursively iterate through subdirectories.
+    """
+    try:
+        names = os.listdir(dir or os.curdir)
+    except OSError as msg:
+        print(msg)
+        return []
+    list = []
+    subdirs = []
+    for name in names:
+        fn = os.path.join(dir, name)
+        if os.path.isdir(fn):
+            subdirs.append(fn)
+        else:
+            if fnmatch.fnmatch(name, base):
+                list.append(fn)
+    if rec:
+        for subdir in subdirs:
+            list.extend(findfiles(subdir, base, rec))
+    return list
+
+
 class GrepDialog(SearchDialogBase):
     "Dialog for searching multiple files."
 
@@ -121,7 +146,7 @@ class GrepDialog(SearchDialogBase):
         is an OutputWindow).
         """
         dir, base = os.path.split(path)
-        list = self.findfiles(dir, base, self.recvar.get())
+        list = findfiles(dir, base, self.recvar.get())
         list.sort()
         self.close()
         pat = self.engine.getpat()
@@ -145,30 +170,6 @@ class GrepDialog(SearchDialogBase):
             # Tk window has been closed, OutputWindow.text = None,
             # so in OW.write, OW.text.insert fails.
             pass
-
-    def findfiles(self, dir, base, rec):
-        """Return list of files in the dir that match the base pattern.
-
-        If rec is True, recursively iterate through subdirectories.
-        """
-        try:
-            names = os.listdir(dir or os.curdir)
-        except OSError as msg:
-            print(msg)
-            return []
-        list = []
-        subdirs = []
-        for name in names:
-            fn = os.path.join(dir, name)
-            if os.path.isdir(fn):
-                subdirs.append(fn)
-            else:
-                if fnmatch.fnmatch(name, base):
-                    list.append(fn)
-        if rec:
-            for subdir in subdirs:
-                list.extend(self.findfiles(subdir, base, rec))
-        return list
 
 
 def _grep_dialog(parent):  # htest #

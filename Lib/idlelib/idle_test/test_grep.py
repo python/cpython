@@ -5,7 +5,7 @@ An exception raised in one method will fail callers.
 Otherwise, tests are mostly independent.
 Currently only test grep_it, coverage 51%.
 """
-from idlelib.grep import GrepDialog
+from idlelib import grep
 import unittest
 from test.support import captured_stdout
 from idlelib.idle_test.mock_tk import Var
@@ -27,15 +27,14 @@ searchengine = Dummy_searchengine()
 class Dummy_grep:
     # Methods tested
     #default_command = GrepDialog.default_command
-    grep_it = GrepDialog.grep_it
-    findfiles = GrepDialog.findfiles
+    grep_it = grep.GrepDialog.grep_it
     # Other stuff needed
     recvar = Var(False)
     engine = searchengine
     def close(self):  # gui method
         pass
 
-grep = Dummy_grep()
+_grep = Dummy_grep()
 
 
 class FindfilesTest(unittest.TestCase):
@@ -123,9 +122,9 @@ class Grep_itTest(unittest.TestCase):
     # from incomplete replacement, so 'later'.
 
     def report(self, pat):
-        grep.engine._pat = pat
+        _grep.engine._pat = pat
         with captured_stdout() as s:
-            grep.grep_it(re.compile(pat), __file__)
+            _grep.grep_it(re.compile(pat), __file__)
         lines = s.getvalue().split('\n')
         lines.pop()  # remove bogus '' after last \n
         return lines
