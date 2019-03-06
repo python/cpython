@@ -1,0 +1,1 @@
+Fix linuxaudiodev.linux_audio_device() error handling: close the internal file descriptor if it fails to open the device.

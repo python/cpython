@@ -126,10 +126,12 @@ newladobject(PyObject *arg)
     }
     if (imode == O_WRONLY && ioctl(fd, SNDCTL_DSP_NONBLOCK, NULL) == -1) {
         PyErr_SetFromErrnoWithFilename(LinuxAudioError, basedev);
+        close(fd);
         return NULL;
     }
     if (ioctl(fd, SNDCTL_DSP_GETFMTS, &afmts) == -1) {
         PyErr_SetFromErrnoWithFilename(LinuxAudioError, basedev);
+        close(fd);
         return NULL;
     }
     /* Create and initialize the object */
