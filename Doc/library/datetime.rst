@@ -448,7 +448,8 @@ Other constructors, all class methods:
    Return a :class:`date` corresponding to *date_string*, parsed according to
    *format*. :exc:`ValueError` is raised if the date string and format can't be
    parsed by :meth:`time.strptime`, or if time components are present in the
-   format string.
+   format string. For a complete list of formatting directives, see
+   :ref:`strftime-strptime-behavior`.
 
    .. versionadded:: 3.8
 
@@ -1441,8 +1442,9 @@ Other constructors, all class methods:
 
    Return a :class:`time` corresponding to *date_string, parsed according to
    *format*. :exc:`ValueError` is raised if the date string and format can't be
-   parsed by :meth:`time.strptime`, if it returns a value which isn't a time tuple,
-   or if the date part is nonzero.
+   parsed by :meth:`time.strptime`, if it returns a value which isn't a time
+   tuple, or if the date part is nonzero. For a complete list of formatting
+   directives, see :ref:`strftime-strptime-behavior`.
 
    .. versionadded:: 3.8
 
