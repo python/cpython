@@ -175,6 +175,15 @@ Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
 
 
+datetime
+--------
+
+Added :func:`~datetime.date.strptime` and :func:`~datetime.time.strptime`.
+(Patch by Alexander Belopolsky, Amaury Forgeot d'Arc, Berker Peksag, Josh-sf,
+Juraez Bochi, Maciej Szulik, Matheus Vieira Portela. Contributed by Stéphane
+Wirtel)
+
+
 gc
 --
 
