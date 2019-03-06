@@ -9,6 +9,7 @@ from idlelib.grep import GrepDialog
 import unittest
 from test.support import captured_stdout
 from idlelib.idle_test.mock_tk import Var
+import os.path
 import re
 
 
@@ -38,11 +39,82 @@ grep = Dummy_grep()
 
 
 class FindfilesTest(unittest.TestCase):
-    # findfiles is really a function, not a method, could be iterator
-    # test that filename return filename
-    # test that idlelib has many .py files
-    # test that recursive flag adds idle_test .py files
-    pass
+
+    @classmethod
+    def setUpClass(cls):
+        cls.realpath = os.path.realpath(__file__)
+        cls.path = os.path.dirname(cls.realpath)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.realpath, cls.path
+
+    def test_invaliddir(self):
+        with captured_stdout() as s:
+            filelist = grep.findfiles('invaliddir', '*.*', False)
+        self.assertEqual(filelist, [])
+        self.assertIn('invalid', s.getvalue())
+
+    def test_default_dir(self):
+        ff = grep.findfiles
+        save_cwd = os.getcwd()
+        os.chdir(self.path)
+        filename = 'test_grep.py'
+
+        # No value sent for directory defaults to os.curdir.
+        filelist = ff('', filename, False)
+        self.assertIn(filename, filelist)
+        os.chdir(save_cwd)
+
+    def test_base(self):
+        ff = grep.findfiles
+        readme = os.path.join(self.path, 'README.txt')
+
+        # Check for Python files in path where this file lives.
+        filelist = ff(self.path, '*.py', False)
+        # This directory has many Python files.
+        self.assertGreater(len(filelist), 10)
+        self.assertIn(self.realpath, filelist)
+        self.assertNotIn(readme, filelist)
+
+        # Look for .txt files in path where this file lives.
+        filelist = ff(self.path, '*.txt', False)
+        self.assertNotEqual(len(filelist), 0)
+        self.assertNotIn(self.realpath, filelist)
+        self.assertIn(readme, filelist)
+
+        # Look for non-matching pattern.
+        filelist = ff(self.path, 'grep.*', False)
+        self.assertEqual(len(filelist), 0)
+        self.assertNotIn(self.realpath, filelist)
+
+    def test_recurse(self):
+        ff = grep.findfiles
+        parent = os.path.dirname(self.path)
+        grepfile = os.path.join(parent, 'grep.py')
+        pat = '*.py'
+
+        # Get Python files only in parent directory.
+        filelist = ff(parent, pat, False)
+        parent_size = len(filelist)
+        # Lots of Python files in idlelib.
+        self.assertGreater(parent_size, 20)
+        self.assertIn(grepfile, filelist)
+        # Without subdirectories, this file isn't returned.
+        self.assertNotIn(self.realpath, filelist)
+
+        # Include subdirectories.
+        filelist = ff(parent, pat, True)
+        # More files found now.
+        self.assertGreater(len(filelist), parent_size)
+        self.assertIn(grepfile, filelist)
+        # This file exists in list now.
+        self.assertIn(self.realpath, filelist)
+
+        # Check another level up the tree.
+        parent = os.path.dirname(parent)
+        filelist = ff(parent, '*.py', True)
+        self.assertIn(self.realpath, filelist)
 
 
 class Grep_itTest(unittest.TestCase):
