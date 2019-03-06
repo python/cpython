@@ -2951,7 +2951,7 @@ date_fromordinal(PyObject *cls, PyObject *args)
 }
 
 
-/* Return new date from time.strptime(). */
+/* Return new date from date.strptime(). */
 static PyObject *
 date_strptime(PyObject *cls, PyObject *args)
 {
@@ -2959,7 +2959,6 @@ date_strptime(PyObject *cls, PyObject *args)
     PyObject *datetime;
 
     datetime = datetime_strptime((PyObject *)&PyDateTime_DateTimeType, args);
-
     if (datetime == NULL) {
         return NULL;
     }

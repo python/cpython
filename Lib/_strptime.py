@@ -310,7 +310,7 @@ def _calc_julian_from_V(iso_year, iso_week, iso_weekday):
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a 3-tuple consisting of a time struct and an int containing
     the number of microseconds based on the input string and the
-    format string, and the GMT offset."""
+    format string, and the UTC offset."""
 
     for index, arg in enumerate([data_string, format]):
         if not isinstance(arg, str):
