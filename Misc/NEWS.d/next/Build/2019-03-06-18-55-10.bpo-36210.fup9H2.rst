@@ -1,0 +1,6 @@
+3rd-party packaging of ncurses (with ASIS support) conflicts
+with officially supported AIX curses library.
+Configure AIX build to use libcurses.a rather than libncurses.a
+(that then fails). Also skip trying to build _curses_panel.
+
+patch by M Felt
