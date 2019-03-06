@@ -716,21 +716,14 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 static _PyInitError
 pyinit_preconfig(_PyPreConfig *preconfig, const _PyPreConfig *src_preconfig)
 {
-    _PyInitError err;
-    PyMemAllocatorEx old_alloc;
-
     /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
 
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    if (_PyPreConfig_Copy(preconfig, src_preconfig) >= 0) {
-        err = _PyPreConfig_Read(preconfig);
+    if (_PyPreConfig_Copy(preconfig, src_preconfig) < 0) {
+        return _Py_INIT_ERR("failed to copy pre config");
     }
-    else {
-        err = _Py_INIT_ERR("failed to copy pre config");
-    }
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    _PyInitError err = _PyPreConfig_Read(preconfig);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -743,21 +736,15 @@ static _PyInitError
 pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
                   PyInterpreterState **interp_p)
 {
-    PyMemAllocatorEx old_alloc;
-    _PyInitError err;
 
     /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
 
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    if (_PyCoreConfig_Copy(config, src_config) >= 0) {
-        err = _PyCoreConfig_Read(config, NULL);
+    if (_PyCoreConfig_Copy(config, src_config) < 0) {
+        return _Py_INIT_ERR("failed to copy core config");
     }
-    else {
-        err = _Py_INIT_ERR("failed to copy core config");
-    }
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    _PyInitError err = _PyCoreConfig_Read(config, NULL);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -792,7 +779,6 @@ _PyInitError
 _Py_InitializeCore(PyInterpreterState **interp_p,
                    const _PyCoreConfig *src_config)
 {
-    PyMemAllocatorEx old_alloc;
     _PyInitError err;
 
     assert(src_config != NULL);
@@ -807,10 +793,7 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
     err = pyinit_coreconfig(&local_config, src_config, interp_p);
 
 done:
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     _PyCoreConfig_Clear(&local_config);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     return err;
 }
 
