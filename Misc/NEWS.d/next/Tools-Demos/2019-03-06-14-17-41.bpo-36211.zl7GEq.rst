@@ -1,0 +1,2 @@
+Change the output of the `make -C Doc/ server` command by showing the
+complete URL. Contributed by Stéphane Wirtel.

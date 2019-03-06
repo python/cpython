@@ -28,7 +28,7 @@ if __name__ == '__main__':
     path = sys.argv[1]
     port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
     httpd = simple_server.make_server('', port, app)
-    print("Serving {} on port {}, control-C to stop".format(path, port))
+    print("Serving {0} on 0.0.0.0 port {1} (http://0.0.0.0:{1}/), control-C to stop".format(path, port))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
