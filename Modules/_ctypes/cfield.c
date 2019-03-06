@@ -1291,24 +1291,16 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
 static PyObject *
 s_get(void *ptr, Py_ssize_t size)
 {
-    PyObject *result;
-    size_t slen;
+    Py_ssize_t i;
+    char *p;
 
-    result = PyString_FromString((char *)ptr);
-    if (!result)
-        return NULL;
-    /* chop off at the first NUL character, if any.
-     * On error, result will be deallocated and set to NULL.
-     */
-    slen = strlen(PyString_AS_STRING(result));
-    size = min(size, (Py_ssize_t)slen);
-    if (result->ob_refcnt == 1) {
-        /* shorten the result */
-        _PyString_Resize(&result, size);
-        return result;
-    } else
-        /* cannot shorten the result */
-        return PyString_FromStringAndSize(ptr, size);
+    p = (char *)ptr;
+    for (i = 0; i < size; ++i) {
+        if (*p++ == '\0')
+            break;
+    }
+
+    return PyBytes_FromStringAndSize((char *)ptr, (Py_ssize_t)i);
 }
 
 static PyObject *
