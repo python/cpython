@@ -155,8 +155,6 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
     PyMemAllocatorDomain domain,
     PyMemAllocatorEx *old_alloc);
 
-PyAPI_FUNC(const char*) _PyMem_GetDebugAllocatorsName(void);
-
 #ifdef __cplusplus
 }
 #endif

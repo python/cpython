@@ -336,7 +336,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'legacy_windows_fs_encoding': 0,
             'legacy_windows_stdio': 0,
         })
-    DEBUG_ALLOCATOR = 'pymalloc_debug' if support.with_pymalloc() else 'malloc_debug'
 
     # main config
     COPY_MAIN_CONFIG = (
@@ -589,7 +588,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_env_dev_mode(self):
         config = dict(self.INIT_ENV_CONFIG,
-                      allocator=self.DEBUG_ALLOCATOR,
+                      allocator='debug',
                       dev_mode=1)
         self.check_config("init_env_dev_mode", config)
 
@@ -597,7 +596,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'dev_mode': 1,
             'faulthandler': 1,
-            'allocator': self.DEBUG_ALLOCATOR,
+            'allocator': 'debug',
         }
         self.check_config("init_dev_mode", config)
 

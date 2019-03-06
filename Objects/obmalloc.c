@@ -221,20 +221,6 @@ static PyMemAllocatorEx _PyObject = PYOBJ_ALLOC;
 #endif
 
 
-/* Get the effective name of "debug" memory allocators,
-   as if _PyMem_GetAllocatorsName() is called after
-   _PyMem_SetupAllocators("debug"). */
-const char*
-_PyMem_GetDebugAllocatorsName(void)
-{
-#ifdef WITH_PYMALLOC
-    return "pymalloc_debug";
-#else
-    return "malloc_debug";
-#endif
-}
-
-
 static int
 pymem_set_default_allocator(PyMemAllocatorDomain domain, int debug,
                             PyMemAllocatorEx *old_alloc)
