@@ -223,10 +223,9 @@ extern char        *ctermid_r(char *);
 #include <rtpLib.h>
 #include <wait.h>
 #include <taskLib.h>
-extern char ** environ;
 #ifndef _P_WAIT
-#define _P_WAIT          3
-#define _P_NOWAIT        2
+#define _P_WAIT          0
+#define _P_NOWAIT        1
 #define _P_NOWAITO       1
 #endif
 #endif /* __VXWORKS__ */
@@ -1357,7 +1356,7 @@ win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
 */
 #include <crt_externs.h>
 static char **environ;
-#elif !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
+#elif !defined(_MSC_VER) && (!defined(__WATCOMC__) || defined(__QNX__) || defined(__VXWORKS__))
 extern char **environ;
 #endif /* !_MSC_VER */
 
@@ -5632,34 +5631,31 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
 
 #ifdef HAVE_RTPSPAWN
 static intptr_t
-_rtp_spawn(int mode, const char *rtpFileName, const char *argv[])
+_rtp_spawn(int mode, const char *rtpFileName, const char *argv[],
+               const char  *envp[])
 {
      RTP_ID rtpid;
      int status;
+     pid_t res;
 
-     rtpid = rtpSpawn(rtpFileName, argv, (const char **)environ,
-                      100, 0x1000000, 0, VX_FP_TASK);
+     if (envp) {
+         rtpid = rtpSpawn(rtpFileName, argv, envp,
+                          100, 0x1000000, 0, VX_FP_TASK);
+     }
+     else {
+         rtpid = rtpSpawn(rtpFileName, argv, (const char **)environ,
+                          100, 0x1000000, 0, VX_FP_TASK);
+     }
      if ((rtpid != RTP_ID_ERROR) && (mode == _P_WAIT)) {
-         (void) waitpid((pid_t)rtpid, &status, 0);
+         do {
+             res = waitpid((pid_t)rtpid, &status, 0);
+         } while (res < 0 && errno == EINTR);
+
+         if (res < 0)
+             return RTP_ID_ERROR;
          return ((intptr_t)status);
      }
      return ((intptr_t)rtpid);
-}
-
-static intptr_t
-_rtp_spawne(int mode, const char *rtpFileName, const char *argv[],
-               const char  *envp[])
-{
-    RTP_ID rtpid;
-    int status;
-
-    rtpid = rtpSpawn(rtpFileName, argv, envp,
-                     100, 0x1000000, 0, VX_FP_TASK);
-    if ((rtpid != RTP_ID_ERROR) && (mode == _P_WAIT)) {
-        (void) waitpid((pid_t)rtpid, &status, 0);
-        return ((intptr_t)status);
-    }
-    return ((intptr_t)rtpid);
 }
 #endif
 
@@ -5743,7 +5739,7 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnv(mode, path->wide, argvlist);
 #elif defined(HAVE_RTPSPAWN)
-    spawnval = _rtp_spawn(mode, path->narrow, (const char **)argvlist);
+    spawnval = _rtp_spawn(mode, path->narrow, (const char **)argvlist, NULL);
 #else
     spawnval = _spawnv(mode, path->narrow, argvlist);
 #endif
@@ -5852,7 +5848,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnve(mode, path->wide, argvlist, envlist);
 #elif defined(HAVE_RTPSPAWN)
-    spawnval = _rtp_spawne(mode, path->narrow, (const char **)argvlist,
+    spawnval = _rtp_spawn(mode, path->narrow, (const char **)argvlist,
                            (const char **)envlist);
 #else
     spawnval = _spawnve(mode, path->narrow, argvlist, envlist);
