@@ -390,7 +390,7 @@ Encoders and Decoders
    +========================================+===============+
    | dict                                   | object        |
    +----------------------------------------+---------------+
-   | list, tuple                            | array         |
+   | list, tuple, deque                     | array         |
    +----------------------------------------+---------------+
    | str                                    | string        |
    +----------------------------------------+---------------+
@@ -405,6 +405,9 @@ Encoders and Decoders
 
    .. versionchanged:: 3.4
       Added support for int- and float-derived Enum classes.
+
+  .. versionchanged:: 3.8
+     Added support for deque.
 
    To extend this to recognize other objects, subclass and implement a
    :meth:`default` method with another method that returns a serializable object

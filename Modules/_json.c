@@ -1496,6 +1496,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
     PyObject *mo = PyImport_ImportModule("collections");
     PyObject *deque_type = PyObject_GetAttrString(mo, "deque");
 
+    Py_DECREF(mo);
     if (obj == Py_None || obj == Py_True || obj == Py_False) {
         PyObject *cstr = _encoded_const(obj);
         if (cstr == NULL)
@@ -1522,6 +1523,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyList_Check(obj) || PyTuple_Check(obj) || PyObject_IsInstance(obj, deque_type)) {
+        Py_DECREF(deque_type);
         if (Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_list(s, acc, obj, indent_level);
