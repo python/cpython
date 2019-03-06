@@ -387,7 +387,7 @@ _Py_ClearArgcArgv(void)
 }
 
 
-int
+static int
 _Py_SetArgcArgv(int argc, wchar_t * const *argv)
 {
     int res;
@@ -473,6 +473,9 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
     CLEAR(config->filesystem_errors);
     CLEAR(config->stdio_encoding);
     CLEAR(config->stdio_errors);
+    CLEAR(config->run_command);
+    CLEAR(config->run_module);
+    CLEAR(config->run_filename);
 #undef CLEAR
 #undef CLEAR_WSTRLIST
 }
@@ -677,8 +680,6 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
 void
 _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
 {
-    _PyPreConfig_SetGlobalConfig(&config->preconfig);
-
 #define COPY_FLAG(ATTR, VAR) \
         if (config->ATTR != -1) { \
             VAR = config->ATTR; \
@@ -812,6 +813,7 @@ config_init_executable(_PyCoreConfig *config)
     return _Py_INIT_OK();
 }
 
+
 static const wchar_t*
 config_get_xoption(const _PyCoreConfig *config, wchar_t *name)
 {
@@ -897,35 +899,34 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
 static _PyInitError
 config_read_env_vars(_PyCoreConfig *config)
 {
-#define get_env_flag(CONFIG, ATTR, NAME) \
-        _Py_get_env_flag(&(CONFIG)->preconfig, (ATTR), (NAME))
+    _PyPreConfig *preconfig = &config->preconfig;
 
     /* Get environment variables */
-    get_env_flag(config, &config->parser_debug, "PYTHONDEBUG");
-    get_env_flag(config, &config->verbose, "PYTHONVERBOSE");
-    get_env_flag(config, &config->optimization_level, "PYTHONOPTIMIZE");
-    get_env_flag(config, &config->inspect, "PYTHONINSPECT");
+    _Py_get_env_flag(preconfig, &config->parser_debug, "PYTHONDEBUG");
+    _Py_get_env_flag(preconfig, &config->verbose, "PYTHONVERBOSE");
+    _Py_get_env_flag(preconfig, &config->optimization_level, "PYTHONOPTIMIZE");
+    _Py_get_env_flag(preconfig, &config->inspect, "PYTHONINSPECT");
 
     int dont_write_bytecode = 0;
-    get_env_flag(config, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
+    _Py_get_env_flag(preconfig, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
     if (dont_write_bytecode) {
         config->write_bytecode = 0;
     }
 
     int no_user_site_directory = 0;
-    get_env_flag(config, &no_user_site_directory, "PYTHONNOUSERSITE");
+    _Py_get_env_flag(preconfig, &no_user_site_directory, "PYTHONNOUSERSITE");
     if (no_user_site_directory) {
         config->user_site_directory = 0;
     }
 
     int unbuffered_stdio = 0;
-    get_env_flag(config, &unbuffered_stdio, "PYTHONUNBUFFERED");
+    _Py_get_env_flag(preconfig, &unbuffered_stdio, "PYTHONUNBUFFERED");
     if (unbuffered_stdio) {
         config->buffered_stdio = 0;
     }
 
 #ifdef MS_WINDOWS
-    get_env_flag(config, &config->legacy_windows_stdio,
+    _Py_get_env_flag(preconfig, &config->legacy_windows_stdio,
                  "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 
@@ -952,8 +953,6 @@ config_read_env_vars(_PyCoreConfig *config)
     }
 
     return _Py_INIT_OK();
-
-#undef get_env_flag
 }
 
 
@@ -1333,10 +1332,7 @@ done:
 }
 
 
-/* Read the configuration into _PyCoreConfig and initialize the LC_CTYPE
-   locale: enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538).
-
-   Read the configuration from:
+/* Read the configuration into _PyCoreConfig from:
 
    * Environment variables
    * Py_xxx global configuration variables
@@ -1497,8 +1493,6 @@ config_init_stdio(const _PyCoreConfig *config)
 
 /* Write the configuration:
 
-   - coerce the LC_CTYPE locale (PEP 538)
-   - UTF-8 mode (PEP 540)
    - set Py_xxx global configuration variables
    - initialize C standard streams (stdin, stdout, stderr) */
 void
@@ -2110,10 +2104,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
 }
 
 
-/* Read the configuration into _PyCoreConfig and initialize the LC_CTYPE
-   locale: enable UTF-8 mode (PEP 540) and/or coerce the C locale (PEP 538).
-
-   Read the configuration from:
+/* Read the configuration into _PyCoreConfig from:
 
    * Command line arguments
    * Environment variables
