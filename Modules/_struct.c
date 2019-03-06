@@ -2088,11 +2088,14 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
             return 0;
     }
 
-    s_object = PyDict_GetItem(cache, fmt);
+    s_object = PyDict_GetItemWithError(cache, fmt);
     if (s_object != NULL) {
         Py_INCREF(s_object);
         *ptr = (PyStructObject *)s_object;
         return Py_CLEANUP_SUPPORTED;
+    }
+    else if (PyErr_Occurred()) {
+        return 0;
     }
 
     s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);

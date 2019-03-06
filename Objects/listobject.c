@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "pycore_accu.h"
 
 #ifdef STDC_HEADERS
@@ -476,14 +477,6 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     PyListObject *np;
     PyObject **src, **dest;
     Py_ssize_t i, len;
-    if (ilow < 0)
-        ilow = 0;
-    else if (ilow > Py_SIZE(a))
-        ilow = Py_SIZE(a);
-    if (ihigh < ilow)
-        ihigh = ilow;
-    else if (ihigh > Py_SIZE(a))
-        ihigh = Py_SIZE(a);
     len = ihigh - ilow;
     np = (PyListObject *) list_new_prealloc(len);
     if (np == NULL)
@@ -506,6 +499,18 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     if (!PyList_Check(a)) {
         PyErr_BadInternalCall();
         return NULL;
+    }
+    if (ilow < 0) {
+        ilow = 0;
+    }
+    else if (ilow > Py_SIZE(a)) {
+        ilow = Py_SIZE(a);
+    }
+    if (ihigh < ilow) {
+        ihigh = ilow;
+    }
+    else if (ihigh > Py_SIZE(a)) {
+        ihigh = Py_SIZE(a);
     }
     return list_slice((PyListObject *)a, ilow, ihigh);
 }
@@ -2330,6 +2335,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             else if ((ms.key_richcompare = key_type->tp_richcompare) != NULL) {
                 ms.key_compare = unsafe_object_compare;
             }
+            else {
+                ms.key_compare = safe_object_compare;
+            }
         }
         else {
             ms.key_compare = safe_object_compare;
@@ -2494,26 +2502,11 @@ PyList_Reverse(PyObject *v)
 PyObject *
 PyList_AsTuple(PyObject *v)
 {
-    PyObject *w;
-    PyObject **p, **q;
-    Py_ssize_t n;
     if (v == NULL || !PyList_Check(v)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    n = Py_SIZE(v);
-    w = PyTuple_New(n);
-    if (w == NULL)
-        return NULL;
-    p = ((PyTupleObject *)w)->ob_item;
-    q = ((PyListObject *)v)->ob_item;
-    while (--n >= 0) {
-        Py_INCREF(*q);
-        *p = *q;
-        p++;
-        q++;
-    }
-    return w;
+    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
 /*[clinic input]

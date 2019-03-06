@@ -1,6 +1,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_tupleobject.h"
 #include "structmember.h"
 
 /* Itertools module written and maintained
@@ -2239,15 +2240,10 @@ product_next(productobject *lz)
         /* Copy the previous result tuple or re-use it if available */
         if (Py_REFCNT(result) > 1) {
             PyObject *old_result = result;
-            result = PyTuple_New(npools);
+            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
             if (result == NULL)
                 goto empty;
             lz->result = result;
-            for (i=0; i < npools; i++) {
-                elem = PyTuple_GET_ITEM(old_result, i);
-                Py_INCREF(elem);
-                PyTuple_SET_ITEM(result, i, elem);
-            }
             Py_DECREF(old_result);
         }
         /* Now, we've got the only copy so we can update it in-place */
@@ -2569,15 +2565,10 @@ combinations_next(combinationsobject *co)
         /* Copy the previous result tuple or re-use it if available */
         if (Py_REFCNT(result) > 1) {
             PyObject *old_result = result;
-            result = PyTuple_New(r);
+            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
-            for (i=0; i<r ; i++) {
-                elem = PyTuple_GET_ITEM(old_result, i);
-                Py_INCREF(elem);
-                PyTuple_SET_ITEM(result, i, elem);
-            }
             Py_DECREF(old_result);
         }
         /* Now, we've got the only copy so we can update it in-place
@@ -2910,15 +2901,10 @@ cwr_next(cwrobject *co)
         /* Copy the previous result tuple or re-use it if available */
         if (Py_REFCNT(result) > 1) {
             PyObject *old_result = result;
-            result = PyTuple_New(r);
+            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
-            for (i=0; i<r ; i++) {
-                elem = PyTuple_GET_ITEM(old_result, i);
-                Py_INCREF(elem);
-                PyTuple_SET_ITEM(result, i, elem);
-            }
             Py_DECREF(old_result);
         }
         /* Now, we've got the only copy so we can update it in-place CPython's
@@ -3258,15 +3244,10 @@ permutations_next(permutationsobject *po)
         /* Copy the previous result tuple or re-use it if available */
         if (Py_REFCNT(result) > 1) {
             PyObject *old_result = result;
-            result = PyTuple_New(r);
+            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             po->result = result;
-            for (i=0; i<r ; i++) {
-                elem = PyTuple_GET_ITEM(old_result, i);
-                Py_INCREF(elem);
-                PyTuple_SET_ITEM(result, i, elem);
-            }
             Py_DECREF(old_result);
         }
         /* Now, we've got the only copy so we can update it in-place */
@@ -4418,6 +4399,7 @@ static PyTypeObject ziplongest_type;
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    _Py_IDENTIFIER(fillvalue);
     ziplongestobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
@@ -4426,10 +4408,15 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t tuplesize;
 
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
-        fillvalue = PyDict_GetItemString(kwds, "fillvalue");
-        if (fillvalue == NULL || PyDict_GET_SIZE(kwds) > 1) {
-            PyErr_SetString(PyExc_TypeError,
-                "zip_longest() got an unexpected keyword argument");
+        fillvalue = NULL;
+        if (PyDict_GET_SIZE(kwds) == 1) {
+            fillvalue = _PyDict_GetItemIdWithError(kwds, &PyId_fillvalue);
+        }
+        if (fillvalue == NULL) {
+            if (!PyErr_Occurred()) {
+                PyErr_SetString(PyExc_TypeError,
+                    "zip_longest() got an unexpected keyword argument");
+            }
             return NULL;
         }
     }

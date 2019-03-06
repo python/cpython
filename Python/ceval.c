@@ -171,6 +171,7 @@ PyEval_InitThreads(void)
 {
     if (gil_created())
         return;
+    PyThread_init_thread();
     create_gil();
     take_gil(_PyThreadState_GET());
     _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
@@ -378,9 +379,16 @@ handle_signals(void)
     {
         return 0;
     }
+    /*
+     * Ensure that the thread isn't currently running some other
+     * interpreter.
+     */
+    if (_PyInterpreterState_GET_UNSAFE() != _PyRuntime.interpreters.main) {
+        return 0;
+    }
 
     UNSIGNAL_PENDING_SIGNALS();
-    if (PyErr_CheckSignals() < 0) {
+    if (_PyErr_CheckSignals() < 0) {
         SIGNAL_PENDING_SIGNALS(); /* We're not done yet */
         return -1;
     }
@@ -2047,10 +2055,12 @@ main_loop:
 
             PyObject *bc;
             if (PyDict_CheckExact(f->f_builtins)) {
-                bc = _PyDict_GetItemId(f->f_builtins, &PyId___build_class__);
+                bc = _PyDict_GetItemIdWithError(f->f_builtins, &PyId___build_class__);
                 if (bc == NULL) {
-                    PyErr_SetString(PyExc_NameError,
-                                    "__build_class__ not found");
+                    if (!PyErr_Occurred()) {
+                        PyErr_SetString(PyExc_NameError,
+                                        "__build_class__ not found");
+                    }
                     goto error;
                 }
                 Py_INCREF(bc);
@@ -2198,8 +2208,10 @@ main_loop:
             int err;
             err = PyDict_DelItem(f->f_globals, name);
             if (err != 0) {
-                format_exc_check_arg(
-                    PyExc_NameError, NAME_ERROR_MSG, name);
+                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                    format_exc_check_arg(
+                        PyExc_NameError, NAME_ERROR_MSG, name);
+                }
                 goto error;
             }
             DISPATCH();
@@ -2215,8 +2227,13 @@ main_loop:
                 goto error;
             }
             if (PyDict_CheckExact(locals)) {
-                v = PyDict_GetItem(locals, name);
-                Py_XINCREF(v);
+                v = PyDict_GetItemWithError(locals, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (PyErr_Occurred()) {
+                    goto error;
+                }
             }
             else {
                 v = PyObject_GetItem(locals, name);
@@ -2227,15 +2244,22 @@ main_loop:
                 }
             }
             if (v == NULL) {
-                v = PyDict_GetItem(f->f_globals, name);
-                Py_XINCREF(v);
-                if (v == NULL) {
+                v = PyDict_GetItemWithError(f->f_globals, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (PyErr_Occurred()) {
+                    goto error;
+                }
+                else {
                     if (PyDict_CheckExact(f->f_builtins)) {
-                        v = PyDict_GetItem(f->f_builtins, name);
+                        v = PyDict_GetItemWithError(f->f_builtins, name);
                         if (v == NULL) {
-                            format_exc_check_arg(
+                            if (!PyErr_Occurred()) {
+                                format_exc_check_arg(
                                         PyExc_NameError,
                                         NAME_ERROR_MSG, name);
+                            }
                             goto error;
                         }
                         Py_INCREF(v);
@@ -2343,8 +2367,13 @@ main_loop:
             assert(idx >= 0 && idx < PyTuple_GET_SIZE(co->co_freevars));
             name = PyTuple_GET_ITEM(co->co_freevars, idx);
             if (PyDict_CheckExact(locals)) {
-                value = PyDict_GetItem(locals, name);
-                Py_XINCREF(value);
+                value = PyDict_GetItemWithError(locals, name);
+                if (value != NULL) {
+                    Py_INCREF(value);
+                }
+                else if (PyErr_Occurred()) {
+                    goto error;
+                }
             }
             else {
                 value = PyObject_GetItem(locals, name);
@@ -2548,9 +2577,12 @@ main_loop:
             }
             /* check if __annotations__ in locals()... */
             if (PyDict_CheckExact(f->f_locals)) {
-                ann_dict = _PyDict_GetItemId(f->f_locals,
+                ann_dict = _PyDict_GetItemIdWithError(f->f_locals,
                                              &PyId___annotations__);
                 if (ann_dict == NULL) {
+                    if (PyErr_Occurred()) {
+                        goto error;
+                    }
                     /* ...if not, create a new one */
                     ann_dict = PyDict_New();
                     if (ann_dict == NULL) {
@@ -3764,16 +3796,11 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
 
     /* Pack other positional arguments into the *args argument */
     if (co->co_flags & CO_VARARGS) {
-        u = PyTuple_New(argcount - n);
+        u = _PyTuple_FromArray(args + n, argcount - n);
         if (u == NULL) {
             goto fail;
         }
         SETLOCAL(total_args, u);
-        for (i = n; i < argcount; i++) {
-            x = args[i];
-            Py_INCREF(x);
-            PyTuple_SET_ITEM(u, i-n, x);
-        }
     }
 
     /* Handle keyword arguments passed as two strided arrays */
@@ -3878,11 +3905,14 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
                 continue;
             name = PyTuple_GET_ITEM(co->co_varnames, i);
             if (kwdefs != NULL) {
-                PyObject *def = PyDict_GetItem(kwdefs, name);
+                PyObject *def = PyDict_GetItemWithError(kwdefs, name);
                 if (def) {
                     Py_INCREF(def);
                     SETLOCAL(i, def);
                     continue;
+                }
+                else if (PyErr_Occurred()) {
+                    goto fail;
                 }
             }
             missing++;
@@ -4818,9 +4848,11 @@ import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *leve
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    import_func = _PyDict_GetItemId(f->f_builtins, &PyId___import__);
+    import_func = _PyDict_GetItemIdWithError(f->f_builtins, &PyId___import__);
     if (import_func == NULL) {
-        PyErr_SetString(PyExc_ImportError, "__import__ not found");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ImportError, "__import__ not found");
+        }
         return NULL;
     }
 
@@ -5164,10 +5196,13 @@ unicode_concatenate(PyObject *v, PyObject *w,
             PyObject *names = f->f_code->co_names;
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = f->f_locals;
-            if (locals && PyDict_CheckExact(locals) &&
-                PyDict_GetItem(locals, name) == v) {
-                if (PyDict_DelItem(locals, name) != 0) {
-                    PyErr_Clear();
+            if (locals && PyDict_CheckExact(locals)) {
+                PyObject *w = PyDict_GetItemWithError(locals, name);
+                if ((w == v && PyDict_DelItem(locals, name) != 0) ||
+                    (w == NULL && PyErr_Occurred()))
+                {
+                    Py_DECREF(v);
+                    return NULL;
                 }
             }
             break;

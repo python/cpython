@@ -100,6 +100,21 @@ The class can be used to simulate nested scopes and is useful in templating.
         :func:`super` function.  A reference to ``d.parents`` is equivalent to:
         ``ChainMap(*d.maps[1:])``.
 
+    Note, the iteration order of a :class:`ChainMap()` is determined by
+    scanning the mappings last to first::
+
+        >>> baseline = {'music': 'bach', 'art': 'rembrandt'}
+        >>> adjustments = {'art': 'van gogh', 'opera': 'carmen'}
+        >>> list(ChainMap(adjustments, baseline))
+        ['music', 'art', 'opera']
+
+    This gives the same ordering as a series of :meth:`dict.update` calls
+    starting with the last mapping::
+
+        >>> combined = baseline.copy()
+        >>> combined.update(adjustments)
+        >>> list(combined)
+        ['music', 'art', 'opera']
 
 .. seealso::
 
@@ -163,8 +178,8 @@ contexts::
         e.maps[-1]            # Root context -- like Python's globals()
         e.parents             # Enclosing context chain -- like Python's nonlocals
 
-        d['x']                # Get first key in the chain of contexts
         d['x'] = 1            # Set value in current context
+        d['x']                # Get first key in the chain of contexts
         del d['x']            # Delete from current context
         list(d)               # All nested values
         k in d                # Check all nested values
@@ -253,6 +268,11 @@ For example::
 
     .. versionadded:: 3.1
 
+    .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
+       Inherited the capability to remember insertion order.  Math operations
+       on *Counter* objects also preserve order.  Results are ordered
+       according to when an element is first encountered in the left operand
+       and then by the order encountered in the right operand.
 
     Counter objects support three methods beyond those available for all
     dictionaries:
@@ -260,8 +280,8 @@ For example::
     .. method:: elements()
 
         Return an iterator over elements repeating each as many times as its
-        count.  Elements are returned in arbitrary order.  If an element's count
-        is less than one, :meth:`elements` will ignore it.
+        count.  Elements are returned in the order first encountered. If an
+        element's count is less than one, :meth:`elements` will ignore it.
 
             >>> c = Counter(a=4, b=2, c=0, d=-2)
             >>> sorted(c.elements())
@@ -272,10 +292,10 @@ For example::
         Return a list of the *n* most common elements and their counts from the
         most common to the least.  If *n* is omitted or ``None``,
         :meth:`most_common` returns *all* elements in the counter.
-        Elements with equal counts are ordered arbitrarily:
+        Elements with equal counts are ordered in the order first encountered:
 
-            >>> Counter('abracadabra').most_common(3)  # doctest: +SKIP
-            [('a', 5), ('r', 2), ('b', 2)]
+            >>> Counter('abracadabra').most_common(3)
+            [('a', 5), ('b', 2), ('r', 2)]
 
     .. method:: subtract([iterable-or-mapping])
 
@@ -887,7 +907,7 @@ field names, the method and attribute names start with an underscore.
 
 .. method:: somenamedtuple._asdict()
 
-    Return a new :class:`OrderedDict` which maps field names to their corresponding
+    Return a new :class:`dict` which maps field names to their corresponding
     values:
 
     .. doctest::
@@ -1024,17 +1044,41 @@ customize a prototype instance:
 :class:`OrderedDict` objects
 ----------------------------
 
-Ordered dictionaries are just like regular dictionaries but they remember the
-order that items were inserted.  When iterating over an ordered dictionary,
-the items are returned in the order their keys were first added.
+Ordered dictionaries are just like regular dictionaries but have some extra
+capabilities relating to ordering operations.  They have become less
+important now that the built-in :class:`dict` class gained the ability
+to remember insertion order (this new behavior became guaranteed in
+Python 3.7).
+
+Some differences from :class:`dict` still remain:
+
+* The regular :class:`dict` was designed to be very good at mapping
+  operations.  Tracking insertion order was secondary.
+
+* The :class:`OrderedDict` was designed to be good at reordering operations.
+  Space efficiency, iteration speed, and the performance of update
+  operations were secondary.
+
+* Algorithmically, :class:`OrderedDict` can handle frequent reordering
+  operations better than :class:`dict`.  This makes it suitable for tracking
+  recent accesses (for example in an `LRU cache
+  <https://medium.com/@krishankantsinghal/my-first-blog-on-medium-583159139237>`_).
+
+* The equality operation for :class:`OrderedDict` checks for matching order.
+
+* The :meth:`popitem` method of :class:`OrderedDict` has a different
+  signature.  It accepts an optional argument to specify which item is popped.
+
+* :class:`OrderedDict` has a :meth:`move_to_end` method to
+  efficiently reposition an element to an endpoint.
+
+* Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
+
 
 .. class:: OrderedDict([items])
 
-    Return an instance of a dict subclass, supporting the usual :class:`dict`
-    methods.  An *OrderedDict* is a dict that remembers the order that keys
-    were first inserted. If a new entry overwrites an existing entry, the
-    original insertion position is left unchanged.  Deleting an entry and
-    reinserting it will move it to the end.
+    Return an instance of a :class:`dict` subclass that has methods
+    specialized for rearranging dictionary order.
 
     .. versionadded:: 3.1
 
@@ -1084,29 +1128,7 @@ anywhere a regular dictionary is used.
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Since an ordered dictionary remembers its insertion order, it can be used
-in conjunction with sorting to make a sorted dictionary::
-
-    >>> # regular unsorted dictionary
-    >>> d = {'banana': 3, 'apple': 4, 'pear': 1, 'orange': 2}
-
-    >>> # dictionary sorted by key
-    >>> OrderedDict(sorted(d.items(), key=lambda t: t[0]))
-    OrderedDict([('apple', 4), ('banana', 3), ('orange', 2), ('pear', 1)])
-
-    >>> # dictionary sorted by value
-    >>> OrderedDict(sorted(d.items(), key=lambda t: t[1]))
-    OrderedDict([('pear', 1), ('orange', 2), ('banana', 3), ('apple', 4)])
-
-    >>> # dictionary sorted by length of the key string
-    >>> OrderedDict(sorted(d.items(), key=lambda t: len(t[0])))
-    OrderedDict([('pear', 1), ('apple', 4), ('orange', 2), ('banana', 3)])
-
-The new sorted dictionaries maintain their sort order when entries
-are deleted.  But when new keys are added, the keys are appended
-to the end and the sort is not maintained.
-
-It is also straight-forward to create an ordered dictionary variant
+It is straightforward to create an ordered dictionary variant
 that remembers the order the keys were *last* inserted.
 If a new entry overwrites an existing entry, the
 original insertion position is changed and moved to the end::
@@ -1115,21 +1137,29 @@ original insertion position is changed and moved to the end::
         'Store items in the order the keys were last added'
 
         def __setitem__(self, key, value):
-            if key in self:
-                del self[key]
-            OrderedDict.__setitem__(self, key, value)
+            super().__setitem__(key, value)
+            super().move_to_end(key)
 
-An ordered dictionary can be combined with the :class:`Counter` class
-so that the counter remembers the order elements are first encountered::
+An :class:`OrderedDict` would also be useful for implementing
+variants of :func:`functools.lru_cache`::
 
-    class OrderedCounter(Counter, OrderedDict):
-        'Counter that remembers the order elements are first encountered'
+    class LRU(OrderedDict):
+        'Limit size, evicting the least recently looked-up key when full'
 
-        def __repr__(self):
-            return '%s(%r)' % (self.__class__.__name__, OrderedDict(self))
+        def __init__(self, maxsize=128, *args, **kwds):
+            self.maxsize = maxsize
+            super().__init__(*args, **kwds)
 
-        def __reduce__(self):
-            return self.__class__, (OrderedDict(self),)
+        def __getitem__(self, key):
+            value = super().__getitem__(key)
+            self.move_to_end(key)
+            return value
+
+        def __setitem__(self, key, value):
+            super().__setitem__(key, value)
+            if len(self) > self.maxsize:
+                oldest = next(iter(self))
+                del self[oldest]
 
 
 :class:`UserDict` objects

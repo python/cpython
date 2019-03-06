@@ -357,8 +357,7 @@ class FileInput:
                     fd = os.open(self._filename, mode, perm)
                     self._output = os.fdopen(fd, "w")
                     try:
-                        if hasattr(os, 'chmod'):
-                            os.chmod(self._filename, perm)
+                        os.chmod(self._filename, perm)
                     except OSError:
                         pass
                 self._savestdout = sys.stdout

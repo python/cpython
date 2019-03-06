@@ -1,2 +1,0 @@
-Removed broken ``has_key`` method from
-multiprocessing.managers.SyncManager.dict. Contributed by Rémi Lapeyre.

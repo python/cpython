@@ -359,12 +359,12 @@ PySymtable_Lookup(struct symtable *st, void *key)
     k = PyLong_FromVoidPtr(key);
     if (k == NULL)
         return NULL;
-    v = PyDict_GetItem(st->st_blocks, k);
+    v = PyDict_GetItemWithError(st->st_blocks, k);
     if (v) {
         assert(PySTEntry_Check(v));
         Py_INCREF(v);
     }
-    else {
+    else if (!PyErr_Occurred()) {
         PyErr_SetString(PyExc_KeyError,
                         "unknown symbol table entry");
     }
@@ -637,7 +637,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
     }
 
     while ((name = PyIter_Next(itr))) {
-        v = PyDict_GetItem(symbols, name);
+        v = PyDict_GetItemWithError(symbols, name);
 
         /* Handle symbol that already exists in this scope */
         if (v) {
@@ -661,6 +661,9 @@ update_symbols(PyObject *symbols, PyObject *scopes,
             /* It's a cell, or already free in this scope */
             Py_DECREF(name);
             continue;
+        }
+        else if (PyErr_Occurred()) {
+            goto error;
         }
         /* Handle global symbol */
         if (bound && !PySet_Contains(bound, name)) {
@@ -991,7 +994,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
     if (!mangled)
         return 0;
     dict = ste->ste_symbols;
-    if ((o = PyDict_GetItem(dict, mangled))) {
+    if ((o = PyDict_GetItemWithError(dict, mangled))) {
         val = PyLong_AS_LONG(o);
         if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
             /* Is it better to use 'mangled' or 'name' here? */
@@ -1002,8 +1005,13 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
             goto error;
         }
         val |= flag;
-    } else
+    }
+    else if (PyErr_Occurred()) {
+        goto error;
+    }
+    else {
         val = flag;
+    }
     o = PyLong_FromLong(val);
     if (o == NULL)
         goto error;
@@ -1444,6 +1452,10 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     }
     switch (e->kind) {
     case NamedExpr_kind:
+        if (st->st_cur->ste_comprehension) {
+            if (!symtable_extend_namedexpr_scope(st, e->v.NamedExpr.target))
+                VISIT_QUIT(st, 0);
+        }
         VISIT(st, expr, e->v.NamedExpr.value);
         VISIT(st, expr, e->v.NamedExpr.target);
         break;
@@ -1547,11 +1559,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.Starred.value);
         break;
     case Name_kind:
-        /* Special-case: named expr */
-        if (e->v.Name.ctx == NamedStore && st->st_cur->ste_comprehension) {
-            if(!symtable_extend_namedexpr_scope(st, e))
-                VISIT_QUIT(st, 0);
-        }
         if (!symtable_add_def(st, e->v.Name.id,
                               e->v.Name.ctx == Load ? USE : DEF_LOCAL))
             VISIT_QUIT(st, 0);
