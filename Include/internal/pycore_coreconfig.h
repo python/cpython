@@ -32,7 +32,6 @@ PyAPI_FUNC(_PyInitError) _PyArgv_Decode(const _PyArgv *args,
 /* --- Py_GetArgcArgv() helpers ----------------------------------- */
 
 PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
-PyAPI_FUNC(int) _Py_SetArgcArgv(int argc, wchar_t * const *argv);
 
 /* --- _PyPreConfig ----------------------------------------------- */
 

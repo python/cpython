@@ -716,9 +716,6 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 static _PyInitError
 pyinit_preconfig(_PyPreConfig *preconfig, const _PyPreConfig *src_preconfig)
 {
-    /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
-
     if (_PyPreConfig_Copy(preconfig, src_preconfig) < 0) {
         return _Py_INIT_ERR("failed to copy pre config");
     }
@@ -736,10 +733,6 @@ static _PyInitError
 pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
                   PyInterpreterState **interp_p)
 {
-
-    /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
-
     if (_PyCoreConfig_Copy(config, src_config) < 0) {
         return _Py_INIT_ERR("failed to copy core config");
     }

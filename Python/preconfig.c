@@ -472,10 +472,50 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 }
 
 
+static _PyInitError
+get_ctype_locale(char **locale_p)
+{
+    const char *loc = setlocale(LC_CTYPE, NULL);
+    if (loc == NULL) {
+        return _Py_INIT_ERR("failed to LC_CTYPE locale");
+    }
+
+    char *copy = _PyMem_RawStrdup(loc);
+    if (copy == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    *locale_p = copy;
+    return _Py_INIT_OK();
+}
+
+
+/* Read the configuration from:
+
+   - environment variables
+   - Py_xxx global configuration variables
+   - the LC_CTYPE locale
+
+   See _PyPreConfig_ReadFromArgv() to parse also command line arguments. */
 _PyInitError
 _PyPreConfig_Read(_PyPreConfig *config)
 {
-    return preconfig_read(config, NULL);
+    _PyInitError err;
+    char *old_loc;
+
+    err = get_ctype_locale(&old_loc);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
+
+    err = preconfig_read(config, NULL);
+
+    setlocale(LC_CTYPE, old_loc);
+
+    return err;
 }
 
 
@@ -604,7 +644,14 @@ done:
 }
 
 
-/* Read the preconfiguration. */
+/* Read the configuration from:
+
+   - command line arguments
+   - environment variables
+   - Py_xxx global configuration variables
+   - the LC_CTYPE locale
+
+   See _PyPreConfig_ReadFromArgv() to parse also command line arguments. */
 _PyInitError
 _PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
 {
@@ -624,15 +671,8 @@ _PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
     int locale_coerced = 0;
     int loops = 0;
 
-    /* copy LC_CTYPE locale */
-    const char *loc = setlocale(LC_CTYPE, NULL);
-    if (loc == NULL) {
-        err = _Py_INIT_ERR("failed to LC_CTYPE locale");
-        goto done;
-    }
-    init_ctype_locale = _PyMem_RawStrdup(loc);
-    if (init_ctype_locale == NULL) {
-        err = _Py_INIT_NO_MEMORY();
+    err = get_ctype_locale(&init_ctype_locale);
+    if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
@@ -767,15 +807,23 @@ _PyPreConfig_SetAllocator(_PyPreConfig *config)
 }
 
 
-/* Write the pre-configuration.
+/* Write the pre-configuration:
+
+   - set the memory allocators
+   - set Py_xxx global configuration variables
+   - set the LC_CTYPE locale (coerce C locale, PEP 538) and set the UTF-8 mode
+     (PEP 540)
 
    If the memory allocator is changed, config is re-allocated with new
-   allocator. So calling _PyPreConfig_Clear(config) is safe after this call. */
+   allocator. So calling _PyPreConfig_Clear(config) is safe after this call.
+
+   Do nothing if called after Py_Initialize(): ignore the new
+   pre-configuration. */
 _PyInitError
 _PyPreConfig_Write(_PyPreConfig *config)
 {
     if (_PyRuntime.core_initialized) {
-        /* bpo-34008: Calling Py_Main() after Py_Initialize() ignores
+        /* bpo-34008: Calling this functions after Py_Initialize() ignores
            the new configuration. */
         return _Py_INIT_OK();
     }
