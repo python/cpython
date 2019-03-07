@@ -34,6 +34,20 @@
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
+#ifdef _MSC_VER
+#define _Py_timezone _timezone
+#define _Py_daylight _daylight
+#define _Py_tzname _tzname
+#else
+#define _Py_timezone timezone
+#define _Py_daylight daylight
+#define _Py_tzname tzname
+#endif
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 /* Forward declarations */
@@ -174,10 +188,15 @@ static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
 {
     int ret;
-    int clk_id;
     struct timespec tp;
 
+#if defined(_AIX) && (SIZEOF_LONG == 8)
+    long clk_id;
+    if (!PyArg_ParseTuple(args, "l:clock_gettime", &clk_id)) {
+#else
+    int clk_id;
     if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
+#endif
         return NULL;
     }
 
@@ -331,6 +350,9 @@ time_pthread_getcpuclockid(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(&clk_id, sizeof(clk_id));
+#endif
     return PyLong_FromLong(clk_id);
 }
 
@@ -743,7 +765,7 @@ time_strftime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-#if defined(_MSC_VER) || defined(sun) || defined(_AIX)
+#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
@@ -789,7 +811,7 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
+#elif (defined(_AIX) || (defined(__sun) && defined(__SVR4))) && defined(HAVE_WCSFTIME)
     for (outbuf = wcschr(fmt, '%');
         outbuf != NULL;
         outbuf = wcschr(outbuf+2, '%'))
@@ -972,35 +994,51 @@ time_mktime(PyObject *self, PyObject *tup)
 {
     struct tm buf;
     time_t tt;
+#ifdef _AIX
+    time_t clk;
+    int     year = buf.tm_year;
+    int     delta_days = 0;
+#endif
+
     if (!gettmarg(tup, &buf,
                   "iiiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
     }
-#ifdef _AIX
+#ifndef _AIX
+    buf.tm_wday = -1;  /* sentinel; original value ignored */
+    tt = mktime(&buf);
+#else
     /* year < 1902 or year > 2037 */
-    if (buf.tm_year < 2 || buf.tm_year > 137) {
+    if ((buf.tm_year < 2) || (buf.tm_year > 137))  {
         /* Issue #19748: On AIX, mktime() doesn't report overflow error for
          * timestamp < -2^31 or timestamp > 2**31-1. */
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
-#else
-    buf.tm_wday = -1;  /* sentinel; original value ignored */
+    year = buf.tm_year;
+    /* year < 1970 - adjust buf.tm_year into legal range */
+    while (buf.tm_year < 70) {
+        buf.tm_year += 4;
+        delta_days -= (366 + (365 * 3));
+    }
+
+    buf.tm_wday = -1;
+    clk = mktime(&buf);
+    buf.tm_year = year;
+
+    if ((buf.tm_wday != -1) && delta_days)
+        buf.tm_wday = (buf.tm_wday + delta_days) % 7;
+
+    tt = clk + (delta_days * (24 * 3600));
 #endif
-    tt = mktime(&buf);
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
     if (tt == (time_t)(-1)
-#ifndef _AIX
         /* Return value of -1 does not necessarily mean an error, but
          * tm_wday cannot remain set to -1 if mktime succeeded. */
-        && buf.tm_wday == -1
-#else
-        /* on AIX, tm_wday is always sets, even on error */
-#endif
-       )
+        && buf.tm_wday == -1)
     {
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
@@ -1572,18 +1610,18 @@ init_timezone(PyObject *m)
 #ifdef HAVE_DECL_TZNAME
     PyObject *otz0, *otz1;
     tzset();
-    PyModule_AddIntConstant(m, "timezone", timezone);
+    PyModule_AddIntConstant(m, "timezone", _Py_timezone);
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);
 #else
-    PyModule_AddIntConstant(m, "altzone", timezone-3600);
+    PyModule_AddIntConstant(m, "altzone", _Py_timezone-3600);
 #endif
-    PyModule_AddIntConstant(m, "daylight", daylight);
-    otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
+    PyModule_AddIntConstant(m, "daylight", _Py_daylight);
+    otz0 = PyUnicode_DecodeLocale(_Py_tzname[0], "surrogateescape");
     if (otz0 == NULL) {
         return -1;
     }
-    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
+    otz1 = PyUnicode_DecodeLocale(_Py_tzname[1], "surrogateescape");
     if (otz1 == NULL) {
         Py_DECREF(otz0);
         return -1;
@@ -1777,6 +1815,9 @@ PyInit_time(void)
 #endif
 #ifdef CLOCK_UPTIME
     PyModule_AddIntMacro(m, CLOCK_UPTIME);
+#endif
+#ifdef CLOCK_UPTIME_RAW
+    PyModule_AddIntMacro(m, CLOCK_UPTIME_RAW);
 #endif
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */

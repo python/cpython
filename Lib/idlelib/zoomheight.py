@@ -13,7 +13,10 @@ class ZoomHeight:
 
     def zoom_height_event(self, event=None):
         top = self.editwin.top
-        zoom_height(top)
+        zoomed = zoom_height(top)
+        menu_status = 'Restore' if zoomed else 'Zoom'
+        self.editwin.update_menu_label(menu='options', index='* Height',
+                                       label=f'{menu_status} Height')
         return "break"
 
 
@@ -46,6 +49,7 @@ def zoom_height(top):
     else:
         newgeom = "%dx%d+%d+%d" % (width, newheight, x, newy)
     top.wm_geometry(newgeom)
+    return newgeom != ""
 
 
 if __name__ == "__main__":

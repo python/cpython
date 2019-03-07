@@ -1,1 +1,0 @@
-Remove deprecated ``cgi.escape``, ``cgi.parse_qs`` and ``cgi.parse_qsl``.

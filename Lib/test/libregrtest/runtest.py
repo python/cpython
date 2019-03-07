@@ -162,7 +162,7 @@ def runtest_inner(ns, test, display_failure=True):
         abstest = get_abs_module(ns, test)
         clear_caches()
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
-            start_time = time.time()
+            start_time = time.perf_counter()
             the_module = importlib.import_module(abstest)
             # If the test has a test_main, that will run the appropriate
             # tests.  If not, use normal unittest test loading.
@@ -180,7 +180,7 @@ def runtest_inner(ns, test, display_failure=True):
                 refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
             else:
                 test_runner()
-            test_time = time.time() - start_time
+            test_time = time.perf_counter() - start_time
         post_test_cleanup()
     except support.ResourceDenied as msg:
         if not ns.quiet and not ns.pgo:
@@ -249,10 +249,8 @@ def cleanup_test_droppings(testname, verbose):
         if verbose:
             print("%r left behind %s %r" % (testname, kind, name))
         try:
-            # if we have chmod, fix possible permissions problems
-            # that might prevent cleanup
-            if (hasattr(os, 'chmod')):
-                os.chmod(name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            # fix possible permissions problems that might prevent cleanup
+            os.chmod(name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
             nuker(name)
         except Exception as msg:
             print(("%r left behind %s %r and it couldn't be "

@@ -701,17 +701,35 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(1234.56, '.4'), '1.235e+03')
         self.assertEqual(format(12345.6, '.4'), '1.235e+04')
 
+    def test_issue35560(self):
+        self.assertEqual(format(123.0, '00'), '123.0')
+        self.assertEqual(format(123.34, '00f'), '123.340000')
+        self.assertEqual(format(123.34, '00e'), '1.233400e+02')
+        self.assertEqual(format(123.34, '00g'), '123.34')
+        self.assertEqual(format(123.34, '00.10f'), '123.3400000000')
+        self.assertEqual(format(123.34, '00.10e'), '1.2334000000e+02')
+        self.assertEqual(format(123.34, '00.10g'), '123.34')
+        self.assertEqual(format(123.34, '01f'), '123.340000')
+
+        self.assertEqual(format(-123.0, '00'), '-123.0')
+        self.assertEqual(format(-123.34, '00f'), '-123.340000')
+        self.assertEqual(format(-123.34, '00e'), '-1.233400e+02')
+        self.assertEqual(format(-123.34, '00g'), '-123.34')
+        self.assertEqual(format(-123.34, '00.10f'), '-123.3400000000')
+        self.assertEqual(format(-123.34, '00.10f'), '-123.3400000000')
+        self.assertEqual(format(-123.34, '00.10e'), '-1.2334000000e+02')
+        self.assertEqual(format(-123.34, '00.10g'), '-123.34')
+
 class ReprTestCase(unittest.TestCase):
     def test_repr(self):
-        floats_file = open(os.path.join(os.path.split(__file__)[0],
-                           'floating_points.txt'))
-        for line in floats_file:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            v = eval(line)
-            self.assertEqual(v, eval(repr(v)))
-        floats_file.close()
+        with open(os.path.join(os.path.split(__file__)[0],
+                  'floating_points.txt')) as floats_file:
+            for line in floats_file:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                v = eval(line)
+                self.assertEqual(v, eval(repr(v)))
 
     @unittest.skipUnless(getattr(sys, 'float_repr_style', '') == 'short',
                          "applies only when using short float repr style")

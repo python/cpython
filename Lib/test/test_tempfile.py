@@ -8,6 +8,7 @@ import sys
 import re
 import warnings
 import contextlib
+import stat
 import weakref
 from unittest import mock
 
@@ -15,12 +16,6 @@ import unittest
 from test import support
 from test.support import script_helper
 
-
-if hasattr(os, 'stat'):
-    import stat
-    has_stat = 1
-else:
-    has_stat = 0
 
 has_textmode = (tempfile._text_openflags != tempfile._bin_openflags)
 has_spawnl = hasattr(os, 'spawnl')
@@ -433,7 +428,6 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
 
@@ -579,9 +573,8 @@ class TestGetTempDir(BaseTestCase):
         # sneaky: just instantiate a NamedTemporaryFile, which
         # defaults to writing into the directory returned by
         # gettempdir.
-        file = tempfile.NamedTemporaryFile()
-        file.write(b"blat")
-        file.close()
+        with tempfile.NamedTemporaryFile() as file:
+            file.write(b"blat")
 
     def test_same_thing(self):
         # gettempdir always returns the same object
@@ -738,7 +731,6 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
@@ -898,9 +890,8 @@ class TestNamedTemporaryFile(BaseTestCase):
         # A NamedTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
         try:
-            f = tempfile.NamedTemporaryFile(dir=dir)
-            f.write(b'blat')
-            f.close()
+            with tempfile.NamedTemporaryFile(dir=dir) as f:
+                f.write(b'blat')
             self.assertFalse(os.path.exists(f.name),
                         "NamedTemporaryFile %s exists after close" % f.name)
         finally:
@@ -1221,8 +1212,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         f.write(b'abcdefg\n')
         f.truncate(20)
         self.assertTrue(f._rolled)
-        if has_stat:
-            self.assertEqual(os.fstat(f.fileno()).st_size, 20)
+        self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:

@@ -1419,6 +1419,19 @@ _PyDict_GetItemIdWithError(PyObject *dp, struct _Py_Identifier *key)
     return PyDict_GetItemWithError(dp, kv);
 }
 
+PyObject *
+_PyDict_GetItemStringWithError(PyObject *v, const char *key)
+{
+    PyObject *kv, *rv;
+    kv = PyUnicode_FromString(key);
+    if (kv == NULL) {
+        return NULL;
+    }
+    rv = PyDict_GetItemWithError(v, kv);
+    Py_DECREF(kv);
+    return rv;
+}
+
 /* Fast version of global value lookup (LOAD_GLOBAL).
  * Lookup in globals, then builtins.
  *
@@ -2358,14 +2371,21 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
         value = PySequence_Fast_GET_ITEM(fast, 1);
         Py_INCREF(key);
         Py_INCREF(value);
-        if (override || PyDict_GetItem(d, key) == NULL) {
-            int status = PyDict_SetItem(d, key, value);
-            if (status < 0) {
+        if (override) {
+            if (PyDict_SetItem(d, key, value) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
                 goto Fail;
             }
         }
+        else if (PyDict_GetItemWithError(d, key) == NULL) {
+            if (PyErr_Occurred() || PyDict_SetItem(d, key, value) < 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                goto Fail;
+            }
+        }
+
         Py_DECREF(key);
         Py_DECREF(value);
         Py_DECREF(fast);
@@ -2489,15 +2509,22 @@ dict_merge(PyObject *a, PyObject *b, int override)
             return -1;
 
         for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
-            if (override != 1 && PyDict_GetItem(a, key) != NULL) {
-                if (override != 0) {
-                    _PyErr_SetKeyError(key);
+            if (override != 1) {
+                if (PyDict_GetItemWithError(a, key) != NULL) {
+                    if (override != 0) {
+                        _PyErr_SetKeyError(key);
+                        Py_DECREF(key);
+                        Py_DECREF(iter);
+                        return -1;
+                    }
+                    Py_DECREF(key);
+                    continue;
+                }
+                else if (PyErr_Occurred()) {
                     Py_DECREF(key);
                     Py_DECREF(iter);
                     return -1;
                 }
-                Py_DECREF(key);
-                continue;
             }
             value = PyObject_GetItem(b, key);
             if (value == NULL) {
@@ -3810,6 +3837,7 @@ dict___reversed___impl(PyDictObject *self)
 static PyObject *
 dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     dictiterobject tmp = *di;
     Py_XINCREF(tmp.di_dict);
@@ -3819,7 +3847,7 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
 }
 
 PyTypeObject PyDictRevIterItem_Type = {

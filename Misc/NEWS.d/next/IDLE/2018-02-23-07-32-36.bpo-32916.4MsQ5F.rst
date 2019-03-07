@@ -1,1 +1,0 @@
-Change ``str`` to ``code`` in pyparse.

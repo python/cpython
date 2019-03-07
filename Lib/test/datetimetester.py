@@ -820,6 +820,44 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(str(t3), str(t4))
         self.assertEqual(t4.as_hours(), -1)
 
+    def test_subclass_date(self):
+        class DateSubclass(date):
+            pass
+
+        d1 = DateSubclass(2018, 1, 5)
+        td = timedelta(days=1)
+
+        tests = [
+            ('add', lambda d, t: d + t, DateSubclass(2018, 1, 6)),
+            ('radd', lambda d, t: t + d, DateSubclass(2018, 1, 6)),
+            ('sub', lambda d, t: d - t, DateSubclass(2018, 1, 4)),
+        ]
+
+        for name, func, expected in tests:
+            with self.subTest(name):
+                act = func(d1, td)
+                self.assertEqual(act, expected)
+                self.assertIsInstance(act, DateSubclass)
+
+    def test_subclass_datetime(self):
+        class DateTimeSubclass(datetime):
+            pass
+
+        d1 = DateTimeSubclass(2018, 1, 5, 12, 30)
+        td = timedelta(days=1, minutes=30)
+
+        tests = [
+            ('add', lambda d, t: d + t, DateTimeSubclass(2018, 1, 6, 13)),
+            ('radd', lambda d, t: t + d, DateTimeSubclass(2018, 1, 6, 13)),
+            ('sub', lambda d, t: d - t, DateTimeSubclass(2018, 1, 4, 12)),
+        ]
+
+        for name, func, expected in tests:
+            with self.subTest(name):
+                act = func(d1, td)
+                self.assertEqual(act, expected)
+                self.assertIsInstance(act, DateTimeSubclass)
+
     def test_division(self):
         t = timedelta(hours=1, minutes=24, seconds=19)
         second = timedelta(seconds=1)
@@ -1350,6 +1388,17 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
         #check that this standard extension works
         t.strftime("%f")
+
+    def test_strftime_trailing_percent(self):
+        # bpo-35066: make sure trailing '%' doesn't cause
+        # datetime's strftime to complain
+        t = self.theclass(2005, 3, 2)
+        try:
+            _time.strftime('%')
+        except ValueError:
+            self.skipTest('time module does not support trailing %')
+        self.assertEqual(t.strftime('%'), '%')
+        self.assertEqual(t.strftime("m:%m d:%d y:%y %"), "m:03 d:02 y:05 %")
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10)
@@ -2593,32 +2642,57 @@ class TestDateTime(TestDate):
         ts = base_d.timestamp()
 
         test_cases = [
-            ('fromtimestamp', (ts,)),
+            ('fromtimestamp', (ts,), base_d),
             # See https://bugs.python.org/issue32417
-            # ('fromtimestamp', (ts, timezone.utc)),
-            ('utcfromtimestamp', (utc_ts,)),
-            ('fromisoformat', (d_isoformat,)),
-            ('strptime', (d_isoformat, '%Y-%m-%dT%H:%M:%S.%f')),
-            ('combine', (date(*args[0:3]), time(*args[3:]))),
+            ('fromtimestamp', (ts, timezone.utc),
+                               base_d.astimezone(timezone.utc)),
+            ('utcfromtimestamp', (utc_ts,), base_d),
+            ('fromisoformat', (d_isoformat,), base_d),
+            ('strptime', (d_isoformat, '%Y-%m-%dT%H:%M:%S.%f'), base_d),
+            ('combine', (date(*args[0:3]), time(*args[3:])), base_d),
         ]
 
-        for constr_name, constr_args in test_cases:
+        for constr_name, constr_args, expected in test_cases:
             for base_obj in (DateTimeSubclass, base_d):
                 # Test both the classmethod and method
                 with self.subTest(base_obj_type=type(base_obj),
                                   constr_name=constr_name):
-                    constr = getattr(base_obj, constr_name)
+                    constructor = getattr(base_obj, constr_name)
 
-                    dt = constr(*constr_args)
+                    dt = constructor(*constr_args)
 
                     # Test that it creates the right subclass
                     self.assertIsInstance(dt, DateTimeSubclass)
 
                     # Test that it's equal to the base object
-                    self.assertEqual(dt, base_d.replace(tzinfo=None))
+                    self.assertEqual(dt, expected)
 
                     # Test that it called the constructor
                     self.assertEqual(dt.extra, 7)
+
+    def test_subclass_now(self):
+        # Test that alternate constructors call the constructor
+        class DateTimeSubclass(self.theclass):
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+
+                return result
+
+        test_cases = [
+            ('now', 'now', {}),
+            ('utcnow', 'utcnow', {}),
+            ('now_utc', 'now', {'tz': timezone.utc}),
+            ('now_fixed', 'now', {'tz': timezone(timedelta(hours=-5), "EST")}),
+        ]
+
+        for name, meth_name, kwargs in test_cases:
+            with self.subTest(name):
+                constr = getattr(DateTimeSubclass, meth_name)
+                dt = constr(**kwargs)
+
+                self.assertIsInstance(dt, DateTimeSubclass)
+                self.assertEqual(dt.extra, 7)
 
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
@@ -4844,8 +4918,9 @@ class Oddballs(unittest.TestCase):
         for xx in [decimal.Decimal(10),
                    decimal.Decimal('10.9'),
                    Number(10)]:
-            self.assertEqual(datetime(10, 10, 10, 10, 10, 10, 10),
-                             datetime(xx, xx, xx, xx, xx, xx, xx))
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(datetime(10, 10, 10, 10, 10, 10, 10),
+                                 datetime(xx, xx, xx, xx, xx, xx, xx))
 
         with self.assertRaisesRegex(TypeError, '^an integer is required '
                                               r'\(got type str\)$'):
@@ -4853,7 +4928,7 @@ class Oddballs(unittest.TestCase):
 
         f10 = Number(10.9)
         with self.assertRaisesRegex(TypeError, '^__int__ returned non-int '
-                                              r'\(type float\)$'):
+                                               r'\(type float\)$'):
             datetime(10, 10, f10)
 
         class Float(float):

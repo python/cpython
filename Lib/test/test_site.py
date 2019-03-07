@@ -125,15 +125,14 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir = os.path.abspath(pth_dir)
         pth_basename = pth_name + '.pth'
         pth_fn = os.path.join(pth_dir, pth_basename)
-        pth_file = open(pth_fn, 'w', encoding='utf-8')
-        self.addCleanup(lambda: os.remove(pth_fn))
-        pth_file.write(contents)
-        pth_file.close()
+        with open(pth_fn, 'w', encoding='utf-8') as pth_file:
+            self.addCleanup(lambda: os.remove(pth_fn))
+            pth_file.write(contents)
         return pth_dir, pth_basename
 
     def test_addpackage_import_bad_syntax(self):
         # Issue 10642
-        pth_dir, pth_fn = self.make_pth("import bad)syntax\n")
+        pth_dir, pth_fn = self.make_pth("import bad-syntax\n")
         with captured_stderr() as err_out:
             site.addpackage(pth_dir, pth_fn, set())
         self.assertRegex(err_out.getvalue(), "line 1")
@@ -143,7 +142,7 @@ class HelperFunctionsTests(unittest.TestCase):
         # order doesn't matter.  The next three could be a single check
         # but my regex foo isn't good enough to write it.
         self.assertRegex(err_out.getvalue(), 'Traceback')
-        self.assertRegex(err_out.getvalue(), r'import bad\)syntax')
+        self.assertRegex(err_out.getvalue(), r'import bad-syntax')
         self.assertRegex(err_out.getvalue(), 'SyntaxError')
 
     def test_addpackage_import_bad_exec(self):
@@ -181,7 +180,9 @@ class HelperFunctionsTests(unittest.TestCase):
         finally:
             pth_file.cleanup()
 
-    def test_getuserbase(self):
+    # This tests _getuserbase, hence the double underline
+    # to distinguish from a test for getuserbase
+    def test__getuserbase(self):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
     def test_get_path(self):

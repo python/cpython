@@ -2578,9 +2578,15 @@ unicode_fromformat_write_cstr(_PyUnicodeWriter *writer, const char *str,
     PyObject *unicode;
     int res;
 
-    length = strlen(str);
-    if (precision != -1)
-        length = Py_MIN(length, precision);
+    if (precision == -1) {
+        length = strlen(str);
+    }
+    else {
+        length = 0;
+        while (length < precision && str[length]) {
+            length++;
+        }
+    }
     unicode = PyUnicode_DecodeUTF8Stateful(str, length, "replace", NULL);
     if (unicode == NULL)
         return -1;
@@ -9381,6 +9387,7 @@ _PyUnicode_InsertThousandsGrouping(
     PyObject *thousands_sep,
     Py_UCS4 *maxchar)
 {
+    min_width = Py_MAX(0, min_width);
     if (writer) {
         assert(digits != NULL);
         assert(maxchar == NULL);
@@ -9391,7 +9398,6 @@ _PyUnicode_InsertThousandsGrouping(
     }
     assert(0 <= d_pos);
     assert(0 <= n_digits);
-    assert(0 <= min_width);
     assert(grouping != NULL);
 
     if (digits != NULL) {
@@ -11656,7 +11662,6 @@ unicode_getitem(PyObject *self, Py_ssize_t index)
 static Py_hash_t
 unicode_hash(PyObject *self)
 {
-    Py_ssize_t len;
     Py_uhash_t x;  /* Unsigned for defined overflow behavior. */
 
 #ifdef Py_DEBUG
@@ -11666,15 +11671,7 @@ unicode_hash(PyObject *self)
         return _PyUnicode_HASH(self);
     if (PyUnicode_READY(self) == -1)
         return -1;
-    len = PyUnicode_GET_LENGTH(self);
-    /*
-      We make the hash of the empty string be 0, rather than using
-      (prefix ^ suffix), since this slightly obfuscates the hash secret
-    */
-    if (len == 0) {
-        _PyUnicode_HASH(self) = 0;
-        return 0;
-    }
+
     x = _Py_HashBytes(PyUnicode_DATA(self),
                       PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
     _PyUnicode_HASH(self) = x;
@@ -15202,7 +15199,8 @@ PyTypeObject PyUnicode_Type = {
 
 /* Initialize the Unicode implementation */
 
-int _PyUnicode_Init(void)
+_PyInitError
+_PyUnicode_Init(void)
 {
     /* XXX - move this array to unicodectype.c ? */
     Py_UCS2 linebreak[] = {
@@ -15218,28 +15216,30 @@ int _PyUnicode_Init(void)
 
     /* Init the implementation */
     _Py_INCREF_UNICODE_EMPTY();
-    if (!unicode_empty)
-        Py_FatalError("Can't create empty string");
+    if (!unicode_empty) {
+        return _Py_INIT_ERR("Can't create empty string");
+    }
     Py_DECREF(unicode_empty);
 
-    if (PyType_Ready(&PyUnicode_Type) < 0)
-        Py_FatalError("Can't initialize 'unicode'");
+    if (PyType_Ready(&PyUnicode_Type) < 0) {
+        return _Py_INIT_ERR("Can't initialize unicode type");
+    }
 
     /* initialize the linebreak bloom filter */
     bloom_linebreak = make_bloom_mask(
         PyUnicode_2BYTE_KIND, linebreak,
         Py_ARRAY_LENGTH(linebreak));
 
-    if (PyType_Ready(&EncodingMapType) < 0)
-         Py_FatalError("Can't initialize encoding map type");
-
-    if (PyType_Ready(&PyFieldNameIter_Type) < 0)
-        Py_FatalError("Can't initialize field name iterator type");
-
-    if (PyType_Ready(&PyFormatterIter_Type) < 0)
-        Py_FatalError("Can't initialize formatter iter type");
-
-    return 0;
+    if (PyType_Ready(&EncodingMapType) < 0) {
+         return _Py_INIT_ERR("Can't initialize encoding map type");
+    }
+    if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
+        return _Py_INIT_ERR("Can't initialize field name iterator type");
+    }
+    if (PyType_Ready(&PyFormatterIter_Type) < 0) {
+        return _Py_INIT_ERR("Can't initialize formatter iter type");
+    }
+    return _Py_INIT_OK();
 }
 
 /* Finalize the Unicode implementation */
@@ -15444,14 +15444,15 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);
     } else {
         PyObject *u = (PyObject *)_PyUnicode_New(0);
         if (u == NULL)
             return NULL;
-        return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), u);
+        return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), u);
     }
 }
 

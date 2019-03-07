@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "osdefs.h"
+#include "pycore_coreconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
@@ -329,7 +330,7 @@ _PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
 #endif
 
     if (path_config.isolated != -1) {
-        config->isolated = path_config.isolated;
+        config->preconfig.isolated = path_config.isolated;
     }
     if (path_config.site_import != -1) {
         config->site_import = path_config.site_import;
@@ -392,7 +393,7 @@ pathconfig_global_init(void)
     _PyInitError err;
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    err = _PyCoreConfig_Read(&config);
+    err = _PyCoreConfig_Read(&config, NULL);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
@@ -407,7 +408,7 @@ pathconfig_global_init(void)
 
 error:
     _PyCoreConfig_Clear(&config);
-    _Py_FatalInitError(err);
+    _Py_ExitInitError(err);
 }
 
 
@@ -675,6 +676,12 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
 }
 
 
+#ifdef MS_WINDOWS
+#define WCSTOK wcstok_s
+#else
+#define WCSTOK wcstok
+#endif
+
 /* Search for a prefix value in an environment file (pyvenv.cfg).
    If found, copy it into the provided buffer. */
 int
@@ -705,11 +712,11 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
         wchar_t *tmpbuffer = _Py_DecodeUTF8_surrogateescape(buffer, n);
         if (tmpbuffer) {
             wchar_t * state;
-            wchar_t * tok = wcstok(tmpbuffer, L" \t\r\n", &state);
+            wchar_t * tok = WCSTOK(tmpbuffer, L" \t\r\n", &state);
             if ((tok != NULL) && !wcscmp(tok, key)) {
-                tok = wcstok(NULL, L" \t", &state);
+                tok = WCSTOK(NULL, L" \t", &state);
                 if ((tok != NULL) && !wcscmp(tok, L"=")) {
-                    tok = wcstok(NULL, L"\r\n", &state);
+                    tok = WCSTOK(NULL, L"\r\n", &state);
                     if (tok != NULL) {
                         wcsncpy(value, tok, MAXPATHLEN);
                         result = 1;

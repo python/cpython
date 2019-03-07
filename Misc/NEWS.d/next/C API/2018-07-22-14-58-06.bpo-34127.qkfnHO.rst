@@ -1,2 +1,0 @@
-Return grammatically correct error message based on argument count.
-Patch by Karthikeyan Singaravelan.

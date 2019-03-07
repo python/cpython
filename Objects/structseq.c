@@ -2,6 +2,7 @@
    and posixmodule for example uses. */
 
 #include "Python.h"
+#include "pycore_tupleobject.h"
 #include "structmember.h"
 
 static const char visible_length_key[] = "n_sequence_fields";
@@ -250,7 +251,7 @@ structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     n_fields = REAL_SIZE(self);
     n_visible_fields = VISIBLE_SIZE(self);
     n_unnamed_fields = UNNAMED_FIELDS(self);
-    tup = PyTuple_New(n_visible_fields);
+    tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
     if (!tup)
         goto error;
 
@@ -258,12 +259,7 @@ structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     if (!dict)
         goto error;
 
-    for (i = 0; i < n_visible_fields; i++) {
-        Py_INCREF(self->ob_item[i]);
-        PyTuple_SET_ITEM(tup, i, self->ob_item[i]);
-    }
-
-    for (; i < n_fields; i++) {
+    for (i = n_visible_fields; i < n_fields; i++) {
         const char *n = Py_TYPE(self)->tp_members[i-n_unnamed_fields].name;
         if (PyDict_SetItemString(dict, n, self->ob_item[i]) < 0)
             goto error;
