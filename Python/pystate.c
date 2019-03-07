@@ -2,6 +2,7 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 
@@ -132,19 +133,28 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
-    memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
+    interp->id_mutex = NULL;
+    interp->modules = NULL;
+    interp->modules_by_index = NULL;
+    interp->sysdict = NULL;
+    interp->builtins = NULL;
+    interp->builtins_copy = NULL;
+    interp->tstate_head = NULL;
     interp->check_interval = 100;
-
-    interp->ceval.pending.lock = PyThread_allocate_lock();
-    if (interp->ceval.pending.lock == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "failed to create interpreter ceval pending mutex");
-        return NULL;
-    }
+    interp->num_threads = 0;
+    interp->pythread_stacksize = 0;
+    interp->codec_search_path = NULL;
+    interp->codec_search_cache = NULL;
+    interp->codec_error_registry = NULL;
+    interp->codecs_initialized = 0;
+    interp->fscodec_initialized = 0;
     interp->core_config = _PyCoreConfig_INIT;
     interp->config = _PyMainInterpreterConfig_INIT;
+    interp->importlib = NULL;
+    interp->import_func = NULL;
     interp->eval_frame = _PyEval_EvalFrameDefault;
+    interp->co_extra_user_count = 0;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
     interp->dlopenflags = RTLD_NOW;
@@ -152,10 +162,13 @@ PyInterpreterState_New(void)
     interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
-
-    if (_PyRuntime.main_thread == 0) {
-        _PyRuntime.main_thread = PyThread_get_thread_ident();
-    }
+#ifdef HAVE_FORK
+    interp->before_forkers = NULL;
+    interp->after_forkers_parent = NULL;
+    interp->after_forkers_child = NULL;
+#endif
+    interp->pyexitfunc = NULL;
+    interp->pyexitmodule = NULL;
 
     HEAD_LOCK();
     if (_PyRuntime.interpreters.next_id < 0) {
@@ -210,9 +223,6 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
-    // XXX Once we have one allocator per interpreter (i.e.
-    // per-interpreter GC) we must ensure that all of the interpreter's
-    // objects have been cleaned up at the point.
 }
 
 
@@ -252,9 +262,6 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     HEAD_UNLOCK();
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
-    }
-    if (interp->ceval.pending.lock != NULL) {
-        PyThread_free_lock(interp->ceval.pending.lock);
     }
     PyMem_RawFree(interp);
 }
@@ -865,7 +872,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
             p->async_exc = exc;
             HEAD_UNLOCK();
             Py_XDECREF(old_exc);
-            _PyEval_SignalAsyncExc(interp);
+            _PyEval_SignalAsyncExc();
             return 1;
         }
     }
@@ -1332,7 +1339,6 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
     }
 
     // "Release" the data and/or the object.
-    // XXX Use _Py_AddPendingCall().
     _call_in_interpreter(interp, _release_xidata, data);
 }
 
