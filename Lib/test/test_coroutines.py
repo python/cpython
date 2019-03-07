@@ -209,6 +209,13 @@ class AsyncBadSyntaxTest(unittest.TestCase):
                  [i for i in els if await i]
             """,
 
+            """def bar():
+                 [[i async for i in a] for a in elts]
+            """,
+
+            """[[i async for i in a] for a in elts]
+            """,
+
             """async def foo():
                 await
             """,
@@ -2057,6 +2064,14 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(
             run_async(run_gen_inside_gen()),
             ([], [0, 1, 2, 0, 1, 2, 3, 4]))
+
+        async def run_list_inside_list_inside_list():
+            return [[[i + j + k async for i in asynciter([1, 2])]
+                     for j in [10, 20]]
+                    for k in [100, 200]]
+        self.assertEqual(
+            run_async(run_list_inside_list_inside_list()),
+            ([], [[[111, 112], [121, 122]], [[211, 212], [221, 222]]]))
 
     def test_copy(self):
         async def func(): pass
