@@ -2286,7 +2286,6 @@ dict_diff_arg(PyObject *self, PyObject *arg)
     if (keys_method && (!PyDict_Check(arg) || 
                         Py_TYPE(arg)->tp_iter != (getiterfunc)dict_iter))
     {
-
         arg = _PyObject_CallNoArg(keys_method);
         Py_DECREF(keys_method);
 
@@ -3251,7 +3250,7 @@ dict_isub(PyDictObject *self, PyObject *other)
 
     // See dict_iadd for this removal:
     
-    // if (!PyDict_Check(other)) {
+    // if (!PyMapping_Check(other)) {
     //     Py_RETURN_NOTIMPLEMENTED;
     // }
 
