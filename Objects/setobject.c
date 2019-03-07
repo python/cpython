@@ -1202,7 +1202,17 @@ PyDoc_STRVAR(union_doc,
 \n\
 (i.e. all elements that are in either set.)");
 
-static PyObject *set_ior(PySetObject *, PyObject *);
+static PyObject *
+set_ior(PySetObject *so, PyObject *other)
+{
+    if (!PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+
+    if (set_update_internal(so, other))
+        return NULL;
+    Py_INCREF(so);
+    return (PyObject *)so;
+}
 
 static PyObject *
 set_or(PySetObject *so, PyObject *other)
@@ -1211,7 +1221,6 @@ set_or(PySetObject *so, PyObject *other)
 
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-
     if (PySet_Check(so) && Py_REFCNT(so) == 1) {
         return set_ior(so, other);
     }
@@ -1225,18 +1234,6 @@ set_or(PySetObject *so, PyObject *other)
         return NULL;
     }
     return (PyObject *)result;
-}
-
-static PyObject *
-set_ior(PySetObject *so, PyObject *other)
-{
-    if (!PyAnySet_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
-
-    if (set_update_internal(so, other))
-        return NULL;
-    Py_INCREF(so);
-    return (PyObject *)so;
 }
 
 static PyObject *
@@ -1371,19 +1368,6 @@ set_intersection_update_multi(PySetObject *so, PyObject *args)
 PyDoc_STRVAR(intersection_update_doc,
 "Update a set with the intersection of itself and another.");
 
-static PyObject *set_iand(PySetObject *, PyObject *);
-
-static PyObject *
-set_and(PySetObject *so, PyObject *other)
-{
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
-    if (PySet_Check(so) && Py_REFCNT(so) == 1) {
-        return set_iand(so, other);
-    }
-    return set_intersection(so, other);
-}
-
 static PyObject *
 set_iand(PySetObject *so, PyObject *other)
 {
@@ -1397,6 +1381,17 @@ set_iand(PySetObject *so, PyObject *other)
     Py_DECREF(result);
     Py_INCREF(so);
     return (PyObject *)so;
+}
+
+static PyObject *
+set_and(PySetObject *so, PyObject *other)
+{
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+    if (PySet_Check(so) && Py_REFCNT(so) == 1) {
+        return set_iand(so, other);
+    }
+    return set_intersection(so, other);
 }
 
 static PyObject *
@@ -1635,7 +1630,16 @@ PyDoc_STRVAR(difference_doc,
 \n\
 (i.e. all elements that are in this set but not the others.)");
 
-static PyObject *set_isub(PySetObject *, PyObject *);
+static PyObject *
+set_isub(PySetObject *so, PyObject *other)
+{
+    if (!PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+    if (set_difference_update_internal(so, other))
+        return NULL;
+    Py_INCREF(so);
+    return (PyObject *)so;
+}
 
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
@@ -1646,17 +1650,6 @@ set_sub(PySetObject *so, PyObject *other)
         return set_isub(so, other);
     }
     return set_difference(so, other);
-}
-
-static PyObject *
-set_isub(PySetObject *so, PyObject *other)
-{
-    if (!PyAnySet_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
-    if (set_difference_update_internal(so, other))
-        return NULL;
-    Py_INCREF(so);
-    return (PyObject *)so;
 }
 
 static PyObject *
@@ -1746,19 +1739,6 @@ PyDoc_STRVAR(symmetric_difference_doc,
 \n\
 (i.e. all elements that are in exactly one of the sets.)");
 
-static PyObject *set_ixor(PySetObject *, PyObject *);
-
-static PyObject *
-set_xor(PySetObject *so, PyObject *other)
-{
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
-    if (PySet_Check(so) && Py_REFCNT(so) == 1) {
-        return set_ixor(so, other);
-    }
-    return set_symmetric_difference(so, other);
-}
-
 static PyObject *
 set_ixor(PySetObject *so, PyObject *other)
 {
@@ -1772,6 +1752,17 @@ set_ixor(PySetObject *so, PyObject *other)
     Py_DECREF(result);
     Py_INCREF(so);
     return (PyObject *)so;
+}
+
+static PyObject *
+set_xor(PySetObject *so, PyObject *other)
+{
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+    if (PySet_Check(so) && Py_REFCNT(so) == 1) {
+        return set_ixor(so, other);
+    }
+    return set_symmetric_difference(so, other);
 }
 
 static PyObject *

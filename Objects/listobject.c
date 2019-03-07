@@ -515,98 +515,6 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     return list_slice((PyListObject *)a, ilow, ihigh);
 }
 
-static PyObject *list_inplace_concat(PyListObject *, PyObject *);
-
-static PyObject *
-list_concat(PyListObject *a, PyObject *bb)
-{
-    Py_ssize_t size;
-    Py_ssize_t i;
-    PyObject **src, **dest;
-    PyListObject *np;
-    if (!PyList_Check(bb)) {
-        PyErr_Format(PyExc_TypeError,
-                  "can only concatenate list (not \"%.200s\") to list",
-                  bb->ob_type->tp_name);
-        return NULL;
-    }
-#define b ((PyListObject *)bb)
-    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
-        return PyErr_NoMemory();
-    if (Py_REFCNT(a) == 1) {
-        return list_inplace_concat(a, bb);
-    }
-    size = Py_SIZE(a) + Py_SIZE(b);
-    np = (PyListObject *) list_new_prealloc(size);
-    if (np == NULL) {
-        return NULL;
-    }
-    src = a->ob_item;
-    dest = np->ob_item;
-    for (i = 0; i < Py_SIZE(a); i++) {
-        PyObject *v = src[i];
-        Py_INCREF(v);
-        dest[i] = v;
-    }
-    src = b->ob_item;
-    dest = np->ob_item + Py_SIZE(a);
-    for (i = 0; i < Py_SIZE(b); i++) {
-        PyObject *v = src[i];
-        Py_INCREF(v);
-        dest[i] = v;
-    }
-    Py_SIZE(np) = size;
-    return (PyObject *)np;
-#undef b
-}
-
-static PyObject *list_inplace_repeat(PyListObject *, Py_ssize_t);
-
-static PyObject *
-list_repeat(PyListObject *a, Py_ssize_t n)
-{
-    Py_ssize_t i, j;
-    Py_ssize_t size;
-    PyListObject *np;
-    PyObject **p, **items;
-    PyObject *elem;
-    if (n < 0)
-        n = 0;
-    if (n > 0 && Py_SIZE(a) > PY_SSIZE_T_MAX / n)
-        return PyErr_NoMemory();
-    size = Py_SIZE(a) * n;
-    if (size == 0)
-        return PyList_New(0);
-    if (Py_REFCNT(a) == 1) {
-        return list_inplace_repeat(a, n);
-    }
-    np = (PyListObject *) list_new_prealloc(size);
-    if (np == NULL)
-        return NULL;
-
-    if (Py_SIZE(a) == 1) {
-        items = np->ob_item;
-        elem = a->ob_item[0];
-        for (i = 0; i < n; i++) {
-            items[i] = elem;
-            Py_INCREF(elem);
-        }
-    }
-    else {
-        p = np->ob_item;
-        items = a->ob_item;
-        for (i = 0; i < n; i++) {
-            for (j = 0; j < Py_SIZE(a); j++) {
-                *p = items[j];
-                Py_INCREF(*p);
-                p++;
-            }
-        }
-    }
-    Py_SIZE(np) = size;
-    return (PyObject *) np;
-}
-
 static int
 _list_clear(PyListObject *a)
 {
@@ -789,6 +697,51 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
     }
     Py_INCREF(self);
     return (PyObject *)self;
+}
+
+static PyObject *
+list_repeat(PyListObject *a, Py_ssize_t n)
+{
+    Py_ssize_t i, j;
+    Py_ssize_t size;
+    PyListObject *np;
+    PyObject **p, **items;
+    PyObject *elem;
+    if (n < 0)
+        n = 0;
+    if (n > 0 && Py_SIZE(a) > PY_SSIZE_T_MAX / n)
+        return PyErr_NoMemory();
+    size = Py_SIZE(a) * n;
+    if (size == 0)
+        return PyList_New(0);
+    if (Py_REFCNT(a) == 1) {
+        return list_inplace_repeat(a, n);
+    }
+    np = (PyListObject *) list_new_prealloc(size);
+    if (np == NULL)
+        return NULL;
+
+    if (Py_SIZE(a) == 1) {
+        items = np->ob_item;
+        elem = a->ob_item[0];
+        for (i = 0; i < n; i++) {
+            items[i] = elem;
+            Py_INCREF(elem);
+        }
+    }
+    else {
+        p = np->ob_item;
+        items = a->ob_item;
+        for (i = 0; i < n; i++) {
+            for (j = 0; j < Py_SIZE(a); j++) {
+                *p = items[j];
+                Py_INCREF(*p);
+                p++;
+            }
+        }
+    }
+    Py_SIZE(np) = size;
+    return (PyObject *) np;
 }
 
 static int
@@ -1014,6 +967,49 @@ list_inplace_concat(PyListObject *self, PyObject *other)
     Py_DECREF(result);
     Py_INCREF(self);
     return (PyObject *)self;
+}
+
+static PyObject *
+list_concat(PyListObject *a, PyObject *bb)
+{
+    Py_ssize_t size;
+    Py_ssize_t i;
+    PyObject **src, **dest;
+    PyListObject *np;
+    if (!PyList_Check(bb)) {
+        PyErr_Format(PyExc_TypeError,
+                  "can only concatenate list (not \"%.200s\") to list",
+                  bb->ob_type->tp_name);
+        return NULL;
+    }
+#define b ((PyListObject *)bb)
+    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
+        return PyErr_NoMemory();
+    if (Py_REFCNT(a) == 1) {
+        return list_inplace_concat(a, bb);
+    }
+    size = Py_SIZE(a) + Py_SIZE(b);
+    np = (PyListObject *) list_new_prealloc(size);
+    if (np == NULL) {
+        return NULL;
+    }
+    src = a->ob_item;
+    dest = np->ob_item;
+    for (i = 0; i < Py_SIZE(a); i++) {
+        PyObject *v = src[i];
+        Py_INCREF(v);
+        dest[i] = v;
+    }
+    src = b->ob_item;
+    dest = np->ob_item + Py_SIZE(a);
+    for (i = 0; i < Py_SIZE(b); i++) {
+        PyObject *v = src[i];
+        Py_INCREF(v);
+        dest[i] = v;
+    }
+    Py_SIZE(np) = size;
+    return (PyObject *)np;
+#undef b
 }
 
 /*[clinic input]

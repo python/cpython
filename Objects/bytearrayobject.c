@@ -297,18 +297,6 @@ bytearray_length(PyByteArrayObject *self)
     return Py_SIZE(self);
 }
 
-static PyObject *bytearray_iconcat(PyByteArrayObject *, PyObject *);
-
-static PyObject *
-bytearray_concat(PyByteArrayObject *self, PyObject *other)
-{
-    if (Py_REFCNT(self) == 1) {
-        return bytearray_iconcat(self, other);
-    }
-    
-    return PyByteArray_Concat((PyObject *)self, other);
-}
-
 static PyObject *
 bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
 {
@@ -336,35 +324,13 @@ bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
     return (PyObject *)self;
 }
 
-static PyObject *bytearray_irepeat(PyByteArrayObject *, Py_ssize_t);
-
 static PyObject *
-bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
+bytearray_concat(PyByteArrayObject *self, PyObject *other)
 {
-    PyByteArrayObject *result;
-    Py_ssize_t mysize;
-    Py_ssize_t size;
-
-    if (count < 0)
-        count = 0;
-    mysize = Py_SIZE(self);
-    if (count > 0 && mysize > PY_SSIZE_T_MAX / count)
-        return PyErr_NoMemory();
     if (Py_REFCNT(self) == 1) {
-        return bytearray_irepeat(self, count);
+        return bytearray_iconcat(self, other);
     }
-    size = mysize * count;
-    result = (PyByteArrayObject *)PyByteArray_FromStringAndSize(NULL, size);
-    if (result != NULL && size != 0) {
-        if (mysize == 1)
-            memset(result->ob_bytes, self->ob_bytes[0], size);
-        else {
-            Py_ssize_t i;
-            for (i = 0; i < count; i++)
-                memcpy(result->ob_bytes + i*mysize, self->ob_bytes, mysize);
-        }
-    }
-    return (PyObject *)result;
+    return PyByteArray_Concat((PyObject *)self, other);
 }
 
 static PyObject *
@@ -394,6 +360,35 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
 
     Py_INCREF(self);
     return (PyObject *)self;
+}
+
+static PyObject *
+bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
+{
+    PyByteArrayObject *result;
+    Py_ssize_t mysize;
+    Py_ssize_t size;
+
+    if (count < 0)
+        count = 0;
+    mysize = Py_SIZE(self);
+    if (count > 0 && mysize > PY_SSIZE_T_MAX / count)
+        return PyErr_NoMemory();
+    if (Py_REFCNT(self) == 1) {
+        return bytearray_irepeat(self, count);
+    }
+    size = mysize * count;
+    result = (PyByteArrayObject *)PyByteArray_FromStringAndSize(NULL, size);
+    if (result != NULL && size != 0) {
+        if (mysize == 1)
+            memset(result->ob_bytes, self->ob_bytes[0], size);
+        else {
+            Py_ssize_t i;
+            for (i = 0; i < count; i++)
+                memcpy(result->ob_bytes + i*mysize, self->ob_bytes, mysize);
+        }
+    }
+    return (PyObject *)result;
 }
 
 static PyObject *
