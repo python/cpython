@@ -2123,6 +2123,7 @@ class TestNormalDist(unittest.TestCase):
             0.3605, 0.3589, 0.3572, 0.3555, 0.3538,
         ]):
             self.assertAlmostEqual(Z.pdf(x / 100.0), px, places=4)
+            self.assertAlmostEqual(Z.pdf(-x / 100.0), px, places=4)
         # Error case: variance is zero
         Y = NormalDist(100, 0)
         with self.assertRaises(statistics.StatisticsError):
