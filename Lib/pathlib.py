@@ -116,13 +116,13 @@ class _WindowsFlavour(_Flavour):
 
     drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     # See https://bugs.python.org/issue33898
-    ext_namespace_prefix = ('\\\\?\\','\\\\.\\')
+    ext_namespace_prefix = ('\\\\?\\', '\\\\.\\')
 
     reserved_names = (
         {'CON', 'PRN', 'AUX', 'NUL'} |
         {'COM%d' % i for i in range(1, 10)} |
         {'LPT%d' % i for i in range(1, 10)}
-        )
+    )
 
     # Interesting findings about extended paths:
     # - '\\?\c:\a', '//?/c:\a' and '//?/c:/a' are all supported
@@ -142,7 +142,7 @@ class _WindowsFlavour(_Flavour):
         else:
             prefix = ''
         third = part[2:3]
-        if (second == sep and first == sep and third != sep):
+        if first == second == sep and third != sep:
             # is a UNC and/or Global path:
             # vvvvvvvvvvvvvvvvvvvvv root
             # \\machine\mountpoint\directory\etc\...
@@ -168,7 +168,8 @@ class _WindowsFlavour(_Flavour):
         # the first component after the local-device prefix.
         # See https://bugs.python.org/issue33898
         # All UNC and some of Global paths are parsed in if-condition above.
-        elif part != sep and prefix and 'global' not in self.casefold(prefix):
+        elif (part != sep and prefix and
+              self.casefold('global') not in self.casefold(prefix)):
             index = part.find(sep)
             if index != -1:
                 drv = part[:index]
@@ -184,11 +185,11 @@ class _WindowsFlavour(_Flavour):
         return prefix + drv, root, part
 
     def casefold(self, s):
-        # .lower() is not recommended. See https://bugs.python.org/issue32612
+        # .lower() is not ideal. See https://bugs.python.org/issue32612
         return s.lower()
 
     def casefold_parts(self, parts):
-        return [p.lower() for p in parts]
+        return [self.casefold(p) for p in parts]
 
     def resolve(self, path, strict=False):
         s = str(path)
@@ -223,22 +224,21 @@ class _WindowsFlavour(_Flavour):
             index = s.find('\\')
             if index != -1:
                 # Do not assume case sensitivity.
-                # See https://docs.microsoft.com/ru-ru/windows/desktop/FileIO/naming-a-file
-                # But .lower() is not recommended. See https://bugs.python.org/issue32612
+                # See https://docs.microsoft.com/windows/desktop/FileIO/naming-a-file
                 s1 = self.casefold(s[:index])
-                if s1 == 'global':
+                if s1 == self.casefold('global'):
                     prefix += s[:6]
                 # For example, Path('//?/Global/Z:/').drive
                     if s[8:9] == ':':
                         prefix += s[6:7]
                         s = s[7:]
                 # For example, r'\\?\Global\UNC\server\share'
-                    elif self.casefold(s[7:11]) == 'unc\\':
+                    elif self.casefold(s[7:11]) == self.casefold('unc\\'):
                         prefix += s[6:10]
                         s = '\\' + s[10:]
                     else:
                         s = '\\' + s[6:]
-                if s1 == 'unc':
+                if s1 == self.casefold('unc'):
                     prefix += s[:3]
                     s = '\\' + s[3:]
         return prefix, s
