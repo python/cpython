@@ -119,11 +119,21 @@ The :mod:`urlparse` module defines the following functions:
    See section :ref:`urlparse-result-object` for more information on the result
    object.
 
+   Characters in the :attr:`netloc` attribute that decompose under NFKC
+   normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
+   ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
+   decomposed before parsing, or is not a Unicode string, no error will be
+   raised.
+
    .. versionchanged:: 2.5
       Added attributes to return value.
 
    .. versionchanged:: 2.7
       Added IPv6 URL parsing capabilities.
+
+   .. versionchanged:: 2.7.17
+      Characters that affect netloc parsing under NFKC normalization will
+      now raise :exc:`ValueError`.
 
 
 .. function:: parse_qs(qs[, keep_blank_values[, strict_parsing[, max_num_fields]]])
@@ -232,10 +242,20 @@ The :mod:`urlparse` module defines the following functions:
    See section :ref:`urlparse-result-object` for more information on the result
    object.
 
+   Characters in the :attr:`netloc` attribute that decompose under NFKC
+   normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
+   ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
+   decomposed before parsing, or is not a Unicode string, no error will be
+   raised.
+
    .. versionadded:: 2.2
 
    .. versionchanged:: 2.5
       Added attributes to return value.
+
+   .. versionchanged:: 2.7.17
+      Characters that affect netloc parsing under NFKC normalization will
+      now raise :exc:`ValueError`.
 
 
 .. function:: urlunsplit(parts)

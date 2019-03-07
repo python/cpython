@@ -1,4 +1,6 @@
 from test import test_support
+import sys
+import unicodedata
 import unittest
 import urlparse
 
@@ -623,6 +625,28 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(urlparse.urlparse("https:"),('https','','','','',''))
         self.assertEqual(urlparse.urlparse("http://www.python.org:80"),
                 ('http','www.python.org:80','','','',''))
+
+    def test_urlsplit_normalization(self):
+        # Certain characters should never occur in the netloc,
+        # including under normalization.
+        # Ensure that ALL of them are detected and cause an error
+        illegal_chars = u'/:#?@'
+        hex_chars = {'{:04X}'.format(ord(c)) for c in illegal_chars}
+        denorm_chars = [
+            c for c in map(unichr, range(128, sys.maxunicode))
+            if (hex_chars & set(unicodedata.decomposition(c).split()))
+            and c not in illegal_chars
+        ]
+        # Sanity check that we found at least one such character
+        self.assertIn(u'\u2100', denorm_chars)
+        self.assertIn(u'\uFF03', denorm_chars)
+
+        for scheme in [u"http", u"https", u"ftp"]:
+            for c in denorm_chars:
+                url = u"{}://netloc{}false.netloc/path".format(scheme, c)
+                print "Checking %r" % url
+                with self.assertRaises(ValueError):
+                    urlparse.urlsplit(url)
 
 def test_main():
     test_support.run_unittest(UrlParseTestCase)
