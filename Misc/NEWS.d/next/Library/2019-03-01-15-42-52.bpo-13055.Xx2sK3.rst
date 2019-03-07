@@ -1,1 +1,1 @@
-Fix empty version handling in disutils.version
+Fix empty version handling in ``disutils.version``. Patch contributed by Matt Martz.
