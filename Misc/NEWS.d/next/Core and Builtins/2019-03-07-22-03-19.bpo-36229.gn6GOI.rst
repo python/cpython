@@ -1,0 +1,2 @@
+Improved performance for chained operations on built-in mutable collections.
+Patch by Brandt Bucher.
