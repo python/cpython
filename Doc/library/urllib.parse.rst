@@ -124,6 +124,11 @@ or on combining URL components into a URL string.
    Unmatched square brackets in the :attr:`netloc` attribute will raise a
    :exc:`ValueError`.
 
+   Characters in the :attr:`netloc` attribute that decompose under NFKC
+   normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
+   ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
+   decomposed before parsing, no error will be raised.
+
    .. versionchanged:: 3.2
       Added IPv6 URL parsing capabilities.
 
@@ -135,6 +140,10 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
       returning :const:`None`.
+
+   .. versionchanged:: 3.7.3
+      Characters that affect netloc parsing under NFKC normalization will
+      now raise :exc:`ValueError`.
 
 
 .. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None)
@@ -257,9 +266,18 @@ or on combining URL components into a URL string.
    Unmatched square brackets in the :attr:`netloc` attribute will raise a
    :exc:`ValueError`.
 
+   Characters in the :attr:`netloc` attribute that decompose under NFKC
+   normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
+   ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
+   decomposed before parsing, no error will be raised.
+
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
       returning :const:`None`.
+
+   .. versionchanged:: 3.7.3
+      Characters that affect netloc parsing under NFKC normalization will
+      now raise :exc:`ValueError`.
 
 
 .. function:: urlunsplit(parts)
