@@ -148,7 +148,8 @@ and classes for traversing abstract syntax trees:
    Also, setting ``feature_version`` to the minor version of an
    earlier Python 3 version will attempt to parse using that version's
    grammar.  For example, setting ``feature_version=4`` will allow
-   the use of ``async`` and ``await`` as variable names.
+   the use of ``async`` and ``await`` as variable names.  The lowest
+   supported value is 4; the highest is ``sys.version_info[1]``.
 
    .. warning::
       It is possible to crash the Python interpreter with a
