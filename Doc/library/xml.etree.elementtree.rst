@@ -594,18 +594,22 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
-                       short_empty_elements=True)
+                       default_namespace=None, short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
-   Returns an (optionally) encoded string containing the XML data.
+   *default_namespace* and *short_empty_elements* has the same meaning as in
+   :meth:`ElementTree.write`. Returns an (optionally) encoded string containing
+   the XML data.
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
+
+   .. versionadded:: 3.8
+      The *default_namespace* parameter.
 
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \

@@ -1,0 +1,1 @@
+New keyword argument `default_namespace` to function ElementTree.tostring()
