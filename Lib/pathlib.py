@@ -228,17 +228,17 @@ class _WindowsFlavour(_Flavour):
                 s1 = self.casefold(s[:index])
                 if s1 == self.casefold('global'):
                     prefix += s[:6]
-                # For example, Path('//?/Global/Z:/').drive
+                    # For example, Path('//?/Global/Z:/').drive
                     if s[8:9] == ':':
                         prefix += s[6:7]
                         s = s[7:]
-                # For example, r'\\?\Global\UNC\server\share'
+                    # For example, r'\\?\Global\UNC\server\share'
                     elif self.casefold(s[7:11]) == self.casefold('unc\\'):
                         prefix += s[6:10]
                         s = '\\' + s[10:]
                     else:
                         s = '\\' + s[6:]
-                if s1 == self.casefold('unc'):
+                elif s1 == self.casefold('unc'):
                     prefix += s[:3]
                     s = '\\' + s[3:]
         return prefix, s
