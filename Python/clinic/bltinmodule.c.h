@@ -151,7 +151,7 @@ exit:
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
-"        dont_inherit=False, optimize=-1)\n"
+"        dont_inherit=False, optimize=-1, feature_version=-1)\n"
 "--\n"
 "\n"
 "Compile source into a code object that can be executed by exec() or eval().\n"
@@ -173,26 +173,27 @@ PyDoc_STRVAR(builtin_compile__doc__,
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize);
+                     int optimize, int feature_version);
 
 static PyObject *
 builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", NULL};
-    static _PyArg_Parser _parser = {"OO&s|iii:compile", _keywords, 0};
+    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "feature_version", NULL};
+    static _PyArg_Parser _parser = {"OO&s|iiii:compile", _keywords, 0};
     PyObject *source;
     PyObject *filename;
     const char *mode;
     int flags = 0;
     int dont_inherit = 0;
     int optimize = -1;
+    int feature_version = -1;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize)) {
+        &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize, &feature_version)) {
         goto exit;
     }
-    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize);
+    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, feature_version);
 
 exit:
     return return_value;
@@ -754,4 +755,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=54e5e33dcc2659e0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00b97a48ea49eaf2 input=a9049054013a1b77]*/
