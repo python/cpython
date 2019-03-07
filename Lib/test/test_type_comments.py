@@ -182,7 +182,7 @@ class TypeCommentTests(unittest.TestCase):
         return ast.parse(source, type_comments=True,
                          feature_version=feature_version)
 
-    def parses(self, source, minver=lowest, maxver=highest, expected_regex=""):
+    def parse_all(self, source, minver=lowest, maxver=highest, expected_regex=""):
         for feature_version in range(self.lowest, self.highest + 1):
             if minver <= feature_version <= maxver:
                 try:
@@ -198,7 +198,7 @@ class TypeCommentTests(unittest.TestCase):
         return ast.parse(source)
 
     def test_funcdef(self):
-        for tree in self.parses(funcdef):
+        for tree in self.parse_all(funcdef):
             self.assertEqual(tree.body[0].type_comment, "() -> int")
             self.assertEqual(tree.body[1].type_comment, "() -> None")
         tree = self.classic_parse(funcdef)
@@ -206,7 +206,7 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[1].type_comment, None)
 
     def test_asyncdef(self):
-        for tree in self.parses(asyncdef, minver=5):
+        for tree in self.parse_all(asyncdef, minver=5):
             self.assertEqual(tree.body[0].type_comment, "() -> int")
             self.assertEqual(tree.body[1].type_comment, "() -> int")
         tree = self.classic_parse(asyncdef)
@@ -214,56 +214,56 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[1].type_comment, None)
 
     def test_asyncvar(self):
-        for tree in self.parses(asyncvar, maxver=6):
+        for tree in self.parse_all(asyncvar, maxver=6):
             pass
 
     def test_asynccomp(self):
-        for tree in self.parses(asynccomp, minver=6):
+        for tree in self.parse_all(asynccomp, minver=6):
             pass
 
     def test_matmul(self):
-        for tree in self.parses(matmul, minver=5):
+        for tree in self.parse_all(matmul, minver=5):
             pass
 
     def test_fstring(self):
-        for tree in self.parses(fstring, minver=6):
+        for tree in self.parse_all(fstring, minver=6):
             pass
 
     def test_redundantdef(self):
-        for tree in self.parses(redundantdef, maxver=0,
+        for tree in self.parse_all(redundantdef, maxver=0,
                                 expected_regex="^Cannot have two type comments on def"):
             pass
 
     def test_nonasciidef(self):
-        for tree in self.parses(nonasciidef):
+        for tree in self.parse_all(nonasciidef):
             self.assertEqual(tree.body[0].type_comment, "() -> àçčéñt")
 
     def test_forstmt(self):
-        for tree in self.parses(forstmt):
+        for tree in self.parse_all(forstmt):
             self.assertEqual(tree.body[0].type_comment, "int")
         tree = self.classic_parse(forstmt)
         self.assertEqual(tree.body[0].type_comment, None)
 
     def test_withstmt(self):
-        for tree in self.parses(withstmt):
+        for tree in self.parse_all(withstmt):
             self.assertEqual(tree.body[0].type_comment, "int")
         tree = self.classic_parse(withstmt)
         self.assertEqual(tree.body[0].type_comment, None)
 
     def test_vardecl(self):
-        for tree in self.parses(vardecl):
+        for tree in self.parse_all(vardecl):
             self.assertEqual(tree.body[0].type_comment, "int")
         tree = self.classic_parse(vardecl)
         self.assertEqual(tree.body[0].type_comment, None)
 
     def test_ignores(self):
-        for tree in self.parses(ignores):
+        for tree in self.parse_all(ignores):
             self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5])
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
     def test_longargs(self):
-        for tree in self.parses(longargs):
+        for tree in self.parse_all(longargs):
             for t in tree.body:
                 # The expected args are encoded in the function name
                 todo = set(t.name[1:])
@@ -300,7 +300,7 @@ class TypeCommentTests(unittest.TestCase):
 
         def check_both_ways(source):
             ast.parse(source, type_comments=False)
-            for tree in self.parses(source, maxver=0):
+            for tree in self.parse_all(source, maxver=0):
                 pass
 
         check_both_ways("pass  # type: int\n")
