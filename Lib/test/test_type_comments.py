@@ -40,6 +40,10 @@ a = 42
 f"{a}"
 """
 
+underscorednumber = """\
+a = 42_42_42
+"""
+
 redundantdef = """\
 def foo():  # type: () -> int
     # type: () -> str
@@ -227,6 +231,10 @@ class TypeCommentTests(unittest.TestCase):
 
     def test_fstring(self):
         for tree in self.parse_all(fstring, minver=6):
+            pass
+
+    def test_underscorednumber(self):
+        for tree in self.parse_all(underscorednumber, minver=6):
             pass
 
     def test_redundantdef(self):
