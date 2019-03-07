@@ -799,7 +799,7 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
         Py_DECREF(path0);
     }
 
-    PyCompilerFlags cf = {.cf_flags = 0};
+    PyCompilerFlags cf = {.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION};
 
     pymain_header(config);
     pymain_import_readline(config);

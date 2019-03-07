@@ -126,7 +126,7 @@ The abstract grammar is currently defined as follows:
 Apart from the node classes, the :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False)
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=-1)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
    filename, mode, ast.PyCF_ONLY_AST)``.
@@ -145,13 +145,19 @@ and classes for traversing abstract syntax trees:
    modified to correspond to :pep:`484` "signature type comments",
    e.g. ``(str, int) -> List[str]``.
 
+   Also, setting ``feature_version`` to the minor version of an
+   earlier Python 3 version will attempt to parse using that version's
+   grammar.  For example, setting ``feature_version=4`` will allow
+   the use of ``async`` and ``await`` as variable names.  The lowest
+   supported value is 4; the highest is ``sys.version_info[1]``.
+
    .. warning::
       It is possible to crash the Python interpreter with a
       sufficiently large/complex string due to stack depth limitations
       in Python's AST compiler.
 
    .. versionchanged:: 3.8
-      Added ``type_comments=True`` and ``mode='func_type'``.
+      Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
 
 
 .. function:: literal_eval(node_or_string)

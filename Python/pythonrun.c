@@ -105,6 +105,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     if (flags == NULL) {
         flags = &local_flags;
         local_flags.cf_flags = 0;
+        local_flags.cf_feature_version = PY_MINOR_VERSION;
     }
     v = _PySys_GetObjectId(&PyId_ps1);
     if (v == NULL) {
@@ -1165,6 +1166,7 @@ Py_SymtableStringObject(const char *str, PyObject *filename, int start)
         return NULL;
 
     flags.cf_flags = 0;
+    flags.cf_feature_version = PY_MINOR_VERSION;
     mod = PyParser_ASTFromStringObject(str, filename, start, &flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
@@ -1198,12 +1200,15 @@ PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
     PyCompilerFlags localflags;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
+    if (flags && flags->cf_feature_version < 7)
+        iflags |= PyPARSE_ASYNC_HACKS;
 
     node *n = PyParser_ParseStringObject(s, filename,
                                          &_PyParser_Grammar, start, &err,
                                          &iflags);
     if (flags == NULL) {
         localflags.cf_flags = 0;
+        localflags.cf_feature_version = PY_MINOR_VERSION;
         flags = &localflags;
     }
     if (n) {
@@ -1249,6 +1254,7 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
                                        start, ps1, ps2, &err, &iflags);
     if (flags == NULL) {
         localflags.cf_flags = 0;
+        localflags.cf_feature_version = PY_MINOR_VERSION;
         flags = &localflags;
     }
     if (n) {

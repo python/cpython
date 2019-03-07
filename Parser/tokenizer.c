@@ -84,6 +84,11 @@ tok_new(void)
     tok->decoding_buffer = NULL;
     tok->type_comments = 0;
 
+    tok->async_hacks = 0;
+    tok->async_def = 0;
+    tok->async_def_indent = 0;
+    tok->async_def_nl = 0;
+
     return tok;
 }
 
@@ -1196,6 +1201,31 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         }
     }
 
+    /* Peek ahead at the next character */
+    c = tok_nextc(tok);
+    tok_backup(tok, c);
+    /* Check if we are closing an async function */
+    if (tok->async_def
+        && !blankline
+        /* Due to some implementation artifacts of type comments,
+         * a TYPE_COMMENT at the start of a function won't set an
+         * indentation level and it will produce a NEWLINE after it.
+         * To avoid spuriously ending an async function due to this,
+         * wait until we have some non-newline char in front of us. */
+        && c != '\n'
+        && tok->level == 0
+        /* There was a NEWLINE after ASYNC DEF,
+           so we're past the signature. */
+        && tok->async_def_nl
+        /* Current indentation level is less than where
+           the async function was defined */
+        && tok->async_def_indent >= tok->indent)
+    {
+        tok->async_def = 0;
+        tok->async_def_indent = 0;
+        tok->async_def_nl = 0;
+    }
+
  again:
     tok->start = NULL;
     /* Skip spaces */
@@ -1310,6 +1340,50 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur;
 
+        /* async/await parsing block. */
+        if (tok->cur - tok->start == 5 && tok->start[0] == 'a') {
+            /* May be an 'async' or 'await' token.  For Python 3.7 or
+               later we recognize them unconditionally.  For Python
+               3.5 or 3.6 we recognize 'async' in front of 'def', and
+               either one inside of 'async def'.  (Technically we
+               shouldn't recognize these at all for 3.4 or earlier,
+               but there's no *valid* Python 3.4 code that would be
+               rejected, and async functions will be rejected in a
+               later phase.) */
+            if (!tok->async_hacks || tok->async_def) {
+                /* Always recognize the keywords. */
+                if (memcmp(tok->start, "async", 5) == 0) {
+                    return ASYNC;
+                }
+                if (memcmp(tok->start, "await", 5) == 0) {
+                    return AWAIT;
+                }
+            }
+            else if (memcmp(tok->start, "async", 5) == 0) {
+                /* The current token is 'async'.
+                   Look ahead one token to see if that is 'def'. */
+
+                struct tok_state ahead_tok;
+                char *ahead_tok_start = NULL, *ahead_tok_end = NULL;
+                int ahead_tok_kind;
+
+                memcpy(&ahead_tok, tok, sizeof(ahead_tok));
+                ahead_tok_kind = tok_get(&ahead_tok, &ahead_tok_start,
+                                         &ahead_tok_end);
+
+                if (ahead_tok_kind == NAME
+                    && ahead_tok.cur - ahead_tok.start == 3
+                    && memcmp(ahead_tok.start, "def", 3) == 0)
+                {
+                    /* The next token is going to be 'def', so instead of
+                       returning a plain NAME token, return ASYNC. */
+                    tok->async_def_indent = tok->indent;
+                    tok->async_def = 1;
+                    return ASYNC;
+                }
+            }
+        }
+
         return NAME;
     }
 
@@ -1322,6 +1396,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur - 1; /* Leave '\n' out of the string */
         tok->cont_line = 0;
+        if (tok->async_def) {
+            /* We're somewhere inside an 'async def' function, and
+               we've encountered a NEWLINE after its signature. */
+            tok->async_def_nl = 1;
+        }
         return NEWLINE;
     }
 

@@ -341,6 +341,7 @@ parser_newstobject(node *st, int type)
         o->st_node = st;
         o->st_type = type;
         o->st_flags.cf_flags = 0;
+        o->st_flags.cf_feature_version = PY_MINOR_VERSION;
     }
     else {
         PyNode_Free(st);
@@ -584,8 +585,10 @@ parser_do_parse(PyObject *args, PyObject *kw, const char *argspec, int type)
 
         if (n) {
             res = parser_newstobject(n, type);
-            if (res)
+            if (res) {
                 ((PyST_Object *)res)->st_flags.cf_flags = flags & PyCF_MASK;
+                ((PyST_Object *)res)->st_flags.cf_feature_version = PY_MINOR_VERSION;
+            }
         }
         else {
             PyParser_SetError(&err);
