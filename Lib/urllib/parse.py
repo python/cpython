@@ -392,7 +392,7 @@ def _splitnetloc(url, start=0):
     return url[start:delim], url[delim:]   # return (domain, rest)
 
 def _checknetloc(netloc):
-    if not netloc or netloc.isascii():
+    if not netloc or not any(ord(c) > 127 for c in netloc):
         return
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
