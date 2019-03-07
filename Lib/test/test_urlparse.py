@@ -1,3 +1,5 @@
+import sys
+import unicodedata
 import unittest
 import urllib.parse
 
@@ -984,6 +986,27 @@ class UrlParseTestCase(unittest.TestCase):
                 expected.append(name)
         self.assertCountEqual(urllib.parse.__all__, expected)
 
+    def test_urlsplit_normalization(self):
+        # Certain characters should never occur in the netloc,
+        # including under normalization.
+        # Ensure that ALL of them are detected and cause an error
+        illegal_chars = '/:#?@'
+        hex_chars = {'{:04X}'.format(ord(c)) for c in illegal_chars}
+        denorm_chars = [
+            c for c in map(chr, range(128, sys.maxunicode))
+            if (hex_chars & set(unicodedata.decomposition(c).split()))
+            and c not in illegal_chars
+        ]
+        # Sanity check that we found at least one such character
+        self.assertIn('\u2100', denorm_chars)
+        self.assertIn('\uFF03', denorm_chars)
+
+        for scheme in ["http", "https", "ftp"]:
+            for c in denorm_chars:
+                url = "{}://netloc{}false.netloc/path".format(scheme, c)
+                with self.subTest(url=url, char='{:04X}'.format(ord(c))):
+                    with self.assertRaises(ValueError):
+                        urllib.parse.urlsplit(url)
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
