@@ -2201,7 +2201,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X * y, NormalDist(1000, 150))      # __mul__
         self.assertEqual(y * X, NormalDist(1000, 150))      # __rmul__
         self.assertEqual(X / y, NormalDist(10, 1.5))        # __truediv__
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError):                  # __rtruediv__
             y / X
 
     def test_equality(self):
