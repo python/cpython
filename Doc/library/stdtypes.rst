@@ -3975,7 +3975,7 @@ The constructors for both classes work the same:
 
    .. method:: copy()
 
-      Return a new set with a shallow copy of *s*.
+      Return a shallow copy of the set.
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
