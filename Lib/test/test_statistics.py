@@ -2123,6 +2123,7 @@ class TestNormalDist(unittest.TestCase):
             0.3605, 0.3589, 0.3572, 0.3555, 0.3538,
         ]):
             self.assertAlmostEqual(Z.pdf(x / 100.0), px, places=4)
+            self.assertAlmostEqual(Z.pdf(-x / 100.0), px, places=4)
         # Error case: variance is zero
         Y = NormalDist(100, 0)
         with self.assertRaises(statistics.StatisticsError):
@@ -2262,7 +2263,7 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X * y, NormalDist(1000, 150))      # __mul__
         self.assertEqual(y * X, NormalDist(1000, 150))      # __rmul__
         self.assertEqual(X / y, NormalDist(10, 1.5))        # __truediv__
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError):                  # __rtruediv__
             y / X
 
     def test_equality(self):
