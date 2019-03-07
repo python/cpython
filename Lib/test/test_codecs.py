@@ -1242,9 +1242,8 @@ class EscapeDecodeTest(unittest.TestCase):
 class RecodingTest(unittest.TestCase):
     def test_recoding(self):
         f = io.BytesIO()
-        f2 = codecs.EncodedFile(f, "unicode_internal", "utf-8")
-        f2.write("a")
-        f2.close()
+        with codecs.EncodedFile(f, "unicode_internal", "utf-8") as f2:
+            f2.write("a")
         # Python used to crash on this at exit because of a refcount
         # bug in _codecsmodule.c
 
