@@ -297,6 +297,18 @@ bytearray_length(PyByteArrayObject *self)
     return Py_SIZE(self);
 }
 
+static PyObject *bytearray_iconcat(PyByteArrayObject *, PyObject *);
+
+static PyObject *
+bytearray_concat(PyByteArrayObject *self, PyObject *other)
+{
+    if (Py_REFCNT(self) == 1) {
+        return bytearray_iconcat(self, other);
+    }
+    
+    return PyByteArray_Concat((PyObject *)self, other);
+}
+
 static PyObject *
 bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
 {
@@ -324,6 +336,8 @@ bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
     return (PyObject *)self;
 }
 
+static PyObject *bytearray_irepeat(PyByteArrayObject *, Py_ssize_t);
+
 static PyObject *
 bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
 {
@@ -336,6 +350,9 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
     mysize = Py_SIZE(self);
     if (count > 0 && mysize > PY_SSIZE_T_MAX / count)
         return PyErr_NoMemory();
+    if (Py_REFCNT(self) == 1) {
+        return bytearray_irepeat(self, count);
+    }
     size = mysize * count;
     result = (PyByteArrayObject *)PyByteArray_FromStringAndSize(NULL, size);
     if (result != NULL && size != 0) {
@@ -2113,7 +2130,7 @@ bytearray_sizeof_impl(PyByteArrayObject *self)
 
 static PySequenceMethods bytearray_as_sequence = {
     (lenfunc)bytearray_length,              /* sq_length */
-    (binaryfunc)PyByteArray_Concat,         /* sq_concat */
+    (binaryfunc)bytearray_concat,           /* sq_concat */
     (ssizeargfunc)bytearray_repeat,         /* sq_repeat */
     (ssizeargfunc)bytearray_getitem,        /* sq_item */
     0,                                      /* sq_slice */
