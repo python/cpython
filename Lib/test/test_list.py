@@ -163,8 +163,8 @@ class ListTest(list_tests.CommonTest):
         iterable = [0] * 10
         iter_size = sys.getsizeof(iterable)
 
-        self.assertEqual(iter_size, sys.getsizeof(list([0] * 10)))
-        self.assertEqual(iter_size, sys.getsizeof(list(range(10))))
+        self.assertGreaterEqual(iter_size, sys.getsizeof(list([0] * 10)))
+        self.assertGreaterEqual(iter_size, sys.getsizeof(list(range(10))))
 
 if __name__ == "__main__":
     unittest.main()
