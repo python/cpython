@@ -373,6 +373,9 @@ class TestOptimizedCompares(unittest.TestCase):
         check_against_PyObject_RichCompareBool(self, [float('nan')]*100)
         check_against_PyObject_RichCompareBool(self, [float('nan') for
                                                       _ in range(100)])
+
+    def test_not_all_tuples(self):
+        self.assertRaises(TypeError, [(1.0, 1.0), (False, "A"), 6].sort)
 #==============================================================================
 
 if __name__ == "__main__":

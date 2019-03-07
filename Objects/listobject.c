@@ -2305,6 +2305,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                              lo.keys[i]);
 
             if (key->ob_type != key_type) {
+                keys_are_in_tuples = 0;
                 keys_are_all_same_type = 0;
                 break;
             }
@@ -2338,21 +2339,24 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             else {
                 ms.key_compare = safe_object_compare;
             }
+
+            if (keys_are_in_tuples) {
+                /* Make sure we're not dealing with tuples of tuples
+                * (remember: here, key_type refers list [key[0] for key in keys]) */
+                if (key_type == &PyTuple_Type) {
+                    ms.tuple_elem_compare = safe_object_compare;
+                }
+                else {
+                    ms.tuple_elem_compare = ms.key_compare;
+                }
+
+                ms.key_compare = unsafe_tuple_compare;
+            }
         }
         else {
             ms.key_compare = safe_object_compare;
         }
 
-        if (keys_are_in_tuples) {
-            /* Make sure we're not dealing with tuples of tuples
-             * (remember: here, key_type refers list [key[0] for key in keys]) */
-            if (key_type == &PyTuple_Type)
-                ms.tuple_elem_compare = safe_object_compare;
-            else
-                ms.tuple_elem_compare = ms.key_compare;
-
-            ms.key_compare = unsafe_tuple_compare;
-        }
     }
     /* End of pre-sort check: ms is now set properly! */
 
