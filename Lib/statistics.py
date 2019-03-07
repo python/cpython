@@ -91,7 +91,7 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import groupby
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, tau
+from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 
 
 
@@ -739,6 +739,41 @@ class NormalDist:
         if not self.sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
         return 0.5 * (1.0 + erf((x - self.mu) / (self.sigma * sqrt(2.0))))
+
+    def overlap(self, other):
+        '''Compute the overlapping coefficient (OVL) between two normal distributions.
+
+        Measures the agreement between two normal probability distributions.
+        Returns a value between 0.0 and 1.0 giving the overlapping area in
+        the two underlying probability density functions.
+
+            >>> N1 = NormalDist(2.4, 1.6)
+            >>> N2 = NormalDist(3.2, 2.0)
+            >>> N1.overlap(N2)
+            0.8035050657330205
+
+        '''
+        # See: "The overlapping coefficient as a measure of agreement between
+        # probability distributions and point estimation of the overlap of two
+        # normal densities" -- Henry F. Inman and Edwin L. Bradley Jr
+        # http://dx.doi.org/10.1080/03610928908830127
+        if not isinstance(other, NormalDist):
+            raise TypeError('Expected another NormalDist instance')
+        X, Y = self, other
+        if (Y.sigma, Y.mu) < (X.sigma, X.mu):   # sort to assure commutativity
+            X, Y = Y, X
+        X_var, Y_var = X.variance, Y.variance
+        if not X_var or not Y_var:
+            raise StatisticsError('overlap() not defined when sigma is zero')
+        dv = Y_var - X_var
+        dm = fabs(Y.mu - X.mu)
+        if not dv:
+            return 2.0 * NormalDist(dm, 2.0 * X.sigma).cdf(0)
+        a = X.mu * Y_var - Y.mu * X_var
+        b = X.sigma * Y.sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
+        x1 = (a + b) / dv
+        x2 = (a - b) / dv
+        return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
 
     @property
     def mean(self):
