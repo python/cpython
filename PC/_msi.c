@@ -894,7 +894,7 @@ msidb_getsummaryinformation(msiobj *db, PyObject *args)
         return msierror(status);
 
     oresult = PyObject_NEW(struct msiobj, &summary_Type);
-    if (!result) {
+    if (!oresult) {
         MsiCloseHandle(result);
         return NULL;
     }
