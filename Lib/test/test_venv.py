@@ -24,8 +24,10 @@ try:
 except ImportError:
     ctypes = None
 
-skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
-                             'Test not appropriate in a venv')
+requireVenvCreate = unittest.skipUnless(
+    sys.platform.startswith('win')
+    or sys.prefix == sys.base_prefix,
+    'Test requires venv.create')
 
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
@@ -118,7 +120,7 @@ class BasicTest(BaseTest):
         context = builder.ensure_directories(self.env_dir)
         self.assertEqual(context.prompt, '(My prompt) ')
 
-    @skipInVenv
+    @requireVenvCreate
     def test_prefixes(self):
         """
         Test that the prefix values are as expected.
@@ -254,7 +256,7 @@ class BasicTest(BaseTest):
     # run the test, the pyvenv.cfg in the venv created in the test will
     # point to the venv being used to run the test, and we lose the link
     # to the source build - so Python can't initialise properly.
-    @skipInVenv
+    @requireVenvCreate
     def test_executable(self):
         """
         Test that the sys.executable value is as expected.
@@ -298,6 +300,7 @@ class BasicTest(BaseTest):
         )
         self.assertEqual(out.strip(), '0')
 
+    @requireVenvCreate
     def test_multiprocessing(self):
         """
         Test that the multiprocessing is able to spawn.
@@ -311,7 +314,7 @@ class BasicTest(BaseTest):
             'print(Pool(1).apply_async("Python".lower).get(3))'])
         self.assertEqual(out.strip(), "python".encode())
 
-@skipInVenv
+@requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
     def assert_pip_not_installed(self):
