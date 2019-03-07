@@ -549,6 +549,28 @@ of applications in statistics, including simulations and hypothesis testing.
        compute the probability that a random variable *X* will be less than or
        equal to *x*.  Mathematically, it is written ``P(X <= x)``.
 
+    .. method:: NormalDist.overlap(other)
+
+       Compute the `overlapping coefficient (OVL)
+       <http://www.iceaaonline.com/ready/wp-content/uploads/2014/06/MM-9-Presentation-Meet-the-Overlapping-Coefficient-A-Measure-for-Elevator-Speeches.pdf>`_
+       between two normal distributions.
+
+       Measures the agreement between two normal probability distributions.
+       Returns a value between 0.0 and 1.0 giving the overlapping area for
+       two probability density functions.
+
+       In this `example from John M. Linacre
+       <https://www.rasch.org/rmt/rmt101r.htm>`_ about 80% of each
+       distribution overlaps the other:
+
+       .. doctest::
+
+           >>> N1 = NormalDist(2.4, 1.6)
+           >>> N2 = NormalDist(3.2, 2.0)
+           >>> ovl = N1.overlap(N2)
+           >>> f'{ovl * 100.0 :.1f}%'
+           '80.4%'
+
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
     are used for translation and scaling.  For example:
@@ -594,6 +616,16 @@ determine the percentage of students with scores between 1100 and 1200:
     >>> fraction = sat.cdf(1200) - sat.cdf(1100)
     >>> f'{fraction * 100 :.1f}% score between 1100 and 1200'
     '18.2% score between 1100 and 1200'
+
+What percentage of men and women will have the same height in `two normally
+distributed populations with known means and standard deviations
+<http://www.usablestats.com/lessons/normal>`_?
+
+    >>> men = NormalDist(70, 4)
+    >>> women = NormalDist(65, 3.5)
+    >>> ovl = men.overlap(women)
+    >>> round(ovl * 100.0, 1)
+    50.3
 
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte

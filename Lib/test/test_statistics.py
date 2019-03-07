@@ -2162,6 +2162,68 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X.cdf(float('Inf')), 1.0)
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
+    def test_overlap(self):
+        NormalDist = statistics.NormalDist
+
+        # Match examples from Imman and Bradley
+        for X1, X2, published_result in [
+                (NormalDist(0.0, 2.0), NormalDist(1.0, 2.0), 0.80258),
+                (NormalDist(0.0, 1.0), NormalDist(1.0, 2.0), 0.60993),
+            ]:
+            self.assertAlmostEqual(X1.overlap(X2), published_result, places=4)
+            self.assertAlmostEqual(X2.overlap(X1), published_result, places=4)
+
+        # Check against integration of the PDF
+        def overlap_numeric(X, Y, *, steps=8_192, z=5):
+            'Numerical integration cross-check for overlap() '
+            fsum = math.fsum
+            center = (X.mu + Y.mu) / 2.0
+            width = z * max(X.sigma, Y.sigma)
+            start = center - width
+            dx = 2.0 * width / steps
+            x_arr = [start + i*dx for i in range(steps)]
+            xp = list(map(X.pdf, x_arr))
+            yp = list(map(Y.pdf, x_arr))
+            total = max(fsum(xp), fsum(yp))
+            return fsum(map(min, xp, yp)) / total
+
+        for X1, X2 in [
+                # Examples from Imman and Bradley
+                (NormalDist(0.0, 2.0), NormalDist(1.0, 2.0)),
+                (NormalDist(0.0, 1.0), NormalDist(1.0, 2.0)),
+                # Example from https://www.rasch.org/rmt/rmt101r.htm
+                (NormalDist(0.0, 1.0), NormalDist(1.0, 2.0)),
+                # Gender heights from http://www.usablestats.com/lessons/normal
+                (NormalDist(70, 4), NormalDist(65, 3.5)),
+                # Misc cases with equal standard deviations
+                (NormalDist(100, 15), NormalDist(110, 15)),
+                (NormalDist(-100, 15), NormalDist(110, 15)),
+                (NormalDist(-100, 15), NormalDist(-110, 15)),
+                # Misc cases with unequal standard deviations
+                (NormalDist(100, 12), NormalDist(110, 15)),
+                (NormalDist(100, 12), NormalDist(150, 15)),
+                (NormalDist(100, 12), NormalDist(150, 35)),
+                # Misc cases with small values
+                (NormalDist(1.000, 0.002), NormalDist(1.001, 0.003)),
+                (NormalDist(1.000, 0.002), NormalDist(1.006, 0.0003)),
+                (NormalDist(1.000, 0.002), NormalDist(1.001, 0.099)),
+            ]:
+            self.assertAlmostEqual(X1.overlap(X2), overlap_numeric(X1, X2), places=5)
+            self.assertAlmostEqual(X2.overlap(X1), overlap_numeric(X1, X2), places=5)
+
+        # Error cases
+        X = NormalDist()
+        with self.assertRaises(TypeError):
+            X.overlap()                             # too few arguments
+        with self.assertRaises(TypeError):
+            X.overlap(X, X)                         # too may arguments
+        with self.assertRaises(TypeError):
+            X.overlap(None)                         # right operand not a NormalDist
+        with self.assertRaises(statistics.StatisticsError):
+            X.overlap(NormalDist(1, 0))             # right operand sigma is zero
+        with self.assertRaises(statistics.StatisticsError):
+            NormalDist(1, 0).overlap(X)             # left operand sigma is zero
+
     def test_properties(self):
         X = statistics.NormalDist(100, 15)
         self.assertEqual(X.mean, 100)
