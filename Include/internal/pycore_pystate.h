@@ -229,6 +229,7 @@ typedef struct pyruntimestate {
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(void);
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
