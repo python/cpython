@@ -93,6 +93,10 @@ Cross Platform
    platforms do not provide this information or simply return the same value as for
    :func:`machine`.  NetBSD does this.
 
+   .. versionchanged:: 3.8
+      Where available (Linux), the processor information is now retrieved from
+      the "model name" of ``/proc/cpuinfo`` instead of from the output of
+      ``uname -p``.
 
 .. function:: python_build()
 
