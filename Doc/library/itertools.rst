@@ -72,14 +72,17 @@ Iterator                                         Arguments                  Resu
 :func:`combinations_with_replacement`            p, r                       r-length tuples, in sorted order, with repeated elements
 ==============================================   ====================       =============================================================
 
-==============================================   =============================================================
-Examples                                         Results
-==============================================   =============================================================
-``product('ABCD', repeat=2)``                    ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
-``permutations('ABCD', 2)``                      ``AB AC AD BA BC BD CA CB CD DA DB DC``
-``combinations('ABCD', 2)``                      ``AB AC AD BC BD CD``
-``combinations_with_replacement('ABCD', 2)``     ``AA AB AC AD BB BC BD CC CD DD``
-==============================================   =============================================================
+.. table::
+   :widths: 47 53
+
+   ==============================================   =============================================================
+   Examples                                         Results
+   ==============================================   =============================================================
+   ``product('ABCD', repeat=2)``                    ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
+   ``permutations('ABCD', 2)``                      ``AB AC AD BA BC BD CA CB CD DA DB DC``
+   ``combinations('ABCD', 2)``                      ``AB AC AD BC BD CD``
+   ``combinations_with_replacement('ABCD', 2)``     ``AA AB AC AD BB BC BD CC CD DD``
+   ==============================================   =============================================================
 
 
 .. _itertools-functions:
