@@ -718,15 +718,11 @@ def _get_machine_win32():
 class _Processor:
     @classmethod
     def get(cls):
-        func = getattr(cls, f'get_{sys.platform}', cls.from_cpu_info)
+        func = getattr(cls, f'get_{sys.platform}', cls.from_subprocess)
         return func() or ''
 
     def get_win32():
         return os.environ.get('PROCESSOR_IDENTIFIER', _get_machine_win32())
-
-    def get_darwin():
-        cmd = 'sysctl -n machdep.cpu.brand_string'.split()
-        return subprocess.check_output(cmd, text=True).strip()
 
     def get_OpenVMS():
         try:
@@ -737,12 +733,18 @@ class _Processor:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
             return 'Alpha' if cpu_number >= 128 else 'VAX'
 
-    def from_cpu_info():
-        pattern = re.compile(r'model name\s+: (.*)')
-        with contextlib.suppress(Exception):
-            with open('/proc/cpuinfo') as lines:
-                matched = next(filter(pattern.match, lines))
-                return pattern.match(matched).group(1)
+    def from_subprocess():
+        """
+        Fall back to `uname -p`
+        """
+        try:
+            return subprocess.check_output(
+                ['uname', '-p'],
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+        except (OSError, subprocess.CalledProcessError):
+            pass
 
 
 ### Portable uname() interface
