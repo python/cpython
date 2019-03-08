@@ -717,21 +717,6 @@ def architecture(executable=sys.executable, bits='', linkage=''):
 
     return bits, linkage
 
-### Portable uname() interface
-
-uname_result = collections.namedtuple("uname_result",
-                    "system node release version machine processor")
-
-_uname_cache = None
-
-
-def _get_processor_from_cpu_info():
-    pattern = re.compile(r'model name\s+: (.*)')
-    with contextlib.suppress(Exception):
-        with open('/proc/cpuinfo') as lines:
-            matched = next(filter(pattern.match, lines))
-            return pattern.match(matched).group(1)
-
 
 def _get_machine_win32():
     # Try to use the PROCESSOR_* environment variables
@@ -746,29 +731,42 @@ def _get_machine_win32():
     )
 
 
-def _get_processor_win32():
-    return os.environ.get('PROCESSOR_IDENTIFIER', _get_machine_win32())
+class _Processor:
+    @classmethod
+    def get(cls):
+        func = getattr(cls, f'get_{sys.platform}', cls.from_cpu_info)
+        return func() or ''
+
+    def get_win32():
+        return os.environ.get('PROCESSOR_IDENTIFIER', _get_machine_win32())
+
+    def get_darwin():
+        cmd = 'sysctl -n machdep.cpu.brand_string'.split()
+        return subprocess.check_output(cmd, text=True).strip()
+
+    def get_OpenVMS():
+        try:
+            import vms_lib
+        except ImportError:
+            pass
+        else:
+            csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
+            return 'Alpha' if cpu_number >= 128 else 'VAX'
+
+    def from_cpu_info():
+        pattern = re.compile(r'model name\s+: (.*)')
+        with contextlib.suppress(Exception):
+            with open('/proc/cpuinfo') as lines:
+                matched = next(filter(pattern.match, lines))
+                return pattern.match(matched).group(1)
 
 
-def _get_processor_darwin():
-    cmd = 'sysctl -n machdep.cpu.brand_string'.split()
-    return subprocess.check_output(cmd, text=True).strip()
+### Portable uname() interface
 
+uname_result = collections.namedtuple("uname_result",
+                    "system node release version machine processor")
 
-def _get_processor():
-    func_name = f'_get_processor_{sys.platform}'
-    func = globals().get(func_name, _get_processor_from_cpu_info)
-    return func() or ''
-
-
-def _get_processor_OpenVMS():
-    try:
-        import vms_lib
-    except ImportError:
-        pass
-    else:
-        csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
-        return 'Alpha' if cpu_number >= 128 else 'VAX'
+_uname_cache = None
 
 
 def uname():
@@ -851,7 +849,7 @@ def uname():
             version = ''
 
     # Get processor information
-    processor = _get_processor()
+    processor = _Processor.get()
 
     #If any unknowns still exist, replace them with ''s, which are more portable
     if system == 'unknown':
