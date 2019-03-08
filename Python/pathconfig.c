@@ -593,7 +593,10 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
 
     if (have_module_arg) {
         #if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
-            _Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath));
+            if (!_Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath))) {
+                Py_FatalError("Failed the obtain current directory");
+                return NULL;
+            }
             argv0 = fullpath;
             n = wcslen(argv0);
         #else
@@ -671,7 +674,6 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
 #endif /* Unix */
     }
 #endif /* All others */
-
     return PyUnicode_FromWideChar(argv0, n);
 }
 
