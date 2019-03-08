@@ -747,6 +747,10 @@ class _Processor:
             pass
 
 
+def _unknown_as_blank(val):
+    return '' if val == 'unknown' else val
+
+
 ### Portable uname() interface
 
 uname_result = collections.namedtuple("uname_result",
@@ -835,27 +839,14 @@ def uname():
     # Get processor information
     processor = _Processor.get()
 
-    #If any unknowns still exist, replace them with ''s, which are more portable
-    if system == 'unknown':
-        system = ''
-    if node == 'unknown':
-        node = ''
-    if release == 'unknown':
-        release = ''
-    if version == 'unknown':
-        version = ''
-    if machine == 'unknown':
-        machine = ''
-    if processor == 'unknown':
-        processor = ''
-
     #  normalize name
     if system == 'Microsoft' and release == 'Windows':
         system = 'Windows'
         release = 'Vista'
 
-    _uname_cache = uname_result(system, node, release, version,
-                                machine, processor)
+    vals = system, node, release, version, machine, processor
+    # Replace 'unknown' values with the more portable ''
+    _uname_cache = uname_result(*map(_unknown_as_blank, vals))
     return _uname_cache
 
 ### Direct interfaces to some of the uname() return values
