@@ -735,30 +735,36 @@ class PosixUidGidTests(unittest.TestCase):
     def test_setuid(self):
         if os.getuid() != 0:
             self.assertRaises(os.error, os.setuid, 0)
+        self.assertRaises(TypeError, os.setuid, 'not an int')
         self.assertRaises(OverflowError, os.setuid, 1<<32)
 
     @unittest.skipUnless(hasattr(os, 'setgid'), 'test needs os.setgid()')
     def test_setgid(self):
         if os.getuid() != 0:
             self.assertRaises(os.error, os.setgid, 0)
+        self.assertRaises(TypeError, os.setgid, 'not an int')
         self.assertRaises(OverflowError, os.setgid, 1<<32)
 
     @unittest.skipUnless(hasattr(os, 'seteuid'), 'test needs os.seteuid()')
     def test_seteuid(self):
         if os.getuid() != 0:
             self.assertRaises(os.error, os.seteuid, 0)
+        self.assertRaises(TypeError, os.seteuid, 'not an int')
         self.assertRaises(OverflowError, os.seteuid, 1<<32)
 
     @unittest.skipUnless(hasattr(os, 'setegid'), 'test needs os.setegid()')
     def test_setegid(self):
         if os.getuid() != 0:
             self.assertRaises(os.error, os.setegid, 0)
+        self.assertRaises(TypeError, os.setegid, 'not an int')
         self.assertRaises(OverflowError, os.setegid, 1<<32)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'test needs os.setreuid()')
     def test_setreuid(self):
         if os.getuid() != 0:
             self.assertRaises(os.error, os.setreuid, 0, 0)
+        self.assertRaises(TypeError, os.setreuid, 'not an int', 0)
+        self.assertRaises(TypeError, os.setreuid, 0, 'not an int')
         self.assertRaises(OverflowError, os.setreuid, 1<<32, 0)
         self.assertRaises(OverflowError, os.setreuid, 0, 1<<32)
 
@@ -774,6 +780,8 @@ class PosixUidGidTests(unittest.TestCase):
     def test_setregid(self):
         if os.getuid() != 0:
             self.assertRaises(os.error, os.setregid, 0, 0)
+        self.assertRaises(TypeError, os.setregid, 'not an int', 0)
+        self.assertRaises(TypeError, os.setregid, 0, 'not an int')
         self.assertRaises(OverflowError, os.setregid, 1<<32, 0)
         self.assertRaises(OverflowError, os.setregid, 0, 1<<32)
 
