@@ -1163,6 +1163,9 @@ class _NamespacePath:
     def __iter__(self):
         return iter(self._recalculate())
 
+    def __getitem__(self, index):
+        return self._recalculate()[index]
+
     def __setitem__(self, index, path):
         self._path[index] = path
 
