@@ -767,6 +767,17 @@ class ElementTreeTest(unittest.TestCase):
             '<body xmlns="http://effbot.org/ns"><tag /></body>'
         )
 
+    def test_tostring_xml_declaration(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode'),
+            '<body><tag /></body>'
+        )
+        self.assertEqual(
+            str(ET.tostring(elem, encoding='utf8', xml_declaration=True), encoding='utf8'),
+            "<?xml version='1.0' encoding='utf8'?>\n<body><tag /></body>"
+        )
+
     def test_encoding(self):
         def check(encoding, body=''):
             xml = ("<?xml version='1.0' encoding='%s'?><xml>%s</xml>" %

@@ -1116,7 +1116,8 @@ def _escape_attrib_html(text):
 # --------------------------------------------------------------------
 
 def tostring(element, encoding=None, method=None, *,
-             default_namespace=None, short_empty_elements=True):
+             xml_declaration=None, default_namespace=None,
+             short_empty_elements=True):
     """Generate string representation of XML element.
 
     All subelements are included.  If encoding is "unicode", a string
@@ -1131,8 +1132,8 @@ def tostring(element, encoding=None, method=None, *,
 
     """
     stream = io.StringIO() if encoding == 'unicode' else io.BytesIO()
-    ElementTree(element).write(stream, encoding, default_namespace=default_namespace,
-                               method=method,
+    ElementTree(element).write(stream, encoding, xml_declaration=xml_declaration,
+                               default_namespace=default_namespace, method=method,
                                short_empty_elements=short_empty_elements)
     return stream.getvalue()
 
