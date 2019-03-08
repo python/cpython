@@ -735,7 +735,6 @@ def uname():
 
     """
     global _uname_cache
-    no_os_uname = 0
 
     if _uname_cache is not None:
         return _uname_cache
@@ -746,17 +745,13 @@ def uname():
     try:
         system, node, release, version, machine = infos = os.uname()
     except AttributeError:
-        no_os_uname = 1
+        system = sys.platform
+        node = _node()
+        release = version = machine = ''
+        infos = ()
 
-    if no_os_uname or not any(infos):
-        # Hmm, no there is either no uname or uname has returned
-        #'unknowns'... we'll have to poke around the system then.
-        if no_os_uname:
-            system = sys.platform
-            release = ''
-            version = ''
-            node = _node()
-            machine = ''
+    if not any(infos):
+        # uname is not available
 
         # Try win32_ver() on win32 platforms
         if system == 'win32':
