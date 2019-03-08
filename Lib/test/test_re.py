@@ -2100,6 +2100,14 @@ ELSE
                           {'tag': 'foo', 'text': None},
                           {'tag': 'foo', 'text': None}])
 
+    def test_bug_35859(self):
+        # MARK_PUSH() macro didn't protect MARK-0
+        # if it was the only available mark.
+        self.assertEqual(re.match(r'(ab|a)*?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(ab|a)+?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(ab|a){0,2}?b', 'ab').groups(), ('a',))
+        self.assertEqual(re.match(r'(.b|a)*?b', 'ab').groups(), ('a',))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
