@@ -540,7 +540,8 @@ typedef struct {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
-    int toplevel;
+    char toplevel;
+    char in_repeat;
 } SRE(match_context);
 
 /* check if string matches the given pattern.  returns <0 for
