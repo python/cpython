@@ -20,8 +20,6 @@ kwlist = [
         'and',
         'as',
         'assert',
-        'async',
-        'await',
         'break',
         'class',
         'continue',
@@ -51,6 +49,10 @@ kwlist = [
         'yield',
 #--end keywords--
         ]
+
+kwlist.append('async')
+kwlist.append('await')
+kwlist.sort()
 
 iskeyword = frozenset(kwlist).__contains__
 

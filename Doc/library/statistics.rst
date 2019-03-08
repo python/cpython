@@ -479,7 +479,7 @@ measurements as a single entity.
 
 Normal distributions arise from the `Central Limit Theorem
 <https://en.wikipedia.org/wiki/Central_limit_theorem>`_ and have a wide range
-of applications in statistics, including simulations and hypothesis testing.
+of applications in statistics.
 
 .. class:: NormalDist(mu=0.0, sigma=1.0)
 
@@ -492,19 +492,19 @@ of applications in statistics, including simulations and hypothesis testing.
 
     .. attribute:: mean
 
-       A read-only property representing the `arithmetic mean
+       A read-only property for the `arithmetic mean
        <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of a normal
        distribution.
 
     .. attribute:: stdev
 
-       A read-only property representing the `standard deviation
+       A read-only property for the `standard deviation
        <https://en.wikipedia.org/wiki/Standard_deviation>`_ of a normal
        distribution.
 
     .. attribute:: variance
 
-       A read-only property representing the `variance
+       A read-only property for the `variance
        <https://en.wikipedia.org/wiki/Variance>`_ of a normal
        distribution. Equal to the square of the standard deviation.
 
@@ -549,6 +549,15 @@ of applications in statistics, including simulations and hypothesis testing.
        compute the probability that a random variable *X* will be less than or
        equal to *x*.  Mathematically, it is written ``P(X <= x)``.
 
+    .. method:: NormalDist.overlap(other)
+
+       Compute the `overlapping coefficient (OVL)
+       <http://www.iceaaonline.com/ready/wp-content/uploads/2014/06/MM-9-Presentation-Meet-the-Overlapping-Coefficient-A-Measure-for-Elevator-Speeches.pdf>`_
+       between two normal distributions, giving a measure of agreement.
+       Returns a value between 0.0 and 1.0 giving `the overlapping area for
+       two probability density functions
+       <https://www.rasch.org/rmt/rmt101r.htm>`_.
+
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
     are used for translation and scaling.  For example:
@@ -562,8 +571,8 @@ of applications in statistics, including simulations and hypothesis testing.
     Dividing a constant by an instance of :class:`NormalDist` is not supported.
 
     Since normal distributions arise from additive effects of independent
-    variables, it is possible to `add and subtract two normally distributed
-    random variables
+    variables, it is possible to `add and subtract two independent normally
+    distributed random variables
     <https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables>`_
     represented as instances of :class:`NormalDist`.  For example:
 
@@ -585,15 +594,25 @@ of applications in statistics, including simulations and hypothesis testing.
 
 For example, given `historical data for SAT exams
 <https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
-are normally distributed with a mean of 1060 and standard deviation of 192,
+are normally distributed with a mean of 1060 and a standard deviation of 192,
 determine the percentage of students with scores between 1100 and 1200:
 
 .. doctest::
 
     >>> sat = NormalDist(1060, 195)
-    >>> fraction = sat.cdf(1200) - sat.cdf(1100)
+    >>> fraction = sat.cdf(1200 + 0.5) - sat.cdf(1100 - 0.5)
     >>> f'{fraction * 100 :.1f}% score between 1100 and 1200'
-    '18.2% score between 1100 and 1200'
+    '18.4% score between 1100 and 1200'
+
+What percentage of men and women will have the same height in `two normally
+distributed populations with known means and standard deviations
+<http://www.usablestats.com/lessons/normal>`_?
+
+    >>> men = NormalDist(70, 4)
+    >>> women = NormalDist(65, 3.5)
+    >>> ovl = men.overlap(women)
+    >>> round(ovl * 100.0, 1)
+    50.3
 
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
@@ -612,20 +631,12 @@ model:
 
 Normal distributions commonly arise in machine learning problems.
 
-Wikipedia has a `nice example with a Naive Bayesian Classifier
-<https://en.wikipedia.org/wiki/Naive_Bayes_classifier>`_.  The challenge
-is to guess a person's gender from measurements of normally distributed
-features including height, weight, and foot size.
+Wikipedia has a `nice example of a Naive Bayesian Classifier
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier>`_.  The challenge is to
+predict a person's gender from measurements of normally distributed features
+including height, weight, and foot size.
 
-The `prior probability <https://en.wikipedia.org/wiki/Prior_probability>`_ of
-being male or female is 50%:
-
-.. doctest::
-
-    >>> prior_male = 0.5
-    >>> prior_female = 0.5
-
-We also have a training dataset with measurements for eight people.  These
+We're given a training dataset with measurements for eight people.  The
 measurements are assumed to be normally distributed, so we summarize the data
 with :class:`NormalDist`:
 
@@ -638,8 +649,8 @@ with :class:`NormalDist`:
     >>> foot_size_male = NormalDist.from_samples([12, 11, 12, 10])
     >>> foot_size_female = NormalDist.from_samples([6, 8, 7, 9])
 
-We observe a new person whose feature measurements are known but whose gender
-is unknown:
+Next, we encounter a new person whose feature measurements are known but whose
+gender is unknown:
 
 .. doctest::
 
@@ -647,19 +658,23 @@ is unknown:
     >>> wt = 130        # weight
     >>> fs = 8          # foot size
 
-The posterior is the product of the prior times each likelihood of a
-feature measurement given the gender:
+Starting with a 50% `prior probability
+<https://en.wikipedia.org/wiki/Prior_probability>`_ of being male or female,
+we compute the posterior as the prior times the product of likelihoods for the
+feature measurements given the gender:
 
 .. doctest::
 
+   >>> prior_male = 0.5
+   >>> prior_female = 0.5
    >>> posterior_male = (prior_male * height_male.pdf(ht) *
    ...                   weight_male.pdf(wt) * foot_size_male.pdf(fs))
 
    >>> posterior_female = (prior_female * height_female.pdf(ht) *
    ...                     weight_female.pdf(wt) * foot_size_female.pdf(fs))
 
-The final prediction is awarded to the largest posterior -- this is known as
-the `maximum a posteriori
+The final prediction goes to the largest posterior. This is known as the
+`maximum a posteriori
 <https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation>`_ or MAP:
 
 .. doctest::

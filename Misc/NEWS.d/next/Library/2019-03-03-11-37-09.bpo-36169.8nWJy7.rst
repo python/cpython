@@ -1,0 +1,2 @@
+Add overlap() method to statistics.NormalDist.  Computes the overlapping
+coefficient for two normal distributions.

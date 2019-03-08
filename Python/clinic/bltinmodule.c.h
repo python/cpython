@@ -151,7 +151,7 @@ exit:
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
-"        dont_inherit=False, optimize=-1)\n"
+"        dont_inherit=False, optimize=-1, feature_version=-1)\n"
 "--\n"
 "\n"
 "Compile source into a code object that can be executed by exec() or eval().\n"
@@ -173,15 +173,15 @@ PyDoc_STRVAR(builtin_compile__doc__,
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize);
+                     int optimize, int feature_version);
 
 static PyObject *
 builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", NULL};
+    static const char * const _keywords[] = {"source", "filename", "mode", "flags", "dont_inherit", "optimize", "feature_version", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "compile", 0};
-    PyObject *argsbuf[6];
+    PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *source;
     PyObject *filename;
@@ -189,8 +189,9 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int flags = 0;
     int dont_inherit = 0;
     int optimize = -1;
+    int feature_version = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 6, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 7, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -242,17 +243,31 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(args[5])) {
+    if (args[5]) {
+        if (PyFloat_Check(args[5])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        optimize = _PyLong_AsInt(args[5]);
+        if (optimize == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[6])) {
         PyErr_SetString(PyExc_TypeError,
                         "integer argument expected, got float" );
         goto exit;
     }
-    optimize = _PyLong_AsInt(args[5]);
-    if (optimize == -1 && PyErr_Occurred()) {
+    feature_version = _PyLong_AsInt(args[6]);
+    if (feature_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_pos:
-    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize);
+    return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, feature_version);
 
 exit:
     return return_value;
@@ -830,4 +845,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=50a7161df0c1c5e4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f690311ac556c31 input=a9049054013a1b77]*/
