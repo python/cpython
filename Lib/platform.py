@@ -758,13 +758,9 @@ def uname():
             node = _node()
             machine = ''
 
-        use_syscmd_ver = 1
-
         # Try win32_ver() on win32 platforms
         if system == 'win32':
             release, version, csd, ptype = win32_ver()
-            if release and version:
-                use_syscmd_ver = 0
             # Try to use the PROCESSOR_* environment variables
             # available on Win XP and later; see
             # http://support.microsoft.com/kb/888731 and
@@ -780,7 +776,7 @@ def uname():
 
         # Try the 'ver' system command available on some
         # platforms
-        if use_syscmd_ver:
+        if not (release and version):
             system, release, version = _syscmd_ver(system)
             # Normalize system to what win32_ver() normally returns
             # (_syscmd_ver() tends to return the vendor name as well)
