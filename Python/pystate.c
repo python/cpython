@@ -223,6 +223,9 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
+    // XXX Once we have one allocator per interpreter (i.e.
+    // per-interpreter GC) we must ensure that all of the interpreter's
+    // objects have been cleaned up at the point.
 }
 
 
