@@ -691,7 +691,7 @@ clone_combined_dict(PyDictObject *orig)
 PyObject *
 PyDict_New(void)
 {
-    DK_INCREF(Py_EMPTY_KEYS);
+    dictkeys_incref(Py_EMPTY_KEYS);
     return new_dict(Py_EMPTY_KEYS, empty_values);
 }
 
