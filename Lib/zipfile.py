@@ -13,6 +13,7 @@ import stat
 import shutil
 import struct
 import binascii
+import tempfile
 
 try:
     import threading
@@ -1574,9 +1575,27 @@ class ZipFile:
                 os.mkdir(targetpath)
             return targetpath
 
-        with self.open(member, pwd=pwd) as source, \
-             open(targetpath, "wb") as target:
-            shutil.copyfileobj(source, target)
+        with self.open(member, pwd=pwd) as source:
+            if pwd:
+                dirname = os.path.dirname(targetpath)
+                basename = os.path.basename(targetpath)
+                idx = basename.rfind(".")
+                if idx != -1:
+                    prefix, suffix = basename[:idx], basename[idx:]
+                else:
+                    prefix, suffix = basename, ""
+                fid, tmptargetpath = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dirname)
+                with open(fid, "wb") as target:
+                    try:
+                        shutil.copyfileobj(source, target)
+                    except:
+                        target.close()
+                        os.unlink(tmptargetpath)
+                        raise
+                shutil.move(tmptargetpath, targetpath)
+            else:
+                with open(targetpath, "wb") as target:
+                    shutil.copyfileobj(source, target)
 
         return targetpath
 

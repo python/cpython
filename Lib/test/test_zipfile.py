@@ -1767,6 +1767,15 @@ class DecryptionTests(unittest.TestCase):
         self.assertRaises(TypeError, self.zip.open, "test.txt", pwd="python")
         self.assertRaises(TypeError, self.zip.extract, "test.txt", pwd="python")
 
+    @requires_zlib
+    def test_wrong_password_collision(self):
+        member = "test.txt"
+        extracted = self.zip.extract(member, pwd=b"python")
+        size = os.stat(extracted).st_size
+        self.assertRaises(zipfile.BadZipFile, self.zip.extract, member, pwd=b"xxx")
+        self.assertEqual(os.stat(extracted).st_size, size)
+
+
 class AbstractTestsWithRandomBinaryFiles:
     @classmethod
     def setUpClass(cls):
