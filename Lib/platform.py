@@ -117,7 +117,8 @@ import os
 import re
 import sys
 import subprocess
-import contextlib
+import functools
+import itertools
 
 ### Globals & Constants
 
@@ -753,8 +754,33 @@ def _unknown_as_blank(val):
 
 ### Portable uname() interface
 
-uname_result = collections.namedtuple("uname_result",
-                    "system node release version machine processor")
+class uname_result(
+    collections.namedtuple(
+        "uname_result_base",
+        "system node release version machine")
+        ):
+    """
+    A uname_result that's largely compatible with a
+    simple namedtuple except that 'platform' is
+    resolved late and cached to avoid calling "uname"
+    except when needed.
+    """
+
+    @functools.cached_property
+    def processor(self):
+        return _unknown_as_blank(_Processor.get())
+
+    def __iter__(self):
+        return itertools.chain(
+            super().__iter__(),
+            (self.processor,)
+        )
+
+    def __getitem__(self, key):
+        if key == 5:
+            return self.processor
+        return super().__getitem__(key)
+
 
 _uname_cache = None
 
@@ -836,15 +862,12 @@ def uname():
             release = version
             version = ''
 
-    # Get processor information
-    processor = _Processor.get()
-
     #  normalize name
     if system == 'Microsoft' and release == 'Windows':
         system = 'Windows'
         release = 'Vista'
 
-    vals = system, node, release, version, machine, processor
+    vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''
     _uname_cache = uname_result(*map(_unknown_as_blank, vals))
     return _uname_cache
