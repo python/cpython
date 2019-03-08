@@ -5547,6 +5547,15 @@ test_fatal_error(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_PyWeakref_NewRef(PyObject *self, PyObject *args) {
+    PyObject *ob = NULL;
+    PyObject *callback = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &ob, &callback))
+        return NULL;
+    return PyWeakref_NewRef(ob, callback);
+}
+
 
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
@@ -5825,6 +5834,7 @@ static PyMethodDef TestMethods[] = {
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"fatal_error", test_fatal_error, METH_VARARGS,
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
+    {"PyWeakref_NewRef", test_PyWeakref_NewRef, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
