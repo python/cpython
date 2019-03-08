@@ -1462,7 +1462,19 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
     interp->finalizing = 1;
 
+    // Wrap up existing threads.
     wait_for_thread_shutdown();
+
+    // Make any remaining pending calls.
+    if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.pending.calls_to_do)) {
+        if (_Py_MakePendingCalls() < 0) {
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+            PyErr_BadInternalCall();
+            _PyErr_ChainExceptions(exc, val, tb);
+            PyErr_Print();
+        }
+    }
 
     call_py_exitfuncs(interp);
 

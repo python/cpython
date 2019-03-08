@@ -459,6 +459,14 @@ error:
     return res;
 }
 
+int
+_Py_MakePendingCalls(void)
+{
+    assert(PyGILState_Check());
+
+    return make_pending_calls();
+}
+
 /* Py_MakePendingCalls() is a simple wrapper for the sake
    of backward-compatibility. */
 int
