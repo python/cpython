@@ -1,0 +1,4 @@
+:module:`platform` module no longer relies on the ``uname`` executable to
+resolve processor information. Processor information on Linux systems is now
+resolved to more useful information from the "model name" as found in
+``/proc/cpuinfo``.
