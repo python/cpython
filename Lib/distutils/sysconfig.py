@@ -205,7 +205,7 @@ def customize_compiler(compiler):
         if 'LDFLAGS' in os.environ:
             ldshared = ldshared + ' ' + os.environ['LDFLAGS']
         if 'CFLAGS' in os.environ:
-            cflags = opt + ' ' + os.environ['CFLAGS']
+            cflags = cflags + ' ' + os.environ['CFLAGS']
             ldshared = ldshared + ' ' + os.environ['CFLAGS']
         if 'CPPFLAGS' in os.environ:
             cpp = cpp + ' ' + os.environ['CPPFLAGS']
