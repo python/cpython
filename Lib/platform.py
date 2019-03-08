@@ -116,6 +116,8 @@ import collections
 import os
 import re
 import sys
+import subprocess
+import contextlib
 
 ### Globals & Constants
 
@@ -722,6 +724,53 @@ uname_result = collections.namedtuple("uname_result",
 
 _uname_cache = None
 
+
+def _get_processor_from_cpu_info():
+    pattern = re.compile(r'model name\s+: (.*)')
+    with contextlib.suppress(Exception):
+        with open('/proc/cpuinfo') as lines:
+            matched = next(filter(pattern.match, lines))
+            return pattern.match(matched).group(1)
+
+
+def _get_machine_win32():
+    # Try to use the PROCESSOR_* environment variables
+    # available on Win XP and later; see
+    # http://support.microsoft.com/kb/888731 and
+    # http://www.geocities.com/rick_lively/MANUALS/ENV/MSWIN/PROCESSI.HTM
+
+    # WOW64 processes mask the native architecture
+    return (
+        os.environ.get('PROCESSOR_ARCHITEW6432', '') or
+        os.environ.get('PROCESSOR_ARCHITECTURE', '')
+    )
+
+
+def _get_processor_win32():
+    return os.environ.get('PROCESSOR_IDENTIFIER', _get_machine_win32())
+
+
+def _get_processor_darwin():
+    cmd = 'sysctl -n machdep.cpu.brand_string'.split()
+    return subprocess.check_output(cmd, text=True).strip()
+
+
+def _get_processor():
+    func_name = f'_get_processor_{sys.platform}'
+    func = globals().get(func_name, _get_processor_from_cpu_info)
+    return func() or ''
+
+
+def _get_processor_OpenVMS():
+    try:
+        import vms_lib
+    except ImportError:
+        pass
+    else:
+        csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
+        return 'Alpha' if cpu_number >= 128 else 'VAX'
+
+
 def uname():
 
     """ Fairly portable uname interface. Returns a tuple
@@ -756,18 +805,7 @@ def uname():
         # Try win32_ver() on win32 platforms
         if system == 'win32':
             release, version, csd, ptype = win32_ver()
-            # Try to use the PROCESSOR_* environment variables
-            # available on Win XP and later; see
-            # http://support.microsoft.com/kb/888731 and
-            # http://www.geocities.com/rick_lively/MANUALS/ENV/MSWIN/PROCESSI.HTM
-            if not machine:
-                # WOW64 processes mask the native architecture
-                if "PROCESSOR_ARCHITEW6432" in os.environ:
-                    machine = os.environ.get("PROCESSOR_ARCHITEW6432", '')
-                else:
-                    machine = os.environ.get('PROCESSOR_ARCHITECTURE', '')
-            if not processor:
-                processor = os.environ.get('PROCESSOR_IDENTIFIER', machine)
+            machine = machine or _get_machine_win32()
 
         # Try the 'ver' system command available on some
         # platforms
@@ -811,20 +849,9 @@ def uname():
         if not release or release == '0':
             release = version
             version = ''
-        # Get processor information
-        try:
-            import vms_lib
-        except ImportError:
-            pass
-        else:
-            csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
-            if (cpu_number >= 128):
-                processor = 'Alpha'
-            else:
-                processor = 'VAX'
-    if not processor:
-        # Get processor information from the uname system command
-        processor = _syscmd_uname('-p', '')
+
+    # Get processor information
+    processor = _get_processor()
 
     #If any unknowns still exist, replace them with ''s, which are more portable
     if system == 'unknown':
