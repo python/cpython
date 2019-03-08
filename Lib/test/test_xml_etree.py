@@ -796,9 +796,12 @@ class ElementTreeTest(unittest.TestCase):
             ['<body', '>', '<tag', ' />', '</body>']
         )
         self.assertEqual(
-            ET.tostringlist(elem, encoding='unicode', xml_declaration=True),
-            ["<?xml version='1.0' encoding='cp1252'?>\n", '<body', '>', '<tag', ' />', '</body>']
+            [str(bstr, encoding='us-ascii') for bstr in ET.tostringlist(elem, xml_declaration=True)],
+            ["<?xml version='1.0' encoding='us-ascii'?>\n<body><tag /></body>"]
         )
+        stringlist = ET.tostringlist(elem, encoding='unicode', xml_declaration=True)
+        self.assertRegex(stringlist[0], r"^<\?xml version='1.0' encoding='.+'?>")
+        self.assertEqual(['<body', '>', '<tag', ' />', '</body>'], stringlist[1:])
 
     def test_encoding(self):
         def check(encoding, body=''):
