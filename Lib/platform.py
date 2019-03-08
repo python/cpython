@@ -744,11 +744,11 @@ def uname():
 
     # Get some infos from the builtin os.uname API...
     try:
-        system, node, release, version, machine = os.uname()
+        system, node, release, version, machine = infos = os.uname()
     except AttributeError:
         no_os_uname = 1
 
-    if no_os_uname or not list(filter(None, (system, node, release, version, machine))):
+    if no_os_uname or not any(infos):
         # Hmm, no there is either no uname or uname has returned
         #'unknowns'... we'll have to poke around the system then.
         if no_os_uname:
