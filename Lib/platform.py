@@ -581,22 +581,6 @@ def _follow_symlinks(filepath):
             os.path.join(os.path.dirname(filepath), os.readlink(filepath)))
     return filepath
 
-def _syscmd_uname(option, default=''):
-
-    """ Interface to the system's uname command.
-    """
-    if sys.platform in ('dos', 'win32', 'win16'):
-        # XXX Others too ?
-        return default
-
-    import subprocess
-    try:
-        output = subprocess.check_output(('uname', option),
-                                         stderr=subprocess.DEVNULL,
-                                         text=True)
-    except (OSError, subprocess.CalledProcessError):
-        return default
-    return (output.strip() or default)
 
 def _syscmd_file(target, default=''):
 
