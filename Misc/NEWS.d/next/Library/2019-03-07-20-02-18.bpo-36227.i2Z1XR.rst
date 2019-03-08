@@ -1,1 +1,2 @@
-New keyword argument `default_namespace` to function ElementTree.tostring()
+Added new keyword arguments `default_namespace` and `xml_declaration` to functions
+ElementTree.tostring() and ElementTree.tostringlist().
