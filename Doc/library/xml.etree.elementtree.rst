@@ -601,15 +601,15 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *default_namespace* and *short_empty_elements* has the same meaning as in
-   :meth:`ElementTree.write`. Returns an (optionally) encoded string containing
-   the XML data.
+   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
+   meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
+   containing the XML data.
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
 
    .. versionadded:: 3.8
-      The *default_namespace* parameter.
+      The *xml_declaration* and *default_namespace* parameters.
 
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
@@ -620,15 +620,18 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
-   Returns a list of (optionally) encoded strings containing the XML data.
-   It does not guarantee any specific sequence, except that
-   ``b"".join(tostringlist(element)) == tostring(element)``.
+   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
+   meaning as in :meth:`ElementTree.write`. Returns a list of (optionally) encoded
+   strings containing the XML data. It does not guarantee any specific sequence,
+   except that ``b"".join(tostringlist(element)) == tostring(element)``.
 
    .. versionadded:: 3.2
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
+
+   .. versionadded:: 3.8
+      The *xml_declaration* and *default_namespace* parameters.
 
 
 .. function:: XML(text, parser=None)
