@@ -972,15 +972,25 @@ entrance:
             } else {
                 /* general case */
                 LASTMARK_SAVE();
+                ctx->in_repeat = (state->repeat != NULL);
+                if (ctx->in_repeat)
+                    MARK_PUSH(ctx->lastmark);
+
                 while ((Py_ssize_t)ctx->pattern[2] == SRE_MAXREPEAT
                        || ctx->count <= (Py_ssize_t)ctx->pattern[2]) {
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_MIN_REPEAT_ONE,jump_min_repeat_one,
                             ctx->pattern+ctx->pattern[0]);
                     if (ret) {
+                        if (ctx->in_repeat)
+                            MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
+                    if (ctx->in_repeat)
+                        MARK_POP_KEEP(ctx->lastmark);
+                    LASTMARK_RESTORE();
+
                     state->ptr = ctx->ptr;
                     ret = SRE(count)(state, ctx->pattern+3, 1);
                     RETURN_ON_ERROR(ret);
@@ -990,8 +1000,9 @@ entrance:
                     assert(ret == 1);
                     ctx->ptr++;
                     ctx->count++;
-                    LASTMARK_RESTORE();
                 }
+                if (ctx->in_repeat)
+                    MARK_POP_DISCARD(ctx->lastmark);
             }
             RETURN_FAILURE;
 

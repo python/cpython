@@ -2136,6 +2136,13 @@ ELSE
         self.assertEqual(m.span(), (0, 4))
         self.assertEqual(m.groups(), (None, 'a'))
 
+        # JUMP_MIN_REPEAT_ONE should MARK_PUSH() if in a repeat
+        s = 'abab'
+        p = r'(?:.*?(?=(a)|(b))b)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.groups(), (None, 'b'))  
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
