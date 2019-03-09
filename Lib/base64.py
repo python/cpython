@@ -42,8 +42,8 @@ def _bytes_from_decode_data(s):
     try:
         return memoryview(s).tobytes()
     except TypeError:
-        raise TypeError("argument should be a bytes-like object or ASCII "
-                        "string, not %r" % s.__class__.__name__) from None
+        raise TypeError('argument should be a bytes-like object or ASCII '
+                        f'string, not {s.__class__.__name__}') from None
 
 
 # Base64 encoding/decoding uses binascii
@@ -361,8 +361,8 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     if adobe:
         if not b.endswith(_A85END):
             raise ValueError(
-                "Ascii85 encoded byte sequences must end "
-                "with {!r}".format(_A85END)
+                'Ascii85 encoded byte sequences must end '
+                f'with {_A85END!r}'
                 )
         if b.startswith(_A85START):
             b = b[2:-2]  # Strip off start/end markers
@@ -402,7 +402,7 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
             # Skip whitespace
             continue
         else:
-            raise ValueError('Non-Ascii85 digit found: %c' % x)
+            raise ValueError(f'Non-Ascii85 digit found: {x}')
 
     result = b''.join(decoded)
     padding = 4 - len(curr)
@@ -460,14 +460,14 @@ def b85decode(b):
         except TypeError:
             for j, c in enumerate(chunk):
                 if _b85dec[c] is None:
-                    raise ValueError('bad base85 character at position %d'
-                                    % (i + j)) from None
+                    raise ValueError(f'bad base85 character at position {i + j}')\
+                            from None
             raise
         try:
             out.append(packI(acc))
         except struct.error:
-            raise ValueError('base85 overflow in hunk starting at byte %d'
-                             % i) from None
+            raise ValueError(f'base85 overflow in hunk starting at byte {i}')\
+                    from None
 
     result = b''.join(out)
     if padding:
@@ -509,15 +509,14 @@ def _input_type_check(s):
     try:
         m = memoryview(s)
     except TypeError as err:
-        msg = "expected bytes-like object, not %s" % s.__class__.__name__
+        msg = f'expected bytes-like object, not {s.__class__.__name__}'
         raise TypeError(msg) from err
     if m.format not in ('c', 'b', 'B'):
-        msg = ("expected single byte elements, not %r from %s" %
-                                          (m.format, s.__class__.__name__))
+        msg = f'expected single byte elements, not {m.format} from \
+                {s.__class__.__name__}'
         raise TypeError(msg)
     if m.ndim != 1:
-        msg = ("expected 1-D data, not %d-D data from %s" %
-                                          (m.ndim, s.__class__.__name__))
+        msg = f'expected 1-D data, not {m.ndim}-D data from {s.__class__.__name__}'
         raise TypeError(msg)
 
 
