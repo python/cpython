@@ -2122,6 +2122,20 @@ ELSE
         p = r'(?:a*?(xx)??z)*'
         self.assertEqual(re.match(p, s).groups(), ('xx',))
 
+        # JUMP_REPEAT_ONE_1 should MARK_PUSH() if in a repeat
+        s = 'aabaab'
+        p = r'(?:[^b]*a(?=(b)|(a))ab)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 6))
+        self.assertEqual(m.groups(), (None, 'a'))
+
+        # JUMP_REPEAT_ONE_2 should MARK_PUSH() if in a repeat
+        s = 'abab'
+        p = r'(?:[^b]*(?=(b)|(a))ab)*'
+        m = re.match(p, s)
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.groups(), (None, 'a'))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
