@@ -60,7 +60,8 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
         return _Py_INIT_ERR("Can't initialize threads for cross-interpreter data registry");
     }
 
-    // runtime->main_thread is set in PyEval_InitThreads().
+    // Set it to the ID of the main thread of the main interpreter.
+    runtime->main_thread = PyThread_get_thread_ident();
 
     return _Py_INIT_OK();
 }
@@ -92,6 +93,32 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
+/* This function is called from PyOS_AfterFork_Child to ensure that
+ * newly created child processes do not share locks with the parent.
+ */
+
+void
+_PyRuntimeState_ReInitThreads(void)
+{
+    // This was initially set in _PyRuntimeState_Init().
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
+
+    _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.mutex == NULL) {
+        Py_FatalError("Can't initialize lock for runtime interpreters");
+    }
+
+    _PyRuntime.interpreters.main->id_mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.main->id_mutex == NULL) {
+        Py_FatalError("Can't initialize ID lock for main interpreter");
+    }
+
+    _PyRuntime.xidregistry.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.xidregistry.mutex == NULL) {
+        Py_FatalError("Can't initialize lock for cross-interpreter data registry");
+    }
 }
 
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
