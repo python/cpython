@@ -632,9 +632,9 @@ model:
 Normal distributions commonly arise in machine learning problems.
 
 Wikipedia has a `nice example of a Naive Bayesian Classifier
-<https://en.wikipedia.org/wiki/Naive_Bayes_classifier>`_.  The challenge is to
-predict a person's gender from measurements of normally distributed features
-including height, weight, and foot size.
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Sex_classification>`_.
+The challenge is to predict a person's gender from measurements of normally
+distributed features including height, weight, and foot size.
 
 We're given a training dataset with measurements for eight people.  The
 measurements are assumed to be normally distributed, so we summarize the data
