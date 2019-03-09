@@ -105,11 +105,20 @@ _PyRuntimeState_ReInitThreads(void)
     // This was initially set in _PyRuntimeState_Init().
     _PyRuntime.main_thread = PyThread_get_thread_ident();
 
-    /* XXX What about the following?
-     *   _PyRuntime.interpreters.mutex
-     *   _PyRuntime.interpreters.main.id_mutex
-     *   _PyRuntime.xidregistry.mutex
-     */
+    _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.mutex == NULL) {
+        Py_FatalError("Can't initialize lock for runtime interpreters");
+    }
+
+    _PyRuntime.interpreters.main->id_mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.main->id_mutex == NULL) {
+        Py_FatalError("Can't initialize ID lock for main interpreter");
+    }
+
+    _PyRuntime.xidregistry.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.xidregistry.mutex == NULL) {
+        Py_FatalError("Can't initialize lock for cross-interpreter data registry");
+    }
 }
 
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
