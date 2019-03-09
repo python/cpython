@@ -784,10 +784,12 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
         }
     }
     else if (!config->preconfig.isolated) {
-        PyObject *path0 = _PyPathConfig_ComputeArgv0(config->argc,
-                                                     config->argv);
+        PyObject *path0 = NULL;
+        _PyInitError error = _PyPathConfig_ComputeArgv0(config->argc,
+                                                        config->argv,
+                                                        &path0);
         if (path0 == NULL) {
-            err = _Py_INIT_NO_MEMORY();
+            err  = error;
             goto done;
         }
 

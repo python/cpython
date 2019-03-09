@@ -566,8 +566,8 @@ Py_GetProgramName(void)
 }
 
 /* Compute argv[0] which will be prepended to sys.argv */
-PyObject*
-_PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
+_PyInitError
+_PyPathConfig_ComputeArgv0(int argc, wchar_t **argv, PyObject** result)
 {
     wchar_t *argv0;
     wchar_t *p = NULL;
@@ -584,6 +584,7 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
 #elif defined(MS_WINDOWS)
     wchar_t fullpath[MAX_PATH];
 #endif
+    assert(*result == NULL);
 
     argv0 = argv[0];
     if (argc > 0 && argv0 != NULL) {
@@ -594,8 +595,7 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
     if (have_module_arg) {
         #if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
             if (!_Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath))) {
-                Py_FatalError("Failed the obtain current directory");
-                return NULL;
+                return _Py_INIT_USER_ERR("Failed the obtain current directory");
             }
             argv0 = fullpath;
             n = wcslen(argv0);
@@ -674,7 +674,11 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
 #endif /* Unix */
     }
 #endif /* All others */
-    return PyUnicode_FromWideChar(argv0, n);
+    *result = PyUnicode_FromWideChar(argv0, n);
+    if (*result == NULL) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    return _Py_INIT_OK();
 }
 
 
