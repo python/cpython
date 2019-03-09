@@ -1,0 +1,1 @@
+Issue discovered when working on https://stackoverflow.com/questions/54532010/zipfile-badzipfile-bad-crc-32-when-extracting-a-password-protected-zip-zip/55063500#55063500
