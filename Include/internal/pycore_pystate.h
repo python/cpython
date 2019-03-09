@@ -31,6 +31,8 @@ struct _is {
     int64_t id_refcount;
     PyThread_type_lock id_mutex;
 
+    int finalizing;
+
     PyObject *modules;
     PyObject *modules_by_index;
     PyObject *sysdict;
@@ -206,6 +208,8 @@ typedef struct pyruntimestate {
         PyThread_type_lock mutex;
         struct _xidregitem *head;
     } xidregistry;
+
+    unsigned long main_thread;
 
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
