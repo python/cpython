@@ -530,18 +530,18 @@ do { \
 
 typedef struct {
     Py_ssize_t last_ctx_pos;
-    Py_ssize_t jump;
     SRE_CHAR* ptr;
     SRE_CODE* pattern;
     Py_ssize_t count;
-    Py_ssize_t lastmark;
-    Py_ssize_t lastindex;
     union {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
-    char toplevel;
+    Py_ssize_t lastindex;
+    Py_ssize_t lastmark;
     char in_repeat;
+    char toplevel;
+    char jump;
 } SRE(match_context);
 
 /* check if string matches the given pattern.  returns <0 for
