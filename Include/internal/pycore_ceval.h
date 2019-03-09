@@ -12,7 +12,6 @@ extern "C" {
 #include "pythread.h"
 
 struct _pending_calls {
-    unsigned long main_thread;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
     _Py_atomic_int calls_to_do;

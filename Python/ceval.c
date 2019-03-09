@@ -174,9 +174,11 @@ PyEval_InitThreads(void)
     PyThread_init_thread();
     create_gil();
     take_gil(_PyThreadState_GET());
-    _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
-    if (!_PyRuntime.ceval.pending.lock)
+    // Set it to the ID of the main thread of the main interpreter.
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
+    if (!_PyRuntime.ceval.pending.lock) {
         _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
+    }
 }
 
 void
@@ -243,9 +245,9 @@ PyEval_ReInitThreads(void)
     if (!gil_created())
         return;
     recreate_gil();
-    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
     take_gil(current_tstate);
-    _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
+    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
@@ -323,6 +325,35 @@ _PyEval_SignalReceived(void)
     SIGNAL_PENDING_SIGNALS();
 }
 
+/* Push one item onto the queue while holding the lock. */
+static int
+_push_pending_call(int (*func)(void *), void *arg)
+{
+    int i = _PyRuntime.ceval.pending.last;
+    int j = (i + 1) % NPENDINGCALLS;
+    if (j == _PyRuntime.ceval.pending.first) {
+        return -1; /* Queue full */
+    }
+    _PyRuntime.ceval.pending.calls[i].func = func;
+    _PyRuntime.ceval.pending.calls[i].arg = arg;
+    _PyRuntime.ceval.pending.last = j;
+    return 0;
+}
+
+/* Pop one item off the queue while holding the lock. */
+static void
+_pop_pending_call(int (**func)(void *), void **arg)
+{
+    int i = _PyRuntime.ceval.pending.first;
+    if (i == _PyRuntime.ceval.pending.last) {
+        return; /* Queue empty */
+    }
+
+    *func = _PyRuntime.ceval.pending.calls[i].func;
+    *arg = _PyRuntime.ceval.pending.calls[i].arg;
+    _PyRuntime.ceval.pending.first = (i + 1) % NPENDINGCALLS;
+}
+
 /* This implementation is thread-safe.  It allows
    scheduling to be made from any thread, and even from an executing
    callback.
@@ -331,7 +362,6 @@ _PyEval_SignalReceived(void)
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
-    int i, j, result=0;
     PyThread_type_lock lock = _PyRuntime.ceval.pending.lock;
 
     /* try a few times for the lock.  Since this mechanism is used
@@ -346,6 +376,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
      * this function is called before any bytecode evaluation takes place.
      */
     if (lock != NULL) {
+        int i;
         for (i = 0; i<100; i++) {
             if (PyThread_acquire_lock(lock, NOWAIT_LOCK))
                 break;
@@ -354,15 +385,8 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
             return -1;
     }
 
-    i = _PyRuntime.ceval.pending.last;
-    j = (i + 1) % NPENDINGCALLS;
-    if (j == _PyRuntime.ceval.pending.first) {
-        result = -1; /* Queue full */
-    } else {
-        _PyRuntime.ceval.pending.calls[i].func = func;
-        _PyRuntime.ceval.pending.calls[i].arg = arg;
-        _PyRuntime.ceval.pending.last = j;
-    }
+    int result = _push_pending_call(func, arg);
+
     /* signal main loop */
     SIGNAL_PENDING_CALLS();
     if (lock != NULL)
@@ -373,10 +397,10 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(void)
 {
-    /* Only handle signals on main thread. */
-    if (_PyRuntime.ceval.pending.main_thread &&
-        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
-    {
+    /* Only handle signals on main thread.  PyEval_InitThreads must
+     * have been called already.
+     */
+    if (PyThread_get_thread_ident() != _PyRuntime.main_thread) {
         return 0;
     }
     /*
@@ -401,9 +425,7 @@ make_pending_calls(void)
     static int busy = 0;
 
     /* only service pending calls on main thread */
-    if (_PyRuntime.ceval.pending.main_thread &&
-        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
-    {
+    if (PyThread_get_thread_ident() != _PyRuntime.main_thread) {
         return 0;
     }
 
@@ -428,24 +450,18 @@ make_pending_calls(void)
 
     /* perform a bounded number of calls, in case of recursion */
     for (int i=0; i<NPENDINGCALLS; i++) {
-        int j;
-        int (*func)(void *);
+        int (*func)(void *) = NULL;
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */
         PyThread_acquire_lock(_PyRuntime.ceval.pending.lock, WAIT_LOCK);
-        j = _PyRuntime.ceval.pending.first;
-        if (j == _PyRuntime.ceval.pending.last) {
-            func = NULL; /* Queue empty */
-        } else {
-            func = _PyRuntime.ceval.pending.calls[j].func;
-            arg = _PyRuntime.ceval.pending.calls[j].arg;
-            _PyRuntime.ceval.pending.first = (j + 1) % NPENDINGCALLS;
-        }
+        _pop_pending_call(&func, &arg);
         PyThread_release_lock(_PyRuntime.ceval.pending.lock);
+
         /* having released the lock, perform the callback */
-        if (func == NULL)
+        if (func == NULL) {
             break;
+        }
         res = func(arg);
         if (res) {
             goto error;
