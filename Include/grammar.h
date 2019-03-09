@@ -50,7 +50,6 @@ typedef struct {
 typedef struct {
     int          d_type;        /* Non-terminal this represents */
     char        *d_name;        /* For printing */
-    int          d_initial;     /* Initial state */
     int          d_nstates;
     state       *d_state;       /* Array of states */
     bitset       d_first;

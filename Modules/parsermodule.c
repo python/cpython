@@ -662,7 +662,7 @@ validate_node(node *tree)
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */
-    dfa_state = &nt_dfa->d_state[nt_dfa->d_initial];
+    dfa_state = nt_dfa->d_state;
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
