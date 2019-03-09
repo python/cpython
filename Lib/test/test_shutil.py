@@ -25,6 +25,7 @@ from test import support
 from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
+AIX = sys.platform[:3] == 'aix'
 
 try:
     import grp
@@ -84,6 +85,17 @@ def rlistdir(path):
             res.append(name)
     return res
 
+# AIX 32-bit mode, by default, lacks enough memory for the xz/lzma compiler test
+# The AIX command 'dump -o program' gives XCOFF header information
+# The second word of the last line in the maxdata value
+# when 32-bit maxdata must be greater than 0x1000000 for the xz test to succeed
+def _maxdataOK():
+    if AIX and sys.maxsize == 2147483647:
+        hdrs=subprocess.getoutput("/usr/bin/dump -o %s" % sys.executable)
+        maxdata=hdrs.split("\n")[-1].split()[1]
+        return int(maxdata,16) >= 0x20000000
+    else:
+        return True
 
 class TestShutil(unittest.TestCase):
 
@@ -1269,6 +1281,7 @@ class TestShutil(unittest.TestCase):
         self.check_unpack_archive('bztar')
 
     @support.requires_lzma
+    @unittest.skipIf(AIX and not _maxdataOK(), "AIX MAXDATA must be 0x20000000 or larger")
     def test_unpack_archive_xztar(self):
         self.check_unpack_archive('xztar')
 
