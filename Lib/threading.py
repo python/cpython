@@ -568,8 +568,8 @@ class Barrier:
     """Implements a Barrier.
 
     Useful for synchronizing a fixed number of threads at known synchronization
-    points.  Threads block on 'wait()' and are simultaneously once they have all
-    made that call.
+    points.  Threads block on 'wait()' and are simultaneously awoken once they
+    have all made that call.
 
     """
 
@@ -578,7 +578,7 @@ class Barrier:
 
         'action' is a callable which, when supplied, will be called by one of
         the threads after they have all entered the barrier and just prior to
-        releasing them all. If a 'timeout' is provided, it is uses as the
+        releasing them all. If a 'timeout' is provided, it is used as the
         default for all subsequent 'wait()' calls.
 
         """
