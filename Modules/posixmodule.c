@@ -429,6 +429,7 @@ PyOS_AfterFork_Child(void)
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
+    _PyRuntimeState_ReInitThreads();
 
     run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
