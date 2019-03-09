@@ -1,0 +1,2 @@
+Fix format strings used for StdPrinter and MatchObject reprs. Patch by
+Stephan Hohe.
