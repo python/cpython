@@ -45,7 +45,7 @@ class TextTestResult(result.TestResult):
 
     def _fmtRes(self, s):
         if self.durations is not None:
-            return "%.3f %s" % (self.runTime, s)
+            return "[%.3fs] %s" % (self.runTime, s)
         else:
             return s
 
@@ -179,7 +179,7 @@ class TextTestRunner(object):
             self.stream.writeln("%-12s %s" % ("%.3fs" % elapsed, test))
         if hidden:
             self.stream.writeln(
-                "\n(0.00 durations hidden.  Use -v to show these durations.)")
+                "\n(0.000 durations hidden.  Use -v to show these durations.)")
         else:
             self.stream.writeln("")
 
@@ -216,10 +216,13 @@ class TextTestRunner(object):
             stopTime = time.perf_counter()
         timeTaken = stopTime - startTime
         result.printErrors()
+
         if getattr(self, 'durations', None) is not None:
             self._printDurations(result)
+
         if hasattr(result, 'separator2'):
             self.stream.writeln(result.separator2)
+
         run = result.testsRun
         self.stream.writeln("Ran %d test%s in %.3fs" %
                             (run, run != 1 and "s" or "", timeTaken))
