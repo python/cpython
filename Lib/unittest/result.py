@@ -159,6 +159,7 @@ class TestResult(object):
         self.unexpectedSuccesses.append(test)
 
     def addDuration(self, test, elapsed):
+        """Called when a test finished to run, regardless of its outcome."""
         self.collectedDurations.append((test, elapsed))
 
     def wasSuccessful(self):

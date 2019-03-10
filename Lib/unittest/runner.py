@@ -40,12 +40,12 @@ class TextTestResult(result.TestResult):
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
-        self.runTime = None
         self.durations = durations
+        self._lastDuration = None
 
-    def _fmtRes(self, s):
+    def _formatDuration(self, s):
         if self.durations is not None:
-            return "[%.3fs] %s" % (self.runTime, s)
+            return "[%.3fs] %s" % (self._lastDuration, s)
         else:
             return s
 
@@ -66,7 +66,7 @@ class TextTestResult(result.TestResult):
     def addSuccess(self, test):
         super(TextTestResult, self).addSuccess(test)
         if self.showAll:
-            self.stream.writeln(self._fmtRes("ok"))
+            self.stream.writeln(self._formatDuration("ok"))
         elif self.dots:
             self.stream.write('.')
             self.stream.flush()
@@ -74,7 +74,7 @@ class TextTestResult(result.TestResult):
     def addError(self, test, err):
         super(TextTestResult, self).addError(test, err)
         if self.showAll:
-            self.stream.writeln(self._fmtRes("ERROR"))
+            self.stream.writeln(self._formatDuration("ERROR"))
         elif self.dots:
             self.stream.write('E')
             self.stream.flush()
@@ -82,7 +82,7 @@ class TextTestResult(result.TestResult):
     def addFailure(self, test, err):
         super(TextTestResult, self).addFailure(test, err)
         if self.showAll:
-            self.stream.writeln(self._fmtRes("FAIL"))
+            self.stream.writeln(self._formatDuration("FAIL"))
         elif self.dots:
             self.stream.write('F')
             self.stream.flush()
@@ -90,7 +90,8 @@ class TextTestResult(result.TestResult):
     def addSkip(self, test, reason):
         super(TextTestResult, self).addSkip(test, reason)
         if self.showAll:
-            self.stream.writeln(self._fmtRes("skipped {0!r}".format(reason)))
+            self.stream.writeln(
+                self._formatDuration("skipped {0!r}".format(reason)))
         elif self.dots:
             self.stream.write("s")
             self.stream.flush()
@@ -98,7 +99,7 @@ class TextTestResult(result.TestResult):
     def addExpectedFailure(self, test, err):
         super(TextTestResult, self).addExpectedFailure(test, err)
         if self.showAll:
-            self.stream.writeln(self._fmtRes("expected failure"))
+            self.stream.writeln(self._formatDuration("expected failure"))
         elif self.dots:
             self.stream.write("x")
             self.stream.flush()
@@ -106,10 +107,14 @@ class TextTestResult(result.TestResult):
     def addUnexpectedSuccess(self, test):
         super(TextTestResult, self).addUnexpectedSuccess(test)
         if self.showAll:
-            self.stream.writeln(self._fmtRes("unexpected success"))
+            self.stream.writeln(self._formatDuration("unexpected success"))
         elif self.dots:
             self.stream.write("u")
             self.stream.flush()
+
+    def addDuration(self, test, duration):
+        super(TextTestResult, self).addDuration(test, duration)
+        self._lastDuration = duration
 
     def printErrors(self):
         if self.dots or self.showAll:
@@ -135,7 +140,7 @@ class TextTestRunner(object):
 
     def __init__(self, stream=None, descriptions=True, verbosity=1,
                  failfast=False, buffer=False, resultclass=None, warnings=None,
-                 *, tb_locals=False, durations=False):
+                 *, tb_locals=False, durations=None):
         """Construct a TextTestRunner.
 
         Subclasses should accept **kwargs to ensure compatibility as the
@@ -176,7 +181,7 @@ class TextTestRunner(object):
             if self.verbosity < 2 and elapsed < 0.001:
                 hidden = True
                 continue
-            self.stream.writeln("%-12s %s" % ("%.3fs" % elapsed, test))
+            self.stream.writeln("%-10s %s" % ("%.3fs" % elapsed, test))
         if hidden:
             self.stream.writeln(
                 "\n(0.000 durations hidden.  Use -v to show these durations.)")

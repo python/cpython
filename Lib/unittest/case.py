@@ -605,6 +605,15 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
+    def _addDuration(self, result, start_time):
+        try:
+            addDuration = result.addDuration
+        except AttributeError:
+            warnings.warn("TestResult has no addDuration method",
+                          RuntimeWarning)
+        else:
+            addDuration(self, time.perf_counter() - start_time)
+
     def run(self, result=None):
         orig_result = result
         if result is None:
@@ -640,7 +649,7 @@ class TestCase(object):
                 try:
                     self.setUp()
                 except Exception:
-                    result.runTime = time.perf_counter() - start_time
+                    self._addDuration(result, start_time)
                     raise
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
@@ -648,19 +657,21 @@ class TestCase(object):
                     try:
                         testMethod()
                     except Exception:
-                        result.runTime = time.perf_counter() - start_time
+                        self._addDuration(result, start_time)
                         raise
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
                     try:
                         self.tearDown()
                     except Exception:
-                        result.runTime = time.perf_counter() - start_time
+                        self._addDuration(result, start_time)
                         raise
 
-            result.runTime = time.perf_counter() - start_time
+            try:
+                self.doCleanups()
+            finally:
+                self._addDuration(result, start_time)
 
-            self.doCleanups()
             for test, reason in outcome.skipped:
                 self._addSkip(result, test, reason)
             self._feedErrorsToResult(result, outcome.errors)
@@ -675,8 +686,6 @@ class TestCase(object):
             return result
         finally:
             result.stopTest(self)
-            if result.durations is not None:
-                result.addDuration(self, result.runTime)
             if orig_result is None:
                 stopTestRun = getattr(result, 'stopTestRun', None)
                 if stopTestRun is not None:
