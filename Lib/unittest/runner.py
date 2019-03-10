@@ -34,16 +34,17 @@ class TextTestResult(result.TestResult):
     separator1 = '=' * 70
     separator2 = '-' * 70
 
-    def __init__(self, stream, descriptions, verbosity):
+    def __init__(self, stream, descriptions, verbosity, *, durations=False):
         super(TextTestResult, self).__init__(stream, descriptions, verbosity)
         self.stream = stream
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
         self.runTime = None
+        self.durations = durations
 
     def _fmtRes(self, s):
-        return "%.7f %s" % (self.runTime, s)
+        return "%.5f %s" % (self.runTime, s) if self.durations else s
 
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
@@ -131,7 +132,7 @@ class TextTestRunner(object):
 
     def __init__(self, stream=None, descriptions=True, verbosity=1,
                  failfast=False, buffer=False, resultclass=None, warnings=None,
-                 *, tb_locals=False):
+                 *, tb_locals=False, durations=False):
         """Construct a TextTestRunner.
 
         Subclasses should accept **kwargs to ensure compatibility as the
@@ -145,12 +146,19 @@ class TextTestRunner(object):
         self.failfast = failfast
         self.buffer = buffer
         self.tb_locals = tb_locals
+        self.durations = durations
         self.warnings = warnings
         if resultclass is not None:
             self.resultclass = resultclass
 
     def _makeResult(self):
-        return self.resultclass(self.stream, self.descriptions, self.verbosity)
+        try:
+            return self.resultclass(self.stream, self.descriptions,
+                                    self.verbosity, durations=self.durations)
+        except TypeError:
+            # didn't accept the durations argument
+            return self.resultclass(self.stream, self.descriptions,
+                                    self.verbosity)
 
     def run(self, test):
         "Run the given test case or test suite."

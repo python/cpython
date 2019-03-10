@@ -65,7 +65,8 @@ class TestProgram(object):
     def __init__(self, module='__main__', defaultTest=None, argv=None,
                     testRunner=None, testLoader=loader.defaultTestLoader,
                     exit=True, verbosity=1, failfast=None, catchbreak=None,
-                    buffer=None, warnings=None, *, tb_locals=False):
+                    buffer=None, warnings=None, *, tb_locals=False,
+                    durations=None):
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -81,6 +82,7 @@ class TestProgram(object):
         self.verbosity = verbosity
         self.buffer = buffer
         self.tb_locals = tb_locals
+        self.durations = durations
         if warnings is None and not sys.warnoptions:
             # even if DeprecationWarnings are ignored by default
             # print them anyway unless other warnings settings are
@@ -175,6 +177,9 @@ class TestProgram(object):
         parser.add_argument('--locals', dest='tb_locals',
                             action='store_true',
                             help='Show local variables in tracebacks')
+        parser.add_argument('--durations', dest='durations',
+                            action='store_true',
+                            help='Show test durations')
         if self.failfast is None:
             parser.add_argument('-f', '--failfast', dest='failfast',
                                 action='store_true',
@@ -195,7 +200,6 @@ class TestProgram(object):
                                 action='append', type=_convert_select_pattern,
                                 help='Only run tests which match the given substring')
             self.testNamePatterns = []
-
         return parser
 
     def _getMainArgParser(self, parent):
@@ -255,9 +259,10 @@ class TestProgram(object):
                                                  failfast=self.failfast,
                                                  buffer=self.buffer,
                                                  warnings=self.warnings,
-                                                 tb_locals=self.tb_locals)
+                                                 tb_locals=self.tb_locals,
+                                                 durations=self.durations)
                 except TypeError:
-                    # didn't accept the tb_locals argument
+                    # didn't accept the tb_locals or durations argument
                     testRunner = self.testRunner(verbosity=self.verbosity,
                                                  failfast=self.failfast,
                                                  buffer=self.buffer,
