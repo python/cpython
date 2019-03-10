@@ -2141,11 +2141,16 @@ ELSE
         p = r'(?:.*?(?=(a)|(b))b)*'
         m = re.match(p, s)
         self.assertEqual(m.span(), (0, 4))
-        self.assertEqual(m.groups(), (None, 'b'))  
+        self.assertEqual(m.groups(), (None, 'b'))
 
         # JUMP_ASSERT_NOT should LASTMARK_SAVE()
         # reported in issue725149
         self.assertEqual(re.match(r'(?!(..)c)', 'ab').groups(), (None,))
+
+        # JUMP_ASSERT_NOT should MARK_PUSH() if in a repeat
+        m = re.match(r'((?!(ab)c)(.))*', 'abab')
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.groups(), ('b', None, 'b'))
 
 
 class PatternReprTests(unittest.TestCase):
