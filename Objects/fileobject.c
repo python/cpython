@@ -411,7 +411,7 @@ stdprinter_fileno(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 stdprinter_repr(PyStdPrinter_Object *self)
 {
-    return PyUnicode_FromFormat("<stdprinter(fd=%d) object at 0x%x>",
+    return PyUnicode_FromFormat("<stdprinter(fd=%d) object at %p>",
                                 self->fd, self);
 }
 
