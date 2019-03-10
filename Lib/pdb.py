@@ -342,11 +342,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Restore the previous signal handler at the Pdb prompt.
         if Pdb._previous_sigint_handler:
             try:
-                signal.signal(signal.SIGINT, pdb.Pdb._previous_sigint_handler)
+                signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
             except ValueError:  # ValueError: signal only works in main thread
                 pass
             else:
-                pdb.Pdb._previous_sigint_handler = None
+                Pdb._previous_sigint_handler = None
         if self.setup(frame, traceback):
             # no interaction desired at this time (happens if .pdbrc contains
             # a command like "continue")
