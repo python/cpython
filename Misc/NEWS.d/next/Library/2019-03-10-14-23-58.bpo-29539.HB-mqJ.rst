@@ -1,0 +1,1 @@
+smtplib.SMTP.sendmail() now returns both error and success messages.
