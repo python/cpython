@@ -1,0 +1,2 @@
+Fix format strings used for stderrprinter and re.Match reprs. Patch by
+Stephan Hohe.
