@@ -2143,6 +2143,10 @@ ELSE
         self.assertEqual(m.span(), (0, 4))
         self.assertEqual(m.groups(), (None, 'b'))  
 
+        # JUMP_ASSERT_NOT should LASTMARK_SAVE()
+        # reported in issue725149
+        self.assertEqual(re.match(r'(?!(..)c)', 'ab').groups(), (None,))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
