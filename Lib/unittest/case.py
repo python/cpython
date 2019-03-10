@@ -10,6 +10,7 @@ import warnings
 import collections
 import contextlib
 import traceback
+import time
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -631,18 +632,33 @@ class TestCase(object):
                                           "__unittest_expecting_failure__", False)
         expecting_failure = expecting_failure_class or expecting_failure_method
         outcome = _Outcome(result)
+        start_time = time.perf_counter()
         try:
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                self.setUp()
+                try:
+                    self.setUp()
+                except:
+                    result.runTime = time.perf_counter() - start_time
+                    raise
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    try:
+                        testMethod()
+                    except:
+                        result.runTime = time.perf_counter() - start_time
+                        raise
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.tearDown()
+                    try:
+                        self.tearDown()
+                    except:
+                        result.runTime = time.perf_counter() - start_time
+                        raise
+
+            result.runTime = time.perf_counter() - start_time
 
             self.doCleanups()
             for test, reason in outcome.skipped:

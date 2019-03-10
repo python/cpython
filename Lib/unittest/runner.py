@@ -40,6 +40,10 @@ class TextTestResult(result.TestResult):
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
+        self.runTime = None
+
+    def _fmtRes(self, s):
+        return "%.7f %s" % (self.runTime, s)
 
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
@@ -58,7 +62,7 @@ class TextTestResult(result.TestResult):
     def addSuccess(self, test):
         super(TextTestResult, self).addSuccess(test)
         if self.showAll:
-            self.stream.writeln("ok")
+            self.stream.writeln(self._fmtRes("ok"))
         elif self.dots:
             self.stream.write('.')
             self.stream.flush()
@@ -66,41 +70,41 @@ class TextTestResult(result.TestResult):
     def addError(self, test, err):
         super(TextTestResult, self).addError(test, err)
         if self.showAll:
-            self.stream.writeln("ERROR")
+            self.stream.writeln(self._fmtRes("ERROR"))
         elif self.dots:
-            self.stream.write('E')
+            self.stream.write(self._fmtRes('E'))
             self.stream.flush()
 
     def addFailure(self, test, err):
         super(TextTestResult, self).addFailure(test, err)
         if self.showAll:
-            self.stream.writeln("FAIL")
+            self.stream.writeln(self._fmtRes("FAIL"))
         elif self.dots:
-            self.stream.write('F')
+            self.stream.write(self._fmtRes('F'))
             self.stream.flush()
 
     def addSkip(self, test, reason):
         super(TextTestResult, self).addSkip(test, reason)
         if self.showAll:
-            self.stream.writeln("skipped {0!r}".format(reason))
+            self.stream.writeln(self._fmtRes("skipped {0!r}".format(reason)))
         elif self.dots:
-            self.stream.write("s")
+            self.stream.write(self._fmtRes("s"))
             self.stream.flush()
 
     def addExpectedFailure(self, test, err):
         super(TextTestResult, self).addExpectedFailure(test, err)
         if self.showAll:
-            self.stream.writeln("expected failure")
+            self.stream.writeln(self._fmtRes("expected failure"))
         elif self.dots:
-            self.stream.write("x")
+            self.stream.write(self._fmtRes("x"))
             self.stream.flush()
 
     def addUnexpectedSuccess(self, test):
         super(TextTestResult, self).addUnexpectedSuccess(test)
         if self.showAll:
-            self.stream.writeln("unexpected success")
+            self.stream.writeln(self._fmtRes("unexpected success"))
         elif self.dots:
-            self.stream.write("u")
+            self.stream.write(self._fmtRes("u"))
             self.stream.flush()
 
     def printErrors(self):
