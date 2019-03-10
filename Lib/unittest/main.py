@@ -177,8 +177,8 @@ class TestProgram(object):
         parser.add_argument('--locals', dest='tb_locals',
                             action='store_true',
                             help='Show local variables in tracebacks')
-        parser.add_argument('--durations', dest='durations',
-                            action='store_true',
+        parser.add_argument('--durations', dest='durations', type=int,
+                            default=None,
                             help='Show test durations')
         if self.failfast is None:
             parser.add_argument('-f', '--failfast', dest='failfast',

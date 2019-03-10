@@ -34,7 +34,7 @@ class TextTestResult(result.TestResult):
     separator1 = '=' * 70
     separator2 = '-' * 70
 
-    def __init__(self, stream, descriptions, verbosity, *, durations=False):
+    def __init__(self, stream, descriptions, verbosity, *, durations=None):
         super(TextTestResult, self).__init__(stream, descriptions, verbosity)
         self.stream = stream
         self.showAll = verbosity > 1
@@ -44,7 +44,10 @@ class TextTestResult(result.TestResult):
         self.durations = durations
 
     def _fmtRes(self, s):
-        return "%.5f %s" % (self.runTime, s) if self.durations else s
+        if self.durations is not None:
+            return "%.2f %s" % (self.runTime, s)
+        else:
+            return s
 
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
