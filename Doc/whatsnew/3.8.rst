@@ -157,6 +157,10 @@ Improved Modules
   to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
   (Contributed by Raymond Hettinger in :issue:`35864`.)
 
+* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.0.0
+  <http://blog.unicode.org/2019/03/announcing-unicode-standard-version-120.html>`_
+  release.
+
 
 asyncio
 -------
