@@ -537,8 +537,8 @@ typedef struct {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
-    Py_ssize_t lastindex;
-    Py_ssize_t lastmark;
+    int32_t lastindex;
+    int32_t lastmark;
     char in_repeat;
     char toplevel;
     char jump;
@@ -551,8 +551,9 @@ SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int toplevel)
 {
     SRE_CHAR* end = (SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
-    Py_ssize_t i, ret = 0;
+    Py_ssize_t ret = 0;
     Py_ssize_t jump;
+    int32_t i;
     unsigned int sigcount=0;
 
     SRE(match_context)* ctx;
