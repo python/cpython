@@ -2319,7 +2319,7 @@ match_repr(MatchObject *self)
     if (group0 == NULL)
         return NULL;
     result = PyUnicode_FromFormat(
-            "<%s object; span=(%d, %d), match=%.50R>",
+            "<%s object; span=(%zd, %zd), match=%.50R>",
             Py_TYPE(self)->tp_name,
             self->mark[0], self->mark[1], group0);
     Py_DECREF(group0);
