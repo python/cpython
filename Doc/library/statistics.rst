@@ -510,7 +510,7 @@ of applications in statistics.
 
     .. classmethod:: NormalDist.from_samples(data)
 
-       Class method that makes a normal distribution instance
+       Makes a normal distribution instance
        from sample data.  The *data* can be any :term:`iterable`
        and should consist of values that can be converted to type
        :class:`float`.
@@ -536,11 +536,10 @@ of applications in statistics.
        the given value *x*.  Mathematically, it is the ratio ``P(x <= X <
        x+dx) / dx``.
 
-       Note the relative likelihood of *x* can be greater than `1.0`.  The
-       probability for a specific point on a continuous distribution is `0.0`,
-       so the :func:`pdf` is used instead.  It gives the probability of a
-       sample occurring in a narrow range around *x* and then dividing that
-       probability by the width of the range (hence the word "density").
+       Since the likelihood is relative to other points, its value can be
+       greater than `1.0`.  The relative likelihood is computed as the
+       probability of a sample occurring in a narrow range divided by the
+       width of the range (hence the word "density").
 
     .. method:: NormalDist.cdf(x)
 
@@ -568,7 +567,8 @@ of applications in statistics.
         >>> temperature_february * (9/5) + 32                     # Fahrenheit
         NormalDist(mu=41.0, sigma=4.5)
 
-    Dividing a constant by an instance of :class:`NormalDist` is not supported.
+    Dividing a constant by an instance of :class:`NormalDist` is not supported
+    because the result wouldn't be normally distributed.
 
     Since normal distributions arise from additive effects of independent
     variables, it is possible to `add and subtract two independent normally
@@ -601,8 +601,8 @@ determine the percentage of students with scores between 1100 and 1200:
 
     >>> sat = NormalDist(1060, 195)
     >>> fraction = sat.cdf(1200 + 0.5) - sat.cdf(1100 - 0.5)
-    >>> f'{fraction * 100 :.1f}% score between 1100 and 1200'
-    '18.4% score between 1100 and 1200'
+    >>> f'{fraction * 100 :.1f}% score between 1100 and 1200 after rounding'
+    '18.4% score between 1100 and 1200 after rounding'
 
 What percentage of men and women will have the same height in `two normally
 distributed populations with known means and standard deviations
