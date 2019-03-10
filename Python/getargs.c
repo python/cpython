@@ -2393,7 +2393,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s%s takes %s %d positional argument%s (%d given)",
+                         "%.200s%s takes %s %d positional argument%s (%zd given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          (parser->min != INT_MAX) ? "at most" : "exactly",
@@ -2439,7 +2439,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
                 Py_ssize_t min = Py_MIN(pos, parser->min);
                 PyErr_Format(PyExc_TypeError,
                              "%.200s%s takes %s %d positional argument%s"
-                             " (%d given)",
+                             " (%zd given)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              min < parser->max ? "at least" : "exactly",
