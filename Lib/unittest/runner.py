@@ -45,7 +45,7 @@ class TextTestResult(result.TestResult):
 
     def _fmtRes(self, s):
         if self.durations is not None:
-            return "%.2f %s" % (self.runTime, s)
+            return "%.3f %s" % (self.runTime, s)
         else:
             return s
 
@@ -163,6 +163,18 @@ class TextTestRunner(object):
             return self.resultclass(self.stream, self.descriptions,
                                     self.verbosity)
 
+    def _printDurations(self, result):
+        self.stream.writeln("Slowest test durations")
+        if hasattr(result, 'separator2'):
+            self.stream.writeln(result.separator2)
+        ls = result.collectedDurations
+        ls.sort(key=lambda x: x[1])
+        if self.durations > 0:
+            ls = ls[-self.durations:]
+        for test, elapsed in ls:
+            print("%-12s %s" % ("%.3fs" % elapsed, str(test)))
+        self.stream.writeln("")
+
     def run(self, test):
         "Run the given test case or test suite."
         result = self._makeResult()
@@ -196,6 +208,8 @@ class TextTestRunner(object):
             stopTime = time.perf_counter()
         timeTaken = stopTime - startTime
         result.printErrors()
+        if getattr(self, 'durations', None) is not None:
+            self._printDurations(result)
         if hasattr(result, 'separator2'):
             self.stream.writeln(result.separator2)
         run = result.testsRun

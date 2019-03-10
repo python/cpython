@@ -675,6 +675,8 @@ class TestCase(object):
             return result
         finally:
             result.stopTest(self)
+            if result.durations is not None:
+                result.addDuration(self, result.runTime)
             if orig_result is None:
                 stopTestRun = getattr(result, 'stopTestRun', None)
                 if stopTestRun is not None:
