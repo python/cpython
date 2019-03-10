@@ -16,12 +16,12 @@
 /* size of a code word (must be unsigned short or larger, and
    large enough to hold a UCS4 character) */
 #define SRE_CODE Py_UCS4
+#define SRE_MAXGROUPS INT_MAX / 2
+
 #if SIZEOF_SIZE_T > 4
 # define SRE_MAXREPEAT (~(SRE_CODE)0)
-# define SRE_MAXGROUPS ((~(SRE_CODE)0) / 2)
 #else
 # define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX)
-# define SRE_MAXGROUPS ((SRE_CODE)PY_SSIZE_T_MAX / SIZEOF_SIZE_T / 2)
 #endif
 
 typedef struct {
@@ -72,8 +72,8 @@ typedef struct {
     int isbytes;
     int charsize; /* character size */
     /* registers */
-    Py_ssize_t lastindex;
-    Py_ssize_t lastmark;
+    int32_t lastindex;
+    int32_t lastmark;
     void** mark;
     int match_all;
     int must_advance;
