@@ -440,6 +440,7 @@ class CookieTests(unittest.TestCase):
             ("http://foo.bar.com/", ".foo.bar.com", True),
             ("http://foo.bar.com/", "foo.bar.com", True),
             ("http://foo.bar.com/", ".bar.com", True),
+            ("http://foo.bar.com/", "bar.com", True),
             ("http://foo.bar.com/", "com", True),
             ("http://foo.com/", "rhubarb.foo.com", False),
             ("http://foo.com/", ".foo.com", True),
@@ -450,6 +451,8 @@ class CookieTests(unittest.TestCase):
             ("http://foo/", "foo", True),
             ("http://foo/", "foo.local", True),
             ("http://foo/", ".local", True),
+            ("http://barfoo.com", ".foo.com", False),
+            ("http://barfoo.com", "foo.com", False),
             ]:
             request = urllib.request.Request(url)
             r = pol.domain_return_ok(domain, request)
@@ -981,6 +984,33 @@ class CookieTests(unittest.TestCase):
         c.set_cookie(cookies[0])
         self.assertEqual(len(c), 2)
         # ... and check is doesn't get returned
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        c.clear()
+
+        pol.set_blocked_domains([])
+        req = urllib.request.Request("http://acme.com/")
+        res = FakeResponse(headers, "http://acme.com/")
+        cookies = c.make_cookies(res, req)
+        c.extract_cookies(res, req)
+        self.assertEqual(len(c), 1)
+
+        req = urllib.request.Request("http://acme.com/")
+        c.add_cookie_header(req)
+        self.assertTrue(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://badacme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(pol.return_ok(cookies[0], req))
+        self.assertFalse(req.has_header("Cookie"))
+
+        p = pol.set_blocked_domains(["acme.com"])
+        req = urllib.request.Request("http://acme.com/")
+        c.add_cookie_header(req)
+        self.assertFalse(req.has_header("Cookie"))
+
+        req = urllib.request.Request("http://badacme.com/")
         c.add_cookie_header(req)
         self.assertFalse(req.has_header("Cookie"))
 

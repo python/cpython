@@ -1148,6 +1148,11 @@ class DefaultCookiePolicy(CookiePolicy):
         req_host, erhn = eff_request_host(request)
         domain = cookie.domain
 
+        if domain and not domain.startswith("."):
+            dotdomain = "." + domain
+        else:
+            dotdomain = domain
+
         # strict check of non-domain cookies: Mozilla does this, MSIE5 doesn't
         if (cookie.version == 0 and
             (self.strict_ns_domain & self.DomainStrictNonDomain) and
@@ -1160,7 +1165,7 @@ class DefaultCookiePolicy(CookiePolicy):
             _debug("   effective request-host name %s does not domain-match "
                    "RFC 2965 cookie domain %s", erhn, domain)
             return False
-        if cookie.version == 0 and not ("."+erhn).endswith(domain):
+        if cookie.version == 0 and not ("."+erhn).endswith(dotdomain):
             _debug("   request-host %s does not match Netscape cookie domain "
                    "%s", req_host, domain)
             return False
@@ -1174,7 +1179,11 @@ class DefaultCookiePolicy(CookiePolicy):
             req_host = "."+req_host
         if not erhn.startswith("."):
             erhn = "."+erhn
-        if not (req_host.endswith(domain) or erhn.endswith(domain)):
+        if domain and not domain.startswith("."):
+            dotdomain = "." + domain
+        else:
+            dotdomain = domain
+        if not (req_host.endswith(dotdomain) or erhn.endswith(dotdomain)):
             #_debug("   request domain %s does not match cookie domain %s",
             #       req_host, domain)
             return False
