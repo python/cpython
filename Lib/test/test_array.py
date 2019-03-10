@@ -1396,5 +1396,116 @@ class DoubleTest(FPTest, unittest.TestCase):
             self.fail("Array of size > maxsize created - MemoryError expected")
 
 
+class LargeListTest(unittest.TestCase):
+    typecode = 'b'
+    values1 = [0, 1, 2, 3, 4, 5, 6, 7]
+    values2 = [8, 9, 10, 11]
+    example_multiplier = 0x10000000
+
+    def example(self):
+        return array.array(self.typecode, self.values1) * self.example_multiplier + array.array(self.typecode, self.values2)
+
+    def test_build_example(self):
+        example = self.example()
+        self.assertEqual(len(example), 0x80000004)
+
+    def test_access(self):
+        example = self.example()
+        self.assertEqual(example[0], 0)
+        self.assertEqual(example[-0x80000004], 0)
+        self.assertEqual(example[0x80000000], 8)
+        self.assertEqual(example[-4], 8)
+        self.assertEqual(example[0x80000003], 11)
+        self.assertEqual(example[-1], 11)
+
+    def test_count(self):
+        example = self.example()
+        for value in [0, 1, 6, 7]:
+            self.assertEqual(example.count(value), 0x10000000)
+        for value in [8, 11]:
+            self.assertEqual(example.count(value), 1)
+
+    def test_append(self):
+        example = self.example()
+        example.append(12)
+        self.assertEqual(example[-1], 12)
+
+    def test_extend(self):
+        example = self.example()
+        example.extend(iter([12, 13, 14, 15]))
+        self.assertEqual(len(example), 0x80000008)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11, 12, 13, 14, 15])
+
+    def test_frombytes(self):
+        example = self.example()
+        example.frombytes(b'abcd')
+        self.assertEqual(len(example), 0x80000008)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11] + list(b'abcd'))
+
+    def test_fromlist(self):
+        example = self.example()
+        example.fromlist([12, 13, 14, 15])
+        self.assertEqual(len(example), 0x80000008)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11, 12, 13, 14, 15])
+
+    def test_index(self):
+        example = self.example()
+        self.assertEqual(example.index(0), 0)
+        self.assertEqual(example.index(1), 1)
+        self.assertEqual(example.index(7), 7)
+        self.assertEqual(example.index(8), 0x80000000)
+        self.assertEqual(example.index(11), 0x80000003)
+
+    def test_insert(self):
+        example = self.example()
+        example.insert(0, 12)
+        example.insert(10, 13)
+        example.insert(0x80000001, 14)
+        self.assertEqual(len(example), 0x80000007)
+        self.assertEqual(example[0], 12)
+        self.assertEqual(example[10], 13)
+        self.assertEqual(example[0x80000001], 14)
+
+    def test_pop(self):
+        example = self.example()
+        self.assertEqual(example.pop(0), 0)
+        self.assertEqual(example[0], 1)
+        self.assertEqual(example.pop(0x80000001), 10)
+        self.assertEqual(example[0x80000001], 11)
+        self.assertEqual(example.pop(1), 2)
+        self.assertEqual(example[1], 3)
+        self.assertEqual(len(example), 0x80000001)
+        self.assertEqual(example.pop(), 11)
+        self.assertEqual(len(example), 0x80000000)
+
+    def test_remove(self):
+        example = self.example()
+        example.remove(0)
+        self.assertEqual(len(example), 0x80000003)
+        self.assertEqual(example[0], 1)
+        example.remove(10)
+        self.assertEqual(len(example), 0x80000002)
+        self.assertEqual(example[0x80000000], 9)
+        self.assertEqual(example[0x80000001], 11)
+
+    def test_reverse(self):
+        example = self.example()
+        example.reverse()
+        self.assertEqual(len(example), 0x80000004)
+        self.assertEqual(example[0], 11)
+        self.assertEqual(example[4], 7)
+        self.assertEqual(example[-1], 0)
+        example.reverse()
+        self.assertEqual(len(example), 0x80000004)
+        self.assertEqual(list(example[:4]), [0, 1, 2, 3])
+        self.assertEqual(list(example[-4:]), [8, 9, 10, 11])
+
+    def test_tolist(self):
+        example = self.example()
+        ls = example.tolist()
+        self.assertEqual(len(ls), len(example))
+        self.assertEqual(ls[:8], list(example[:8]))
+        self.assertEqual(ls[-8:], list(example[-8:]))
+
 if __name__ == "__main__":
     unittest.main()
