@@ -72,7 +72,7 @@ class TextTestResult(result.TestResult):
         if self.showAll:
             self.stream.writeln(self._fmtRes("ERROR"))
         elif self.dots:
-            self.stream.write(self._fmtRes('E'))
+            self.stream.write('E')
             self.stream.flush()
 
     def addFailure(self, test, err):
@@ -80,7 +80,7 @@ class TextTestResult(result.TestResult):
         if self.showAll:
             self.stream.writeln(self._fmtRes("FAIL"))
         elif self.dots:
-            self.stream.write(self._fmtRes('F'))
+            self.stream.write('F')
             self.stream.flush()
 
     def addSkip(self, test, reason):
@@ -88,7 +88,7 @@ class TextTestResult(result.TestResult):
         if self.showAll:
             self.stream.writeln(self._fmtRes("skipped {0!r}".format(reason)))
         elif self.dots:
-            self.stream.write(self._fmtRes("s"))
+            self.stream.write("s")
             self.stream.flush()
 
     def addExpectedFailure(self, test, err):
@@ -96,7 +96,7 @@ class TextTestResult(result.TestResult):
         if self.showAll:
             self.stream.writeln(self._fmtRes("expected failure"))
         elif self.dots:
-            self.stream.write(self._fmtRes("x"))
+            self.stream.write("x")
             self.stream.flush()
 
     def addUnexpectedSuccess(self, test):
@@ -104,7 +104,7 @@ class TextTestResult(result.TestResult):
         if self.showAll:
             self.stream.writeln(self._fmtRes("unexpected success"))
         elif self.dots:
-            self.stream.write(self._fmtRes("u"))
+            self.stream.write("u")
             self.stream.flush()
 
     def printErrors(self):
