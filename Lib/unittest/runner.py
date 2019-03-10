@@ -171,9 +171,17 @@ class TextTestRunner(object):
         ls.sort(key=lambda x: x[1])
         if self.durations > 0:
             ls = ls[-self.durations:]
+        hidden = False
         for test, elapsed in ls:
-            print("%-12s %s" % ("%.3fs" % elapsed, str(test)))
-        self.stream.writeln("")
+            if self.verbosity < 2 and elapsed < 0.001:
+                hidden = True
+                continue
+            self.stream.writeln("%-12s %s" % ("%.3fs" % elapsed, test))
+        if hidden:
+            self.stream.writeln(
+                "\n(0.00 durations hidden.  Use -v to show these durations.)")
+        else:
+            self.stream.writeln("")
 
     def run(self, test):
         "Run the given test case or test suite."
