@@ -1,0 +1,1 @@
+Implement ``__getitem__`` for ``_NamespacePath``.  Patch by Anthony Sottile.

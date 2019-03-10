@@ -60,6 +60,9 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
         return _Py_INIT_ERR("Can't initialize threads for cross-interpreter data registry");
     }
 
+    // Set it to the ID of the main thread of the main interpreter.
+    runtime->main_thread = PyThread_get_thread_ident();
+
     return _Py_INIT_OK();
 }
 
@@ -90,6 +93,32 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
+/* This function is called from PyOS_AfterFork_Child to ensure that
+ * newly created child processes do not share locks with the parent.
+ */
+
+void
+_PyRuntimeState_ReInitThreads(void)
+{
+    // This was initially set in _PyRuntimeState_Init().
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
+
+    _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.mutex == NULL) {
+        Py_FatalError("Can't initialize lock for runtime interpreters");
+    }
+
+    _PyRuntime.interpreters.main->id_mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.main->id_mutex == NULL) {
+        Py_FatalError("Can't initialize ID lock for main interpreter");
+    }
+
+    _PyRuntime.xidregistry.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.xidregistry.mutex == NULL) {
+        Py_FatalError("Can't initialize lock for cross-interpreter data registry");
+    }
 }
 
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
@@ -133,28 +162,12 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
+    memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
-    interp->id_mutex = NULL;
-    interp->modules = NULL;
-    interp->modules_by_index = NULL;
-    interp->sysdict = NULL;
-    interp->builtins = NULL;
-    interp->builtins_copy = NULL;
-    interp->tstate_head = NULL;
     interp->check_interval = 100;
-    interp->num_threads = 0;
-    interp->pythread_stacksize = 0;
-    interp->codec_search_path = NULL;
-    interp->codec_search_cache = NULL;
-    interp->codec_error_registry = NULL;
-    interp->codecs_initialized = 0;
-    interp->fscodec_initialized = 0;
     interp->core_config = _PyCoreConfig_INIT;
     interp->config = _PyMainInterpreterConfig_INIT;
-    interp->importlib = NULL;
-    interp->import_func = NULL;
     interp->eval_frame = _PyEval_EvalFrameDefault;
-    interp->co_extra_user_count = 0;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
     interp->dlopenflags = RTLD_NOW;
@@ -162,13 +175,6 @@ PyInterpreterState_New(void)
     interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
-#ifdef HAVE_FORK
-    interp->before_forkers = NULL;
-    interp->after_forkers_parent = NULL;
-    interp->after_forkers_child = NULL;
-#endif
-    interp->pyexitfunc = NULL;
-    interp->pyexitmodule = NULL;
 
     HEAD_LOCK();
     if (_PyRuntime.interpreters.next_id < 0) {
@@ -223,6 +229,9 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
+    // XXX Once we have one allocator per interpreter (i.e.
+    // per-interpreter GC) we must ensure that all of the interpreter's
+    // objects have been cleaned up at the point.
 }
 
 
@@ -334,26 +343,37 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
 }
 
 
-PyInterpreterState *
-_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+static PyInterpreterState *
+interp_look_up_id(PY_INT64_T requested_id)
 {
-    if (requested_id < 0)
-        goto error;
-
     PyInterpreterState *interp = PyInterpreterState_Head();
     while (interp != NULL) {
         PY_INT64_T id = PyInterpreterState_GetID(interp);
-        if (id < 0)
+        if (id < 0) {
             return NULL;
-        if (requested_id == id)
+        }
+        if (requested_id == id) {
             return interp;
+        }
         interp = PyInterpreterState_Next(interp);
     }
-
-error:
-    PyErr_Format(PyExc_RuntimeError,
-                 "unrecognized interpreter ID %lld", requested_id);
     return NULL;
+}
+
+PyInterpreterState *
+_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+{
+    PyInterpreterState *interp = NULL;
+    if (requested_id >= 0) {
+        HEAD_LOCK();
+        interp = interp_look_up_id(requested_id);
+        HEAD_UNLOCK();
+    }
+    if (interp == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unrecognized interpreter ID %lld", requested_id);
+    }
+    return interp;
 }
 
 
