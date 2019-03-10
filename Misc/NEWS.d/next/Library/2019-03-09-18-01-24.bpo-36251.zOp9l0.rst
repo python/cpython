@@ -1,2 +1,2 @@
-Fix format strings used for StdPrinter and MatchObject reprs. Patch by
+Fix format strings used for stderrprinter and re.Match reprs. Patch by
 Stephan Hohe.
