@@ -44,7 +44,7 @@ class TextTestResult(result.TestResult):
         self._lastDuration = None
 
     def _formatDuration(self, s):
-        if self.durations is not None:
+        if self.durations is not None and self._lastDuration is not None:
             return "[%.3fs] %s" % (self._lastDuration, s)
         else:
             return s
