@@ -639,7 +639,7 @@ class TestCase(object):
             with outcome.testPartExecutor(self):
                 try:
                     self.setUp()
-                except:
+                except Exception:
                     result.runTime = time.perf_counter() - start_time
                     raise
             if outcome.success:
@@ -647,14 +647,14 @@ class TestCase(object):
                 with outcome.testPartExecutor(self, isTest=True):
                     try:
                         testMethod()
-                    except:
+                    except Exception:
                         result.runTime = time.perf_counter() - start_time
                         raise
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
                     try:
                         self.tearDown()
-                    except:
+                    except Exception:
                         result.runTime = time.perf_counter() - start_time
                         raise
 
