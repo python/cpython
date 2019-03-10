@@ -21,8 +21,7 @@ import unittest
 from test import support, mock_socket
 from test.support import HOST, HOSTv4, HOSTv6
 from test.support import threading_setup, threading_cleanup, join_thread
-from unittest.mock import Mock
-
+from unittest.mock import Mock, patch
 
 if sys.platform == 'darwin':
     # select.poll returns a select.POLLHUP at the end of the tests
@@ -1375,11 +1374,7 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
 
 class SMTPLibTest(unittest.TestCase):
 
-    """ Tests for bpo-29539
-    To run the following tests successfully, you need to adjust
-    the class attributes based on your MTA configuration."""
-
-    mta = 'localhost'
+    mta = 'test.mta.instance'
     message = 'This is a test message'
 
     # sender
@@ -1391,61 +1386,130 @@ class SMTPLibTest(unittest.TestCase):
     valid_to_addr2 = 'example2@localhost'
     invalid_to_addr = 'invalid@localhost'
 
+    def send_message(self, rcpt_from, rcpt_tos, msg):
+        session = smtplib.SMTP(self.mta)
+        result = session.sendmail(rcpt_from, rcpt_tos, msg)
+        session.quit()
+        return result
 
-    def test_mta_status_not_empty_rcpt_valid(self):
-        with smtplib.SMTP(self.mta) as session:
-            result = session.sendmail(
-                self.valid_from_addr, self.valid_to_addr1, self.message)
+    @patch('smtplib.SMTP')
+    def test_mta_status_not_empty_rcpt_valid(self, mock_session):
+
+        mta_status = {
+            'example1@localhost': (250, b'2.0.0 Ok: queued as B753674274E')
+        }
+
+        instance = mock_session.return_value
+        instance.sendmail.return_value = mta_status
+
+        result = self.send_message(
+            self.valid_from_addr, self.valid_to_addr1, self.message
+        )
         self.assertEqual(len(result), 1)
 
-    def test_mta_status_multiple_rcpt_valid(self):
-        with smtplib.SMTP(self.mta) as session:
-            result = session.sendmail(
-                self.valid_from_addr,
-                [self.valid_to_addr1, self.valid_to_addr2],
-                self.message
-            )
+
+    @patch('smtplib.SMTP')
+    def test_mta_status_multiple_rcpt_valid(self, mock_session):
+        mta_status = {
+            'example1@localhost': (250, b'2.0.0 Ok: queued as B043D7426C5'),
+            'example2@localhost': (250, b'2.0.0 Ok: queued as B043D7426C5')
+        }
+
+        instance = mock_session.return_value
+        instance.sendmail.return_value = mta_status
+
+        result = self.send_message(
+            self.valid_from_addr,
+            [self.valid_to_addr1, self.valid_to_addr2],
+            self.message
+        )
         self.assertEqual(len(result), 2)
 
-    def test_mta_status_code_ok(self):
-        with smtplib.SMTP(self.mta) as session:
-            result = session.sendmail(
-                self.valid_from_addr, self.valid_to_addr1, self.message
-            )
+    @patch('smtplib.SMTP')
+    def test_mta_status_code_ok(self, mock_session):
+        mta_status = {
+            'example1@localhost': (250, b'2.0.0 Ok: queued as 926CC7426C5')
+        }
+
+        instance = mock_session.return_value
+        instance.sendmail.return_value = mta_status
+
+        result = self.send_message(
+            self.valid_from_addr, self.valid_to_addr1, self.message
+        )
         self.assertEqual(result[self.valid_to_addr1][0], 250 or 251)
 
-    def test_mta_status_code_err(self):
-        with self.assertRaises(smtplib.SMTPRecipientsRefused):
-            with smtplib.SMTP(self.mta) as session:
-                session.sendmail(
-                    self.valid_from_addr, self.invalid_to_addr, self.message
-                )
+    @patch('smtplib.SMTP')
+    def test_mta_status_code_err(self, mock_session):
+        instance = mock_session.return_value
+        instance.sendmail.side_effect = smtplib.SMTPRecipientsRefused({
+            'invalid@localhost':
+                (550,
+                 b'5.1.1 <invalid@localhost>: Recipient address rejected: '
+                 b'User unknown in local recipient table')
+        })
 
-    def test_smtp_sender_refused(self):
-        """Catch `SMTPSenderRefused` if MTA returns sender check immediately.
-        Otherwise it returns always `250 Ok`."""
-        # with self.assertRaises(smtplib.SMTPSenderRefused):
-        with self.assertRaises(smtplib.SMTPRecipientsRefused):
-            with smtplib.SMTP(self.mta) as session:
-                session.sendmail(
-                    self.invalid_from_addr, self.valid_to_addr1, self.message
-                )
+        self.assertRaises(
+            smtplib.SMTPRecipientsRefused,
+            self.send_message,
+            self.valid_from_addr,
+            self.invalid_to_addr,
+            self.message
+        )
 
-    def test_mta_status_mixed_valid_invalid_rcpt(self):
-        with smtplib.SMTP(self.mta) as session:
-            result = session.sendmail(
-                self.valid_from_addr,
-                [self.valid_to_addr1, self.invalid_to_addr],
-                self.message
-            )
-            return_codes = result[self.invalid_to_addr][0], \
-                           result[self.valid_to_addr1][0]
-            self.assertEqual((550 or 421 or 451, 250 or 251), return_codes)
+    @patch('smtplib.SMTP')
+    def test_smtp_sender_refused(self, mock_session):
+        instance = mock_session.return_value
+        instance.sendmail.side_effect = smtplib.SMTPRecipientsRefused({
+            'example2@localhost':
+                (550,
+                 b'5.7.1 <blacklisted@localhost>: '
+                 b'Sender address rejected: blacklisted')
+        })
 
-    def test_missing_arg(self):
-        with self.assertRaises(TypeError):
-            with smtplib.SMTP(self.mta) as session:
-                session.sendmail(self.valid_to_addr1, self.message, )
+        self.assertRaises(
+            smtplib.SMTPRecipientsRefused,
+            self.send_message,
+            self.invalid_from_addr,
+            self.valid_to_addr1,
+            self.message
+        )
+
+    @patch('smtplib.SMTP')
+    def test_mta_status_mixed_valid_invalid_rcpt(self, mock_session):
+        mta_status = {
+            'invalid@localhost':
+                (550,
+                 b'5.1.1 invalid@localhost>: Recipient address rejected: '
+                 b'User unknown in local recipient table'),
+            'example1@localhost': (250, b'2.0.0 Ok: queued as DBE6F7426C5')
+        }
+
+        instance = mock_session.return_value
+        instance.sendmail.return_value = mta_status
+
+        result = self.send_message(
+            self.valid_from_addr,
+            [self.invalid_to_addr, self.valid_to_addr1],
+            self.message
+        )
+        self.assertEqual(
+            (550, 250),
+            (result[self.invalid_to_addr][0],
+             result[self.valid_to_addr1][0])
+        )
+
+    @patch('smtplib.SMTP')
+    def test_missing_arg(self, mock_session):
+        instance = mock_session.return_value
+        instance.sendmail.side_effect = TypeError()
+
+        self.assertRaises(
+            TypeError,
+            self.send_message,
+            self.valid_from_addr,
+            self.invalid_to_addr,
+        )
 
 
 if __name__ == '__main__':
