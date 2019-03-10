@@ -157,8 +157,16 @@ class _PoolCache(dict):
     def __init__(self, *args, notifier=None, **kwds):
         self.notifier = notifier
         super().__init__(*args, **kwds)
+
     def __delitem__(self, item):
         super().__delitem__(item)
+
+        # Notify that the cache is empty. This is important because the
+        # pool keeps maintaining workers until the cache gets drained. This
+        # eliminates a race condition in which a task is finished after the
+        # the pool's _handle_workers method has enter another iteration of the
+        # loop. In this situation, the only event that can wake up the pool
+        # is the cache to be emptied (no more tasks available).
         if not self:
             self.notifier.put(None)
 
@@ -182,8 +190,8 @@ class Pool(object):
         self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
-        # The _change_notifier queue exist to wake ip self._handle_workers()
-        # when the cache (self._cache) is empty or when ther is a change in
+        # The _change_notifier queue exist to wake up self._handle_workers()
+        # when the cache (self._cache) is empty or when there is a change in
         # the _state variable of the thread that runs _handle_workers.
         self._change_notifier = self._ctx.SimpleQueue()
         self._cache = _PoolCache(notifier=self._change_notifier)
@@ -210,16 +218,7 @@ class Pool(object):
                 p.join()
             raise
 
-        if hasattr(self._outqueue, "_reader"):
-            task_queue_sentinels = [self._outqueue._reader]
-        else:
-            task_queue_sentinels = []
-        if hasattr(self._change_notifier, "_reader"):
-            self_notifier_sentinels = [self._change_notifier._reader]
-        else:
-            self_notifier_sentinels = []
-
-        sentinels = [*task_queue_sentinels, *self_notifier_sentinels]
+        sentinels = self._get_sentinels()
 
         self._worker_handler = threading.Thread(
             target=Pool._handle_workers,
@@ -265,7 +264,7 @@ class Pool(object):
         if self._state == RUN:
             _warn(f"unclosed running multiprocessing pool {self!r}",
                   ResourceWarning, source=self)
-            if getattr(self, '_change_notifier') is not None:
+            if getattr(self, '_change_notifier', None) is not None:
                 self._change_notifier.put(None)
 
     def __repr__(self):
@@ -273,6 +272,16 @@ class Pool(object):
         return (f'<{cls.__module__}.{cls.__qualname__} '
                 f'state={self._state} '
                 f'pool_size={len(self._pool)}>')
+
+    def _get_sentinels(self):
+        task_queue_sentinels = [self._outqueue._reader]
+        self_notifier_sentinels = [self._change_notifier._reader]
+        return [*task_queue_sentinels, *self_notifier_sentinels]
+
+    @staticmethod
+    def _get_worker_sentinels(workers):
+        return [worker.sentinel for worker in
+                workers if hasattr(worker, "sentinel")]
 
     @staticmethod
     def _join_exited_workers(pool):
@@ -505,9 +514,7 @@ class Pool(object):
                                outqueue, initializer, initargs,
                                maxtasksperchild, wrap_exception)
 
-            worker_sentinels = [worker.sentinel for worker in
-                                pool if hasattr(worker, "sentinel")]
-            current_sentinels = [*worker_sentinels, *sentinels]
+            current_sentinels = [*cls._get_worker_sentinels(pool), *sentinels]
 
             cls._wait_for_updates(current_sentinels, change_notifier)
         # send sentinel to stop workers
@@ -919,6 +926,13 @@ class ThreadPool(Pool):
         self._outqueue = queue.SimpleQueue()
         self._quick_put = self._inqueue.put
         self._quick_get = self._outqueue.get
+
+    def _get_sentinels(self):
+        return [self._change_notifier._reader]
+
+    @staticmethod
+    def _get_worker_sentinels(workers):
+        return []
 
     @staticmethod
     def _help_stuff_finish(inqueue, task_handler, size):
