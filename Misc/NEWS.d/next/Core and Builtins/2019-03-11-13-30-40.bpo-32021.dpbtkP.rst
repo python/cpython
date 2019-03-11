@@ -1,0 +1,1 @@
+Include brotli .br encoding in mimetypes encodings_map
