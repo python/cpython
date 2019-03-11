@@ -1159,6 +1159,7 @@ entrance:
                 RETURN_FAILURE;
 
             ctx->u.rep->count = ctx->count;
+            MARK_PUSH(ctx->lastmark); /* already LASTMARK_SAVE() above */
             /* zero-width match protection */
             DATA_PUSH(&ctx->u.rep->last_ptr);
             ctx->u.rep->last_ptr = state->ptr;
@@ -1166,9 +1167,12 @@ entrance:
                     ctx->u.rep->pattern+3);
             DATA_POP(&ctx->u.rep->last_ptr);
             if (ret) {
+                MARK_POP_DISCARD(ctx->lastmark);
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
             }
+            MARK_POP(ctx->lastmark);
+            LASTMARK_RESTORE();
             ctx->u.rep->count = ctx->count-1;
             state->ptr = ctx->ptr;
             RETURN_FAILURE;
