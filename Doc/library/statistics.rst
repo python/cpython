@@ -535,10 +535,10 @@ of applications in statistics.
        the given value *x*.  Mathematically, it is the ratio ``P(x <= X <
        x+dx) / dx``.
 
-       Since the likelihood is relative to other points, its value can be
-       greater than `1.0`.  The relative likelihood is computed as the
-       probability of a sample occurring in a narrow range divided by the
-       width of the range (hence the word "density").
+       The relative likelihood is computed as the probability of a sample
+       occurring in a narrow range divided by the width of the range (hence
+       the word "density").  Since the likelihood is relative to other points,
+       its value can be greater than `1.0`.
 
     .. method:: NormalDist.cdf(x)
 
@@ -580,8 +580,10 @@ of applications in statistics.
         >>> birth_weights = NormalDist.from_samples([2.5, 3.1, 2.1, 2.4, 2.7, 3.5])
         >>> drug_effects = NormalDist(0.4, 0.15)
         >>> combined = birth_weights + drug_effects
-        >>> f'mean: {combined.mean :.1f}   standard deviation: {combined.stdev :.1f}'
-        'mean: 3.1   standard deviation: 0.5'
+        >>> round(combined.mean, 1)
+        3.1
+        >>> round(combined.stdev, 1)
+        0.5
 
     .. versionadded:: 3.8
 
@@ -594,14 +596,15 @@ of applications in statistics.
 For example, given `historical data for SAT exams
 <https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
 are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with scores between 1100 and 1200:
+determine the percentage of students with scores between 1100 and 1200,
+after rounding to the nearest whole number:
 
 .. doctest::
 
     >>> sat = NormalDist(1060, 195)
     >>> fraction = sat.cdf(1200 + 0.5) - sat.cdf(1100 - 0.5)
-    >>> f'{fraction * 100 :.1f}% score between 1100 and 1200 after rounding'
-    '18.4% score between 1100 and 1200 after rounding'
+    >>> round(fraction * 100.0, 1)
+    18.4
 
 What percentage of men and women will have the same height in `two normally
 distributed populations with known means and standard deviations
