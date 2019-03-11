@@ -1,0 +1,2 @@
+re module, fix a few bugs about capturing group. In rare cases, capture
+group may be an incorrect string. Patch by Ma Lin.
