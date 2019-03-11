@@ -1,1 +1,1 @@
-Cmd.complete: use ``completedefault`` also with ``cmd=None`` returned from ``parseline``.
+Cmd.complete: use ``completedefault`` also with ``cmd=None`` returned from ``parseline``. Patch contributed by Daniel Hahler.
