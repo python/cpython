@@ -1054,15 +1054,22 @@ entrance:
             TRACE(("|%p|%p|MAX_UNTIL %" PY_FORMAT_SIZE_T "d\n", ctx->pattern,
                    ctx->ptr, ctx->count));
 
+            LASTMARK_SAVE();
+            MARK_PUSH(ctx->lastmark);
+
             if (ctx->count < (Py_ssize_t) ctx->u.rep->pattern[1]) {
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MAX_UNTIL_1, jump_max_until_1,
                         ctx->u.rep->pattern+3);
                 if (ret) {
+                    MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
+                MARK_POP(ctx->lastmark);
+                LASTMARK_RESTORE();
+
                 ctx->u.rep->count = ctx->count-1;
                 state->ptr = ctx->ptr;
                 RETURN_FAILURE;
@@ -1074,8 +1081,6 @@ entrance:
                 /* we may have enough matches, but if we can
                    match another item, do so */
                 ctx->u.rep->count = ctx->count;
-                LASTMARK_SAVE();
-                MARK_PUSH(ctx->lastmark);
                 /* zero-width match protection */
                 DATA_PUSH(&ctx->u.rep->last_ptr);
                 ctx->u.rep->last_ptr = state->ptr;
@@ -1087,7 +1092,7 @@ entrance:
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
-                MARK_POP(ctx->lastmark);
+                MARK_POP_KEEP(ctx->lastmark);
                 LASTMARK_RESTORE();
                 ctx->u.rep->count = ctx->count-1;
                 state->ptr = ctx->ptr;
@@ -1097,7 +1102,13 @@ entrance:
                tail matches */
             state->repeat = ctx->u.rep->prev;
             DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern);
-            RETURN_ON_SUCCESS(ret);
+            if (ret) {
+                MARK_POP_DISCARD(ctx->lastmark);
+                RETURN_ON_ERROR(ret);
+                RETURN_SUCCESS;
+            }
+            MARK_POP(ctx->lastmark);
+            LASTMARK_RESTORE();
             state->repeat = ctx->u.rep;
             state->ptr = ctx->ptr;
             RETURN_FAILURE;
