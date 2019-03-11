@@ -870,9 +870,7 @@ entrance:
             }
 
             LASTMARK_SAVE();
-            ctx->in_repeat = (state->repeat != NULL);
-            if (ctx->in_repeat)
-                MARK_PUSH(ctx->lastmark);
+            MARK_PUSH(ctx->lastmark);
 
             if (ctx->pattern[ctx->pattern[0]] == SRE_OP_LITERAL) {
                 /* tail starts with a literal. skip positions where
@@ -890,20 +888,17 @@ entrance:
                     DO_JUMP(JUMP_REPEAT_ONE_1, jump_repeat_one_1,
                             ctx->pattern+ctx->pattern[0]);
                     if (ret) {
-                        if (ctx->in_repeat)
-                            MARK_POP_DISCARD(ctx->lastmark);
+                        MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
-                    if (ctx->in_repeat)
-                        MARK_POP_KEEP(ctx->lastmark);
+                    MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
                     ctx->ptr--;
                     ctx->count--;
                 }
-                if (ctx->in_repeat)
-                    MARK_POP_DISCARD(ctx->lastmark);
+                MARK_POP_DISCARD(ctx->lastmark);
             } else {
                 /* general case */
                 while (ctx->count >= (Py_ssize_t) ctx->pattern[1]) {
@@ -911,20 +906,17 @@ entrance:
                     DO_JUMP(JUMP_REPEAT_ONE_2, jump_repeat_one_2,
                             ctx->pattern+ctx->pattern[0]);
                     if (ret) {
-                        if (ctx->in_repeat)
-                            MARK_POP_DISCARD(ctx->lastmark);
+                        MARK_POP_DISCARD(ctx->lastmark);
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
                     }
-                    if (ctx->in_repeat)
-                        MARK_POP_KEEP(ctx->lastmark);
+                    MARK_POP_KEEP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
                     ctx->ptr--;
                     ctx->count--;
                 }
-                if (ctx->in_repeat)
-                    MARK_POP_DISCARD(ctx->lastmark);
+                MARK_POP_DISCARD(ctx->lastmark);
             }
             RETURN_FAILURE;
 
