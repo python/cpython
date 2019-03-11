@@ -189,7 +189,7 @@ class AutoCompleteWindow:
             pass
         self.scrollbar = scrollbar = Scrollbar(acw, orient=VERTICAL)
         self.listbox = listbox = Listbox(acw, yscrollcommand=scrollbar.set,
-                                         exportselection=False, bg="white")
+                                         exportselection=False)
         for item in self.completions:
             listbox.insert(END, item)
         self.origselforeground = listbox.cget("selectforeground")
