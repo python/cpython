@@ -2354,6 +2354,14 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
             if (j+1 <= state->lastmark && state->mark[j] && state->mark[j+1]) {
                 match->mark[j+2] = ((char*) state->mark[j] - base) / n;
                 match->mark[j+3] = ((char*) state->mark[j+1] - base) / n;
+
+                /* check wrong span */
+                if (match->mark[j+2] > match->mark[j+3]) {
+                    PyErr_Format(PyExc_RuntimeError,
+                                 "the span of capturing group %d is wrong,"
+                                 " please report bug.", i+1);
+                    return NULL;
+                }
             } else
                 match->mark[j+2] = match->mark[j+3] = -1; /* undefined */
 
