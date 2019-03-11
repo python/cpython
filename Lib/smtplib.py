@@ -788,7 +788,7 @@ class SMTP:
         return (resp, reply)
 
     def sendmail(self, from_addr, to_addrs, msg, mail_options=(),
-                 rcpt_options=()):
+                 rcpt_options=(), keep_results=False):
         """This command performs an entire mail transaction.
 
         The arguments are:
@@ -800,6 +800,8 @@ class SMTP:
                              mail command.
             - rcpt_options : List of ESMTP options (such as DSN commands) for
                              all the rcpt commands.
+            - keep_results : If True, return any SMTP status for each
+                             recipient
 
         msg may be a string containing characters in the ASCII range, or a byte
         string.  A string is encoded to bytes using the ascii codec, and lone
@@ -810,10 +812,14 @@ class SMTP:
         and each of the specified options will be passed to it.  If EHLO
         fails, HELO will be tried and ESMTP options suppressed.
 
-        This method returns a dictionary with one entry for each recipient.
-        Each entry will contain a tuple of the SMTP return code and the
-        accompanying message sent by the server, which includes both errors
-        and success messages.
+        If keep_results is False, this method will return normally if the mail
+        is accepted for at least one recipient.  It returns a dictionary, with
+        one entry for each recipient that was refused.  Each entry contains a
+        tuple of the SMTP error code and the accompanying error message sent by
+        the server.  If keep_results is True, this method returns a dictionary
+        of all recipients and the SMTP result whether refused or accepted
+        unless all are refused then the normal exception is raised.
+
 
         This method may raise the following exceptions:
 
@@ -884,9 +890,10 @@ class SMTP:
 
         (code, resp) = self.data(msg)
 
-        for to_addr in to_addrs:
-            if not to_addr in mta_result:
-                mta_result[to_addr] = (code, resp)
+        if keep_results:
+            for to_addr in to_addrs:
+                if not to_addr in mta_result:
+                    mta_result[to_addr] = (code, resp)
 
         if code != 250:
             if code == 421:

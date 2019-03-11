@@ -1386,7 +1386,7 @@ class SMTPLibTest(unittest.TestCase):
     valid_to_addr2 = 'example2@localhost'
     invalid_to_addr = 'invalid@localhost'
 
-    def send_message(self, rcpt_from, rcpt_tos, msg):
+    def send_message(self, rcpt_from, rcpt_tos, msg, keep_results=True):
         session = smtplib.SMTP(self.mta)
         result = session.sendmail(rcpt_from, rcpt_tos, msg)
         session.quit()
