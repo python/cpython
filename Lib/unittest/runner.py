@@ -44,7 +44,7 @@ class TextTestResult(result.TestResult):
         self._lastDuration = None
 
     def _formatDuration(self, s):
-        if self.durations is not None and self._lastDuration is not None:
+        if self.durations is not None:
             return "[%.3fs] %s" % (self._lastDuration, s)
         else:
             return s
@@ -90,8 +90,7 @@ class TextTestResult(result.TestResult):
     def addSkip(self, test, reason):
         super(TextTestResult, self).addSkip(test, reason)
         if self.showAll:
-            self.stream.writeln(
-                self._formatDuration("skipped {0!r}".format(reason)))
+            self.stream.writeln("skipped {0!r}".format(reason))
         elif self.dots:
             self.stream.write("s")
             self.stream.flush()
@@ -222,8 +221,7 @@ class TextTestRunner(object):
             stopTime = time.perf_counter()
         timeTaken = stopTime - startTime
         result.printErrors()
-
-        if getattr(self, 'durations', None) is not None:
+        if self.durations is not None:
             self._printDurations(result)
 
         if hasattr(result, 'separator2'):

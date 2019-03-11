@@ -605,14 +605,14 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
-    def _addDuration(self, result, start_time):
+    def _addDuration(self, result, elapsed):
         try:
             addDuration = result.addDuration
         except AttributeError:
             warnings.warn("TestResult has no addDuration method",
                           RuntimeWarning)
         else:
-            addDuration(self, time.perf_counter() - start_time)
+            addDuration(self, elapsed)
 
     def run(self, result=None):
         orig_result = result
@@ -656,7 +656,7 @@ class TestCase(object):
                     self.tearDown()
 
             self.doCleanups()
-            self._addDuration(result, start_time)
+            self._addDuration(result, (time.perf_counter() - start_time))
 
             for test, reason in outcome.skipped:
                 self._addSkip(result, test, reason)
