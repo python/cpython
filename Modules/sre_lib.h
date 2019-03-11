@@ -1304,8 +1304,18 @@ entrance:
             if (ctx->ptr - (SRE_CHAR *)state->beginning < (Py_ssize_t)ctx->pattern[1])
                 RETURN_FAILURE;
             state->ptr = ctx->ptr - ctx->pattern[1];
+
+            LASTMARK_SAVE();
+            MARK_PUSH(ctx->lastmark);
             DO_JUMP0(JUMP_ASSERT, jump_assert, ctx->pattern+2);
-            RETURN_ON_FAILURE(ret);
+            if (ret <= 0) {
+                MARK_POP(ctx->lastmark);
+                LASTMARK_RESTORE();
+
+                RETURN_ON_ERROR(ret);
+                RETURN_FAILURE;
+            }
+            MARK_POP_DISCARD(ctx->lastmark);
             ctx->pattern += ctx->pattern[0];
             break;
 
