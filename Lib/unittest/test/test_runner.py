@@ -761,6 +761,7 @@ class Test_TextTestRunner(unittest.TestCase):
         self.assertTrue(runner.descriptions)
         self.assertEqual(runner.resultclass, unittest.TextTestResult)
         self.assertFalse(runner.tb_locals)
+        self.assertIsNone(runner.durations)
 
     def test_multiple_inheritance(self):
         class AResult(unittest.TestResult):
@@ -792,6 +793,11 @@ class Test_TextTestRunner(unittest.TestCase):
         runner = unittest.TextTestRunner(stream=io.StringIO(), tb_locals=True)
         result = runner.run(unittest.TestSuite())
         self.assertEqual(True, result.tb_locals)
+
+    def test_durations(self):
+        runner = unittest.TextTestRunner(stream=io.StringIO(), durations=5)
+        result = runner.run(unittest.TestSuite())
+        self.assertEqual(5, result.durations)
 
     def testRunnerRegistersResult(self):
         class Test(unittest.TestCase):
