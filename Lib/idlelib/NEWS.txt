@@ -3,7 +3,11 @@ Released on 2019-10-20?
 ======================================
 
 
-bpl-36152: Remove colorizer.ColorDelegator.close_when_done and the
+bpo-36176: Fix IDLE autocomplete & calltip popup colors.
+Prevent conflicts with Linux dark themes
+(and slightly darken calltip background).
+
+bpo-36152: Remove colorizer.ColorDelegator.close_when_done and the
 corresponding argument of .close().  In IDLE, both have always been
 None or False since 2007.
 
