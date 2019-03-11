@@ -356,17 +356,18 @@ unittest
 * Added ``--durations`` command line option, showing the slowest test cases.
   If ``-v`` is used also shows the elapsed time of each individual test case::
 
-    python3 -m unittest --durations=3 lib.tests.__main__
+    python3 -m unittest --durations=3 lib.tests.test_threading
     .....
     Slowest test durations
     ----------------------------------------------------------------------
-    0.151s     test_memory (lib.tests.test_memory.TestMemory)
-    0.509s     test_system (lib.tests.test_system.TestSystem)
-    1.414s     test_process (lib.tests.test_system.TestProcess)
+    0.518s     test_timeout (Lib.test.test_threading.EventTests)
+    1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
+    1.010s     test_timeout (Lib.test.test_threading.BarrierTests)
+
 
     (0.000 durations hidden.  Use -v to show these durations.)
     ----------------------------------------------------------------------
-    Ran 122 tests in 12.385s
+    Ran 158 tests in 9.869s
 
     OK (skipped=3)
 
