@@ -4,5 +4,6 @@ and the elapsed time of each individual test.
 constructors have a new *durations* keyword argument. Subclasses should take
 this into account or accept ``**kwargs``. Added
 :meth:`unittest.TestResult.addDuration` method and
-:attr:`unittest.TestResult.collectedDurations` attribute. (Contributed by
-Giampaolo Rodola in :issue:`4080`)
+:attr:`unittest.TestResult.collectedDurations` attribute.
+
+(Contributed by Giampaolo Rodola in :issue:`4080`)

@@ -241,7 +241,8 @@ Command-line options
 
 .. cmdoption:: --durations
 
-   Show test durations.
+   Show the slowest test cases. If ``-v`` option is used also shows the
+   elapsed time of each individual test case.
 
 .. versionadded:: 3.2
    The command-line options ``-b``, ``-c`` and ``-f`` were added.
@@ -2034,7 +2035,7 @@ Loading and running tests
 
    .. method:: addDuration(test, elapsed)
 
-      Called when the test case finishes. **elapsed** is the time represented
+      Called when the test case finishes. *elapsed* is the time represented
       in seconds.
 
       .. versionadded:: 3.8
@@ -2042,16 +2043,15 @@ Loading and running tests
 .. class:: TextTestResult(stream, descriptions, verbosity, *, durations=None)
 
    A concrete implementation of :class:`TestResult` used by the
-   :class:`TextTestRunner`.
-   Subclasses should accept ``**kwargs`` to ensure compatibility as the
-   interface changes.
+   :class:`TextTestRunner`. Subclasses should accept ``**kwargs`` to ensure
+   compatibility as the interface changes.
 
    .. versionadded:: 3.2
       This class was previously named ``_TextTestResult``. The old name still
       exists as an alias but is deprecated.
 
    .. versionadded:: 3.8
-      Added *durations* argument.
+      Added *durations* keyword argument.
 
 .. data:: defaultTestLoader
 
@@ -2061,7 +2061,8 @@ Loading and running tests
 
 
 .. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, failfast=False, \
-                          buffer=False, resultclass=None, warnings=None, *, tb_locals=False, durations=None)
+                          buffer=False, resultclass=None, warnings=None, *, \
+                          tb_locals=False, durations=None)
 
    A basic test runner implementation that outputs results to a stream. If *stream*
    is ``None``, the default, :data:`sys.stderr` is used as the output stream. This class

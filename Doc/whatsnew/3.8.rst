@@ -353,20 +353,20 @@ unittest
   :meth:`~unittest.TestCase.setUpClass()`.
   (Contributed by Lisa Roach in :issue:`24412`.)
 
-* Added ``--durations`` command line option, showing the slowest test cases and
-  the elapsed time of each individual test::
+* Added ``--durations`` command line option, showing the slowest test cases.
+  If ``-v`` is used also shows the elapsed time of each individual test case::
 
-    python3 -m unittest test_suite --durations=3
+    python3 -m unittest --durations=3 lib.tests.__main__
     .....
     Slowest test durations
     ----------------------------------------------------------------------
-    0.051s     test_process (test_suite.TestCase)
-    0.209s     test_system (test_suite.TestCase)
-    0.414s     test_memory (test_suite.TestCase)
+    0.151s     test_memory (lib.tests.test_memory.TestMemory)
+    0.509s     test_system (lib.tests.test_system.TestSystem)
+    1.414s     test_process (lib.tests.test_system.TestProcess)
 
     (0.000 durations hidden.  Use -v to show these durations.)
     ----------------------------------------------------------------------
-    Ran 122 tests in 1.385s
+    Ran 122 tests in 12.385s
 
     OK (skipped=3)
 
