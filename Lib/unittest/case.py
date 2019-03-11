@@ -646,31 +646,17 @@ class TestCase(object):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                try:
-                    self.setUp()
-                except Exception:
-                    self._addDuration(result, start_time)
-                    raise
+                self.setUp()
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    try:
-                        testMethod()
-                    except Exception:
-                        self._addDuration(result, start_time)
-                        raise
+                    testMethod()
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    try:
-                        self.tearDown()
-                    except Exception:
-                        self._addDuration(result, start_time)
-                        raise
+                    self.tearDown()
 
-            try:
-                self.doCleanups()
-            finally:
-                self._addDuration(result, start_time)
+            self.doCleanups()
+            self._addDuration(result, start_time)
 
             for test, reason in outcome.skipped:
                 self._addSkip(result, test, reason)

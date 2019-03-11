@@ -6,6 +6,7 @@ from test import support
 
 import traceback
 import unittest
+from unittest import mock
 
 
 class MockTraceback(object):
@@ -259,6 +260,50 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         test_case, formatted_exc = result.errors[0]
         self.assertEqual('A tracebacklocals', formatted_exc)
+
+    def test_durations(self):
+        def run(test):
+            result = unittest.TextTestResult(
+                stream=mock.MagicMock(), descriptions=True,
+                verbosity=2, durations=5)
+            result.startTestRun()
+            test.run(result)
+            result.stopTestRun()
+            return len(result.collectedDurations)
+
+        # success
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+        self.assertEqual(run(Foo('test_1')), 1)
+
+        # failure
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                self.assertEqual(0, 1)
+        self.assertEqual(run(Foo('test_1')), 1)
+
+        # error
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                1 / 0
+        self.assertEqual(run(Foo('test_1')), 1)
+
+        # error in setUp and tearDown
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                1 / 0
+            tearDown = setUp
+            def test_1(self):
+                pass
+        self.assertEqual(run(Foo('test_1')), 1)
+
+        # skip (expect 0)
+        class Foo(unittest.TestCase):
+            @unittest.skip("reason")
+            def test_1(self):
+                pass
+        self.assertEqual(run(Foo('test_1')), 0)
 
     def test_addSubTest(self):
         class Foo(unittest.TestCase):
