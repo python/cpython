@@ -596,8 +596,8 @@ of applications in statistics.
 For example, given `historical data for SAT exams
 <https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
 are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with scores between 1100 and 1200,
-after rounding to the nearest whole number:
+determine the percentage of students with scores between 1100 and 1200, after
+rounding to the nearest whole number:
 
 .. doctest::
 
@@ -618,18 +618,19 @@ distributed populations with known means and standard deviations
 
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
-Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_ of the
-model:
+Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
 
 .. doctest::
 
+    >>> def model(x, y, z):
+    ...     return (3*x + 7*x*y - 5*y) / (11 * z)
+    ...
     >>> n = 100_000
-    >>> X = NormalDist(350, 15).samples(n)
-    >>> Y = NormalDist(47, 17).samples(n)
-    >>> Z = NormalDist(62, 6).samples(n)
-    >>> model_simulation = [x * y / z for x, y, z in zip(X, Y, Z)]
-    >>> NormalDist.from_samples(model_simulation)           # doctest: +SKIP
-    NormalDist(mu=267.6516398754636, sigma=101.357284306067)
+    >>> X = NormalDist(10, 2.5).samples(n)
+    >>> Y = NormalDist(15, 1.75).samples(n)
+    >>> Z = NormalDist(5, 1.25).samples(n)
+    >>> NormalDist.from_samples(map(model, X, Y, Z))     # doctest: +SKIP
+    NormalDist(mu=19.640137307085507, sigma=47.03273142191088)
 
 Normal distributions commonly arise in machine learning problems.
 
