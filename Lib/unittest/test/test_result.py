@@ -451,6 +451,8 @@ def __init__(self, stream=None, descriptions=None, verbosity=None):
     self.shouldStop = False
     self.buffer = False
     self.tb_locals = False
+    self.durations = None
+    self.collectedDurations = []
 
 classDict['__init__'] = __init__
 OldResult = type('OldResult', (object,), classDict)
