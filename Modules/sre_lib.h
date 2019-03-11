@@ -798,8 +798,8 @@ entrance:
             /* <BRANCH> <0=skip> code <JUMP> ... <NULL> */
             TRACE(("|%p|%p|BRANCH\n", ctx->pattern, ctx->ptr));
             LASTMARK_SAVE();
-            ctx->u.rep = state->repeat;
-            if (ctx->u.rep)
+            ctx->in_repeat = (state->repeat != NULL);
+            if (ctx->in_repeat)
                 MARK_PUSH(ctx->lastmark);
             for (; ctx->pattern[0]; ctx->pattern += ctx->pattern[0]) {
                 if (ctx->pattern[1] == SRE_OP_LITERAL &&
@@ -814,16 +814,16 @@ entrance:
                 state->ptr = ctx->ptr;
                 DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1);
                 if (ret) {
-                    if (ctx->u.rep)
+                    if (ctx->in_repeat)
                         MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
-                if (ctx->u.rep)
+                if (ctx->in_repeat)
                     MARK_POP_KEEP(ctx->lastmark);
                 LASTMARK_RESTORE();
             }
-            if (ctx->u.rep)
+            if (ctx->in_repeat)
                 MARK_POP_DISCARD(ctx->lastmark);
             RETURN_FAILURE;
 
