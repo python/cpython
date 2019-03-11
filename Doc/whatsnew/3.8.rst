@@ -364,7 +364,6 @@ unittest
     1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
     1.010s     test_timeout (Lib.test.test_threading.BarrierTests)
 
-
     (0.000 durations hidden.  Use -v to show these durations.)
     ----------------------------------------------------------------------
     Ran 158 tests in 9.869s
