@@ -263,12 +263,17 @@ class Test_TestResult(unittest.TestCase):
 
     def test_durations(self):
         def run(test):
-            result = unittest.TextTestResult(
-                stream=mock.MagicMock(), descriptions=True,
-                verbosity=2, durations=5)
+            m = mock.MagicMock()
+            result = unittest.TextTestResult(stream=m, descriptions=True,
+                                             verbosity=2, durations=5)
             result.startTestRun()
             test.run(result)
             result.stopTestRun()
+            prefix = m.writeln.call_args[0][0]
+            if 'skipped' not in prefix:
+                self.assertIn('s]', prefix)
+            else:
+                self.assertNotIn('s]', prefix)
             return len(result.collectedDurations)
 
         # success
