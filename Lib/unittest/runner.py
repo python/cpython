@@ -35,6 +35,8 @@ class TextTestResult(result.TestResult):
     separator2 = '-' * 70
 
     def __init__(self, stream, descriptions, verbosity, *, durations=None):
+        """Construct a TextTestResult. Subclasses should accept **kwargs
+        to ensure compatibility as the interface changes."""
         super(TextTestResult, self).__init__(stream, descriptions, verbosity)
         self.stream = stream
         self.showAll = verbosity > 1

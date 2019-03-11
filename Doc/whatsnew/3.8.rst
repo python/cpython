@@ -353,6 +353,25 @@ unittest
   :meth:`~unittest.TestCase.setUpClass()`.
   (Contributed by Lisa Roach in :issue:`24412`.)
 
+* Added ``--durations`` command line option, showing the slowest test cases and
+  the elapsed time of each individual test::
+
+    python3 -m unittest test_suite --durations=3
+    .....
+    Slowest test durations
+    ----------------------------------------------------------------------
+    0.051s     test_process (test_suite.TestCase)
+    0.209s     test_system (test_suite.TestCase)
+    0.414s     test_memory (test_suite.TestCase)
+
+    (0.000 durations hidden.  Use -v to show these durations.)
+    ----------------------------------------------------------------------
+    Ran 122 tests in 1.385s
+
+    OK (skipped=3)
+
+  (Contributed by Giampaolo Rodola in :issue:`4080`)
+
 venv
 ----
 
@@ -664,6 +683,12 @@ Changes in the Python API
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
 
+* :class:`unittest.TextTestRunner` and :class:`unittest.TextTestResult`
+  constructors have a new *durations* keyword argument. Subclasses should take
+  this into account or accept ``**kwargs``.
+  Added :meth:`unittest.TestResult.addDuration` method and
+  :attr:`unittest.TestResult.collectedDurations` attribute.
+  (Contributed by Giampaolo Rodola in :issue:`4080`)
 
 CPython bytecode changes
 ------------------------
