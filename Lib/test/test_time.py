@@ -492,6 +492,25 @@ class TimeTestCase(unittest.TestCase):
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
+    def test_perf_counter_vs_process_time(self):
+        # bpo-36205: process_time and perf_counter should give similar results
+        def busy_work(a, b):
+            if a == b:
+                return 0
+            d = sys.maxsize
+            for i, c in enumerate(a):
+                d = min(d, ord(c) + busy_work(a[:i]+a[i+1:], b))
+            for i, c in enumerate(b):
+                d = min(d, ord(c) + busy_work(a, b[:i]+b[i+1:]))
+            return d
+
+        processtime = time.process_time()
+        perfcounter = time.perf_counter()
+        busy_work("1234", "abcd")
+        processtime = time.process_time() - processtime
+        perfcounter = time.perf_counter() - perfcounter
+        self.assertAlmostEqual(processtime, perfcounter, places=2)
+
     def test_thread_time(self):
         if not hasattr(time, 'thread_time'):
             if sys.platform.startswith(('linux', 'win')):
