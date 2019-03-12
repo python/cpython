@@ -676,6 +676,10 @@ Changes in the Python API
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
 
+* :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
+  environment variable and does not use :envvar:`HOME`, which is not normally
+  set for regular user accounts.
+
 
 CPython bytecode changes
 ------------------------
