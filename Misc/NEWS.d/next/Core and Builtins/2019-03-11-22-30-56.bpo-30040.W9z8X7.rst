@@ -1,0 +1,2 @@
+New empty dict uses fewer memory for now.  It used more memory than empty
+dict created by ``dict.clear()``.  Patch by Inada Naoki.
