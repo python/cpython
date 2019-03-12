@@ -1,2 +1,0 @@
-
-Gray out Code Context menu entry on macOS when it's not applicable.
