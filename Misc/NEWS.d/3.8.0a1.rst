@@ -8163,7 +8163,7 @@ Squeezer now properly counts wrapped lines before newlines.
 .. nonce: M58_K3
 .. section: IDLE
 
-Gray out Code Context menu entry on macOS when it's not applicable.
+Gray out Code Context menu entry when it's not applicable.
 
 ..
 
