@@ -1769,7 +1769,7 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
     def test_range_data(self):
         # Override test from UnivariateCommonMixin.
         data = range(20, 50, 3)
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        self.assertEqual(self.func(data), 20)
 
     def test_nominal_data(self):
         # Test mode with nominal data.
@@ -1790,13 +1790,14 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # Test mode with bimodal data.
         data = [1, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6, 7, 8, 9, 9]
         assert data.count(2) == data.count(6) == 4
-        # Check for an exception.
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        # mode() should return 2, the first encounted mode
+        self.assertEqual(self.func(data), 2)
 
-    def test_unique_data_failure(self):
-        # Test mode exception when data points are all unique.
+    def test_unique_data(self):
+        # Test mode when data points are all unique.
         data = list(range(10))
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        # mode() should return 0, the first encounted mode
+        self.assertEqual(self.func(data), 0)
 
     def test_none_data(self):
         # Test that mode raises TypeError if given None as data.
@@ -1809,8 +1810,18 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # Test that a Counter is treated like any other iterable.
         data = collections.Counter([1, 1, 1, 2])
         # Since the keys of the counter are treated as data points, not the
-        # counts, this should raise.
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        # counts, this should return the first mode encountered, 1
+        self.assertEqual(self.func(data), 1)
+
+
+class TestMultiMode(unittest.TestCase):
+
+    def test_basics(self):
+        multimode = statistics.multimode
+        self.assertEqual(multimode('aabbbbbbbbcc'), ['b'])
+        self.assertEqual(multimode('aabbbbccddddeeffffgg'), ['b', 'd', 'f'])
+        self.assertEqual(multimode(''), [])
+
 
 class TestFMean(unittest.TestCase):
 

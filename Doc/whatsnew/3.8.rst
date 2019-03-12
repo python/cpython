@@ -282,6 +282,9 @@ Added :func:`statistics.fmean` as a faster, floating point variant of
 :func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
 
+Added :func:`statistics.multimode` that returns a list of the most
+common values. (Contributed by Raymond Hettinger in :issue:`35892`.)
+
 Added :class:`statistics.NormalDist`, a tool for creating
 and manipulating normal distributions of a random variable.
 (Contributed by Raymond Hettinger in :issue:`36018`.)
@@ -590,6 +593,11 @@ Changes in the Python API
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
+
+* The :func:`statistics.mode` function no longer raises an exception
+  when given multimodal data.  Instead, it returns the first mode
+  encountered in the input data.  (Contributed by Raymond Hettinger
+  in :issue:`35892`.)
 
 * The :meth:`~tkinter.ttk.Treeview.selection` method of the
   :class:`tkinter.ttk.Treeview` class no longer takes arguments.  Using it with
