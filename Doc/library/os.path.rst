@@ -172,16 +172,19 @@ the :mod:`glob` module.)
    password directory through the built-in module :mod:`pwd`. An initial ``~user``
    is looked up directly in the password directory.
 
-   On Windows, :envvar:`HOME` and :envvar:`USERPROFILE` will be used if set,
-   otherwise a combination of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be
-   used.  An initial ``~user`` is handled by stripping the last directory component
-   from the created user path derived above.
+   On Windows, :envvar:`USERPROFILE` will be used if set, otherwise a combination
+   of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be used.  An initial
+   ``~user`` is handled by stripping the last directory component from the created
+   user path derived above.
 
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      No longer uses :envvar:`HOME` on Windows.
 
 .. index::
    single: $ (dollar); environment variables expansion
