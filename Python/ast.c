@@ -2313,13 +2313,13 @@ ast_for_atom(struct compiling *c, const node *n)
         size_t len = strlen(s);
         if (len >= 4 && len <= 5) {
             if (!strcmp(s, "None"))
-                return Constant(Py_None, LINENO(n), n->n_col_offset,
+                return Constant(Py_None, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             if (!strcmp(s, "True"))
-                return Constant(Py_True, LINENO(n), n->n_col_offset,
+                return Constant(Py_True, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             if (!strcmp(s, "False"))
-                return Constant(Py_False, LINENO(n), n->n_col_offset,
+                return Constant(Py_False, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
         name = new_identifier(s, c);
@@ -2374,11 +2374,11 @@ ast_for_atom(struct compiling *c, const node *n)
             Py_DECREF(pynum);
             return NULL;
         }
-        return Constant(pynum, LINENO(n), n->n_col_offset,
+        return Constant(pynum, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     case ELLIPSIS: /* Ellipsis */
-        return Constant(Py_Ellipsis, LINENO(n), n->n_col_offset,
+        return Constant(Py_Ellipsis, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     case LPAR: /* some parenthesized expressions */
         ch = CHILD(n, 1);
@@ -5388,6 +5388,63 @@ FstringParser_Dealloc(FstringParser *state)
     ExprList_Dealloc(&state->expr_list);
 }
 
+/* Constants for the following */
+static PyObject *u_kind;
+static PyObject *b_kind;
+static PyObject *no_kind;
+
+/* Compute 'kind' field for str/bytes Constant (either 'b', 'u' or '') */
+static PyObject *
+make_kind(struct compiling *c, const node *n)
+{
+    char *s = NULL;
+    PyObject *kind = NULL;
+
+    /* Find the first string literal, if any */
+    while (TYPE(n) != STRING) {
+        if (NCH(n) == 0)
+            return NULL;
+        n = CHILD(n, 0);
+    }
+    REQ(n, STRING);
+
+    /* Re-parse the string until we find either 'b', 'u' or a quote */
+    s = STR(n);
+    while (s) {
+        switch (*s) {
+        case 'u':
+            if (!u_kind)
+                u_kind = PyUnicode_InternFromString("u");
+            kind = u_kind;
+            s = NULL;  // Break out of while loop
+            break;
+        case 'b':
+            if (!b_kind)
+                b_kind = PyUnicode_InternFromString("b");
+            kind = b_kind;
+            s = NULL;  // Break out of while loop
+            break;
+        case '\'':
+        case '"':
+            s = NULL;  // Break out of while loop
+            break;
+        default:
+            s++;
+        }
+    }
+    if (kind == NULL) {
+        if (!no_kind)
+            no_kind = PyUnicode_InternFromString("");
+        kind = no_kind;
+    }
+    Py_INCREF(kind);
+    if (PyArena_AddPyObject(c->c_arena, kind) < 0) {
+        Py_DECREF(kind);
+        return NULL;
+    }
+    return kind;
+}
+
 /* Make a Constant node, but decref the PyUnicode object being added. */
 static expr_ty
 make_str_node_and_del(PyObject **str, struct compiling *c, const node* n)
@@ -5399,7 +5456,7 @@ make_str_node_and_del(PyObject **str, struct compiling *c, const node* n)
         Py_DECREF(s);
         return NULL;
     }
-    return Constant(s, LINENO(n), n->n_col_offset,
+    return Constant(s, make_kind(c, n), LINENO(n), n->n_col_offset,
                     n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
@@ -5774,7 +5831,7 @@ parsestrplus(struct compiling *c, const node *n)
         /* Just return the bytes object and we're done. */
         if (PyArena_AddPyObject(c->c_arena, bytes_str) < 0)
             goto error;
-        return Constant(bytes_str, LINENO(n), n->n_col_offset,
+        return Constant(bytes_str, make_kind(c, n), LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 
