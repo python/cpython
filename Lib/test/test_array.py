@@ -1399,17 +1399,14 @@ class DoubleTest(FPTest, unittest.TestCase):
 
 class LargeListTest(unittest.TestCase):
     typecode = 'b'
-    values1 = [0, 1, 2, 3, 4, 5, 6, 7]
-    values2 = [8, 9, 10, 11]
-    example_multiplier = 0x10000000
 
     def example(self, size):
         base = array.array(self.typecode, [0, 1, 2, 3, 4, 5, 6, 7]) * (size // 8)
-        base += array.array(self.typecode, [100]*(size % 8) + self.values2)
+        base += array.array(self.typecode, [99]*(size % 8) + [8, 9, 10, 11])
         return base
 
     @support.bigmemtest(_2G, memuse=1)
-    def test_build_example(self, size):
+    def test_example_data(self, size):
         example = self.example(size)
         self.assertEqual(len(example), size+4)
 
