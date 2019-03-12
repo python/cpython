@@ -7954,15 +7954,6 @@ prevent it from truncating the last character.
 
 ..
 
-.. bpo: 35555
-.. date: 2018-12-21-18-44-30
-.. nonce: M58_K3
-.. section: macOS
-
-Gray out Code Context menu entry when it's not applicable.
-
-..
-
 .. bpo: 35401
 .. date: 2018-12-09-13-56-49
 .. nonce: n8B7X1
@@ -8164,6 +8155,15 @@ Add Previous/Next History entries to Shell menu.
 .. section: IDLE
 
 Squeezer now properly counts wrapped lines before newlines.
+
+..
+
+.. bpo: 35555
+.. date: 2018-12-21-18-44-30
+.. nonce: M58_K3
+.. section: IDLE
+
+Gray out Code Context menu entry on macOS when it's not applicable.
 
 ..
 
