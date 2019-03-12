@@ -2343,7 +2343,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             else {
                 ms.key_compare = safe_object_compare;
             }
-
         }
         else {
             ms.key_compare = safe_object_compare;
