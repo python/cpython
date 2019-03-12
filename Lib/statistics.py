@@ -320,9 +320,9 @@ def fmean(data):
             nonlocal n
             n += 1
             return x
-        total = math.fsum(map(count, data))
+        total = fsum(map(count, data))
     else:
-        total = math.fsum(data)
+        total = fsum(data)
     try:
         return total / n
     except ZeroDivisionError:
