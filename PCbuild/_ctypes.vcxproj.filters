@@ -7,12 +7,6 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{dbdea1f2-ad8b-44ca-b782-fcf65d91559b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Win32">
-      <UniqueIdentifier>{335d87ad-db56-4b31-a1c5-c21aad59d2b0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="x64">
-      <UniqueIdentifier>{919b42ac-e8c3-4e19-b2cf-8cea96ca726d}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_ctypes\ctypes.h">
@@ -20,22 +14,6 @@
     </ClInclude>
     <ClInclude Include="..\Modules\_ctypes\ctypes_dlfcn.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="$(libffiDir)include\ffi_common.h" />
-    <ClInclude Include="$(libffiDir)include\x64\ffi.h">
-      <Filter>x64</Filter>
-    </ClInclude>
-    <ClInclude Include="$(libffiDir)include\x86\ffi.h">
-      <Filter>Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="$(libffiDir)include\x64\fficonfig.h">
-      <Filter>x64</Filter>
-    </ClInclude>
-    <ClInclude Include="$(libffiDir)include\x86\fficonfig.h">
-      <Filter>Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="$(libffiDir)\src\x86\ffitarget.h">
-      <Filter>Win32</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -57,21 +35,6 @@
     <ClCompile Include="..\Modules\_ctypes\stgdict.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(libffiDir)src\prep_cif.c" />
-    <ClCompile Include="$(libffiDir)src\x86\ffiw64.c">
-      <Filter>x64</Filter>
-    </ClCompile>
-    <ClCompile Include="$(libffiDir)src\x86\ffi.c">
-      <Filter>Win32</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="$(libffiDir)src\x86\win64_intel.S">
-      <Filter>x64</Filter>
-    </CustomBuild>
-    <CustomBuild Include="$(libffiDir)src\x86\sysv_intel.S">
-      <Filter>Win32</Filter>
-    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

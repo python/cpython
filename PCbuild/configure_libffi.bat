@@ -69,30 +69,49 @@ set VCVARS_PLATFORM=%1
 set BUILD=%2
 set HOST=%3
 set ML=
+set SRC_CPU=x86
 
 if "%VCVARS_PLATFORM%" EQU "" echo ERROR bad VCVARS_PLATFORM&&exit /b 123
 if /I "%VCVARS_PLATFORM%" EQU "x64" (set ML=-m64)
+
+if /I "%VCVARS_PLATFORM%" EQU "x64" (
+    set ARCH=amd64
+    set ARTIFACTS=%LIBFFI_SOURCE%\x86_64-w64-cygwin
+)
+if /I "%VCVARS_PLATFORM%" EQU "x86" (
+    set ARCH=win32
+    set ARTIFACTS=%LIBFFI_SOURCE%\i686-pc-cygwin
+)
+
+set LIBFFI_OUT=%~dp0\..\externals\libffi-bin-3.3.0-rc0-r1\%ARCH%
 
 REM get VS build environment
 call %VCVARSALL% %VCVARS_PLATFORM%
 
 REM clean header output directory
 if exist %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH% (rd %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH% /s/q)
+if exist %LIBFFI_OUT% (rd %LIBFFI_OUT% /s/q)
 
 REM just configure the build to generate fficonfig.h and ffi.h
 %SH% -lc "(cd $OLDPWD; ./configure CC='%MSVCC% %ML%' CXX='%MSVCC% %ML%' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
 
 REM There is no support for building .DLLs currently.
-REM %SH% -lc "(cd $OLDPWD; cp src/x86/ffitarget.h include; make; find .;)"
+%SH% -lc "(cd $OLDPWD; export PATH=/usr/bin:$PATH; cp src/%SRC_CPU%/ffitarget.h include; make; find .;)"
 
 REM Running the libffi tests doesn't work when using msvc
 REM msvcc.sh is missing support for -l and -L according to the note in appveyor.yml
-REM %SH% -lc "(cd $OLDPWD; cp `find . -name 'libffi-?.dll'` $HOST/testsuite/; make check; cat `find ./ -name libffi.log`)"
+REM %SH% -lc "(cd $OLDPWD; export PATH=/usr/bin:$PATH; cp `find $PWD -name 'libffi-?.dll'` $HOST/testsuite/; make check; cat `find ./ -name libffi.log`)"
 
 REM create header output directory and copy headers to check-in location
 if not exist %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH% (md %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH%)
 copy %LIBFFI_SOURCE%\%HOST%\fficonfig.h  %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH%
 copy %LIBFFI_SOURCE%\%HOST%\include\ffi.h  %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH%
+
+if not exist %LIBFFI_OUT%\include (md %LIBFFI_OUT%\include)
+copy %ARTIFACTS%\.libs\libffi-7.dll %LIBFFI_OUT%
+copy %ARTIFACTS%\.libs\libffi-7.lib %LIBFFI_OUT%
+copy %ARTIFACTS%\fficonfig.h %LIBFFI_OUT%\include
+copy %ARTIFACTS%\include\*.h %LIBFFI_OUT%\include
 
 endlocal
 exit /b
