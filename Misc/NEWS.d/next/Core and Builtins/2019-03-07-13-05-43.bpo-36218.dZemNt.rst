@@ -1,2 +1,2 @@
 Fix a segfault occuring when sorting a list of heterogeneous values. Patch
-contributed by Rémi Lapeyre.
+contributed by Rémi Lapeyre and Elliot Gorokhovsky.
