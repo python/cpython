@@ -55,8 +55,8 @@ The constants defined in this module are:
 
 .. data:: punctuation
 
-   The string ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
-
+   String of ASCII characters which are considered punctuation characters
+   in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
 .. data:: printable
 
