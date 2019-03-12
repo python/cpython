@@ -1423,10 +1423,8 @@ class LargeListTest(unittest.TestCase):
     @support.bigmemtest(_2G, memuse=1)
     def test_count(self, size):
         example = self.example(size)
-        for value in [0, 1, 6, 7]:
-            self.assertEqual(example.count(value), size//8) # TODO
-        for value in [8, 11]:
-            self.assertEqual(example.count(value), 1)
+        self.assertEqual(example.count(0), size//8)
+        self.assertEqual(example.count(11), 1)
 
     @support.bigmemtest(_2G, memuse=1)
     def test_append(self, size):
@@ -1461,7 +1459,6 @@ class LargeListTest(unittest.TestCase):
         self.assertEqual(example.index(0), 0)
         self.assertEqual(example.index(1), 1)
         self.assertEqual(example.index(7), 7)
-        self.assertEqual(example.index(8), size)
         self.assertEqual(example.index(11), size+3)
 
     @support.bigmemtest(_2G, memuse=1)
