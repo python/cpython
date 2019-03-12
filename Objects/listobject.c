@@ -2308,6 +2308,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 keys_are_all_same_type = 0;
                 /* If keys are in tuple we must loop over the whole list to make
                    sure all items are tuples */
+                key_type = key->ob_type;
                 if (!keys_are_in_tuples) {
                     break;
                 }
