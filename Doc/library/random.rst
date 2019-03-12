@@ -312,7 +312,7 @@ Alternative Generator
 
 .. class:: Random([seed])
 
-   This class implement the default pseudo-random number generator used by the
+   Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
 
 .. class:: SystemRandom([seed])
