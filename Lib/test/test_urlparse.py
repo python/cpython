@@ -644,7 +644,8 @@ class UrlParseTestCase(unittest.TestCase):
         for scheme in [u"http", u"https", u"ftp"]:
             for c in denorm_chars:
                 url = u"{}://netloc{}false.netloc/path".format(scheme, c)
-                print "Checking %r" % url
+                if test_support.verbose:
+                    print "Checking %r" % url
                 with self.assertRaises(ValueError):
                     urlparse.urlsplit(url)
 
