@@ -37,7 +37,7 @@ Averages and measures of central location
 These functions calculate an average or typical value from a population
 or sample.
 
-=======================  ====================================================
+=======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
 :func:`fmean`            Fast, floating point arithmetic mean.
 :func:`harmonic_mean`    Harmonic mean of data.
@@ -45,9 +45,9 @@ or sample.
 :func:`median_low`       Low median of data.
 :func:`median_high`      High median of data.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
-:func:`mode`             Mode (most common value) of discrete data.
-:func:`multimode`        List of modes (most common values) of discrete data.
-=======================  ====================================================
+:func:`mode`             Single mode (most common value) of discrete or nominal data.
+:func:`multimode`        List of modes (most common values) of discrete or nomimal data.
+=======================  ===============================================================
 
 Measures of spread
 ------------------
@@ -289,7 +289,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: mode(data)
 
    Return the single most common data point from discrete or nominal *data*.
-   The mode (when it exists) is the most typical value, and is a robust
+   The mode (when it exists) is the most typical value and serves as a
    measure of central location.
 
    If there are multiple modes, returns the first one encountered in the *data*.
@@ -321,7 +321,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return a list of the most frequently occurring values in the order they
    were first encountered in the *data*.  Will return more than one result if
-   there are multiple modes or an empty list if *data* is empty:
+   there are multiple modes or an empty list if the *data* is empty:
 
    .. doctest::
 
