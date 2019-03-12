@@ -1813,6 +1813,16 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # counts, this should return the first mode encountered, 1
         self.assertEqual(self.func(data), 1)
 
+
+class TestMultiMode(unittest.TestCase):
+
+    def test_basics(self):
+        multimode = statistics.multimode
+        self.assertEqual(multimode('aabbbbbbbbcc'), ['b'])
+        self.assertEqual(multimode('aabbbbccddddeeffffgg'), ['b', 'd', 'f'])
+        self.assertEqual(multimode(''), [])
+
+
 class TestFMean(unittest.TestCase):
 
     def test_basics(self):
