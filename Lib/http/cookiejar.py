@@ -993,7 +993,7 @@ class DefaultCookiePolicy(CookiePolicy):
             req_path = request_path(request)
             if ((cookie.version > 0 or
                  (cookie.version == 0 and self.strict_ns_set_path)) and
-                not req_path.startswith(cookie.path)):
+                not self.path_return_ok(cookie.path, request)):
                 _debug("   path attribute %s is not a prefix of request "
                        "path %s", cookie.path, req_path)
                 return False
@@ -1200,11 +1200,15 @@ class DefaultCookiePolicy(CookiePolicy):
     def path_return_ok(self, path, request):
         _debug("- checking cookie path=%s", path)
         req_path = request_path(request)
-        if not req_path.startswith(path):
-            _debug("  %s does not path-match %s", req_path, path)
-            return False
-        return True
+        pathlen = len(path)
+        if req_path == path:
+            return True
+        elif (req_path.startswith(path) and
+              (path.endswith("/") or req_path[pathlen:pathlen+1] == "/")):
+            return True
 
+        _debug("  %s does not path-match %s", req_path, path)
+        return False
 
 def vals_sorted_by_key(adict):
     keys = sorted(adict.keys())
