@@ -1093,16 +1093,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         sys.settrace(None)
         globals = self.curframe.f_globals
         locals = self.curframe_locals
-        try:
-            code = compile(arg, "<string>", "exec")
-        except SyntaxError:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
-            return
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
-        sys.call_tracing(p.run, (code, globals, locals))
+        try:
+            sys.call_tracing(p.run, (arg, globals, locals))
+        except Exception:
+            exc_info = sys.exc_info()[:2]
+            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
         self.message("LEAVING RECURSIVE DEBUGGER")
         sys.settrace(self.trace_dispatch)
         self.lastcmd = p.lastcmd
