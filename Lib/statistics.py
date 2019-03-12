@@ -80,7 +80,7 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [ 'StatisticsError', 'NormalDist',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
-            'mean', 'mode', 'harmonic_mean', 'fmean',
+            'mean', 'mode', 'multimode', 'harmonic_mean', 'fmean',
           ]
 
 import math
@@ -527,7 +527,7 @@ def mode(data):
 def multimode(data):
     """ Return a list of the most frequently occurring values.
 
-        Will return more than one result is there are multiple modes
+        Will return more than one result if there are multiple modes
         or an empty list if *data* is empty.
 
         >>> multimode('aabbbbbbbbcc')
