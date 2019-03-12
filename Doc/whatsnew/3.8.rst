@@ -236,6 +236,10 @@ now return ``False`` instead of raising :exc:`ValueError` or its subclasses
 characters or bytes unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+:func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
+environment variable and does not use :envvar:`HOME`, which is not normally set
+for regular user accounts.
+
 
 ncurses
 -------
@@ -671,6 +675,10 @@ Changes in the Python API
   :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`error` (:exc:`dbm.dumb.error`,
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
+
+* :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
+  environment variable and does not use :envvar:`HOME`, which is not normally
+  set for regular user accounts.
 
 
 CPython bytecode changes
