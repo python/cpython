@@ -6,6 +6,7 @@ import subprocess
 from test import support
 import unittest
 import unittest.test
+from argparse import Namespace
 
 
 class Test_TestProgram(unittest.TestCase):
@@ -17,7 +18,7 @@ class Test_TestProgram(unittest.TestCase):
         expectedPath = os.path.abspath(os.path.dirname(unittest.test.__file__))
 
         self.wasRun = False
-        def _find_tests(start_dir, pattern):
+        def _find_tests(start_dir, pattern, command_line_arguments=None):
             self.wasRun = True
             self.assertEqual(start_dir, expectedPath)
             return tests
@@ -436,6 +437,37 @@ class TestCommandLineArgs(unittest.TestCase):
         self.assertIn('Ran 3 tests', run_unittest(['-k', '*t', t]))
         self.assertIn('Ran 7 tests', run_unittest(['-k', '*test_warnings.*Warning*', t]))
         self.assertIn('Ran 1 test', run_unittest(['-k', '*test_warnings.*warning*', t]))
+
+    def testCustomCommandLineArguments(self):
+        class FakeTP(unittest.TestProgram):
+            def addCustomArguments(self, parser):
+                parser.add_argument('--foo', action="store_true", help='foo help')
+            def runTests(self, *args, **kw): pass
+
+        fp = FakeTP(argv=["testprogram"])
+        self.assertEqual(fp.command_line_arguments, Namespace(
+            buffer=False,
+            catchbreak=False,
+            exit=True,
+            failfast=False,
+            foo=False,
+            tb_locals=False,
+            testNamePatterns=[],
+            tests=[],
+            verbosity=1
+        ))
+        fp = FakeTP(argv=["testprogram", "--foo"])
+        self.assertEqual(fp.command_line_arguments, Namespace(
+            buffer=False,
+            catchbreak=False,
+            exit=True,
+            failfast=False,
+            foo=True,
+            tb_locals=False,
+            testNamePatterns=[],
+            tests=[],
+            verbosity=1
+        ))
 
 
 if __name__ == '__main__':

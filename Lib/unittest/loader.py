@@ -5,6 +5,7 @@ import re
 import sys
 import traceback
 import types
+import itertools
 import functools
 import warnings
 
@@ -81,7 +82,7 @@ class TestLoader(object):
         # avoid infinite re-entrancy.
         self._loading_packages = set()
 
-    def loadTestsFromTestCase(self, testCaseClass):
+    def loadTestsFromTestCase(self, testCaseClass, command_line_arguments=None):
         """Return a suite of all test cases contained in testCaseClass"""
         if issubclass(testCaseClass, suite.TestSuite):
             raise TypeError("Test cases should not be derived from "
@@ -90,12 +91,21 @@ class TestLoader(object):
         testCaseNames = self.getTestCaseNames(testCaseClass)
         if not testCaseNames and hasattr(testCaseClass, 'runTest'):
             testCaseNames = ['runTest']
-        loaded_suite = self.suiteClass(map(testCaseClass, testCaseNames))
+
+        # keep backward compatibility for subclasses that override __init__
+        def instanciate_testcase(testCaseClass, testCaseName):
+            try:
+                return testCaseClass(testCaseName, command_line_arguments)
+            except TypeError:
+                return testCaseClass(testCaseName)
+        loaded_suite = self.suiteClass(
+            map(instanciate_testcase, itertools.repeat(testCaseClass), testCaseNames)
+        )
         return loaded_suite
 
     # XXX After Python 3.5, remove backward compatibility hacks for
     # use_load_tests deprecation via *args and **kws.  See issue 16662.
-    def loadTestsFromModule(self, module, *args, pattern=None, **kws):
+    def loadTestsFromModule(self, module, *args, pattern=None, command_line_arguments=None, **kws):
         """Return a suite of all test cases contained in the given module"""
         # This method used to take an undocumented and unofficial
         # use_load_tests argument.  For backward compatibility, we still
@@ -121,7 +131,7 @@ class TestLoader(object):
         for name in dir(module):
             obj = getattr(module, name)
             if isinstance(obj, type) and issubclass(obj, case.TestCase):
-                tests.append(self.loadTestsFromTestCase(obj))
+                tests.append(self.loadTestsFromTestCase(obj, command_line_arguments))
 
         load_tests = getattr(module, 'load_tests', None)
         tests = self.suiteClass(tests)
@@ -135,7 +145,7 @@ class TestLoader(object):
                 return error_case
         return tests
 
-    def loadTestsFromName(self, name, module=None):
+    def loadTestsFromName(self, name, module=None, command_line_arguments=None):
         """Return a suite of all test cases given a string specifier.
 
         The name may resolve either to a module, a test case class, a
@@ -188,9 +198,9 @@ class TestLoader(object):
                     return error_case
 
         if isinstance(obj, types.ModuleType):
-            return self.loadTestsFromModule(obj)
+            return self.loadTestsFromModule(obj, command_line_arguments)
         elif isinstance(obj, type) and issubclass(obj, case.TestCase):
-            return self.loadTestsFromTestCase(obj)
+            return self.loadTestsFromTestCase(obj, command_line_arguments)
         elif (isinstance(obj, types.FunctionType) and
               isinstance(parent, type) and
               issubclass(parent, case.TestCase)):
@@ -213,11 +223,11 @@ class TestLoader(object):
         else:
             raise TypeError("don't know how to make test from: %s" % obj)
 
-    def loadTestsFromNames(self, names, module=None):
+    def loadTestsFromNames(self, names, module=None, command_line_arguments=None):
         """Return a suite of all test cases found using the given sequence
         of string specifiers. See 'loadTestsFromName()'.
         """
-        suites = [self.loadTestsFromName(name, module) for name in names]
+        suites = [self.loadTestsFromName(name, module, command_line_arguments) for name in names]
         return self.suiteClass(suites)
 
     def getTestCaseNames(self, testCaseClass):
@@ -239,7 +249,7 @@ class TestLoader(object):
             testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
         return testFnNames
 
-    def discover(self, start_dir, pattern='test*.py', top_level_dir=None):
+    def discover(self, start_dir, pattern='test*.py', top_level_dir=None, command_line_arguments=None):
         """Find and return all test modules from the specified start
         directory, recursing into subdirectories to find them and return all
         tests found within them. Only test files that match the pattern will
@@ -322,9 +332,12 @@ class TestLoader(object):
                                 self._top_level_dir = \
                                     (path.split(the_module.__name__
                                          .replace(".", os.path.sep))[0])
-                                tests.extend(self._find_tests(path,
-                                                              pattern,
-                                                              namespace=True))
+                                tests.extend(self._find_tests(
+                                    path,
+                                    pattern,
+                                    namespace=True,
+                                    command_line_arguments=command_line_arguments
+                                ))
                     elif the_module.__name__ in sys.builtin_module_names:
                         # builtin module
                         raise TypeError('Can not use builtin modules '
@@ -346,7 +359,7 @@ class TestLoader(object):
             raise ImportError('Start directory is not importable: %r' % start_dir)
 
         if not is_namespace:
-            tests = list(self._find_tests(start_dir, pattern))
+            tests = list(self._find_tests(start_dir, pattern, command_line_arguments=command_line_arguments))
         return self.suiteClass(tests)
 
     def _get_directory_containing_module(self, module_name):
@@ -381,7 +394,7 @@ class TestLoader(object):
         # override this method to use alternative matching strategy
         return fnmatch(path, pattern)
 
-    def _find_tests(self, start_dir, pattern, namespace=False):
+    def _find_tests(self, start_dir, pattern, namespace=False, command_line_arguments=None):
         """Used by discovery. Yields test suites it loads."""
         # Handle the __init__ in this package
         name = self._get_name_from_path(start_dir)
@@ -391,7 +404,7 @@ class TestLoader(object):
             # name is in self._loading_packages while we have called into
             # loadTestsFromModule with name.
             tests, should_recurse = self._find_test_path(
-                start_dir, pattern, namespace)
+                start_dir, pattern, namespace, command_line_arguments)
             if tests is not None:
                 yield tests
             if not should_recurse:
@@ -403,7 +416,7 @@ class TestLoader(object):
         for path in paths:
             full_path = os.path.join(start_dir, path)
             tests, should_recurse = self._find_test_path(
-                full_path, pattern, namespace)
+                full_path, pattern, namespace, command_line_arguments)
             if tests is not None:
                 yield tests
             if should_recurse:
@@ -411,11 +424,16 @@ class TestLoader(object):
                 name = self._get_name_from_path(full_path)
                 self._loading_packages.add(name)
                 try:
-                    yield from self._find_tests(full_path, pattern, namespace)
+                    yield from self._find_tests(
+                        full_path,
+                        pattern,
+                        namespace,
+                        command_line_arguments=command_line_arguments
+                    )
                 finally:
                     self._loading_packages.discard(name)
 
-    def _find_test_path(self, full_path, pattern, namespace=False):
+    def _find_test_path(self, full_path, pattern, namespace=False, command_line_arguments=None):
         """Used by discovery.
 
         Loads tests from a single file, or a directories' __init__.py when
@@ -457,7 +475,8 @@ class TestLoader(object):
                            "%r. Is this module globally installed?")
                     raise ImportError(
                         msg % (mod_name, module_dir, expected_dir))
-                return self.loadTestsFromModule(module, pattern=pattern), False
+                return self.loadTestsFromModule(module, pattern=pattern,
+                         command_line_arguments=command_line_arguments), False
         elif os.path.isdir(full_path):
             if (not namespace and
                 not os.path.isfile(os.path.join(full_path, '__init__.py'))):
@@ -480,7 +499,11 @@ class TestLoader(object):
                 # Mark this package as being in load_tests (possibly ;))
                 self._loading_packages.add(name)
                 try:
-                    tests = self.loadTestsFromModule(package, pattern=pattern)
+                    tests = self.loadTestsFromModule(
+                        package,
+                        pattern=pattern,
+                        command_line_arguments=command_line_arguments
+                    )
                     if load_tests is not None:
                         # loadTestsFromModule(package) has loaded tests for us.
                         return tests, False
@@ -507,11 +530,11 @@ def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp, testNa
     return _makeLoader(prefix, sortUsing, testNamePatterns=testNamePatterns).getTestCaseNames(testCaseClass)
 
 def makeSuite(testCaseClass, prefix='test', sortUsing=util.three_way_cmp,
-              suiteClass=suite.TestSuite):
+              suiteClass=suite.TestSuite, command_line_arguments=None):
     return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromTestCase(
-        testCaseClass)
+        testCaseClass, command_line_arguments)
 
 def findTestCases(module, prefix='test', sortUsing=util.three_way_cmp,
-                  suiteClass=suite.TestSuite):
+                  suiteClass=suite.TestSuite, command_line_arguments=None):
     return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromModule(\
-        module)
+        module, command_line_arguments=command_line_arguments)

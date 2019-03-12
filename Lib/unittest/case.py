@@ -1,6 +1,7 @@
 """Test case implementation"""
 
 import sys
+import argparse
 import functools
 import difflib
 import logging
@@ -429,7 +430,7 @@ class TestCase(object):
 
     _class_cleanups = []
 
-    def __init__(self, methodName='runTest'):
+    def __init__(self, methodName='runTest', command_line_arguments=None):
         """Create an instance of the class that will use the named test
            method when executed. Raises a ValueError if the instance does
            not have a method with the specified name.
@@ -449,6 +450,10 @@ class TestCase(object):
             self._testMethodDoc = testMethod.__doc__
         self._cleanups = []
         self._subtest = None
+        if command_line_arguments is None:
+            self.command_line_arguments = argparse.Namespace()
+        else:
+            self.command_line_arguments = command_line_arguments
 
         # Map types to custom assertEqual functions that will compare
         # instances of said type in more detail to generate a more useful

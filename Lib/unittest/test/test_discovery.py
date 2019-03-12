@@ -6,6 +6,7 @@ import types
 import pickle
 from test import support
 import test.test_importlib.util
+from argparse import Namespace
 
 import unittest
 import unittest.mock
@@ -19,7 +20,6 @@ class TestableTestProgram(unittest.TestProgram):
     verbosity = 1
     progName = ''
     testRunner = testLoader = None
-
     def __init__(self):
         pass
 
@@ -72,9 +72,13 @@ class TestDiscovery(unittest.TestCase):
 
         loader._get_module_from_name = lambda path: path + ' module'
         orig_load_tests = loader.loadTestsFromModule
-        def loadTestsFromModule(module, pattern=None):
+        def loadTestsFromModule(module, pattern=None, command_line_arguments=None):
             # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
+            base = orig_load_tests(
+                module,
+                pattern=pattern,
+                command_line_arguments=command_line_arguments
+            )
             return base + [module + ' tests']
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
@@ -118,9 +122,13 @@ class TestDiscovery(unittest.TestCase):
 
         loader._get_module_from_name = lambda path: path + ' module'
         orig_load_tests = loader.loadTestsFromModule
-        def loadTestsFromModule(module, pattern=None):
+        def loadTestsFromModule(module, pattern=None, command_line_arguments=None):
             # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
+            base = orig_load_tests(
+                module,
+                pattern=pattern,
+                command_line_arguments=command_line_arguments
+            )
             return base + [module + ' tests']
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
@@ -173,9 +181,13 @@ class TestDiscovery(unittest.TestCase):
 
         loader._get_module_from_name = lambda name: Module(name)
         orig_load_tests = loader.loadTestsFromModule
-        def loadTestsFromModule(module, pattern=None):
+        def loadTestsFromModule(module, pattern=None, command_line_arguments=None):
             # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
+            base = orig_load_tests(
+                module,
+                pattern=pattern,
+                command_line_arguments=command_line_arguments
+            )
             return base + [module.path + ' module tests']
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
@@ -247,9 +259,13 @@ class TestDiscovery(unittest.TestCase):
 
         loader._get_module_from_name = lambda name: Module(name)
         orig_load_tests = loader.loadTestsFromModule
-        def loadTestsFromModule(module, pattern=None):
+        def loadTestsFromModule(module, pattern=None, command_line_arguments=None):
             # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
+            base = orig_load_tests(
+                module,
+                pattern=pattern,
+                command_line_arguments=command_line_arguments
+            )
             return base + [module.path + ' module tests']
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
@@ -395,7 +411,7 @@ class TestDiscovery(unittest.TestCase):
         self.addCleanup(restore_isdir)
 
         _find_tests_args = []
-        def _find_tests(start_dir, pattern, namespace=None):
+        def _find_tests(start_dir, pattern, namespace=None, command_line_arguments=None):
             _find_tests_args.append((start_dir, pattern))
             return ['tests']
         loader._find_tests = _find_tests
@@ -633,75 +649,214 @@ class TestDiscovery(unittest.TestCase):
 
         class Loader(object):
             args = []
-            def discover(self, start_dir, pattern, top_level_dir):
-                self.args.append((start_dir, pattern, top_level_dir))
+            def discover(self, start_dir, pattern, top_level_dir, command_line_arguments):
+                self.args.append((start_dir, pattern, top_level_dir, command_line_arguments))
                 return 'tests'
 
         program.testLoader = Loader()
         program._do_discovery(['-v'])
-        self.assertEqual(Loader.args, [('.', 'test*.py', None)])
+        self.assertEqual(Loader.args, [(
+            '.',
+            'test*.py',
+            None,
+            Namespace(
+                buffer=False,
+                catchbreak=False,
+                failfast=False,
+                pattern='test*.py',
+                start='.',
+                tb_locals=False,
+                testNamePatterns=[],
+                top=None,
+                verbosity=2
+            )
+        )])
 
     def test_command_line_handling_do_discovery_calls_loader(self):
         program = TestableTestProgram()
 
         class Loader(object):
             args = []
-            def discover(self, start_dir, pattern, top_level_dir):
-                self.args.append((start_dir, pattern, top_level_dir))
+            def discover(self, start_dir, pattern, top_level_dir, command_line_arguments):
+                self.args.append((start_dir, pattern, top_level_dir, command_line_arguments))
                 return 'tests'
 
         program._do_discovery(['-v'], Loader=Loader)
         self.assertEqual(program.verbosity, 2)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('.', 'test*.py', None)])
+        self.assertEqual(Loader.args, [('.', 'test*.py', None, Namespace(
+                buffer=False,
+                catchbreak=False,
+                exit=True,
+                failfast=False,
+                pattern='test*.py',
+                start='.',
+                tb_locals=False,
+                testNamePatterns=[],
+                top=None,
+                verbosity=2
+            ))])
 
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery(['--verbose'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('.', 'test*.py', None)])
+        self.assertEqual(Loader.args, [('.', 'test*.py', None, Namespace(
+            buffer=False,
+            catchbreak=False,
+            exit=True,
+            failfast=False,
+            pattern='test*.py',
+            start='.',
+            tb_locals=False,
+            testNamePatterns=[],
+            top=None,
+            verbosity=2
+        ))])
 
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery([], Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('.', 'test*.py', None)])
+        self.assertEqual(Loader.args, [('.', 'test*.py', None, Namespace(
+            buffer=False,
+            catchbreak=False,
+            exit=True,
+            failfast=False,
+            pattern='test*.py',
+            start='.',
+            tb_locals=False,
+            testNamePatterns=[],
+            top=None,
+            verbosity=1
+        ))])
 
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery(['fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('fish', 'test*.py', None)])
+        self.assertEqual(Loader.args, [('fish', 'test*.py', None, Namespace(
+            buffer=False,
+            catchbreak=False,
+            exit=True,
+            failfast=False,
+            pattern='test*.py',
+            start='fish',
+            tb_locals=False,
+            testNamePatterns=[],
+            top=None,
+            verbosity=1
+        ))])
 
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery(['fish', 'eggs'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('fish', 'eggs', None)])
+        self.assertEqual(Loader.args, [(
+            'fish',
+            'eggs',
+            None,
+            Namespace(
+                buffer=False,
+                catchbreak=False,
+                exit=True,
+                failfast=False,
+                pattern='eggs',
+                start='fish',
+                tb_locals=False,
+                testNamePatterns=[],
+                top=None,
+                verbosity=1
+            )
+        )])
 
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery(['fish', 'eggs', 'ham'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('fish', 'eggs', 'ham')])
+        self.assertEqual(Loader.args, [(
+            'fish',
+            'eggs',
+            'ham',
+            Namespace(
+                buffer=False,
+                catchbreak=False,
+                exit=True,
+                failfast=False,
+                pattern='eggs',
+                start='fish',
+                tb_locals=False,
+                testNamePatterns=[],
+                top='ham',
+                verbosity=1
+            )
+        )])
 
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery(['-s', 'fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('fish', 'test*.py', None)])
+        self.assertEqual(Loader.args, [(
+            'fish',
+            'test*.py',
+            None,
+            Namespace(
+                buffer=False,
+                catchbreak=False,
+                exit=True,
+                failfast=False,
+                pattern='test*.py',
+                start='fish',
+                tb_locals=False,
+                testNamePatterns=[],
+                top=None,
+                verbosity=1
+            )
+        )])
 
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery(['-t', 'fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('.', 'test*.py', 'fish')])
+        self.assertEqual(Loader.args, [(
+            '.',
+            'test*.py',
+            'fish',
+            Namespace(
+                buffer=False,
+                catchbreak=False,
+                exit=True,
+                failfast=False,
+                pattern='test*.py',
+                start='.',
+                tb_locals=False,
+                testNamePatterns=[],
+                top='fish',
+                verbosity=1
+            )
+        )])
 
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery(['-p', 'fish'], Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('.', 'fish', None)])
+        self.assertEqual(Loader.args, [(
+            '.',
+            'fish',
+            None,
+            Namespace(
+                buffer=False,
+                catchbreak=False,
+                exit=True,
+                failfast=False,
+                pattern='fish',
+                start='.',
+                tb_locals=False,
+                testNamePatterns=[],
+                top=None,
+                verbosity=1
+            )
+        )])
         self.assertFalse(program.failfast)
         self.assertFalse(program.catchbreak)
 
@@ -710,7 +865,23 @@ class TestDiscovery(unittest.TestCase):
         program._do_discovery(['-p', 'eggs', '-s', 'fish', '-v', '-f', '-c'],
                               Loader=Loader)
         self.assertEqual(program.test, 'tests')
-        self.assertEqual(Loader.args, [('fish', 'eggs', None)])
+        self.assertEqual(Loader.args, [(
+            'fish',
+            'eggs',
+            None,
+            Namespace(
+                buffer=False,
+                catchbreak=True,
+                exit=True,
+                failfast=True,
+                pattern='eggs',
+                start='fish',
+                tb_locals=False,
+                testNamePatterns=[],
+                top=None,
+                verbosity=2
+            )
+        )])
         self.assertEqual(program.verbosity, 2)
         self.assertTrue(program.failfast)
         self.assertTrue(program.catchbreak)
@@ -785,7 +956,7 @@ class TestDiscovery(unittest.TestCase):
         expectedPath = os.path.abspath(os.path.dirname(unittest.test.__file__))
 
         self.wasRun = False
-        def _find_tests(start_dir, pattern, namespace=None):
+        def _find_tests(start_dir, pattern, namespace=None, command_line_arguments=None):
             self.wasRun = True
             self.assertEqual(start_dir, expectedPath)
             return tests
@@ -833,7 +1004,7 @@ class TestDiscovery(unittest.TestCase):
             return package
 
         _find_tests_args = []
-        def _find_tests(start_dir, pattern, namespace=None):
+        def _find_tests(start_dir, pattern, namespace=None, command_line_arguments=None):
             _find_tests_args.append((start_dir, pattern))
             return ['%s/tests' % start_dir]
 
