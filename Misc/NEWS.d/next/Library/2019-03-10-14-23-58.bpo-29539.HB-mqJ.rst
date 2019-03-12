@@ -1,1 +1,2 @@
 smtplib.SMTP.sendmail() now returns both error and success messages.
+Patch contributed by Sebastian Scheltner.

@@ -419,7 +419,8 @@ An :class:`SMTP` instance has the following methods:
       :exc:`SMTPException`.
 
 
-.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=(), rcpt_options=())
+.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=(), \
+                          rcpt_options=(), keep_results=False)
 
    Send mail.  The required arguments are an :rfc:`822` from-address string, a list
    of :rfc:`822` to-address strings (a bare string will be treated as a list with 1
@@ -428,7 +429,8 @@ An :class:`SMTP` instance has the following methods:
    ESMTP options (such as ``DSN`` commands) that should be used with all ``RCPT``
    commands can be passed as *rcpt_options*.  (If you need to use different ESMTP
    options to different recipients you have to use the low-level methods such as
-   :meth:`mail`, :meth:`rcpt` and :meth:`data` to send the message.)
+   :meth:`mail`, :meth:`rcpt` and :meth:`data` to send the message.) If you want
+   this method to return any SMTP status code set *keep_results* to ``True``.
 
    .. note::
 
@@ -447,12 +449,13 @@ An :class:`SMTP` instance has the following methods:
    feature set the server advertises).  If ``EHLO`` fails, ``HELO`` will be tried
    and ESMTP options suppressed.
 
-   This method will return normally if the mail is accepted for at least one
-   recipient. Otherwise it will raise an exception.  That is, if this method does
-   not raise an exception, then someone should get your mail. If this method does
-   not raise an exception, it returns a dictionary, with one entry for each
-   recipient that was refused.  Each entry contains a tuple of the SMTP error code
-   and the accompanying error message sent by the server.
+   If *keep_results* is ``False``, this method will return normally if the mail is
+   accepted for at least one recipient. It returns a dictionary, with one entry for
+   each recipient that was refused.  Each entry contains a tuple of the SMTP error
+   code and the accompanying error message sent by the server. If *keep_results* is
+   ``True``, this method returns a dictionary of all recipients and the SMTP result
+   whether refused or accepted unless all are refused then the normal exception is
+   raised.
 
    If ``SMTPUTF8`` is included in *mail_options*, and the server supports it,
    *from_addr* and *to_addrs* may contain non-ASCII characters.
