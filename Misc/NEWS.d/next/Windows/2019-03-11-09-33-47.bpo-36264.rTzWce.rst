@@ -1,0 +1,2 @@
+Don't honor POSIX ``HOME`` in ``os.path.expanduser`` on windows.  Patch by
+Anthony Sottile.
