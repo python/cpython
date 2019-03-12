@@ -78,9 +78,6 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- <AdditionalIncludeDirectories>$(libffiDir)include;$(libffiDir)src\x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Platform)'=='Win32'">$(libffiDir)include\x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">$(libffiDir)include\x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories> -->
       <PreprocessorDefinitions>FFI_BUILDING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
