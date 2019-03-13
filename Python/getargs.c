@@ -2325,7 +2325,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *kwtuple;
     PyObject *keyword;
-    int i, pos, len;
+    int i, posonly, minposonly, maxargs;
     Py_ssize_t nkwargs;
     PyObject *current_arg;
     PyObject * const *kwstack = NULL;
@@ -2347,15 +2347,14 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         args = buf;
     }
 
-    parser->min = minpos;
-    parser->max = maxpos;
     if (!parser_init(parser)) {
         return NULL;
     }
 
     kwtuple = parser->kwtuple;
-    pos = parser->pos;
-    len = pos + (int)PyTuple_GET_SIZE(kwtuple);
+    posonly = parser->pos;
+    minposonly = Py_MIN(posonly, minpos);
+    maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);
 
     if (kwargs != NULL) {
         nkwargs = PyDict_GET_SIZE(kwargs);
@@ -2367,25 +2366,25 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
     else {
         nkwargs = 0;
     }
-    if (nkwargs == 0 && parser->min <= nargs && nargs <= parser->max) {
+    if (nkwargs == 0 && minkw == 0 && minpos <= nargs && nargs <= maxpos) {
         /* Fast path. */
         return args;
     }
-    if (nargs + nkwargs > len) {
+    if (nargs + nkwargs > maxargs) {
         /* Adding "keyword" (when nargs == 0) prevents producing wrong error
            messages in some special cases (see bpo-31229). */
         PyErr_Format(PyExc_TypeError,
                      "%.200s%s takes at most %d %sargument%s (%zd given)",
                      (parser->fname == NULL) ? "function" : parser->fname,
                      (parser->fname == NULL) ? "" : "()",
-                     len,
+                     maxargs,
                      (nargs == 0) ? "keyword " : "",
-                     (len == 1) ? "" : "s",
+                     (maxargs == 1) ? "" : "s",
                      nargs + nkwargs);
         return NULL;
     }
-    if (parser->max < nargs) {
-        if (parser->max == 0) {
+    if (nargs > maxpos) {
+        if (maxpos == 0) {
             PyErr_Format(PyExc_TypeError,
                          "%.200s%s takes no positional arguments",
                          (parser->fname == NULL) ? "function" : parser->fname,
@@ -2396,21 +2395,35 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
                          "%.200s%s takes %s %d positional argument%s (%zd given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
-                         (parser->min != INT_MAX) ? "at most" : "exactly",
-                         parser->max,
-                         parser->max == 1 ? "" : "s",
+                         (minpos < maxpos) ? "at most" : "exactly",
+                         maxpos,
+                         (maxpos == 1) ? "" : "s",
                          nargs);
         }
         return NULL;
     }
+    if (nargs < minposonly) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s%s takes %s %d positional argument%s"
+                     " (%zd given)",
+                     (parser->fname == NULL) ? "function" : parser->fname,
+                     (parser->fname == NULL) ? "" : "()",
+                     minposonly < maxpos ? "at least" : "exactly",
+                     minposonly,
+                     minposonly == 1 ? "" : "s",
+                     nargs);
+        return NULL;
+    }
 
-    /* convert tuple args and keyword args in same loop, using kwtuple to drive process */
-    for (i = 0; i < len; i++) {
-        if (i < nargs) {
-            current_arg = args[i];
-        }
-        else if (nkwargs && i >= pos) {
-            keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
+    /* copy tuple args */
+    for (i = 0; i < nargs; i++) {
+        buf[i] = args[i];
+    }
+
+    /* copy keyword args using kwtuple to drive process */
+    for (i = Py_MAX(nargs, posonly); i < maxargs; i++) {
+        if (nkwargs) {
+            keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
             if (kwargs != NULL) {
                 current_arg = PyDict_GetItemWithError(kwargs, keyword);
                 if (!current_arg && PyErr_Occurred()) {
@@ -2420,57 +2433,33 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
             else {
                 current_arg = find_keyword(kwnames, kwstack, keyword);
             }
-            if (current_arg) {
-                --nkwargs;
-            }
         }
         else {
             current_arg = NULL;
         }
 
         buf[i] = current_arg;
-        if (current_arg) {
-            continue;
-        }
 
-        if (i < parser->min) {
-            /* Less arguments than required */
-            if (i < pos) {
-                Py_ssize_t min = Py_MIN(pos, parser->min);
-                PyErr_Format(PyExc_TypeError,
-                             "%.200s%s takes %s %d positional argument%s"
-                             " (%zd given)",
-                             (parser->fname == NULL) ? "function" : parser->fname,
-                             (parser->fname == NULL) ? "" : "()",
-                             min < parser->max ? "at least" : "exactly",
-                             min,
-                             min == 1 ? "" : "s",
-                             nargs);
-            }
-            else {
-                keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
-                PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
-                             "argument '%U' (pos %d)",
-                             (parser->fname == NULL) ? "function" : parser->fname,
-                             (parser->fname == NULL) ? "" : "()",
-                             keyword, i+1);
-            }
-            return NULL;
+        if (current_arg) {
+            --nkwargs;
         }
-        /* current code reports success when all required args
-         * fulfilled and no keyword args left, with no further
-         * validation. XXX Maybe skip this in debug build ?
-         */
-        if (!nkwargs) {
-            return buf;
+        else if (i < minpos || (maxpos <= i && i < maxpos + minkw)) {
+            /* Less arguments than required */
+            keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
+            PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
+                         "argument '%U' (pos %d)",
+                         (parser->fname == NULL) ? "function" : parser->fname,
+                         (parser->fname == NULL) ? "" : "()",
+                         keyword, i+1);
+            return NULL;
         }
     }
 
     if (nkwargs > 0) {
         Py_ssize_t j;
         /* make sure there are no arguments given by name and position */
-        for (i = pos; i < nargs; i++) {
-            keyword = PyTuple_GET_ITEM(kwtuple, i - pos);
+        for (i = posonly; i < nargs; i++) {
+            keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
             if (kwargs != NULL) {
                 current_arg = PyDict_GetItemWithError(kwargs, keyword);
                 if (!current_arg && PyErr_Occurred()) {
