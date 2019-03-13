@@ -1278,6 +1278,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     PyObject *nameobj;
     PyObject *ignored;
     HMODULE hMod;
+    DWORD err;
 
     if (!PyArg_ParseTuple(args, "U|O:LoadLibrary", &nameobj, &ignored))
         return NULL;
@@ -1291,10 +1292,14 @@ static PyObject *load_library(PyObject *self, PyObject *args)
      * attacks and enable use of the AddDllDirectory function.
      */
     hMod = LoadLibraryExW(name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+    if (!hMod) {
+        err = GetLastError();
+    }
     Py_END_ALLOW_THREADS
 
-    if (!hMod)
-        return PyErr_SetFromWindowsErr(GetLastError());
+    if (err) {
+        return PyErr_SetFromWindowsErr(err);
+    }
 #ifdef _WIN64
     return PyLong_FromVoidPtr(hMod);
 #else

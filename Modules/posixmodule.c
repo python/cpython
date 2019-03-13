@@ -1442,10 +1442,9 @@ win32_error(const char* function, const char* filename)
 }
 
 static PyObject *
-win32_error_object(const char* function, PyObject* filename)
+win32_error_object_err(const char* function, PyObject* filename, DWORD err)
 {
     /* XXX - see win32_error for comments on 'function' */
-    errno = GetLastError();
     if (filename)
         return PyErr_SetExcFromWindowsErrWithFilenameObject(
                     PyExc_OSError,
@@ -1453,6 +1452,13 @@ win32_error_object(const char* function, PyObject* filename)
                     filename);
     else
         return PyErr_SetFromWindowsErr(errno);
+}
+
+static PyObject *
+win32_error_object(const char* function, PyObject* filename)
+{
+    errno = GetLastError();
+    return win32_error_object_err(function, filename, errno);
 }
 
 #endif /* MS_WINDOWS */
@@ -13191,6 +13197,7 @@ os_add_dll_directory_impl(PyObject *module, path_t *path)
     HMODULE hKernel32;
     PAddDllDirectory AddDllDirectory;
     DLL_DIRECTORY_COOKIE cookie = 0;
+    DWORD err = 0;
 
     /* For Windows 7, we have to load this. As this will be a fairly
        infrequent operation, just do it each time. Kernel32 is always
@@ -13200,11 +13207,15 @@ os_add_dll_directory_impl(PyObject *module, path_t *path)
         (AddDllDirectory = (PAddDllDirectory)GetProcAddress(
             hKernel32, "AddDllDirectory"))) {
         cookie = (*AddDllDirectory)(path->wide);
+        if (!cookie) {
+            err = GetLastError();
+        }
     }
     Py_END_ALLOW_THREADS
 
-    if (!cookie) {
-        return win32_error_object("AddDllDirectory", path->object);
+    if (err) {
+        return win32_error_object_err("add_dll_directory",
+                                      path->object, err);
     }
 
     return PyCapsule_New(cookie, "DLL directory cookie", NULL);
@@ -13229,6 +13240,7 @@ os_remove_dll_directory_impl(PyObject *module, PyObject *cookie)
     HMODULE hKernel32;
     PRemoveDllDirectory RemoveDllDirectory;
     DLL_DIRECTORY_COOKIE cookieValue;
+    DWORD err = 0;
 
     if (!PyCapsule_IsValid(cookie, "DLL directory cookie")) {
         PyErr_SetString(PyExc_TypeError,
@@ -13246,9 +13258,20 @@ os_remove_dll_directory_impl(PyObject *module, PyObject *cookie)
     if ((hKernel32 = GetModuleHandleW(L"kernel32")) &&
         (RemoveDllDirectory = (PRemoveDllDirectory)GetProcAddress(
             hKernel32, "RemoveDllDirectory"))) {
-        (*RemoveDllDirectory)(cookieValue);
+        if (!(*RemoveDllDirectory)(cookieValue)) {
+            err = GetLastError();
+        }
     }
     Py_END_ALLOW_THREADS
+
+    if (err) {
+        return win32_error_object_err("remove_dll_directory",
+                                      NULL, err);
+    }
+
+    if (PyCapsule_SetName(cookie, NULL)) {
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
