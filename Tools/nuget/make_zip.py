@@ -103,6 +103,7 @@ FULL_LAYOUT = [
     ('Lib/', 'Lib', '**/*', include_in_lib),
     ('libs/', 'PCBuild/$arch', '*.lib', include_in_libs),
     ('Tools/', 'Tools', '**/*', include_in_tools),
+    ('/', '', 'LICENSE', None),
 ]
 
 EMBED_LAYOUT = [
