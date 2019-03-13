@@ -3,8 +3,21 @@ from test.support.script_helper import assert_python_failure
 import unittest
 import sys
 import cgitb
+from contextlib import ExitStack
+from unittest import mock
 
 class TestCgitb(unittest.TestCase):
+
+    def mock_sys(self):
+        "Mock system environment for cgitb"
+        # use exit stack to match patch context managers to addCleanup
+        stack = ExitStack()
+        self.addCleanup(stack.close)
+        self.stdout = stack.enter_context(mock.patch('cgitb.sys.stdout'))
+        self.stderr = stack.enter_context(mock.patch('cgitb.sys.stderr'))
+        prepatch = mock.patch('cgitb.sys', wraps=cgitb.sys, spec=cgitb.sys)
+        self.sysmod = stack.enter_context(prepatch)
+        self.sysmod.excepthook = self.sysmod.__excepthook__
 
     def test_fonts(self):
         text = "Hello Robbie!"
@@ -62,6 +75,55 @@ class TestCgitb(unittest.TestCase):
         self.assertIn("Hello World", out)
         self.assertNotIn('<p>', out)
         self.assertNotIn('</p>', out)
+
+    def test_text_displayed(self):
+        self.mock_sys()
+        cgitb.enable(display=1, format="text")
+        try:
+            raise ValueError("Just a little scratch!")
+        except:
+            cgitb.sys.excepthook(*self.sysmod.exc_info())
+        self.assertEqual(self.stdout.write.call_count, 1)
+        written = self.stdout.write.call_args[0][0]
+        self.assertIn("ValueError", written)
+        self.assertNotRegex(written, "^<p>")
+
+    def test_text_suppressed(self):
+        self.mock_sys()
+        cgitb.enable(display=0, format="text")
+        try:
+            raise ValueError("Just a little scratch!")
+        except:
+            cgitb.sys.excepthook(*self.sysmod.exc_info())
+        self.assertEqual(self.stdout.write.call_count, 1)
+        written = self.stdout.write.call_args[0][0]
+        self.assertNotIn("ValueError", written)
+        self.assertNotRegex(written, "^<p>")
+
+    def test_html_displayed(self):
+        self.mock_sys()
+        cgitb.enable(display=1, format="html")
+        try:
+            raise ValueError("Just a little scratch!")
+        except:
+            cgitb.sys.excepthook(*self.sysmod.exc_info())
+        self.assertGreater(self.stdout.write.call_count, 0)
+        written = self.stdout.write.call_args[0][0]
+        self.assertIn("ValueError", written)
+        self.assertRegex(written, "^<body")
+
+    def test_html_suppressed(self):
+        self.mock_sys()
+        cgitb.enable(display=0, format="html")
+        try:
+            raise ValueError("Just a little scratch!")
+        except:
+            cgitb.sys.excepthook(*self.sysmod.exc_info())
+        self.assertGreater(self.stdout.write.call_count, 0)
+        written = self.stdout.write.call_args[0][0]
+        self.assertNotIn("ValueError", written)
+        self.assertRegex(written, "^<p>")
+
 
 
 if __name__ == "__main__":

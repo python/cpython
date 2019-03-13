@@ -42,16 +42,25 @@ analysis.
    .. index:: single: excepthook() (in module sys)
 
    This function causes the :mod:`cgitb` module to take over the interpreter's
-   default handling for exceptions by setting the value of :attr:`sys.excepthook`.
+   default handling for exceptions by setting the value of
+   :attr:`sys.excepthook`.
 
-   The optional argument *display* defaults to ``1`` and can be set to ``0`` to
-   suppress sending the traceback to the browser. If the argument *logdir* is
-   present, the traceback reports are written to files.  The value of *logdir*
-   should be a directory where these files will be placed. The optional argument
-   *context* is the number of lines of context to display around the current line
-   of source code in the traceback; this defaults to ``5``. If the optional
-   argument *format* is ``"html"``, the output is formatted as HTML.  Any other
-   value forces plain text output.  The default value is ``"html"``.
+   The optional argument *display* defaults to ``1`` and can be set to ``0``
+   to suppress sending the traceback to the browser. A message single line
+   message declaring that "A problem has occurred ..." will continue to be
+   generated.
+
+   If the argument *logdir* is present, the traceback reports are written to
+   files.  The value of *logdir* should be a directory where these files will
+   be placed.
+
+   The optional argument *context* is the number of lines of context to
+   display around the current line of source code in the traceback; this
+   defaults to ``5``.
+
+   If the optional argument *format* is ``"html"``, the output is formatted as
+   HTML.  Any other value forces plain text output. The default value is
+   ``"html"``.
 
 
 .. function:: text(info, context=5)

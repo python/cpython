@@ -271,11 +271,14 @@ class Hook:
 
     def handle(self, info=None):
         info = info or sys.exc_info()
+
+        # always reset browser to a known state if rendering html
         if self.format == "html":
             self.file.write(reset())
 
-        formatter = (self.format=="html") and html or text
+        formatter = html if self.format == "html" else text
         plain = False
+        prefix = "<p>" if self.format == "html" else ""
         try:
             doc = formatter(info, self.context)
         except:                         # just in case something goes wrong
@@ -289,23 +292,22 @@ class Hook:
             else:
                 self.file.write(doc + '\n')
         else:
-            self.file.write('<p>A problem occurred in a Python script.\n')
+            self.file.write(prefix + 'A problem occurred in a Python script.\n')
 
         if self.logdir is not None:
-            suffix = ['.txt', '.html'][self.format=="html"]
+            suffix = '.html' if self.format == "html" else '.txt'
             (fd, path) = tempfile.mkstemp(suffix=suffix, dir=self.logdir)
 
             try:
                 with os.fdopen(fd, 'w') as file:
                     file.write(doc)
-                msg = '%s contains the description of this error.' % path
-            except:
-                msg = 'Tried to save traceback to %s, but failed.' % path
 
-            if self.format == 'html':
-                self.file.write('<p>%s</p>\n' % msg)
-            else:
-                self.file.write(msg + '\n')
+                msg = '%s %s contains the description of this error.' % (
+                                                                prefix, path)
+            except:
+                msg = '%s Tried to save traceback to %s, but failed.' % (
+                                                                prefix, path)
+            self.file.write(msg + '\n')
         try:
             self.file.flush()
         except: pass

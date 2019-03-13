@@ -16,6 +16,7 @@ class TestUntestedModules(unittest.TestCase):
                 else:
                     self.fail('{} has tests even though test_sundry claims '
                               'otherwise'.format(name))
+            import bdb
 
             import distutils.bcppcompiler
             import distutils.ccompiler

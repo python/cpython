@@ -1,0 +1,2 @@
+Fix a bug in cgitb that would display HTML when the output is suppressed and
+chosen form is text. Patch contributed by Aaron Iles.
