@@ -6820,6 +6820,88 @@ exit:
 
 #endif /* defined(HAVE_GETRANDOM_SYSCALL) */
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_add_dll_directory__doc__,
+"add_dll_directory($module, /, path)\n"
+"--\n"
+"\n"
+"Add a path to the DLL search path.\n"
+"\n"
+"This search path is used when resolving dependencies for imported\n"
+"extension modules (the module itself is resolved through sys.path),\n"
+"and also by ctypes.\n"
+"\n"
+"Returns an opaque value that may be passed to os.remove_dll_directory\n"
+"to remove this directory from the search path.");
+
+#define OS_ADD_DLL_DIRECTORY_METHODDEF    \
+    {"add_dll_directory", (PyCFunction)(void(*)(void))os_add_dll_directory, METH_FASTCALL|METH_KEYWORDS, os_add_dll_directory__doc__},
+
+static PyObject *
+os_add_dll_directory_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os_add_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {"O&:add_dll_directory", _keywords, 0};
+    path_t path = PATH_T_INITIALIZE("add_dll_directory", "path", 0, 0);
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        path_converter, &path)) {
+        goto exit;
+    }
+    return_value = os_add_dll_directory_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_remove_dll_directory__doc__,
+"remove_dll_directory($module, /, cookie)\n"
+"--\n"
+"\n"
+"Removes a path from the DLL search path.\n"
+"\n"
+"The parameter is an opaque value that was returned from\n"
+"os.add_dll_directory. You can only remove directories that you added\n"
+"yourself.");
+
+#define OS_REMOVE_DLL_DIRECTORY_METHODDEF    \
+    {"remove_dll_directory", (PyCFunction)(void(*)(void))os_remove_dll_directory, METH_FASTCALL|METH_KEYWORDS, os_remove_dll_directory__doc__},
+
+static PyObject *
+os_remove_dll_directory_impl(PyObject *module, PyObject *cookie);
+
+static PyObject *
+os_remove_dll_directory(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"cookie", NULL};
+    static _PyArg_Parser _parser = {"O:remove_dll_directory", _keywords, 0};
+    PyObject *cookie;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &cookie)) {
+        goto exit;
+    }
+    return_value = os_remove_dll_directory_impl(module, cookie);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -7339,4 +7421,12 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=bb677205c036deca input=a9049054013a1b77]*/
+
+#ifndef OS_ADD_DLL_DIRECTORY_METHODDEF
+    #define OS_ADD_DLL_DIRECTORY_METHODDEF
+#endif /* !defined(OS_ADD_DLL_DIRECTORY_METHODDEF) */
+
+#ifndef OS_REMOVE_DLL_DIRECTORY_METHODDEF
+    #define OS_REMOVE_DLL_DIRECTORY_METHODDEF
+#endif /* !defined(OS_REMOVE_DLL_DIRECTORY_METHODDEF) */
+/*[clinic end generated code: output=486052d2be922e0c input=a9049054013a1b77]*/

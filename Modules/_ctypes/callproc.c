@@ -1287,7 +1287,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    hMod = LoadLibraryW(name);
+    /* bpo-36085: Limit DLL search directories to avoid pre-loading
+     * attacks and enable use of the AddDllDirectory function.
+     */
+    hMod = LoadLibraryExW(name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
     Py_END_ALLOW_THREADS
 
     if (!hMod)
