@@ -5390,10 +5390,8 @@ FstringParser_Dealloc(FstringParser *state)
 
 /* Constants for the following */
 static PyObject *u_kind;
-static PyObject *b_kind;
-static PyObject *no_kind;
 
-/* Compute 'kind' field for str/bytes Constant (either 'b', 'u' or '') */
+/* Compute 'kind' field for string Constant (either 'u' or None) */
 static PyObject *
 make_kind(struct compiling *c, const node *n)
 {
@@ -5408,39 +5406,19 @@ make_kind(struct compiling *c, const node *n)
     }
     REQ(n, STRING);
 
-    /* Re-parse the string until we find either 'b', 'u' or a quote */
+    /* If it starts with 'u', return a PyUnicode "u" string */
     s = STR(n);
-    while (s) {
-        switch (*s) {
-        case 'u':
+    if (s && *s == 'u') {
+        if (!u_kind) {
+            u_kind = PyUnicode_InternFromString("u");
             if (!u_kind)
-                u_kind = PyUnicode_InternFromString("u");
-            kind = u_kind;
-            s = NULL;  // Break out of while loop
-            break;
-        case 'b':
-            if (!b_kind)
-                b_kind = PyUnicode_InternFromString("b");
-            kind = b_kind;
-            s = NULL;  // Break out of while loop
-            break;
-        case '\'':
-        case '"':
-            s = NULL;  // Break out of while loop
-            break;
-        default:
-            s++;
+                return NULL;
         }
-    }
-    if (kind == NULL) {
-        if (!no_kind)
-            no_kind = PyUnicode_InternFromString("");
-        kind = no_kind;
-    }
-    Py_INCREF(kind);
-    if (PyArena_AddPyObject(c->c_arena, kind) < 0) {
-        Py_DECREF(kind);
-        return NULL;
+        kind = u_kind;
+        if (PyArena_AddPyObject(c->c_arena, kind) < 0) {
+            return NULL;
+        }
+        Py_INCREF(kind);
     }
     return kind;
 }
@@ -5831,7 +5809,7 @@ parsestrplus(struct compiling *c, const node *n)
         /* Just return the bytes object and we're done. */
         if (PyArena_AddPyObject(c->c_arena, bytes_str) < 0)
             goto error;
-        return Constant(bytes_str, make_kind(c, n), LINENO(n), n->n_col_offset,
+        return Constant(bytes_str, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 
