@@ -1,3 +1,4 @@
+
 .. bpo: 36216
 .. date: 2019-03-06-09-38-40
 .. nonce: 6q1m4a
@@ -564,15 +565,6 @@ and thereby avoid using partially-loaded modules. Patch by Tim Burgess.
 
 ..
 
-.. bpo: 31715
-.. date: 2018-08-15-16-22-30
-.. nonce: Iw8jS8
-.. section: Library
-
-Associate ``.mjs`` file extension with ``application/javascript`` MIME Type.
-
-..
-
 .. bpo: 33687
 .. date: 2018-06-10-14-08-52
 .. nonce: 1zZdnA
@@ -849,27 +841,6 @@ Remove asynciomodule.c from pythoncore.vcxproj
 
 Fix incorrect Solaris #ifdef checks to look for __sun && __SVR4 instead of
 sun when compiling.
-
-..
-
-.. bpo: 35499
-.. date: 2018-12-14-19-36-05
-.. nonce: 9yAldM
-.. section: Build
-
-``make profile-opt`` no longer replaces ``CFLAGS_NODIST`` with ``CFLAGS``.
-It now adds profile-guided optimization (PGO) flags to ``CFLAGS_NODIST``:
-existing ``CFLAGS_NODIST`` flags are kept.
-
-..
-
-.. bpo: 35257
-.. date: 2018-12-05-22-28-40
-.. nonce: dmcd_s
-.. section: Build
-
-Avoid leaking the linker flags from Link Time Optimizations (LTO) into
-distutils when compiling C extensions.
 
 ..
 
@@ -1227,13 +1198,3 @@ Fix py-list and py-bt commands of python-gdb.py on gdb7.
 .. section: C API
 
 Fixed :c:func:`_PyBytes_Resize` for empty bytes objects.
-
-..
-
-.. bpo: 35259
-.. date: 2018-11-22-13-52-36
-.. nonce: p07c61
-.. section: C API
-
-Conditionally declare :c:func:`Py_FinalizeEx()` (new in 3.6) based on
-Py_LIMITED_API. Patch by Arthur Neufeld.
