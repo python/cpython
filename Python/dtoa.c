@@ -1441,7 +1441,7 @@ _Py_dg_strtod(const char *s00, char **se)
     ULong y, z, abs_exp;
     Long L;
     BCinfo bc;
-    Bigint *bb = NULL, *bb1, *bd = NULL, *bd0 = NULL, *bs = NULL, *delta = NULL;
+    Bigint *bb = NULL, *bd = NULL, *bd0 = NULL, *bs = NULL, *delta = NULL;
     size_t ndigits, fraclen;
     double result;
 
@@ -1635,7 +1635,6 @@ _Py_dg_strtod(const char *s00, char **se)
     if (k > 9) {
         dval(&rv) = tens[k - 9] * dval(&rv) + z;
     }
-    bd0 = 0;
     if (nd <= DBL_DIG
         && Flt_Rounds == 1
         ) {
@@ -1871,7 +1870,7 @@ _Py_dg_strtod(const char *s00, char **se)
             if (bs == NULL) {
                 goto failed_malloc;
             }
-            bb1 = mult(bs, bb);
+            Bigint *bb1 = mult(bs, bb);
             Bfree(bb);
             bb = bb1;
             if (bb == NULL) {
