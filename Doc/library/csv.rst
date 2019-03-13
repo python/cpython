@@ -467,9 +467,14 @@ DictWriter objects have the following public method:
 
 .. method:: DictWriter.writeheader()
 
-   Write a row with the field names (as specified in the constructor).
+   Write a row with the field names (as specified in the constructor) to
+   the writer's file object, formatted according to the current dialect and
+   return the return value of the :meth:`csvwriter.writerow` used internally.
 
    .. versionadded:: 3.2
+   .. versionchanged:: 3.8
+      :meth:`writeheader` now also *returns* the value returned by
+      the :meth:`csvwriter.writerow` method it uses internally.
 
 
 .. _csv-examples:
