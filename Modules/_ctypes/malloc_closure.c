@@ -76,7 +76,7 @@ static void more_core(void)
 
 #ifdef MALLOC_CLOSURE_DEBUG
     printf("block at %p allocated (%d bytes), %d ITEMs\n",
-           item, count * sizeof(ITEM), count);
+           item, count * (int)sizeof(ITEM), count);
 #endif
     /* put them into the free list */
     for (i = 0; i < count; ++i) {

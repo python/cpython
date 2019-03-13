@@ -3347,7 +3347,7 @@ _ssl__SSLContext__set_alpn_protocols_impl(PySSLContext *self,
 #if HAVE_ALPN
     if ((size_t)protos->len > UINT_MAX) {
         PyErr_Format(PyExc_OverflowError,
-            "protocols longer than %d bytes", UINT_MAX);
+            "protocols longer than %u bytes", UINT_MAX);
         return NULL;
     }
 
