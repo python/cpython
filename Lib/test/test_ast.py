@@ -556,6 +556,7 @@ class AST_Tests(unittest.TestCase):
 
 
 class ASTHelpers_Test(unittest.TestCase):
+    maxDiff = None
 
     def test_parse(self):
         a = ast.parse('foo(1 + 1)')
@@ -574,18 +575,18 @@ class ASTHelpers_Test(unittest.TestCase):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
-            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')], "
+            "args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese', kind='')], "
             "keywords=[]))], type_ignores=[])"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
-            "Constant('and cheese')], []))], [])"
+            "Constant('and cheese', kind='')], []))], [])"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=4), "
             "args=[Name(id='eggs', ctx=Load(), lineno=1, col_offset=5, "
-            "end_lineno=1, end_col_offset=9), Constant(value='and cheese', "
+            "end_lineno=1, end_col_offset=9), Constant(value='and cheese', kind='', "
             "lineno=1, col_offset=11, end_lineno=1, end_col_offset=23)], keywords=[], "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)], type_ignores=[])"
@@ -595,7 +596,7 @@ class ASTHelpers_Test(unittest.TestCase):
         src = ast.parse('1 + 1', mode='eval')
         src.body.right = ast.copy_location(ast.Num(2), src.body.right)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=1, col_offset=0, '
+            'Expression(body=BinOp(left=Constant(value=1, kind=None, lineno=1, col_offset=0, '
             'end_lineno=1, end_col_offset=1), op=Add(), right=Constant(value=2, '
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
@@ -610,12 +611,12 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.dump(src, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=5), "
-            "args=[Constant(value='spam', lineno=1, col_offset=6, end_lineno=1, "
+            "args=[Constant(value='spam', kind='', lineno=1, col_offset=6, end_lineno=1, "
             "end_col_offset=12)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=13), Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=0), "
-            "args=[Constant(value='eggs', lineno=1, col_offset=0, end_lineno=1, "
+            "args=[Constant(value='eggs', kind='', lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=0)], keywords=[], lineno=1, col_offset=0, end_lineno=1, "
             "end_col_offset=0), lineno=1, col_offset=0, end_lineno=1, end_col_offset=0)], "
             "type_ignores=[])"
@@ -625,8 +626,8 @@ class ASTHelpers_Test(unittest.TestCase):
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src, n=3), src)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
-            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
+            'Expression(body=BinOp(left=Constant(value=1, kind='', lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, kind='', '
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
@@ -634,8 +635,8 @@ class ASTHelpers_Test(unittest.TestCase):
         src = ast.parse('1 + 1', mode='eval')
         self.assertEqual(ast.increment_lineno(src.body, n=3), src.body)
         self.assertEqual(ast.dump(src, include_attributes=True),
-            'Expression(body=BinOp(left=Constant(value=1, lineno=4, col_offset=0, '
-            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, '
+            'Expression(body=BinOp(left=Constant(value=1, kind='', lineno=4, col_offset=0, '
+            'end_lineno=4, end_col_offset=1), op=Add(), right=Constant(value=1, kind='', '
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
@@ -654,7 +655,7 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(next(iterator).value, 23)
         self.assertEqual(next(iterator).value, 42)
         self.assertEqual(ast.dump(next(iterator)),
-            "keyword(arg='eggs', value=Constant(value='leek'))"
+            "keyword(arg='eggs', value=Constant(value='leek', kind=''))"
         )
 
     def test_get_docstring(self):
@@ -1282,6 +1283,23 @@ class ConstantTests(unittest.TestCase):
         binop.right = new_right
 
         self.assertEqual(ast.literal_eval(binop), 10+20j)
+
+    def test_string_kind(self):
+        c = ast.parse('"x"', mode='eval').body
+        self.assertEqual(c.value, "x")
+        self.assertEqual(c.kind, None)
+
+        c = ast.parse('u"x"', mode='eval').body
+        self.assertEqual(c.value, "x")
+        self.assertEqual(c.kind, "u")
+
+        c = ast.parse('r"x"', mode='eval').body
+        self.assertEqual(c.value, "x")
+        self.assertEqual(c.kind, None)
+
+        c = ast.parse('b"x"', mode='eval').body
+        self.assertEqual(c.value, b"x")
+        self.assertEqual(c.kind, None)
 
 
 class EndPositionTests(unittest.TestCase):
