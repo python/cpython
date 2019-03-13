@@ -1,0 +1,2 @@
+The :func:`os.wait3` function could return uninitialized memory if the system
+call succeeded, but no child process exit status was reported.

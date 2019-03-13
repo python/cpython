@@ -2472,6 +2472,22 @@ class PidTests(unittest.TestCase):
         status = os.waitpid(pid, 0)
         self.assertEqual(status, (pid, 0))
 
+    @unittest.skipUnless(hasattr(os, 'wait3'), "os.wait3() is required")
+    def test_wait3_rusage_initialized(self):
+        # Ensure a successful wait3() call where no child was ready to report
+        # its exit status does not return uninitialized memory in the rusage
+        # structure. See bpo-36279.
+        args = [sys.executable, '-c', 'import sys; sys.stdin.read()']
+        proc = subprocess.Popen(args, stdin=subprocess.PIPE)
+        try:
+            pid, status, rusage = os.wait3(os.WNOHANG)
+            self.assertEqual(0, pid)
+            self.assertEqual(0, status)
+            self.assertEqual(0, sum(rusage))
+        finally:
+            proc.stdin.close()
+            proc.wait()
+
 
 class SpawnTests(unittest.TestCase):
     def create_args(self, *, with_env=False, use_bytes=False):
