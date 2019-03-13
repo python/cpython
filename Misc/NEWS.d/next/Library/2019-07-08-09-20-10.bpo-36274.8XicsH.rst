@@ -1,0 +1,3 @@
+``http.client`` can now make requests with non-ASCII request-targets using
+surrogate escape sequences. Callers are still encouraged to URL-quote the
+request-target instead so as to comply with the RFC.

@@ -275,6 +275,37 @@ class HeaderTests(TestCase):
         conn.request('GET', '/foo')
         self.assertTrue(sock.data.startswith(expected))
 
+    def test_request_path_handling(self):
+        happy_cases = (
+            ('/', b'/'),
+            ('', b'/'),
+            ('/\udce4\udcbd\udca0\udce5\udca5\udcbd',
+             b'/\xe4\xbd\xa0\xe5\xa5\xbd'),
+        )
+        for caller_path, expected_path in happy_cases:
+            with self.subTest((caller_path, expected_path)):
+                conn = client.HTTPConnection('server.fqdn')
+                sock = FakeSocket('')
+                conn.sock = sock
+                conn.request('GET', caller_path)
+                expected = (b'GET ' + expected_path + b' HTTP/1.1\r\n'
+                            b'Host: server.fqdn\r\n'
+                            b'Accept-Encoding: identity\r\n\r\n')
+                self.assertEqual(sock.data, expected)
+
+        error_cases = (
+            '/\xe4\xbd\xa0\xe5\xa5\xbd',
+            '/\u4f60\u597d',
+        )
+        for caller_path in error_cases:
+            with self.subTest(caller_path):
+                conn = client.HTTPConnection('server.fqdn')
+                sock = FakeSocket('')
+                conn.sock = sock
+                with self.assertRaises(UnicodeEncodeError):
+                    conn.request('GET', caller_path)
+                self.assertEqual(sock.data, b'')
+
     def test_malformed_headers_coped_with(self):
         # Issue 19996
         body = "HTTP/1.1 200 OK\r\nFirst: val\r\n: nval\r\nSecond: val\r\n\r\n"
@@ -720,8 +751,7 @@ class BasicTest(TestCase):
             sock = FakeSocket(body)
             conn.sock = sock
             conn.request('GET', '/foo', body)
-            self.assertTrue(sock.data.startswith(expected), '%r != %r' %
-                    (sock.data[:len(expected)], expected))
+            self.assertEqual(sock.data[:len(expected)], expected)
 
     def test_send(self):
         expected = b'this is a test this is only a test'

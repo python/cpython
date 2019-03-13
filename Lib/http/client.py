@@ -1095,8 +1095,9 @@ class HTTPConnection:
                              f"(found at least {match.group()!r})")
         request = '%s %s %s' % (method, url, self._http_vsn_str)
 
-        # Non-ASCII characters should have been eliminated earlier
-        self._output(request.encode('ascii'))
+        # Encode with surrogate escapes, to allow non-ascii bytes without
+        # making it too easy to write an out-of-spec client
+        self._output(request.encode('ascii', errors='surrogateescape'))
 
         if self._http_vsn == 11:
             # Issue some standard headers for better HTTP/1.1 compliance
