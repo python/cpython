@@ -1125,20 +1125,20 @@ PyObject *_ctypes_callproc(PPROC pProc,
             converter = PyTuple_GET_ITEM(argtypes, i);
             v = PyObject_CallFunctionObjArgs(converter, arg, NULL);
             if (v == NULL) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
 
             err = ConvParam(v, i+1, pa);
             Py_DECREF(v);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
         } else {
             err = ConvParam(arg, i+1, pa);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup; /* leaking ? */
             }
         }
