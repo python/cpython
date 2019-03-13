@@ -4102,7 +4102,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
             break;
         default:
             PyErr_Format(PyExc_TypeError,
-                         "sendto() takes 2 or 3 arguments (%d given)",
+                         "sendto() takes 2 or 3 arguments (%zd given)",
                          arglen);
             return NULL;
     }
@@ -4642,7 +4642,7 @@ sock_ioctl(PySocketSockObject *s, PyObject *arg)
         return PyLong_FromUnsignedLong(recv); }
 #endif
     default:
-        PyErr_Format(PyExc_ValueError, "invalid ioctl command %d", cmd);
+        PyErr_Format(PyExc_ValueError, "invalid ioctl command %lu", cmd);
         return NULL;
     }
 }

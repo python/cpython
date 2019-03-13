@@ -2003,7 +2003,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (_hamt_dump_format(writer, "%d::\n", i)) {
+        if (_hamt_dump_format(writer, "%zd::\n", i)) {
             goto error;
         }
 
