@@ -1,0 +1,2 @@
+``http.client`` now accepts ISO-8859-1 request-targets. Callers are still
+encouraged to URL-quote the request-target so as to comply with the RFC.
