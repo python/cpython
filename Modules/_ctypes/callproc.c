@@ -1291,13 +1291,21 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     /* bpo-36085: Limit DLL search directories to avoid pre-loading
      * attacks and enable use of the AddDllDirectory function.
      */
-    hMod = LoadLibraryExW(name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+    hMod = LoadLibraryExW(name, NULL,
+                          LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
+                          LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     if (!hMod) {
         err = GetLastError();
     }
     Py_END_ALLOW_THREADS
 
-    if (err) {
+    if (err == ERROR_MOD_NOT_FOUND) {
+        PyErr_Format(PyExc_FileNotFoundError,
+                     ("Could not find module '%.500S'. Try using "
+                      "the full path with constructor syntax."),
+                     nameobj);
+        return NULL;
+    } else if (err) {
         return PyErr_SetFromWindowsErr(err);
     }
 #ifdef _WIN64
