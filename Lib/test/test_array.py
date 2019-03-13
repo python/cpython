@@ -1509,6 +1509,7 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(list(example[:4]), [0, 1, 2, 3])
         self.assertEqual(list(example[-4:]), [8, 9, 10, 11])
 
+    # list takes about 9 bytes per element
     @support.bigmemtest(_2G, memuse=1+9)
     def test_tolist(self, size):
         example = self.example(size)
