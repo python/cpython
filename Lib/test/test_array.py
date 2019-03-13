@@ -1420,6 +1420,24 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(example[size+3], 11)
         self.assertEqual(example[-1], 11)
 
+    @support.bigmemtest(_2G, memuse=2)
+    def test_slice(self, size):
+        example = self.example(size)
+        self.assertEqual(list(example[:4]), [0, 1, 2, 3])
+        self.assertEqual(list(example[-4:]), [8, 9, 10, 11])
+        part = example[1:-1]
+        self.assertEqual(len(part), size+2)
+        self.assertEqual(part[0], 1)
+        self.assertEqual(part[-1], 10)
+        del part
+        part = example[::2]
+        self.assertEqual(len(part), (size+5)//2)
+        self.assertEqual(list(part[:4]), [0, 2, 4, 6])
+        if size % 2:
+            self.assertEqual(list(part[-2:]), [9, 11])
+        else:
+            self.assertEqual(list(part[-2:]), [8, 10])
+
     @support.bigmemtest(_2G, memuse=1)
     def test_count(self, size):
         example = self.example(size)
