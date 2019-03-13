@@ -1,0 +1,3 @@
+Fix an unlikely memory leak on conversion from string to float in the function
+``_Py_dg_strtod()`` used by ``float(str)``, ``complex(str)``,
+:func:`pickle.load`, :func:`marshal.load`, etc.

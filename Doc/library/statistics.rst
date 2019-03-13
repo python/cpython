@@ -37,7 +37,7 @@ Averages and measures of central location
 These functions calculate an average or typical value from a population
 or sample.
 
-=======================  =============================================
+=======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
 :func:`fmean`            Fast, floating point arithmetic mean.
 :func:`harmonic_mean`    Harmonic mean of data.
@@ -45,8 +45,9 @@ or sample.
 :func:`median_low`       Low median of data.
 :func:`median_high`      High median of data.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
-:func:`mode`             Mode (most common value) of discrete data.
-=======================  =============================================
+:func:`mode`             Single mode (most common value) of discrete or nominal data.
+:func:`multimode`        List of modes (most common values) of discrete or nomimal data.
+=======================  ===============================================================
 
 Measures of spread
 ------------------
@@ -287,12 +288,12 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: mode(data)
 
-   Return the most common data point from discrete or nominal *data*.  The mode
-   (when it exists) is the most typical value, and is a robust measure of
-   central location.
+   Return the single most common data point from discrete or nominal *data*.
+   The mode (when it exists) is the most typical value and serves as a
+   measure of central location.
 
-   If *data* is empty, or if there is not exactly one most common value,
-   :exc:`StatisticsError` is raised.
+   If there are multiple modes, returns the first one encountered in the *data*.
+   If *data* is empty, :exc:`StatisticsError` is raised.
 
    ``mode`` assumes discrete data, and returns a single value. This is the
    standard treatment of the mode as commonly taught in schools:
@@ -309,6 +310,27 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
       'red'
+
+   .. versionchanged:: 3.8
+      Now handles multimodal datasets by returning the first mode encountered.
+      Formerly, it raised :exc:`StatisticsError` when more than one mode was
+      found.
+
+
+.. function:: multimode(data)
+
+   Return a list of the most frequently occurring values in the order they
+   were first encountered in the *data*.  Will return more than one result if
+   there are multiple modes or an empty list if the *data* is empty:
+
+   .. doctest::
+
+        >>> multimode('aabbbbccddddeeffffgg')
+        ['b', 'd', 'f']
+        >>> multimode('')
+        []
+
+   .. versionadded:: 3.8
 
 
 .. function:: pstdev(data, mu=None)
@@ -510,10 +532,9 @@ of applications in statistics.
 
     .. classmethod:: NormalDist.from_samples(data)
 
-       Class method that makes a normal distribution instance
-       from sample data.  The *data* can be any :term:`iterable`
-       and should consist of values that can be converted to type
-       :class:`float`.
+       Makes a normal distribution instance computed from sample data.  The
+       *data* can be any :term:`iterable` and should consist of values that
+       can be converted to type :class:`float`.
 
        If *data* does not contain at least two elements, raises
        :exc:`StatisticsError` because it takes at least one point to estimate
@@ -536,11 +557,10 @@ of applications in statistics.
        the given value *x*.  Mathematically, it is the ratio ``P(x <= X <
        x+dx) / dx``.
 
-       Note the relative likelihood of *x* can be greater than `1.0`.  The
-       probability for a specific point on a continuous distribution is `0.0`,
-       so the :func:`pdf` is used instead.  It gives the probability of a
-       sample occurring in a narrow range around *x* and then dividing that
-       probability by the width of the range (hence the word "density").
+       The relative likelihood is computed as the probability of a sample
+       occurring in a narrow range divided by the width of the range (hence
+       the word "density").  Since the likelihood is relative to other points,
+       its value can be greater than `1.0`.
 
     .. method:: NormalDist.cdf(x)
 
@@ -568,7 +588,8 @@ of applications in statistics.
         >>> temperature_february * (9/5) + 32                     # Fahrenheit
         NormalDist(mu=41.0, sigma=4.5)
 
-    Dividing a constant by an instance of :class:`NormalDist` is not supported.
+    Dividing a constant by an instance of :class:`NormalDist` is not supported
+    because the result wouldn't be normally distributed.
 
     Since normal distributions arise from additive effects of independent
     variables, it is possible to `add and subtract two independent normally
@@ -581,8 +602,10 @@ of applications in statistics.
         >>> birth_weights = NormalDist.from_samples([2.5, 3.1, 2.1, 2.4, 2.7, 3.5])
         >>> drug_effects = NormalDist(0.4, 0.15)
         >>> combined = birth_weights + drug_effects
-        >>> f'mean: {combined.mean :.1f}   standard deviation: {combined.stdev :.1f}'
-        'mean: 3.1   standard deviation: 0.5'
+        >>> round(combined.mean, 1)
+        3.1
+        >>> round(combined.stdev, 1)
+        0.5
 
     .. versionadded:: 3.8
 
@@ -595,14 +618,15 @@ of applications in statistics.
 For example, given `historical data for SAT exams
 <https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
 are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with scores between 1100 and 1200:
+determine the percentage of students with scores between 1100 and 1200, after
+rounding to the nearest whole number:
 
 .. doctest::
 
     >>> sat = NormalDist(1060, 195)
     >>> fraction = sat.cdf(1200 + 0.5) - sat.cdf(1100 - 0.5)
-    >>> f'{fraction * 100 :.1f}% score between 1100 and 1200'
-    '18.4% score between 1100 and 1200'
+    >>> round(fraction * 100.0, 1)
+    18.4
 
 What percentage of men and women will have the same height in `two normally
 distributed populations with known means and standard deviations
@@ -616,18 +640,19 @@ distributed populations with known means and standard deviations
 
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
-Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_ of the
-model:
+Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
 
 .. doctest::
 
+    >>> def model(x, y, z):
+    ...     return (3*x + 7*x*y - 5*y) / (11 * z)
+    ...
     >>> n = 100_000
-    >>> X = NormalDist(350, 15).samples(n)
-    >>> Y = NormalDist(47, 17).samples(n)
-    >>> Z = NormalDist(62, 6).samples(n)
-    >>> model_simulation = [x * y / z for x, y, z in zip(X, Y, Z)]
-    >>> NormalDist.from_samples(model_simulation)           # doctest: +SKIP
-    NormalDist(mu=267.6516398754636, sigma=101.357284306067)
+    >>> X = NormalDist(10, 2.5).samples(n)
+    >>> Y = NormalDist(15, 1.75).samples(n)
+    >>> Z = NormalDist(5, 1.25).samples(n)
+    >>> NormalDist.from_samples(map(model, X, Y, Z))     # doctest: +SKIP
+    NormalDist(mu=19.640137307085507, sigma=47.03273142191088)
 
 Normal distributions commonly arise in machine learning problems.
 
