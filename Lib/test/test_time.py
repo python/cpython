@@ -88,6 +88,8 @@ class TimeTestCase(unittest.TestCase):
             check_ns(time.clock_gettime(time.CLOCK_REALTIME),
                      time.clock_gettime_ns(time.CLOCK_REALTIME))
 
+    @unittest.skipUnless(hasattr(time, 'clock'),
+                         'need time.clock()')
     def test_clock(self):
         with self.assertWarns(DeprecationWarning):
             time.clock()
@@ -312,7 +314,13 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
         t = time.mktime((2000, 1, 1, 0, 0, 0, 0, 0, -1))
         self.assertEqual(time.ctime(t), 'Sat Jan  1 00:00:00 2000')
-        for year in [-100, 100, 1000, 2000, 2050, 10000]:
+        # the largest year on VxWorks is 2038
+        if 'vxworks' in sys.platform :
+            range = [-100, 100, 1000, 2000]
+        else:
+            range = [-100, 100, 1000, 2000, 2050, 10000]
+
+        for year in range:
             try:
                 testval = time.mktime((year, 1, 10) + (0,)*6)
             except (ValueError, OverflowError):
@@ -549,8 +557,10 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
-
+        if hasattr(time, 'clock'):
+            clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
+        else:
+            clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
         for name in clocks:
             if name == 'clock':
                 with self.assertWarns(DeprecationWarning):
