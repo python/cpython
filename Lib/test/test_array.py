@@ -1397,7 +1397,7 @@ class DoubleTest(FPTest, unittest.TestCase):
             self.fail("Array of size > maxsize created - MemoryError expected")
 
 
-class LargeListTest(unittest.TestCase):
+class LargeArrayTest(unittest.TestCase):
     typecode = 'b'
 
     def example(self, size):
