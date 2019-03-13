@@ -2137,7 +2137,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                          "%.200s%s takes %s %d positional argument%s (%d given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
-                         (parser->min != INT_MAX) ? "at most" : "exactly",
+                         (parser->min < parser->max) ? "at most" : "exactly",
                          parser->max,
                          parser->max == 1 ? "" : "s",
                          nargs);
