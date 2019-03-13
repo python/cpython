@@ -338,6 +338,7 @@ struct _expr {
 
         struct {
             constant value;
+            string kind;
         } Constant;
 
         struct {
@@ -642,9 +643,9 @@ expr_ty _Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec,
 #define JoinedStr(a0, a1, a2, a3, a4, a5) _Py_JoinedStr(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_JoinedStr(asdl_seq * values, int lineno, int col_offset, int
                       end_lineno, int end_col_offset, PyArena *arena);
-#define Constant(a0, a1, a2, a3, a4, a5) _Py_Constant(a0, a1, a2, a3, a4, a5)
-expr_ty _Py_Constant(constant value, int lineno, int col_offset, int
-                     end_lineno, int end_col_offset, PyArena *arena);
+#define Constant(a0, a1, a2, a3, a4, a5, a6) _Py_Constant(a0, a1, a2, a3, a4, a5, a6)
+expr_ty _Py_Constant(constant value, string kind, int lineno, int col_offset,
+                     int end_lineno, int end_col_offset, PyArena *arena);
 #define Attribute(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Attribute(a0, a1, a2, a3, a4, a5, a6, a7)
 expr_ty _Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
                       lineno, int col_offset, int end_lineno, int
