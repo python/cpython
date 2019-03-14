@@ -482,8 +482,11 @@ restart:
     }
     else if (!err) {
         result = PyTuple_New(4);
-        if (result == NULL)
+        if (result == NULL) {
+            Py_XDECREF(s1);
+            Py_XDECREF(s2);
             return NULL;
+        }
         PyTuple_SET_ITEM(result, 0, PyInt_FromLong(what));
         PyTuple_SET_ITEM(result, 2, PyInt_FromLong(fileno));
         if (s1 == NULL)
