@@ -797,8 +797,7 @@ entrance:
             /* <BRANCH> <0=skip> code <JUMP> ... <NULL> */
             TRACE(("|%p|%p|BRANCH\n", ctx->pattern, ctx->ptr));
             LASTMARK_SAVE();
-            ctx->u.rep = state->repeat;
-            if (ctx->u.rep)
+            if (state->repeat)
                 MARK_PUSH(ctx->lastmark);
             for (; ctx->pattern[0]; ctx->pattern += ctx->pattern[0]) {
                 if (ctx->pattern[1] == SRE_OP_LITERAL &&
@@ -813,16 +812,16 @@ entrance:
                 state->ptr = ctx->ptr;
                 DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1);
                 if (ret) {
-                    if (ctx->u.rep)
+                    if (state->repeat)
                         MARK_POP_DISCARD(ctx->lastmark);
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
                 }
-                if (ctx->u.rep)
+                if (state->repeat)
                     MARK_POP_KEEP(ctx->lastmark);
                 LASTMARK_RESTORE();
             }
-            if (ctx->u.rep)
+            if (state->repeat)
                 MARK_POP_DISCARD(ctx->lastmark);
             RETURN_FAILURE;
 
@@ -1071,8 +1070,9 @@ entrance:
                tail matches */
             state->repeat = ctx->u.rep->prev;
             DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern);
+            state->repeat = ctx->u.rep; /* restore repeat before return */
+
             RETURN_ON_SUCCESS(ret);
-            state->repeat = ctx->u.rep;
             state->ptr = ctx->ptr;
             RETURN_FAILURE;
 
@@ -1110,12 +1110,12 @@ entrance:
             /* see if the tail matches */
             state->repeat = ctx->u.rep->prev;
             DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern);
+            state->repeat = ctx->u.rep; /* restore repeat before return */
+
             if (ret) {
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
             }
-
-            state->repeat = ctx->u.rep;
             state->ptr = ctx->ptr;
 
             LASTMARK_RESTORE();
