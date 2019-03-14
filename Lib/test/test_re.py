@@ -2144,6 +2144,10 @@ ELSE
         p = r'(?:a*?(xx)??z)*'
         self.assertEqual(re.match(p, s).groups(), ('xx',))
 
+        # JUMP_ASSERT_NOT should LASTMARK_SAVE()
+        # reported in issue725149
+        self.assertEqual(re.match(r'(?!(..)c)', 'ab').groups(), (None,))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):

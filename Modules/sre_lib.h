@@ -1316,11 +1316,13 @@ entrance:
                    ctx->ptr, ctx->pattern[1]));
             if (ctx->ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)ctx->pattern[1]) {
                 state->ptr = ctx->ptr - ctx->pattern[1];
+                LASTMARK_SAVE();
                 DO_JUMP0(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_FAILURE;
                 }
+                LASTMARK_RESTORE();
             }
             ctx->pattern += ctx->pattern[0];
             break;
