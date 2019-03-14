@@ -1,2 +1,3 @@
 New empty dict uses fewer memory for now.  It used more memory than empty
-dict created by ``dict.clear()``.  Patch by Inada Naoki.
+dict created by ``dict.clear()``.  And empty dict creation and deletion
+is about 2x faster.  Patch by Inada Naoki.
