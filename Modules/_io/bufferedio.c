@@ -1363,6 +1363,7 @@ _bufferedreader_read_all(buffered *self)
         res = buffered_flush_and_rewind_unlocked(self);
         if (res == NULL) {
             Py_DECREF(chunks);
+            Py_XDECREF(data);
             return NULL;
         }
         Py_CLEAR(res);
