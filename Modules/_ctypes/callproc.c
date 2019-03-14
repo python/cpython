@@ -1291,9 +1291,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     /* bpo-36085: Limit DLL search directories to avoid pre-loading
      * attacks and enable use of the AddDllDirectory function.
      */
-    hMod = LoadLibraryExW(name, NULL,
-                          LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
-                          LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+    hMod = LoadLibraryExW(name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
     if (!hMod) {
         err = GetLastError();
     }
