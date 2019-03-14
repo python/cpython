@@ -2134,7 +2134,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s%s takes %s %d positional argument%s (%d given)",
+                         "%.200s%s takes %s %d positional argument%s (%zd given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          (parser->min < parser->max) ? "at most" : "exactly",
