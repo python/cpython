@@ -1,4 +1,5 @@
 import ast
+import sys
 import unittest
 
 
@@ -18,6 +19,29 @@ async def foo():
 
 async def bar():  # type: () -> int
     return await bar()
+"""
+
+asyncvar = """\
+async = 12
+await = 13
+"""
+
+asynccomp = """\
+async def foo(xs):
+    [x async for x in xs]
+"""
+
+matmul = """\
+a = b @ c
+"""
+
+fstring = """\
+a = 42
+f"{a}"
+"""
+
+underscorednumber = """\
+a = 42_42_42
 """
 
 redundantdef = """\
@@ -155,80 +179,117 @@ def favk(
 
 class TypeCommentTests(unittest.TestCase):
 
-    def parse(self, source):
-        return ast.parse(source, type_comments=True)
+    lowest = 4  # Lowest minor version supported
+    highest = sys.version_info[1]  # Highest minor version
+
+    def parse(self, source, feature_version=highest):
+        return ast.parse(source, type_comments=True,
+                         feature_version=feature_version)
+
+    def parse_all(self, source, minver=lowest, maxver=highest, expected_regex=""):
+        for feature_version in range(self.lowest, self.highest + 1):
+            if minver <= feature_version <= maxver:
+                try:
+                    yield self.parse(source, feature_version)
+                except SyntaxError as err:
+                    raise SyntaxError(str(err) + f" feature_version={feature_version}")
+            else:
+                with self.assertRaisesRegex(SyntaxError, expected_regex,
+                                            msg=f"feature_version={feature_version}"):
+                    self.parse(source, feature_version)
 
     def classic_parse(self, source):
         return ast.parse(source)
 
     def test_funcdef(self):
-        tree = self.parse(funcdef)
-        self.assertEqual(tree.body[0].type_comment, "() -> int")
-        self.assertEqual(tree.body[1].type_comment, "() -> None")
+        for tree in self.parse_all(funcdef):
+            self.assertEqual(tree.body[0].type_comment, "() -> int")
+            self.assertEqual(tree.body[1].type_comment, "() -> None")
         tree = self.classic_parse(funcdef)
         self.assertEqual(tree.body[0].type_comment, None)
         self.assertEqual(tree.body[1].type_comment, None)
 
     def test_asyncdef(self):
-        tree = self.parse(asyncdef)
-        self.assertEqual(tree.body[0].type_comment, "() -> int")
-        self.assertEqual(tree.body[1].type_comment, "() -> int")
+        for tree in self.parse_all(asyncdef, minver=5):
+            self.assertEqual(tree.body[0].type_comment, "() -> int")
+            self.assertEqual(tree.body[1].type_comment, "() -> int")
         tree = self.classic_parse(asyncdef)
         self.assertEqual(tree.body[0].type_comment, None)
         self.assertEqual(tree.body[1].type_comment, None)
 
+    def test_asyncvar(self):
+        for tree in self.parse_all(asyncvar, maxver=6):
+            pass
+
+    def test_asynccomp(self):
+        for tree in self.parse_all(asynccomp, minver=6):
+            pass
+
+    def test_matmul(self):
+        for tree in self.parse_all(matmul, minver=5):
+            pass
+
+    def test_fstring(self):
+        for tree in self.parse_all(fstring, minver=6):
+            pass
+
+    def test_underscorednumber(self):
+        for tree in self.parse_all(underscorednumber, minver=6):
+            pass
+
     def test_redundantdef(self):
-        with self.assertRaisesRegex(SyntaxError, "^Cannot have two type comments on def"):
-            tree = self.parse(redundantdef)
+        for tree in self.parse_all(redundantdef, maxver=0,
+                                expected_regex="^Cannot have two type comments on def"):
+            pass
 
     def test_nonasciidef(self):
-        tree = self.parse(nonasciidef)
-        self.assertEqual(tree.body[0].type_comment, "() -> àçčéñt")
+        for tree in self.parse_all(nonasciidef):
+            self.assertEqual(tree.body[0].type_comment, "() -> àçčéñt")
 
     def test_forstmt(self):
-        tree = self.parse(forstmt)
-        self.assertEqual(tree.body[0].type_comment, "int")
+        for tree in self.parse_all(forstmt):
+            self.assertEqual(tree.body[0].type_comment, "int")
         tree = self.classic_parse(forstmt)
         self.assertEqual(tree.body[0].type_comment, None)
 
     def test_withstmt(self):
-        tree = self.parse(withstmt)
-        self.assertEqual(tree.body[0].type_comment, "int")
+        for tree in self.parse_all(withstmt):
+            self.assertEqual(tree.body[0].type_comment, "int")
         tree = self.classic_parse(withstmt)
         self.assertEqual(tree.body[0].type_comment, None)
 
     def test_vardecl(self):
-        tree = self.parse(vardecl)
-        self.assertEqual(tree.body[0].type_comment, "int")
+        for tree in self.parse_all(vardecl):
+            self.assertEqual(tree.body[0].type_comment, "int")
         tree = self.classic_parse(vardecl)
         self.assertEqual(tree.body[0].type_comment, None)
 
     def test_ignores(self):
-        tree = self.parse(ignores)
-        self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5])
+        for tree in self.parse_all(ignores):
+            self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5])
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
     def test_longargs(self):
-        tree = self.parse(longargs)
-        for t in tree.body:
-            # The expected args are encoded in the function name
-            todo = set(t.name[1:])
-            self.assertEqual(len(t.args.args),
-                             len(todo) - bool(t.args.vararg) - bool(t.args.kwarg))
-            self.assertTrue(t.name.startswith('f'), t.name)
-            for c in t.name[1:]:
-                todo.remove(c)
-                if c == 'v':
-                    arg = t.args.vararg
-                elif c == 'k':
-                    arg = t.args.kwarg
-                else:
-                    assert 0 <= ord(c) - ord('a') < len(t.args.args)
-                    arg = t.args.args[ord(c) - ord('a')]
-                self.assertEqual(arg.arg, c)  # That's the argument name
-                self.assertEqual(arg.type_comment, arg.arg.upper())
-            assert not todo
+        for tree in self.parse_all(longargs):
+            for t in tree.body:
+                # The expected args are encoded in the function name
+                todo = set(t.name[1:])
+                self.assertEqual(len(t.args.args),
+                                 len(todo) - bool(t.args.vararg) - bool(t.args.kwarg))
+                self.assertTrue(t.name.startswith('f'), t.name)
+                for c in t.name[1:]:
+                    todo.remove(c)
+                    if c == 'v':
+                        arg = t.args.vararg
+                    elif c == 'k':
+                        arg = t.args.kwarg
+                    else:
+                        assert 0 <= ord(c) - ord('a') < len(t.args.args)
+                        arg = t.args.args[ord(c) - ord('a')]
+                    self.assertEqual(arg.arg, c)  # That's the argument name
+                    self.assertEqual(arg.type_comment, arg.arg.upper())
+                assert not todo
         tree = self.classic_parse(longargs)
         for t in tree.body:
             for arg in t.args.args + [t.args.vararg, t.args.kwarg]:
@@ -247,8 +308,8 @@ class TypeCommentTests(unittest.TestCase):
 
         def check_both_ways(source):
             ast.parse(source, type_comments=False)
-            with self.assertRaises(SyntaxError):
-                ast.parse(source, type_comments=True)
+            for tree in self.parse_all(source, maxver=0):
+                pass
 
         check_both_ways("pass  # type: int\n")
         check_both_ways("foo()  # type: int\n")

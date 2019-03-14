@@ -524,7 +524,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'install_signal_handlers': 0,
             'use_hash_seed': 1,
             'hash_seed': 123,
-            'allocator': 'malloc_debug',
+            'allocator': 'malloc',
             'tracemalloc': 2,
             'import_time': 1,
             'show_ref_count': 1,
@@ -564,7 +564,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     INIT_ENV_CONFIG = {
         'use_hash_seed': 1,
         'hash_seed': 42,
-        'allocator': 'malloc_debug',
+        'allocator': 'malloc',
         'tracemalloc': 2,
         'import_time': 1,
         'malloc_stats': 1,
@@ -591,6 +591,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                       allocator='debug',
                       dev_mode=1)
         self.check_config("init_env_dev_mode", config)
+
+    def test_init_env_dev_mode(self):
+        config = dict(self.INIT_ENV_CONFIG,
+                      allocator='malloc',
+                      dev_mode=1)
+        self.check_config("init_env_dev_mode_alloc", config)
 
     def test_init_dev_mode(self):
         config = {

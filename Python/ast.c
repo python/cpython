@@ -543,6 +543,7 @@ struct compiling {
     PyArena *c_arena; /* Arena for allocating memory. */
     PyObject *c_filename; /* filename */
     PyObject *c_normalize; /* Normalization function from unicodedata. */
+    int c_feature_version; /* Latest minor version of Python for allowed features */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -762,6 +763,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
+    c.c_feature_version = flags->cf_feature_version;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -934,7 +936,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename_str,
 */
 
 static operator_ty
-get_operator(const node *n)
+get_operator(struct compiling *c, const node *n)
 {
     switch (TYPE(n)) {
         case VBAR:
@@ -954,6 +956,11 @@ get_operator(const node *n)
         case STAR:
             return Mult;
         case AT:
+            if (c->c_feature_version < 5) {
+                ast_error(c, n,
+                          "The '@' operator is only supported in Python 3.5 and greater");
+                return (operator_ty)0;
+            }
             return MatMult;
         case SLASH:
             return Div;
@@ -1188,6 +1195,11 @@ ast_for_augassign(struct compiling *c, const node *n)
             else
                 return Mult;
         case '@':
+            if (c->c_feature_version < 5) {
+                ast_error(c, n,
+                          "The '@' operator is only supported in Python 3.5 and greater");
+                return (operator_ty)0;
+            }
             return MatMult;
         default:
             PyErr_Format(PyExc_SystemError, "invalid augassign: %s", STR(n));
@@ -1497,7 +1509,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 }
                 else if (found_default) {
                     ast_error(c, n,
-                             "non-default argument follows default argument");
+                              "non-default argument follows default argument");
                     return NULL;
                 }
                 arg = ast_for_arg(c, ch);
@@ -1698,6 +1710,12 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
     node *tc;
     string type_comment = NULL;
 
+    if (is_async && c->c_feature_version < 5) {
+        ast_error(c, n,
+                  "Async functions are only supported in Python 3.5 and greater");
+        return NULL;
+    }
+
     REQ(n, funcdef);
 
     name = NEW_IDENTIFIER(CHILD(n, name_i));
@@ -1751,10 +1769,9 @@ ast_for_funcdef_impl(struct compiling *c, const node *n0,
 static stmt_ty
 ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
-    /* async_funcdef: 'async' funcdef */
+    /* async_funcdef: ASYNC funcdef */
     REQ(n, async_funcdef);
-    REQ(CHILD(n, 0), NAME);
-    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+    REQ(CHILD(n, 0), ASYNC);
     REQ(CHILD(n, 1), funcdef);
 
     return ast_for_funcdef_impl(c, n, decorator_seq,
@@ -1773,10 +1790,9 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 static stmt_ty
 ast_for_async_stmt(struct compiling *c, const node *n)
 {
-    /* async_stmt: 'async' (funcdef | with_stmt | for_stmt) */
+    /* async_stmt: ASYNC (funcdef | with_stmt | for_stmt) */
     REQ(n, async_stmt);
-    REQ(CHILD(n, 0), NAME);
-    assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+    REQ(CHILD(n, 0), ASYNC);
 
     switch (TYPE(CHILD(n, 1))) {
         case funcdef:
@@ -1927,8 +1943,7 @@ count_comp_fors(struct compiling *c, const node *n)
     n_fors++;
     REQ(n, comp_for);
     if (NCH(n) == 2) {
-        REQ(CHILD(n, 0), NAME);
-        assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+        REQ(CHILD(n, 0), ASYNC);
         n = CHILD(n, 1);
     }
     else if (NCH(n) == 1) {
@@ -2013,14 +2028,20 @@ ast_for_comprehension(struct compiling *c, const node *n)
 
         if (NCH(n) == 2) {
             is_async = 1;
-            REQ(CHILD(n, 0), NAME);
-            assert(strcmp(STR(CHILD(n, 0)), "async") == 0);
+            REQ(CHILD(n, 0), ASYNC);
             sync_n = CHILD(n, 1);
         }
         else {
             sync_n = CHILD(n, 0);
         }
         REQ(sync_n, sync_comp_for);
+
+        /* Async comprehensions only allowed in Python 3.6 and greater */
+        if (is_async && c->c_feature_version < 6) {
+            ast_error(c, n,
+                      "Async comprehensions are only supported in Python 3.6 and greater");
+            return NULL;
+        }
 
         for_ch = CHILD(sync_n, 1);
         t = ast_for_exprlist(c, for_ch, Store);
@@ -2271,13 +2292,13 @@ ast_for_atom(struct compiling *c, const node *n)
         size_t len = strlen(s);
         if (len >= 4 && len <= 5) {
             if (!strcmp(s, "None"))
-                return Constant(Py_None, LINENO(n), n->n_col_offset,
+                return Constant(Py_None, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             if (!strcmp(s, "True"))
-                return Constant(Py_True, LINENO(n), n->n_col_offset,
+                return Constant(Py_True, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             if (!strcmp(s, "False"))
-                return Constant(Py_False, LINENO(n), n->n_col_offset,
+                return Constant(Py_False, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
         name = new_identifier(s, c);
@@ -2316,7 +2337,15 @@ ast_for_atom(struct compiling *c, const node *n)
         return str;
     }
     case NUMBER: {
-        PyObject *pynum = parsenumber(c, STR(ch));
+        PyObject *pynum;
+        /* Underscores in numeric literals are only allowed in Python 3.6 or greater */
+        /* Check for underscores here rather than in parse_number so we can report a line number on error */
+        if (c->c_feature_version < 6 && strchr(STR(ch), '_') != NULL) {
+            ast_error(c, ch,
+                      "Underscores in numeric literals are only supported in Python 3.6 and greater");
+            return NULL;
+        }
+        pynum = parsenumber(c, STR(ch));
         if (!pynum)
             return NULL;
 
@@ -2324,11 +2353,11 @@ ast_for_atom(struct compiling *c, const node *n)
             Py_DECREF(pynum);
             return NULL;
         }
-        return Constant(pynum, LINENO(n), n->n_col_offset,
+        return Constant(pynum, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     case ELLIPSIS: /* Ellipsis */
-        return Constant(Py_Ellipsis, LINENO(n), n->n_col_offset,
+        return Constant(Py_Ellipsis, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     case LPAR: /* some parenthesized expressions */
         ch = CHILD(n, 1);
@@ -2399,8 +2428,8 @@ ast_for_atom(struct compiling *c, const node *n)
                     TYPE(CHILD(ch, 3 - is_dict)) == comp_for) {
                 /* It's a dictionary comprehension. */
                 if (is_dict) {
-                    ast_error(c, n, "dict unpacking cannot be used in "
-                              "dict comprehension");
+                    ast_error(c, n,
+                              "dict unpacking cannot be used in dict comprehension");
                     return NULL;
                 }
                 res = ast_for_dictcomp(c, ch);
@@ -2498,7 +2527,7 @@ ast_for_binop(struct compiling *c, const node *n)
     if (!expr2)
         return NULL;
 
-    newoperator = get_operator(CHILD(n, 1));
+    newoperator = get_operator(c, CHILD(n, 1));
     if (!newoperator)
         return NULL;
 
@@ -2513,7 +2542,7 @@ ast_for_binop(struct compiling *c, const node *n)
         expr_ty tmp_result, tmp;
         const node* next_oper = CHILD(n, i * 2 + 1);
 
-        newoperator = get_operator(next_oper);
+        newoperator = get_operator(c, next_oper);
         if (!newoperator)
             return NULL;
 
@@ -2632,7 +2661,12 @@ ast_for_atom_expr(struct compiling *c, const node *n)
     REQ(n, atom_expr);
     nch = NCH(n);
 
-    if (TYPE(CHILD(n, 0)) == NAME && strcmp(STR(CHILD(n, 0)), "await") == 0) {
+    if (TYPE(CHILD(n, 0)) == AWAIT) {
+        if (c->c_feature_version < 5) {
+            ast_error(c, n,
+                      "Await expressions are only supported in Python 3.5 and greater");
+            return NULL;
+        }
         start = 1;
         assert(nch > 1);
     }
@@ -2729,7 +2763,7 @@ ast_for_expr(struct compiling *c, const node *n)
        term: factor (('*'|'@'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
        power: atom_expr ['**' factor]
-       atom_expr: ['await'] atom trailer*
+       atom_expr: [AWAIT] atom trailer*
        yield_expr: 'yield' [yield_arg]
     */
 
@@ -3186,6 +3220,13 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         node *ch = CHILD(n, 0);
         node *deep, *ann = CHILD(n, 1);
         int simple = 1;
+
+        /* AnnAssigns are only allowed in Python 3.6 or greater */
+        if (c->c_feature_version < 6) {
+            ast_error(c, ch,
+                      "Variable annotation syntax is only supported in Python 3.6 and greater");
+            return NULL;
+        }
 
         /* we keep track of parens to qualify (x) as expression not name */
         deep = ch;
@@ -4004,6 +4045,13 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
     int end_lineno, end_col_offset;
     int has_type_comment;
     string type_comment;
+
+    if (is_async && c->c_feature_version < 5) {
+        ast_error(c, n,
+                  "Async for loops are only supported in Python 3.5 and greater");
+        return NULL;
+    }
+
     /* for_stmt: 'for' exprlist 'in' testlist ':' [TYPE_COMMENT] suite ['else' ':' suite] */
     REQ(n, for_stmt);
 
@@ -4231,6 +4279,12 @@ ast_for_with_stmt(struct compiling *c, const node *n0, bool is_async)
     int i, n_items, nch_minus_type, has_type_comment, end_lineno, end_col_offset;
     asdl_seq *items, *body;
     string type_comment;
+
+    if (is_async && c->c_feature_version < 5) {
+        ast_error(c, n,
+                  "Async with statements are only supported in Python 3.5 and greater");
+        return NULL;
+    }
 
     REQ(n, with_stmt);
 
@@ -4722,6 +4776,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+2] = 0;
 
     cf.cf_flags = PyCF_ONLY_AST;
+    cf.cf_feature_version = PY_MINOR_VERSION;
     mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
                                                     Py_eval_input, 0);
     if (!mod_n) {
@@ -5287,18 +5342,57 @@ FstringParser_Dealloc(FstringParser *state)
     ExprList_Dealloc(&state->expr_list);
 }
 
+/* Constants for the following */
+static PyObject *u_kind;
+
+/* Compute 'kind' field for string Constant (either 'u' or None) */
+static PyObject *
+make_kind(struct compiling *c, const node *n)
+{
+    char *s = NULL;
+    PyObject *kind = NULL;
+
+    /* Find the first string literal, if any */
+    while (TYPE(n) != STRING) {
+        if (NCH(n) == 0)
+            return NULL;
+        n = CHILD(n, 0);
+    }
+    REQ(n, STRING);
+
+    /* If it starts with 'u', return a PyUnicode "u" string */
+    s = STR(n);
+    if (s && *s == 'u') {
+        if (!u_kind) {
+            u_kind = PyUnicode_InternFromString("u");
+            if (!u_kind)
+                return NULL;
+        }
+        kind = u_kind;
+        if (PyArena_AddPyObject(c->c_arena, kind) < 0) {
+            return NULL;
+        }
+        Py_INCREF(kind);
+    }
+    return kind;
+}
+
 /* Make a Constant node, but decref the PyUnicode object being added. */
 static expr_ty
 make_str_node_and_del(PyObject **str, struct compiling *c, const node* n)
 {
     PyObject *s = *str;
+    PyObject *kind = NULL;
     *str = NULL;
     assert(PyUnicode_CheckExact(s));
     if (PyArena_AddPyObject(c->c_arena, s) < 0) {
         Py_DECREF(s);
         return NULL;
     }
-    return Constant(s, LINENO(n), n->n_col_offset,
+    kind = make_kind(c, n);
+    if (kind == NULL && PyErr_Occurred())
+        return NULL;
+    return Constant(s, kind, LINENO(n), n->n_col_offset,
                     n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
@@ -5522,6 +5616,13 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *rawmode,
             }
         }
     }
+
+    /* fstrings are only allowed in Python 3.6 and greater */
+    if (fmode && c->c_feature_version < 6) {
+        ast_error(c, n, "Format strings are only supported in Python 3.6 and greater");
+        return -1;
+    }
+
     if (fmode && *bytesmode) {
         PyErr_BadInternalCall();
         return -1;
@@ -5666,7 +5767,7 @@ parsestrplus(struct compiling *c, const node *n)
         /* Just return the bytes object and we're done. */
         if (PyArena_AddPyObject(c->c_arena, bytes_str) < 0)
             goto error;
-        return Constant(bytes_str, LINENO(n), n->n_col_offset,
+        return Constant(bytes_str, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 

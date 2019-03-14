@@ -330,6 +330,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         goto finally;
     if (!flags) {
         local_flags.cf_flags = 0;
+        local_flags.cf_feature_version = PY_MINOR_VERSION;
         flags = &local_flags;
     }
     merged = c.c_future->ff_features | flags->cf_flags;

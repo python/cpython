@@ -139,6 +139,9 @@ static int test_forced_io_encoding(void)
 
 static int test_pre_initialization_api(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* Leading "./" ensures getpath.c can still find the standard library */
     _Py_EMBED_PREINIT_CHECK("Checking Py_DecodeLocale\n");
     wchar_t *program = Py_DecodeLocale("./spam", NULL);
@@ -235,6 +238,9 @@ static void bpo20891_thread(void *lockp)
 
 static int test_bpo20891(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
        call PyEval_InitThreads() for us in this case. */
@@ -436,8 +442,8 @@ static int test_init_from_config(void)
     config.use_hash_seed = 1;
     config.hash_seed = 123;
 
-    putenv("PYTHONMALLOC=malloc");
-    config.preconfig.allocator = "malloc_debug";
+    putenv("PYTHONMALLOC=malloc_debug");
+    config.preconfig.allocator = "malloc";
 
     /* dev_mode=1 is tested in test_init_dev_mode() */
 
@@ -564,7 +570,7 @@ static int test_init_from_config(void)
 static void test_init_env_putenvs(void)
 {
     putenv("PYTHONHASHSEED=42");
-    putenv("PYTHONMALLOC=malloc_debug");
+    putenv("PYTHONMALLOC=malloc");
     putenv("PYTHONTRACEMALLOC=2");
     putenv("PYTHONPROFILEIMPORTTIME=1");
     putenv("PYTHONMALLOCSTATS=1");
@@ -588,15 +594,6 @@ static void test_init_env_putenvs(void)
 }
 
 
-static void test_init_env_dev_mode_putenvs(void)
-{
-    test_init_env_putenvs();
-    putenv("PYTHONMALLOC=malloc");
-    putenv("PYTHONFAULTHANDLER=");
-    putenv("PYTHONDEVMODE=1");
-}
-
-
 static int test_init_env(void)
 {
     /* Test initialization from environment variables */
@@ -609,11 +606,33 @@ static int test_init_env(void)
 }
 
 
+static void test_init_env_dev_mode_putenvs(void)
+{
+    test_init_env_putenvs();
+    putenv("PYTHONMALLOC=");
+    putenv("PYTHONFAULTHANDLER=");
+    putenv("PYTHONDEVMODE=1");
+}
+
+
 static int test_init_env_dev_mode(void)
 {
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
     test_init_env_dev_mode_putenvs();
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_env_dev_mode_alloc(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    test_init_env_dev_mode_putenvs();
+    putenv("PYTHONMALLOC=malloc");
     _testembed_Py_Initialize();
     dump_config();
     Py_Finalize();
@@ -694,6 +713,7 @@ static struct TestCase TestCases[] = {
     { "init_from_config", test_init_from_config },
     { "init_env", test_init_env },
     { "init_env_dev_mode", test_init_env_dev_mode },
+    { "init_env_dev_mode_alloc", test_init_env_dev_mode_alloc },
     { "init_dev_mode", test_init_dev_mode },
     { "init_isolated", test_init_isolated },
     { NULL, NULL }

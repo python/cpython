@@ -97,7 +97,7 @@ class Grammar:
                 '    {{{dfa_symbol}, "{symbol_name}", '.format(
                     dfa_symbol=symbol, symbol_name=self.number2symbol[symbol]
                 )
-                + "0, {n_states}, states_{dfa_index},\n".format(
+                + "{n_states}, states_{dfa_index},\n".format(
                     n_states=len(dfa), dfa_index=dfaindex
                 )
                 + '     "'
