@@ -4637,8 +4637,8 @@ long_bitwise(PyLongObject *a,
         size_z = negb ? size_b : size_a;
         break;
     default:
-        PyErr_BadArgument();
-        return NULL;
+        /* Unreachable code */
+        Py_UNREACHABLE();
     }
 
     /* We allow an extra digit if z is negative, to make sure that
@@ -4665,8 +4665,8 @@ long_bitwise(PyLongObject *a,
             z->ob_digit[i] = a->ob_digit[i] ^ b->ob_digit[i];
         break;
     default:
-        PyErr_BadArgument();
-        return NULL;
+        /* Unreachable code */
+        Py_UNREACHABLE();
     }
 
     /* Copy any remaining digits of a, inverting if necessary. */
