@@ -1105,20 +1105,28 @@ entrance:
                 RETURN_FAILURE;
             }
 
-            LASTMARK_SAVE();
-
             /* see if the tail matches */
             state->repeat = ctx->u.rep->prev;
+
+            LASTMARK_SAVE();
+            if (state->repeat)
+                MARK_PUSH(ctx->lastmark);
+
             DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern);
+            SRE_REPEAT *repeat_of_tail = state->repeat;
             state->repeat = ctx->u.rep; /* restore repeat before return */
 
             if (ret) {
+                if (repeat_of_tail)
+                    MARK_POP_DISCARD(ctx->lastmark);
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
             }
-            state->ptr = ctx->ptr;
-
+            if (repeat_of_tail)
+                MARK_POP(ctx->lastmark);
             LASTMARK_RESTORE();
+
+            state->ptr = ctx->ptr;
 
             if ((ctx->count >= (Py_ssize_t) ctx->u.rep->pattern[2]
                 && ctx->u.rep->pattern[2] != SRE_MAXREPEAT) ||
