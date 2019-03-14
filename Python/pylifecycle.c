@@ -737,6 +737,11 @@ pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
         return _Py_INIT_ERR("failed to copy core config");
     }
 
+    /* Read config written by _PyPreConfig_Write() */
+    if (_PyPreConfig_Copy(&config->preconfig, &_PyRuntime.preconfig) < 0) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
     _PyInitError err = _PyCoreConfig_Read(config, NULL);
     if (_Py_INIT_FAILED(err)) {
         return err;
