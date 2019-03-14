@@ -2148,6 +2148,11 @@ ELSE
         # reported in issue725149
         self.assertEqual(re.match(r'(?!(..)c)', 'ab').groups(), (None,))
 
+        # JUMP_ASSERT_NOT should MARK_PUSH() if in a repeat
+        m = re.match(r'((?!(ab)c)(.))*', 'abab')
+        self.assertEqual(m.span(), (0, 4))
+        self.assertEqual(m.groups(), ('b', None, 'b'))
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
