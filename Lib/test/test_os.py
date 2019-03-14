@@ -1419,9 +1419,20 @@ class URandomFDTests(unittest.TestCase):
             import errno
             import os
             import resource
-
             soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-            resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
+            try:
+                resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
+            except (ValueError,OSError):
+                for i in range(1, hard_limit + 1):
+                    try:
+                        os.open(os.devnull, os.O_RDONLY)
+                    except OSError as e:
+                        if e.errno == errno.EMFILE:
+                           break
+                    else:
+                        continue
+            else:
+                pass
             try:
                 os.urandom(16)
             except OSError as e:
@@ -1517,7 +1528,8 @@ def _execvpe_mockup(defpath=None):
         os.execve = orig_execve
         os.defpath = orig_defpath
 
-
+@unittest.skipUnless(hasattr(os, 'execv'),
+                         "No os.execv or os.execve function to test.")
 class ExecTests(unittest.TestCase):
     @unittest.skipIf(USING_LINUXTHREADS,
                      "avoid triggering a linuxthreads bug: see issue #4970")
