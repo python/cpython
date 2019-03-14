@@ -1,0 +1,10 @@
+When cross-compiling and the ``CONFIG_SITE`` environment variable is unset
+or empty, ``configure`` copies the executables, results of the build of the
+AC_RUN_IFELSE test programs in configure.ac, to the ``build/run_ifelse_cvs``
+directory. The ``Misc/build_config_site.sh`` script may be run then to
+create a config.site file when invoked with one of the parameters as a path
+to a shell script that transfers an executable to the platform, target of
+the cross-compilation, and runs it on this platform.  A second run of
+'configure' with the CONFIG_SITE environment variable set to the
+**absolute** path of this config.site file allows configuring the Python
+build with the correct cache values for this platform.

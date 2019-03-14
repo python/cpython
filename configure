@@ -783,7 +783,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -895,7 +894,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1148,15 +1146,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1294,7 +1283,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1447,7 +1436,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -5488,7 +5476,81 @@ fi
 
 if test $ac_cv_header_stdc = yes; then
   # /bin/cc in Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_header_stdc=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+:
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ctype.h>
+#include <stdlib.h>
+#if ((' ' & 0x0FF) == 0x020)
+# define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+# define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
+#else
+# define ISLOWER(c) \
+		   (('a' <= (c) && (c) <= 'i') \
+		     || ('j' <= (c) && (c) <= 'r') \
+		     || ('s' <= (c) && (c) <= 'z'))
+# define TOUPPER(c) (ISLOWER(c) ? ((c) | 0x40) : (c))
+#endif
+
+#define XOR(e, f) (((e) && !(f)) || (!(e) && (f)))
+int
+main ()
+{
+  int i;
+  for (i = 0; i < 256; i++)
+    if (XOR (islower (i), ISLOWER (i))
+	|| toupper (i) != TOUPPER (i))
+      return 2;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -5526,6 +5588,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 fi
 fi
@@ -7515,7 +7578,79 @@ $as_echo_n "checking whether pthreads are available without options... " >&6; }
 if ${ac_cv_pthread_is_default+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+
+  ac_cv_pthread_is_default=yes
+  ac_cv_kthread=no
+  ac_cv_pthread=no
+
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+
+  ac_cv_pthread_is_default=yes
+  ac_cv_kthread=no
+  ac_cv_pthread=no
+
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_pthread_is_default=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_pthread_is_default=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <pthread.h>
+
+void* routine(void* p){return NULL;}
+
+int main(){
+  pthread_t p;
+  if(pthread_create(&p,NULL,routine,NULL)!=0)
+    return 1;
+  (void)pthread_detach(p);
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_pthread_is_default=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7549,6 +7684,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread_is_default" >&5
@@ -7571,7 +7707,71 @@ if ${ac_cv_kpthread+:} false; then :
 else
   ac_save_cc="$CC"
 CC="$CC -Kpthread"
-if test "$cross_compiling" = yes; then :
+if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_kpthread=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_kpthread=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_kpthread=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_kpthread=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <pthread.h>
+
+void* routine(void* p){return NULL;}
+
+int main(){
+  pthread_t p;
+  if(pthread_create(&p,NULL,routine,NULL)!=0)
+    return 1;
+  (void)pthread_detach(p);
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_kpthread=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7600,6 +7800,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+
 CC="$ac_save_cc"
 fi
 
@@ -7621,7 +7822,71 @@ if ${ac_cv_kthread+:} false; then :
 else
   ac_save_cc="$CC"
 CC="$CC -Kthread"
-if test "$cross_compiling" = yes; then :
+if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_kthread=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_kthread=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_kthread=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_kthread=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <pthread.h>
+
+void* routine(void* p){return NULL;}
+
+int main(){
+  pthread_t p;
+  if(pthread_create(&p,NULL,routine,NULL)!=0)
+    return 1;
+  (void)pthread_detach(p);
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_kthread=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7650,6 +7915,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+
 CC="$ac_save_cc"
 fi
 
@@ -7671,7 +7937,71 @@ if ${ac_cv_pthread+:} false; then :
 else
   ac_save_cc="$CC"
 CC="$CC -pthread"
-if test "$cross_compiling" = yes; then :
+if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_pthread=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_pthread=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_pthread=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_pthread=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <pthread.h>
+
+void* routine(void* p){return NULL;}
+
+int main(){
+  pthread_t p;
+  if(pthread_create(&p,NULL,routine,NULL)!=0)
+    return 1;
+  (void)pthread_detach(p);
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_pthread=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7699,6 +8029,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 CC="$ac_save_cc"
 fi
@@ -7813,7 +8144,81 @@ fi
 
 if test $ac_cv_header_stdc = yes; then
   # /bin/cc in Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_header_stdc=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+:
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ctype.h>
+#include <stdlib.h>
+#if ((' ' & 0x0FF) == 0x020)
+# define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+# define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
+#else
+# define ISLOWER(c) \
+		   (('a' <= (c) && (c) <= 'i') \
+		     || ('j' <= (c) && (c) <= 'r') \
+		     || ('s' <= (c) && (c) <= 'z'))
+# define TOUPPER(c) (ISLOWER(c) ? ((c) | 0x40) : (c))
+#endif
+
+#define XOR(e, f) (((e) && !(f)) || (!(e) && (f)))
+int
+main ()
+{
+  int i;
+  for (i = 0; i < 256; i++)
+    if (XOR (islower (i), ISLOWER (i))
+	|| toupper (i) != TOUPPER (i))
+      return 2;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7851,6 +8256,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 fi
 fi
@@ -9194,7 +9600,68 @@ case $ac_sys_system/$ac_sys_release in
         else
             LIBTOOL_CRUFT=""
     fi
-    if test "$cross_compiling" = yes; then :
+    if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_osx_32bit=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_osx_32bit=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_osx_32bit=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_osx_32bit=yes
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <unistd.h>
+    int main(int argc, char*argv[])
+    {
+      if (sizeof(long) == 4) {
+    	  return 0;
+      } else {
+      	  return 1;
+      }
+    }
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_osx_32bit=yes
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -9219,6 +9686,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 
     if test "${ac_osx_32bit}" = "yes"; then
@@ -9982,7 +10450,70 @@ $as_echo_n "checking aligned memory access is required... " >&6; }
 if ${ac_cv_aligned_required+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_aligned_required=no
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_aligned_required=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_aligned_required=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_aligned_required=yes
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main()
+{
+    char s[16];
+    int i, *p1, *p2;
+    for (i=0; i < 16; i++)
+        s[i] = i;
+    p1 = (int*)(s+1);
+    p2 = (int*)(s+2);
+    if (*p1 == *p2)
+        return 1;
+    return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_aligned_required=yes
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -10009,6 +10540,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 
 fi
@@ -10839,7 +11371,71 @@ $as_echo_n "checking if PTHREAD_SCOPE_SYSTEM is supported... " >&6; }
       if ${ac_cv_pthread_system_supported+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_pthread_system_supported=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_pthread_system_supported=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_pthread_system_supported=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_pthread_system_supported=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <stdio.h>
+      #include <pthread.h>
+      void *foo(void *parm) {
+        return NULL;
+      }
+      main() {
+        pthread_attr_t attr;
+        pthread_t id;
+        if (pthread_attr_init(&attr)) exit(-1);
+        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
+        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
+        exit(0);
+      }
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_pthread_system_supported=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -10867,6 +11463,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 
 fi
@@ -12093,7 +12690,67 @@ $as_echo_n "checking for chflags... " >&6; }
 if ${ac_cv_have_chflags+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_have_chflags=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_have_chflags=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_have_chflags=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_have_chflags=cross
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/stat.h>
+#include <unistd.h>
+int main(int argc, char*argv[])
+{
+  if(chflags(argv[0], 0) != 0)
+    return 1;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_have_chflags=cross
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -12119,6 +12776,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 
+
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_chflags" >&5
 $as_echo "$ac_cv_have_chflags" >&6; }
@@ -12142,7 +12800,67 @@ $as_echo_n "checking for lchflags... " >&6; }
 if ${ac_cv_have_lchflags+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_have_lchflags=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_have_lchflags=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_have_lchflags=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_have_lchflags=cross
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/stat.h>
+#include <unistd.h>
+int main(int argc, char*argv[])
+{
+  if(lchflags(argv[0], 0) != 0)
+    return 1;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_have_lchflags=cross
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -12166,6 +12884,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 
 fi
@@ -13093,7 +13812,152 @@ $as_echo_n "checking getaddrinfo bug... " >&6; }
   if ${ac_cv_buggy_getaddrinfo+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_buggy_getaddrinfo=no
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_buggy_getaddrinfo=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_buggy_getaddrinfo=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+
+if test "${enable_ipv6+set}" = set; then
+  ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
+else
+  ac_cv_buggy_getaddrinfo=yes
+fi
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <netdb.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+int main()
+{
+  int passive, gaierr, inet4 = 0, inet6 = 0;
+  struct addrinfo hints, *ai, *aitop;
+  char straddr[INET6_ADDRSTRLEN], strport[16];
+
+  for (passive = 0; passive <= 1; passive++) {
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_flags = passive ? AI_PASSIVE : 0;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    if ((gaierr = getaddrinfo(NULL, "54321", &hints, &aitop)) != 0) {
+      (void)gai_strerror(gaierr);
+      goto bad;
+    }
+    for (ai = aitop; ai; ai = ai->ai_next) {
+      if (ai->ai_addr == NULL ||
+          ai->ai_addrlen == 0 ||
+          getnameinfo(ai->ai_addr, ai->ai_addrlen,
+                      straddr, sizeof(straddr), strport, sizeof(strport),
+                      NI_NUMERICHOST|NI_NUMERICSERV) != 0) {
+        goto bad;
+      }
+      switch (ai->ai_family) {
+      case AF_INET:
+        if (strcmp(strport, "54321") != 0) {
+          goto bad;
+        }
+        if (passive) {
+          if (strcmp(straddr, "0.0.0.0") != 0) {
+            goto bad;
+          }
+        } else {
+          if (strcmp(straddr, "127.0.0.1") != 0) {
+            goto bad;
+          }
+        }
+        inet4++;
+        break;
+      case AF_INET6:
+        if (strcmp(strport, "54321") != 0) {
+          goto bad;
+        }
+        if (passive) {
+          if (strcmp(straddr, "::") != 0) {
+            goto bad;
+          }
+        } else {
+          if (strcmp(straddr, "::1") != 0) {
+            goto bad;
+          }
+        }
+        inet6++;
+        break;
+      case AF_UNSPEC:
+        goto bad;
+        break;
+      default:
+        /* another family support? */
+        break;
+      }
+    }
+    freeaddrinfo(aitop);
+    aitop = NULL;
+  }
+
+  if (!(inet4 == 0 || inet4 == 2))
+    goto bad;
+  if (!(inet6 == 0 || inet6 == 2))
+    goto bad;
+
+  if (aitop)
+    freeaddrinfo(aitop);
+  return 0;
+
+ bad:
+  if (aitop)
+    freeaddrinfo(aitop);
+  return 1;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
 
 if test "${enable_ipv6+set}" = set; then
   ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
@@ -13202,6 +14066,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 fi
 
@@ -14363,7 +15228,77 @@ $as_echo_n "checking for x87-style double rounding... " >&6; }
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
 CC="$CC $BASECFLAGS"
-if test "$cross_compiling" = yes; then :
+if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_x87_double_rounding=no
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_x87_double_rounding=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_x87_double_rounding=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_x87_double_rounding=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <math.h>
+int main() {
+    volatile double x, y, z;
+    /* 1./(1-2**-53) -> 1+2**-52 (correct), 1.0 (double rounding) */
+    x = 0.99999999999999989; /* 1-2**-53 */
+    y = 1./x;
+    if (y != 1.)
+        exit(0);
+    /* 1e16+2.99999 -> 1e16+2. (correct), 1e16+4. (double rounding) */
+    x = 1e16;
+    y = 2.99999;
+    z = x + y;
+    if (z != 1e16+4.)
+        exit(0);
+    /* both tests show evidence of double rounding */
+    exit(1);
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_x87_double_rounding=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -14397,6 +15332,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 CC="$ac_save_cc"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_x87_double_rounding" >&5
@@ -14484,7 +15420,75 @@ $as_echo_n "checking whether POSIX semaphores are enabled... " >&6; }
 if ${ac_cv_posix_semaphores_enabled+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_posix_semaphores_enabled=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_posix_semaphores_enabled=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_posix_semaphores_enabled=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_posix_semaphores_enabled=yes
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+
+int main(void) {
+  sem_t *a = sem_open("/autoconf", O_CREAT, S_IRUSR|S_IWUSR, 0);
+  if (a == SEM_FAILED) {
+    perror("sem_open");
+    return 1;
+  }
+  sem_close(a);
+  sem_unlink("/autoconf");
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_posix_semaphores_enabled=yes
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -14518,6 +15522,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_posix_semaphores_enabled" >&5
@@ -14535,7 +15540,79 @@ $as_echo_n "checking for broken sem_getvalue... " >&6; }
 if ${ac_cv_broken_sem_getvalue+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_broken_sem_getvalue=no
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_broken_sem_getvalue=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_broken_sem_getvalue=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_broken_sem_getvalue=yes
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+
+int main(void){
+  sem_t *a = sem_open("/autocftw", O_CREAT, S_IRUSR|S_IWUSR, 0);
+  int count;
+  int res;
+  if(a==SEM_FAILED){
+    perror("sem_open");
+    return 1;
+
+  }
+  res = sem_getvalue(a, &count);
+  sem_close(a);
+  sem_unlink("/autocftw");
+  return res==-1 ? 1 : 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_broken_sem_getvalue=yes
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -14571,6 +15648,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 
 fi
@@ -14798,7 +15876,65 @@ $as_echo_n "checking whether wchar_t is signed... " >&6; }
   $as_echo_n "(cached) " >&6
 else
 
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_wchar_t_signed=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_wchar_t_signed=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_wchar_t_signed=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_wchar_t_signed=yes
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+  #include <wchar.h>
+  int main()
+  {
+	/* Success: exit code 0 */
+        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
+  }
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_wchar_t_signed=yes
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -14820,6 +15956,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 fi
 
@@ -14976,7 +16113,114 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     fi
     if test $ac_cv_c_bigendian = unknown; then
       # Compile a test program.
-      if test "$cross_compiling" = yes; then :
+      if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_c_bigendian=no
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_c_bigendian=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_c_bigendian=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+# Try to guess by grepping values from an object file.
+	 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+short int ascii_mm[] =
+		  { 0x4249, 0x4765, 0x6E44, 0x6961, 0x6E53, 0x7953, 0 };
+		short int ascii_ii[] =
+		  { 0x694C, 0x5454, 0x656C, 0x6E45, 0x6944, 0x6E61, 0 };
+		int use_ascii (int i) {
+		  return ascii_mm[i] + ascii_ii[i];
+		}
+		short int ebcdic_ii[] =
+		  { 0x89D3, 0xE3E3, 0x8593, 0x95C5, 0x89C4, 0x9581, 0 };
+		short int ebcdic_mm[] =
+		  { 0xC2C9, 0xC785, 0x95C4, 0x8981, 0x95E2, 0xA8E2, 0 };
+		int use_ebcdic (int i) {
+		  return ebcdic_mm[i] + ebcdic_ii[i];
+		}
+		extern int foo;
+
+int
+main ()
+{
+return use_ascii (foo) == use_ebcdic (foo);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  if grep BIGenDianSyS conftest.$ac_objext >/dev/null; then
+	      ac_cv_c_bigendian=yes
+	    fi
+	    if grep LiTTleEnDian conftest.$ac_objext >/dev/null ; then
+	      if test "$ac_cv_c_bigendian" = unknown; then
+		ac_cv_c_bigendian=no
+	      else
+		# finding both strings is unlikely to happen, but who knows?
+		ac_cv_c_bigendian=unknown
+	      fi
+	    fi
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+
+	     /* Are we little or big endian?  From Harbison&Steele.  */
+	     union
+	     {
+	       long int l;
+	       char c[sizeof (long int)];
+	     } u;
+	     u.l = 1;
+	     return u.c[sizeof (long int) - 1] == 1;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   # Try to guess by grepping values from an object file.
 	 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -15047,6 +16291,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
     fi
 fi
@@ -15124,7 +16369,63 @@ if ${ac_cv_rshift_extends_sign+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-if test "$cross_compiling" = yes; then :
+if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_rshift_extends_sign=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_rshift_extends_sign=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_rshift_extends_sign=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_rshift_extends_sign=yes
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main()
+{
+	exit(((-1)>>3 == -1) ? 0 : 1);
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_rshift_extends_sign=yes
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -15144,6 +16445,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 fi
 
@@ -15553,7 +16855,68 @@ if ${ac_cv_broken_nice+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-if test "$cross_compiling" = yes; then :
+if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_broken_nice=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_broken_nice=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_broken_nice=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_broken_nice=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <unistd.h>
+int main()
+{
+	int val1 = nice(1);
+	if (val1 != -1 && val1 == nice(2))
+		exit(0);
+	exit(1);
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_broken_nice=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -15579,6 +16942,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_nice" >&5
@@ -15595,7 +16959,76 @@ $as_echo_n "checking for broken poll()... " >&6; }
 if ${ac_cv_broken_poll+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_broken_poll=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_broken_poll=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_broken_poll=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_broken_poll=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <poll.h>
+
+int main()
+{
+    struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 };
+    int poll_test;
+
+    close (42);
+
+    poll_test = poll(&poll_struct, 1, 0);
+    if (poll_test < 0)
+        return 0;
+    else if (poll_test == 0 && poll_struct.revents != POLLNVAL)
+        return 0;
+    else
+        return 1;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_broken_poll=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -15629,6 +17062,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_broken_poll" >&5
@@ -15647,7 +17081,121 @@ if ${ac_cv_working_tzset+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-if test "$cross_compiling" = yes; then :
+if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_working_tzset=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_working_tzset=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_working_tzset=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_working_tzset=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+#if HAVE_TZNAME
+extern char *tzname[];
+#endif
+
+int main()
+{
+	/* Note that we need to ensure that not only does tzset(3)
+	   do 'something' with localtime, but it works as documented
+	   in the library reference and as expected by the test suite.
+	   This includes making sure that tzname is set properly if
+	   tm->tm_zone does not exist since it is the alternative way
+	   of getting timezone info.
+
+	   Red Hat 6.2 doesn't understand the southern hemisphere
+	   after New Year's Day.
+	*/
+
+	time_t groundhogday = 1044144000; /* GMT-based */
+	time_t midyear = groundhogday + (365 * 24 * 3600 / 2);
+
+	putenv("TZ=UTC+0");
+	tzset();
+	if (localtime(&groundhogday)->tm_hour != 0)
+	    exit(1);
+#if HAVE_TZNAME
+	/* For UTC, tzname[1] is sometimes "", sometimes "   " */
+	if (strcmp(tzname[0], "UTC") ||
+		(tzname[1][0] != 0 && tzname[1][0] != ' '))
+	    exit(1);
+#endif
+
+	putenv("TZ=EST+5EDT,M4.1.0,M10.5.0");
+	tzset();
+	if (localtime(&groundhogday)->tm_hour != 19)
+	    exit(1);
+#if HAVE_TZNAME
+	if (strcmp(tzname[0], "EST") || strcmp(tzname[1], "EDT"))
+	    exit(1);
+#endif
+
+	putenv("TZ=AEST-10AEDT-11,M10.5.0,M3.5.0");
+	tzset();
+	if (localtime(&groundhogday)->tm_hour != 11)
+	    exit(1);
+#if HAVE_TZNAME
+	if (strcmp(tzname[0], "AEST") || strcmp(tzname[1], "AEDT"))
+	    exit(1);
+#endif
+
+#if HAVE_STRUCT_TM_TM_ZONE
+	if (strcmp(localtime(&groundhogday)->tm_zone, "AEDT"))
+	    exit(1);
+	if (strcmp(localtime(&midyear)->tm_zone, "AEST"))
+	    exit(1);
+#endif
+
+	exit(0);
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_working_tzset=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -15725,6 +17273,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 fi
 
@@ -16332,7 +17881,94 @@ $as_echo_n "checking for %zd printf() format support... " >&6; }
 if ${ac_cv_have_size_t_format+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_have_size_t_format=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_have_size_t_format=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_have_size_t_format=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_have_size_t_format="cross -- assuming yes"
+
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SSIZE_T
+typedef ssize_t Py_ssize_t;
+#elif SIZEOF_VOID_P == SIZEOF_LONG
+typedef long Py_ssize_t;
+#else
+typedef int Py_ssize_t;
+#endif
+
+int main()
+{
+    char buffer[256];
+
+    if(sprintf(buffer, "%zd", (size_t)123) < 0)
+       	return 1;
+
+    if (strcmp(buffer, "123"))
+	return 1;
+
+    if (sprintf(buffer, "%zd", (Py_ssize_t)-123) < 0)
+       	return 1;
+
+    if (strcmp(buffer, "-123"))
+	return 1;
+
+    return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_have_size_t_format="cross -- assuming yes"
 
 else
@@ -16384,6 +18020,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_size_t_format" >&5
 $as_echo "$ac_cv_have_size_t_format" >&6; }
@@ -16416,7 +18053,67 @@ $as_echo_n "checking for broken mbstowcs... " >&6; }
 if ${ac_cv_broken_mbstowcs+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_broken_mbstowcs=no
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_broken_mbstowcs=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_broken_mbstowcs=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+ac_cv_broken_mbstowcs=no
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include<stdlib.h>
+int main() {
+    size_t len = -1;
+    const char *str = "text";
+    len = mbstowcs(NULL, str, 0);
+    return (len != 4);
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   ac_cv_broken_mbstowcs=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -16440,6 +18137,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 fi
 
@@ -16487,7 +18185,73 @@ $as_echo_n "checking whether $CC supports computed gotos... " >&6; }
 if ${ac_cv_computed_gotos+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test "$cross_compiling" = yes; then :
+  if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+ac_cv_computed_gotos=yes
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+ac_cv_computed_gotos=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+ac_cv_computed_gotos=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+if test "${with_computed_gotos+set}" = set; then
+   ac_cv_computed_gotos="$with_computed_gotos -- configured --with(out)-computed-gotos"
+ else
+   ac_cv_computed_gotos=no
+ fi
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main(int argc, char **argv)
+{
+    static void *targets[1] = { &&LABEL1 };
+    goto LABEL2;
+LABEL1:
+    return 0;
+LABEL2:
+    goto *targets[0];
+    return 1;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   if test "${with_computed_gotos+set}" = set; then
    ac_cv_computed_gotos="$with_computed_gotos -- configured --with(out)-computed-gotos"
  else
@@ -16517,6 +18281,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
 fi
 
@@ -16591,7 +18356,73 @@ CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
 if test "$have_O2" = no; then
     CFLAGS=""
 fi
-if test "$cross_compiling" = yes; then :
+if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+have_glibc_memmove_bug=no
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+have_glibc_memmove_bug=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+have_glibc_memmove_bug=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+have_glibc_memmove_bug=undefined
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+void foo(void *p, void *q) { memmove(p, q, 19); }
+int main() {
+  char a[32] = "123456789000000000";
+  foo(&a[9], a);
+  if (strcmp(a, "123456789123456789000000000") != 0)
+    return 1;
+  foo(a, &a[9]);
+  if (strcmp(a, "123456789000000000") != 0)
+    return 1;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   have_glibc_memmove_bug=undefined
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -16622,6 +18453,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+
 CFLAGS="$saved_cflags"
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_glibc_memmove_bug" >&5
 $as_echo "$have_glibc_memmove_bug" >&6; }
@@ -16641,7 +18473,74 @@ if test "$have_gcc_asm_for_x87" = yes; then
 $as_echo_n "checking for gcc ipa-pure-const bug... " >&6; }
             saved_cflags="$CFLAGS"
             CFLAGS="-O2"
-            if test "$cross_compiling" = yes; then :
+            if test "$cross_compiling" = yes -a -z "$CONFIG_SITE"; then :
+  # Create a (secure) tmp directory for tmp files.
+: "${TMPDIR:=/tmp}"
+{
+  tmp=`(umask 077 && mktemp -d "$TMPDIR/ac_rXXXXXX") 2>/dev/null` &&
+  test -d "$tmp"
+}  ||
+{
+  tmp=$TMPDIR/ac_r$$-$RANDOM
+  (umask 077 && mkdir "$tmp")
+} || as_fn_error $? "cannot create a temporary directory in $TMPDIR" "$LINENO" 5
+                 cat <<AXEOF > $tmp/ACTION-IF-TRUE
+have_ipa_pure_const_bug=no
+AXEOF
+
+                 ax_run_ifelse_var=`cat $tmp/ACTION-IF-TRUE | LC_ALL=C sed -n \
+                   -e '/^[ \t\n]*$/d' \
+                   -e 's/^[ \t\n]*\([_a-zA-Z][_0-9a-zA-Z]*\)=.*/\1/p' \
+                   -e 'q'`
+                 rm -r $tmp
+                 if test -n "$ax_run_ifelse_var"; then :
+  ax_run_ifelse_var=build/run_ifelse_cvs/$ax_run_ifelse_var
+                        as_dir=$ax_run_ifelse_var; as_fn_mkdir_p
+                        cat <<AXEOF > $ax_run_ifelse_var/TRUE
+have_ipa_pure_const_bug=no
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/FALSE
+have_ipa_pure_const_bug=yes
+AXEOF
+
+                        cat <<AXEOF > $ax_run_ifelse_var/CROSS-COMPILING
+have_ipa_pure_const_bug=undefined
+AXEOF
+
+                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+            __attribute__((noinline)) int
+            foo(int *p) {
+              int r;
+              asm ( "movl \$6, (%1)\n\t"
+                    "xorl %0, %0\n\t"
+                    : "=r" (r) : "r" (p) : "memory"
+              );
+              return r;
+            }
+            int main() {
+              int p = 8;
+              if ((foo(&p) ? : p) != 6)
+                return 1;
+              return 0;
+            }
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  cat conftest$EXEEXT > $ax_run_ifelse_var/a.out
+                                        chmod a+x $ax_run_ifelse_var/a.out
+else
+  cat conftest.c > $ax_run_ifelse_var/conftest.c
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+fi
+          if test "$cross_compiling" = yes; then :
   have_ipa_pure_const_bug=undefined
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -16672,6 +18571,7 @@ fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
+
 
             CFLAGS="$saved_cflags"
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_ipa_pure_const_bug" >&5
