@@ -94,15 +94,34 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"file", "protocol", "fix_imports", NULL};
-    static _PyArg_Parser _parser = {"O|Op:Pickler", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "Pickler", 0};
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *file;
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &file, &protocol, &fix_imports)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 3, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    file = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        protocol = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    fix_imports = PyObject_IsTrue(fastargs[2]);
+    if (fix_imports < 0) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = _pickle_Pickler___init___impl((PicklerObject *)self, file, protocol, fix_imports);
 
 exit:
@@ -287,16 +306,65 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {"O|$pss:Unpickler", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "Unpickler", 0};
+    PyObject *argsbuf[4];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *file;
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &file, &fix_imports, &encoding, &errors)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    file = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (fastargs[1]) {
+        fix_imports = PyObject_IsTrue(fastargs[1]);
+        if (fix_imports < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[2]) {
+        if (!PyUnicode_Check(fastargs[2])) {
+            _PyArg_BadArgument("Unpickler", 3, "str", fastargs[2]);
+            goto exit;
+        }
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(fastargs[2], &encoding_length);
+        if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (!PyUnicode_Check(fastargs[3])) {
+        _PyArg_BadArgument("Unpickler", 4, "str", fastargs[3]);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(fastargs[3], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = _pickle_Unpickler___init___impl((UnpicklerObject *)self, file, fix_imports, encoding, errors);
 
 exit:
@@ -396,16 +464,38 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "file", "protocol", "fix_imports", NULL};
-    static _PyArg_Parser _parser = {"OO|O$p:dump", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "dump", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *obj;
     PyObject *file;
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &obj, &file, &protocol, &fix_imports)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    obj = args[0];
+    file = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        protocol = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    fix_imports = PyObject_IsTrue(args[3]);
+    if (fix_imports < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = _pickle_dump_impl(module, obj, file, protocol, fix_imports);
 
 exit:
@@ -443,15 +533,36 @@ _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"obj", "protocol", "fix_imports", NULL};
-    static _PyArg_Parser _parser = {"O|O$p:dumps", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "dumps", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *obj;
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &obj, &protocol, &fix_imports)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    obj = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        protocol = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    fix_imports = PyObject_IsTrue(args[2]);
+    if (fix_imports < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = _pickle_dumps_impl(module, obj, protocol, fix_imports);
 
 exit:
@@ -499,16 +610,63 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {"O|$pss:load", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "load", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *file;
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &file, &fix_imports, &encoding, &errors)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    file = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        fix_imports = PyObject_IsTrue(args[1]);
+        if (fix_imports < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        if (!PyUnicode_Check(args[2])) {
+            _PyArg_BadArgument("load", 3, "str", args[2]);
+            goto exit;
+        }
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(args[2], &encoding_length);
+        if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (!PyUnicode_Check(args[3])) {
+        _PyArg_BadArgument("load", 4, "str", args[3]);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = _pickle_load_impl(module, file, fix_imports, encoding, errors);
 
 exit:
@@ -547,19 +705,66 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {"O|$pss:loads", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "loads", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *data;
     int fix_imports = 1;
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &data, &fix_imports, &encoding, &errors)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    data = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        fix_imports = PyObject_IsTrue(args[1]);
+        if (fix_imports < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        if (!PyUnicode_Check(args[2])) {
+            _PyArg_BadArgument("loads", 3, "str", args[2]);
+            goto exit;
+        }
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(args[2], &encoding_length);
+        if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (!PyUnicode_Check(args[3])) {
+        _PyArg_BadArgument("loads", 4, "str", args[3]);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[3], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = _pickle_loads_impl(module, data, fix_imports, encoding, errors);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=225f06abcf27ed2b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f972562c8f71e2b input=a9049054013a1b77]*/

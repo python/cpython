@@ -21,13 +21,17 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"format", NULL};
-    static _PyArg_Parser _parser = {"O:Struct", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "Struct", 0};
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *format;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &format)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    format = fastargs[0];
     return_value = Struct___init___impl((PyStructObject *)self, format);
 
 exit:
@@ -100,14 +104,44 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {"y*|n:unpack_from", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &buffer, &offset)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack_from", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        offset = ival;
+    }
+skip_optional_pos:
     return_value = Struct_unpack_from_impl(self, &buffer, offset);
 
 exit:
@@ -257,15 +291,48 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {"O&y*|n:unpack_from", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        cache_struct_converter, &s_object, &buffer, &offset)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!cache_struct_converter(args[0], &s_object)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
+        _PyArg_BadArgument("unpack_from", 2, "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        offset = ival;
+    }
+skip_optional_pos:
     return_value = unpack_from_impl(module, s_object, &buffer, offset);
 
 exit:
@@ -319,4 +386,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ac595db9d2b271aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b642e1002d25ebdd input=a9049054013a1b77]*/
