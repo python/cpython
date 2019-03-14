@@ -773,7 +773,7 @@ class NormalDist:
         dv = Y_var - X_var
         dm = fabs(Y.mu - X.mu)
         if not dv:
-            return 2.0 * NormalDist(dm, 2.0 * X.sigma).cdf(0)
+            return 1.0 - erf(dm / (2.0 * X.sigma * sqrt(2.0)))
         a = X.mu * Y_var - Y.mu * X_var
         b = X.sigma * Y.sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
