@@ -82,16 +82,23 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"string", NULL};
-    static _PyArg_Parser _parser = {"|O:md5", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "md5", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *string = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &string)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    string = args[0];
+skip_optional_pos:
     return_value = _md5_md5_impl(module, string);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=83cb1aef575f13bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=53133f08cf9095fc input=a9049054013a1b77]*/
