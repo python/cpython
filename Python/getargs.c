@@ -2326,6 +2326,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
     PyObject *kwtuple;
     PyObject *keyword;
     int i, posonly, minposonly, maxargs;
+    int reqlimit = minkw ? maxpos + minkw : minpos;
     Py_ssize_t nkwargs;
     PyObject *current_arg;
     PyObject * const *kwstack = NULL;
@@ -2434,6 +2435,9 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
                 current_arg = find_keyword(kwnames, kwstack, keyword);
             }
         }
+        else if (i >= reqlimit) {
+            break;
+        }
         else {
             current_arg = NULL;
         }
@@ -2443,7 +2447,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         if (current_arg) {
             --nkwargs;
         }
-        else if (i < minpos || (maxpos <= i && i < maxpos + minkw)) {
+        else if (i < minpos || (maxpos <= i && i < reqlimit)) {
             /* Less arguments than required */
             keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
             PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
