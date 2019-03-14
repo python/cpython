@@ -1,0 +1,1 @@
+Fix two possible reference leaks in the hotshot module.
