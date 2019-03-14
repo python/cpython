@@ -897,17 +897,44 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {"DD|$dd:isclose", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     Py_complex a;
     Py_complex b;
     double rel_tol = 1e-09;
     double abs_tol = 0.0;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &a, &b, &rel_tol, &abs_tol)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    a = PyComplex_AsCComplex(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    b = PyComplex_AsCComplex(args[1]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        rel_tol = PyFloat_AsDouble(args[2]);
+        if (PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    abs_tol = PyFloat_AsDouble(args[3]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
     _return_value = cmath_isclose_impl(module, a, b, rel_tol, abs_tol);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -917,4 +944,4 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=86a365d23f34aaff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7afb866e593fa45 input=a9049054013a1b77]*/
