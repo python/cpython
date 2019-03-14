@@ -13,7 +13,9 @@ echo.
 echo Tested with cygwin-x86 from https://www.cygwin.com/install.html
 echo Select http://mirrors.kernel.org as the download site
 echo Include the following cygwin packages in cygwin configuration:
-echo     make, autoconf, automake, libtool
+echo     make, autoconf, automake, libtool, dejagnu
+echo.
+echo NOTE: dejagnu is only required for running tests.
 echo.
 echo Based on https://github.com/libffi/libffi/blob/master/.appveyor.yml
 echo.
@@ -85,28 +87,28 @@ if /I "%VCVARS_PLATFORM%" EQU "x86" (
 
 set LIBFFI_OUT=%~dp0\..\externals\libffi-bin-3.3.0-rc0-r1\%ARCH%
 
-REM get VS build environment
+echo get VS build environment
 call %VCVARSALL% %VCVARS_PLATFORM%
 
-REM clean header output directory
-if exist %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH% (rd %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH% /s/q)
+echo clean %LIBFFI_OUT%
 if exist %LIBFFI_OUT% (rd %LIBFFI_OUT% /s/q)
 
-REM just configure the build to generate fficonfig.h and ffi.h
+echo Configure the build to generate fficonfig.h and ffi.h
 %SH% -lc "(cd $OLDPWD; ./configure CC='%MSVCC% %ML%' CXX='%MSVCC% %ML%' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
 
-REM There is no support for building .DLLs currently.
+echo Building libffi
 %SH% -lc "(cd $OLDPWD; export PATH=/usr/bin:$PATH; cp src/%SRC_CPU%/ffitarget.h include; make; find .;)"
 
-REM Running the libffi tests doesn't work when using msvc
-REM msvcc.sh is missing support for -l and -L according to the note in appveyor.yml
-REM %SH% -lc "(cd $OLDPWD; export PATH=/usr/bin:$PATH; cp `find $PWD -name 'libffi-?.dll'` $HOST/testsuite/; make check; cat `find ./ -name libffi.log`)"
+REM Tests are not needed to produce artifacts
+if "%LIBFFI_TEST%" EQU "1" (
+    echo "Running tests..."
+    %SH% -lc "(cd $OLDPWD; export PATH=/usr/bin:$PATH; cp `find $PWD -name 'libffi-?.dll'` $HOST/testsuite/; make check; cat `find ./ -name libffi.log`)"
+) else (
+    echo "Not running tests"
+)
 
-REM create header output directory and copy headers to check-in location
-if not exist %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH% (md %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH%)
-copy %LIBFFI_SOURCE%\%HOST%\fficonfig.h  %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH%
-copy %LIBFFI_SOURCE%\%HOST%\include\ffi.h  %LIBFFI_SOURCE%\include\%VSCMD_ARG_TGT_ARCH%
 
+echo copying files to %LIBFFI_OUT%
 if not exist %LIBFFI_OUT%\include (md %LIBFFI_OUT%\include)
 copy %ARTIFACTS%\.libs\libffi-7.dll %LIBFFI_OUT%
 copy %ARTIFACTS%\.libs\libffi-7.lib %LIBFFI_OUT%
