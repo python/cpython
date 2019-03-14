@@ -1096,7 +1096,7 @@ class StreamHandler(Handler):
             # issue 35046: merged two stream.writes into one.
             stream.write(msg + self.terminator)
             self.flush()
-        except RecursionError as e:  # See issue 36272
+        except RecursionError:  # See issue 36272
             raise
         except Exception:
             self.handleError(record)
