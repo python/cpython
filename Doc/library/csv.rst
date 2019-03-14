@@ -443,7 +443,8 @@ read CSV files (assuming they support complex numbers at all).
 .. method:: csvwriter.writerow(row)
 
    Write the *row* parameter to the writer's file object, formatted according to
-   the current dialect.
+   the current dialect, and return the return value of the call to the *write*
+   method of the underlying file object.
 
    .. versionchanged:: 3.5
       Added support of arbitrary iterables.
