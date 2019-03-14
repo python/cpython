@@ -27,13 +27,22 @@ _asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"loop", NULL};
-    static _PyArg_Parser _parser = {"|$O:Future", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "Future", 0};
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *loop = Py_None;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &loop)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 0, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    loop = fastargs[0];
+skip_optional_kwonly:
     return_value = _asyncio_Future___init___impl((FutureObj *)self, loop);
 
 exit:
@@ -131,14 +140,22 @@ _asyncio_Future_add_done_callback(FutureObj *self, PyObject *const *args, Py_ssi
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "context", NULL};
-    static _PyArg_Parser _parser = {"O|$O:add_done_callback", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "add_done_callback", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *fn;
     PyObject *context = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &fn, &context)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    fn = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    context = args[1];
+skip_optional_kwonly:
     return_value = _asyncio_Future_add_done_callback_impl(self, fn, context);
 
 exit:
@@ -267,15 +284,31 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     static const char * const _keywords[] = {"coro", "loop", "name", NULL};
-    static _PyArg_Parser _parser = {"O|$OO:Task", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "Task", 0};
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *coro;
     PyObject *loop = Py_None;
     PyObject *name = Py_None;
 
-    if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
-        &coro, &loop, &name)) {
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
         goto exit;
     }
+    coro = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (fastargs[1]) {
+        loop = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    name = fastargs[2];
+skip_optional_kwonly:
     return_value = _asyncio_Task___init___impl((TaskObj *)self, coro, loop, name);
 
 exit:
@@ -303,13 +336,20 @@ _asyncio_Task_current_task(PyTypeObject *type, PyObject *const *args, Py_ssize_t
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
-    static _PyArg_Parser _parser = {"|O:current_task", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "current_task", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *loop = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &loop)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    loop = args[0];
+skip_optional_pos:
     return_value = _asyncio_Task_current_task_impl(type, loop);
 
 exit:
@@ -335,13 +375,20 @@ _asyncio_Task_all_tasks(PyTypeObject *type, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", NULL};
-    static _PyArg_Parser _parser = {"|O:all_tasks", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "all_tasks", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *loop = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &loop)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    loop = args[0];
+skip_optional_pos:
     return_value = _asyncio_Task_all_tasks_impl(type, loop);
 
 exit:
@@ -435,13 +482,20 @@ _asyncio_Task_get_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", NULL};
-    static _PyArg_Parser _parser = {"|$O:get_stack", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get_stack", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *limit = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &limit)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    limit = args[0];
+skip_optional_kwonly:
     return_value = _asyncio_Task_get_stack_impl(self, limit);
 
 exit:
@@ -472,14 +526,27 @@ _asyncio_Task_print_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"limit", "file", NULL};
-    static _PyArg_Parser _parser = {"|$OO:print_stack", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "print_stack", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *limit = Py_None;
     PyObject *file = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &limit, &file)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[0]) {
+        limit = args[0];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    file = args[1];
+skip_optional_kwonly:
     return_value = _asyncio_Task_print_stack_impl(self, limit, file);
 
 exit:
@@ -624,13 +691,15 @@ _asyncio__register_task(PyObject *module, PyObject *const *args, Py_ssize_t narg
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"task", NULL};
-    static _PyArg_Parser _parser = {"O:_register_task", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_register_task", 0};
+    PyObject *argsbuf[1];
     PyObject *task;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &task)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    task = args[0];
     return_value = _asyncio__register_task_impl(module, task);
 
 exit:
@@ -656,13 +725,15 @@ _asyncio__unregister_task(PyObject *module, PyObject *const *args, Py_ssize_t na
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"task", NULL};
-    static _PyArg_Parser _parser = {"O:_unregister_task", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_unregister_task", 0};
+    PyObject *argsbuf[1];
     PyObject *task;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &task)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    task = args[0];
     return_value = _asyncio__unregister_task_impl(module, task);
 
 exit:
@@ -690,14 +761,17 @@ _asyncio__enter_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", "task", NULL};
-    static _PyArg_Parser _parser = {"OO:_enter_task", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_enter_task", 0};
+    PyObject *argsbuf[2];
     PyObject *loop;
     PyObject *task;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &loop, &task)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    loop = args[0];
+    task = args[1];
     return_value = _asyncio__enter_task_impl(module, loop, task);
 
 exit:
@@ -725,17 +799,20 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"loop", "task", NULL};
-    static _PyArg_Parser _parser = {"OO:_leave_task", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_leave_task", 0};
+    PyObject *argsbuf[2];
     PyObject *loop;
     PyObject *task;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &loop, &task)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    loop = args[0];
+    task = args[1];
     return_value = _asyncio__leave_task_impl(module, loop, task);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fd474bdc8f03d5ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3b02d96da56e80c input=a9049054013a1b77]*/

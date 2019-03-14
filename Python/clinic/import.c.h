@@ -411,12 +411,29 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "source", NULL};
-    static _PyArg_Parser _parser = {"ly*:source_hash", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "source_hash", 0};
+    PyObject *argsbuf[2];
     long key;
     Py_buffer source = {NULL, NULL};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &key, &source)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    key = PyLong_AsLong(args[0]);
+    if (key == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &source, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&source, 'C')) {
+        _PyArg_BadArgument("source_hash", 2, "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _imp_source_hash_impl(module, key, &source);
@@ -437,4 +454,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=2409b8feeafe7c4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b51244770fdcf4b8 input=a9049054013a1b77]*/

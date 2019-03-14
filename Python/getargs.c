@@ -1905,22 +1905,9 @@ parser_init(struct _PyArg_Parser *parser)
     int i, len, min, max, nkw;
     PyObject *kwtuple;
 
-    assert(parser->format != NULL);
     assert(parser->keywords != NULL);
     if (parser->kwtuple != NULL) {
         return 1;
-    }
-
-    /* grab the function name or custom error msg first (mutually exclusive) */
-    parser->fname = strchr(parser->format, ':');
-    if (parser->fname) {
-        parser->fname++;
-        parser->custom_msg = NULL;
-    }
-    else {
-        parser->custom_msg = strchr(parser->format,';');
-        if (parser->custom_msg)
-            parser->custom_msg++;
     }
 
     keywords = parser->keywords;
@@ -1938,59 +1925,73 @@ parser_init(struct _PyArg_Parser *parser)
     }
     len = i;
 
-    min = max = INT_MAX;
     format = parser->format;
-    for (i = 0; i < len; i++) {
-        if (*format == '|') {
-            if (min != INT_MAX) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Invalid format string (| specified twice)");
-                return 0;
-            }
-            if (max != INT_MAX) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Invalid format string ($ before |)");
-                return 0;
-            }
-            min = i;
-            format++;
+    if (format) {
+        /* grab the function name or custom error msg first (mutually exclusive) */
+        parser->fname = strchr(parser->format, ':');
+        if (parser->fname) {
+            parser->fname++;
+            parser->custom_msg = NULL;
         }
-        if (*format == '$') {
-            if (max != INT_MAX) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Invalid format string ($ specified twice)");
-                return 0;
-            }
-            if (i < parser->pos) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Empty parameter name after $");
-                return 0;
-            }
-            max = i;
-            format++;
+        else {
+            parser->custom_msg = strchr(parser->format,';');
+            if (parser->custom_msg)
+                parser->custom_msg++;
         }
-        if (IS_END_OF_FORMAT(*format)) {
+
+        min = max = INT_MAX;
+        for (i = 0; i < len; i++) {
+            if (*format == '|') {
+                if (min != INT_MAX) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "Invalid format string (| specified twice)");
+                    return 0;
+                }
+                if (max != INT_MAX) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "Invalid format string ($ before |)");
+                    return 0;
+                }
+                min = i;
+                format++;
+            }
+            if (*format == '$') {
+                if (max != INT_MAX) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "Invalid format string ($ specified twice)");
+                    return 0;
+                }
+                if (i < parser->pos) {
+                    PyErr_SetString(PyExc_SystemError,
+                                    "Empty parameter name after $");
+                    return 0;
+                }
+                max = i;
+                format++;
+            }
+            if (IS_END_OF_FORMAT(*format)) {
+                PyErr_Format(PyExc_SystemError,
+                            "More keyword list entries (%d) than "
+                            "format specifiers (%d)", len, i);
+                return 0;
+            }
+
+            msg = skipitem(&format, NULL, 0);
+            if (msg) {
+                PyErr_Format(PyExc_SystemError, "%s: '%s'", msg,
+                            format);
+                return 0;
+            }
+        }
+        parser->min = Py_MIN(min, len);
+        parser->max = Py_MIN(max, len);
+
+        if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
             PyErr_Format(PyExc_SystemError,
-                         "More keyword list entries (%d) than "
-                         "format specifiers (%d)", len, i);
+                "more argument specifiers than keyword list entries "
+                "(remaining format:'%s')", format);
             return 0;
         }
-
-        msg = skipitem(&format, NULL, 0);
-        if (msg) {
-            PyErr_Format(PyExc_SystemError, "%s: '%s'", msg,
-                         format);
-            return 0;
-        }
-    }
-    parser->min = Py_MIN(min, len);
-    parser->max = Py_MIN(max, len);
-
-    if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
-        PyErr_Format(PyExc_SystemError,
-            "more argument specifiers than keyword list entries "
-            "(remaining format:'%s')", format);
-        return 0;
     }
 
     nkw = len - parser->pos;
@@ -2310,6 +2311,215 @@ vgetargskeywordsfast(PyObject *args, PyObject *keywords,
     nargs = PyTuple_GET_SIZE(args);
     return vgetargskeywordsfast_impl(stack, nargs, keywords, NULL,
                                      parser, p_va, flags);
+}
+
+
+#undef _PyArg_UnpackKeywords
+
+PyObject * const *
+_PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
+                      PyObject *kwargs, PyObject *kwnames,
+                      struct _PyArg_Parser *parser,
+                      int minpos, int maxpos, int minkw,
+                      PyObject **buf)
+{
+    PyObject *kwtuple;
+    PyObject *keyword;
+    int i, posonly, minposonly, maxargs;
+    int reqlimit = minkw ? maxpos + minkw : minpos;
+    Py_ssize_t nkwargs;
+    PyObject *current_arg;
+    PyObject * const *kwstack = NULL;
+
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+    assert(kwargs == NULL || kwnames == NULL);
+
+    if (parser == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    if (kwnames != NULL && !PyTuple_Check(kwnames)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    if (args == NULL && nargs == 0) {
+        args = buf;
+    }
+
+    if (!parser_init(parser)) {
+        return NULL;
+    }
+
+    kwtuple = parser->kwtuple;
+    posonly = parser->pos;
+    minposonly = Py_MIN(posonly, minpos);
+    maxargs = posonly + (int)PyTuple_GET_SIZE(kwtuple);
+
+    if (kwargs != NULL) {
+        nkwargs = PyDict_GET_SIZE(kwargs);
+    }
+    else if (kwnames != NULL) {
+        nkwargs = PyTuple_GET_SIZE(kwnames);
+        kwstack = args + nargs;
+    }
+    else {
+        nkwargs = 0;
+    }
+    if (nkwargs == 0 && minkw == 0 && minpos <= nargs && nargs <= maxpos) {
+        /* Fast path. */
+        return args;
+    }
+    if (nargs + nkwargs > maxargs) {
+        /* Adding "keyword" (when nargs == 0) prevents producing wrong error
+           messages in some special cases (see bpo-31229). */
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s%s takes at most %d %sargument%s (%zd given)",
+                     (parser->fname == NULL) ? "function" : parser->fname,
+                     (parser->fname == NULL) ? "" : "()",
+                     maxargs,
+                     (nargs == 0) ? "keyword " : "",
+                     (maxargs == 1) ? "" : "s",
+                     nargs + nkwargs);
+        return NULL;
+    }
+    if (nargs > maxpos) {
+        if (maxpos == 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s%s takes no positional arguments",
+                         (parser->fname == NULL) ? "function" : parser->fname,
+                         (parser->fname == NULL) ? "" : "()");
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s%s takes %s %d positional argument%s (%zd given)",
+                         (parser->fname == NULL) ? "function" : parser->fname,
+                         (parser->fname == NULL) ? "" : "()",
+                         (minpos < maxpos) ? "at most" : "exactly",
+                         maxpos,
+                         (maxpos == 1) ? "" : "s",
+                         nargs);
+        }
+        return NULL;
+    }
+    if (nargs < minposonly) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s%s takes %s %d positional argument%s"
+                     " (%zd given)",
+                     (parser->fname == NULL) ? "function" : parser->fname,
+                     (parser->fname == NULL) ? "" : "()",
+                     minposonly < maxpos ? "at least" : "exactly",
+                     minposonly,
+                     minposonly == 1 ? "" : "s",
+                     nargs);
+        return NULL;
+    }
+
+    /* copy tuple args */
+    for (i = 0; i < nargs; i++) {
+        buf[i] = args[i];
+    }
+
+    /* copy keyword args using kwtuple to drive process */
+    for (i = Py_MAX(nargs, posonly); i < maxargs; i++) {
+        if (nkwargs) {
+            keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
+            if (kwargs != NULL) {
+                current_arg = PyDict_GetItemWithError(kwargs, keyword);
+                if (!current_arg && PyErr_Occurred()) {
+                    return NULL;
+                }
+            }
+            else {
+                current_arg = find_keyword(kwnames, kwstack, keyword);
+            }
+        }
+        else if (i >= reqlimit) {
+            break;
+        }
+        else {
+            current_arg = NULL;
+        }
+
+        buf[i] = current_arg;
+
+        if (current_arg) {
+            --nkwargs;
+        }
+        else if (i < minpos || (maxpos <= i && i < reqlimit)) {
+            /* Less arguments than required */
+            keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
+            PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
+                         "argument '%U' (pos %d)",
+                         (parser->fname == NULL) ? "function" : parser->fname,
+                         (parser->fname == NULL) ? "" : "()",
+                         keyword, i+1);
+            return NULL;
+        }
+    }
+
+    if (nkwargs > 0) {
+        Py_ssize_t j;
+        /* make sure there are no arguments given by name and position */
+        for (i = posonly; i < nargs; i++) {
+            keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
+            if (kwargs != NULL) {
+                current_arg = PyDict_GetItemWithError(kwargs, keyword);
+                if (!current_arg && PyErr_Occurred()) {
+                    return NULL;
+                }
+            }
+            else {
+                current_arg = find_keyword(kwnames, kwstack, keyword);
+            }
+            if (current_arg) {
+                /* arg present in tuple and in dict */
+                PyErr_Format(PyExc_TypeError,
+                             "argument for %.200s%s given by name ('%U') "
+                             "and position (%d)",
+                             (parser->fname == NULL) ? "function" : parser->fname,
+                             (parser->fname == NULL) ? "" : "()",
+                             keyword, i+1);
+                return NULL;
+            }
+        }
+        /* make sure there are no extraneous keyword arguments */
+        j = 0;
+        while (1) {
+            int match;
+            if (kwargs != NULL) {
+                if (!PyDict_Next(kwargs, &j, &keyword, NULL))
+                    break;
+            }
+            else {
+                if (j >= PyTuple_GET_SIZE(kwnames))
+                    break;
+                keyword = PyTuple_GET_ITEM(kwnames, j);
+                j++;
+            }
+
+            if (!PyUnicode_Check(keyword)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "keywords must be strings");
+                return NULL;
+            }
+            match = PySequence_Contains(kwtuple, keyword);
+            if (match <= 0) {
+                if (!match) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "'%U' is an invalid keyword "
+                                 "argument for %.200s%s",
+                                 keyword,
+                                 (parser->fname == NULL) ? "this function" : parser->fname,
+                                 (parser->fname == NULL) ? "" : "()");
+                }
+                return NULL;
+            }
+        }
+    }
+
+    return buf;
 }
 
 
