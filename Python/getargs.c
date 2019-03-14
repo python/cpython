@@ -371,14 +371,14 @@ vgetargs1_impl(PyObject *compat_args, PyObject *const *stack, Py_ssize_t nargs, 
     if (nargs < min || max < nargs) {
         if (message == NULL)
             PyErr_Format(PyExc_TypeError,
-                         "%.150s%s takes %s %d argument%s (%ld given)",
+                         "%.150s%s takes %s %d argument%s (%zd given)",
                          fname==NULL ? "function" : fname,
                          fname==NULL ? "" : "()",
                          min==max ? "exactly"
                          : nargs < min ? "at least" : "at most",
                          nargs < min ? min : max,
                          (nargs < min ? min : max) == 1 ? "" : "s",
-                         Py_SAFE_DOWNCAST(nargs, Py_ssize_t, long));
+                         nargs);
         else
             PyErr_SetString(PyExc_TypeError, message);
         return cleanreturn(0, &freelist);
@@ -1718,7 +1718,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 else {
                     PyErr_Format(PyExc_TypeError,
                                  "%.200s%s takes %s %d positional arguments"
-                                 " (%d given)",
+                                 " (%zd given)",
                                  (fname == NULL) ? "function" : fname,
                                  (fname == NULL) ? "" : "()",
                                  (min != INT_MAX) ? "at most" : "exactly",
@@ -1797,7 +1797,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
     if (skip) {
         PyErr_Format(PyExc_TypeError,
                      "%.200s%s takes %s %d positional arguments"
-                     " (%d given)",
+                     " (%zd given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      (Py_MIN(pos, min) < i) ? "at least" : "exactly",
@@ -2103,7 +2103,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         }
         else {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s%s takes %s %d positional arguments (%d given)",
+                         "%.200s%s takes %s %d positional arguments (%zd given)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          (parser->min != INT_MAX) ? "at most" : "exactly",
@@ -2152,7 +2152,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
                 Py_ssize_t min = Py_MIN(pos, parser->min);
                 PyErr_Format(PyExc_TypeError,
                              "%.200s%s takes %s %d positional arguments"
-                             " (%d given)",
+                             " (%zd given)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              min < parser->max ? "at least" : "exactly",

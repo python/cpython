@@ -1209,7 +1209,7 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
 
             if (!errors || strcmp(errors, "strict") == 0) {
                 PyErr_Format(PyExc_ValueError,
-                             "invalid \\x escape at position %d",
+                             "invalid \\x escape at position %zd",
                              s - 2 - (end - len));
                 goto failed;
             }
