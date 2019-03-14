@@ -410,11 +410,21 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"depth", NULL};
-    static _PyArg_Parser _parser = {"i:set_coroutine_origin_tracking_depth", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_coroutine_origin_tracking_depth", 0};
+    PyObject *argsbuf[1];
     int depth;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &depth)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    depth = _PyLong_AsInt(args[0]);
+    if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = sys_set_coroutine_origin_tracking_depth_impl(module, depth);
@@ -1050,4 +1060,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=109787af3401cd27 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3ba4c194d00f1866 input=a9049054013a1b77]*/

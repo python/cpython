@@ -1103,7 +1103,7 @@ get_locale_encoding(char **locale_encoding)
 {
 #ifdef MS_WINDOWS
     char encoding[20];
-    PyOS_snprintf(encoding, sizeof(encoding), "cp%d", GetACP());
+    PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
 #elif defined(__ANDROID__) || defined(__VXWORKS__)
     const char *encoding = "UTF-8";
 #else

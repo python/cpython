@@ -442,6 +442,11 @@ Optimizations
   (Contributed by Stefan Behnel, Pablo Galindo Salgado, Raymond Hettinger,
   Neil Schemenauer, and Serhiy Storchaka in :issue:`36012`.)
 
+* Reduced an overhead of converting arguments passed to many builtin functions
+  and methods.  This sped up calling some simple builtin functions and
+  methods up to 20--50%.  (Contributed by Serhiy Storchaka in :issue:`23867`,
+  :issue:`35582` and :issue:`36127`.)
+
 
 Build and C API Changes
 =======================
