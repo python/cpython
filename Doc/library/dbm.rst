@@ -264,12 +264,12 @@ to locate the appropriate header file to simplify building this module.
    Name of the ``ndbm`` implementation library used.
 
 
-.. function:: open(filename[, flag[, mode]])
+.. function:: open(filename[, flags[, mode]])
 
    Open a dbm database and return a ``ndbm`` object.  The *filename* argument is the
    name of the database file (without the :file:`.dir` or :file:`.pag` extensions).
 
-   The optional *flag* argument must be one of these values:
+   The optional *flags* argument must be one of these values:
 
    +---------+-------------------------------------------+
    | Value   | Meaning                                   |
