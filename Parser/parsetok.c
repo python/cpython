@@ -84,6 +84,11 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
     struct tok_state *tok;
     int exec_input = start == file_input;
 
+    if (PySys_Audit("compile", "yO", s, filename) < 0) {
+        err_ret->error = E_ERROR;
+        return NULL;
+    }
+
     if (initerr(err_ret, filename) < 0)
         return NULL;
 
@@ -154,6 +159,10 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
                          perrdetail *err_ret, int *flags)
 {
     struct tok_state *tok;
+
+    if (PySys_Audit("compile", "OO", Py_None, filename) < 0) {
+        return NULL;
+    }
 
     if (initerr(err_ret, filename) < 0)
         return NULL;

@@ -37,6 +37,11 @@ PyAPI_FUNC(PyObject *) PySys_GetXOptions(void);
 PyAPI_FUNC(size_t) _PySys_GetSizeOf(PyObject *);
 #endif
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) PySys_Audit(const char*, const char *, ...);
+PyAPI_FUNC(int) PySys_AddAuditHook(void*, void*);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -666,5 +666,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_config("preinit_isolated2", config, preconfig)
 
 
+class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
+    def test_open_code_hook(self):
+        self.run_embedded_interpreter("open_code_hook")
+
+    def test_audit(self):
+        self.run_embedded_interpreter("audit")
+
+
 if __name__ == "__main__":
     unittest.main()

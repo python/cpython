@@ -67,6 +67,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    will be relative to the offset from the beginning of the file. *offset*
    defaults to 0.  *offset* must be a multiple of the :const:`ALLOCATIONGRANULARITY`.
 
+   Creating an instance of this class raises an
+   :func:`auditing event <sys.audit>` ``mmap.__new__`` with arguments
+   ``fileno``, ``length``, ``access``, ``offset``.
 
 .. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, access=ACCESS_DEFAULT[, offset])
    :noindex:
@@ -155,6 +158,10 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
           mm.close()
 
+   Creating an instance of this class raises an
+   :func:`auditing event <sys.audit>` ``mmap.__new__`` with arguments
+   ``fileno``, ``length``, ``access``, ``offset``, where access may have been
+   inferred from *flags* and *prot*.
 
    Memory-mapped file objects support the following methods:
 

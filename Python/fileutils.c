@@ -1262,6 +1262,10 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 #endif
 
     if (gil_held) {
+        if (PySys_Audit("open", "sOi", pathname, Py_None, flags) < 0) {
+            return -1;
+        }
+
         do {
             Py_BEGIN_ALLOW_THREADS
             fd = open(pathname, flags);
@@ -1344,9 +1348,25 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     if (cpath == NULL) {
         return NULL;
     }
+    if (_Py_IsCoreInitialized() &&
+        PySys_Audit("open", "uui", path, mode, 0) < 0) {
+        /* Audit hooks can abort this, but the caller is not
+           expecting Python exceptions so we have to clear it */
+        PyErr_Clear();
+        errno = EPERM;
+        return NULL;
+    }
     f = fopen(cpath, cmode);
     PyMem_RawFree(cpath);
 #else
+    if (_Py_IsCoreInitialized() &&
+        PySys_Audit("open", "uui", path, mode, 0) < 0) {
+        /* Audit hooks can abort this, but the caller is not
+           expecting Python exceptions so we have to clear it */
+        PyErr_Clear();
+        errno = EPERM;
+        return NULL;
+    }
     f = _wfopen(path, mode);
 #endif
     if (f == NULL)
@@ -1366,7 +1386,16 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
-    FILE *f = fopen(pathname, mode);
+    FILE *f;
+    if (_Py_IsCoreInitialized() &&
+        PySys_Audit("open", "ssi", pathname, mode, 0) < 0) {
+        /* Audit hooks can abort this, but the caller is not
+           expecting Python exceptions so we have to clear it */
+        PyErr_Clear();
+        errno = EPERM;
+        return NULL;
+    }
+    f = fopen(pathname, mode);
     if (f == NULL)
         return NULL;
     if (make_non_inheritable(fileno(f)) < 0) {
@@ -1401,6 +1430,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
 
     assert(PyGILState_Check());
 
+    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        return NULL;
+    }
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError,
                      "str file path expected under Windows, got %R",
@@ -1433,6 +1465,10 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;
     path_bytes = PyBytes_AS_STRING(bytes);
+
+    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        return NULL;
+    }
 
     do {
         Py_BEGIN_ALLOW_THREADS

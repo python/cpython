@@ -49,6 +49,12 @@ PyAPI_DATA(PyTypeObject) PyStdPrinter_Type;
     #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
 #endif
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) PyFile_OpenCode(const char *utf8path);
+PyAPI_FUNC(PyObject *) PyFile_OpenCodeObject(PyObject *path);
+PyAPI_FUNC(int) PyFile_SetOpenCodeHook(void *hook, void *userData);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

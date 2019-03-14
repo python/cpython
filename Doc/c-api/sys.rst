@@ -289,6 +289,41 @@ accessible to C code.  They all work with the current interpreter thread's
    .. versionadded:: 3.2
 
 
+.. c:function:: int PySys_Audit(const char *event, PyObject *arguments)
+
+   .. index:: single: audit events
+
+   Raises an auditing event with any active hooks. Returns zero for success
+   and non-zero with an exception set on failure.
+
+   :func:`sys.audit` performs the same function from Python code.
+
+   .. versionadded:: 3.8
+
+
+.. c:function:: int PySys_AddAuditHook(void *hook)
+
+   .. index:: single: audit events
+
+   Adds to the collection of active auditing hooks. Returns zero for success
+   and non-zero on failure. If the interpreter has been initialized, also sets an
+   error on failure.
+
+   This function is safe to call before :c:func:`Py_Initialize`. When called
+   after interpreter initialization, existing audit hooks are notified and may
+   silently abort the operation by raising an error subclassed from
+   :class:`Exception` (other errors will not be silenced).
+
+   The hook function is of type :c:type:`int (*)(const char *event, PyObject
+   *args)`, where ``args`` is guaranteed to be a :c:type:`PyTupleObject*`.
+
+   See :pep:`578` for a detailed decription of auditing. Functions in the
+   runtime and standard library that raise events include the details in each
+   function's documentation.
+
+   .. versionadded:: 3.8
+
+
 .. _processcontrol:
 
 Process Control

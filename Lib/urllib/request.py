@@ -521,6 +521,7 @@ class OpenerDirector:
             meth = getattr(processor, meth_name)
             req = meth(req)
 
+        sys.audit('urllib.Request', req.full_url, req.data, req.headers, req.get_method())
         response = self._open(req, data)
 
         # post-process response

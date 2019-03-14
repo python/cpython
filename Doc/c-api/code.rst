@@ -40,6 +40,9 @@ bound into a function.
    :c:func:`PyCode_New` directly can bind you to a precise Python
    version since the definition of the bytecode changes often.
 
+   Raises an :func:`auditing event <sys.audit>` ``code.__new__``
+   with arguments ``code``, ``filename``, ``name``, ``argcount``,
+   ``kwonlyargcount``, ``nlocals``, ``stacksize``, ``flags``.
 
 .. c:function:: PyCodeObject* PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 

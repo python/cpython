@@ -1277,6 +1277,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!name)
         return NULL;
 
+    if (PySys_Audit("ctypes.dlopen", "O", nameobj) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     /* bpo-36085: Limit DLL search directories to avoid pre-loading
      * attacks and enable use of the AddDllDirectory function.
@@ -1381,6 +1385,9 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     } else {
         name_str = NULL;
         name2 = NULL;
+    }
+    if (PySys_Audit("ctypes.dlopen", "s", name_str) < 0) {
+        return NULL;
     }
     handle = ctypes_dlopen(name_str, mode);
     Py_XDECREF(name2);

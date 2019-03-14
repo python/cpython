@@ -19,6 +19,22 @@ always available.
    .. versionadded:: 3.2
 
 
+.. function:: addaudithook(hook)
+
+   Adds the callable *hook* to the collection of active auditing hooks.
+
+   When an auditing event is raised through the :func:`sys.audit` function, each
+   hook will be called in the order it was added with the event name and the
+   tuple of arguments.
+
+   Calling this function will trigger an event for all existing hooks, and if
+   any raise an exception derived from :class:`Exception`, the add will be
+   silently ignored. As a result, callers cannot assume that their hook has been
+   added unless they control all existing hooks.
+
+   .. versionadded:: 3.8
+
+
 .. data:: argv
 
    The list of command line arguments passed to a Python script. ``argv[0]`` is the
@@ -35,6 +51,26 @@ always available.
       them with filesystem encoding and "surrogateescape" error handler.
       When you need original bytes, you can get it by
       ``[os.fsencode(arg) for arg in sys.argv]``.
+
+
+.. function:: audit(event, *args)
+
+   .. index:: single: auditing
+
+   Raises an auditing event with any active hooks. The event name is a string
+   identifying the event and its associated schema, which is the number and
+   types of arguments. The schema for a given event is considered public and
+   stable API and should not be modified between releases.
+
+   This function will raise the first exception raised by any hook. In general,
+   these errors should not be handled and should terminate the process as
+   quickly as possible.
+
+   Hooks are added using the :func:`sys.addaudithook` function. The native
+   equivalent of this function is :c:func:`PySys_Audit`, and is preferred over
+   the Python function where possible.
+
+   .. versionadded:: 3.8
 
 
 .. data:: base_exec_prefix
@@ -113,6 +149,9 @@ always available.
    code examines the frame.
 
    This function should be used for internal and specialized purposes only.
+
+   Raises an :func:`auditing event <sys.audit>` ``sys._current_frames`` with no
+   arguments.
 
 
 .. function:: breakpointhook()
@@ -613,6 +652,9 @@ always available.
    given, return the frame object that many calls below the top of the stack.  If
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
+
+   Raises an :func:`auditing event <sys.audit>` ``sys._getframe`` with no
+   arguments.
 
    .. impl-detail::
 
@@ -1143,6 +1185,8 @@ always available.
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
 
+   Raises an :func:`auditing event <sys.audit>` ``sys.setprofile`` with no arguments.
+
    The events have the following meaning:
 
    ``'call'``
@@ -1263,6 +1307,8 @@ always available.
 
    For more information on code and frame objects, refer to :ref:`types`.
 
+   Raises an :func:`auditing event <sys.audit>` ``sys.settrace`` with no arguments.
+
    .. impl-detail::
 
       The :func:`settrace` function is intended only for implementing debuggers,
@@ -1282,6 +1328,12 @@ always available.
    callable will be called when an asynchronous generator is iterated for the
    first time. The *finalizer* will be called when an asynchronous generator
    is about to be garbage collected.
+
+   Raises two :func:`auditing events <sys.audit>`
+   ``sys.set_asyncgen_hooks_firstiter`` and
+   ``sys.set_asyncgen_hooks_finalizer``, both with no arguments. (Two events
+   are raised because the underlying API consists of two calls, each of which
+   must raise its own event.)
 
    .. versionadded:: 3.6
       See :pep:`525` for more details, and for a reference example of a
@@ -1345,6 +1397,9 @@ always available.
         foo()
 
    See also :func:`get_coroutine_wrapper`.
+
+   Raises an :func:`auditing event <sys.audit>` ``sys.set_coroutine_wrapper``
+   with no arguments.
 
    .. versionadded:: 3.5
       See :pep:`492` for more details.

@@ -44,7 +44,18 @@ static PyThreadState *_PyThreadState_Swap(struct _gilstate_runtime_state *gilsta
 static _PyInitError
 _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 {
+    /* We preserve the hook across init, because there is
+       currently no public API to set it between runtime
+       initialization and interpreter initialization. */
+    void *open_code_hook = runtime->open_code_hook;
+    void *open_code_userdata = runtime->open_code_userdata;
+    _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
+
     memset(runtime, 0, sizeof(*runtime));
+
+    runtime->open_code_hook = open_code_hook;
+    runtime->open_code_userdata = open_code_userdata;
+    runtime->audit_hook_head = audit_hook_head;
 
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
@@ -1050,6 +1061,10 @@ _PyThread_CurrentFrames(void)
 {
     PyObject *result;
     PyInterpreterState *i;
+
+    if (PySys_Audit("sys._current_frames", NULL) < 0) {
+        return NULL;
+    }
 
     result = PyDict_New();
     if (result == NULL)
