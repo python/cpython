@@ -37,6 +37,9 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
 
 /* Initialization and finalization */
 
+PyAPI_FUNC(_PyInitError) _Py_PreInitialize(void);
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPreConfig(
+    const _PyPreConfig *config);
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
     const _PyCoreConfig *config);
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_ExitInitError(_PyInitError err);

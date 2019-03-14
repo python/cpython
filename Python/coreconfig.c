@@ -3,9 +3,10 @@
 #include "pycore_coreconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_getopt.h"
+#include "pycore_pathconfig.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
-#include "pycore_pathconfig.h"
+#include "pycore_pystate.h"   /* _PyRuntime */
 #include <locale.h>       /* setlocale() */
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>   /* nl_langinfo(CODESET) */
@@ -1327,35 +1328,6 @@ config_init_fs_encoding(_PyCoreConfig *config)
 }
 
 
-static _PyInitError
-_PyCoreConfig_ReadPreConfig(_PyCoreConfig *config)
-{
-    _PyInitError err;
-    _PyPreConfig local_preconfig = _PyPreConfig_INIT;
-    _PyPreConfig_GetGlobalConfig(&local_preconfig);
-
-    if (_PyPreConfig_Copy(&local_preconfig, &config->preconfig) < 0) {
-        err = _Py_INIT_NO_MEMORY();
-        goto done;
-    }
-
-    err = _PyPreConfig_Read(&local_preconfig);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
-
-    if (_PyPreConfig_Copy(&config->preconfig, &local_preconfig) < 0) {
-        err = _Py_INIT_NO_MEMORY();
-        goto done;
-    }
-    err = _Py_INIT_OK();
-
-done:
-    _PyPreConfig_Clear(&local_preconfig);
-    return err;
-}
-
-
 /* Read the configuration into _PyCoreConfig from:
 
    * Environment variables
@@ -1363,22 +1335,20 @@ done:
 
    See _PyCoreConfig_ReadFromArgv() to parse also command line arguments. */
 _PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
+_PyCoreConfig_Read(_PyCoreConfig *config)
 {
     _PyInitError err;
 
+    err = _Py_PreInitialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     _PyCoreConfig_GetGlobalConfig(config);
 
-    if (preconfig != NULL) {
-        if (_PyPreConfig_Copy(&config->preconfig, preconfig) < 0) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-    else {
-        err = _PyCoreConfig_ReadPreConfig(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
+    /* Read pre-configuration written by _PyPreConfig_Write() */
+    if (_PyPreConfig_Copy(&config->preconfig, &_PyRuntime.preconfig) < 0) {
+        return _Py_INIT_NO_MEMORY();
     }
 
     assert(config->preconfig.use_environment >= 0);
@@ -2019,11 +1989,12 @@ config_usage(int error, const wchar_t* program)
 
 /* Parse command line options and environment variables. */
 static _PyInitError
-config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
-                    const _PyPreConfig *preconfig)
+config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline)
 {
     int need_usage = 0;
     _PyInitError err;
+
+    _PyCoreConfig_GetGlobalConfig(config);
 
     err = config_init_program(config, cmdline);
     if (_Py_INIT_FAILED(err)) {
@@ -2056,7 +2027,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
         return err;
     }
 
-    err = _PyCoreConfig_Read(config, preconfig);
+    err = _PyCoreConfig_Read(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -2086,8 +2057,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
    * Environment variables
    * Py_xxx global configuration variables */
 _PyInitError
-_PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args,
-                           const _PyPreConfig *preconfig)
+_PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args)
 {
     _PyInitError err;
 
@@ -2099,7 +2069,7 @@ _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args,
         goto done;
     }
 
-    err = config_from_cmdline(config, &cmdline, preconfig);
+    err = config_from_cmdline(config, &cmdline);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }

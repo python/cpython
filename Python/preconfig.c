@@ -666,6 +666,8 @@ _PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
     int locale_coerced = 0;
     int loops = 0;
 
+    _PyPreConfig_GetGlobalConfig(config);
+
     err = get_ctype_locale(&init_ctype_locale);
     if (_Py_INIT_FAILED(err)) {
         goto done;
@@ -838,6 +840,16 @@ _PyPreConfig_Write(_PyPreConfig *config)
 
     /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
+
+    /* Write the new pre-configuration into _PyRuntime */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    int res = _PyPreConfig_Copy(&_PyRuntime.preconfig, config);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (res < 0) {
+        return _Py_INIT_NO_MEMORY();
+    }
 
     return _Py_INIT_OK();
 }

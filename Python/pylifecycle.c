@@ -713,41 +713,58 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 }
 
 
-static _PyInitError
-pyinit_preconfig(_PyPreConfig *preconfig, const _PyPreConfig *src_preconfig)
+_PyInitError
+_Py_PreInitializeFromPreConfig(const _PyPreConfig *src_preconfig)
 {
-    if (_PyPreConfig_Copy(preconfig, src_preconfig) < 0) {
-        return _Py_INIT_ERR("failed to copy pre config");
-    }
+    _PyInitError err;
 
-    _PyInitError err = _PyPreConfig_Read(preconfig);
+    err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    return _PyPreConfig_Write(preconfig);
+    _PyPreConfig config = _PyPreConfig_INIT;
+    if (_PyPreConfig_Copy(&config, src_preconfig) < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    err = _PyPreConfig_Read(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _PyPreConfig_Write(&config);
+
+    _PyRuntime.pre_initialized = 1;
+
+done:
+    _PyPreConfig_Clear(&config);
+    return err;
 }
 
 
-static _PyInitError
-pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
-                  PyInterpreterState **interp_p)
+_PyInitError
+_Py_PreInitialize(void)
 {
-    if (_PyCoreConfig_Copy(config, src_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
-    }
+    _PyInitError err;
 
-    _PyInitError err = _PyCoreConfig_Read(config, NULL);
+    err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    if (!_PyRuntime.core_initialized) {
-        return _Py_InitializeCore_impl(interp_p, config);
+    if (_PyRuntime.pre_initialized) {
+        /* Already initialized */
+        return _Py_INIT_OK();
     }
-    else {
-        return _Py_Initialize_ReconfigureCore(interp_p, config);
-    }
+
+    _PyPreConfig config = _PyPreConfig_INIT;
+
+    err = _Py_PreInitializeFromPreConfig(&config);
+
+    _PyPreConfig_Clear(&config);
+    return err;
 }
 
 
@@ -767,28 +784,40 @@ pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
  * Any code invoked from this function should *not* assume it has access
  * to the Python C API (unless the API is explicitly listed as being
  * safe to call without calling Py_Initialize first)
+ *
+ * Must be called after _Py_PreInitialize().
  */
 _PyInitError
 _Py_InitializeCore(PyInterpreterState **interp_p,
                    const _PyCoreConfig *src_config)
 {
+    assert(_PyRuntime.pre_initialized);
+
     _PyInitError err;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    assert(src_config != NULL);
+    if (_PyCoreConfig_Copy(&config, src_config) < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
 
-    _PyCoreConfig local_config = _PyCoreConfig_INIT;
-
-    err = pyinit_preconfig(&local_config.preconfig, &src_config->preconfig);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = pyinit_coreconfig(&local_config, src_config, interp_p);
+    if (!_PyRuntime.core_initialized) {
+        err = _Py_InitializeCore_impl(interp_p, &config);
+    }
+    else {
+        err = _Py_Initialize_ReconfigureCore(interp_p, &config);
+    }
 
 done:
-    _PyCoreConfig_Clear(&local_config);
+    _PyCoreConfig_Clear(&config);
     return err;
 }
+
 
 /* Py_Initialize() has already been called: update the main interpreter
    configuration. Example of bpo-34008: Py_Main() called after
@@ -924,8 +953,19 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
 _PyInitError
 _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    PyInterpreterState *interp = NULL;
     _PyInitError err;
+
+    err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = _Py_PreInitializeFromPreConfig(&config->preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    PyInterpreterState *interp = NULL;
     err = _Py_InitializeCore(&interp, config);
     if (_Py_INIT_FAILED(err)) {
         return err;

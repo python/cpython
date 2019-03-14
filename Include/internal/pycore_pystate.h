@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
 #endif
 
+#include "cpython/coreconfig.h"
 #include "pystate.h"
 #include "pythread.h"
 
@@ -185,8 +186,9 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    int initialized;
+    int pre_initialized;
     int core_initialized;
+    int initialized;
     PyThreadState *finalizing;
 
     struct pyinterpreters {
@@ -220,10 +222,14 @@ typedef struct pyruntimestate {
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
+    _PyPreConfig preconfig;
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
-#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+#define _PyRuntimeState_INIT \
+    {.pre_initialized = 0, \
+     .core_initialized = 0, \
+     .initialized = 0}
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;

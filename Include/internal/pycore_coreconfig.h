@@ -79,11 +79,9 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
-    const _PyPreConfig *preconfig);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
-    const _PyArgv *args,
-    const _PyPreConfig *preconfig);
+    const _PyArgv *args);
 PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
 
 #ifdef __cplusplus
