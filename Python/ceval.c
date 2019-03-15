@@ -330,31 +330,33 @@ _PyEval_SignalReceived(void)
 
 /* Push one item onto the queue while holding the lock. */
 static int
-_push_pending_call(int (*func)(void *), void *arg)
+_push_pending_call(struct _pending_calls *pending,
+                   int (*func)(void *), void *arg)
 {
-    int i = _PyRuntime.ceval.pending.last;
+    int i = pending->last;
     int j = (i + 1) % NPENDINGCALLS;
-    if (j == _PyRuntime.ceval.pending.first) {
+    if (j == pending->first) {
         return -1; /* Queue full */
     }
-    _PyRuntime.ceval.pending.calls[i].func = func;
-    _PyRuntime.ceval.pending.calls[i].arg = arg;
-    _PyRuntime.ceval.pending.last = j;
+    pending->calls[i].func = func;
+    pending->calls[i].arg = arg;
+    pending->last = j;
     return 0;
 }
 
 /* Pop one item off the queue while holding the lock. */
 static void
-_pop_pending_call(int (**func)(void *), void **arg)
+_pop_pending_call(struct _pending_calls *pending,
+                  int (**func)(void *), void **arg)
 {
-    int i = _PyRuntime.ceval.pending.first;
-    if (i == _PyRuntime.ceval.pending.last) {
+    int i = pending->first;
+    if (i == pending->last) {
         return; /* Queue empty */
     }
 
-    *func = _PyRuntime.ceval.pending.calls[i].func;
-    *arg = _PyRuntime.ceval.pending.calls[i].arg;
-    _PyRuntime.ceval.pending.first = (i + 1) % NPENDINGCALLS;
+    *func = pending->calls[i].func;
+    *arg = pending->calls[i].arg;
+    pending->first = (i + 1) % NPENDINGCALLS;
 }
 
 /* This implementation is thread-safe.  It allows
@@ -365,9 +367,23 @@ _pop_pending_call(int (**func)(void *), void **arg)
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
-    PyThread_acquire_lock(_PyRuntime.ceval.pending.lock, WAIT_LOCK);
-    int result = _push_pending_call(func, arg);
-    PyThread_release_lock(_PyRuntime.ceval.pending.lock);
+    struct _pending_calls *pending = &_PyRuntime.ceval.pending;
+
+    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+    if (pending->finishing) {
+        PyThread_release_lock(pending->lock);
+
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        PyErr_SetString(PyExc_SystemError,
+                        "Py_AddPendingCall: cannot add pending calls "
+                        "(Python shutting down)");
+        PyErr_Print();
+        PyErr_Restore(exc, val, tb);
+        return -1;
+    }
+    int result = _push_pending_call(pending, func, arg);
+    PyThread_release_lock(pending->lock);
 
     /* signal main loop */
     SIGNAL_PENDING_CALLS();
@@ -400,7 +416,7 @@ handle_signals(void)
 }
 
 static int
-make_pending_calls(void)
+make_pending_calls(struct _pending_calls* pending)
 {
     static int busy = 0;
 
@@ -425,9 +441,9 @@ make_pending_calls(void)
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */
-        PyThread_acquire_lock(_PyRuntime.ceval.pending.lock, WAIT_LOCK);
-        _pop_pending_call(&func, &arg);
-        PyThread_release_lock(_PyRuntime.ceval.pending.lock);
+        PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+        _pop_pending_call(pending, &func, &arg);
+        PyThread_release_lock(pending->lock);
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
@@ -448,6 +464,30 @@ error:
     return res;
 }
 
+void
+_Py_FinishPendingCalls(void)
+{
+    struct _pending_calls *pending = &_PyRuntime.ceval.pending;
+
+    assert(PyGILState_Check());
+
+    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+    pending->finishing = 1;
+    PyThread_release_lock(pending->lock);
+
+    if (!_Py_atomic_load_relaxed(&(pending->calls_to_do))) {
+        return;
+    }
+
+    if (make_pending_calls(pending) < 0) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        PyErr_BadInternalCall();
+        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_Print();
+    }
+}
+
 /* Py_MakePendingCalls() is a simple wrapper for the sake
    of backward-compatibility. */
 int
@@ -462,7 +502,7 @@ Py_MakePendingCalls(void)
         return res;
     }
 
-    res = make_pending_calls();
+    res = make_pending_calls(&_PyRuntime.ceval.pending);
     if (res != 0) {
         return res;
     }
@@ -1012,7 +1052,7 @@ main_loop:
             if (_Py_atomic_load_relaxed(
                         &_PyRuntime.ceval.pending.calls_to_do))
             {
-                if (make_pending_calls() != 0) {
+                if (make_pending_calls(&_PyRuntime.ceval.pending) != 0) {
                     goto error;
                 }
             }
