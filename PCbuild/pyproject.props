@@ -98,10 +98,10 @@
           Inputs="$(PySourcePath)Include\patchlevel.h"
           Outputs="$(IntDir)pythonnt_rc.h">
     <WriteLinesToFile File="$(IntDir)pythonnt_rc.h" Overwrite="true" Encoding="ascii"
-                      Lines='/* This file created by pyproject.props /t:GeneratePythonNtRcH */%0D%0A
-#define FIELD3 $(Field3Value)%0D%0A
-#define MS_DLL_ID "$(SysWinVer)"%0D%0A
-#define PYTHON_DLL_NAME "$(TargetName)$(TargetExt)"%0D%0A
+                      Lines='/* This file created by pyproject.props /t:GeneratePythonNtRcH */
+#define FIELD3 $(Field3Value)
+#define MS_DLL_ID "$(SysWinVer)"
+#define PYTHON_DLL_NAME "$(TargetName)$(TargetExt)"
 ' />
     <ItemGroup>
         <FileWrites Include="$(IntDir)pythonnt_rc.h" />
