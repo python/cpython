@@ -1,2 +1,0 @@
-Allow repeated assignment deletion of :class:`unittest.mock.Mock` attributes.
-Patch by Pablo Galindo.

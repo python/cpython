@@ -1,3 +1,0 @@
-:func:`unittest.mock.patch.dict` used as a decorator with string target
-resolves the target during function call instead of during decorator
-construction. Patch by Karthikeyan Singaravelan.

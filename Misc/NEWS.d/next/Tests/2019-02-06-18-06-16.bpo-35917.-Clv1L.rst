@@ -1,3 +1,0 @@
-multiprocessing: provide unit tests for SyncManager and SharedMemoryManager
-classes + all the shareable types which are supposed to be supported by
-them.  (patch by Giampaolo Rodola)

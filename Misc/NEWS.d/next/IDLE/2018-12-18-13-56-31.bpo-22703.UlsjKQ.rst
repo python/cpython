@@ -1,3 +1,0 @@
-The Code Context menu label now toggles between Show/Hide Code Context.
-The Zoom Height menu now toggles between Zoom/Restore Height.
-Zoom Height has moved from the Window menu to the Options menu.

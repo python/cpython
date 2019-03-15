@@ -1,2 +1,0 @@
-Add a pending deprecated warning for the :meth:`threading.Thread.isAlive` method.
-Patch by Dong-hee Na.

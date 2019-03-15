@@ -1,1 +1,0 @@
-Fix incorrect Solaris #ifdef checks to look for __sun && __SVR4 instead of sun when compiling.

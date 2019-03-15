@@ -1,1 +1,0 @@
-Avoid test_ttk_guionly ComboboxTest failure with macOS Cocoa Tk.
