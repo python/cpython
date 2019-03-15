@@ -418,7 +418,7 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     int64_t refcount = interp->id_refcount;
     PyThread_release_lock(interp->id_mutex);
 
-    if (refcount == 0) {
+    if (refcount == 0 && interp->requires_idref) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?
@@ -426,6 +426,18 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
         Py_EndInterpreter(tstate);
         PyThreadState_Swap(save_tstate);
     }
+}
+
+int
+_PyInterpreterState_RequiresIDRef(PyInterpreterState *interp)
+{
+    return interp->requires_idref;
+}
+
+void
+_PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
+{
+    interp->requires_idref = required ? 1 : 0;
 }
 
 _PyCoreConfig *
@@ -438,6 +450,16 @@ _PyMainInterpreterConfig *
 _PyInterpreterState_GetMainConfig(PyInterpreterState *interp)
 {
     return &interp->config;
+}
+
+PyObject *
+_PyInterpreterState_GetMainModule(PyInterpreterState *interp)
+{
+    if (interp->modules == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
+        return NULL;
+    }
+    return PyMapping_GetItemString(interp->modules, "__main__");
 }
 
 /* Default implementation for _PyThreadState_GetFrame */
@@ -1392,7 +1414,7 @@ _register_xidata(PyTypeObject *cls, crossinterpdatafunc getdata)
 static void _register_builtins_for_crossinterpreter_data(void);
 
 int
-_PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
+_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
                                        crossinterpdatafunc getdata)
 {
     if (!PyType_Check(cls)) {
