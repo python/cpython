@@ -1558,6 +1558,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_init` function is called; if :c:member:`~PyTypeObject.tp_new` returns an instance of a
    subtype of the original type, the subtype's :c:member:`~PyTypeObject.tp_init` is called.
 
+   Returns ``0`` on success, ``-1`` and sets an exception on error.
+
    **Inheritance:**
 
    This field is inherited by subtypes.
