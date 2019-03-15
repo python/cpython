@@ -896,15 +896,6 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeRawUnicodeEscape(
     Py_ssize_t length           /* Number of Py_UNICODE chars to encode */
     ) Py_DEPRECATED(3.3);
 
-/* --- Unicode Internal Codec --------------------------------------------- */
-
-/* Only for internal use in _codecsmodule.c */
-PyObject *_PyUnicode_DecodeUnicodeInternal(
-    const char *string,
-    Py_ssize_t length,
-    const char *errors
-    );
-
 /* --- Latin-1 Codecs ----------------------------------------------------- */
 
 PyAPI_FUNC(PyObject*) _PyUnicode_AsLatin1String(
