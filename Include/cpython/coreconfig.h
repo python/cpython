@@ -46,6 +46,18 @@ typedef struct {
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL || err.exitcode != -1)
 
+/* --- _PyWstrList ------------------------------------------------ */
+
+typedef struct {
+    /* If length is greater than zero, items must be non-NULL
+       and all items strings must be non-NULL */
+    Py_ssize_t length;
+    wchar_t **items;
+} _PyWstrList;
+
+#define _PyWstrList_INIT (_PyWstrList){.length = 0, .items = NULL}
+
+
 /* --- _PyPreConfig ----------------------------------------------- */
 
 typedef struct {
@@ -162,19 +174,12 @@ typedef struct {
     char *filesystem_encoding;
     char *filesystem_errors;
 
-    wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
-
-    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
-    int argc;               /* Number of command line arguments,
-                               -1 means unset */
-    wchar_t **argv;         /* Command line arguments */
-    wchar_t *program;       /* argv[0] or "" */
-
-    int nxoption;           /* Number of -X options */
-    wchar_t **xoptions;     /* -X options */
-
-    int nwarnoption;        /* Number of warnings options */
-    wchar_t **warnoptions;  /* Warnings options */
+    wchar_t *pycache_prefix;  /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
+    wchar_t *program_name;    /* Program name, see also Py_GetProgramName() */
+    _PyWstrList argv;         /* Command line arguments */
+    wchar_t *program;         /* argv[0] or "" */
+    _PyWstrList xoptions;     /* Command line -X options */
+    _PyWstrList warnoptions;  /* Warnings options */
 
     /* Path configuration inputs */
     wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
@@ -182,9 +187,11 @@ typedef struct {
                                see also Py_SetPythonHome(). */
 
     /* Path configuration outputs */
-    int nmodule_search_path;        /* Number of sys.path paths,
-                                       -1 means unset */
-    wchar_t **module_search_paths;  /* sys.path paths */
+    int use_module_search_paths;  /* If non-zero, use module_search_paths */
+    _PyWstrList module_search_paths;  /* sys.path paths. Computed if
+                                       use_module_search_paths is equal
+                                       to zero. */
+
     wchar_t *executable;    /* sys.executable */
     wchar_t *prefix;        /* sys.prefix */
     wchar_t *base_prefix;   /* sys.base_prefix */
@@ -366,8 +373,7 @@ typedef struct {
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
-        .argc = -1, \
-        .nmodule_search_path = -1, \
+        .use_module_search_paths = 0, \
         .site_import = -1, \
         .bytes_warning = -1, \
         .inspect = -1, \

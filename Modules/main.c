@@ -84,15 +84,15 @@ error:
 static PyObject*
 mainconfig_create_xoptions_dict(const _PyCoreConfig *config)
 {
-    int nxoption = config->nxoption;
-    wchar_t **xoptions = config->xoptions;
+    Py_ssize_t nxoption = config->xoptions.length;
+    wchar_t * const * xoptions = config->xoptions.items;
     PyObject *dict = PyDict_New();
     if (dict == NULL) {
         return NULL;
     }
 
-    for (int i=0; i < nxoption; i++) {
-        wchar_t *option = xoptions[i];
+    for (Py_ssize_t i=0; i < nxoption; i++) {
+        const wchar_t *option = xoptions[i];
         if (mainconfig_add_xoption(dict, option) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -243,22 +243,18 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
             } \
         } \
     } while (0)
-#define COPY_WSTRLIST(ATTR, LEN, LIST) \
+#define COPY_WSTRLIST(ATTR, LIST) \
     do { \
         if (ATTR == NULL) { \
-            ATTR = _Py_wstrlist_as_pylist(LEN, LIST); \
+            ATTR = _PyWstrList_AsList(LIST); \
             if (ATTR == NULL) { \
                 return _Py_INIT_NO_MEMORY(); \
             } \
         } \
     } while (0)
 
-    COPY_WSTRLIST(main_config->warnoptions,
-                  config->nwarnoption, config->warnoptions);
-    if (config->argc >= 0) {
-        COPY_WSTRLIST(main_config->argv,
-                      config->argc, config->argv);
-    }
+    COPY_WSTRLIST(main_config->warnoptions, &config->warnoptions);
+    COPY_WSTRLIST(main_config->argv, &config->argv);
 
     if (config->_install_importlib) {
         COPY_WSTR(executable);
@@ -268,7 +264,7 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
         COPY_WSTR(base_exec_prefix);
 
         COPY_WSTRLIST(main_config->module_search_path,
-                      config->nmodule_search_path, config->module_search_paths);
+                      &config->module_search_paths);
 
         if (config->pycache_prefix != NULL) {
             COPY_WSTR(pycache_prefix);
@@ -784,8 +780,7 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
         }
     }
     else if (!config->preconfig.isolated) {
-        PyObject *path0 = _PyPathConfig_ComputeArgv0(config->argc,
-                                                     config->argv);
+        PyObject *path0 = _PyPathConfig_ComputeArgv0(&config->argv);
         if (path0 == NULL) {
             err = _Py_INIT_NO_MEMORY();
             goto done;
