@@ -841,7 +841,7 @@ config_init_executable(_PyCoreConfig *config)
 static const wchar_t*
 config_get_xoption(const _PyCoreConfig *config, wchar_t *name)
 {
-    return _Py_get_xoption(config->xoptions.length, config->xoptions.items, name);
+    return _Py_get_xoption(&config->xoptions, name);
 }
 
 

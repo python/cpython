@@ -49,12 +49,13 @@ typedef struct {
 /* --- _PyWstrList ------------------------------------------------ */
 
 typedef struct {
+    /* If length is greater than zero, items must be non-NULL
+       and all items strings must be non-NULL */
     Py_ssize_t length;
     wchar_t **items;
 } _PyWstrList;
 
 #define _PyWstrList_INIT (_PyWstrList){.length = 0, .items = NULL}
-
 
 
 /* --- _PyPreConfig ----------------------------------------------- */

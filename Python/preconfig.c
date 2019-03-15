@@ -263,10 +263,10 @@ _Py_get_env_flag(_PyPreConfig *config, int *flag, const char *name)
 
 
 const wchar_t*
-_Py_get_xoption(Py_ssize_t nxoption, wchar_t * const *xoptions, const wchar_t *name)
+_Py_get_xoption(const _PyWstrList *xoptions, const wchar_t *name)
 {
-    for (Py_ssize_t i=0; i < nxoption; i++) {
-        const wchar_t *option = xoptions[i];
+    for (Py_ssize_t i=0; i < xoptions->length; i++) {
+        const wchar_t *option = xoptions->items[i];
         size_t len;
         wchar_t *sep = wcschr(option, L'=');
         if (sep != NULL) {
@@ -288,9 +288,7 @@ preconfig_init_utf8_mode(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 {
     const wchar_t *xopt;
     if (cmdline) {
-        xopt = _Py_get_xoption(cmdline->xoptions.length,
-                               cmdline->xoptions.items,
-                               L"utf8");
+        xopt = _Py_get_xoption(&cmdline->xoptions, L"utf8");
     }
     else {
         xopt = NULL;
@@ -433,7 +431,7 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
     }
 
     /* dev_mode */
-    if ((cmdline && _Py_get_xoption(cmdline->xoptions.length, cmdline->xoptions.items, L"dev"))
+    if ((cmdline && _Py_get_xoption(&cmdline->xoptions, L"dev"))
         || _PyPreConfig_GetEnv(config, "PYTHONDEVMODE"))
     {
         config->dev_mode = 1;

@@ -39,8 +39,7 @@ PyAPI_FUNC(int) _Py_str_to_int(
     const char *str,
     int *result);
 PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
-    Py_ssize_t nxoption,
-    wchar_t * const *xoptions,
+    const _PyWstrList *xoptions,
     const wchar_t *name);
 
 PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
