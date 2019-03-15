@@ -1,0 +1,2 @@
+Raise an ImportError in pyclbr when no module spec is found for a module.
+Thanks to 'mental' for the bug report.

@@ -254,11 +254,11 @@ class ReadmoduleTests(TestCase):
         self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncore.foo')
 
     def test_module_has_no_spec(self):
-        module_name = "justnone"
+        module_name = "doesnotexist"
         assert module_name not in pyclbr._modules
         with test_importlib_util.uncache(module_name):
-            sys.modules[module_name] = None  # Lacks a __spec__.
-            self.assertFalse(pyclbr.readmodule_ex(module_name))
+            with self.assertRaises(ModuleNotFoundError):
+                pyclbr.readmodule_ex(module_name)
 
 
 if __name__ == "__main__":

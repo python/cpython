@@ -160,6 +160,8 @@ def _readmodule(module, path, inpackage=None):
     else:
         search_path = path + sys.path
     spec = importlib.util._find_spec_from_path(fullmodule, search_path)
+    if spec is None:
+        raise ModuleNotFoundError(f"no module named {fullmodule!r}", name=fullmodule)
     _modules[fullmodule] = tree
     # Is module a package?
     if getattr(spec, 'submodule_search_locations', None) is not None:
