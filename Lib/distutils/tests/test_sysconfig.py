@@ -9,7 +9,7 @@ import unittest
 from distutils import sysconfig
 from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
-from test.support import TESTFN, run_unittest, check_warnings
+from test.support import TESTFN, run_unittest, check_warnings, swap_item
 
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     def setUp(self):
@@ -78,7 +78,9 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
                          'not testing if default compiler is not unix')
     def test_customize_compiler(self):
         os.environ['AR'] = 'my_ar'
-        os.environ['ARFLAGS'] = '-arflags'
+        os.environ['CC'] = 'my_cc'
+        os.environ['ARFLAGS'] = '--myarflags'
+        os.environ['CFLAGS'] = '--mycflags'
 
         # make sure AR gets caught
         class compiler:
@@ -87,9 +89,14 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
             def set_executables(self, **kw):
                 self.exes = kw
 
+        # Make sure that sysconfig._config_vars is initialized
+        sysconfig.get_config_vars()
+
         comp = compiler()
-        sysconfig.customize_compiler(comp)
-        self.assertEqual(comp.exes['archiver'], 'my_ar -arflags')
+        with swap_item(sysconfig._config_vars, 'CFLAGS', '--sysconfig-cflags'):
+            sysconfig.customize_compiler(comp)
+        self.assertEqual(comp.exes['archiver'], 'my_ar --myarflags')
+        self.assertEqual(comp.exes['compiler'], 'my_cc --sysconfig-cflags --mycflags')
 
     def test_parse_makefile_base(self):
         self.makefile = TESTFN
