@@ -867,11 +867,11 @@ class Element(Node):
             writer.write(">")
             if (len(self.childNodes) == 1 and
                 self.childNodes[0].nodeType == Node.TEXT_NODE):
-                self.childNodes[0].writexml(writer, '', '', '')
+                self.childNodes[0].writexml(writer, '', '', '', sort=sort)
             else:
                 writer.write(newl)
                 for node in self.childNodes:
-                    node.writexml(writer, indent+addindent, addindent, newl)
+                    node.writexml(writer, indent+addindent, addindent, newl, sort=sort)
                 writer.write(indent)
             writer.write("</%s>%s" % (self.tagName, newl))
         else:
@@ -988,8 +988,8 @@ class ProcessingInstruction(Childless, Node):
         self.target = value
     nodeName = property(_get_nodeName, _set_nodeName)
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
-        writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
+    def writexml(self, writer, indent="", addindent="", newl="", sort=False):
+        writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl), sort=sort)
 
 
 class CharacterData(Childless, Node):
@@ -1088,7 +1088,7 @@ class Text(CharacterData):
         self.data = self.data[:offset]
         return newText
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", sort=False):
         _write_data(writer, "%s%s%s" % (indent, self.data, newl))
 
     # DOM Level 3 (WD 9 April 2002)
@@ -1183,10 +1183,10 @@ class Comment(CharacterData):
         CharacterData.__init__(self)
         self._data = data
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", sort=False):
         if "--" in self.data:
             raise ValueError("'--' is not allowed in a comment node")
-        writer.write("%s<!--%s-->%s" % (indent, self.data, newl))
+        writer.write("%s<!--%s-->%s" % (indent, self.data, newl), sort=sort)
 
 
 class CDATASection(Text):
@@ -1195,7 +1195,7 @@ class CDATASection(Text):
     nodeType = Node.CDATA_SECTION_NODE
     nodeName = "#cdata-section"
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", sort=False):
         if self.data.find("]]>") >= 0:
             raise ValueError("']]>' not allowed in a CDATA section")
         writer.write("<![CDATA[%s]]>" % self.data)
@@ -1328,7 +1328,7 @@ class DocumentType(Identified, Childless, Node):
         else:
             return None
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", sort=False):
         writer.write("<!DOCTYPE ")
         writer.write(self.name)
         if self.publicId:
