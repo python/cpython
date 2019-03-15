@@ -154,14 +154,14 @@ _PyPathConfig_ClearGlobal(void)
 
 
 static wchar_t*
-wstrlist_join(wchar_t sep, int count, wchar_t **list)
+_PyWstrList_Join(const _PyWstrList *list, wchar_t sep)
 {
     size_t len = 1;   /* NUL terminator */
-    for (int i=0; i < count; i++) {
+    for (Py_ssize_t i=0; i < list->length; i++) {
         if (i != 0) {
             len++;
         }
-        len += wcslen(list[i]);
+        len += wcslen(list->items[i]);
     }
 
     wchar_t *text = PyMem_RawMalloc(len * sizeof(wchar_t));
@@ -169,8 +169,8 @@ wstrlist_join(wchar_t sep, int count, wchar_t **list)
         return NULL;
     }
     wchar_t *str = text;
-    for (int i=0; i < count; i++) {
-        wchar_t *path = list[i];
+    for (Py_ssize_t i=0; i < list->length; i++) {
+        wchar_t *path = list->items[i];
         if (i != 0) {
             *str++ = SEP;
         }
@@ -194,9 +194,7 @@ _PyCoreConfig_SetPathConfig(const _PyCoreConfig *core_config)
     _PyInitError err;
     _PyPathConfig path_config = _PyPathConfig_INIT;
 
-    path_config.module_search_path = wstrlist_join(DELIM,
-                                                   core_config->nmodule_search_path,
-                                                   core_config->module_search_paths);
+    path_config.module_search_path = _PyWstrList_Join(&core_config->module_search_paths, DELIM);
     if (path_config.module_search_path == NULL) {
         goto no_memory;
     }
@@ -244,10 +242,9 @@ static _PyInitError
 core_config_init_module_search_paths(_PyCoreConfig *config,
                                      _PyPathConfig *path_config)
 {
-    assert(config->module_search_paths == NULL);
-    assert(config->nmodule_search_path < 0);
+    assert(!config->use_module_search_paths);
 
-    config->nmodule_search_path = 0;
+    _PyWstrList_Clear(&config->module_search_paths);
 
     const wchar_t *sys_path = path_config->module_search_path;
     const wchar_t delim = DELIM;
@@ -266,12 +263,10 @@ core_config_init_module_search_paths(_PyCoreConfig *config,
         memcpy(path, sys_path, path_len * sizeof(wchar_t));
         path[path_len] = L'\0';
 
-        _PyInitError err = _Py_wstrlist_append(&config->nmodule_search_path,
-                                               &config->module_search_paths,
-                                               path);
+        int res = _PyWstrList_Append(&config->module_search_paths, path);
         PyMem_RawFree(path);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
+        if (res < 0) {
+            return _Py_INIT_NO_MEMORY();
         }
 
         if (*p == '\0') {
@@ -279,6 +274,7 @@ core_config_init_module_search_paths(_PyCoreConfig *config,
         }
         sys_path = p + 1;
     }
+    config->use_module_search_paths = 1;
     return _Py_INIT_OK();
 }
 
@@ -294,7 +290,7 @@ _PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
         goto error;
     }
 
-    if (config->nmodule_search_path < 0) {
+    if (!config->use_module_search_paths) {
         err = core_config_init_module_search_paths(config, &path_config);
         if (_Py_INIT_FAILED(err)) {
             goto error;
@@ -352,7 +348,7 @@ _PyInitError
 _PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
 {
     /* Do we need to calculate the path? */
-    if ((config->nmodule_search_path < 0)
+    if (!config->use_module_search_paths
         || (config->executable == NULL)
         || (config->prefix == NULL)
 #ifdef MS_WINDOWS
@@ -567,8 +563,10 @@ Py_GetProgramName(void)
 
 /* Compute argv[0] which will be prepended to sys.argv */
 PyObject*
-_PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
+_PyPathConfig_ComputeArgv0(const _PyWstrList *argv)
 {
+    assert(_PyWstrList_CheckConsistency(argv));
+
     wchar_t *argv0;
     wchar_t *p = NULL;
     Py_ssize_t n = 0;
@@ -585,8 +583,8 @@ _PyPathConfig_ComputeArgv0(int argc, wchar_t **argv)
     wchar_t fullpath[MAX_PATH];
 #endif
 
-    argv0 = argv[0];
-    if (argc > 0 && argv0 != NULL) {
+    if (argv->length > 0) {
+        argv0 = argv->items[0];
         have_module_arg = (wcscmp(argv0, L"-m") == 0);
         have_script_arg = !have_module_arg && (wcscmp(argv0, L"-c") != 0);
     }
