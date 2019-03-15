@@ -576,6 +576,23 @@ inherits properties from :class:`Node`.
    particular namespace URI and localname.  The localname is the part of the
    namespace after the prefix.
 
+.. method:: Document.writexml(self, writer, indent="", addindent="", newl="", encoding=None, sort=False)
+
+   Write XML to the writer object.  The writer should have a :meth:`write` method
+   which matches that of the file object interface.  The *indent* parameter is the
+   indentation of the current node.  The *addindent* parameter is the incremental
+   indentation to use for subnodes of the current one.  The *newl* parameter
+   specifies the string to use to terminate newlines.
+
+   The keyword argument *encoding* can be used to specify the encoding field of
+   the XML header.
+
+   .. versionchanged:: 3.8
+      The :meth:`writexml` method now preserves the attribute order specified
+      by the user.
+
+   .. versionadded:: 3.8
+      The *sort* parameter sorts the XML attributes of the tags.
 
 .. _dom-element-objects:
 

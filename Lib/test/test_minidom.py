@@ -1612,6 +1612,14 @@ class MinidomTest(unittest.TestCase):
         pi = doc.createProcessingInstruction("y", "z")
         pi.nodeValue = "crash"
 
+    def test_minidom_attribute_sorted(self):
+        xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
+        sorted_xml_str = '<?xml version="1.0" ?><curriculum company="example" status="public" />'
+        doc = parseString(xml_str)
+        output = io.StringIO()
+        doc.writexml(output, sort=True)
+        self.assertEqual(output.getvalue(), sorted_xml_str)
+
     def test_minidom_attribute_order(self):
         xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
         doc = parseString(xml_str)

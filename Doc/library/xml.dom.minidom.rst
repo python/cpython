@@ -132,7 +132,7 @@ module documentation.  This section lists the differences between the API and
           ... # Work with dom.
 
 
-.. method:: Node.writexml(writer, indent="", addindent="", newl="")
+.. method:: Node.writexml(writer, indent="", addindent="", newl="", sort=False)
 
    Write XML to the writer object.  The writer should have a :meth:`write` method
    which matches that of the file object interface.  The *indent* parameter is the
@@ -146,6 +146,11 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.8
       The :meth:`writexml` method now preserves the attribute order specified
       by the user.
+
+   .. versionadded:: 3.8
+      The *sort* parameter sorts the XML attributes of the tags. For the
+      :class:`Document` node, an additional keyword argument *sort* can be used
+      to specify the sort of the attributes.
 
 .. method:: Node.toxml(encoding=None)
 

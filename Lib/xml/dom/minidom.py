@@ -847,7 +847,7 @@ class Element(Node):
     def __repr__(self):
         return "<DOM Element: %s at %#x>" % (self.tagName, id(self))
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
+    def writexml(self, writer, indent="", addindent="", newl="", sort=False):
         # indent = current indentation
         # addindent = indentation to add to higher levels
         # newl = newline string
@@ -855,7 +855,11 @@ class Element(Node):
 
         attrs = self._get_attributes()
 
-        for a_name in attrs.keys():
+        attribute_names = attrs.keys()
+        if sort:
+            attribute_names = sorted(attribute_names)
+
+        for a_name in attribute_names:
             writer.write(" %s=\"" % a_name)
             _write_data(writer, attrs[a_name].value)
             writer.write("\"")
@@ -1786,14 +1790,14 @@ class Document(Node, DocumentLS):
             raise xml.dom.NotSupportedErr("cannot import document type nodes")
         return _clone_node(node, deep, self)
 
-    def writexml(self, writer, indent="", addindent="", newl="", encoding=None):
+    def writexml(self, writer, indent="", addindent="", newl="", encoding=None, sort=False):
         if encoding is None:
             writer.write('<?xml version="1.0" ?>'+newl)
         else:
             writer.write('<?xml version="1.0" encoding="%s"?>%s' % (
                 encoding, newl))
         for node in self.childNodes:
-            node.writexml(writer, indent, addindent, newl)
+            node.writexml(writer, indent, addindent, newl, sort=sort)
 
     # DOM Level 3 (WD 9 April 2002)
 

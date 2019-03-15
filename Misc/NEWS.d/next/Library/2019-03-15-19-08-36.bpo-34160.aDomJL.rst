@@ -1,0 +1,5 @@
+Add the *sort* attribute to the :meth:`xml.dom.minidom.Node.writexml` method
+allowing to sort the attributes by name (``True``) or by the attribute order
+specified by the user (by default ``False``). Document
+:meth:`xml.dom.minidom.Document.writexml` method. Contributed by Stéphane
+Wirtel.
