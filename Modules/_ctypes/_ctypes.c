@@ -1311,7 +1311,9 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
     if (len < 0) {
         return -1;
     }
-    if ((size_t)len > self->b_size/sizeof(wchar_t)) {
+    // PyUnicode_AsWideChar() returns number of wchars including trailing NUL,
+    // when it is called with NULL.
+    if ((size_t)len-1 > self->b_size/sizeof(wchar_t)) {
         PyErr_SetString(PyExc_ValueError, "string too long");
         result = -1;
         goto done;

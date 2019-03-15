@@ -1243,6 +1243,10 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
     if (size < 0) {
         return NULL;
     }
+    // PyUnicode_AsWideChar() returns number of wchars including trailing NUL,
+    // when it is called with NULL.
+    size--;
+    assert(size >= 0);
     if (size > length) {
         PyErr_Format(PyExc_ValueError,
                      "string too long (%zd, maximum length %zd)",
