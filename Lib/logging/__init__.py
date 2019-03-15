@@ -934,6 +934,8 @@ class Handler(Filterer):
                     sys.stderr.write('Message: %r\n'
                                      'Arguments: %s\n' % (record.msg,
                                                           record.args))
+                except RecursionError:  # See issue 36272
+                    raise
                 except Exception:
                     sys.stderr.write('Unable to print the message and arguments'
                                      ' - possible formatting error.\nUse the'
@@ -996,6 +998,8 @@ class StreamHandler(Handler):
             stream.write(msg)
             stream.write(self.terminator)
             self.flush()
+        except RecursionError:  # See issue 36272
+            raise
         except Exception:
             self.handleError(record)
 
