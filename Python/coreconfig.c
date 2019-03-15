@@ -1464,6 +1464,13 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
         return err;
     }
 
+    if (config->argv.length < 1) {
+        /* Ensure at least one (empty) argument is seen */
+        if (_PyWstrList_Append(&config->argv, L"") < 0) {
+            return _Py_INIT_NO_MEMORY();
+        }
+    }
+
     assert(config->preconfig.use_environment >= 0);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
