@@ -177,7 +177,7 @@ PyEval_InitThreads(void)
 
     _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
     if (_PyRuntime.ceval.pending.lock == NULL) {
-        return Py_FatalError("Can't initialize threads for pending calls");
+        Py_FatalError("Can't initialize threads for pending calls");
     }
 }
 
