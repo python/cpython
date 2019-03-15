@@ -181,8 +181,8 @@ def customize_compiler(compiler):
                 _osx_support.customize_compiler(_config_vars)
                 _config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
 
-        (cc, cxx, opt, cflags, ccshared, ldshared, shlib_suffix, ar, ar_flags) = \
-            get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
+        (cc, cxx, cflags, ccshared, ldshared, shlib_suffix, ar, ar_flags) = \
+            get_config_vars('CC', 'CXX', 'CFLAGS',
                             'CCSHARED', 'LDSHARED', 'SHLIB_SUFFIX', 'AR', 'ARFLAGS')
 
         if 'CC' in os.environ:
@@ -205,7 +205,7 @@ def customize_compiler(compiler):
         if 'LDFLAGS' in os.environ:
             ldshared = ldshared + ' ' + os.environ['LDFLAGS']
         if 'CFLAGS' in os.environ:
-            cflags = opt + ' ' + os.environ['CFLAGS']
+            cflags = cflags + ' ' + os.environ['CFLAGS']
             ldshared = ldshared + ' ' + os.environ['CFLAGS']
         if 'CPPFLAGS' in os.environ:
             cpp = cpp + ' ' + os.environ['CPPFLAGS']
