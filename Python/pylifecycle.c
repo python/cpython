@@ -64,7 +64,6 @@ static _PyInitError initsite(void);
 static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
 static void call_py_exitfuncs(PyInterpreterState *);
-static void finish_pending_calls(_PyRuntimeState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
 
@@ -1051,7 +1050,7 @@ Py_FinalizeEx(void)
         return status;
 
     // Make any remaining pending calls.
-    finish_pending_calls(&_PyRuntime);
+    _Py_FinishPendingCalls();
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
@@ -2094,23 +2093,6 @@ call_py_exitfuncs(PyInterpreterState *istate)
 
     (*istate->pyexitfunc)(istate->pyexitmodule);
     PyErr_Clear();
-}
-
-static void
-finish_pending_calls(_PyRuntimeState *runtime)
-{
-    _Py_atomic_int *calls_to_do = &runtime->ceval.pending.calls_to_do;
-    if (!_Py_atomic_load_relaxed(calls_to_do)) {
-        return;
-    }
-
-    if (_Py_MakePendingCalls() < 0) {
-        PyObject *exc, *val, *tb;
-        PyErr_Fetch(&exc, &val, &tb);
-        PyErr_BadInternalCall();
-        _PyErr_ChainExceptions(exc, val, tb);
-        PyErr_Print();
-    }
 }
 
 /* Wait until threading._shutdown completes, provided
