@@ -1308,7 +1308,7 @@ _PyDict_NewPresized(Py_ssize_t minused)
     Py_ssize_t newsize;
     PyDictKeysObject *new_keys;
 
-    if (minused == 0) {
+    if (minused <= USABLE_FRACTION(PyDict_MINSIZE)) {
         return PyDict_New();
     }
     /* There are no strict guarantee that returned dict can contain minused
@@ -1320,7 +1320,7 @@ _PyDict_NewPresized(Py_ssize_t minused)
     }
     else {
         Py_ssize_t minsize = ESTIMATE_SIZE(minused);
-        newsize = PyDict_MINSIZE;
+        newsize = PyDict_MINSIZE*2;
         while (newsize < minsize) {
             newsize <<= 1;
         }
