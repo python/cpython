@@ -2325,7 +2325,8 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
 {
     PyObject *kwtuple;
     PyObject *keyword;
-    int i, posonly, minposonly, maxargs;
+    Py_ssize_t i;
+    int posonly, minposonly, maxargs;
     int reqlimit = minkw ? maxpos + minkw : minpos;
     Py_ssize_t nkwargs;
     PyObject *current_arg;
@@ -2451,7 +2452,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
             /* Less arguments than required */
             keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
             PyErr_Format(PyExc_TypeError,  "%.200s%s missing required "
-                         "argument '%U' (pos %d)",
+                         "argument '%U' (pos %zd)",
                          (parser->fname == NULL) ? "function" : parser->fname,
                          (parser->fname == NULL) ? "" : "()",
                          keyword, i+1);
@@ -2477,7 +2478,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
                 /* arg present in tuple and in dict */
                 PyErr_Format(PyExc_TypeError,
                              "argument for %.200s%s given by name ('%U') "
-                             "and position (%d)",
+                             "and position (%zd)",
                              (parser->fname == NULL) ? "function" : parser->fname,
                              (parser->fname == NULL) ? "" : "()",
                              keyword, i+1);
