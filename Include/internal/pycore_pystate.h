@@ -63,6 +63,8 @@ struct _is {
     int dlopenflags;
 #endif
 
+    PyObject *dict;  /* Stores per-interpreter state */
+
     PyObject *builtins_copy;
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */
