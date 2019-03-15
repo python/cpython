@@ -162,15 +162,16 @@ def _readmodule(module, path, inpackage=None):
     spec = importlib.util._find_spec_from_path(fullmodule, search_path)
     _modules[fullmodule] = tree
     # Is module a package?
-    if spec.submodule_search_locations is not None:
+    if getattr(spec, 'submodule_search_locations', None) is not None:
         tree['__path__'] = spec.submodule_search_locations
     try:
         source = spec.loader.get_source(fullmodule)
-        if source is None:
-            return tree
     except (AttributeError, ImportError):
         # If module is not Python source, we cannot do anything.
         return tree
+    else:
+        if source is None:
+            return tree
 
     fname = spec.loader.get_filename(fullmodule)
     return _create_tree(fullmodule, path, fname, source, tree, inpackage)
