@@ -1614,7 +1614,7 @@ class MinidomTest(unittest.TestCase):
 
     def test_minidom_attribute_sorted(self):
         xml_str = '<?xml version="1.0" ?><curriculum status="public" company="example"/>'
-        sorted_xml_str = '<?xml version="1.0" ?><curriculum company="example" status="public" />'
+        sorted_xml_str = '<?xml version="1.0" ?><curriculum company="example" status="public"/>'
         doc = parseString(xml_str)
         output = io.StringIO()
         doc.writexml(output, sort=True)
