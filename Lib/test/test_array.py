@@ -1401,16 +1401,17 @@ class LargeArrayTest(unittest.TestCase):
     typecode = 'b'
 
     def example(self, size):
+        # We assess a base memuse of <=2.125 for constructing this array
         base = array.array(self.typecode, [0, 1, 2, 3, 4, 5, 6, 7]) * (size // 8)
         base += array.array(self.typecode, [99]*(size % 8) + [8, 9, 10, 11])
         return base
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_example_data(self, size):
         example = self.example(size)
         self.assertEqual(len(example), size+4)
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_access(self, size):
         example = self.example(size)
         self.assertEqual(example[0], 0)
@@ -1420,7 +1421,7 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(example[size+3], 11)
         self.assertEqual(example[-1], 11)
 
-    @support.bigmemtest(_2G, memuse=2)
+    @support.bigmemtest(_2G, memuse=2.125+1)
     def test_slice(self, size):
         example = self.example(size)
         self.assertEqual(list(example[:4]), [0, 1, 2, 3])
@@ -1438,40 +1439,40 @@ class LargeArrayTest(unittest.TestCase):
         else:
             self.assertEqual(list(part[-2:]), [8, 10])
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_count(self, size):
         example = self.example(size)
         self.assertEqual(example.count(0), size//8)
         self.assertEqual(example.count(11), 1)
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_append(self, size):
         example = self.example(size)
         example.append(12)
         self.assertEqual(example[-1], 12)
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_extend(self, size):
         example = self.example(size)
         example.extend(iter([12, 13, 14, 15]))
         self.assertEqual(len(example), size+8)
         self.assertEqual(list(example[-8:]), [8, 9, 10, 11, 12, 13, 14, 15])
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_frombytes(self, size):
         example = self.example(size)
         example.frombytes(b'abcd')
         self.assertEqual(len(example), size+8)
         self.assertEqual(list(example[-8:]), [8, 9, 10, 11] + list(b'abcd'))
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_fromlist(self, size):
         example = self.example(size)
         example.fromlist([12, 13, 14, 15])
         self.assertEqual(len(example), size+8)
         self.assertEqual(list(example[-8:]), [8, 9, 10, 11, 12, 13, 14, 15])
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_index(self, size):
         example = self.example(size)
         self.assertEqual(example.index(0), 0)
@@ -1479,7 +1480,7 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(example.index(7), 7)
         self.assertEqual(example.index(11), size+3)
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_insert(self, size):
         example = self.example(size)
         example.insert(0, 12)
@@ -1490,7 +1491,7 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(example[10], 13)
         self.assertEqual(example[size+1], 14)
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_pop(self, size):
         example = self.example(size)
         self.assertEqual(example.pop(0), 0)
@@ -1503,7 +1504,7 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(example.pop(), 11)
         self.assertEqual(len(example), size)
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_remove(self, size):
         example = self.example(size)
         example.remove(0)
@@ -1514,7 +1515,7 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(example[size], 9)
         self.assertEqual(example[size+1], 11)
 
-    @support.bigmemtest(_2G, memuse=1)
+    @support.bigmemtest(_2G, memuse=2.125)
     def test_reverse(self, size):
         example = self.example(size)
         example.reverse()
@@ -1528,7 +1529,7 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(list(example[-4:]), [8, 9, 10, 11])
 
     # list takes about 9 bytes per element
-    @support.bigmemtest(_2G, memuse=1+9)
+    @support.bigmemtest(_2G, memuse=2.125+9)
     def test_tolist(self, size):
         example = self.example(size)
         ls = example.tolist()
