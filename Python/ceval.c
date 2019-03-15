@@ -444,10 +444,11 @@ _PyEval_AddPendingCall(PyThreadState *tstate,
         return -1;
     }
     int result = _push_pending_call(pending, func, arg);
-    PyThread_release_lock(pending->lock);
 
     /* signal loop */
     SIGNAL_PENDING_CALLS(ceval_r, ceval_i);
+    PyThread_release_lock(pending->lock);
+
     return result;
 }
 
