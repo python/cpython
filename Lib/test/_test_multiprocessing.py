@@ -4896,10 +4896,10 @@ class TestSemaphoreTracker(unittest.TestCase):
         self.check_semaphore_tracker_death(signal.SIGKILL, True)
 
     @staticmethod
-    def _is_semaphore_tracker_reused(conn):
+    def _is_semaphore_tracker_reused(conn, pid):
         from multiprocessing.semaphore_tracker import _semaphore_tracker
         _semaphore_tracker.ensure_running()
-        reused = _semaphore_tracker._pid is None
+        reused = _semaphore_tracker._pid  == pid
         reused &= _semaphore_tracker._check_alive()
         conn.send(reused)
 
@@ -4911,7 +4911,7 @@ class TestSemaphoreTracker(unittest.TestCase):
         ctx = multiprocessing.get_context("spawn")
         r, w = ctx.Pipe(duplex=False)
         p = ctx.Process(target=self._is_semaphore_tracker_reused,
-                        args=(w,))
+                        args=(w, pid))
         p.start()
         is_semaphore_tracker_reused = r.recv()
 

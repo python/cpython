@@ -169,6 +169,11 @@ def get_preparation_data(name):
     else:
         sys_path[i] = process.ORIGINAL_DIR
 
+    if sys.platform != "win32":
+        from .semaphore_tracker import _semaphore_tracker
+        _semaphore_tracker.ensure_running()
+        d['semaphore_tracker_pid'] = _semaphore_tracker._pid
+
     d.update(
         name=name,
         sys_path=sys_path,
@@ -230,6 +235,10 @@ def prepare(data):
 
     if 'start_method' in data:
         set_start_method(data['start_method'], force=True)
+
+    if 'semaphore_tracker_pid' in data:
+        from .semaphore_tracker import _semaphore_tracker
+        _semaphore_tracker._pid = data['semaphore_tracker_pid']
 
     if 'init_main_from_name' in data:
         _fixup_main_from_name(data['init_main_from_name'])
