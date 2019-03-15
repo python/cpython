@@ -91,11 +91,7 @@ class ReplaceDialog(SearchDialogBase):
         self.make_button("Replace All", self.replace_all)
 
     def find_it(self, event=None):
-        """Handle the Find button.
-
-        In the Replace dialog, repeatedly using Find does not
-        go to the next occurrence of the pattern.
-        """
+        "Handle the Find button."
         self.do_find(False)
 
     def replace_it(self, event=None):
@@ -251,10 +247,6 @@ class ReplaceDialog(SearchDialogBase):
         when the text is displayed.  This is due to the 'sel'
         tag being added first, so the colors in the 'sel'
         config are seen instead of the colors for 'hit'.
-
-        Args:
-            first: Starting text index.
-            last: Ending text index.
         """
         text = self.text
         text.mark_set("insert", first)
