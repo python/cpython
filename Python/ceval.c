@@ -391,10 +391,10 @@ _Py_AddPendingCall(PyInterpreterState *interp, int (*func)(void *), void *arg)
         return -1;
     }
     int result = _push_pending_call(pending, func, arg);
-    PyThread_release_lock(pending->lock);
-
     /* signal main loop */
     SIGNAL_PENDING_CALLS();
+    PyThread_release_lock(pending->lock);
+
     return result;
 }
 
