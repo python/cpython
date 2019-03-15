@@ -567,7 +567,7 @@ _PyPathConfig_ComputeArgv0(const _PyWstrList *argv)
 {
     assert(_PyWstrList_CheckConsistency(argv));
 
-    wchar_t *argv0;
+    wchar_t *argv0 = NULL;
     wchar_t *p = NULL;
     Py_ssize_t n = 0;
     int have_script_arg = 0;
