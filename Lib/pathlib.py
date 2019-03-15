@@ -60,38 +60,49 @@ class _Flavour(object):
     def __init__(self):
         self.join = self.sep.join
 
+    def _split_part(self, part):
+        """
+        Return the drive, root and path parts from a given part.
+        If the part is a tuple, it already contains these values and therefore is returned.
+        Otherwise, splitroot is used to parse the part.
+        """
+        if isinstance(part, tuple):
+            return part
+        elif isinstance(part, str):
+            if self.altsep:
+                part = part.replace(self.altsep, self.sep)
+            drv, root, rel = self.splitroot(part)
+            return drv, root, rel.split(self.sep)
+        else:
+            raise TypeError(f'argument should be a tuple or an str object, not {type(part)}')
+
     def parse_parts(self, parts):
+        """
+        Parse and join multiple path strings, and
+        return a tuple of the final drive, root and path parts.
+        The given parts can be either strings of paths,
+        or tuples that represent paths, containing the drive, root and list of path parts.
+        The option for passing a tuple is needed, as the part 'a:b' could be interpreted
+        either as the relative path 'b' with the drive 'a:',
+        or as a file 'a' with the NTFS data-stream 'b'.
+        For example, passing either ('a:', '', ['b']) or ('', '', ['a:b']) instead of 'a:b'
+        will allow parse_parts to behave properly in these cases.
+        """
         parsed = []
-        sep = self.sep
-        altsep = self.altsep
         drv = root = ''
         it = reversed(parts)
         for part in it:
             if not part:
                 continue
-            if altsep:
-                part = part.replace(altsep, sep)
-            drv, root, rel = self.splitroot(part)
-            if sep in rel:
-                for x in reversed(rel.split(sep)):
+            current_drv, current_root, rel_parts = self._split_part(part)
+            if not drv:
+                drv = current_drv
+            if not root:
+                root = current_root
+                for x in reversed(rel_parts):
                     if x and x != '.':
                         parsed.append(sys.intern(x))
-            else:
-                if rel and rel != '.':
-                    parsed.append(sys.intern(rel))
-            if drv or root:
-                if not drv:
-                    # If no drive is present, try to find one in the previous
-                    # parts. This makes the result of parsing e.g.
-                    # ("C:", "/", "a") reasonably intuitive.
-                    for part in it:
-                        if not part:
-                            continue
-                        if altsep:
-                            part = part.replace(altsep, sep)
-                        drv = self.splitroot(part)[0]
-                        if drv:
-                            break
+            if root and drv:
                 break
         if drv or root:
             parsed.append(drv + root)
@@ -114,6 +125,9 @@ class _Flavour(object):
             # Second path is non-anchored (common case)
             return drv, root, parts + parts2
         return drv2, root2, parts2
+
+    def has_drive(self, part):
+        return self.splitroot(part)[0] != ''
 
 
 class _WindowsFlavour(_Flavour):
@@ -191,11 +205,11 @@ class _WindowsFlavour(_Flavour):
         s = str(path)
         if not s:
             return os.getcwd()
-        previous_s = None
         if _getfinalpathname is not None:
             if strict:
                 return self._ext_to_normal(_getfinalpathname(s))
             else:
+                previous_s = None
                 tail_parts = []  # End of the path after the first one not found
                 while True:
                     try:
@@ -203,6 +217,9 @@ class _WindowsFlavour(_Flavour):
                     except FileNotFoundError:
                         previous_s = s
                         s, tail = os.path.split(s)
+                        if self.has_drive(tail):
+                            # To avoid confusing between a filename with a data-stream and a drive letter
+                            tail = f'.{self.sep}{tail}'
                         tail_parts.append(tail)
                         if previous_s == s:
                             return path
@@ -646,7 +663,10 @@ class PurePath(object):
         parts = []
         for a in args:
             if isinstance(a, PurePath):
-                parts += a._parts
+                path_parts = a._parts
+                if a._drv or a._root:
+                    path_parts = path_parts[1:]
+                parts.append((a._drv, a._root, path_parts))
             else:
                 a = os.fspath(a)
                 if isinstance(a, str):
@@ -684,6 +704,10 @@ class PurePath(object):
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, parts):
+        if parts and not drv and cls._flavour.has_drive(parts[0]):
+            # In case there is no drive, and the first part might be interpreted as a drive,
+            # we add a dot to clarify the first part is not a drive.
+            parts = ['.'] + parts
         if drv or root:
             return drv + root + cls._flavour.join(parts[1:])
         else:
@@ -910,7 +934,7 @@ class PurePath(object):
         return self._make_child((key,))
 
     def __rtruediv__(self, key):
-        return self._from_parts([key] + self._parts)
+        return self._from_parts([key, self])
 
     @property
     def parent(self):
@@ -1138,7 +1162,7 @@ class Path(PurePath):
             return self
         # FIXME this must defer to the specific flavour (and, under Windows,
         # use nt._getfullpathname())
-        obj = self._from_parts([os.getcwd()] + self._parts, init=False)
+        obj = self._from_parts([os.getcwd(), self], init=False)
         obj._init(template=self)
         return obj
 
@@ -1507,7 +1531,7 @@ class Path(PurePath):
         if (not (self._drv or self._root) and
             self._parts and self._parts[0][:1] == '~'):
             homedir = self._flavour.gethomedir(self._parts[0][1:])
-            return self._from_parts([homedir] + self._parts[1:])
+            return self._from_parts([homedir, self.relative_to(self._parts[0])])
 
         return self
 
