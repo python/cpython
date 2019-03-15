@@ -64,6 +64,7 @@ static _PyInitError initsite(void);
 static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
 static void call_py_exitfuncs(PyInterpreterState *);
+static void finish_pending_calls(_PyRuntimeState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
 
@@ -1049,6 +1050,10 @@ Py_FinalizeEx(void)
     if (!_PyRuntime.initialized)
         return status;
 
+    // Make any remaining pending calls.
+    finish_pending_calls(&_PyRuntime);
+
+    // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
 
     /* Get current thread state and interpreter pointer */
@@ -1059,7 +1064,7 @@ Py_FinalizeEx(void)
      * exit funcs may be relying on that.  In particular, if some thread
      * or exit func is still waiting to do an import, the import machinery
      * expects Py_IsInitialized() to return true.  So don't say the
-     * interpreter is uninitialized until after the exit funcs have run.
+     * runtime is uninitialized until after the exit funcs have run.
      * Note that Threading.py uses an exit func to do a join on all the
      * threads created thru it, so this also protects pending imports in
      * the threads created via Threading.
@@ -1462,19 +1467,8 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
     interp->finalizing = 1;
 
-    // Wrap up existing threads.
+    // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
-
-    // Make any remaining pending calls.
-    if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.pending.calls_to_do)) {
-        if (_Py_MakePendingCalls() < 0) {
-            PyObject *exc, *val, *tb;
-            PyErr_Fetch(&exc, &val, &tb);
-            PyErr_BadInternalCall();
-            _PyErr_ChainExceptions(exc, val, tb);
-            PyErr_Print();
-        }
-    }
 
     call_py_exitfuncs(interp);
 
@@ -2100,6 +2094,23 @@ call_py_exitfuncs(PyInterpreterState *istate)
 
     (*istate->pyexitfunc)(istate->pyexitmodule);
     PyErr_Clear();
+}
+
+static void
+finish_pending_calls(_PyRuntimeState *runtime)
+{
+    _Py_atomic_int *calls_to_do = &runtime->ceval.pending.calls_to_do;
+    if (!_Py_atomic_load_relaxed(calls_to_do)) {
+        return;
+    }
+
+    if (_Py_MakePendingCalls() < 0) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        PyErr_BadInternalCall();
+        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_Print();
+    }
 }
 
 /* Wait until threading._shutdown completes, provided
