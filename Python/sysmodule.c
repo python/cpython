@@ -2739,35 +2739,35 @@ PySys_SetPath(const wchar_t *path)
 }
 
 static PyObject *
-makeargvobject(int argc, wchar_t **argv)
+make_sys_argv(int argc, wchar_t * const * argv)
 {
-    PyObject *av;
-    if (argc <= 0 || argv == NULL) {
-        /* Ensure at least one (empty) argument is seen */
-        static wchar_t *empty_argv[1] = {L""};
-        argv = empty_argv;
-        argc = 1;
+    PyObject *list = PyList_New(argc);
+    if (list == NULL) {
+        return NULL;
     }
-    av = PyList_New(argc);
-    if (av != NULL) {
-        int i;
-        for (i = 0; i < argc; i++) {
-            PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
-            if (v == NULL) {
-                Py_DECREF(av);
-                av = NULL;
-                break;
-            }
-            PyList_SET_ITEM(av, i, v);
+
+    for (Py_ssize_t i = 0; i < argc; i++) {
+        PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
+        if (v == NULL) {
+            Py_DECREF(list);
+            return NULL;
         }
+        PyList_SET_ITEM(list, i, v);
     }
-    return av;
+    return list;
 }
 
 void
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
-    PyObject *av = makeargvobject(argc, argv);
+    if (argc < 1 || argv == NULL) {
+        /* Ensure at least one (empty) argument is seen */
+        wchar_t* empty_argv[1] = {L""};
+        argv = empty_argv;
+        argc = 1;
+    }
+
+    PyObject *av = make_sys_argv(argc, argv);
     if (av == NULL) {
         Py_FatalError("no mem for sys.argv");
     }
@@ -2780,7 +2780,8 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (updatepath) {
         /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
            If argv[0] is a symlink, use the real path. */
-        PyObject *argv0 = _PyPathConfig_ComputeArgv0(argc, argv);
+        const _PyWstrList argv_list = {.length = argc, .items = argv};
+        PyObject *argv0 = _PyPathConfig_ComputeArgv0(&argv_list);
         if (argv0 == NULL) {
             Py_FatalError("can't compute path0 from argv");
         }
