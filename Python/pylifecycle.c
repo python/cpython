@@ -1049,15 +1049,15 @@ Py_FinalizeEx(void)
     if (!_PyRuntime.initialized)
         return status;
 
-    // Make any remaining pending calls.
-    _Py_FinishPendingCalls();
-
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
 
     /* Get current thread state and interpreter pointer */
     tstate = _PyThreadState_GET();
     interp = tstate->interp;
+
+    // Make any remaining pending calls.
+    _Py_FinishPendingCalls();
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
