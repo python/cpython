@@ -1229,9 +1229,6 @@ U_get(void *ptr, Py_ssize_t size)
 static PyObject *
 U_set(void *ptr, PyObject *value, Py_ssize_t length)
 {
-    Py_UNICODE *wstr;
-    Py_ssize_t size;
-
     /* It's easier to calculate in characters than in bytes */
     length /= sizeof(wchar_t);
 
@@ -1242,9 +1239,10 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     }
 
-    wstr = PyUnicode_AsUnicodeAndSize(value, &size);
-    if (wstr == NULL)
+    Py_ssize_t size = PyUnicode_AsWideChar(value, NULL, 0);
+    if (size < 0) {
         return NULL;
+    }
     if (size > length) {
         PyErr_Format(PyExc_ValueError,
                      "string too long (%zd, maximum length %zd)",
@@ -1421,11 +1419,10 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     /* create a BSTR from value */
     if (value) {
-        wchar_t* wvalue;
-        Py_ssize_t wsize;
-        wvalue = PyUnicode_AsUnicodeAndSize(value, &wsize);
-        if (wvalue == NULL)
+        Py_ssize_t wsize = PyUnicode_AsWideChar(value, NULL, 0);
+        if (wsize < 0) {
             return NULL;
+        }
         if ((unsigned) wsize != wsize) {
             PyErr_SetString(PyExc_ValueError, "String too long for BSTR");
             return NULL;

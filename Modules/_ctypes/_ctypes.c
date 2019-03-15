@@ -1293,8 +1293,6 @@ static int
 WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     Py_ssize_t result = 0;
-    Py_UNICODE *wstr;
-    Py_ssize_t len;
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -1309,12 +1307,12 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
     } else
         Py_INCREF(value);
 
-    wstr = PyUnicode_AsUnicodeAndSize(value, &len);
-    if (wstr == NULL)
+    Py_ssize_t len = PyUnicode_AsWideChar(value, NULL, 0);
+    if (len < 0) {
         return -1;
+    }
     if ((size_t)len > self->b_size/sizeof(wchar_t)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "string too long");
+        PyErr_SetString(PyExc_ValueError, "string too long");
         result = -1;
         goto done;
     }
