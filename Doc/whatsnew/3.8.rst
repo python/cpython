@@ -614,6 +614,11 @@ Changes in the Python API
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
 
+* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of the
+  :mod:`xml.dom.minidom` module, and :mod:`xml.etree` now preserve the attribute
+  order specified by the user.
+  (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
+
 * A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
   :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates
   a database if it does not exist.
