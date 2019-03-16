@@ -815,7 +815,7 @@ The module defines the following classes, functions and decorators:
 
 .. class:: NamedTuple
 
-   Typed version of namedtuple.
+   Typed version of :func:`collections.namedtuple`.
 
    Usage::
 
