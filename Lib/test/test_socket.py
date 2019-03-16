@@ -4913,10 +4913,20 @@ class FileObjectClassTestCase(SocketConnectedTest):
         # Performing file readline test
         line = self.read_file.readline()
         self.assertEqual(line, self.read_msg)
+        # Readline mode
+        if self.bufsize == 1 and self.read_mode == "r":
+            self.assertTrue(self.read_file.line_buffering)
 
     def _testReadline(self):
         self.write_file.write(self.write_msg)
-        self.write_file.flush()
+        # Readline mode: no need to flush
+        if self.bufsize == 1 and self.write_mode == "w":
+            self.assertTrue(self.write_file.line_buffering)
+        else:
+            self.write_file.flush()
+        # Prevent garbage collection from flushing
+        # until the server has finished
+        self.assertTrue(self.serv_finished.wait(5.0))
 
     def testCloseAfterMakefile(self):
         # The file returned by makefile should keep the socket open.
@@ -5072,11 +5082,6 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
             self.serv_skipped = "failed to saturate the socket buffer"
 
 
-class LineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
-
-    bufsize = 1 # Default-buffered for reading; line-buffered for writing
-
-
 class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     bufsize = 2 # Exercise the buffering code
@@ -5105,6 +5110,16 @@ class UnicodeWriteFileObjectClassTestCase(FileObjectClassTestCase):
 class UnicodeReadWriteFileObjectClassTestCase(FileObjectClassTestCase):
     """Tests for socket.makefile() in text mode (rather than binary)"""
 
+    read_mode = 'r'
+    read_msg = MSG.decode('utf-8')
+    write_mode = 'w'
+    write_msg = MSG.decode('utf-8')
+    newline = ''
+
+
+class UnicodeLineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
+
+    bufsize = 1  # Default-buffered for reading; line-buffered for writing
     read_mode = 'r'
     read_msg = MSG.decode('utf-8')
     write_mode = 'w'
@@ -6649,11 +6664,11 @@ def test_main():
         NonBlockingTCPTests,
         FileObjectClassTestCase,
         UnbufferedFileObjectClassTestCase,
-        LineBufferedFileObjectClassTestCase,
         SmallBufferedFileObjectClassTestCase,
         UnicodeReadFileObjectClassTestCase,
         UnicodeWriteFileObjectClassTestCase,
         UnicodeReadWriteFileObjectClassTestCase,
+        UnicodeLineBufferedFileObjectClassTestCase,
         NetworkConnectionNoServer,
         NetworkConnectionAttributesTest,
         NetworkConnectionBehaviourTest,
