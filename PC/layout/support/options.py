@@ -53,7 +53,7 @@ PRESETS = {
     },
     "nuget": {
         "help": "nuget package",
-        "options": ["stable", "pip", "distutils", "dev", "props"],
+        "options": ["stable", "pip", "distutils", "venv", "dev", "props"],
     },
     "default": {
         "help": "development kit package",
