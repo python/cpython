@@ -299,7 +299,7 @@ called.
 .. nonce: LT_qL8
 .. section: Library
 
-:class:`asyncio.ProactorEventLoop` now catchs and logs send errors when the
+:class:`asyncio.ProactorEventLoop` now catches and logs send errors when the
 self-pipe is full.
 
 ..
@@ -506,7 +506,7 @@ Karthikeyan Singaravelan.
 .. nonce: laV_IE
 .. section: Library
 
-:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catchs
+:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catches
 :exc:`KeyError` on calling :func:`pwd.getpwuid`: don't create the ``HOME``
 environment variable in this case.
 
