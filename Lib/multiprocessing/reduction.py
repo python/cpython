@@ -300,18 +300,18 @@ class AbstractReducer(metaclass=abc.ABCMeta):
                  hasattr(socket.socket, 'sendmsg')))
 
     @abc.abstractmethod
-    def get_pickler_class(self):
+    def get_pickler(self):
         pass
 
     def register(self, type_, reduce_):
-        return self.get_pickler_class().register(type_, reduce_)
+        return self.get_pickler().register(type_, reduce_)
 
     def dump(self, obj, file, protocol=None):
-        self.get_pickler_class()(file, protocol).dump(obj)
+        self.get_pickler()(file, protocol).dump(obj)
 
     def dumps(self, obj, protocol=None):
-        return self.get_pickler_class().dumps(obj, protocol=protocol)
+        return self.get_pickler().dumps(obj, protocol=protocol)
 
     def loads(self, s, *, fix_imports=True, encoding="ASCII", errors="strict"):
-        return self.get_pickler_class().loads(s, fix_imports=fix_imports,
+        return self.get_pickler().loads(s, fix_imports=fix_imports,
                                               encoding=encoding, errors=errors)

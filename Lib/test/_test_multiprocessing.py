@@ -5434,7 +5434,7 @@ class _TestCustomReducer(BaseTestCase):
         self.spy = spy
 
         class SpyReducer(reduction.AbstractReducer):
-            def get_pickler_class(self):
+            def get_pickler(self):
                 return spy
 
         multiprocessing.set_reducer(SpyReducer())
@@ -5467,6 +5467,56 @@ class _TestCustomReducer(BaseTestCase):
         queue = self.Queue()
         parent_can_continue = self.Event()
         p = self.Process(target=self._put_and_get_in_queue,
+            args=(queue, parent_can_continue))
+        p.daemon = True
+        p.start()
+        parent_can_continue.wait()
+        element = queue.get(timeout=TIMEOUT3)
+        self.assertEqual(element, "Something")
+        queue.put("Other_Something")
+        p.join(timeout=TIMEOUT3)
+        self.assertEqual(p.exitcode, 0)
+        self.assertEqual(element, "Something")
+        self.assertEqual(self.spy.dumps.call_count, 1)
+        self.assertEqual(self.spy.loads.call_count, 1)
+        close_queue(queue)
+
+
+class _TestCustomReducerWithContext(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes',)
+
+    def setUp(self):
+        class CustomContext(multiprocessing.context.BaseContext):
+            _name = "custom"
+            Process = multiprocessing.get_context().Process
+
+        self.ctx = CustomContext()
+        self.original_reducer = self.ctx.get_reducer()
+        spy = unittest.mock.MagicMock(spec_set=self.original_reducer.ForkingPickler,
+                                      wraps=self.original_reducer.ForkingPickler)
+        self.spy = spy
+
+        class SpyReducer(reduction.AbstractReducer):
+            def get_pickler(self):
+                return spy
+
+        self.ctx.set_reducer(SpyReducer())
+
+    def tearDown(self):
+        self.ctx.set_reducer(self.original_reducer)
+
+    @classmethod
+    def _put_and_get_in_queue(cls, queue, parent_can_continue):
+        parent_can_continue.set()
+        queue.put("Something")
+        queue.get()
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_queue_custom_reducer_with_context(self):
+        queue = self.ctx.Queue()
+        parent_can_continue = self.ctx.Event()
+        p = self.ctx.Process(target=self._put_and_get_in_queue,
             args=(queue, parent_can_continue))
         p.daemon = True
         p.start()

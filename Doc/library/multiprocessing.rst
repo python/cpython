@@ -1195,34 +1195,35 @@ Custom Reduction
 Several primitives of the :mod:`multiprocessing` module such as
 :class:`multiprocessing.Queue`, :class:`multiprocessing.connection.Listener` or
 :class:`multiprocessing.connection.Server` need to serialize and deserialize Python
-objects to communicate between processes. Sometimes is useful to control what
-serialization is to be used for the transport of data for supporting communication with
-different versions of Python, use more performant 3rd party tools or custom strategies.
+objects to communicate between processes. Sometimes it is useful to control what
+serialization is to be used for the transport of data in order to support communication
+with different versions of Python, use more performant third party tools or custom
+strategies.
 
-For this pourpose a set of hooks is available to provide alternate implementations of
+For this purpose a set of hooks is available to provide alternate implementations of
 the reduction mechanism:
 
 .. currentmodule:: multiprocessing.reduction
 
 .. class:: AbstractReducer()
 
-   Abstract base class for use in implementing a Reduction class suitable for use
-   in replacing the standard reduction mechanism used in multiprocessing.
+   Abstract base class that can be implemented in order to replace the standard
+   reduction mechanism used in multiprocessing
 
-   .. function:: get_pickler_class():
+   .. function:: get_pickler():
 
-      This method must return a subclass of :class:`pickle.Pickler` to be used by
-      the multiprocessing reducer mechanism.
+      This method must return a instance of a subclass of :class:`pickle.Pickler`
+      to be used by the multiprocessing reducer mechanism.
 
 .. currentmodule:: multiprocessing
 
-.. function:: set_reducer(reduction)
+.. method:: set_reducer(reduction)
 
    Sets a reduction class to be used for serialization and deserialization by the module
-   primitive internals. **reduction** must be a subclass of
+   primitive internals. **reduction** must be an instance of a subclass of
    :class:`multiprocessing.reduction.AbstractReducer`.
 
-.. function:: get_reducer()
+.. method:: get_reducer()
 
    Gets the current reduction class in use by the module's primitive internals.
 
@@ -1238,7 +1239,7 @@ version 2 to be able to communicate with a Python 2.x programs.::
            return super().dumps(obj, protocol=pickle_protocol)
 
    class PickleProtocol2Reducer(AbstractReducer):
-       def get_pickler_class(self):
+       def get_pickler(self):
            return ForkingPicklerProtocol2
 
    multiprocessing.set_reducer(PickleProtocol2Reducer)

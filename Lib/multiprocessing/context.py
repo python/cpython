@@ -214,11 +214,11 @@ class BaseContext(object):
             return
 
         if not isinstance(reduction, original_reducer.AbstractReducer):
-            raise TypeError("Custom reducers must subclass "
-                            "multiprocessing.reduction.AbstractReducer")
-        if not isinstance(reduction.get_pickler_class(), pickle.Pickler):
+            raise TypeError("Custom reducers must be instances of a "
+                            "subclass of multiprocessing.reduction.AbstractReducer")
+        if not isinstance(reduction.get_pickler(), pickle.Pickler):
             raise TypeError("Custom reducers must return a subclass of "
-                            "pickler.Pickler in the get_pickler_class() method")
+                            "pickler.Pickler in the get_pickler() method")
 
         globals()['reduction'] = reduction
 
