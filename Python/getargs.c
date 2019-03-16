@@ -2422,7 +2422,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
     }
 
     /* copy keyword args using kwtuple to drive process */
-    for (i = Py_MAX(nargs, posonly); i < maxargs; i++) {
+    for (i = Py_MAX((int)nargs, posonly); i < maxargs; i++) {
         if (nkwargs) {
             keyword = PyTuple_GET_ITEM(kwtuple, i - posonly);
             if (kwargs != NULL) {
