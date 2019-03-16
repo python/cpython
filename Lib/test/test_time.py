@@ -119,7 +119,13 @@ class TimeTestCase(unittest.TestCase):
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
-        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # when in 32-bit mode AIX only returns the predefined constant
+        if not platform.system() == "AIX":
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        elif (sys.maxsize.bit_length() > 32):
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         t1 = time.clock_gettime(clk_id)
         t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)
@@ -424,13 +430,6 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
-            if sys.platform.startswith('aix') and t == -1:
-                # Issue #11188, #19748: mktime() returns -1 on error. On Linux,
-                # the tm_wday field is used as a sentinel () to detect if -1 is
-                # really an error or a valid timestamp. On AIX, tm_wday is
-                # unchanged even on success and so cannot be used as a
-                # sentinel.
-                continue
             try:
                 tt = time.localtime(t)
             except (OverflowError, OSError):

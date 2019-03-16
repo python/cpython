@@ -594,7 +594,7 @@ if hasattr(os, "fork"):
         def service_actions(self):
             """Collect the zombie child processes regularly in the ForkingMixIn.
 
-            service_actions is called in the BaseServer's serve_forver loop.
+            service_actions is called in the BaseServer's serve_forever loop.
             """
             self.collect_children()
 

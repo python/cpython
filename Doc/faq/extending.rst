@@ -277,7 +277,7 @@ However sometimes you have to run the embedded Python interpreter in the same
 thread as your rest application and you can't allow the
 :c:func:`PyRun_InteractiveLoop` to stop while waiting for user input.  The one
 solution then is to call :c:func:`PyParser_ParseString` and test for ``e.error``
-equal to ``E_EOF``, which means the input is incomplete).  Here's a sample code
+equal to ``E_EOF``, which means the input is incomplete.  Here's a sample code
 fragment, untested, inspired by code from Alex Farber::
 
    #include <Python.h>

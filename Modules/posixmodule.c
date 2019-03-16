@@ -367,6 +367,10 @@ static int win32_can_symlink = 0;
 #define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 #ifdef HAVE_FORK
 static void
 run_at_forkers(PyObject *lst, int reverse)
@@ -425,6 +429,7 @@ PyOS_AfterFork_Child(void)
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
+    _PyRuntimeState_ReInitThreads();
 
     run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
@@ -950,28 +955,35 @@ path_converter(PyObject *o, void *p)
     if (!is_index && !is_buffer && !is_unicode && !is_bytes) {
         /* Inline PyOS_FSPath() for better error messages. */
         _Py_IDENTIFIER(__fspath__);
-        PyObject *func = NULL;
+        PyObject *func, *res;
 
         func = _PyObject_LookupSpecial(o, &PyId___fspath__);
         if (NULL == func) {
             goto error_format;
         }
-        /* still owns a reference to the original object */
-        Py_DECREF(o);
-        o = _PyObject_CallNoArg(func);
+        res = _PyObject_CallNoArg(func);
         Py_DECREF(func);
-        if (NULL == o) {
+        if (NULL == res) {
             goto error_exit;
         }
-        else if (PyUnicode_Check(o)) {
+        else if (PyUnicode_Check(res)) {
             is_unicode = 1;
         }
-        else if (PyBytes_Check(o)) {
+        else if (PyBytes_Check(res)) {
             is_bytes = 1;
         }
         else {
-            goto error_format;
+            PyErr_Format(PyExc_TypeError,
+                 "expected %.200s.__fspath__() to return str or bytes, "
+                 "not %.200s", Py_TYPE(o)->tp_name,
+                 Py_TYPE(res)->tp_name);
+            Py_DECREF(res);
+            goto error_exit;
         }
+
+        /* still owns a reference to the original object */
+        Py_DECREF(o);
+        o = res;
     }
 
     if (is_unicode) {
@@ -1356,62 +1368,52 @@ convertenviron(void)
     /* _wenviron must be initialized in this way if the program is started
        through main() instead of wmain(). */
     _wgetenv(L"");
-    if (_wenviron == NULL)
-        return d;
-    /* This part ignores errors */
-    for (e = _wenviron; *e != NULL; e++) {
-        PyObject *k;
-        PyObject *v;
-        const wchar_t *p = wcschr(*e, L'=');
-        if (p == NULL)
-            continue;
-        k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
-        if (k == NULL) {
-            PyErr_Clear();
-            continue;
-        }
-        v = PyUnicode_FromWideChar(p+1, wcslen(p+1));
-        if (v == NULL) {
-            PyErr_Clear();
-            Py_DECREF(k);
-            continue;
-        }
-        if (PyDict_GetItem(d, k) == NULL) {
-            if (PyDict_SetItem(d, k, v) != 0)
-                PyErr_Clear();
-        }
-        Py_DECREF(k);
-        Py_DECREF(v);
-    }
+    e = _wenviron;
 #else
-    if (environ == NULL)
+    e = environ;
+#endif
+    if (e == NULL)
         return d;
-    /* This part ignores errors */
-    for (e = environ; *e != NULL; e++) {
+    for (; *e != NULL; e++) {
         PyObject *k;
         PyObject *v;
+#ifdef MS_WINDOWS
+        const wchar_t *p = wcschr(*e, L'=');
+#else
         const char *p = strchr(*e, '=');
+#endif
         if (p == NULL)
             continue;
+#ifdef MS_WINDOWS
+        k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
+#else
         k = PyBytes_FromStringAndSize(*e, (int)(p-*e));
+#endif
         if (k == NULL) {
-            PyErr_Clear();
-            continue;
+            Py_DECREF(d);
+            return NULL;
         }
+#ifdef MS_WINDOWS
+        v = PyUnicode_FromWideChar(p+1, wcslen(p+1));
+#else
         v = PyBytes_FromStringAndSize(p+1, strlen(p+1));
+#endif
         if (v == NULL) {
-            PyErr_Clear();
             Py_DECREF(k);
-            continue;
+            Py_DECREF(d);
+            return NULL;
         }
-        if (PyDict_GetItem(d, k) == NULL) {
-            if (PyDict_SetItem(d, k, v) != 0)
-                PyErr_Clear();
+        if (PyDict_GetItemWithError(d, k) == NULL) {
+            if (PyErr_Occurred() || PyDict_SetItem(d, k, v) != 0) {
+                Py_DECREF(v);
+                Py_DECREF(k);
+                Py_DECREF(d);
+                return NULL;
+            }
         }
         Py_DECREF(k);
         Py_DECREF(v);
     }
-#endif
     return d;
 }
 
@@ -1646,11 +1648,6 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
         return FALSE;
     }
 
-    if(!CloseHandle(hdl)) {
-        PyMem_RawFree(buf);
-        return FALSE;
-    }
-
     buf[result_length] = 0;
 
     *target_path = buf;
@@ -1708,9 +1705,10 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             return -1;
         }
         if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!win32_get_reparse_tag(hFile, &reparse_tag))
+            if (!win32_get_reparse_tag(hFile, &reparse_tag)) {
+                CloseHandle(hFile);
                 return -1;
-
+            }
             /* Close the outer open file handle now that we're about to
                reopen it with different flags. */
             if (!CloseHandle(hFile))
@@ -1727,8 +1725,14 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                 if (hFile2 == INVALID_HANDLE_VALUE)
                     return -1;
 
-                if (!get_target_path(hFile2, &target_path))
+                if (!get_target_path(hFile2, &target_path)) {
+                    CloseHandle(hFile2);
                     return -1;
+                }
+
+                if (!CloseHandle(hFile2)) {
+                    return -1;
+                }
 
                 code = win32_xstat_impl(target_path, result, FALSE);
                 PyMem_RawFree(target_path);
@@ -2657,7 +2661,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 
 #ifdef HAVE_TTYNAME
 /*[clinic input]
-os.ttyname -> DecodeFSDefault
+os.ttyname
 
     fd: int
         Integer file descriptor handle.
@@ -2667,16 +2671,17 @@ os.ttyname -> DecodeFSDefault
 Return the name of the terminal device connected to 'fd'.
 [clinic start generated code]*/
 
-static char *
+static PyObject *
 os_ttyname_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ed16ad216d813591 input=5f72ca83e76b3b45]*/
+/*[clinic end generated code: output=c424d2e9d1cd636a input=9ff5a58b08115c55]*/
 {
     char *ret;
 
     ret = ttyname(fd);
-    if (ret == NULL)
-        posix_error();
-    return ret;
+    if (ret == NULL) {
+        return posix_error();
+    }
+    return PyUnicode_DecodeFSDefault(ret);
 }
 #endif
 
@@ -4160,13 +4165,13 @@ If either src_dir_fd or dst_dir_fd is not None, it should be a file
   descriptor open to a directory, and the respective path string (src or dst)
   should be relative; the path will then be relative to that directory.
 src_dir_fd and dst_dir_fd, may not be implemented on your platform.
-  If they are unavailable, using them will raise a NotImplementedError."
+  If they are unavailable, using them will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
 os_replace_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                 int dst_dir_fd)
-/*[clinic end generated code: output=1968c02e7857422b input=25515dfb107c8421]*/
+/*[clinic end generated code: output=1968c02e7857422b input=c003f0def43378ef]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 1);
 }
@@ -4225,8 +4230,8 @@ Execute the command in a subshell.
 [clinic start generated code]*/
 
 static long
-os_system_impl(PyObject *module, Py_UNICODE *command)
-/*[clinic end generated code: output=96c4dffee36dfb48 input=303f5ce97df606b0]*/
+os_system_impl(PyObject *module, const Py_UNICODE *command)
+/*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
 {
     long result;
     Py_BEGIN_ALLOW_THREADS
@@ -5171,7 +5176,8 @@ convert_sched_param(PyObject *param, struct sched_param *res);
 #endif
 
 static int
-parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
+parse_posix_spawn_flags(const char *func_name, PyObject *setpgroup,
+                        int resetids, int setsid, PyObject *setsigmask,
                         PyObject *setsigdef, PyObject *scheduler,
                         posix_spawnattr_t *attrp)
 {
@@ -5198,6 +5204,17 @@ parse_posix_spawn_flags(PyObject *setpgroup, int resetids, PyObject *setsigmask,
 
     if (resetids) {
         all_flags |= POSIX_SPAWN_RESETIDS;
+    }
+
+    if (setsid) {
+#ifdef POSIX_SPAWN_SETSID
+        all_flags |= POSIX_SPAWN_SETSID;
+#elif defined(POSIX_SPAWN_SETSID_NP)
+        all_flags |= POSIX_SPAWN_SETSID_NP;
+#else
+        argument_unavailable_error(func_name, "setsid");
+        return -1;
+#endif
     }
 
    if (setsigmask) {
@@ -5386,40 +5403,14 @@ fail:
     return -1;
 }
 
-/*[clinic input]
-
-os.posix_spawn
-    path: path_t
-        Path of executable file.
-    argv: object
-        Tuple or list of strings.
-    env: object
-        Dictionary of strings mapping to strings.
-    /
-    *
-    file_actions: object(c_default='NULL') = ()
-        A sequence of file action tuples.
-    setpgroup: object = NULL
-        The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
-    resetids: bool(accept={int}) = False
-        If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
-    setsigmask: object(c_default='NULL') = ()
-        The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
-    setsigdef: object(c_default='NULL') = ()
-        The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
-    scheduler: object = NULL
-        A tuple with the scheduler policy (optional) and parameters.
-
-Execute the program specified by path in a new process.
-[clinic start generated code]*/
 
 static PyObject *
-os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
-                    PyObject *env, PyObject *file_actions,
-                    PyObject *setpgroup, int resetids, PyObject *setsigmask,
-                    PyObject *setsigdef, PyObject *scheduler)
-/*[clinic end generated code: output=45dfa4c515d09f2c input=2891c2f1d457e39b]*/
+py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *argv,
+               PyObject *env, PyObject *file_actions,
+               PyObject *setpgroup, int resetids, int setsid, PyObject *setsigmask,
+               PyObject *setsigdef, PyObject *scheduler)
 {
+    const char *func_name = use_posix_spawnp ? "posix_spawnp" : "posix_spawn";
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist = NULL;
     posix_spawn_file_actions_t file_actions_buf;
@@ -5432,24 +5423,25 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
     pid_t pid;
     int err_code;
 
-    /* posix_spawn has three arguments: (path, argv, env), where
+    /* posix_spawn and posix_spawnp have three arguments: (path, argv, env), where
        argv is a list or tuple of strings and env is a dictionary
        like posix.environ. */
 
     if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "posix_spawn: argv must be a tuple or list");
+        PyErr_Format(PyExc_TypeError,
+                     "%s: argv must be a tuple or list", func_name);
         goto exit;
     }
     argc = PySequence_Size(argv);
     if (argc < 1) {
-        PyErr_SetString(PyExc_ValueError, "posix_spawn: argv must not be empty");
+        PyErr_Format(PyExc_ValueError,
+                     "%s: argv must not be empty", func_name);
         return NULL;
     }
 
     if (!PyMapping_Check(env)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "posix_spawn: environment must be a mapping object");
+        PyErr_Format(PyExc_TypeError,
+                     "%s: environment must be a mapping object", func_name);
         goto exit;
     }
 
@@ -5458,8 +5450,8 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         goto exit;
     }
     if (!argvlist[0][0]) {
-        PyErr_SetString(PyExc_ValueError,
-            "posix_spawn: argv first element cannot be empty");
+        PyErr_Format(PyExc_ValueError,
+                     "%s: argv first element cannot be empty", func_name);
         goto exit;
     }
 
@@ -5487,21 +5479,34 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
         file_actionsp = &file_actions_buf;
     }
 
-    if (parse_posix_spawn_flags(setpgroup, resetids, setsigmask,
-                                setsigdef, scheduler, &attr)) {
+    if (parse_posix_spawn_flags(func_name, setpgroup, resetids, setsid,
+                                setsigmask, setsigdef, scheduler, &attr)) {
         goto exit;
     }
     attrp = &attr;
 
     _Py_BEGIN_SUPPRESS_IPH
-    err_code = posix_spawn(&pid, path->narrow,
-                           file_actionsp, attrp, argvlist, envlist);
+#ifdef HAVE_POSIX_SPAWNP
+    if (use_posix_spawnp) {
+        err_code = posix_spawnp(&pid, path->narrow,
+                                file_actionsp, attrp, argvlist, envlist);
+    }
+    else
+#endif /* HAVE_POSIX_SPAWNP */
+    {
+        err_code = posix_spawn(&pid, path->narrow,
+                               file_actionsp, attrp, argvlist, envlist);
+    }
     _Py_END_SUPPRESS_IPH
+
     if (err_code) {
         errno = err_code;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
         goto exit;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(&pid, sizeof(pid));
+#endif
     result = PyLong_FromPid(pid);
 
 exit:
@@ -5520,7 +5525,96 @@ exit:
     Py_XDECREF(temp_buffer);
     return result;
 }
-#endif /* HAVE_POSIX_SPAWN */
+
+
+/*[clinic input]
+
+os.posix_spawn
+    path: path_t
+        Path of executable file.
+    argv: object
+        Tuple or list of strings.
+    env: object
+        Dictionary of strings mapping to strings.
+    /
+    *
+    file_actions: object(c_default='NULL') = ()
+        A sequence of file action tuples.
+    setpgroup: object = NULL
+        The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
+    resetids: bool(accept={int}) = False
+        If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.
+    setsid: bool(accept={int}) = False
+        If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.
+    setsigmask: object(c_default='NULL') = ()
+        The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
+    setsigdef: object(c_default='NULL') = ()
+        The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
+    scheduler: object = NULL
+        A tuple with the scheduler policy (optional) and parameters.
+
+Execute the program specified by path in a new process.
+[clinic start generated code]*/
+
+static PyObject *
+os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
+                    PyObject *env, PyObject *file_actions,
+                    PyObject *setpgroup, int resetids, int setsid,
+                    PyObject *setsigmask, PyObject *setsigdef,
+                    PyObject *scheduler)
+/*[clinic end generated code: output=14a1098c566bc675 input=8c6305619a00ad04]*/
+{
+    return py_posix_spawn(0, module, path, argv, env, file_actions,
+                          setpgroup, resetids, setsid, setsigmask, setsigdef,
+                          scheduler);
+}
+ #endif /* HAVE_POSIX_SPAWN */
+
+
+
+#ifdef HAVE_POSIX_SPAWNP
+/*[clinic input]
+
+os.posix_spawnp
+    path: path_t
+        Path of executable file.
+    argv: object
+        Tuple or list of strings.
+    env: object
+        Dictionary of strings mapping to strings.
+    /
+    *
+    file_actions: object(c_default='NULL') = ()
+        A sequence of file action tuples.
+    setpgroup: object = NULL
+        The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
+    resetids: bool(accept={int}) = False
+        If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
+    setsid: bool(accept={int}) = False
+        If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.
+    setsigmask: object(c_default='NULL') = ()
+        The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
+    setsigdef: object(c_default='NULL') = ()
+        The sigmask to use with the POSIX_SPAWN_SETSIGDEF flag.
+    scheduler: object = NULL
+        A tuple with the scheduler policy (optional) and parameters.
+
+Execute the program specified by path in a new process.
+[clinic start generated code]*/
+
+static PyObject *
+os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
+                     PyObject *env, PyObject *file_actions,
+                     PyObject *setpgroup, int resetids, int setsid,
+                     PyObject *setsigmask, PyObject *setsigdef,
+                     PyObject *scheduler)
+/*[clinic end generated code: output=7b9aaefe3031238d input=c1911043a22028da]*/
+{
+    return py_posix_spawn(1, module, path, argv, env, file_actions,
+                          setpgroup, resetids, setsid, setsigmask, setsigdef,
+                          scheduler);
+}
+#endif /* HAVE_POSIX_SPAWNP */
 
 
 #if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
@@ -6107,6 +6201,9 @@ os_sched_rr_get_interval_impl(PyObject *module, pid_t pid)
         posix_error();
         return -1.0;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(&interval, sizeof(interval));
+#endif
     return (double)interval.tv_sec + 1e-9*interval.tv_nsec;
 }
 #endif /* HAVE_SCHED_RR_GET_INTERVAL */
@@ -6344,7 +6441,7 @@ os_openpty_impl(PyObject *module)
 #endif
 #if defined(HAVE_DEV_PTMX) && !defined(HAVE_OPENPTY) && !defined(HAVE__GETPTY)
     PyOS_sighandler_t sig_saved;
-#ifdef sun
+#if defined(__sun) && defined(__SVR4)
     extern char *ptsname(int fildes);
 #endif
 #endif
@@ -6577,6 +6674,12 @@ posix_getgrouplist(PyObject *self, PyObject *args)
         return posix_error();
     }
 
+#ifdef _Py_MEMORY_SANITIZER
+    /* Clang memory sanitizer libc intercepts don't know getgrouplist. */
+    __msan_unpoison(&ngroups, sizeof(ngroups));
+    __msan_unpoison(groups, ngroups*sizeof(*groups));
+#endif
+
     list = PyList_New(ngroups);
     if (list == NULL) {
         PyMem_Del(groups);
@@ -6651,8 +6754,7 @@ os_getgroups_impl(PyObject *module)
     } else {
         alt_grouplist = PyMem_New(gid_t, n);
         if (alt_grouplist == NULL) {
-            errno = EINVAL;
-            return posix_error();
+            return PyErr_NoMemory();
         }
     }
 
@@ -6677,8 +6779,7 @@ os_getgroups_impl(PyObject *module)
             } else {
                 alt_grouplist = PyMem_New(gid_t, n);
                 if (alt_grouplist == NULL) {
-                    errno = EINVAL;
-                    return posix_error();
+                    return PyErr_NoMemory();
                 }
                 n = getgroups(n, alt_grouplist);
                 if (n == -1) {
@@ -7658,9 +7759,13 @@ check_CreateSymbolicLink(void)
     /* only recheck */
     if (Py_CreateSymbolicLinkW)
         return 1;
+
+    Py_BEGIN_ALLOW_THREADS
     hKernel32 = GetModuleHandleW(L"KERNEL32");
     *(FARPROC*)&Py_CreateSymbolicLinkW = GetProcAddress(hKernel32,
                                                         "CreateSymbolicLinkW");
+    Py_END_ALLOW_THREADS
+
     return Py_CreateSymbolicLinkW != NULL;
 }
 
@@ -9733,6 +9838,9 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
      */
     if (PyDict_DelItem(posix_putenv_garbage, name)) {
         /* really not much we can do; just leak */
+        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+            return NULL;
+        }
         PyErr_Clear();
     }
     Py_RETURN_NONE;
@@ -11197,7 +11305,6 @@ check_ShellExecute()
            the system SHELL32.DLL, even if there is another SHELL32.DLL
            in the DLL search path. */
         hShell32 = LoadLibraryW(L"SHELL32");
-        Py_END_ALLOW_THREADS
         if (hShell32) {
             *(FARPROC*)&Py_ShellExecuteW = GetProcAddress(hShell32,
                                             "ShellExecuteW");
@@ -11205,6 +11312,7 @@ check_ShellExecute()
         } else {
             has_ShellExecute = 0;
         }
+        Py_END_ALLOW_THREADS
     }
     return has_ShellExecute;
 }
@@ -11236,8 +11344,9 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 [clinic start generated code]*/
 
 static PyObject *
-os_startfile_impl(PyObject *module, path_t *filepath, Py_UNICODE *operation)
-/*[clinic end generated code: output=912ceba79acfa1c9 input=63950bf2986380d0]*/
+os_startfile_impl(PyObject *module, path_t *filepath,
+                  const Py_UNICODE *operation)
+/*[clinic end generated code: output=66dc311c94d50797 input=63950bf2986380d0]*/
 {
     HINSTANCE rc;
 
@@ -11817,11 +11926,12 @@ os_cpu_count_impl(PyObject *module)
     /* Vista is supported and the GetMaximumProcessorCount API is Win7+
        Need to fallback to Vista behavior if this call isn't present */
     HINSTANCE hKernel32;
-    hKernel32 = GetModuleHandleW(L"KERNEL32");
-
     static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    hKernel32 = GetModuleHandleW(L"KERNEL32");
     *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,
         "GetMaximumProcessorCount");
+    Py_END_ALLOW_THREADS
     if (_GetMaximumProcessorCount != NULL) {
         ncpu = _GetMaximumProcessorCount(ALL_PROCESSOR_GROUPS);
     }
@@ -13078,6 +13188,7 @@ static PyMethodDef posix_methods[] = {
     OS_GETPRIORITY_METHODDEF
     OS_SETPRIORITY_METHODDEF
     OS_POSIX_SPAWN_METHODDEF
+    OS_POSIX_SPAWNP_METHODDEF
     OS_READLINK_METHODDEF
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF

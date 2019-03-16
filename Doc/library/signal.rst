@@ -237,6 +237,13 @@ The :mod:`signal` module defines the following functions:
    :func:`sigpending`.
 
 
+.. function:: raise_signal(signum)
+
+   Sends a signal to the calling process. Returns nothing.
+
+   .. versionadded:: 3.8
+
+
 .. function:: pthread_kill(thread_id, signalnum)
 
    Send the signal *signalnum* to the thread *thread_id*, another thread in the

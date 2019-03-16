@@ -558,6 +558,16 @@ class MockTest(unittest.TestCase):
         real.assert_called_with(1, 2, fish=3)
 
 
+    def test_wraps_prevents_automatic_creation_of_mocks(self):
+        class Real(object):
+            pass
+
+        real = Real()
+        mock = Mock(wraps=real)
+
+        self.assertRaises(AttributeError, lambda: mock.new_attr())
+
+
     def test_wraps_call_with_nondefault_return_value(self):
         real = Mock()
 
@@ -584,6 +594,118 @@ class MockTest(unittest.TestCase):
         self.assertEqual(result, Real.attribute.frog())
 
 
+    def test_customize_wrapped_object_with_side_effect_iterable_with_default(self):
+        class Real(object):
+            def method(self):
+                return sentinel.ORIGINAL_VALUE
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, DEFAULT]
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.ORIGINAL_VALUE)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_iterable(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, sentinel.VALUE2]
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.VALUE2)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_exception(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = RuntimeError
+
+        self.assertRaises(RuntimeError, mock.method)
+
+
+    def test_customize_wrapped_object_with_side_effect_function(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        def side_effect():
+            return sentinel.VALUE
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = side_effect
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.return_value = sentinel.VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect(self):
+        # side_effect should always take precedence over return_value.
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, sentinel.VALUE2]
+        mock.method.return_value = sentinel.WRONG_VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.VALUE2)
+        self.assertRaises(StopIteration, mock.method)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect2(self):
+        # side_effect can return DEFAULT to default to return_value
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = lambda: DEFAULT
+        mock.method.return_value = sentinel.VALUE
+
+        self.assertEqual(mock.method(), sentinel.VALUE)
+
+
+    def test_customize_wrapped_object_with_return_value_and_side_effect_default(self):
+        class Real(object):
+            def method(self):
+                raise NotImplementedError()
+
+        real = Real()
+        mock = Mock(wraps=real)
+        mock.method.side_effect = [sentinel.VALUE1, DEFAULT]
+        mock.method.return_value = sentinel.RETURN
+
+        self.assertEqual(mock.method(), sentinel.VALUE1)
+        self.assertEqual(mock.method(), sentinel.RETURN)
+        self.assertRaises(StopIteration, mock.method)
+
+
     def test_exceptional_side_effect(self):
         mock = Mock(side_effect=AttributeError)
         self.assertRaises(AttributeError, mock)
@@ -602,7 +724,7 @@ class MockTest(unittest.TestCase):
 
     def test_assert_called_with_message(self):
         mock = Mock()
-        self.assertRaisesRegex(AssertionError, 'Not called',
+        self.assertRaisesRegex(AssertionError, 'not called',
                                 mock.assert_called_with)
 
 
@@ -795,10 +917,11 @@ class MockTest(unittest.TestCase):
     def test_assert_called_with_failure_message(self):
         mock = NonCallableMock()
 
+        actual = 'not called.'
         expected = "mock(1, '2', 3, bar='foo')"
-        message = 'Expected call: %s\nNot called'
+        message = 'expected call not found.\nExpected: %s\nActual: %s'
         self.assertRaisesWithMsg(
-            AssertionError, message % (expected,),
+            AssertionError, message % (expected, actual),
             mock.assert_called_with, 1, '2', 3, bar='foo'
         )
 
@@ -811,7 +934,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(1, '2', 3, bar='foo')"
-            message = 'Expected call: %s\nActual call: %s'
+            message = 'expected call not found.\nExpected: %s\nActual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, 1, '2', 3, bar='foo'
@@ -821,7 +944,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(bar='foo')"
-            message = 'Expected call: %s\nActual call: %s'
+            message = 'expected call not found.\nExpected: %s\nActual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, bar='foo'
@@ -831,7 +954,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(1, 2, 3)"
-            message = 'Expected call: %s\nActual call: %s'
+            message = 'expected call not found.\nExpected: %s\nActual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, 1, 2, 3
@@ -841,7 +964,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo()"
-            message = 'Expected call: %s\nActual call: %s'
+            message = 'expected call not found.\nExpected: %s\nActual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual), meth
             )
@@ -1647,6 +1770,33 @@ class MockTest(unittest.TestCase):
             self.assertRaises(AttributeError, getattr, mock, 'f')
 
 
+    def test_mock_does_not_raise_on_repeated_attribute_deletion(self):
+        # bpo-20239: Assigning and deleting twice an attribute raises.
+        for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
+                     NonCallableMock()):
+            mock.foo = 3
+            self.assertTrue(hasattr(mock, 'foo'))
+            self.assertEqual(mock.foo, 3)
+
+            del mock.foo
+            self.assertFalse(hasattr(mock, 'foo'))
+
+            mock.foo = 4
+            self.assertTrue(hasattr(mock, 'foo'))
+            self.assertEqual(mock.foo, 4)
+
+            del mock.foo
+            self.assertFalse(hasattr(mock, 'foo'))
+
+
+    def test_mock_raises_when_deleting_nonexistent_attribute(self):
+        for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
+                     NonCallableMock()):
+            del mock.foo
+            with self.assertRaises(AttributeError):
+                del mock.foo
+
+
     def test_reset_mock_does_not_raise_on_attr_deletion(self):
         # bpo-31177: reset_mock should not raise AttributeError when attributes
         # were deleted in a mock instance
@@ -1678,6 +1828,19 @@ class MockTest(unittest.TestCase):
         self.assertIsNotNone(call.parent)
         self.assertEqual(type(call.parent), _Call)
         self.assertEqual(type(call.parent().parent), _Call)
+
+
+    def test_parent_propagation_with_create_autospec(self):
+
+        def foo(a, b):
+            pass
+
+        mock = Mock()
+        mock.child = create_autospec(foo)
+        mock.child(1, 2)
+
+        self.assertRaises(TypeError, mock.child, 1)
+        self.assertEqual(mock.mock_calls, [call.child(1, 2)])
 
 
 if __name__ == '__main__':

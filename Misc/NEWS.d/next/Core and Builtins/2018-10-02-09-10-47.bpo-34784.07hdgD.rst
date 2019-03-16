@@ -1,2 +1,0 @@
-Fix the implementation of PyStructSequence_NewType in order to create heap
-allocated StructSequences.

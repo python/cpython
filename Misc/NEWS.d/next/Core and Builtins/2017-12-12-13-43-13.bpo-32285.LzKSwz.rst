@@ -1,2 +1,0 @@
-New function unicodedata.is_normalized, which can check whether a string is
-in a specific normal form.

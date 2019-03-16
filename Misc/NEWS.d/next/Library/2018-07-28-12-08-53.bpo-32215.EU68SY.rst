@@ -1,2 +1,0 @@
-Fix performance regression in :mod:`sqlite3` when a DML statement appeared
-in a different line than the rest of the SQL query.

@@ -341,6 +341,7 @@ parser_newstobject(node *st, int type)
         o->st_node = st;
         o->st_type = type;
         o->st_flags.cf_flags = 0;
+        o->st_flags.cf_feature_version = PY_MINOR_VERSION;
     }
     else {
         PyNode_Free(st);
@@ -584,8 +585,10 @@ parser_do_parse(PyObject *args, PyObject *kw, const char *argspec, int type)
 
         if (n) {
             res = parser_newstobject(n, type);
-            if (res)
+            if (res) {
                 ((PyST_Object *)res)->st_flags.cf_flags = flags & PyCF_MASK;
+                ((PyST_Object *)res)->st_flags.cf_feature_version = PY_MINOR_VERSION;
+            }
         }
         else {
             PyParser_SetError(&err);
@@ -659,10 +662,16 @@ validate_node(node *tree)
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */
-    dfa_state = &nt_dfa->d_state[nt_dfa->d_initial];
+    dfa_state = nt_dfa->d_state;
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
+        if (ch_type == suite && TYPE(tree) == funcdef) {
+            /* This is the opposite hack of what we do in parser.c
+               (search for func_body_suite), except we don't ever
+               support type comments here. */
+            ch_type = func_body_suite;
+        }
         for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
             short a_label = dfa_state->s_arc[arc].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
@@ -920,7 +929,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             Py_DECREF(elem);
             return NULL;
         }
-        err = PyNode_AddChild(root, type, strn, *line_num, 0);
+        err = PyNode_AddChild(root, type, strn, *line_num, 0, *line_num, 0);
         if (err == E_NOMEM) {
             Py_DECREF(elem);
             PyObject_FREE(strn);

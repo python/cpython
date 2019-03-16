@@ -50,13 +50,18 @@ _weakref__remove_dead_weakref(PyObject *module, PyObject *const *args, Py_ssize_
     PyObject *dct;
     PyObject *key;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!O:_remove_dead_weakref",
-        &PyDict_Type, &dct, &key)) {
+    if (!_PyArg_CheckPositional("_remove_dead_weakref", nargs, 2, 2)) {
         goto exit;
     }
+    if (!PyDict_Check(args[0])) {
+        _PyArg_BadArgument("_remove_dead_weakref", 1, "dict", args[0]);
+        goto exit;
+    }
+    dct = args[0];
+    key = args[1];
     return_value = _weakref__remove_dead_weakref_impl(module, dct, key);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=927e889feb8a7dc4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eae22e2d2e43120e input=a9049054013a1b77]*/

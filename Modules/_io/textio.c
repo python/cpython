@@ -2344,7 +2344,8 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
-    if (whence == 1) {
+    switch (whence) {
+    case SEEK_CUR:
         /* seek relative to current position */
         cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
@@ -2362,8 +2363,9 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         cookieObj = _PyObject_CallMethodId((PyObject *)self, &PyId_tell, NULL);
         if (cookieObj == NULL)
             goto fail;
-    }
-    else if (whence == 2) {
+        break;
+
+    case SEEK_END:
         /* seek relative to end of file */
         cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
@@ -2401,10 +2403,14 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             }
         }
         return res;
-    }
-    else if (whence != 0) {
+
+    case SEEK_SET:
+        break;
+
+    default:
         PyErr_Format(PyExc_ValueError,
-                     "invalid whence (%d, should be 0, 1 or 2)", whence);
+                     "invalid whence (%d, should be %d, %d or %d)", whence,
+                     SEEK_SET, SEEK_CUR, SEEK_END);
         goto fail;
     }
 
@@ -3042,6 +3048,10 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
+    if (arg == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;

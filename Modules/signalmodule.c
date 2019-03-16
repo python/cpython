@@ -99,6 +99,7 @@ class sigset_t_converter(CConverter):
 #include "pythread.h"
 static unsigned long main_thread;
 static pid_t main_pid;
+static PyInterpreterState *main_interp;
 
 static volatile struct {
     _Py_atomic_int tripped;
@@ -185,6 +186,13 @@ itimer_retval(struct itimerval *iv)
 }
 #endif
 
+static int
+is_main(void)
+{
+    return PyThread_get_thread_ident() == main_thread &&
+        _PyInterpreterState_Get() == main_interp;
+}
+
 static PyObject *
 signal_default_int_handler(PyObject *self, PyObject *args)
 {
@@ -202,12 +210,15 @@ It raises KeyboardInterrupt.");
 static int
 report_wakeup_write_error(void *data)
 {
+    PyObject *exc, *val, *tb;
     int save_errno = errno;
     errno = (int) (intptr_t) data;
+    PyErr_Fetch(&exc, &val, &tb);
     PyErr_SetFromErrno(PyExc_OSError);
     PySys_WriteStderr("Exception ignored when trying to write to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
+    PyErr_Restore(exc, val, tb);
     errno = save_errno;
     return 0;
 }
@@ -216,6 +227,8 @@ report_wakeup_write_error(void *data)
 static int
 report_wakeup_send_error(void* data)
 {
+    PyObject *exc, *val, *tb;
+    PyErr_Fetch(&exc, &val, &tb);
     /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
@@ -223,6 +236,7 @@ report_wakeup_send_error(void* data)
     PySys_WriteStderr("Exception ignored when trying to send to the "
                       "signal wakeup fd:\n");
     PyErr_WriteUnraisable(NULL);
+    PyErr_Restore(exc, val, tb);
     return 0;
 }
 #endif   /* MS_WINDOWS */
@@ -390,6 +404,31 @@ signal_pause_impl(PyObject *module)
 
 #endif
 
+/*[clinic input]
+signal.raise_signal
+
+    signalnum: int
+    /
+
+Send a signal to the executing process.
+[clinic start generated code]*/
+
+static PyObject *
+signal_raise_signal_impl(PyObject *module, int signalnum)
+/*[clinic end generated code: output=e2b014220aa6111d input=e90c0f9a42358de6]*/
+{
+    int err;
+    Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
+    err = raise(signalnum);
+    _Py_END_SUPPRESS_IPH
+    Py_END_ALLOW_THREADS
+    
+    if (err) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 signal.signal
@@ -433,7 +472,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
             return NULL;
     }
 #endif
-    if (PyThread_get_thread_ident() != main_thread) {
+    if (!is_main()) {
         PyErr_SetString(PyExc_ValueError,
                         "signal only works in main thread");
         return NULL;
@@ -455,7 +494,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     else
         func = signal_handler;
     /* Check for pending signals before changing signal handler */
-    if (PyErr_CheckSignals()) {
+    if (_PyErr_CheckSignals()) {
         return NULL;
     }
     if (PyOS_setsig(signalnum, func) == SIG_ERR) {
@@ -650,7 +689,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 #endif
 
-    if (PyThread_get_thread_ident() != main_thread) {
+    if (!is_main()) {
         PyErr_SetString(PyExc_ValueError,
                         "set_wakeup_fd only works in main thread");
         return NULL;
@@ -1040,11 +1079,18 @@ fill_siginfo(siginfo_t *si)
 
     PyStructSequence_SET_ITEM(result, 0, PyLong_FromLong((long)(si->si_signo)));
     PyStructSequence_SET_ITEM(result, 1, PyLong_FromLong((long)(si->si_code)));
+#ifdef __VXWORKS__   
+    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 5, PyLong_FromLong(0L));
+#else   
     PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si->si_errno)));
     PyStructSequence_SET_ITEM(result, 3, PyLong_FromPid(si->si_pid));
     PyStructSequence_SET_ITEM(result, 4, _PyLong_FromUid(si->si_uid));
     PyStructSequence_SET_ITEM(result, 5,
                                 PyLong_FromLong((long)(si->si_status)));
+#endif   
 #ifdef HAVE_SIGINFO_T_SI_BAND
     PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(si->si_band));
 #else
@@ -1208,6 +1254,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_SETITIMER_METHODDEF
     SIGNAL_GETITIMER_METHODDEF
     SIGNAL_SIGNAL_METHODDEF
+    SIGNAL_RAISE_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
     {"set_wakeup_fd", (PyCFunction)(void(*)(void))signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
@@ -1282,6 +1329,7 @@ PyInit__signal(void)
 
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
+    main_interp = _PyInterpreterState_Get();
 
     /* Create the module and add the functions */
     m = PyModule_Create(&signalmodule);
@@ -1575,13 +1623,22 @@ finisignal(void)
 int
 PyErr_CheckSignals(void)
 {
+    if (!is_main()) {
+        return 0;
+    }
+
+    return _PyErr_CheckSignals();
+}
+
+
+/* Declared in cpython/pyerrors.h */
+int
+_PyErr_CheckSignals(void)
+{
     int i;
     PyObject *f;
 
     if (!_Py_atomic_load(&is_tripped))
-        return 0;
-
-    if (PyThread_get_thread_ident() != main_thread)
         return 0;
 
     /*
@@ -1655,8 +1712,9 @@ int
 PyOS_InterruptOccurred(void)
 {
     if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
-        if (PyThread_get_thread_ident() != main_thread)
+        if (!is_main()) {
             return 0;
+        }
         _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
         return 1;
     }
@@ -1684,12 +1742,13 @@ _PySignal_AfterFork(void)
     _clear_pending_signals();
     main_thread = PyThread_get_thread_ident();
     main_pid = getpid();
+    main_interp = _PyInterpreterState_Get();
 }
 
 int
 _PyOS_IsMainThread(void)
 {
-    return PyThread_get_thread_ident() == main_thread;
+    return is_main();
 }
 
 #ifdef MS_WINDOWS

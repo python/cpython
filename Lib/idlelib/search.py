@@ -75,13 +75,16 @@ class SearchDialog(SearchDialogBase):
 def _search_dialog(parent):  # htest #
     "Display search test box."
     from tkinter import Toplevel, Text
-    from tkinter.ttk import Button
+    from tkinter.ttk import Frame, Button
 
-    box = Toplevel(parent)
-    box.title("Test SearchDialog")
+    top = Toplevel(parent)
+    top.title("Test SearchDialog")
     x, y = map(int, parent.geometry().split('+')[1:])
-    box.geometry("+%d+%d" % (x, y + 175))
-    text = Text(box, inactiveselectbackground='gray')
+    top.geometry("+%d+%d" % (x, y + 175))
+
+    frame = Frame(top)
+    frame.pack()
+    text = Text(frame, inactiveselectbackground='gray')
     text.pack()
     text.insert("insert","This is a sample string.\n"*5)
 
@@ -90,7 +93,7 @@ def _search_dialog(parent):  # htest #
         _setup(text).open(text)
         text.tag_remove('sel', '1.0', 'end')
 
-    button = Button(box, text="Search (selection ignored)", command=show_find)
+    button = Button(frame, text="Search (selection ignored)", command=show_find)
     button.pack()
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>IDLE &#8212; Python 3.8.0a0 documentation</title>
+    <title>IDLE &#8212; Python 3.8.0a1 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -19,7 +19,7 @@
     <script type="text/javascript" src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.8.0a0 documentation"
+          title="Search within Python 3.8.0a1 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -72,7 +72,7 @@
 
 
     <li>
-      <a href="../index.html">3.8.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.8.0a1 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -202,19 +202,20 @@ be undone.</dd>
 <dd>Move cursor to the line number requested and make that line visible.</dd>
 <dt>Show Completions</dt>
 <dd>Open a scrollable list allowing selection of keywords and attributes. See
-Completions in the Tips sections below.</dd>
+<a class="reference internal" href="#completions"><span class="std std-ref">Completions</span></a> in the Editing and navigation section below.</dd>
 <dt>Expand Word</dt>
 <dd>Expand a prefix you have typed to match a full word in the same window;
 repeat to get a different expansion.</dd>
 <dt>Show call tip</dt>
 <dd>After an unclosed parenthesis for a function, open a small window with
-function parameter hints.</dd>
+function parameter hints.  See <a class="reference internal" href="#calltips"><span class="std std-ref">Calltips</span></a> in the
+Editing and navigation section below.</dd>
 <dt>Show surrounding parens</dt>
 <dd>Highlight the surrounding parenthesis.</dd>
 </dl>
 </div>
 <div class="section" id="format-menu-editor-window-only">
-<h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Permalink to this headline">¶</a></h3>
+<span id="format-menu"></span><h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
 <dt>Indent Region</dt>
 <dd>Shift selected lines right by the indent width (default 4 spaces).</dd>
@@ -272,6 +273,10 @@ line.</dd>
 <dd>Scroll the shell window to the last Shell restart.</dd>
 <dt>Restart Shell</dt>
 <dd>Restart the shell to clean the environment.</dd>
+<dt>Previous History</dt>
+<dd>Cycle through earlier commands in history which match the current entry.</dd>
+<dt>Next History</dt>
+<dd>Cycle through later commands in history which match the current entry.</dd>
 <dt>Interrupt Execution</dt>
 <dd>Stop a running program.</dd>
 </dl>
@@ -302,32 +307,26 @@ access to locals and globals.</dd>
 <h3>Options menu (Shell and Editor)<a class="headerlink" href="#options-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
 <dt>Configure IDLE</dt>
-<dd><p class="first">Open a configuration dialog and change preferences for the following:
+<dd>Open a configuration dialog and change preferences for the following:
 fonts, indentation, keybindings, text color themes, startup windows and
-size, additional help sources, and extensions (see below).  On macOS,
-open the configuration dialog by selecting Preferences in the application
-menu.  To use a new built-in color theme (IDLE Dark) with older IDLEs,
-save it as a new custom theme.</p>
-<p class="last">Non-default user settings are saved in a .idlerc directory in the user’s
-home directory.  Problems caused by bad user configuration files are solved
-by editing or deleting one or more of the files in .idlerc.</p>
-</dd>
-<dt>Code Context (toggle)(Editor Window only)</dt>
+size, additional help sources, and extensions.  On macOS,  open the
+configuration dialog by selecting Preferences in the application
+menu. For more, see
+<a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</dd>
+<dt>Zoom/Restore Height</dt>
+<dd>Toggles the window between normal size and maximum height. The initial size
+defaults to 40 lines by 80 chars unless changed on the General tab of the
+Configure IDLE dialog.</dd>
+<dt>Show/Hide Code Context (Editor Window only)</dt>
 <dd>Open a pane at the top of the edit window which shows the block context
-of the code which has scrolled above the top of the window.  Clicking a
-line in this pane exposes that line at the top of the editor.</dd>
+of the code which has scrolled above the top of the window.  See
+<a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section below.</dd>
 </dl>
 </div>
 <div class="section" id="window-menu-shell-and-editor">
 <h3>Window menu (Shell and Editor)<a class="headerlink" href="#window-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>Zoom Height</dt>
-<dd>Toggles the window between normal size and maximum height. The initial size
-defaults to 40 lines by 80 chars unless changed on the General tab of the
-Configure IDLE dialog.</dd>
-</dl>
-<p>The rest of this menu lists the names of all open windows; select one to bring
-it to the foreground (deiconifying it if necessary).</p>
+<p>Lists the names of all open windows; select one to bring it to the foreground
+(deiconifying it if necessary).</p>
 </div>
 <div class="section" id="help-menu-shell-and-editor">
 <h3>Help menu (Shell and Editor)<a class="headerlink" href="#help-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
@@ -344,8 +343,8 @@ and open docs.python.org showing the latest Python documentation.</dd>
 <dd>Run the turtledemo module with example Python code and turtle drawings.</dd>
 </dl>
 <p>Additional help sources may be added here with the Configure IDLE dialog under
-the General tab. See the “Help sources” subsection below for more
-on Help menu choices.</p>
+the General tab. See the <a class="reference internal" href="#help-sources"><span class="std std-ref">Help sources</span></a> subsection below
+for more on Help menu choices.</p>
 </div>
 <div class="section" id="context-menus">
 <span id="index-4"></span><h3>Context Menus<a class="headerlink" href="#context-menus" title="Permalink to this headline">¶</a></h3>
@@ -383,7 +382,7 @@ the code above and the prompt below down to a ‘Squeezed text’ label.</dd>
 </div>
 </div>
 <div class="section" id="editing-and-navigation">
-<h2>Editing and navigation<a class="headerlink" href="#editing-and-navigation" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h2>Editing and navigation<a class="headerlink" href="#editing-and-navigation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="editor-windows">
 <h3>Editor windows<a class="headerlink" href="#editor-windows" title="Permalink to this headline">¶</a></h3>
 <p>IDLE may open editor windows when it starts, depending on settings
@@ -442,10 +441,11 @@ the next line is dedented.  In leading indentation, <kbd class="kbd docutils lit
 to 4 spaces if they are there. <kbd class="kbd docutils literal notranslate">Tab</kbd> inserts spaces (in the Python
 Shell window one tab), number depends on Indent width. Currently, tabs
 are restricted to four spaces due to Tcl/Tk limitations.</p>
-<p>See also the indent/dedent region commands in the edit menu.</p>
+<p>See also the indent/dedent region commands on the
+<a class="reference internal" href="#format-menu"><span class="std std-ref">Format menu</span></a>.</p>
 </div>
 <div class="section" id="completions">
-<h3>Completions<a class="headerlink" href="#completions" title="Permalink to this headline">¶</a></h3>
+<span id="id3"></span><h3>Completions<a class="headerlink" href="#completions" title="Permalink to this headline">¶</a></h3>
 <p>Completions are supplied for functions, classes, and attributes of classes,
 both built-in and user-defined. Completions are also provided for
 filenames.</p>
@@ -480,7 +480,7 @@ much can be found by default, e.g. the re module.</p>
 longer or disable the extension.</p>
 </div>
 <div class="section" id="calltips">
-<h3>Calltips<a class="headerlink" href="#calltips" title="Permalink to this headline">¶</a></h3>
+<span id="id4"></span><h3>Calltips<a class="headerlink" href="#calltips" title="Permalink to this headline">¶</a></h3>
 <p>A calltip is shown when one types <kbd class="kbd docutils literal notranslate">(</kbd> after the name of an <em>accessible</em>
 function.  A name expression may include dots and subscripts.  A calltip
 remains until it is clicked, the cursor is moved out of the argument area,
@@ -501,6 +501,21 @@ not import turtle.  The menu or shortcut do nothing either.  Enter
 <p>In an editor, import statements have no effect until one runs the file.  One
 might want to run a file after writing the import statements at the top,
 or immediately run an existing file before editing.</p>
+</div>
+<div class="section" id="code-context">
+<span id="id5"></span><h3>Code Context<a class="headerlink" href="#code-context" title="Permalink to this headline">¶</a></h3>
+<p>Within an editor window containing Python code, code context can be toggled
+in order to show or hide a pane at the top of the window.  When shown, this
+pane freezes the opening lines for block code, such as those beginning with
+<code class="docutils literal notranslate"><span class="pre">class</span></code>, <code class="docutils literal notranslate"><span class="pre">def</span></code>, or <code class="docutils literal notranslate"><span class="pre">if</span></code> keywords, that would have otherwise scrolled
+out of view.  The size of the pane will be expanded and contracted as needed
+to show the all current levels of context, up to the maximum number of
+lines defined in the Configure IDLE dialog (which defaults to 15).  If there
+are no current context lines and the feature is toggled on, a single blank
+line will display.  Clicking on a line in the context pane will move that
+line to the top of the editor.</p>
+<p>The text and background colors for the context pane can be configured under
+the Highlights tab in the Configure IDLE dialog.</p>
 </div>
 <div class="section" id="python-shell-window">
 <h3>Python Shell window<a class="headerlink" href="#python-shell-window" title="Permalink to this headline">¶</a></h3>
@@ -658,14 +673,31 @@ output to Shell will eventually fill memory, resulting in a memory error.
 In contrast, some system text windows only keep the last n lines of output.
 A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
 with 300 the default.</p>
-<p>Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
-Which characters get a proper glyph instead of a replacement box depends on
-the operating system and installed fonts.  Newline characters cause following
-text to appear on a new line, but other control characters are either
-replaced with a box or deleted.  However, <code class="docutils literal notranslate"><span class="pre">repr()</span></code>, which is used for
-interactive echo of expression values, replaces control characters,
-some BMP codepoints, and all non-BMP characters with escape codes
-before they are output.</p>
+<p>A Tk Text widget, and hence IDLE’s Shell, displays characters (codepoints)
+in the the BMP (Basic Multilingual Plane) subset of Unicode.
+Which characters are displayed with a proper glyph and which with a
+replacement box depends on the operating system and installed fonts.
+Tab characters cause the following text to begin after
+the next tab stop. (They occur every 8 ‘characters’).
+Newline characters cause following text to appear on a new line.
+Other control characters are ignored or displayed as a space, box, or
+something else, depending on the operating system and font.
+(Moving the text cursor through such output with arrow keys may exhibit
+some surprising spacing behavior.)</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; s = &#39;a\tb\a&lt;\x02&gt;&lt;\r&gt;\bc\nd&#39;
+&gt;&gt;&gt; len(s)
+14
+&gt;&gt;&gt; s  # Display repr(s)
+&#39;a\tb\x07&lt;\x02&gt;&lt;\r&gt;\x08c\nd&#39;
+&gt;&gt;&gt; print(s, end=&#39;&#39;)  # Display s as is.
+# Result varies by OS and font.  Try it.
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">repr</span></code> function is used for interactive echo of expression
+values.  It returns an altered version of the input string in which
+control codes, some BMP codepoints, and all non-BMP codepoints are
+replaced with escape codes. As demonstrated above, it allows one to
+identify the characters in a string, regardless of how they are displayed.</p>
 <p>Normal and error output are generally kept separate (on separate lines)
 from code input and each other.  They each get different highlight colors.</p>
 <p>For SyntaxError tracebacks, the normal ‘^’ marking where the error was
@@ -733,7 +765,7 @@ with the default subprocess if at all possible.</p>
 <div class="section" id="help-and-preferences">
 <h2>Help and preferences<a class="headerlink" href="#help-and-preferences" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="help-sources">
-<h3>Help sources<a class="headerlink" href="#help-sources" title="Permalink to this headline">¶</a></h3>
+<span id="id6"></span><h3>Help sources<a class="headerlink" href="#help-sources" title="Permalink to this headline">¶</a></h3>
 <p>Help menu entry “IDLE Help” displays a formatted html version of the
 IDLE chapter of the Library Reference.  The result, in a read-only
 tkinter text window, is close to what one sees in a web browser.
@@ -750,11 +782,22 @@ that will be opened instead.</p>
 General tab of the Configure IDLE dialog .</p>
 </div>
 <div class="section" id="setting-preferences">
-<h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
+<span id="preferences"></span><h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
 <p>The font preferences, highlighting, keys, and general preferences can be
-changed via Configure IDLE on the Option menu.  Keys can be user defined;
-IDLE ships with four built-in key sets. In addition, a user can create a
-custom key set in the Configure IDLE dialog under the keys tab.</p>
+changed via Configure IDLE on the Option menu.
+Non-default user settings are saved in a .idlerc directory in the user’s
+home directory.  Problems caused by bad user configuration files are solved
+by editing or deleting one or more of the files in .idlerc.</p>
+<p>On the Font tab, see the text sample for the effect of font face and size
+on multiple characters in multiple languages.  Edit the sample to add
+other characters of personal interest.  Use the sample to select
+monospaced fonts.  If particular characters have problems in Shell or an
+editor, add them to the top of the sample and try changing first size
+and then font.</p>
+<p>On the Highlights and Keys tab, select a built-in or custom color theme
+and key set.  To use a newer built-in color theme or key set with older
+IDLEs, save it as a new custom theme or key set and it well be accessible
+to older IDLEs.</p>
 </div>
 <div class="section" id="idle-on-macos">
 <h3>IDLE on macOS<a class="headerlink" href="#idle-on-macos" title="Permalink to this headline">¶</a></h3>
@@ -801,6 +844,7 @@ also used for testing.</p>
 <li><a class="reference internal" href="#automatic-indentation">Automatic indentation</a></li>
 <li><a class="reference internal" href="#completions">Completions</a></li>
 <li><a class="reference internal" href="#calltips">Calltips</a></li>
+<li><a class="reference internal" href="#code-context">Code Context</a></li>
 <li><a class="reference internal" href="#python-shell-window">Python Shell window</a></li>
 <li><a class="reference internal" href="#text-colors">Text colors</a></li>
 </ul>
@@ -868,7 +912,7 @@ also used for testing.</p>
 
 
     <li>
-      <a href="../index.html">3.8.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.8.0a1 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -891,7 +935,7 @@ also used for testing.</p>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2018, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 2001-2019, Python Software Foundation.
     <br />
 
     The Python Software Foundation is a non-profit corporation.
@@ -899,7 +943,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Nov 12, 2018.
+    Last updated on Feb 23, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

@@ -431,9 +431,13 @@ PyImport_Cleanup(void)
     for (p = sys_files; *p != NULL; p+=2) {
         if (Py_VerboseFlag)
             PySys_WriteStderr("# restore sys.%s\n", *p);
-        value = PyDict_GetItemString(interp->sysdict, *(p+1));
-        if (value == NULL)
+        value = _PyDict_GetItemStringWithError(interp->sysdict, *(p+1));
+        if (value == NULL) {
+            if (PyErr_Occurred()) {
+                PyErr_WriteUnraisable(NULL);
+            }
             value = Py_None;
+        }
         if (PyDict_SetItemString(interp->sysdict, *p, value) < 0) {
             PyErr_WriteUnraisable(NULL);
         }
@@ -718,7 +722,7 @@ _PyImport_FindExtensionObjectEx(PyObject *name, PyObject *filename,
     key = PyTuple_Pack(2, filename, name);
     if (key == NULL)
         return NULL;
-    def = (PyModuleDef *)PyDict_GetItem(extensions, key);
+    def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
     Py_DECREF(key);
     if (def == NULL)
         return NULL;
@@ -749,7 +753,6 @@ _PyImport_FindExtensionObjectEx(PyObject *name, PyObject *filename,
     }
     if (_PyState_AddModule(mod, def) < 0) {
         PyMapping_DelItem(modules, name);
-        Py_DECREF(mod);
         return NULL;
     }
     if (Py_VerboseFlag)
@@ -928,6 +931,7 @@ error:
 static PyObject *
 module_dict_for_exec(PyObject *name)
 {
+    _Py_IDENTIFIER(__builtins__);
     PyObject *m, *d = NULL;
 
     m = PyImport_AddModuleObject(name);
@@ -936,9 +940,11 @@ module_dict_for_exec(PyObject *name)
     /* If the module is being reloaded, we get the old module back
        and re-use its dict to exec the new code. */
     d = PyModule_GetDict(m);
-    if (PyDict_GetItemString(d, "__builtins__") == NULL) {
-        if (PyDict_SetItemString(d, "__builtins__",
-                                 PyEval_GetBuiltins()) != 0) {
+    if (_PyDict_GetItemIdWithError(d, &PyId___builtins__) == NULL) {
+        if (PyErr_Occurred() ||
+            _PyDict_SetItemId(d, &PyId___builtins__,
+                              PyEval_GetBuiltins()) != 0)
+        {
             remove_module(name);
             return NULL;
         }
@@ -1108,8 +1114,8 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
     if (nhooks < 0)
         return NULL; /* Shouldn't happen */
 
-    importer = PyDict_GetItem(path_importer_cache, p);
-    if (importer != NULL)
+    importer = PyDict_GetItemWithError(path_importer_cache, p);
+    if (importer != NULL || PyErr_Occurred())
         return importer;
 
     /* set path_importer_cache[p] to None to avoid recursion */
@@ -1497,11 +1503,17 @@ resolve_name(PyObject *name, PyObject *globals, int level)
         PyErr_SetString(PyExc_TypeError, "globals must be a dict");
         goto error;
     }
-    package = _PyDict_GetItemId(globals, &PyId___package__);
+    package = _PyDict_GetItemIdWithError(globals, &PyId___package__);
     if (package == Py_None) {
         package = NULL;
     }
-    spec = _PyDict_GetItemId(globals, &PyId___spec__);
+    else if (package == NULL && PyErr_Occurred()) {
+        goto error;
+    }
+    spec = _PyDict_GetItemIdWithError(globals, &PyId___spec__);
+    if (spec == NULL && PyErr_Occurred()) {
+        goto error;
+    }
 
     if (package != NULL) {
         Py_INCREF(package);
@@ -1547,9 +1559,11 @@ resolve_name(PyObject *name, PyObject *globals, int level)
             goto error;
         }
 
-        package = _PyDict_GetItemId(globals, &PyId___name__);
+        package = _PyDict_GetItemIdWithError(globals, &PyId___name__);
         if (package == NULL) {
-            PyErr_SetString(PyExc_KeyError, "'__name__' not in globals");
+            if (!PyErr_Occurred()) {
+                PyErr_SetString(PyExc_KeyError, "'__name__' not in globals");
+            }
             goto error;
         }
 
@@ -1559,10 +1573,10 @@ resolve_name(PyObject *name, PyObject *globals, int level)
             goto error;
         }
 
-        if (_PyDict_GetItemId(globals, &PyId___path__) == NULL) {
+        if (_PyDict_GetItemIdWithError(globals, &PyId___path__) == NULL) {
             Py_ssize_t dot;
 
-            if (PyUnicode_READY(package) < 0) {
+            if (PyErr_Occurred() || PyUnicode_READY(package) < 0) {
                 goto error;
             }
 
@@ -2143,10 +2157,10 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
     mod = _PyImport_FindExtensionObject(name, path);
-    if (mod != NULL) {
+    if (mod != NULL || PyErr_Occurred()) {
         Py_DECREF(name);
         Py_DECREF(path);
-        Py_INCREF(mod);
+        Py_XINCREF(mod);
         return mod;
     }
 

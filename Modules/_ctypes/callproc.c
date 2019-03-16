@@ -455,6 +455,12 @@ PyCArg_dealloc(PyCArgObject *self)
     PyObject_Del(self);
 }
 
+static int
+is_literal_char(unsigned char c)
+{
+    return c < 128 && _PyUnicode_IsPrintable(c) && c != '\\' && c != '\'';
+}
+
 static PyObject *
 PyCArg_repr(PyCArgObject *self)
 {
@@ -501,8 +507,14 @@ PyCArg_repr(PyCArgObject *self)
         break;
 
     case 'c':
-        sprintf(buffer, "<cparam '%c' (%c)>",
-            self->tag, self->value.c);
+        if (is_literal_char((unsigned char)self->value.c)) {
+            sprintf(buffer, "<cparam '%c' ('%c')>",
+                self->tag, self->value.c);
+        }
+        else {
+            sprintf(buffer, "<cparam '%c' ('\\x%02x')>",
+                self->tag, (unsigned char)self->value.c);
+        }
         break;
 
 /* Hm, are these 'z' and 'Z' codes useful at all?
@@ -517,8 +529,14 @@ PyCArg_repr(PyCArgObject *self)
         break;
 
     default:
-        sprintf(buffer, "<cparam '%c' at %p>",
-            self->tag, self);
+        if (is_literal_char((unsigned char)self->tag)) {
+            sprintf(buffer, "<cparam '%c' at %p>",
+                (unsigned char)self->tag, self);
+        }
+        else {
+            sprintf(buffer, "<cparam 0x%02x at %p>",
+                (unsigned char)self->tag, self);
+        }
         break;
     }
     return PyUnicode_FromString(buffer);
@@ -1040,7 +1058,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #endif
 
 #if (defined(__x86_64__) && (defined(__MINGW64__) || defined(__CYGWIN__))) || \
-    defined(__aarch64__)
+    defined(__aarch64__) || defined(__riscv)
 #define CTYPES_PASS_BY_REF_HACK
 #define POW2(x) (((x & ~(x - 1)) == x) ? x : 0)
 #define IS_PASS_BY_REF(x) (x > 8 || !POW2(x))
@@ -1113,20 +1131,20 @@ PyObject *_ctypes_callproc(PPROC pProc,
             converter = PyTuple_GET_ITEM(argtypes, i);
             v = PyObject_CallFunctionObjArgs(converter, arg, NULL);
             if (v == NULL) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
 
             err = ConvParam(v, i+1, pa);
             Py_DECREF(v);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
         } else {
             err = ConvParam(arg, i+1, pa);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup; /* leaking ? */
             }
         }
@@ -1268,7 +1286,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!name)
         return NULL;
 
+    Py_BEGIN_ALLOW_THREADS
     hMod = LoadLibraryW(name);
+    Py_END_ALLOW_THREADS
+
     if (!hMod)
         return PyErr_SetFromWindowsErr(GetLastError());
 #ifdef _WIN64
@@ -1285,9 +1306,15 @@ Free the handle of an executable previously loaded by LoadLibrary.\n";
 static PyObject *free_library(PyObject *self, PyObject *args)
 {
     void *hMod;
+    BOOL result;
     if (!PyArg_ParseTuple(args, "O&:FreeLibrary", &_parse_voidp, &hMod))
         return NULL;
-    if (!FreeLibrary((HMODULE)hMod))
+
+    Py_BEGIN_ALLOW_THREADS
+    result = FreeLibrary((HMODULE)hMod);
+    Py_END_ALLOW_THREADS
+
+    if (!result)
         return PyErr_SetFromWindowsErr(GetLastError());
     Py_RETURN_NONE;
 }

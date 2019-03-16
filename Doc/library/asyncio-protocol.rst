@@ -73,7 +73,7 @@ Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.
 
 Transport objects are always instantiated by an
-ref:`asyncio event loop <asyncio-event-loop>`.
+:ref:`asyncio event loop <asyncio-event-loop>`.
 
 asyncio implements transports for TCP, UDP, SSL, and subprocess pipes.
 The methods available on a transport depend on the transport's kind.

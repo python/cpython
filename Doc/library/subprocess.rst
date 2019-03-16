@@ -572,9 +572,7 @@ Exceptions
 ^^^^^^^^^^
 
 Exceptions raised in the child process, before the new program has started to
-execute, will be re-raised in the parent.  Additionally, the exception object
-will have one extra attribute called :attr:`child_traceback`, which is a string
-containing traceback information from the child's point of view.
+execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
@@ -961,7 +959,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: CREATE_NO_WINDOW
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will not create a window
+   will not create a window.
 
    .. versionadded:: 3.7
 
@@ -1297,7 +1295,7 @@ Replacing functions from the :mod:`popen2` module
 
 * :class:`Popen` raises an exception if the execution fails.
 
-* the *capturestderr* argument is replaced with the *stderr* argument.
+* The *capturestderr* argument is replaced with the *stderr* argument.
 
 * ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
 

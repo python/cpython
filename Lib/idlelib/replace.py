@@ -205,12 +205,12 @@ class ReplaceDialog(SearchDialogBase):
 
 def _replace_dialog(parent):  # htest #
     from tkinter import Toplevel, Text, END, SEL
-    from tkinter.ttk import Button
+    from tkinter.ttk import Frame, Button
 
-    box = Toplevel(parent)
-    box.title("Test ReplaceDialog")
+    top = Toplevel(parent)
+    top.title("Test ReplaceDialog")
     x, y = map(int, parent.geometry().split('+')[1:])
-    box.geometry("+%d+%d" % (x, y + 175))
+    top.geometry("+%d+%d" % (x, y + 175))
 
     # mock undo delegator methods
     def undo_block_start():
@@ -219,7 +219,9 @@ def _replace_dialog(parent):  # htest #
     def undo_block_stop():
         pass
 
-    text = Text(box, inactiveselectbackground='gray')
+    frame = Frame(top)
+    frame.pack()
+    text = Text(frame, inactiveselectbackground='gray')
     text.undo_block_start = undo_block_start
     text.undo_block_stop = undo_block_stop
     text.pack()
@@ -231,7 +233,7 @@ def _replace_dialog(parent):  # htest #
         replace(text)
         text.tag_remove(SEL, "1.0", END)
 
-    button = Button(box, text="Replace", command=show_replace)
+    button = Button(frame, text="Replace", command=show_replace)
     button.pack()
 
 if __name__ == '__main__':

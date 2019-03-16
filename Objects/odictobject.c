@@ -1539,7 +1539,7 @@ odict_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (len == -1)
         return -1;
     if (len > 1) {
-        const char *msg = "expected at most 1 arguments, got %d";
+        const char *msg = "expected at most 1 arguments, got %zd";
         PyErr_Format(PyExc_TypeError, msg, len);
         return -1;
     }
@@ -1806,6 +1806,7 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 static PyObject *
 odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     odictiterobject tmp = *di;
     Py_XINCREF(tmp.di_odict);
@@ -1818,7 +1819,7 @@ odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
 }
 
 static PyMethodDef odictiter_methods[] = {
@@ -2212,7 +2213,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
     assert(args == NULL || PyTuple_Check(args));
     len = (args != NULL) ? PyTuple_GET_SIZE(args) : 0;
     if (len > 1) {
-        const char *msg = "update() takes at most 1 positional argument (%d given)";
+        const char *msg = "update() takes at most 1 positional argument (%zd given)";
         PyErr_Format(PyExc_TypeError, msg, len);
         return NULL;
     }

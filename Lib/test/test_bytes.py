@@ -852,9 +852,10 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
 
     def test_getitem_error(self):
+        b = b'python'
         msg = "byte indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            b'python'['a']
+            b['a']
 
     def test_buffer_is_readonly(self):
         fd = os.open(__file__, os.O_RDONLY)
@@ -1001,6 +1002,12 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(OverflowError,
                           PyBytes_FromFormat, b'%c', c_int(256))
 
+        # Issue #33817: empty strings
+        self.assertEqual(PyBytes_FromFormat(b''),
+                         b'')
+        self.assertEqual(PyBytes_FromFormat(b'%s', b''),
+                         b'')
+
     def test_bytes_blocking(self):
         class IterationBlocked(list):
             __bytes__ = None
@@ -1036,14 +1043,15 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
 
     def test_getitem_error(self):
+        b = bytearray(b'python')
         msg = "bytearray indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            bytearray(b'python')['a']
+            b['a']
 
     def test_setitem_error(self):
+        b = bytearray(b'python')
         msg = "bytearray indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            b = bytearray(b'python')
             b['a'] = "python"
 
     def test_nohash(self):

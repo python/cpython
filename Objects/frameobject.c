@@ -105,6 +105,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     int blockstack[CO_MAXBLOCKS];       /* Walking the 'finally' blocks */
     int blockstack_top = 0;             /* (ditto) */
 
+    if (p_new_lineno == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     /* f_lineno must be an integer. */
     if (!PyLong_CheckExact(p_new_lineno)) {
         PyErr_SetString(PyExc_ValueError,
@@ -609,7 +613,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     }
 #endif
     if (back == NULL || back->f_globals != globals) {
-        builtins = _PyDict_GetItemId(globals, &PyId___builtins__);
+        builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
         if (builtins) {
             if (PyModule_Check(builtins)) {
                 builtins = PyModule_GetDict(builtins);
@@ -617,6 +621,9 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
             }
         }
         if (builtins == NULL) {
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
             /* No builtins!              Make up a minimal one
                Give them 'None', at least. */
             builtins = PyDict_New();

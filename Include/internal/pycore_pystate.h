@@ -17,6 +17,96 @@ extern "C" {
 #include "pycore_warnings.h"
 
 
+/* interpreter state */
+
+typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
+
+// The PyInterpreterState typedef is in Include/pystate.h.
+struct _is {
+
+    struct _is *next;
+    struct _ts *tstate_head;
+
+    int64_t id;
+    int64_t id_refcount;
+    int requires_idref;
+    PyThread_type_lock id_mutex;
+
+    int finalizing;
+
+    PyObject *modules;
+    PyObject *modules_by_index;
+    PyObject *sysdict;
+    PyObject *builtins;
+    PyObject *importlib;
+
+    /* Used in Python/sysmodule.c. */
+    int check_interval;
+
+    /* Used in Modules/_threadmodule.c. */
+    long num_threads;
+    /* Support for runtime thread stack size tuning.
+       A value of 0 means using the platform's default stack size
+       or the size specified by the THREAD_STACK_SIZE macro. */
+    /* Used in Python/thread.c. */
+    size_t pythread_stacksize;
+
+    PyObject *codec_search_path;
+    PyObject *codec_search_cache;
+    PyObject *codec_error_registry;
+    int codecs_initialized;
+    int fscodec_initialized;
+
+    _PyCoreConfig core_config;
+    _PyMainInterpreterConfig config;
+#ifdef HAVE_DLOPEN
+    int dlopenflags;
+#endif
+
+    PyObject *dict;  /* Stores per-interpreter state */
+
+    PyObject *builtins_copy;
+    PyObject *import_func;
+    /* Initialized to PyEval_EvalFrameDefault(). */
+    _PyFrameEvalFunction eval_frame;
+
+    Py_ssize_t co_extra_user_count;
+    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+
+#ifdef HAVE_FORK
+    PyObject *before_forkers;
+    PyObject *after_forkers_parent;
+    PyObject *after_forkers_child;
+#endif
+    /* AtExit module */
+    void (*pyexitfunc)(PyObject *);
+    PyObject *pyexitmodule;
+
+    uint64_t tstate_next_unique_id;
+};
+
+PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
+
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
+
+
+/* cross-interpreter data registry */
+
+/* For now we use a global registry of shareable classes.  An
+   alternative would be to add a tp_* slot for a class's
+   crossinterpdatafunc. It would be simpler and more efficient. */
+
+struct _xidregitem;
+
+struct _xidregitem {
+    PyTypeObject *cls;
+    crossinterpdatafunc getdata;
+    struct _xidregitem *next;
+};
+
+
 /* GIL state */
 
 struct _gilstate_runtime_state {
@@ -39,84 +129,6 @@ struct _gilstate_runtime_state {
 /* Issue #26558: Flag to disable PyGILState_Check().
    If set to non-zero, PyGILState_Check() always return 1. */
 #define _PyGILState_check_enabled _PyRuntime.gilstate.check_enabled
-
-
-/* interpreter state */
-
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(PY_INT64_T);
-
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
-PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
-
-
-/* cross-interpreter data */
-
-struct _xid;
-
-// _PyCrossInterpreterData is similar to Py_buffer as an effectively
-// opaque struct that holds data outside the object machinery.  This
-// is necessary to pass safely between interpreters in the same process.
-typedef struct _xid {
-    // data is the cross-interpreter-safe derivation of a Python object
-    // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
-    // new_object func (below) encodes the data.
-    void *data;
-    // obj is the Python object from which the data was derived.  This
-    // is non-NULL only if the data remains bound to the object in some
-    // way, such that the object must be "released" (via a decref) when
-    // the data is released.  In that case the code that sets the field,
-    // likely a registered "crossinterpdatafunc", is responsible for
-    // ensuring it owns the reference (i.e. incref).
-    PyObject *obj;
-    // interp is the ID of the owning interpreter of the original
-    // object.  It corresponds to the active interpreter when
-    // _PyObject_GetCrossInterpreterData() was called.  This should only
-    // be set by the cross-interpreter machinery.
-    //
-    // We use the ID rather than the PyInterpreterState to avoid issues
-    // with deleted interpreters.
-    int64_t interp;
-    // new_object is a function that returns a new object in the current
-    // interpreter given the data.  The resulting object (a new
-    // reference) will be equivalent to the original object.  This field
-    // is required.
-    PyObject *(*new_object)(struct _xid *);
-    // free is called when the data is released.  If it is NULL then
-    // nothing will be done to free the data.  For some types this is
-    // okay (e.g. bytes) and for those types this field should be set
-    // to NULL.  However, for most the data was allocated just for
-    // cross-interpreter use, so it must be freed when
-    // _PyCrossInterpreterData_Release is called or the memory will
-    // leak.  In that case, at the very least this field should be set
-    // to PyMem_RawFree (the default if not explicitly set to NULL).
-    // The call will happen with the original interpreter activated.
-    void (*free)(void *);
-} _PyCrossInterpreterData;
-
-typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
-
-PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
-PyAPI_FUNC(void) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
-
-/* cross-interpreter data registry */
-
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
-
-PyAPI_FUNC(int) _PyCrossInterpreterData_Register_Class(PyTypeObject *, crossinterpdatafunc);
-PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
-
-struct _xidregitem;
-
-struct _xidregitem {
-    PyTypeObject *cls;
-    crossinterpdatafunc getdata;
-    struct _xidregitem *next;
-};
 
 
 /* Full Python runtime state */
@@ -146,6 +158,8 @@ typedef struct pyruntimestate {
         struct _xidregitem *head;
     } xidregistry;
 
+    unsigned long main_thread;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
@@ -164,6 +178,7 @@ typedef struct pyruntimestate {
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(void);
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
