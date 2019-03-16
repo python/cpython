@@ -84,15 +84,15 @@ error:
 static PyObject*
 mainconfig_create_xoptions_dict(const _PyCoreConfig *config)
 {
-    int nxoption = config->nxoption;
-    wchar_t **xoptions = config->xoptions;
+    Py_ssize_t nxoption = config->xoptions.length;
+    wchar_t * const * xoptions = config->xoptions.items;
     PyObject *dict = PyDict_New();
     if (dict == NULL) {
         return NULL;
     }
 
-    for (int i=0; i < nxoption; i++) {
-        wchar_t *option = xoptions[i];
+    for (Py_ssize_t i=0; i < nxoption; i++) {
+        const wchar_t *option = xoptions[i];
         if (mainconfig_add_xoption(dict, option) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -243,22 +243,18 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
             } \
         } \
     } while (0)
-#define COPY_WSTRLIST(ATTR, LEN, LIST) \
+#define COPY_WSTRLIST(ATTR, LIST) \
     do { \
         if (ATTR == NULL) { \
-            ATTR = _Py_wstrlist_as_pylist(LEN, LIST); \
+            ATTR = _PyWstrList_AsList(LIST); \
             if (ATTR == NULL) { \
                 return _Py_INIT_NO_MEMORY(); \
             } \
         } \
     } while (0)
 
-    COPY_WSTRLIST(main_config->warnoptions,
-                  config->nwarnoption, config->warnoptions);
-    if (config->argc >= 0) {
-        COPY_WSTRLIST(main_config->argv,
-                      config->argc, config->argv);
-    }
+    COPY_WSTRLIST(main_config->warnoptions, &config->warnoptions);
+    COPY_WSTRLIST(main_config->argv, &config->argv);
 
     if (config->_install_importlib) {
         COPY_WSTR(executable);
@@ -268,7 +264,7 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
         COPY_WSTR(base_exec_prefix);
 
         COPY_WSTRLIST(main_config->module_search_path,
-                      config->nmodule_search_path, config->module_search_paths);
+                      &config->module_search_paths);
 
         if (config->pycache_prefix != NULL) {
             COPY_WSTR(pycache_prefix);
@@ -289,23 +285,14 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 static _PyInitError
 preconfig_read_write(_PyPreConfig *config, const _PyArgv *args)
 {
-    _PyInitError err;
-
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     _PyPreConfig_GetGlobalConfig(config);
 
-    err = _PyPreConfig_ReadFromArgv(config, args);
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
+    _PyInitError err = _PyPreConfig_ReadFromArgv(config, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    _PyPreConfig_Write(config);
-    return _Py_INIT_OK();
+    return _PyPreConfig_Write(config);
 }
 
 
@@ -313,17 +300,9 @@ static _PyInitError
 config_read_write(_PyCoreConfig *config, const _PyArgv *args,
                   const _PyPreConfig *preconfig)
 {
-    _PyInitError err;
-
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     _PyCoreConfig_GetGlobalConfig(config);
 
-    err = _PyCoreConfig_ReadFromArgv(config, args, preconfig);
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
+    _PyInitError err = _PyCoreConfig_ReadFromArgv(config, args, preconfig);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -356,7 +335,6 @@ static _PyInitError
 pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
 {
     _PyInitError err;
-    PyMemAllocatorEx old_alloc;
 
     err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
@@ -403,12 +381,8 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     err = _Py_INIT_OK();
 
 done:
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     _PyPreConfig_Clear(preconfig);
     _PyCoreConfig_Clear(config);
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return err;
 }
 
@@ -806,8 +780,7 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
         }
     }
     else if (!config->preconfig.isolated) {
-        PyObject *path0 = _PyPathConfig_ComputeArgv0(config->argc,
-                                                     config->argv);
+        PyObject *path0 = _PyPathConfig_ComputeArgv0(&config->argv);
         if (path0 == NULL) {
             err = _Py_INIT_NO_MEMORY();
             goto done;
@@ -821,7 +794,7 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
         Py_DECREF(path0);
     }
 
-    PyCompilerFlags cf = {.cf_flags = 0};
+    PyCompilerFlags cf = {.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION};
 
     pymain_header(config);
     pymain_import_readline(config);

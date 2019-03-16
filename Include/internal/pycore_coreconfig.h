@@ -8,31 +8,30 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN defined"
 #endif
 
-/* --- _Py_wstrlist ----------------------------------------------- */
 
-PyAPI_FUNC(void) _Py_wstrlist_clear(
-    int len,
-    wchar_t **list);
-PyAPI_FUNC(wchar_t**) _Py_wstrlist_copy(
-    int len,
-    wchar_t * const *list);
-PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
-    int *len,
-    wchar_t ***list,
-    const wchar_t *str);
-PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(
-    int len,
-    wchar_t **list);
+/* --- _PyWstrList ------------------------------------------------ */
+
+#ifndef NDEBUG
+PyAPI_FUNC(int) _PyWstrList_CheckConsistency(const _PyWstrList *list);
+#endif
+PyAPI_FUNC(void) _PyWstrList_Clear(_PyWstrList *list);
+PyAPI_FUNC(int) _PyWstrList_Copy(_PyWstrList *list,
+    const _PyWstrList *list2);
+PyAPI_FUNC(int) _PyWstrList_Append(_PyWstrList *list,
+    const wchar_t *item);
+PyAPI_FUNC(PyObject*) _PyWstrList_AsList(const _PyWstrList *list);
+
 
 /* --- _PyArgv ---------------------------------------------------- */
 
-PyAPI_FUNC(_PyInitError) _PyArgv_Decode(const _PyArgv *args,
-    wchar_t*** argv_p);
+PyAPI_FUNC(_PyInitError) _PyArgv_AsWstrList(const _PyArgv *args,
+    _PyWstrList *list);
+
 
 /* --- Py_GetArgcArgv() helpers ----------------------------------- */
 
 PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
-PyAPI_FUNC(int) _Py_SetArgcArgv(int argc, wchar_t * const *argv);
+
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
@@ -40,8 +39,7 @@ PyAPI_FUNC(int) _Py_str_to_int(
     const char *str,
     int *result);
 PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
-    int nxoption,
-    wchar_t * const *xoptions,
+    const _PyWstrList *xoptions,
     const wchar_t *name);
 
 PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
@@ -59,7 +57,7 @@ PyAPI_FUNC(int) _PyPreConfig_AsDict(const _PyPreConfig *config,
     PyObject *dict);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_ReadFromArgv(_PyPreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(void) _PyPreConfig_Write(const _PyPreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(_PyPreConfig *config);
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */

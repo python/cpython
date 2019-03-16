@@ -60,6 +60,9 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
         return _Py_INIT_ERR("Can't initialize threads for cross-interpreter data registry");
     }
 
+    // Set it to the ID of the main thread of the main interpreter.
+    runtime->main_thread = PyThread_get_thread_ident();
+
     return _Py_INIT_OK();
 }
 
@@ -90,6 +93,32 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+}
+
+/* This function is called from PyOS_AfterFork_Child to ensure that
+ * newly created child processes do not share locks with the parent.
+ */
+
+void
+_PyRuntimeState_ReInitThreads(void)
+{
+    // This was initially set in _PyRuntimeState_Init().
+    _PyRuntime.main_thread = PyThread_get_thread_ident();
+
+    _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.mutex == NULL) {
+        Py_FatalError("Can't initialize lock for runtime interpreters");
+    }
+
+    _PyRuntime.interpreters.main->id_mutex = PyThread_allocate_lock();
+    if (_PyRuntime.interpreters.main->id_mutex == NULL) {
+        Py_FatalError("Can't initialize ID lock for main interpreter");
+    }
+
+    _PyRuntime.xidregistry.mutex = PyThread_allocate_lock();
+    if (_PyRuntime.xidregistry.mutex == NULL) {
+        Py_FatalError("Can't initialize lock for cross-interpreter data registry");
+    }
 }
 
 #define HEAD_LOCK() PyThread_acquire_lock(_PyRuntime.interpreters.mutex, \
@@ -133,28 +162,12 @@ PyInterpreterState_New(void)
         return NULL;
     }
 
+    memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
-    interp->id_mutex = NULL;
-    interp->modules = NULL;
-    interp->modules_by_index = NULL;
-    interp->sysdict = NULL;
-    interp->builtins = NULL;
-    interp->builtins_copy = NULL;
-    interp->tstate_head = NULL;
     interp->check_interval = 100;
-    interp->num_threads = 0;
-    interp->pythread_stacksize = 0;
-    interp->codec_search_path = NULL;
-    interp->codec_search_cache = NULL;
-    interp->codec_error_registry = NULL;
-    interp->codecs_initialized = 0;
-    interp->fscodec_initialized = 0;
     interp->core_config = _PyCoreConfig_INIT;
     interp->config = _PyMainInterpreterConfig_INIT;
-    interp->importlib = NULL;
-    interp->import_func = NULL;
     interp->eval_frame = _PyEval_EvalFrameDefault;
-    interp->co_extra_user_count = 0;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
     interp->dlopenflags = RTLD_NOW;
@@ -162,13 +175,6 @@ PyInterpreterState_New(void)
     interp->dlopenflags = RTLD_LAZY;
 #endif
 #endif
-#ifdef HAVE_FORK
-    interp->before_forkers = NULL;
-    interp->after_forkers_parent = NULL;
-    interp->after_forkers_child = NULL;
-#endif
-    interp->pyexitfunc = NULL;
-    interp->pyexitmodule = NULL;
 
     HEAD_LOCK();
     if (_PyRuntime.interpreters.next_id < 0) {
@@ -218,11 +224,15 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
+    Py_CLEAR(interp->dict);
 #ifdef HAVE_FORK
     Py_CLEAR(interp->before_forkers);
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
+    // XXX Once we have one allocator per interpreter (i.e.
+    // per-interpreter GC) we must ensure that all of the interpreter's
+    // objects have been cleaned up at the point.
 }
 
 
@@ -334,26 +344,37 @@ PyInterpreterState_GetID(PyInterpreterState *interp)
 }
 
 
-PyInterpreterState *
-_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+static PyInterpreterState *
+interp_look_up_id(PY_INT64_T requested_id)
 {
-    if (requested_id < 0)
-        goto error;
-
     PyInterpreterState *interp = PyInterpreterState_Head();
     while (interp != NULL) {
         PY_INT64_T id = PyInterpreterState_GetID(interp);
-        if (id < 0)
+        if (id < 0) {
             return NULL;
-        if (requested_id == id)
+        }
+        if (requested_id == id) {
             return interp;
+        }
         interp = PyInterpreterState_Next(interp);
     }
-
-error:
-    PyErr_Format(PyExc_RuntimeError,
-                 "unrecognized interpreter ID %lld", requested_id);
     return NULL;
+}
+
+PyInterpreterState *
+_PyInterpreterState_LookUpID(PY_INT64_T requested_id)
+{
+    PyInterpreterState *interp = NULL;
+    if (requested_id >= 0) {
+        HEAD_LOCK();
+        interp = interp_look_up_id(requested_id);
+        HEAD_UNLOCK();
+    }
+    if (interp == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_RuntimeError,
+                     "unrecognized interpreter ID %lld", requested_id);
+    }
+    return interp;
 }
 
 
@@ -398,7 +419,7 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     int64_t refcount = interp->id_refcount;
     PyThread_release_lock(interp->id_mutex);
 
-    if (refcount == 0) {
+    if (refcount == 0 && interp->requires_idref) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?
@@ -406,6 +427,18 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
         Py_EndInterpreter(tstate);
         PyThreadState_Swap(save_tstate);
     }
+}
+
+int
+_PyInterpreterState_RequiresIDRef(PyInterpreterState *interp)
+{
+    return interp->requires_idref;
+}
+
+void
+_PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
+{
+    interp->requires_idref = required ? 1 : 0;
 }
 
 _PyCoreConfig *
@@ -418,6 +451,29 @@ _PyMainInterpreterConfig *
 _PyInterpreterState_GetMainConfig(PyInterpreterState *interp)
 {
     return &interp->config;
+}
+
+PyObject *
+_PyInterpreterState_GetMainModule(PyInterpreterState *interp)
+{
+    if (interp->modules == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
+        return NULL;
+    }
+    return PyMapping_GetItemString(interp->modules, "__main__");
+}
+
+PyObject *
+PyInterpreterState_GetDict(PyInterpreterState *interp)
+{
+    if (interp->dict == NULL) {
+        interp->dict = PyDict_New();
+        if (interp->dict == NULL) {
+            PyErr_Clear();
+        }
+    }
+    /* Returning NULL means no per-interpreter dict is available. */
+    return interp->dict;
 }
 
 /* Default implementation for _PyThreadState_GetFrame */
@@ -1372,7 +1428,7 @@ _register_xidata(PyTypeObject *cls, crossinterpdatafunc getdata)
 static void _register_builtins_for_crossinterpreter_data(void);
 
 int
-_PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
+_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
                                        crossinterpdatafunc getdata)
 {
     if (!PyType_Check(cls)) {

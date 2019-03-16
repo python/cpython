@@ -14,11 +14,16 @@ from idlelib.searchbase import SearchDialogBase
 from idlelib import searchengine
 
 # Importing OutputWindow here fails due to import loop
-# EditorWindow -> GrepDialop -> OutputWindow -> EditorWindow
+# EditorWindow -> GrepDialog -> OutputWindow -> EditorWindow
 
 
 def grep(text, io=None, flist=None):
-    """Create or find singleton GrepDialog instance.
+    """Open the Find in Files dialog.
+
+    Module-level function to access the singleton GrepDialog
+    instance and open the dialog.  If text is selected, it is
+    used as the search phrase; otherwise, the previous entry
+    is used.
 
     Args:
         text: Text widget that contains the selected text for
@@ -26,7 +31,6 @@ def grep(text, io=None, flist=None):
         io: iomenu.IOBinding instance with default path to search.
         flist: filelist.FileList instance for OutputWindow parent.
     """
-
     root = text._root()
     engine = searchengine.get(root)
     if not hasattr(engine, "_grepdialog"):
@@ -71,17 +75,29 @@ class GrepDialog(SearchDialogBase):
         searchengine instance to prepare the search.
 
         Attributes:
-            globvar: Value of Text Entry widget for path to search.
-            recvar: Boolean value of Checkbutton widget
-                    for traversing through subdirectories.
+            flist: filelist.Filelist instance for OutputWindow parent.
+            globvar: String value of Entry widget for path to search.
+            globent: Entry widget for globvar.  Created in
+                create_entries().
+            recvar: Boolean value of Checkbutton widget for
+                traversing through subdirectories.
         """
-        SearchDialogBase.__init__(self, root, engine)
+        super().__init__(root, engine)
         self.flist = flist
         self.globvar = StringVar(root)
         self.recvar = BooleanVar(root)
 
     def open(self, text, searchphrase, io=None):
-        "Make dialog visible on top of others and ready to use."
+        """Make dialog visible on top of others and ready to use.
+
+        Extend the SearchDialogBase open() to set the initial value
+        for globvar.
+
+        Args:
+            text: Multicall object containing the text information.
+            searchphrase: String phrase to search.
+            io: iomenu.IOBinding instance containing file path.
+        """
         SearchDialogBase.open(self, text, searchphrase)
         if io:
             path = io.filename or ""
@@ -106,9 +122,9 @@ class GrepDialog(SearchDialogBase):
         btn.pack(side="top", fill="both")
 
     def create_command_buttons(self):
-        "Create base command buttons and add button for search."
+        "Create base command buttons and add button for Search Files."
         SearchDialogBase.create_command_buttons(self)
-        self.make_button("Search Files", self.default_command, 1)
+        self.make_button("Search Files", self.default_command, isdef=True)
 
     def default_command(self, event=None):
         """Grep for search pattern in file path. The default command is bound
@@ -140,6 +156,10 @@ class GrepDialog(SearchDialogBase):
         search each line for the matching pattern.  If the pattern is
         found,  write the file and line information to stdout (which
         is an OutputWindow).
+
+        Args:
+            prog: The compiled, cooked search pattern.
+            path: String containing the search path.
         """
         folder, filepat = os.path.split(path)
         if not folder:
