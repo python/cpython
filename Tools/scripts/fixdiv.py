@@ -179,12 +179,12 @@ PATTERN = (r"^(.+?):(\d+): DeprecationWarning: "
 
 def readwarnings(warningsfile):
     prog = re.compile(PATTERN)
+    warnings = {}
     try:
         f = open(warningsfile)
     except IOError as msg:
         sys.stderr.write("can't open: %s\n" % msg)
         return
-    warnings = {}
     with f:
         while 1:
             line = f.readline()
