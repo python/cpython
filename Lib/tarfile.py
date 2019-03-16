@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------
 # tarfile.py
 #-------------------------------------------------------------------
-# Copyright (C) 2002 Lars Gust‰bel <lars@gustaebel.de>
+# Copyright (C) 2002 Lars Gust√§bel <lars@gustaebel.de>
 # All rights reserved.
 #
 # Permission  is  hereby granted,  free  of charge,  to  any person
@@ -33,10 +33,10 @@ __version__ = "$Revision: 85213 $"
 # $Source$
 
 version     = "0.9.0"
-__author__  = "Lars Gust‰bel (lars@gustaebel.de)"
+__author__  = "Lars Gust√§bel (lars@gustaebel.de)"
 __date__    = "$Date$"
 __cvsid__   = "$Id$"
-__credits__ = "Gustavo Niemeyer, Niels Gust‰bel, Richard Townsend."
+__credits__ = "Gustavo Niemeyer, Niels Gust√§bel, Richard Townsend."
 
 #---------
 # Imports
@@ -849,12 +849,14 @@ class ExFileObject(object):
                 buf = self.fileobj.read(self.blocksize)
                 buffers.append(buf)
                 if not buf or "\n" in buf:
-                    self.buffer = "".join(buffers)
-                    pos = self.buffer.find("\n") + 1
-                    if pos == 0:
-                        # no newline found.
-                        pos = len(self.buffer)
-                    break
+                    if buf is not None:
+                        self.buffer = "".join(buffers)
+                        pos = self.buffer.find("\n") + 1
+                        if pos == 0:
+                            # no newline found.
+                            pos = len(self.buffer)
+                pos = pos + 1
+                break
 
         if size != -1:
             pos = min(size, pos)
