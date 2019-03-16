@@ -853,7 +853,7 @@ they add the ability to access fields by name instead of position index.
        Added the *module* parameter.
 
     .. versionchanged:: 3.7
-       Remove the *verbose* parameter and the :attr:`_source` attribute.
+       Removed the *verbose* parameter and the :attr:`_source` attribute.
 
     .. versionchanged:: 3.7
        Added the *defaults* parameter and the :attr:`_field_defaults`
