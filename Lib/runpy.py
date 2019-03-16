@@ -186,7 +186,28 @@ def _run_module_as_main(mod_name, alter_argv=True):
     except _Error as exc:
         msg = "%s: %s" % (sys.executable, exc)
         sys.exit(msg)
-    main_globals = sys.modules["__main__"].__dict__
+    main_module = sys.modules["__main__"]
+    main_module_name = mod_spec.name
+    if not main_module.is_package(main_module_name):
+        global_module = sys.modules.get(main_module_name)
+        if global_module is not main_module:
+            if global_module:
+                main_module_spec = getattr(main_module, '__spec__')
+                main_module_desc = repr(main_module_spec or main_module)
+                global_module_spec = getattr(global_module, '__spec__')
+                global_module_desc = repr(global_module_spec or global_module)
+                from warnings import warn
+                msg = "main module {main_module_name!r}:" \
+                    " a different module {global_module_desc}" \
+                    " is already present in sys.modules" \
+                    " and will be replaced by {main_module_desc}" \
+                    .format(
+                        main_module_name=main_module_name,
+                        main_module_desc=main_module_desc,
+                        global_module_desc=global_module_desc)
+                warn(RuntimeWarning(msg))
+            sys.modules[main_module_name] = main_module
+    main_globals = main_module.__dict__
     if alter_argv:
         sys.argv[0] = mod_spec.origin
     return _run_code(code, main_globals, None,
