@@ -1028,17 +1028,20 @@ customize a prototype instance:
 
 .. seealso::
 
-    * `Recipe for named tuple abstract base class with a metaclass mix-in
-      <https://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
-      by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
-      named tuples, it also supports an alternate :term:`metaclass`-based
-      constructor that is convenient for use cases where named tuples are being
-      subclassed.
+    * See :class:`typing.NamedTuple` for a way to add type hints for named
+      tuples.  It also provides an elegant notation using the :keyword:`class`
+      keyword::
+
+          class Component(NamedTuple):
+              part_number: int
+              weight: float
+              description: Optional[str] = None
 
     * See :meth:`types.SimpleNamespace` for a mutable namespace based on an
       underlying dictionary instead of a tuple.
 
-    * See :meth:`typing.NamedTuple` for a way to add type hints for named tuples.
+    * The :mod:`dataclasses` module provides a decorator and functions for
+      automatically adding generated special methods to user-defined classes.
 
 
 :class:`OrderedDict` objects
