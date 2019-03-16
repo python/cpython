@@ -794,6 +794,9 @@ class DictConfigurator(BaseConfigurator):
         propagate = config.get('propagate', None)
         if propagate is not None:
             logger.propagate = propagate
+        disabled = config.get('disabled', None)
+        if disabled is not None:
+            logger.disabled = disabled
 
     def configure_root(self, config, incremental=False):
         """Configure a root logger from a dictionary."""
