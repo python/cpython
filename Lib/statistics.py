@@ -746,7 +746,7 @@ class NormalDist:
         return 0.5 * (1.0 + erf((x - self.mu) / (self.sigma * sqrt(2.0))))
 
     def inv_cdf(self, p):
-        ''' Inverse cumulative distribution function.  x : P(X <= x) = p'
+        ''' Inverse cumulative distribution function:  x : P(X <= x) = p
 
          Finds the value of the random variable such that the probability of the
          variable being less than or equal to that value equals the given probability.
