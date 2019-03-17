@@ -166,6 +166,11 @@ Searches
 for the named module and runs the corresponding
 .I .py
 file as a script.
+This also imports the
+.I .py
+file
+as
+.IR module-name .
 .TP
 .B \-O
 Remove assert statements and any code conditional on the value of
