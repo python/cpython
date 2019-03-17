@@ -1215,7 +1215,7 @@ functions.
    closing all handlers. This should be called at application exit and no
    further use of the logging system should be made after this call.
 
-   When then logging module is imported, it registers this function as an exit
+   When the logging module is imported, it registers this function as an exit
    handler (see :mod:`atexit`), so normally there's no need to do that
    manually.
 
