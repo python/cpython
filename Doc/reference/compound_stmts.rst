@@ -6,10 +6,10 @@ Compound statements
 
 .. index:: pair: compound; statement
 
-Compound statements contain (groups of) other statements; they affect or
-control the execution of those other statements in some way.  In general,
-compound statements span multiple lines, although in simple incarnations a
-whole compound statement may be contained in one line.
+Compound statements contain (groups of) other statements; they affect or control
+the execution of those other statements in some way.  In general, compound
+statements span multiple lines, although in simple incarnations a whole compound
+statement may be contained in one line.
 
 The :keyword:`if`, :keyword:`while` and :keyword:`for` statements implement
 traditional control flow constructs.  :keyword:`try` specifies exception
@@ -24,21 +24,21 @@ also syntactically compound statements.
    single: ; (semicolon)
 
 A compound statement consists of one or more 'clauses.'  A clause consists of a
-header and a 'suite.'  The clause headers of a particular compound statement
-are all at the same indentation level.  Each clause header begins with a
-uniquely identifying keyword and ends with a colon.  A suite is a group of
-statements controlled by a clause.  A suite can be one or more
-semicolon-separated simple statements on the same line as the header, following
-the header's colon, or it can be one or more indented statements on subsequent
-lines.  Only the latter form of a suite can contain nested compound statements;
-the following is illegal, mostly because it wouldn't be clear to which
-:keyword:`if` clause a following :keyword:`else` clause would belong::
+header and a 'suite.'  The clause headers of a particular compound statement are
+all at the same indentation level.  Each clause header begins with a uniquely
+identifying keyword and ends with a colon.  A suite is a group of statements
+controlled by a clause.  A suite can be one or more semicolon-separated simple
+statements on the same line as the header, following the header's colon, or it
+can be one or more indented statements on subsequent lines.  Only the latter
+form of a suite can contain nested compound statements; the following is
+illegal, mostly because it wouldn't be clear to which :keyword:`if` clause a
+following :keyword:`else` clause would belong::
 
    if test1: if test2: print(x)
 
 Also note that the semicolon binds tighter than the colon in this context, so
-that in the following example, either all or none of the :func:`print` calls
-are executed::
+that in the following example, either all or none of the :func:`print` calls are
+executed::
 
    if x < y < z: print(x); print(y); print(z)
 
@@ -70,8 +70,8 @@ keyword that cannot start a statement, thus there are no ambiguities (the
 'dangling :keyword:`else`' problem is solved in Python by requiring nested
 :keyword:`if` statements to be indented).
 
-The formatting of the grammar rules in the following sections places each
-clause on a separate line for clarity.
+The formatting of the grammar rules in the following sections places each clause
+on a separate line for clarity.
 
 
 .. _if:
@@ -95,8 +95,8 @@ The :keyword:`if` statement is used for conditional execution:
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one
-until one is found to be true (see section :ref:`booleans` for the definition
-of true and false); then that suite is executed (and no other part of the
+until one is found to be true (see section :ref:`booleans` for the definition of
+true and false); then that suite is executed (and no other part of the
 :keyword:`if` statement is executed or evaluated).  If all expressions are
 false, the :keyword:`else` clause's suite, if present, is executed.
 
@@ -120,8 +120,8 @@ expression is true:
              : ["else" ":" `suite`]
 
 This repeatedly tests the expression and, if it is true, executes the first
-suite; if the expression is false (which may be the first time it is tested)
-the :keyword:`!else` clause's suite, if present, is executed and the loop
+suite; if the expression is false (which may be the first time it is tested) the
+:keyword:`!else` clause's suite, if present, is executed and the loop
 terminates.
 
 .. index::
@@ -157,11 +157,11 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 
 The expression list is evaluated once; it should yield an iterable object.  An
 iterator is created for the result of the ``expression_list``.  The suite is
-then executed once for each item provided by the iterator, in the order
-returned by the iterator.  Each item in turn is assigned to the target list
-using the standard rules for assignments (see :ref:`assignment`), and then the
-suite is executed.  When the items are exhausted (which is immediately when the
-sequence is empty or an iterator raises a :exc:`StopIteration` exception), the
+then executed once for each item provided by the iterator, in the order returned
+by the iterator.  Each item in turn is assigned to the target list using the
+standard rules for assignments (see :ref:`assignment`), and then the suite is
+executed.  When the items are exhausted (which is immediately when the sequence
+is empty or an iterator raises a :exc:`StopIteration` exception), the
 :keyword:`!else` clause's suite, if present, is executed, and the loop
 terminates.
 
@@ -175,9 +175,9 @@ statement executed in the first suite skips the rest of the suite and continues
 with the next item, or with the :keyword:`!else` clause if there is no next
 item.
 
-The for-loop makes assignments to the variables in the target list.  This
-overwrites all previous assignments to those variables including those made in
-the for-loop's suite::
+The for-loop makes assignments to the variables in the target list.
+This overwrites all previous assignments to those variables including
+those made in the for-loop's suite::
 
    for i in range(10):
        print(i)
@@ -201,17 +201,17 @@ suitable to emulate the effect of Pascal's ``for i := a to b do``; e.g.,
       single: loop; over mutable sequence
       single: mutable sequence; loop over
 
-   There is a subtlety when the sequence is being modified by the loop (this
-   can only occur for mutable sequences, e.g. lists).  An internal counter is
-   used to keep track of which item is used next, and this is incremented on
-   each iteration.  When this counter has reached the length of the sequence
-   the loop terminates.  This means that if the suite deletes the current (or a
-   previous) item from the sequence, the next item will be skipped (since it
-   gets the index of the current item which has already been treated).
-   Likewise, if the suite inserts an item in the sequence before the current
-   item, the current item will be treated again the next time through the loop.
-   This can lead to nasty bugs that can be avoided by making a temporary copy
-   using a slice of the whole sequence, e.g., ::
+   There is a subtlety when the sequence is being modified by the loop (this can
+   only occur for mutable sequences, e.g. lists).  An internal counter is used
+   to keep track of which item is used next, and this is incremented on each
+   iteration.  When this counter has reached the length of the sequence the loop
+   terminates.  This means that if the suite deletes the current (or a previous)
+   item from the sequence, the next item will be skipped (since it gets the
+   index of the current item which has already been treated).  Likewise, if the
+   suite inserts an item in the sequence before the current item, the current
+   item will be treated again the next time through the loop.  This can lead to
+   nasty bugs that can be avoided by making a temporary copy using a slice of
+   the whole sequence, e.g., ::
 
       for x in a[:]:
           if x < 0: a.remove(x)
@@ -245,17 +245,17 @@ for a group of statements:
             : "finally" ":" `suite`
 
 
-The :keyword:`except` clause(s) specify one or more exception handlers.  When
-no exception occurs in the :keyword:`try` clause, no exception handler is
-executed.  When an exception occurs in the :keyword:`!try` clause, a search for
-an exception handler is started.  This search inspects the :keyword:`except`
+The :keyword:`except` clause(s) specify one or more exception handlers.  When no
+exception occurs in the :keyword:`try` clause, no exception handler is executed.
+When an exception occurs in the :keyword:`!try` clause, a search for an
+exception handler is started.  This search inspects the :keyword:`except`
 clauses in turn until one is found that matches the exception.  An
 expression-less :keyword:`except` clause, if present, must be last; it matches
-any exception.  For an :keyword:`except` clause with an expression, that
-expression is evaluated, and the clause matches the exception if the resulting
-object is 'compatible' with the exception.  An object is compatible with an
-exception if it is the class or a base class of the exception object or a tuple
-containing an item compatible with the exception.
+any exception.  For an except clause with an expression, that expression is
+evaluated, and the clause matches the exception if the resulting object is
+'compatible' with the exception.  An object is compatible with an exception if
+it is the class or a base class of the exception object or a tuple containing
+an item compatible with the exception.
 
 If no :keyword:`except` clause matches the exception, the search for an
 exception handler continues in the surrounding code and on the invocation stack.
@@ -305,9 +305,9 @@ Before an :keyword:`except` clause's suite is executed, details about the
 exception are stored in the :mod:`sys` module and can be accessed via
 :func:`sys.exc_info`.  :func:`sys.exc_info` returns a 3-tuple consisting of the
 exception class, the exception instance and a traceback object (see section
-:ref:`types`) identifying the point in the program where the exception
-occurred.  :func:`sys.exc_info` values are restored to their previous values
-(before the call) when leaving an exception handler.
+:ref:`types`) identifying the point in the program where the exception occurred.
+:func:`sys.exc_info` values are restored to their previous values (before the
+call) when leaving an exception handler.
 
 .. index::
    keyword: else
@@ -431,8 +431,8 @@ follows:
 
    If the suite was exited due to an exception, and the return value from the
    :meth:`__exit__` method was false, the exception is reraised.  If the return
-   value was true, the exception is suppressed, and execution continues with
-   the statement following the :keyword:`with` statement.
+   value was true, the exception is suppressed, and execution continues with the
+   statement following the :keyword:`with` statement.
 
    If the suite was exited for any reason other than an exception, the return
    value from :meth:`__exit__` is ignored, and execution proceeds at the normal
@@ -456,8 +456,8 @@ is equivalent to ::
 .. seealso::
 
    :pep:`343` - The "with" statement
-      The specification, background, and examples for the Python
-      :keyword:`with` statement.
+      The specification, background, and examples for the Python :keyword:`with`
+      statement.
 
 
 .. index::
@@ -529,8 +529,7 @@ is roughly equivalent to ::
    def func(): pass
    func = f1(arg)(f2(func))
 
-except that the original function is not temporarily bound to the name
-``func``.
+except that the original function is not temporarily bound to the name ``func``.
 
 .. index::
    triple: default; parameter; value
@@ -540,20 +539,20 @@ except that the original function is not temporarily bound to the name
 When one or more :term:`parameters <parameter>` have the form *parameter* ``=``
 *expression*, the function is said to have 'default parameter values.'  For a
 parameter with a default value, the corresponding :term:`argument` may be
-omitted from a call, in which case the parameter's default value is
-substituted.  If a parameter has a default value, all following parameters up
-until the '``*``' must also have a default value --- this is a syntactic
-restriction that is not expressed by the grammar.
+omitted from a call, in which
+case the parameter's default value is substituted.  If a parameter has a default
+value, all following parameters up until the '``*``' must also have a default
+value --- this is a syntactic restriction that is not expressed by the grammar.
 
 **Default parameter values are evaluated from left to right when the function
-definition is executed.** This means that the expression is evaluated once,
-when the function is defined, and that the same 'pre-computed' value is used
-for each call.  This is especially important to understand when a default
-parameter is a mutable object, such as a list or a dictionary: if the function
-modifies the object (e.g. by appending an item to a list), the default value is
-in effect modified.  This is generally not what was intended.  A way around
-this is to use ``None`` as the default, and explicitly test for it in the body
-of the function, e.g.::
+definition is executed.** This means that the expression is evaluated once, when
+the function is defined, and that the same 'pre-computed' value is used for each
+call.  This is especially important to understand when a default parameter is a
+mutable object, such as a list or a dictionary: if the function modifies the
+object (e.g. by appending an item to a list), the default value is in effect
+modified.  This is generally not what was intended.  A way around this is to use
+``None`` as the default, and explicitly test for it in the body of the function,
+e.g.::
 
    def whats_on_the_telly(penguin=None):
        if penguin is None:
@@ -565,15 +564,16 @@ of the function, e.g.::
    single: * (asterisk); function definition
    single: **; function definition
 
-Function call semantics are described in more detail in section :ref:`calls`.
-A function call always assigns values to all parameters mentioned in the
-parameter list, either from position arguments, from keyword arguments, or from
-default values.  If the form '``*identifier``' is present, it is initialized to
-a tuple receiving any excess positional parameters, defaulting to the empty
-tuple.  If the form '``**identifier``' is present, it is initialized to a new
-ordered mapping receiving any excess keyword arguments, defaulting to a new
-empty mapping of the same type.  Parameters after '``*``' or '``*identifier``'
-are keyword-only parameters and may only be passed used keyword arguments.
+Function call semantics are described in more detail in section :ref:`calls`.  A
+function call always assigns values to all parameters mentioned in the parameter
+list, either from position arguments, from keyword arguments, or from default
+values.  If the form '``*identifier``' is present, it is initialized to a tuple
+receiving any excess positional parameters, defaulting to the empty tuple.
+If the form '``**identifier``' is present, it is initialized to a new
+ordered mapping receiving any excess keyword arguments, defaulting to a
+new empty mapping of the same type.  Parameters after '``*``' or
+'``*identifier``' are keyword-only parameters and may only be passed
+used keyword arguments.
 
 .. index::
    pair: function; annotations
@@ -605,10 +605,10 @@ just like a function defined by a lambda expression.  The ':keyword:`!def`'
 form is actually more powerful since it allows the execution of multiple
 statements and annotations.
 
-**Programmer's note:** Functions are first-class objects.  A '``def``'
-statement executed inside a function definition defines a local function that
-can be returned or passed around.  Free variables used in the nested function
-can access the local variables of the function containing the def.  See section
+**Programmer's note:** Functions are first-class objects.  A '``def``' statement
+executed inside a function definition defines a local function that can be
+returned or passed around.  Free variables used in the nested function can
+access the local variables of the function containing the def.  See section
 :ref:`naming` for details.
 
 .. seealso::
@@ -654,8 +654,8 @@ A class definition defines a class object (see section :ref:`types`):
    classname: `identifier`
 
 A class definition is an executable statement.  The inheritance list usually
-gives a list of base classes (see :ref:`metaclasses` for more advanced uses),
-so each item in the list should evaluate to a class object which allows
+gives a list of base classes (see :ref:`metaclasses` for more advanced uses), so
+each item in the list should evaluate to a class object which allows
 subclassing.  Classes without an inheritance list inherit, by default, from the
 base class :class:`object`; hence, ::
 
@@ -667,22 +667,21 @@ is equivalent to ::
    class Foo(object):
        pass
 
-The class's suite is then executed in a new execution frame (see
-:ref:`naming`), using a newly created local namespace and the original global
-namespace.  (Usually, the suite contains mostly function definitions.)  When
-the class's suite finishes execution, its execution frame is discarded but its
-local namespace is saved. [#]_ A class object is then created using the
-inheritance list for the base classes and the saved local namespace for the
-attribute dictionary.  The class name is bound to this class object in the
-original local namespace.
+The class's suite is then executed in a new execution frame (see :ref:`naming`),
+using a newly created local namespace and the original global namespace.
+(Usually, the suite contains mostly function definitions.)  When the class's
+suite finishes execution, its execution frame is discarded but its local
+namespace is saved. [#]_ A class object is then created using the inheritance
+list for the base classes and the saved local namespace for the attribute
+dictionary.  The class name is bound to this class object in the original local
+namespace.
 
-The order in which attributes are defined in the class body is preserved in the
-new class's ``__dict__``.  Note that this is reliable only right after the
-class is created and only for classes that were defined using the definition
-syntax.
+The order in which attributes are defined in the class body is preserved
+in the new class's ``__dict__``.  Note that this is reliable only right
+after the class is created and only for classes that were defined using
+the definition syntax.
 
-Class creation can be customized heavily using
-:ref:`metaclasses <metaclasses>`.
+Class creation can be customized heavily using :ref:`metaclasses <metaclasses>`.
 
 .. index::
    single: @ (at); class definition
@@ -704,8 +703,8 @@ decorators.  The result is then bound to the class name.
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
 method with ``self.name = value``.  Both class and instance attributes are
-accessible through the notation '``self.name``', and an instance attribute
-hides a class attribute with the same name when accessed in this way.  Class
+accessible through the notation '``self.name``', and an instance attribute hides
+a class attribute with the same name when accessed in this way.  Class
 attributes can be used as defaults for instance attributes, but using mutable
 values there can lead to unexpected results.  :ref:`Descriptors <descriptors>`
 can be used to create instance variables with different implementation details.
@@ -744,11 +743,11 @@ Coroutine function definition
    keyword: async
    keyword: await
 
-Execution of Python coroutines can be suspended and resumed at many points (see
-:term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
+Execution of Python coroutines can be suspended and resumed at many points
+(see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
 ``async`` identifiers become reserved keywords; :keyword:`await` expressions,
-:keyword:`async for` and :keyword:`async with` can only be used in coroutine
-function bodies.
+:keyword:`async for` and :keyword:`async with` can only be used in
+coroutine function bodies.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
@@ -803,8 +802,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
-It is a :exc:`SyntaxError` to use an ``async for`` statement outside the body
-of a coroutine function.
+It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
+body of a coroutine function.
 
 
 .. index:: statement: async with
@@ -841,8 +840,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 
-It is a :exc:`SyntaxError` to use an ``async with`` statement outside the body
-of a coroutine function.
+It is a :exc:`SyntaxError` to use an ``async with`` statement outside the
+body of a coroutine function.
 
 .. seealso::
 
@@ -853,12 +852,12 @@ of a coroutine function.
 
 .. rubric:: Footnotes
 
-.. [#] The exception is propagated to the invocation stack unless there is a
-   :keyword:`finally` clause which happens to raise another exception. That new
-   exception causes the old one to be lost.
+.. [#] The exception is propagated to the invocation stack unless
+   there is a :keyword:`finally` clause which happens to raise another
+   exception. That new exception causes the old one to be lost.
 
-.. [#] A string literal appearing as the first statement in the function body
-   is transformed into the function's ``__doc__`` attribute and therefore the
+.. [#] A string literal appearing as the first statement in the function body is
+   transformed into the function's ``__doc__`` attribute and therefore the
    function's :term:`docstring`.
 
 .. [#] A string literal appearing as the first statement in the class body is
