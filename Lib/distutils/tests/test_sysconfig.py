@@ -81,6 +81,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         os.environ['CC'] = 'my_cc'
         os.environ['ARFLAGS'] = '--myarflags'
         os.environ['CFLAGS'] = '--mycflags'
+        os.environ.pop('CPPFLAGS', None)
 
         # make sure AR gets caught
         class compiler:
