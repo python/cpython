@@ -443,6 +443,14 @@ class _ABC(type):
         return type.__instancecheck__(cls, inst)
 
 def _new(cls, *args, **kwargs):
+    for key in kwargs:
+        try:
+            pos = cls._fields.index(key)
+            if pos < len(args):
+                raise TypeError(f"{cls.__name__} got multiple values for argument {key!r}")
+        except ValueError:
+            # arbitrary keywork arguments are accepted
+            pass
     if cls in _const_types:
         return Constant(*args, **kwargs)
     return Constant.__new__(cls, *args, **kwargs)

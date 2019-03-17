@@ -1,0 +1,2 @@
+_ast.ast_type_init now raises TypeError on conflicting keyword arguments.
+Patch contributed by Rémi Lapeyre.
