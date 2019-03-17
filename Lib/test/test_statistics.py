@@ -2187,8 +2187,16 @@ class TestNormalDist(unittest.TestCase):
             p /= n
             self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
 
-        # Now apply cdf() first.  At six sigmas the round-trip
-        # loses a lot of precision, so check to 6 places.
+        # One hundred ever smaller probabilities to test tails out to
+        # extreme probabilies: 1 / 2**50 and (2**50-1) / 2 ** 50
+        for e in range(1, 51):
+            p = 2.0 ** (-e)
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+            p = 1.0 - p
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+
+        # Now apply cdf() first.  At six sigmas, the round-trip
+        # loses a lot of precision, so only check to 6 places.
         for x in range(10, 190):
             self.assertAlmostEqual(iq.inv_cdf(iq.cdf(x)), x, places=6)
 
