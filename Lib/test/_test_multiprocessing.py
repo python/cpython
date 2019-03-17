@@ -5423,24 +5423,40 @@ class MiscTestCase(unittest.TestCase):
                              blacklist=['SUBDEBUG', 'SUBWARNING'])
 
 
+class SpyReducer(reduction.AbstractReducer):
+    """Custom reducer that records the call to the Pickler
+    class it returns. Mocks are not used because they do not
+    play good with pickling"""
+    def __init__(self, spy):
+        self.spy = spy
+    def get_pickler(self):
+        spy = self.spy
+        class Pickler(pickle.Pickler):
+            def __init__(self):
+                pass
+            @classmethod
+            def dumps(self, obj, protocol=None):
+                spy["dumps"] += 1
+                return pickle.dumps(obj)
+            @classmethod
+            def loads(self, *args, **kwargs):
+                spy["loads"] += 1
+                return pickle.loads(*args, **kwargs)
+        return Pickler()
+
 class _TestCustomReducer(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
 
     def setUp(self):
+        self.context = multiprocessing.get_context()
         self.original_reducer = multiprocessing.get_reducer()
-        spy = unittest.mock.MagicMock(spec_set=self.original_reducer.ForkingPickler,
-                                      wraps=self.original_reducer.ForkingPickler)
-        self.spy = spy
-
-        class SpyReducer(reduction.AbstractReducer):
-            def get_pickler(self):
-                return spy
-
-        multiprocessing.set_reducer(SpyReducer())
+        self.spy = {'loads': 0, 'dumps': 0}
+        self.context.set_reducer(SpyReducer(self.spy))
 
     def tearDown(self):
-        multiprocessing.set_reducer(self.original_reducer)
+        self.context.set_reducer(self.original_reducer)
+        del self.spy
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_connection_custom_reducer(self):
@@ -5453,8 +5469,8 @@ class _TestCustomReducer(BaseTestCase):
         if self.TYPE == 'processes':
             self.assertRaises(OSError, l.accept)
 
-        self.assertEqual(self.spy.dumps.call_count, 1)
-        self.assertEqual(self.spy.loads.call_count, 1)
+        self.assertEqual(self.spy['loads'], 1)
+        self.assertEqual(self.spy['dumps'], 1)
 
     @classmethod
     def _put_and_get_in_queue(cls, queue, parent_can_continue):
@@ -5477,9 +5493,14 @@ class _TestCustomReducer(BaseTestCase):
         p.join(timeout=TIMEOUT3)
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(element, "Something")
-        self.assertEqual(self.spy.dumps.call_count, 1)
-        self.assertEqual(self.spy.loads.call_count, 1)
+        self.assertEqual(self.spy['loads'], 1)
+        self.assertEqual(self.spy['dumps'], 1)
         close_queue(queue)
+
+
+class CustomContext(multiprocessing.context.BaseContext):
+    _name = "custom"
+    Process = multiprocessing.get_context().Process
 
 
 class _TestCustomReducerWithContext(BaseTestCase):
@@ -5487,21 +5508,11 @@ class _TestCustomReducerWithContext(BaseTestCase):
     ALLOWED_TYPES = ('processes',)
 
     def setUp(self):
-        class CustomContext(multiprocessing.context.BaseContext):
-            _name = "custom"
-            Process = multiprocessing.get_context().Process
-
         self.ctx = CustomContext()
+
         self.original_reducer = self.ctx.get_reducer()
-        spy = unittest.mock.MagicMock(spec_set=self.original_reducer.ForkingPickler,
-                                      wraps=self.original_reducer.ForkingPickler)
-        self.spy = spy
-
-        class SpyReducer(reduction.AbstractReducer):
-            def get_pickler(self):
-                return spy
-
-        self.ctx.set_reducer(SpyReducer())
+        self.spy = {'loads': 0, 'dumps': 0}
+        self.ctx.set_reducer(SpyReducer(self.spy))
 
     def tearDown(self):
         self.ctx.set_reducer(self.original_reducer)
@@ -5527,8 +5538,8 @@ class _TestCustomReducerWithContext(BaseTestCase):
         p.join(timeout=TIMEOUT3)
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(element, "Something")
-        self.assertEqual(self.spy.dumps.call_count, 1)
-        self.assertEqual(self.spy.loads.call_count, 1)
+        self.assertEqual(self.spy['loads'], 1)
+        self.assertEqual(self.spy['dumps'], 1)
         close_queue(queue)
 
 
@@ -5542,7 +5553,7 @@ class _TestCustomReducerInvalidParameters(BaseTestCase):
             multiprocessing.set_reducer(BadReducer())
 
 
-    def test_setting_valid_reducer_that_returns_ivalid_pickler(self):
+    def test_setting_valid_reducer_that_returns_invalid_pickler(self):
 
         class PicklerClass:
             pass

@@ -1212,7 +1212,7 @@ the reduction mechanism:
 
    .. function:: get_pickler():
 
-      This method must return a instance of a subclass of :class:`pickle.Pickler`
+      This method must return an instance of a subclass of :class:`pickler.Pickler`
       to be used by the multiprocessing reducer mechanism.
 
 .. currentmodule:: multiprocessing
@@ -1239,10 +1239,14 @@ version 2 to be able to communicate with a Python 2.x programs.::
            return super().dumps(obj, protocol=pickle_protocol)
 
    class PickleProtocol2Reducer(AbstractReducer):
-       def get_pickler(self):
+       def get_pickler_class(self):
            return ForkingPicklerProtocol2
 
    multiprocessing.set_reducer(PickleProtocol2Reducer)
+
+Notice that using :meth:`multiprocessing.set_reducer` changes the reducer globally. If
+changing this setting globally is undesirable you could call :meth:`context.set_reducer`,
+where *context* is a context object obtained by calling :func:`get_context`.
 
 Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

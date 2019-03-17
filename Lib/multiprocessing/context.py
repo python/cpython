@@ -206,21 +206,25 @@ class BaseContext(object):
     def get_reducer(self):
         '''Controls how objects will be reduced to a form that can be
         shared with other processes.'''
-        return globals().get('reduction')
+        reducer = getattr(self, "_reducer", None)
+        if reducer is None:
+            return reduction
+        return reducer
 
     def set_reducer(self, reduction):
         if reduction is original_reducer:
-            globals()['reduction'] = reduction
+            self._reducer = None
             return
 
         if not isinstance(reduction, original_reducer.AbstractReducer):
             raise TypeError("Custom reducers must be instances of a "
                             "subclass of multiprocessing.reduction.AbstractReducer")
         if not isinstance(reduction.get_pickler(), pickle.Pickler):
+            breakpoint()
             raise TypeError("Custom reducers must return a subclass of "
                             "pickler.Pickler in the get_pickler() method")
 
-        globals()['reduction'] = reduction
+        self._reducer = reduction
 
     def _check_available(self):
         pass
