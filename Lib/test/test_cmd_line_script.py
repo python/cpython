@@ -363,6 +363,32 @@ class CmdLineTest(unittest.TestCase):
                    "be directly executed")
             self._check_import_error(["-m", "test_pkg"], msg, cwd=script_dir)
 
+    def test_module_self_import(self):
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script',
+                    "import sys; import script\n"
+                    "if sys.modules['__main__'] is not sys.modules['script']:\n"
+                    "    raise AssertionError(\"sys.modules['__main__'] is not sys.modules['script']\")"
+                    )
+            rc, out, err = assert_python_ok('-m', 'script',
+                                            __isolated=False,
+                                            __cleanenv=True,
+                                            PYTHONPATH=script_dir)
+
+    def test_package_self_import(self):
+        with support.temp_dir() as script_dir:
+            pkg_dir = os.path.join(script_dir, 'test_pkg')
+            make_pkg(pkg_dir)
+            script_name = _make_test_script(pkg_dir, '__main__',
+                    "import sys; import test_pkg\n"
+                    "if sys.modules['__main__'] is sys.modules['test_pkg']:\n"
+                    "    raise AssertionError(\"sys.modules['__main__'] is sys.modules['test_pkg']\")"
+                    )
+            rc, out, err = assert_python_ok('-m', 'test_pkg',
+                                            __isolated=False,
+                                            __cleanenv=True,
+                                            PYTHONPATH=script_dir)
+
     def test_issue8202(self):
         # Make sure package __init__ modules see "-m" in sys.argv0 while
         # searching for the module to execute
