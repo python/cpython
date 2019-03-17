@@ -2174,6 +2174,40 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X.cdf(float('Inf')), 1.0)
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
+    def test_inv_cdf(self):
+        NormalDist = statistics.NormalDist
+
+        # Center case should be exact.
+        iq = NormalDist(100, 15)
+        self.assertEqual(iq.inv_cdf(0.50), iq.mean)
+
+        # One million equally spaced probabilities
+        n = 2**20
+        for p in range(1, n):
+            p /= n
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+
+        # Now apply cdf() first.  At six sigmas the round-trip
+        # loses a lot of precision, so check to 6 places.
+        for x in range(10, 190):
+            self.assertAlmostEqual(iq.inv_cdf(iq.cdf(x)), x, places=6)
+
+        # Error cases:
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(0.0)                         # p is zero
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(-0.1)                        # p under zero
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(1.0)                         # p is one
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(1.1)                         # p over one
+        with self.assertRaises(statistics.StatisticsError):
+            iq.sigma = 0.0                          # sigma is zero
+            iq.inv_cdf(0.5)
+        with self.assertRaises(statistics.StatisticsError):
+            iq.sigma = -0.1                         # sigma under zero
+            iq.inv_cdf(0.5)
+
     def test_overlap(self):
         NormalDist = statistics.NormalDist
 
