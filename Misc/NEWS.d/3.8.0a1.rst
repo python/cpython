@@ -1845,7 +1845,7 @@ parameter.
 .. nonce: LT_qL8
 .. section: Library
 
-:class:`asyncio.ProactorEventLoop` now catchs and logs send errors when the
+:class:`asyncio.ProactorEventLoop` now catches and logs send errors when the
 self-pipe is full.
 
 ..
@@ -2270,7 +2270,7 @@ last release was in 2000. Mac OS 9 last release was in 2001.
 .. nonce: laV_IE
 .. section: Library
 
-:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catchs
+:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catches
 :exc:`KeyError` on calling :func:`pwd.getpwuid`: don't create the ``HOME``
 environment variable in this case.
 
@@ -8674,7 +8674,7 @@ Argument Clinic now has non-bitwise unsigned int converters.
 .. nonce: Q3Dwns
 .. section: Tools/Demos
 
-python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
+python-gdb now catches ``UnicodeDecodeError`` exceptions when calling
 ``string()``.
 
 ..
@@ -8684,7 +8684,7 @@ python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
 .. nonce: 2YfdwI
 .. section: Tools/Demos
 
-python-gdb now catchs ValueError on read_var(): when Python has no debug
+python-gdb now catches ValueError on read_var(): when Python has no debug
 symbols for example.
 
 ..
