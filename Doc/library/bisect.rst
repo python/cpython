@@ -27,14 +27,14 @@ The following functions are provided:
    The parameters *lo* and *hi* may be used to specify a subset of the list
    which should be considered; by default the entire list is used. The
    parameter *key* specifies a function of one argument that is used to
-   extract a comparison key from each element in *a* (for example,
+   extract a comparison key from each element in *a* and from *x* (for example,
    ``key=str.lower``). The default value is ``None`` (compare the elements
    directly).
 
    If *x* is already present in *a*, the insertion point will be before
    (to the left of) any existing entries.  The return value is suitable for
    use as the first parameter to ``list.insert()`` assuming that *a* is
-   already sorted.
+   already sorted according to *key*.
 
    The returned insertion point *i* partitions the array *a* into two halves so
    that ``all(val < x for val in a[lo:i])`` for the left side and
