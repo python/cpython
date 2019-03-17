@@ -1261,7 +1261,7 @@ _Py_Sigset_Converter(PyObject *obj, void *addr)
     long signum;
     int overflow;
 
-    if (sigemptyset(mask)) {
+    if (sigemptyset(mask) < (0)) {
         /* Probably only if mask == NULL. */
         PyErr_SetFromErrno(PyExc_OSError);
         return 0;
