@@ -933,6 +933,19 @@ qualify as a built-in module.  This is because the manner in which
 ``__main__`` is initialized depends on the flags and other options with
 which the interpreter is invoked.
 
+When Python is started with the :option:`-m` option, if the name
+provided resolves to a module (as distinct from a package) then the
+module is associated as both ``sys.modules['__main__']`` and also
+as ``sys.modules[``name``]``. This prevents a future import of the
+named module creating a distinct module instance which cauases
+subtle failures because references like ``__main__.foo`` are to
+distinct objects from references like name``.foo``.
+
+.. versionchanged:: 3.8
+   The :option:`-m` formerly installed the module only as
+   ``sys.modules['__main__']`` without aliasing it as its module
+   name.
+
 .. _main_spec:
 
 __main__.__spec__
@@ -960,11 +973,11 @@ Note that ``__main__.__spec__`` is always ``None`` in the last case,
 instead. Use the :option:`-m` switch if valid module metadata is desired
 in :mod:`__main__`.
 
-Note also that even when ``__main__`` corresponds with an importable module
-and ``__main__.__spec__`` is set accordingly, they're still considered
-*distinct* modules. This is due to the fact that blocks guarded by
-``if __name__ == "__main__":`` checks only execute when the module is used
-to populate the ``__main__`` namespace, and not during normal import.
+Note also that when ``__main__`` corresponds with an importable
+module and ``__main__.__spec__`` is set accordingly, ``__name__``
+is still ``"__main__"`` so that blocks guarded by ``if __name__
+== "__main__":`` execute when the module is used to populate the
+``__main__`` namespace.
 
 
 Open issues
