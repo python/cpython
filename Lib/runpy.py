@@ -188,7 +188,8 @@ def _run_module_as_main(mod_name, alter_argv=True):
         sys.exit(msg)
     main_module = sys.modules["__main__"]
     main_module_name = mod_spec.name
-    if not main_module.is_package(main_module_name):
+    main_module_pkg = getattr(main_module, '__package__', '') or ''
+    if main_module_pkg == '':
         global_module = sys.modules.get(main_module_name)
         if global_module is not main_module:
             if global_module:
