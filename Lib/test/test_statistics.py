@@ -2181,6 +2181,21 @@ class TestNormalDist(unittest.TestCase):
         iq = NormalDist(100, 15)
         self.assertEqual(iq.inv_cdf(0.50), iq.mean)
 
+        # Test versus a published table of known percentage points.
+        # See the second table at the bottom of the page here:
+        # http://people.bath.ac.uk/masss/tables/normaltable.pdf
+        Z = NormalDist()
+        pp = {5.0: (0.000, 1.645, 2.576, 3.291, 3.891,
+                    4.417, 4.892, 5.327, 5.731, 6.109),
+              2.5: (0.674, 1.960, 2.807, 3.481, 4.056,
+                    4.565, 5.026, 5.451, 5.847, 6.219),
+              1.0: (1.282, 2.326, 3.090, 3.719, 4.265,
+                    4.753, 5.199, 5.612, 5.998, 6.361)}
+        for base, row in pp.items():
+            for exp, x in enumerate(row, start=1):
+                p = base * 10 ** (-exp)
+                self.assertAlmostEqual(-Z.inv_cdf(p), x, places=3)
+
         # One million equally spaced probabilities
         n = 2**20
         for p in range(1, n):
@@ -2188,7 +2203,7 @@ class TestNormalDist(unittest.TestCase):
             self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
 
         # One hundred ever smaller probabilities to test tails out to
-        # extreme probabilies: 1 / 2**50 and (2**50-1) / 2 ** 50
+        # extreme probabilities: 1 / 2**50 and (2**50-1) / 2 ** 50
         for e in range(1, 51):
             p = 2.0 ** (-e)
             self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
