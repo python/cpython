@@ -363,6 +363,7 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
 
     err = config_read_write(config, args, preconfig);
     if (_Py_INIT_FAILED(err)) {
+        _PyRuntimeState_Fini(&_PyRuntime);
         goto done;
     }
 

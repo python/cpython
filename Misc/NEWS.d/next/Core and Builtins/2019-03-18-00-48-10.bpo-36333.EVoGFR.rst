@@ -1,0 +1,2 @@
+Fix leaks in pymain_init and _PyPreConfig_ReadFromArgv. Contributed by
+Stéphane Wirtel
