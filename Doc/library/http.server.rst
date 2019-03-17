@@ -343,7 +343,7 @@ provides three different variants:
    .. attribute:: directory
 
       If not specified, the directory to serve is the current working directory.
-      
+
       .. versionchanged:: 3.7
          Accepts a :term:`path-like object`.
 
