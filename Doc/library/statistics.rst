@@ -643,9 +643,11 @@ rounding to the nearest whole number:
 Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
 <https://en.wikipedia.org/wiki/Decile>`_ for the SAT scores:
 
+.. doctest::
+
     >>> [round(sat.inv_cdf(p)) for p in (0.25, 0.50, 0.75)]
     [928, 1060, 1192]
-    >>> [round(sat.inv_cdf(p / 100.0)) for p in range(10, 100, 10)]
+    >>> [round(sat.inv_cdf(p / 10)) for p in range(1, 10)]
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
 What percentage of men and women will have the same height in `two normally
