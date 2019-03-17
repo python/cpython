@@ -24,6 +24,7 @@ from . import util
 
 from . import AuthenticationError, BufferTooShort
 from . import context
+from . import get_context
 
 try:
     import _winapi
@@ -113,7 +114,8 @@ def address_type(address):
 class _ConnectionBase:
     _handle = None
 
-    def __init__(self, handle, readable=True, writable=True):
+    def __init__(self, handle, readable=True, writable=True, ctx=None):
+        self._ctx = ctx or get_context()
         handle = handle.__index__()
         if handle < 0:
             raise ValueError("invalid handle")
@@ -202,7 +204,7 @@ class _ConnectionBase:
         """Send a (picklable) object"""
         self._check_closed()
         self._check_writable()
-        self._send_bytes(context.reduction.dumps(obj))
+        self._send_bytes(self._ctx.get_reducer().dumps(obj))
 
     def recv_bytes(self, maxlength=None):
         """
@@ -247,7 +249,7 @@ class _ConnectionBase:
         self._check_closed()
         self._check_readable()
         buf = self._recv_bytes()
-        return context.reduction.loads(buf.getbuffer())
+        return self._ctx.get_reducer().loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
         """Whether there is any input available to be read"""

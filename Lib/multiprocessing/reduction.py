@@ -54,7 +54,6 @@ class ForkingPickler(pickle.Pickler):
     loads = pickle.loads
 
 
-
 def register(type_, reduce_):
     return ForkingPickler.register(type_, reduce_)
 
