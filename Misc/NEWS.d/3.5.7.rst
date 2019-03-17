@@ -1,0 +1,32 @@
+.. bpo: 36216
+.. date: 2019-03-06-09-38-40
+.. nonce: 6q1m4a
+.. release date: 2019-03-17
+.. section: Security
+
+Changes urlsplit() to raise ValueError when the URL contains characters that
+decompose under IDNA encoding (NFKC-normalization) into characters that
+affect how the URL is parsed.
+
+..
+
+.. bpo: 35121
+.. date: 2018-10-31-15-39-17
+.. nonce: EgHv9k
+.. section: Security
+
+Don't send cookies of domain A without Domain attribute to domain B when
+domain A is a suffix match of domain B while using a cookiejar with
+:class:`http.cookiejar.DefaultCookiePolicy` policy. Patch by Karthikeyan
+Singaravelan.
+
+..
+
+.. bpo: 35121
+.. date: 2018-12-30-14-35-19
+.. nonce: oWmiGU
+.. section: Library
+
+Don't set cookie for a request when the request path is a prefix match of
+the cookie's path attribute but doesn't end with "/". Patch by Karthikeyan
+Singaravelan.
