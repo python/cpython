@@ -251,14 +251,13 @@ or on combining URL components into a URL string.
    This should generally be used instead of :func:`urlparse` if the more recent URL
    syntax allowing parameters to be applied to each segment of the *path* portion
    of the URL (see :rfc:`2396`) is wanted.  A separate function is needed to
-   separate the path segments and parameters.  This function returns a 5 item
-   :term:`named tuple`:
+   separate the path segments and parameters.  This function returns a 5-item
+   :term:`named tuple`::
 
-   (addressing scheme, network location, path, query, fragment identifier).
+      (addressing scheme, network location, path, query, fragment identifier).
 
-   The return value is actually an instance of a subclass of :class:`tuple` (see
-   :class:`~collections.namedtuple`).  This class has the following additional read-only convenience
-   attributes:
+   The return value is a :term:`named tuple`, its items can be accessed by index
+   or as named attributes:
 
    +------------------+-------+-------------------------+----------------------+
    | Attribute        | Index | Value                   | Value if not present |
@@ -354,9 +353,8 @@ or on combining URL components into a URL string.
    string.  If there is no fragment identifier in *url*, return *url* unmodified
    and an empty string.
 
-   The return value is actually an instance of a subclass of :class:`tuple` (see
-   :class:`~collections.namedtuple`). This class has the following additional read-only convenience
-   attributes:
+   The return value is a :term:`named tuple`, its items can be accessed by index
+   or as named attributes:   
 
    +------------------+-------+-------------------------+----------------------+
    | Attribute        | Index | Value                   | Value if not present |
