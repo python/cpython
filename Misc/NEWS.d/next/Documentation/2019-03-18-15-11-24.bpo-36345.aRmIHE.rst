@@ -1,0 +1,2 @@
+make serve uses :mod:`http.server` with ``-d`` parameter instead of
+``Tools/scripts/server.py``. Contributed by Stéphane Wirtel

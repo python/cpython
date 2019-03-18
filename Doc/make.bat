@@ -172,7 +172,7 @@ cmd /S /C "%PYTHON% tools\rstlint.py -i tools"
 goto end
 
 :serve
-cmd /S /C "%PYTHON% ..\Tools\scripts\serve.py "%BUILDDIR%\html""
+cmd /S /C "%PYTHON% -m http.server -d "%BUILDDIR%\html""
 goto end
 
 :end
