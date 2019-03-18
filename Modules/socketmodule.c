@@ -2837,7 +2837,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
     PyBuffer_Release(&pbuf);
     if (n < 0)
         return s->errorhandler();
-    return PyInt_FromLong((long)n);
+    return PyLong_FromSsize_t(n);
 }
 
 PyDoc_STRVAR(send_doc,
