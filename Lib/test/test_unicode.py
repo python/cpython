@@ -2104,12 +2104,8 @@ class UnicodeTest(string_tests.CommonTest,
             u = chr(c)
             for encoding in ('utf-7', 'utf-8', 'utf-16', 'utf-16-le',
                              'utf-16-be', 'raw_unicode_escape',
-                             'unicode_escape', 'unicode_internal'):
-                with warnings.catch_warnings():
-                    # unicode-internal has been deprecated
-                    warnings.simplefilter("ignore", DeprecationWarning)
-
-                    self.assertEqual(str(u.encode(encoding),encoding), u)
+                             'unicode_escape'):
+                self.assertEqual(str(u.encode(encoding),encoding), u)
 
         # Roundtrip safety for BMP (just the first 256 chars)
         for c in range(256):
@@ -2125,13 +2121,9 @@ class UnicodeTest(string_tests.CommonTest,
 
         # Roundtrip safety for non-BMP (just a few chars)
         with warnings.catch_warnings():
-            # unicode-internal has been deprecated
-            warnings.simplefilter("ignore", DeprecationWarning)
-
             u = '\U00010001\U00020002\U00030003\U00040004\U00050005'
             for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
-                             'raw_unicode_escape',
-                             'unicode_escape', 'unicode_internal'):
+                             'raw_unicode_escape', 'unicode_escape'):
                 self.assertEqual(str(u.encode(encoding),encoding), u)
 
         # UTF-8 must be roundtrip safe for all code points
@@ -2349,22 +2341,22 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(args[0], text)
         self.assertEqual(len(args), 1)
 
+    @support.cpython_only
     def test_resize(self):
+        from _testcapi import getargs_u
         for length in range(1, 100, 7):
             # generate a fresh string (refcount=1)
             text = 'a' * length + 'b'
 
-            with support.check_warnings(('unicode_internal codec has been '
-                                         'deprecated', DeprecationWarning)):
-                # fill wstr internal field
-                abc = text.encode('unicode_internal')
-                self.assertEqual(abc.decode('unicode_internal'), text)
+            # fill wstr internal field
+            abc = getargs_u(text)
+            self.assertEqual(abc, text)
 
-                # resize text: wstr field must be cleared and then recomputed
-                text += 'c'
-                abcdef = text.encode('unicode_internal')
-                self.assertNotEqual(abc, abcdef)
-                self.assertEqual(abcdef.decode('unicode_internal'), text)
+            # resize text: wstr field must be cleared and then recomputed
+            text += 'c'
+            abcdef = getargs_u(text)
+            self.assertNotEqual(abc, abcdef)
+            self.assertEqual(abcdef, text)
 
     def test_compare(self):
         # Issue #17615

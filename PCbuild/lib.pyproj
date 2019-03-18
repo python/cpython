@@ -392,7 +392,6 @@
     <Compile Include="encodings\tis_620.py" />
     <Compile Include="encodings\undefined.py" />
     <Compile Include="encodings\unicode_escape.py" />
-    <Compile Include="encodings\unicode_internal.py" />
     <Compile Include="encodings\utf_16.py" />
     <Compile Include="encodings\utf_16_be.py" />
     <Compile Include="encodings\utf_16_le.py" />
