@@ -4637,7 +4637,6 @@ long_bitwise(PyLongObject *a,
         size_z = negb ? size_b : size_a;
         break;
     default:
-        /* Unreachable code */
         Py_UNREACHABLE();
     }
 
@@ -4665,7 +4664,6 @@ long_bitwise(PyLongObject *a,
             z->ob_digit[i] = a->ob_digit[i] ^ b->ob_digit[i];
         break;
     default:
-        /* Unreachable code */
         Py_UNREACHABLE();
     }
 
