@@ -6351,7 +6351,61 @@ static PyTypeObject PyDateTime_DateTimeType = {
  * Module methods and initialization.
  */
 
+static PyObject *
+_check_invalid_datetime_specs(PyObject *module, PyObject *args)
+{
+    PyObject *format = NULL, *specs = NULL, *message = NULL;
+
+    if (!PyArg_ParseTuple(args, "OOO", &format, &specs, &message)) {
+        return NULL;
+    }
+
+    PyObject *found_invalid_specs = PyList_New(0);
+    if (found_invalid_specs == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(specs); pos++) {
+        PyObject *spec = PyTuple_GET_ITEM(specs, pos);
+        if (PySequence_Contains(format, spec)) {
+            PyList_Append(found_invalid_specs, spec);
+        }
+    }
+
+    Py_ssize_t specs_length = PyList_GET_SIZE(found_invalid_specs);
+    if (specs_length) {
+        PyObject *suffix = PyUnicode_FromString(specs_length > 1 ? "are" : "is");
+        PyObject *separator = PyUnicode_FromString(", ");
+        PyObject *left_part = PyUnicode_Join(separator, found_invalid_specs);
+
+        PyObject *error_message = PyObject_CallMethod(message,
+                                                      "format", "OO",
+                                                      left_part, suffix, NULL);
+        Py_DECREF(suffix);
+        Py_DECREF(left_part);
+        Py_DECREF(separator);
+        Py_DECREF(found_invalid_specs);
+        PyErr_SetObject(PyExc_ValueError, error_message);
+        Py_DECREF(error_message);
+        return NULL;
+    }
+
+    Py_DECREF(found_invalid_specs);
+    return Py_INCREF(Py_True), Py_True;
+}
+
+PyDoc_STRVAR(
+    _check_invalid_datetime_specs__doc__,
+    "_check_invalid_datetime_specs(format, specs, message)"
+);
+
 static PyMethodDef module_methods[] = {
+    {
+        "_check_invalid_datetime_specs",
+        (PyCFunction) _check_invalid_datetime_specs,
+        METH_VARARGS,
+        _check_invalid_datetime_specs__doc__
+    },
     {NULL, NULL}
 };
 

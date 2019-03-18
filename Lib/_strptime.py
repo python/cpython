@@ -586,6 +586,7 @@ def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
 def _strptime_datetime_date(data_string, format):
     """Return a date based on the input string and the format string."""
     msg = "'{!s}' {} not valid in date format specification."
+    from _datetime import _check_invalid_datetime_specs
     if _check_invalid_datetime_specs(format, time_specs, msg):
         _date = _strptime_datetime(datetime_datetime, data_string, format)
         return _date.date()
@@ -593,16 +594,7 @@ def _strptime_datetime_date(data_string, format):
 def _strptime_datetime_time(data_string, format):
     """Return a time based on the input string and the format string."""
     msg = "'{!s}' {} not valid in time format specification."
+    from _datetime import _check_invalid_datetime_specs
     if _check_invalid_datetime_specs(format, date_specs, msg):
         _time = _strptime_datetime(datetime_datetime, data_string, format)
         return _time.time()
-
-def _check_invalid_datetime_specs(fmt, blacklist_specs, msg):
-    found_invalid_specs = []
-    for spec in blacklist_specs:
-        if spec in fmt:
-            found_invalid_specs.append(spec)
-    if found_invalid_specs:
-        suffix = "are" if len(found_invalid_specs) > 1 else "is"
-        raise ValueError(msg.format(", ".join(found_invalid_specs), suffix))
-    return True
