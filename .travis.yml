@@ -33,7 +33,6 @@ matrix:
     - env: OPTIONAL=true
   include:
     - os: linux
-      language: c
       compiler: clang
       # gcc also works, but to keep the # of concurrent builds down, we use one C
       # compiler here and the other to run the coverage build. Clang is preferred
@@ -44,7 +43,6 @@ matrix:
           packages:
             - xvfb
     - os: linux
-      language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
       env: TESTING=docs
@@ -56,7 +54,6 @@ matrix:
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - os: linux
-      language: c
       compiler: gcc
       env: OPTIONAL=true
       addons:
