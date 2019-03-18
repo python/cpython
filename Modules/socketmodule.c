@@ -634,7 +634,7 @@ sendsegmented(int sock_fd, char *buf, Py_ssize_t len, int flags)
     while (remaining > 0) {
         unsigned int segment;
 
-        segment = (remaining >= SEGMENT_SIZE ? SEGMENT_SIZE : remaining);
+        segment = ((size_t)remaining >= SEGMENT_SIZE ? SEGMENT_SIZE : (unsigned int) remaining);
         n = send(sock_fd, buf, segment, flags);
         if (n < 0) {
             return n;
@@ -2816,9 +2816,6 @@ sock_send(PySocketSockObject *s, PyObject *args)
     timeout = internal_select_ex(s, 1, interval);
     if (!timeout) {
 #ifdef __VMS
-        if (len > INT_MAX) {
-            len = INT_MAX;
-        }
         n = sendsegmented(s->sock_fd, buf, len, flags);
 #elif defined(MS_WINDOWS)
         if (len > INT_MAX) {
@@ -2878,9 +2875,6 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         n = -1;
         if (!timeout) {
 #ifdef __VMS
-            if (len > INT_MAX) {
-                len = INT_MAX;
-            }
             n = sendsegmented(s->sock_fd, buf, len, flags);
 #elif defined(MS_WINDOWS)
             if (len > INT_MAX) {
