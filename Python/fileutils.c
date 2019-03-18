@@ -1716,7 +1716,7 @@ _Py_wrealpath(const wchar_t *path,
 }
 #endif
 
-/* Get the current directory. size is the buffer size in wide characters
+/* Get the current directory. buflen is the buffer size in wide characters
    including the null character. Decode the path from the locale encoding.
 
    Return NULL on getcwd() error, on decoding error, or if 'buf' is
