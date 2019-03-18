@@ -149,7 +149,12 @@ done:
 void
 _PyPathConfig_ClearGlobal(void)
 {
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     _PyPathConfig_Clear(&_Py_path_config);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
