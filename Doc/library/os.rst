@@ -3079,6 +3079,26 @@ to be ignored.
    :func:`signal.signal`.
 
 
+.. function:: add_dll_directory(path)
+
+   Add a path to the DLL search path.
+
+   This search path is used when resolving dependencies for imported
+   extension modules (the module itself is resolved through sys.path),
+   and also by ctypes.
+
+   Remove the directory by calling **close()** on the returned object
+   or using it in a :keyword:`with` statement.
+
+   See the `Microsoft documentation
+   <https://msdn.microsoft.com/44228cf2-6306-466c-8f16-f513cd3ba8b5>`_
+   for more information about how DLLs are loaded.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.8
+
+
 .. function:: execl(path, arg0, arg1, ...)
               execle(path, arg0, arg1, ..., env)
               execlp(file, arg0, arg1, ...)

@@ -1292,7 +1292,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
      * attacks and enable use of the AddDllDirectory function.
      */
     hMod = LoadLibraryExW(name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-    err = hMod : 0 ? GetLastError();
+    err = hMod ? 0 : GetLastError();
     Py_END_ALLOW_THREADS
 
     if (err == ERROR_MOD_NOT_FOUND) {
@@ -1319,15 +1319,18 @@ static PyObject *free_library(PyObject *self, PyObject *args)
 {
     void *hMod;
     BOOL result;
+    DWORD err;
     if (!PyArg_ParseTuple(args, "O&:FreeLibrary", &_parse_voidp, &hMod))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
     result = FreeLibrary((HMODULE)hMod);
+    err = result ? 0 : GetLastError();
     Py_END_ALLOW_THREADS
 
-    if (!result)
-        return PyErr_SetFromWindowsErr(GetLastError());
+    if (!result) {
+        return PyErr_SetFromWindowsErr(err);
+    }
     Py_RETURN_NONE;
 }
 

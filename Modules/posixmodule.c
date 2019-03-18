@@ -13176,7 +13176,7 @@ typedef DLL_DIRECTORY_COOKIE (*PAddDllDirectory)(PCWSTR newDirectory);
 typedef BOOL (*PRemoveDllDirectory)(DLL_DIRECTORY_COOKIE cookie);
 
 /*[clinic input]
-os.add_dll_directory
+os._add_dll_directory
 
     path: path_t
 
@@ -13191,8 +13191,8 @@ to remove this directory from the search path.
 [clinic start generated code]*/
 
 static PyObject *
-os_add_dll_directory_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=8e498e193ddce271 input=bae8b8ffda652600]*/
+os__add_dll_directory_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=80b025daebb5d683 input=1de3e6c13a5808c8]*/
 {
     HMODULE hKernel32;
     PAddDllDirectory AddDllDirectory;
@@ -13222,7 +13222,7 @@ os_add_dll_directory_impl(PyObject *module, path_t *path)
 }
 
 /*[clinic input]
-os.remove_dll_directory
+os._remove_dll_directory
 
     cookie: object
 
@@ -13234,8 +13234,8 @@ yourself.
 [clinic start generated code]*/
 
 static PyObject *
-os_remove_dll_directory_impl(PyObject *module, PyObject *cookie)
-/*[clinic end generated code: output=cfbb576332208c2a input=178939bb10c7a6cf]*/
+os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
+/*[clinic end generated code: output=594350433ae535bc input=c1d16a7e7d9dc5dc]*/
 {
     HMODULE hKernel32;
     PRemoveDllDirectory RemoveDllDirectory;
@@ -13466,8 +13466,8 @@ static PyMethodDef posix_methods[] = {
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
 #ifdef MS_WINDOWS
-    OS_ADD_DLL_DIRECTORY_METHODDEF
-    OS_REMOVE_DLL_DIRECTORY_METHODDEF
+    OS__ADD_DLL_DIRECTORY_METHODDEF
+    OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif
     {NULL,              NULL}            /* Sentinel */
 };
