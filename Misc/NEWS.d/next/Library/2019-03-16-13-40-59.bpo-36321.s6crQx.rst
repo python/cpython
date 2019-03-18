@@ -1,0 +1,5 @@
+collections.namedtuple() misspelled the name of an attribute.  To be
+consistent with typing.NamedTuple, the attribute name should have been
+"_field_defaults" instead of "_fields_defaults".  For backwards
+compatibility, both spellings are now created.  The misspelled version may
+be removed in the future.
