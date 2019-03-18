@@ -624,7 +624,8 @@ function.
          this order had always been preserved in Python 3.
 
       .. versionchanged:: 3.8
-         :attr:`parameters` is now of type :class:`dict`.
+         :attr:`parameters` is now of type :class:`dict`. Formerly, it was of
+         type :class:`collections.OrderedDict`.
 
    .. attribute:: Signature.return_annotation
 
@@ -833,7 +834,8 @@ function.
          them.
 
       .. versionchanged:: 3.8
-         :attr:`arguments` is now of type :class:`dict`.
+         :attr:`arguments` is now of type :class:`dict`. Formerly, it was of
+         type :class:`collections.OrderedDict`.
 
    .. attribute:: BoundArguments.args
 
