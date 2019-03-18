@@ -2196,6 +2196,10 @@ class TestNormalDist(unittest.TestCase):
                 p = base * 10 ** (-exp)
                 self.assertAlmostEqual(-Z.inv_cdf(p), x, places=3)
 
+        # Match published example for MS Excel
+        # https://support.office.com/en-us/article/norm-inv-function-54b30935-fee7-493c-bedb-2278a9db7e13
+        self.assertAlmostEqual(NormalDist(40, 1.5).inv_cdf(0.908789), 42.000002)
+
         # One million equally spaced probabilities
         n = 2**20
         for p in range(1, n):
