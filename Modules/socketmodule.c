@@ -625,11 +625,11 @@ set_gaierror(int error)
 
 #ifdef __VMS
 /* Function to send in segments */
-static int
-sendsegmented(int sock_fd, char *buf, int len, int flags)
+static Py_ssize_t
+sendsegmented(int sock_fd, char *buf, Py_ssize_t len, int flags)
 {
     int n = 0;
-    int remaining = len;
+    Py_ssize_t remaining = len;
 
     while (remaining > 0) {
         unsigned int segment;
@@ -2819,7 +2819,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
         if (len > INT_MAX) {
             len = INT_MAX;
         }
-        n = sendsegmented(s->sock_fd, buf, (int)len, flags);
+        n = sendsegmented(s->sock_fd, buf, len, flags);
 #elif defined(MS_WINDOWS)
         if (len > INT_MAX) {
             len = INT_MAX;
@@ -2881,7 +2881,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
             if (len > INT_MAX) {
                 len = INT_MAX;
             }
-            n = sendsegmented(s->sock_fd, buf, (int)len, flags);
+            n = sendsegmented(s->sock_fd, buf, len, flags);
 #elif defined(MS_WINDOWS)
             if (len > INT_MAX) {
                 len = INT_MAX;
