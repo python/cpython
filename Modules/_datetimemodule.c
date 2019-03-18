@@ -6360,13 +6360,18 @@ _check_invalid_datetime_specs(PyObject *module, PyObject *args)
         return NULL;
     }
 
+    assert(PyTuple_CheckExact(specs) || PyList_CheckExact(specs));
+
     PyObject *found_invalid_specs = PyList_New(0);
     if (found_invalid_specs == NULL) {
         return NULL;
     }
 
-    for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(specs); pos++) {
-        PyObject *spec = PyTuple_GET_ITEM(specs, pos);
+    PyObject *(*GetItem)(PyObject *, Py_ssize_t) = \
+        PyTuple_CheckExact(specs) ? PyTuple_GetItem : PyList_GetItem;
+
+    for (Py_ssize_t pos = 0; pos < PyObject_Size(specs); pos++) {
+        PyObject *spec = GetItem(specs, pos);
         if (PySequence_Contains(format, spec)) {
             PyList_Append(found_invalid_specs, spec);
         }
