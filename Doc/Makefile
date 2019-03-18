@@ -11,9 +11,10 @@ BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
+SPHINXERRORHANDLING = -W
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_elements.papersize=$(PAPER) \
-                $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
+                $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
@@ -123,7 +124,7 @@ clean:
 
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb python-docs-theme
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
@@ -173,7 +174,7 @@ check:
 	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
 
 serve:
-	../Tools/scripts/serve.py build/html
+	$(PYTHON) ../Tools/scripts/serve.py build/html
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.

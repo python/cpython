@@ -27,6 +27,17 @@ except ImportError:
 skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
                              'Test not appropriate in a venv')
 
+def check_output(cmd, encoding=None):
+    p = subprocess.Popen(cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        encoding=encoding)
+    out, err = p.communicate()
+    if p.returncode:
+        raise subprocess.CalledProcessError(
+            p.returncode, cmd, out, err)
+    return out, err
+
 class BaseTest(unittest.TestCase):
     """Base class for venv tests."""
     maxDiff = 80 * 50
@@ -41,10 +52,7 @@ class BaseTest(unittest.TestCase):
             self.bindir = 'bin'
             self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
-        if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in os.environ:
-            executable = os.environ['__PYVENV_LAUNCHER__']
-        else:
-            executable = sys.executable
+        executable = getattr(sys, '_base_executable', sys.executable)
         self.exe = os.path.split(executable)[-1]
 
     def tearDown(self):
@@ -89,11 +97,7 @@ class BasicTest(BaseTest):
         else:
             self.assertFalse(os.path.exists(p))
         data = self.get_text_file_contents('pyvenv.cfg')
-        if sys.platform == 'darwin' and ('__PYVENV_LAUNCHER__'
-                                         in os.environ):
-            executable =  os.environ['__PYVENV_LAUNCHER__']
-        else:
-            executable = sys.executable
+        executable = getattr(sys, '_base_executable', sys.executable)
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
         fn = self.get_env_file(self.bindir, self.exe)
@@ -106,13 +110,21 @@ class BasicTest(BaseTest):
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
 
+        rmtree(self.env_dir)
         builder = venv.EnvBuilder()
+        self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
+        data = self.get_text_file_contents('pyvenv.cfg')
         self.assertEqual(context.prompt, '(%s) ' % env_name)
+        self.assertNotIn("prompt = ", data)
 
+        rmtree(self.env_dir)
         builder = venv.EnvBuilder(prompt='My prompt')
+        self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
+        data = self.get_text_file_contents('pyvenv.cfg')
         self.assertEqual(context.prompt, '(My prompt) ')
+        self.assertIn("prompt = 'My prompt'\n", data)
 
     @skipInVenv
     def test_prefixes(self):
@@ -134,9 +146,7 @@ class BasicTest(BaseTest):
             ('base_prefix', sys.prefix),
             ('base_exec_prefix', sys.exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
+            out, err = check_output(cmd)
             self.assertEqual(out.strip(), expected.encode())
 
     if sys.platform == 'win32':
@@ -259,11 +269,10 @@ class BasicTest(BaseTest):
         """
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
-        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
-        cmd = [envpy, '-c', 'import sys; print(sys.executable)']
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out, err = p.communicate()
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        out, err = check_output([envpy, '-c',
+            'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
 
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
@@ -274,13 +283,41 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         builder = venv.EnvBuilder(clear=True, symlinks=True)
         builder.create(self.env_dir)
-        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
-        cmd = [envpy, '-c', 'import sys; print(sys.executable)']
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out, err = p.communicate()
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        out, err = check_output([envpy, '-c',
+            'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
 
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_unicode_in_batch_file(self):
+        """
+        Test handling of Unicode paths
+        """
+        rmtree(self.env_dir)
+        env_dir = os.path.join(os.path.realpath(self.env_dir), 'ϼўТλФЙ')
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        envpy = os.path.join(env_dir, self.bindir, self.exe)
+        out, err = check_output(
+            [activate, '&', self.exe, '-c', 'print(0)'],
+            encoding='oem',
+        )
+        self.assertEqual(out.strip(), '0')
+
+    def test_multiprocessing(self):
+        """
+        Test that the multiprocessing is able to spawn.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        out, err = check_output([envpy, '-c',
+            'from multiprocessing import Pool; ' +
+            'print(Pool(1).apply_async("Python".lower).get(3))'])
+        self.assertEqual(out.strip(), "python".encode())
 
 @skipInVenv
 class EnsurePipTest(BaseTest):
@@ -288,11 +325,8 @@ class EnsurePipTest(BaseTest):
     def assert_pip_not_installed(self):
         envpy = os.path.join(os.path.realpath(self.env_dir),
                              self.bindir, self.exe)
-        try_import = 'try:\n import pip\nexcept ImportError:\n print("OK")'
-        cmd = [envpy, '-c', try_import]
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out, err = p.communicate()
+        out, err = check_output([envpy, '-c',
+            'try:\n import pip\nexcept ImportError:\n print("OK")'])
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
         err = err.decode("latin-1") # Force to text, prevent decoding errors
@@ -369,10 +403,9 @@ class EnsurePipTest(BaseTest):
                     self.fail(msg.format(exc, details))
         # Ensure pip is available in the virtual environment
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
-        cmd = [envpy, '-Im', 'pip', '--version']
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
-        out, err = p.communicate()
+        # Ignore DeprecationWarning since pip code is not part of Python
+        out, err = check_output([envpy, '-W', 'ignore::DeprecationWarning', '-I',
+               '-m', 'pip', '--version'])
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
         err = err.decode("latin-1") # Force to text, prevent decoding errors
@@ -386,11 +419,10 @@ class EnsurePipTest(BaseTest):
         # http://bugs.python.org/issue19728
         # Check the private uninstall command provided for the Windows
         # installers works (at least in a virtual environment)
-        cmd = [envpy, '-Im', 'ensurepip._uninstall']
         with EnvironmentVarGuard() as envvars:
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE)
-            out, err = p.communicate()
+            out, err = check_output([envpy,
+                '-W', 'ignore::DeprecationWarning', '-I',
+                '-m', 'ensurepip._uninstall'])
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
         err = err.decode("latin-1") # Force to text, prevent decoding errors

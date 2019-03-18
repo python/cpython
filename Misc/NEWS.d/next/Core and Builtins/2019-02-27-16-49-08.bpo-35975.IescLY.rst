@@ -1,0 +1,7 @@
+Add a ``feature_version`` flag to ``ast.parse()`` (documented) and
+``compile()`` (hidden) that allows tweaking the parser to support older
+versions of the grammar. In particular, if ``feature_version`` is 5 or 6,
+the hacks for the ``async`` and ``await`` keyword from PEP 492 are
+reinstated. (For 7 or higher, these are unconditionally treated as keywords,
+but they are still special tokens rather than ``NAME`` tokens that the
+parser driver recognizes.)

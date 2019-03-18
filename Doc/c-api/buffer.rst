@@ -198,7 +198,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       indicates that no de-referencing should occur (striding in a contiguous
       memory block).
 
-      If all suboffsets are negative (i.e. no de-referencing is needed, then
+      If all suboffsets are negative (i.e. no de-referencing is needed), then
       this field must be NULL (the default value).
 
       This type of array representation is used by the Python Imaging Library
@@ -429,7 +429,7 @@ Buffer-related functions
 
    Return ``1`` if *obj* supports the buffer interface otherwise ``0``.  When ``1`` is
    returned, it doesn't guarantee that :c:func:`PyObject_GetBuffer` will
-   succeed.
+   succeed.  This function always succeeds.
 
 
 .. c:function:: int PyObject_GetBuffer(PyObject *exporter, Py_buffer *view, int flags)
@@ -470,7 +470,16 @@ Buffer-related functions
 
    Return ``1`` if the memory defined by the *view* is C-style (*order* is
    ``'C'``) or Fortran-style (*order* is ``'F'``) :term:`contiguous` or either one
-   (*order* is ``'A'``).  Return ``0`` otherwise.
+   (*order* is ``'A'``).  Return ``0`` otherwise.  This function always succeeds.
+
+
+.. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
+
+   Copy *len* bytes from *src* to its contiguous representation in *buf*.
+   *order* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+   ``0`` is returned on success, ``-1`` on error.
+
+   This function fails if *len* != *src->len*.
 
 
 .. c:function:: void PyBuffer_FillContiguousStrides(int ndims, Py_ssize_t *shape, Py_ssize_t *strides, int itemsize, char order)
@@ -497,6 +506,3 @@ Buffer-related functions
    If this function is used as part of a :ref:`getbufferproc <buffer-structs>`,
    *exporter* MUST be set to the exporting object and *flags* must be passed
    unmodified. Otherwise, *exporter* MUST be NULL.
-
-
-

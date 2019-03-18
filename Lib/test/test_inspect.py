@@ -57,6 +57,31 @@ def revise(filename, *args):
 
 git = mod.StupidGit()
 
+
+def signatures_with_lexicographic_keyword_only_parameters():
+    """
+    Yields a whole bunch of functions with only keyword-only parameters,
+    where those parameters are always in lexicographically sorted order.
+    """
+    parameters = ['a', 'bar', 'c', 'delta', 'ephraim', 'magical', 'yoyo', 'z']
+    for i in range(1, 2**len(parameters)):
+        p = []
+        bit = 1
+        for j in range(len(parameters)):
+            if i & (bit << j):
+                p.append(parameters[j])
+        fn_text = "def foo(*, " + ", ".join(p) + "): pass"
+        symbols = {}
+        exec(fn_text, symbols, symbols)
+        yield symbols['foo']
+
+
+def unsorted_keyword_only_parameters_fn(*, throw, out, the, baby, with_,
+                                        the_, bathwater):
+    pass
+
+unsorted_keyword_only_parameters = 'throw out the baby with_ the_ bathwater'.split()
+
 class IsTestBase(unittest.TestCase):
     predicates = set([inspect.isbuiltin, inspect.isclass, inspect.iscode,
                       inspect.isframe, inspect.isfunction, inspect.ismethod,
@@ -141,26 +166,51 @@ class TestPredicates(IsTestBase):
             self.assertFalse(inspect.ismemberdescriptor(datetime.timedelta.days))
 
     def test_iscoroutine(self):
+        async_gen_coro = async_generator_function_example(1)
         gen_coro = gen_coroutine_function_example(1)
         coro = coroutine_function_example(1)
 
         self.assertFalse(
             inspect.iscoroutinefunction(gen_coroutine_function_example))
+        self.assertFalse(
+            inspect.iscoroutinefunction(
+                functools.partial(functools.partial(
+                    gen_coroutine_function_example))))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
             inspect.isgeneratorfunction(gen_coroutine_function_example))
+        self.assertTrue(
+            inspect.isgeneratorfunction(
+                functools.partial(functools.partial(
+                    gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
         self.assertTrue(
             inspect.iscoroutinefunction(coroutine_function_example))
+        self.assertTrue(
+            inspect.iscoroutinefunction(
+                functools.partial(functools.partial(
+                    coroutine_function_example))))
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
             inspect.isgeneratorfunction(coroutine_function_example))
+        self.assertFalse(
+            inspect.isgeneratorfunction(
+                functools.partial(functools.partial(
+                    coroutine_function_example))))
         self.assertFalse(inspect.isgenerator(coro))
 
-        coro.close(); gen_coro.close() # silence warnings
+        self.assertTrue(
+            inspect.isasyncgenfunction(async_generator_function_example))
+        self.assertTrue(
+            inspect.isasyncgenfunction(
+                functools.partial(functools.partial(
+                    async_generator_function_example))))
+        self.assertTrue(inspect.isasyncgen(async_gen_coro))
+
+        coro.close(); gen_coro.close(); # silence warnings
 
     def test_isawaitable(self):
         def gen(): yield
@@ -319,7 +369,7 @@ class GetSourceBase(unittest.TestCase):
 
     def sourcerange(self, top, bottom):
         lines = self.source.split("\n")
-        return "\n".join(lines[top-1:bottom]) + "\n"
+        return "\n".join(lines[top-1:bottom]) + ("\n" if bottom else "")
 
     def assertSourceEqual(self, obj, top, bottom):
         self.assertEqual(inspect.getsource(obj),
@@ -501,6 +551,16 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
+
+class TestGettingSourceOfToplevelFrames(GetSourceBase):
+    fodderModule = mod
+
+    def test_range_toplevel_frame(self):
+        self.maxDiff = None
+        self.assertSourceEqual(mod.currentframe, 1, None)
+
+    def test_range_traceback_toplevel_frame(self):
+        self.assertSourceEqual(mod.tb, 1, None)
 
 class TestDecorators(GetSourceBase):
     fodderModule = mod2
@@ -687,8 +747,9 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(varkw, varkw_e)
         self.assertEqual(defaults, defaults_e)
         if formatted is not None:
-            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
-                             formatted)
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
+                                 formatted)
 
     def assertFullArgSpecEquals(self, routine, args_e, varargs_e=None,
                                     varkw_e=None, defaults_e=None,
@@ -704,8 +765,9 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(kwonlydefaults, kwonlydefaults_e)
         self.assertEqual(ann, ann_e)
         if formatted is not None:
-            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
-                                                    kwonlyargs, kwonlydefaults, ann),
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
+                                                       kwonlyargs, kwonlydefaults, ann),
                              formatted)
 
     def test_getargspec(self):
@@ -814,7 +876,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_getfullagrspec_builtin_func(self):
+    def test_getfullargspec_builtin_func(self):
         import _testcapi
         builtin = _testcapi.docstring_with_signature_with_defaults
         spec = inspect.getfullargspec(builtin)
@@ -823,11 +885,22 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
-    def test_getfullagrspec_builtin_func_no_signature(self):
+    def test_getfullargspec_builtin_func_no_signature(self):
         import _testcapi
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
             inspect.getfullargspec(builtin)
+
+    def test_getfullargspec_definition_order_preserved_on_kwonly(self):
+        for fn in signatures_with_lexicographic_keyword_only_parameters():
+            signature = inspect.getfullargspec(fn)
+            l = list(signature.kwonlyargs)
+            sorted_l = sorted(l)
+            self.assertTrue(l)
+            self.assertEqual(l, sorted_l)
+        signature = inspect.getfullargspec(unsorted_keyword_only_parameters_fn)
+        l = list(signature.kwonlyargs)
+        self.assertEqual(l, unsorted_keyword_only_parameters)
 
     def test_getargspec_method(self):
         class A(object):
@@ -858,7 +931,8 @@ class TestClassesAndFunctions(unittest.TestCase):
 
         attrs = attrs_wo_objs(A)
 
-        self.assertIn(('__new__', 'method', object), attrs, 'missing __new__')
+        self.assertIn(('__new__', 'static method', object), attrs,
+                      'missing __new__')
         self.assertIn(('__init__', 'method', object), attrs, 'missing __init__')
 
         self.assertIn(('s', 'static method', A), attrs, 'missing static method')
@@ -922,6 +996,18 @@ class TestClassesAndFunctions(unittest.TestCase):
             builtin = getattr(__builtins__, name)
             if isinstance(builtin, type):
                 inspect.classify_class_attrs(builtin)
+
+        attrs = attrs_wo_objs(bool)
+        self.assertIn(('__new__', 'static method', bool), attrs,
+                      'missing __new__')
+        self.assertIn(('from_bytes', 'class method', int), attrs,
+                      'missing class method')
+        self.assertIn(('to_bytes', 'method', int), attrs,
+                      'missing plain method')
+        self.assertIn(('__add__', 'method', int), attrs,
+                      'missing plain method')
+        self.assertIn(('__and__', 'method', bool), attrs,
+                      'missing plain method')
 
     def test_classify_DynamicClassAttribute(self):
         class Meta(type):
@@ -1084,6 +1170,61 @@ class TestClassesAndFunctions(unittest.TestCase):
             pass
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
+
+class TestIsDataDescriptor(unittest.TestCase):
+
+    def test_custom_descriptors(self):
+        class NonDataDescriptor:
+            def __get__(self, value, type=None): pass
+        class DataDescriptor0:
+            def __set__(self, name, value): pass
+        class DataDescriptor1:
+            def __delete__(self, name): pass
+        class DataDescriptor2:
+            __set__ = None
+        self.assertFalse(inspect.isdatadescriptor(NonDataDescriptor()),
+                         'class with only __get__ not a data descriptor')
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor0()),
+                        'class with __set__ is a data descriptor')
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor1()),
+                        'class with __delete__ is a data descriptor')
+        self.assertTrue(inspect.isdatadescriptor(DataDescriptor2()),
+                        'class with __set__ = None is a data descriptor')
+
+    def test_slot(self):
+        class Slotted:
+            __slots__ = 'foo',
+        self.assertTrue(inspect.isdatadescriptor(Slotted.foo),
+                        'a slot is a data descriptor')
+
+    def test_property(self):
+        class Propertied:
+            @property
+            def a_property(self):
+                pass
+        self.assertTrue(inspect.isdatadescriptor(Propertied.a_property),
+                        'a property is a data descriptor')
+
+    def test_functions(self):
+        class Test(object):
+            def instance_method(self): pass
+            @classmethod
+            def class_method(cls): pass
+            @staticmethod
+            def static_method(): pass
+        def function():
+            pass
+        a_lambda = lambda: None
+        self.assertFalse(inspect.isdatadescriptor(Test().instance_method),
+                         'a instance method is not a data descriptor')
+        self.assertFalse(inspect.isdatadescriptor(Test().class_method),
+                         'a class method is not a data descriptor')
+        self.assertFalse(inspect.isdatadescriptor(Test().static_method),
+                         'a static method is not a data descriptor')
+        self.assertFalse(inspect.isdatadescriptor(function),
+                         'a function is not a data descriptor')
+        self.assertFalse(inspect.isdatadescriptor(a_lambda),
+                         'a lambda is not a data descriptor')
 
 
 _global_ref = object()
@@ -1395,6 +1536,20 @@ class TestGetcallargsFunctions(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "'a', 'b' and 'c'"):
             inspect.getcallargs(f6)
 
+        # bpo-33197
+        with self.assertRaisesRegex(ValueError,
+                                    'variadic keyword parameters cannot'
+                                    ' have default values'):
+            inspect.Parameter("foo", kind=inspect.Parameter.VAR_KEYWORD,
+                              default=42)
+        with self.assertRaisesRegex(ValueError,
+                                    "value 5 is not a valid Parameter.kind"):
+            inspect.Parameter("bar", kind=5, default=42)
+
+        with self.assertRaisesRegex(TypeError,
+                                   'name must be a str, not a int'):
+            inspect.Parameter(123, kind=4)
+
 class TestGetcallargsMethods(TestGetcallargsFunctions):
 
     def setUp(self):
@@ -1569,7 +1724,7 @@ class TestGetattrStatic(unittest.TestCase):
         foo.__dict__['d'] = 1
         self.assertEqual(inspect.getattr_static(foo, 'd'), 1)
 
-        # if the descriptor is a data-desciptor we should return the
+        # if the descriptor is a data-descriptor we should return the
         # descriptor
         descriptor.__set__ = lambda s, i, v: None
         self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
@@ -2061,7 +2216,7 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(p('f'), False)
         self.assertEqual(p('local'), 3)
         self.assertEqual(p('sys'), sys.maxsize)
-        self.assertEqual(p('exp'), sys.maxsize - 1)
+        self.assertNotIn('exp', signature.parameters)
 
         test_callable(object)
 
@@ -2531,6 +2686,16 @@ class TestSignatureObject(unittest.TestCase):
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
 
+        class Spam:
+            def test(self: 'anno', x):
+                pass
+
+            g = partialmethod(test, 1)
+
+        self.assertEqual(self.signature(Spam.g),
+                         ((('self', ..., 'anno', 'positional_or_keyword'),),
+                          ...))
+
     def test_signature_on_fake_partialmethod(self):
         def foo(a): pass
         foo._partialmethod = 'spam'
@@ -2956,6 +3121,17 @@ class TestSignatureObject(unittest.TestCase):
         sig = MySignature.from_callable(_pickle.Pickler)
         self.assertTrue(isinstance(sig, MySignature))
 
+    def test_signature_definition_order_preserved_on_kwonly(self):
+        for fn in signatures_with_lexicographic_keyword_only_parameters():
+            signature = inspect.signature(fn)
+            l = list(signature.parameters)
+            sorted_l = sorted(l)
+            self.assertTrue(l)
+            self.assertEqual(l, sorted_l)
+        signature = inspect.signature(unsorted_keyword_only_parameters_fn)
+        l = list(signature.parameters)
+        self.assertEqual(l, unsorted_keyword_only_parameters)
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -2974,7 +3150,8 @@ class TestParameterObject(unittest.TestCase):
         self.assertIs(p.annotation, p.empty)
         self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
 
-        with self.assertRaisesRegex(ValueError, 'invalid value'):
+        with self.assertRaisesRegex(ValueError, "value '123' is "
+                                    "not a valid Parameter.kind"):
             inspect.Parameter('foo', default=10, kind='123')
 
         with self.assertRaisesRegex(ValueError, 'not a valid parameter name'):
@@ -3064,7 +3241,9 @@ class TestParameterObject(unittest.TestCase):
         self.assertEqual(p2.kind, p2.POSITIONAL_OR_KEYWORD)
         self.assertNotEqual(p2, p)
 
-        with self.assertRaisesRegex(ValueError, 'invalid value for'):
+        with self.assertRaisesRegex(ValueError,
+                                    "value <class 'inspect._empty'> "
+                                    "is not a valid Parameter.kind"):
             p2 = p2.replace(kind=p2.empty)
 
         p2 = p2.replace(kind=p2.KEYWORD_ONLY)
@@ -3077,7 +3256,9 @@ class TestParameterObject(unittest.TestCase):
     @cpython_only
     def test_signature_parameter_implicit(self):
         with self.assertRaisesRegex(ValueError,
-                                    'implicit arguments must be passed in as'):
+                                    'implicit arguments must be passed as '
+                                    'positional or keyword arguments, '
+                                    'not positional-only'):
             inspect.Parameter('.0', kind=inspect.Parameter.POSITIONAL_ONLY)
 
         param = inspect.Parameter(
@@ -3722,9 +3903,9 @@ def test_main():
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
         TestBoundArguments, TestSignaturePrivateHelpers,
-        TestSignatureDefinitions,
+        TestSignatureDefinitions, TestIsDataDescriptor,
         TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState
+        TestGetCoroutineState, TestGettingSourceOfToplevelFrames
     )
 
 if __name__ == "__main__":

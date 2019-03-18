@@ -53,7 +53,7 @@ with a tool such as `SWIG <http://www.swig.org>`_.  `SIP
 <https://riverbankcomputing.com/software/sip/intro>`__, `CXX
 <http://cxx.sourceforge.net/>`_ `Boost
 <http://www.boost.org/libs/python/doc/index.html>`_, or `Weave
-<https://scipy.github.io/devdocs/tutorial/weave.html>`_ are also
+<https://github.com/scipy/weave>`_ are also
 alternatives for wrapping C++ libraries.
 
 
@@ -62,8 +62,8 @@ How can I execute arbitrary Python statements from C?
 
 The highest-level function to do this is :c:func:`PyRun_SimpleString` which takes
 a single string argument to be executed in the context of the module
-``__main__`` and returns 0 for success and -1 when an exception occurred
-(including ``SyntaxError``).  If you want more control, use
+``__main__`` and returns ``0`` for success and ``-1`` when an exception occurred
+(including :exc:`SyntaxError`).  If you want more control, use
 :c:func:`PyRun_String`; see the source for :c:func:`PyRun_SimpleString` in
 ``Python/pythonrun.c``.
 
@@ -277,7 +277,7 @@ However sometimes you have to run the embedded Python interpreter in the same
 thread as your rest application and you can't allow the
 :c:func:`PyRun_InteractiveLoop` to stop while waiting for user input.  The one
 solution then is to call :c:func:`PyParser_ParseString` and test for ``e.error``
-equal to ``E_EOF``, which means the input is incomplete).  Here's a sample code
+equal to ``E_EOF``, which means the input is incomplete.  Here's a sample code
 fragment, untested, inspired by code from Alex Farber::
 
    #include <Python.h>

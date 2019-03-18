@@ -44,7 +44,7 @@ Character), EL (Erase Line), GA (Go Ahead), SB (Subnegotiation Begin).
    an empty string for other reasons.  See the individual descriptions below.
 
    A :class:`Telnet` object is a context manager and can be used in a
-   :keyword:`with` statement.  When the :keyword:`with` block ends, the
+   :keyword:`with` statement.  When the :keyword:`!with` block ends, the
    :meth:`close` method is called::
 
        >>> from telnetlib import Telnet

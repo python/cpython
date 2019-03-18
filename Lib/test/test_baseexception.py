@@ -163,7 +163,7 @@ class UsageTests(unittest.TestCase):
         self.raise_fails("spam")
 
     def test_catch_non_BaseException(self):
-        # Tryinng to catch an object that does not inherit from BaseException
+        # Trying to catch an object that does not inherit from BaseException
         # is not allowed.
         class NonBaseException(object):
             pass

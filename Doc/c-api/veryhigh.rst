@@ -301,12 +301,12 @@ the same library that the Python runtime is using.
    set to *NULL*.
 
 
-.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject **args, int argcount, PyObject **kws, int kwcount, PyObject **defs, int defcount, PyObject *kwdefs, PyObject *closure)
+.. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject *const *args, int argcount, PyObject *const *kws, int kwcount, PyObject *const *defs, int defcount, PyObject *kwdefs, PyObject *closure)
 
    Evaluate a precompiled code object, given a particular environment for its
    evaluation.  This environment consists of a dictionary of global variables,
    a mapping object of local variables, arrays of arguments, keywords and
-   defaults, a dictionary of default values for :ref:`keyword-only\
+   defaults, a dictionary of default values for :ref:`keyword-only
    <keyword-only_parameter>` arguments and a closure tuple of cells.
 
 

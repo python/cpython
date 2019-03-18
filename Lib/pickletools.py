@@ -1325,9 +1325,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
-
-      Push True onto the stack."""),
+      doc="Push True onto the stack."),
 
     I(name='NEWFALSE',
       code='\x89',
@@ -1335,9 +1333,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
-
-      Push False onto the stack."""),
+      doc="Push False onto the stack."),
 
     # Ways to spell Unicode strings.
 
@@ -2279,7 +2275,7 @@ def optimize(p):
             if arg > proto:
                 proto = arg
             if pos == 0:
-                protoheader = p[pos: end_pos]
+                protoheader = p[pos:end_pos]
             else:
                 opcodes.append((pos, end_pos))
         else:
@@ -2295,6 +2291,7 @@ def optimize(p):
         pickler.framer.start_framing()
     idx = 0
     for op, arg in opcodes:
+        frameless = False
         if op is put:
             if arg not in newids:
                 continue
@@ -2305,8 +2302,12 @@ def optimize(p):
             data = pickler.get(newids[arg])
         else:
             data = p[op:arg]
-        pickler.framer.commit_frame()
-        pickler.write(data)
+            frameless = len(data) > pickler.framer._FRAME_SIZE_TARGET
+        pickler.framer.commit_frame(force=frameless)
+        if frameless:
+            pickler.framer.file_write(data)
+        else:
+            pickler.write(data)
     pickler.framer.end_framing()
     return out.getvalue()
 

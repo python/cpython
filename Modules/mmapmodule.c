@@ -118,22 +118,26 @@ static void
 mmap_object_dealloc(mmap_object *m_obj)
 {
 #ifdef MS_WINDOWS
+    Py_BEGIN_ALLOW_THREADS
     if (m_obj->data != NULL)
         UnmapViewOfFile (m_obj->data);
     if (m_obj->map_handle != NULL)
         CloseHandle (m_obj->map_handle);
     if (m_obj->file_handle != INVALID_HANDLE_VALUE)
         CloseHandle (m_obj->file_handle);
+    Py_END_ALLOW_THREADS
     if (m_obj->tagname)
         PyMem_Free(m_obj->tagname);
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
+    Py_BEGIN_ALLOW_THREADS
     if (m_obj->fd >= 0)
         (void) close(m_obj->fd);
     if (m_obj->data!=NULL) {
         munmap(m_obj->data, m_obj->size);
     }
+    Py_END_ALLOW_THREADS
 #endif /* UNIX */
 
     if (m_obj->weakreflist != NULL)
@@ -157,28 +161,37 @@ mmap_close_method(mmap_object *self, PyObject *unused)
        again.
        TODO - should we check for errors in the close operations???
     */
-    if (self->data != NULL) {
-        UnmapViewOfFile(self->data);
-        self->data = NULL;
+    HANDLE map_handle = self->map_handle;
+    HANDLE file_handle = self->file_handle;
+    char *data = self->data;
+    self->map_handle = NULL;
+    self->file_handle = INVALID_HANDLE_VALUE;
+    self->data = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    if (data != NULL) {
+        UnmapViewOfFile(data);
     }
-    if (self->map_handle != NULL) {
-        CloseHandle(self->map_handle);
-        self->map_handle = NULL;
+    if (map_handle != NULL) {
+        CloseHandle(map_handle);
     }
-    if (self->file_handle != INVALID_HANDLE_VALUE) {
-        CloseHandle(self->file_handle);
-        self->file_handle = INVALID_HANDLE_VALUE;
+    if (file_handle != INVALID_HANDLE_VALUE) {
+        CloseHandle(file_handle);
     }
+    Py_END_ALLOW_THREADS
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-    if (0 <= self->fd)
-        (void) close(self->fd);
+    int fd = self->fd;
+    char *data = self->data;
     self->fd = -1;
-    if (self->data != NULL) {
-        munmap(self->data, self->size);
-        self->data = NULL;
+    self->data = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    if (0 <= fd)
+        (void) close(fd);
+    if (data != NULL) {
+        munmap(data, self->size);
     }
+    Py_END_ALLOW_THREADS
 #endif
 
     Py_RETURN_NONE;
@@ -569,18 +582,21 @@ mmap_flush_method(mmap_object *self, PyObject *args)
     }
 
     if (self->access == ACCESS_READ || self->access == ACCESS_COPY)
-        return PyLong_FromLong(0);
+        Py_RETURN_NONE;
 
 #ifdef MS_WINDOWS
-    return PyLong_FromLong((long) FlushViewOfFile(self->data+offset, size));
+    if (!FlushViewOfFile(self->data+offset, size)) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return NULL;
+    }
+    Py_RETURN_NONE;
 #elif defined(UNIX)
-    /* XXX semantics of return value? */
     /* XXX flags for msync? */
     if (-1 == msync(self->data + offset, size, MS_SYNC)) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    return PyLong_FromLong(0);
+    Py_RETURN_NONE;
 #else
     PyErr_SetString(PyExc_ValueError, "flush not supported on this system");
     return NULL;
@@ -653,7 +669,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
 }
 
 static PyObject *
-mmap_closed_get(mmap_object *self)
+mmap_closed_get(mmap_object *self, void *Py_UNUSED(ignored))
 {
 #ifdef MS_WINDOWS
     return PyBool_FromLong(self->map_handle == NULL ? 1 : 0);
@@ -812,24 +828,6 @@ mmap_subscript(mmap_object *self, PyObject *item)
     }
 }
 
-static PyObject *
-mmap_concat(mmap_object *self, PyObject *bb)
-{
-    CHECK_VALID(NULL);
-    PyErr_SetString(PyExc_SystemError,
-                    "mmaps don't support concatenation");
-    return NULL;
-}
-
-static PyObject *
-mmap_repeat(mmap_object *self, Py_ssize_t n)
-{
-    CHECK_VALID(NULL);
-    PyErr_SetString(PyExc_SystemError,
-                    "mmaps don't support repeat operation");
-    return NULL;
-}
-
 static int
 mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
 {
@@ -949,8 +947,8 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
 
 static PySequenceMethods mmap_as_sequence = {
     (lenfunc)mmap_length,            /*sq_length*/
-    (binaryfunc)mmap_concat,         /*sq_concat*/
-    (ssizeargfunc)mmap_repeat,       /*sq_repeat*/
+    0,                               /*sq_concat*/
+    0,                               /*sq_repeat*/
     (ssizeargfunc)mmap_item,         /*sq_item*/
     0,                               /*sq_slice*/
     (ssizeobjargproc)mmap_ass_item,  /*sq_ass_item*/
@@ -998,7 +996,7 @@ To map anonymous memory, pass -1 as the fileno (both versions).");
 static PyTypeObject mmap_object_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "mmap.mmap",                                /* tp_name */
-    sizeof(mmap_object),                        /* tp_size */
+    sizeof(mmap_object),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor) mmap_object_dealloc,           /* tp_dealloc */
@@ -1050,6 +1048,7 @@ static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 {
     struct _Py_stat_struct status;
+    int fstat_result = -1;
     mmap_object *m_obj;
     Py_ssize_t map_size;
     off_t offset = 0;
@@ -1066,7 +1065,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         return NULL;
     if (map_size < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "memory mapped length must be postiive");
+                        "memory mapped length must be positive");
         return NULL;
     }
     if (offset < 0) {
@@ -1115,8 +1114,14 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     if (fd != -1)
         (void)fcntl(fd, F_FULLFSYNC);
 #endif
-    if (fd != -1 && _Py_fstat_noraise(fd, &status) == 0
-        && S_ISREG(status.st_mode)) {
+
+    if (fd != -1) {
+        Py_BEGIN_ALLOW_THREADS
+        fstat_result = _Py_fstat_noraise(fd, &status);
+        Py_END_ALLOW_THREADS
+    }
+
+    if (fd != -1 && fstat_result == 0 && S_ISREG(status.st_mode)) {
         if (map_size == 0) {
             if (status.st_size == 0) {
                 PyErr_SetString(PyExc_ValueError,
@@ -1246,7 +1251,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 
     if (map_size < 0) {
         PyErr_SetString(PyExc_OverflowError,
-                        "memory mapped length must be postiive");
+                        "memory mapped length must be positive");
         return NULL;
     }
     if (offset < 0) {

@@ -27,7 +27,8 @@ your system setup; details are given in later chapters.
    avoid writing C extensions and preserve portability to other implementations.
    For example, if your use case is calling C library functions or system calls,
    you should consider using the :mod:`ctypes` module or the `cffi
-   <https://cffi.readthedocs.org>`_ library rather than writing custom C code.
+   <https://cffi.readthedocs.io/>`_ library rather than writing
+   custom C code.
    These modules let you write Python code to interface with C code and are more
    portable between implementations of Python than writing and compiling a C
    extension module.
@@ -40,9 +41,11 @@ A Simple Example
 
 Let's create an extension module called ``spam`` (the favorite food of Monty
 Python fans...) and let's say we want to create a Python interface to the C
-library function :c:func:`system`. [#]_ This function takes a null-terminated
+library function :c:func:`system` [#]_. This function takes a null-terminated
 character string as argument and returns an integer.  We want this function to
-be callable from Python as follows::
+be callable from Python as follows:
+
+.. code-block:: pycon
 
    >>> import spam
    >>> status = spam.system("ls -l")
@@ -438,7 +441,9 @@ part of the Python interpreter, you will have to change the configuration setup
 and rebuild the interpreter.  Luckily, this is very simple on Unix: just place
 your file (:file:`spammodule.c` for example) in the :file:`Modules/` directory
 of an unpacked source distribution, add a line to the file
-:file:`Modules/Setup.local` describing your file::
+:file:`Modules/Setup.local` describing your file:
+
+.. code-block:: sh
 
    spam spammodule.o
 
@@ -449,7 +454,9 @@ subdirectory, but then you must first rebuild :file:`Makefile` there by running
 :file:`Setup` file.)
 
 If your module requires additional libraries to link with, these can be listed
-on the line in the configuration file as well, for instance::
+on the line in the configuration file as well, for instance:
+
+.. code-block:: sh
 
    spam spammodule.o -lX11
 
@@ -538,8 +545,9 @@ or more format codes between parentheses.  For example::
 :c:func:`PyObject_CallObject` returns a Python object pointer: this is the return
 value of the Python function.  :c:func:`PyObject_CallObject` is
 "reference-count-neutral" with respect to its arguments.  In the example a new
-tuple was created to serve as the argument list, which is :c:func:`Py_DECREF`\
--ed immediately after the :c:func:`PyObject_CallObject` call.
+tuple was created to serve as the argument list, which is
+:c:func:`Py_DECREF`\ -ed immediately after the :c:func:`PyObject_CallObject`
+call.
 
 The return value of :c:func:`PyObject_CallObject` is "new": either it is a brand
 new object, or it is an existing object whose reference count has been
@@ -749,7 +757,7 @@ Philbrick (philbrick@hks.com)::
         * only take two PyObject* parameters, and keywdarg_parrot() takes
         * three.
         */
-       {"parrot", (PyCFunction)keywdarg_parrot, METH_VARARGS | METH_KEYWORDS,
+       {"parrot", (PyCFunction)(void(*)(void))keywdarg_parrot, METH_VARARGS | METH_KEYWORDS,
         "Print a lovely skit to standard output."},
        {NULL, NULL, 0, NULL}   /* sentinel */
    };
@@ -917,7 +925,7 @@ It is also possible to :dfn:`borrow` [#]_ a reference to an object.  The
 borrower of a reference should not call :c:func:`Py_DECREF`.  The borrower must
 not hold on to the object longer than the owner from which it was borrowed.
 Using a borrowed reference after the owner has disposed of it risks using freed
-memory and should be avoided completely. [#]_
+memory and should be avoided completely [#]_.
 
 The advantage of borrowing over owning a reference is that you don't need to
 take care of disposing of the reference on all possible paths through the code
@@ -1088,7 +1096,7 @@ checking.
 
 The C function calling mechanism guarantees that the argument list passed to C
 functions (``args`` in the examples) is never *NULL* --- in fact it guarantees
-that it is always a tuple. [#]_
+that it is always a tuple [#]_.
 
 It is a severe error to ever let a *NULL* pointer "escape" to the Python user.
 

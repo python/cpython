@@ -6,6 +6,7 @@ from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import glob
+import tempfile
 import pathlib
 import random
 import shutil
@@ -13,6 +14,7 @@ import subprocess
 import threading
 from test.support import unlink
 import _compression
+import sys
 
 
 # Skip tests if the bz2 module doesn't exist.
@@ -75,11 +77,11 @@ class BaseTest(unittest.TestCase):
     BIG_DATA = bz2.compress(BIG_TEXT, compresslevel=1)
 
     def setUp(self):
-        self.filename = support.TESTFN
+        fd, self.filename = tempfile.mkstemp()
+        os.close(fd)
 
     def tearDown(self):
-        if os.path.isfile(self.filename):
-            os.unlink(self.filename)
+        unlink(self.filename)
 
 
 class BZ2FileTest(BaseTest):
@@ -815,6 +817,16 @@ class BZ2DecompressorTest(BaseTest):
         self.assertRaises(Exception, bzd.decompress, self.BAD_DATA * 30)
         # Previously, a second call could crash due to internal inconsistency
         self.assertRaises(Exception, bzd.decompress, self.BAD_DATA * 30)
+
+    @support.refcount_test
+    def test_refleaks_in___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        bzd = BZ2Decompressor()
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            bzd.__init__()
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
 
 class CompressDecompressTest(BaseTest):
     def testCompress(self):

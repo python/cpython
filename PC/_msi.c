@@ -315,6 +315,12 @@ msierror(int status)
         case ERROR_INVALID_PARAMETER:
             PyErr_SetString(MSIError, "invalid parameter");
             return NULL;
+        case ERROR_OPEN_FAILED:
+            PyErr_SetString(MSIError, "open failed");
+            return NULL;
+        case ERROR_CREATE_FAILED:
+            PyErr_SetString(MSIError, "create failed");
+            return NULL;
         default:
             PyErr_Format(MSIError, "unknown error %x", status);
             return NULL;
@@ -324,6 +330,10 @@ msierror(int status)
     code = MsiRecordGetInteger(err, 1); /* XXX code */
     if (MsiFormatRecord(0, err, res, &size) == ERROR_MORE_DATA) {
         res = malloc(size+1);
+        if (res == NULL) {
+            MsiCloseHandle(err);
+            return PyErr_NoMemory();
+        }
         MsiFormatRecord(0, err, res, &size);
         res[size]='\0';
     }
@@ -545,7 +555,7 @@ summary_getproperty(msiobj* si, PyObject *args)
     FILETIME fval;
     char sbuf[1000];
     char *sval = sbuf;
-    DWORD ssize = sizeof(sval);
+    DWORD ssize = sizeof(sbuf);
 
     if (!PyArg_ParseTuple(args, "i:GetProperty", &field))
         return NULL;
@@ -553,25 +563,39 @@ summary_getproperty(msiobj* si, PyObject *args)
     status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
         &fval, sval, &ssize);
     if (status == ERROR_MORE_DATA) {
+        ssize++;
         sval = malloc(ssize);
+        if (sval == NULL) {
+            return PyErr_NoMemory();
+        }
         status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
             &fval, sval, &ssize);
     }
 
     switch(type) {
-        case VT_I2: case VT_I4:
-            return PyLong_FromLong(ival);
+        case VT_I2:
+        case VT_I4:
+            result = PyLong_FromLong(ival);
+            break;
         case VT_FILETIME:
             PyErr_SetString(PyExc_NotImplementedError, "FILETIME result");
-            return NULL;
+            result = NULL;
+            break;
         case VT_LPSTR:
             result = PyBytes_FromStringAndSize(sval, ssize);
-            if (sval != sbuf)
-                free(sval);
-            return result;
+            break;
+        case VT_EMPTY:
+            Py_INCREF(Py_None);
+            result = Py_None;
+            break;
+        default:
+            PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
+            result = NULL;
+            break;
     }
-    PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
-    return NULL;
+    if (sval != sbuf)
+        free(sval);
+    return result;
 }
 
 static PyObject*
@@ -723,8 +747,12 @@ view_fetch(msiobj *view, PyObject*args)
     int status;
     MSIHANDLE result;
 
-    if ((status = MsiViewFetch(view->h, &result)) != ERROR_SUCCESS)
+    status = MsiViewFetch(view->h, &result);
+    if (status == ERROR_NO_MORE_ITEMS) {
+        Py_RETURN_NONE;
+    } else if (status != ERROR_SUCCESS) {
         return msierror(status);
+    }
 
     return record_new(result);
 }
@@ -888,7 +916,7 @@ msidb_getsummaryinformation(msiobj *db, PyObject *args)
         return msierror(status);
 
     oresult = PyObject_NEW(struct msiobj, &summary_Type);
-    if (!result) {
+    if (!oresult) {
         MsiCloseHandle(result);
         return NULL;
     }

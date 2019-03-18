@@ -8,6 +8,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 
 #ifdef MS_WINDOWS
 
@@ -556,12 +557,16 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
     Py_BEGIN_ALLOW_THREADS
     DWORD off = 0;
     while (off < maxlen) {
-        DWORD n, len = min(maxlen - off, BUFSIZ);
+        DWORD n = (DWORD)-1;
+        DWORD len = min(maxlen - off, BUFSIZ);
         SetLastError(0);
         BOOL res = ReadConsoleW(handle, &buf[off], len, &n, NULL);
 
         if (!res) {
             err = GetLastError();
+            break;
+        }
+        if (n == (DWORD)-1 && (err = GetLastError()) == ERROR_OPERATION_ABORTED) {
             break;
         }
         if (n == 0) {
@@ -720,7 +725,7 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
 
     if (u8n) {
         PyErr_Format(PyExc_SystemError,
-            "Buffer had room for %d bytes but %d bytes required",
+            "Buffer had room for %zd bytes but %u bytes required",
             len, u8n);
         return -1;
     }
@@ -811,11 +816,13 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
             }
             bufsize = newsize;
 
-            buf = PyMem_Realloc(buf, (bufsize + 1) * sizeof(wchar_t));
-            if (!buf) {
+            wchar_t *tmp = PyMem_Realloc(buf,
+                                         (bufsize + 1) * sizeof(wchar_t));
+            if (tmp == NULL) {
                 PyMem_Free(buf);
                 return NULL;
             }
+            buf = tmp;
         }
 
         subbuf = read_console_w(self->handle, bufsize - len, &n);
@@ -964,6 +971,9 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     if (!self->writable)
         return err_mode("writing");
 
+    if (!b->len) {
+        return PyLong_FromLong(0);
+    }
     if (b->len > BUFMAX)
         len = BUFMAX;
     else
@@ -1053,14 +1063,6 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self)
     Py_RETURN_TRUE;
 }
 
-static PyObject *
-winconsoleio_getstate(winconsoleio *self)
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 #include "clinic/winconsoleio.c.h"
 
 static PyMethodDef winconsoleio_methods[] = {
@@ -1073,7 +1075,6 @@ static PyMethodDef winconsoleio_methods[] = {
     _IO__WINDOWSCONSOLEIO_WRITABLE_METHODDEF
     _IO__WINDOWSCONSOLEIO_FILENO_METHODDEF
     _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
-    {"__getstate__", (PyCFunction)winconsoleio_getstate, METH_NOARGS, NULL},
     {NULL,           NULL}             /* sentinel */
 };
 
@@ -1163,6 +1164,6 @@ PyTypeObject PyWindowsConsoleIO_Type = {
     0,                                          /* tp_finalize */
 };
 
-PyAPI_DATA(PyObject *) _PyWindowsConsoleIO_Type = (PyObject*)&PyWindowsConsoleIO_Type;
+PyObject * _PyWindowsConsoleIO_Type = (PyObject*)&PyWindowsConsoleIO_Type;
 
 #endif /* MS_WINDOWS */

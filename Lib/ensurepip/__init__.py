@@ -8,9 +8,9 @@ import tempfile
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "28.8.0"
+_SETUPTOOLS_VERSION = "40.8.0"
 
-_PIP_VERSION = "9.0.1"
+_PIP_VERSION = "19.0.3"
 
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION),
@@ -24,8 +24,8 @@ def _run_pip(args, additional_paths=None):
         sys.path = additional_paths + sys.path
 
     # Install the bundled software
-    import pip
-    return pip.main(args)
+    import pip._internal
+    return pip._internal.main(args)
 
 
 def version():
@@ -182,15 +182,15 @@ def _main(argv=None):
         "--altinstall",
         action="store_true",
         default=False,
-        help=("Make an alternate install, installing only the X.Y versioned"
-              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)"),
+        help=("Make an alternate install, installing only the X.Y versioned "
+              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)."),
     )
     parser.add_argument(
         "--default-pip",
         action="store_true",
         default=False,
         help=("Make a default pip install, installing the unqualified pip "
-              "and easy_install in addition to the versioned scripts"),
+              "and easy_install in addition to the versioned scripts."),
     )
 
     args = parser.parse_args(argv)

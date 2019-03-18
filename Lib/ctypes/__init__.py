@@ -266,11 +266,6 @@ def _reset_cache():
     # _SimpleCData.c_char_p_from_param
     POINTER(c_char).from_param = c_char_p.from_param
     _pointer_type_cache[None] = c_void_p
-    # XXX for whatever reasons, creating the first instance of a callback
-    # function is needed for the unittests on Win64 to succeed.  This MAY
-    # be a compiler bug, since the problem occurs only when _ctypes is
-    # compiled with the MS SDK compiler.  Or an uninitialized variable?
-    CFUNCTYPE(c_int)(lambda: None)
 
 def create_unicode_buffer(init, size=None):
     """create_unicode_buffer(aString) -> character array
@@ -338,6 +333,14 @@ class CDLL(object):
             flags |= _FUNCFLAG_USE_ERRNO
         if use_last_error:
             flags |= _FUNCFLAG_USE_LASTERROR
+        if _sys.platform.startswith("aix"):
+            """When the name contains ".a(" and ends with ")",
+               e.g., "libFOO.a(libFOO.so)" - this is taken to be an
+               archive(member) syntax for dlopen(), and the mode is adjusted.
+               Otherwise, name is presented to dlopen() as a file argument.
+            """
+            if name and name.endswith(")") and ".a(" in name:
+                mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
 
         class _FuncPtr(_CFuncPtr):
             _flags_ = flags

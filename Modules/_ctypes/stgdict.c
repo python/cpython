@@ -281,13 +281,15 @@ MakeFields(PyObject *type, CFieldObject *descr,
 static int
 MakeAnonFields(PyObject *type)
 {
+    _Py_IDENTIFIER(_anonymous_);
     PyObject *anon;
     PyObject *anon_names;
     Py_ssize_t i;
 
-    anon = PyObject_GetAttrString(type, "_anonymous_");
+    if (_PyObject_LookupAttrId(type, &PyId__anonymous_, &anon) < 0) {
+        return -1;
+    }
     if (anon == NULL) {
-        PyErr_Clear();
         return 0;
     }
     anon_names = PySequence_Fast(anon, "_anonymous_ must be a sequence");
@@ -335,13 +337,17 @@ MakeAnonFields(PyObject *type)
 int
 PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 {
+    _Py_IDENTIFIER(_swappedbytes_);
+    _Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
+    _Py_IDENTIFIER(_pack_);
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
     Py_ssize_t field_size = 0;
     int bitofs;
-    PyObject *isPacked;
-    int pack = 0;
+    PyObject *tmp;
+    int isPacked;
+    int pack;
     Py_ssize_t ffi_ofs;
     int big_endian;
 
@@ -356,32 +362,59 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (fields == NULL)
         return 0;
 
-#ifdef WORDS_BIGENDIAN
-    big_endian = PyObject_HasAttrString(type, "_swappedbytes_") ? 0 : 1;
-#else
-    big_endian = PyObject_HasAttrString(type, "_swappedbytes_") ? 1 : 0;
-#endif
+    if (_PyObject_LookupAttrId(type, &PyId__swappedbytes_, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        Py_DECREF(tmp);
+        big_endian = !PY_BIG_ENDIAN;
+    }
+    else {
+        big_endian = PY_BIG_ENDIAN;
+    }
 
-    use_broken_old_ctypes_semantics = \
-        PyObject_HasAttrString(type, "_use_broken_old_ctypes_structure_semantics_");
+    if (_PyObject_LookupAttrId(type,
+                &PyId__use_broken_old_ctypes_structure_semantics_, &tmp) < 0)
+    {
+        return -1;
+    }
+    if (tmp) {
+        Py_DECREF(tmp);
+        use_broken_old_ctypes_semantics = 1;
+    }
+    else {
+        use_broken_old_ctypes_semantics = 0;
+    }
 
-    isPacked = PyObject_GetAttrString(type, "_pack_");
-    if (isPacked) {
-        pack = _PyLong_AsInt(isPacked);
-        if (pack < 0 || PyErr_Occurred()) {
-            Py_XDECREF(isPacked);
-            PyErr_SetString(PyExc_ValueError,
-                            "_pack_ must be a non-negative integer");
+    if (_PyObject_LookupAttrId(type, &PyId__pack_, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        isPacked = 1;
+        pack = _PyLong_AsInt(tmp);
+        Py_DECREF(tmp);
+        if (pack < 0) {
+            if (!PyErr_Occurred() ||
+                PyErr_ExceptionMatches(PyExc_TypeError) ||
+                PyErr_ExceptionMatches(PyExc_OverflowError))
+            {
+                PyErr_SetString(PyExc_ValueError,
+                                "_pack_ must be a non-negative integer");
+            }
             return -1;
         }
-        Py_DECREF(isPacked);
-    } else
-        PyErr_Clear();
+    }
+    else {
+        isPacked = 0;
+        pack = 0;
+    }
 
-    len = PySequence_Length(fields);
+    len = PySequence_Size(fields);
     if (len == -1) {
-        PyErr_SetString(PyExc_TypeError,
-                        "'_fields_' must be a sequence of pairs");
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "'_fields_' must be a sequence of pairs");
+        }
         return -1;
     }
 

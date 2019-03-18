@@ -1,2 +1,0 @@
-an empty asyncio.Queue now doesn't leak memory when queue.get pollers
-timeout
