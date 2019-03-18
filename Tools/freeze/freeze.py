@@ -217,7 +217,7 @@ def main():
 
     # locations derived from options
     version = '%d.%d' % sys.version_info[:2]
-    if sys.platform != "win32":
+    if not win:
         # on Windows this will make freeze traceback
         # because abiflags is not in sys.
         flagged_version = version + sys.abiflags
