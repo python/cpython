@@ -1102,6 +1102,7 @@ Fail:
     return -1;
 }
 
+// Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
 static int
 insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                     PyObject *value)
