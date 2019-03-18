@@ -285,6 +285,8 @@ combined using bitwise-OR.
 +---------------------------+----------------------------------------------+
 | Constant                  | Meaning                                      |
 +===========================+==============================================+
+| :const:`READWRITE`        | Writable.                                    |
++---------------------------+----------------------------------------------+
 | :const:`READONLY`         | Never writable.                              |
 +---------------------------+----------------------------------------------+
 | :const:`READ_RESTRICTED`  | Not readable in restricted mode.             |
@@ -295,6 +297,7 @@ combined using bitwise-OR.
 +---------------------------+----------------------------------------------+
 
 .. index::
+   single: READWRITE
    single: READONLY
    single: READ_RESTRICTED
    single: WRITE_RESTRICTED

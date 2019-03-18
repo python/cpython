@@ -57,6 +57,7 @@ typedef struct PyMemberDef {
 
 
 /* Flags */
+#define READWRITE           0
 #define READONLY            1
 #define READ_RESTRICTED     2
 #define PY_WRITE_RESTRICTED 4
