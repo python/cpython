@@ -615,14 +615,16 @@ function.
 
    .. attribute:: Signature.parameters
 
-      An ordered mapping of parameters' names to the corresponding
-      :class:`Parameter` objects.  Parameters appear in strict definition
-      order, including keyword-only parameters.
+      An dictionary of :class:`Parameter` objects.  Parameters appear in strict
+      definition order, including keyword-only parameters.
 
       .. versionchanged:: 3.7
          Python only explicitly guaranteed that it preserved the declaration
          order of keyword-only parameters as of version 3.7, although in practice
          this order had always been preserved in Python 3.
+
+      .. versionchanged:: 3.8
+         :attr:`parameters` is now of type :class:`dict`.
 
    .. attribute:: Signature.return_annotation
 
@@ -816,10 +818,9 @@ function.
 
    .. attribute:: BoundArguments.arguments
 
-      An ordered, mutable mapping (:class:`collections.OrderedDict`) of
-      parameters' names to arguments' values.  Contains only explicitly bound
-      arguments.  Changes in :attr:`arguments` will reflect in :attr:`args` and
-      :attr:`kwargs`.
+      An ordered, mutable mapping of parameters' names to arguments' values.
+      Contains only explicitly bound arguments.  Changes in :attr:`arguments`
+      will reflect in :attr:`args` and :attr:`kwargs`.
 
       Should be used in conjunction with :attr:`Signature.parameters` for any
       argument processing purposes.
@@ -830,6 +831,9 @@ function.
          :meth:`Signature.bind_partial` relied on a default value are skipped.
          However, if needed, use :meth:`BoundArguments.apply_defaults` to add
          them.
+
+      .. versionchanged:: 3.8
+         :attr:`arguments` is now of type :class:`dict`.
 
    .. attribute:: BoundArguments.args
 
@@ -861,7 +865,7 @@ function.
         >>> ba = inspect.signature(foo).bind('spam')
         >>> ba.apply_defaults()
         >>> ba.arguments
-        OrderedDict([('a', 'spam'), ('b', 'ham'), ('args', ())])
+        {'a': 'spam', 'b': 'ham', 'args': ()}
 
       .. versionadded:: 3.5
 

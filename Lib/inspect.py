@@ -48,7 +48,7 @@ import warnings
 import functools
 import builtins
 from operator import attrgetter
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 
 # Create constants for the compiler flags in Include/code.h
 # We try to get them from dis to avoid duplication
@@ -1730,7 +1730,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     """
 
     old_params = wrapped_sig.parameters
-    new_params = OrderedDict(old_params.items())
+    new_params = dict(old_params)
 
     partial_args = partial.args or ()
     partial_keywords = partial.keywords or {}
@@ -1790,9 +1790,8 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
             if param.kind is _POSITIONAL_OR_KEYWORD:
                 new_param = new_params[param_name].replace(kind=_KEYWORD_ONLY)
                 new_params[param_name] = new_param
-                new_params.move_to_end(param_name)
             elif param.kind in (_KEYWORD_ONLY, _VAR_KEYWORD):
-                new_params.move_to_end(param_name)
+                pass
             elif param.kind is _VAR_POSITIONAL:
                 new_params.pop(param.name)
 
@@ -2591,7 +2590,7 @@ class BoundArguments:
 
     Has the following public attributes:
 
-    * arguments : OrderedDict
+    * arguments : dict
         An ordered mutable mapping of parameters' names to arguments' values.
         Does not contain arguments' default values.
     * signature : Signature
@@ -2691,7 +2690,7 @@ class BoundArguments:
                     # Signature.bind_partial().
                     continue
                 new_arguments.append((name, val))
-        self.arguments = OrderedDict(new_arguments)
+        self.arguments = dict(new_arguments)
 
     def __eq__(self, other):
         if self is other:
@@ -2722,7 +2721,7 @@ class Signature:
 
     A Signature object has the following public attributes and methods:
 
-    * parameters : OrderedDict
+    * parameters : dict
         An ordered mapping of parameters' names to the corresponding
         Parameter objects (keyword-only arguments are in the same order
         as listed in `code.co_varnames`).
@@ -2752,14 +2751,14 @@ class Signature:
         """
 
         if parameters is None:
-            params = OrderedDict()
+            params = {}
         else:
             if __validate_parameters__:
-                params = OrderedDict()
+                params = {}
                 top_kind = _POSITIONAL_ONLY
                 kind_defaults = False
 
-                for idx, param in enumerate(parameters):
+                for param in parameters:
                     kind = param.kind
                     name = param.name
 
@@ -2794,8 +2793,7 @@ class Signature:
 
                     params[name] = param
             else:
-                params = OrderedDict(((param.name, param)
-                                                for param in parameters))
+                params = {param.name: param for param in parameters}
 
         self._parameters = types.MappingProxyType(params)
         self._return_annotation = return_annotation
@@ -2877,7 +2875,7 @@ class Signature:
     def _bind(self, args, kwargs, *, partial=False):
         """Private method. Don't use directly."""
 
-        arguments = OrderedDict()
+        arguments = {}
 
         parameters = iter(self.parameters.values())
         parameters_ex = ()

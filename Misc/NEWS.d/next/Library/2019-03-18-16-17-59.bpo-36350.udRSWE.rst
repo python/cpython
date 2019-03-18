@@ -1,0 +1,2 @@
+`inspect.Signature.parameters` and `inspect.BoundArguments.arguments` are
+now dicts instead of OrderedDicts. Patch contributed by Rémi Lapeyre.
