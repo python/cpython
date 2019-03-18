@@ -510,8 +510,8 @@ Deprecated
 
   (Contributed by Berker Peksag in :issue:`9372`.)
 
-* The :class:`typing.NamedTuple` has deprecated the ``_field_types`` attribute
-  in favor of the ``__annotations__`` attribute which had the same
+* The :class:`typing.NamedTuple` class has deprecated the ``_field_types``
+  attribute in favor of the ``__annotations__`` attribute which has the same
   information.  (Contributed by Raymond Hettinger in :issue:`36320`.)
 
 * :mod:`ast` classes ``Num``, ``Str``, ``Bytes``, ``NameConstant`` and

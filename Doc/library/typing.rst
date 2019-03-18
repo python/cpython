@@ -864,7 +864,7 @@ The module defines the following classes, functions and decorators:
 
    .. versionchanged:: 3.8
       Deprecated the ``_field_types`` attribute in favor of the more
-      standard ``__annotations__`` which has the same information.
+      standard ``__annotations__`` attribute which has the same information.
 
    .. versionchanged:: 3.8
       The ``_field_types`` and ``__annotations__`` attributes are
