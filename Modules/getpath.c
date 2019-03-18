@@ -117,6 +117,8 @@ extern "C" {
      ? _Py_INIT_USER_ERR("cannot decode " NAME) \
      : _Py_INIT_NO_MEMORY()
 
+#define PATHLEN_ERR() _Py_INIT_USER_ERR("path configuration: path too long")
+
 typedef struct {
     wchar_t *path_env;                 /* PATH environment variable */
 
@@ -237,7 +239,7 @@ isdir(wchar_t *filename)
    than MAXPATHLEN characters at exit.  If stuff is too long, only as much of
    stuff as fits will be appended.
 */
-static void
+static _PyInitError
 joinpath(wchar_t *buffer, wchar_t *stuff)
 {
     size_t n, k;
@@ -251,7 +253,7 @@ joinpath(wchar_t *buffer, wchar_t *stuff)
         }
     }
     if (n > MAXPATHLEN) {
-        Py_FatalError("buffer overflow in getpath.c's joinpath()");
+        return PATHLEN_ERR();
     }
     k = wcslen(stuff);
     if (n + k > MAXPATHLEN) {
@@ -259,12 +261,13 @@ joinpath(wchar_t *buffer, wchar_t *stuff)
     }
     wcsncpy(buffer+n, stuff, k);
     buffer[n+k] = '\0';
+    return _Py_INIT_OK();
 }
 
 
 /* copy_absolute requires that path be allocated at least
    MAXPATHLEN + 1 bytes and that p be no more than MAXPATHLEN bytes. */
-static void
+static _PyInitError
 copy_absolute(wchar_t *path, wchar_t *p, size_t pathlen)
 {
     if (p[0] == SEP) {
@@ -274,27 +277,36 @@ copy_absolute(wchar_t *path, wchar_t *p, size_t pathlen)
         if (!_Py_wgetcwd(path, pathlen)) {
             /* unable to get the current directory */
             wcscpy(path, p);
-            return;
+            return _Py_INIT_OK();
         }
         if (p[0] == '.' && p[1] == SEP) {
             p += 2;
         }
-        joinpath(path, p);
+        _PyInitError err = joinpath(path, p);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
+    return _Py_INIT_OK();
 }
 
 
 /* absolutize() requires that path be allocated at least MAXPATHLEN+1 bytes. */
-static void
+static _PyInitError
 absolutize(wchar_t *path)
 {
     wchar_t buffer[MAXPATHLEN+1];
 
     if (path[0] == SEP) {
-        return;
+        return _Py_INIT_OK();
     }
-    copy_absolute(buffer, path, MAXPATHLEN+1);
+
+    _PyInitError err = copy_absolute(buffer, path, MAXPATHLEN+1);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
     wcscpy(path, buffer);
+    return _Py_INIT_OK();
 }
 
 
@@ -307,7 +319,7 @@ absolutize(wchar_t *path)
 #define EXE_SUFFIX L".exe"
 #endif
 
-static void
+static _PyInitError
 add_exe_suffix(wchar_t *progpath)
 {
     /* Check for already have an executable suffix */
@@ -315,7 +327,7 @@ add_exe_suffix(wchar_t *progpath)
     size_t s = wcslen(EXE_SUFFIX);
     if (wcsncasecmp(EXE_SUFFIX, progpath+n-s, s) != 0) {
         if (n + s > MAXPATHLEN) {
-            Py_FatalError("progpath overflow in getpath.c's add_exe_suffix()");
+            return PATHLEN_ERR();
         }
         /* Save original path for revert */
         wchar_t orig[MAXPATHLEN+1];
@@ -329,6 +341,7 @@ add_exe_suffix(wchar_t *progpath)
             wcsncpy(progpath, orig, MAXPATHLEN);
         }
     }
+    return _Py_INIT_OK();
 }
 #endif
 
@@ -336,10 +349,11 @@ add_exe_suffix(wchar_t *progpath)
 /* search_for_prefix requires that argv0_path be no more than MAXPATHLEN
    bytes long.
 */
-static int
+static _PyInitError
 search_for_prefix(const _PyCoreConfig *core_config,
-                  PyCalculatePath *calculate, wchar_t *prefix)
+                  PyCalculatePath *calculate, wchar_t *prefix, int *found)
 {
+    _PyInitError err;
     size_t n;
     wchar_t *vpath;
 
@@ -351,39 +365,74 @@ search_for_prefix(const _PyCoreConfig *core_config,
         if (delim) {
             *delim = L'\0';
         }
-        joinpath(prefix, calculate->lib_python);
-        joinpath(prefix, LANDMARK);
-        return 1;
+        err = joinpath(prefix, calculate->lib_python);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+        err = joinpath(prefix, LANDMARK);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+        *found = 1;
+        return _Py_INIT_OK();
     }
 
     /* Check to see if argv[0] is in the build directory */
     wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
     prefix[MAXPATHLEN] = L'\0';
-    joinpath(prefix, L"Modules/Setup.local");
+    err = joinpath(prefix, L"Modules/Setup.local");
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
         vpath = Py_DecodeLocale(VPATH, NULL);
         if (vpath != NULL) {
             wcsncpy(prefix, calculate->argv0_path, MAXPATHLEN);
             prefix[MAXPATHLEN] = L'\0';
-            joinpath(prefix, vpath);
+            err = joinpath(prefix, vpath);
             PyMem_RawFree(vpath);
-            joinpath(prefix, L"Lib");
-            joinpath(prefix, LANDMARK);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+
+            err = joinpath(prefix, L"Lib");
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+            err = joinpath(prefix, LANDMARK);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+
             if (ismodule(prefix)) {
-                return -1;
+                *found = -1;
+                return _Py_INIT_OK();
             }
         }
     }
 
     /* Search from argv0_path, until root is found */
-    copy_absolute(prefix, calculate->argv0_path, MAXPATHLEN+1);
+    err = copy_absolute(prefix, calculate->argv0_path, MAXPATHLEN+1);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     do {
         n = wcslen(prefix);
-        joinpath(prefix, calculate->lib_python);
-        joinpath(prefix, LANDMARK);
+        err = joinpath(prefix, calculate->lib_python);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+        err = joinpath(prefix, LANDMARK);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+
         if (ismodule(prefix)) {
-            return 1;
+            *found = 1;
+            return _Py_INIT_OK();
         }
         prefix[n] = L'\0';
         reduce(prefix);
@@ -392,33 +441,52 @@ search_for_prefix(const _PyCoreConfig *core_config,
     /* Look at configure's PREFIX */
     wcsncpy(prefix, calculate->prefix, MAXPATHLEN);
     prefix[MAXPATHLEN] = L'\0';
-    joinpath(prefix, calculate->lib_python);
-    joinpath(prefix, LANDMARK);
+    err = joinpath(prefix, calculate->lib_python);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    err = joinpath(prefix, LANDMARK);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     if (ismodule(prefix)) {
-        return 1;
+        *found = 1;
+        return _Py_INIT_OK();
     }
 
     /* Fail */
-    return 0;
+    *found = 0;
+    return _Py_INIT_OK();
 }
 
 
-static void
+static _PyInitError
 calculate_prefix(const _PyCoreConfig *core_config,
                  PyCalculatePath *calculate, wchar_t *prefix)
 {
-    calculate->prefix_found = search_for_prefix(core_config, calculate, prefix);
+    _PyInitError err;
+
+    err = search_for_prefix(core_config, calculate, prefix, &calculate->prefix_found);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     if (!calculate->prefix_found) {
         if (!core_config->_frozen) {
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
         }
         wcsncpy(prefix, calculate->prefix, MAXPATHLEN);
-        joinpath(prefix, calculate->lib_python);
+        err = joinpath(prefix, calculate->lib_python);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
     else {
         reduce(prefix);
     }
+    return _Py_INIT_OK();
 }
 
 
@@ -448,10 +516,12 @@ calculate_reduce_prefix(PyCalculatePath *calculate, wchar_t *prefix)
 /* search_for_exec_prefix requires that argv0_path be no more than
    MAXPATHLEN bytes long.
 */
-static int
+static _PyInitError
 search_for_exec_prefix(const _PyCoreConfig *core_config,
-                       PyCalculatePath *calculate, wchar_t *exec_prefix)
+                       PyCalculatePath *calculate, wchar_t *exec_prefix,
+                       int *found)
 {
+    _PyInitError err;
     size_t n;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
@@ -464,9 +534,16 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
             wcsncpy(exec_prefix, core_config->home, MAXPATHLEN);
         }
         exec_prefix[MAXPATHLEN] = L'\0';
-        joinpath(exec_prefix, calculate->lib_python);
-        joinpath(exec_prefix, L"lib-dynload");
-        return 1;
+        err = joinpath(exec_prefix, calculate->lib_python);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+        err = joinpath(exec_prefix, L"lib-dynload");
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+        *found = 1;
+        return _Py_INIT_OK();
     }
 
     /* Check to see if argv[0] is in the build directory. "pybuilddir.txt"
@@ -474,7 +551,11 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
        of shared library modules. */
     wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
     exec_prefix[MAXPATHLEN] = L'\0';
-    joinpath(exec_prefix, L"pybuilddir.txt");
+    err = joinpath(exec_prefix, L"pybuilddir.txt");
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     if (isfile(exec_prefix)) {
         FILE *f = _Py_wfopen(exec_prefix, L"rb");
         if (f == NULL) {
@@ -490,21 +571,37 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
             if (rel_builddir_path) {
                 wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
                 exec_prefix[MAXPATHLEN] = L'\0';
-                joinpath(exec_prefix, rel_builddir_path);
+                err = joinpath(exec_prefix, rel_builddir_path);
                 PyMem_RawFree(rel_builddir_path );
-                return -1;
+                if (_Py_INIT_FAILED(err)) {
+                    return err;
+                }
+
+                *found = -1;
+                return _Py_INIT_OK();
             }
         }
     }
 
     /* Search from argv0_path, until root is found */
-    copy_absolute(exec_prefix, calculate->argv0_path, MAXPATHLEN+1);
+    err = copy_absolute(exec_prefix, calculate->argv0_path, MAXPATHLEN+1);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     do {
         n = wcslen(exec_prefix);
-        joinpath(exec_prefix, calculate->lib_python);
-        joinpath(exec_prefix, L"lib-dynload");
+        err = joinpath(exec_prefix, calculate->lib_python);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+        err = joinpath(exec_prefix, L"lib-dynload");
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
         if (isdir(exec_prefix)) {
-            return 1;
+            *found = 1;
+            return _Py_INIT_OK();
         }
         exec_prefix[n] = L'\0';
         reduce(exec_prefix);
@@ -513,33 +610,50 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
     /* Look at configure's EXEC_PREFIX */
     wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
     exec_prefix[MAXPATHLEN] = L'\0';
-    joinpath(exec_prefix, calculate->lib_python);
-    joinpath(exec_prefix, L"lib-dynload");
+    err = joinpath(exec_prefix, calculate->lib_python);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    err = joinpath(exec_prefix, L"lib-dynload");
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
     if (isdir(exec_prefix)) {
-        return 1;
+        *found = 1;
+        return _Py_INIT_OK();
     }
 
     /* Fail */
-    return 0;
+    *found = 0;
+    return _Py_INIT_OK();
 }
 
 
-static void
+static _PyInitError
 calculate_exec_prefix(const _PyCoreConfig *core_config,
                       PyCalculatePath *calculate, wchar_t *exec_prefix)
 {
-    calculate->exec_prefix_found = search_for_exec_prefix(core_config,
-                                                          calculate,
-                                                          exec_prefix);
+    _PyInitError err;
+
+    err = search_for_exec_prefix(core_config, calculate, exec_prefix,
+                                 &calculate->exec_prefix_found);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     if (!calculate->exec_prefix_found) {
         if (!core_config->_frozen) {
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
         wcsncpy(exec_prefix, calculate->exec_prefix, MAXPATHLEN);
-        joinpath(exec_prefix, L"lib/lib-dynload");
+        err = joinpath(exec_prefix, L"lib/lib-dynload");
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
     /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
+    return _Py_INIT_OK();
 }
 
 
@@ -564,6 +678,7 @@ static _PyInitError
 calculate_program_full_path(const _PyCoreConfig *core_config,
                             PyCalculatePath *calculate, _PyPathConfig *config)
 {
+    _PyInitError err;
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
 
@@ -624,7 +739,11 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
                 wcsncpy(program_full_path, path, MAXPATHLEN);
             }
 
-            joinpath(program_full_path, core_config->program_name);
+            err = joinpath(program_full_path, core_config->program_name);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+
             if (isxfile(program_full_path)) {
                 break;
             }
@@ -640,7 +759,10 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
         program_full_path[0] = '\0';
     }
     if (program_full_path[0] != SEP && program_full_path[0] != '\0') {
-        absolutize(program_full_path);
+        err = absolutize(program_full_path);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 #if defined(__CYGWIN__) || defined(__MINGW32__)
     /* For these platforms it is necessary to ensure that the .exe suffix
@@ -649,7 +771,10 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
      * path (bpo-28441).
      */
     if (program_full_path[0] != '\0') {
-        add_exe_suffix(program_full_path);
+        err = add_exe_suffix(program_full_path);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 #endif
 
@@ -687,6 +812,7 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
         ** be running the interpreter in the build directory, so we use the
         ** build-directory-specific logic to find Lib and such.
         */
+        _PyInitError err;
         size_t len;
         wchar_t* wbuf = Py_DecodeLocale(modPath, &len);
         if (wbuf == NULL) {
@@ -695,8 +821,16 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
 
         wcsncpy(calculate->argv0_path, wbuf, MAXPATHLEN);
         reduce(calculate->argv0_path);
-        joinpath(calculate->argv0_path, calculate->lib_python);
-        joinpath(calculate->argv0_path, LANDMARK);
+        err = joinpath(calculate->argv0_path, calculate->lib_python);
+        if (_Py_INIT_FAILED(err)) {
+            PyMem_RawFree(wbuf);
+            return err;
+        }
+        err = joinpath(calculate->argv0_path, LANDMARK);
+        if (_Py_INIT_FAILED(err)) {
+            PyMem_RawFree(wbuf);
+            return err;
+        }
         if (!ismodule(calculate->argv0_path)) {
             /* We are in the build directory so use the name of the
                executable - we know that the absolute path is passed */
@@ -721,8 +855,12 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
         }
         else {
             /* Interpret relative to program_full_path */
+            _PyInitError err;
             reduce(calculate->argv0_path);
-            joinpath(calculate->argv0_path, tmpbuffer);
+            err = joinpath(calculate->argv0_path, tmpbuffer);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
         }
         linklen = _Py_wreadlink(calculate->argv0_path, tmpbuffer, MAXPATHLEN);
     }
@@ -739,23 +877,30 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
    executable's directory and then in the parent directory.
    If found, open it for use when searching for prefixes.
 */
-static void
+static _PyInitError
 calculate_read_pyenv(PyCalculatePath *calculate)
 {
+    _PyInitError err;
     wchar_t tmpbuffer[MAXPATHLEN+1];
     wchar_t *env_cfg = L"pyvenv.cfg";
     FILE *env_file;
 
     wcscpy(tmpbuffer, calculate->argv0_path);
 
-    joinpath(tmpbuffer, env_cfg);
+    err = joinpath(tmpbuffer, env_cfg);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
     env_file = _Py_wfopen(tmpbuffer, L"r");
     if (env_file == NULL) {
         errno = 0;
 
         reduce(tmpbuffer);
         reduce(tmpbuffer);
-        joinpath(tmpbuffer, env_cfg);
+        err = joinpath(tmpbuffer, env_cfg);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
 
         env_file = _Py_wfopen(tmpbuffer, L"r");
         if (env_file == NULL) {
@@ -764,7 +909,7 @@ calculate_read_pyenv(PyCalculatePath *calculate)
     }
 
     if (env_file == NULL) {
-        return;
+        return _Py_INIT_OK();
     }
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
@@ -772,12 +917,14 @@ calculate_read_pyenv(PyCalculatePath *calculate)
         wcscpy(calculate->argv0_path, tmpbuffer);
     }
     fclose(env_file);
+    return _Py_INIT_OK();
 }
 
 
-static void
+static _PyInitError
 calculate_zip_path(PyCalculatePath *calculate, const wchar_t *prefix)
 {
+    _PyInitError err;
     wcsncpy(calculate->zip_path, prefix, MAXPATHLEN);
     calculate->zip_path[MAXPATHLEN] = L'\0';
 
@@ -789,12 +936,16 @@ calculate_zip_path(PyCalculatePath *calculate, const wchar_t *prefix)
     else {
         wcsncpy(calculate->zip_path, calculate->prefix, MAXPATHLEN);
     }
-    joinpath(calculate->zip_path, L"lib/python00.zip");
+    err = joinpath(calculate->zip_path, L"lib/python00.zip");
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     /* Replace "00" with version */
     size_t bufsz = wcslen(calculate->zip_path);
     calculate->zip_path[bufsz - 6] = VERSION[0];
     calculate->zip_path[bufsz - 5] = VERSION[2];
+    return _Py_INIT_OK();
 }
 
 
@@ -949,17 +1100,29 @@ calculate_path_impl(const _PyCoreConfig *core_config,
         return err;
     }
 
-    calculate_read_pyenv(calculate);
+    err = calculate_read_pyenv(calculate);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     wchar_t prefix[MAXPATHLEN+1];
     memset(prefix, 0, sizeof(prefix));
-    calculate_prefix(core_config, calculate, prefix);
+    err = calculate_prefix(core_config, calculate, prefix);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
-    calculate_zip_path(calculate, prefix);
+    err = calculate_zip_path(calculate, prefix);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     wchar_t exec_prefix[MAXPATHLEN+1];
     memset(exec_prefix, 0, sizeof(exec_prefix));
-    calculate_exec_prefix(core_config, calculate, exec_prefix);
+    err = calculate_exec_prefix(core_config, calculate, exec_prefix);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     if ((!calculate->prefix_found || !calculate->exec_prefix_found) &&
         !core_config->_frozen)
@@ -995,10 +1158,11 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 _PyInitError
 _PyPathConfig_Calculate_impl(_PyPathConfig *config, const _PyCoreConfig *core_config)
 {
+    _PyInitError err;
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
-    _PyInitError err = calculate_init(&calculate, core_config);
+    err = calculate_init(&calculate, core_config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
