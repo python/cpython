@@ -510,6 +510,10 @@ Deprecated
 
   (Contributed by Berker Peksag in :issue:`9372`.)
 
+* The :class:`typing.NamedTuple` class has deprecated the ``_field_types``
+  attribute in favor of the ``__annotations__`` attribute which has the same
+  information.  (Contributed by Raymond Hettinger in :issue:`36320`.)
+
 * :mod:`ast` classes ``Num``, ``Str``, ``Bytes``, ``NameConstant`` and
   ``Ellipsis`` are considered deprecated and will be removed in future Python
   versions. :class:`~ast.Constant` should be used instead.

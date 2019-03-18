@@ -1325,8 +1325,8 @@ def _make_nmtuple(name, types):
     types = [(n, _type_check(t, msg)) for n, t in types]
     nm_tpl = collections.namedtuple(name, [n for n, t in types])
     # Prior to PEP 526, only _field_types attribute was assigned.
-    # Now, both __annotations__ and _field_types are used to maintain compatibility.
-    nm_tpl.__annotations__ = nm_tpl._field_types = collections.OrderedDict(types)
+    # Now __annotations__ are used and _field_types is deprecated (remove in 3.9)
+    nm_tpl.__annotations__ = nm_tpl._field_types = dict(types)
     try:
         nm_tpl.__module__ = sys._getframe(2).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
@@ -1361,7 +1361,7 @@ class NamedTupleMeta(type):
                                 "follow default field(s) {default_names}"
                                 .format(field_name=field_name,
                                         default_names=', '.join(defaults_dict.keys())))
-        nm_tpl.__new__.__annotations__ = collections.OrderedDict(types)
+        nm_tpl.__new__.__annotations__ = dict(types)
         nm_tpl.__new__.__defaults__ = tuple(defaults)
         nm_tpl._field_defaults = defaults_dict
         # update from user namespace without overriding special namedtuple attributes
@@ -1386,12 +1386,10 @@ class NamedTuple(metaclass=NamedTupleMeta):
 
         Employee = collections.namedtuple('Employee', ['name', 'id'])
 
-    The resulting class has extra __annotations__ and _field_types
-    attributes, giving an ordered dict mapping field names to types.
-    __annotations__ should be preferred, while _field_types
-    is kept to maintain pre PEP 526 compatibility. (The field names
-    are in the _fields attribute, which is part of the namedtuple
-    API.) Alternative equivalent keyword syntax is also accepted::
+    The resulting class has an extra __annotations__ attribute, giving a
+    dict that maps field names to types.  (The field names are also in
+    the _fields attribute, which is part of the namedtuple API.)
+    Alternative equivalent keyword syntax is also accepted::
 
         Employee = NamedTuple('Employee', name=str, id=int)
 

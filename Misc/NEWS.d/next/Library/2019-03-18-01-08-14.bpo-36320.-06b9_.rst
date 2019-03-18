@@ -1,0 +1,3 @@
+The typing.NamedTuple() class has deprecated the _field_types attribute in
+favor of the __annotations__ attribute which carried the same information.
+Also, both attributes were converted from OrderedDict to a regular dict.
