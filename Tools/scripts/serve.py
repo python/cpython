@@ -28,10 +28,12 @@ if __name__ == '__main__':
     path = sys.argv[1]
     port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
 
-    # by security, the default interface is the loopback address, 127.0.0.1
-    httpd = simple_server.make_server('127.0.0.1', port, app)
-    interface, port = httpd.socket.getsockname()
-    print("Serving {0} on {1} port {2} (http://{1}:{2}/), control-C to stop".format(path, interface, port))
+    httpd = simple_server.make_server('', port, app)
+
+    message = "Serving {0} on {1} port {3} (http://{2}:{3}/), control-C to stop"
+    parameters = (path, "0.0.0.0", "127.0.0.1", port)
+
+    print(message.format(*parameters))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
