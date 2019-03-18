@@ -4883,11 +4883,6 @@ class TestSemaphoreTracker(unittest.TestCase):
             else:
                 self.assertEqual(len(all_warn), 0)
 
-        # make sure to clean-up the killed semaphore_tracker to avoid dangling
-        # processes.
-        if signum == signal.SIGKILL:
-            os.waitpid(pid, 0)
-
     def test_semaphore_tracker_sigint(self):
         # Catchable signal (ignored by semaphore tracker)
         self.check_semaphore_tracker_death(signal.SIGINT, False)
