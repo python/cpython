@@ -137,12 +137,6 @@ And::
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
 
-   *initializer* is an optional callable that is called at the start of
-   each worker thread; *initargs* is a tuple of arguments passed to the
-   initializer.  Should *initializer* raise an exception, all currently
-   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
-   as well any attempt to submit more jobs to the pool.
-
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
       not given, it will default to the number of processors on the machine,
