@@ -249,7 +249,7 @@ by Oren Milman.
 .. nonce: _kr47t
 .. section: Core and Builtins
 
-Make ``async`` and ``await`` proper keywords, as specified in PEP 492.
+Make ``async`` and ``await`` proper keywords, as specified in :pep:`492`.
 
 ..
 
@@ -477,6 +477,8 @@ module now requires sqlite version at least 3.3.9.
 argparse subparsers are now required by default.  This matches behaviour in
 Python 2. For optional subparsers, use the new parameter
 ``add_subparsers(required=False)``. Patch by Anthony Sottile.
+(As of 3.7.0rc1, the default was changed to not required as had been the case
+since Python 3.3.)
 
 ..
 
@@ -628,7 +630,7 @@ Remove test order dependence in idle_test.test_browser.
 Rename IDLE's module browser from Class Browser to Module Browser. The
 original module-level class and method browser became a module browser, with
 the addition of module-level functions, years ago. Nested classes and
-functions were added yesterday.  For back- compatibility, the virtual event
+functions were added yesterday.  For back-compatibility, the virtual event
 <<open-class-browser>>, which appears on the Keys tab of the Settings
 dialog, is not changed. Patch by Cheryl Sabella.
 
@@ -678,7 +680,7 @@ and Py_SetPath()
 .. nonce: vm8vGE
 .. section: C API
 
-Implement PEP 539 for Thread Specific Storage (TSS) API: it is a new Thread
+Implement :pep:`539` for Thread Specific Storage (TSS) API: it is a new Thread
 Local Storage (TLS) API to CPython which would supersede use of the existing
 TLS API within the CPython interpreter, while deprecating the existing API.
 PEP written by Erik M. Bray, patch by Masayuki Yamamoto.

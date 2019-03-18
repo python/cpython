@@ -3,6 +3,10 @@ import decimal
 import unittest
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class DecimalContextTest(unittest.TestCase):
 
     def test_asyncio_task_decimal_context(self):

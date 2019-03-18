@@ -171,10 +171,11 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         if self._pending_removals:
             self._commit_removals()
         new = WeakValueDictionary()
-        for key, wr in self.data.items():
-            o = wr()
-            if o is not None:
-                new[key] = o
+        with _IterationGuard(self):
+            for key, wr in self.data.items():
+                o = wr()
+                if o is not None:
+                    new[key] = o
         return new
 
     __copy__ = copy
@@ -184,10 +185,11 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         if self._pending_removals:
             self._commit_removals()
         new = self.__class__()
-        for key, wr in self.data.items():
-            o = wr()
-            if o is not None:
-                new[deepcopy(key, memo)] = o
+        with _IterationGuard(self):
+            for key, wr in self.data.items():
+                o = wr()
+                if o is not None:
+                    new[deepcopy(key, memo)] = o
         return new
 
     def get(self, key, default=None):
@@ -408,10 +410,11 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
 
     def copy(self):
         new = WeakKeyDictionary()
-        for key, value in self.data.items():
-            o = key()
-            if o is not None:
-                new[o] = value
+        with _IterationGuard(self):
+            for key, value in self.data.items():
+                o = key()
+                if o is not None:
+                    new[o] = value
         return new
 
     __copy__ = copy
@@ -419,10 +422,11 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
     def __deepcopy__(self, memo):
         from copy import deepcopy
         new = self.__class__()
-        for key, value in self.data.items():
-            o = key()
-            if o is not None:
-                new[o] = deepcopy(value, memo)
+        with _IterationGuard(self):
+            for key, value in self.data.items():
+                o = key()
+                if o is not None:
+                    new[o] = deepcopy(value, memo)
         return new
 
     def get(self, key, default=None):

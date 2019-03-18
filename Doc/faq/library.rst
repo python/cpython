@@ -19,7 +19,7 @@ standard library module.  (Eventually you'll learn what's in the standard
 library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
-<https://pypi.python.org/pypi>`_ or try `Google <https://www.google.com>`_ or
+<https://pypi.org>`_ or try `Google <https://www.google.com>`_ or
 another Web search engine.  Searching for "Python" plus a keyword or two for
 your topic of interest will usually find something helpful.
 
@@ -74,7 +74,9 @@ interpreter.
 
 Occasionally, a user's environment is so full that the :program:`/usr/bin/env`
 program fails; or there's no env program at all.  In that case, you can try the
-following hack (due to Alex Rezinsky)::
+following hack (due to Alex Rezinsky):
+
+.. code-block:: sh
 
    #! /bin/sh
    """:"
@@ -609,7 +611,7 @@ use ``p.read(n)``.
    "expect" library.  A Python extension that interfaces to expect is called
    "expy" and available from http://expectpy.sourceforge.net.  A pure Python
    solution that works like expect is `pexpect
-   <https://pypi.python.org/pypi/pexpect/>`_.
+   <https://pypi.org/project/pexpect/>`_.
 
 
 How do I access the serial (RS232) port?

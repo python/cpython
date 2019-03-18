@@ -1,0 +1,2 @@
+Clean up code which checked presence of ``os.stat`` / ``os.lstat`` /
+``os.chmod`` which are always present.  Patch by Anthony Sottile.

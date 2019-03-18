@@ -2021,7 +2021,7 @@ class Decimal(object):
         if not other and not self:
             return context._raise_error(InvalidOperation,
                                         'at least one of pow() 1st argument '
-                                        'and 2nd argument must be nonzero ;'
+                                        'and 2nd argument must be nonzero; '
                                         '0**0 is not defined')
 
         # compute sign of result

@@ -226,7 +226,6 @@ class AutoComplete:
 
 AutoComplete.reload()
 
-
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_autocomplete', verbosity=2)

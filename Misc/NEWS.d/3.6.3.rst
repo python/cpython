@@ -1,0 +1,27 @@
+.. bpo: 31641
+.. date: 2017-10-03-01-05-11
+.. nonce: vlQEq5
+.. release date: 2017-10-03
+.. section: Library
+
+Re-allow arbitrary iterables in `concurrent.futures.as_completed()`. Fixes
+regression in 3.6.3rc1.
+
+..
+
+.. bpo: 31662
+.. date: 2017-10-03-01-06-24
+.. nonce: 8l2jEz
+.. section: Build
+
+Fix typos in Windows ``uploadrelease.bat`` script. Fix Windows Doc build
+issues in ``Doc/make.bat``.
+
+..
+
+.. bpo: 31423
+.. date: 2017-10-03-01-01-52
+.. nonce: uKvPYA
+.. section: Build
+
+Fix building the PDF documentation with newer versions of Sphinx.

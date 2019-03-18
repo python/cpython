@@ -1,46 +1,43 @@
--- ASDL's 7 builtin types are:
--- identifier, int, string, bytes, object, singleton, constant
---
--- singleton: None, True or False
--- constant can be None, whereas None means "no value" for object.
+-- ASDL's 5 builtin types are:
+-- identifier, int, string, object, constant
 
 module Python
 {
-    mod = Module(stmt* body, string? docstring)
+    mod = Module(stmt* body, type_ignore *type_ignores)
         | Interactive(stmt* body)
         | Expression(expr body)
+        | FunctionType(expr* argtypes, expr returns)
 
         -- not really an actual node but useful in Jython's typesystem.
         | Suite(stmt* body)
 
     stmt = FunctionDef(identifier name, arguments args,
                        stmt* body, expr* decorator_list, expr? returns,
-                       string? docstring)
+                       string? type_comment)
           | AsyncFunctionDef(identifier name, arguments args,
                              stmt* body, expr* decorator_list, expr? returns,
-                             string? docstring)
+                             string? type_comment)
 
           | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
              stmt* body,
-             expr* decorator_list,
-             string? docstring)
+             expr* decorator_list)
           | Return(expr? value)
 
           | Delete(expr* targets)
-          | Assign(expr* targets, expr value)
+          | Assign(expr* targets, expr value, string? type_comment)
           | AugAssign(expr target, operator op, expr value)
           -- 'simple' indicates that we annotate simple name without parens
           | AnnAssign(expr target, expr annotation, expr? value, int simple)
 
           -- use 'orelse' because else is a keyword in target languages
-          | For(expr target, expr iter, stmt* body, stmt* orelse)
-          | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse)
+          | For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)
+          | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)
           | While(expr test, stmt* body, stmt* orelse)
           | If(expr test, stmt* body, stmt* orelse)
-          | With(withitem* items, stmt* body)
-          | AsyncWith(withitem* items, stmt* body)
+          | With(withitem* items, stmt* body, string? type_comment)
+          | AsyncWith(withitem* items, stmt* body, string? type_comment)
 
           | Raise(expr? exc, expr? cause)
           | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
@@ -56,10 +53,11 @@ module Python
 
           -- XXX Jython will be different
           -- col_offset is the byte offset in the utf8 string the parser uses
-          attributes (int lineno, int col_offset)
+          attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
           -- BoolOp() can use left & right?
     expr = BoolOp(boolop op, expr* values)
+         | NamedExpr(expr target, expr value)
          | BinOp(expr left, operator op, expr right)
          | UnaryOp(unaryop op, expr operand)
          | Lambda(arguments args, expr body)
@@ -78,14 +76,9 @@ module Python
          -- x < 4 < 3 and (x < 4) < 3
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
-         | Num(object n) -- a number as a PyObject.
-         | Str(string s) -- need to specify raw, unicode, etc?
          | FormattedValue(expr value, int? conversion, expr? format_spec)
          | JoinedStr(expr* values)
-         | Bytes(bytes s)
-         | NameConstant(singleton value)
-         | Ellipsis
-         | Constant(constant value)
+         | Constant(constant value, string? kind)
 
          -- the following expression can appear in assignment context
          | Attribute(expr value, identifier attr, expr_context ctx)
@@ -96,7 +89,7 @@ module Python
          | Tuple(expr* elts, expr_context ctx)
 
           -- col_offset is the byte offset in the utf8 string the parser uses
-          attributes (int lineno, int col_offset)
+          attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
     expr_context = Load | Store | Del | AugLoad | AugStore | Param
 
@@ -116,13 +109,13 @@ module Python
     comprehension = (expr target, expr iter, expr* ifs, int is_async)
 
     excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)
-                    attributes (int lineno, int col_offset)
+                    attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
     arguments = (arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults,
                  arg? kwarg, expr* defaults)
 
-    arg = (identifier arg, expr? annotation)
-           attributes (int lineno, int col_offset)
+    arg = (identifier arg, expr? annotation, string? type_comment)
+           attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
     -- keyword arguments supplied to call (NULL identifier for **kwargs)
     keyword = (identifier? arg, expr value)
@@ -131,5 +124,7 @@ module Python
     alias = (identifier name, identifier? asname)
 
     withitem = (expr context_expr, expr? optional_vars)
+
+    type_ignore = TypeIgnore(int lineno)
 }
 
