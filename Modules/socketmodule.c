@@ -2817,7 +2817,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
     if (!timeout) {
 #ifdef __VMS
         n = sendsegmented(s->sock_fd, buf, len, flags);
-#elif MS_WINDOWS
+#elif defined(MS_WINDOWS)
         if (len > INT_MAX)
             len = INT_MAX;
         n = send(s->sock_fd, buf, (int)len, flags);
@@ -2875,7 +2875,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         if (!timeout) {
 #ifdef __VMS
             n = sendsegmented(s->sock_fd, buf, len, flags);
-#elif MS_WINDOWS
+#elif defined(MS_WINDOWS)
             if (len > INT_MAX)
                 len = INT_MAX;
             n = send(s->sock_fd, buf, (int)len, flags);
