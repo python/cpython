@@ -41,7 +41,7 @@ import socket
 import struct
 import sys
 import tempfile
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
 import textwrap
 import threading
@@ -4141,6 +4141,21 @@ class ModuleLevelMiscTest(BaseTest):
         err = err.decode()
         self.assertIn("exception in __del__", err)
         self.assertIn("ValueError: some error", err)
+
+    def test_recursion_error(self):
+        # Issue 36272
+        code = """if 1:
+            import logging
+
+            def rec():
+                logging.error("foo")
+                rec()
+
+            rec()"""
+        rc, out, err = assert_python_failure("-c", code)
+        err = err.decode()
+        self.assertNotIn("Cannot recover from stack overflow.", err)
+        self.assertEqual(rc, 1)
 
 
 class LogRecordTest(BaseTest):

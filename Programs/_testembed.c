@@ -479,8 +479,8 @@ static int test_init_from_config(void)
         L"-c",
         L"pass",
     };
-    config.argc = Py_ARRAY_LENGTH(argv);
-    config.argv = argv;
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
 
     config.program = L"conf_program";
 
@@ -489,15 +489,15 @@ static int test_init_from_config(void)
         L"core_xoption2=",
         L"core_xoption3",
     };
-    config.nxoption = Py_ARRAY_LENGTH(xoptions);
-    config.xoptions = xoptions;
+    config.xoptions.length = Py_ARRAY_LENGTH(xoptions);
+    config.xoptions.items = xoptions;
 
     static wchar_t* warnoptions[2] = {
         L"default",
         L"error::ResourceWarning",
     };
-    config.nwarnoption = Py_ARRAY_LENGTH(warnoptions);
-    config.warnoptions = warnoptions;
+    config.warnoptions.length = Py_ARRAY_LENGTH(warnoptions);
+    config.warnoptions.items = warnoptions;
 
     /* FIXME: test module_search_path_env */
     /* FIXME: test home */

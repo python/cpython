@@ -1102,6 +1102,41 @@ Fail:
     return -1;
 }
 
+// Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
+static int
+insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                    PyObject *value)
+{
+    assert(mp->ma_keys == Py_EMPTY_KEYS);
+
+    PyDictKeysObject *newkeys = new_keys_object(PyDict_MINSIZE);
+    if (newkeys == NULL) {
+        return -1;
+    }
+    if (!PyUnicode_CheckExact(key)) {
+        newkeys->dk_lookup = lookdict;
+    }
+    dictkeys_decref(Py_EMPTY_KEYS);
+    mp->ma_keys = newkeys;
+    mp->ma_values = NULL;
+
+    Py_INCREF(key);
+    Py_INCREF(value);
+    MAINTAIN_TRACKING(mp, key, value);
+
+    size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
+    PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[0];
+    dictkeys_set_index(mp->ma_keys, hashpos, 0);
+    ep->me_key = key;
+    ep->me_hash = hash;
+    ep->me_value = value;
+    mp->ma_used++;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
+    mp->ma_keys->dk_usable--;
+    mp->ma_keys->dk_nentries++;
+    return 0;
+}
+
 /*
 Internal routine used by dictresize() to build a hashtable of entries.
 */
@@ -1274,7 +1309,7 @@ _PyDict_NewPresized(Py_ssize_t minused)
     Py_ssize_t newsize;
     PyDictKeysObject *new_keys;
 
-    if (minused == 0) {
+    if (minused <= USABLE_FRACTION(PyDict_MINSIZE)) {
         return PyDict_New();
     }
     /* There are no strict guarantee that returned dict can contain minused
@@ -1286,7 +1321,7 @@ _PyDict_NewPresized(Py_ssize_t minused)
     }
     else {
         Py_ssize_t minsize = ESTIMATE_SIZE(minused);
-        newsize = PyDict_MINSIZE;
+        newsize = PyDict_MINSIZE*2;
         while (newsize < minsize) {
             newsize <<= 1;
         }
@@ -1495,6 +1530,9 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
             return -1;
     }
 
+    if (mp->ma_keys == Py_EMPTY_KEYS) {
+        return insert_to_emptydict(mp, key, hash, value);
+    }
     /* insertdict() handles any resizing that might be necessary */
     return insertdict(mp, key, hash, value);
 }
@@ -1514,6 +1552,9 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     assert(hash != -1);
     mp = (PyDictObject *)op;
 
+    if (mp->ma_keys == Py_EMPTY_KEYS) {
+        return insert_to_emptydict(mp, key, hash, value);
+    }
     /* insertdict() handles any resizing that might be necessary */
     return insertdict(mp, key, hash, value);
 }
@@ -2843,6 +2884,12 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         hash = PyObject_Hash(key);
         if (hash == -1)
             return NULL;
+    }
+    if (mp->ma_keys == Py_EMPTY_KEYS) {
+        if (insert_to_emptydict(mp, key, hash, defaultobj) < 0) {
+            return NULL;
+        }
+        return defaultobj;
     }
 
     if (mp->ma_values != NULL && !PyUnicode_CheckExact(key)) {

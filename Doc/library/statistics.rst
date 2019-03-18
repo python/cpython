@@ -491,7 +491,7 @@ A single exception is defined:
 
 
 :class:`NormalDist` objects
-===========================
+---------------------------
 
 :class:`NormalDist` is a tool for creating and manipulating normal
 distributions of a `random variable
@@ -611,7 +611,7 @@ of applications in statistics.
 
 
 :class:`NormalDist` Examples and Recipes
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :class:`NormalDist` readily solves classic probability problems.
 
