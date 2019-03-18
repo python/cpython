@@ -1292,9 +1292,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
      * attacks and enable use of the AddDllDirectory function.
      */
     hMod = LoadLibraryExW(name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-    if (!hMod) {
-        err = GetLastError();
-    }
+    err = hMod : 0 ? GetLastError();
     Py_END_ALLOW_THREADS
 
     if (err == ERROR_MOD_NOT_FOUND) {
