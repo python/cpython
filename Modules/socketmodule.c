@@ -2818,8 +2818,9 @@ sock_send(PySocketSockObject *s, PyObject *args)
 #ifdef __VMS
         n = sendsegmented(s->sock_fd, buf, len, flags);
 #elif defined(MS_WINDOWS)
-        if (len > INT_MAX)
+        if (len > INT_MAX) {
             len = INT_MAX;
+        }
         n = send(s->sock_fd, buf, (int)len, flags);
 #else
         n = send(s->sock_fd, buf, len, flags);
@@ -2876,8 +2877,9 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 #ifdef __VMS
             n = sendsegmented(s->sock_fd, buf, len, flags);
 #elif defined(MS_WINDOWS)
-            if (len > INT_MAX)
+            if (len > INT_MAX) {
                 len = INT_MAX;
+            }
             n = send(s->sock_fd, buf, (int)len, flags);
 #else
             n = send(s->sock_fd, buf, len, flags);
