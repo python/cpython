@@ -758,6 +758,7 @@ _PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
 done:
     if (init_ctype_locale != NULL) {
         setlocale(LC_CTYPE, init_ctype_locale);
+        PyMem_RawFree(init_ctype_locale);
     }
     _PyPreConfig_Clear(&save_config);
     Py_UTF8Mode = init_utf8_mode ;
