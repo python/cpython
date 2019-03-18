@@ -136,7 +136,8 @@ exec_tests = [
     # Decorator with generator argument
     "@deco(a for a in b)\ndef f(): pass",
     # Simple assignment expression
-    "if a:=1:\n  True"
+    "(a := 1)",
+
 ]
 
 # These are compiled through "single"
@@ -1686,7 +1687,7 @@ exec_results = [
 ('Module', [('AsyncFunctionDef', (3, 0), 'f', ('arguments', [], None, [], [], None, []), [('Pass', (3, 15))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])], None, None)], []),
 ('Module', [('ClassDef', (3, 0), 'C', [], [], [('Pass', (3, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])])], []),
 ('Module', [('FunctionDef', (2, 0), 'f', ('arguments', [], None, [], [], None, []), [('Pass', (2, 9))], [('Call', (1, 1), ('Name', (1, 1), 'deco', ('Load',)), [('GeneratorExp', (1, 5), ('Name', (1, 6), 'a', ('Load',)), [('comprehension', ('Name', (1, 12), 'a', ('Store',)), ('Name', (1, 17), 'b', ('Load',)), [], 0)])], [])], None, None)], []),
-('Module', [('If', (1, 0), ('NamedExpr', (1, 3), ('Name', (1, 3), 'a', ('Store',)), ('Constant', (1, 6), 1, None)), [('Expr', (2, 2), ('Constant', (2, 2), True, None))], [])], []),
+('Module', [('Expr', (1, 0), ('NamedExpr', (1, 1), ('Name', (1, 1), 'a', ('Store',)), ('Constant', (1, 6), 1, None)))], []),
 ]
 single_results = [
 ('Interactive', [('Expr', (1, 0), ('BinOp', (1, 0), ('Constant', (1, 0), 1, None), ('Add',), ('Constant', (1, 2), 2, None)))]),
