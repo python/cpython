@@ -39,7 +39,7 @@ or on combining URL components into a URL string.
 
 .. function:: urlparse(urlstring, scheme='', allow_fragments=True)
 
-   Parse a URL into six components, returning a 6 item :term:`named tuple`.  This
+   Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
    corresponds to the general structure of a URL:
    ``scheme://netloc/path;parameters?query#fragment``.
    Each tuple item is a string, possibly empty. The components are not broken up in
@@ -89,9 +89,8 @@ or on combining URL components into a URL string.
    or query component, and :attr:`fragment` is set to the empty string in
    the return value.
 
-   The return value is actually an instance of a subclass of :class:`tuple` (see
-   :class:`~collections.namedtuple` and :term:`named tuple`).
-   This class has the following additional read-only convenience attributes:
+   The return value is a :term:`named tuple`, which means that its items can
+   be accessed by index or as named attributes, which are:
 
    +------------------+-------+--------------------------+----------------------+
    | Attribute        | Index | Value                    | Value if not present |
@@ -130,7 +129,7 @@ or on combining URL components into a URL string.
    normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
    ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
    decomposed before parsing, no error will be raised.
-      
+
    As is the case with all named tuples, the subclass has a few additional methods
    and attributes that are particularly useful. One such method is :meth:`_replace`.
    The :meth:`_replace` method will return a new ParseResult object replacing specified
