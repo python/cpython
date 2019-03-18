@@ -1,9 +1,28 @@
-This is Python version 3.4.10rc1
-================================
+This is Python version 3.4.10
+=============================
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Python Software
 Foundation.  All rights reserved.
+
+Python 3.4 Is No Longer Supported
+---------------------------------
+
+Python 3.4.10 is the final release in the Python 3.4 series.  As of this
+release, the 3.4 branch has been retired, no further changes to 3.4 will be
+accepted, and no new releases will be made.  This is standard Python policy;
+Python releases get five years of support and are then retired.
+
+If you're still using Python 3.4, you should consider upgrading to the
+current version--3.7.2 as of this writing.  Newer versions of Python
+have many new features, performance improvements, and bug fixes, which
+should all serve to enhance your Python programming experience.
+
+We in the Python core development community thank you for your interest
+in 3.4, and we wish you all the best!
+
+Python 3.x
+----------
 
 Python 3.x is a new version of the language, which is incompatible with the 2.x
 line of releases.  The language is mostly the same, but many details, especially
