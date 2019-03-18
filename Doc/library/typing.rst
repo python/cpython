@@ -840,7 +840,9 @@ The module defines the following classes, functions and decorators:
 
    The resulting class has an extra attribute ``__annotations__`` giving a
    dict that maps the field names to the field types.  (The field names are in
-   the ``_fields`` attribute, which is part of the namedtuple API.)
+   the ``_fields`` attribute and the default values are in the
+   ``_field_defaults`` attribute both of which are part of the namedtuple
+   API.)
 
    ``NamedTuple`` subclasses can also have docstrings and methods::
 
