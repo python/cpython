@@ -2193,8 +2193,10 @@ class TestNormalDist(unittest.TestCase):
                     4.753, 5.199, 5.612, 5.998, 6.361)}
         for base, row in pp.items():
             for exp, x in enumerate(row, start=1):
-                p = base * 10 ** (-exp)
+                p = base * 10.0 ** (-exp)
                 self.assertAlmostEqual(-Z.inv_cdf(p), x, places=3)
+                p = 1.0 - p
+                self.assertAlmostEqual(Z.inv_cdf(p), x, places=3)
 
         # Match published example for MS Excel
         # https://support.office.com/en-us/article/norm-inv-function-54b30935-fee7-493c-bedb-2278a9db7e13
