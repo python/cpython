@@ -577,12 +577,12 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: unquote_to_bytes_plus(string)
 
-   Like :func:`unquote_to_bytes`, but also replace plus signs by spaces, as required for
-   unquoting HTML form values.
+   Like :func:`unquote_to_bytes`, but also replace plus signs with spaces, as 
+   required for unquoting HTML form values.
 
    *string* must be a :class:`str`.
 
-   Example: ``unquote_to_bytes_plus('/El+Ni%C3%B1o/')`` yields ``b'/El Niño/'``.
+   Example: ``unquote_to_bytes_plus('/El+Ni%C3%B1o/')`` yields ``b'/El Ni\xc3\xb1o'``.
 
 
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, \

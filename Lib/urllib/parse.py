@@ -754,10 +754,10 @@ def unquote_plus(string, encoding='utf-8', errors='replace'):
     return unquote(string, encoding, errors)
 
 def unquote_to_bytes_plus(string):
-    """Like unquote_to_bytes(), but also replace plus signs by spaces, as
+    """Like unquote_to_bytes(), but also replace plus signs with spaces, as
     required for unquoting HTML form values.
 
-    unquote_to_bytes_plus('abc+def') -> b'abc def'
+    unquote_to_bytes_plus('%7e/abc+def') -> b'~/abc def'
     """
     string = string.replace('+', ' ')
     return unquote_to_bytes(string)
