@@ -4373,7 +4373,8 @@ AC_MSG_CHECKING(for x87-style double rounding)
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
 CC="$CC $BASECFLAGS"
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
+AC_CACHE_VAL(ac_cv_x87_double_rounding,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdlib.h>
 #include <math.h>
 int main() {
@@ -4395,7 +4396,7 @@ int main() {
 ]])],
 [ac_cv_x87_double_rounding=no],
 [ac_cv_x87_double_rounding=yes],
-[ac_cv_x87_double_rounding=no])
+[ac_cv_x87_double_rounding=no])])
 CC="$ac_save_cc"
 AC_MSG_RESULT($ac_cv_x87_double_rounding)
 if test "$ac_cv_x87_double_rounding" = yes
@@ -5271,7 +5272,8 @@ CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
 if test "$have_O2" = no; then
     CFLAGS=""
 fi
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
+AC_CACHE_VAL(ac_cv_glibc_memmove_bug,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5287,12 +5289,12 @@ int main() {
   return 0;
 }
 ]])],
-[have_glibc_memmove_bug=no],
-[have_glibc_memmove_bug=yes],
-[have_glibc_memmove_bug=undefined])
+[ac_cv_glibc_memmove_bug=no],
+[ac_cv_glibc_memmove_bug=yes],
+[ac_cv_glibc_memmove_bug=undefined])])
 CFLAGS="$saved_cflags"
-AC_MSG_RESULT($have_glibc_memmove_bug)
-if test "$have_glibc_memmove_bug" = yes; then
+AC_MSG_RESULT($ac_cv_glibc_memmove_bug)
+if test "$ac_cv_glibc_memmove_bug" = yes; then
     AC_DEFINE(HAVE_GLIBC_MEMMOVE_BUG, 1,
     [Define if glibc has incorrect _FORTIFY_SOURCE wrappers
      for memmove and bcopy.])
@@ -5307,7 +5309,8 @@ if test "$have_gcc_asm_for_x87" = yes; then
             AC_MSG_CHECKING(for gcc ipa-pure-const bug)
             saved_cflags="$CFLAGS"
             CFLAGS="-O2"
-            AC_RUN_IFELSE([AC_LANG_SOURCE([[
+            AC_CACHE_VAL(ac_cv_ipa_pure_const_bug,
+            [AC_RUN_IFELSE([AC_LANG_SOURCE([[
             __attribute__((noinline)) int
             foo(int *p) {
               int r;
@@ -5324,12 +5327,12 @@ if test "$have_gcc_asm_for_x87" = yes; then
               return 0;
             }
             ]])],
-            [have_ipa_pure_const_bug=no],
-            [have_ipa_pure_const_bug=yes],
-            [have_ipa_pure_const_bug=undefined])
+            [ac_cv_ipa_pure_const_bug=no],
+            [ac_cv_ipa_pure_const_bug=yes],
+            [ac_cv_ipa_pure_const_bug=undefined])])
             CFLAGS="$saved_cflags"
-            AC_MSG_RESULT($have_ipa_pure_const_bug)
-            if test "$have_ipa_pure_const_bug" = yes; then
+            AC_MSG_RESULT($ac_cv_ipa_pure_const_bug)
+            if test "$ac_cv_ipa_pure_const_bug" = yes; then
                 AC_DEFINE(HAVE_IPA_PURE_CONST_BUG, 1,
                           [Define if gcc has the ipa-pure-const bug.])
             fi

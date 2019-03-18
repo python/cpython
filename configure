@@ -783,7 +783,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -895,7 +894,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1148,15 +1146,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1294,7 +1283,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1447,7 +1436,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -14363,7 +14351,10 @@ $as_echo_n "checking for x87-style double rounding... " >&6; }
 # $BASECFLAGS may affect the result
 ac_save_cc="$CC"
 CC="$CC $BASECFLAGS"
-if test "$cross_compiling" = yes; then :
+if ${ac_cv_x87_double_rounding+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
   ac_cv_x87_double_rounding=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -14396,6 +14387,8 @@ else
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
 fi
 
 CC="$ac_save_cc"
@@ -16591,8 +16584,11 @@ CFLAGS="-O2 -D_FORTIFY_SOURCE=2"
 if test "$have_O2" = no; then
     CFLAGS=""
 fi
-if test "$cross_compiling" = yes; then :
-  have_glibc_memmove_bug=undefined
+if ${ac_cv_glibc_memmove_bug+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_glibc_memmove_bug=undefined
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -16614,18 +16610,20 @@ int main() {
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-  have_glibc_memmove_bug=no
+  ac_cv_glibc_memmove_bug=no
 else
-  have_glibc_memmove_bug=yes
+  ac_cv_glibc_memmove_bug=yes
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+fi
+
 CFLAGS="$saved_cflags"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_glibc_memmove_bug" >&5
-$as_echo "$have_glibc_memmove_bug" >&6; }
-if test "$have_glibc_memmove_bug" = yes; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_glibc_memmove_bug" >&5
+$as_echo "$ac_cv_glibc_memmove_bug" >&6; }
+if test "$ac_cv_glibc_memmove_bug" = yes; then
 
 $as_echo "#define HAVE_GLIBC_MEMMOVE_BUG 1" >>confdefs.h
 
@@ -16641,8 +16639,11 @@ if test "$have_gcc_asm_for_x87" = yes; then
 $as_echo_n "checking for gcc ipa-pure-const bug... " >&6; }
             saved_cflags="$CFLAGS"
             CFLAGS="-O2"
-            if test "$cross_compiling" = yes; then :
-  have_ipa_pure_const_bug=undefined
+            if ${ac_cv_ipa_pure_const_bug+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv_ipa_pure_const_bug=undefined
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -16665,18 +16666,20 @@ else
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-  have_ipa_pure_const_bug=no
+  ac_cv_ipa_pure_const_bug=no
 else
-  have_ipa_pure_const_bug=yes
+  ac_cv_ipa_pure_const_bug=yes
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+fi
+
             CFLAGS="$saved_cflags"
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_ipa_pure_const_bug" >&5
-$as_echo "$have_ipa_pure_const_bug" >&6; }
-            if test "$have_ipa_pure_const_bug" = yes; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ipa_pure_const_bug" >&5
+$as_echo "$ac_cv_ipa_pure_const_bug" >&6; }
+            if test "$ac_cv_ipa_pure_const_bug" = yes; then
 
 $as_echo "#define HAVE_IPA_PURE_CONST_BUG 1" >>confdefs.h
 

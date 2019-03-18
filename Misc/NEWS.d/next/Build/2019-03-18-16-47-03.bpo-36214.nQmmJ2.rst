@@ -1,0 +1,1 @@
+Use cache variables in AC_RUN_IFELSE macros for use when cross-compiling.
