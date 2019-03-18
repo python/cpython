@@ -369,12 +369,12 @@ calls are unexciting::
 
     >>> class E(object):
     ...     def f(x):
-    ...         print(x)
+    ...         return x
     ...     f = staticmethod(f)
     ...
-    >>> print(E.f(3))
+    >>> E.f(3)
     3
-    >>> print(E().f(3))
+    >>> E().f(3)
     3
 
 Using the non-data descriptor protocol, a pure Python version of
@@ -398,9 +398,9 @@ for whether the caller is an object or a class::
     ...         return klass.__name__, x
     ...     f = classmethod(f)
     ...
-    >>> print(E.f(3))
+    >>> E.f(3)
     ('E', 3)
-    >>> print(E().f(3))
+    >>> E().f(3)
     ('E', 3)
 
 
