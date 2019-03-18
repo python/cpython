@@ -108,7 +108,7 @@ Operating System Utilities
 
    Encoding, highest priority to lowest priority:
 
-   * ``UTF-8`` on macOS and Android;
+   * ``UTF-8`` on macOS, Android, and VxWorks;
    * ``UTF-8`` on Windows if :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
    * ``UTF-8`` if the Python UTF-8 mode is enabled;
    * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
@@ -154,7 +154,7 @@ Operating System Utilities
 
    Encoding, highest priority to lowest priority:
 
-   * ``UTF-8`` on macOS and Android;
+   * ``UTF-8`` on macOS, Android, and VxWorks;
    * ``UTF-8`` on Windows if :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
    * ``UTF-8`` if the Python UTF-8 mode is enabled;
    * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,

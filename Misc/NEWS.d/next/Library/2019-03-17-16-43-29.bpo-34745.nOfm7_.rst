@@ -1,0 +1,1 @@
+Fix :mod:`asyncio` ssl memory issues caused by circular references

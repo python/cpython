@@ -256,7 +256,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                This should not happen if called correctly. */
             if (theLength == 0) {
                 message = PyUnicode_FromFormat(
-                    "DLL load failed with error code %d",
+                    "DLL load failed with error code %u",
                     errorCode);
             } else {
                 /* For some reason a \r\n

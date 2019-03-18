@@ -157,6 +157,10 @@ Improved Modules
   to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
   (Contributed by Raymond Hettinger in :issue:`35864`.)
 
+* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.0.0
+  <http://blog.unicode.org/2019/03/announcing-unicode-standard-version-120.html>`_
+  release.
+
 
 asyncio
 -------
@@ -232,6 +236,10 @@ now return ``False`` instead of raising :exc:`ValueError` or its subclasses
 characters or bytes unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+:func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
+environment variable and does not use :envvar:`HOME`, which is not normally set
+for regular user accounts.
+
 
 ncurses
 -------
@@ -277,6 +285,9 @@ statistics
 Added :func:`statistics.fmean` as a faster, floating point variant of
 :func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
+
+Added :func:`statistics.multimode` that returns a list of the most
+common values. (Contributed by Raymond Hettinger in :issue:`35892`.)
 
 Added :class:`statistics.NormalDist`, a tool for creating
 and manipulating normal distributions of a random variable.
@@ -430,6 +441,11 @@ Optimizations
   was updated, there was an unnecessary call to update slots.
   (Contributed by Stefan Behnel, Pablo Galindo Salgado, Raymond Hettinger,
   Neil Schemenauer, and Serhiy Storchaka in :issue:`36012`.)
+
+* Reduced an overhead of converting arguments passed to many builtin functions
+  and methods.  This sped up calling some simple builtin functions and
+  methods up to 20--50%.  (Contributed by Serhiy Storchaka in :issue:`23867`,
+  :issue:`35582` and :issue:`36127`.)
 
 
 Build and C API Changes
@@ -587,11 +603,21 @@ Changes in the Python API
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
 
+* The :func:`statistics.mode` function no longer raises an exception
+  when given multimodal data.  Instead, it returns the first mode
+  encountered in the input data.  (Contributed by Raymond Hettinger
+  in :issue:`35892`.)
+
 * The :meth:`~tkinter.ttk.Treeview.selection` method of the
   :class:`tkinter.ttk.Treeview` class no longer takes arguments.  Using it with
   arguments for changing the selection was deprecated in Python 3.6.  Use
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
+
+* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of the
+  :mod:`xml.dom.minidom` module, and :mod:`xml.etree` now preserve the attribute
+  order specified by the user.
+  (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
 
 * A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
   :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates
@@ -659,6 +685,10 @@ Changes in the Python API
   :mod:`dbm.gnu` or :mod:`dbm.ndbm`) raises :attr:`error` (:exc:`dbm.dumb.error`,
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
+
+* :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
+  environment variable and does not use :envvar:`HOME`, which is not normally
+  set for regular user accounts.
 
 
 CPython bytecode changes

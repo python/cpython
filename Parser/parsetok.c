@@ -99,10 +99,10 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
         tok->type_comments = 1;
     }
 
-#ifndef PGEN
     Py_INCREF(err_ret->filename);
     tok->filename = err_ret->filename;
-#endif
+    if (*flags & PyPARSE_ASYNC_HACKS)
+        tok->async_hacks = 1;
     return parsetok(tok, g, start, err_ret, flags);
 }
 
@@ -113,7 +113,6 @@ PyParser_ParseStringFlagsFilenameEx(const char *s, const char *filename_str,
 {
     node *n;
     PyObject *filename = NULL;
-#ifndef PGEN
     if (filename_str != NULL) {
         filename = PyUnicode_DecodeFSDefault(filename_str);
         if (filename == NULL) {
@@ -121,11 +120,8 @@ PyParser_ParseStringFlagsFilenameEx(const char *s, const char *filename_str,
             return NULL;
         }
     }
-#endif
     n = PyParser_ParseStringObject(s, filename, g, start, err_ret, flags);
-#ifndef PGEN
     Py_XDECREF(filename);
-#endif
     return n;
 }
 
@@ -169,10 +165,8 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
     if (*flags & PyPARSE_TYPE_COMMENTS) {
         tok->type_comments = 1;
     }
-#ifndef PGEN
     Py_INCREF(err_ret->filename);
     tok->filename = err_ret->filename;
-#endif
     return parsetok(tok, g, start, err_ret, flags);
 }
 
@@ -184,7 +178,6 @@ PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
 {
     node *n;
     PyObject *fileobj = NULL;
-#ifndef PGEN
     if (filename != NULL) {
         fileobj = PyUnicode_DecodeFSDefault(filename);
         if (fileobj == NULL) {
@@ -192,12 +185,9 @@ PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
             return NULL;
         }
     }
-#endif
     n = PyParser_ParseFileObject(fp, fileobj, enc, g,
                                  start, ps1, ps2, err_ret, flags);
-#ifndef PGEN
     Py_XDECREF(fileobj);
-#endif
     return n;
 }
 
@@ -371,7 +361,6 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             }
         }
 
-#ifndef PGEN
         /* Check that the source for a single input statement really
            is a single statement by looking at what is left in the
            buffer after parsing.  Trailing whitespace and comments
@@ -399,7 +388,6 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
                     c = *++cur;
             }
         }
-#endif
     }
     else
         n = NULL;
@@ -470,7 +458,6 @@ initerr(perrdetail *err_ret, PyObject *filename)
     err_ret->text = NULL;
     err_ret->token = -1;
     err_ret->expected = -1;
-#ifndef PGEN
     if (filename) {
         Py_INCREF(filename);
         err_ret->filename = filename;
@@ -482,6 +469,5 @@ initerr(perrdetail *err_ret, PyObject *filename)
             return -1;
         }
     }
-#endif
     return 0;
 }

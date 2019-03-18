@@ -195,7 +195,7 @@ structseq_repr(PyStructSequence *obj)
 
         cname = typ->tp_members[i].name;
         if (cname == NULL) {
-            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %d name is NULL"
+            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %zd name is NULL"
                          " for type %.500s", i, typ->tp_name);
             return NULL;
         }

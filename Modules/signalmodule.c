@@ -19,7 +19,6 @@
 #include <process.h>
 #endif
 #endif
-#include "internal/pycore_pystate.h"
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -296,10 +295,8 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _Py_AddPendingCall(_PyRuntime.interpreters.main,
-                                       main_thread,
-                                       report_wakeup_send_error,
-                                       (void *)(intptr_t) last_error);
+                    Py_AddPendingCall(report_wakeup_send_error,
+                                      (void *)(intptr_t) last_error);
                 }
             }
         }
@@ -316,10 +313,8 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _Py_AddPendingCall(_PyRuntime.interpreters.main,
-                                       main_thread,
-                                       report_wakeup_write_error,
-                                       (void *)(intptr_t)errno);
+                    Py_AddPendingCall(report_wakeup_write_error,
+                                      (void *)(intptr_t)errno);
                 }
             }
         }
@@ -1084,11 +1079,18 @@ fill_siginfo(siginfo_t *si)
 
     PyStructSequence_SET_ITEM(result, 0, PyLong_FromLong((long)(si->si_signo)));
     PyStructSequence_SET_ITEM(result, 1, PyLong_FromLong((long)(si->si_code)));
+#ifdef __VXWORKS__   
+    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 5, PyLong_FromLong(0L));
+#else   
     PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si->si_errno)));
     PyStructSequence_SET_ITEM(result, 3, PyLong_FromPid(si->si_pid));
     PyStructSequence_SET_ITEM(result, 4, _PyLong_FromUid(si->si_uid));
     PyStructSequence_SET_ITEM(result, 5,
                                 PyLong_FromLong((long)(si->si_status)));
+#endif   
 #ifdef HAVE_SIGINFO_T_SI_BAND
     PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(si->si_band));
 #else

@@ -17,6 +17,7 @@ median_low          Low median of data.
 median_high         High median of data.
 median_grouped      Median, or 50th percentile, of grouped data.
 mode                Mode (most common value) of data.
+multimode           List of modes (most common values of data)
 ==================  =============================================
 
 Calculate the arithmetic mean ("the average") of data:
@@ -79,10 +80,9 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [ 'StatisticsError', 'NormalDist',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
-            'mean', 'mode', 'harmonic_mean', 'fmean',
+            'mean', 'mode', 'multimode', 'harmonic_mean', 'fmean',
           ]
 
-import collections
 import math
 import numbers
 import random
@@ -91,9 +91,9 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import groupby
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, tau
-
-
+from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
+from operator import itemgetter
+from collections import Counter
 
 # === Exceptions ===
 
@@ -249,20 +249,6 @@ def _convert(value, T):
             raise
 
 
-def _counts(data):
-    # Generate a table of sorted (value, frequency) pairs.
-    table = collections.Counter(iter(data)).most_common()
-    if not table:
-        return table
-    # Extract the values with the highest frequency.
-    maxfreq = table[0][1]
-    for i in range(1, len(table)):
-        if table[i][1] != maxfreq:
-            table = table[:i]
-            break
-    return table
-
-
 def _find_lteq(a, x):
     'Locate the leftmost value exactly equal to x'
     i = bisect_left(a, x)
@@ -334,9 +320,9 @@ def fmean(data):
             nonlocal n
             n += 1
             return x
-        total = math.fsum(map(count, data))
+        total = fsum(map(count, data))
     else:
-        total = math.fsum(data)
+        total = fsum(data)
     try:
         return total / n
     except ZeroDivisionError:
@@ -523,19 +509,38 @@ def mode(data):
     >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
     'red'
 
-    If there is not exactly one most common value, ``mode`` will raise
-    StatisticsError.
+    If there are multiple modes, return the first one encountered.
+
+        >>> mode(['red', 'red', 'green', 'blue', 'blue'])
+        'red'
+
+    If *data* is empty, ``mode``, raises StatisticsError.
+
     """
-    # Generate a table of sorted (value, frequency) pairs.
-    table = _counts(data)
-    if len(table) == 1:
-        return table[0][0]
-    elif table:
-        raise StatisticsError(
-                'no unique mode; found %d equally common values' % len(table)
-                )
-    else:
-        raise StatisticsError('no mode for empty data')
+    data = iter(data)
+    try:
+        return Counter(data).most_common(1)[0][0]
+    except IndexError:
+        raise StatisticsError('no mode for empty data') from None
+
+
+def multimode(data):
+    """ Return a list of the most frequently occurring values.
+
+        Will return more than one result if there are multiple modes
+        or an empty list if *data* is empty.
+
+        >>> multimode('aabbbbbbbbcc')
+        ['b']
+        >>> multimode('aabbbbccddddeeffffgg')
+        ['b', 'd', 'f']
+        >>> multimode('')
+        []
+
+    """
+    counts = Counter(iter(data)).most_common()
+    maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
+    return list(map(itemgetter(0), mode_items))
 
 
 # === Measures of spread ===
@@ -740,6 +745,41 @@ class NormalDist:
             raise StatisticsError('cdf() not defined when sigma is zero')
         return 0.5 * (1.0 + erf((x - self.mu) / (self.sigma * sqrt(2.0))))
 
+    def overlap(self, other):
+        '''Compute the overlapping coefficient (OVL) between two normal distributions.
+
+        Measures the agreement between two normal probability distributions.
+        Returns a value between 0.0 and 1.0 giving the overlapping area in
+        the two underlying probability density functions.
+
+            >>> N1 = NormalDist(2.4, 1.6)
+            >>> N2 = NormalDist(3.2, 2.0)
+            >>> N1.overlap(N2)
+            0.8035050657330205
+
+        '''
+        # See: "The overlapping coefficient as a measure of agreement between
+        # probability distributions and point estimation of the overlap of two
+        # normal densities" -- Henry F. Inman and Edwin L. Bradley Jr
+        # http://dx.doi.org/10.1080/03610928908830127
+        if not isinstance(other, NormalDist):
+            raise TypeError('Expected another NormalDist instance')
+        X, Y = self, other
+        if (Y.sigma, Y.mu) < (X.sigma, X.mu):   # sort to assure commutativity
+            X, Y = Y, X
+        X_var, Y_var = X.variance, Y.variance
+        if not X_var or not Y_var:
+            raise StatisticsError('overlap() not defined when sigma is zero')
+        dv = Y_var - X_var
+        dm = fabs(Y.mu - X.mu)
+        if not dv:
+            return 1.0 - erf(dm / (2.0 * X.sigma * sqrt(2.0)))
+        a = X.mu * Y_var - Y.mu * X_var
+        b = X.sigma * Y.sigma * sqrt(dm**2.0 + dv * log(Y_var / X_var))
+        x1 = (a + b) / dv
+        x2 = (a - b) / dv
+        return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
+
     @property
     def mean(self):
         'Arithmetic mean of the normal distribution'
@@ -801,6 +841,7 @@ if __name__ == '__main__':
     from math import isclose
     from operator import add, sub, mul, truediv
     from itertools import repeat
+    import doctest
 
     g1 = NormalDist(10, 20)
     g2 = NormalDist(-5, 25)
@@ -858,3 +899,5 @@ if __name__ == '__main__':
     S = NormalDist.from_samples([x - y for x, y in zip(X.samples(n),
                                                        Y.samples(n))])
     assert_close(X - Y, S)
+
+    print(doctest.testmod())

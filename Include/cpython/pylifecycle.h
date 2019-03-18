@@ -39,7 +39,7 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
     const _PyCoreConfig *config);
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalInitError(_PyInitError err);
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_ExitInitError(_PyInitError err);
 
 /* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level
  * exit functions.

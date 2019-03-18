@@ -154,6 +154,7 @@
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
     <ClInclude Include="..\Include\internal\pycore_tupleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
+    <ClInclude Include="..\Include\interpreteridobject.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
@@ -161,7 +162,6 @@
     <ClInclude Include="..\Include\longobject.h" />
     <ClInclude Include="..\Include\marshal.h" />
     <ClInclude Include="..\Include\memoryobject.h" />
-    <ClInclude Include="..\Include\metagrammar.h" />
     <ClInclude Include="..\Include\methodobject.h" />
     <ClInclude Include="..\Include\modsupport.h" />
     <ClInclude Include="..\Include\moduleobject.h" />
@@ -175,7 +175,6 @@
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\parsetok.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
-    <ClInclude Include="..\Include\pgen.h" />
     <ClInclude Include="..\Include\pgenheaders.h" />
     <ClInclude Include="..\Include\pyhash.h" />
     <ClInclude Include="..\Include\py_curses.h" />
@@ -352,6 +351,7 @@
     <ClCompile Include="..\Objects\frameobject.c" />
     <ClCompile Include="..\Objects\funcobject.c" />
     <ClCompile Include="..\Objects\genobject.c" />
+    <ClCompile Include="..\Objects\interpreteridobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
     <ClCompile Include="..\Objects\listobject.c" />
     <ClCompile Include="..\Objects\longobject.c" />
@@ -372,12 +372,8 @@
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\acceler.c" />
-    <ClCompile Include="..\Parser\bitset.c" />
-    <ClCompile Include="..\Parser\firstsets.c" />
-    <ClCompile Include="..\Parser\grammar.c" />
     <ClCompile Include="..\Parser\grammar1.c" />
     <ClCompile Include="..\Parser\listnode.c" />
-    <ClCompile Include="..\Parser\metagrammar.c" />
     <ClCompile Include="..\Parser\myreadline.c" />
     <ClCompile Include="..\Parser\node.c" />
     <ClCompile Include="..\Parser\parser.c" />
@@ -425,6 +421,7 @@
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\peephole.c" />
+    <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
     <ClCompile Include="..\Python\pyfpe.c" />

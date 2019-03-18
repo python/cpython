@@ -799,10 +799,9 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(repr(s), expected)
 
     def test_weakref(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        p = proxy(s)
-        self.assertEqual(p.fileno(), s.fileno())
-        s.close()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            p = proxy(s)
+            self.assertEqual(p.fileno(), s.fileno())
         s = None
         try:
             p.fileno()
@@ -1072,9 +1071,8 @@ class GeneralModuleTests(unittest.TestCase):
         # Testing default timeout
         # The default timeout should initially be None
         self.assertEqual(socket.getdefaulttimeout(), None)
-        s = socket.socket()
-        self.assertEqual(s.gettimeout(), None)
-        s.close()
+        with socket.socket() as s:
+            self.assertEqual(s.gettimeout(), None)
 
         # Set the default timeout to 10, and see if it propagates
         with socket_setdefaulttimeout(10):
@@ -1297,9 +1295,8 @@ class GeneralModuleTests(unittest.TestCase):
 
     def testSendAfterClose(self):
         # testing send() after close() with timeout
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        sock.close()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(1)
         self.assertRaises(OSError, sock.send, b"spam")
 
     def testCloseException(self):
@@ -1317,16 +1314,15 @@ class GeneralModuleTests(unittest.TestCase):
     def testNewAttributes(self):
         # testing .family, .type and .protocol
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.assertEqual(sock.family, socket.AF_INET)
-        if hasattr(socket, 'SOCK_CLOEXEC'):
-            self.assertIn(sock.type,
-                          (socket.SOCK_STREAM | socket.SOCK_CLOEXEC,
-                           socket.SOCK_STREAM))
-        else:
-            self.assertEqual(sock.type, socket.SOCK_STREAM)
-        self.assertEqual(sock.proto, 0)
-        sock.close()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            self.assertEqual(sock.family, socket.AF_INET)
+            if hasattr(socket, 'SOCK_CLOEXEC'):
+                self.assertIn(sock.type,
+                              (socket.SOCK_STREAM | socket.SOCK_CLOEXEC,
+                               socket.SOCK_STREAM))
+            else:
+                self.assertEqual(sock.type, socket.SOCK_STREAM)
+            self.assertEqual(sock.proto, 0)
 
     def test_getsockaddrarg(self):
         sock = socket.socket()
@@ -1601,10 +1597,9 @@ class GeneralModuleTests(unittest.TestCase):
     def test_listen_backlog_overflow(self):
         # Issue 15989
         import _testcapi
-        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        srv.bind((HOST, 0))
-        self.assertRaises(OverflowError, srv.listen, _testcapi.INT_MAX + 1)
-        srv.close()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+            srv.bind((HOST, 0))
+            self.assertRaises(OverflowError, srv.listen, _testcapi.INT_MAX + 1)
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
     def test_flowinfo(self):
