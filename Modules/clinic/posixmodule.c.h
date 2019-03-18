@@ -8480,4 +8480,4 @@ exit:
 #ifndef OS_GETRANDOM_METHODDEF
     #define OS_GETRANDOM_METHODDEF
 #endif /* !defined(OS_GETRANDOM_METHODDEF) */
-/*[clinic end generated code: output=1a9c62f5841221ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb283c968332ca2a input=a9049054013a1b77]*/
