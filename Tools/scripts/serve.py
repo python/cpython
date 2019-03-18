@@ -27,7 +27,6 @@ def app(environ, respond):
 if __name__ == '__main__':
     path = sys.argv[1]
     port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
-
     httpd = simple_server.make_server('', port, app)
 
     message = "Serving {0} on {1} port {3} (http://{2}:{3}/), control-C to stop"
