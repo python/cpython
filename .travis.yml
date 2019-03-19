@@ -83,6 +83,7 @@ matrix:
 
 before_install:
   - set -e
+  - pyenv global 3.6
   - |
       # Check short-circuit conditions
       if [ "${TESTING}" != "docs" ]
