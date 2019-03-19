@@ -573,78 +573,83 @@ Py_GetProgramName(void)
    Return 1 if the path is correctly resolved, but *path0_p can be NULL
    if the Unicode object fail to be created.
 
-   Return 0 if it fails to resolve the full path (and *path0_p will be NULL),
-   for example if the current working directory has been removed (bpo-36236).
+   Return 0 if it fails to resolve the full path (and *path0_p will be NULL).
+   For example, return 0 if the current working directory has been removed
+   (bpo-36236) or if argv is empty.
    */
 int
 _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
 {
     assert(_PyWstrList_CheckConsistency(argv));
+    assert(*path0_p == NULL);
 
-    wchar_t *argv0;
-    wchar_t *p = NULL;
+    if (argv->length == 0) {
+        /* Leave sys.path unchanged if sys.argv is empty */
+        return 0;
+    }
+
+    wchar_t *argv0 = argv->items[0];
+    int have_module_arg = (wcscmp(argv0, L"-m") == 0);
+    int have_script_arg = (!have_module_arg && (wcscmp(argv0, L"-c") != 0));
+
+    wchar_t *path0 = argv0;
     Py_ssize_t n = 0;
-    int have_script_arg = 0;
-    int have_module_arg = 0;
-#ifdef HAVE_READLINK
-    wchar_t link[MAXPATHLEN + 1];
-    wchar_t argv0copy[2 * MAXPATHLEN + 1];
-    int nr = 0;
-#endif
-#if defined(HAVE_REALPATH)
+
+#ifdef HAVE_REALPATH
     wchar_t fullpath[MAXPATHLEN];
 #elif defined(MS_WINDOWS)
     wchar_t fullpath[MAX_PATH];
 #endif
 
-    assert(*path0_p == NULL);
-
-    if (argv->length > 0) {
-        argv0 = argv->items[0];
-        have_module_arg = (wcscmp(argv0, L"-m") == 0);
-        have_script_arg = !have_module_arg && (wcscmp(argv0, L"-c") != 0);
-    }
-
     if (have_module_arg) {
 #if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
-            if (!_Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath))) {
-                *path0_p = NULL;
-                return 0;
-            }
-            argv0 = fullpath;
-            n = wcslen(argv0);
+        if (!_Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath))) {
+            return 0;
+        }
+        path0 = fullpath;
 #else
-            argv0 = L".";
-            n = 1;
+        path0 = L".";
 #endif
+        n = wcslen(path0);
     }
 
 #ifdef HAVE_READLINK
-    if (have_script_arg)
-        nr = _Py_wreadlink(argv0, link, Py_ARRAY_LENGTH(link));
+    wchar_t link[MAXPATHLEN + 1];
+    int nr = 0;
+
+    if (have_script_arg) {
+        nr = _Py_wreadlink(path0, link, Py_ARRAY_LENGTH(link));
+    }
     if (nr > 0) {
         /* It's a symlink */
         link[nr] = '\0';
-        if (link[0] == SEP)
-            argv0 = link; /* Link to absolute path */
-        else if (wcschr(link, SEP) == NULL)
-            ; /* Link without path */
+        if (link[0] == SEP) {
+            path0 = link; /* Link to absolute path */
+        }
+        else if (wcschr(link, SEP) == NULL) {
+            /* Link without path */
+        }
         else {
-            /* Must join(dirname(argv0), link) */
-            wchar_t *q = wcsrchr(argv0, SEP);
-            if (q == NULL)
-                argv0 = link; /* argv0 without path */
+            /* Must join(dirname(path0), link) */
+            wchar_t *q = wcsrchr(path0, SEP);
+            if (q == NULL) {
+                /* path0 without path */
+                path0 = link;
+            }
             else {
-                /* Must make a copy, argv0copy has room for 2 * MAXPATHLEN */
-                wcsncpy(argv0copy, argv0, MAXPATHLEN);
-                q = wcsrchr(argv0copy, SEP);
+                /* Must make a copy, path0copy has room for 2 * MAXPATHLEN */
+                wchar_t path0copy[2 * MAXPATHLEN + 1];
+                wcsncpy(path0copy, path0, MAXPATHLEN);
+                q = wcsrchr(path0copy, SEP);
                 wcsncpy(q+1, link, MAXPATHLEN);
                 q[MAXPATHLEN + 1] = L'\0';
-                argv0 = argv0copy;
+                path0 = path0copy;
             }
         }
     }
 #endif /* HAVE_READLINK */
+
+    wchar_t *p = NULL;
 
 #if SEP == '\\'
     /* Special case for Microsoft filename syntax */
@@ -653,43 +658,46 @@ _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
 #if defined(MS_WINDOWS)
         /* Replace the first element in argv with the full path. */
         wchar_t *ptemp;
-        if (GetFullPathNameW(argv0,
+        if (GetFullPathNameW(path0,
                            Py_ARRAY_LENGTH(fullpath),
                            fullpath,
                            &ptemp)) {
-            argv0 = fullpath;
+            path0 = fullpath;
         }
 #endif
-        p = wcsrchr(argv0, SEP);
+        p = wcsrchr(path0, SEP);
         /* Test for alternate separator */
-        q = wcsrchr(p ? p : argv0, '/');
+        q = wcsrchr(p ? p : path0, '/');
         if (q != NULL)
             p = q;
         if (p != NULL) {
-            n = p + 1 - argv0;
+            n = p + 1 - path0;
             if (n > 1 && p[-1] != ':')
                 n--; /* Drop trailing separator */
         }
     }
-#else /* All other filename syntaxes */
+#else
+    /* All other filename syntaxes */
     if (have_script_arg) {
 #if defined(HAVE_REALPATH)
-        if (_Py_wrealpath(argv0, fullpath, Py_ARRAY_LENGTH(fullpath))) {
-            argv0 = fullpath;
+        if (_Py_wrealpath(path0, fullpath, Py_ARRAY_LENGTH(fullpath))) {
+            path0 = fullpath;
         }
 #endif
-        p = wcsrchr(argv0, SEP);
+        p = wcsrchr(path0, SEP);
     }
     if (p != NULL) {
-        n = p + 1 - argv0;
+        n = p + 1 - path0;
 #if SEP == '/' /* Special case for Unix filename syntax */
-        if (n > 1)
-            n--; /* Drop trailing separator */
+        if (n > 1) {
+            /* Drop trailing separator */
+            n--;
+        }
 #endif /* Unix */
     }
 #endif /* All others */
 
-    *path0_p = PyUnicode_FromWideChar(argv0, n);
+    *path0_p = PyUnicode_FromWideChar(path0, n);
     return 1;
 }
 
