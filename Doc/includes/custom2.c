@@ -64,11 +64,11 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef Custom_members[] = {
-    {"first", T_OBJECT_EX, offsetof(CustomObject, first), 0,
+    {"first", T_OBJECT_EX, offsetof(CustomObject, first), PY_READWRITE,
      "first name"},
-    {"last", T_OBJECT_EX, offsetof(CustomObject, last), 0,
+    {"last", T_OBJECT_EX, offsetof(CustomObject, last), PY_READWRITE,
      "last name"},
-    {"number", T_INT, offsetof(CustomObject, number), 0,
+    {"number", T_INT, offsetof(CustomObject, number), PY_READWRITE,
      "custom number"},
     {NULL}  /* Sentinel */
 };

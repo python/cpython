@@ -4976,22 +4976,24 @@ typedef struct {
     all_structmembers structmembers;
 } test_structmembers;
 
+#define OFF(field) offsetof(test_structmembers, structmembers.field)
+
 static struct PyMemberDef test_members[] = {
-    {"T_BOOL", T_BOOL, offsetof(test_structmembers, structmembers.bool_member), 0, NULL},
-    {"T_BYTE", T_BYTE, offsetof(test_structmembers, structmembers.byte_member), 0, NULL},
-    {"T_UBYTE", T_UBYTE, offsetof(test_structmembers, structmembers.ubyte_member), 0, NULL},
-    {"T_SHORT", T_SHORT, offsetof(test_structmembers, structmembers.short_member), 0, NULL},
-    {"T_USHORT", T_USHORT, offsetof(test_structmembers, structmembers.ushort_member), 0, NULL},
-    {"T_INT", T_INT, offsetof(test_structmembers, structmembers.int_member), 0, NULL},
-    {"T_UINT", T_UINT, offsetof(test_structmembers, structmembers.uint_member), 0, NULL},
-    {"T_LONG", T_LONG, offsetof(test_structmembers, structmembers.long_member), 0, NULL},
-    {"T_ULONG", T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
-    {"T_PYSSIZET", T_PYSSIZET, offsetof(test_structmembers, structmembers.pyssizet_member), 0, NULL},
-    {"T_FLOAT", T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
-    {"T_DOUBLE", T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
-    {"T_STRING_INPLACE", T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
-    {"T_LONGLONG", T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
-    {"T_ULONGLONG", T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
+    {"T_BOOL", T_BOOL, OFF(bool_member), PY_READWRITE, NULL},
+    {"T_BYTE", T_BYTE, OFF(byte_member), PY_READWRITE, NULL},
+    {"T_UBYTE", T_UBYTE, OFF(ubyte_member), PY_READWRITE, NULL},
+    {"T_SHORT", T_SHORT, OFF(short_member), PY_READWRITE, NULL},
+    {"T_USHORT", T_USHORT, OFF(ushort_member), PY_READWRITE, NULL},
+    {"T_INT", T_INT, OFF(int_member), PY_READWRITE, NULL},
+    {"T_UINT", T_UINT, OFF(uint_member), PY_READWRITE, NULL},
+    {"T_LONG", T_LONG, OFF(long_member), PY_READWRITE, NULL},
+    {"T_ULONG", T_ULONG, OFF(ulong_member), PY_READWRITE, NULL},
+    {"T_PYSSIZET", T_PYSSIZET, OFF(pyssizet_member), PY_READWRITE, NULL},
+    {"T_FLOAT", T_FLOAT, OFF(float_member), PY_READWRITE, NULL},
+    {"T_DOUBLE", T_DOUBLE, OFF(double_member), PY_READWRITE, NULL},
+    {"T_STRING_INPLACE", T_STRING_INPLACE, OFF(inplace_member), PY_READWRITE, NULL},
+    {"T_LONGLONG", T_LONGLONG, OFF(longlong_member), PY_READWRITE, NULL},
+    {"T_ULONGLONG", T_ULONGLONG, OFF(ulonglong_member), PY_READWRITE, NULL},
     {NULL}
 };
 

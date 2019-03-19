@@ -1170,8 +1170,8 @@ static PyGetSetDef fileio_getsetlist[] = {
 };
 
 static PyMemberDef fileio_members[] = {
-    {"_blksize", T_UINT, offsetof(fileio, blksize), 0},
-    {"_finalizing", T_BOOL, offsetof(fileio, finalizing), 0},
+    {"_blksize", T_UINT, offsetof(fileio, blksize), PY_READWRITE},
+    {"_finalizing", T_BOOL, offsetof(fileio, finalizing), PY_READWRITE},
     {NULL}
 };
 

@@ -17,8 +17,8 @@ static PyMemberDef frame_memberlist[] = {
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  PY_READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   PY_READONLY},
     {"f_lasti",         T_INT,          OFF(f_lasti),     PY_READONLY},
-    {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
-    {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
+    {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), PY_READWRITE},
+    {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), PY_READWRITE},
     {NULL}      /* Sentinel */
 };
 

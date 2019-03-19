@@ -486,7 +486,7 @@ SimpleExtendsException(PyExc_Exception, StopAsyncIteration,
  */
 
 static PyMemberDef StopIteration_members[] = {
-    {"value", T_OBJECT, offsetof(PyStopIterationObject, value), 0,
+    {"value", T_OBJECT, offsetof(PyStopIterationObject, value), PY_READWRITE,
         PyDoc_STR("generator return value")},
     {NULL}  /* Sentinel */
 };
@@ -599,7 +599,7 @@ SystemExit_traverse(PySystemExitObject *self, visitproc visit, void *arg)
 }
 
 static PyMemberDef SystemExit_members[] = {
-    {"code", T_OBJECT, offsetof(PySystemExitObject, code), 0,
+    {"code", T_OBJECT, offsetof(PySystemExitObject, code), PY_READWRITE,
         PyDoc_STR("exception code")},
     {NULL}  /* Sentinel */
 };
@@ -742,11 +742,11 @@ ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMemberDef ImportError_members[] = {
-    {"msg", T_OBJECT, offsetof(PyImportErrorObject, msg), 0,
+    {"msg", T_OBJECT, offsetof(PyImportErrorObject, msg), PY_READWRITE,
         PyDoc_STR("exception message")},
-    {"name", T_OBJECT, offsetof(PyImportErrorObject, name), 0,
+    {"name", T_OBJECT, offsetof(PyImportErrorObject, name), PY_READWRITE,
         PyDoc_STR("module name")},
-    {"path", T_OBJECT, offsetof(PyImportErrorObject, path), 0,
+    {"path", T_OBJECT, offsetof(PyImportErrorObject, path), PY_READWRITE,
         PyDoc_STR("module path")},
     {NULL}  /* Sentinel */
 };
@@ -1213,16 +1213,16 @@ OSError_written_set(PyOSErrorObject *self, PyObject *arg, void *context)
 }
 
 static PyMemberDef OSError_members[] = {
-    {"errno", T_OBJECT, offsetof(PyOSErrorObject, myerrno), 0,
+    {"errno", T_OBJECT, offsetof(PyOSErrorObject, myerrno), PY_READWRITE,
         PyDoc_STR("POSIX exception code")},
-    {"strerror", T_OBJECT, offsetof(PyOSErrorObject, strerror), 0,
+    {"strerror", T_OBJECT, offsetof(PyOSErrorObject, strerror), PY_READWRITE,
         PyDoc_STR("exception strerror")},
-    {"filename", T_OBJECT, offsetof(PyOSErrorObject, filename), 0,
+    {"filename", T_OBJECT, offsetof(PyOSErrorObject, filename), PY_READWRITE,
         PyDoc_STR("exception filename")},
-    {"filename2", T_OBJECT, offsetof(PyOSErrorObject, filename2), 0,
+    {"filename2", T_OBJECT, offsetof(PyOSErrorObject, filename2), PY_READWRITE,
         PyDoc_STR("second exception filename")},
 #ifdef MS_WINDOWS
-    {"winerror", T_OBJECT, offsetof(PyOSErrorObject, winerror), 0,
+    {"winerror", T_OBJECT, offsetof(PyOSErrorObject, winerror), PY_READWRITE,
         PyDoc_STR("Win32 exception code")},
 #endif
     {NULL}  /* Sentinel */
@@ -1492,18 +1492,18 @@ SyntaxError_str(PySyntaxErrorObject *self)
 }
 
 static PyMemberDef SyntaxError_members[] = {
-    {"msg", T_OBJECT, offsetof(PySyntaxErrorObject, msg), 0,
+    {"msg", T_OBJECT, offsetof(PySyntaxErrorObject, msg), PY_READWRITE,
         PyDoc_STR("exception msg")},
-    {"filename", T_OBJECT, offsetof(PySyntaxErrorObject, filename), 0,
+    {"filename", T_OBJECT, offsetof(PySyntaxErrorObject, filename), PY_READWRITE,
         PyDoc_STR("exception filename")},
-    {"lineno", T_OBJECT, offsetof(PySyntaxErrorObject, lineno), 0,
+    {"lineno", T_OBJECT, offsetof(PySyntaxErrorObject, lineno), PY_READWRITE,
         PyDoc_STR("exception lineno")},
-    {"offset", T_OBJECT, offsetof(PySyntaxErrorObject, offset), 0,
+    {"offset", T_OBJECT, offsetof(PySyntaxErrorObject, offset), PY_READWRITE,
         PyDoc_STR("exception offset")},
-    {"text", T_OBJECT, offsetof(PySyntaxErrorObject, text), 0,
+    {"text", T_OBJECT, offsetof(PySyntaxErrorObject, text), PY_READWRITE,
         PyDoc_STR("exception text")},
     {"print_file_and_line", T_OBJECT,
-        offsetof(PySyntaxErrorObject, print_file_and_line), 0,
+        offsetof(PySyntaxErrorObject, print_file_and_line), PY_READWRITE,
         PyDoc_STR("exception print_file_and_line")},
     {NULL}  /* Sentinel */
 };
@@ -1866,15 +1866,15 @@ UnicodeError_traverse(PyUnicodeErrorObject *self, visitproc visit, void *arg)
 }
 
 static PyMemberDef UnicodeError_members[] = {
-    {"encoding", T_OBJECT, offsetof(PyUnicodeErrorObject, encoding), 0,
+    {"encoding", T_OBJECT, offsetof(PyUnicodeErrorObject, encoding), PY_READWRITE,
         PyDoc_STR("exception encoding")},
-    {"object", T_OBJECT, offsetof(PyUnicodeErrorObject, object), 0,
+    {"object", T_OBJECT, offsetof(PyUnicodeErrorObject, object), PY_READWRITE,
         PyDoc_STR("exception object")},
-    {"start", T_PYSSIZET, offsetof(PyUnicodeErrorObject, start), 0,
+    {"start", T_PYSSIZET, offsetof(PyUnicodeErrorObject, start), PY_READWRITE,
         PyDoc_STR("exception start")},
-    {"end", T_PYSSIZET, offsetof(PyUnicodeErrorObject, end), 0,
+    {"end", T_PYSSIZET, offsetof(PyUnicodeErrorObject, end), PY_READWRITE,
         PyDoc_STR("exception end")},
-    {"reason", T_OBJECT, offsetof(PyUnicodeErrorObject, reason), 0,
+    {"reason", T_OBJECT, offsetof(PyUnicodeErrorObject, reason), PY_READWRITE,
         PyDoc_STR("exception reason")},
     {NULL}  /* Sentinel */
 };

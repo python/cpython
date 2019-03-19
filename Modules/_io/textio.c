@@ -3147,7 +3147,7 @@ static PyMemberDef textiowrapper_members[] = {
     {"buffer", T_OBJECT, offsetof(textio, buffer), PY_READONLY},
     {"line_buffering", T_BOOL, offsetof(textio, line_buffering), PY_READONLY},
     {"write_through", T_BOOL, offsetof(textio, write_through), PY_READONLY},
-    {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
+    {"_finalizing", T_BOOL, offsetof(textio, finalizing), PY_READWRITE},
     {NULL}
 };
 

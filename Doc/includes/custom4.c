@@ -80,7 +80,7 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef Custom_members[] = {
-    {"number", T_INT, offsetof(CustomObject, number), 0,
+    {"number", T_INT, offsetof(CustomObject, number), PY_READWRITE,
      "custom number"},
     {NULL}  /* Sentinel */
 };

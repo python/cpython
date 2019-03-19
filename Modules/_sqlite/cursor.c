@@ -906,10 +906,10 @@ static struct PyMemberDef cursor_members[] =
 {
     {"connection", T_OBJECT, offsetof(pysqlite_Cursor, connection), PY_READONLY},
     {"description", T_OBJECT, offsetof(pysqlite_Cursor, description), PY_READONLY},
-    {"arraysize", T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
+    {"arraysize", T_INT, offsetof(pysqlite_Cursor, arraysize), PY_READWRITE},
     {"lastrowid", T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), PY_READONLY},
     {"rowcount", T_LONG, offsetof(pysqlite_Cursor, rowcount), PY_READONLY},
-    {"row_factory", T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
+    {"row_factory", T_OBJECT, offsetof(pysqlite_Cursor, row_factory), PY_READWRITE},
     {NULL}
 };
 

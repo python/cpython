@@ -1107,8 +1107,8 @@ static PyGetSetDef winconsoleio_getsetlist[] = {
 };
 
 static PyMemberDef winconsoleio_members[] = {
-    {"_blksize", T_UINT, offsetof(winconsoleio, blksize), 0},
-    {"_finalizing", T_BOOL, offsetof(winconsoleio, finalizing), 0},
+    {"_blksize", T_UINT, offsetof(winconsoleio, blksize), PY_READWRITE},
+    {"_finalizing", T_BOOL, offsetof(winconsoleio, finalizing), PY_READWRITE},
     {NULL}
 };
 

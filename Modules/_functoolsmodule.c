@@ -460,7 +460,7 @@ keyobject_clear(keyobject *ko)
 
 static PyMemberDef keyobject_members[] = {
     {"obj", T_OBJECT,
-     offsetof(keyobject, object), 0,
+     offsetof(keyobject, object), PY_READWRITE,
      PyDoc_STR("Value wrapped by a key function.")},
     {NULL}
 };
