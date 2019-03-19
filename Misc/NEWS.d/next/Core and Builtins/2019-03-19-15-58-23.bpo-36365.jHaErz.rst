@@ -1,0 +1,1 @@
+repr(structseq) is no longer limited to 512 bytes.
