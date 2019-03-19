@@ -839,6 +839,7 @@ pymain_free(void)
     _PyPathConfig_ClearGlobal();
     _Py_ClearStandardStreamEncoding();
     _Py_ClearArgcArgv();
+    _PyRuntime_Finalize();
 }
 
 
