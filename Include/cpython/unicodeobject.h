@@ -722,8 +722,6 @@ PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
-PyAPI_FUNC(void) _Py_ReleaseInternedUnicodeStrings(void);
-
 /* --- wchar_t support for platforms which support it --------------------- */
 
 #ifdef HAVE_WCHAR_H
