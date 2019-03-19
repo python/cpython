@@ -5064,12 +5064,21 @@ _Py_DecodeUTF8Ex(const char *s, Py_ssize_t size, wchar_t **wstr, size_t *wlen,
     return 0;
 }
 
+
 wchar_t*
-_Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen)
+_Py_DecodeUTF8_surrogateescape(const char *arg, Py_ssize_t arglen,
+                               size_t *wlen)
 {
     wchar_t *wstr;
-    int res = _Py_DecodeUTF8Ex(arg, arglen, &wstr, NULL, NULL, 1);
+    int res = _Py_DecodeUTF8Ex(arg, arglen,
+                               &wstr, wlen,
+                               NULL, _Py_ERROR_SURROGATEESCAPE);
     if (res != 0) {
+        /* _Py_DecodeUTF8Ex() must support _Py_ERROR_SURROGATEESCAPE */
+        assert(res != -3);
+        if (wlen) {
+            *wlen = (size_t)res;
+        }
         return NULL;
     }
     return wstr;

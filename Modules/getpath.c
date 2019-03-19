@@ -563,23 +563,27 @@ search_for_exec_prefix(const _PyCoreConfig *core_config,
         }
         else {
             char buf[MAXPATHLEN+1];
-            wchar_t *rel_builddir_path;
             n = fread(buf, 1, MAXPATHLEN, f);
             buf[n] = '\0';
             fclose(f);
-            rel_builddir_path = _Py_DecodeUTF8_surrogateescape(buf, n);
-            if (rel_builddir_path) {
-                wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
-                exec_prefix[MAXPATHLEN] = L'\0';
-                err = joinpath(exec_prefix, rel_builddir_path);
-                PyMem_RawFree(rel_builddir_path );
-                if (_Py_INIT_FAILED(err)) {
-                    return err;
-                }
 
-                *found = -1;
-                return _Py_INIT_OK();
+            size_t dec_len;
+            wchar_t *pybuilddir;
+            pybuilddir = _Py_DecodeUTF8_surrogateescape(buf, n, &dec_len);
+            if (!pybuilddir) {
+                return DECODE_LOCALE_ERR("pybuilddir.txt", dec_len);
             }
+
+            wcsncpy(exec_prefix, calculate->argv0_path, MAXPATHLEN);
+            exec_prefix[MAXPATHLEN] = L'\0';
+            err = joinpath(exec_prefix, pybuilddir);
+            PyMem_RawFree(pybuilddir );
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+
+            *found = -1;
+            return _Py_INIT_OK();
         }
     }
 

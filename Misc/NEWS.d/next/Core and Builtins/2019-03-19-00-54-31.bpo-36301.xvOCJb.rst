@@ -1,0 +1,2 @@
+Python initialization now fails if decoding ``pybuilddir.txt`` configuration
+file fails at startup.
