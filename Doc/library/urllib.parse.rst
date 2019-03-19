@@ -577,7 +577,7 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: unquote_to_bytes_plus(string)
 
-   Like :func:`unquote_to_bytes`, but also replace plus signs with spaces, as 
+   Like :func:`unquote_to_bytes`, but also replace plus signs with spaces, as
    required for unquoting HTML form values.
 
    *string* must be a :class:`str`.
