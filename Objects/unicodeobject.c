@@ -51,6 +51,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+/* Uncomment to display statistics on interned strings at exit when
+   using Valgrind or Insecure++. */
+/* #define INTERNED_STATS 1 */
+
+
 /*[clinic input]
 class str "PyObject *" "&PyUnicode_Type"
 [clinic start generated code]*/
@@ -15157,18 +15162,6 @@ PyUnicode_ClearFreeList(void)
     return 0;
 }
 
-void
-_PyUnicode_Fini(void)
-{
-    int i;
-
-    Py_CLEAR(unicode_empty);
-
-    for (i = 0; i < 256; i++)
-        Py_CLEAR(unicode_latin1[i]);
-    _PyUnicode_ClearStaticStrings();
-    (void)PyUnicode_ClearFreeList();
-}
 
 void
 PyUnicode_InternInPlace(PyObject **p)
@@ -15233,8 +15226,10 @@ PyUnicode_InternFromString(const char *cp)
     return s;
 }
 
-void
-_Py_ReleaseInternedUnicodeStrings(void)
+
+#if defined(WITH_VALGRIND) || defined(__INSURE__)
+static void
+unicode_release_interned(void)
 {
     PyObject *keys;
     PyObject *s;
@@ -15249,14 +15244,16 @@ _Py_ReleaseInternedUnicodeStrings(void)
         return;
     }
 
-    /* Since _Py_ReleaseInternedUnicodeStrings() is intended to help a leak
+    /* Since unicode_release_interned() is intended to help a leak
        detector, interned unicode strings are not forcibly deallocated;
        rather, we give them their stolen references back, and then clear
        and DECREF the interned dict. */
 
     n = PyList_GET_SIZE(keys);
+#ifdef INTERNED_STATS
     fprintf(stderr, "releasing %" PY_FORMAT_SIZE_T "d interned strings\n",
             n);
+#endif
     for (i = 0; i < n; i++) {
         s = PyList_GET_ITEM(keys, i);
         if (PyUnicode_READY(s) == -1) {
@@ -15279,13 +15276,16 @@ _Py_ReleaseInternedUnicodeStrings(void)
         }
         _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
     }
+#ifdef INTERNED_STATS
     fprintf(stderr, "total size of all interned strings: "
             "%" PY_FORMAT_SIZE_T "d/%" PY_FORMAT_SIZE_T "d "
             "mortal/immortal\n", mortal_size, immortal_size);
+#endif
     Py_DECREF(keys);
     PyDict_Clear(interned);
     Py_CLEAR(interned);
 }
+#endif
 
 
 /********************* Unicode Iterator **************************/
@@ -15563,6 +15563,33 @@ PyUnicode_AsUnicodeCopy(PyObject *unicode)
     memcpy(copy, u, size);
     return copy;
 }
+
+
+void
+_PyUnicode_Fini(void)
+{
+#if defined(WITH_VALGRIND) || defined(__INSURE__)
+    /* Insure++ is a memory analysis tool that aids in discovering
+     * memory leaks and other memory problems.  On Python exit, the
+     * interned string dictionaries are flagged as being in use at exit
+     * (which it is).  Under normal circumstances, this is fine because
+     * the memory will be automatically reclaimed by the system.  Under
+     * memory debugging, it's a huge source of useless noise, so we
+     * trade off slower shutdown for less distraction in the memory
+     * reports.  -baw
+     */
+    unicode_release_interned();
+#endif /* __INSURE__ */
+
+    Py_CLEAR(unicode_empty);
+
+    for (Py_ssize_t i = 0; i < 256; i++) {
+        Py_CLEAR(unicode_latin1[i]);
+    }
+    _PyUnicode_ClearStaticStrings();
+    (void)PyUnicode_ClearFreeList();
+}
+
 
 /* A _string module, to export formatter_parser and formatter_field_name_split
    to the string.Formatter class implemented in Python. */
