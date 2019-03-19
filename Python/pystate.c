@@ -92,6 +92,11 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         runtime->interpreters.mutex = NULL;
     }
 
+    if (runtime->xidregistry.mutex != NULL) {
+        PyThread_free_lock(runtime->xidregistry.mutex);
+        runtime->xidregistry.mutex = NULL;
+    }
+
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
