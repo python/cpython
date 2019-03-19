@@ -184,6 +184,8 @@ PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(void);
    Return NULL on success, or return an error message on failure. */
 PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
 
+PyAPI_FUNC(void) _PyRuntime_Finalize(void);
+
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)
 
