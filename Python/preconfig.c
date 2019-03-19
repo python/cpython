@@ -514,6 +514,7 @@ _PyPreConfig_Read(_PyPreConfig *config)
     err = preconfig_read(config, NULL);
 
     setlocale(LC_CTYPE, old_loc);
+    PyMem_RawFree(old_loc);
 
     return err;
 }
