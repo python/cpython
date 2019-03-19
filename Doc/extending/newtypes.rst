@@ -282,26 +282,26 @@ store flags which control how the attribute can be accessed.
 The following flag constants are defined in :file:`structmember.h`; they may be
 combined using bitwise-OR.
 
-+---------------------------+----------------------------------------------+
-| Constant                  | Meaning                                      |
-+===========================+==============================================+
-| :const:`READWRITE`        | Writable.                                    |
-+---------------------------+----------------------------------------------+
-| :const:`READONLY`         | Never writable.                              |
-+---------------------------+----------------------------------------------+
-| :const:`READ_RESTRICTED`  | Not readable in restricted mode.             |
-+---------------------------+----------------------------------------------+
-| :const:`WRITE_RESTRICTED` | Not writable in restricted mode.             |
-+---------------------------+----------------------------------------------+
-| :const:`RESTRICTED`       | Not readable or writable in restricted mode. |
-+---------------------------+----------------------------------------------+
++------------------------------+----------------------------------------------+
+| Constant                     | Meaning                                      |
++==============================+==============================================+
+| :const:`PY_READWRITE`        | Writable.                                    |
++------------------------------+----------------------------------------------+
+| :const:`PY_READONLY`         | Never writable.                              |
++------------------------------+----------------------------------------------+
+| :const:`PY_READ_RESTRICTED`  | Not readable in restricted mode.             |
++------------------------------+----------------------------------------------+
+| :const:`PY_WRITE_RESTRICTED` | Not writable in restricted mode.             |
++------------------------------+----------------------------------------------+
+| :const:`PY_RESTRICTED`       | Not readable or writable in restricted mode. |
++------------------------------+----------------------------------------------+
 
 .. index::
-   single: READWRITE
-   single: READONLY
-   single: READ_RESTRICTED
-   single: WRITE_RESTRICTED
-   single: RESTRICTED
+   single: PY_READWRITE
+   single: PY_READONLY
+   single: PY_READ_RESTRICTED
+   single: PY_WRITE_RESTRICTED
+   single: PY_RESTRICTED
 
 An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table to build
 descriptors that are used at runtime is that any attribute defined this way can
