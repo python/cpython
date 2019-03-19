@@ -171,8 +171,6 @@ structseq_repr(PyStructSequence *obj)
     PyTypeObject *typ = Py_TYPE(obj);
     _PyUnicodeWriter writer;
 
-    _PyUnicodeWriter_Init(&writer);
-
     /* Write "typename(" */
     PyObject *type_name = PyUnicode_DecodeUTF8(typ->tp_name,
                                                strlen(typ->tp_name),
@@ -180,6 +178,13 @@ structseq_repr(PyStructSequence *obj)
     if (type_name == NULL) {
         goto error;
     }
+
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+    /* count 5 characters per item: "x=1, " */
+    writer.min_length = (PyUnicode_GET_LENGTH(type_name) + 1
+                         + VISIBLE_SIZE(obj) * 5 + 1);
+
     if (_PyUnicodeWriter_WriteStr(&writer, type_name) < 0) {
         Py_DECREF(type_name);
         goto error;
