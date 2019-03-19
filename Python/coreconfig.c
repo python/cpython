@@ -967,6 +967,9 @@ config_read_env_vars(_PyCoreConfig *config)
     if (res < 0) {
         return DECODE_LOCALE_ERR("PYTHONPATH", res);
     }
+    if (config->module_search_path_env != NULL) {
+        PyMem_RawFree(config->module_search_path_env);
+    }
     config->module_search_path_env = path;
 
     if (config->use_hash_seed < 0) {
