@@ -169,8 +169,10 @@ PyEval_ThreadsInitialized(void)
 void
 PyEval_InitThreads(void)
 {
-    if (gil_created())
+    if (gil_created()) {
         return;
+    }
+
     PyThread_init_thread();
     create_gil();
     take_gil(_PyThreadState_GET());
@@ -184,10 +186,17 @@ PyEval_InitThreads(void)
 void
 _PyEval_FiniThreads(void)
 {
-    if (!gil_created())
+    if (!gil_created()) {
         return;
+    }
+
     destroy_gil();
     assert(!gil_created());
+
+    if (_PyRuntime.ceval.pending.lock != NULL) {
+        PyThread_free_lock(_PyRuntime.ceval.pending.lock);
+        _PyRuntime.ceval.pending.lock = NULL;
+    }
 }
 
 void
