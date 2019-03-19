@@ -21,7 +21,7 @@ env:
     # OpenSSL ignores LDFLAGS when linking bin/openssl
     - LD_RUN_PATH="${OPENSSL_DIR}/lib"
     # python3.7 is in PATH (via pyenv), but not available sometime.
-    - PYTHON_FOR_REGEN=python3.6
+    - PYTHON_FOR_REGEN=python3
 
 branches:
   only:
@@ -83,9 +83,7 @@ matrix:
 
 before_install:
   - set -e
-  - pyenv versions
-  - /usr/bin/python3 -VV
-  - echo $PATH
+  - pyenv global 3.7.1
   - |
       # Check short-circuit conditions
       if [ "${TESTING}" != "docs" ]
