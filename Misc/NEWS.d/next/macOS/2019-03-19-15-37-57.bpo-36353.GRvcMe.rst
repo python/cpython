@@ -1,0 +1,1 @@
+Fix ``--rpath (-R)`` option of ``build_ext`` for clang on OSX. It now gets translated correctly to ``-Wl,-rpath,[argument of -R]`` instead of ``-L [argument of -R]``.
