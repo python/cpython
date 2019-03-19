@@ -1,0 +1,2 @@
+Raises a :exc:`PendingDeprecationWarning` when calling :func:`tempfile.mktemp`.
+Contributed by Stéphane Wirtel

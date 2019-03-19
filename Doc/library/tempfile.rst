@@ -340,3 +340,9 @@ other functions described above.
          >>> os.unlink(f.name)
          >>> os.path.exists(f.name)
          False
+
+   .. versionchanged:: 3.8
+
+     A :exc:`PendingDeprecationWarning` is raised. In the future, this function
+     will be dropped.
+      

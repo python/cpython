@@ -818,13 +818,17 @@ class TestMktemp(BaseTestCase):
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 
-##     def test_warning(self):
-##         # mktemp issues a warning when used
-##         warnings.filterwarnings("error",
-##                                 category=RuntimeWarning,
-##                                 message="mktemp")
-##         self.assertRaises(RuntimeWarning,
-##                           tempfile.mktemp, dir=self.dir)
+    @unittest.skipUnless(sys.version_info == (3,8), "requires 3.8")
+    def test_pending_deprecation_warning(self):
+        # mktemp issues a PendingDeprecationWarning warning with 3.8
+        with self.assertWarns(PendingDeprecationWarning):
+            tempfile.mktemp(dir=self.dir)
+
+    @unittest.skipUnless(sys.version_info == (3,9), "requires 3.9")
+    def test_deprecation_warning(self):
+        # mktemp issues a DeprecationWarning warning with 3.9
+        with self.assertWarns(DeprecationWarning):
+            tempfile.mktemp(dir=self.dir)
 
 
 # We test _TemporaryFileWrapper by testing NamedTemporaryFile.
