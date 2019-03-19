@@ -11,7 +11,7 @@ extern "C" {
 
 /* An array of PyMemberDef structures defines the name, type and offset
    of selected members of a C structure.  These can be read by
-   PyMember_GetOne() and set by PyMember_SetOne() (except if their READONLY
+   PyMember_GetOne() and set by PyMember_SetOne() (except if their PY_READONLY
    flag is set).  The array must be terminated with an entry whose name
    pointer is NULL. */
 
@@ -57,11 +57,17 @@ typedef struct PyMemberDef {
 
 
 /* Flags */
-#define READWRITE           0
-#define READONLY            1
-#define READ_RESTRICTED     2
-#define PY_WRITE_RESTRICTED 4
-#define RESTRICTED          (READ_RESTRICTED | PY_WRITE_RESTRICTED)
+#define PY_READWRITE            0
+#define PY_READONLY             1
+#define PY_READ_RESTRICTED      2
+#define PY_WRITE_RESTRICTED     4
+#define PY_RESTRICTED           (PY_READ_RESTRICTED | PY_WRITE_RESTRICTED)
+
+/* Flags defined for the backward compatibility */
+#define READWRITE               PY_READWRITE
+#define READONLY                PY_READONLY
+#define READ_RESTRICTED         PY_READ_RESTRICTED
+#define RESTRICTED              PY_RESTRICTED
 
 
 /* Current API, use this */
