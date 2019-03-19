@@ -660,6 +660,8 @@ pymain_free_raw(_PyMain *pymain)
     orig_argc = 0;
     orig_argv = NULL;
 
+    _PyRuntime_Finalize();
+
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
