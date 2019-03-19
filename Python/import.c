@@ -1983,13 +1983,14 @@ _imp_extension_suffixes_impl(PyObject *module)
 /*[clinic end generated code: output=0bf346e25a8f0cd3 input=ecdeeecfcb6f839e]*/
 {
     PyObject *list;
-    const char *suffix;
-    unsigned int index = 0;
 
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
 #ifdef HAVE_DYNAMIC_LOADING
+    const char *suffix;
+    unsigned int index = 0;
+
     while ((suffix = _PyImport_DynLoadFiletab[index])) {
         PyObject *item = PyUnicode_FromString(suffix);
         if (item == NULL) {
