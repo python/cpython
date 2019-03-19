@@ -569,6 +569,18 @@ of applications in statistics.
        compute the probability that a random variable *X* will be less than or
        equal to *x*.  Mathematically, it is written ``P(X <= x)``.
 
+    .. method:: NormalDist.inv_cdf(p)
+
+       Compute the inverse cumulative distribution function, also known as the
+       `quantile function <https://en.wikipedia.org/wiki/Quantile_function>`_
+       or the `percent-point
+       <https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
+       function.  Mathematically, it is written ``x : P(X <= x) = p``.
+
+       Finds the value *x* of the random variable *X* such that the
+       probability of the variable being less than or equal to that value
+       equals the given probability *p*.
+
     .. method:: NormalDist.overlap(other)
 
        Compute the `overlapping coefficient (OVL)
@@ -627,6 +639,16 @@ rounding to the nearest whole number:
     >>> fraction = sat.cdf(1200 + 0.5) - sat.cdf(1100 - 0.5)
     >>> round(fraction * 100.0, 1)
     18.4
+
+Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
+<https://en.wikipedia.org/wiki/Decile>`_ for the SAT scores:
+
+.. doctest::
+
+    >>> [round(sat.inv_cdf(p)) for p in (0.25, 0.50, 0.75)]
+    [928, 1060, 1192]
+    >>> [round(sat.inv_cdf(p / 10)) for p in range(1, 10)]
+    [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
 What percentage of men and women will have the same height in `two normally
 distributed populations with known means and standard deviations
