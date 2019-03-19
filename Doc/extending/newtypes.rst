@@ -282,19 +282,19 @@ store flags which control how the attribute can be accessed.
 The following flag constants are defined in :file:`structmember.h`; they may be
 combined using bitwise-OR.
 
-+------------------------------+----------------------------------------------+
-| Constant                     | Meaning                                      |
-+==============================+==============================================+
-| :const:`PY_READWRITE`        | Writable.                                    |
-+------------------------------+----------------------------------------------+
-| :const:`PY_READONLY`         | Never writable.                              |
-+------------------------------+----------------------------------------------+
-| :const:`PY_READ_RESTRICTED`  | Not readable in restricted mode.             |
-+------------------------------+----------------------------------------------+
-| :const:`PY_WRITE_RESTRICTED` | Not writable in restricted mode.             |
-+------------------------------+----------------------------------------------+
-| :const:`PY_RESTRICTED`       | Not readable or writable in restricted mode. |
-+------------------------------+----------------------------------------------+
++------------------------------+----------------------------------------------+---------------------------+
+| Constant                     | Meaning                                      | Former Constant           |
++==============================+==============================================+===========================+
+| :const:`PY_READWRITE`        | Writable.                                    | 0                         |
++------------------------------+----------------------------------------------+---------------------------+
+| :const:`PY_READONLY`         | Never writable.                              | :const:`READONLY`         |
++------------------------------+----------------------------------------------+---------------------------+
+| :const:`PY_READ_RESTRICTED`  | Not readable in restricted mode.             | :const:`READ_RESTRICTED`  |
++------------------------------+----------------------------------------------+---------------------------+
+| :const:`PY_WRITE_RESTRICTED` | Not writable in restricted mode.             | :const:`WRITE_RESTRICTED` |
++------------------------------+----------------------------------------------+---------------------------+
+| :const:`PY_RESTRICTED`       | Not readable or writable in restricted mode. | :const:`RESTRICTED`       |
++------------------------------+----------------------------------------------+---------------------------+
 
 .. index::
    single: PY_READWRITE
