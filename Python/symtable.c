@@ -123,14 +123,14 @@ ste_dealloc(PySTEntryObject *ste)
 #define OFF(x) offsetof(PySTEntryObject, x)
 
 static PyMemberDef ste_memberlist[] = {
-    {"id",       T_OBJECT, OFF(ste_id), READONLY},
-    {"name",     T_OBJECT, OFF(ste_name), READONLY},
-    {"symbols",  T_OBJECT, OFF(ste_symbols), READONLY},
-    {"varnames", T_OBJECT, OFF(ste_varnames), READONLY},
-    {"children", T_OBJECT, OFF(ste_children), READONLY},
-    {"nested",   T_INT,    OFF(ste_nested), READONLY},
-    {"type",     T_INT,    OFF(ste_type), READONLY},
-    {"lineno",   T_INT,    OFF(ste_lineno), READONLY},
+    {"id",       T_OBJECT, OFF(ste_id), PY_READONLY},
+    {"name",     T_OBJECT, OFF(ste_name), PY_READONLY},
+    {"symbols",  T_OBJECT, OFF(ste_symbols), PY_READONLY},
+    {"varnames", T_OBJECT, OFF(ste_varnames), PY_READONLY},
+    {"children", T_OBJECT, OFF(ste_children), PY_READONLY},
+    {"nested",   T_INT,    OFF(ste_nested), PY_READONLY},
+    {"type",     T_INT,    OFF(ste_type), PY_READONLY},
+    {"lineno",   T_INT,    OFF(ste_lineno), PY_READONLY},
     {NULL}
 };
 

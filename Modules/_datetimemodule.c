@@ -2650,13 +2650,13 @@ delta_reduce(PyDateTime_Delta* self, PyObject *Py_UNUSED(ignored))
 
 static PyMemberDef delta_members[] = {
 
-    {"days",         T_INT, OFFSET(days),         READONLY,
+    {"days",         T_INT, OFFSET(days),         PY_READONLY,
      PyDoc_STR("Number of days.")},
 
-    {"seconds",      T_INT, OFFSET(seconds),      READONLY,
+    {"seconds",      T_INT, OFFSET(seconds),      PY_READONLY,
      PyDoc_STR("Number of seconds (>= 0 and less than 1 day).")},
 
-    {"microseconds", T_INT, OFFSET(microseconds), READONLY,
+    {"microseconds", T_INT, OFFSET(microseconds), PY_READONLY,
      PyDoc_STR("Number of microseconds (>= 0 and less than 1 second).")},
     {NULL}
 };

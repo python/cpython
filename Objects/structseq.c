@@ -336,7 +336,7 @@ initialize_members(PyStructSequence_Desc *desc, PyMemberDef* members,
         members[k].type = T_OBJECT;
         members[k].offset = offsetof(PyStructSequence, ob_item)
           + i * sizeof(PyObject*);
-        members[k].flags = READONLY;
+        members[k].flags = PY_READONLY;
         members[k].doc = desc->fields[i].doc;
         k++;
     }

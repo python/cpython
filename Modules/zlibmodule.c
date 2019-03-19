@@ -1211,9 +1211,9 @@ static PyMethodDef Decomp_methods[] =
 
 #define COMP_OFF(x) offsetof(compobject, x)
 static PyMemberDef Decomp_members[] = {
-    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
-    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
-    {"eof",             T_BOOL,   COMP_OFF(eof), READONLY},
+    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), PY_READONLY},
+    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), PY_READONLY},
+    {"eof",             T_BOOL,   COMP_OFF(eof), PY_READONLY},
     {NULL},
 };
 

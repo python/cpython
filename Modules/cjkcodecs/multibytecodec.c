@@ -1655,7 +1655,7 @@ static struct PyMethodDef mbstreamreader_methods[] = {
 static PyMemberDef mbstreamreader_members[] = {
     {"stream",          T_OBJECT,
                     offsetof(MultibyteStreamReaderObject, stream),
-                    READONLY, NULL},
+                    PY_READONLY, NULL},
     {NULL,}
 };
 
@@ -1969,7 +1969,7 @@ static struct PyMethodDef mbstreamwriter_methods[] = {
 static PyMemberDef mbstreamwriter_members[] = {
     {"stream",          T_OBJECT,
                     offsetof(MultibyteStreamWriterObject, stream),
-                    READONLY, NULL},
+                    PY_READONLY, NULL},
     {NULL,}
 };
 

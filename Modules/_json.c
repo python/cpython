@@ -35,12 +35,12 @@ typedef struct _PyScannerObject {
 } PyScannerObject;
 
 static PyMemberDef scanner_members[] = {
-    {"strict", T_BOOL, offsetof(PyScannerObject, strict), READONLY, "strict"},
-    {"object_hook", T_OBJECT, offsetof(PyScannerObject, object_hook), READONLY, "object_hook"},
-    {"object_pairs_hook", T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), READONLY},
-    {"parse_float", T_OBJECT, offsetof(PyScannerObject, parse_float), READONLY, "parse_float"},
-    {"parse_int", T_OBJECT, offsetof(PyScannerObject, parse_int), READONLY, "parse_int"},
-    {"parse_constant", T_OBJECT, offsetof(PyScannerObject, parse_constant), READONLY, "parse_constant"},
+    {"strict", T_BOOL, offsetof(PyScannerObject, strict), PY_READONLY, "strict"},
+    {"object_hook", T_OBJECT, offsetof(PyScannerObject, object_hook), PY_READONLY, "object_hook"},
+    {"object_pairs_hook", T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), PY_READONLY},
+    {"parse_float", T_OBJECT, offsetof(PyScannerObject, parse_float), PY_READONLY, "parse_float"},
+    {"parse_int", T_OBJECT, offsetof(PyScannerObject, parse_int), PY_READONLY, "parse_int"},
+    {"parse_constant", T_OBJECT, offsetof(PyScannerObject, parse_constant), PY_READONLY, "parse_constant"},
     {NULL}
 };
 
@@ -59,14 +59,14 @@ typedef struct _PyEncoderObject {
 } PyEncoderObject;
 
 static PyMemberDef encoder_members[] = {
-    {"markers", T_OBJECT, offsetof(PyEncoderObject, markers), READONLY, "markers"},
-    {"default", T_OBJECT, offsetof(PyEncoderObject, defaultfn), READONLY, "default"},
-    {"encoder", T_OBJECT, offsetof(PyEncoderObject, encoder), READONLY, "encoder"},
-    {"indent", T_OBJECT, offsetof(PyEncoderObject, indent), READONLY, "indent"},
-    {"key_separator", T_OBJECT, offsetof(PyEncoderObject, key_separator), READONLY, "key_separator"},
-    {"item_separator", T_OBJECT, offsetof(PyEncoderObject, item_separator), READONLY, "item_separator"},
-    {"sort_keys", T_BOOL, offsetof(PyEncoderObject, sort_keys), READONLY, "sort_keys"},
-    {"skipkeys", T_BOOL, offsetof(PyEncoderObject, skipkeys), READONLY, "skipkeys"},
+    {"markers", T_OBJECT, offsetof(PyEncoderObject, markers), PY_READONLY, "markers"},
+    {"default", T_OBJECT, offsetof(PyEncoderObject, defaultfn), PY_READONLY, "default"},
+    {"encoder", T_OBJECT, offsetof(PyEncoderObject, encoder), PY_READONLY, "encoder"},
+    {"indent", T_OBJECT, offsetof(PyEncoderObject, indent), PY_READONLY, "indent"},
+    {"key_separator", T_OBJECT, offsetof(PyEncoderObject, key_separator), PY_READONLY, "key_separator"},
+    {"item_separator", T_OBJECT, offsetof(PyEncoderObject, item_separator), PY_READONLY, "item_separator"},
+    {"sort_keys", T_BOOL, offsetof(PyEncoderObject, sort_keys), PY_READONLY, "sort_keys"},
+    {"skipkeys", T_BOOL, offsetof(PyEncoderObject, skipkeys), PY_READONLY, "skipkeys"},
     {NULL}
 };
 

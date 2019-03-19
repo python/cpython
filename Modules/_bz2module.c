@@ -676,10 +676,10 @@ PyDoc_STRVAR(BZ2Decompressor_needs_input_doc,
 
 static PyMemberDef BZ2Decompressor_members[] = {
     {"eof", T_BOOL, offsetof(BZ2Decompressor, eof),
-     READONLY, BZ2Decompressor_eof__doc__},
+     PY_READONLY, BZ2Decompressor_eof__doc__},
     {"unused_data", T_OBJECT_EX, offsetof(BZ2Decompressor, unused_data),
-     READONLY, BZ2Decompressor_unused_data__doc__},
-    {"needs_input", T_BOOL, offsetof(BZ2Decompressor, needs_input), READONLY,
+     PY_READONLY, BZ2Decompressor_unused_data__doc__},
+    {"needs_input", T_BOOL, offsetof(BZ2Decompressor, needs_input), PY_READONLY,
      BZ2Decompressor_needs_input_doc},
     {NULL}
 };

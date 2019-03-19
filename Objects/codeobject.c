@@ -274,21 +274,21 @@ failed:
 #define OFF(x) offsetof(PyCodeObject, x)
 
 static PyMemberDef code_memberlist[] = {
-    {"co_argcount",     T_INT,          OFF(co_argcount),       READONLY},
-    {"co_kwonlyargcount",       T_INT,  OFF(co_kwonlyargcount), READONLY},
-    {"co_nlocals",      T_INT,          OFF(co_nlocals),        READONLY},
-    {"co_stacksize",T_INT,              OFF(co_stacksize),      READONLY},
-    {"co_flags",        T_INT,          OFF(co_flags),          READONLY},
-    {"co_code",         T_OBJECT,       OFF(co_code),           READONLY},
-    {"co_consts",       T_OBJECT,       OFF(co_consts),         READONLY},
-    {"co_names",        T_OBJECT,       OFF(co_names),          READONLY},
-    {"co_varnames",     T_OBJECT,       OFF(co_varnames),       READONLY},
-    {"co_freevars",     T_OBJECT,       OFF(co_freevars),       READONLY},
-    {"co_cellvars",     T_OBJECT,       OFF(co_cellvars),       READONLY},
-    {"co_filename",     T_OBJECT,       OFF(co_filename),       READONLY},
-    {"co_name",         T_OBJECT,       OFF(co_name),           READONLY},
-    {"co_firstlineno", T_INT,           OFF(co_firstlineno),    READONLY},
-    {"co_lnotab",       T_OBJECT,       OFF(co_lnotab),         READONLY},
+    {"co_argcount",     T_INT,          OFF(co_argcount),       PY_READONLY},
+    {"co_kwonlyargcount",       T_INT,  OFF(co_kwonlyargcount), PY_READONLY},
+    {"co_nlocals",      T_INT,          OFF(co_nlocals),        PY_READONLY},
+    {"co_stacksize",T_INT,              OFF(co_stacksize),      PY_READONLY},
+    {"co_flags",        T_INT,          OFF(co_flags),          PY_READONLY},
+    {"co_code",         T_OBJECT,       OFF(co_code),           PY_READONLY},
+    {"co_consts",       T_OBJECT,       OFF(co_consts),         PY_READONLY},
+    {"co_names",        T_OBJECT,       OFF(co_names),          PY_READONLY},
+    {"co_varnames",     T_OBJECT,       OFF(co_varnames),       PY_READONLY},
+    {"co_freevars",     T_OBJECT,       OFF(co_freevars),       PY_READONLY},
+    {"co_cellvars",     T_OBJECT,       OFF(co_cellvars),       PY_READONLY},
+    {"co_filename",     T_OBJECT,       OFF(co_filename),       PY_READONLY},
+    {"co_name",         T_OBJECT,       OFF(co_name),           PY_READONLY},
+    {"co_firstlineno", T_INT,           OFF(co_firstlineno),    PY_READONLY},
+    {"co_lnotab",       T_OBJECT,       OFF(co_lnotab),         PY_READONLY},
     {NULL}      /* Sentinel */
 };
 

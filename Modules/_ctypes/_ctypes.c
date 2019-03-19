@@ -2666,13 +2666,13 @@ PyCData_dealloc(PyObject *self)
 
 static PyMemberDef PyCData_members[] = {
     { "_b_base_", T_OBJECT,
-      offsetof(CDataObject, b_base), READONLY,
+      offsetof(CDataObject, b_base), PY_READONLY,
       "the base object" },
     { "_b_needsfree_", T_INT,
-      offsetof(CDataObject, b_needsfree), READONLY,
+      offsetof(CDataObject, b_needsfree), PY_READONLY,
       "whether the object owns the memory or not" },
     { "_objects", T_OBJECT,
-      offsetof(CDataObject, b_objects), READONLY,
+      offsetof(CDataObject, b_objects), PY_READONLY,
       "internal objects tree (NEVER CHANGE THIS OBJECT!)"},
     { NULL },
 };

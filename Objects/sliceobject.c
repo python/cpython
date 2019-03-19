@@ -341,9 +341,9 @@ slice_repr(PySliceObject *r)
 }
 
 static PyMemberDef slice_members[] = {
-    {"start", T_OBJECT, offsetof(PySliceObject, start), READONLY},
-    {"stop", T_OBJECT, offsetof(PySliceObject, stop), READONLY},
-    {"step", T_OBJECT, offsetof(PySliceObject, step), READONLY},
+    {"start", T_OBJECT, offsetof(PySliceObject, start), PY_READONLY},
+    {"stop", T_OBJECT, offsetof(PySliceObject, stop), PY_READONLY},
+    {"step", T_OBJECT, offsetof(PySliceObject, step), PY_READONLY},
     {0}
 };
 

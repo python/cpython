@@ -300,7 +300,7 @@ static PyMethodDef overlapped_methods[] = {
 static PyMemberDef overlapped_members[] = {
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "overlapped event handle"},
+     PY_READONLY, "overlapped event handle"},
     {NULL}
 };
 
@@ -1956,7 +1956,7 @@ PyInit__winapi(void)
     WINAPI_CONSTANT(F_DWORD, PAGE_GUARD);
     WINAPI_CONSTANT(F_DWORD, PAGE_NOACCESS);
     WINAPI_CONSTANT(F_DWORD, PAGE_NOCACHE);
-    WINAPI_CONSTANT(F_DWORD, PAGE_READONLY);
+    WINAPI_CONSTANT(F_DWORD, PAGE_PY_READONLY);
     WINAPI_CONSTANT(F_DWORD, PAGE_READWRITE);
     WINAPI_CONSTANT(F_DWORD, PAGE_WRITECOMBINE);
     WINAPI_CONSTANT(F_DWORD, PAGE_WRITECOPY);

@@ -3143,10 +3143,10 @@ static PyMethodDef textiowrapper_methods[] = {
 };
 
 static PyMemberDef textiowrapper_members[] = {
-    {"encoding", T_OBJECT, offsetof(textio, encoding), READONLY},
-    {"buffer", T_OBJECT, offsetof(textio, buffer), READONLY},
-    {"line_buffering", T_BOOL, offsetof(textio, line_buffering), READONLY},
-    {"write_through", T_BOOL, offsetof(textio, write_through), READONLY},
+    {"encoding", T_OBJECT, offsetof(textio, encoding), PY_READONLY},
+    {"buffer", T_OBJECT, offsetof(textio, buffer), PY_READONLY},
+    {"line_buffering", T_BOOL, offsetof(textio, line_buffering), PY_READONLY},
+    {"write_through", T_BOOL, offsetof(textio, write_through), PY_READONLY},
     {"_finalizing", T_BOOL, offsetof(textio, finalizing), 0},
     {NULL}
 };

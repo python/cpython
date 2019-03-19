@@ -1817,16 +1817,16 @@ static PyMethodDef connection_methods[] = {
 
 static struct PyMemberDef connection_members[] =
 {
-    {"Warning", T_OBJECT, offsetof(pysqlite_Connection, Warning), READONLY},
-    {"Error", T_OBJECT, offsetof(pysqlite_Connection, Error), READONLY},
-    {"InterfaceError", T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), READONLY},
-    {"DatabaseError", T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), READONLY},
-    {"DataError", T_OBJECT, offsetof(pysqlite_Connection, DataError), READONLY},
-    {"OperationalError", T_OBJECT, offsetof(pysqlite_Connection, OperationalError), READONLY},
-    {"IntegrityError", T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), READONLY},
-    {"InternalError", T_OBJECT, offsetof(pysqlite_Connection, InternalError), READONLY},
-    {"ProgrammingError", T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), READONLY},
-    {"NotSupportedError", T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), READONLY},
+    {"Warning", T_OBJECT, offsetof(pysqlite_Connection, Warning), PY_READONLY},
+    {"Error", T_OBJECT, offsetof(pysqlite_Connection, Error), PY_READONLY},
+    {"InterfaceError", T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), PY_READONLY},
+    {"DatabaseError", T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), PY_READONLY},
+    {"DataError", T_OBJECT, offsetof(pysqlite_Connection, DataError), PY_READONLY},
+    {"OperationalError", T_OBJECT, offsetof(pysqlite_Connection, OperationalError), PY_READONLY},
+    {"IntegrityError", T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), PY_READONLY},
+    {"InternalError", T_OBJECT, offsetof(pysqlite_Connection, InternalError), PY_READONLY},
+    {"ProgrammingError", T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), PY_READONLY},
+    {"NotSupportedError", T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), PY_READONLY},
     {"row_factory", T_OBJECT, offsetof(pysqlite_Connection, row_factory)},
     {"text_factory", T_OBJECT, offsetof(pysqlite_Connection, text_factory)},
     {NULL}

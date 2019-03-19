@@ -1,2 +1,2 @@
-Add :c:macro:`READWRITE` for a more explicit definition of the
+Add :c:macro:`PY_READWRITE` for a more explicit definition of the
 :c:type:`PyMemberDef` members. Contributed by Stéphane Wirtel.

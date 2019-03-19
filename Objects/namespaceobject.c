@@ -11,7 +11,7 @@ typedef struct {
 
 
 static PyMemberDef namespace_members[] = {
-    {"__dict__", T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), READONLY},
+    {"__dict__", T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), PY_READONLY},
     {NULL}
 };
 

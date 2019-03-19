@@ -239,10 +239,10 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 
 static PyMemberDef func_memberlist[] = {
     {"__closure__",   T_OBJECT,     OFF(func_closure),
-     RESTRICTED|READONLY},
+     PY_RESTRICTED|PY_READONLY},
     {"__doc__",       T_OBJECT,     OFF(func_doc), PY_WRITE_RESTRICTED},
     {"__globals__",   T_OBJECT,     OFF(func_globals),
-     RESTRICTED|READONLY},
+     PY_RESTRICTED|PY_READONLY},
     {"__module__",    T_OBJECT,     OFF(func_module), PY_WRITE_RESTRICTED},
     {NULL}  /* Sentinel */
 };
@@ -728,7 +728,7 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef cm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
+    {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), PY_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -910,7 +910,7 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef sm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
+    {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), PY_READONLY},
     {NULL}  /* Sentinel */
 };
 

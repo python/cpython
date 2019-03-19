@@ -342,7 +342,7 @@ static struct PyMethodDef PyHKEY_methods[] = {
 
 #define OFF(e) offsetof(PyHKEYObject, e)
 static PyMemberDef PyHKEY_memberlist[] = {
-    {"handle",      T_INT,      OFF(hkey), READONLY},
+    {"handle",      T_INT,      OFF(hkey), PY_READONLY},
     {NULL}    /* Sentinel */
 };
 

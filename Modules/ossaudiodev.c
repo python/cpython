@@ -922,7 +922,7 @@ static PyMethodDef oss_mixer_methods[] = {
 };
 
 static PyMemberDef oss_members[] = {
-    {"name", T_STRING, offsetof(oss_audio_t, devicename), READONLY, NULL},
+    {"name", T_STRING, offsetof(oss_audio_t, devicename), PY_READONLY, NULL},
     {NULL}
 };
 

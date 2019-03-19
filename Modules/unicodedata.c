@@ -84,7 +84,7 @@ typedef struct previous_version {
 #define get_old_record(self, v)    ((((PreviousDBVersion*)self)->getrecord)(v))
 
 static PyMemberDef DB_members[] = {
-        {"unidata_version", T_STRING, offsetof(PreviousDBVersion, name), READONLY},
+        {"unidata_version", T_STRING, offsetof(PreviousDBVersion, name), PY_READONLY},
         {NULL}
 };
 

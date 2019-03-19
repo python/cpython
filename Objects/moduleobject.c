@@ -17,7 +17,7 @@ typedef struct {
 } PyModuleObject;
 
 static PyMemberDef module_members[] = {
-    {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
+    {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), PY_READONLY},
     {0}
 };
 

@@ -320,7 +320,7 @@ EVP_get_digest_size(EVPobject *self, void *closure)
 }
 
 static PyMemberDef EVP_members[] = {
-    {"name", T_OBJECT, offsetof(EVPobject, name), READONLY, PyDoc_STR("algorithm name.")},
+    {"name", T_OBJECT, offsetof(EVPobject, name), PY_READONLY, PyDoc_STR("algorithm name.")},
     {NULL}  /* Sentinel */
 };
 

@@ -186,7 +186,7 @@ spamdict_init(spamdictobject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef spamdict_members[] = {
-    {"state", T_INT, offsetof(spamdictobject, state), READONLY,
+    {"state", T_INT, offsetof(spamdictobject, state), PY_READONLY,
      PyDoc_STR("an int variable for demonstration purposes")},
     {0}
 };

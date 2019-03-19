@@ -1016,7 +1016,7 @@ contextvar_cls_getitem(PyObject *self, PyObject *args)
 }
 
 static PyMemberDef PyContextVar_members[] = {
-    {"name", T_OBJECT, offsetof(PyContextVar, var_name), READONLY},
+    {"name", T_OBJECT, offsetof(PyContextVar, var_name), PY_READONLY},
     {NULL}
 };
 
