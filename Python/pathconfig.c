@@ -584,6 +584,7 @@ _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
     assert(*path0_p == NULL);
 
     if (argv->length == 0) {
+        /* Leave sys.path unchanged if sys.argv is empty */
         return 0;
     }
 
@@ -606,16 +607,14 @@ _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
             return 0;
         }
         path0 = fullpath;
-        n = wcslen(path0);
 #else
         path0 = L".";
-        n = 1;
 #endif
+        n = wcslen(path0);
     }
 
 #ifdef HAVE_READLINK
     wchar_t link[MAXPATHLEN + 1];
-    wchar_t path0copy[2 * MAXPATHLEN + 1];
     int nr = 0;
 
     if (have_script_arg) {
@@ -624,17 +623,22 @@ _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
     if (nr > 0) {
         /* It's a symlink */
         link[nr] = '\0';
-        if (link[0] == SEP)
+        if (link[0] == SEP) {
             path0 = link; /* Link to absolute path */
-        else if (wcschr(link, SEP) == NULL)
-            ; /* Link without path */
+        }
+        else if (wcschr(link, SEP) == NULL) {
+            /* Link without path */
+        }
         else {
             /* Must join(dirname(path0), link) */
             wchar_t *q = wcsrchr(path0, SEP);
-            if (q == NULL)
-                path0 = link; /* path0 without path */
+            if (q == NULL) {
+                /* path0 without path */
+                path0 = link;
+            }
             else {
                 /* Must make a copy, path0copy has room for 2 * MAXPATHLEN */
+                wchar_t path0copy[2 * MAXPATHLEN + 1];
                 wcsncpy(path0copy, path0, MAXPATHLEN);
                 q = wcsrchr(path0copy, SEP);
                 wcsncpy(q+1, link, MAXPATHLEN);
