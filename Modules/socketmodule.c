@@ -625,16 +625,16 @@ set_gaierror(int error)
 
 #ifdef __VMS
 /* Function to send in segments */
-static int
-sendsegmented(int sock_fd, char *buf, int len, int flags)
+static Py_ssize_t
+sendsegmented(int sock_fd, char *buf, Py_ssize_t len, int flags)
 {
     int n = 0;
-    int remaining = len;
+    Py_ssize_t remaining = len;
 
     while (remaining > 0) {
         unsigned int segment;
 
-        segment = (remaining >= SEGMENT_SIZE ? SEGMENT_SIZE : remaining);
+        segment = ((size_t)remaining >= SEGMENT_SIZE ? SEGMENT_SIZE : (unsigned int) remaining);
         n = send(sock_fd, buf, segment, flags);
         if (n < 0) {
             return n;
@@ -2797,7 +2797,8 @@ static PyObject *
 sock_send(PySocketSockObject *s, PyObject *args)
 {
     char *buf;
-    int len, n = -1, flags = 0, timeout;
+    int flags = 0, timeout;
+    Py_ssize_t len, n = -1;
     Py_buffer pbuf;
 
     if (!PyArg_ParseTuple(args, "s*|i:send", &pbuf, &flags))
@@ -2813,12 +2814,18 @@ sock_send(PySocketSockObject *s, PyObject *args)
     BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS
     timeout = internal_select_ex(s, 1, interval);
-    if (!timeout)
+    if (!timeout) {
 #ifdef __VMS
         n = sendsegmented(s->sock_fd, buf, len, flags);
+#elif defined(MS_WINDOWS)
+        if (len > INT_MAX) {
+            len = INT_MAX;
+        }
+        n = send(s->sock_fd, buf, (int)len, flags);
 #else
         n = send(s->sock_fd, buf, len, flags);
 #endif
+    }
     Py_END_ALLOW_THREADS
     if (timeout == 1) {
         PyBuffer_Release(&pbuf);
@@ -2830,7 +2837,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
     PyBuffer_Release(&pbuf);
     if (n < 0)
         return s->errorhandler();
-    return PyInt_FromLong((long)n);
+    return PyInt_FromSsize_t(n);
 }
 
 PyDoc_STRVAR(send_doc,
@@ -2847,7 +2854,8 @@ static PyObject *
 sock_sendall(PySocketSockObject *s, PyObject *args)
 {
     char *buf;
-    int len, n = -1, flags = 0, timeout, saved_errno;
+    int flags = 0, timeout, saved_errno;
+    Py_ssize_t len, n = -1;
     Py_buffer pbuf;
 
     if (!PyArg_ParseTuple(args, "s*|i:sendall", &pbuf, &flags))
@@ -2868,6 +2876,11 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         if (!timeout) {
 #ifdef __VMS
             n = sendsegmented(s->sock_fd, buf, len, flags);
+#elif defined(MS_WINDOWS)
+            if (len > INT_MAX) {
+                len = INT_MAX;
+            }
+            n = send(s->sock_fd, buf, (int)len, flags);
 #else
             n = send(s->sock_fd, buf, len, flags);
 #endif

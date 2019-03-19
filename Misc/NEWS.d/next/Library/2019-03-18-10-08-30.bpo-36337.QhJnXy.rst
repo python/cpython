@@ -1,0 +1,3 @@
+Fix buffer overflow in :meth:`~socket.socket.send` and
+:meth:`~socket.socket.sendall` methods of :func:`socket.socket` for data larger
+than 2 GiB.
