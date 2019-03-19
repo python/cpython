@@ -1580,7 +1580,7 @@ winreg.SetValue
 
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
-    sub_key as sub_key_obj: object
+    sub_key: Py_UNICODE(accept={str, NoneType})
         A string that names the subkey with which the value is associated.
     type: DWORD
         An integer that specifies the type of the data.  Currently this must
@@ -1603,12 +1603,10 @@ KEY_SET_VALUE access.
 [clinic start generated code]*/
 
 static PyObject *
-winreg_SetValue_impl(PyObject *module, HKEY key, PyObject *sub_key_obj,
+winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
                      DWORD type, PyObject *value_obj)
-/*[clinic end generated code: output=e1c0674b77ba195b input=525af06a623c9ad9]*/
+/*[clinic end generated code: output=d4773dc9c372311a input=bf088494ae2d24fd]*/
 {
-    wchar_t *sub_key = NULL;
-    wchar_t *value = NULL;
     Py_ssize_t value_length;
     long rc;
 
@@ -1619,29 +1617,17 @@ winreg_SetValue_impl(PyObject *module, HKEY key, PyObject *sub_key_obj,
     }
 
 #if USE_UNICODE_WCHAR_CACHE
-    if (!_PyUnicode_UNICODE_Converter(sub_key_obj, &sub_key)) {
-        return NULL;
-    }
-    value = PyUnicode_AsUnicodeAndSize(value_obj, &value_length);
-    if (value == NULL) {
-        return NULL;
-    }
+    const wchar_t *value = PyUnicode_AsUnicodeAndSize(value_obj, &value_length);
 #else /* USE_UNICODE_WCHAR_CACHE */
-    if (!_PyUnicode_WideCharString_Converter(sub_key_obj, &sub_key)) {
-        return NULL;
-    }
-    value = PyUnicode_AsWideCharString(value_obj, &value_length);
+    wchar_t *value = PyUnicode_AsWideCharString(value_obj, &value_length);
 #endif /* USE_UNICODE_WCHAR_CACHE */
     if (value == NULL) {
-#if !USE_UNICODE_WCHAR_CACHE
-        PyMem_Free(sub_key);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
     if ((Py_ssize_t)(DWORD)value_length != value_length) {
         PyErr_SetString(PyExc_OverflowError, "too long string");
 #if !USE_UNICODE_WCHAR_CACHE
-        PyMem_Free(sub_key);
+        PyMem_Free(value);
 #endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
@@ -1651,7 +1637,6 @@ winreg_SetValue_impl(PyObject *module, HKEY key, PyObject *sub_key_obj,
     Py_END_ALLOW_THREADS
 #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(value);
-    PyMem_Free(sub_key);
 #endif /* USE_UNICODE_WCHAR_CACHE */
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");

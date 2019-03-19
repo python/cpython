@@ -1152,7 +1152,7 @@ PyDoc_STRVAR(winreg_SetValue__doc__,
     {"SetValue", (PyCFunction)(void(*)(void))winreg_SetValue, METH_FASTCALL, winreg_SetValue__doc__},
 
 static PyObject *
-winreg_SetValue_impl(PyObject *module, HKEY key, PyObject *sub_key_obj,
+winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
                      DWORD type, PyObject *value_obj);
 
 static PyObject *
@@ -1160,17 +1160,22 @@ winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    PyObject *sub_key_obj;
+    const Py_UNICODE *sub_key;
     DWORD type;
     PyObject *value_obj;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&OkU:SetValue",
-        clinic_HKEY_converter, &key, &sub_key_obj, &type, &value_obj)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&O&kU:SetValue",
+        clinic_HKEY_converter, &key, _PyUnicode_WideCharString_Opt_Converter, &sub_key, &type, &value_obj)) {
         goto exit;
     }
-    return_value = winreg_SetValue_impl(module, key, sub_key_obj, type, value_obj);
+    return_value = winreg_SetValue_impl(module, key, sub_key, type, value_obj);
 
 exit:
+    /* Cleanup for sub_key */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)sub_key);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -1351,4 +1356,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d32916ff805bd452 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d710dde7327c59e7 input=a9049054013a1b77]*/
