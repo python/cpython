@@ -8,9 +8,12 @@ additional features:
   * options set attributes of a passed-in object
 """
 
-import sys, string, re
+import sys
+import string
+import re
 import getopt
 from distutils.errors import *
+
 
 # Much like command_re in distutils.core, this is close to but not quite
 # the same as a Python NAME -- except, in the spirit of most GNU
@@ -25,6 +28,7 @@ neg_alias_re = re.compile("^(%s)=!(%s)$" % (longopt_pat, longopt_pat))
 # This is used to translate long options to legitimate Python identifiers
 # (for use as attributes of some object).
 longopt_xlate = str.maketrans('-', '_')
+
 
 class FancyGetopt:
     """Wrapper around the standard 'getopt()' module that provides some
@@ -351,7 +355,7 @@ class FancyGetopt:
                     lines.append("  --%-*s  %s" %
                                  (max_opt, opt_names, text[0]))
                 else:
-                    lines.append("  --%-*s" % opt_names)
+                    lines.append("  --%-*s" % (max_opt, opt_names))
 
             for l in text[1:]:
                 lines.append(big_indent + l)
@@ -372,13 +376,14 @@ def fancy_getopt(options, negative_opt, object, args):
 
 WS_TRANS = {ord(_wschar) : ' ' for _wschar in string.whitespace}
 
+
 def wrap_text(text, width):
     """wrap_text(text : string, width : int) -> [string]
 
     Split 'text' into multiple lines of no more than 'width' characters
     each, and return the list of strings that results.
     """
-    if text is None:
+    if not text:
         return []
     if len(text) <= width:
         return [text]
