@@ -2781,19 +2781,21 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
         /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
            If argv[0] is a symlink, use the real path. */
         const _PyWstrList argv_list = {.length = argc, .items = argv};
-        PyObject *argv0 = _PyPathConfig_ComputeArgv0(&argv_list);
-        if (argv0 == NULL) {
-            Py_FatalError("can't compute path0 from argv");
-        }
-
-        PyObject *sys_path = _PySys_GetObjectId(&PyId_path);
-        if (sys_path != NULL) {
-            if (PyList_Insert(sys_path, 0, argv0) < 0) {
-                Py_DECREF(argv0);
-                Py_FatalError("can't prepend path0 to sys.path");
+        PyObject *path0 = NULL;
+        if (_PyPathConfig_ComputeSysPath0(&argv_list, &path0)) {
+            if (path0 == NULL) {
+                Py_FatalError("can't compute path0 from argv");
             }
+
+            PyObject *sys_path = _PySys_GetObjectId(&PyId_path);
+            if (sys_path != NULL) {
+                if (PyList_Insert(sys_path, 0, path0) < 0) {
+                    Py_DECREF(path0);
+                    Py_FatalError("can't prepend path0 to sys.path");
+                }
+            }
+            Py_DECREF(path0);
         }
-        Py_DECREF(argv0);
     }
 }
 

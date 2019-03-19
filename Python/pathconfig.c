@@ -566,9 +566,18 @@ Py_GetProgramName(void)
     return _Py_path_config.program_name;
 }
 
-/* Compute argv[0] which will be prepended to sys.argv */
-PyObject*
-_PyPathConfig_ComputeArgv0(const _PyWstrList *argv)
+/* Compute module search path from argv[0] or the current working
+   directory ("-m module" case) which will be prepended to sys.argv:
+   sys.path[0].
+
+   Return 1 if the path is correctly resolved, but *path0_p can be NULL
+   if the Unicode object fail to be created.
+
+   Return 0 if it fails to resolve the full path (and *path0_p will be NULL),
+   for example if the current working directory has been removed (bpo-36236).
+   */
+int
+_PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
 {
     assert(_PyWstrList_CheckConsistency(argv));
 
@@ -588,6 +597,8 @@ _PyPathConfig_ComputeArgv0(const _PyWstrList *argv)
     wchar_t fullpath[MAX_PATH];
 #endif
 
+    assert(*path0_p == NULL);
+
     if (argv->length > 0) {
         argv0 = argv->items[0];
         have_module_arg = (wcscmp(argv0, L"-m") == 0);
@@ -595,14 +606,17 @@ _PyPathConfig_ComputeArgv0(const _PyWstrList *argv)
     }
 
     if (have_module_arg) {
-        #if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
-            _Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath));
+#if defined(HAVE_REALPATH) || defined(MS_WINDOWS)
+            if (!_Py_wgetcwd(fullpath, Py_ARRAY_LENGTH(fullpath))) {
+                *path0_p = NULL;
+                return 0;
+            }
             argv0 = fullpath;
             n = wcslen(argv0);
-        #else
+#else
             argv0 = L".";
             n = 1;
-        #endif
+#endif
     }
 
 #ifdef HAVE_READLINK
@@ -675,7 +689,8 @@ _PyPathConfig_ComputeArgv0(const _PyWstrList *argv)
     }
 #endif /* All others */
 
-    return PyUnicode_FromWideChar(argv0, n);
+    *path0_p = PyUnicode_FromWideChar(argv0, n);
+    return 1;
 }
 
 
