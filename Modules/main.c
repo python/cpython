@@ -780,18 +780,20 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
         }
     }
     else if (!config->preconfig.isolated) {
-        PyObject *path0 = _PyPathConfig_ComputeArgv0(&config->argv);
-        if (path0 == NULL) {
-            err = _Py_INIT_NO_MEMORY();
-            goto done;
-        }
+        PyObject *path0 = NULL;
+        if (_PyPathConfig_ComputeSysPath0(&config->argv, &path0)) {
+            if (path0 == NULL) {
+                err = _Py_INIT_NO_MEMORY();
+                goto done;
+            }
 
-        if (pymain_sys_path_add_path0(interp, path0) < 0) {
+            if (pymain_sys_path_add_path0(interp, path0) < 0) {
+                Py_DECREF(path0);
+                err = _Py_INIT_EXIT(1);
+                goto done;
+            }
             Py_DECREF(path0);
-            err = _Py_INIT_EXIT(1);
-            goto done;
         }
-        Py_DECREF(path0);
     }
 
     PyCompilerFlags cf = {.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION};
