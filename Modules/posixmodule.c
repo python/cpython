@@ -901,8 +901,9 @@ static void
 path_cleanup(path_t *path)
 {
 #if !USE_UNICODE_WCHAR_CACHE
-    PyMem_Free((wchar_t *)path->wide);
+    wchar_t *wide = (wchar_t *)path->wide;
     path->wide = NULL;
+    PyMem_Free(wide);
 #endif /* USE_UNICODE_WCHAR_CACHE */
     Py_CLEAR(path->object);
     Py_CLEAR(path->cleanup);
