@@ -712,7 +712,7 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
             continue;
         }
 
-        wchar_t *tmpbuffer = _Py_DecodeUTF8_surrogateescape(buffer, n);
+        wchar_t *tmpbuffer = _Py_DecodeUTF8_surrogateescape(buffer, n, NULL);
         if (tmpbuffer) {
             wchar_t * state;
             wchar_t * tok = WCSTOK(tmpbuffer, L" \t\r\n", &state);
