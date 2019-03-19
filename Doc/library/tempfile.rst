@@ -343,6 +343,6 @@ other functions described above.
 
    .. versionchanged:: 3.8
 
-     A :exc:`PendingDeprecationWarning` is raised. In the future, this function
-     will be dropped.
-      
+      A :exc:`PendingDeprecationWarning` is raised. In the future, this function
+      will be dropped.
+
