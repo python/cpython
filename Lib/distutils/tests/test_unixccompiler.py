@@ -29,7 +29,7 @@ class UnixCCompilerTestCase(unittest.TestCase):
 
         # darwin
         sys.platform = 'darwin'
-        self.assertEqual(self.cc.rpath_foo(), '-L/foo')
+        self.assertEqual(self.cc.rpath_foo(), '-Wl,-rpath,/foo')
 
         # hp-ux
         sys.platform = 'hp-ux'
