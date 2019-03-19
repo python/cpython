@@ -176,6 +176,7 @@ same ``numpy.ndarray`` from two distinct Python shells:
 
 
 .. class:: SharedMemoryManager([address[, authkey]])
+   :module: multiprocessing.managers
 
    A subclass of :class:`~multiprocessing.managers.BaseManager` which can be
    used for the management of shared memory blocks across processes.
