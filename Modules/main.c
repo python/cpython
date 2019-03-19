@@ -888,13 +888,13 @@ pymain_main(_PyArgv *args)
     PyInterpreterState *interp;
     err = pymain_init(args, &interp);
     if (_Py_INIT_FAILED(err)) {
-        _Py_ExitInitError(err);
+        goto exit_init_error;
     }
 
     int exitcode = 0;
     err = pymain_run_python(interp, &exitcode);
     if (_Py_INIT_FAILED(err)) {
-        _Py_ExitInitError(err);
+        goto exit_init_error;
     }
 
     if (Py_FinalizeEx() < 0) {
@@ -910,6 +910,10 @@ pymain_main(_PyArgv *args)
     }
 
     return exitcode;
+
+exit_init_error:
+    pymain_free();
+    _Py_ExitInitError(err);
 }
 
 

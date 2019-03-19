@@ -510,6 +510,10 @@ Deprecated
 
   (Contributed by Berker Peksag in :issue:`9372`.)
 
+* The :class:`typing.NamedTuple` class has deprecated the ``_field_types``
+  attribute in favor of the ``__annotations__`` attribute which has the same
+  information.  (Contributed by Raymond Hettinger in :issue:`36320`.)
+
 * :mod:`ast` classes ``Num``, ``Str``, ``Bytes``, ``NameConstant`` and
   ``Ellipsis`` are considered deprecated and will be removed in future Python
   versions. :class:`~ast.Constant` should be used instead.
@@ -573,6 +577,9 @@ The following features and APIs have been removed from Python 3.8:
 * Removed the ``doctype()`` method of :class:`~xml.etree.ElementTree.XMLParser`.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
+* "unicode_internal" codec is removed.
+  (Contributed by Inada Naoki in :issue:`36297`.)
+
 
 Porting to Python 3.8
 =====================
@@ -613,6 +620,11 @@ Changes in the Python API
   arguments for changing the selection was deprecated in Python 3.6.  Use
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
+
+* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of the
+  :mod:`xml.dom.minidom` module, and :mod:`xml.etree` now preserve the attribute
+  order specified by the user.
+  (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
 
 * A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
   :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates

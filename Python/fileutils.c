@@ -1641,10 +1641,12 @@ _Py_write_noraise(int fd, const void *buf, size_t count)
 #ifdef HAVE_READLINK
 
 /* Read value of symbolic link. Encode the path to the locale encoding, decode
-   the result from the locale encoding. Return -1 on error. */
+   the result from the locale encoding.
 
+   Return -1 on encoding error, on readlink() error, if the internal buffer is
+   too short, on decoding error, or if 'buf' is too short. */
 int
-_Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
+_Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t buflen)
 {
     char *cpath;
     char cbuf[MAXPATHLEN];
@@ -1671,12 +1673,13 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
         errno = EINVAL;
         return -1;
     }
-    if (bufsiz <= r1) {
+    /* wbuf must have space to store the trailing NUL character */
+    if (buflen <= r1) {
         PyMem_RawFree(wbuf);
         errno = EINVAL;
         return -1;
     }
-    wcsncpy(buf, wbuf, bufsiz);
+    wcsncpy(buf, wbuf, buflen);
     PyMem_RawFree(wbuf);
     return (int)r1;
 }
@@ -1686,11 +1689,12 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 
 /* Return the canonicalized absolute pathname. Encode path to the locale
    encoding, decode the result from the locale encoding.
-   Return NULL on error. */
 
+   Return NULL on encoding error, realpath() error, decoding error
+   or if 'resolved_path' is too short. */
 wchar_t*
 _Py_wrealpath(const wchar_t *path,
-              wchar_t *resolved_path, size_t resolved_path_size)
+              wchar_t *resolved_path, size_t resolved_path_len)
 {
     char *cpath;
     char cresolved_path[MAXPATHLEN];
@@ -1712,27 +1716,29 @@ _Py_wrealpath(const wchar_t *path,
         errno = EINVAL;
         return NULL;
     }
-    if (resolved_path_size <= r) {
+    /* wresolved_path must have space to store the trailing NUL character */
+    if (resolved_path_len <= r) {
         PyMem_RawFree(wresolved_path);
         errno = EINVAL;
         return NULL;
     }
-    wcsncpy(resolved_path, wresolved_path, resolved_path_size);
+    wcsncpy(resolved_path, wresolved_path, resolved_path_len);
     PyMem_RawFree(wresolved_path);
     return resolved_path;
 }
 #endif
 
-/* Get the current directory. size is the buffer size in wide characters
+/* Get the current directory. buflen is the buffer size in wide characters
    including the null character. Decode the path from the locale encoding.
-   Return NULL on error. */
 
+   Return NULL on getcwd() error, on decoding error, or if 'buf' is
+   too short. */
 wchar_t*
-_Py_wgetcwd(wchar_t *buf, size_t size)
+_Py_wgetcwd(wchar_t *buf, size_t buflen)
 {
 #ifdef MS_WINDOWS
-    int isize = (int)Py_MIN(size, INT_MAX);
-    return _wgetcwd(buf, isize);
+    int ibuflen = (int)Py_MIN(buflen, INT_MAX);
+    return _wgetcwd(buf, ibuflen);
 #else
     char fname[MAXPATHLEN];
     wchar_t *wname;
@@ -1743,11 +1749,12 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
     wname = Py_DecodeLocale(fname, &len);
     if (wname == NULL)
         return NULL;
-    if (size <= len) {
+    /* wname must have space to store the trailing NUL character */
+    if (buflen <= len) {
         PyMem_RawFree(wname);
         return NULL;
     }
-    wcsncpy(buf, wname, size);
+    wcsncpy(buf, wname, buflen);
     PyMem_RawFree(wname);
     return buf;
 #endif
