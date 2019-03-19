@@ -335,24 +335,24 @@ absolutize(wchar_t *path, size_t path_len)
 
 /* pathlen: 'path' length in characters including trailing NUL */
 static _PyInitError
-add_exe_suffix(wchar_t *path, size_t pathlen)
+add_exe_suffix(wchar_t *progpath, size_t progpathlen)
 {
     /* Check for already have an executable suffix */
-    size_t n = wcslen(path);
+    size_t n = wcslen(progpath);
     size_t s = wcslen(EXE_SUFFIX);
-    if (wcsncasecmp(EXE_SUFFIX, path + n - s, s) == 0) {
+    if (wcsncasecmp(EXE_SUFFIX, progpath + n - s, s) == 0) {
         return _Py_INIT_OK();
     }
 
-    if (n + s >= pathlen) {
+    if (n + s >= progpathlen) {
         return PATHLEN_ERR();
     }
-    wcsncpy(path + n, EXE_SUFFIX, s);
-    path[n+s] = '\0';
+    wcsncpy(progpath + n, EXE_SUFFIX, s);
+    progpath[n+s] = '\0';
 
-    if (!isxfile(path)) {
+    if (!isxfile(progpath)) {
         /* Path that added suffix is invalid: truncate (remove suffix) */
-        path[n] = '\0';
+        progpath[n] = '\0';
     }
 
     return _Py_INIT_OK();
@@ -911,14 +911,14 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
 #endif
 
 #if HAVE_READLINK
-    wchar_t buffer[MAXPATHLEN + 1];
-    const size_t buflen = Py_ARRAY_LENGTH(buffer);
-    int linklen = _Py_wreadlink(program_full_path, buffer, buflen);
+    wchar_t tmpbuffer[MAXPATHLEN + 1];
+    const size_t buflen = Py_ARRAY_LENGTH(tmpbuffer);
+    int linklen = _Py_wreadlink(program_full_path, tmpbuffer, buflen);
     while (linklen != -1) {
-        if (buffer[0] == SEP) {
-            /* buffer should never be longer than MAXPATHLEN,
+        if (tmpbuffer[0] == SEP) {
+            /* tmpbuffer should never be longer than MAXPATHLEN,
                but extra check does not hurt */
-            if (safe_wcscpy(calculate->argv0_path, buffer, argv0_path_len) < 0) {
+            if (safe_wcscpy(calculate->argv0_path, tmpbuffer, argv0_path_len) < 0) {
                 return PATHLEN_ERR();
             }
         }
@@ -926,12 +926,12 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
             /* Interpret relative to program_full_path */
             _PyInitError err;
             reduce(calculate->argv0_path);
-            err = joinpath(calculate->argv0_path, buffer, argv0_path_len);
+            err = joinpath(calculate->argv0_path, tmpbuffer, argv0_path_len);
             if (_Py_INIT_FAILED(err)) {
                 return err;
             }
         }
-        linklen = _Py_wreadlink(calculate->argv0_path, buffer, buflen);
+        linklen = _Py_wreadlink(calculate->argv0_path, tmpbuffer, buflen);
     }
 #endif /* HAVE_READLINK */
 
@@ -950,31 +950,31 @@ static _PyInitError
 calculate_read_pyenv(PyCalculatePath *calculate)
 {
     _PyInitError err;
-    wchar_t buffer[MAXPATHLEN+1];
-    const size_t buflen = Py_ARRAY_LENGTH(buffer);
+    wchar_t tmpbuffer[MAXPATHLEN+1];
+    const size_t buflen = Py_ARRAY_LENGTH(tmpbuffer);
     wchar_t *env_cfg = L"pyvenv.cfg";
     FILE *env_file;
 
-    if (safe_wcscpy(buffer, calculate->argv0_path, buflen) < 0) {
+    if (safe_wcscpy(tmpbuffer, calculate->argv0_path, buflen) < 0) {
         return PATHLEN_ERR();
     }
 
-    err = joinpath(buffer, env_cfg, buflen);
+    err = joinpath(tmpbuffer, env_cfg, buflen);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
-    env_file = _Py_wfopen(buffer, L"r");
+    env_file = _Py_wfopen(tmpbuffer, L"r");
     if (env_file == NULL) {
         errno = 0;
 
-        reduce(buffer);
-        reduce(buffer);
-        err = joinpath(buffer, env_cfg, Py_ARRAY_LENGTH(buffer));
+        reduce(tmpbuffer);
+        reduce(tmpbuffer);
+        err = joinpath(tmpbuffer, env_cfg, buflen);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
 
-        env_file = _Py_wfopen(buffer, L"r");
+        env_file = _Py_wfopen(tmpbuffer, L"r");
         if (env_file == NULL) {
             errno = 0;
         }
@@ -985,8 +985,8 @@ calculate_read_pyenv(PyCalculatePath *calculate)
     }
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
-    if (_Py_FindEnvConfigValue(env_file, L"home", buffer, Py_ARRAY_LENGTH(buffer) - 1)) {
-        if (safe_wcscpy(calculate->argv0_path, buffer,
+    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, buflen)) {
+        if (safe_wcscpy(calculate->argv0_path, tmpbuffer,
                         Py_ARRAY_LENGTH(calculate->argv0_path)) < 0) {
             return PATHLEN_ERR();
         }
