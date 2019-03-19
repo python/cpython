@@ -712,7 +712,7 @@ class NormalDist:
     __slots__ = ('mu', 'sigma')
 
     def __init__(self, mu=0.0, sigma=1.0):
-        'NormalDist where mu is the mean and sigma is the standard deviation'
+        'NormalDist where mu is the mean and sigma is the standard deviation.'
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
         self.mu = mu
@@ -720,39 +720,38 @@ class NormalDist:
 
     @classmethod
     def from_samples(cls, data):
-        'Make a normal distribution instance from sample data'
+        'Make a normal distribution instance from sample data.'
         if not isinstance(data, (list, tuple)):
             data = list(data)
         xbar = fmean(data)
         return cls(xbar, stdev(data, xbar))
 
     def samples(self, n, seed=None):
-        'Generate *n* samples for a given mean and standard deviation'
+        'Generate *n* samples for a given mean and standard deviation.'
         gauss = random.gauss if seed is None else random.Random(seed).gauss
         mu, sigma = self.mu, self.sigma
         return [gauss(mu, sigma) for i in range(n)]
 
     def pdf(self, x):
-        'Probability density function:  P(x <= X < x+dx) / dx'
+        'Probability density function.  P(x <= X < x+dx) / dx'
         variance = self.sigma ** 2.0
         if not variance:
             raise StatisticsError('pdf() not defined when sigma is zero')
         return exp((x - self.mu)**2.0 / (-2.0*variance)) / sqrt(tau * variance)
 
     def cdf(self, x):
-        'Cumulative distribution function:  P(X <= x)'
+        'Cumulative distribution function.  P(X <= x)'
         if not self.sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
         return 0.5 * (1.0 + erf((x - self.mu) / (self.sigma * sqrt(2.0))))
 
     def inv_cdf(self, p):
-        ''' Inverse cumulative distribution function:  x : P(X <= x) = p
+        '''Inverse cumulative distribution function.  x : P(X <= x) = p
 
-         Finds the value of the random variable such that the probability of the
-         variable being less than or equal to that value equals the given probability.
+        Finds the value of the random variable such that the probability of the
+        variable being less than or equal to that value equals the given probability.
 
-         This function is also called the percent-point function or quantile function.
-
+        This function is also called the percent point function or quantile function.
         '''
         if (p <= 0.0 or p >= 1.0):
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
@@ -851,7 +850,6 @@ class NormalDist:
             >>> N2 = NormalDist(3.2, 2.0)
             >>> N1.overlap(N2)
             0.8035050657330205
-
         '''
         # See: "The overlapping coefficient as a measure of agreement between
         # probability distributions and point estimation of the overlap of two
@@ -877,49 +875,81 @@ class NormalDist:
 
     @property
     def mean(self):
-        'Arithmetic mean of the normal distribution'
+        'Arithmetic mean of the normal distribution.'
         return self.mu
 
     @property
     def stdev(self):
-        'Standard deviation of the normal distribution'
+        'Standard deviation of the normal distribution.'
         return self.sigma
 
     @property
     def variance(self):
-        'Square of the standard deviation'
+        'Square of the standard deviation.'
         return self.sigma ** 2.0
 
     def __add__(x1, x2):
+        '''Add a constant or another NormalDist instance.
+
+        If *other* is a constant, translate mu by the constant,
+        leaving sigma unchanged.
+
+        If *other* is a NormalDist, add both the means and the variances.
+        Mathematically, this works only if the two distributions are
+        independent or if they are jointly normally distributed.
+        '''
         if isinstance(x2, NormalDist):
             return NormalDist(x1.mu + x2.mu, hypot(x1.sigma, x2.sigma))
         return NormalDist(x1.mu + x2, x1.sigma)
 
     def __sub__(x1, x2):
+        '''Subtract a constant or another NormalDist instance.
+
+        If *other* is a constant, translate by the constant mu,
+        leaving sigma unchanged.
+
+        If *other* is a NormalDist, subtract the means and add the variances.
+        Mathematically, this works only if the two distributions are
+        independent or if they are jointly normally distributed.
+        '''
         if isinstance(x2, NormalDist):
             return NormalDist(x1.mu - x2.mu, hypot(x1.sigma, x2.sigma))
         return NormalDist(x1.mu - x2, x1.sigma)
 
     def __mul__(x1, x2):
+        '''Multiply both mu and sigma by a constant.
+
+        Used for rescaling, perhaps to change measurement units.
+        Sigma is scaled with the absolute value of the constant.
+        '''
         return NormalDist(x1.mu * x2, x1.sigma * fabs(x2))
 
     def __truediv__(x1, x2):
+        '''Divide both mu and sigma by a constant.
+
+        Used for rescaling, perhaps to change measurement units.
+        Sigma is scaled with the absolute value of the constant.
+        '''
         return NormalDist(x1.mu / x2, x1.sigma / fabs(x2))
 
     def __pos__(x1):
+        'Return a copy of the instance.'
         return NormalDist(x1.mu, x1.sigma)
 
     def __neg__(x1):
+        'Negates mu while keeping sigma the same.'
         return NormalDist(-x1.mu, x1.sigma)
 
     __radd__ = __add__
 
     def __rsub__(x1, x2):
+        'Subtract a NormalDist from a constant or another NormalDist.'
         return -(x1 - x2)
 
     __rmul__ = __mul__
 
     def __eq__(x1, x2):
+        'Two NormalDist objects are equal if their mu and sigma are both equal.'
         if not isinstance(x2, NormalDist):
             return NotImplemented
         return (x1.mu, x2.sigma) == (x2.mu, x2.sigma)
