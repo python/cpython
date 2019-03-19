@@ -578,8 +578,8 @@ _PyPathConfig_ComputeArgv0(const _PyWstrList *argv)
     int have_script_arg = 0;
     int have_module_arg = 0;
 #ifdef HAVE_READLINK
-    wchar_t link[MAXPATHLEN+1];
-    wchar_t argv0copy[2*MAXPATHLEN+1];
+    wchar_t link[MAXPATHLEN + 1];
+    wchar_t argv0copy[2 * MAXPATHLEN + 1];
     int nr = 0;
 #endif
 #if defined(HAVE_REALPATH)
@@ -607,7 +607,7 @@ _PyPathConfig_ComputeArgv0(const _PyWstrList *argv)
 
 #ifdef HAVE_READLINK
     if (have_script_arg)
-        nr = _Py_wreadlink(argv0, link, MAXPATHLEN);
+        nr = _Py_wreadlink(argv0, link, Py_ARRAY_LENGTH(link));
     if (nr > 0) {
         /* It's a symlink */
         link[nr] = '\0';
@@ -692,11 +692,12 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
                        wchar_t *value, size_t value_size)
 {
     int result = 0; /* meaning not found */
-    char buffer[MAXPATHLEN*2+1];  /* allow extra for key, '=', etc. */
+    char buffer[MAXPATHLEN * 2 + 1];  /* allow extra for key, '=', etc. */
+    buffer[Py_ARRAY_LENGTH(buffer)-1] = '\0';
 
     fseek(env_file, 0, SEEK_SET);
     while (!feof(env_file)) {
-        char * p = fgets(buffer, MAXPATHLEN*2, env_file);
+        char * p = fgets(buffer, Py_ARRAY_LENGTH(buffer) - 1, env_file);
 
         if (p == NULL) {
             break;
@@ -721,7 +722,8 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
                 if ((tok != NULL) && !wcscmp(tok, L"=")) {
                     tok = WCSTOK(NULL, L"\r\n", &state);
                     if (tok != NULL) {
-                        wcsncpy(value, tok, MAXPATHLEN);
+                        wcsncpy(value, tok, value_size - 1);
+                        value[value_size - 1] = L'\0';
                         result = 1;
                         PyMem_RawFree(tmpbuffer);
                         break;
