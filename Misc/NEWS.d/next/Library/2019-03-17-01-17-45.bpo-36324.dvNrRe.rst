@@ -1,0 +1,2 @@
+Add method to statistics.NormalDist for computing the inverse cumulative
+normal distribution.
