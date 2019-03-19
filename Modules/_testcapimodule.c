@@ -1410,7 +1410,6 @@ getargs_y_hash(PyObject *self, PyObject *args)
     return PyBytes_FromStringAndSize(str, size);
 }
 
-//#if USE_UNICODE_WCHAR_CACHE
 static PyObject *
 getargs_u(PyObject *self, PyObject *args)
 {
@@ -1454,7 +1453,6 @@ getargs_Z_hash(PyObject *self, PyObject *args)
     else
         Py_RETURN_NONE;
 }
-// #endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
 getargs_es(PyObject *self, PyObject *args)
@@ -4817,12 +4815,10 @@ static PyMethodDef TestMethods[] = {
     {"getargs_y",               getargs_y,                       METH_VARARGS},
     {"getargs_y_star",          getargs_y_star,                  METH_VARARGS},
     {"getargs_y_hash",          getargs_y_hash,                  METH_VARARGS},
-// #if USE_UNICODE_WCHAR_CACHE
     {"getargs_u",               getargs_u,                       METH_VARARGS},
     {"getargs_u_hash",          getargs_u_hash,                  METH_VARARGS},
     {"getargs_Z",               getargs_Z,                       METH_VARARGS},
     {"getargs_Z_hash",          getargs_Z_hash,                  METH_VARARGS},
-// #endif /* USE_UNICODE_WCHAR_CACHE */
     {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
     {"getargs_es",              getargs_es,                      METH_VARARGS},
     {"getargs_et",              getargs_et,                      METH_VARARGS},
@@ -4846,8 +4842,6 @@ static PyMethodDef TestMethods[] = {
 #if USE_UNICODE_WCHAR_CACHE
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
-#endif /* USE_UNICODE_WCHAR_CACHE */
-#if USE_UNICODE_WCHAR_CACHE
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
 #endif /* USE_UNICODE_WCHAR_CACHE */
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
