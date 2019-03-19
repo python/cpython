@@ -11,6 +11,8 @@ env:
   global:
     # Use -O3 because we don't use debugger on Travis-CI
     - CFLAGS="-O3"
+    # python3.x in PATH may be pyenv shims, not real python.
+    - PYTHON_FOR_REGEN=python3
 
 branches:
   only:
@@ -49,6 +51,7 @@ matrix:
 
 before_install:
   - set -e
+  - pyenv global 3.7.1  # If this fails, try `pyenv versions`
   - |
       # Check short-circuit conditions
       if [ "${TESTING}" != "docs" ]
