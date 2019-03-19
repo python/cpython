@@ -1340,29 +1340,6 @@ _Py_wstrlist_as_pylist(int len, wchar_t **list)
 
 
 static int
-pymain_compute_path0(_PyMain *pymain, _PyCoreConfig *config, PyObject **path0)
-{
-    if (pymain->main_importer_path != NULL) {
-        /* Let pymain_run_main_from_importer() adjust sys.path[0] later */
-        *path0 = NULL;
-        return 0;
-    }
-
-    if (Py_IsolatedFlag) {
-        *path0 = NULL;
-        return 0;
-    }
-
-    *path0 = _PyPathConfig_ComputeArgv0(config->argc, config->argv);
-    if (*path0 == NULL) {
-        pymain->err = _Py_INIT_NO_MEMORY();
-        return -1;
-    }
-    return 0;
-}
-
-
-static int
 pymain_update_sys_path(_PyMain *pymain, PyObject *path0)
 {
     /* Prepend argv[0] to sys.path.
@@ -2845,18 +2822,29 @@ pymain_init_sys_path(_PyMain *pymain, _PyCoreConfig *config)
         pymain->main_importer_path = pymain_get_importer(pymain->filename);
     }
 
-    PyObject *path0;
-    if (pymain_compute_path0(pymain, config, &path0) < 0) {
+    if (pymain->main_importer_path != NULL) {
+        /* Let pymain_run_main_from_importer() adjust sys.path[0] later */
+        return 0;
+    }
+
+    if (Py_IsolatedFlag) {
+        return 0;
+    }
+
+    PyObject *path0 = NULL;
+    if (!_PyPathConfig_ComputeArgv0(config->argc, config->argv, &path0)) {
+        return 0;
+    }
+    if (path0 == NULL) {
+        pymain->err = _Py_INIT_NO_MEMORY();
         return -1;
     }
 
-    if (path0 != NULL) {
-        if (pymain_update_sys_path(pymain, path0) < 0) {
-            Py_DECREF(path0);
-            return -1;
-        }
+    if (pymain_update_sys_path(pymain, path0) < 0) {
         Py_DECREF(path0);
+        return -1;
     }
+    Py_DECREF(path0);
     return 0;
 }
 
