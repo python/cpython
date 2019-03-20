@@ -1609,7 +1609,7 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
                         "Type must be winreg.REG_SZ");
         return NULL;
     }
-    if (value_length + 1 > INT_MAX) {
+    if (value_length >= INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "the value is too long");
         return NULL;
