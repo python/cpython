@@ -1789,7 +1789,11 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
                 new_param = new_params[param_name].replace(kind=_KEYWORD_ONLY)
+                new_params.pop(param_name)
                 new_params[param_name] = new_param
+            elif param.kind in (_KEYWORD_ONLY, _VAR_KEYWORD):
+                param = new_params.pop(param_name)
+                new_params[param_name] = param
             elif param.kind is _VAR_POSITIONAL:
                 new_params.pop(param.name)
 
