@@ -9,6 +9,30 @@ extern "C" {
 #endif
 
 
+/* --- _PyPreCmdline ------------------------------------------------- */
+
+typedef struct {
+    _PyWstrList argv;
+    _PyWstrList xoptions;     /* "-X value" option */
+    int use_environment;      /* -E option */
+    int isolated;             /* -I option */
+} _PyPreCmdline;
+
+#define _PyPreCmdline_INIT \
+    (_PyPreCmdline){ \
+        .use_environment = -1, \
+        .isolated = -1}
+/* Note: _PyPreCmdline_INIT sets other fields to 0/NULL */
+
+PyAPI_FUNC(void) _PyPreCmdline_Clear(_PyPreCmdline *cmdline);
+PyAPI_FUNC(_PyInitError) _PyPreCmdline_Init(_PyPreCmdline *cmdline,
+    const _PyArgv *args);
+PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline);
+PyAPI_FUNC(void) _PyPreCmdline_SetPreConfig(
+    const _PyPreCmdline *cmdline,
+    _PyPreConfig *config);
+
+
 /* --- _PyWstrList ------------------------------------------------ */
 
 #ifndef NDEBUG
