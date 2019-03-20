@@ -679,7 +679,8 @@ intended.
 Comparing Sequences and Other Types
 ===================================
 
-Sequence objects may be compared to other objects with the same sequence type.
+Sequence objects can be compared to some objects with the same sequence type,
+for instance `range()` object is a `sequence` type, but they can not be compared.
 The comparison uses *lexicographical* ordering: first the first two items are
 compared, and if they differ this determines the outcome of the comparison; if
 they are equal, the next two items are compared, and so on, until either
