@@ -102,17 +102,18 @@ _PyArgv_AsWstrList(const _PyArgv *args, _PyWstrList *list)
 
 /* --- _PyPreCmdline ------------------------------------------------- */
 
-typedef struct {
-    _PyWstrList argv;
-    _PyWstrList xoptions;     /* -X options */
-} _PyPreCmdline;
-
-
-static void
-precmdline_clear(_PyPreCmdline *cmdline)
+void
+_PyPreCmdline_Clear(_PyPreCmdline *cmdline)
 {
     _PyWstrList_Clear(&cmdline->argv);
     _PyWstrList_Clear(&cmdline->xoptions);
+}
+
+
+_PyInitError
+_PyPreCmdline_Init(_PyPreCmdline *cmdline, const _PyArgv *args)
+{
+    return _PyArgv_AsWstrList(args, &cmdline->argv);
 }
 
 
@@ -520,6 +521,21 @@ _PyPreConfig_Read(_PyPreConfig *config)
 }
 
 
+void
+_PyPreCmdline_SetPreConfig(const _PyPreCmdline *cmdline, _PyPreConfig *config)
+{
+#define COPY_ATTR(ATTR) \
+    if (cmdline->ATTR != -1) { \
+        config->ATTR = cmdline->ATTR; \
+    }
+
+    COPY_ATTR(use_environment);
+    COPY_ATTR(isolated);
+
+#undef COPY_ATTR
+}
+
+
 int
 _PyPreConfig_AsDict(const _PyPreConfig *config, PyObject *dict)
 {
@@ -567,16 +583,18 @@ fail:
 
 
 /* Parse the command line arguments */
-static _PyInitError
-preconfig_parse_cmdline(_PyPreConfig *config, _PyPreCmdline *cmdline)
+_PyInitError
+_PyPreCmdline_Read(_PyPreCmdline *cmdline)
 {
+    _PyWstrList *argv = &cmdline->argv;
+
     _PyOS_ResetGetOpt();
     /* Don't log parsing errors into stderr here: _PyCoreConfig_ReadFromArgv()
        is responsible for that */
     _PyOS_opterr = 0;
     do {
         int longindex = -1;
-        int c = _PyOS_GetOpt(cmdline->argv.length, cmdline->argv.items, &longindex);
+        int c = _PyOS_GetOpt(argv->length, argv->items, &longindex);
 
         if (c == EOF || c == 'c' || c == 'm') {
             break;
@@ -584,11 +602,11 @@ preconfig_parse_cmdline(_PyPreConfig *config, _PyPreCmdline *cmdline)
 
         switch (c) {
         case 'E':
-            config->use_environment = 0;
+            cmdline->use_environment = 0;
             break;
 
         case 'I':
-            config->isolated++;
+            cmdline->isolated = 1;
             break;
 
         case 'X':
@@ -615,18 +633,19 @@ preconfig_from_argv(_PyPreConfig *config, const _PyArgv *args)
 {
     _PyInitError err;
 
-    _PyPreCmdline cmdline;
-    memset(&cmdline, 0, sizeof(cmdline));
+    _PyPreCmdline cmdline = _PyPreCmdline_INIT;
 
-    err = _PyArgv_AsWstrList(args, &cmdline.argv);
+    err = _PyPreCmdline_Init(&cmdline, args);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = preconfig_parse_cmdline(config, &cmdline);
+    err = _PyPreCmdline_Read(&cmdline);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
+
+    _PyPreCmdline_SetPreConfig(&cmdline, config);
 
     err = preconfig_read(config, &cmdline);
     if (_Py_INIT_FAILED(err)) {
@@ -635,7 +654,7 @@ preconfig_from_argv(_PyPreConfig *config, const _PyArgv *args)
     err = _Py_INIT_OK();
 
 done:
-    precmdline_clear(&cmdline);
+    _PyPreCmdline_Clear(&cmdline);
     return err;
 }
 
