@@ -961,13 +961,15 @@ config_read_env_vars(_PyCoreConfig *config)
         config->malloc_stats = 1;
     }
 
-    wchar_t *path;
-    int res = _PyCoreConfig_GetEnvDup(config, &path,
-                                      L"PYTHONPATH", "PYTHONPATH");
-    if (res < 0) {
-        return DECODE_LOCALE_ERR("PYTHONPATH", res);
+    if (config->module_search_path_env == NULL) {
+        wchar_t *path;
+        int res = _PyCoreConfig_GetEnvDup(config, &path,
+                                          L"PYTHONPATH", "PYTHONPATH");
+        if (res < 0) {
+            return DECODE_LOCALE_ERR("PYTHONPATH", res);
+        }
+        config->module_search_path_env = path;
     }
-    config->module_search_path_env = path;
 
     if (config->use_hash_seed < 0) {
         _PyInitError err = config_init_hash_seed(config);
@@ -1689,18 +1691,20 @@ config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
         }
 
         if (c == 'c') {
-            /* -c is the last option; following arguments
-               that look like options are left for the
-               command to interpret. */
-            size_t len = wcslen(_PyOS_optarg) + 1 + 1;
-            wchar_t *command = PyMem_RawMalloc(sizeof(wchar_t) * len);
-            if (command == NULL) {
-                return _Py_INIT_NO_MEMORY();
+            if (config->run_command == NULL) {
+                /* -c is the last option; following arguments
+                   that look like options are left for the
+                   command to interpret. */
+                size_t len = wcslen(_PyOS_optarg) + 1 + 1;
+                wchar_t *command = PyMem_RawMalloc(sizeof(wchar_t) * len);
+                if (command == NULL) {
+                    return _Py_INIT_NO_MEMORY();
+                }
+                memcpy(command, _PyOS_optarg, (len - 2) * sizeof(wchar_t));
+                command[len - 2] = '\n';
+                command[len - 1] = 0;
+                config->run_command = command;
             }
-            memcpy(command, _PyOS_optarg, (len - 2) * sizeof(wchar_t));
-            command[len - 2] = '\n';
-            command[len - 1] = 0;
-            config->run_command = command;
             break;
         }
 
@@ -1708,9 +1712,11 @@ config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
             /* -m is the last option; following arguments
                that look like options are left for the
                module to interpret. */
-            config->run_module = _PyMem_RawWcsdup(_PyOS_optarg);
             if (config->run_module == NULL) {
-                return _Py_INIT_NO_MEMORY();
+                config->run_module = _PyMem_RawWcsdup(_PyOS_optarg);
+                if (config->run_module == NULL) {
+                    return _Py_INIT_NO_MEMORY();
+                }
             }
             break;
         }
@@ -1825,7 +1831,8 @@ config_parse_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
 
     if (config->run_command == NULL && config->run_module == NULL
         && _PyOS_optind < cmdline->argv.length
-        && wcscmp(cmdline->argv.items[_PyOS_optind], L"-") != 0)
+        && wcscmp(cmdline->argv.items[_PyOS_optind], L"-") != 0
+        && config->run_filename == NULL)
     {
         config->run_filename = _PyMem_RawWcsdup(cmdline->argv.items[_PyOS_optind]);
         if (config->run_filename == NULL) {
@@ -2032,9 +2039,11 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
 
     _PyCoreConfig_GetGlobalConfig(config);
 
-    err = config_init_program(config, cmdline);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (config->program == NULL) {
+        err = config_init_program(config, cmdline);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
     err = config_parse_cmdline(config, cmdline, &need_usage);
