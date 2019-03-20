@@ -14,6 +14,10 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 
+PyAPI_FUNC(_PyInitError) _Py_PreInitialize(void);
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPreConfig(
+    _PyPreConfig *preconfig);
+
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
     PyInterpreterState **interp,
     const _PyCoreConfig *);
