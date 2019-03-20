@@ -1,2 +1,1 @@
-Add property method to provide args and kwargs attributes on mock call
-objects. Contributed by Kumar Akshay.
+Add args and kwards propery to mock call objects. Contributed by Kumar Akshay.
