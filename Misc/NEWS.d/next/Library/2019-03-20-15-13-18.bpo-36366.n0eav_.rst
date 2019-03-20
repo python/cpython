@@ -1,0 +1,3 @@
+Calling ``stop`` on an unstarted or stopped :func:`unittest.mock.patch`
+object will not raise :exc:`RuntimeError` and returns `None`. Patch by
+Karthikeyan Singaravelan.
