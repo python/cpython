@@ -672,6 +672,8 @@ _PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
         goto done;
     }
 
+    _PyPreConfig_GetGlobalConfig(config);
+
     if (_PyPreConfig_Copy(&save_config, config) < 0) {
         err = _Py_INIT_NO_MEMORY();
         goto done;

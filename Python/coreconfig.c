@@ -1367,6 +1367,11 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
 {
     _PyInitError err;
 
+    err = _Py_PreInitialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     _PyCoreConfig_GetGlobalConfig(config);
 
     if (preconfig != NULL) {
@@ -2024,6 +2029,8 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
 {
     int need_usage = 0;
     _PyInitError err;
+
+    _PyCoreConfig_GetGlobalConfig(config);
 
     err = config_init_program(config, cmdline);
     if (_Py_INIT_FAILED(err)) {
