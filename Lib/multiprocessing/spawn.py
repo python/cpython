@@ -169,10 +169,15 @@ def get_preparation_data(name):
     else:
         sys_path[i] = process.ORIGINAL_DIR
 
+    try:
+        sys_argv = sys.argv
+    except AttributeError:
+        sys_argv = []
+
     d.update(
         name=name,
         sys_path=sys_path,
-        sys_argv=sys.argv,
+        sys_argv=sys_argv,
         orig_dir=process.ORIGINAL_DIR,
         dir=os.getcwd(),
         start_method=get_start_method(),
