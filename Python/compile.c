@@ -1210,7 +1210,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
     PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
     if (t != key) {
         // o is registered in c_const_cache.  Just use it.
-        Py_INCREF(t);
+        Py_XINCREF(t);
         Py_DECREF(key);
         return t;
     }
