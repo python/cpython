@@ -119,7 +119,7 @@ dbm_length(dbmobject *dp)
     return dp->di_size;
 }
 
-// Wrapper function for PyArg_Parse(o, "s#", &d.dptr, &d.size.
+// Wrapper function for PyArg_Parse(o, "s#", &d.dptr, &d.size).
 // This function is needed to support PY_SSIZE_T_CLEAN.
 // Return 1 on success, same to PyArg_Parse().
 static int
