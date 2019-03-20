@@ -7083,15 +7083,21 @@ decode_code_page_strict(UINT code_page,
                         const char *in,
                         int insize)
 {
-    const DWORD flags = decode_code_page_flags(code_page);
+    DWORD flags = MB_ERR_INVALID_CHARS;
     wchar_t *out;
     DWORD outsize;
 
     /* First get the size of the result */
     assert(insize > 0);
-    outsize = MultiByteToWideChar(code_page, flags, in, insize, NULL, 0);
-    if (outsize <= 0)
-        goto error;
+    while ((outsize = MultiByteToWideChar(code_page, flags,
+                                          in, insize, NULL, 0)) <= 0)
+    {
+        if (!flags || GetLastError() != ERROR_INVALID_FLAGS) {
+            goto error;
+        }
+        /* For some code pages (e.g. UTF-7) flags must be set to 0. */
+        flags = 0;
+    }
 
     /* Extend a wchar_t* buffer */
     Py_ssize_t n = *bufsize;   /* Get the current length */
@@ -7129,7 +7135,7 @@ decode_code_page_errors(UINT code_page,
 {
     const char *startin = in;
     const char *endin = in + size;
-    const DWORD flags = decode_code_page_flags(code_page);
+    DWORD flags = MB_ERR_INVALID_CHARS;
     /* Ideally, we should get reason from FormatMessage. This is the Windows
        2000 English version of the message. */
     const char *reason = "No mapping for the Unicode character exists "
@@ -7187,6 +7193,11 @@ decode_code_page_errors(UINT code_page,
             if (outsize > 0)
                 break;
             err = GetLastError();
+            if (err == ERROR_INVALID_FLAGS && flags) {
+                /* For some code pages (e.g. UTF-7) flags must be set to 0. */
+                flags = 0;
+                continue;
+            }
             if (err != ERROR_NO_UNICODE_TRANSLATION
                 && err != ERROR_INSUFFICIENT_BUFFER)
             {

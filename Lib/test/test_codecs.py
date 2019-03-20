@@ -3066,6 +3066,15 @@ class CodePageTest(unittest.TestCase):
             ('[\U0010ffff\uDC80]', 'replace', b'[\xf4\x8f\xbf\xbf?]'),
         ))
 
+    def test_code_page_decode_flags(self):
+        # Issue #36312: For some code pages (e.g. UTF-7) flags for
+        # MultiByteToWideChar() must be set to 0.
+        for cp in (50220, 50221, 50222, 50225, 50227, 50229,
+                   *range(57002, 57011+1), 65000):
+            self.assertEqual(codecs.code_page_decode(cp, b'abc'), ('abc', 3))
+        self.assertEqual(codecs.code_page_decode(42, b'abc'),
+                         ('\uf061\uf062\uf063', 3))
+
     def test_incremental(self):
         decoded = codecs.code_page_decode(932, b'\x82', 'strict', False)
         self.assertEqual(decoded, ('', 0))
