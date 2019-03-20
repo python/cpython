@@ -933,13 +933,13 @@ qualify as a built-in module.  This is because the manner in which
 ``__main__`` is initialized depends on the flags and other options with
 which the interpreter is invoked.
 
-When Python is started with the :option:`-m` option, if the name
-provided resolves to a module (as distinct from a package) then the
-module is associated as both ``sys.modules['__main__']`` and also
-as ``sys.modules[``name``]``. This prevents a future import of the
-named module creating a distinct module instance which cauases
-subtle failures because references like ``__main__.foo`` are to
-distinct objects from references like name``.foo``.
+When Python is started with the :option:`-m` ``module_name`` option,
+if the name provided resolves to a module (as distinct from a package)
+then the module is associated as both ``sys.modules['__main__']``
+and also as ``sys.modules[module_name]``. This prevents a future import
+of the named module creating a distinct module instance which causes
+subtle failures because references like ``__main__.foo`` resolve to
+distinct objects from references like ``module_name.foo``.
 
 .. versionchanged:: 3.8
    The :option:`-m` formerly installed the module only as
