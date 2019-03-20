@@ -106,6 +106,7 @@ __author__ = 'Bob Ippolito <bob@redivi.com>'
 from .decoder import JSONDecoder, JSONDecodeError
 from .encoder import JSONEncoder
 import codecs
+from pathlib import Path
 
 _default_encoder = JSONEncoder(
     skipkeys=False,
@@ -273,8 +274,8 @@ def detect_encoding(b):
 
 def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
-    """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
-    a JSON document) to a Python object.
+    """Deserialize ``fp`` (a ``.read()``-supporting file-like object, string,
+    or pathlib.Path containing a JSON document) to a Python object.
 
     ``object_hook`` is an optional function that will be called with the
     result of any object literal decode (a ``dict``). The return value of
@@ -290,7 +291,18 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
     """
-    return loads(fp.read(),
+    if isinstance(fp, str):
+        fid = open(fp, "r")
+        json_string = fid.read()
+        fid.close()
+    elif isinstance(fp, Path):
+        fid = fp.open("r")
+        json_string = fid.read()
+        fid.close()
+    else:
+        json_string = fp.read()
+
+    return loads(json_string,
         cls=cls, object_hook=object_hook,
         parse_float=parse_float, parse_int=parse_int,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
