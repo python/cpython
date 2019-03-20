@@ -1,0 +1,8 @@
+PEP 499 implemented: the "python -m module_name" command line option now binds the imported module
+to both ``sys.modules['__main__'`` and additionally to ``sys.modules['module_name']``.
+This prevents subtle bug that arise when a later import of the module by name within the code
+formerly produced a distinct instance of the module,
+which led to hard to debug issues where the object resolved by ``__main__.obj_name``
+was distinct from the object resolved by ``module_name.obj_name``.
+This led to subtle breakage of code which relied on objtect identity tests,
+particularly ``isinstance`` tests and ``try/except`` clauses.
