@@ -283,32 +283,30 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 /* --- pymain_init() ---------------------------------------------- */
 
 static _PyInitError
-preconfig_read_write(_PyPreConfig *config, const _PyArgv *args)
+pymain_init_preconfig(_PyPreConfig *config, const _PyArgv *args)
 {
-    _PyPreConfig_GetGlobalConfig(config);
-
     _PyInitError err = _PyPreConfig_ReadFromArgv(config, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    return _PyPreConfig_Write(config);
+    return _Py_PreInitializeFromPreConfig(config);
 }
 
 
 static _PyInitError
-config_read_write(_PyCoreConfig *config, const _PyArgv *args,
-                  const _PyPreConfig *preconfig)
+pymain_init_coreconfig(_PyCoreConfig *config, const _PyArgv *args,
+                       const _PyPreConfig *preconfig,
+                       PyInterpreterState **interp_p)
 {
-    _PyCoreConfig_GetGlobalConfig(config);
-
     _PyInitError err = _PyCoreConfig_ReadFromArgv(config, args, preconfig);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
     _PyCoreConfig_Write(config);
-    return _Py_INIT_OK();
+
+    return _Py_InitializeCore(interp_p, config);
 }
 
 
@@ -356,24 +354,17 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     _PyCoreConfig local_config = _PyCoreConfig_INIT;
     _PyCoreConfig *config = &local_config;
 
-    err = preconfig_read_write(preconfig, args);
+    err = pymain_init_preconfig(preconfig, args);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = config_read_write(config, args, preconfig);
+    err = pymain_init_coreconfig(config, args, preconfig, interp_p);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    PyInterpreterState *interp;
-    err = _Py_InitializeCore(&interp, config);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
-    *interp_p = interp;
-
-    err = pymain_init_python_main(interp);
+    err = pymain_init_python_main(*interp_p);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -780,18 +771,20 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
         }
     }
     else if (!config->preconfig.isolated) {
-        PyObject *path0 = _PyPathConfig_ComputeArgv0(&config->argv);
-        if (path0 == NULL) {
-            err = _Py_INIT_NO_MEMORY();
-            goto done;
-        }
+        PyObject *path0 = NULL;
+        if (_PyPathConfig_ComputeSysPath0(&config->argv, &path0)) {
+            if (path0 == NULL) {
+                err = _Py_INIT_NO_MEMORY();
+                goto done;
+            }
 
-        if (pymain_sys_path_add_path0(interp, path0) < 0) {
+            if (pymain_sys_path_add_path0(interp, path0) < 0) {
+                Py_DECREF(path0);
+                err = _Py_INIT_EXIT(1);
+                goto done;
+            }
             Py_DECREF(path0);
-            err = _Py_INIT_EXIT(1);
-            goto done;
         }
-        Py_DECREF(path0);
     }
 
     PyCompilerFlags cf = {.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION};
@@ -839,18 +832,7 @@ pymain_free(void)
     _PyPathConfig_ClearGlobal();
     _Py_ClearStandardStreamEncoding();
     _Py_ClearArgcArgv();
-#ifdef __INSURE__
-    /* Insure++ is a memory analysis tool that aids in discovering
-     * memory leaks and other memory problems.  On Python exit, the
-     * interned string dictionaries are flagged as being in use at exit
-     * (which it is).  Under normal circumstances, this is fine because
-     * the memory will be automatically reclaimed by the system.  Under
-     * memory debugging, it's a huge source of useless noise, so we
-     * trade off slower shutdown for less distraction in the memory
-     * reports.  -baw
-     */
-    _Py_ReleaseInternedUnicodeStrings();
-#endif /* __INSURE__ */
+    _PyRuntime_Finalize();
 }
 
 

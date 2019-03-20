@@ -69,6 +69,7 @@ static void call_ll_exitfuncs(void);
 
 int _Py_UnhandledKeyboardInterrupt = 0;
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
+static int runtime_initialized = 0;
 
 _PyInitError
 _PyRuntime_Initialize(void)
@@ -79,11 +80,10 @@ _PyRuntime_Initialize(void)
        every Py_Initialize() call, but doing so breaks the runtime.
        This is because the runtime state is not properly finalized
        currently. */
-    static int initialized = 0;
-    if (initialized) {
+    if (runtime_initialized) {
         return _Py_INIT_OK();
     }
-    initialized = 1;
+    runtime_initialized = 1;
 
     return _PyRuntimeState_Init(&_PyRuntime);
 }
@@ -92,6 +92,7 @@ void
 _PyRuntime_Finalize(void)
 {
     _PyRuntimeState_Fini(&_PyRuntime);
+    runtime_initialized = 0;
 }
 
 int
@@ -713,19 +714,57 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 }
 
 
-static _PyInitError
-pyinit_preconfig(_PyPreConfig *preconfig, const _PyPreConfig *src_preconfig)
+_PyInitError
+_Py_PreInitializeFromPreConfig(_PyPreConfig *config)
 {
-    if (_PyPreConfig_Copy(preconfig, src_preconfig) < 0) {
-        return _Py_INIT_ERR("failed to copy pre config");
+    if (config != NULL) {
+        _PyInitError err = _PyPreConfig_Write(config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
-    _PyInitError err = _PyPreConfig_Read(preconfig);
+    _PyRuntime.pre_initialized = 1;
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+pyinit_preconfig(_PyPreConfig *config, const _PyPreConfig *src_config)
+{
+    _PyInitError err;
+
+    err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    return _PyPreConfig_Write(preconfig);
+    if (_PyPreConfig_Copy(config, src_config) < 0) {
+        return _Py_INIT_ERR("failed to copy pre config");
+    }
+
+    err = _PyPreConfig_Read(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    return _Py_PreInitializeFromPreConfig(config);
+}
+
+
+_PyInitError
+_Py_PreInitialize(void)
+{
+    _PyInitError err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    if (_PyRuntime.pre_initialized) {
+        return _Py_INIT_OK();
+    }
+
+    return _Py_PreInitializeFromPreConfig(NULL);
 }
 
 
