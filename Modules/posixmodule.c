@@ -12236,11 +12236,7 @@ DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
         result = fstatat(self->dir_fd, path, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
 #else
-#if defined(MS_WINDOWS) && !USE_UNICODE_WCHAR_CACHE
-        PyMem_Free(path);
-#else /* USE_UNICODE_WCHAR_CACHE */
         Py_DECREF(ub);
-#endif /* USE_UNICODE_WCHAR_CACHE */
         PyErr_SetString(PyExc_NotImplementedError, "can't fetch stat");
         return NULL;
 #endif /* HAVE_FSTATAT */
@@ -13053,9 +13049,9 @@ os_scandir_impl(PyObject *module, path_t *path)
 #else /* POSIX */
     errno = 0;
 #ifdef HAVE_FDOPENDIR
-    if (path->fd != -1) {
+    if (iterator->path.fd != -1) {
         /* closedir() closes the FD, so we duplicate it */
-        fd = _Py_dup(path->fd);
+        fd = _Py_dup(iterator->path.fd);
         if (fd == -1)
             goto error;
 
