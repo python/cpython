@@ -698,6 +698,15 @@ Changes in the Python API
   set for regular user accounts.
 
 
+Changes in the C API
+--------------------
+
+* Use of ``#`` variants of formats without ``PY_SSIZE_T_CLEAN`` defined
+  raises ``PendingDeprecationWarning`` now.  Read :ref:`arg-parsing` for
+  detail.
+  (Contributed by Inada Naoki in :issue:`36381`.)
+
+
 CPython bytecode changes
 ------------------------
 
