@@ -134,8 +134,15 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    int initialized;
+    /* Is Python pre-initialized? Set to 1 by _Py_PreInitialize() */
+    int pre_initialized;
+
+    /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
     int core_initialized;
+
+    /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+    int initialized;
+
     PyThreadState *finalizing;
 
     struct pyinterpreters {
@@ -172,7 +179,8 @@ typedef struct pyruntimestate {
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
-#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+#define _PyRuntimeState_INIT \
+    {.pre_initialized = 0, .core_initialized = 0, .initialized = 0}
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
