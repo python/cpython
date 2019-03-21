@@ -300,7 +300,7 @@ class LocalWinregTests(BaseWinregTests):
             # SQL Server that crash here, so try and ensure that their
             # directories are available.
             for p in os.environ["PATH"].split(os.pathsep):
-                if "sql" in p.lower():
+                if p:
                     stack.enter_context(os.add_dll_directory(p))
 
             # Issue2810, when the value is dynamically generated, these
