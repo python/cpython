@@ -697,7 +697,7 @@ validate_node(node *tree)
                 goto illegal_num_children;
 
             int next_type = _PyParser_Grammar.g_ll.ll_label[a_label].lb_type;
-            const char* expected_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+            const char *expected_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
 
             if (ISNONTERMINAL(next_type)) {
                 PyErr_Format(parser_error, "Expected node type %d, got %d.",
