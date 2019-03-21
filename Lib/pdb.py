@@ -76,6 +76,7 @@ import bdb
 import dis
 import code
 import glob
+import types
 import pprint
 import signal
 import inspect
@@ -1533,8 +1534,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         import runpy
         mod_name, mod_spec, code = runpy._get_module_details(module_name)
         self.mainpyfile = self.canonic(code.co_filename)
-        import __main__
-        __main__.__dict__.clear()
+        __main__ = types.ModuleType(module_name, 'New __main__ module for pdb.')
         __main__.__dict__.update({
             "__name__": "__main__",
             "__file__": self.mainpyfile,
@@ -1543,6 +1543,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             "__spec__": mod_spec,
             "__builtins__": __builtins__,
         })
+        sys.modules['__main__'] = __main__
         self.run(code)
 
     def _runscript(self, filename):
@@ -1551,12 +1552,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         #
         # So we clear up the __main__ and set several special variables
         # (this gets rid of pdb's globals and cleans old variables on restarts).
-        import __main__
-        __main__.__dict__.clear()
+        __main__ = types.ModuleType("__main__", 'New __main__ module for pdb.')
         __main__.__dict__.update({"__name__"    : "__main__",
                                   "__file__"    : filename,
                                   "__builtins__": __builtins__,
                                  })
+        sys.modules['__main__'] = __main__
 
         # When bdb sets tracing, a number of call and line events happens
         # BEFORE debugger even reaches user's code (and the exact sequence of
