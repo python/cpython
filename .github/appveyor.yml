@@ -32,7 +32,7 @@ build_script:
   - cmd: PCbuild\amd64\python.exe -m test.pythoninfo
 test_script:
   - cmd: PCbuild\rt.bat -x64 -q -uall -u-cpu -u-largefile -rwW --slowest --timeout=1200 --fail-env-changed -j0
-after_test:
+on_finish:
   - ps: Get-EventLog -LogName Application | ?{$_.EventID -eq 1009 -or $_.EventID -eq 1017} | select -first 50 | %{ $_.Source; $_.Message; "**********" }
 environment:
   HOST_PYTHON: C:\Python36\python.exe
