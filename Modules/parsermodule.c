@@ -678,7 +678,7 @@ validate_node(node *tree)
 
             const char *label_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
             if ((_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type)
-                && ( (ch->n_str == NULL ) || (label_str == NULL)
+                && ((ch->n_str == NULL) || (label_str == NULL)
                      || (strcmp(ch->n_str, label_str) == 0))
                ) {
                 /* The child is acceptable; if non-terminal, validate it recursively. */
