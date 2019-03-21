@@ -76,7 +76,7 @@
     matter which WinSDK version we use.
     -->
     <_RegistryVersion>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
-    <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\WOW6432Node\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
+    <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
     <!-- Sometimes the version in the registry has to .0 suffix, and sometimes it doesn't. Check and add it -->
     <_RegistryVersion Condition="$(_RegistryVersion) != '' and !$(_RegistryVersion.EndsWith('.0'))">$(_RegistryVersion).0</_RegistryVersion>
 
