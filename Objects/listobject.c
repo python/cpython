@@ -2308,20 +2308,21 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 keys_are_all_same_type = 0;
                 /* If keys are in tuple we must loop over the whole list to make
                    sure all items are tuples */
-                key_type = key->ob_type;
                 if (!keys_are_in_tuples) {
                     break;
                 }
             }
 
-            if (key_type == &PyLong_Type) {
-                if (ints_are_bounded && Py_ABS(Py_SIZE(key)) > 1)
-                    ints_are_bounded = 0;
-            }
-            else if (key_type == &PyUnicode_Type){
-                if (strings_are_latin &&
-                    PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
-                strings_are_latin = 0;
+            if (keys_are_all_same_type) {
+                if (key_type == &PyLong_Type) {
+                    if (ints_are_bounded && Py_ABS(Py_SIZE(key)) > 1)
+                        ints_are_bounded = 0;
+                }
+                else if (key_type == &PyUnicode_Type){
+                    if (strings_are_latin &&
+                        PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
+                    strings_are_latin = 0;
+                }
             }
         }
 
