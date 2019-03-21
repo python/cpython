@@ -446,6 +446,41 @@ def test_post_mortem():
     Correctly reraised.
     """
 
+def test_debug_in_post_mortem():
+    """Test debug command in post_mortem.
+
+    pdb.Pdb.do_debug should not call settrace with no tracing being active.
+
+    This test does not work when run with `python -m pdb`.
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'debug 1',
+    ...     'q',
+    ...     'l',
+    ...     'q',
+    ... ]):
+    ...    try:
+    ...        raise Exception()
+    ...    except Exception:
+    ...        import pdb; pdb.post_mortem()
+    > <doctest test.test_pdb.test_debug_in_post_mortem[0]>(8)<module>()
+    -> raise Exception()
+    (Pdb) debug 1
+    ENTERING RECURSIVE DEBUGGER
+    > <string>(1)<module>()
+    ((Pdb)) q
+    LEAVING RECURSIVE DEBUGGER
+    (Pdb) l
+      5             'q',
+      6         ]):
+      7            try:
+      8  >>            raise Exception()
+      9            except Exception:
+     10  ->            import pdb; pdb.post_mortem()
+    [EOF]
+    (Pdb) q
+    """
+
 
 def test_pdb_skip_modules():
     """This illustrates the simple case of module skipping.

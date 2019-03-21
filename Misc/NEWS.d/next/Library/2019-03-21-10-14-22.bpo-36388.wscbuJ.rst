@@ -1,0 +1,3 @@
+Fix pdb's ``debug`` command to properly restore only the existing
+``sys.settrace()`` handler, which might be absent with ``post_mortem()``.
+Patch provided by Daniel Hahler.
