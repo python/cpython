@@ -301,7 +301,10 @@ class LocalWinregTests(BaseWinregTests):
             # directories are available.
             for p in os.environ["PATH"].split(os.pathsep):
                 if p:
-                    stack.enter_context(os.add_dll_directory(p))
+                    try:
+                        stack.enter_context(os.add_dll_directory(p))
+                    except OSError:
+                        pass
 
             # Issue2810, when the value is dynamically generated, these
             # raise "WindowsError: More data is available" in 2.6 and 3.1
