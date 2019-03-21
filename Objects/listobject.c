@@ -2318,7 +2318,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                     if (ints_are_bounded && Py_ABS(Py_SIZE(key)) > 1)
                         ints_are_bounded = 0;
                 }
-                else if (key_type == &PyUnicode_Type){
+                else if (key_type == &PyUnicode_Type) {
                     if (strings_are_latin &&
                         PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
                     strings_are_latin = 0;
