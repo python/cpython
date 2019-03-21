@@ -3742,12 +3742,12 @@ class _TestSharedMemory(BaseTestCase):
 
         # make sure the manager works properly at the beginning
         sl = smm.ShareableList(range(10))
-        sl.shm.unlink()
 
         # the manager's server should ignore SIGINT (<-KeyboardInterrupt)
         # signals, and maintain its connection with the current process
         os.kill(smm._process.pid, signal.SIGINT)
         sl2 = smm.ShareableList(range(10))
+        smm.shutdown()
 
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
