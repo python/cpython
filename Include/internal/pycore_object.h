@@ -76,6 +76,8 @@ static inline void _PyObject_GC_UNTRACK_impl(const char *filename, int lineno,
 #define _PyObject_GC_UNTRACK(op) \
     _PyObject_GC_UNTRACK_impl(__FILE__, __LINE__, _PyObject_CAST(op))
 
+PyAPI_FUNC(void) _PyGC_DisableObjectDebugger(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -6,6 +6,7 @@
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_coreconfig.h"
 #include "pycore_context.h"
+#include "pycore_object.h"   /* _PyGC_DisableObjectDebugger() */
 #include "pycore_fileutils.h"
 #include "pycore_hamt.h"
 #include "pycore_pathconfig.h"
@@ -2062,6 +2063,9 @@ fatal_error(const char *prefix, const char *msg, int status)
         goto exit;
     }
     reentrant = 1;
+
+    /* Prevent reentrant call if called by the GC object debugger */
+    _PyGC_DisableObjectDebugger();
 
     fprintf(stderr, "Fatal Python error: ");
     if (prefix) {

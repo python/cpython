@@ -263,6 +263,39 @@ values but should not rebind them):
    .. versionadded:: 3.3
 
 
+The :mod:`gc` module provides an "object debugger" which checks frequently if
+all Python objects tracked by the garbage collector look valid:
+
+* check that the reference counter is greater than or equal to 1;
+* check that the pointer to the type is not NULL;
+* if debug hooks on memory allocators (:c:func:`PyMem_SetupDebugHooks`) are
+  enabled (:envvar:`PYTHONMALLOC` environment variable set to ``"debug"`` or
+  :option:`-X` ``dev`` command line option), detect freed memory.
+
+This debugger aims to debug bugs in C extensions.
+
+.. function:: enable_object_debugger(threshold)
+
+   Enable the object debugger.
+
+   Check that all Python objects tracked by the garbage collector look valid
+   every *threshold* memory allocation or deallocation made by the garbage
+   collector.
+
+   Low *threshold* can have a significant negative impact on Python
+   performance, but should detect earlier Python objects which look invalid.
+
+   *threshold* must be greater than or equal to 1.
+
+   .. versionadded:: 3.8
+
+.. function:: disable_object_debugger()
+
+   Disable the object debugger.
+
+   .. versionadded:: 3.8
+
+
 The following constants are provided for use with :func:`set_debug`:
 
 

@@ -206,6 +206,11 @@ gc
 indicating a generation to get objects from. Contributed in
 :issue:`36016` by Pablo Galindo.
 
+New "object debugger" which checks frequently if all Python objects tracked by
+the garbage collector look valid: :func:`gc.enable_object_debugger` and
+:func:`gc.disable_object_debugger`. This debugger aims to debug bugs in C
+extensions. Contributed in :issue:`36389` by Victor Stinner.
+
 
 gzip
 ----

@@ -373,4 +373,71 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e40d384b1f0d513c input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gc_py_enable_object_debugger__doc__,
+"enable_object_debugger($module, /, threshold)\n"
+"--\n"
+"\n"
+"Enable the object debugger.\n"
+"\n"
+"Check all Python objects tracked by the garbage collector every \'threshold\'\n"
+"memory allocation or deallocation made by the garbage collector.");
+
+#define GC_PY_ENABLE_OBJECT_DEBUGGER_METHODDEF    \
+    {"enable_object_debugger", (PyCFunction)(void(*)(void))gc_py_enable_object_debugger, METH_FASTCALL|METH_KEYWORDS, gc_py_enable_object_debugger__doc__},
+
+static PyObject *
+gc_py_enable_object_debugger_impl(PyObject *module, int threshold);
+
+static PyObject *
+gc_py_enable_object_debugger(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"threshold", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "enable_object_debugger", 0};
+    PyObject *argsbuf[1];
+    int threshold;
+    PyObject *_return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    threshold = _PyLong_AsInt(args[0]);
+    if (threshold == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    _return_value = gc_py_enable_object_debugger_impl(module, threshold);
+    if (_return_value != Py_None) {
+        goto exit;
+    }
+    return_value = Py_None;
+    Py_INCREF(Py_None);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(gc_py_disable_object_debugger__doc__,
+"disable_object_debugger($module, /)\n"
+"--\n"
+"\n"
+"Disable the object debugger.");
+
+#define GC_PY_DISABLE_OBJECT_DEBUGGER_METHODDEF    \
+    {"disable_object_debugger", (PyCFunction)gc_py_disable_object_debugger, METH_NOARGS, gc_py_disable_object_debugger__doc__},
+
+static PyObject *
+gc_py_disable_object_debugger_impl(PyObject *module);
+
+static PyObject *
+gc_py_disable_object_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return gc_py_disable_object_debugger_impl(module);
+}
+/*[clinic end generated code: output=341ba16a8fbc2b45 input=a9049054013a1b77]*/

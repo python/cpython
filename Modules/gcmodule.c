@@ -111,6 +111,7 @@ gc_decref(PyGC_Head *g)
     g->_gc_prev -= 1 << _PyGC_PREV_SHIFT;
 }
 
+
 /* Python string to use if unhandled exception occurs */
 static PyObject *gc_str = NULL;
 
@@ -146,6 +147,8 @@ _PyGC_Initialize(struct _gc_runtime_state *state)
            (uintptr_t)&state->permanent_generation.head}, 0, 0
     };
     state->permanent_generation = permanent_generation;
+
+    state->object_debugger.enabled = 0;
 }
 
 /*
@@ -402,7 +405,7 @@ subtract_refs(PyGC_Head *containers)
     for (; gc != containers; gc = GC_NEXT(gc)) {
         traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
         (void) traverse(FROM_GC(gc),
-                       (visitproc)visit_decref,
+                       visit_decref,
                        NULL);
     }
 }
@@ -1240,6 +1243,89 @@ collect_generations(void)
     return n;
 }
 
+
+/* Object Debugger */
+
+static void
+gc_enable_object_debugger(int threshold)
+{
+    struct _gc_object_debugger *debugger = &_PyRuntime.gc.object_debugger;
+
+    /* Clear some caches to run the debugger in next allocations */
+    clear_freelists();
+    PyType_ClearCache();
+
+    debugger->enabled = 1;
+    /* leave debugger->count unchanged */
+    debugger->threshold = threshold;
+}
+
+
+void
+_PyGC_DisableObjectDebugger(void)
+{
+    struct _gc_object_debugger *debugger = &_PyRuntime.gc.object_debugger;
+    debugger->enabled = 0;
+    debugger->count = 0;
+    debugger->threshold = 0;
+}
+
+
+#define GC_OBJECT_ASSERT(OP, EXPR) \
+    if (!(EXPR)) { \
+        _PyObject_AssertFailed((OP), #EXPR, NULL, \
+                               __FILE__, __LINE__, __func__); \
+    }
+
+static void
+gc_check_object_consistency(PyObject *op)
+{
+    GC_OBJECT_ASSERT(op, op != NULL);
+    GC_OBJECT_ASSERT(op, !_PyObject_IsFreed(op));
+    GC_OBJECT_ASSERT(op, Py_REFCNT(op) >= 1);
+
+    PyTypeObject *type = op->ob_type;
+    GC_OBJECT_ASSERT(op, type != NULL);
+    GC_OBJECT_ASSERT(op, !_PyObject_IsFreed((PyObject *)type));
+
+#undef ASSERT
+}
+
+
+static int
+visit_check_consistency(PyObject *op, void *data)
+{
+    gc_check_object_consistency(op);
+    return 0;
+}
+
+
+static void
+gc_check_object(PyObject *op)
+{
+    gc_check_object_consistency(op);
+    GC_OBJECT_ASSERT(op, _PyObject_GC_IS_TRACKED(op));
+
+    traverseproc traverse = Py_TYPE(op)->tp_traverse;
+    traverse(op, visit_check_consistency, NULL);
+}
+
+#undef GC_OBJECT_ASSERT
+
+
+static void
+_PyGC_ObjectDebugger(void)
+{
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
+        PyGC_Head *gc_list = GEN_HEAD(i);
+        for (PyGC_Head *gc = GC_NEXT(gc_list); gc != gc_list; gc = GC_NEXT(gc)) {
+            PyObject *op = FROM_GC(gc);
+            gc_check_object(op);
+        }
+    }
+}
+
+
 #include "clinic/gcmodule.c.h"
 
 /*[clinic input]
@@ -1524,7 +1610,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     /* If generation is passed, we extract only that generation */
-    if (generation != -1) { 
+    if (generation != -1) {
         if (generation >= NUM_GENERATIONS) {
             PyErr_Format(PyExc_ValueError,
                          "generation parameter must be less than the number of "
@@ -1683,6 +1769,47 @@ gc_get_freeze_count_impl(PyObject *module)
 }
 
 
+/*[clinic input]
+gc.enable_object_debugger as gc_py_enable_object_debugger -> NoneType
+
+    threshold: int
+
+Enable the object debugger.
+
+Check all Python objects tracked by the garbage collector every 'threshold'
+memory allocation or deallocation made by the garbage collector.
+[clinic start generated code]*/
+
+static PyObject *
+gc_py_enable_object_debugger_impl(PyObject *module, int threshold)
+/*[clinic end generated code: output=fd520f0e39d20687 input=26bda85590a9d241]*/
+{
+    if (threshold < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "threshold must be greater than or equal to 1");
+        return NULL;
+    }
+
+    gc_enable_object_debugger(threshold);
+    return Py_None;
+}
+
+
+/*[clinic input]
+gc.disable_object_debugger as gc_py_disable_object_debugger -> NoneType
+
+Disable the object debugger.
+[clinic start generated code]*/
+
+static PyObject *
+gc_py_disable_object_debugger_impl(PyObject *module)
+/*[clinic end generated code: output=48666b981226d740 input=37522f5b3e475600]*/
+{
+    _PyGC_DisableObjectDebugger();
+    return Py_None;
+}
+
+
 PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
 "\n"
@@ -1724,6 +1851,8 @@ static PyMethodDef GcMethods[] = {
     GC_FREEZE_METHODDEF
     GC_UNFREEZE_METHODDEF
     GC_GET_FREEZE_COUNT_METHODDEF
+    GC_PY_ENABLE_OBJECT_DEBUGGER_METHODDEF
+    GC_PY_DISABLE_OBJECT_DEBUGGER_METHODDEF
     {NULL,      NULL}           /* Sentinel */
 };
 
@@ -1864,9 +1993,11 @@ _PyGC_DumpShutdownStats(void)
     }
 }
 
+
 void
 _PyGC_Fini(void)
 {
+    _PyGC_DisableObjectDebugger();
     Py_CLEAR(_PyRuntime.gc.callbacks);
 }
 
@@ -1876,6 +2007,7 @@ _PyGC_Dump(PyGC_Head *g)
 {
     _PyObject_Dump(FROM_GC(g));
 }
+
 
 /* extension modules might be compiled with GC support so these
    functions must always be available */
@@ -1904,12 +2036,27 @@ PyObject_GC_UnTrack(void *op_raw)
     }
 }
 
+
+static inline void
+gc_check_object_debugger(void)
+{
+    if (_PyRuntime.gc.object_debugger.enabled) {
+        _PyRuntime.gc.object_debugger.count++;
+        if (_PyRuntime.gc.object_debugger.count >= _PyRuntime.gc.object_debugger.threshold) {
+            _PyRuntime.gc.object_debugger.count = 0;
+            _PyGC_ObjectDebugger();
+        }
+    }
+}
+
+
 static PyObject *
 _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
 {
     PyObject *op;
     PyGC_Head *g;
     size_t size;
+
     if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head))
         return PyErr_NoMemory();
     size = sizeof(PyGC_Head) + basicsize;
@@ -1932,6 +2079,9 @@ _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
         collect_generations();
         _PyRuntime.gc.collecting = 0;
     }
+
+    gc_check_object_debugger();
+
     op = FROM_GC(g);
     return op;
 }
@@ -1989,6 +2139,9 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
         return (PyVarObject *)PyErr_NoMemory();
     op = (PyVarObject *) FROM_GC(g);
     Py_SIZE(op) = nitems;
+
+    gc_check_object_debugger();
+
     return op;
 }
 
@@ -2003,4 +2156,6 @@ PyObject_GC_Del(void *op)
         _PyRuntime.gc.generations[0].count--;
     }
     PyObject_FREE(g);
+
+    gc_check_object_debugger();
 }

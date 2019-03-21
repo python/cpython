@@ -1,0 +1,4 @@
+New "object debugger" which checks frequently if all Python objects tracked
+by the garbage collector are consistent: :func:`gc.enable_object_debugger`
+and :func:`gc.disable_object_debugger`. Contributed in :issue:`36389` by Victor
+Stinner.
