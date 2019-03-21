@@ -229,7 +229,11 @@ details.
 
 .. data:: DEFAULT_FORMAT
 
-   The default format for creating archives. This is currently :const:`GNU_FORMAT`.
+   The default format for creating archives. This is currently :const:`PAX_FORMAT`.
+
+    .. versionchanged:: 3.8
+       The default format for new archives was changed to
+       :const:`PAX_FORMAT` from :const:`GNU_FORMAT`.
 
 
 .. seealso::
@@ -820,8 +824,10 @@ There are three tar formats that can be created with the :mod:`tarfile` module:
 
 * The POSIX.1-2001 pax format (:const:`PAX_FORMAT`). It is the most flexible
   format with virtually no limits. It supports long filenames and linknames, large
-  files and stores pathnames in a portable way. However, not all tar
-  implementations today are able to handle pax archives properly.
+  files and stores pathnames in a portable way. Modern tar implementations,
+  including GNU tar, bsdtar/libarchive and star, fully support extended *pax*
+  features; some older or unmaintained libraries may not, but should treat
+  *pax* archives as if they were in the universally-supported *ustar* format.
 
   The *pax* format is an extension to the existing *ustar* format. It uses extra
   headers for information that cannot be stored otherwise. There are two flavours
@@ -871,7 +877,7 @@ converted. Possible values are listed in section :ref:`error-handlers`.
 The default scheme is ``'surrogateescape'`` which Python also uses for its
 file system calls, see :ref:`os-filenames`.
 
-In case of :const:`PAX_FORMAT` archives, *encoding* is generally not needed
+For :const:`PAX_FORMAT` archives (the default), *encoding* is generally not needed
 because all the metadata is stored using *UTF-8*. *encoding* is only used in
 the rare cases when binary pax headers are decoded or when strings with
 surrogate characters are stored.

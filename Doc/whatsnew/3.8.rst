@@ -316,6 +316,16 @@ and manipulating normal distributions of a random variable.
     [7.672102882379219, 12.000027119750287, 4.647488369766392]
 
 
+tarfile
+-------
+
+The :mod:`tarfile` module now defaults to the modern pax (POSIX.1-2001)
+format for new archives, instead of the previous GNU-specific one.
+This improves cross-platform portability with a consistent encoding (UTF-8)
+in a standardized and extensible format, and offers several other benefits.
+(Contributed by C.A.M. Gerlach in :issue:`36268`.)
+
+
 tokenize
 --------
 
