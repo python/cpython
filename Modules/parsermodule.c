@@ -675,7 +675,11 @@ validate_node(node *tree)
         for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
             short a_label = dfa_state->s_arc[arc].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
-            if (_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type) {
+            char* label_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+            if ((_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type)
+                && ( (ch->n_str == NULL ) || (label_str == NULL)
+                     || (strcmp(ch->n_str, label_str) == 0))
+               ) {
                 /* The child is acceptable; if non-terminal, validate it recursively. */
                 if (ISNONTERMINAL(ch_type) && !validate_node(ch))
                     return 0;
