@@ -3735,7 +3735,7 @@ class _TestSharedMemory(BaseTestCase):
         sms.close()
 
     def test_shared_memory_SharedMemoryServer_ignores_sigint(self):
-        # bpo-36368: procect SharedMemoryManager server process from
+        # bpo-36368: protect SharedMemoryManager server process from
         # KeyboardInterrupt signals.
         smm = multiprocessing.managers.SharedMemoryManager()
         smm.start()
