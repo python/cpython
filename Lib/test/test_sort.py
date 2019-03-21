@@ -377,6 +377,7 @@ class TestOptimizedCompares(unittest.TestCase):
     def test_not_all_tuples(self):
         self.assertRaises(TypeError, [(1.0, 1.0), (False, "A"), 6].sort)
         self.assertRaises(TypeError, [('a', 1), (1, 'a')].sort)
+        self.assertRaises(TypeError, [(1, 'a'), ('a', 1)].sort)
 #==============================================================================
 
 if __name__ == "__main__":
