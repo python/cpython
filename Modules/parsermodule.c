@@ -703,7 +703,7 @@ validate_node(node *tree)
                 PyErr_Format(parser_error, "Expected node type %d, got %d.",
                              next_type, ch_type);
             }
-            else if (expected_str) {
+            else if (expected_str != NULL) {
                 PyErr_Format(parser_error, "Illegal terminal: expected '%s'.",
                              expected_str);
             }
