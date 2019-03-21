@@ -1,6 +1,7 @@
 # Test the windows specific win32reg module.
 # Only win32reg functions not hit here: FlushKey, LoadKey and SaveKey
 
+import contextlib
 import os, sys, errno
 import unittest
 from test import support
@@ -294,16 +295,24 @@ class LocalWinregTests(BaseWinregTests):
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
     def test_dynamic_key(self):
-        # Issue2810, when the value is dynamically generated, these
-        # raise "WindowsError: More data is available" in 2.6 and 3.1
-        try:
-            EnumValue(HKEY_PERFORMANCE_DATA, 0)
-        except OSError as e:
-            if e.errno in (errno.EPERM, errno.EACCES):
-                self.skipTest("access denied to registry key "
-                              "(are you running in a non-interactive session?)")
-            raise
-        QueryValueEx(HKEY_PERFORMANCE_DATA, "")
+        with contextlib.ExitStack() as stack:
+            # Issue36085: AppVeyor includes some performance counters from
+            # SQL Server that crash here, so try and ensure that their
+            # directories are available.
+            for p in os.environ["PATH"].split(os.pathsep):
+                if "sql" in p.lower():
+                    stack.enter_context(os.add_dll_directory(p))
+
+            # Issue2810, when the value is dynamically generated, these
+            # raise "WindowsError: More data is available" in 2.6 and 3.1
+            try:
+                EnumValue(HKEY_PERFORMANCE_DATA, 0)
+            except OSError as e:
+                if e.errno in (errno.EPERM, errno.EACCES):
+                    self.skipTest("access denied to registry key "
+                                  "(are you running in a non-interactive session?)")
+                raise
+            QueryValueEx(HKEY_PERFORMANCE_DATA, "")
 
     # Reflection requires XP x64/Vista at a minimum. XP doesn't have this stuff
     # or DeleteKeyEx so make sure their use raises NotImplementedError
