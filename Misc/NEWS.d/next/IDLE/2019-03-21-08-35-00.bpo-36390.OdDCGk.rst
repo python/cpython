@@ -1,0 +1,1 @@
+Refactor formatting methods from editor.py and add tests.
