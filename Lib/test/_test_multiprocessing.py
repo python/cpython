@@ -3743,9 +3743,13 @@ class _TestSharedMemory(BaseTestCase):
         # make sure the manager works properly at the beginning
         sl = smm.ShareableList(range(10))
 
-        # the manager's server should ignore SIGINT (<-KeyboardInterrupt)
-        # signals, and maintain its connection with the current process
-        os.kill(smm._process.pid, signal.SIGINT)
+        # the manager's server should ignore KeyboardInterrupt signals, and
+        # maintain its connection with the current process
+        if sys.platform != 'win32':
+            os.kill(smm._process.pid, signal.SIGINT)
+        else:
+            os.kill(smm._process.pid, signal.CTRL_C_EVENT)
+
         sl2 = smm.ShareableList(range(10))
         smm.shutdown()
 

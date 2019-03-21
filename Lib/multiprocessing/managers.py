@@ -598,7 +598,10 @@ class BaseManager(object):
         Create a server, report its address and run it
         '''
         # bpo-36368: protect server process from KeyboardInterrupt signals
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        if sys.platform != 'win32':
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+        else:
+            signal.signal(signal.CTRL_C_EVENT, signal.SIG_IGN)
 
         if initializer is not None:
             initializer(*initargs)
