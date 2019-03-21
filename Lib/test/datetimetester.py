@@ -4918,8 +4918,9 @@ class Oddballs(unittest.TestCase):
         for xx in [decimal.Decimal(10),
                    decimal.Decimal('10.9'),
                    Number(10)]:
-            self.assertEqual(datetime(10, 10, 10, 10, 10, 10, 10),
-                             datetime(xx, xx, xx, xx, xx, xx, xx))
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(datetime(10, 10, 10, 10, 10, 10, 10),
+                                 datetime(xx, xx, xx, xx, xx, xx, xx))
 
         with self.assertRaisesRegex(TypeError, '^an integer is required '
                                               r'\(got type str\)$'):
@@ -4927,7 +4928,7 @@ class Oddballs(unittest.TestCase):
 
         f10 = Number(10.9)
         with self.assertRaisesRegex(TypeError, '^__int__ returned non-int '
-                                              r'\(type float\)$'):
+                                               r'\(type float\)$'):
             datetime(10, 10, f10)
 
         class Float(float):

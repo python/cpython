@@ -975,7 +975,7 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (myerrno && PyLong_Check(myerrno) &&
             errnomap && (PyObject *) type == PyExc_OSError) {
             PyObject *newtype;
-            newtype = PyDict_GetItem(errnomap, myerrno);
+            newtype = PyDict_GetItemWithError(errnomap, myerrno);
             if (newtype) {
                 assert(PyType_Check(newtype));
                 type = (PyTypeObject *) newtype;

@@ -1502,27 +1502,61 @@ gc_get_referents(PyObject *self, PyObject *args)
 
 /*[clinic input]
 gc.get_objects
+    generation: Py_ssize_t(accept={int, NoneType}, c_default="-1") = None
+        Generation to extract the objects from.
 
 Return a list of objects tracked by the collector (excluding the list returned).
+
+If generation is not None, return only the objects tracked by the collector
+that are in that generation.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_objects_impl(PyObject *module)
-/*[clinic end generated code: output=fcb95d2e23e1f750 input=9439fe8170bf35d8]*/
+gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=ef7da9df9806754c]*/
 {
     int i;
     PyObject* result;
 
     result = PyList_New(0);
-    if (result == NULL)
+    if (result == NULL) {
         return NULL;
+    }
+
+    /* If generation is passed, we extract only that generation */
+    if (generation != -1) { 
+        if (generation >= NUM_GENERATIONS) {
+            PyErr_Format(PyExc_ValueError,
+                         "generation parameter must be less than the number of "
+                         "available generations (%i)",
+                          NUM_GENERATIONS);
+            goto error;
+        }
+
+        if (generation < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "generation parameter cannot be negative");
+            goto error;
+        }
+
+        if (append_objects(result, GEN_HEAD(generation))) {
+            goto error;
+        }
+
+        return result;
+    }
+
+    /* If generation is not passed or None, get all objects from all generations */
     for (i = 0; i < NUM_GENERATIONS; i++) {
         if (append_objects(result, GEN_HEAD(i))) {
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
     }
     return result;
+
+error:
+    Py_DECREF(result);
+    return NULL;
 }
 
 /*[clinic input]

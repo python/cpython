@@ -379,19 +379,34 @@ def _check_utc_offset(name, offset):
 def _check_int_field(value):
     if isinstance(value, int):
         return value
-    if not isinstance(value, float):
-        try:
-            value = value.__int__()
-        except AttributeError:
-            pass
-        else:
-            if isinstance(value, int):
-                return value
+    if isinstance(value, float):
+        raise TypeError('integer argument expected, got float')
+    try:
+        value = value.__index__()
+    except AttributeError:
+        pass
+    else:
+        if not isinstance(value, int):
+            raise TypeError('__index__ returned non-int (type %s)' %
+                            type(value).__name__)
+        return value
+    orig = value
+    try:
+        value = value.__int__()
+    except AttributeError:
+        pass
+    else:
+        if not isinstance(value, int):
             raise TypeError('__int__ returned non-int (type %s)' %
                             type(value).__name__)
-        raise TypeError('an integer is required (got type %s)' %
-                        type(value).__name__)
-    raise TypeError('integer argument expected, got float')
+        import warnings
+        warnings.warn("an integer is required (got type %s)"  %
+                      type(orig).__name__,
+                      DeprecationWarning,
+                      stacklevel=2)
+        return value
+    raise TypeError('an integer is required (got type %s)' %
+                    type(value).__name__)
 
 def _check_date_fields(year, month, day):
     year = _check_int_field(year)

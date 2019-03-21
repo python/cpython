@@ -424,7 +424,7 @@ On Linux, Solaris and other POSIX platforms where :func:`os.sendfile` supports
 copies between 2 regular file descriptors :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
-instead of 16 KiB) and a :func:`memoryview`-based variant of
+instead of 64 KiB) and a :func:`memoryview`-based variant of
 :func:`shutil.copyfileobj` is used.
 
 If the fast-copy operation fails and no data was written in the destination

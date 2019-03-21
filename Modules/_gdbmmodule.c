@@ -3,7 +3,7 @@
 /* Author: Anthony Baxter, after dbmmodule.c */
 /* Doc strings: Mitch Chapman */
 
-
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #include <sys/types.h>
@@ -119,15 +119,36 @@ dbm_length(dbmobject *dp)
     return dp->di_size;
 }
 
+// Wrapper function for PyArg_Parse(o, "s#", &d.dptr, &d.size).
+// This function is needed to support PY_SSIZE_T_CLEAN.
+// Return 1 on success, same to PyArg_Parse().
+static int
+parse_datum(PyObject *o, datum *d, const char *failmsg)
+{
+    Py_ssize_t size;
+    if (!PyArg_Parse(o, "s#", &d->dptr, &size)) {
+        if (failmsg != NULL) {
+            PyErr_SetString(PyExc_TypeError, failmsg);
+        }
+        return 0;
+    }
+    if (INT_MAX < size) {
+        PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
+        return 0;
+    }
+    d->dsize = size;
+    return 1;
+}
+
 static PyObject *
 dbm_subscript(dbmobject *dp, PyObject *key)
 {
     PyObject *v;
     datum drec, krec;
 
-    if (!PyArg_Parse(key, "s#", &krec.dptr, &krec.dsize) )
+    if (!parse_datum(key, &krec, NULL)) {
         return NULL;
-
+    }
     if (dp->di_dbm == NULL) {
         PyErr_SetString(DbmError,
                         "GDBM object has already been closed");
@@ -172,10 +193,9 @@ static int
 dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 {
     datum krec, drec;
+    const char *failmsg = "gdbm mappings have bytes or string indices only";
 
-    if (!PyArg_Parse(v, "s#", &krec.dptr, &krec.dsize) ) {
-        PyErr_SetString(PyExc_TypeError,
-                        "gdbm mappings have bytes or string indices only");
+    if (!parse_datum(v, &krec, failmsg)) {
         return -1;
     }
     if (dp->di_dbm == NULL) {
@@ -196,9 +216,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
         }
     }
     else {
-        if (!PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "gdbm mappings have bytes or string elements only");
+        if (!parse_datum(w, &drec, failmsg)) {
             return -1;
         }
         errno = 0;

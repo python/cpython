@@ -445,6 +445,8 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__doc__': f'{typename}({arg_list})',
         '__slots__': (),
         '_fields': field_names,
+        '_field_defaults': field_defaults,
+        # alternate spelling for backward compatiblity
         '_fields_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
@@ -570,8 +572,8 @@ class Counter(dict):
         '''List the n most common elements and their counts from the most
         common to the least.  If n is None, then list all element counts.
 
-        >>> Counter('abcdeabcdabcaba').most_common(3)
-        [('a', 5), ('b', 4), ('c', 3)]
+        >>> Counter('abracadabra').most_common(3)
+        [('a', 5), ('b', 2), ('r', 2)]
 
         '''
         # Emulate Bag.sortedByCount from Smalltalk
