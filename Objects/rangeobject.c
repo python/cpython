@@ -742,6 +742,7 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
 
@@ -760,7 +761,8 @@ rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
     if (range == NULL)
         goto err;
     /* return the result */
-    return Py_BuildValue("N(N)i", _PyObject_GetBuiltin("iter"), range, r->index);
+    return Py_BuildValue("N(N)i", _PyEval_GetBuiltinId(&PyId_iter),
+                         range, r->index);
 err:
     Py_XDECREF(start);
     Py_XDECREF(stop);
@@ -898,6 +900,7 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 static PyObject *
 longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     PyObject *product, *stop=NULL;
     PyObject *range;
 
@@ -921,7 +924,8 @@ longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
     }
 
     /* return the result */
-    return Py_BuildValue("N(N)O", _PyObject_GetBuiltin("iter"), range, r->index);
+    return Py_BuildValue("N(N)O", _PyEval_GetBuiltinId(&PyId_iter),
+                         range, r->index);
 }
 
 static PyObject *

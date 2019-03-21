@@ -3,6 +3,97 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-36176: Fix IDLE autocomplete & calltip popup colors.
+Prevent conflicts with Linux dark themes
+(and slightly darken calltip background).
+
+bpo-36152: Remove colorizer.ColorDelegator.close_when_done and the
+corresponding argument of .close().  In IDLE, both have always been
+None or False since 2007.
+
+bpo-36096: Make colorizer state variables instance-only.
+
+bpo-24310: Document settings dialog font tab sample.
+
+bpo-35689: Add docstrings and tests for colorizer.
+
+bpo-35833: Revise IDLE doc for control codes sent to Shell.
+Add a code example block.
+
+bpo-35770: IDLE macosx deletes Options => Configure IDLE.
+It previously deleted Window => Zoom Height by mistake.
+(Zoom Height is now on the Options menu).  On Mac, the settings
+dialog is accessed via Preferences on the IDLE menu.
+
+bpo-35769: Change new file name from 'Untitled' to 'untitled'.
+
+bpo-35660: Fix imports in window module.
+
+bpo-35641: Properly format calltip for function without docstring.
+
+bpo-33987: Use ttk Frame for ttk widgets.
+
+bpo-34055: Fix erroneous 'smart' indents and newlines in IDLE Shell.
+
+bpo-28097: Add Previous/Next History entries to Shell menu.
+
+bpo-35591: Find Selection now works when selection not found.
+
+bpo-35598: Update config_key: use PEP 8 names and ttk widgets,
+make some objects global, and add tests.
+
+bpo-35196: Speed up squeezer line counting.
+
+bpo-35208: Squeezer now counts wrapped lines before newlines.
+
+bpo-35555: Gray out Code Context menu entry when it's not applicable.
+
+bpo-22703: Improve the Code Context and Zoom Height menu labels.
+The Code Context menu label now toggles between Show/Hide Code Context.
+The Zoom Height menu now toggles between Zoom/Restore Height.
+Zoom Height has moved from the Window menu to the Options menu.
+
+bpo-35521: Document the editor code context feature.
+Add some internal references within the IDLE doc.
+
+bpo-34864: When starting IDLE on MacOS, warn if the system setting
+"Prefer tabs when opening documents" is "Always".  As previous
+documented for this issue, running IDLE with this setting causes
+problems.  If the setting is changed while IDLE is running,
+there will be no warning until IDLE is restarted.
+
+bpo-35213: Where appropriate, use 'macOS' in idlelib.
+
+bpo-34864: Document two IDLE on MacOS issues.  The System Preferences
+Dock "prefer tabs always" setting disables some IDLE features.
+Menus are a bit different than as described for Windows and Linux.
+
+bpo-35202: Remove unused imports in idlelib.
+
+bpo-33000: Document that IDLE's shell has no line limit.
+A program that runs indefinitely can overfill memory.
+
+bpo-23220: Explain how IDLE's Shell displays output.
+Add new subsection "User output in Shell".
+
+bpo-35099: Improve the doc about IDLE running user code.
+"IDLE -- console differences" is renamed "Running user code".
+It mostly covers the implications of using custom sys.stdxxx objects.
+
+bpo-35097: Add IDLE doc subsection explaining editor windows.
+Topics include opening, title and status bars, .py* extension, and running.
+
+Issue 35093: Document the IDLE document viewer in the IDLE doc.
+Add a paragraph in "Help and preferences", "Help sources" subsection.
+
+bpo-1529353: Explain Shell text squeezing in the IDLE doc.
+
+bpo-35088: Update idlelib.help.copy_string docstring.
+We now use git and backporting instead of hg and forward merging.
+
+bpo-35087: Update idlelib help files for the current doc build.
+The main change is the elimination of chapter-section numbers.
+
 bpo-1529353: Output over N lines (50 by default) is squeezed down to a button.
 N can be changed in the PyShell section of the General page of the
 Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by

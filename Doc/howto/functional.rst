@@ -1108,7 +1108,7 @@ need to define a new function at all::
     existing_files = filter(os.path.exists, file_list)
 
 If the function you need doesn't exist, you need to write it.  One way to write
-small functions is to use the :keyword:`lambda` statement.  ``lambda`` takes a
+small functions is to use the :keyword:`lambda` expression.  ``lambda`` takes a
 number of parameters and an expression combining these parameters, and creates
 an anonymous function that returns the value of the expression::
 

@@ -1,2 +1,0 @@
-CVE-2018-14647: The C accelerated _elementtree module now initializes hash
-randomization salt from _Py_HashSecret instead of libexpat's default CSPRNG.

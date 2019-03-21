@@ -41,12 +41,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    the OS default behavior will be used.
 
    For normal use, you should only require the initialization/connect,
-   :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
+   :meth:`sendmail`, and :meth:`SMTP.quit` methods.
    An example is included below.
 
    The :class:`SMTP` class supports the :keyword:`with` statement.  When used
    like this, the SMTP ``QUIT`` command is issued automatically when the
-   :keyword:`with` statement exits.  E.g.::
+   :keyword:`!with` statement exits.  E.g.::
 
     >>> from smtplib import SMTP
     >>> with SMTP("domain.org") as smtp:

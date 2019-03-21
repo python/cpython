@@ -63,7 +63,7 @@ The following function is the primary interface of this module:
 
    The :class:`FileInput` instance can be used as a context manager in the
    :keyword:`with` statement.  In this example, *input* is closed after the
-   :keyword:`with` statement is exited, even if an exception occurs::
+   :keyword:`!with` statement is exited, even if an exception occurs::
 
       with fileinput.input(files=('spam.txt', 'eggs.txt')) as f:
           for line in f:
@@ -155,7 +155,7 @@ available for subclassing as well:
 
    A :class:`FileInput` instance can be used as a context manager in the
    :keyword:`with` statement.  In this example, *input* is closed after the
-   :keyword:`with` statement is exited, even if an exception occurs::
+   :keyword:`!with` statement is exited, even if an exception occurs::
 
       with FileInput(files=('spam.txt', 'eggs.txt')) as input:
           process(input)

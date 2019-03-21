@@ -174,7 +174,7 @@ check:
 	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
 
 serve:
-	../Tools/scripts/serve.py build/html
+	$(PYTHON) ../Tools/scripts/serve.py build/html
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.

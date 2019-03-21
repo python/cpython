@@ -30,6 +30,9 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#if !defined(_WIN32) && defined(HAVE_EXPAT_CONFIG_H)
+#  include <pyconfig.h>
+#endif
 #include <stddef.h>
 #include <string.h>  /* memcpy */
 

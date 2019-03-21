@@ -973,8 +973,8 @@ As an example, here is a simple way to synchronize a client and server thread::
 
 .. _with-locks:
 
-Using locks, conditions, and semaphores in the :keyword:`with` statement
-------------------------------------------------------------------------
+Using locks, conditions, and semaphores in the :keyword:`!with` statement
+-------------------------------------------------------------------------
 
 All of the objects provided by this module that have :meth:`acquire` and
 :meth:`release` methods can be used as context managers for a :keyword:`with`

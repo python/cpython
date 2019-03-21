@@ -1,1 +1,0 @@
-Fix a compiler error when statically linking `pyexpat` in `Modules/Setup`.

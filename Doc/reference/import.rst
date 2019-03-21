@@ -15,11 +15,11 @@ way.  Functions such as :func:`importlib.import_module` and built-in
 
 The :keyword:`import` statement combines two operations; it searches for the
 named module, then it binds the results of that search to a name in the local
-scope.  The search operation of the :keyword:`import` statement is defined as
+scope.  The search operation of the :keyword:`!import` statement is defined as
 a call to the :func:`__import__` function, with the appropriate arguments.
 The return value of :func:`__import__` is used to perform the name
-binding operation of the :keyword:`import` statement.  See the
-:keyword:`import` statement for the exact details of that name binding
+binding operation of the :keyword:`!import` statement.  See the
+:keyword:`!import` statement for the exact details of that name binding
 operation.
 
 A direct call to :func:`__import__` performs only the module search and, if

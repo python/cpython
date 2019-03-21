@@ -45,7 +45,7 @@ Module :mod:`aifc` defines the following function:
    time how many samples you are going to write in total and use
    :meth:`writeframesraw` and :meth:`setnframes`.
    The :func:`.open` function may be used in a :keyword:`with` statement.  When
-   the :keyword:`with` block completes, the :meth:`~aifc.close` method is called.
+   the :keyword:`!with` block completes, the :meth:`~aifc.close` method is called.
 
    .. versionchanged:: 3.4
       Support for the :keyword:`with` statement was added.

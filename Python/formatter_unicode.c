@@ -462,7 +462,8 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
 /* not all fields of format are used.  for example, precision is
    unused.  should this take discrete params in order to be more clear
    about what it does?  or is passing a single format parameter easier
-   and more efficient enough to justify a little obfuscation? */
+   and more efficient enough to justify a little obfuscation?
+   Return -1 on error. */
 static Py_ssize_t
 calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
                    Py_UCS4 sign_char, PyObject *number, Py_ssize_t n_start,
@@ -541,9 +542,12 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         Py_UCS4 grouping_maxchar;
         spec->n_grouped_digits = _PyUnicode_InsertThousandsGrouping(
             NULL, 0,
-            0, NULL,
-            spec->n_digits, spec->n_min_width,
+            NULL, 0, spec->n_digits,
+            spec->n_min_width,
             locale->grouping, locale->thousands_sep, &grouping_maxchar);
+        if (spec->n_grouped_digits == -1) {
+            return -1;
+        }
         *maxchar = Py_MAX(*maxchar, grouping_maxchar);
     }
 
@@ -635,26 +639,14 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
     /* Only for type 'c' special case, it has no digits. */
     if (spec->n_digits != 0) {
         /* Fill the digits with InsertThousandsGrouping. */
-        char *pdigits;
-        if (PyUnicode_READY(digits))
-            return -1;
-        pdigits = PyUnicode_DATA(digits);
-        if (PyUnicode_KIND(digits) < kind) {
-            pdigits = _PyUnicode_AsKind(digits, kind);
-            if (pdigits == NULL)
-                return -1;
-        }
         r = _PyUnicode_InsertThousandsGrouping(
-                writer->buffer, writer->pos,
-                spec->n_grouped_digits,
-                pdigits + kind * d_pos,
-                spec->n_digits, spec->n_min_width,
+                writer, spec->n_grouped_digits,
+                digits, d_pos, spec->n_digits,
+                spec->n_min_width,
                 locale->grouping, locale->thousands_sep, NULL);
         if (r == -1)
             return -1;
         assert(r == spec->n_grouped_digits);
-        if (PyUnicode_KIND(digits) < kind)
-            PyMem_Free(pdigits);
         d_pos += spec->n_digits;
     }
     if (toupper) {
@@ -994,6 +986,9 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
     n_total = calc_number_widths(&spec, n_prefix, sign_char, tmp, inumeric_chars,
                                  inumeric_chars + n_digits, n_remainder, 0,
                                  &locale, format, &maxchar);
+    if (n_total == -1) {
+        goto done;
+    }
 
     /* Allocate the memory. */
     if (_PyUnicodeWriter_Prepare(writer, n_total, maxchar) == -1)
@@ -1139,6 +1134,9 @@ format_float_internal(PyObject *value,
     n_total = calc_number_widths(&spec, 0, sign_char, unicode_tmp, index,
                                  index + n_digits, n_remainder, has_decimal,
                                  &locale, format, &maxchar);
+    if (n_total == -1) {
+        goto done;
+    }
 
     /* Allocate the memory. */
     if (_PyUnicodeWriter_Prepare(writer, n_total, maxchar) == -1)
@@ -1322,6 +1320,9 @@ format_complex_internal(PyObject *value,
                                     i_re, i_re + n_re_digits, n_re_remainder,
                                     re_has_decimal, &locale, &tmp_format,
                                     &maxchar);
+    if (n_re_total == -1) {
+        goto done;
+    }
 
     /* Same formatting, but always include a sign, unless the real part is
      * going to be omitted, in which case we use whatever sign convention was
@@ -1332,6 +1333,9 @@ format_complex_internal(PyObject *value,
                                     i_im, i_im + n_im_digits, n_im_remainder,
                                     im_has_decimal, &locale, &tmp_format,
                                     &maxchar);
+    if (n_im_total == -1) {
+        goto done;
+    }
 
     if (skip_re)
         n_re_total = 0;

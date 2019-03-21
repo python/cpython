@@ -1,2 +1,0 @@
-Raise :exc:`TypeError` when looking up non-Enum objects in Enum classes and
-Enum members.

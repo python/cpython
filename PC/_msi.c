@@ -555,7 +555,7 @@ summary_getproperty(msiobj* si, PyObject *args)
     FILETIME fval;
     char sbuf[1000];
     char *sval = sbuf;
-    DWORD ssize = sizeof(sval);
+    DWORD ssize = sizeof(sbuf);
 
     if (!PyArg_ParseTuple(args, "i:GetProperty", &field))
         return NULL;
@@ -563,6 +563,7 @@ summary_getproperty(msiobj* si, PyObject *args)
     status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
         &fval, sval, &ssize);
     if (status == ERROR_MORE_DATA) {
+        ssize++;
         sval = malloc(ssize);
         if (sval == NULL) {
             return PyErr_NoMemory();
@@ -572,21 +573,29 @@ summary_getproperty(msiobj* si, PyObject *args)
     }
 
     switch(type) {
-        case VT_I2: case VT_I4:
-            return PyLong_FromLong(ival);
+        case VT_I2:
+        case VT_I4:
+            result = PyLong_FromLong(ival);
+            break;
         case VT_FILETIME:
             PyErr_SetString(PyExc_NotImplementedError, "FILETIME result");
-            return NULL;
+            result = NULL;
+            break;
         case VT_LPSTR:
             result = PyBytes_FromStringAndSize(sval, ssize);
-            if (sval != sbuf)
-                free(sval);
-            return result;
+            break;
         case VT_EMPTY:
-            Py_RETURN_NONE;
+            Py_INCREF(Py_None);
+            result = Py_None;
+            break;
+        default:
+            PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
+            result = NULL;
+            break;
     }
-    PyErr_Format(PyExc_NotImplementedError, "result of type %d", type);
-    return NULL;
+    if (sval != sbuf)
+        free(sval);
+    return result;
 }
 
 static PyObject*
@@ -907,7 +916,7 @@ msidb_getsummaryinformation(msiobj *db, PyObject *args)
         return msierror(status);
 
     oresult = PyObject_NEW(struct msiobj, &summary_Type);
-    if (!result) {
+    if (!oresult) {
         MsiCloseHandle(result);
         return NULL;
     }
