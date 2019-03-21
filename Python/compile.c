@@ -3879,9 +3879,7 @@ check_index(struct compiler *c, expr_ty e, slice_ty s)
     }
 }
 
-/* Try to compile optimized memory call.
-   Returns 0 on error, -1 if cannot optimize, 1 if successfully optimized.
- */
+// Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
