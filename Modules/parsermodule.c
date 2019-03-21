@@ -676,7 +676,7 @@ validate_node(node *tree)
             short a_label = dfa_state->s_arc[arc].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
 
-            char* label_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+            const char *label_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
             if ((_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type)
                 && ( (ch->n_str == NULL ) || (label_str == NULL)
                      || (strcmp(ch->n_str, label_str) == 0))
