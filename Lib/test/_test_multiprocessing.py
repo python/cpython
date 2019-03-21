@@ -3734,6 +3734,21 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
+    def test_shared_memory_SharedMemoryServer_ignores_sigint(self):
+        # bpo-36368: procect SharedMemoryManager server process from
+        # KeyboardInterrupt signals.
+        smm = multiprocessing.managers.SharedMemoryManager()
+        smm.start()
+
+        # make sure the manager works properly at the beginning
+        sl = smm.ShareableList(range(10))
+        sl.shm.unlink()
+
+        # the manager's server should ignore SIGINT (<-KeyboardInterrupt)
+        # signals, and maintain its connection with the current process
+        os.kill(smm._process.pid, signal.SIGINT)
+        sl2 = smm.ShareableList(range(10))
+
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
         with self.assertRaises(ValueError):
