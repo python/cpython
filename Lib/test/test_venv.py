@@ -24,10 +24,12 @@ try:
 except ImportError:
     ctypes = None
 
+# Platforms that set sys._base_executable can create venvs from within
+# another venv, so no need to skip tests that require venv.create().
 requireVenvCreate = unittest.skipUnless(
-    sys.platform.startswith('win')
+    hasattr(sys, '_base_executable')
     or sys.prefix == sys.base_prefix,
-    'Test requires venv.create')
+    'cannot run venv.create from within a venv on this platform')
 
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
