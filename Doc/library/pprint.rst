@@ -52,8 +52,7 @@ The :mod:`pprint` module defines one class:
    will be formatted on a separate line.  If *compact* is true, as many items
    as will fit within the *width* will be formatted on each output line. If
    *sort_dicts* is true (the default), dictionaries will be formatted with their
-   keys sorted alphabetically, otherwise they will be sorted by their insertion
-   order.
+   keys sorted, otherwise they will display in insertion order.
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
@@ -106,9 +105,9 @@ The :mod:`pprint` module also provides several shortcut functions:
 
    Prints the formatted representation of *object* followed by a newline.
    If *sort_dicts* is false (the default), dictionaries will be displayed with
-   their keys sorted in insertion order, otherwise they will be sorted
-   alphabetically. *args* an *kwargs* will be passed to :func:`pprint` as
-   formatting paramaters.
+   their keys in insertion order, otherwise the dict keys will be sorted.
+   *args* an *kwargs* will be passed to :func:`pprint` as formatting
+   parameters.
 
    .. versionadded:: 3.8
 

@@ -41,7 +41,7 @@ import types as _types
 from io import StringIO as _StringIO
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
-           "PrettyPrinter"]
+           "PrettyPrinter", "pp"]
 
 
 def pprint(object, stream=None, indent=1, width=80, depth=None, *,
@@ -123,7 +123,7 @@ class PrettyPrinter:
             If true, several items will be combined in one line.
 
         sort_dicts
-            If true, dicts key are sorted alphabetically.
+            If true, dict keys are sorted.
 
         """
         indent = int(indent)
