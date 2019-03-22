@@ -40,7 +40,7 @@ def color_config(text):
     # Not automatic because ColorDelegator does not know 'text'.
     theme = idleConf.CurrentTheme()
     normal_colors = idleConf.GetHighlight(theme, 'normal')
-    cursor_color = idleConf.GetHighlight(theme, 'cursor', fgBg='fg')
+    cursor_color = idleConf.GetHighlight(theme, 'cursor')['foreground']
     select_colors = idleConf.GetHighlight(theme, 'hilite')
     text.config(
         foreground=normal_colors['foreground'],
