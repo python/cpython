@@ -3536,6 +3536,7 @@ compiler_compare(struct compiler *c, expr_ty e)
     return 1;
 }
 
+// Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
@@ -3569,9 +3570,10 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
-    if (maybe_optimize_method_call(c, e) > 0)
-        return 1;
-
+    int ret = maybe_optimize_method_call(c, e);
+    if (ret >= 0) {
+        return ret;
+    }
     VISIT(c, expr, e->v.Call.func);
     return compiler_call_helper(c, 0,
                                 e->v.Call.args,
