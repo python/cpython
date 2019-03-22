@@ -220,7 +220,7 @@ PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
    If nargs is equal to zero, args can be NULL. kwargs can be NULL.
    nargs must be greater or equal to zero.
 
-   Return the result on success. Raise an exception on return NULL on
+   Return the result on success. Raise an exception and return NULL on
    error. */
 PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
     PyObject *callable,
