@@ -1083,7 +1083,7 @@ class UserDict(_collections_abc.MutableMapping):
 
         if isinstance(other, type(self.data)):
             return self.__class__(other | self.data)
-            
+
         return self.__class__(dict(other) | self.data)
 
     def __ior__(self, other):
@@ -1094,7 +1094,7 @@ class UserDict(_collections_abc.MutableMapping):
             self.data |= other
         else:
             self.data |= dict(other)
-            
+
         return self
 
     def __sub__(self, other):
@@ -1125,7 +1125,7 @@ class UserDict(_collections_abc.MutableMapping):
             self.data -= other
         else:
             self.data -= dict(other)
-            
+
         return self
 
     def copy(self):
