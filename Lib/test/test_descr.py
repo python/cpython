@@ -4325,7 +4325,11 @@ order (MRO) for bases """
             def __hash__(self):
                 return hash('attr')
             def __eq__(self, other):
-                del C.attr
+                try:
+                    del C.attr
+                except AttributeError:
+                    # possible race condition
+                    pass
                 return 0
 
         class Descr(object):
@@ -5342,16 +5346,16 @@ class SharedKeyTests(unittest.TestCase):
 
         a, b = A(), B()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
-        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
         # Initial hash table can contain at most 5 elements.
         # Set 6 attributes to cause internal resizing.
         a.x, a.y, a.z, a.w, a.v, a.u = range(6)
         self.assertNotEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
         a2 = A()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
-        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
         b.u, b.v, b.w, b.t, b.s, b.r = range(6)
-        self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({}))
+        self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({"a":1}))
 
 
 class DebugHelperMeta(type):

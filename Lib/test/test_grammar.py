@@ -1,7 +1,7 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error
+from test.support import check_syntax_error, check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -101,7 +101,7 @@ INVALID_UNDERSCORE_LITERALS = [
 
 class TokenTests(unittest.TestCase):
 
-    check_syntax_error = check_syntax_error
+    from test.support import check_syntax_error
 
     def test_backslash(self):
         # Backslash means line continuation:
@@ -276,7 +276,7 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
-    check_syntax_error = check_syntax_error
+    from test.support import check_syntax_error, check_syntax_warning
 
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
@@ -1109,12 +1109,10 @@ class GrammarTests(unittest.TestCase):
         else:
             self.fail("AssertionError not raised by 'assert False'")
 
-        with self.assertWarnsRegex(SyntaxWarning, 'assertion is always true'):
-            compile('assert(x, "msg")', '<testcase>', 'exec')
+        self.check_syntax_warning('assert(x, "msg")',
+                                  'assertion is always true')
         with warnings.catch_warnings():
-            warnings.filterwarnings('error', category=SyntaxWarning)
-            with self.assertRaisesRegex(SyntaxError, 'assertion is always true'):
-                compile('assert(x, "msg")', '<testcase>', 'exec')
+            warnings.simplefilter('error', SyntaxWarning)
             compile('assert x, "msg"', '<testcase>', 'exec')
 
 
@@ -1243,12 +1241,7 @@ class GrammarTests(unittest.TestCase):
 
     def test_comparison_is_literal(self):
         def check(test, msg='"is" with a literal'):
-            with self.assertWarnsRegex(SyntaxWarning, msg):
-                compile(test, '<testcase>', 'exec')
-            with warnings.catch_warnings():
-                warnings.filterwarnings('error', category=SyntaxWarning)
-                with self.assertRaisesRegex(SyntaxError, msg):
-                    compile(test, '<testcase>', 'exec')
+            self.check_syntax_warning(test, msg)
 
         check('x is 1')
         check('x is "thing"')
@@ -1257,11 +1250,93 @@ class GrammarTests(unittest.TestCase):
         check('x is not 1', '"is not" with a literal')
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('error', category=SyntaxWarning)
+            warnings.simplefilter('error', SyntaxWarning)
             compile('x is None', '<testcase>', 'exec')
             compile('x is False', '<testcase>', 'exec')
             compile('x is True', '<testcase>', 'exec')
             compile('x is ...', '<testcase>', 'exec')
+
+    def test_warn_missed_comma(self):
+        def check(test):
+            self.check_syntax_warning(test, msg)
+
+        msg=r'is not callable; perhaps you missed a comma\?'
+        check('[(1, 2) (3, 4)]')
+        check('[(x, y) (3, 4)]')
+        check('[[1, 2] (3, 4)]')
+        check('[{1, 2} (3, 4)]')
+        check('[{1: 2} (3, 4)]')
+        check('[[i for i in range(5)] (3, 4)]')
+        check('[{i for i in range(5)} (3, 4)]')
+        check('[(i for i in range(5)) (3, 4)]')
+        check('[{i: i for i in range(5)} (3, 4)]')
+        check('[f"{x}" (3, 4)]')
+        check('[f"x={x}" (3, 4)]')
+        check('["abc" (3, 4)]')
+        check('[b"abc" (3, 4)]')
+        check('[123 (3, 4)]')
+        check('[12.3 (3, 4)]')
+        check('[12.3j (3, 4)]')
+        check('[None (3, 4)]')
+        check('[True (3, 4)]')
+        check('[... (3, 4)]')
+
+        msg=r'is not subscriptable; perhaps you missed a comma\?'
+        check('[{1, 2} [i, j]]')
+        check('[{i for i in range(5)} [i, j]]')
+        check('[(i for i in range(5)) [i, j]]')
+        check('[(lambda x, y: x) [i, j]]')
+        check('[123 [i, j]]')
+        check('[12.3 [i, j]]')
+        check('[12.3j [i, j]]')
+        check('[None [i, j]]')
+        check('[True [i, j]]')
+        check('[... [i, j]]')
+
+        msg=r'indices must be integers or slices, not tuple; perhaps you missed a comma\?'
+        check('[(1, 2) [i, j]]')
+        check('[(x, y) [i, j]]')
+        check('[[1, 2] [i, j]]')
+        check('[[i for i in range(5)] [i, j]]')
+        check('[f"{x}" [i, j]]')
+        check('[f"x={x}" [i, j]]')
+        check('["abc" [i, j]]')
+        check('[b"abc" [i, j]]')
+
+        msg=r'indices must be integers or slices, not tuple;'
+        check('[[1, 2] [3, 4]]')
+        msg=r'indices must be integers or slices, not list;'
+        check('[[1, 2] [[3, 4]]]')
+        check('[[1, 2] [[i for i in range(5)]]]')
+        msg=r'indices must be integers or slices, not set;'
+        check('[[1, 2] [{3, 4}]]')
+        check('[[1, 2] [{i for i in range(5)}]]')
+        msg=r'indices must be integers or slices, not dict;'
+        check('[[1, 2] [{3: 4}]]')
+        check('[[1, 2] [{i: i for i in range(5)}]]')
+        msg=r'indices must be integers or slices, not generator;'
+        check('[[1, 2] [(i for i in range(5))]]')
+        msg=r'indices must be integers or slices, not function;'
+        check('[[1, 2] [(lambda x, y: x)]]')
+        msg=r'indices must be integers or slices, not str;'
+        check('[[1, 2] [f"{x}"]]')
+        check('[[1, 2] [f"x={x}"]]')
+        check('[[1, 2] ["abc"]]')
+        msg=r'indices must be integers or slices, not'
+        check('[[1, 2] [b"abc"]]')
+        check('[[1, 2] [12.3]]')
+        check('[[1, 2] [12.3j]]')
+        check('[[1, 2] [None]]')
+        check('[[1, 2] [...]]')
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', SyntaxWarning)
+            compile('[(lambda x, y: x) (3, 4)]', '<testcase>', 'exec')
+            compile('[[1, 2] [i]]', '<testcase>', 'exec')
+            compile('[[1, 2] [0]]', '<testcase>', 'exec')
+            compile('[[1, 2] [True]]', '<testcase>', 'exec')
+            compile('[[1, 2] [1:2]]', '<testcase>', 'exec')
+            compile('[{(1, 2): 3} [i, j]]', '<testcase>', 'exec')
 
     def test_binary_mask_ops(self):
         x = 1 & 1

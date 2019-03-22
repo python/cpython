@@ -12,6 +12,7 @@
 
 */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
 #include "windows.h"
@@ -1604,8 +1605,11 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     long rc;
 
     if (type != REG_SZ) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Type must be winreg.REG_SZ");
+        PyErr_SetString(PyExc_TypeError, "type must be winreg.REG_SZ");
+        return NULL;
+    }
+    if ((size_t)value_length >= PY_DWORD_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "value is too long");
         return NULL;
     }
 

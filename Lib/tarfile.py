@@ -105,7 +105,7 @@ SOLARIS_XHDTYPE = b"X"          # Solaris extended header
 USTAR_FORMAT = 0                # POSIX.1-1988 (ustar) format
 GNU_FORMAT = 1                  # GNU tar format
 PAX_FORMAT = 2                  # POSIX.1-2001 (pax) format
-DEFAULT_FORMAT = GNU_FORMAT
+DEFAULT_FORMAT = PAX_FORMAT
 
 #---------------------------------------------------------
 # tarfile constants
@@ -1787,10 +1787,9 @@ class TarFile(object):
         tarinfo = self.tarinfo()
         tarinfo.tarfile = self  # Not needed
 
-        # Use os.stat or os.lstat, depending on platform
-        # and if symlinks shall be resolved.
+        # Use os.stat or os.lstat, depending on if symlinks shall be resolved.
         if fileobj is None:
-            if hasattr(os, "lstat") and not self.dereference:
+            if not self.dereference:
                 statres = os.lstat(name)
             else:
                 statres = os.stat(name)
@@ -2235,11 +2234,10 @@ class TarFile(object):
     def chmod(self, tarinfo, targetpath):
         """Set file permissions of targetpath according to tarinfo.
         """
-        if hasattr(os, 'chmod'):
-            try:
-                os.chmod(targetpath, tarinfo.mode)
-            except OSError:
-                raise ExtractError("could not change mode")
+        try:
+            os.chmod(targetpath, tarinfo.mode)
+        except OSError:
+            raise ExtractError("could not change mode")
 
     def utime(self, tarinfo, targetpath):
         """Set modification time of targetpath according to tarinfo.

@@ -324,8 +324,10 @@ static char *JoinedStr_fields[]={
     "values",
 };
 static PyTypeObject *Constant_type;
+_Py_IDENTIFIER(kind);
 static char *Constant_fields[]={
     "value",
+    "kind",
 };
 static PyTypeObject *Attribute_type;
 _Py_IDENTIFIER(attr);
@@ -365,8 +367,7 @@ static char *Tuple_fields[]={
 };
 static PyTypeObject *expr_context_type;
 static PyObject *Load_singleton, *Store_singleton, *Del_singleton,
-*AugLoad_singleton, *AugStore_singleton, *Param_singleton,
-*NamedStore_singleton;
+*AugLoad_singleton, *AugStore_singleton, *Param_singleton;
 static PyObject* ast2obj_expr_context(expr_context_ty);
 static PyTypeObject *Load_type;
 static PyTypeObject *Store_type;
@@ -374,7 +375,6 @@ static PyTypeObject *Del_type;
 static PyTypeObject *AugLoad_type;
 static PyTypeObject *AugStore_type;
 static PyTypeObject *Param_type;
-static PyTypeObject *NamedStore_type;
 static PyTypeObject *slice_type;
 static PyObject* ast2obj_slice(void*);
 static PyTypeObject *Slice_type;
@@ -952,7 +952,7 @@ static int init_types(void)
     if (!FormattedValue_type) return 0;
     JoinedStr_type = make_type("JoinedStr", expr_type, JoinedStr_fields, 1);
     if (!JoinedStr_type) return 0;
-    Constant_type = make_type("Constant", expr_type, Constant_fields, 1);
+    Constant_type = make_type("Constant", expr_type, Constant_fields, 2);
     if (!Constant_type) return 0;
     Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
     if (!Attribute_type) return 0;
@@ -993,10 +993,6 @@ static int init_types(void)
     if (!Param_type) return 0;
     Param_singleton = PyType_GenericNew(Param_type, NULL, NULL);
     if (!Param_singleton) return 0;
-    NamedStore_type = make_type("NamedStore", expr_context_type, NULL, 0);
-    if (!NamedStore_type) return 0;
-    NamedStore_singleton = PyType_GenericNew(NamedStore_type, NULL, NULL);
-    if (!NamedStore_singleton) return 0;
     slice_type = make_type("slice", &AST_type, NULL, 0);
     if (!slice_type) return 0;
     if (!add_attributes(slice_type, NULL, 0)) return 0;
@@ -2293,8 +2289,8 @@ JoinedStr(asdl_seq * values, int lineno, int col_offset, int end_lineno, int
 }
 
 expr_ty
-Constant(constant value, int lineno, int col_offset, int end_lineno, int
-         end_col_offset, PyArena *arena)
+Constant(constant value, string kind, int lineno, int col_offset, int
+         end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2307,6 +2303,7 @@ Constant(constant value, int lineno, int col_offset, int end_lineno, int
         return NULL;
     p->kind = Constant_kind;
     p->v.Constant.value = value;
+    p->v.Constant.kind = kind;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -3513,6 +3510,11 @@ ast2obj_expr(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_string(o->v.Constant.kind);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_kind, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case Attribute_kind:
         result = PyType_GenericNew(Attribute_type, NULL, NULL);
@@ -3657,9 +3659,6 @@ PyObject* ast2obj_expr_context(expr_context_ty o)
         case Param:
             Py_INCREF(Param_singleton);
             return Param_singleton;
-        case NamedStore:
-            Py_INCREF(NamedStore_singleton);
-            return NamedStore_singleton;
         default:
             /* should never happen, but just in case ... */
             PyErr_Format(PyExc_SystemError, "unknown expr_context found");
@@ -7233,6 +7232,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     if (isinstance) {
         constant value;
+        string kind;
 
         if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
             return 1;
@@ -7247,8 +7247,21 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Constant(value, lineno, col_offset, end_lineno, end_col_offset,
-                        arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_kind, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            kind = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &kind, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = Constant(value, kind, lineno, col_offset, end_lineno,
+                        end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7606,14 +7619,6 @@ obj2ast_expr_context(PyObject* obj, expr_context_ty* out, PyArena* arena)
     }
     if (isinstance) {
         *out = Param;
-        return 0;
-    }
-    isinstance = PyObject_IsInstance(obj, (PyObject *)NamedStore_type);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        *out = NamedStore;
         return 0;
     }
 
@@ -8828,8 +8833,6 @@ PyInit__ast(void)
         return NULL;
     if (PyDict_SetItemString(d, "Param", (PyObject*)Param_type) < 0) return
         NULL;
-    if (PyDict_SetItemString(d, "NamedStore", (PyObject*)NamedStore_type) < 0)
-        return NULL;
     if (PyDict_SetItemString(d, "slice", (PyObject*)slice_type) < 0) return
         NULL;
     if (PyDict_SetItemString(d, "Slice", (PyObject*)Slice_type) < 0) return
@@ -8918,6 +8921,11 @@ PyObject* PyAST_mod2obj(mod_ty t)
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+{
+    return PyAST_obj2mod_ex(ast, arena, mode, PY_MINOR_VERSION);
+}
+
+mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version)
 {
     mod_ty res;
     PyObject *req_type[3];

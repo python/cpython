@@ -178,7 +178,7 @@ typedef _W64 int ssize_t;
 #define PYD_PLATFORM_TAG "win32"
 #elif defined(_M_ARM)
 #define COMPILER _Py_PASTE_VERSION("32 bit (ARM)")
-#define PYD_PLATFORM_TAG "win_arm"
+#define PYD_PLATFORM_TAG "win_arm32"
 #else
 #define COMPILER _Py_PASTE_VERSION("32 bit (Unknown)")
 #endif
@@ -191,13 +191,6 @@ typedef int pid_t;
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
 #define Py_IS_FINITE(X) _finite(X)
 #define copysign _copysign
-
-/* VS 2015 defines these names with a leading underscore */
-#if _MSC_VER >= 1900
-#define timezone _timezone
-#define daylight _daylight
-#define tzname _tzname
-#endif
 
 /* Side by Side assemblies supported in VS 2005 and VS 2008 but not 2010*/
 #if _MSC_VER >= 1400 && _MSC_VER < 1600

@@ -41,7 +41,7 @@ if "%DO_FETCH%"=="false" goto end
 if "%ORG%"=="" (set ORG=python)
 call "%PCBUILD%\find_python.bat" "%PYTHON%"
 
-if "%PYTHON%"=="" (
+if NOT DEFINED PYTHON (
     where /Q git || echo Python 3.6 could not be found or installed, and git.exe is not on your PATH && exit /B 1
 )
 
@@ -60,7 +60,7 @@ set libraries=%libraries%                                       zlib-1.2.11
 for %%e in (%libraries%) do (
     if exist "%EXTERNALS_DIR%\%%e" (
         echo.%%e already exists, skipping.
-    ) else if "%PYTHON%"=="" (
+    ) else if NOT DEFINED PYTHON (
         echo.Fetching %%e with git...
         git clone --depth 1 https://github.com/%ORG%/cpython-source-deps --branch %%e "%EXTERNALS_DIR%\%%e"
     ) else (
@@ -79,7 +79,7 @@ if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 for %%b in (%binaries%) do (
     if exist "%EXTERNALS_DIR%\%%b" (
         echo.%%b already exists, skipping.
-    ) else if "%PYTHON%"=="" (
+    ) else if NOT DEFINED PYTHON (
         echo.Fetching %%b with git...
         git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (

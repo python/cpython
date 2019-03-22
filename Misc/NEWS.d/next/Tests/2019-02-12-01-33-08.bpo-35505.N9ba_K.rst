@@ -1,2 +1,0 @@
-Make test_imap4_host_default_value independent on whether the 
-local IMAP server is running.

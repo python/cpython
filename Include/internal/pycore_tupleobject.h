@@ -11,6 +11,7 @@ extern "C" {
 #include "tupleobject.h"
 
 #define _PyTuple_ITEMS(op) (_PyTuple_CAST(op)->ob_item)
+PyAPI_FUNC(PyObject *) _PyTuple_FromArray(PyObject *const *, Py_ssize_t);
 
 #ifdef __cplusplus
 }

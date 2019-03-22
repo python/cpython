@@ -42,15 +42,9 @@ struct tok_state {
                            expression (cf. issue 16806) */
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
-#ifndef PGEN
     char parenstack[MAXLEVEL];
     int parenlinenostack[MAXLEVEL];
-    /* pgen doesn't have access to Python codecs, it cannot decode the input
-       filename. The bytes filename might be kept, but it is only used by
-       indenterror() and it is not really needed: pgen only compiles one file
-       (Grammar/Grammar). */
     PyObject *filename;
-#endif
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
@@ -63,15 +57,20 @@ struct tok_state {
     const char* multi_line_start; /* pointer to start of first line of
                                      a single line or multi line string
                                      expression (cf. issue 16806) */
-#ifndef PGEN
     PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
-#endif
     const char* enc;        /* Encoding for the current str. */
     const char* str;
     const char* input; /* Tokenizer's newline translated copy of the string. */
 
     int type_comments;      /* Whether to look for type comments */
+
+    /* async/await related fields (still needed depending on feature_version) */
+    int async_hacks;     /* =1 if async/await aren't always keywords */
+    int async_def;        /* =1 if tokens are inside an 'async def' body. */
+    int async_def_indent; /* Indentation level of the outermost 'async def'. */
+    int async_def_nl;     /* =1 if the outermost 'async def' had at least one
+                             NEWLINE token after it. */
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);

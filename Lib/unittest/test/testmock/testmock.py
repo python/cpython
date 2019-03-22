@@ -267,6 +267,10 @@ class MockTest(unittest.TestCase):
         self.assertEqual(mock.call_count, 1, "call_count incoreect")
         self.assertEqual(mock.call_args, ((sentinel.Arg,), {}),
                          "call_args not set")
+        self.assertEqual(mock.call_args.args, (sentinel.Arg,),
+                         "call_args not set")
+        self.assertEqual(mock.call_args.kwargs, {},
+                         "call_args not set")
         self.assertEqual(mock.call_args_list, [((sentinel.Arg,), {})],
                          "call_args_list not initialised correctly")
 
@@ -300,6 +304,8 @@ class MockTest(unittest.TestCase):
         ])
         self.assertEqual(mock.call_args,
                          ((sentinel.Arg,), {"kw": sentinel.Kwarg}))
+        self.assertEqual(mock.call_args.args, (sentinel.Arg,))
+        self.assertEqual(mock.call_args.kwargs, {"kw": sentinel.Kwarg})
 
         # Comparing call_args to a long sequence should not raise
         # an exception. See issue 24857.
@@ -724,7 +730,7 @@ class MockTest(unittest.TestCase):
 
     def test_assert_called_with_message(self):
         mock = Mock()
-        self.assertRaisesRegex(AssertionError, 'Not called',
+        self.assertRaisesRegex(AssertionError, 'not called',
                                 mock.assert_called_with)
 
 
@@ -917,10 +923,11 @@ class MockTest(unittest.TestCase):
     def test_assert_called_with_failure_message(self):
         mock = NonCallableMock()
 
+        actual = 'not called.'
         expected = "mock(1, '2', 3, bar='foo')"
-        message = 'Expected call: %s\nNot called'
+        message = 'expected call not found.\nExpected: %s\nActual: %s'
         self.assertRaisesWithMsg(
-            AssertionError, message % (expected,),
+            AssertionError, message % (expected, actual),
             mock.assert_called_with, 1, '2', 3, bar='foo'
         )
 
@@ -933,7 +940,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(1, '2', 3, bar='foo')"
-            message = 'Expected call: %s\nActual call: %s'
+            message = 'expected call not found.\nExpected: %s\nActual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, 1, '2', 3, bar='foo'
@@ -943,7 +950,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(bar='foo')"
-            message = 'Expected call: %s\nActual call: %s'
+            message = 'expected call not found.\nExpected: %s\nActual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, bar='foo'
@@ -953,7 +960,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo(1, 2, 3)"
-            message = 'Expected call: %s\nActual call: %s'
+            message = 'expected call not found.\nExpected: %s\nActual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual),
                 meth, 1, 2, 3
@@ -963,7 +970,7 @@ class MockTest(unittest.TestCase):
         for meth in asserters:
             actual = "foo(1, '2', 3, foo='foo')"
             expected = "foo()"
-            message = 'Expected call: %s\nActual call: %s'
+            message = 'expected call not found.\nExpected: %s\nActual: %s'
             self.assertRaisesWithMsg(
                 AssertionError, message % (expected, actual), meth
             )
@@ -1156,9 +1163,8 @@ class MockTest(unittest.TestCase):
         mock(2, b=4)
 
         self.assertEqual(len(mock.call_args), 2)
-        args, kwargs = mock.call_args
-        self.assertEqual(args, (2,))
-        self.assertEqual(kwargs, dict(b=4))
+        self.assertEqual(mock.call_args.args, (2,))
+        self.assertEqual(mock.call_args.kwargs, dict(b=4))
 
         expected_list = [((1,), dict(a=3)), ((2,), dict(b=4))]
         for expected, call_args in zip(expected_list, mock.call_args_list):
@@ -1827,6 +1833,19 @@ class MockTest(unittest.TestCase):
         self.assertIsNotNone(call.parent)
         self.assertEqual(type(call.parent), _Call)
         self.assertEqual(type(call.parent().parent), _Call)
+
+
+    def test_parent_propagation_with_create_autospec(self):
+
+        def foo(a, b):
+            pass
+
+        mock = Mock()
+        mock.child = create_autospec(foo)
+        mock.child(1, 2)
+
+        self.assertRaises(TypeError, mock.child, 1)
+        self.assertEqual(mock.mock_calls, [call.child(1, 2)])
 
 
 if __name__ == '__main__':

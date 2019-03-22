@@ -1239,17 +1239,6 @@ class EscapeDecodeTest(unittest.TestCase):
         self.assertEqual(decode(br"[\x0]\x0", "replace"), (b"[?]?", 8))
 
 
-class RecodingTest(unittest.TestCase):
-    def test_recoding(self):
-        f = io.BytesIO()
-        f2 = codecs.EncodedFile(f, "unicode_internal", "utf-8")
-        f2.write("a")
-        f2.close()
-        # Python used to crash on this at exit because of a refcount
-        # bug in _codecsmodule.c
-
-        self.assertTrue(f.closed)
-
 # From RFC 3492
 punycode_testcases = [
     # A Arabic (Egyptian):
@@ -1378,87 +1367,6 @@ class PunycodeTest(unittest.TestCase):
             puny = puny.decode("ascii").encode("ascii")
             self.assertEqual(uni, puny.decode("punycode"))
 
-
-class UnicodeInternalTest(unittest.TestCase):
-    @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
-    def test_bug1251300(self):
-        # Decoding with unicode_internal used to not correctly handle "code
-        # points" above 0x10ffff on UCS-4 builds.
-        ok = [
-            (b"\x00\x10\xff\xff", "\U0010ffff"),
-            (b"\x00\x00\x01\x01", "\U00000101"),
-            (b"", ""),
-        ]
-        not_ok = [
-            b"\x7f\xff\xff\xff",
-            b"\x80\x00\x00\x00",
-            b"\x81\x00\x00\x00",
-            b"\x00",
-            b"\x00\x00\x00\x00\x00",
-        ]
-        for internal, uni in ok:
-            if sys.byteorder == "little":
-                internal = bytes(reversed(internal))
-            with support.check_warnings():
-                self.assertEqual(uni, internal.decode("unicode_internal"))
-        for internal in not_ok:
-            if sys.byteorder == "little":
-                internal = bytes(reversed(internal))
-            with support.check_warnings(('unicode_internal codec has been '
-                                         'deprecated', DeprecationWarning)):
-                self.assertRaises(UnicodeDecodeError, internal.decode,
-                                  "unicode_internal")
-        if sys.byteorder == "little":
-            invalid = b"\x00\x00\x11\x00"
-            invalid_backslashreplace = r"\x00\x00\x11\x00"
-        else:
-            invalid = b"\x00\x11\x00\x00"
-            invalid_backslashreplace = r"\x00\x11\x00\x00"
-        with support.check_warnings():
-            self.assertRaises(UnicodeDecodeError,
-                              invalid.decode, "unicode_internal")
-        with support.check_warnings():
-            self.assertEqual(invalid.decode("unicode_internal", "replace"),
-                             '\ufffd')
-        with support.check_warnings():
-            self.assertEqual(invalid.decode("unicode_internal", "backslashreplace"),
-                             invalid_backslashreplace)
-
-    @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
-    def test_decode_error_attributes(self):
-        try:
-            with support.check_warnings(('unicode_internal codec has been '
-                                         'deprecated', DeprecationWarning)):
-                b"\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
-        except UnicodeDecodeError as ex:
-            self.assertEqual("unicode_internal", ex.encoding)
-            self.assertEqual(b"\x00\x00\x00\x00\x00\x11\x11\x00", ex.object)
-            self.assertEqual(4, ex.start)
-            self.assertEqual(8, ex.end)
-        else:
-            self.fail()
-
-    @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
-    def test_decode_callback(self):
-        codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
-        decoder = codecs.getdecoder("unicode_internal")
-        with support.check_warnings(('unicode_internal codec has been '
-                                     'deprecated', DeprecationWarning)):
-            ab = "ab".encode("unicode_internal").decode()
-            ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
-                                    "ascii"),
-                              "UnicodeInternalTest")
-        self.assertEqual(("ab", 12), ignored)
-
-    def test_encode_length(self):
-        with support.check_warnings(('unicode_internal codec has been '
-                                     'deprecated', DeprecationWarning)):
-            # Issue 3739
-            encoder = codecs.getencoder("unicode_internal")
-            self.assertEqual(encoder("a")[1], 1)
-            self.assertEqual(encoder("\xe9\u0142")[1], 2)
-
-            self.assertEqual(codecs.escape_encode(br'\x00')[1], 4)
 
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
 nameprep_tests = [
@@ -1950,7 +1858,6 @@ all_unicode_encodings = [
     "shift_jisx0213",
     "tis_620",
     "unicode_escape",
-    "unicode_internal",
     "utf_16",
     "utf_16_be",
     "utf_16_le",
@@ -1970,7 +1877,6 @@ if hasattr(codecs, "oem_encode"):
 # The following encodings don't work in stateful mode
 broken_unicode_with_stateful = [
     "punycode",
-    "unicode_internal"
 ]
 
 
@@ -1985,12 +1891,10 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 name = "latin_1"
             self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
 
-            with support.check_warnings():
-                # unicode-internal has been deprecated
-                (b, size) = codecs.getencoder(encoding)(s)
-                self.assertEqual(size, len(s), "encoding=%r" % encoding)
-                (chars, size) = codecs.getdecoder(encoding)(b)
-                self.assertEqual(chars, s, "encoding=%r" % encoding)
+            (b, size) = codecs.getencoder(encoding)(s)
+            self.assertEqual(size, len(s), "encoding=%r" % encoding)
+            (chars, size) = codecs.getdecoder(encoding)(b)
+            self.assertEqual(chars, s, "encoding=%r" % encoding)
 
             if encoding not in broken_unicode_with_stateful:
                 # check stream reader/writer
@@ -2117,9 +2021,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
     def test_bad_encode_args(self):
         for encoding in all_unicode_encodings:
             encoder = codecs.getencoder(encoding)
-            with support.check_warnings():
-                # unicode-internal has been deprecated
-                self.assertRaises(TypeError, encoder)
+            self.assertRaises(TypeError, encoder)
 
     def test_encoding_map_type_initialized(self):
         from encodings import cp1140
@@ -3163,6 +3065,15 @@ class CodePageTest(unittest.TestCase):
             ('[\U0010ffff\uDC80]', 'ignore', b'[\xf4\x8f\xbf\xbf]'),
             ('[\U0010ffff\uDC80]', 'replace', b'[\xf4\x8f\xbf\xbf?]'),
         ))
+
+    def test_code_page_decode_flags(self):
+        # Issue #36312: For some code pages (e.g. UTF-7) flags for
+        # MultiByteToWideChar() must be set to 0.
+        for cp in (50220, 50221, 50222, 50225, 50227, 50229,
+                   *range(57002, 57011+1), 65000):
+            self.assertEqual(codecs.code_page_decode(cp, b'abc'), ('abc', 3))
+        self.assertEqual(codecs.code_page_decode(42, b'abc'),
+                         ('\uf061\uf062\uf063', 3))
 
     def test_incremental(self):
         decoded = codecs.code_page_decode(932, b'\x82', 'strict', False)

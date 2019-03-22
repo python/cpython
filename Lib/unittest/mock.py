@@ -321,6 +321,14 @@ class _CallList(list):
 
 
 def _check_and_set_parent(parent, value, name, new_name):
+    # function passed to create_autospec will have mock
+    # attribute attached to which parent must be set
+    if isinstance(value, FunctionTypes):
+        try:
+            value = value.mock
+        except AttributeError:
+            pass
+
     if not _is_instance_mock(value):
         return False
     if ((value._mock_name or value._mock_new_name) or
@@ -745,7 +753,7 @@ class NonCallableMock(Base):
 
 
     def _format_mock_failure_message(self, args, kwargs):
-        message = 'Expected call: %s\nActual call: %s'
+        message = 'expected call not found.\nExpected: %s\nActual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         if len(call_args) == 3:
@@ -814,7 +822,10 @@ class NonCallableMock(Base):
         self = _mock_self
         if self.call_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
-            raise AssertionError('Expected call: %s\nNot called' % (expected,))
+            actual = 'not called.'
+            error_message = ('expected call not found.\nExpected: %s\nActual: %s'
+                    % (expected, actual))
+            raise AssertionError(error_message)
 
         def _error_message():
             msg = self._format_mock_failure_message(args, kwargs)
@@ -1617,8 +1628,6 @@ class _patch_dict(object):
     """
 
     def __init__(self, in_dict, values=(), clear=False, **kwargs):
-        if isinstance(in_dict, str):
-            in_dict = _importer(in_dict)
         self.in_dict = in_dict
         # support any argument supported by dict(...) constructor
         self.values = dict(values)
@@ -1659,6 +1668,8 @@ class _patch_dict(object):
 
     def _patch_dict(self):
         values = self.values
+        if isinstance(self.in_dict, str):
+            self.in_dict = _importer(self.in_dict)
         in_dict = self.in_dict
         clear = self.clear
 
@@ -2123,6 +2134,22 @@ class _Call(tuple):
 
     def index(self, *args, **kwargs):
         return self.__getattr__('index')(*args, **kwargs)
+
+    def _get_call_arguments(self):
+        if len(self) == 2:
+            args, kwargs = self
+        else:
+            name, args, kwargs = self
+
+        return args, kwargs
+
+    @property
+    def args(self):
+        return self._get_call_arguments()[0]
+
+    @property
+    def kwargs(self):
+        return self._get_call_arguments()[1]
 
     def __repr__(self):
         if not self._mock_from_kall:

@@ -6,7 +6,8 @@
 
 [CVE-2019-5010] Fix a NULL pointer deref in ssl module. The cert parser did
 not handle CRL distribution points with empty DP or URI correctly. A
-malicious or buggy certificate can result into segfault.
+malicious or buggy certificate can result into segfault. Vulnerability
+(TALOS-2018-0758) reported by Colin Read and Nicolas Edet of Cisco.
 
 ..
 
@@ -1844,7 +1845,7 @@ parameter.
 .. nonce: LT_qL8
 .. section: Library
 
-:class:`asyncio.ProactorEventLoop` now catchs and logs send errors when the
+:class:`asyncio.ProactorEventLoop` now catches and logs send errors when the
 self-pipe is full.
 
 ..
@@ -2269,7 +2270,7 @@ last release was in 2000. Mac OS 9 last release was in 2001.
 .. nonce: laV_IE
 .. section: Library
 
-:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catchs
+:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catches
 :exc:`KeyError` on calling :func:`pwd.getpwuid`: don't create the ``HOME``
 environment variable in this case.
 
@@ -7953,15 +7954,6 @@ prevent it from truncating the last character.
 
 ..
 
-.. bpo: 35555
-.. date: 2018-12-21-18-44-30
-.. nonce: M58_K3
-.. section: macOS
-
-Gray out Code Context menu entry when it's not applicable.
-
-..
-
 .. bpo: 35401
 .. date: 2018-12-09-13-56-49
 .. nonce: n8B7X1
@@ -8163,6 +8155,15 @@ Add Previous/Next History entries to Shell menu.
 .. section: IDLE
 
 Squeezer now properly counts wrapped lines before newlines.
+
+..
+
+.. bpo: 35555
+.. date: 2018-12-21-18-44-30
+.. nonce: M58_K3
+.. section: IDLE
+
+Gray out Code Context menu entry when it's not applicable.
 
 ..
 
@@ -8673,7 +8674,7 @@ Argument Clinic now has non-bitwise unsigned int converters.
 .. nonce: Q3Dwns
 .. section: Tools/Demos
 
-python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
+python-gdb now catches ``UnicodeDecodeError`` exceptions when calling
 ``string()``.
 
 ..
@@ -8683,7 +8684,7 @@ python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
 .. nonce: 2YfdwI
 .. section: Tools/Demos
 
-python-gdb now catchs ValueError on read_var(): when Python has no debug
+python-gdb now catches ValueError on read_var(): when Python has no debug
 symbols for example.
 
 ..

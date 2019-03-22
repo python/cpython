@@ -27,7 +27,7 @@ object-oriented way:
 
 test fixture
    A :dfn:`test fixture` represents the preparation needed to perform one or more
-   tests, and any associate cleanup actions.  This may involve, for example,
+   tests, and any associated cleanup actions.  This may involve, for example,
    creating temporary or proxy databases, directories, or starting a server
    process.
 
@@ -2083,7 +2083,7 @@ Loading and running tests
 
    .. method:: run(test)
 
-      This method is the main public interface to the `TextTestRunner`. This
+      This method is the main public interface to the ``TextTestRunner``. This
       method takes a :class:`TestSuite` or :class:`TestCase` instance. A
       :class:`TestResult` is created by calling
       :func:`_makeResult` and the test(s) are run and the

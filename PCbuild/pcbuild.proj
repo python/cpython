@@ -70,7 +70,7 @@
     </Projects>
     
     <!-- _freeze_importlib -->
-    <Projects2 Include="_freeze_importlib.vcxproj" />
+    <Projects2 Condition="$(Platform) != 'ARM'" Include="_freeze_importlib.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
     <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />

@@ -319,6 +319,10 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("try: pass\nexcept: pass\nelse: pass\n"
                          "finally: pass\n")
 
+    def test_if_stmt(self):
+        self.check_suite("if True:\n  pass\nelse:\n  pass\n")
+        self.check_suite("if True:\n  pass\nelif True:\n  pass\nelse:\n  pass\n")
+
     def test_position(self):
         # An absolutely minimal test of position information.  Better
         # tests would be a big project.
@@ -916,7 +920,7 @@ class STObjectTestCase(unittest.TestCase):
                 return (n + 3) & ~3
             return 1 << (n - 1).bit_length()
 
-        basesize = support.calcobjsize('Pii')
+        basesize = support.calcobjsize('Piii')
         nodesize = struct.calcsize('hP3iP0h2i')
         def sizeofchildren(node):
             if node is None:

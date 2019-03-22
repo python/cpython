@@ -169,22 +169,34 @@ PyEval_ThreadsInitialized(void)
 void
 PyEval_InitThreads(void)
 {
-    if (gil_created())
+    if (gil_created()) {
         return;
+    }
+
+    PyThread_init_thread();
     create_gil();
     take_gil(_PyThreadState_GET());
-    _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
-    if (!_PyRuntime.ceval.pending.lock)
-        _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
+
+    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
+    if (_PyRuntime.ceval.pending.lock == NULL) {
+        Py_FatalError("Can't initialize threads for pending calls");
+    }
 }
 
 void
 _PyEval_FiniThreads(void)
 {
-    if (!gil_created())
+    if (!gil_created()) {
         return;
+    }
+
     destroy_gil();
     assert(!gil_created());
+
+    if (_PyRuntime.ceval.pending.lock != NULL) {
+        PyThread_free_lock(_PyRuntime.ceval.pending.lock);
+        _PyRuntime.ceval.pending.lock = NULL;
+    }
 }
 
 void
@@ -242,9 +254,12 @@ PyEval_ReInitThreads(void)
     if (!gil_created())
         return;
     recreate_gil();
-    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
     take_gil(current_tstate);
-    _PyRuntime.ceval.pending.main_thread = PyThread_get_thread_ident();
+
+    _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
+    if (_PyRuntime.ceval.pending.lock == NULL) {
+        Py_FatalError("Can't initialize threads for pending calls");
+    }
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(current_tstate);
@@ -322,6 +337,37 @@ _PyEval_SignalReceived(void)
     SIGNAL_PENDING_SIGNALS();
 }
 
+/* Push one item onto the queue while holding the lock. */
+static int
+_push_pending_call(struct _pending_calls *pending,
+                   int (*func)(void *), void *arg)
+{
+    int i = pending->last;
+    int j = (i + 1) % NPENDINGCALLS;
+    if (j == pending->first) {
+        return -1; /* Queue full */
+    }
+    pending->calls[i].func = func;
+    pending->calls[i].arg = arg;
+    pending->last = j;
+    return 0;
+}
+
+/* Pop one item off the queue while holding the lock. */
+static void
+_pop_pending_call(struct _pending_calls *pending,
+                  int (**func)(void *), void **arg)
+{
+    int i = pending->first;
+    if (i == pending->last) {
+        return; /* Queue empty */
+    }
+
+    *func = pending->calls[i].func;
+    *arg = pending->calls[i].arg;
+    pending->first = (i + 1) % NPENDINGCALLS;
+}
+
 /* This implementation is thread-safe.  It allows
    scheduling to be made from any thread, and even from an executing
    callback.
@@ -330,57 +376,48 @@ _PyEval_SignalReceived(void)
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
-    int i, j, result=0;
-    PyThread_type_lock lock = _PyRuntime.ceval.pending.lock;
+    struct _pending_calls *pending = &_PyRuntime.ceval.pending;
 
-    /* try a few times for the lock.  Since this mechanism is used
-     * for signal handling (on the main thread), there is a (slim)
-     * chance that a signal is delivered on the same thread while we
-     * hold the lock during the Py_MakePendingCalls() function.
-     * This avoids a deadlock in that case.
-     * Note that signals can be delivered on any thread.  In particular,
-     * on Windows, a SIGINT is delivered on a system-created worker
-     * thread.
-     * We also check for lock being NULL, in the unlikely case that
-     * this function is called before any bytecode evaluation takes place.
-     */
-    if (lock != NULL) {
-        for (i = 0; i<100; i++) {
-            if (PyThread_acquire_lock(lock, NOWAIT_LOCK))
-                break;
-        }
-        if (i == 100)
-            return -1;
-    }
+    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+    if (pending->finishing) {
+        PyThread_release_lock(pending->lock);
 
-    i = _PyRuntime.ceval.pending.last;
-    j = (i + 1) % NPENDINGCALLS;
-    if (j == _PyRuntime.ceval.pending.first) {
-        result = -1; /* Queue full */
-    } else {
-        _PyRuntime.ceval.pending.calls[i].func = func;
-        _PyRuntime.ceval.pending.calls[i].arg = arg;
-        _PyRuntime.ceval.pending.last = j;
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        PyErr_SetString(PyExc_SystemError,
+                        "Py_AddPendingCall: cannot add pending calls "
+                        "(Python shutting down)");
+        PyErr_Print();
+        PyErr_Restore(exc, val, tb);
+        return -1;
     }
+    int result = _push_pending_call(pending, func, arg);
+    PyThread_release_lock(pending->lock);
+
     /* signal main loop */
     SIGNAL_PENDING_CALLS();
-    if (lock != NULL)
-        PyThread_release_lock(lock);
     return result;
 }
 
 static int
 handle_signals(void)
 {
-    /* Only handle signals on main thread. */
-    if (_PyRuntime.ceval.pending.main_thread &&
-        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
-    {
+    /* Only handle signals on main thread.  PyEval_InitThreads must
+     * have been called already.
+     */
+    if (PyThread_get_thread_ident() != _PyRuntime.main_thread) {
+        return 0;
+    }
+    /*
+     * Ensure that the thread isn't currently running some other
+     * interpreter.
+     */
+    if (_PyInterpreterState_GET_UNSAFE() != _PyRuntime.interpreters.main) {
         return 0;
     }
 
     UNSIGNAL_PENDING_SIGNALS();
-    if (PyErr_CheckSignals() < 0) {
+    if (_PyErr_CheckSignals() < 0) {
         SIGNAL_PENDING_SIGNALS(); /* We're not done yet */
         return -1;
     }
@@ -388,14 +425,12 @@ handle_signals(void)
 }
 
 static int
-make_pending_calls(void)
+make_pending_calls(struct _pending_calls* pending)
 {
     static int busy = 0;
 
     /* only service pending calls on main thread */
-    if (_PyRuntime.ceval.pending.main_thread &&
-        PyThread_get_thread_ident() != _PyRuntime.ceval.pending.main_thread)
-    {
+    if (PyThread_get_thread_ident() != _PyRuntime.main_thread) {
         return 0;
     }
 
@@ -409,35 +444,20 @@ make_pending_calls(void)
     UNSIGNAL_PENDING_CALLS();
     int res = 0;
 
-    if (!_PyRuntime.ceval.pending.lock) {
-        /* initial allocation of the lock */
-        _PyRuntime.ceval.pending.lock = PyThread_allocate_lock();
-        if (_PyRuntime.ceval.pending.lock == NULL) {
-            res = -1;
-            goto error;
-        }
-    }
-
     /* perform a bounded number of calls, in case of recursion */
     for (int i=0; i<NPENDINGCALLS; i++) {
-        int j;
-        int (*func)(void *);
+        int (*func)(void *) = NULL;
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */
-        PyThread_acquire_lock(_PyRuntime.ceval.pending.lock, WAIT_LOCK);
-        j = _PyRuntime.ceval.pending.first;
-        if (j == _PyRuntime.ceval.pending.last) {
-            func = NULL; /* Queue empty */
-        } else {
-            func = _PyRuntime.ceval.pending.calls[j].func;
-            arg = _PyRuntime.ceval.pending.calls[j].arg;
-            _PyRuntime.ceval.pending.first = (j + 1) % NPENDINGCALLS;
-        }
-        PyThread_release_lock(_PyRuntime.ceval.pending.lock);
+        PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+        _pop_pending_call(pending, &func, &arg);
+        PyThread_release_lock(pending->lock);
+
         /* having released the lock, perform the callback */
-        if (func == NULL)
+        if (func == NULL) {
             break;
+        }
         res = func(arg);
         if (res) {
             goto error;
@@ -451,6 +471,30 @@ error:
     busy = 0;
     SIGNAL_PENDING_CALLS();
     return res;
+}
+
+void
+_Py_FinishPendingCalls(void)
+{
+    struct _pending_calls *pending = &_PyRuntime.ceval.pending;
+
+    assert(PyGILState_Check());
+
+    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+    pending->finishing = 1;
+    PyThread_release_lock(pending->lock);
+
+    if (!_Py_atomic_load_relaxed(&(pending->calls_to_do))) {
+        return;
+    }
+
+    if (make_pending_calls(pending) < 0) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        PyErr_BadInternalCall();
+        _PyErr_ChainExceptions(exc, val, tb);
+        PyErr_Print();
+    }
 }
 
 /* Py_MakePendingCalls() is a simple wrapper for the sake
@@ -467,7 +511,7 @@ Py_MakePendingCalls(void)
         return res;
     }
 
-    res = make_pending_calls();
+    res = make_pending_calls(&_PyRuntime.ceval.pending);
     if (res != 0) {
         return res;
     }
@@ -594,6 +638,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
     PyThreadState *tstate = _PyThreadState_GET();
+    _Py_atomic_int *eval_breaker = &_PyRuntime.ceval.eval_breaker;
     PyCodeObject *co;
 
     /* when tracing we set things up so that
@@ -679,7 +724,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
 #define DISPATCH() \
     { \
-        if (!_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) { \
+        if (!_Py_atomic_load_relaxed(eval_breaker)) { \
                     FAST_DISPATCH(); \
         } \
         continue; \
@@ -981,7 +1026,7 @@ main_loop:
            async I/O handler); see Py_AddPendingCall() and
            Py_MakePendingCalls() above. */
 
-        if (_Py_atomic_load_relaxed(&_PyRuntime.ceval.eval_breaker)) {
+        if (_Py_atomic_load_relaxed(eval_breaker)) {
             opcode = _Py_OPCODE(*next_instr);
             if (opcode == SETUP_FINALLY ||
                 opcode == SETUP_WITH ||
@@ -1016,7 +1061,7 @@ main_loop:
             if (_Py_atomic_load_relaxed(
                         &_PyRuntime.ceval.pending.calls_to_do))
             {
-                if (make_pending_calls() != 0) {
+                if (make_pending_calls(&_PyRuntime.ceval.pending) != 0) {
                     goto error;
                 }
             }
@@ -2047,10 +2092,12 @@ main_loop:
 
             PyObject *bc;
             if (PyDict_CheckExact(f->f_builtins)) {
-                bc = _PyDict_GetItemId(f->f_builtins, &PyId___build_class__);
+                bc = _PyDict_GetItemIdWithError(f->f_builtins, &PyId___build_class__);
                 if (bc == NULL) {
-                    PyErr_SetString(PyExc_NameError,
-                                    "__build_class__ not found");
+                    if (!PyErr_Occurred()) {
+                        PyErr_SetString(PyExc_NameError,
+                                        "__build_class__ not found");
+                    }
                     goto error;
                 }
                 Py_INCREF(bc);
@@ -2198,8 +2245,10 @@ main_loop:
             int err;
             err = PyDict_DelItem(f->f_globals, name);
             if (err != 0) {
-                format_exc_check_arg(
-                    PyExc_NameError, NAME_ERROR_MSG, name);
+                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                    format_exc_check_arg(
+                        PyExc_NameError, NAME_ERROR_MSG, name);
+                }
                 goto error;
             }
             DISPATCH();
@@ -2215,8 +2264,13 @@ main_loop:
                 goto error;
             }
             if (PyDict_CheckExact(locals)) {
-                v = PyDict_GetItem(locals, name);
-                Py_XINCREF(v);
+                v = PyDict_GetItemWithError(locals, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (PyErr_Occurred()) {
+                    goto error;
+                }
             }
             else {
                 v = PyObject_GetItem(locals, name);
@@ -2227,15 +2281,22 @@ main_loop:
                 }
             }
             if (v == NULL) {
-                v = PyDict_GetItem(f->f_globals, name);
-                Py_XINCREF(v);
-                if (v == NULL) {
+                v = PyDict_GetItemWithError(f->f_globals, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (PyErr_Occurred()) {
+                    goto error;
+                }
+                else {
                     if (PyDict_CheckExact(f->f_builtins)) {
-                        v = PyDict_GetItem(f->f_builtins, name);
+                        v = PyDict_GetItemWithError(f->f_builtins, name);
                         if (v == NULL) {
-                            format_exc_check_arg(
+                            if (!PyErr_Occurred()) {
+                                format_exc_check_arg(
                                         PyExc_NameError,
                                         NAME_ERROR_MSG, name);
+                            }
                             goto error;
                         }
                         Py_INCREF(v);
@@ -2343,8 +2404,13 @@ main_loop:
             assert(idx >= 0 && idx < PyTuple_GET_SIZE(co->co_freevars));
             name = PyTuple_GET_ITEM(co->co_freevars, idx);
             if (PyDict_CheckExact(locals)) {
-                value = PyDict_GetItem(locals, name);
-                Py_XINCREF(value);
+                value = PyDict_GetItemWithError(locals, name);
+                if (value != NULL) {
+                    Py_INCREF(value);
+                }
+                else if (PyErr_Occurred()) {
+                    goto error;
+                }
             }
             else {
                 value = PyObject_GetItem(locals, name);
@@ -2548,9 +2614,12 @@ main_loop:
             }
             /* check if __annotations__ in locals()... */
             if (PyDict_CheckExact(f->f_locals)) {
-                ann_dict = _PyDict_GetItemId(f->f_locals,
+                ann_dict = _PyDict_GetItemIdWithError(f->f_locals,
                                              &PyId___annotations__);
                 if (ann_dict == NULL) {
+                    if (PyErr_Occurred()) {
+                        goto error;
+                    }
                     /* ...if not, create a new one */
                     ann_dict = PyDict_New();
                     if (ann_dict == NULL) {
@@ -3764,16 +3833,11 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
 
     /* Pack other positional arguments into the *args argument */
     if (co->co_flags & CO_VARARGS) {
-        u = PyTuple_New(argcount - n);
+        u = _PyTuple_FromArray(args + n, argcount - n);
         if (u == NULL) {
             goto fail;
         }
         SETLOCAL(total_args, u);
-        for (i = n; i < argcount; i++) {
-            x = args[i];
-            Py_INCREF(x);
-            PyTuple_SET_ITEM(u, i-n, x);
-        }
     }
 
     /* Handle keyword arguments passed as two strided arrays */
@@ -3878,11 +3942,14 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
                 continue;
             name = PyTuple_GET_ITEM(co->co_varnames, i);
             if (kwdefs != NULL) {
-                PyObject *def = PyDict_GetItem(kwdefs, name);
+                PyObject *def = PyDict_GetItemWithError(kwdefs, name);
                 if (def) {
                     Py_INCREF(def);
                     SETLOCAL(i, def);
                     continue;
+                }
+                else if (PyErr_Occurred()) {
+                    goto fail;
                 }
             }
             missing++;
@@ -4818,9 +4885,11 @@ import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *leve
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    import_func = _PyDict_GetItemId(f->f_builtins, &PyId___import__);
+    import_func = _PyDict_GetItemIdWithError(f->f_builtins, &PyId___import__);
     if (import_func == NULL) {
-        PyErr_SetString(PyExc_ImportError, "__import__ not found");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ImportError, "__import__ not found");
+        }
         return NULL;
     }
 
@@ -5164,10 +5233,13 @@ unicode_concatenate(PyObject *v, PyObject *w,
             PyObject *names = f->f_code->co_names;
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = f->f_locals;
-            if (locals && PyDict_CheckExact(locals) &&
-                PyDict_GetItem(locals, name) == v) {
-                if (PyDict_DelItem(locals, name) != 0) {
-                    PyErr_Clear();
+            if (locals && PyDict_CheckExact(locals)) {
+                PyObject *w = PyDict_GetItemWithError(locals, name);
+                if ((w == v && PyDict_DelItem(locals, name) != 0) ||
+                    (w == NULL && PyErr_Occurred()))
+                {
+                    Py_DECREF(v);
+                    return NULL;
                 }
             }
             break;

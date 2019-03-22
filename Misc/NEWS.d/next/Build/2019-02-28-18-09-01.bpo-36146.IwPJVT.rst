@@ -1,0 +1,2 @@
+Fix setup.py on macOS: only add ``/usr/include/ffi`` to include
+directories of _ctypes, not for all extensions.

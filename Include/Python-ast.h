@@ -17,7 +17,7 @@ typedef struct _stmt *stmt_ty;
 typedef struct _expr *expr_ty;
 
 typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5,
-                             Param=6, NamedStore=7 } expr_context_ty;
+                             Param=6 } expr_context_ty;
 
 typedef struct _slice *slice_ty;
 
@@ -338,6 +338,7 @@ struct _expr {
 
         struct {
             constant value;
+            string kind;
         } Constant;
 
         struct {
@@ -642,9 +643,9 @@ expr_ty _Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec,
 #define JoinedStr(a0, a1, a2, a3, a4, a5) _Py_JoinedStr(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_JoinedStr(asdl_seq * values, int lineno, int col_offset, int
                       end_lineno, int end_col_offset, PyArena *arena);
-#define Constant(a0, a1, a2, a3, a4, a5) _Py_Constant(a0, a1, a2, a3, a4, a5)
-expr_ty _Py_Constant(constant value, int lineno, int col_offset, int
-                     end_lineno, int end_col_offset, PyArena *arena);
+#define Constant(a0, a1, a2, a3, a4, a5, a6) _Py_Constant(a0, a1, a2, a3, a4, a5, a6)
+expr_ty _Py_Constant(constant value, string kind, int lineno, int col_offset,
+                     int end_lineno, int end_col_offset, PyArena *arena);
 #define Attribute(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Attribute(a0, a1, a2, a3, a4, a5, a6, a7)
 expr_ty _Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
                       lineno, int col_offset, int end_lineno, int
@@ -703,6 +704,7 @@ type_ignore_ty _Py_TypeIgnore(int lineno, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
+mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version);
 int PyAST_Check(PyObject* obj);
 
 #ifdef __cplusplus

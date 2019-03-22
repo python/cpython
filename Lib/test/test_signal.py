@@ -78,6 +78,22 @@ class PosixTests(unittest.TestCase):
         self.assertNotIn(signal.NSIG, s)
         self.assertLess(len(s), signal.NSIG)
 
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers exit via SIGINT."""
+        process = subprocess.run(
+                [sys.executable, "-c",
+                 "import os, signal, time\n"
+                 "os.kill(os.getpid(), signal.SIGINT)\n"
+                 "for _ in range(999): time.sleep(0.01)"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        self.assertEqual(process.returncode, -signal.SIGINT)
+        # Caveat: The exit code is insufficient to guarantee we actually died
+        # via a signal.  POSIX shells do more than look at the 8 bit value.
+        # Writing an automation friendly test of an interactive shell
+        # to confirm that our process died via a SIGINT proved too complex.
+
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
@@ -111,6 +127,20 @@ class WindowsSignalTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             signal.signal(7, handler)
+
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
+        # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
+        # as that requires setting up a console control handler in a child
+        # in its own process group.  Doable, but quite complicated.  (see
+        # @eryksun on https://github.com/python/cpython/pull/11862)
+        process = subprocess.run(
+                [sys.executable, "-c", "raise KeyboardInterrupt"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        STATUS_CONTROL_C_EXIT = 0xC000013A
+        self.assertEqual(process.returncode, STATUS_CONTROL_C_EXIT)
 
 
 class WakeupFDTests(unittest.TestCase):
@@ -1217,11 +1247,8 @@ class StressTest(unittest.TestCase):
 class RaiseSignalTest(unittest.TestCase):
 
     def test_sigint(self):
-        try:
+        with self.assertRaises(KeyboardInterrupt):
             signal.raise_signal(signal.SIGINT)
-            self.fail("Expected KeyInterrupt")
-        except KeyboardInterrupt:
-            pass
 
     @unittest.skipIf(sys.platform != "win32", "Windows specific test")
     def test_invalid_argument(self):

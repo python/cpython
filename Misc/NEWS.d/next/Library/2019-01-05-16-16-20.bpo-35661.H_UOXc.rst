@@ -1,0 +1,1 @@
+Store the venv prompt in pyvenv.cfg.
