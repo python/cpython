@@ -22,7 +22,7 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'B'``   | unsigned char      | int               | 1                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'u'``   | Py_UNICODE         | Unicode character | 2                     | \(1)  |
+| ``'u'``   | Py_UCS4            | Unicode character | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'h'``   | signed short       | int               | 2                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -36,9 +36,9 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'L'``   | unsigned long      | int               | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'q'``   | signed long long   | int               | 8                     | \(2)  |
+| ``'q'``   | signed long long   | int               | 8                     | \(1)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'Q'``   | unsigned long long | int               | 8                     | \(2)  |
+| ``'Q'``   | unsigned long long | int               | 8                     | \(1)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'f'``   | float              | float             | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -48,16 +48,6 @@ defined:
 Notes:
 
 (1)
-   The ``'u'`` type code corresponds to Python's obsolete unicode character
-   (:c:type:`Py_UNICODE` which is :c:type:`wchar_t`). Depending on the
-   platform, it can be 16 bits or 32 bits.
-
-   ``'u'`` will be removed together with the rest of the :c:type:`Py_UNICODE`
-   API.
-
-   .. deprecated-removed:: 3.3 4.0
-
-(2)
    The ``'q'`` and ``'Q'`` type codes are available only if
    the platform C compiler used to build Python supports C :c:type:`long long`,
    or, on Windows, :c:type:`__int64`.
