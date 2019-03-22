@@ -97,7 +97,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         """
         warnings.warn("Task.current_task() is deprecated, "
                       "use asyncio.current_task() instead",
-                      PendingDeprecationWarning,
+                      DeprecationWarning,
                       stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
@@ -111,7 +111,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         """
         warnings.warn("Task.all_tasks() is deprecated, "
                       "use asyncio.all_tasks() instead",
-                      PendingDeprecationWarning,
+                      DeprecationWarning,
                       stacklevel=2)
         return _all_tasks_compat(loop)
 
