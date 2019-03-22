@@ -682,7 +682,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 #define FETCH_SIZE      int *q=NULL;Py_ssize_t *q2=NULL;\
     if (flags & FLAG_SIZE_T) q2=va_arg(*p_va, Py_ssize_t*); \
     else { \
-        if (PyErr_WarnEx(PyExc_PendingDeprecationWarning, \
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, \
                     "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) { \
             return NULL; \
         } \
@@ -2598,7 +2598,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
                     if (flags & FLAG_SIZE_T)
                         (void) va_arg(*p_va, Py_ssize_t *);
                     else {
-                        if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
                                     "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
                             return NULL;
                         }

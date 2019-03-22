@@ -701,9 +701,10 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* Use of ``#`` variants of formats without ``PY_SSIZE_T_CLEAN`` defined
-  raises ``PendingDeprecationWarning`` now.  Read :ref:`arg-parsing` for
-  detail.
+* Use of ``#`` variants of formats in parsing or building value (e.g.
+  :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,
+  etc.) without ``PY_SSIZE_T_CLEAN`` defined raises ``DeprecationWarning`` now.
+  It will be removed in 3.10 or 4.0.  Read :ref:`arg-parsing` for detail.
   (Contributed by Inada Naoki in :issue:`36381`.)
 
 
