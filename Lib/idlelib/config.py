@@ -287,7 +287,7 @@ class IdleConf:
         """Return dict of theme element highlight colors.
 
         The keys are 'foreground' and 'background'.  The values are
-        colors for configuring backgrounds and tags.
+        tkinter color strings for configuring backgrounds and tags.
         """
         cfg = ('default' if self.defaultCfg['highlight'].has_section(theme)
                else 'user')

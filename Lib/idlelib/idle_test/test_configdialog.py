@@ -606,40 +606,37 @@ class HighPageTest(unittest.TestCase):
 
     def test_paint_theme_sample(self):
         eq = self.assertEqual
-        d = self.page
-        del d.paint_theme_sample
-        hs_tag = d.highlight_sample.tag_cget
+        hi = self.page
+        del hi.paint_theme_sample  # Delete masking mock.
+        hs_tag = hi.highlight_sample.tag_cget
         gh = idleConf.GetHighlight
         fg = 'foreground'
         bg = 'background'
 
         # Create custom theme based on IDLE Dark.
-        d.theme_source.set(True)
-        d.builtin_name.set('IDLE Dark')
+        hi.theme_source.set(True)
+        hi.builtin_name.set('IDLE Dark')
         theme = 'IDLE Test'
-        d.create_new(theme)
-        d.set_color_sample.called = 0
+        hi.create_new(theme)
+        hi.set_color_sample.called = 0
 
         # Base theme with nothing in `changes`.
-        d.paint_theme_sample()
-        eq(hs_tag('break', fg), gh(theme, 'break', fgBg='fg'))
-        eq(hs_tag('cursor', bg), gh(theme, 'normal', fgBg='bg'))
-        self.assertNotEqual(hs_tag('console', fg), 'blue')
-        self.assertNotEqual(hs_tag('console', bg), 'yellow')
-        eq(d.set_color_sample.called, 1)
+        hi.paint_theme_sample()
+        new_console = {'foreground': 'blue',
+                       'background': 'yellow',}
+        for key, value in new_console.items():
+            self.assertNotEqual(hs_tag('console', key), value)
+        eq(hi.set_color_sample.called, 1)
 
         # Apply changes.
-        changes.add_option('highlight', theme, 'console-foreground', 'blue')
-        changes.add_option('highlight', theme, 'console-background', 'yellow')
-        d.paint_theme_sample()
+        for key, value in new_console.items():
+            changes.add_option('highlight', theme, 'console-'+key, value)
+        hi.paint_theme_sample()
+        for key, value in new_console.items():
+            eq(hs_tag('console', key), value)
+        eq(hi.set_color_sample.called, 2)
 
-        eq(hs_tag('break', fg), gh(theme, 'break', fgBg='fg'))
-        eq(hs_tag('cursor', bg), gh(theme, 'normal', fgBg='bg'))
-        eq(hs_tag('console', fg), 'blue')
-        eq(hs_tag('console', bg), 'yellow')
-        eq(d.set_color_sample.called, 2)
-
-        d.paint_theme_sample = Func()
+        hi.paint_theme_sample = Func()
 
     def test_delete_custom(self):
         eq = self.assertEqual
