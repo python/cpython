@@ -304,7 +304,7 @@ class LocalWinregTests(BaseWinregTests):
                 self.skipTest("access denied to registry key "
                               "(are you running in a non-interactive session?)")
             raise
-        QueryValueEx(HKEY_PERFORMANCE_DATA, "0")
+        QueryValueEx(HKEY_PERFORMANCE_DATA, "")
 
     # Reflection requires XP x64/Vista at a minimum. XP doesn't have this stuff
     # or DeleteKeyEx so make sure their use raises NotImplementedError

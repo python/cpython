@@ -335,25 +335,6 @@ static _PyInitError
 pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
 {
     _PyInitError err;
-#ifdef MS_WINDOWS
-    HMODULE hKernel32;
-    typedef BOOL (*PSetDefaultDllDirectories)(DWORD directoryFlags);
-    PSetDefaultDllDirectories SetDefaultDllDirectories;
-#endif
-
-    /* bpo-36085: Limit DLL resolution to avoid pre-loading attacks and
-     * enable use of the AddDllDirectory function.
-     * Embedders will need to call this themselves if they want the
-     * same functionality, but we always use it via ctypes and importdl
-     * regardless of whether the process-wide default has been set.
-     */
-#ifdef MS_WINDOWS
-    if ((hKernel32 = GetModuleHandleW(L"kernel32.dll")) &&
-        (SetDefaultDllDirectories = (PSetDefaultDllDirectories)GetProcAddress(
-            hKernel32, "SetDefaultDllDirectories"))) {
-        (*SetDefaultDllDirectories)(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-    }
-#endif
 
     err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
