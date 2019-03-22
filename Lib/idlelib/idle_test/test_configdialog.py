@@ -610,8 +610,6 @@ class HighPageTest(unittest.TestCase):
         del hi.paint_theme_sample  # Delete masking mock.
         hs_tag = hi.highlight_sample.tag_cget
         gh = idleConf.GetHighlight
-        fg = 'foreground'
-        bg = 'background'
 
         # Create custom theme based on IDLE Dark.
         hi.theme_source.set(True)

@@ -34,7 +34,6 @@ import idlelib
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
-class InvalidFgBg(Exception): pass
 class InvalidTheme(Exception): pass
 
 class IdleConfParser(ConfigParser):
