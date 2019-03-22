@@ -606,35 +606,35 @@ class HighPageTest(unittest.TestCase):
 
     def test_paint_theme_sample(self):
         eq = self.assertEqual
-        hi = self.page
-        del hi.paint_theme_sample  # Delete masking mock.
-        hs_tag = hi.highlight_sample.tag_cget
+        page = self.page
+        del page.paint_theme_sample  # Delete masking mock.
+        hs_tag = page.highlight_sample.tag_cget
         gh = idleConf.GetHighlight
 
         # Create custom theme based on IDLE Dark.
-        hi.theme_source.set(True)
-        hi.builtin_name.set('IDLE Dark')
+        page.theme_source.set(True)
+        page.builtin_name.set('IDLE Dark')
         theme = 'IDLE Test'
-        hi.create_new(theme)
-        hi.set_color_sample.called = 0
+        page.create_new(theme)
+        page.set_color_sample.called = 0
 
         # Base theme with nothing in `changes`.
-        hi.paint_theme_sample()
+        page.paint_theme_sample()
         new_console = {'foreground': 'blue',
                        'background': 'yellow',}
         for key, value in new_console.items():
             self.assertNotEqual(hs_tag('console', key), value)
-        eq(hi.set_color_sample.called, 1)
+        eq(page.set_color_sample.called, 1)
 
         # Apply changes.
         for key, value in new_console.items():
             changes.add_option('highlight', theme, 'console-'+key, value)
-        hi.paint_theme_sample()
+        page.paint_theme_sample()
         for key, value in new_console.items():
             eq(hs_tag('console', key), value)
-        eq(hi.set_color_sample.called, 2)
+        eq(page.set_color_sample.called, 2)
 
-        hi.paint_theme_sample = Func()
+        page.paint_theme_sample = Func()
 
     def test_delete_custom(self):
         eq = self.assertEqual
