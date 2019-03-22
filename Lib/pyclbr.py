@@ -164,7 +164,7 @@ def _readmodule(module, path, inpackage=None):
         raise ModuleNotFoundError(f"no module named {fullmodule!r}", name=fullmodule)
     _modules[fullmodule] = tree
     # Is module a package?
-    if getattr(spec, 'submodule_search_locations', None) is not None:
+    if spec.submodule_search_locations is not None:
         tree['__path__'] = spec.submodule_search_locations
     try:
         source = spec.loader.get_source(fullmodule)
