@@ -3433,12 +3433,20 @@ static PyNumberMethods dict_as_number = {
     0,                                  /*nb_rshift*/
     0,                                  /*nb_and*/
     0,                                  /*nb_xor*/
-    0,                                  /*nb_or*/
+    (binaryfunc)dict_add,               /*nb_or*/
     0,                                  /*nb_int*/
     0,                                  /*nb_reserved*/
     0,                                  /*nb_float*/
     (binaryfunc)dict_iadd,              /*nb_inplace_add*/
     (binaryfunc)dict_isub,              /*nb_inplace_subtract*/
+    0,                                  /*nb_inplace_multiply*/
+    0,                                  /*nb_inplace_remainder*/
+    0,                                  /*nb_inplace_power*/
+    0,                                  /*nb_inplace_lshift*/
+    0,                                  /*nb_inplace_rshift*/
+    0,                                  /*nb_inplace_and*/
+    0,                                  /*nb_inplace_xor*/
+    (binaryfunc)dict_iadd,              /*nb_inplace_or*/
 };
 
 PyDoc_STRVAR(dictionary_doc,
