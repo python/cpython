@@ -2314,17 +2314,20 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             }
 
             if (keys_are_all_same_type) {
-                if (key_type == &PyLong_Type) {
-                    if (ints_are_bounded && Py_ABS(Py_SIZE(key)) > 1)
-                        ints_are_bounded = 0;
+                if (key_type == &PyLong_Type &&
+                    ints_are_bounded &&
+                    Py_ABS(Py_SIZE(key)) > 1) {
+
+                    ints_are_bounded = 0;
                 }
-                else if (key_type == &PyUnicode_Type) {
-                    if (strings_are_latin &&
-                        PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
-                    strings_are_latin = 0;
+                else if (key_type == &PyUnicode_Type &&
+                         strings_are_latin &&
+                         PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND) {
+
+                        strings_are_latin = 0;
+                    }
                 }
             }
-        }
 
         /* Choose the best compare, given what we now know about the keys. */
         if (keys_are_all_same_type) {
