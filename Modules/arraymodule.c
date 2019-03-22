@@ -2592,7 +2592,7 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
         view->format = (char *)self->ob_descr->formats;
         if (self->ob_descr->typecode == 'u') {
-            view->format = "w";
+            view->format = "I";
         }
     }
 
