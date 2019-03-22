@@ -4,7 +4,7 @@ Released on 2019-10-20?
 
 
 bpo-36396: Remove fgBg param of idlelib.config.GetHighlight()
-This param was only used once and changed the return type.
+This param was only used twice and changed the return type.
 
 bpo-23216: IDLE: Add docstrings to search modules
 
