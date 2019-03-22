@@ -3,6 +3,11 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-36396: Remove fgBg param of idlelib.config.GetHighlight().
+This param was only used twice and changed the return type.
+
+bpo-23216: IDLE: Add docstrings to search modules.
+
 bpo-36176: Fix IDLE autocomplete & calltip popup colors.
 Prevent conflicts with Linux dark themes
 (and slightly darken calltip background).
