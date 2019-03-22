@@ -3734,6 +3734,7 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
+    @unittest.skipIf(WIN32, "test not feasible in Windows")
     def test_shared_memory_SharedMemoryServer_ignores_sigint(self):
         # bpo-36368: protect SharedMemoryManager server process from
         # KeyboardInterrupt signals.
@@ -3745,10 +3746,7 @@ class _TestSharedMemory(BaseTestCase):
 
         # the manager's server should ignore KeyboardInterrupt signals, and
         # maintain its connection with the current process
-        if sys.platform != 'win32':
-            os.kill(smm._process.pid, signal.SIGINT)
-        else:
-            os.kill(smm._process.pid, signal.CTRL_C_EVENT)
+        os.kill(smm._process.pid, signal.SIGINT)
 
         sl2 = smm.ShareableList(range(10))
         smm.shutdown()
