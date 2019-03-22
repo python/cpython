@@ -1123,12 +1123,8 @@ class UnicodeTest(StringTest, unittest.TestCase):
 
     def test_issue17223(self):
         # this used to crash
-        if sizeof_wchar == 4:
-            # U+FFFFFFFF is an invalid code point in Unicode 6.0
-            invalid_str = b'\xff\xff\xff\xff'
-        else:
-            # PyUnicode_FromUnicode() cannot fail with 16-bit wchar_t
-            self.skipTest("specific to 32-bit wchar_t")
+        # U+FFFFFFFF is an invalid code point in Unicode 6.0
+        invalid_str = b'\xff\xff\xff\xff'
         a = array.array('u', invalid_str)
         self.assertRaises(ValueError, a.tounicode)
         self.assertRaises(ValueError, str, a)
