@@ -267,6 +267,10 @@ class MockTest(unittest.TestCase):
         self.assertEqual(mock.call_count, 1, "call_count incoreect")
         self.assertEqual(mock.call_args, ((sentinel.Arg,), {}),
                          "call_args not set")
+        self.assertEqual(mock.call_args.args, (sentinel.Arg,),
+                         "call_args not set")
+        self.assertEqual(mock.call_args.kwargs, {},
+                         "call_args not set")
         self.assertEqual(mock.call_args_list, [((sentinel.Arg,), {})],
                          "call_args_list not initialised correctly")
 
@@ -300,6 +304,8 @@ class MockTest(unittest.TestCase):
         ])
         self.assertEqual(mock.call_args,
                          ((sentinel.Arg,), {"kw": sentinel.Kwarg}))
+        self.assertEqual(mock.call_args.args, (sentinel.Arg,))
+        self.assertEqual(mock.call_args.kwargs, {"kw": sentinel.Kwarg})
 
         # Comparing call_args to a long sequence should not raise
         # an exception. See issue 24857.
@@ -1157,9 +1163,8 @@ class MockTest(unittest.TestCase):
         mock(2, b=4)
 
         self.assertEqual(len(mock.call_args), 2)
-        args, kwargs = mock.call_args
-        self.assertEqual(args, (2,))
-        self.assertEqual(kwargs, dict(b=4))
+        self.assertEqual(mock.call_args.args, (2,))
+        self.assertEqual(mock.call_args.kwargs, dict(b=4))
 
         expected_list = [((1,), dict(a=3)), ((2,), dict(b=4))]
         for expected, call_args in zip(expected_list, mock.call_args_list):
