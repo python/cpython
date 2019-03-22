@@ -1634,26 +1634,26 @@ class BaseTaskTests:
     def test_current_task_deprecated(self):
         Task = self.__class__.Task
 
-        with self.assertWarns(PendingDeprecationWarning):
+        with self.assertWarns(DeprecationWarning):
             self.assertIsNone(Task.current_task(loop=self.loop))
 
         async def coro(loop):
-            with self.assertWarns(PendingDeprecationWarning):
+            with self.assertWarns(DeprecationWarning):
                 self.assertIs(Task.current_task(loop=loop), task)
 
             # See http://bugs.python.org/issue29271 for details:
             asyncio.set_event_loop(loop)
             try:
-                with self.assertWarns(PendingDeprecationWarning):
+                with self.assertWarns(DeprecationWarning):
                     self.assertIs(Task.current_task(None), task)
-                with self.assertWarns(PendingDeprecationWarning):
+                with self.assertWarns(DeprecationWarning):
                     self.assertIs(Task.current_task(), task)
             finally:
                 asyncio.set_event_loop(None)
 
         task = self.new_task(self.loop, coro(self.loop))
         self.loop.run_until_complete(task)
-        with self.assertWarns(PendingDeprecationWarning):
+        with self.assertWarns(DeprecationWarning):
             self.assertIsNone(Task.current_task(loop=self.loop))
 
     def test_current_task(self):
@@ -1982,7 +1982,7 @@ class BaseTaskTests:
         Task = self.__class__.Task
 
         async def coro():
-            with self.assertWarns(PendingDeprecationWarning):
+            with self.assertWarns(DeprecationWarning):
                 assert Task.all_tasks(self.loop) == {t}
 
         t = self.new_task(self.loop, coro())
@@ -2012,9 +2012,9 @@ class BaseTaskTests:
         # See http://bugs.python.org/issue29271 for details:
         asyncio.set_event_loop(self.loop)
         try:
-            with self.assertWarns(PendingDeprecationWarning):
+            with self.assertWarns(DeprecationWarning):
                 self.assertEqual(Task.all_tasks(), {task})
-            with self.assertWarns(PendingDeprecationWarning):
+            with self.assertWarns(DeprecationWarning):
                 self.assertEqual(Task.all_tasks(None), {task})
         finally:
             asyncio.set_event_loop(None)
@@ -2692,7 +2692,7 @@ class BaseTaskIntrospectionTests:
         self.assertEqual(asyncio.all_tasks(loop), set())
         self._register_task(task)
         self.assertEqual(asyncio.all_tasks(loop), set())
-        with self.assertWarns(PendingDeprecationWarning):
+        with self.assertWarns(DeprecationWarning):
             self.assertEqual(asyncio.Task.all_tasks(loop), {task})
         self._unregister_task(task)
 

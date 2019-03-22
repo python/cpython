@@ -2088,7 +2088,7 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
     PyObject *ret;
     PyObject *current_task_func;
 
-    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "Task.current_task() is deprecated, " \
                      "use asyncio.current_task() instead",
                      1) < 0) {
@@ -2136,7 +2136,7 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
     PyObject *res;
     PyObject *all_tasks_func;
 
-    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "Task.all_tasks() is deprecated, " \
                      "use asyncio.all_tasks() instead",
                      1) < 0) {
