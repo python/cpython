@@ -4,6 +4,7 @@ import dbm
 import io
 import functools
 import os
+import math
 import pickle
 import pickletools
 import shutil
@@ -3011,6 +3012,59 @@ def setstate_bbb(obj, state):
     classes/functions.
     """
     obj.a = "custom state_setter"
+
+
+
+class AbstractHookTests(unittest.TestCase):
+    def test_pickler_hook(self):
+        # test the CPickler ability to register custom, user-defined reduction
+        # callbacks to pickle functions and classes.
+
+        def custom_reduction_callback(pickler, obj):
+            obj_name = obj.__name__
+
+            if obj_name == 'f':
+                # asking the pickler to save f as 5
+                return int, (5, )
+
+            if obj_name == 'MyClass':
+                return str, ('NewClass', )
+
+            elif obj_name == 'log':
+                # letting the pickler falling back to buitlin save_global to
+                # pickle functions named 'log' by attribute.
+                return NotImplementedError
+
+            elif obj_name == 'g':
+                # in this case, the callback returns an invalid result (not a
+                # 2-5 tuple), the pickler should raise a proper error.
+                return False
+            return NotImplementedError
+
+        def f():
+            pass
+
+        def g():
+            pass
+
+        class MyClass:
+            pass
+
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                bio = io.BytesIO()
+                p = self.pickler_class(bio, proto)
+                p.global_hook = custom_reduction_callback
+
+                p.dump([f, MyClass, math.log])
+                new_f, NewClass, math_log = pickle.loads(bio.getvalue())
+
+                self.assertEqual(new_f, 5)
+                self.assertEqual(NewClass, 'NewClass')
+                self.assertIs(math_log, math.log)
+
+                with self.assertRaises(pickle.PicklingError):
+                    p.dump(g)
 
 
 class AbstractDispatchTableTests(unittest.TestCase):

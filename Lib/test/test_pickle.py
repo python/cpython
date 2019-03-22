@@ -11,6 +11,7 @@ import weakref
 import unittest
 from test import support
 
+from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
 from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
@@ -252,6 +253,9 @@ if has_c_implementation:
         pickler_class = pickle.Pickler
         def get_dispatch_table(self):
             return collections.ChainMap({}, pickle.dispatch_table)
+
+    class CPicklerHookTests(AbstractHookTests):
+        pickler_class = _pickle.Pickler
 
     @support.cpython_only
     class SizeofTests(unittest.TestCase):
@@ -506,6 +510,7 @@ def test_main():
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
                       CDispatchTableTests, CChainDispatchTableTests,
+                      CPicklerHookTests,
                       InMemoryPickleTests, SizeofTests])
     support.run_unittest(*tests)
     support.run_doctest(pickle)
