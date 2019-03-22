@@ -176,7 +176,7 @@ structseq_repr(PyStructSequence *obj)
                                                strlen(typ->tp_name),
                                                NULL);
     if (type_name == NULL) {
-        goto error;
+        return NULL;
     }
 
     _PyUnicodeWriter_Init(&writer);
