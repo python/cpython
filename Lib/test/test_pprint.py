@@ -81,6 +81,7 @@ class QueryTestCase(unittest.TestCase):
         pp = pprint.PrettyPrinter(indent=4, width=40, depth=5,
                                   stream=io.StringIO(), compact=True)
         pp = pprint.PrettyPrinter(4, 40, 5, io.StringIO())
+        pp = pprint.PrettyPrinter(sort_dicts=False)
         with self.assertRaises(TypeError):
             pp = pprint.PrettyPrinter(4, 40, 5, io.StringIO(), True)
         self.assertRaises(ValueError, pprint.PrettyPrinter, indent=-1)
@@ -292,6 +293,12 @@ class QueryTestCase(unittest.TestCase):
         # against a crazy mix of types.
         self.assertEqual(pprint.pformat({"xy\tab\n": (3,), 5: [[]], (): {}}),
             r"{5: [[]], 'xy\tab\n': (3,), (): {}}")
+
+    def test_sort_dict(self):
+        d = dict.fromkeys('cba')
+        self.assertEqual(pprint.pformat(d, sort_dicts=False), "{'c': None, 'b': None, 'a': None}")
+        self.assertEqual(pprint.pformat([d, d], sort_dicts=False),
+            "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]")
 
     def test_ordered_dict(self):
         d = collections.OrderedDict()
