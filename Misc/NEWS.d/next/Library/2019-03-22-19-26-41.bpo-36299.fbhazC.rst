@@ -1,0 +1,2 @@
+``array('u')`` uses ``Py_UCS4`` instead of deprecated ``Py_UNICODE`` now.
+Patch by Inada Naoki.

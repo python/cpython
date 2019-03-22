@@ -162,6 +162,13 @@ Improved Modules
   release.
 
 
+array
+-----
+
+``array('u')`` uses ``Py_UCS4`` instead of deprecated ``Py_UNICODE`` now.
+And it is not deprecated now.  (Contributed by Inada Naoki in :issue:`36299`.)
+
+
 asyncio
 -------
 
