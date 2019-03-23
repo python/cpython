@@ -3,6 +3,8 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-36405: Use dict unpacking in idlelib and remove unneeded __main__ imports.
+
 bpo-36176: Fix IDLE autocomplete & calltip popup colors.
 Prevent conflicts with Linux dark themes
 (and slightly darken calltip background).
