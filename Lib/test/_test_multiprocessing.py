@@ -5498,6 +5498,7 @@ class SpyReducer(reduction.AbstractReducer):
         return Pickler()
 
 class _TestCustomReducer(BaseTestCase):
+    """Test case for the global reducer"""
 
     ALLOWED_TYPES = ('processes',)
 
@@ -5557,6 +5558,7 @@ class CustomContext(multiprocessing.context.BaseContext):
 
 
 class _TestCustomReducerWithContext(BaseTestCase):
+    """Test case for per-context reducers"""
 
     ALLOWED_TYPES = ('processes',)
 
