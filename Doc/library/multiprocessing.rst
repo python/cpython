@@ -1239,7 +1239,7 @@ version 2 to be able to communicate with a Python 2.x programs.::
            return super().dumps(obj, protocol=pickle_protocol)
 
    class PickleProtocol2Reducer(AbstractReducer):
-       def get_pickler_class(self):
+       def get_pickler(self):
            return ForkingPicklerProtocol2
 
    multiprocessing.set_reducer(PickleProtocol2Reducer)
