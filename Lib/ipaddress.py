@@ -1520,7 +1520,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         elif isinstance(address, tuple):
             addr = address[0]
             if len(address) > 1:
-                if isinstance(address[1], int) and 0 < address[1] > 32:
+                if isinstance(address[1], int) and address[1] > 32:
                     raise NetmaskValueError(f"The netmask is not valid {address[1]}")
                 mask = address[1]
             else:
