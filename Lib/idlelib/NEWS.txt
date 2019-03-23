@@ -3,6 +3,8 @@ Released on 2019-10-20?
 ======================================
 
 
+bpo-36405: Use dict unpacking in idlelib and remove unneeded __main__ imports.
+
 bpo-36396: Remove fgBg param of idlelib.config.GetHighlight().
 This param was only used twice and changed the return type.
 

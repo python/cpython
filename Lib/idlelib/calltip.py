@@ -12,7 +12,6 @@ import types
 
 from idlelib import calltip_w
 from idlelib.hyperparser import HyperParser
-import __main__
 
 
 class Calltip:
@@ -100,13 +99,12 @@ class Calltip:
 
 def get_entity(expression):
     """Return the object corresponding to expression evaluated
-    in a namespace spanning sys.modules and __main.dict__.
+    in a namespace spanning sys.modules and globals().
     """
     if expression:
-        namespace = sys.modules.copy()
-        namespace.update(__main__.__dict__)
+        namespace = {**sys.modules, **globals()}
         try:
-            return eval(expression, namespace)
+            return eval(expression, namespace)  # Only protect user code.
         except BaseException:
             # An uncaught exception closes idle, and eval can raise any
             # exception, especially if user classes are involved.
