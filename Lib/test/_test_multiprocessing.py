@@ -5508,14 +5508,16 @@ class _TestCustomReducerWithContext(BaseTestCase):
     ALLOWED_TYPES = ('processes',)
 
     def setUp(self):
-        self.ctx = CustomContext()
-
-        self.original_reducer = self.ctx.get_reducer()
-        self.spy = {'loads': 0, 'dumps': 0}
-        self.ctx.set_reducer(SpyReducer(self.spy))
+        self.custom_ctx = CustomContext()
+        self.default_ctx = multiprocessing.get_context()
+        self.original_custom_reducer = self.custom_ctx.get_reducer()
+        self.original_default_reducer = self.default_ctx.get_reducer()
+        self.default_spy = {'loads': 0, 'dumps': 0}
+        self.custom_spy = {'loads': 0, 'dumps': 0}
 
     def tearDown(self):
-        self.ctx.set_reducer(self.original_reducer)
+        self.custom_ctx.set_reducer(self.original_custom_reducer)
+        self.default_ctx.set_reducer(self.original_default_reducer)
 
     @classmethod
     def _put_and_get_in_queue(cls, queue, parent_can_continue):
@@ -5524,10 +5526,13 @@ class _TestCustomReducerWithContext(BaseTestCase):
         queue.get()
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
-    def test_queue_custom_reducer_with_context(self):
-        queue = self.ctx.Queue()
-        parent_can_continue = self.ctx.Event()
-        p = self.ctx.Process(target=self._put_and_get_in_queue,
+    def test_queue_custom_reducer_over_custom_context(self):
+        self.default_ctx.set_reducer(SpyReducer(self.default_spy))
+        self.custom_ctx.set_reducer(SpyReducer(self.custom_spy))
+
+        queue = self.custom_ctx.Queue()
+        parent_can_continue = self.custom_ctx.Event()
+        p = self.custom_ctx.Process(target=self._put_and_get_in_queue,
             args=(queue, parent_can_continue))
         p.daemon = True
         p.start()
@@ -5538,9 +5543,37 @@ class _TestCustomReducerWithContext(BaseTestCase):
         p.join(timeout=TIMEOUT3)
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(element, "Something")
-        self.assertEqual(self.spy['loads'], 1)
-        self.assertEqual(self.spy['dumps'], 1)
+        self.assertEqual(self.custom_spy['loads'], 1)
+        self.assertEqual(self.custom_spy['dumps'], 1)
+        self.assertEqual(self.default_spy['loads'], 0)
+        self.assertEqual(self.default_spy['dumps'], 0)
         close_queue(queue)
+
+    @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
+    def test_queue_custom_reducer_over_default_context(self):
+        self.default_ctx.set_reducer(SpyReducer(self.default_spy))
+        self.custom_ctx.set_reducer(SpyReducer(self.custom_spy))
+
+        queue = self.default_ctx.Queue()
+        parent_can_continue = self.default_ctx.Event()
+        p = self.default_ctx.Process(target=self._put_and_get_in_queue,
+            args=(queue, parent_can_continue))
+        p.daemon = True
+        p.start()
+        parent_can_continue.wait()
+        element = queue.get(timeout=TIMEOUT3)
+        self.assertEqual(element, "Something")
+        queue.put("Other_Something")
+        p.join(timeout=TIMEOUT3)
+        self.assertEqual(p.exitcode, 0)
+        self.assertEqual(element, "Something")
+        self.assertEqual(self.custom_spy['loads'], 0)
+        self.assertEqual(self.custom_spy['dumps'], 0)
+        self.assertEqual(self.default_spy['loads'], 1)
+        self.assertEqual(self.default_spy['dumps'], 1)
+        close_queue(queue)
+
+
 
 
 class _TestCustomReducerInvalidParameters(BaseTestCase):
