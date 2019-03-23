@@ -5,6 +5,7 @@
 #include "pycore_getopt.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
+#include "pycore_pystate.h"   /* _PyRuntime */
 #include "pycore_pathconfig.h"
 #include <locale.h>       /* setlocale() */
 #ifdef HAVE_LANGINFO_H
@@ -1358,6 +1359,17 @@ done:
 }
 
 
+static _PyInitError
+_PyCoreConfig_GetPreConfig(_PyCoreConfig *config)
+{
+    /* Read config written by _PyPreConfig_Write() */
+    if (_PyPreConfig_Copy(&config->preconfig, &_PyRuntime.preconfig) < 0) {
+        return _Py_INIT_NO_MEMORY();
+    }
+    return _Py_INIT_OK();
+}
+
+
 /* Read the configuration into _PyCoreConfig from:
 
    * Environment variables
@@ -1370,6 +1382,11 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
     _PyInitError err;
 
     err = _Py_PreInitialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    err = _PyCoreConfig_GetPreConfig(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -2116,6 +2133,11 @@ _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args,
                            const _PyPreConfig *preconfig)
 {
     _PyInitError err;
+
+    err = _Py_PreInitialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     _PyCmdline cmdline = {.precmdline = _PyPreCmdline_INIT};
 
