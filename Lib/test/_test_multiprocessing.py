@@ -5429,11 +5429,9 @@ class SpyReducer(reduction.AbstractReducer):
     play good with pickling"""
     def __init__(self, spy):
         self.spy = spy
-    def get_pickler(self):
+    def get_pickler_class(self):
         spy = self.spy
-        class Pickler(pickle.Pickler):
-            def __init__(self):
-                pass
+        class Pickler(multiprocessing.reduction.ForkingPickler):
             @classmethod
             def dumps(self, obj, protocol=None):
                 spy["dumps"] += 1
@@ -5442,7 +5440,7 @@ class SpyReducer(reduction.AbstractReducer):
             def loads(self, *args, **kwargs):
                 spy["loads"] += 1
                 return pickle.loads(*args, **kwargs)
-        return Pickler()
+        return Pickler
 
 class _TestCustomReducer(BaseTestCase):
     """Test case for the global reducer"""

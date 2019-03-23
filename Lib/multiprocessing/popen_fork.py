@@ -1,6 +1,7 @@
 import os
 import signal
 
+import multiprocessing
 from . import util
 
 __all__ = ['Popen']
@@ -12,10 +13,11 @@ __all__ = ['Popen']
 class Popen(object):
     method = 'fork'
 
-    def __init__(self, process_obj):
+    def __init__(self, process_obj, ctx=None):
         util._flush_std_streams()
         self.returncode = None
         self.finalizer = None
+        self.ctx = ctx or multiprocessing.get_context()
         self._launch(process_obj)
 
     def duplicate_for_child(self, fd):

@@ -1210,7 +1210,7 @@ the reduction mechanism:
    Abstract base class that can be implemented in order to replace the standard
    reduction mechanism used in multiprocessing
 
-   .. function:: get_pickler():
+   .. function:: get_pickler_class():
 
       This method must return an instance of a subclass of :class:`pickler.Pickler`
       to be used by the multiprocessing reducer mechanism.
@@ -1239,7 +1239,7 @@ version 2 to be able to communicate with a Python 2.x programs.::
            return super().dumps(obj, protocol=pickle_protocol)
 
    class PickleProtocol2Reducer(AbstractReducer):
-       def get_pickler(self):
+       def get_pickler_class(self):
            return ForkingPicklerProtocol2
 
    multiprocessing.set_reducer(PickleProtocol2Reducer)

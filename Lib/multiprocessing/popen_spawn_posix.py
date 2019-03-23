@@ -1,7 +1,7 @@
 import io
 import os
 
-from . import context
+import multiprocessing
 from .context import set_spawning_popen
 from . import popen_fork
 from . import spawn
@@ -28,9 +28,10 @@ class Popen(popen_fork.Popen):
     method = 'spawn'
     DupFd = _DupFd
 
-    def __init__(self, process_obj):
+    def __init__(self, process_obj, ctx=None):
         self._fds = []
-        super().__init__(process_obj)
+        ctx = ctx or multiprocessing.get_context()
+        super().__init__(process_obj, ctx)
 
     def duplicate_for_child(self, fd):
         self._fds.append(fd)
@@ -44,8 +45,8 @@ class Popen(popen_fork.Popen):
         fp = io.BytesIO()
         set_spawning_popen(self)
         try:
-            context.reduction.dump(prep_data, fp)
-            context.reduction.dump(process_obj, fp)
+            self.ctx.get_reducer().dump(prep_data, fp)
+            self.ctx.get_reducer().dump(process_obj, fp)
         finally:
             set_spawning_popen(None)
 

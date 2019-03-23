@@ -220,9 +220,9 @@ class BaseContext(object):
         if not isinstance(reduction, original_reducer.AbstractReducer):
             raise TypeError("Custom reducers must be instances of a "
                             "subclass of multiprocessing.reduction.AbstractReducer")
-        if not isinstance(reduction.get_pickler(), pickle.Pickler):
-            raise TypeError("Custom reducers must return an instance of "
-                            "pickler.Pickler in the get_pickler() method")
+        if not issubclass(reduction.get_pickler_class(), pickle.Pickler):
+            raise TypeError("Custom reducers must return an subclass of "
+                            "pickler.Pickler in the get_pickler_class() method")
 
         self._reducer = reduction
 
@@ -236,8 +236,10 @@ class BaseContext(object):
 class Process(process.BaseProcess):
     _start_method = None
     @staticmethod
-    def _Popen(process_obj):
-        return _default_context.get_context().Process._Popen(process_obj)
+    def _Popen(process_obj, ctx=None):
+        if ctx is None:
+            ctx = _default_context.get_context()
+        return ctx.Process._Popen(process_obj, ctx)
 
 class DefaultContext(BaseContext):
     Process = Process
@@ -287,23 +289,23 @@ if sys.platform != 'win32':
     class ForkProcess(process.BaseProcess):
         _start_method = 'fork'
         @staticmethod
-        def _Popen(process_obj):
+        def _Popen(process_obj, ctx=None):
             from .popen_fork import Popen
-            return Popen(process_obj)
+            return Popen(process_obj, ctx=ctx)
 
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
         @staticmethod
-        def _Popen(process_obj):
+        def _Popen(process_obj, ctx=None):
             from .popen_spawn_posix import Popen
-            return Popen(process_obj)
+            return Popen(process_obj, ctx=ctx)
 
     class ForkServerProcess(process.BaseProcess):
         _start_method = 'forkserver'
         @staticmethod
-        def _Popen(process_obj):
+        def _Popen(process_obj, ctx=None):
             from .popen_forkserver import Popen
-            return Popen(process_obj)
+            return Popen(process_obj, ctx=ctx)
 
     class ForkContext(BaseContext):
         _name = 'fork'
@@ -332,9 +334,9 @@ else:
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
         @staticmethod
-        def _Popen(process_obj):
+        def _Popen(process_obj, ctx=None):
             from .popen_spawn_win32 import Popen
-            return Popen(process_obj)
+            return Popen(process_obj, ctx)
 
     class SpawnContext(BaseContext):
         _name = 'spawn'
