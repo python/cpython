@@ -1631,5 +1631,21 @@ class MinidomTest(unittest.TestCase):
                          '<?xml version="1.0" ?>\n'
                          '<curriculum status="public" company="example"/>\n')
 
+    def testCDATAWriting(self):
+        doc = Document()
+        root = doc.createElement('root')
+        doc.appendChild(root)
+        node = doc.createElement('node')
+        root.appendChild(node)
+        data = doc.createCDATASection('</data>')
+        node.appendChild(data)
+
+        doc1 = parseString(doc.toxml())
+        val1 = doc1.getElementsByTagName('node')[0].firstChild.nodeValue
+        doc2 = parseString(doc.toprettyxml())
+        val2 = doc2.getElementsByTagName('node')[0].firstChild.nodeValue
+
+        self.confirm(val1 == val2)
+
 if __name__ == "__main__":
     unittest.main()
