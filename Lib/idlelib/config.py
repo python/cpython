@@ -34,7 +34,6 @@ import idlelib
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
-class InvalidFgBg(Exception): pass
 class InvalidTheme(Exception): pass
 
 class IdleConfParser(ConfigParser):
@@ -283,34 +282,20 @@ class IdleConf:
             raise InvalidConfigSet('Invalid configSet specified')
         return cfgParser.sections()
 
-    def GetHighlight(self, theme, element, fgBg=None):
-        """Return individual theme element highlight color(s).
+    def GetHighlight(self, theme, element):
+        """Return dict of theme element highlight colors.
 
-        fgBg - string ('fg' or 'bg') or None.
-        If None, return a dictionary containing fg and bg colors with
-        keys 'foreground' and 'background'.  Otherwise, only return
-        fg or bg color, as specified.  Colors are intended to be
-        appropriate for passing to Tkinter in, e.g., a tag_config call).
+        The keys are 'foreground' and 'background'.  The values are
+        tkinter color strings for configuring backgrounds and tags.
         """
-        if self.defaultCfg['highlight'].has_section(theme):
-            themeDict = self.GetThemeDict('default', theme)
-        else:
-            themeDict = self.GetThemeDict('user', theme)
-        fore = themeDict[element + '-foreground']
-        if element == 'cursor':  # There is no config value for cursor bg
-            back = themeDict['normal-background']
-        else:
-            back = themeDict[element + '-background']
-        highlight = {"foreground": fore, "background": back}
-        if not fgBg:  # Return dict of both colors
-            return highlight
-        else:  # Return specified color only
-            if fgBg == 'fg':
-                return highlight["foreground"]
-            if fgBg == 'bg':
-                return highlight["background"]
-            else:
-                raise InvalidFgBg('Invalid fgBg specified')
+        cfg = ('default' if self.defaultCfg['highlight'].has_section(theme)
+               else 'user')
+        theme_dict = self.GetThemeDict(cfg, theme)
+        fore = theme_dict[element + '-foreground']
+        if element == 'cursor':
+            element = 'normal'
+        back = theme_dict[element + '-background']
+        return {"foreground": fore, "background": back}
 
     def GetThemeDict(self, type, themeName):
         """Return {option:value} dict for elements in themeName.
@@ -562,12 +547,11 @@ class IdleConf:
         result = self.GetKeySet(self.CurrentKeys())
 
         if sys.platform == "darwin":
-            # OS X Tk variants do not support the "Alt" keyboard modifier.
-            # So replace all keybingings that use "Alt" with ones that
-            # use the "Option" keyboard modifier.
-            # TODO (Ned?): the "Option" modifier does not work properly for
-            #        Cocoa Tk and XQuartz Tk so we should not use it
-            #        in default OS X KeySets.
+            # macOS (OS X) Tk variants do not support the "Alt"
+            # keyboard modifier.  Replace it with "Option".
+            # TODO (Ned?): the "Option" modifier does not work properly
+            #     for Cocoa Tk and XQuartz Tk so we should not use it
+            #     in the default 'OSX' keyset.
             for k, v in result.items():
                 v2 = [ x.replace('<Alt-', '<Option-') for x in v ]
                 if v != v2:

@@ -74,7 +74,7 @@ class Bdb:
             return: A function or other code block is about to return.
             exception: An exception has occurred.
             c_call: A C function is about to be called.
-            c_return: A C functon has returned.
+            c_return: A C function has returned.
             c_exception: A C function has raised an exception.
 
         For the Python events, specialized functions (see the dispatch_*()
@@ -190,6 +190,8 @@ class Bdb:
 
     def is_skipped_module(self, module_name):
         "Return True if module_name matches any skip pattern."
+        if module_name is None:  # some modules do not have names
+            return False
         for pattern in self.skip:
             if fnmatch.fnmatch(module_name, pattern):
                 return True

@@ -187,8 +187,8 @@ class CmdLineTest(unittest.TestCase):
         if not stdout.startswith(pattern):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
-    @unittest.skipUnless((support.MACOS or support.ANDROID),
-                         'test specific to macOS and Android')
+    @unittest.skipUnless((sys.platform == 'darwin' or
+                support.is_android), 'test specific to Mac OS X and Android')
     def test_osx_android_utf8(self):
         def check_output(text):
             decoded = text.decode('utf-8', 'surrogateescape')
@@ -507,13 +507,15 @@ class CmdLineTest(unittest.TestCase):
                 PYTHONDONTWRITEBYTECODE=value,
                 PYTHONVERBOSE=value,
             )
+            dont_write_bytecode = int(bool(value))
             code = (
                 "import sys; "
                 "sys.stderr.write(str(sys.flags)); "
                 f"""sys.exit(not (
                     sys.flags.debug == sys.flags.optimize ==
-                    sys.flags.dont_write_bytecode == sys.flags.verbose ==
+                    sys.flags.verbose ==
                     {expected}
+                    and sys.flags.dont_write_bytecode == {dont_write_bytecode}
                 ))"""
             )
             with self.subTest(envar_value=value):
@@ -549,9 +551,7 @@ class CmdLineTest(unittest.TestCase):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
         env.pop('PYTHONDEVMODE', None)
-        # Force malloc() to disable the debug hooks which are enabled
-        # by default for Python compiled in debug mode
-        env['PYTHONMALLOC'] = 'malloc'
+        env.pop('PYTHONMALLOC', None)
 
         if xdev:
             args = (sys.executable, '-X', 'dev', *args)

@@ -51,7 +51,6 @@ __all__ = ['Trace', 'CoverageResults']
 
 import linecache
 import os
-import re
 import sys
 import token
 import tokenize
@@ -62,14 +61,6 @@ import pickle
 from time import monotonic as _time
 
 import threading
-
-def _settrace(func):
-    threading.settrace(func)
-    sys.settrace(func)
-
-def _unsettrace():
-    sys.settrace(None)
-    threading.settrace(None)
 
 PRAGMA_NOCOVER = "#pragma NO COVER"
 
@@ -307,7 +298,7 @@ class CoverageResults:
         try:
             outfile = open(path, "w", encoding=encoding)
         except OSError as err:
-            print(("trace: Could not open %r for writing: %s"
+            print(("trace: Could not open %r for writing: %s "
                                   "- skipping" % (path, err)), file=sys.stderr)
             return 0, 0
 
@@ -451,12 +442,14 @@ class Trace:
         if globals is None: globals = {}
         if locals is None: locals = {}
         if not self.donothing:
-            _settrace(self.globaltrace)
+            threading.settrace(self.globaltrace)
+            sys.settrace(self.globaltrace)
         try:
             exec(cmd, globals, locals)
         finally:
             if not self.donothing:
-                _unsettrace()
+                sys.settrace(None)
+                threading.settrace(None)
 
     def runfunc(self, func, *args, **kw):
         result = None
@@ -650,7 +643,7 @@ def main():
     grp = parser.add_argument_group('Filters',
             'Can be specified multiple times')
     grp.add_argument('--ignore-module', action='append', default=[],
-            help='Ignore the given module(s) and its submodules'
+            help='Ignore the given module(s) and its submodules '
                  '(if it is a package). Accepts comma separated list of '
                  'module names.')
     grp.add_argument('--ignore-dir', action='append', default=[],

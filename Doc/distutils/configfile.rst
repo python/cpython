@@ -13,8 +13,8 @@ edit is a cheap and easy way to solicit it.  Configuration files also let you
 provide default values for any command option, which the installer can then
 override either on the command-line or by editing the config file.
 
-The setup configuration file is a useful middle-ground between the setup script
----which, ideally, would be opaque to installers [#]_---and the command-line to
+The setup configuration file is a useful middle-ground between the setup
+script---which, ideally, would be opaque to installers [#]_---and the command-line to
 the setup script, which is outside of your control and entirely up to the
 installer.  In fact, :file:`setup.cfg` (and any other Distutils configuration
 files present on the target system) are processed after the contents of the

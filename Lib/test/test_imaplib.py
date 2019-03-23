@@ -1,12 +1,14 @@
 from test import support
 
 from contextlib import contextmanager
+import errno
 import imaplib
 import os.path
 import socketserver
 import time
 import calendar
 import threading
+import socket
 
 from test.support import (reap_threads, verbose, transient_internet,
                           run_with_tz, run_with_locale, cpython_only)
@@ -68,6 +70,28 @@ class TestImaplib(unittest.TestCase):
         # since the result depends on the timezone the machine is in.
         for t in self.timevalues():
             imaplib.Time2Internaldate(t)
+
+    def test_imap4_host_default_value(self):
+        # Check whether the IMAP4_PORT is truly unavailable.
+        with socket.socket() as s:
+            try:
+                s.connect(('', imaplib.IMAP4_PORT))
+                self.skipTest(
+                    "Cannot run the test with local IMAP server running.")
+            except socket.error:
+                pass
+
+        expected_errnos = [
+            # This is the exception that should be raised.
+            errno.ECONNREFUSED,
+        ]
+        if hasattr(errno, 'EADDRNOTAVAIL'):
+            # socket.create_connection() fails randomly with
+            # EADDRNOTAVAIL on Travis CI.
+            expected_errnos.append(errno.EADDRNOTAVAIL)
+        with self.assertRaises(OSError) as cm:
+            imaplib.IMAP4()
+        self.assertIn(cm.exception.errno, expected_errnos)
 
 
 if ssl:

@@ -6,6 +6,7 @@ if __name__ != 'test.support':
 import asyncio.events
 import collections.abc
 import contextlib
+import datetime
 import errno
 import faulthandler
 import fnmatch
@@ -13,6 +14,7 @@ import functools
 import gc
 import importlib
 import importlib.util
+import io
 import logging.handlers
 import nntplib
 import os
@@ -33,6 +35,8 @@ import types
 import unittest
 import urllib.error
 import warnings
+
+from .testresult import get_test_runner
 
 try:
     import multiprocessing.process
@@ -68,7 +72,7 @@ __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
     # exceptions
-    "Error", "TestFailed", "ResourceDenied",
+    "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # imports
     "import_module", "import_fresh_module", "CleanImport",
     # modules
@@ -82,6 +86,7 @@ __all__ = [
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver", "check_syntax_error",
+    "check_syntax_warning",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
@@ -89,9 +94,10 @@ __all__ = [
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_unless_bind_unix_socket",
+    "ignore_warnings",
     # sys
-    "JYTHON", "ANDROID", "check_impl_detail", "unix_shell",
-    "setswitchinterval", "MS_WINDOWS", "MACOS",
+    "is_jython", "is_android", "check_impl_detail", "unix_shell",
+    "setswitchinterval",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     "bind_unix_socket",
@@ -102,32 +108,21 @@ __all__ = [
     # threads
     "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
-    "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
+    "check_warnings", "check_no_resource_warning", "check_no_warnings",
+    "EnvironmentVarGuard",
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
     ]
-
-
-# True if Python is running on Microsoft Windows.
-MS_WINDOWS = (sys.platform == 'win32')
-
-# True if Python is running on Apple macOS.
-MACOS = (sys.platform == 'darwin')
-
-# True if Python runs on Jython
-# (Python implemented in Java running in a Java VM)
-JYTHON = sys.platform.startswith('java')
-
-# True if Python runs on Android
-ANDROID = hasattr(sys, 'getandroidapilevel')
-
 
 class Error(Exception):
     """Base class for regression test exceptions."""
 
 class TestFailed(Error):
     """Test failed."""
+
+class TestDidNotRun(Error):
+    """Test did not run any subtests."""
 
 class ResourceDenied(unittest.SkipTest):
     """Test skipped because it requested a disallowed resource.
@@ -151,6 +146,22 @@ def _ignore_deprecated_imports(ignore=True):
             yield
     else:
         yield
+
+
+def ignore_warnings(*, category):
+    """Decorator to suppress deprecation warnings.
+
+    Use of context managers to hide warnings make diffs
+    more noisy and tools like 'git blame' less useful.
+    """
+    def decorator(test):
+        @functools.wraps(test)
+        def wrapper(self, *args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category=category)
+                return test(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def import_module(name, deprecated=False, *, required_on=()):
@@ -293,6 +304,7 @@ use_resources = None     # Flag set to [] by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
+junit_xml_list = None    # list of testsuite XML elements
 failfast = False
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
@@ -499,7 +511,7 @@ def _is_gui_available():
             raise ctypes.WinError()
         if not bool(uof.dwFlags & WSF_VISIBLE):
             reason = "gui not available (WSF_VISIBLE flag not set)"
-    elif MACOS:
+    elif sys.platform == 'darwin':
         # The Aqua Tk implementations on OS X can abort the process if
         # being called in an environment where a window server connection
         # cannot be made, for instance when invoked by a buildbot or ssh
@@ -615,7 +627,7 @@ def requires_mac_ver(*min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            if MACOS:
+            if sys.platform == 'darwin':
                 version_txt = platform.mac_ver()[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
@@ -694,9 +706,8 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     issue if/when we come across it.
     """
 
-    tempsock = socket.socket(family, socktype)
-    port = bind_port(tempsock)
-    tempsock.close()
+    with socket.socket(family, socktype) as tempsock:
+        port = bind_port(tempsock)
     del tempsock
     return port
 
@@ -803,12 +814,14 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
-if MS_WINDOWS:
-    unix_shell = None
-elif ANDROID:
-    unix_shell = '/system/bin/sh'
+is_jython = sys.platform.startswith('java')
+
+is_android = hasattr(sys, 'getandroidapilevel')
+
+if sys.platform != 'win32':
+    unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
-    unix_shell = '/bin/sh'
+    unix_shell = None
 
 # Filename used for testing
 if os.name == 'java':
@@ -820,6 +833,10 @@ else:
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
+
+# Define the URL of a dedicated HTTP server for the network tests.
+# The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
+TEST_HTTP_URL = "http://www.pythontest.net"
 
 # FS_NONASCII: non-ASCII character encodable by os.fsencode(),
 # or None if there is no such character.
@@ -858,7 +875,11 @@ for character in (
     '\u20AC',
 ):
     try:
-        os.fsdecode(os.fsencode(character))
+        # If Python is set up to use the legacy 'mbcs' in Windows,
+        # 'replace' error mode is used, and encode() returns b'?'
+        # for characters missing in the ANSI codepage
+        if os.fsdecode(os.fsencode(character)) != character:
+            raise UnicodeError
     except UnicodeError:
         pass
     else:
@@ -867,7 +888,7 @@ for character in (
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
-if MACOS:
+if sys.platform == 'darwin':
     # In Mac OS X's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
@@ -879,7 +900,7 @@ TESTFN_ENCODING = sys.getfilesystemencoding()
 # encoded by the filesystem encoding (in strict mode). It can be None if we
 # cannot generate such filename.
 TESTFN_UNENCODABLE = None
-if MS_WINDOWS:
+if os.name == 'nt':
     # skip win32s (0) or Windows 9x/ME (1)
     if sys.getwindowsversion().platform >= 2:
         # Different kinds of characters from various languages to minimize the
@@ -894,8 +915,8 @@ if MS_WINDOWS:
                   'Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
             TESTFN_UNENCODABLE = None
-# macOS denies unencodable filenames (invalid utf-8)
-elif not MACOS:
+# Mac OS X denies unencodable filenames (invalid utf-8)
+elif sys.platform != 'darwin':
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(TESTFN_ENCODING)
@@ -1096,6 +1117,7 @@ def make_bad_fd():
         file.close()
         unlink(TESTFN)
 
+
 def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None):
     with testcase.assertRaisesRegex(SyntaxError, errtext) as cm:
         compile(statement, '<test string>', 'exec')
@@ -1106,6 +1128,33 @@ def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=N
     testcase.assertIsNotNone(err.offset)
     if offset is not None:
         testcase.assertEqual(err.offset, offset)
+
+def check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None):
+    # Test also that a warning is emitted only once.
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.simplefilter('always', SyntaxWarning)
+        compile(statement, '<testcase>', 'exec')
+    testcase.assertEqual(len(warns), 1, warns)
+
+    warn, = warns
+    testcase.assertTrue(issubclass(warn.category, SyntaxWarning), warn.category)
+    if errtext:
+        testcase.assertRegex(str(warn.message), errtext)
+    testcase.assertEqual(warn.filename, '<testcase>')
+    testcase.assertIsNotNone(warn.lineno)
+    if lineno is not None:
+        testcase.assertEqual(warn.lineno, lineno)
+
+    # SyntaxWarning should be converted to SyntaxError when raised,
+    # since the latter contains more information and provides better
+    # error report.
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.simplefilter('error', SyntaxWarning)
+        check_syntax_error(testcase, statement, errtext,
+                           lineno=lineno, offset=offset)
+    # No warnings are leaked when a SyntaxError is raised.
+    testcase.assertEqual(warns, [])
+
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
@@ -1244,6 +1293,30 @@ def check_warnings(*filters, **kwargs):
 
 
 @contextlib.contextmanager
+def check_no_warnings(testcase, message='', category=Warning, force_gc=False):
+    """Context manager to check that no warnings are emitted.
+
+    This context manager enables a given warning within its scope
+    and checks that no warnings are emitted even with that warning
+    enabled.
+
+    If force_gc is True, a garbage collection is attempted before checking
+    for warnings. This may help to catch warnings emitted when objects
+    are deleted, such as ResourceWarning.
+
+    Other keyword arguments are passed to warnings.filterwarnings().
+    """
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.filterwarnings('always',
+                                message=message,
+                                category=category)
+        yield
+        if force_gc:
+            gc_collect()
+    testcase.assertEqual(warns, [])
+
+
+@contextlib.contextmanager
 def check_no_resource_warning(testcase):
     """Context manager to check that no ResourceWarning is emitted.
 
@@ -1257,11 +1330,8 @@ def check_no_resource_warning(testcase):
     You must remove the object which may emit ResourceWarning before
     the end of the context manager.
     """
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.filterwarnings('always', category=ResourceWarning)
+    with check_no_warnings(testcase, category=ResourceWarning, force_gc=True):
         yield
-        gc_collect()
-    testcase.assertEqual(warns, [])
 
 
 class CleanImport(object):
@@ -1417,6 +1487,9 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         ('EHOSTUNREACH', 113),
         ('ENETUNREACH', 101),
         ('ETIMEDOUT', 110),
+        # socket.create_connection() fails randomly with
+        # EADDRNOTAVAIL on Travis CI.
+        ('EADDRNOTAVAIL', 99),
     ]
     default_gai_errnos = [
         ('EAI_AGAIN', -3),
@@ -1536,7 +1609,7 @@ def gc_collect():
     objects to disappear.
     """
     gc.collect()
-    if JYTHON:
+    if is_jython:
         time.sleep(0.1)
     gc.collect()
     gc.collect()
@@ -1711,10 +1784,11 @@ class _MemoryWatchdog:
             sys.stderr.flush()
             return
 
-        watchdog_script = findfile("memory_watchdog.py")
-        self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
-                                             stdin=f, stderr=subprocess.DEVNULL)
-        f.close()
+        with f:
+            watchdog_script = findfile("memory_watchdog.py")
+            self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
+                                                 stdin=f,
+                                                 stderr=subprocess.DEVNULL)
         self.started = True
 
     def stop(self):
@@ -1887,13 +1961,17 @@ def _filter_suite(suite, pred):
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
-    if verbose:
-        runner = unittest.TextTestRunner(sys.stdout, verbosity=2,
-                                         failfast=failfast)
-    else:
-        runner = BasicTestRunner()
+    runner = get_test_runner(sys.stdout,
+                             verbosity=verbose,
+                             capture_output=(junit_xml_list is not None))
 
     result = runner.run(suite)
+
+    if junit_xml_list is not None:
+        junit_xml_list.append(result.get_xml_element())
+
+    if not result.testsRun and not result.skipped:
+        raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
             err = result.errors[0][1]
@@ -1941,7 +2019,7 @@ def set_match_tests(patterns):
         patterns = ()
     elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
-        # The test.bisect utility only uses such full test identifiers.
+        # The test.bisect_cmd utility only uses such full test identifiers.
         func = set(patterns).__contains__
     else:
         regex = '|'.join(map(fnmatch.translate, patterns))
@@ -1951,8 +2029,8 @@ def set_match_tests(patterns):
 
         def match_test_regex(test_id):
             if regex_match(test_id):
-                # The regex matchs the whole identifier like
-                # 'test.test_os.FileTests.test_access'
+                # The regex matches the whole identifier, for example
+                # 'test.test_os.FileTests.test_access'.
                 return True
             else:
                 # Try to match parts of the test identifier.
@@ -1995,7 +2073,7 @@ def _check_docstrings():
     """Just used to check if docstrings are enabled"""
 
 MISSING_C_DOCSTRINGS = (check_impl_detail() and
-                        not MS_WINDOWS and
+                        sys.platform != 'win32' and
                         not sysconfig.get_config_var('WITH_DOC_STRINGS'))
 
 HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
@@ -2214,19 +2292,19 @@ def start_threads(threads, unlock=None):
         try:
             if unlock:
                 unlock()
-            endtime = starttime = time.time()
+            endtime = starttime = time.monotonic()
             for timeout in range(1, 16):
                 endtime += 60
                 for t in started:
-                    t.join(max(endtime - time.time(), 0.01))
-                started = [t for t in started if t.isAlive()]
+                    t.join(max(endtime - time.monotonic(), 0.01))
+                started = [t for t in started if t.is_alive()]
                 if not started:
                     break
                 if verbose:
                     print('Unable to join %d threads during a period of '
                           '%d minutes' % (len(started), timeout))
         finally:
-            started = [t for t in started if t.isAlive()]
+            started = [t for t in started if t.is_alive()]
             if started:
                 faulthandler.dump_traceback(sys.stdout)
                 raise AssertionError('Unable to join %d threads' % len(started))
@@ -2605,7 +2683,7 @@ class SuppressCrashReport:
                 except (ValueError, OSError):
                     pass
 
-            if MACOS:
+            if sys.platform == 'darwin':
                 # Check if the 'Crash Reporter' on OSX was configured
                 # in 'Developer' mode and warn that it will get triggered
                 # when it is.
@@ -2738,7 +2816,7 @@ def missing_compiler_executable(cmd_names=[]):
         if cmd_names:
             assert cmd is not None, \
                     "the '%s' executable is not configured" % name
-        elif cmd is None:
+        elif not cmd:
             continue
         if spawn.find_executable(cmd[0]) is None:
             return cmd[0]
@@ -2749,7 +2827,7 @@ def setswitchinterval(interval):
     # Setting a very low gil interval on the Android emulator causes python
     # to hang (issue #26939).
     minimum_interval = 1e-5
-    if ANDROID and interval < minimum_interval:
+    if is_android and interval < minimum_interval:
         global _is_android_emulator
         if _is_android_emulator is None:
             _is_android_emulator = (subprocess.check_output(
@@ -2795,7 +2873,7 @@ def fd_count():
             pass
 
     old_modes = None
-    if MS_WINDOWS:
+    if sys.platform == 'win32':
         # bpo-25306, bpo-31009: Call CrtSetReportMode() to not kill the process
         # on invalid file descriptor if Python is compiled in debug mode
         try:
@@ -2899,3 +2977,44 @@ class FakePath:
 def maybe_get_event_loop_policy():
     """Return the global event loop policy if one is set, else return None."""
     return asyncio.events._event_loop_policy
+
+# Helpers for testing hashing.
+NHASHBITS = sys.hash_info.width # number of bits in hash() result
+assert NHASHBITS in (32, 64)
+
+# Return mean and sdev of number of collisions when tossing nballs balls
+# uniformly at random into nbins bins.  By definition, the number of
+# collisions is the number of balls minus the number of occupied bins at
+# the end.
+def collision_stats(nbins, nballs):
+    n, k = nbins, nballs
+    # prob a bin empty after k trials = (1 - 1/n)**k
+    # mean # empty is then n * (1 - 1/n)**k
+    # so mean # occupied is n - n * (1 - 1/n)**k
+    # so collisions = k - (n - n*(1 - 1/n)**k)
+    #
+    # For the variance:
+    # n*(n-1)*(1-2/n)**k + meanempty - meanempty**2 =
+    # n*(n-1)*(1-2/n)**k + meanempty * (1 - meanempty)
+    #
+    # Massive cancellation occurs, and, e.g., for a 64-bit hash code
+    # 1-1/2**64 rounds uselessly to 1.0.  Rather than make heroic (and
+    # error-prone) efforts to rework the naive formulas to avoid those,
+    # we use the `decimal` module to get plenty of extra precision.
+    #
+    # Note:  the exact values are straightforward to compute with
+    # rationals, but in context that's unbearably slow, requiring
+    # multi-million bit arithmetic.
+    import decimal
+    with decimal.localcontext() as ctx:
+        bits = n.bit_length() * 2  # bits in n**2
+        # At least that many bits will likely cancel out.
+        # Use that many decimal digits instead.
+        ctx.prec = max(bits, 30)
+        dn = decimal.Decimal(n)
+        p1empty = ((dn - 1) / dn) ** k
+        meanempty = n * p1empty
+        occupied = n - meanempty
+        collisions = k - occupied
+        var = dn*(dn-1)*((dn-2)/dn)**k + meanempty * (1 - meanempty)
+        return float(collisions), float(var.sqrt())

@@ -186,6 +186,13 @@ A library which wants to use a particular start method should probably
 use :func:`get_context` to avoid interfering with the choice of the
 library user.
 
+.. warning::
+
+   The ``'spawn'`` and ``'forkserver'`` start methods cannot currently
+   be used with "frozen" executables (i.e., binaries produced by
+   packages like **PyInstaller** and **cx_Freeze**) on Unix.
+   The ``'fork'`` start method does work.
+
 
 Exchanging objects between processes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -435,7 +442,7 @@ process which created it.
 
    (If you try this it will actually output three full tracebacks
    interleaved in a semi-random fashion, and then you may have to
-   stop the master process somehow.)
+   stop the parent process somehow.)
 
 
 Reference
@@ -621,18 +628,19 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Example usage of some of the methods of :class:`Process`:
 
    .. doctest::
+      :options: +ELLIPSIS
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
        >>> print(p, p.is_alive())
-       <Process(Process-1, initial)> False
+       <Process ... initial> False
        >>> p.start()
        >>> print(p, p.is_alive())
-       <Process(Process-1, started)> True
+       <Process ... started> True
        >>> p.terminate()
        >>> time.sleep(0.1)
        >>> print(p, p.is_alive())
-       <Process(Process-1, stopped[SIGTERM])> False
+       <Process ... stopped exitcode=-SIGTERM> False
        >>> p.exitcode == -signal.SIGTERM
        True
 
@@ -786,6 +794,10 @@ For an example of the usage of queues for interprocess communication see
       available, else raise the :exc:`queue.Full` exception (*timeout* is
       ignored in that case).
 
+      .. versionchanged:: 3.8
+         If the queue is closed, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
+
    .. method:: put_nowait(obj)
 
       Equivalent to ``put(obj, False)``.
@@ -799,6 +811,10 @@ For an example of the usage of queues for interprocess communication see
       exception if no item was available within that time.  Otherwise (block is
       ``False``), return an item if one is immediately available, else raise the
       :exc:`queue.Empty` exception (*timeout* is ignored in that case).
+
+      .. versionchanged:: 3.8
+         If the queue is closed, :exc:`ValueError` is raised instead of
+         :exc:`OSError`.
 
    .. method:: get_nowait()
 
@@ -1638,7 +1654,7 @@ their parent process exits.  The manager classes are defined in the
       Connect a local manager object to a remote manager process::
 
       >>> from multiprocessing.managers import BaseManager
-      >>> m = BaseManager(address=('127.0.0.1', 5000), authkey=b'abc')
+      >>> m = BaseManager(address=('127.0.0.1', 50000), authkey=b'abc')
       >>> m.connect()
 
    .. method:: shutdown()
@@ -2141,6 +2157,10 @@ with the :class:`Pool` class.
       the process pool as separate tasks.  The (approximate) size of these
       chunks can be specified by setting *chunksize* to a positive integer.
 
+      Note that it may cause high memory usage for very long iterables. Consider
+      using :meth:`imap` or :meth:`imap_unordered` with explicit *chunksize*
+      option for better efficiency.
+
    .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
       A variant of the :meth:`.map` method which returns a result object.
@@ -2159,7 +2179,7 @@ with the :class:`Pool` class.
 
    .. method:: imap(func, iterable[, chunksize])
 
-      A lazier version of :meth:`map`.
+      A lazier version of :meth:`.map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can

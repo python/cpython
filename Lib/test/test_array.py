@@ -4,6 +4,7 @@
 
 import unittest
 from test import support
+from test.support import _2G
 import weakref
 import pickle
 import operator
@@ -248,7 +249,7 @@ class BaseTest:
         a = array.array(self.typecode, self.example)
         for protocol in range(3):
             self.assertIs(a.__reduce_ex__(protocol)[0], array.array)
-        for protocol in range(3, pickle.HIGHEST_PROTOCOL):
+        for protocol in range(3, pickle.HIGHEST_PROTOCOL + 1):
             self.assertIs(a.__reduce_ex__(protocol)[0], array_reconstructor)
 
     def test_pickle(self):
@@ -1242,6 +1243,8 @@ class IntegerNumberTest(NumberTest):
 class Intable:
     def __init__(self, num):
         self._num = num
+    def __index__(self):
+        return self._num
     def __int__(self):
         return self._num
     def __sub__(self, other):
@@ -1393,6 +1396,146 @@ class DoubleTest(FPTest, unittest.TestCase):
         else:
             self.fail("Array of size > maxsize created - MemoryError expected")
 
+
+class LargeArrayTest(unittest.TestCase):
+    typecode = 'b'
+
+    def example(self, size):
+        # We assess a base memuse of <=2.125 for constructing this array
+        base = array.array(self.typecode, [0, 1, 2, 3, 4, 5, 6, 7]) * (size // 8)
+        base += array.array(self.typecode, [99]*(size % 8) + [8, 9, 10, 11])
+        return base
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_example_data(self, size):
+        example = self.example(size)
+        self.assertEqual(len(example), size+4)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_access(self, size):
+        example = self.example(size)
+        self.assertEqual(example[0], 0)
+        self.assertEqual(example[-(size+4)], 0)
+        self.assertEqual(example[size], 8)
+        self.assertEqual(example[-4], 8)
+        self.assertEqual(example[size+3], 11)
+        self.assertEqual(example[-1], 11)
+
+    @support.bigmemtest(_2G, memuse=2.125+1)
+    def test_slice(self, size):
+        example = self.example(size)
+        self.assertEqual(list(example[:4]), [0, 1, 2, 3])
+        self.assertEqual(list(example[-4:]), [8, 9, 10, 11])
+        part = example[1:-1]
+        self.assertEqual(len(part), size+2)
+        self.assertEqual(part[0], 1)
+        self.assertEqual(part[-1], 10)
+        del part
+        part = example[::2]
+        self.assertEqual(len(part), (size+5)//2)
+        self.assertEqual(list(part[:4]), [0, 2, 4, 6])
+        if size % 2:
+            self.assertEqual(list(part[-2:]), [9, 11])
+        else:
+            self.assertEqual(list(part[-2:]), [8, 10])
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_count(self, size):
+        example = self.example(size)
+        self.assertEqual(example.count(0), size//8)
+        self.assertEqual(example.count(11), 1)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_append(self, size):
+        example = self.example(size)
+        example.append(12)
+        self.assertEqual(example[-1], 12)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_extend(self, size):
+        example = self.example(size)
+        example.extend(iter([12, 13, 14, 15]))
+        self.assertEqual(len(example), size+8)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11, 12, 13, 14, 15])
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_frombytes(self, size):
+        example = self.example(size)
+        example.frombytes(b'abcd')
+        self.assertEqual(len(example), size+8)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11] + list(b'abcd'))
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_fromlist(self, size):
+        example = self.example(size)
+        example.fromlist([12, 13, 14, 15])
+        self.assertEqual(len(example), size+8)
+        self.assertEqual(list(example[-8:]), [8, 9, 10, 11, 12, 13, 14, 15])
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_index(self, size):
+        example = self.example(size)
+        self.assertEqual(example.index(0), 0)
+        self.assertEqual(example.index(1), 1)
+        self.assertEqual(example.index(7), 7)
+        self.assertEqual(example.index(11), size+3)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_insert(self, size):
+        example = self.example(size)
+        example.insert(0, 12)
+        example.insert(10, 13)
+        example.insert(size+1, 14)
+        self.assertEqual(len(example), size+7)
+        self.assertEqual(example[0], 12)
+        self.assertEqual(example[10], 13)
+        self.assertEqual(example[size+1], 14)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_pop(self, size):
+        example = self.example(size)
+        self.assertEqual(example.pop(0), 0)
+        self.assertEqual(example[0], 1)
+        self.assertEqual(example.pop(size+1), 10)
+        self.assertEqual(example[size+1], 11)
+        self.assertEqual(example.pop(1), 2)
+        self.assertEqual(example[1], 3)
+        self.assertEqual(len(example), size+1)
+        self.assertEqual(example.pop(), 11)
+        self.assertEqual(len(example), size)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_remove(self, size):
+        example = self.example(size)
+        example.remove(0)
+        self.assertEqual(len(example), size+3)
+        self.assertEqual(example[0], 1)
+        example.remove(10)
+        self.assertEqual(len(example), size+2)
+        self.assertEqual(example[size], 9)
+        self.assertEqual(example[size+1], 11)
+
+    @support.bigmemtest(_2G, memuse=2.125)
+    def test_reverse(self, size):
+        example = self.example(size)
+        example.reverse()
+        self.assertEqual(len(example), size+4)
+        self.assertEqual(example[0], 11)
+        self.assertEqual(example[3], 8)
+        self.assertEqual(example[-1], 0)
+        example.reverse()
+        self.assertEqual(len(example), size+4)
+        self.assertEqual(list(example[:4]), [0, 1, 2, 3])
+        self.assertEqual(list(example[-4:]), [8, 9, 10, 11])
+
+    # list takes about 9 bytes per element
+    @support.bigmemtest(_2G, memuse=2.125+9)
+    def test_tolist(self, size):
+        example = self.example(size)
+        ls = example.tolist()
+        self.assertEqual(len(ls), len(example))
+        self.assertEqual(ls[:8], list(example[:8]))
+        self.assertEqual(ls[-8:], list(example[-8:]))
 
 if __name__ == "__main__":
     unittest.main()

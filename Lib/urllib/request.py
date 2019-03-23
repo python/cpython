@@ -198,7 +198,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     global _opener
     if cafile or capath or cadefault:
         import warnings
-        warnings.warn("cafile, cpath and cadefault are deprecated, use a "
+        warnings.warn("cafile, capath and cadefault are deprecated, use a "
                       "custom context instead.", DeprecationWarning, 2)
         if context is not None:
             raise ValueError(

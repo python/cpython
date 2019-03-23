@@ -3,12 +3,15 @@ Test the implementation of the PEP 540: the UTF-8 Mode.
 """
 
 import locale
-import os
 import sys
 import textwrap
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
+
+
+MS_WINDOWS = (sys.platform == 'win32')
+POSIX_LOCALES = ('C', 'POSIX')
 
 
 class UTF8ModeTests(unittest.TestCase):
@@ -20,7 +23,7 @@ class UTF8ModeTests(unittest.TestCase):
 
     def posix_locale(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
-        return (loc == 'C')
+        return (loc in POSIX_LOCALES)
 
     def get_output(self, *args, failure=False, **kw):
         kw = dict(self.DEFAULT_ENV, **kw)
@@ -32,12 +35,14 @@ class UTF8ModeTests(unittest.TestCase):
             out = out[1]
         return out.decode().rstrip("\n\r")
 
-    @unittest.skipIf(support.MS_WINDOWS, 'Windows has no POSIX locale')
+    @unittest.skipIf(MS_WINDOWS, 'Windows has no POSIX locale')
     def test_posix_locale(self):
         code = 'import sys; print(sys.flags.utf8_mode)'
 
-        out = self.get_output('-c', code, LC_ALL='C')
-        self.assertEqual(out, '1')
+        for loc in POSIX_LOCALES:
+            with self.subTest(LC_ALL=loc):
+                out = self.get_output('-c', code, LC_ALL=loc)
+                self.assertEqual(out, '1')
 
     def test_xoption(self):
         code = 'import sys; print(sys.flags.utf8_mode)'
@@ -52,7 +57,7 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8=0', '-c', code)
         self.assertEqual(out, '0')
 
-        if support.MS_WINDOWS:
+        if MS_WINDOWS:
             # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 Mode
             # and has the priority over -X utf8
             out = self.get_output('-X', 'utf8', '-c', code,
@@ -72,7 +77,7 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8=0', '-c', code, PYTHONUTF8='1')
         self.assertEqual(out, '0')
 
-        if support.MS_WINDOWS:
+        if MS_WINDOWS:
             # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 mode
             # and has the priority over PYTHONUTF8
             out = self.get_output('-X', 'utf8', '-c', code, PYTHONUTF8='1',
@@ -98,7 +103,7 @@ class UTF8ModeTests(unittest.TestCase):
                                  sys.getfilesystemencodeerrors()))
         ''')
 
-        if support.MS_WINDOWS:
+        if MS_WINDOWS:
             expected = 'utf-8/surrogatepass'
         else:
             expected = 'utf-8/surrogateescape'
@@ -106,7 +111,7 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8', '-c', code)
         self.assertEqual(out, expected)
 
-        if support.MS_WINDOWS:
+        if MS_WINDOWS:
             # PYTHONLEGACYWINDOWSFSENCODING disables the UTF-8 mode
             # and has the priority over -X utf8 and PYTHONUTF8
             out = self.get_output('-X', 'utf8', '-c', code,
@@ -133,16 +138,16 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8', '-c', code,
                               PYTHONIOENCODING="latin1")
         self.assertEqual(out.splitlines(),
-                         ['stdin: latin1/strict',
-                          'stdout: latin1/strict',
-                          'stderr: latin1/backslashreplace'])
+                         ['stdin: iso8859-1/strict',
+                          'stdout: iso8859-1/strict',
+                          'stderr: iso8859-1/backslashreplace'])
 
         out = self.get_output('-X', 'utf8', '-c', code,
                               PYTHONIOENCODING=":namereplace")
         self.assertEqual(out.splitlines(),
-                         ['stdin: UTF-8/namereplace',
-                          'stdout: UTF-8/namereplace',
-                          'stderr: UTF-8/backslashreplace'])
+                         ['stdin: utf-8/namereplace',
+                          'stdout: utf-8/namereplace',
+                          'stderr: utf-8/backslashreplace'])
 
     def test_io(self):
         code = textwrap.dedent('''
@@ -198,10 +203,12 @@ class UTF8ModeTests(unittest.TestCase):
         out = self.get_output('-X', 'utf8', '-c', code)
         self.assertEqual(out, 'UTF-8 UTF-8')
 
-        out = self.get_output('-X', 'utf8', '-c', code, LC_ALL='C')
-        self.assertEqual(out, 'UTF-8 UTF-8')
+        for loc in POSIX_LOCALES:
+            with self.subTest(LC_ALL=loc):
+                out = self.get_output('-X', 'utf8', '-c', code, LC_ALL=loc)
+                self.assertEqual(out, 'UTF-8 UTF-8')
 
-    @unittest.skipIf(support.MS_WINDOWS, 'test specific to Unix')
+    @unittest.skipIf(MS_WINDOWS, 'test specific to Unix')
     def test_cmd_line(self):
         arg = 'h\xe9\u20ac'.encode('utf-8')
         arg_utf8 = arg.decode('utf-8')
@@ -214,11 +221,19 @@ class UTF8ModeTests(unittest.TestCase):
             self.assertEqual(args, ascii(expected), out)
 
         check('utf8', [arg_utf8])
-        if support.MACOS or support.ANDROID:
+        for loc in POSIX_LOCALES:
+            with self.subTest(LC_ALL=loc):
+                check('utf8', [arg_utf8], LC_ALL=loc)
+
+        if sys.platform == 'darwin' or support.is_android:
             c_arg = arg_utf8
+        elif sys.platform.startswith("aix"):
+            c_arg = arg.decode('iso-8859-1')
         else:
             c_arg = arg_ascii
-        check('utf8=0', [c_arg], LC_ALL='C')
+        for loc in POSIX_LOCALES:
+            with self.subTest(LC_ALL=loc):
+                check('utf8=0', [c_arg], LC_ALL=loc)
 
     def test_optim_level(self):
         # CPython: check that Py_Main() doesn't increment Py_OptimizeFlag

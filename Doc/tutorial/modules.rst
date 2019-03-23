@@ -112,8 +112,8 @@ Note that in general the practice of importing ``*`` from a module or package is
 frowned upon, since it often causes poorly readable code. However, it is okay to
 use it to save typing in interactive sessions.
 
-If the module name is followed by :keyword:`as`, then the name
-following :keyword:`as` is bound directly to the imported module.
+If the module name is followed by :keyword:`!as`, then the name
+following :keyword:`!as` is bound directly to the imported module.
 
 ::
 
@@ -249,7 +249,7 @@ Some tips for experts:
   directory.
 
 * There is more detail on this process, including a flow chart of the
-  decisions, in PEP 3147.
+  decisions, in :pep:`3147`.
 
 
 .. _tut-standardmodules:

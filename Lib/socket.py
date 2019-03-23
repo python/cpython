@@ -70,22 +70,22 @@ __all__.extend(os._get_exports_list(_socket))
 # in this module understands the enums and translates them back from integers
 # where needed (e.g. .family property of a socket object).
 
-IntEnum._convert(
+IntEnum._convert_(
         'AddressFamily',
         __name__,
         lambda C: C.isupper() and C.startswith('AF_'))
 
-IntEnum._convert(
+IntEnum._convert_(
         'SocketKind',
         __name__,
         lambda C: C.isupper() and C.startswith('SOCK_'))
 
-IntFlag._convert(
+IntFlag._convert_(
         'MsgFlag',
         __name__,
         lambda C: C.isupper() and C.startswith('MSG_'))
 
-IntFlag._convert(
+IntFlag._convert_(
         'AddressInfo',
         __name__,
         lambda C: C.isupper() and C.startswith('AI_'))
@@ -189,7 +189,7 @@ class socket(_socket.socket):
         return s
 
     def __getstate__(self):
-        raise TypeError("Cannot serialize socket object")
+        raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
 
     def dup(self):
         """dup() -> socket object

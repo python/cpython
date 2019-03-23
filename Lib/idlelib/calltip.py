@@ -51,7 +51,7 @@ class Calltip:
         self.open_calltip(False)
 
     def refresh_calltip_event(self, event):
-        if self.active_calltip and self.active_calltip.is_active():
+        if self.active_calltip and self.active_calltip.tipwindow:
             self.open_calltip(False)
 
     def open_calltip(self, evalfuncs):
@@ -167,7 +167,7 @@ def get_argspec(ob):
             if len(line) > _MAX_COLS:
                 line = line[: _MAX_COLS - 3] + '...'
             lines.append(line)
-        argspec = '\n'.join(lines)
+    argspec = '\n'.join(lines)
     if not argspec:
         argspec = _default_callable_argspec
     return argspec
