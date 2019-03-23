@@ -1079,7 +1079,7 @@ calls these functions.
 
    This behaviour may be overridden by setting *text*, *encoding*, *errors*,
    or *universal_newlines* to ``True`` as described in
-   :ref:`frequently-used-arguments` and :func:`run`..
+   :ref:`frequently-used-arguments` and :func:`run`.
 
    To also capture standard error in the result, use
    ``stderr=subprocess.STDOUT``::
