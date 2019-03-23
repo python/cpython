@@ -49,9 +49,9 @@ def findfiles(folder, pattern, recursive):
     """Generate file names in dir that match pattern.
 
     Args:
-    folder: Root directory to search.
-    pattern: File pattern to match.
-    recursive: True to include subdirectories.
+        folder: Root directory to search.
+        pattern: File pattern to match.
+        recursive: True to include subdirectories.
     """
     for dirpath, _, filenames in os.walk(folder, onerror=walk_error):
         yield from (os.path.join(dirpath, name)
