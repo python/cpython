@@ -694,6 +694,14 @@ The following exceptions are used as warning categories; see the
    Base class for warnings about features which will be deprecated in the
    future.
 
+   .. deprecated:: 3.8
+      PendingDeprecationWarning was introduced as "ignored by default" version
+      of DeprecationWarning.  But :exc:`DeprecationWarning` is ignored by
+      default since Python 2.7 and 3.2.  There is no enough reason to use
+      PendingDeprecationWarning instead of DeprecationWarning for nowadays.
+      There is no plan to actual removal, but new use of
+      PendingDeprecationWarning is not recommended.
+
 
 .. exception:: SyntaxWarning
 
