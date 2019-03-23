@@ -3,6 +3,7 @@
 Either on demand or after a user-selected delay after a key character,
 pop up a list of candidates.
 """
+import __main__
 import os
 import string
 import sys
@@ -181,7 +182,8 @@ class AutoComplete:
         else:
             if mode == COMPLETE_ATTRIBUTES:
                 if what == "":
-                    namespace = {**__builtins__.__dict__, **globals()}
+                    namespace = {**__main__.__builtins__.__dict__,
+                                 **__main__.__dict__}
                     bigl = eval("dir()", namespace)
                     bigl.sort()
                     if "__all__" in bigl:
@@ -217,11 +219,12 @@ class AutoComplete:
 
     def get_entity(self, name):
         "Lookup name in a namespace spanning sys.modules and globals()."
-        return eval(name, {**sys.modules, **globals()})
+        return eval(name, {**sys.modules, **__main__.__dict__})
 
 
 AutoComplete.reload()
 
 if __name__ == '__main__':
+    testing_in_autocomplete = True  # For test_fetch_completions.
     from unittest import main
     main('idlelib.idle_test.test_autocomplete', verbosity=2)
