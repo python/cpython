@@ -1,0 +1,1 @@
+Fixed wrong indentation writing for CDATA section in xml.dom.minidom
