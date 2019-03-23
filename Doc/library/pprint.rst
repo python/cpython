@@ -106,7 +106,7 @@ The :mod:`pprint` module also provides several shortcut functions:
    Prints the formatted representation of *object* followed by a newline.
    If *sort_dicts* is false (the default), dictionaries will be displayed with
    their keys in insertion order, otherwise the dict keys will be sorted.
-   *args* an *kwargs* will be passed to :func:`pprint` as formatting
+   *args* and *kwargs* will be passed to :func:`pprint` as formatting
    parameters.
 
    .. versionadded:: 3.8
