@@ -117,10 +117,10 @@ The following warnings category classes are currently defined:
 
 .. versionchanged:: 3.8
    :exc:`PendingDeprecationWarning` is now deprecated.  It was introduced
-   as "ignored by default" version of :exc:`DeprecationWarning`.  But
+   as an "ignored by default" version of :exc:`DeprecationWarning`.  But
    :exc:`DeprecationWarning` is ignored by default since Python 2.7 and 3.2.
-   There is no enough reason to use :exc:`PendingDeprecationWarning` instead
-   of :exc:`DeprecationWarning` for nowadays.
+   There is no reason to use :exc:`PendingDeprecationWarning` instead
+   of :exc:`DeprecationWarning` nowadays.
 
 
 .. _warning-filter:
