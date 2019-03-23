@@ -354,7 +354,7 @@ or on combining URL components into a URL string.
    and an empty string.
 
    The return value is a :term:`named tuple`, its items can be accessed by index
-   or as named attributes:   
+   or as named attributes:
 
    +------------------+-------+-------------------------+----------------------+
    | Attribute        | Index | Value                   | Value if not present |
