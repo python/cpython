@@ -1631,21 +1631,21 @@ class MinidomTest(unittest.TestCase):
                          '<?xml version="1.0" ?>\n'
                          '<curriculum status="public" company="example"/>\n')
 
-    def testCDATAWriting(self):
-        doc = Document()
-        root = doc.createElement('root')
-        doc.appendChild(root)
-        node = doc.createElement('node')
-        root.appendChild(node)
-        data = doc.createCDATASection('</data>')
-        node.appendChild(data)
+    def test_toprettyxml_with_cdata(self):
+        xml_str = '<?xml version="1.0" ?><root><node><![CDATA[</data>]]></node></root>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toprettyxml(),
+                         '<?xml version="1.0" ?>\n'
+                         '<root>\n'
+                         '\t<node><![CDATA[</data>]]></node>\n'
+                         '</root>\n')
 
-        doc1 = parseString(doc.toxml())
-        val1 = doc1.getElementsByTagName('node')[0].firstChild.nodeValue
-        doc2 = parseString(doc.toprettyxml())
-        val2 = doc2.getElementsByTagName('node')[0].firstChild.nodeValue
-
-        self.confirm(val1 == val2)
+    def test_cdata_parsing(self):
+        xml_str = '<?xml version="1.0" ?><root><node><![CDATA[</data>]]></node></root>'
+        dom1 = parseString(xml_str)
+        self.checkWholeText(dom1.getElementsByTagName('node')[0].firstChild, '</data>')
+        dom2 = parseString(dom1.toprettyxml())
+        self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
 
 if __name__ == "__main__":
     unittest.main()
