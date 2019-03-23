@@ -55,7 +55,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
    ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be used at the same time.
+   not be supplied at the same time as *capture_output*.
 
    The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
    expires, the child process will be killed and waited for.  The
