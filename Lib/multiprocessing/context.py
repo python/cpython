@@ -40,6 +40,7 @@ class BaseContext(object):
     current_process = staticmethod(process.current_process)
     parent_process = staticmethod(process.parent_process)
     active_children = staticmethod(process.active_children)
+    _reducer = None
 
     def cpu_count(self):
         '''Returns the number of CPUs in the system'''
@@ -206,7 +207,7 @@ class BaseContext(object):
     def get_reducer(self):
         '''Controls how objects will be reduced to a form that can be
         shared with other processes.'''
-        reducer = getattr(self, "_reducer", None)
+        reducer = self._reducer
         if reducer is None:
             return reduction
         return reducer
@@ -220,8 +221,7 @@ class BaseContext(object):
             raise TypeError("Custom reducers must be instances of a "
                             "subclass of multiprocessing.reduction.AbstractReducer")
         if not isinstance(reduction.get_pickler(), pickle.Pickler):
-            breakpoint()
-            raise TypeError("Custom reducers must return a subclass of "
+            raise TypeError("Custom reducers must return an instance of "
                             "pickler.Pickler in the get_pickler() method")
 
         self._reducer = reduction
