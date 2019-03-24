@@ -1,0 +1,1 @@
+Handle empty packages in :mod:`doctest`. Patch by Karthikeyan Singaravelan.
