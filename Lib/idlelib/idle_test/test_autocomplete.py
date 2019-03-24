@@ -3,6 +3,7 @@
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
+import __main__
 
 import idlelib.autocomplete as ac
 import idlelib.autocomplete_w as acw
@@ -35,7 +36,7 @@ class AutoCompleteTest(unittest.TestCase):
         del cls.root
 
     def setUp(self):
-        self.editor.text.delete('1.0', 'end')
+        self.text.delete('1.0', 'end')
         self.autocomplete = ac.AutoComplete(self.editor)
 
     def test_init(self):
@@ -132,12 +133,16 @@ class AutoCompleteTest(unittest.TestCase):
         # a small list containing non-private variables.
         # For file completion, a large list containing all files in the path,
         # and a small list containing files that do not start with '.'
-        pass
+        small, large = self.autocomplete.fetch_completions(
+                '', ac.COMPLETE_ATTRIBUTES)
+        self.assertLess(len(small), len(large))
+        if __main__.__file__ != ac.__file__:
+            self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
         # __main__.__dict__
-        pass
+        self.assertEqual(self.autocomplete.get_entity('int'), int)
 
 
 if __name__ == '__main__':
