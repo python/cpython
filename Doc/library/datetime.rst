@@ -447,8 +447,8 @@ Other constructors, all class methods:
 
    Return a :class:`date` corresponding to *date_string*, parsed according to
    *format*. :exc:`ValueError` is raised if the date string and format can't be
-   parsed by :meth:`time.strptime`, or if time components are present in the
-   format string. For a complete list of formatting directives, see
+   parsed by :meth:`datetime.time.strptime`, or if time components are present
+   in the format string. For a complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
 
    .. versionadded:: 3.8
@@ -1440,11 +1440,10 @@ Other constructors, all class methods:
 
 .. classmethod:: time.strptime(date_string, format)
 
-   Return a :class:`time` corresponding to *date_string, parsed according to
-   *format*. :exc:`ValueError` is raised if the date string and format can't be
-   parsed by :meth:`time.strptime`, if it returns a value which isn't a time
-   tuple, or if the date part is nonzero. For a complete list of formatting
-   directives, see :ref:`strftime-strptime-behavior`.
+   Return a :class:`datetime.time` corresponding to *date_string*, parsed
+   according to *format*. :exc:`ValueError` is raised if the date string and
+   format can't be parsed by :meth:`time.strptime`. For a complete list of
+   formatting directives, see :ref:`strftime-strptime-behavior`.
 
    .. versionadded:: 3.8
 
@@ -2044,11 +2043,13 @@ Conversely, the :meth:`datetime.strptime` class method creates a
 corresponding format string. ``datetime.strptime(date_string, format)`` is
 equivalent to ``datetime(*(time.strptime(date_string, format)[0:6]))``, except
 when the format includes sub-second components or timezone offset information,
-which are supported in ``datetime.strptime`` but are discarded by ``time.strptime``.
+which are supported in ``datetime.strptime`` but are discarded by
+:meth:`time.strptime`.
 
 The :meth:`date.strptime` class method creates a :class:`date` object from a
 string representing a date and a corresponding format string. :exc:`ValueError`
-raised if the format codes for hours, minutes, seconds, and microseconds are used.
+is raised if the format codes for hours, minutes, seconds, or microseconds are
+used.
 
 The :meth:`.time.strptime` class method creates a :class:`.time` object from a
 string representing a time and a corresponding format string. :exc:`ValueError`
