@@ -209,7 +209,7 @@ type.
       This function "steals" a reference to *o*.
 
 
-.. c:function:: PyObject* PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)
+.. c:function:: void PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)
 
    Macro equivalent of :c:func:`PyStructSequence_SetItem`.
 

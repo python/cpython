@@ -3,6 +3,7 @@
 Either on demand or after a user-selected delay after a key character,
 pop up a list of candidates.
 """
+import __main__
 import os
 import string
 import sys
@@ -14,7 +15,6 @@ COMPLETE_ATTRIBUTES, COMPLETE_FILES = range(1, 2+1)
 from idlelib import autocomplete_w
 from idlelib.config import idleConf
 from idlelib.hyperparser import HyperParser
-import __main__
 
 # This string includes all chars that may be in an identifier.
 # TODO Update this here and elsewhere.
@@ -187,8 +187,8 @@ class AutoComplete:
         else:
             if mode == COMPLETE_ATTRIBUTES:
                 if what == "":
-                    namespace = __main__.__dict__.copy()
-                    namespace.update(__main__.__builtins__.__dict__)
+                    namespace = {**__main__.__builtins__.__dict__,
+                                 **__main__.__dict__}
                     bigl = eval("dir()", namespace)
                     bigl.sort()
                     if "__all__" in bigl:
@@ -223,10 +223,8 @@ class AutoComplete:
             return smalll, bigl
 
     def get_entity(self, name):
-        """Lookup name in a namespace spanning sys.modules and __main.dict__"""
-        namespace = sys.modules.copy()
-        namespace.update(__main__.__dict__)
-        return eval(name, namespace)
+        "Lookup name in a namespace spanning sys.modules and __main.dict__."
+        return eval(name, {**sys.modules, **__main__.__dict__})
 
 
 AutoComplete.reload()

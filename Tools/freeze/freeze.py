@@ -124,7 +124,7 @@ def main():
 
     # default the exclude list for each platform
     if win: exclude = exclude + [
-        'dos', 'dospath', 'mac', 'macpath', 'macfs', 'MACFS', 'posix', ]
+        'dos', 'dospath', 'mac', 'macfs', 'MACFS', 'posix', ]
 
     fail_import = exclude[:]
 
@@ -217,7 +217,10 @@ def main():
 
     # locations derived from options
     version = '%d.%d' % sys.version_info[:2]
-    flagged_version = version + sys.abiflags
+    if hasattr(sys, 'abiflags'):
+        flagged_version = version + sys.abiflags
+    else:
+        flagged_version = version
     if win:
         extensions_c = 'frozen_extensions.c'
     if ishome:

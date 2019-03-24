@@ -232,13 +232,13 @@ is the module's name in the Python package namespace.
       above example). In such circumstances, it is likely that specialized
       :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
-      .. versionadded:: 3.2
+      .. versionchanged:: 3.2
          The *stack_info* parameter was added.
 
       .. versionchanged:: 3.5
          The *exc_info* parameter can now accept exception instances.
 
-      .. versionadded:: 3.8
+      .. versionchanged:: 3.8
          The *stacklevel* parameter was added.
 
 
@@ -544,6 +544,10 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
    .. versionchanged:: 3.2
       The *style* parameter was added.
 
+   .. versionchanged:: 3.8
+      The *validate* parameter was added. Incorrect or mismatched style and fmt
+      will raise a ``ValueError``.
+      For example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
 
    .. method:: format(record)
 
@@ -900,7 +904,7 @@ re-entrant, and so cannot be invoked from such signal handlers.
 Module-Level Functions
 ----------------------
 
-In addition to the classes described above, there are a number of module- level
+In addition to the classes described above, there are a number of module-level
 functions.
 
 
@@ -949,8 +953,8 @@ functions.
    There are three keyword arguments in *kwargs* which are inspected: *exc_info*
    which, if it does not evaluate as false, causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
-   :func:`sys.exc_info`) is provided, it is used; otherwise, :func:`sys.exc_info`
-   is called to get the exception information.
+   :func:`sys.exc_info`) or an exception instance is provided, it is used;
+   otherwise, :func:`sys.exc_info` is called to get the exception information.
 
    The second optional keyword argument is *stack_info*, which defaults to
    ``False``. If true, stack information is added to the logging
@@ -1007,7 +1011,7 @@ functions.
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       The *stack_info* parameter was added.
 
 .. function:: info(msg, *args, **kwargs)
@@ -1186,25 +1190,24 @@ functions.
    |              | with *filename* or *stream* - if both       |
    |              | are present, a ``ValueError`` is raised.    |
    +--------------+---------------------------------------------+
-   | ``force``    | If this keyword argument is specified as    |
+   | *force*      | If this keyword argument is specified as    |
    |              | true, any existing handlers attached to the |
    |              | root logger are removed and closed, before  |
    |              | carrying out the configuration as specified |
    |              | by the other arguments.                     |
    +--------------+---------------------------------------------+
 
-   .. versionchanged:: 3.8
-      The ``force`` argument was added.
-
    .. versionchanged:: 3.2
-      The ``style`` argument was added.
+      The *style* argument was added.
 
    .. versionchanged:: 3.3
-      The ``handlers`` argument was added. Additional checks were added to
+      The *handlers* argument was added. Additional checks were added to
       catch situations where incompatible arguments are specified (e.g.
-      ``handlers`` together with ``stream`` or ``filename``, or ``stream``
-      together with ``filename``).
+      *handlers* together with *stream* or *filename*, or *stream*
+      together with *filename*).
 
+   .. versionchanged:: 3.8
+      The *force* argument was added.
 
 .. function:: shutdown()
 

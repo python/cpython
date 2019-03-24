@@ -257,6 +257,19 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(None, tr._buffer)
         self.assertEqual(tr._conn_lost, 1)
 
+    def test_loop_writing_force_close(self):
+        exc_handler = mock.Mock()
+        self.loop.set_exception_handler(exc_handler)
+        fut = asyncio.Future(loop=self.loop)
+        fut.set_result(1)
+        self.proactor.send.return_value = fut
+
+        tr = self.socket_transport()
+        tr.write(b'data')
+        tr._force_close(None)
+        test_utils.run_briefly(self.loop)
+        exc_handler.assert_not_called()
+
     def test_force_close_idempotent(self):
         tr = self.socket_transport()
         tr._closing = True
@@ -724,19 +737,19 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
         with mock.patch('asyncio.proactor_events.socket.socketpair',
                         return_value=(self.ssock, self.csock)):
-            self.loop = BaseProactorEventLoop(self.proactor)
+            with mock.patch('signal.set_wakeup_fd'):
+                self.loop = BaseProactorEventLoop(self.proactor)
         self.set_event_loop(self.loop)
 
-    @mock.patch.object(BaseProactorEventLoop, 'call_soon')
     @mock.patch('asyncio.proactor_events.socket.socketpair')
-    def test_ctor(self, socketpair, call_soon):
+    def test_ctor(self, socketpair):
         ssock, csock = socketpair.return_value = (
             mock.Mock(), mock.Mock())
-        loop = BaseProactorEventLoop(self.proactor)
+        with mock.patch('signal.set_wakeup_fd'):
+            loop = BaseProactorEventLoop(self.proactor)
         self.assertIs(loop._ssock, ssock)
         self.assertIs(loop._csock, csock)
         self.assertEqual(loop._internal_fds, 1)
-        call_soon.assert_called_with(loop._loop_self_reading)
         loop.close()
 
     def test_close_self_pipe(self):
@@ -938,7 +951,7 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_not_a_file(self):
         sock, proto = self.prepare()
         f = object()
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -947,7 +960,7 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def test_sock_sendfile_iobuffer(self):
         sock, proto = self.prepare()
         f = io.BytesIO()
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))
@@ -957,7 +970,7 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
         sock, proto = self.prepare()
         f = mock.Mock()
         f.fileno.return_value = -1
-        with self.assertRaisesRegex(events.SendfileNotAvailableError,
+        with self.assertRaisesRegex(asyncio.SendfileNotAvailableError,
                                     "not a regular file"):
             self.run_loop(self.loop._sock_sendfile_native(sock, f,
                                                           0, None))

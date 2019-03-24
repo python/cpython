@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from test.support import requires
 from tkinter import Tk, Text
 import os
+import __main__
 
 import idlelib.autocomplete as ac
 import idlelib.autocomplete_w as acw
@@ -27,6 +28,7 @@ class AutoCompleteTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = Tk()
+        cls.root.withdraw()
         cls.text = Text(cls.root)
         cls.editor = DummyEditwin(cls.root, cls.text)
 
@@ -38,7 +40,7 @@ class AutoCompleteTest(unittest.TestCase):
         del cls.root
 
     def setUp(self):
-        self.editor.text.delete('1.0', 'end')
+        self.text.delete('1.0', 'end')
         self.autocomplete = ac.AutoComplete(self.editor)
 
     def test_init(self):
@@ -173,9 +175,14 @@ class AutoCompleteTest(unittest.TestCase):
         # For file completion, a large list containing all files in the path,
         # and a small list containing files that do not start with '.'.
         autocomplete = self.autocomplete
+        small, large = self.autocomplete.fetch_completions(
+                '', ac.COMPLETE_ATTRIBUTES)
+        if __main__.__file__ != ac.__file__:
+            self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
         # Test attributes
         s, b = autocomplete.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+        self.assertLess(len(small), len(large))
         self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
         self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
 
@@ -217,6 +224,8 @@ class AutoCompleteTest(unittest.TestCase):
         # __main__.__dict__.
         autocomplete = self.autocomplete
         Equal = self.assertEqual
+
+        Equal(self.autocomplete.get_entity('int'), int)
 
         # Test name from sys.modules.
         mock = Mock()

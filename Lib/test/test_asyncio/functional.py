@@ -15,7 +15,7 @@ class FunctionalTestCaseMixin:
         return asyncio.new_event_loop()
 
     def run_loop_briefly(self, *, delay=0.01):
-        self.loop.run_until_complete(asyncio.sleep(delay, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(delay))
 
     def loop_exception_handler(self, loop, context):
         self.__unhandled_exceptions.append(context)
