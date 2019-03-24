@@ -218,13 +218,12 @@ class AutoComplete:
             return smalll, bigl
 
     def get_entity(self, name):
-        "Lookup name in a namespace spanning sys.modules and globals()."
+        "Lookup name in a namespace spanning sys.modules and __main.dict__."
         return eval(name, {**sys.modules, **__main__.__dict__})
 
 
 AutoComplete.reload()
 
 if __name__ == '__main__':
-    testing_in_autocomplete = True  # For test_fetch_completions.
     from unittest import main
     main('idlelib.idle_test.test_autocomplete', verbosity=2)

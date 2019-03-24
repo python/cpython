@@ -100,7 +100,7 @@ class Calltip:
 
 def get_entity(expression):
     """Return the object corresponding to expression evaluated
-    in a namespace spanning sys.modules and globals().
+    in a namespace spanning sys.modules and __main.dict__.
     """
     if expression:
         namespace = {**sys.modules, **__main__.__dict__}

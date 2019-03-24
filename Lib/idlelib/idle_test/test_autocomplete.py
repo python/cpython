@@ -3,6 +3,7 @@
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
+import __main__
 
 import idlelib.autocomplete as ac
 import idlelib.autocomplete_w as acw
@@ -135,8 +136,8 @@ class AutoCompleteTest(unittest.TestCase):
         small, large = self.autocomplete.fetch_completions(
                 '', ac.COMPLETE_ATTRIBUTES)
         self.assertLess(len(small), len(large))
-        self.assertTrue('AutoComplete' not in small or  # See issue 36405.
-                        'testing_in_autocomplete' in small)
+        if __main__.__file__ != ac.__file__:
+            self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
