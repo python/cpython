@@ -4,6 +4,7 @@ Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
 which disappear when you type a closing parenthesis.
 """
+import __main__
 import inspect
 import re
 import sys
@@ -99,10 +100,10 @@ class Calltip:
 
 def get_entity(expression):
     """Return the object corresponding to expression evaluated
-    in a namespace spanning sys.modules and globals().
+    in a namespace spanning sys.modules and __main.dict__.
     """
     if expression:
-        namespace = {**sys.modules, **globals()}
+        namespace = {**sys.modules, **__main__.__dict__}
         try:
             return eval(expression, namespace)  # Only protect user code.
         except BaseException:
