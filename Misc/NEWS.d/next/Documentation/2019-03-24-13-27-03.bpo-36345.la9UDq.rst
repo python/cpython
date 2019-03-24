@@ -1,0 +1,2 @@
+Remove the deprecated ``Tools/scripts/serve.py`` script. Contributed by
+Stéphane Wirtel
