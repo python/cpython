@@ -57,11 +57,23 @@ typedef struct PyMemberDef {
 
 
 /* Flags */
-#define READONLY            1
-#define READ_RESTRICTED     2
-#define PY_WRITE_RESTRICTED 4
-#define RESTRICTED          (READ_RESTRICTED | PY_WRITE_RESTRICTED)
+enum PyMemberDefFlagEnum {
+    PY_READWRITE = 0,
+    PY_READONLY = 1,
+    PY_READ_RESTRICTED = 2,
+    PY_WRITE_RESTRICTED = 4,
+    PY_RESTRICTED = (PY_READ_RESTRICTED | PY_WRITE_RESTRICTED),
 
+#define DEPRECATED(attribute) \
+    __attribute__((deprecated("use "#attribute))) = attribute
+
+    // Flags for backward-compatibility
+    READONLY DEPRECATED(PY_READONLY),
+    READWRITE DEPRECATED(PY_READWRITE),
+    READ_RESTRICTED DEPRECATED(PY_READ_RESTRICTED),
+    RESTRICTED DEPRECATED(PY_RESTRICTED)
+#undef DEPRECATED
+};
 
 /* Current API, use this */
 PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, struct PyMemberDef *);
