@@ -604,7 +604,9 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
         mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
         if (mp == NULL) {
             dictkeys_decref(keys);
-            free_values(values);
+            if (values != empty_values) {
+                free_values(values);
+            }
             return NULL;
         }
     }
