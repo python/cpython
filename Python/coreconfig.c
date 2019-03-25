@@ -1330,46 +1330,6 @@ config_init_fs_encoding(_PyCoreConfig *config)
 }
 
 
-static _PyInitError
-_PyCoreConfig_ReadPreConfig(_PyCoreConfig *config)
-{
-    _PyInitError err;
-    _PyPreConfig local_preconfig = _PyPreConfig_INIT;
-    _PyPreConfig_GetGlobalConfig(&local_preconfig);
-
-    if (_PyPreConfig_Copy(&local_preconfig, &config->preconfig) < 0) {
-        err = _Py_INIT_NO_MEMORY();
-        goto done;
-    }
-
-    err = _PyPreConfig_Read(&local_preconfig);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
-
-    if (_PyPreConfig_Copy(&config->preconfig, &local_preconfig) < 0) {
-        err = _Py_INIT_NO_MEMORY();
-        goto done;
-    }
-    err = _Py_INIT_OK();
-
-done:
-    _PyPreConfig_Clear(&local_preconfig);
-    return err;
-}
-
-
-static _PyInitError
-_PyCoreConfig_GetPreConfig(_PyCoreConfig *config)
-{
-    /* Read config written by _PyPreConfig_Write() */
-    if (_PyPreConfig_Copy(&config->preconfig, &_PyRuntime.preconfig) < 0) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
-}
-
-
 /* Read the configuration into _PyCoreConfig from:
 
    * Environment variables
@@ -1377,7 +1337,7 @@ _PyCoreConfig_GetPreConfig(_PyCoreConfig *config)
 
    See _PyCoreConfig_ReadFromArgv() to parse also command line arguments. */
 _PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
+_PyCoreConfig_Read(_PyCoreConfig *config)
 {
     _PyInitError err;
 
@@ -1386,24 +1346,11 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyPreConfig *preconfig)
         return err;
     }
 
-    err = _PyCoreConfig_GetPreConfig(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (_PyPreConfig_Copy(&config->preconfig, &_PyRuntime.preconfig) < 0) {
+        return _Py_INIT_NO_MEMORY();
     }
 
     _PyCoreConfig_GetGlobalConfig(config);
-
-    if (preconfig != NULL) {
-        if (_PyPreConfig_Copy(&config->preconfig, preconfig) < 0) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-    else {
-        err = _PyCoreConfig_ReadPreConfig(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
 
     assert(config->preconfig.use_environment >= 0);
 
@@ -1548,11 +1495,22 @@ config_init_stdio(const _PyCoreConfig *config)
 
    - set Py_xxx global configuration variables
    - initialize C standard streams (stdin, stdout, stderr) */
-void
+_PyInitError
 _PyCoreConfig_Write(const _PyCoreConfig *config)
 {
     _PyCoreConfig_SetGlobalConfig(config);
     config_init_stdio(config);
+
+    /* Write the new pre-configuration into _PyRuntime */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    int res = _PyPreConfig_Copy(&_PyRuntime.preconfig, &config->preconfig);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    if (res < 0) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    return _Py_INIT_OK();
 }
 
 
@@ -2047,8 +2005,7 @@ config_usage(int error, const wchar_t* program)
 
 /* Parse command line options and environment variables. */
 static _PyInitError
-config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
-                    const _PyPreConfig *preconfig)
+config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline)
 {
     int need_usage = 0;
     _PyInitError err;
@@ -2067,7 +2024,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
         return err;
     }
 
-    _PyPreCmdline_SetPreConfig(&cmdline->precmdline, &config->preconfig);
+    _PyPreCmdline_SetPreConfig(&cmdline->precmdline, &_PyRuntime.preconfig);
     if (_PyWstrList_Extend(&config->xoptions, &cmdline->precmdline.xoptions) < 0) {
         return _Py_INIT_NO_MEMORY();
     }
@@ -2098,7 +2055,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
         return err;
     }
 
-    err = _PyCoreConfig_Read(config, preconfig);
+    err = _PyCoreConfig_Read(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -2129,8 +2086,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline,
    * Environment variables
    * Py_xxx global configuration variables */
 _PyInitError
-_PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args,
-                           const _PyPreConfig *preconfig)
+_PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args)
 {
     _PyInitError err;
 
@@ -2141,12 +2097,12 @@ _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args,
 
     _PyCmdline cmdline = {.precmdline = _PyPreCmdline_INIT};
 
-    err = _PyPreCmdline_Init(&cmdline.precmdline, args);
+    err = _PyPreCmdline_SetArgv(&cmdline.precmdline, args);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = config_from_cmdline(config, &cmdline, preconfig);
+    err = config_from_cmdline(config, &cmdline);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
