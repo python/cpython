@@ -781,3 +781,35 @@ This is a working "Hello World" WSGI application::
 
        # Serve until process is killed
        httpd.serve_forever()
+
+
+Example of a small wsgiref-based web server::
+
+   # Takes a path to serve from and an optional port number (defaults to 8000),
+   # then tries to serve files.  Mime types are guessed from the file names, 404
+   # errors are raised if the file is not found.
+   import sys
+   import os
+   import mimetypes
+   from wsgiref import simple_server, util
+
+   def app(environ, respond):
+       fn = os.path.join(path, environ['PATH_INFO'][1:])
+       if '.' not in fn.split(os.path.sep)[-1]:
+           fn = os.path.join(fn, 'index.html')
+       type = mimetypes.guess_type(fn)[0]
+
+       if os.path.exists(fn):
+           respond('200 OK', [('Content-Type', type)])
+           return util.FileWrapper(open(fn, "rb"))
+       else:
+           respond('404 Not Found', [('Content-Type', 'text/plain')])
+           return [b'not found']
+
+    path = sys.argv[1]
+    port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
+    with simple_server.make_server('', port, app) as httpd:
+        print("Serving {} on port {}, control-C to stop".format(path, port))
+
+        # Serve until process is killed
+        httpd.serve_forever()
