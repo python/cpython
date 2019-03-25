@@ -57,7 +57,7 @@ typedef struct PyMemberDef {
 
 
 /* Flags */
-enum PyMemberDefFlagEnum {
+enum {
     PY_READWRITE = 0,
     PY_READONLY = 1,
     PY_READ_RESTRICTED = 2,
