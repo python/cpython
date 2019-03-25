@@ -115,7 +115,9 @@ typedef struct {
         .isolated = -1, \
         .use_environment = -1, \
         .coerce_c_locale = -1, \
-        .utf8_mode = -1}
+        .utf8_mode = -1, \
+        .dev_mode = -1, \
+        .allocator = NULL}
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */
