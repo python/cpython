@@ -598,18 +598,15 @@ def collect_get_config(info_add):
     # Dump global configuration variables, _PyCoreConfig
     # and _PyMainInterpreterConfig
     try:
-        from _testcapi import get_global_config, get_core_config, get_main_config
+        from _testcapi import get_configs
     except ImportError:
         return
 
-    for prefix, get_config_func in (
-        ('global_config', get_global_config),
-        ('core_config', get_core_config),
-        ('main_config', get_main_config),
-    ):
-        config = get_config_func()
+    all_configs = get_configs()
+    for config_type in sorted(all_configs):
+        config = all_configs[config_type]
         for key in sorted(config):
-            info_add('%s[%s]' % (prefix, key), repr(config[key]))
+            info_add('%s[%s]' % (config_type, key), repr(config[key]))
 
 
 def collect_subprocess(info_add):

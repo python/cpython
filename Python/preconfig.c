@@ -574,9 +574,16 @@ _PyPreCmdline_SetPreConfig(const _PyPreCmdline *cmdline, _PyPreConfig *config)
 }
 
 
-int
-_PyPreConfig_AsDict(const _PyPreConfig *config, PyObject *dict)
+PyObject*
+_PyPreConfig_AsDict(const _PyPreConfig *config)
 {
+    PyObject *dict;
+
+    dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
 #define SET_ITEM(KEY, EXPR) \
         do { \
             PyObject *obj = (EXPR); \
@@ -608,10 +615,11 @@ _PyPreConfig_AsDict(const _PyPreConfig *config, PyObject *dict)
 #endif
     SET_ITEM_INT(dev_mode);
     SET_ITEM_STR(allocator);
-    return 0;
+    return dict;
 
 fail:
-    return -1;
+    Py_DECREF(dict);
+    return NULL;
 
 #undef FROM_STRING
 #undef SET_ITEM

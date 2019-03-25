@@ -131,7 +131,7 @@ int Py_LegacyWindowsStdioFlag = 0; /* Uses FileIO instead of WindowsConsoleIO */
 #endif
 
 
-PyObject *
+static PyObject *
 _Py_GetGlobalVariablesAsDict(void)
 {
     PyObject *dict, *obj;
@@ -1563,18 +1563,13 @@ _PyCoreConfig_Write(const _PyCoreConfig *config)
 }
 
 
-PyObject *
+static PyObject *
 _PyCoreConfig_AsDict(const _PyCoreConfig *config)
 {
     PyObject *dict;
 
     dict = PyDict_New();
     if (dict == NULL) {
-        return NULL;
-    }
-
-    if (_PyPreConfig_AsDict(&config->preconfig, dict) < 0) {
-        Py_DECREF(dict);
         return NULL;
     }
 
@@ -2157,4 +2152,68 @@ _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args)
 done:
     cmdline_clear(&cmdline);
     return err;
+}
+
+
+PyObject*
+_Py_GetConfigsAsDict(void)
+{
+    PyObject *config = NULL;
+    PyObject *dict = NULL;
+
+    config = PyDict_New();
+    if (config == NULL) {
+        goto error;
+    }
+
+    /* global config */
+    dict = _Py_GetGlobalVariablesAsDict();
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "global_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    /* pre config */
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    const _PyCoreConfig *core_config = _PyInterpreterState_GetCoreConfig(interp);
+    const _PyPreConfig *pre_config = &core_config->preconfig;
+    dict = _PyPreConfig_AsDict(pre_config);
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "pre_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    /* core config */
+    dict = _PyCoreConfig_AsDict(core_config);
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "core_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    /* main config */
+    const _PyMainInterpreterConfig *main_config = _PyInterpreterState_GetMainConfig(interp);
+    dict = _PyMainInterpreterConfig_AsDict(main_config);
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(config, "main_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    return config;
+
+error:
+    Py_XDECREF(config);
+    Py_XDECREF(dict);
+    return NULL;
 }

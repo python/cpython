@@ -90,8 +90,7 @@ PyAPI_FUNC(void) _Py_get_env_flag(_PyPreConfig *config,
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
     const _PyArgv *args,
     const _PyCoreConfig *coreconfig);
-PyAPI_FUNC(int) _PyPreConfig_AsDict(const _PyPreConfig *config,
-    PyObject *dict);
+PyAPI_FUNC(PyObject*) _PyPreConfig_AsDict(const _PyPreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_ReadFromArgv(_PyPreConfig *config,
     const _PyArgv *args);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(_PyPreConfig *config);
@@ -120,6 +119,11 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
     const _PyArgv *args);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Write(const _PyCoreConfig *config);
+
+/* --- _PyMainInterpreterConfig ----------------------------------- */
+
+PyAPI_FUNC(PyObject*) _PyMainInterpreterConfig_AsDict(
+    const _PyMainInterpreterConfig *config);
 
 #ifdef __cplusplus
 }

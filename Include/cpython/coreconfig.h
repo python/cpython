@@ -400,8 +400,7 @@ typedef struct {
 
 /* --- Function used for testing ---------------------------------- */
 
-PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
-PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
+PyAPI_FUNC(PyObject*) _Py_GetConfigsAsDict(void);
 
 #ifdef __cplusplus
 }
