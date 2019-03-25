@@ -1,2 +1,0 @@
-Cleaned up left-over vestiges of Python 2 unbound method handling in method objects and documentation.
-Patch by Martijn Pieters

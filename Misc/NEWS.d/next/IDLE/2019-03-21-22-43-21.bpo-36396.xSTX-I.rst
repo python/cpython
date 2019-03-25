@@ -1,2 +1,0 @@
-Remove fgBg param of idlelib.config.GetHighlight(). This param was only used
-twice and changed the return type.

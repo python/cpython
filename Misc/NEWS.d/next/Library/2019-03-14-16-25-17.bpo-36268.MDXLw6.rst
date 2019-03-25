@@ -1,3 +1,0 @@
-Switch the default format used for writing tars with mod:`tarfile` to
-the modern POSIX.1-2001 pax standard, from the vendor-specific GNU.
-Contributed by C.A.M. Gerlach.

@@ -1,1 +1,0 @@
-Add _signal module support for VxWorks.

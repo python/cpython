@@ -1,2 +1,0 @@
-test_posix.PosixUidGidTests: add tests for invalid uid/gid type (str).
-Initial patch written by David Malcolm.

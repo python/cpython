@@ -1,1 +1,0 @@
-Fix a possible double decref in _ctypes.c's ``PyCArrayType_new()``.

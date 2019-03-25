@@ -1,4 +1,0 @@
-`pprint.pp` has been added to pretty-print objects with dictionary
-keys being sorted with their insertion order by default. Parameter
-*sort_dicts* has been added to `pprint.pprint`, `pprint.pformat` and
-`pprint.PrettyPrinter`. Contributed by Rémi Lapeyre.

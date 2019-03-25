@@ -1,1 +1,0 @@
-Fix a possible crash when creating a new dictionary.

@@ -1,2 +1,0 @@
-Fixed decoders for the following code pages: 50220, 50221, 50222, 50225,
-50227, 50229, 57002 through 57011, 65000 and 42.

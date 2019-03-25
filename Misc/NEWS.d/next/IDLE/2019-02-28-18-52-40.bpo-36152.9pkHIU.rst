@@ -1,3 +1,0 @@
-Remove colorizer.ColorDelegator.close_when_done and the
-corresponding argument of .close().  In IDLE, both have
-always been None or False since 2007.

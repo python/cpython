@@ -1,2 +1,0 @@
-Ensure custom :func:`warnings.formatwarning` function can receive `line` as
-positional argument. Based on patch by Tashrif Billah.

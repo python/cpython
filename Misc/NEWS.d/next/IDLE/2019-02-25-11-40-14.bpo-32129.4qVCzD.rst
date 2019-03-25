@@ -1,2 +1,0 @@
-Avoid blurry IDLE application icon on macOS with Tk 8.6. Patch by Kevin
-Walzer.

@@ -1,2 +1,0 @@
-Fix bug in parsermodule when parsing a state in a DFA that has two or more
-arcs with labels of the same type. Patch by Pablo Galindo.
