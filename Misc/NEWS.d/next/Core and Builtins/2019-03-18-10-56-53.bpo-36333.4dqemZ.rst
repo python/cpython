@@ -1,1 +1,0 @@
-Fix leak in _PyRuntimeState_Fini. Contributed by Stéphane Wirtel.

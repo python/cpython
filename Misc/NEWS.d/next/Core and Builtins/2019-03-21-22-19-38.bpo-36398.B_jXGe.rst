@@ -1,1 +1,0 @@
-Fix a possible crash in ``structseq_repr()``.
