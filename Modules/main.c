@@ -655,7 +655,7 @@ pymain_run_file(_PyCoreConfig *config, PyCompilerFlags *cf)
 static void
 pymain_run_startup(_PyCoreConfig *config, PyCompilerFlags *cf)
 {
-    const char *startup = _PyCoreConfig_GetEnv(config, "PYTHONSTARTUP");
+    const char *startup = _Py_GetEnv(config->preconfig.use_environment, "PYTHONSTARTUP");
     if (startup == NULL) {
         return;
     }
@@ -735,7 +735,7 @@ pymain_repl(_PyCoreConfig *config, PyCompilerFlags *cf, int *exitcode)
 {
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
-    if (!Py_InspectFlag && _PyCoreConfig_GetEnv(config, "PYTHONINSPECT")) {
+    if (!Py_InspectFlag && _Py_GetEnv(config->preconfig.use_environment, "PYTHONINSPECT")) {
         Py_InspectFlag = 1;
         config->inspect = 1;
     }

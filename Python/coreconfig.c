@@ -610,14 +610,14 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 }
 
 
-const char*
+static const char*
 _PyCoreConfig_GetEnv(const _PyCoreConfig *config, const char *name)
 {
-    return _PyPreConfig_GetEnv(&config->preconfig, name);
+    return _Py_GetEnv(config->preconfig.use_environment, name);
 }
 
 
-int
+static int
 _PyCoreConfig_GetEnvDup(const _PyCoreConfig *config,
                         wchar_t **dest,
                         wchar_t *wname, char *name)
@@ -924,34 +924,34 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
 static _PyInitError
 config_read_env_vars(_PyCoreConfig *config)
 {
-    _PyPreConfig *preconfig = &config->preconfig;
+    int use_env = config->preconfig.use_environment;
 
     /* Get environment variables */
-    _Py_get_env_flag(preconfig, &config->parser_debug, "PYTHONDEBUG");
-    _Py_get_env_flag(preconfig, &config->verbose, "PYTHONVERBOSE");
-    _Py_get_env_flag(preconfig, &config->optimization_level, "PYTHONOPTIMIZE");
-    _Py_get_env_flag(preconfig, &config->inspect, "PYTHONINSPECT");
+    _Py_get_env_flag(use_env, &config->parser_debug, "PYTHONDEBUG");
+    _Py_get_env_flag(use_env, &config->verbose, "PYTHONVERBOSE");
+    _Py_get_env_flag(use_env, &config->optimization_level, "PYTHONOPTIMIZE");
+    _Py_get_env_flag(use_env, &config->inspect, "PYTHONINSPECT");
 
     int dont_write_bytecode = 0;
-    _Py_get_env_flag(preconfig, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
+    _Py_get_env_flag(use_env, &dont_write_bytecode, "PYTHONDONTWRITEBYTECODE");
     if (dont_write_bytecode) {
         config->write_bytecode = 0;
     }
 
     int no_user_site_directory = 0;
-    _Py_get_env_flag(preconfig, &no_user_site_directory, "PYTHONNOUSERSITE");
+    _Py_get_env_flag(use_env, &no_user_site_directory, "PYTHONNOUSERSITE");
     if (no_user_site_directory) {
         config->user_site_directory = 0;
     }
 
     int unbuffered_stdio = 0;
-    _Py_get_env_flag(preconfig, &unbuffered_stdio, "PYTHONUNBUFFERED");
+    _Py_get_env_flag(use_env, &unbuffered_stdio, "PYTHONUNBUFFERED");
     if (unbuffered_stdio) {
         config->buffered_stdio = 0;
     }
 
 #ifdef MS_WINDOWS
-    _Py_get_env_flag(preconfig, &config->legacy_windows_stdio,
+    _Py_get_env_flag(use_env, &config->legacy_windows_stdio,
                  "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 

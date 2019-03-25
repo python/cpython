@@ -270,11 +270,11 @@ _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config)
 
 
 const char*
-_PyPreConfig_GetEnv(const _PyPreConfig *config, const char *name)
+_Py_GetEnv(int use_environment, const char *name)
 {
-    assert(config->use_environment >= 0);
+    assert(use_environment >= 0);
 
-    if (!config->use_environment) {
+    if (!use_environment) {
         return NULL;
     }
 
@@ -285,6 +285,13 @@ _PyPreConfig_GetEnv(const _PyPreConfig *config, const char *name)
     else {
         return NULL;
     }
+}
+
+
+static const char*
+_PyPreConfig_GetEnv(const _PyPreConfig *config, const char *name)
+{
+    return _Py_GetEnv(config->use_environment, name);
 }
 
 
@@ -307,9 +314,9 @@ _Py_str_to_int(const char *str, int *result)
 
 
 void
-_Py_get_env_flag(_PyPreConfig *config, int *flag, const char *name)
+_Py_get_env_flag(int use_environment, int *flag, const char *name)
 {
-    const char *var = _PyPreConfig_GetEnv(config, name);
+    const char *var = _Py_GetEnv(use_environment, name);
     if (!var) {
         return;
     }
@@ -434,8 +441,9 @@ preconfig_read(_PyPreConfig *config, _PyPreCmdline *cmdline)
     /* legacy_windows_fs_encoding, utf8_mode, coerce_c_locale */
     if (config->use_environment) {
 #ifdef MS_WINDOWS
-        _Py_get_env_flag(config, &config->legacy_windows_fs_encoding,
-                "PYTHONLEGACYWINDOWSFSENCODING");
+        _Py_get_env_flag(config->use_environment,
+                         &config->legacy_windows_fs_encoding,
+                         "PYTHONLEGACYWINDOWSFSENCODING");
 #endif
 
         const char *env = _PyPreConfig_GetEnv(config, "PYTHONCOERCECLOCALE");
