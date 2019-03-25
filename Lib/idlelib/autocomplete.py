@@ -104,9 +104,14 @@ class AutoComplete:
     def open_completions(self, evalfuncs, complete, userWantsWin, mode=None):
         """Find the completions and create the AutoCompleteWindow.
         Return True if successful (no syntax error or so found).
-        if complete is True, then if there's nothing to complete and no
+        If complete is True, then if there's nothing to complete and no
         start of completion, won't open completions and return False.
         If mode is given, will open a completion list only in this mode.
+
+        Action  Function                Eval   Complete WantWin Mode
+        ^space  force_open_completions  True,  False,   True    no
+        . or /  try_open_completions    False, False,   False   yes
+        tab     autocomplete            False, True,    True    no
         """
         # Cancel another delayed call, if it exists.
         if self._delayed_completion_id is not None:
@@ -117,11 +122,11 @@ class AutoComplete:
         curline = self.text.get("insert linestart", "insert")
         i = j = len(curline)
         if hp.is_in_string() and (not mode or mode==COMPLETE_FILES):
-            # Find the beginning of the string
-            # fetch_completions will look at the file system to determine whether the
-            # string value constitutes an actual file name
-            # XXX could consider raw strings here and unescape the string value if it's
-            # not raw.
+            # Find the beginning of the string.
+            # fetch_completions will look at the file system to determine
+            # whether the string value constitutes an actual file name
+            # XXX could consider raw strings here and unescape the string
+            # value if it's not raw.
             self._remove_autocomplete_window()
             mode = COMPLETE_FILES
             # Find last separator or string start
