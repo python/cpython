@@ -2051,7 +2051,7 @@ class TestNormalDist(unittest.TestCase):
         nd = statistics.NormalDist(300, 23)
         with self.assertRaises(TypeError):
             vars(nd)
-        self.assertEqual(nd.__slots__, ('mu', 'sigma'))
+        self.assertEqual(tuple(nd.__slots__), ('mu', 'sigma'))
 
     def test_instantiation_and_attributes(self):
         nd = statistics.NormalDist(500, 17)

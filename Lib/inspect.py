@@ -582,9 +582,12 @@ def _finddoc(obj):
         cls = obj.__objclass__
         if getattr(cls, name) is not obj:
             return None
+        if ismemberdescriptor(obj):
+            slots = getattr(cls, '__slots__', None)
+            if isinstance(slots, dict) and name in slots:
+                return slots[name]
     else:
         return None
-
     for base in cls.__mro__:
         try:
             doc = getattr(base, name).__doc__
