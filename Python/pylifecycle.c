@@ -715,7 +715,9 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 
 
 static _PyInitError
-pyinit_preinit(_PyPreConfig *config, const _PyPreConfig *src_config)
+pyinit_preinit(_PyPreConfig *config,
+               const _PyPreConfig *src_config,
+               const _PyCoreConfig *coreconfig)
 {
     _PyInitError err;
 
@@ -729,13 +731,17 @@ pyinit_preinit(_PyPreConfig *config, const _PyPreConfig *src_config)
         return _Py_INIT_OK();
     }
 
+    if (!src_config && coreconfig) {
+        src_config = &coreconfig->preconfig;
+    }
+
     if (src_config) {
         if (_PyPreConfig_Copy(config, src_config) < 0) {
             return _Py_INIT_ERR("failed to copy pre config");
         }
     }
 
-    err = _PyPreConfig_Read(config, NULL);
+    err = _PyPreConfig_Read(config, NULL, coreconfig);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -751,17 +757,27 @@ pyinit_preinit(_PyPreConfig *config, const _PyPreConfig *src_config)
 
 
 _PyInitError
-_Py_PreInitializeFromPreConfig(_PyPreConfig *config)
+_Py_PreInitialize(void)
 {
-    return pyinit_preinit(config, NULL);
+    _PyPreConfig config = _PyPreConfig_INIT;
+    _PyInitError err = pyinit_preinit(&config, NULL, NULL);
+    _PyPreConfig_Clear(&config);
+    return err;
 }
 
 
 _PyInitError
-_Py_PreInitialize(void)
+_Py_PreInitializeFromPreConfig(_PyPreConfig *config)
+{
+    return pyinit_preinit(config, NULL, NULL);
+}
+
+
+_PyInitError
+_Py_PreInitializeFromConfig(const _PyCoreConfig *coreconfig)
 {
     _PyPreConfig config = _PyPreConfig_INIT;
-    _PyInitError err = pyinit_preinit(&config, NULL);
+    _PyInitError err = pyinit_preinit(&config, NULL, coreconfig);
     _PyPreConfig_Clear(&config);
     return err;
 }
@@ -814,16 +830,13 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
 
     assert(src_config != NULL);
 
-    _PyCoreConfig local_config = _PyCoreConfig_INIT;
-
-    err = pyinit_preinit(&local_config.preconfig, &src_config->preconfig);
+    err = _Py_PreInitializeFromConfig(src_config);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
+    _PyCoreConfig local_config = _PyCoreConfig_INIT;
     err = pyinit_coreconfig(&local_config, src_config, interp_p);
-
-done:
     _PyCoreConfig_Clear(&local_config);
     return err;
 }
