@@ -375,13 +375,20 @@ class GetSourceBase(unittest.TestCase):
         self.assertEqual(inspect.getsource(obj),
                          self.sourcerange(top, bottom))
 
+    def assertNotSourceEqual(self, obj, top, bottom):
+        self.assertNotEqual(inspect.getsource(obj),
+                            self.sourcerange(top, bottom))
+
 class TestRetrievingSourceCode(GetSourceBase):
     fodderModule = mod
 
     def test_getclasses(self):
         classes = inspect.getmembers(mod, inspect.isclass)
         self.assertEqual(classes,
-                         [('FesteringGob', mod.FesteringGob),
+                         [('A', mod.A),
+                          ('B', mod.B),
+                          ('C', mod.C),
+                          ('FesteringGob', mod.FesteringGob),
                           ('MalodorousPervert', mod.MalodorousPervert),
                           ('ParrotDroppings', mod.ParrotDroppings),
                           ('StupidGit', mod.StupidGit),
@@ -390,7 +397,10 @@ class TestRetrievingSourceCode(GetSourceBase):
         tree = inspect.getclasstree([cls[1] for cls in classes])
         self.assertEqual(tree,
                          [(object, ()),
-                          [(mod.ParrotDroppings, (object,)),
+                          [(mod.A, (object,)),
+                           (mod.B, (object,)),
+                           (mod.C, (object,)),
+                           (mod.ParrotDroppings, (object,)),
                            [(mod.FesteringGob, (mod.MalodorousPervert,
                                                    mod.ParrotDroppings))
                             ],
@@ -405,7 +415,10 @@ class TestRetrievingSourceCode(GetSourceBase):
         tree = inspect.getclasstree([cls[1] for cls in classes], True)
         self.assertEqual(tree,
                          [(object, ()),
-                          [(mod.ParrotDroppings, (object,)),
+                          [(mod.A, (object,)),
+                           (mod.B, (object,)),
+                           (mod.C, (object,)),
+                           (mod.ParrotDroppings, (object,)),
                            (mod.StupidGit, (object,)),
                            [(mod.MalodorousPervert, (mod.StupidGit,)),
                             [(mod.FesteringGob, (mod.MalodorousPervert,
@@ -418,6 +431,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
         self.assertEqual(functions, [('eggs', mod.eggs),
+                                     ('extra_c', mod.extra_c),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
@@ -552,7 +566,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
 
-class TestGettingSourceOfToplevelFrames(GetSourceBase):
+class TestGettingSourceOfFrames(GetSourceBase):
     fodderModule = mod
 
     def test_range_toplevel_frame(self):
@@ -561,6 +575,14 @@ class TestGettingSourceOfToplevelFrames(GetSourceBase):
 
     def test_range_traceback_toplevel_frame(self):
         self.assertSourceEqual(mod.tb, 1, None)
+
+    def test_class_frame(self):
+        self.assertSourceEqual(mod.A.fr, 100, 103)
+        self.assertNotSourceEqual(mod.A.fr, 85, 86)
+        self.assertSourceEqual(mod.B.fr, 94, 97)
+        self.assertNotSourceEqual(mod.B.fr, 85, 86)
+        self.assertSourceEqual(mod.C.fr, 87, 90)
+        self.assertNotSourceEqual(mod.C.fr, 85, 86)
 
 class TestDecorators(GetSourceBase):
     fodderModule = mod2
@@ -675,7 +697,6 @@ class TestBuggyCases(GetSourceBase):
 
     def test_nested_func(self):
         self.assertSourceEqual(mod2.cls135.func136, 136, 139)
-
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
@@ -3905,7 +3926,7 @@ def test_main():
         TestBoundArguments, TestSignaturePrivateHelpers,
         TestSignatureDefinitions, TestIsDataDescriptor,
         TestGetClosureVars, TestUnwrap, TestMain, TestReload,
-        TestGetCoroutineState, TestGettingSourceOfToplevelFrames
+        TestGetCoroutineState, TestGettingSourceOfFrames
     )
 
 if __name__ == "__main__":
