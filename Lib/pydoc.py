@@ -886,7 +886,7 @@ class HTMLDoc(Doc):
                           lambda t: t[1] == 'class method')
             attrs = spill('Static methods %s' % tag, attrs,
                           lambda t: t[1] == 'static method')
-            attrs = spilldescriptors("Readonly properties %s:\n" % tag, attrs,
+            attrs = spilldescriptors("Readonly properties %s" % tag, attrs,
                                      lambda t: t[1] == 'readonly property')
             attrs = spilldescriptors('Data descriptors %s' % tag, attrs,
                                      lambda t: t[1] == 'data descriptor')
