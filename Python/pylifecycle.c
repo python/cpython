@@ -2157,8 +2157,10 @@ wait_for_thread_shutdown(void)
     PyObject *result;
     PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
     if (threading == NULL) {
-        /* threading not imported */
-        PyErr_Clear();
+        if (PyErr_Occurred()) {
+            PyErr_WriteUnraisable(NULL);
+        }
+        /* else: threading not imported */
         return;
     }
     result = _PyObject_CallMethodId(threading, &PyId__shutdown, NULL);
