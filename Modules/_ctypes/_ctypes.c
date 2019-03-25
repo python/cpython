@@ -1537,6 +1537,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (length * itemsize < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "array too large");
+        Py_DECREF(stgdict);
         return NULL;
     }
 
@@ -1559,8 +1560,10 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* create the new instance (which is a class,
        since we are a metatype!) */
     result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (result == NULL)
+    if (result == NULL) {
+        Py_DECREF(stgdict);
         return NULL;
+    }
 
     /* replace the class dict by our updated spam dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
@@ -1574,12 +1577,16 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
        A permanent annoyance: char arrays are also strings!
     */
     if (itemdict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-        if (-1 == add_getset(result, CharArray_getsets))
+        if (-1 == add_getset(result, CharArray_getsets)) {
+            Py_DECREF(result);
             return NULL;
+        }
 #ifdef CTYPES_UNICODE
     } else if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-        if (-1 == add_getset(result, WCharArray_getsets))
+        if (-1 == add_getset(result, WCharArray_getsets)) {
+            Py_DECREF(result);
             return NULL;
+        }
 #endif
     }
 
