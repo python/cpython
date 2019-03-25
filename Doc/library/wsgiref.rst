@@ -783,7 +783,7 @@ This is a working "Hello World" WSGI application::
        httpd.serve_forever()
 
 
-Example of a small wsgiref based web server::
+Example of a small wsgiref-based web server::
 
    # Takes a path to serve from and an optional port number (defaults to 8000),
    # then tries to serve files.  Mime types are guessed from the file names, 404
