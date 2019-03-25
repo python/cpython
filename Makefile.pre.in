@@ -724,7 +724,7 @@ regen-importlib: Programs/_freeze_importlib
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
-	regen-token regen-symbol regen-ast regen-importlib clinic
+	regen-token regen-keyword regen-symbol regen-ast regen-importlib clinic
 
 ############################################################################
 # Special rules for object files
@@ -842,6 +842,15 @@ regen-token:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py py \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Lib/token.py
+
+.PHONY: regen-keyword
+regen-keyword:
+	# Regenerate Lib/keyword.py from Grammar/Grammar and Grammar/Tokens
+	# using Parser/pgen
+	$(PYTHON_FOR_REGEN) -m Parser.pgen.keywordgen $(srcdir)/Grammar/Grammar \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Lib/keyword.py.new
+	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
 
 .PHONY: regen-symbol
 regen-symbol: $(srcdir)/Include/graminit.h
