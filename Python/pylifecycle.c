@@ -714,23 +714,8 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 }
 
 
-_PyInitError
-_Py_PreInitializeFromPreConfig(_PyPreConfig *config)
-{
-    if (config != NULL) {
-        _PyInitError err = _PyPreConfig_Write(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
-
-    _PyRuntime.pre_initialized = 1;
-    return _Py_INIT_OK();
-}
-
-
 static _PyInitError
-pyinit_preconfig(_PyPreConfig *config, const _PyPreConfig *src_config)
+pyinit_preinit(_PyPreConfig *config, const _PyPreConfig *src_config)
 {
     _PyInitError err;
 
@@ -739,32 +724,46 @@ pyinit_preconfig(_PyPreConfig *config, const _PyPreConfig *src_config)
         return err;
     }
 
-    if (_PyPreConfig_Copy(config, src_config) < 0) {
-        return _Py_INIT_ERR("failed to copy pre config");
+    if (_PyRuntime.pre_initialized) {
+        /* If it's already configured: ignored the new configuration */
+        return _Py_INIT_OK();
     }
 
-    err = _PyPreConfig_Read(config);
+    if (src_config) {
+        if (_PyPreConfig_Copy(config, src_config) < 0) {
+            return _Py_INIT_ERR("failed to copy pre config");
+        }
+    }
+
+    err = _PyPreConfig_Read(config, NULL);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    return _Py_PreInitializeFromPreConfig(config);
+    err = _PyPreConfig_Write(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    _PyRuntime.pre_initialized = 1;
+    return _Py_INIT_OK();
+}
+
+
+_PyInitError
+_Py_PreInitializeFromPreConfig(_PyPreConfig *config)
+{
+    return pyinit_preinit(config, NULL);
 }
 
 
 _PyInitError
 _Py_PreInitialize(void)
 {
-    _PyInitError err = _PyRuntime_Initialize();
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    if (_PyRuntime.pre_initialized) {
-        return _Py_INIT_OK();
-    }
-
-    return _Py_PreInitializeFromPreConfig(NULL);
+    _PyPreConfig config = _PyPreConfig_INIT;
+    _PyInitError err = pyinit_preinit(&config, NULL);
+    _PyPreConfig_Clear(&config);
+    return err;
 }
 
 
@@ -776,7 +775,7 @@ pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
         return _Py_INIT_ERR("failed to copy core config");
     }
 
-    _PyInitError err = _PyCoreConfig_Read(config, NULL);
+    _PyInitError err = _PyCoreConfig_Read(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -817,7 +816,7 @@ _Py_InitializeCore(PyInterpreterState **interp_p,
 
     _PyCoreConfig local_config = _PyCoreConfig_INIT;
 
-    err = pyinit_preconfig(&local_config.preconfig, &src_config->preconfig);
+    err = pyinit_preinit(&local_config.preconfig, &src_config->preconfig);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }

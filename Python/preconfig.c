@@ -111,9 +111,24 @@ _PyPreCmdline_Clear(_PyPreCmdline *cmdline)
 
 
 _PyInitError
-_PyPreCmdline_Init(_PyPreCmdline *cmdline, const _PyArgv *args)
+_PyPreCmdline_SetArgv(_PyPreCmdline *cmdline, const _PyArgv *args)
 {
     return _PyArgv_AsWstrList(args, &cmdline->argv);
+}
+
+
+static void
+_PyPreCmdline_GetPreConfig(_PyPreCmdline *cmdline, const _PyPreConfig *config)
+{
+#define COPY_ATTR(ATTR) \
+    if (config->ATTR != -1) { \
+        cmdline->ATTR = config->ATTR; \
+    }
+
+    COPY_ATTR(use_environment);
+    COPY_ATTR(isolated);
+
+#undef COPY_ATTR
 }
 
 
@@ -336,24 +351,28 @@ preconfig_init_utf8_mode(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 static void
 preconfig_init_locale(_PyPreConfig *config)
 {
-    /* Test also if coerce_c_locale equals 1: PYTHONCOERCECLOCALE=1 doesn't
-       imply that the C locale is always coerced. It is only coerced if
-       if the LC_CTYPE locale is "C". */
-    if (config->coerce_c_locale != 0) {
-        /* The C locale enables the C locale coercion (PEP 538) */
-        if (_Py_LegacyLocaleDetected()) {
-            config->coerce_c_locale = 1;
-        }
-        else {
-            config->coerce_c_locale = 0;
-        }
+    /* The C locale enables the C locale coercion (PEP 538) */
+    if (_Py_LegacyLocaleDetected()) {
+        config->coerce_c_locale = 2;
+    }
+    else {
+        config->coerce_c_locale = 0;
     }
 }
 
 
 static _PyInitError
-preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
+preconfig_read(_PyPreConfig *config, _PyPreCmdline *cmdline)
 {
+    _PyInitError err;
+
+    err = _PyPreCmdline_Read(cmdline);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    _PyPreCmdline_SetPreConfig(cmdline, config);
+
     _PyPreConfig_GetGlobalConfig(config);
 
     /* isolated and use_environment */
@@ -398,13 +417,16 @@ preconfig_read(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 #endif
 
     if (config->utf8_mode < 0) {
-        _PyInitError err = preconfig_init_utf8_mode(config, cmdline);
+        err = preconfig_init_utf8_mode(config, cmdline);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
     }
 
-    if (config->coerce_c_locale != 0) {
+    /* Test also if coerce_c_locale equals 1: PYTHONCOERCECLOCALE=1 doesn't
+       imply that the C locale is always coerced. It is only coerced if
+       if the LC_CTYPE locale is "C". */
+    if (config->coerce_c_locale != 0 && config->coerce_c_locale != 2) {
         preconfig_init_locale(config);
     }
 
@@ -488,36 +510,6 @@ get_ctype_locale(char **locale_p)
 
     *locale_p = copy;
     return _Py_INIT_OK();
-}
-
-
-/* Read the configuration from:
-
-   - environment variables
-   - Py_xxx global configuration variables
-   - the LC_CTYPE locale
-
-   See _PyPreConfig_ReadFromArgv() to parse also command line arguments. */
-_PyInitError
-_PyPreConfig_Read(_PyPreConfig *config)
-{
-    _PyInitError err;
-    char *old_loc;
-
-    err = get_ctype_locale(&old_loc);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
-
-    err = preconfig_read(config, NULL);
-
-    setlocale(LC_CTYPE, old_loc);
-    PyMem_RawFree(old_loc);
-
-    return err;
 }
 
 
@@ -628,33 +620,46 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline)
 }
 
 
-static _PyInitError
-preconfig_from_argv(_PyPreConfig *config, const _PyArgv *args)
+/* Read the configuration from:
+
+   - environment variables
+   - Py_xxx global configuration variables
+   - the LC_CTYPE locale
+
+   See _PyPreConfig_ReadFromArgv() to parse also command line arguments. */
+_PyInitError
+_PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
 {
     _PyInitError err;
-
     _PyPreCmdline cmdline = _PyPreCmdline_INIT;
+    char *old_loc = NULL;
 
-    err = _PyPreCmdline_Init(&cmdline, args);
+    err = get_ctype_locale(&old_loc);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyPreCmdline_Read(&cmdline);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
+    /* Set LC_CTYPE to the user preferred locale */
+    _Py_SetLocaleFromEnv(LC_CTYPE);
 
-    _PyPreCmdline_SetPreConfig(&cmdline, config);
+    _PyPreCmdline_GetPreConfig(&cmdline, config);
+
+    if (args) {
+        err = _PyPreCmdline_SetArgv(&cmdline, args);
+        if (_Py_INIT_FAILED(err)) {
+            goto done;
+        }
+    }
 
     err = preconfig_read(config, &cmdline);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
-    err = _Py_INIT_OK();
 
 done:
+    if (old_loc != NULL) {
+        setlocale(LC_CTYPE, old_loc);
+        PyMem_RawFree(old_loc);
+    }
     _PyPreCmdline_Clear(&cmdline);
+
     return err;
 }
 
@@ -719,13 +724,9 @@ _PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
         Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
 #endif
 
-        err = preconfig_from_argv(config, args);
+        err = _PyPreConfig_Read(config, args);
         if (_Py_INIT_FAILED(err)) {
             goto done;
-        }
-
-        if (locale_coerced) {
-            config->coerce_c_locale = 1;
         }
 
         /* The legacy C locale assumes ASCII as the default text encoding, which

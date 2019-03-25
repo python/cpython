@@ -25,12 +25,12 @@ typedef struct {
 /* Note: _PyPreCmdline_INIT sets other fields to 0/NULL */
 
 PyAPI_FUNC(void) _PyPreCmdline_Clear(_PyPreCmdline *cmdline);
-PyAPI_FUNC(_PyInitError) _PyPreCmdline_Init(_PyPreCmdline *cmdline,
+PyAPI_FUNC(_PyInitError) _PyPreCmdline_SetArgv(_PyPreCmdline *cmdline,
     const _PyArgv *args);
-PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline);
 PyAPI_FUNC(void) _PyPreCmdline_SetPreConfig(
     const _PyPreCmdline *cmdline,
     _PyPreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline);
 
 
 /* --- _PyWstrList ------------------------------------------------ */
@@ -76,7 +76,8 @@ PyAPI_FUNC(const char*) _PyPreConfig_GetEnv(const _PyPreConfig *config,
 PyAPI_FUNC(void) _Py_get_env_flag(_PyPreConfig *config,
     int *flag,
     const char *name);
-PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
+    const _PyArgv *args);
 PyAPI_FUNC(int) _PyPreConfig_AsDict(const _PyPreConfig *config,
     PyObject *dict);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_ReadFromArgv(_PyPreConfig *config,
@@ -103,12 +104,10 @@ PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
     wchar_t **dest,
     wchar_t *wname,
     char *name);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
-    const _PyPreConfig *preconfig);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
-    const _PyArgv *args,
-    const _PyPreConfig *preconfig);
-PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
+    const _PyArgv *args);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Write(const _PyCoreConfig *config);
 
 #ifdef __cplusplus
 }

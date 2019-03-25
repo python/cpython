@@ -73,7 +73,12 @@ typedef struct {
        set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
 
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
+    /* PYTHONCOERCECLOCALE, -1 means unknown.
+
+       If it is equal to 1, LC_CTYPE locale is read to decide it it should be
+       coerced or not (ex: PYTHONCOERCECLOCALE=1). Internally, it is set to 2
+       if the LC_CTYPE locale must be coerced. */
+    int coerce_c_locale;
     int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
 
 #ifdef MS_WINDOWS

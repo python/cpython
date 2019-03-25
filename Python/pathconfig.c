@@ -394,7 +394,7 @@ pathconfig_global_init(void)
     _PyInitError err;
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    err = _PyCoreConfig_Read(&config, NULL);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }
