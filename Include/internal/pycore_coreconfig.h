@@ -76,15 +76,17 @@ PyAPI_FUNC(int) _Py_str_to_int(
 PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
     const _PyWstrList *xoptions,
     const wchar_t *name);
+PyAPI_FUNC(const char*) _Py_GetEnv(
+    int use_environment,
+    const char *name);
 
 PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
 PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
 PyAPI_FUNC(void) _PyPreConfig_GetGlobalConfig(_PyPreConfig *config);
 PyAPI_FUNC(void) _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config);
-PyAPI_FUNC(const char*) _PyPreConfig_GetEnv(const _PyPreConfig *config,
-    const char *name);
-PyAPI_FUNC(void) _Py_get_env_flag(_PyPreConfig *config,
+PyAPI_FUNC(void) _Py_get_env_flag(
+    int use_environment,
     int *flag,
     const char *name);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
@@ -107,14 +109,6 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config);
-PyAPI_FUNC(const char*) _PyCoreConfig_GetEnv(
-    const _PyCoreConfig *config,
-    const char *name);
-PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
-    const _PyCoreConfig *config,
-    wchar_t **dest,
-    wchar_t *wname,
-    char *name);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
     const _PyArgv *args);
