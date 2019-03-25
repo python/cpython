@@ -1336,14 +1336,28 @@ config_init_fs_encoding(_PyCoreConfig *config)
    * Py_xxx global configuration variables
 
    See _PyCoreConfig_ReadFromArgv() to parse also command line arguments. */
-_PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config)
+static _PyInitError
+config_read_impl(_PyCoreConfig *config, _PyPreCmdline *cmdline)
 {
     _PyInitError err;
 
-    err = _Py_PreInitialize();
+    err = _Py_PreInitializeFromConfig(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
+    }
+
+    _PyPreCmdline_GetPreConfig(cmdline, &_PyRuntime.preconfig);
+    _PyPreCmdline_GetCoreConfig(cmdline, config);
+
+    err = _PyPreCmdline_Read(cmdline);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    _PyPreCmdline_SetCoreConfig(cmdline, config);
+
+    if (_PyWstrList_Extend(&config->xoptions, &cmdline->xoptions) < 0) {
+        return _Py_INIT_NO_MEMORY();
     }
 
     if (_PyPreConfig_Copy(&config->preconfig, &_PyRuntime.preconfig) < 0) {
@@ -1451,6 +1465,41 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     assert(_PyWstrList_CheckConsistency(&config->argv));
 
     return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+config_read(_PyCoreConfig *config, const _PyPreCmdline *src_cmdline)
+{
+    _PyInitError err;
+
+    err = _Py_PreInitializeFromConfig(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    _PyPreCmdline cmdline = _PyPreCmdline_INIT;
+
+    if (src_cmdline) {
+        if (_PyPreCmdline_Copy(&cmdline, src_cmdline) < 0) {
+            err = _Py_INIT_NO_MEMORY();
+            goto done;
+        }
+    }
+
+    err = config_read_impl(config, &cmdline);
+
+done:
+    _PyPreCmdline_Clear(&cmdline);
+    return err;
+
+}
+
+
+_PyInitError
+_PyCoreConfig_Read(_PyCoreConfig *config)
+{
+    return config_read(config, NULL);
 }
 
 
@@ -2025,9 +2074,6 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline)
     }
 
     _PyPreCmdline_SetPreConfig(&cmdline->precmdline, &_PyRuntime.preconfig);
-    if (_PyWstrList_Extend(&config->xoptions, &cmdline->precmdline.xoptions) < 0) {
-        return _Py_INIT_NO_MEMORY();
-    }
 
     err = config_parse_cmdline(config, cmdline, &need_usage);
     if (_Py_INIT_FAILED(err)) {
@@ -2055,7 +2101,7 @@ config_from_cmdline(_PyCoreConfig *config, _PyCmdline *cmdline)
         return err;
     }
 
-    err = _PyCoreConfig_Read(config);
+    err = config_read(config, &cmdline->precmdline);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -2090,7 +2136,7 @@ _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config, const _PyArgv *args)
 {
     _PyInitError err;
 
-    err = _Py_PreInitialize();
+    err = _Py_PreInitializeFromConfig(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }

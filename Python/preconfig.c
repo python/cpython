@@ -110,6 +110,22 @@ _PyPreCmdline_Clear(_PyPreCmdline *cmdline)
 }
 
 
+int
+_PyPreCmdline_Copy(_PyPreCmdline *cmdline, const _PyPreCmdline *cmdline2)
+{
+    _PyPreCmdline_Clear(cmdline);
+    if (_PyWstrList_Copy(&cmdline->argv, &cmdline2->argv) < 0) {
+        return -1;
+    }
+    if (_PyWstrList_Copy(&cmdline->xoptions, &cmdline2->xoptions) < 0) {
+        return -1;
+    }
+    cmdline->use_environment = cmdline2->use_environment;
+    cmdline->isolated = cmdline2->isolated;
+    return 0;
+}
+
+
 _PyInitError
 _PyPreCmdline_SetArgv(_PyPreCmdline *cmdline, const _PyArgv *args)
 {
@@ -117,12 +133,42 @@ _PyPreCmdline_SetArgv(_PyPreCmdline *cmdline, const _PyArgv *args)
 }
 
 
-static void
+void
 _PyPreCmdline_GetPreConfig(_PyPreCmdline *cmdline, const _PyPreConfig *config)
 {
 #define COPY_ATTR(ATTR) \
     if (config->ATTR != -1) { \
         cmdline->ATTR = config->ATTR; \
+    }
+
+    COPY_ATTR(use_environment);
+    COPY_ATTR(isolated);
+
+#undef COPY_ATTR
+}
+
+
+void
+_PyPreCmdline_GetCoreConfig(_PyPreCmdline *cmdline, const _PyCoreConfig *config)
+{
+#define COPY_ATTR(ATTR) \
+    if (config->preconfig.ATTR != -1) { \
+        cmdline->ATTR = config->preconfig.ATTR; \
+    }
+
+    COPY_ATTR(use_environment);
+    COPY_ATTR(isolated);
+
+#undef COPY_ATTR
+}
+
+
+void
+_PyPreCmdline_SetCoreConfig(const _PyPreCmdline *cmdline, _PyCoreConfig *config)
+{
+#define COPY_ATTR(ATTR) \
+    if (config->preconfig.ATTR == -1 && cmdline->ATTR != -1) { \
+        config->preconfig.ATTR = cmdline->ATTR; \
     }
 
     COPY_ATTR(use_environment);
@@ -628,7 +674,8 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline)
 
    See _PyPreConfig_ReadFromArgv() to parse also command line arguments. */
 _PyInitError
-_PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
+_PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args,
+                  const _PyCoreConfig *coreconfig)
 {
     _PyInitError err;
     _PyPreCmdline cmdline = _PyPreCmdline_INIT;
@@ -642,7 +689,16 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
     /* Set LC_CTYPE to the user preferred locale */
     _Py_SetLocaleFromEnv(LC_CTYPE);
 
+    _PyPreConfig_GetGlobalConfig(config);
+
     _PyPreCmdline_GetPreConfig(&cmdline, config);
+
+    if (coreconfig) {
+        _PyPreCmdline_GetCoreConfig(&cmdline, coreconfig);
+        if (config->dev_mode == -1) {
+            config->dev_mode = coreconfig->preconfig.dev_mode;
+        }
+    }
 
     if (args) {
         err = _PyPreCmdline_SetArgv(&cmdline, args);
@@ -724,7 +780,7 @@ _PyPreConfig_ReadFromArgv(_PyPreConfig *config, const _PyArgv *args)
         Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
 #endif
 
-        err = _PyPreConfig_Read(config, args);
+        err = _PyPreConfig_Read(config, args, NULL);
         if (_Py_INIT_FAILED(err)) {
             goto done;
         }

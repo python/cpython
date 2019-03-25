@@ -25,11 +25,22 @@ typedef struct {
 /* Note: _PyPreCmdline_INIT sets other fields to 0/NULL */
 
 PyAPI_FUNC(void) _PyPreCmdline_Clear(_PyPreCmdline *cmdline);
+PyAPI_FUNC(int) _PyPreCmdline_Copy(_PyPreCmdline *cmdline,
+    const _PyPreCmdline *cmdline2);
 PyAPI_FUNC(_PyInitError) _PyPreCmdline_SetArgv(_PyPreCmdline *cmdline,
     const _PyArgv *args);
+PyAPI_FUNC(void) _PyPreCmdline_GetPreConfig(
+    _PyPreCmdline *cmdline,
+    const _PyPreConfig *config);
 PyAPI_FUNC(void) _PyPreCmdline_SetPreConfig(
     const _PyPreCmdline *cmdline,
     _PyPreConfig *config);
+PyAPI_FUNC(void) _PyPreCmdline_GetCoreConfig(
+    _PyPreCmdline *cmdline,
+    const _PyCoreConfig *config);
+PyAPI_FUNC(void) _PyPreCmdline_SetCoreConfig(
+    const _PyPreCmdline *cmdline,
+    _PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline);
 
 
@@ -77,7 +88,8 @@ PyAPI_FUNC(void) _Py_get_env_flag(_PyPreConfig *config,
     int *flag,
     const char *name);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
-    const _PyArgv *args);
+    const _PyArgv *args,
+    const _PyCoreConfig *coreconfig);
 PyAPI_FUNC(int) _PyPreConfig_AsDict(const _PyPreConfig *config,
     PyObject *dict);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_ReadFromArgv(_PyPreConfig *config,
