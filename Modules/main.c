@@ -311,11 +311,6 @@ pymain_init_coreconfig(_PyCoreConfig *config, const _PyArgv *args,
         return err;
     }
 
-    err = _PyCoreConfig_Write(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
     return _Py_InitializeCore(interp_p, config);
 }
 
@@ -483,7 +478,7 @@ pymain_header(const _PyCoreConfig *config)
 static void
 pymain_import_readline(const _PyCoreConfig *config)
 {
-    if (config->preconfig.isolated) {
+    if (config->isolated) {
         return;
     }
     if (!config->inspect && RUN_CODE(config)) {
@@ -655,7 +650,7 @@ pymain_run_file(_PyCoreConfig *config, PyCompilerFlags *cf)
 static void
 pymain_run_startup(_PyCoreConfig *config, PyCompilerFlags *cf)
 {
-    const char *startup = _Py_GetEnv(config->preconfig.use_environment, "PYTHONSTARTUP");
+    const char *startup = _Py_GetEnv(config->use_environment, "PYTHONSTARTUP");
     if (startup == NULL) {
         return;
     }
@@ -735,7 +730,7 @@ pymain_repl(_PyCoreConfig *config, PyCompilerFlags *cf, int *exitcode)
 {
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
-    if (!Py_InspectFlag && _Py_GetEnv(config->preconfig.use_environment, "PYTHONINSPECT")) {
+    if (!Py_InspectFlag && _Py_GetEnv(config->use_environment, "PYTHONINSPECT")) {
         Py_InspectFlag = 1;
         config->inspect = 1;
     }
@@ -775,7 +770,7 @@ pymain_run_python(PyInterpreterState *interp, int *exitcode)
             goto done;
         }
     }
-    else if (!config->preconfig.isolated) {
+    else if (!config->isolated) {
         PyObject *path0 = NULL;
         if (_PyPathConfig_ComputeSysPath0(&config->argv, &path0)) {
             if (path0 == NULL) {
