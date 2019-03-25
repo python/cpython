@@ -283,28 +283,38 @@ _PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
 /* --- pymain_init() ---------------------------------------------- */
 
 static _PyInitError
-pymain_init_preconfig(_PyPreConfig *config, const _PyArgv *args)
+pymain_init_preconfig(const _PyArgv *args)
 {
-    _PyInitError err = _PyPreConfig_ReadFromArgv(config, args);
+    _PyInitError err;
+
+    _PyPreConfig config = _PyPreConfig_INIT;
+
+    err = _PyPreConfig_ReadFromArgv(&config, args);
     if (_Py_INIT_FAILED(err)) {
-        return err;
+        goto done;
     }
 
-    return _Py_PreInitializeFromPreConfig(config);
+    err = _Py_PreInitializeFromPreConfig(&config);
+
+done:
+    _PyPreConfig_Clear(&config);
+    return err;
 }
 
 
 static _PyInitError
 pymain_init_coreconfig(_PyCoreConfig *config, const _PyArgv *args,
-                       const _PyPreConfig *preconfig,
                        PyInterpreterState **interp_p)
 {
-    _PyInitError err = _PyCoreConfig_ReadFromArgv(config, args, preconfig);
+    _PyInitError err = _PyCoreConfig_ReadFromArgv(config, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    _PyCoreConfig_Write(config);
+    err = _PyCoreConfig_Write(config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
 
     return _Py_InitializeCore(interp_p, config);
 }
@@ -348,18 +358,14 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
-    _PyPreConfig local_preconfig = _PyPreConfig_INIT;
-    _PyPreConfig *preconfig = &local_preconfig;
-
-    _PyCoreConfig local_config = _PyCoreConfig_INIT;
-    _PyCoreConfig *config = &local_config;
-
-    err = pymain_init_preconfig(preconfig, args);
+    err = pymain_init_preconfig(args);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
-    err = pymain_init_coreconfig(config, args, preconfig, interp_p);
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    err = pymain_init_coreconfig(&config, args, interp_p);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -372,8 +378,7 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     err = _Py_INIT_OK();
 
 done:
-    _PyPreConfig_Clear(preconfig);
-    _PyCoreConfig_Clear(config);
+    _PyCoreConfig_Clear(&config);
     return err;
 }
 
