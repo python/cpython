@@ -1501,7 +1501,12 @@ _PyCoreConfig_Write(const _PyCoreConfig *config)
     _PyCoreConfig_SetGlobalConfig(config);
     config_init_stdio(config);
 
-    if (_PyPreConfig_Copy(&_PyRuntime.preconfig, &config->preconfig) < 0) {
+    /* Write the new pre-configuration into _PyRuntime */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    int res = _PyPreConfig_Copy(&_PyRuntime.preconfig, &config->preconfig);
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    if (res < 0) {
         return _Py_INIT_NO_MEMORY();
     }
 
