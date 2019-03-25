@@ -301,64 +301,29 @@ static int test_initialize_pymain(void)
 static int
 dump_config_impl(void)
 {
-    PyObject *config = NULL;
-    PyObject *dict = NULL;
-
-    config = PyDict_New();
+    PyObject *config = _Py_GetConfigsAsDict();
     if (config == NULL) {
-        goto error;
+        return -1;
     }
 
-    /* global config */
-    dict = _Py_GetGlobalVariablesAsDict();
-    if (dict == NULL) {
-        goto error;
-    }
-    if (PyDict_SetItemString(config, "global_config", dict) < 0) {
-        goto error;
-    }
-    Py_CLEAR(dict);
-
-    /* core config */
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyCoreConfig *core_config = _PyInterpreterState_GetCoreConfig(interp);
-    dict = _PyCoreConfig_AsDict(core_config);
-    if (dict == NULL) {
-        goto error;
-    }
-    if (PyDict_SetItemString(config, "core_config", dict) < 0) {
-        goto error;
-    }
-    Py_CLEAR(dict);
-
-    /* main config */
-    const _PyMainInterpreterConfig *main_config = _PyInterpreterState_GetMainConfig(interp);
-    dict = _PyMainInterpreterConfig_AsDict(main_config);
-    if (dict == NULL) {
-        goto error;
-    }
-    if (PyDict_SetItemString(config, "main_config", dict) < 0) {
-        goto error;
-    }
-    Py_CLEAR(dict);
-
+    PyObject *res;
     PyObject *json = PyImport_ImportModule("json");
-    PyObject *res = PyObject_CallMethod(json, "dumps", "O", config);
-    Py_DECREF(json);
+    if (json) {
+        res = PyObject_CallMethod(json, "dumps", "O", config);
+        Py_DECREF(json);
+    }
+    else {
+        res = NULL;
+    }
     Py_CLEAR(config);
     if (res == NULL) {
-        goto error;
+        return -1;
     }
 
     PySys_FormatStdout("%S\n", res);
     Py_DECREF(res);
 
     return 0;
-
-error:
-    Py_XDECREF(config);
-    Py_XDECREF(dict);
-    return -1;
 }
 
 
