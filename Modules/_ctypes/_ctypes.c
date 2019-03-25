@@ -1522,6 +1522,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->align = itemalign;
     stgdict->length = length;
     stgdict->proto = type_attr;
+    type_attr = NULL;
 
     stgdict->paramfunc = &PyCArrayType_paramfunc;
 
