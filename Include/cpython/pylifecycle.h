@@ -33,9 +33,6 @@ PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
 PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
     _PyMainInterpreterConfig *config,
     const _PyMainInterpreterConfig *config2);
-/* Used by _testcapi.get_main_config() */
-PyAPI_FUNC(PyObject*) _PyMainInterpreterConfig_AsDict(
-    const _PyMainInterpreterConfig *config);
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
     PyInterpreterState *interp,
