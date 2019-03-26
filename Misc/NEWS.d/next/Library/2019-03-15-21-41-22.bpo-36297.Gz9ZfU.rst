@@ -1,2 +1,0 @@
-"unicode_internal" codec is removed.  It was deprecated since Python 3.3.
-Patch by Inada Naoki.

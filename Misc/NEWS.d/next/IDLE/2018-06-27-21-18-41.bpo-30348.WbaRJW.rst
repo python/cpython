@@ -1,1 +1,0 @@
-Increase test coverage of idlelib.autocomplete by 30%.
