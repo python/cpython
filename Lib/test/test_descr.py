@@ -1601,8 +1601,11 @@ order (MRO) for bases """
             spam_cm()
         with self.assertRaises(TypeError):
             spam_cm(spam.spamlist())
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError) as cm:
             spam_cm(list)
+        self.assertEqual(cm.exception.args[0],
+                         "descriptor 'classmeth' requires a subtype of "
+                         "'spamlist' but received 'list'")
 
     def test_staticmethods(self):
         # Testing static methods...

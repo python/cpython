@@ -325,10 +325,10 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' "
                      "requires a subtype of '%.100s' "
-                     "but received '%.100s",
+                     "but received '%.100s'",
                      descr_name((PyDescrObject *)descr), "?",
                      PyDescr_TYPE(descr)->tp_name,
-                     self->ob_type->tp_name);
+                     ((PyTypeObject*)self)->tp_name);
         return NULL;
     }
 
