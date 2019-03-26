@@ -16,12 +16,14 @@ typedef struct {
     _PyWstrList xoptions;     /* "-X value" option */
     int use_environment;      /* -E option */
     int isolated;             /* -I option */
+    int dev_mode;             /* -X dev and PYTHONDEVMODE */
 } _PyPreCmdline;
 
 #define _PyPreCmdline_INIT \
     (_PyPreCmdline){ \
         .use_environment = -1, \
-        .isolated = -1}
+        .isolated = -1, \
+        .dev_mode = -1}
 /* Note: _PyPreCmdline_INIT sets other fields to 0/NULL */
 
 PyAPI_FUNC(void) _PyPreCmdline_Clear(_PyPreCmdline *cmdline);
@@ -112,7 +114,7 @@ PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Write(const _PyCoreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
 
 /* --- _PyMainInterpreterConfig ----------------------------------- */
 

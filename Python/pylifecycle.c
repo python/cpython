@@ -286,9 +286,10 @@ static const char *_C_LOCALE_WARNING =
     "locales is recommended.\n";
 
 static void
-_emit_stderr_warning_for_legacy_locale(const _PyCoreConfig *core_config)
+_emit_stderr_warning_for_legacy_locale(void)
 {
-    if (core_config->preconfig.coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
+    const _PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    if (preconfig->coerce_c_locale_warn && _Py_LegacyLocaleDetected()) {
         PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
@@ -675,6 +676,8 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 {
     PyInterpreterState *interp;
 
+    _PyCoreConfig_Write(core_config);
+
     _PyInitError err = pycore_init_runtime(core_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -720,54 +723,64 @@ pyinit_preinit(_PyPreConfig *config,
                const _PyCoreConfig *coreconfig)
 {
     _PyInitError err;
+    _PyPreConfig local_config = _PyPreConfig_INIT;
+    if (!config) {
+        config = &local_config;
+    }
 
     err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
-        return err;
+        goto done;
     }
 
     if (_PyRuntime.pre_initialized) {
         /* If it's already configured: ignored the new configuration */
-        return _Py_INIT_OK();
-    }
-
-    if (!src_config && coreconfig) {
-        src_config = &coreconfig->preconfig;
+        err = _Py_INIT_OK();
+        goto done;
     }
 
     if (src_config) {
         if (_PyPreConfig_Copy(config, src_config) < 0) {
-            return _Py_INIT_ERR("failed to copy pre config");
+            err = _Py_INIT_ERR("failed to copy pre config");
+            goto done;
         }
     }
 
     err = _PyPreConfig_Read(config, NULL, coreconfig);
     if (_Py_INIT_FAILED(err)) {
-        return err;
+        goto done;
     }
 
     err = _PyPreConfig_Write(config);
     if (_Py_INIT_FAILED(err)) {
-        return err;
+        goto done;
     }
 
     _PyRuntime.pre_initialized = 1;
-    return _Py_INIT_OK();
+    err = _Py_INIT_OK();
+
+done:
+    _PyPreConfig_Clear(&local_config);
+    return err;
 }
 
 
 _PyInitError
 _Py_PreInitialize(void)
 {
-    _PyPreConfig config = _PyPreConfig_INIT;
-    _PyInitError err = pyinit_preinit(&config, NULL, NULL);
-    _PyPreConfig_Clear(&config);
-    return err;
+    return pyinit_preinit(NULL, NULL, NULL);
 }
 
 
 _PyInitError
-_Py_PreInitializeFromPreConfig(_PyPreConfig *config)
+_Py_PreInitializeFromPreConfig(const _PyPreConfig *src_config)
+{
+    return pyinit_preinit(NULL, src_config, NULL);
+}
+
+
+_PyInitError
+_Py_PreInitializeInPlace(_PyPreConfig *config)
 {
     return pyinit_preinit(config, NULL, NULL);
 }
@@ -776,10 +789,7 @@ _Py_PreInitializeFromPreConfig(_PyPreConfig *config)
 _PyInitError
 _Py_PreInitializeFromConfig(const _PyCoreConfig *coreconfig)
 {
-    _PyPreConfig config = _PyPreConfig_INIT;
-    _PyInitError err = pyinit_preinit(&config, NULL, coreconfig);
-    _PyPreConfig_Clear(&config);
-    return err;
+    return pyinit_preinit(NULL, NULL, coreconfig);
 }
 
 
@@ -964,7 +974,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
     }
 
 #ifndef MS_WINDOWS
-    _emit_stderr_warning_for_legacy_locale(core_config);
+    _emit_stderr_warning_for_legacy_locale();
 #endif
 
     return _Py_INIT_OK();

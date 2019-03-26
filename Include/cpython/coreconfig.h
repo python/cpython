@@ -123,7 +123,9 @@ typedef struct {
 /* --- _PyCoreConfig ---------------------------------------------- */
 
 typedef struct {
-    _PyPreConfig preconfig;
+    int isolated;
+    int use_environment;
+    int dev_mode;
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -375,7 +377,9 @@ typedef struct {
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         _PyCoreConfig_WINDOWS_INIT \
-        .preconfig = _PyPreConfig_INIT, \
+        .isolated = -1, \
+        .use_environment = -1, \
+        .dev_mode = -1, \
         .install_signal_handlers = 1, \
         .use_hash_seed = -1, \
         .faulthandler = -1, \
