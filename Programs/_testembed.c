@@ -466,8 +466,7 @@ static int test_init_from_config(void)
     config.xoptions.length = Py_ARRAY_LENGTH(xoptions);
     config.xoptions.items = xoptions;
 
-    static wchar_t* warnoptions[2] = {
-        L"default",
+    static wchar_t* warnoptions[1] = {
         L"error::ResourceWarning",
     };
     config.warnoptions.length = Py_ARRAY_LENGTH(warnoptions);
