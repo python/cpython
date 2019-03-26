@@ -1573,7 +1573,6 @@ def main():
     capture_warnings(False)
 
 if __name__ == "__main__":
-    #sys.modules['pyshell'] = sys.modules['__main__']
     main()
 
 capture_warnings(False)  # Make sure turned off; see issue 18081
