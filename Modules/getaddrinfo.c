@@ -251,7 +251,7 @@ getaddrinfo(const char*hostname, const char*servname,
     if (firsttime) {
         /* translator hack */
         {
-            char *q = getenv("GAI");
+            const char *q = getenv("GAI");
             if (q && inet_pton(AF_INET6, q, &faith_prefix) == 1)
                 translate = YES;
         }

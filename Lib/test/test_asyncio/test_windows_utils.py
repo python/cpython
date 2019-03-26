@@ -1,10 +1,8 @@
 """Tests for window_utils"""
 
-import socket
 import sys
 import unittest
 import warnings
-from unittest import mock
 
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
@@ -12,11 +10,13 @@ if sys.platform != 'win32':
 import _overlapped
 import _winapi
 
+import asyncio
 from asyncio import windows_utils
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
+from test import support
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 class PipeTests(unittest.TestCase):

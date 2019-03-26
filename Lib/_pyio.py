@@ -198,6 +198,11 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         raise ValueError("binary mode doesn't take an errors argument")
     if binary and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")
+    if binary and buffering == 1:
+        import warnings
+        warnings.warn("line buffering (buffering=1) isn't supported in binary "
+                      "mode, the default buffer size will be used",
+                      RuntimeWarning, 2)
     raw = FileIO(file,
                  (creating and "x" or "") +
                  (reading and "r" or "") +
@@ -809,8 +814,7 @@ class _BufferedIOMixin(BufferedIOBase):
         return self.raw.mode
 
     def __getstate__(self):
-        raise TypeError("can not serialize a '{0}' object"
-                        .format(self.__class__.__name__))
+        raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
 
     def __repr__(self):
         modname = self.__class__.__module__
@@ -1182,7 +1186,6 @@ class BufferedWriter(_BufferedIOMixin):
         self.buffer_size = buffer_size
         self._write_buf = bytearray()
         self._write_lock = Lock()
-        _register_writer(self)
 
     def writable(self):
         return self.raw.writable()
@@ -1550,7 +1553,7 @@ class FileIO(RawIOBase):
             self.close()
 
     def __getstate__(self):
-        raise TypeError("cannot serialize '%s' object", self.__class__.__name__)
+        raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
 
     def __repr__(self):
         class_name = '%s.%s' % (self.__class__.__module__,
@@ -1939,10 +1942,7 @@ class TextIOWrapper(TextIOBase):
     # so that the signature can match the signature of the C version.
     def __init__(self, buffer, encoding=None, errors=None, newline=None,
                  line_buffering=False, write_through=False):
-        if newline is not None and not isinstance(newline, str):
-            raise TypeError("illegal newline type: %r" % (type(newline),))
-        if newline not in (None, "", "\n", "\r", "\r\n"):
-            raise ValueError("illegal newline value: %r" % (newline,))
+        self._check_newline(newline)
         if encoding is None:
             try:
                 encoding = os.device_encoding(buffer.fileno())
@@ -1972,22 +1972,38 @@ class TextIOWrapper(TextIOBase):
                 raise ValueError("invalid errors: %r" % errors)
 
         self._buffer = buffer
-        self._encoding = encoding
-        self._errors = errors
-        self._readuniversal = not newline
-        self._readtranslate = newline is None
-        self._readnl = newline
-        self._writetranslate = newline != ''
-        self._writenl = newline or os.linesep
-        self._encoder = None
-        self._decoder = None
         self._decoded_chars = ''  # buffer for text returned from decoder
         self._decoded_chars_used = 0  # offset into _decoded_chars for read()
         self._snapshot = None  # info for reconstructing decoder state
         self._seekable = self._telling = self.buffer.seekable()
         self._has_read1 = hasattr(self.buffer, 'read1')
+        self._configure(encoding, errors, newline,
+                        line_buffering, write_through)
+
+    def _check_newline(self, newline):
+        if newline is not None and not isinstance(newline, str):
+            raise TypeError("illegal newline type: %r" % (type(newline),))
+        if newline not in (None, "", "\n", "\r", "\r\n"):
+            raise ValueError("illegal newline value: %r" % (newline,))
+
+    def _configure(self, encoding=None, errors=None, newline=None,
+                   line_buffering=False, write_through=False):
+        self._encoding = encoding
+        self._errors = errors
+        self._encoder = None
+        self._decoder = None
         self._b2cratio = 0.0
 
+        self._readuniversal = not newline
+        self._readtranslate = newline is None
+        self._readnl = newline
+        self._writetranslate = newline != ''
+        self._writenl = newline or os.linesep
+
+        self._line_buffering = line_buffering
+        self._write_through = write_through
+
+        # don't write a BOM in the middle of a file
         if self._seekable and self.writable():
             position = self.buffer.tell()
             if position != 0:
@@ -1996,12 +2012,6 @@ class TextIOWrapper(TextIOBase):
                 except LookupError:
                     # Sometimes the encoder doesn't exist
                     pass
-
-        self._configure(line_buffering, write_through)
-
-    def _configure(self, line_buffering=False, write_through=False):
-        self._line_buffering = line_buffering
-        self._write_through = write_through
 
     # self._snapshot is either None, or a tuple (dec_flags, next_input)
     # where dec_flags is the second (integer) item of the decoder state
@@ -2049,17 +2059,46 @@ class TextIOWrapper(TextIOBase):
     def buffer(self):
         return self._buffer
 
-    def reconfigure(self, *, line_buffering=None, write_through=None):
+    def reconfigure(self, *,
+                    encoding=None, errors=None, newline=Ellipsis,
+                    line_buffering=None, write_through=None):
         """Reconfigure the text stream with new parameters.
 
         This also flushes the stream.
         """
+        if (self._decoder is not None
+                and (encoding is not None or errors is not None
+                     or newline is not Ellipsis)):
+            raise UnsupportedOperation(
+                "It is not possible to set the encoding or newline of stream "
+                "after the first read")
+
+        if errors is None:
+            if encoding is None:
+                errors = self._errors
+            else:
+                errors = 'strict'
+        elif not isinstance(errors, str):
+            raise TypeError("invalid errors: %r" % errors)
+
+        if encoding is None:
+            encoding = self._encoding
+        else:
+            if not isinstance(encoding, str):
+                raise TypeError("invalid encoding: %r" % encoding)
+
+        if newline is Ellipsis:
+            newline = self._readnl
+        self._check_newline(newline)
+
         if line_buffering is None:
             line_buffering = self.line_buffering
         if write_through is None:
             write_through = self.write_through
+
         self.flush()
-        self._configure(line_buffering, write_through)
+        self._configure(encoding, errors, newline,
+                        line_buffering, write_through)
 
     def seekable(self):
         if self.closed:
@@ -2114,6 +2153,7 @@ class TextIOWrapper(TextIOBase):
         self.buffer.write(b)
         if self._line_buffering and (haslf or "\r" in s):
             self.flush()
+        self._set_decoded_chars('')
         self._snapshot = None
         if self._decoder:
             self._decoder.reset()
@@ -2247,7 +2287,7 @@ class TextIOWrapper(TextIOBase):
             # current pos.
             # Rationale: calling decoder.decode() has a large overhead
             # regardless of chunk size; we want the number of such calls to
-            # be O(1) in most situations (common decoders, non-crazy input).
+            # be O(1) in most situations (common decoders, sensible input).
             # Actually, it will be exactly 1 for fixed-size codecs (all
             # 8-bit codecs, also UTF-16 and UTF-32).
             skip_bytes = int(self._b2cratio * chars_to_skip)
@@ -2346,18 +2386,18 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("tell on closed file")
         if not self._seekable:
             raise UnsupportedOperation("underlying stream is not seekable")
-        if whence == 1: # seek relative to current position
+        if whence == SEEK_CUR:
             if cookie != 0:
                 raise UnsupportedOperation("can't do nonzero cur-relative seeks")
             # Seeking to the current position should attempt to
             # sync the underlying buffer with the current position.
             whence = 0
             cookie = self.tell()
-        if whence == 2: # seek relative to end of file
+        elif whence == SEEK_END:
             if cookie != 0:
                 raise UnsupportedOperation("can't do nonzero end-relative seeks")
             self.flush()
-            position = self.buffer.seek(0, 2)
+            position = self.buffer.seek(0, whence)
             self._set_decoded_chars('')
             self._snapshot = None
             if self._decoder:
@@ -2587,26 +2627,3 @@ class StringIO(TextIOWrapper):
     def detach(self):
         # This doesn't make sense on StringIO.
         self._unsupported("detach")
-
-
-# ____________________________________________________________
-
-import atexit, weakref
-
-_all_writers = weakref.WeakSet()
-
-def _register_writer(w):
-    # keep weak-ref to buffered writer
-    _all_writers.add(w)
-
-def _flush_all_writers():
-    # Ensure all buffered writers are flushed before proceeding with
-    # normal shutdown.  Otherwise, if the underlying file objects get
-    # finalized before the buffered writer wrapping it then any buffered
-    # data will be lost.
-    for w in _all_writers:
-        try:
-            w.flush()
-        except:
-            pass
-atexit.register(_flush_all_writers)

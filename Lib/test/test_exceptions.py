@@ -138,15 +138,6 @@ class ExceptionTests(unittest.TestCase):
             else:
                 self.fail("failed to get expected SyntaxError")
 
-        s = '''while 1:
-            try:
-                pass
-            finally:
-                continue'''
-
-        if not sys.platform.startswith('java'):
-            ckmsg(s, "'continue' not supported inside 'finally' clause")
-
         s = '''if 1:
         try:
             continue
@@ -196,6 +187,45 @@ class ExceptionTests(unittest.TestCase):
         check('def spam():\n  print(1)\n print(2)', 3, 10)
         check('Python = "Python" +', 1, 20)
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
+        check('x = "a', 1, 7)
+        check('lambda x: x = 2', 1, 1)
+
+        # Errors thrown by compile.c
+        check('class foo:return 1', 1, 11)
+        check('def f():\n  continue', 2, 3)
+        check('def f():\n  break', 2, 3)
+        check('try:\n  pass\nexcept:\n  pass\nexcept ValueError:\n  pass', 2, 3)
+
+        # Errors thrown by tokenizer.c
+        check('(0x+1)', 1, 3)
+        check('x = 0xI', 1, 6)
+        check('0010 + 2', 1, 4)
+        check('x = 32e-+4', 1, 8)
+        check('x = 0o9', 1, 6)
+
+        # Errors thrown by symtable.c
+        check('x = [(yield i) for i in range(3)]', 1, 5)
+        check('def f():\n  from _ import *', 1, 1)
+        check('def f(x, x):\n  pass', 1, 1)
+        check('def f(x):\n  nonlocal x', 2, 3)
+        check('def f(x):\n  x = 1\n  global x', 3, 3)
+        check('nonlocal x', 1, 1)
+        check('def f():\n  global x\n  nonlocal x', 2, 3)
+
+        # Errors thrown by ast.c
+        check('for 1 in []: pass', 1, 5)
+        check('def f(*):\n  pass', 1, 7)
+        check('[*x for x in xs]', 1, 2)
+        check('def f():\n  x, y: int', 2, 3)
+        check('(yield i) = 2', 1, 1)
+        check('foo(x for x in range(10), 100)', 1, 5)
+        check('foo(1=2)', 1, 5)
+
+        # Errors thrown by future.c
+        check('from __future__ import doesnt_exist', 1, 1)
+        check('from __future__ import braces', 1, 1)
+        check('x=1\nfrom __future__ import division', 2, 1)
+
 
     @cpython_only
     def testSettingException(self):

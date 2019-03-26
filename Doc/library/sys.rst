@@ -161,7 +161,9 @@ always available.
 
 .. data:: dllhandle
 
-   Integer specifying the handle of the Python DLL. Availability: Windows.
+   Integer specifying the handle of the Python DLL.
+
+   .. availability:: Windows.
 
 
 .. function:: displayhook(value)
@@ -207,6 +209,26 @@ always available.
    ``False`` depending on the :option:`-B` command line option and the
    :envvar:`PYTHONDONTWRITEBYTECODE` environment variable, but you can set it
    yourself to control bytecode file generation.
+
+
+.. data:: pycache_prefix
+
+   If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
+   files to (and read them from) a parallel directory tree rooted at this
+   directory, rather than from ``__pycache__`` directories in the source code
+   tree. Any ``__pycache__`` directories in the source code tree will be ignored
+   and new `.pyc` files written within the pycache prefix. Thus if you use
+   :mod:`compileall` as a pre-build step, you must ensure you run it with the
+   same pycache prefix (if any) that you will use at runtime.
+
+   A relative path is interpreted relative to the current working directory.
+
+   This value is initially set based on the value of the :option:`-X`
+   ``pycache_prefix=PATH`` command-line option or the
+   :envvar:`PYTHONPYCACHEPREFIX` environment variable (command-line takes
+   precedence). If neither are set, it is ``None``.
+
+   .. versionadded:: 3.8
 
 
 .. function:: excepthook(type, value, traceback)
@@ -325,6 +347,7 @@ always available.
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
+   :const:`isolated`             :option:`-I`
    :const:`optimize`             :option:`-O` or :option:`-OO`
    :const:`dont_write_bytecode`  :option:`-B`
    :const:`no_user_site`         :option:`-s`
@@ -335,6 +358,7 @@ always available.
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
    :const:`dev_mode`             :option:`-X` ``dev``
+   :const:`utf8_mode`            :option:`-X` ``utf8``
    ============================= =============================
 
    .. versionchanged:: 3.2
@@ -346,8 +370,12 @@ always available.
    .. versionchanged:: 3.3
       Removed obsolete ``division_warning`` attribute.
 
+   .. versionchanged:: 3.4
+      Added ``isolated`` attribute for :option:`-I` ``isolated`` flag.
+
    .. versionchanged:: 3.7
-      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag.
+      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
+      and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
 
 
 .. data:: float_info
@@ -451,7 +479,7 @@ always available.
 
    Return the build time API version of Android as an integer.
 
-   Availability: Android.
+   .. availability:: Android.
 
    .. versionadded:: 3.7
 
@@ -475,7 +503,9 @@ always available.
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
    found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).  Availability: Unix.
+   :data:`os.RTLD_LAZY`).
+
+   .. availability:: Unix.
 
 
 .. function:: getfilesystemencoding()
@@ -492,12 +522,18 @@ always available.
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
-   * On Mac OS X, the encoding is ``'utf-8'``.
+   * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
+
+   * On macOS, the encoding is ``'utf-8'``.
 
    * On Unix, the encoding is the locale encoding.
 
    * On Windows, the encoding may be ``'utf-8'`` or ``'mbcs'``, depending
      on user configuration.
+
+   * On Android, the encoding is ``'utf-8'``.
+
+   * On VxWorks, the encoding is ``'utf-8'``.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
@@ -505,6 +541,10 @@ always available.
    .. versionchanged:: 3.6
       Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
       and :func:`_enablelegacywindowsfsencoding` for more information.
+
+   .. versionchanged:: 3.7
+      Return 'utf-8' in the UTF-8 mode.
+
 
 .. function:: getfilesystemencodeerrors()
 
@@ -637,7 +677,7 @@ always available.
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionchanged:: 3.2
       Changed to a named tuple and added *service_pack_minor*,
@@ -664,6 +704,18 @@ always available.
       for details.)
 
 
+.. function:: get_coroutine_origin_tracking_depth()
+
+   Get the current coroutine origin tracking depth, as set by
+   :func:`set_coroutine_origin_tracking_depth`.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
+
+
 .. function:: get_coroutine_wrapper()
 
    Returns ``None``, or a wrapper set by :func:`set_coroutine_wrapper`.
@@ -674,6 +726,10 @@ always available.
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
+
+   .. deprecated:: 3.7
+      The coroutine wrapper functionality has been deprecated, and
+      will be removed in 3.8. See :issue:`32591` for details.
 
 
 .. data:: hash_info
@@ -971,7 +1027,7 @@ always available.
    Linux            ``'linux'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
-   Mac OS X         ``'darwin'``
+   macOS            ``'darwin'``
    ================ ===========================
 
    .. versionchanged:: 3.3
@@ -1012,6 +1068,8 @@ always available.
    .. index::
       single: interpreter prompts
       single: prompts, interpreter
+      single: >>>; interpreter prompt
+      single: ...; interpreter prompt
 
    Strings specifying the primary and secondary prompt of the interpreter.  These
    are only defined if the interpreter is in interactive mode.  Their initial
@@ -1046,7 +1104,7 @@ always available.
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
    :data:`os.RTLD_LAZY`).
 
-   Availability: Unix.
+   .. availability:: Unix.
 
 .. function:: setprofile(profilefunc)
 
@@ -1057,13 +1115,39 @@ always available.
    Set the system's profile function, which allows you to implement a Python source
    code profiler in Python.  See chapter :ref:`profile` for more information on the
    Python profiler.  The system's profile function is called similarly to the
-   system's trace function (see :func:`settrace`), but it isn't called for each
-   executed line of code (only on call and return, but the return event is reported
-   even when an exception has been set).  The function is thread-specific, but
-   there is no way for the profiler to know about context switches between threads,
-   so it does not make sense to use this in the presence of multiple threads. Also,
-   its return value is not used, so it can simply return ``None``.
+   system's trace function (see :func:`settrace`), but it is called with different events,
+   for example it isn't called for each executed line of code (only on call and return,
+   but the return event is reported even when an exception has been set). The function is
+   thread-specific, but there is no way for the profiler to know about context switches between
+   threads, so it does not make sense to use this in the presence of multiple threads. Also,
+   its return value is not used, so it can simply return ``None``.  Error in the profile
+   function will cause itself unset.
 
+   Profile functions should have three arguments: *frame*, *event*, and
+   *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
+   ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
+   on the event type.
+
+   The events have the following meaning:
+
+   ``'call'``
+      A function is called (or some other code block entered).  The
+      profile function is called; *arg* is ``None``.
+
+   ``'return'``
+      A function (or other code block) is about to return.  The profile
+      function is called; *arg* is the value that will be returned, or ``None``
+      if the event is caused by an exception being raised.
+
+   ``'c_call'``
+      A C function is about to be called.  This may be an extension function or
+      a built-in.  *arg* is the C function object.
+
+   ``'c_return'``
+      A C function has returned. *arg* is the C function object.
+
+   ``'c_exception'``
+      A C function has raised an exception.  *arg* is the C function object.
 
 .. function:: setrecursionlimit(limit)
 
@@ -1110,8 +1194,8 @@ always available.
 
    Trace functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
-   ``'line'``, ``'return'``, ``'exception'``, ``'c_call'``, ``'c_return'``, or
-   ``'c_exception'``, ``'opcode'``. *arg* depends on the event type.
+   ``'line'``, ``'return'``, ``'exception'`` or ``'opcode'``.  *arg* depends on
+   the event type.
 
    The trace function is invoked (with *event* set to ``'call'``) whenever a new
    local scope is entered; it should return a reference to a local trace
@@ -1120,6 +1204,9 @@ always available.
    The local trace function should return a reference to itself (or to another
    function for further tracing in that scope), or ``None`` to turn off tracing
    in that scope.
+
+   If there is any error occurred in the trace function, it will be unset, just
+   like ``settrace(None)`` is called.
 
    The events have the following meaning:
 
@@ -1147,16 +1234,6 @@ always available.
       An exception has occurred.  The local trace function is called; *arg* is a
       tuple ``(exception, value, traceback)``; the return value specifies the
       new local trace function.
-
-   ``'c_call'``
-      A C function is about to be called.  This may be an extension function or
-      a built-in.  *arg* is the C function object.
-
-   ``'c_return'``
-      A C function has returned. *arg* is the C function object.
-
-   ``'c_exception'``
-      A C function has raised an exception.  *arg* is the C function object.
 
    ``'opcode'``
       The interpreter is about to execute a new opcode (see :mod:`dis` for
@@ -1201,6 +1278,26 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)
 
+.. function:: set_coroutine_origin_tracking_depth(depth)
+
+   Allows enabling or disabling coroutine origin tracking. When
+   enabled, the ``cr_origin`` attribute on coroutine objects will
+   contain a tuple of (filename, line number, function name) tuples
+   describing the traceback where the coroutine object was created,
+   with the most recent call first. When disabled, ``cr_origin`` will
+   be None.
+
+   To enable, pass a *depth* value greater than zero; this sets the
+   number of frames whose information will be captured. To disable,
+   pass set *depth* to zero.
+
+   This setting is thread-specific.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
 
 .. function:: set_coroutine_wrapper(wrapper)
 
@@ -1241,6 +1338,10 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+   .. deprecated:: 3.7
+      The coroutine wrapper functionality has been deprecated, and
+      will be removed in 3.8. See :issue:`32591` for details.
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the default filesystem encoding and errors mode to 'mbcs' and
@@ -1249,7 +1350,7 @@ always available.
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -1271,13 +1372,30 @@ always available.
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The character encoding is platform-dependent.  Under Windows, if the stream
-     is interactive (that is, if its :meth:`isatty` method returns ``True``), the
-     console codepage is used, otherwise the ANSI code page.  Under other
-     platforms, the locale encoding is used (see :meth:`locale.getpreferredencoding`).
+   * The character encoding is platform-dependent.  Non-Windows
+     platforms use the locale encoding (see
+     :meth:`locale.getpreferredencoding()`).
 
-     Under all platforms though, you can override this value by setting the
-     :envvar:`PYTHONIOENCODING` environment variable before starting Python.
+     On Windows, UTF-8 is used for the console device.  Non-character
+     devices such as disk files and pipes use the system locale
+     encoding (i.e. the ANSI codepage).  Non-console character
+     devices such as NUL (i.e. where isatty() returns True) use the
+     value of the console input and output codepages at startup,
+     respectively for stdin and stdout/stderr. This defaults to the
+     system locale encoding if the process is not initially attached
+     to a console.
+
+     The special behaviour of the console can be overridden
+     by setting the environment variable PYTHONLEGACYWINDOWSSTDIO
+     before starting Python. In that case, the console codepages are
+     used as for any other character device.
+
+     Under all platforms, you can override the character encoding by
+     setting the :envvar:`PYTHONIOENCODING` environment variable before
+     starting Python or by using the new :option:`-X` ``utf8`` command
+     line option and :envvar:`PYTHONUTF8` environment variable.  However,
+     for the Windows console, this only applies when
+     :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also set.
 
    * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
      Otherwise, they are block-buffered like regular text files.  You can
@@ -1395,7 +1513,9 @@ always available.
    stored as string resource 1000 in the Python DLL.  The value is normally the
    first three characters of :const:`version`.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
-   registry keys used by Python. Availability: Windows.
+   registry keys used by Python.
+
+   .. availability:: Windows.
 
 
 .. data:: _xoptions

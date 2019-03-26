@@ -1,0 +1,2 @@
+For the grep module, add tests for findfiles, refactor findfiles to be a
+module-level function, and refactor findfiles to use os.walk.

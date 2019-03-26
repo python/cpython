@@ -27,6 +27,20 @@ from distutils.debug import DEBUG
 command_re = re.compile(r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
 
+def _ensure_list(value, fieldname):
+    if isinstance(value, str):
+        # a string containing comma separated values is okay.  It will
+        # be converted to a list by Distribution.finalize_options().
+        pass
+    elif not isinstance(value, list):
+        # passing a tuple or an iterator perhaps, warn and convert
+        typename = type(value).__name__
+        msg = f"Warning: '{fieldname}' should be a list, got type '{typename}'"
+        log.log(log.WARN, msg)
+        value = list(value)
+    return value
+
+
 class Distribution:
     """The core of the Distutils.  Most of the work hiding behind 'setup'
     is really done within a Distribution instance, which farms the work out
@@ -257,10 +271,7 @@ Common commands: (see '--help-commands' for more)
                     setattr(self, key, val)
                 else:
                     msg = "Unknown distribution option: %s" % repr(key)
-                    if warnings is not None:
-                        warnings.warn(msg)
-                    else:
-                        sys.stderr.write(msg + "\n")
+                    warnings.warn(msg)
 
         # no-user-cfg is handled before other command line args
         # because other args override the config files, and this
@@ -1189,36 +1200,19 @@ class DistributionMetadata:
         return self.keywords or []
 
     def set_keywords(self, value):
-        # If 'keywords' is a string, it will be converted to a list
-        # by Distribution.finalize_options(). To maintain backwards
-        # compatibility, do not raise an exception if 'keywords' is
-        # a string.
-        if not isinstance(value, (list, str)):
-            msg = "'keywords' should be a 'list', not %r"
-            raise TypeError(msg % type(value).__name__)
-        self.keywords = value
+        self.keywords = _ensure_list(value, 'keywords')
 
     def get_platforms(self):
         return self.platforms or ["UNKNOWN"]
 
     def set_platforms(self, value):
-        # If 'platforms' is a string, it will be converted to a list
-        # by Distribution.finalize_options(). To maintain backwards
-        # compatibility, do not raise an exception if 'platforms' is
-        # a string.
-        if not isinstance(value, (list, str)):
-            msg = "'platforms' should be a 'list', not %r"
-            raise TypeError(msg % type(value).__name__)
-        self.platforms = value
+        self.platforms = _ensure_list(value, 'platforms')
 
     def get_classifiers(self):
         return self.classifiers or []
 
     def set_classifiers(self, value):
-        if not isinstance(value, list):
-            msg = "'classifiers' should be a 'list', not %r"
-            raise TypeError(msg % type(value).__name__)
-        self.classifiers = value
+        self.classifiers = _ensure_list(value, 'classifiers')
 
     def get_download_url(self):
         return self.download_url or "UNKNOWN"
@@ -1231,7 +1225,7 @@ class DistributionMetadata:
         import distutils.versionpredicate
         for v in value:
             distutils.versionpredicate.VersionPredicate(v)
-        self.requires = value
+        self.requires = list(value)
 
     def get_provides(self):
         return self.provides or []
@@ -1250,7 +1244,7 @@ class DistributionMetadata:
         import distutils.versionpredicate
         for v in value:
             distutils.versionpredicate.VersionPredicate(v)
-        self.obsoletes = value
+        self.obsoletes = list(value)
 
 def fix_help_options(options):
     """Convert a 4-tuple 'help_options' list as found in various command

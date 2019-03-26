@@ -33,9 +33,8 @@ def _showwarnmsg_impl(msg):
         pass
 
 def _formatwarnmsg_impl(msg):
-    s =  ("%s:%s: %s: %s\n"
-          % (msg.filename, msg.lineno, msg.category.__name__,
-             msg.message))
+    category = msg.category.__name__
+    s =  f"{msg.filename}:{msg.lineno}: {category}: {msg.message}\n"
 
     if msg.line is None:
         try:
@@ -55,11 +54,20 @@ def _formatwarnmsg_impl(msg):
     if msg.source is not None:
         try:
             import tracemalloc
-            tb = tracemalloc.get_object_traceback(msg.source)
+        # Logging a warning should not raise a new exception:
+        # catch Exception, not only ImportError and RecursionError.
         except Exception:
-            # When a warning is logged during Python shutdown, tracemalloc
-            # and the import machinery don't work anymore
+            # don't suggest to enable tracemalloc if it's not available
+            tracing = True
             tb = None
+        else:
+            tracing = tracemalloc.is_tracing()
+            try:
+                tb = tracemalloc.get_object_traceback(msg.source)
+            except Exception:
+                # When a warning is logged during Python shutdown, tracemalloc
+                # and the import machinery don't work anymore
+                tb = None
 
         if tb is not None:
             s += 'Object allocated at (most recent call last):\n'
@@ -77,6 +85,9 @@ def _formatwarnmsg_impl(msg):
                 if line:
                     line = line.strip()
                     s += '    %s\n' % line
+        elif not tracing:
+            s += (f'{category}: Enable tracemalloc to get the object '
+                  f'allocation traceback\n')
     return s
 
 # Keep a reference to check if the function was replaced
@@ -113,7 +124,7 @@ def _formatwarnmsg(msg):
         if fw is not _formatwarning_orig:
             # warnings.formatwarning() was replaced
             return fw(msg.message, msg.category,
-                      msg.filename, msg.lineno, line=msg.line)
+                      msg.filename, msg.lineno, msg.line)
     return _formatwarnmsg_impl(msg)
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
@@ -303,28 +314,16 @@ def warn(message, category=None, stacklevel=1, source=None):
                     raise ValueError
     except ValueError:
         globals = sys.__dict__
+        filename = "sys"
         lineno = 1
     else:
         globals = frame.f_globals
+        filename = frame.f_code.co_filename
         lineno = frame.f_lineno
     if '__name__' in globals:
         module = globals['__name__']
     else:
         module = "<string>"
-    filename = globals.get('__file__')
-    if filename:
-        fnl = filename.lower()
-        if fnl.endswith(".pyc"):
-            filename = filename[:-1]
-    else:
-        if module == "__main__":
-            try:
-                filename = sys.argv[0]
-            except AttributeError:
-                # embedded interpreters don't have sys.argv, see bug #839151
-                filename = '__main__'
-        if not filename:
-            filename = module
     registry = globals.setdefault("__warningregistry__", {})
     warn_explicit(message, category, filename, lineno, module, registry,
                   globals, source)
@@ -488,6 +487,29 @@ class catch_warnings(object):
         self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
+# Private utility function called by _PyErr_WarnUnawaitedCoroutine
+def _warn_unawaited_coroutine(coro):
+    msg_lines = [
+        f"coroutine '{coro.__qualname__}' was never awaited\n"
+    ]
+    if coro.cr_origin is not None:
+        import linecache, traceback
+        def extract():
+            for filename, lineno, funcname in reversed(coro.cr_origin):
+                line = linecache.getline(filename, lineno)
+                yield (filename, lineno, funcname, line)
+        msg_lines.append("Coroutine created at (most recent call last)\n")
+        msg_lines += traceback.format_list(list(extract()))
+    msg = "".join(msg_lines).rstrip("\n")
+    # Passing source= here means that if the user happens to have tracemalloc
+    # enabled and tracking where the coroutine was created, the warning will
+    # contain that traceback. This does mean that if they have *both*
+    # coroutine origin tracking *and* tracemalloc enabled, they'll get two
+    # partially-redundant tracebacks. If we wanted to be clever we could
+    # probably detect this case and avoid it, but for now we don't bother.
+    warn(msg, category=RuntimeWarning, stacklevel=2, source=coro)
+
+
 # filters contains a sequence of filter 5-tuples
 # The components of the 5-tuple are:
 # - an action: error, ignore, always, default, module, or once
@@ -519,34 +541,13 @@ except ImportError:
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:
-    dev_mode = ('dev' in getattr(sys, '_xoptions', {}))
-    py_debug = hasattr(sys, 'gettotalrefcount')
-
-    if not(dev_mode or py_debug):
-        silence = [ImportWarning, PendingDeprecationWarning]
-        silence.append(DeprecationWarning)
-        for cls in silence:
-            simplefilter("ignore", category=cls)
-
-    bytes_warning = sys.flags.bytes_warning
-    if bytes_warning > 1:
-        bytes_action = "error"
-    elif bytes_warning:
-        bytes_action = "default"
-    else:
-        bytes_action = "ignore"
-    simplefilter(bytes_action, category=BytesWarning, append=1)
-
-    # resource usage warnings are enabled by default in pydebug mode
-    if dev_mode or py_debug:
-        resource_action = "default"
-    else:
-        resource_action = "ignore"
-    simplefilter(resource_action, category=ResourceWarning, append=1)
-
-    if dev_mode:
-        simplefilter("default", category=Warning, append=1)
-
-    del py_debug, dev_mode
+    # Several warning categories are ignored by default in regular builds
+    if not hasattr(sys, 'gettotalrefcount'):
+        filterwarnings("default", category=DeprecationWarning,
+                       module="__main__", append=1)
+        simplefilter("ignore", category=DeprecationWarning, append=1)
+        simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+        simplefilter("ignore", category=ImportWarning, append=1)
+        simplefilter("ignore", category=ResourceWarning, append=1)
 
 del _warnings_defaults

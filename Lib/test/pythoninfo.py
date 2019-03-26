@@ -6,6 +6,7 @@ import errno
 import re
 import sys
 import traceback
+import warnings
 
 
 def normalize_text(text):
@@ -144,11 +145,20 @@ def collect_platform(info_add):
     info_add('platform.platform',
              platform.platform(aliased=True))
 
+    libc_ver = ('%s %s' % platform.libc_ver()).strip()
+    if libc_ver:
+        info_add('platform.libc_ver', libc_ver)
+
 
 def collect_locale(info_add):
     import locale
 
     info_add('locale.encoding', locale.getpreferredencoding(False))
+
+
+def collect_builtins(info_add):
+    info_add('builtins.float.float_format', float.__getformat__("float"))
+    info_add('builtins.float.double_format', float.__getformat__("double"))
 
 
 def collect_os(info_add):
@@ -170,7 +180,7 @@ def collect_os(info_add):
     )
     copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
 
-    info_add("os.cwd", os.getcwd())
+    call_func(info_add, 'os.cwd', os, 'getcwd')
 
     call_func(info_add, 'os.uid', os, 'getuid')
     call_func(info_add, 'os.gid', os, 'getgid')
@@ -194,32 +204,74 @@ def collect_os(info_add):
     call_func(info_add, 'os.cpu_count', os, 'cpu_count')
     call_func(info_add, 'os.loadavg', os, 'getloadavg')
 
-    # Get environment variables: filter to list
-    # to not leak sensitive information
-    ENV_VARS = (
+    # Environment variables used by the stdlib and tests. Don't log the full
+    # environment: filter to list to not leak sensitive information.
+    #
+    # HTTP_PROXY is not logged because it can contain a password.
+    ENV_VARS = frozenset((
+        "APPDATA",
+        "AR",
+        "ARCHFLAGS",
+        "ARFLAGS",
+        "AUDIODEV",
         "CC",
+        "CFLAGS",
+        "COLUMNS",
+        "COMPUTERNAME",
         "COMSPEC",
+        "CPP",
+        "CPPFLAGS",
         "DISPLAY",
+        "DISTUTILS_DEBUG",
         "DISTUTILS_USE_SDK",
         "DYLD_LIBRARY_PATH",
+        "ENSUREPIP_OPTIONS",
+        "HISTORY_FILE",
         "HOME",
         "HOMEDRIVE",
         "HOMEPATH",
+        "IDLESTARTUP",
         "LANG",
+        "LDFLAGS",
+        "LDSHARED",
         "LD_LIBRARY_PATH",
+        "LINES",
         "MACOSX_DEPLOYMENT_TARGET",
+        "MAILCAPS",
         "MAKEFLAGS",
+        "MIXERDEV",
         "MSSDK",
         "PATH",
+        "PATHEXT",
+        "PIP_CONFIG_FILE",
+        "PLAT",
+        "POSIXLY_CORRECT",
+        "PY_SAX_PARSER",
+        "ProgramFiles",
+        "ProgramFiles(x86)",
+        "RUNNING_ON_VALGRIND",
         "SDK_TOOLS_BIN",
+        "SERVER_SOFTWARE",
         "SHELL",
+        "SOURCE_DATE_EPOCH",
+        "SYSTEMROOT",
         "TEMP",
         "TERM",
+        "TILE_LIBRARY",
+        "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
+        "TRAVIS",
+        "TZ",
         "USERPROFILE",
+        "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
-    )
+        "WINDIR",
+        "_PYTHON_HOST_PLATFORM",
+        "_PYTHON_PROJECT_BASE",
+        "_PYTHON_SYSCONFIGDATA_NAME",
+        "__PYVENV_LAUNCHER__",
+    ))
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
@@ -270,6 +322,14 @@ def collect_readline(info_add):
     copy_attributes(info_add, readline, 'readline.%s', attributes,
                     formatter=format_attr)
 
+    if not hasattr(readline, "_READLINE_LIBRARY_VERSION"):
+        # _READLINE_LIBRARY_VERSION has been added to CPython 3.7
+        doc = getattr(readline, '__doc__', '')
+        if 'libedit readline' in doc:
+            info_add('readline.library', 'libedit readline')
+        elif 'GNU readline' in doc:
+            info_add('readline.library', 'GNU readline')
+
 
 def collect_gdb(info_add):
     import subprocess
@@ -310,6 +370,8 @@ def collect_tkinter(info_add):
 def collect_time(info_add):
     import time
 
+    info_add('time.time', time.time())
+
     attributes = (
         'altzone',
         'daylight',
@@ -319,9 +381,26 @@ def collect_time(info_add):
     copy_attributes(info_add, time, 'time.%s', attributes)
 
     if hasattr(time, 'get_clock_info'):
-        for clock in ('time', 'perf_counter'):
-            tinfo = time.get_clock_info(clock)
-            info_add('time.%s' % clock, tinfo)
+        for clock in ('clock', 'monotonic', 'perf_counter',
+                      'process_time', 'thread_time', 'time'):
+            try:
+                # prevent DeprecatingWarning on get_clock_info('clock')
+                with warnings.catch_warnings(record=True):
+                    clock_info = time.get_clock_info(clock)
+            except ValueError:
+                # missing clock like time.thread_time()
+                pass
+            else:
+                info_add('time.get_clock_info(%s)' % clock, clock_info)
+
+
+def collect_datetime(info_add):
+    try:
+        import datetime
+    except ImportError:
+        return
+
+    info_add('datetime.datetime.now', datetime.datetime.now())
 
 
 def collect_sysconfig(info_add):
@@ -341,7 +420,10 @@ def collect_sysconfig(info_add):
         'OPT',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
+        'PY_CORE_LDFLAGS',
         'PY_LDFLAGS',
+        'PY_LDFLAGS_NODIST',
+        'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'SHELL',
@@ -435,6 +517,103 @@ def collect_testcapi(info_add):
     copy_attr(info_add, 'pymem.with_pymalloc', _testcapi, 'WITH_PYMALLOC')
 
 
+def collect_resource(info_add):
+    try:
+        import resource
+    except ImportError:
+        return
+
+    limits = [attr for attr in dir(resource) if attr.startswith('RLIMIT_')]
+    for name in limits:
+        key = getattr(resource, name)
+        value = resource.getrlimit(key)
+        info_add('resource.%s' % name, value)
+
+    call_func(info_add, 'resource.pagesize', resource, 'getpagesize')
+
+
+def collect_test_socket(info_add):
+    try:
+        from test import test_socket
+    except ImportError:
+        return
+
+    # all check attributes like HAVE_SOCKET_CAN
+    attributes = [name for name in dir(test_socket)
+                  if name.startswith('HAVE_')]
+    copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
+
+
+def collect_test_support(info_add):
+    try:
+        from test import support
+    except ImportError:
+        return
+
+    attributes = ('IPV6_ENABLED',)
+    copy_attributes(info_add, support, 'test_support.%s', attributes)
+
+    call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
+    call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+
+
+def collect_cc(info_add):
+    import subprocess
+    import sysconfig
+
+    CC = sysconfig.get_config_var('CC')
+    if not CC:
+        return
+
+    try:
+        import shlex
+        args = shlex.split(CC)
+    except ImportError:
+        args = CC.split()
+    args.append('--version')
+    proc = subprocess.Popen(args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            universal_newlines=True)
+    stdout = proc.communicate()[0]
+    if proc.returncode:
+        # CC --version failed: ignore error
+        return
+
+    text = stdout.splitlines()[0]
+    text = normalize_text(text)
+    info_add('CC.version', text)
+
+
+def collect_gdbm(info_add):
+    try:
+        from _gdbm import _GDBM_VERSION
+    except ImportError:
+        return
+
+    info_add('gdbm.GDBM_VERSION', '.'.join(map(str, _GDBM_VERSION)))
+
+
+def collect_get_config(info_add):
+    # Dump global configuration variables, _PyCoreConfig
+    # and _PyMainInterpreterConfig
+    try:
+        from _testcapi import get_configs
+    except ImportError:
+        return
+
+    all_configs = get_configs()
+    for config_type in sorted(all_configs):
+        config = all_configs[config_type]
+        for key in sorted(config):
+            info_add('%s[%s]' % (config_type, key), repr(config[key]))
+
+
+def collect_subprocess(info_add):
+    import subprocess
+    copy_attributes(info_add, subprocess, 'subprocess.%s', ('_USE_POSIX_SPAWN',))
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -443,6 +622,7 @@ def collect_info(info):
         # collect_os() should be the first, to check the getrandom() status
         collect_os,
 
+        collect_builtins,
         collect_gdb,
         collect_locale,
         collect_platform,
@@ -453,11 +633,21 @@ def collect_info(info):
         collect_sys,
         collect_sysconfig,
         collect_time,
+        collect_datetime,
         collect_tkinter,
         collect_zlib,
         collect_expat,
         collect_decimal,
         collect_testcapi,
+        collect_resource,
+        collect_cc,
+        collect_gdbm,
+        collect_get_config,
+        collect_subprocess,
+
+        # Collecting from tests should be last as they have side effects.
+        collect_test_socket,
+        collect_test_support,
     ):
         try:
             collect_func(info_add)

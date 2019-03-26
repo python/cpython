@@ -1,10 +1,11 @@
 #ifndef Py_LIMITED_API
 #ifndef Py_SYMTABLE_H
 #define Py_SYMTABLE_H
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "Python-ast.h"   /* mod_ty */
 
 /* XXX(ncoghlan): This is a weird mix of public names and interpreter internal
  *                names.
@@ -49,6 +50,7 @@ typedef struct _symtable_entry {
                                      including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
+    unsigned ste_comprehension : 1; /* true if namespace is a list comprehension */
     unsigned ste_varargs : 1;     /* true if block has varargs */
     unsigned ste_varkeywords : 1; /* true if block has varkeywords */
     unsigned ste_returns_value : 1;  /* true if namespace uses return with
@@ -60,7 +62,6 @@ typedef struct _symtable_entry {
     int ste_col_offset;      /* offset of first line of block */
     int ste_opt_lineno;      /* lineno of last exec or import * */
     int ste_opt_col_offset;  /* offset of last exec or import * */
-    int ste_tmpname;         /* counter for listcomp temp vars */
     struct symtable *ste_table;
 } PySTEntryObject;
 
@@ -116,4 +117,4 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 }
 #endif
 #endif /* !Py_SYMTABLE_H */
-#endif /* Py_LIMITED_API */
+#endif /* !Py_LIMITED_API */

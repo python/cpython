@@ -16,6 +16,8 @@ import warnings as original_warnings
 py_warnings = support.import_fresh_module('warnings', blocked=['_warnings'])
 c_warnings = support.import_fresh_module('warnings', fresh=['_warnings'])
 
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
 @contextmanager
 def warnings_state(module):
     """Use a specific warnings implementation in warning_tests."""
@@ -146,10 +148,14 @@ class FilterTests(BaseTest):
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
             message = "FilterTests.test_always"
-            self.module.warn(message, UserWarning)
-            self.assertTrue(message, w[-1].message)
-            self.module.warn(message, UserWarning)
-            self.assertTrue(w[-1].message, message)
+            def f():
+                self.module.warn(message, UserWarning)
+            f()
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[-1].message.args[0], message)
+            f()
+            self.assertEqual(len(w), 2)
+            self.assertEqual(w[-1].message.args[0], message)
 
     def test_always_after_default(self):
         with original_warnings.catch_warnings(record=True,
@@ -215,6 +221,27 @@ class FilterTests(BaseTest):
             self.module.warn_explicit(message, UserWarning, "test_warnings2.py",
                                     42)
             self.assertEqual(len(w), 0)
+
+    def test_module_globals(self):
+        with original_warnings.catch_warnings(record=True,
+                module=self.module) as w:
+            self.module.simplefilter("always", UserWarning)
+
+            # bpo-33509: module_globals=None must not crash
+            self.module.warn_explicit('msg', UserWarning, "filename", 42,
+                                      module_globals=None)
+            self.assertEqual(len(w), 1)
+
+            # Invalid module_globals type
+            with self.assertRaises(TypeError):
+                self.module.warn_explicit('msg', UserWarning, "filename", 42,
+                                          module_globals=True)
+            self.assertEqual(len(w), 1)
+
+            # Empty module_globals
+            self.module.warn_explicit('msg', UserWarning, "filename", 42,
+                                      module_globals={})
+            self.assertEqual(len(w), 2)
 
     def test_inheritance(self):
         with original_warnings.catch_warnings(module=self.module) as w:
@@ -320,6 +347,7 @@ class FilterTests(BaseTest):
                 self.module.filters[0][0], "error",
                 "simplefilter did not promote filter to the beginning of list"
             )
+
     def test_append_duplicate(self):
         with original_warnings.catch_warnings(module=self.module,
                 record=True) as w:
@@ -417,78 +445,15 @@ class WarnTests(BaseTest):
                 self.assertEqual(len(w), 1)
                 self.assertEqual(w[0].filename, __file__)
 
-    def test_missing_filename_not_main(self):
-        # If __file__ is not specified and __main__ is not the module name,
-        # then __file__ should be set to the module name.
-        filename = warning_tests.__file__
-        try:
-            del warning_tests.__file__
-            with warnings_state(self.module):
-                with original_warnings.catch_warnings(record=True,
-                        module=self.module) as w:
-                    warning_tests.inner("spam8", stacklevel=1)
-                    self.assertEqual(w[-1].filename, warning_tests.__name__)
-        finally:
-            warning_tests.__file__ = filename
-
-    @unittest.skipUnless(hasattr(sys, 'argv'), 'test needs sys.argv')
-    def test_missing_filename_main_with_argv(self):
-        # If __file__ is not specified and the caller is __main__ and sys.argv
-        # exists, then use sys.argv[0] as the file.
-        filename = warning_tests.__file__
-        module_name = warning_tests.__name__
-        try:
-            del warning_tests.__file__
-            warning_tests.__name__ = '__main__'
-            with warnings_state(self.module):
-                with original_warnings.catch_warnings(record=True,
-                        module=self.module) as w:
-                    warning_tests.inner('spam9', stacklevel=1)
-                    self.assertEqual(w[-1].filename, sys.argv[0])
-        finally:
-            warning_tests.__file__ = filename
-            warning_tests.__name__ = module_name
-
-    def test_missing_filename_main_without_argv(self):
-        # If __file__ is not specified, the caller is __main__, and sys.argv
-        # is not set, then '__main__' is the file name.
-        filename = warning_tests.__file__
-        module_name = warning_tests.__name__
-        argv = sys.argv
-        try:
-            del warning_tests.__file__
-            warning_tests.__name__ = '__main__'
-            del sys.argv
-            with warnings_state(self.module):
-                with original_warnings.catch_warnings(record=True,
-                        module=self.module) as w:
-                    warning_tests.inner('spam10', stacklevel=1)
-                    self.assertEqual(w[-1].filename, '__main__')
-        finally:
-            warning_tests.__file__ = filename
-            warning_tests.__name__ = module_name
-            sys.argv = argv
-
-    def test_missing_filename_main_with_argv_empty_string(self):
-        # If __file__ is not specified, the caller is __main__, and sys.argv[0]
-        # is the empty string, then '__main__ is the file name.
-        # Tests issue 2743.
-        file_name = warning_tests.__file__
-        module_name = warning_tests.__name__
-        argv = sys.argv
-        try:
-            del warning_tests.__file__
-            warning_tests.__name__ = '__main__'
-            sys.argv = ['']
-            with warnings_state(self.module):
-                with original_warnings.catch_warnings(record=True,
-                        module=self.module) as w:
-                    warning_tests.inner('spam11', stacklevel=1)
-                    self.assertEqual(w[-1].filename, '__main__')
-        finally:
-            warning_tests.__file__ = file_name
-            warning_tests.__name__ = module_name
-            sys.argv = argv
+    def test_exec_filename(self):
+        filename = "<warnings-test>"
+        codeobj = compile(("import warnings\n"
+                           "warnings.warn('hello', UserWarning)"),
+                          filename, "exec")
+        with original_warnings.catch_warnings(record=True) as w:
+            self.module.simplefilter("always", category=UserWarning)
+            exec(codeobj)
+        self.assertEqual(w[0].filename, filename)
 
     def test_warn_explicit_non_ascii_filename(self):
         with original_warnings.catch_warnings(record=True,
@@ -912,6 +877,25 @@ class WarningsDisplayTests(BaseTest):
                                 file_object, expected_file_line)
         self.assertEqual(expect, file_object.getvalue())
 
+    def test_formatwarning_override(self):
+        # bpo-35178: Test that a custom formatwarning function gets the 'line'
+        # argument as a positional argument, and not only as a keyword argument
+        def myformatwarning(message, category, filename, lineno, text):
+            return f'm={message}:c={category}:f={filename}:l={lineno}:t={text}'
+
+        file_name = os.path.splitext(warning_tests.__file__)[0] + '.py'
+        line_num = 3
+        file_line = linecache.getline(file_name, line_num).strip()
+        message = 'msg'
+        category = Warning
+        file_object = StringIO()
+        expected = f'm={message}:c={category}:f={file_name}:l={line_num}' + \
+                   f':t={file_line}'
+        with support.swap_attr(self.module, 'formatwarning', myformatwarning):
+            self.module.showwarning(message, category, file_name, line_num,
+                                    file_object, file_line)
+            self.assertEqual(file_object.getvalue(), expected)
+
 
 class CWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = c_warnings
@@ -932,12 +916,27 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
                 func()
             """))
 
-        res = assert_python_ok('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+        def run(*args):
+            res = assert_python_ok(*args)
+            stderr = res.err.decode('ascii', 'replace')
+            stderr = '\n'.join(stderr.splitlines())
 
-        stderr = res.err.decode('ascii', 'replace')
-        # normalize newlines
-        stderr = '\n'.join(stderr.splitlines())
-        stderr = re.sub('<.*>', '<...>', stderr)
+            # normalize newlines
+            stderr = re.sub('<.*>', '<...>', stderr)
+            return stderr
+
+        # tracemalloc disabled
+        stderr = run('-Wd', support.TESTFN)
+        expected = textwrap.dedent('''
+            {fname}:5: ResourceWarning: unclosed file <...>
+              f = None
+            ResourceWarning: Enable tracemalloc to get the object allocation traceback
+        ''')
+        expected = expected.format(fname=support.TESTFN).strip()
+        self.assertEqual(stderr, expected)
+
+        # tracemalloc enabled
+        stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
         expected = textwrap.dedent('''
             {fname}:5: ResourceWarning: unclosed file <...>
               f = None
@@ -1110,20 +1109,23 @@ class EnvironmentVariableTests(BaseTest):
     def test_single_warning(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout, b"['ignore::DeprecationWarning']")
 
     def test_comma_separated_warnings(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning,ignore::UnicodeWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
     def test_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_ok("-Wignore::UnicodeWarning", "-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
-            PYTHONWARNINGS="ignore::DeprecationWarning")
+            PYTHONWARNINGS="ignore::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
@@ -1131,7 +1133,8 @@ class EnvironmentVariableTests(BaseTest):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "
             "warnings.warn('Message', DeprecationWarning)",
-            PYTHONWARNINGS="default::DeprecationWarning")
+            PYTHONWARNINGS="default::DeprecationWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             b"['default::DeprecationWarning', 'error::DeprecationWarning']")
         self.assertEqual(stderr.splitlines(),
@@ -1139,13 +1142,45 @@ class EnvironmentVariableTests(BaseTest):
              b"  File \"<string>\", line 1, in <module>",
              b"DeprecationWarning: Message"])
 
+    def test_default_filter_configuration(self):
+        pure_python_api = self.module is py_warnings
+        if Py_DEBUG:
+            expected_default_filters = []
+        else:
+            if pure_python_api:
+                main_module_filter = re.compile("__main__")
+            else:
+                main_module_filter = "__main__"
+            expected_default_filters = [
+                ('default', None, DeprecationWarning, main_module_filter, 0),
+                ('ignore', None, DeprecationWarning, None, 0),
+                ('ignore', None, PendingDeprecationWarning, None, 0),
+                ('ignore', None, ImportWarning, None, 0),
+                ('ignore', None, ResourceWarning, None, 0),
+            ]
+        expected_output = [str(f).encode() for f in expected_default_filters]
+
+        if pure_python_api:
+            # Disable the warnings acceleration module in the subprocess
+            code = "import sys; sys.modules.pop('warnings', None); sys.modules['_warnings'] = None; "
+        else:
+            code = ""
+        code += "import warnings; [print(f) for f in warnings.filters]"
+
+        rc, stdout, stderr = assert_python_ok("-c", code, __isolated=True)
+        stdout_lines = [line.strip() for line in stdout.splitlines()]
+        self.maxDiff = None
+        self.assertEqual(stdout_lines, expected_output)
+
+
     @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
                          'requires non-ascii filesystemencoding')
     def test_nonascii(self):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONIOENCODING="utf-8",
-            PYTHONWARNINGS="ignore:DeprecaciónWarning")
+            PYTHONWARNINGS="ignore:DeprecaciónWarning",
+            PYTHONDEVMODE="")
         self.assertEqual(stdout,
             "['ignore:DeprecaciónWarning']".encode('utf-8'))
 
@@ -1185,9 +1220,7 @@ class A:
 a=A()
         """
         rc, out, err = assert_python_ok("-c", code)
-        # note: "__main__" filename is not correct, it should be the name
-        # of the script
-        self.assertEqual(err, b'__main__:7: UserWarning: test')
+        self.assertEqual(err.decode(), '<string>:7: UserWarning: test')
 
     def test_late_resource_warning(self):
         # Issue #21925: Emitting a ResourceWarning late during the Python

@@ -1,2 +1,0 @@
-Updates 2to3 to convert from operator.isCallable(obj) to callable(obj). 
-Patch by Dong-hee Na.

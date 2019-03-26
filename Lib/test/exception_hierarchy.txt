@@ -42,6 +42,7 @@ BaseException
       |    +-- NotImplementedError
       |    +-- RecursionError
       +-- SyntaxError
+      |    +-- TargetScopeError
       |    +-- IndentationError
       |         +-- TabError
       +-- SystemError

@@ -1,2 +1,0 @@
-Delete unused file idlelib/tabbedpages.py. Use of TabbedPageSet in
-configdialog was replaced by ttk.Notebook.

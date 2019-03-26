@@ -1,8 +1,9 @@
 /* Class object implementation (dead now except for methods) */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
@@ -73,12 +74,10 @@ PyMethod_New(PyObject *func, PyObject *self)
 }
 
 static PyObject *
-method_reduce(PyMethodObject *im)
+method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
 {
     PyObject *self = PyMethod_GET_SELF(im);
     PyObject *func = PyMethod_GET_FUNCTION(im);
-    PyObject *builtins;
-    PyObject *getattr;
     PyObject *funcname;
     _Py_IDENTIFIER(getattr);
 
@@ -86,9 +85,8 @@ method_reduce(PyMethodObject *im)
     if (funcname == NULL) {
         return NULL;
     }
-    builtins = PyEval_GetBuiltins();
-    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-    return Py_BuildValue("O(ON)", getattr, self, funcname);
+    return Py_BuildValue("N(ON)", _PyEval_GetBuiltinId(&PyId_getattr),
+                         self, funcname);
 }
 
 static PyMethodDef method_methods[] = {
@@ -225,13 +223,9 @@ method_richcompare(PyObject *self, PyObject *other, int op)
     b = (PyMethodObject *)other;
     eq = PyObject_RichCompareBool(a->im_func, b->im_func, Py_EQ);
     if (eq == 1) {
-        if (a->im_self == NULL || b->im_self == NULL)
-            eq = a->im_self == b->im_self;
-        else
-            eq = PyObject_RichCompareBool(a->im_self, b->im_self,
-                                          Py_EQ);
+        eq = (a->im_self == b->im_self);
     }
-    if (eq < 0)
+    else if (eq < 0)
         return NULL;
     if (op == Py_EQ)
         res = eq ? Py_True : Py_False;
@@ -246,21 +240,14 @@ method_repr(PyMethodObject *a)
 {
     PyObject *self = a->im_self;
     PyObject *func = a->im_func;
-    PyObject *funcname = NULL, *result = NULL;
+    PyObject *funcname, *result;
     const char *defname = "?";
 
-    funcname = _PyObject_GetAttrId(func, &PyId___qualname__);
-    if (funcname == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-            return NULL;
-        PyErr_Clear();
-
-        funcname = _PyObject_GetAttrId(func, &PyId___name__);
-        if (funcname == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-                return NULL;
-            PyErr_Clear();
-        }
+    if (_PyObject_LookupAttrId(func, &PyId___qualname__, &funcname) < 0 ||
+        (funcname == NULL &&
+         _PyObject_LookupAttrId(func, &PyId___name__, &funcname) < 0))
+    {
+        return NULL;
     }
 
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
@@ -280,12 +267,7 @@ static Py_hash_t
 method_hash(PyMethodObject *a)
 {
     Py_hash_t x, y;
-    if (a->im_self == NULL)
-        x = PyObject_Hash(Py_None);
-    else
-        x = PyObject_Hash(a->im_self);
-    if (x == -1)
-        return -1;
+    x = _Py_HashPointer(a->im_self);
     y = PyObject_Hash(a->im_func);
     if (y == -1)
         return -1;
@@ -309,11 +291,6 @@ method_call(PyObject *method, PyObject *args, PyObject *kwargs)
     PyObject *self, *func;
 
     self = PyMethod_GET_SELF(method);
-    if (self == NULL) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
     func = PyMethod_GET_FUNCTION(method);
 
     return _PyObject_Call_Prepend(func, self, args, kwargs);
@@ -322,15 +299,8 @@ method_call(PyObject *method, PyObject *args, PyObject *kwargs)
 static PyObject *
 method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 {
-    /* Don't rebind an already bound method of a class that's not a base
-       class of cls. */
-    if (PyMethod_GET_SELF(meth) != NULL) {
-        /* Already bound */
-        Py_INCREF(meth);
-        return meth;
-    }
-    /* Bind it to obj */
-    return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj);
+    Py_INCREF(meth);
+    return meth;
 }
 
 PyTypeObject PyMethod_Type = {
@@ -542,7 +512,7 @@ static PyObject *
 instancemethod_repr(PyObject *self)
 {
     PyObject *func = PyInstanceMethod_Function(self);
-    PyObject *funcname = NULL , *result = NULL;
+    PyObject *funcname, *result;
     const char *defname = "?";
 
     if (func == NULL) {
@@ -550,13 +520,10 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
 
-    funcname = _PyObject_GetAttrId(func, &PyId___name__);
-    if (funcname == NULL) {
-        if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-            return NULL;
-        PyErr_Clear();
+    if (_PyObject_LookupAttrId(func, &PyId___name__, &funcname) < 0) {
+        return NULL;
     }
-    else if (!PyUnicode_Check(funcname)) {
+    if (funcname != NULL && !PyUnicode_Check(funcname)) {
         Py_DECREF(funcname);
         funcname = NULL;
     }

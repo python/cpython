@@ -23,9 +23,9 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         # The tests assume that line wrapping occurs at 80 columns, but this
         # behaviour can be overridden by setting the COLUMNS environment
-        # variable.  To ensure that this assumption is true, unset COLUMNS.
+        # variable.  To ensure that this width is used, set COLUMNS to 80.
         env = support.EnvironmentVarGuard()
-        env.unset("COLUMNS")
+        env['COLUMNS'] = '80'
         self.addCleanup(env.__exit__)
 
 
@@ -1379,9 +1379,8 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
             ('invalid', '@no-such-path\n'),
         ]
         for path, text in file_texts:
-            file = open(path, 'w')
-            file.write(text)
-            file.close()
+            with open(path, 'w') as file:
+                file.write(text)
 
     parser_signature = Sig(fromfile_prefix_chars='@')
     argument_signatures = [
@@ -1410,9 +1409,8 @@ class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
             ('hello', 'hello world!\n'),
         ]
         for path, text in file_texts:
-            file = open(path, 'w')
-            file.write(text)
-            file.close()
+            with open(path, 'w') as file:
+                file.write(text)
 
     class FromFileConverterArgumentParser(ErrorRaisingArgumentParser):
 
@@ -1459,6 +1457,16 @@ class TestFileTypeRepr(TestCase):
         type = argparse.FileType('r', 1, errors='replace')
         self.assertEqual("FileType('r', 1, errors='replace')", repr(type))
 
+class StdStreamComparer:
+    def __init__(self, attr):
+        self.attr = attr
+
+    def __eq__(self, other):
+        return other == getattr(sys, self.attr)
+
+eq_stdin = StdStreamComparer('stdin')
+eq_stdout = StdStreamComparer('stdout')
+eq_stderr = StdStreamComparer('stderr')
 
 class RFile(object):
     seen = {}
@@ -1483,9 +1491,8 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestFileTypeR, self).setUp()
         for file_name in ['foo', 'bar']:
-            file = open(os.path.join(self.temp_dir, file_name), 'w')
-            file.write(file_name)
-            file.close()
+            with open(os.path.join(self.temp_dir, file_name), 'w') as file:
+                file.write(file_name)
         self.create_readonly_file('readonly')
 
     argument_signatures = [
@@ -1497,7 +1504,7 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=RFile('foo'))),
         ('-x foo bar', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('bar -x foo', NS(x=RFile('foo'), spam=RFile('bar'))),
-        ('-x - -', NS(x=sys.stdin, spam=sys.stdin)),
+        ('-x - -', NS(x=eq_stdin, spam=eq_stdin)),
         ('readonly', NS(x=None, spam=RFile('readonly'))),
     ]
 
@@ -1524,9 +1531,8 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestFileTypeRB, self).setUp()
         for file_name in ['foo', 'bar']:
-            file = open(os.path.join(self.temp_dir, file_name), 'w')
-            file.write(file_name)
-            file.close()
+            with open(os.path.join(self.temp_dir, file_name), 'w') as file:
+                file.write(file_name)
 
     argument_signatures = [
         Sig('-x', type=argparse.FileType('rb')),
@@ -1537,7 +1543,7 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=RFile('foo'))),
         ('-x foo bar', NS(x=RFile('foo'), spam=RFile('bar'))),
         ('bar -x foo', NS(x=RFile('foo'), spam=RFile('bar'))),
-        ('-x - -', NS(x=sys.stdin, spam=sys.stdin)),
+        ('-x - -', NS(x=eq_stdin, spam=eq_stdin)),
     ]
 
 
@@ -1576,7 +1582,7 @@ class TestFileTypeW(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=WFile('foo'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
-        ('-x - -', NS(x=sys.stdout, spam=sys.stdout)),
+        ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
 
@@ -1591,7 +1597,7 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
         ('foo', NS(x=None, spam=WFile('foo'))),
         ('-x foo bar', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
-        ('-x - -', NS(x=sys.stdout, spam=sys.stdout)),
+        ('-x - -', NS(x=eq_stdout, spam=eq_stdout)),
     ]
 
 
@@ -1932,7 +1938,9 @@ class TestAddSubparsers(TestCase):
         parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(dest='command')
         subparsers.add_parser('run')
-        self._test_required_subparsers(parser)
+        # No error here
+        ret = parser.parse_args(())
+        self.assertIsNone(ret.command)
 
     def test_optional_subparsers(self):
         parser = ErrorRaisingArgumentParser()
@@ -4953,7 +4961,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs=None, metavar=tuple())
 
     def test_nargs_None_metavar_length1(self):
-        self.do_test_no_exception(nargs=None, metavar=("1"))
+        self.do_test_no_exception(nargs=None, metavar=("1",))
 
     def test_nargs_None_metavar_length2(self):
         self.do_test_exception(nargs=None, metavar=("1", "2"))
@@ -4970,7 +4978,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs="?", metavar=tuple())
 
     def test_nargs_optional_metavar_length1(self):
-        self.do_test_no_exception(nargs="?", metavar=("1"))
+        self.do_test_no_exception(nargs="?", metavar=("1",))
 
     def test_nargs_optional_metavar_length2(self):
         self.do_test_exception(nargs="?", metavar=("1", "2"))
@@ -4987,7 +4995,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs="*", metavar=tuple())
 
     def test_nargs_zeroormore_metavar_length1(self):
-        self.do_test_no_exception(nargs="*", metavar=("1"))
+        self.do_test_exception(nargs="*", metavar=("1",))
 
     def test_nargs_zeroormore_metavar_length2(self):
         self.do_test_no_exception(nargs="*", metavar=("1", "2"))
@@ -5004,7 +5012,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs="+", metavar=tuple())
 
     def test_nargs_oneormore_metavar_length1(self):
-        self.do_test_no_exception(nargs="+", metavar=("1"))
+        self.do_test_exception(nargs="+", metavar=("1",))
 
     def test_nargs_oneormore_metavar_length2(self):
         self.do_test_no_exception(nargs="+", metavar=("1", "2"))
@@ -5021,7 +5029,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_no_exception(nargs="...", metavar=tuple())
 
     def test_nargs_remainder_metavar_length1(self):
-        self.do_test_no_exception(nargs="...", metavar=("1"))
+        self.do_test_no_exception(nargs="...", metavar=("1",))
 
     def test_nargs_remainder_metavar_length2(self):
         self.do_test_no_exception(nargs="...", metavar=("1", "2"))
@@ -5038,7 +5046,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs="A...", metavar=tuple())
 
     def test_nargs_parser_metavar_length1(self):
-        self.do_test_no_exception(nargs="A...", metavar=("1"))
+        self.do_test_no_exception(nargs="A...", metavar=("1",))
 
     def test_nargs_parser_metavar_length2(self):
         self.do_test_exception(nargs="A...", metavar=("1", "2"))
@@ -5055,7 +5063,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs=1, metavar=tuple())
 
     def test_nargs_1_metavar_length1(self):
-        self.do_test_no_exception(nargs=1, metavar=("1"))
+        self.do_test_no_exception(nargs=1, metavar=("1",))
 
     def test_nargs_1_metavar_length2(self):
         self.do_test_exception(nargs=1, metavar=("1", "2"))
@@ -5072,7 +5080,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs=2, metavar=tuple())
 
     def test_nargs_2_metavar_length1(self):
-        self.do_test_no_exception(nargs=2, metavar=("1"))
+        self.do_test_exception(nargs=2, metavar=("1",))
 
     def test_nargs_2_metavar_length2(self):
         self.do_test_no_exception(nargs=2, metavar=("1", "2"))
@@ -5089,7 +5097,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs=3, metavar=tuple())
 
     def test_nargs_3_metavar_length1(self):
-        self.do_test_no_exception(nargs=3, metavar=("1"))
+        self.do_test_exception(nargs=3, metavar=("1",))
 
     def test_nargs_3_metavar_length2(self):
         self.do_test_exception(nargs=3, metavar=("1", "2"))
@@ -5115,6 +5123,31 @@ class TestImportStar(TestCase):
             if not inspect.ismodule(value)
         ]
         self.assertEqual(sorted(items), sorted(argparse.__all__))
+
+
+class TestWrappingMetavar(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.parser = ErrorRaisingArgumentParser(
+            'this_is_spammy_prog_with_a_long_name_sorry_about_the_name'
+        )
+        # this metavar was triggering library assertion errors due to usage
+        # message formatting incorrectly splitting on the ] chars within
+        metavar = '<http[s]://example:1234>'
+        self.parser.add_argument('--proxy', metavar=metavar)
+
+    def test_help_with_metavar(self):
+        help_text = self.parser.format_help()
+        self.assertEqual(help_text, textwrap.dedent('''\
+            usage: this_is_spammy_prog_with_a_long_name_sorry_about_the_name
+                   [-h] [--proxy <http[s]://example:1234>]
+
+            optional arguments:
+              -h, --help            show this help message and exit
+              --proxy <http[s]://example:1234>
+            '''))
+
 
 def test_main():
     support.run_unittest(__name__)

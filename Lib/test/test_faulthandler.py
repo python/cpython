@@ -5,6 +5,7 @@ import os
 import signal
 import subprocess
 import sys
+import sysconfig
 from test import support
 from test.support import script_helper, is_android
 import tempfile
@@ -19,6 +20,17 @@ except ImportError:
 
 TIMEOUT = 0.5
 MS_WINDOWS = (os.name == 'nt')
+_cflags = sysconfig.get_config_var('CFLAGS') or ''
+_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+UB_SANITIZER = (
+    '-fsanitize=undefined' in _cflags or
+    '--with-undefined-behavior-sanitizer' in _config_args
+)
+MEMORY_SANITIZER = (
+    '-fsanitize=memory' in _cflags or
+    '--with-memory-sanitizer' in _config_args
+)
+
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
@@ -94,7 +106,7 @@ class FaultHandlerTests(unittest.TestCase):
         else:
             header = 'Stack'
         regex = r"""
-            ^{fatal_error}
+            (?m)^{fatal_error}
 
             {header} \(most recent call first\):
               File "<string>", line {lineno} in <module>
@@ -186,14 +198,13 @@ class FaultHandlerTests(unittest.TestCase):
     @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
-            import _testcapi
             import faulthandler
             import signal
 
             faulthandler.enable()
-            _testcapi.raise_signal(signal.SIGBUS)
+            signal.raise_signal(signal.SIGBUS)
             """,
-            6,
+            5,
             'Bus error')
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
@@ -201,14 +212,13 @@ class FaultHandlerTests(unittest.TestCase):
     @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""
-            import _testcapi
             import faulthandler
             import signal
 
             faulthandler.enable()
-            _testcapi.raise_signal(signal.SIGILL)
+            signal.raise_signal(signal.SIGILL)
             """,
-            6,
+            5,
             'Illegal instruction')
 
     def test_fatal_error(self):
@@ -252,6 +262,8 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
+    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
+                     "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -267,6 +279,8 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
+    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
+                     "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
@@ -332,13 +346,9 @@ class FaultHandlerTests(unittest.TestCase):
     def test_disabled_by_default(self):
         # By default, the module should be disabled
         code = "import faulthandler; print(faulthandler.is_enabled())"
-        args = filter(None, (sys.executable,
-                             "-E" if sys.flags.ignore_environment else "",
-                             "-c", code))
-        env = os.environ.copy()
-        env.pop("PYTHONFAULTHANDLER", None)
+        args = (sys.executable, "-E", "-c", code)
         # don't use assert_python_ok() because it always enables faulthandler
-        output = subprocess.check_output(args, env=env)
+        output = subprocess.check_output(args)
         self.assertEqual(output.rstrip(), b"False")
 
     def test_sys_xoptions(self):
@@ -357,15 +367,17 @@ class FaultHandlerTests(unittest.TestCase):
         # empty env var
         code = "import faulthandler; print(faulthandler.is_enabled())"
         args = (sys.executable, "-c", code)
-        env = os.environ.copy()
+        env = dict(os.environ)
         env['PYTHONFAULTHANDLER'] = ''
+        env['PYTHONDEVMODE'] = ''
         # don't use assert_python_ok() because it always enables faulthandler
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"False")
 
         # non-empty env var
-        env = os.environ.copy()
+        env = dict(os.environ)
         env['PYTHONFAULTHANDLER'] = '1'
+        env['PYTHONDEVMODE'] = ''
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"True")
 
@@ -402,7 +414,7 @@ class FaultHandlerTests(unittest.TestCase):
         if filename:
             lineno = 9
         elif fd is not None:
-            lineno = 12
+            lineno = 11
         else:
             lineno = 14
         expected = [

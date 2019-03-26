@@ -760,7 +760,8 @@ system.
                                                         Py_ssize_t len, \
                                                         const char *errors)
 
-   Decode a string from the current locale encoding. The supported
+   Decode a string from UTF-8 on Android and VxWorks, or from the current
+   locale encoding on other platforms. The supported
    error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The decoder uses ``"strict"`` error handler if
    *errors* is ``NULL``.  *str* must end with a null character but
@@ -770,11 +771,19 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
+   This function ignores the Python UTF-8 mode.
+
    .. seealso::
 
       The :c:func:`Py_DecodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler, except on Android. Previously, :c:func:`Py_DecodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 .. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, const char *errors)
@@ -787,7 +796,8 @@ system.
 
 .. c:function:: PyObject* PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
-   Encode a Unicode object to the current locale encoding. The
+   Encode a Unicode object to UTF-8 on Android and VxWorks, or to the current
+   locale encoding on other platforms. The
    supported error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The encoder uses ``"strict"`` error handler if
    *errors* is ``NULL``. Return a :class:`bytes` object. *unicode* cannot
@@ -797,11 +807,20 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
+   This function ignores the Python UTF-8 mode.
+
    .. seealso::
 
       The :c:func:`Py_EncodeLocale` function.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.7
+      The function now also uses the current locale encoding for the
+      ``surrogateescape`` error handler, except on Android. Previously,
+      :c:func:`Py_EncodeLocale`
+      was used for the ``surrogateescape``, and the current locale encoding was
+      used for ``strict``.
 
 
 File System Encoding
@@ -916,7 +935,7 @@ wchar_t Support
    Return *NULL* on failure.
 
 
-.. c:function:: Py_ssize_t PyUnicode_AsWideChar(PyUnicodeObject *unicode, wchar_t *w, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUnicode_AsWideChar(PyObject *unicode, wchar_t *w, Py_ssize_t size)
 
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
@@ -1327,7 +1346,7 @@ These are the "Raw Unicode Escape" codec APIs:
 
 
 .. c:function:: PyObject* PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s, \
-                              Py_ssize_t size, const char *errors)
+                              Py_ssize_t size)
 
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Raw-Unicode-Escape
    and return a bytes object.  Return *NULL* if an exception was raised by the codec.
@@ -1496,8 +1515,8 @@ the user settings on the machine running the codec.
    Return *NULL* if an exception was raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_DecodeMBCSStateful(const char *s, int size, \
-                              const char *errors, int *consumed)
+.. c:function:: PyObject* PyUnicode_DecodeMBCSStateful(const char *s, Py_ssize_t size, \
+                              const char *errors, Py_ssize_t *consumed)
 
    If *consumed* is *NULL*, behave like :c:func:`PyUnicode_DecodeMBCS`. If
    *consumed* is not *NULL*, :c:func:`PyUnicode_DecodeMBCSStateful` will not decode

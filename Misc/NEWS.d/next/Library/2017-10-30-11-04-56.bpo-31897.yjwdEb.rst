@@ -1,2 +1,0 @@
-plistlib now catches more errors when read binary plists and raises
-InvalidFileException instead of unexpected exceptions.

@@ -14,7 +14,7 @@ from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
-from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
+from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
                          OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
@@ -30,10 +30,12 @@ from idlelib.autocomplete import AutoComplete
 from idlelib.codecontext import CodeContext
 from idlelib.parenmatch import ParenMatch
 from idlelib.paragraph import FormatParagraph
+from idlelib.squeezer import Squeezer
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.
-reloadables = (AutoComplete, CodeContext, ParenMatch, FormatParagraph)
+reloadables = (AutoComplete, CodeContext, ParenMatch, FormatParagraph,
+               Squeezer)
 
 
 class ConfigDialog(Toplevel):
@@ -191,6 +193,7 @@ class ConfigDialog(Toplevel):
     def destroy(self):
         global font_sample_text
         font_sample_text = self.fontpage.font_sample.get('1.0', 'end')
+        self.grab_release()
         super().destroy()
 
     def help(self):
@@ -373,11 +376,12 @@ class ConfigDialog(Toplevel):
                             ).grid(row=row, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
-                      validatecommand=(self.is_int, '%P')
+                      validatecommand=(self.is_int, '%P'), width=10
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
-            else:
-                Entry(entry_area, textvariable=var
+            else:  # type == 'str'
+                # Limit size to fit non-expanding space with larger font.
+                Entry(entry_area, textvariable=var, width=15
                       ).grid(row=row, column=1, sticky=NSEW, padx=7)
         return
 
@@ -495,7 +499,7 @@ class FontPage(Frame):
         Changing any of the font vars invokes var_changed_font, which
         adds all 3 font options to changes and calls set_samples.
         Set_samples applies a new font constructed from the font vars to
-        font_sample and to highlight_sample on the hightlight page.
+        font_sample and to highlight_sample on the highlight page.
 
         Tabs: Enable users to change spaces entered for indent tabs.
         Changing indent_scale value with the mouse sets Var space_num,
@@ -646,7 +650,7 @@ class FontPage(Frame):
 
         Called on font initialization and change events.
         Accesses font_name, font_size, and font_bold Variables.
-        Updates font_sample and hightlight page highlight_sample.
+        Updates font_sample and highlight page highlight_sample.
         """
         font_name = self.font_name.get()
         font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
@@ -799,19 +803,20 @@ class HighPage(Frame):
         """
         self.theme_elements = {
             'Normal Text': ('normal', '00'),
-            'Python Keywords': ('keyword', '01'),
-            'Python Definitions': ('definition', '02'),
-            'Python Builtins': ('builtin', '03'),
-            'Python Comments': ('comment', '04'),
-            'Python Strings': ('string', '05'),
-            'Selected Text': ('hilite', '06'),
-            'Found Text': ('hit', '07'),
-            'Cursor': ('cursor', '08'),
-            'Editor Breakpoint': ('break', '09'),
-            'Shell Normal Text': ('console', '10'),
-            'Shell Error Text': ('error', '11'),
-            'Shell Stdout Text': ('stdout', '12'),
-            'Shell Stderr Text': ('stderr', '13'),
+            'Code Context': ('context', '01'),
+            'Python Keywords': ('keyword', '02'),
+            'Python Definitions': ('definition', '03'),
+            'Python Builtins': ('builtin', '04'),
+            'Python Comments': ('comment', '05'),
+            'Python Strings': ('string', '06'),
+            'Selected Text': ('hilite', '07'),
+            'Found Text': ('hit', '08'),
+            'Cursor': ('cursor', '09'),
+            'Editor Breakpoint': ('break', '10'),
+            'Shell Normal Text': ('console', '11'),
+            'Shell Error Text': ('error', '12'),
+            'Shell Stdout Text': ('stdout', '13'),
+            'Shell Stderr Text': ('stderr', '14'),
             }
         self.builtin_name = tracers.add(
                 StringVar(self), self.var_changed_builtin_name)
@@ -842,6 +847,7 @@ class HighPage(Frame):
             ('\n', 'normal'),
             ('#you can click here', 'comment'), ('\n', 'normal'),
             ('#to choose items', 'comment'), ('\n', 'normal'),
+            ('code context section', 'context'), ('\n\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
             ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
@@ -1246,7 +1252,7 @@ class HighPage(Frame):
             colors = idleConf.GetHighlight(theme, element)
             if element == 'cursor':  # Cursor sample needs special painting.
                 colors['background'] = idleConf.GetHighlight(
-                        theme, 'normal', fgBg='bg')
+                        theme, 'normal')['background']
             # Handle any unsaved changes to this theme.
             if theme in changes['highlight']:
                 theme_dict = changes['highlight'][theme]
@@ -1744,9 +1750,9 @@ class KeysPage(Frame):
             self.customlist.SetMenu(item_list, item_list[0])
         # Revert to default key set.
         self.keyset_source.set(idleConf.defaultCfg['main']
-                                .Get('Keys', 'default'))
+                               .Get('Keys', 'default'))
         self.builtin_name.set(idleConf.defaultCfg['main'].Get('Keys', 'name')
-                             or idleConf.default_keys())
+                              or idleConf.default_keys())
         # User can't back out of these changes, they must be applied now.
         changes.save_all()
         self.cd.save_all_changed_extensions()
@@ -1792,11 +1798,31 @@ class GenPage(Frame):
                     (*)win_width_int: Entry - win_width
                     win_height_title: Label
                     (*)win_height_int: Entry - win_height
+                frame_autocomplete: Frame
+                    auto_wait_title: Label
+                    (*)auto_wait_int: Entry - autocomplete_wait
+                frame_paren1: Frame
+                    paren_style_title: Label
+                    (*)paren_style_type: OptionMenu - paren_style
+                frame_paren2: Frame
+                    paren_time_title: Label
+                    (*)paren_flash_time: Entry - flash_delay
+                    (*)bell_on: Checkbutton - paren_bell
             frame_editor: LabelFrame
                 frame_save: Frame
                     run_save_title: Label
                     (*)save_ask_on: Radiobutton - autosave
                     (*)save_auto_on: Radiobutton - autosave
+                frame_format: Frame
+                    format_width_title: Label
+                    (*)format_width_int: Entry - format_width
+                frame_context: Frame
+                    context_title: Label
+                    (*)context_int: Entry - context_lines
+            frame_shell: LabelFrame
+                frame_auto_squeeze_min_lines: Frame
+                    auto_squeeze_min_lines_title: Label
+                    (*)auto_squeeze_min_lines_int: Entry - auto_squeeze_min_lines
             frame_help: LabelFrame
                 frame_helplist: Frame
                     frame_helplist_buttons: Frame
@@ -1822,12 +1848,15 @@ class GenPage(Frame):
         self.paren_bell = tracers.add(
                 BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
 
+        self.auto_squeeze_min_lines = tracers.add(
+                StringVar(self), ('main', 'PyShell', 'auto-squeeze-min-lines'))
+
         self.autosave = tracers.add(
                 IntVar(self), ('main', 'General', 'autosave'))
         self.format_width = tracers.add(
                 StringVar(self), ('extensions', 'FormatParagraph', 'max-width'))
         self.context_lines = tracers.add(
-                StringVar(self), ('extensions', 'CodeContext', 'numlines'))
+                StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
         # Create widgets:
         # Section frames.
@@ -1835,8 +1864,10 @@ class GenPage(Frame):
                                   text=' Window Preferences')
         frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Editor Preferences')
+        frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                 text=' Shell Preferences')
         frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                               text=' Additional Help Sources ')
+                                text=' Additional Help Sources ')
         # Frame_window.
         frame_run = Frame(frame_window, borderwidth=0)
         startup_title = Label(frame_run, text='At Startup')
@@ -1894,10 +1925,17 @@ class GenPage(Frame):
                 frame_format, textvariable=self.format_width, width=4)
 
         frame_context = Frame(frame_editor, borderwidth=0)
-        context_title = Label(frame_context, text='Context Lines :')
+        context_title = Label(frame_context, text='Max Context Lines :')
         self.context_int = Entry(
                 frame_context, textvariable=self.context_lines, width=3)
 
+        # Frame_shell.
+        frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
+        auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
+                                             text='Auto-Squeeze Min. Lines:')
+        self.auto_squeeze_min_lines_int = Entry(
+            frame_auto_squeeze_min_lines, width=4,
+            textvariable=self.auto_squeeze_min_lines)
 
         # frame_help.
         frame_helplist = Frame(frame_help)
@@ -1923,6 +1961,7 @@ class GenPage(Frame):
         # Body.
         frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_shell.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
         frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
@@ -1963,6 +2002,11 @@ class GenPage(Frame):
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.context_int.pack(side=TOP, padx=5, pady=5)
 
+        # frame_auto_squeeze_min_lines
+        frame_auto_squeeze_min_lines.pack(side=TOP, padx=5, pady=0, fill=X)
+        auto_squeeze_min_lines_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.auto_squeeze_min_lines_int.pack(side=TOP, padx=5, pady=5)
+
         # frame_help.
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
@@ -1996,7 +2040,11 @@ class GenPage(Frame):
         self.format_width.set(idleConf.GetOption(
                 'extensions', 'FormatParagraph', 'max-width', type='int'))
         self.context_lines.set(idleConf.GetOption(
-                'extensions', 'CodeContext', 'numlines', type='int'))
+                'extensions', 'CodeContext', 'maxlines', type='int'))
+
+        # Set variables for shell windows.
+        self.auto_squeeze_min_lines.set(idleConf.GetOption(
+                'main', 'PyShell', 'auto-squeeze-min-lines', type='int'))
 
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
@@ -2188,6 +2236,12 @@ ParenMatch: Style indicates what is highlighted when closer is entered:
 'opener' - opener '({[' corresponding to closer; 'parens' - both chars;
 'expression' (default) - also everything in between.  Flash-delay is how
 long to highlight if cursor is not moved (0 means forever).
+
+CodeContext: Maxlines is the maximum number of code context lines to
+display when Code Context is turned on for an editor window.
+
+Shell Preferences: Auto-Squeeze Min. Lines is the minimum number of lines
+of output to automatically "squeeze".
 '''
 }
 
@@ -2247,8 +2301,8 @@ class VerticalScrolledFrame(Frame):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_configdialog',
-                  verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_configdialog', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(ConfigDialog)
