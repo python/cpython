@@ -1,1 +1,0 @@
-Use dict unpacking in idlelib.
