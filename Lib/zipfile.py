@@ -1128,11 +1128,11 @@ class _ZipWriteFile(io.BufferedIOBase):
             else:
                 if not self._zip64:
                     if self._file_size > ZIP64_LIMIT:
-                        raise RuntimeError('File size unexpectedly exceeded ZIP64 '
-                                        'limit')
+                        raise RuntimeError(
+                            'File size unexpectedly exceeded ZIP64 limit')
                     if self._compress_size > ZIP64_LIMIT:
-                        raise RuntimeError('Compressed size unexpectedly exceeded '
-                                        'ZIP64 limit')
+                        raise RuntimeError(
+                            'Compressed size unexpectedly exceeded ZIP64 limit')
                 # Seek backwards and write file header (which will now include
                 # correct CRC and file sizes)
 
