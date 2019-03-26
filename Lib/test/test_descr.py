@@ -1601,21 +1601,21 @@ order (MRO) for bases """
         with self.assertRaises(TypeError) as cm:
             spam_cm()
         self.assertEqual(
-            cm.exception.args[0],
+            str(cm.exception),
             "descriptor 'classmeth' of 'xxsubtype.spamlist' "
             "object needs an argument")
 
         with self.assertRaises(TypeError) as cm:
             spam_cm(spam.spamlist())
         self.assertEqual(
-            cm.exception.args[0],
-            "descriptor 'classmeth' requires a subtype of 'xxsubtype.spamlist' "
+            str(cm.exception),
+            "descriptor 'classmeth' requires a type "
             "but received a 'xxsubtype.spamlist' instance")
 
         with self.assertRaises(TypeError) as cm:
             spam_cm(list)
         self.assertEqual(
-            cm.exception.args[0],
+            str(cm.exception),
             "descriptor 'classmeth' requires a subtype of 'xxsubtype.spamlist' "
             "but received 'list'")
 
