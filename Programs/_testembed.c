@@ -397,6 +397,22 @@ static int test_init_global_config(void)
 
 static int test_init_from_config(void)
 {
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+
+    putenv("PYTHONMALLOC=malloc_debug");
+    preconfig.allocator = "malloc";
+
+    putenv("PYTHONUTF8=0");
+    Py_UTF8Mode = 0;
+    preconfig.utf8_mode = 1;
+
+    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
     /* Test _Py_InitializeFromConfig() */
     _PyCoreConfig config = _PyCoreConfig_INIT;
     config.install_signal_handlers = 0;
@@ -406,9 +422,6 @@ static int test_init_from_config(void)
     putenv("PYTHONHASHSEED=42");
     config.use_hash_seed = 1;
     config.hash_seed = 123;
-
-    putenv("PYTHONMALLOC=malloc_debug");
-    config.preconfig.allocator = "malloc";
 
     /* dev_mode=1 is tested in test_init_dev_mode() */
 
@@ -429,10 +442,6 @@ static int test_init_from_config(void)
     config.malloc_stats = 1;
 
     /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
-
-    putenv("PYTHONUTF8=0");
-    Py_UTF8Mode = 0;
-    config.preconfig.utf8_mode = 1;
 
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config.pycache_prefix = L"conf_pycache_prefix";
@@ -521,7 +530,7 @@ static int test_init_from_config(void)
     Py_FrozenFlag = 0;
     config._frozen = 1;
 
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config);
     /* Don't call _PyCoreConfig_Clear() since all strings are static */
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
@@ -607,20 +616,30 @@ static int test_init_env_dev_mode_alloc(void)
 
 static int test_init_isolated(void)
 {
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+
+    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
+    preconfig.coerce_c_locale = 0;
+    preconfig.utf8_mode = 0;
+
+    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
     Py_IsolatedFlag = 0;
-    config.preconfig.isolated = 1;
+    config.isolated = 1;
 
-    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    config.preconfig.coerce_c_locale = 0;
-    config.preconfig.utf8_mode = 0;
     /* Use path starting with "./" avoids a search along the PATH */
     config.program_name = L"./_testembed";
 
     test_init_env_dev_mode_putenvs();
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -635,7 +654,7 @@ static int test_init_dev_mode(void)
     _PyCoreConfig config = _PyCoreConfig_INIT;
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
-    config.preconfig.dev_mode = 1;
+    config.dev_mode = 1;
     config.program_name = L"./_testembed";
     _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
