@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
 import sys
+if __name__ == "__main__":
+    sys.modules['idlelib.pyshell'] = sys.modules['__main__']
 
 try:
     from tkinter import *
@@ -416,10 +418,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # run from the IDLE source directory.
         del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
                                        default=False, type='bool')
-        if __name__ == 'idlelib.pyshell':
-            command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
-        else:
-            command = "__import__('run').main(%r)" % (del_exitf,)
+        command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
         return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
@@ -1574,7 +1573,6 @@ def main():
     capture_warnings(False)
 
 if __name__ == "__main__":
-    sys.modules['pyshell'] = sys.modules['__main__']
     main()
 
 capture_warnings(False)  # Make sure turned off; see issue 18081
