@@ -289,7 +289,7 @@ pymain_init_preconfig(const _PyArgv *args)
 
     _PyPreConfig config = _PyPreConfig_INIT;
 
-    err = _PyPreConfig_ReadFromArgv(&config, args);
+    err = _PyPreConfig_Read(&config, args, NULL);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -306,12 +306,12 @@ static _PyInitError
 pymain_init_coreconfig(_PyCoreConfig *config, const _PyArgv *args,
                        PyInterpreterState **interp_p)
 {
-    _PyInitError err = _PyCoreConfig_ReadFromArgv(config, args);
+    _PyInitError err = _PyCoreConfig_Read(config, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    return _Py_InitializeCore(interp_p, config);
+    return _Py_InitializeCore(config, interp_p);
 }
 
 
@@ -359,22 +359,18 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     }
 
     _PyCoreConfig config = _PyCoreConfig_INIT;
-
     err = pymain_init_coreconfig(&config, args, interp_p);
+    _PyCoreConfig_Clear(&config);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
     err = pymain_init_python_main(*interp_p);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
-    err = _Py_INIT_OK();
-
-done:
-    _PyCoreConfig_Clear(&config);
-    return err;
+    return _Py_INIT_OK();
 }
 
 
