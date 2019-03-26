@@ -648,6 +648,74 @@ static int test_init_isolated(void)
 }
 
 
+/* _PyPreConfig.isolated=1, _PyCoreConfig.isolated=0 */
+static int test_preinit_isolated1(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+
+    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
+    preconfig.coerce_c_locale = 0;
+    preconfig.utf8_mode = 0;
+    preconfig.isolated = 1;
+
+    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config.program_name = L"./_testembed";
+
+    test_init_env_dev_mode_putenvs();
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* _PyPreConfig.isolated=0, _PyCoreConfig.isolated=1 */
+static int test_preinit_isolated2(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+
+    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
+    preconfig.coerce_c_locale = 0;
+    preconfig.utf8_mode = 0;
+    preconfig.isolated = 0;
+
+    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    /* Test _PyCoreConfig.isolated=1 */
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    Py_IsolatedFlag = 0;
+    config.isolated = 1;
+
+    /* Use path starting with "./" avoids a search along the PATH */
+    config.program_name = L"./_testembed";
+
+    test_init_env_dev_mode_putenvs();
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static int test_init_dev_mode(void)
 {
     _PyCoreConfig config = _PyCoreConfig_INIT;
@@ -699,6 +767,8 @@ static struct TestCase TestCases[] = {
     { "init_env_dev_mode_alloc", test_init_env_dev_mode_alloc },
     { "init_dev_mode", test_init_dev_mode },
     { "init_isolated", test_init_isolated },
+    { "preinit_isolated1", test_preinit_isolated1 },
+    { "preinit_isolated2", test_preinit_isolated2 },
     { NULL, NULL }
 };
 
