@@ -662,6 +662,26 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_config("init_isolated", config, preconfig)
 
+    def test_preinit_isolated1(self):
+        # _PyPreConfig.isolated=1, _PyCoreConfig.isolated not set
+        preconfig = {}
+        config = {
+            'isolated': 1,
+            'use_environment': 0,
+            'user_site_directory': 0,
+        }
+        self.check_config("preinit_isolated1", config, preconfig)
+
+    def test_preinit_isolated2(self):
+        # _PyPreConfig.isolated=0, _PyCoreConfig.isolated=1
+        preconfig = {}
+        config = {
+            'isolated': 1,
+            'use_environment': 0,
+            'user_site_directory': 0,
+        }
+        self.check_config("preinit_isolated2", config, preconfig)
+
 
 if __name__ == "__main__":
     unittest.main()
