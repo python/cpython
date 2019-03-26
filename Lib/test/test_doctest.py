@@ -699,10 +699,11 @@ class TestDocTestFinder(unittest.TestCase):
                 support.forget(pkg_name)
                 sys.path.pop()
 
-            empty_doctest_finder = doctest.DocTestFinder(exclude_empty=False)
+            include_empty_finder = doctest.DocTestFinder(exclude_empty=False)
+            exclude_empty_finder = doctest.DocTestFinder(exclude_empty=True)
 
-            self.assertEqual(len(doctest.DocTestFinder().find(mod)), 0)
-            self.assertEqual(len(empty_doctest_finder.find(mod)), 1)
+            self.assertEqual(len(include_empty_finder.find(mod)), 1)
+            self.assertEqual(len(exclude_empty_finder.find(mod)), 0)
 
 def test_DocTestParser(): r"""
 Unit tests for the `DocTestParser` class.
