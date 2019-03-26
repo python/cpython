@@ -2158,6 +2158,7 @@ make_flags(void)
 {
     int pos = 0;
     PyObject *seq;
+    const _PyPreConfig *preconfig = &_PyRuntime.preconfig;
     const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
@@ -2174,16 +2175,16 @@ make_flags(void)
     SetFlag(!config->write_bytecode);
     SetFlag(!config->user_site_directory);
     SetFlag(!config->site_import);
-    SetFlag(!config->preconfig.use_environment);
+    SetFlag(!config->use_environment);
     SetFlag(config->verbose);
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
     SetFlag(config->bytes_warning);
     SetFlag(config->quiet);
     SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
-    SetFlag(config->preconfig.isolated);
-    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->preconfig.dev_mode));
-    SetFlag(config->preconfig.utf8_mode);
+    SetFlag(config->isolated);
+    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
+    SetFlag(preconfig->utf8_mode);
 #undef SetFlag
 
     if (PyErr_Occurred()) {

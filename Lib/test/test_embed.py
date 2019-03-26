@@ -272,12 +272,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'allocator': None,
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
-        'dev_mode': 0,
-        'isolated': 0,
-        'use_environment': 1,
         'utf8_mode': 0,
     }
+    COPY_PRE_CONFIG = [
+        'dev_mode',
+        'isolated',
+        'use_environment',
+    ]
+
     DEFAULT_CORE_CONFIG = {
+        'isolated': 0,
+        'use_environment': 1,
+        'dev_mode': 0,
+
         'install_signal_handlers': 1,
         'use_hash_seed': 0,
         'hash_seed': 0,
@@ -363,8 +370,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_Py_HasFileSystemDefaultEncodeErrors': 0,
     }
     COPY_GLOBAL_PRE_CONFIG = [
-        ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
-        ('Py_IsolatedFlag', 'isolated'),
         ('Py_UTF8Mode', 'utf8_mode'),
     ]
     COPY_GLOBAL_CONFIG = [
@@ -376,8 +381,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         ('Py_FileSystemDefaultEncodeErrors', 'filesystem_errors'),
         ('Py_FileSystemDefaultEncoding', 'filesystem_encoding'),
         ('Py_FrozenFlag', '_frozen'),
+        ('Py_IgnoreEnvironmentFlag', 'use_environment', True),
         ('Py_InspectFlag', 'inspect'),
         ('Py_InteractiveFlag', 'interactive'),
+        ('Py_IsolatedFlag', 'isolated'),
         ('Py_NoSiteFlag', 'site_import', True),
         ('Py_NoUserSiteDirectory', 'user_site_directory', True),
         ('Py_OptimizeFlag', 'optimization_level'),
@@ -415,7 +422,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         expected['xoptions'] = self.main_xoptions(core_config['xoptions'])
         self.assertEqual(main_config, expected)
 
-    def get_expected_config(self, expected, expected_preconfig, env):
+    def get_expected_config(self, expected, env):
         expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
 
         code = textwrap.dedent('''
@@ -443,7 +450,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # when test_embed is run from a venv (bpo-35313)
         args = (sys.executable, '-S', '-c', code)
         env = dict(env)
-        if not expected_preconfig['isolated']:
+        if not expected['isolated']:
             env['PYTHONCOERCECLOCALE'] = '0'
             env['PYTHONUTF8'] = '0'
         proc = subprocess.run(args, env=env,
@@ -509,7 +516,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = json.loads(out)
 
         expected_preconfig = dict(self.DEFAULT_PRE_CONFIG, **expected_preconfig)
-        expected_config = self.get_expected_config(expected_config, expected_preconfig, env)
+        expected_config = self.get_expected_config(expected_config, env)
+        for key in self.COPY_PRE_CONFIG:
+            if key not in expected_preconfig:
+                expected_preconfig[key] = expected_config[key]
 
         self.check_core_config(config, expected_config)
         self.check_pre_config(config, expected_preconfig)
@@ -617,35 +627,36 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_env_dev_mode(self):
         preconfig = dict(self.INIT_ENV_PRECONFIG,
-                      allocator='debug',
-                      dev_mode=1)
+                      allocator='debug')
         config = dict(self.INIT_ENV_CONFIG,
                       dev_mode=1)
         self.check_config("init_env_dev_mode", config, preconfig)
 
-    def test_init_env_dev_mode(self):
+    def test_init_env_dev_mode_alloc(self):
         preconfig = dict(self.INIT_ENV_PRECONFIG,
-                         allocator='malloc',
-                         dev_mode=1)
-        config = dict(self.INIT_ENV_CONFIG)
+                         allocator='malloc')
+        config = dict(self.INIT_ENV_CONFIG,
+                      dev_mode=1)
         self.check_config("init_env_dev_mode_alloc", config, preconfig)
 
     def test_init_dev_mode(self):
         preconfig = {
             'allocator': 'debug',
-            'dev_mode': 1,
         }
         config = {
             'faulthandler': 1,
+            'dev_mode': 1,
         }
         self.check_config("init_dev_mode", config, preconfig)
 
     def test_init_isolated(self):
         preconfig = {
-            'isolated': 1,
-            'use_environment': 0,
+            'isolated': 0,
+            'use_environment': 1,
         }
         config = {
+            'isolated': 1,
+            'use_environment': 0,
             'user_site_directory': 0,
         }
         self.check_config("init_isolated", config, preconfig)
