@@ -45,16 +45,15 @@ class AutoCompleteTest(unittest.TestCase):
 
     def test_init(self):
         self.assertEqual(self.autocomplete.editwin, self.editor)
-
-    def test_make_autocomplete_window(self):
-        testwin = self.autocomplete._make_autocomplete_window()
-        self.assertIsInstance(testwin, acw.AutoCompleteWindow)
+        acac = ac.AutoComplete()
+        self.assertEqual(acac.editwin, None)
 
     def test_remove_autocomplete_window(self):
-        self.autocomplete.autocompletewindow = (
-            self.autocomplete._make_autocomplete_window())
-        self.autocomplete._remove_autocomplete_window()
-        self.assertIsNone(self.autocomplete.autocompletewindow)
+        acp = self.autocomplete
+        acp.autocompletewindow = m = Mock(spec=acw.AutoCompleteWindow)
+        acp._remove_autocomplete_window()
+        m.hide_window.assert_called_once()
+        self.assertIsNone(acp.autocompletewindow)
 
     def test_force_open_completions_event(self):
         # Test that force_open_completions_event calls _open_completions.
@@ -70,50 +69,58 @@ class AutoCompleteTest(unittest.TestCase):
         o_c_l = Func()
         autocomplete._open_completions_later = o_c_l
 
-        # _open_completions_later should not be called with no text in editor.
-        trycompletions('event')
+        # if no text or trigger, _open_completions_later not called
+        # or if last character is not trigger char.
+        trycompletions()
+        Equal(o_c_l.args, None)
+        self.text.insert('1.0', 're')
+        trycompletions()
         Equal(o_c_l.args, None)
 
-        # _open_completions_later should be called with COMPLETE_ATTRIBUTES (1).
-        self.text.insert('1.0', 're.')
-        trycompletions('event')
+        # _open_completions_later called with COMPLETE_ATTRIBUTES (1).
+        self.text.insert('insert', '.')
+        trycompletions()
         Equal(o_c_l.args, (False, False, False, 1))
 
-        # _open_completions_later should be called with COMPLETE_FILES (2).
+        # _open_completions_later called with COMPLETE_FILES (2).
         self.text.delete('1.0', 'end')
         self.text.insert('1.0', '"./Lib/')
-        trycompletions('event')
+        trycompletions()
         Equal(o_c_l.args, (False, False, False, 2))
 
     def test_autocomplete_event(self):
         Equal = self.assertEqual
-        autocomplete = self.autocomplete
+        acp = self.autocomplete
 
         # Test that the autocomplete event is ignored if user is pressing a
         # modifier key in addition to the tab key.
         ev = Event(mc_state=True)
-        self.assertIsNone(autocomplete.autocomplete_event(ev))
+        self.assertIsNone(acp.autocomplete_event(ev))
         del ev.mc_state
 
         # Test that tab after whitespace is ignored.
         self.text.insert('1.0', '        """Docstring.\n    ')
-        self.assertIsNone(autocomplete.autocomplete_event(ev))
+        self.assertIsNone(acp.autocomplete_event(ev))
         self.text.delete('1.0', 'end')
 
         # If autocomplete window is open, complete() method is called.
         self.text.insert('1.0', 're.')
-        # This must call autocomplete._make_autocomplete_window().
-        Equal(self.autocomplete.autocomplete_event(ev), 'break')
+        acp.autocompletewindow = m = Mock(spec=acw.AutoCompleteWindow)
+        m.is_active = Mock(return_value=True)
+        Equal(acp.autocomplete_event(ev), 'break')
+        m.complete.assert_called_once()
+        m.is_active = Mock(return_value=False)
+        Equal(acp.autocomplete_event(ev), 'break')
+        acp.autocompletewindow = None
 
         # If autocomplete window is not active or does not exist,
         # open_completions is called. Return depends on its return.
-        autocomplete._remove_autocomplete_window()
         o_cs = Func()  # .result = None.
-        autocomplete.open_completions = o_cs
-        Equal(self.autocomplete.autocomplete_event(ev), None)
+        acp.open_completions = o_cs
+        Equal(acp.autocomplete_event(ev), None)
         Equal(o_cs.args, (False, True, True))
         o_cs.result = True
-        Equal(self.autocomplete.autocomplete_event(ev), 'break')
+        Equal(acp.autocomplete_event(ev), 'break')
         Equal(o_cs.args, (False, True, True))
 
     def test_open_completions_later(self):
@@ -151,8 +158,11 @@ class AutoCompleteTest(unittest.TestCase):
     def test_open_completions(self):
         # Test completions of files and attributes as well as non-completion
         # of errors.
+        acp = self.autocomplete
         self.text.insert('1.0', 'pr')
-        self.assertTrue(self.autocomplete.open_completions(False, True, True))
+        self.assertIsNone(acp.autocompletewindow)
+        self.assertTrue(acp.open_completions(False, True, True))
+        self.assertIsInstance(acp.autocompletewindow, acw.AutoCompleteWindow)
         self.text.delete('1.0', 'end')
 
         # Test files.
@@ -161,11 +171,11 @@ class AutoCompleteTest(unittest.TestCase):
         self.text.delete('1.0', 'end')
 
         # Test with blank will fail.
-        self.assertFalse(self.autocomplete.open_completions(False, True, True))
+        self.assertFalse(acp.open_completions(False, True, True))
 
         # Test with only string quote will fail.
         self.text.insert('1.0', '"')
-        self.assertFalse(self.autocomplete.open_completions(False, True, True))
+        self.assertFalse(acp.open_completions(False, True, True))
         self.text.delete('1.0', 'end')
 
     def test_fetch_completions(self):

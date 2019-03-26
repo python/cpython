@@ -20,31 +20,26 @@ from idlelib.hyperparser import HyperParser
 # TODO Update this here and elsewhere.
 ID_CHARS = string.ascii_letters + string.digits + "_"
 
-SEPS = os.sep
-if os.altsep:  # e.g. '/' on Windows...
-    SEPS += os.altsep
-
+SEPS = f"{os.sep}{os.altsep if os.altsep else ''}"
+TRIGGERS = f".{SEPS}"
 
 class AutoComplete:
 
     def __init__(self, editwin=None):
         self.editwin = editwin
-        if editwin is not None:   # not in subprocess or test
+        if editwin is not None:   # not in subprocess or no-gui test
             self.text = editwin.text
-            self.autocompletewindow = None
-            # id of delayed call, and the index of the text insert when
-            # the delayed call was issued. If _delayed_completion_id is
-            # None, there is no delayed call.
-            self._delayed_completion_id = None
-            self._delayed_completion_index = None
+        self.autocompletewindow = None
+        # id of delayed call, and the index of the text insert when
+        # the delayed call was issued. If _delayed_completion_id is
+        # None, there is no delayed call.
+        self._delayed_completion_id = None
+        self._delayed_completion_index = None
 
     @classmethod
     def reload(cls):
         cls.popupwait = idleConf.GetOption(
             "extensions", "AutoComplete", "popupwait", type="int", default=0)
-
-    def _make_autocomplete_window(self):
-        return autocomplete_w.AutoCompleteWindow(self.text)
 
     def _remove_autocomplete_window(self, event=None):
         if self.autocompletewindow:
@@ -58,18 +53,15 @@ class AutoComplete:
         self.open_completions(True, False, True)
         return "break"
 
-    def try_open_completions_event(self, event):
+    def try_open_completions_event(self, event=None):
         """Happens when it would be nice to open a completion list, but not
         really necessary, for example after a dot, so function
         calls won't be made.
         """
         lastchar = self.text.get("insert-1c")
-        if lastchar == ".":
-            self._open_completions_later(False, False, False,
-                                         COMPLETE_ATTRIBUTES)
-        elif lastchar in SEPS:
-            self._open_completions_later(False, False, False,
-                                         COMPLETE_FILES)
+        if lastchar in TRIGGERS:
+            mode =  COMPLETE_ATTRIBUTES if lastchar == "." else COMPLETE_FILES
+            self._open_completions_later(False, False, False, mode)
 
     def autocomplete_event(self, event):
         """Happens when the user wants to complete his word, and if necessary,
@@ -160,7 +152,7 @@ class AutoComplete:
         comp_lists = self.fetch_completions(comp_what, mode)
         if not comp_lists[0]:
             return None
-        self.autocompletewindow = self._make_autocomplete_window()
+        self.autocompletewindow = autocomplete_w.AutoCompleteWindow(self.text)
         return not self.autocompletewindow.show_window(
                 comp_lists, "insert-%dc" % len(comp_start),
                 complete, mode, userWantsWin)
