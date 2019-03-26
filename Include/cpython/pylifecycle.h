@@ -21,8 +21,8 @@ PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromConfig(
     const _PyCoreConfig *coreconfig);
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
-    PyInterpreterState **interp,
-    const _PyCoreConfig *);
+    const _PyCoreConfig *config,
+    PyInterpreterState **interp);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
 

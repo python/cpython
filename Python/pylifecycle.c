@@ -482,7 +482,7 @@ _Py_Initialize_ReconfigureCore(PyInterpreterState **interp_p,
     }
     *interp_p = interp;
 
-    _PyCoreConfig_SetGlobalConfig(core_config);
+    _PyCoreConfig_Write(core_config);
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
         return _Py_INIT_ERR("failed to copy core config");
@@ -506,7 +506,7 @@ pycore_init_runtime(const _PyCoreConfig *core_config)
         return _Py_INIT_ERR("main interpreter already initialized");
     }
 
-    _PyCoreConfig_SetGlobalConfig(core_config);
+    _PyCoreConfig_Write(core_config);
 
     _PyInitError err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
@@ -801,7 +801,7 @@ pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
         return _Py_INIT_ERR("failed to copy core config");
     }
 
-    _PyInitError err = _PyCoreConfig_Read(config);
+    _PyInitError err = _PyCoreConfig_Read(config, NULL);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -833,14 +833,12 @@ pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
  * safe to call without calling Py_Initialize first)
  */
 _PyInitError
-_Py_InitializeCore(PyInterpreterState **interp_p,
-                   const _PyCoreConfig *src_config)
+_Py_InitializeCore(const _PyCoreConfig *src_config,
+                   PyInterpreterState **interp_p)
 {
-    _PyInitError err;
-
     assert(src_config != NULL);
 
-    err = _Py_PreInitializeFromConfig(src_config);
+    _PyInitError err = _Py_PreInitializeFromConfig(src_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -987,7 +985,7 @@ _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
     PyInterpreterState *interp = NULL;
     _PyInitError err;
-    err = _Py_InitializeCore(&interp, config);
+    err = _Py_InitializeCore(config, &interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
