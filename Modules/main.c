@@ -294,7 +294,7 @@ pymain_init_preconfig(const _PyArgv *args)
         goto done;
     }
 
-    err = _Py_PreInitializeFromPreConfig(&config);
+    err = _Py_PreInitializeInPlace(&config);
 
 done:
     _PyPreConfig_Clear(&config);
