@@ -678,7 +678,7 @@ intended.
 
 Comparing Sequences and Other Types
 ===================================
-Sequence objects tipically may be compared to other objects with the same sequence
+Sequence objects typically may be compared to other objects with the same sequence
 type. The comparison uses *lexicographical* ordering: first the first two
 items are compared, and if they differ this determines the outcome of the
 comparison; if they are equal, the next two items are compared, and so on, until
