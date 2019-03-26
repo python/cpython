@@ -77,7 +77,7 @@ main(int argc, char *argv[])
     text[text_size] = '\0';
 
     _PyCoreConfig config = _PyCoreConfig_INIT;
-    config.preconfig.use_environment = 0;
+    config.use_environment = 0;
     config.user_site_directory = 0;
     config.site_import = 0;
     config.program_name = L"./_freeze_importlib";

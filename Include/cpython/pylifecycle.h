@@ -16,7 +16,7 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 
 PyAPI_FUNC(_PyInitError) _Py_PreInitialize(void);
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPreConfig(
-    _PyPreConfig *preconfig);
+    const _PyPreConfig *preconfig);
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromConfig(
     const _PyCoreConfig *coreconfig);
 

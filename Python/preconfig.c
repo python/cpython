@@ -143,6 +143,23 @@ _PyPreCmdline_GetPreConfig(_PyPreCmdline *cmdline, const _PyPreConfig *config)
 
     COPY_ATTR(use_environment);
     COPY_ATTR(isolated);
+    COPY_ATTR(dev_mode);
+
+#undef COPY_ATTR
+}
+
+
+void
+_PyPreCmdline_SetPreConfig(const _PyPreCmdline *cmdline, _PyPreConfig *config)
+{
+#define COPY_ATTR(ATTR) \
+    if (cmdline->ATTR != -1) { \
+        config->ATTR = cmdline->ATTR; \
+    }
+
+    COPY_ATTR(use_environment);
+    COPY_ATTR(isolated);
+    COPY_ATTR(dev_mode);
 
 #undef COPY_ATTR
 }
@@ -152,12 +169,13 @@ void
 _PyPreCmdline_GetCoreConfig(_PyPreCmdline *cmdline, const _PyCoreConfig *config)
 {
 #define COPY_ATTR(ATTR) \
-    if (config->preconfig.ATTR != -1) { \
-        cmdline->ATTR = config->preconfig.ATTR; \
+    if (config->ATTR != -1) { \
+        cmdline->ATTR = config->ATTR; \
     }
 
     COPY_ATTR(use_environment);
     COPY_ATTR(isolated);
+    COPY_ATTR(dev_mode);
 
 #undef COPY_ATTR
 }
@@ -167,12 +185,13 @@ void
 _PyPreCmdline_SetCoreConfig(const _PyPreCmdline *cmdline, _PyCoreConfig *config)
 {
 #define COPY_ATTR(ATTR) \
-    if (config->preconfig.ATTR == -1 && cmdline->ATTR != -1) { \
-        config->preconfig.ATTR = cmdline->ATTR; \
+    if (config->ATTR == -1 && cmdline->ATTR != -1) { \
+        config->ATTR = cmdline->ATTR; \
     }
 
     COPY_ATTR(use_environment);
     COPY_ATTR(isolated);
+    COPY_ATTR(dev_mode);
 
 #undef COPY_ATTR
 }
@@ -206,13 +225,13 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
+    COPY_ATTR(dev_mode);
     COPY_ATTR(coerce_c_locale);
     COPY_ATTR(coerce_c_locale_warn);
 #ifdef MS_WINDOWS
     COPY_ATTR(legacy_windows_fs_encoding);
 #endif
     COPY_ATTR(utf8_mode);
-    COPY_ATTR(dev_mode);
     COPY_STR_ATTR(allocator);
 
 #undef COPY_ATTR
@@ -567,21 +586,6 @@ get_ctype_locale(char **locale_p)
 }
 
 
-void
-_PyPreCmdline_SetPreConfig(const _PyPreCmdline *cmdline, _PyPreConfig *config)
-{
-#define COPY_ATTR(ATTR) \
-    if (cmdline->ATTR != -1) { \
-        config->ATTR = cmdline->ATTR; \
-    }
-
-    COPY_ATTR(use_environment);
-    COPY_ATTR(isolated);
-
-#undef COPY_ATTR
-}
-
-
 PyObject*
 _PyPreConfig_AsDict(const _PyPreConfig *config)
 {
@@ -712,7 +716,7 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args,
     if (coreconfig) {
         _PyPreCmdline_GetCoreConfig(&cmdline, coreconfig);
         if (config->dev_mode == -1) {
-            config->dev_mode = coreconfig->preconfig.dev_mode;
+            config->dev_mode = coreconfig->dev_mode;
         }
     }
 
