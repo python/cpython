@@ -1822,13 +1822,9 @@ class SimpleBackgroundTests(unittest.TestCase):
         with test_wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_REQUIRED,
                             ca_certs=SIGNING_CA) as s:
-            try:
-                s.connect(self.server_addr)
-                self.assertTrue(s.getpeercert())
-                self.assertFalse(s.server_side)
-            except (ConnectionResetError, ConnectionAbortedError) as e:
-                # sometimes windows throws ConnectionResetError during the handshake
-                sys.stdout.write(repr(e))
+            s.connect(self.server_addr)
+            self.assertTrue(s.getpeercert())
+            self.assertFalse(s.server_side)
 
     def test_connect_fail(self):
         # This should fail because we have no verification certs. Connection
@@ -1885,18 +1881,13 @@ class SimpleBackgroundTests(unittest.TestCase):
         with ctx.wrap_socket(socket.socket(socket.AF_INET),
                             server_hostname="dummy") as s:
             s.connect(self.server_addr)
-            self.assertEqual({}, s.getpeercert())
         ctx.verify_mode = ssl.CERT_REQUIRED
         # This should succeed because we specify the root cert
         ctx.load_verify_locations(SIGNING_CA)
         with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
-            try:
-                s.connect(self.server_addr)
-                cert = s.getpeercert()
-                self.assertTrue(cert)
-            except (ConnectionResetError, ConnectionRefusedError) as e:
-                # sometimes windows throws ConnectionResetError during the handshake
-                sys.stdout.write(repr(e))
+            s.connect(self.server_addr)
+            cert = s.getpeercert()
+            self.assertTrue(cert)
 
     def test_connect_with_context_fail(self):
         # This should fail because we have no verification certs. Connection
@@ -1928,13 +1919,9 @@ class SimpleBackgroundTests(unittest.TestCase):
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.load_verify_locations(capath=BYTES_CAPATH)
         with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
-            try:
-                s.connect(self.server_addr)
-                cert = s.getpeercert()
-                self.assertTrue(cert)
-            except ConnectionResetError as e:
-                # sometimes windows throws ConnectionResetError during the handshake
-                sys.stdout.write(repr(e))
+            s.connect(self.server_addr)
+            cert = s.getpeercert()
+            self.assertTrue(cert)
 
     def test_connect_cadata(self):
         with open(SIGNING_CA) as f:
@@ -2248,7 +2235,7 @@ class ThreadedEchoServer(threading.Thread):
                     if support.verbose and self.server.chatty:
                         sys.stdout.write(" client cert is " + pprint.pformat(cert) + "\n")
                     cert_binary = self.sslconn.getpeercert(True)
-                    if support.verbose and self.server.chatty and cert_binary != None:
+                    if support.verbose and self.server.chatty:
                         sys.stdout.write(" cert binary is " + str(len(cert_binary)) + " bytes\n")
                 cipher = self.sslconn.cipher()
                 if support.verbose and self.server.chatty:
@@ -2347,8 +2334,9 @@ class ThreadedEchoServer(threading.Thread):
                             sys.stdout.write(" server: read %r (%s), sending back %r (%s)...\n"
                                              % (msg, ctype, msg.lower(), ctype))
                         self.write(msg.lower())
-                except ConnectionResetError:
-                    # XXX: OpenSSL 1.1.1 sometimes raises ConnectionResetError
+                except (ConnectionResetError, ConnectionAbortedError):
+                    # XXX: OpenSSL 1.1.1 sometimes raises ConnectionResetError 
+                    # or ConnectionAbortedError (on Windows)
                     # when connection is not shut down gracefully.
                     if self.server.chatty and support.verbose:
                         sys.stdout.write(
@@ -2357,22 +2345,27 @@ class ThreadedEchoServer(threading.Thread):
                         )
                     self.close()
                     self.running = False
-                except OSError as err:
-                    if 'peer did not return a certificate' in err.args[1]:
-                        # test_pha_required_nocert causes this error which results in a false(?) failure
+                except ssl.SSLError as err:
+                    # On Windows sometimes test_pha_required_nocert receives the 
+                    # PEER_DID_NOT_RETURN_A_CERTIFICATE exception 
+                    # before the 'tlsv13 alert certificate required' exception.
+                    # If the server is stopped when PEER_DID_NOT_RETURN_A_CERTIFICATE
+                    # is received test_pha_required_nocert fails with ConnectionResetError 
+                    # because the underlying socket is closed
+                    if 'PEER_DID_NOT_RETURN_A_CERTIFICATE' == err.reason:
                         if self.server.chatty and support.verbose:
                             sys.stdout.write(err.args[1])
                         # test_pha_required_nocert is expecting this exception
                         raise ssl.SSLError('tlsv13 alert certificate required')
-                    else:
-                        if self.server.chatty:
-                            handle_error("Test server failure:\n")
-                        self.close()
-                        self.running = False
+                except OSError:
+                    if self.server.chatty:
+                        handle_error("Test server failure:\n")
+                    self.close()
+                    self.running = False
 
-                        # normally, we'd just stop here, but for the test
-                        # harness, we want to stop the server
-                        self.server.stop()
+                    # normally, we'd just stop here, but for the test
+                    # harness, we want to stop the server
+                    self.server.stop()
 
     def __init__(self, certificate=None, ssl_version=None,
                  certreqs=None, cacerts=None,
