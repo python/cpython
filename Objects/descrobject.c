@@ -117,8 +117,8 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
     }
     if (!PyType_IsSubtype((PyTypeObject *)type, PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' for type '%.100s' "
-                     "doesn't apply to a '%.100s' type",
+                     "descriptor '%V' requires a subtype of '%.100s' "
+                     "but received '%.100s'",
                      descr_name((PyDescrObject *)descr), "?",
                      PyDescr_TYPE(descr)->tp_name,
                      ((PyTypeObject *)type)->tp_name);
