@@ -1,7 +1,6 @@
 # Test the windows specific win32reg module.
 # Only win32reg functions not hit here: FlushKey, LoadKey and SaveKey
 
-import contextlib
 import os, sys, errno
 import unittest
 from test import support
