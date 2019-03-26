@@ -313,20 +313,18 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
     if (!PyType_Check(self)) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' requires a type "
-                     "but received a '%.100s'",
+                     "but received a '%.100s' instance",
                      descr_name((PyDescrObject *)descr), "?",
-                     PyDescr_TYPE(descr)->tp_name,
                      self->ob_type->tp_name);
         return NULL;
     }
     if (!PyType_IsSubtype((PyTypeObject *)self, PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
-                     "descriptor '%V' "
-                     "requires a subtype of '%.100s' "
-                     "but received '%.100s",
+                     "descriptor '%V' requires a subtype of '%.100s' "
+                     "but received '%.100s'",
                      descr_name((PyDescrObject *)descr), "?",
                      PyDescr_TYPE(descr)->tp_name,
-                     self->ob_type->tp_name);
+                     ((PyTypeObject*)self)->tp_name);
         return NULL;
     }
 

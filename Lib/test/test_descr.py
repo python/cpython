@@ -1592,12 +1592,27 @@ order (MRO) for bases """
         self.assertEqual(x2, SubSpam)
         self.assertEqual(a2, a1)
         self.assertEqual(d2, d1)
-        with self.assertRaises(TypeError):
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm()
-        with self.assertRaises(TypeError):
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'classmeth' of 'xxsubtype.spamlist' "
+            "object needs an argument")
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm(spam.spamlist())
-        with self.assertRaises(TypeError):
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'classmeth' requires a type "
+            "but received a 'xxsubtype.spamlist' instance")
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm(list)
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'classmeth' requires a subtype of 'xxsubtype.spamlist' "
+            "but received 'list'")
 
     def test_staticmethods(self):
         # Testing static methods...
