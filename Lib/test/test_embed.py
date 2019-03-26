@@ -302,7 +302,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'pycache_prefix': None,
         'program_name': './_testembed',
         'argv': [""],
-        'program': None,
+        'program': '',
 
         'xoptions': [],
         'warnoptions': [],
@@ -537,6 +537,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'program_name': './globalvar',
             'site_import': 0,
             'bytes_warning': 1,
+            'warnoptions': ['default::BytesWarning'],
             'inspect': 1,
             'interactive': 1,
             'optimization_level': 2,
@@ -579,7 +580,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'argv': ['-c', 'pass'],
             'program': 'conf_program',
             'xoptions': ['core_xoption1=3', 'core_xoption2=', 'core_xoption3'],
-            'warnoptions': ['default', 'error::ResourceWarning'],
+            'warnoptions': ['error::ResourceWarning', 'default::BytesWarning'],
 
             'site_import': 0,
             'bytes_warning': 1,
@@ -629,14 +630,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         preconfig = dict(self.INIT_ENV_PRECONFIG,
                       allocator='debug')
         config = dict(self.INIT_ENV_CONFIG,
-                      dev_mode=1)
+                      dev_mode=1,
+                      warnoptions=['default'])
         self.check_config("init_env_dev_mode", config, preconfig)
 
     def test_init_env_dev_mode_alloc(self):
         preconfig = dict(self.INIT_ENV_PRECONFIG,
                          allocator='malloc')
         config = dict(self.INIT_ENV_CONFIG,
-                      dev_mode=1)
+                      dev_mode=1,
+                      warnoptions=['default'])
         self.check_config("init_env_dev_mode_alloc", config, preconfig)
 
     def test_init_dev_mode(self):
@@ -646,14 +649,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'faulthandler': 1,
             'dev_mode': 1,
+            'warnoptions': ['default'],
         }
         self.check_config("init_dev_mode", config, preconfig)
 
     def test_init_isolated(self):
-        preconfig = {
-            'isolated': 0,
-            'use_environment': 1,
-        }
+        preconfig = {}
         config = {
             'isolated': 1,
             'use_environment': 0,
