@@ -356,8 +356,8 @@ Shell and Output windows also have the following.
 Go to file/line
    Same as in Debug menu.
 
-The Shell window also has an output squeezing facility explained in the
-the *Python Shell window* subsection below.
+The Shell window also has an output squeezing facility explained in the *Python
+Shell window* subsection below.
 
 Squeeze
    If the cursor is over an output line, squeeze all the output between
@@ -716,17 +716,15 @@ In contrast, some system text windows only keep the last n lines of output.
 A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
 with 300 the default.
 
-A Tk Text widget, and hence IDLE's Shell, displays characters (codepoints)
-in the the BMP (Basic Multilingual Plane) subset of Unicode.
-Which characters are displayed with a proper glyph and which with a
-replacement box depends on the operating system and installed fonts.
-Tab characters cause the following text to begin after
-the next tab stop. (They occur every 8 'characters').
-Newline characters cause following text to appear on a new line.
-Other control characters are ignored or displayed as a space, box, or
-something else, depending on the operating system and font.
-(Moving the text cursor through such output with arrow keys may exhibit
-some surprising spacing behavior.)
+A Tk Text widget, and hence IDLE's Shell, displays characters (codepoints) in
+the BMP (Basic Multilingual Plane) subset of Unicode.  Which characters are
+displayed with a proper glyph and which with a replacement box depends on the
+operating system and installed fonts.  Tab characters cause the following text
+to begin after the next tab stop. (They occur every 8 'characters').  Newline
+characters cause following text to appear on a new line.  Other control
+characters are ignored or displayed as a space, box, or something else,
+depending on the operating system and font.  (Moving the text cursor through
+such output with arrow keys may exhibit some surprising spacing behavior.)
 
 .. code-block:: none
 
