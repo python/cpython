@@ -174,7 +174,6 @@ PyInterpreterState_New(void)
     interp->id_refcount = -1;
     interp->check_interval = 100;
     interp->core_config = _PyCoreConfig_INIT;
-    interp->config = _PyMainInterpreterConfig_INIT;
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
@@ -221,7 +220,6 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
         PyThreadState_Clear(p);
     HEAD_UNLOCK();
     _PyCoreConfig_Clear(&interp->core_config);
-    _PyMainInterpreterConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
@@ -453,12 +451,6 @@ _PyCoreConfig *
 _PyInterpreterState_GetCoreConfig(PyInterpreterState *interp)
 {
     return &interp->core_config;
-}
-
-_PyMainInterpreterConfig *
-_PyInterpreterState_GetMainConfig(PyInterpreterState *interp)
-{
-    return &interp->config;
 }
 
 PyObject *

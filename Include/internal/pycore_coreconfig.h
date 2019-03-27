@@ -104,11 +104,6 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
     const _PyArgv *args);
 PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
 
-/* --- _PyMainInterpreterConfig ----------------------------------- */
-
-PyAPI_FUNC(PyObject*) _PyMainInterpreterConfig_AsDict(
-    const _PyMainInterpreterConfig *config);
-
 #ifdef __cplusplus
 }
 #endif

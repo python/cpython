@@ -2208,17 +2208,6 @@ _Py_GetConfigsAsDict(void)
     }
     Py_CLEAR(dict);
 
-    /* main config */
-    const _PyMainInterpreterConfig *main_config = _PyInterpreterState_GetMainConfig(interp);
-    dict = _PyMainInterpreterConfig_AsDict(main_config);
-    if (dict == NULL) {
-        goto error;
-    }
-    if (PyDict_SetItemString(config, "main_config", dict) < 0) {
-        goto error;
-    }
-    Py_CLEAR(dict);
-
     return config;
 
 error:
