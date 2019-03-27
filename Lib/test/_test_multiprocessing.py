@@ -3751,8 +3751,8 @@ class _TestSharedMemory(BaseTestCase):
 
         sl2 = smm.ShareableList(range(10))
 
-        # test that the custom signal handler registered in the Manager do not
-        # affect signal handling in the parent process.
+        # test that the custom signal handler registered in the Manager does
+        # not affect signal handling in the parent process.
         with self.assertRaises(KeyboardInterrupt):
                 os.kill(os.getpid(), signal.SIGINT)
 
