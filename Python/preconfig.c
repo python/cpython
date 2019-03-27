@@ -386,7 +386,9 @@ _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
-    COPY_FLAG(utf8_mode, Py_UTF8Mode);
+    if (Py_UTF8Mode > 0) {
+        config->utf8_mode = 1;
+    }
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
