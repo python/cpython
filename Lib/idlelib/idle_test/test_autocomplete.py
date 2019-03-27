@@ -56,66 +56,37 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertIsNone(acp.autocompletewindow)
 
     def test_force_open_completions_event(self):
-        # Test that force_open_completions_event calls _open_completions.
+        # Call _open_completions and break.
+        acp = self.autocomplete
         o_cs = Func()
-        self.autocomplete.open_completions = o_cs
-        self.autocomplete.force_open_completions_event('event')
+        acp.open_completions = o_cs
+        self.assertEqual(acp.force_open_completions_event('event'), 'break')
         self.assertEqual(o_cs.args, (True, False, True))
-
-    def test_try_open_completions_event(self):
-        Equal = self.assertEqual
-        autocomplete = self.autocomplete
-        trycompletions = self.autocomplete.try_open_completions_event
-        o_c_l = Func()
-        autocomplete._open_completions_later = o_c_l
-
-        # if no text or trigger, _open_completions_later not called
-        # or if last character is not trigger char.
-        trycompletions()
-        Equal(o_c_l.args, None)
-        self.text.insert('1.0', 're')
-        trycompletions()
-        Equal(o_c_l.args, None)
-
-        # _open_completions_later called with COMPLETE_ATTRIBUTES (1).
-        self.text.insert('insert', '.')
-        trycompletions()
-        Equal(o_c_l.args, (False, False, False, 1))
-
-        # _open_completions_later called with COMPLETE_FILES (2).
-        self.text.delete('1.0', 'end')
-        self.text.insert('1.0', '"./Lib/')
-        trycompletions()
-        Equal(o_c_l.args, (False, False, False, 2))
 
     def test_autocomplete_event(self):
         Equal = self.assertEqual
         acp = self.autocomplete
 
-        # Test that the autocomplete event is ignored if user is pressing a
-        # modifier key in addition to the tab key.
+        # Result of autocomplete event: If modified tab, None.
         ev = Event(mc_state=True)
         self.assertIsNone(acp.autocomplete_event(ev))
         del ev.mc_state
 
-        # Test that tab after whitespace is ignored.
+        # If tab after whitespace, None.
         self.text.insert('1.0', '        """Docstring.\n    ')
         self.assertIsNone(acp.autocomplete_event(ev))
         self.text.delete('1.0', 'end')
 
-        # If autocomplete window is open, complete() method is called.
+        # If active autocomplete window, complete() and 'break'.
         self.text.insert('1.0', 're.')
         acp.autocompletewindow = m = Mock(spec=acw.AutoCompleteWindow)
         m.is_active = Mock(return_value=True)
         Equal(acp.autocomplete_event(ev), 'break')
         m.complete.assert_called_once()
-        m.is_active = Mock(return_value=False)
-        Equal(acp.autocomplete_event(ev), 'break')
         acp.autocompletewindow = None
 
-        # If autocomplete window is not active or does not exist,
-        # open_completions is called. Return depends on its return.
-        o_cs = Func()  # .result = None.
+        # If no active autocomplete window, open_completions(), None/break.
+        o_cs = Func(result=False)
         acp.open_completions = o_cs
         Equal(acp.autocomplete_event(ev), None)
         Equal(o_cs.args, (False, True, True))
@@ -123,41 +94,81 @@ class AutoCompleteTest(unittest.TestCase):
         Equal(acp.autocomplete_event(ev), 'break')
         Equal(o_cs.args, (False, True, True))
 
-    def test_open_completions_later(self):
-        # Test that autocomplete._delayed_completion_id is set.
+    def test_try_open_completions_event(self):
+        Equal = self.assertEqual
         acp = self.autocomplete
+        trycompletions = acp.try_open_completions_event
+        o_c_l = Func()
+        acp._open_completions_later = o_c_l
+
+        # If no text or trigger, _open_completions_later not called.
+        trycompletions()
+        Equal(o_c_l.called, 0)
+        self.text.insert('1.0', 're')
+        trycompletions()
+        Equal(o_c_l.called, 0)
+
+        # _open_completions_later called with COMPLETE_ATTRIBUTES (1).
+        self.text.insert('insert', 're.')
+        trycompletions()
+        Equal(o_c_l.args, ((False, False, False, 1),))
+
+        # _open_completions_later called with COMPLETE_FILES (2).
+        self.text.delete('1.0', 'end')
+        self.text.insert('1.0', '"./Lib/')
+        trycompletions()
+        Equal(o_c_l.args, ((False, False, False, 2),))
+
+    def test_open_completions_later(self):
+        Equal = self.assertEqual
+
+        # Test after call and autocomplete._delayed_completion_id.
+        acp = self.autocomplete
+        after = Func(result='after1')
+        acp.text.after = after
         acp._delayed_completion_id = None
-        acp._open_completions_later(False, False, False, ac.COMPLETE_ATTRIBUTES)
+        acp._open_completions_later('dummy1')
+        Equal(after.args,
+              (acp.popupwait, acp._delayed_open_completions, 'dummy1'))
         cb1 = acp._delayed_completion_id
-        self.assertTrue(cb1.startswith('after'))
+        Equal(cb1, 'after1')
 
         # Test that cb1 is cancelled and cb2 is new.
-        acp._open_completions_later(False, False, False, ac.COMPLETE_FILES)
-        self.assertNotIn(cb1, self.root.tk.call('after', 'info'))
+        after.result = 'after2'
+        acp.text.after_cancel = Func()
+        acp._open_completions_later('dummy2')
+        Equal(after.args,
+              (acp.popupwait, acp._delayed_open_completions, 'dummy2'))
+        Equal(self.text.after_cancel.args, (cb1,))
         cb2 = acp._delayed_completion_id
-        self.assertTrue(cb2.startswith('after') and cb2 != cb1)
-        self.text.after_cancel(cb2)
+        Equal(cb2, 'after2')
 
     def test_delayed_open_completions(self):
-        # Test that autocomplete._delayed_completion_id set to None
-        # and that open_completions is not called if the index is not
-        # equal to _delayed_completion_index.
+        Equal = self.assertEqual
         acp = self.autocomplete
-        acp.open_completions = Func()
+        o_c = Func()
+        acp.open_completions = o_c
+        self.text.delete('1.0', 'end')
+        self.text.insert('1.0', '"dict.')
+
+
+        # Set autocomplete._delayed_completion_id to None.
+        # Text index changed, don't call open_completions.
         acp._delayed_completion_id = 'after'
         acp._delayed_completion_index = self.text.index('insert+1c')
-        acp._delayed_open_completions(1, 2, 3)
+        acp._delayed_open_completions('dummy')
         self.assertIsNone(acp._delayed_completion_id)
-        self.assertEqual(acp.open_completions.called, 0)
+        Equal(acp.open_completions.called, 0)
 
-        # Test that open_completions is called if indexes match.
+        # Text index unchanged, call open_completions.
         acp._delayed_completion_index = self.text.index('insert')
-        acp._delayed_open_completions(1, 2, 3, ac.COMPLETE_FILES)
+        acp._delayed_open_completions((1, 2, 3, ac.COMPLETE_FILES))
         self.assertEqual(acp.open_completions.args, (1, 2, 3, 2))
 
     def test_open_completions(self):
         # Test completions of files and attributes as well as non-completion
         # of errors.
+        # add 're.', others to complete coverage
         acp = self.autocomplete
         self.text.insert('1.0', 'pr')
         self.assertIsNone(acp.autocompletewindow)
@@ -167,6 +178,7 @@ class AutoCompleteTest(unittest.TestCase):
 
         # Test files.
         self.text.insert('1.0', '"t')
+        # When run under regrtest, not comp_lists[0] (small)
         #self.assertTrue(self.autocomplete.open_completions(False, True, True))
         self.text.delete('1.0', 'end')
 

@@ -47,27 +47,12 @@ class AutoComplete:
             self.autocompletewindow = None
 
     def force_open_completions_event(self, event):
-        """Happens when the user really wants to open a completion list, even
-        if a function call is needed.
-        """
+        "(^space) Open completion list, even if a function call is needed."
         self.open_completions(True, False, True)
         return "break"
 
-    def try_open_completions_event(self, event=None):
-        """Happens when it would be nice to open a completion list, but not
-        really necessary, for example after a dot, so function
-        calls won't be made.
-        """
-        lastchar = self.text.get("insert-1c")
-        if lastchar in TRIGGERS:
-            mode =  COMPLETE_ATTRIBUTES if lastchar == "." else COMPLETE_FILES
-            self._open_completions_later(False, False, False, mode)
-
     def autocomplete_event(self, event):
-        """Happens when the user wants to complete his word, and if necessary,
-        open a completion list after that (if there is more than one
-        completion)
-        """
+        "(tab) Complete word or open list if multiple options."
         if hasattr(event, "mc_state") and event.mc_state or\
                 not self.text.get("insert linestart", "insert").strip():
             # A modifier was pressed along with the tab or
@@ -80,15 +65,23 @@ class AutoComplete:
             opened = self.open_completions(False, True, True)
             return "break" if opened else None
 
-    def _open_completions_later(self, *args):
+    def try_open_completions_event(self, event=None):
+        "(./) Open completion list after pause with no movement."
+        lastchar = self.text.get("insert-1c")
+        if lastchar in TRIGGERS:
+            mode =  COMPLETE_ATTRIBUTES if lastchar == "." else COMPLETE_FILES
+            self._open_completions_later((False, False, False, mode))
+
+    def _open_completions_later(self, args):
         self._delayed_completion_index = self.text.index("insert")
         if self._delayed_completion_id is not None:
             self.text.after_cancel(self._delayed_completion_id)
         self._delayed_completion_id = \
             self.text.after(self.popupwait, self._delayed_open_completions,
-                            *args)
+                            args)
 
-    def _delayed_open_completions(self, *args):
+    def _delayed_open_completions(self, args):
+        "Call open_completions if index unchanged."
         self._delayed_completion_id = None
         if self.text.index("insert") == self._delayed_completion_index:
             self.open_completions(*args)
@@ -102,8 +95,8 @@ class AutoComplete:
 
         Action  Function                Eval   Complete WantWin Mode
         ^space  force_open_completions  True,  False,   True    no
-        . or /  try_open_completions    False, False,   False   yes
         tab     autocomplete            False, True,    True    no
+        . or /  try_open_completions    False, False,   False   yes
         """
         # Cancel another delayed call, if it exists.
         if self._delayed_completion_id is not None:
