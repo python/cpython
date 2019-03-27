@@ -441,8 +441,6 @@ static int test_init_from_config(void)
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
 
-    /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
-
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config.pycache_prefix = L"conf_pycache_prefix";
 
@@ -617,17 +615,6 @@ static int test_init_isolated(void)
 {
     _PyInitError err;
 
-    _PyPreConfig preconfig = _PyPreConfig_INIT;
-
-    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    preconfig.coerce_c_locale = 0;
-    preconfig.utf8_mode = 0;
-
-    err = _Py_PreInitialize(&preconfig);
-    if (_Py_INIT_FAILED(err)) {
-        _Py_ExitInitError(err);
-    }
-
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
@@ -654,10 +641,6 @@ static int test_preinit_isolated1(void)
     _PyInitError err;
 
     _PyPreConfig preconfig = _PyPreConfig_INIT;
-
-    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    preconfig.coerce_c_locale = 0;
-    preconfig.utf8_mode = 0;
     preconfig.isolated = 1;
 
     err = _Py_PreInitialize(&preconfig);
@@ -685,10 +668,6 @@ static int test_preinit_isolated2(void)
     _PyInitError err;
 
     _PyPreConfig preconfig = _PyPreConfig_INIT;
-
-    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    preconfig.coerce_c_locale = 0;
-    preconfig.utf8_mode = 0;
     preconfig.isolated = 0;
 
     err = _Py_PreInitialize(&preconfig);
