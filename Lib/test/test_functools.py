@@ -2304,10 +2304,12 @@ class TestSingleDispatch(unittest.TestCase):
                 # types from `typing`. Instead, annotate with regular types
                 # or ABCs.
                 return "I annotated with a generic collection"
-        self.assertTrue(str(exc.exception).startswith(msg_prefix +
-            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
+        self.assertTrue(str(exc.exception).startswith(
+            "Invalid annotation for 'arg'."
         ))
-        self.assertTrue(str(exc.exception).endswith(msg_suffix))
+        self.assertTrue(str(exc.exception).endswith(
+            'typing.Iterable[str] is not a class.'
+        ))
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch
