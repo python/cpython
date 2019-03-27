@@ -170,8 +170,8 @@ class LoaderTest(unittest.TestCase):
                         "winmode=nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)")
 
             # User-specified directory should succeed
-            should_pass("import os; os.add_dll_directory(os.getcwd());" +
-                        "WinDLL('_sqlite3.dll')")
+            should_pass("import os; p = os.add_dll_directory(os.getcwd());" +
+                        "WinDLL('_sqlite3.dll'); p.close()")
 
 
 
