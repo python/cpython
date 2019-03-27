@@ -120,33 +120,58 @@ class LoaderTest(unittest.TestCase):
     def test_load_dll_with_flags(self):
         _sqlite3 = test.support.import_module("_sqlite3")
         src = _sqlite3.__file__
+        if src.lower().endswith("_d.pyd"):
+            ext = "_d.dll"
+        else:
+            ext = ".dll"
 
-        def check(command):
-            subprocess.check_output(
-                [sys.executable, "-c", "from ctypes import *;" + command],
-                stderr=subprocess.STDOUT,
-            )
-
-        with test.support.temp_cwd() as cwd:
+        with test.support.temp_dir() as tmp:
             # We copy two files and load _sqlite3.dll (formerly .pyd),
             # which has a dependency on sqlite3.dll. Then we test
             # loading it in subprocesses to avoid it starting in memory
             # for each test.
-            shutil.copy(src, os.path.join(cwd, "_sqlite3.dll"))
-            shutil.copy(os.path.join(os.path.dirname(src), "sqlite3.dll"),
-                        os.path.join(cwd, "sqlite3.dll"))
+            target = os.path.join(tmp, "_sqlite3.dll")
+            shutil.copy(src, target)
+            shutil.copy(os.path.join(os.path.dirname(src), "sqlite3" + ext),
+                        os.path.join(tmp, "sqlite3" + ext))
 
-            with self.assertRaises(subprocess.CalledProcessError):
-                check("WinDLL('_sqlite3.dll')")
+            def should_pass(command):
+                with self.subTest(command):
+                    subprocess.check_output(
+                        [sys.executable, "-c",
+                         "from ctypes import *; import nt;" + command],
+                        cwd=tmp
+                    )
 
-            with self.assertRaises(subprocess.CalledProcessError):
-                check("import nt; WinDLL('_sqlite3.dll', " +
-                      "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32)")
+            def should_fail(command):
+                with self.subTest(command):
+                    with self.assertRaises(subprocess.CalledProcessError):
+                        subprocess.check_output(
+                            [sys.executable, "-c",
+                             "from ctypes import *; import nt;" + command],
+                            cwd=tmp, stderr=subprocess.STDOUT,
+                        )
 
-            check("WinDLL('_sqlite3.dll', winmode=0)")
-            check("WinDLL('./_sqlite3.dll')")
-            check("import os; os.add_dll_directory(os.getcwd()); " +
-                  "WinDLL('_sqlite3.dll')")
+            # Default load should not find this in CWD
+            should_fail("WinDLL('_sqlite3.dll')")
+
+            # Relative path (but not just filename) should succeed
+            should_pass("WinDLL('./_sqlite3.dll')")
+
+            # Insecure load flags should succeed
+            should_pass("WinDLL('_sqlite3.dll', winmode=0)")
+
+            # Full path load without DLL_LOAD_DIR shouldn't find dependency
+            should_fail("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
+                        "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32)")
+
+            # Full path load with DLL_LOAD_DIR should succeed
+            should_pass("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
+                        "winmode=nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)")
+
+            # User-specified directory should succeed
+            should_pass("import os; os.add_dll_directory(os.getcwd());" +
+                        "WinDLL('_sqlite3.dll')")
 
 
 
