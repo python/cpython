@@ -3543,6 +3543,12 @@ dictiter_iternextkey(dictiterobject *di)
             goto fail;
         key = entry_ptr->me_key;
     }
+    // We found an element (key), but did not expect it
+    if (di->len == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "dictionary keys changed during iteration");
+        goto fail;
+    }
     di->di_pos = i+1;
     di->len--;
     Py_INCREF(key);
