@@ -69,6 +69,15 @@
     </Fragment>
     
     <Fragment>
+        <!-- The auto-generated directory is not available when building debug binaries -->
+        <DirectoryRef Id="Lib">
+            <Directory Id="Lib_venv__d" Name="venv">
+                <Directory Id="Lib_venv_scripts__d" Name="scripts">
+                    <Directory Id="Lib_venv_scripts_nt__d" Name="nt" />
+                </Directory>
+            </Directory>
+        </DirectoryRef>
+
         <ComponentGroup Id="lib_extensions_d">
             <?foreach ext in $(var.exts)?>
             
@@ -86,6 +95,12 @@
             </Component>
             <Component Id="sqlite3_d.pdb" Directory="DLLs" Guid="*">
                 <File Name="sqlite3_d.pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="venvlauncher_d.exe" Directory="Lib_venv_scripts_nt__d" Guid="*">
+                <File Name="python_d.exe" Source="venvlauncher_d.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="venvwlauncher_d.exe" Directory="Lib_venv_scripts_nt__d" Guid="*">
+                <File Name="pythonw_d.exe" Source="venvwlauncher_d.exe" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

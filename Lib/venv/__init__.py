@@ -195,6 +195,9 @@ class EnvBuilder:
                     src = os.path.join(os.path.dirname(src), basename + ext)
                 else:
                     src = srcfn
+                if not os.path.exists(src):
+                    logger.warning('Unable to copy %r', src)
+                    return
 
             shutil.copyfile(src, dst)
 
