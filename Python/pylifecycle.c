@@ -485,7 +485,7 @@ _Py_Initialize_ReconfigureCore(PyInterpreterState **interp_p,
     _PyCoreConfig_Write(core_config);
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
+        return _Py_INIT_NO_MEMORY();
     }
     core_config = &interp->core_config;
 
@@ -548,7 +548,7 @@ pycore_create_interpreter(const _PyCoreConfig *core_config,
     *interp_p = interp;
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
+        return _Py_INIT_NO_MEMORY();
     }
     core_config = &interp->core_config;
 
@@ -785,6 +785,7 @@ _Py_PreInitialize(const _PyPreConfig *src_config)
 _PyInitError
 _Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig)
 {
+    assert(coreconfig != NULL);
     _PyPreConfig config = _PyPreConfig_INIT;
     _PyCoreConfig_GetCoreConfig(&config, coreconfig);
     return _Py_PreInitialize(&config);
@@ -799,8 +800,10 @@ pyinit_coreconfig(_PyCoreConfig *config,
                   const _PyArgv *args,
                   PyInterpreterState **interp_p)
 {
-    if (_PyCoreConfig_Copy(config, src_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
+    if (src_config) {
+        if (_PyCoreConfig_Copy(config, src_config) < 0) {
+            return _Py_INIT_NO_MEMORY();
+        }
     }
 
     _PyInitError err = _PyCoreConfig_Read(config, args);
@@ -839,9 +842,14 @@ _Py_InitializeCore(const _PyCoreConfig *src_config,
                    const _PyArgv *args,
                    PyInterpreterState **interp_p)
 {
-    assert(src_config != NULL);
+    _PyInitError err;
 
-    _PyInitError err = _Py_PreInitializeFromCoreConfig(src_config);
+    if (src_config) {
+        err = _Py_PreInitializeFromCoreConfig(src_config);
+    }
+    else {
+        err = _Py_PreInitialize(NULL);
+    }
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -1395,7 +1403,7 @@ new_interpreter(PyThreadState **tstate_p)
     }
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
+        return _Py_INIT_NO_MEMORY();
     }
     core_config = &interp->core_config;
 

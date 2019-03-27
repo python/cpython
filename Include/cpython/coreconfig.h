@@ -63,13 +63,20 @@ typedef struct {
        set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
 
-    /* PYTHONCOERCECLOCALE, -1 means unknown.
+    /* Coerce the LC_CTYPE locale if it's equal to "C"? (PEP 538)
+
+       Set to 0 by PYTHONCOERCECLOCALE=0. Set to 1 by PYTHONCOERCECLOCALE=1.
+       Set to 2 if the user preferred LC_CTYPE locale is "C".
 
        If it is equal to 1, LC_CTYPE locale is read to decide it it should be
        coerced or not (ex: PYTHONCOERCECLOCALE=1). Internally, it is set to 2
        if the LC_CTYPE locale must be coerced. */
     int coerce_c_locale;
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+
+    /* Emit a warning if the LC_CTYPE locale is coerced?
+
+       Disabled by default. Set to 1 by PYTHONCOERCECLOCALE=warn. */
+    int coerce_c_locale_warn;
 
 #ifdef MS_WINDOWS
     /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
@@ -83,9 +90,17 @@ typedef struct {
     int legacy_windows_fs_encoding;
 #endif
 
-    /* Enable UTF-8 mode?
-       Set by -X utf8 command line option and PYTHONUTF8 environment variable.
-       If set to -1 (default), inherit Py_UTF8Mode value. */
+    /* Enable UTF-8 mode? (PEP 540)
+
+       Disabled by default (equals to 0).
+
+       Set to 1 by "-X utf8" and "-X utf8=1" command line options.
+       Set to 1 by PYTHONUTF8=1 environment variable.
+
+       Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
+
+       If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
+       "POSIX", otherwise inherit Py_UTF8Mode value. */
     int utf8_mode;
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
@@ -104,8 +119,6 @@ typedef struct {
         _PyPreConfig_WINDOWS_INIT \
         .isolated = -1, \
         .use_environment = -1, \
-        .coerce_c_locale = -1, \
-        .utf8_mode = -1, \
         .dev_mode = -1, \
         .allocator = NULL}
 

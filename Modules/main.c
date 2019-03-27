@@ -52,23 +52,30 @@ pymain_init(const _PyArgv *args)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
-
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    /* Set to -1 to enable them depending on the LC_CTYPE locale and the
+       environment variables (PYTHONUTF8 and PYTHONCOERCECLOCALE)  */
+    preconfig.coerce_c_locale = -1;
+    preconfig.utf8_mode = -1;
     if (args->use_bytes_argv) {
-        err = _Py_PreInitializeFromArgs(NULL, args->argc, args->bytes_argv);
+        err = _Py_PreInitializeFromArgs(&preconfig,
+                                        args->argc, args->bytes_argv);
     }
     else {
-        err = _Py_PreInitializeFromWideArgs(NULL, args->argc, args->wchar_argv);
+        err = _Py_PreInitializeFromWideArgs(&preconfig,
+                                            args->argc, args->wchar_argv);
     }
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
+    /* pass NULL as the config: config is read from command line arguments,
+       environment variables, configuration files */
     if (args->use_bytes_argv) {
-        return _Py_InitializeFromArgs(&config, args->argc, args->bytes_argv);
+        return _Py_InitializeFromArgs(NULL, args->argc, args->bytes_argv);
     }
     else {
-        return _Py_InitializeFromWideArgs(&config, args->argc, args->wchar_argv);
+        return _Py_InitializeFromWideArgs(NULL, args->argc, args->wchar_argv);
     }
 }
 

@@ -494,8 +494,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if key not in expected_preconfig:
                 expected_preconfig[key] = expected_config[key]
 
-        self.check_core_config(config, expected_config)
         self.check_pre_config(config, expected_preconfig)
+        self.check_core_config(config, expected_config)
         self.check_global_config(config)
 
     def test_init_default_config(self):
@@ -573,7 +573,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     INIT_ENV_PRECONFIG = {
         'allocator': 'malloc',
-        'utf8_mode': 1,
     }
     INIT_ENV_CONFIG = {
         'use_hash_seed': 1,
@@ -581,8 +580,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'tracemalloc': 2,
         'import_time': 1,
         'malloc_stats': 1,
-        'filesystem_encoding': 'utf-8',
-        'filesystem_errors': UTF8_MODE_ERRORS,
         'inspect': 1,
         'optimization_level': 2,
         'pycache_prefix': 'env_pycache_prefix',
