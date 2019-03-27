@@ -1,6 +1,9 @@
 from ctypes import *
 import os
+import shutil
+import subprocess
 import sys
+import sysconfig
 import unittest
 import test.support
 from ctypes.util import find_library
@@ -111,6 +114,41 @@ class LoaderTest(unittest.TestCase):
         self.assertTrue(proc)
         # This is the real test: call the function via 'call_function'
         self.assertEqual(0, call_function(proc, (None,)))
+
+    @unittest.skipUnless(os.name == "nt",
+                         'test specific to Windows')
+    def test_load_dll_with_flags(self):
+        _sqlite3 = test.support.import_module("_sqlite3")
+        src = _sqlite3.__file__
+
+        def check(command):
+            subprocess.check_output(
+                [sys.executable, "-c", "from ctypes import *;" + command],
+                stderr=subprocess.STDOUT,
+            )
+
+        with test.support.temp_cwd() as cwd:
+            # We copy two files and load _sqlite3.dll (formerly .pyd),
+            # which has a dependency on sqlite3.dll. Then we test
+            # loading it in subprocesses to avoid it starting in memory
+            # for each test.
+            shutil.copy(src, os.path.join(cwd, "_sqlite3.dll"))
+            shutil.copy(os.path.join(os.path.dirname(src), "sqlite3.dll"),
+                        os.path.join(cwd, "sqlite3.dll"))
+
+            with self.assertRaises(subprocess.CalledProcessError):
+                check("WinDLL('_sqlite3.dll')")
+
+            with self.assertRaises(subprocess.CalledProcessError):
+                check("import nt; WinDLL('_sqlite3.dll', " +
+                      "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32)")
+
+            check("WinDLL('_sqlite3.dll', winmode=0)")
+            check("WinDLL('./_sqlite3.dll')")
+            check("import os; os.add_dll_directory(os.getcwd()); " +
+                  "WinDLL('_sqlite3.dll')")
+
+
 
 if __name__ == "__main__":
     unittest.main()
