@@ -54,19 +54,6 @@ done:
 
 
 static _PyInitError
-pymain_init_coreconfig(_PyCoreConfig *config, const _PyArgv *args,
-                       PyInterpreterState **interp_p)
-{
-    _PyInitError err = _PyCoreConfig_Read(config, args);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    return _Py_InitializeCore(config, interp_p);
-}
-
-
-static _PyInitError
 pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
 {
     _PyInitError err;
@@ -91,18 +78,22 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     }
 
     _PyCoreConfig config = _PyCoreConfig_INIT;
-    err = pymain_init_coreconfig(&config, args, interp_p);
+
+    err = _PyCoreConfig_Read(&config, args);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _Py_InitializeFromConfig(&config, interp_p);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    err = _Py_INIT_OK();
+
+done:
     _PyCoreConfig_Clear(&config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    err = _Py_InitializeMainInterpreter(*interp_p);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    return _Py_INIT_OK();
+    return err;
 }
 
 

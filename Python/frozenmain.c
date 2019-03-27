@@ -82,7 +82,7 @@ Py_FrozenMain(int argc, char **argv)
     if (argc >= 1)
         Py_SetProgramName(argv_copy[0]);
 
-    err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config, NULL);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
        memory: program_name is a constant string. */
     if (_Py_INIT_FAILED(err)) {
