@@ -1,3 +1,4 @@
-Calling ``stop`` on an unstarted or stopped :func:`unittest.mock.patch`
-object will not raise :exc:`RuntimeError` and returns `None`. Patch by
-Karthikeyan Singaravelan.
+Calling ``stop()`` on an unstarted or stopped :func:`unittest.mock.patch`
+object will now return `None` instead of raising :exc:`RuntimeError`,
+making the method idempotent.
+Patch byKarthikeyan Singaravelan.
