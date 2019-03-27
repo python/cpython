@@ -1,0 +1,2 @@
+allow the user to speficy custom functions to set the state of an object in
+save_reduce via the new state_setter keyword argument.
