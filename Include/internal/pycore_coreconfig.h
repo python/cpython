@@ -9,6 +9,54 @@ extern "C" {
 #endif
 
 
+/* --- _PyWstrList ------------------------------------------------ */
+
+#ifndef NDEBUG
+PyAPI_FUNC(int) _PyWstrList_CheckConsistency(const _PyWstrList *list);
+#endif
+PyAPI_FUNC(void) _PyWstrList_Clear(_PyWstrList *list);
+PyAPI_FUNC(int) _PyWstrList_Copy(_PyWstrList *list,
+    const _PyWstrList *list2);
+PyAPI_FUNC(int) _PyWstrList_Append(_PyWstrList *list,
+    const wchar_t *item);
+PyAPI_FUNC(PyObject*) _PyWstrList_AsList(const _PyWstrList *list);
+PyAPI_FUNC(int) _PyWstrList_Extend(_PyWstrList *list,
+    const _PyWstrList *list2);
+
+
+/* --- _PyArgv ---------------------------------------------------- */
+
+typedef struct {
+    int argc;
+    int use_bytes_argv;
+    char **bytes_argv;
+    wchar_t **wchar_argv;
+} _PyArgv;
+
+PyAPI_FUNC(_PyInitError) _PyArgv_AsWstrList(const _PyArgv *args,
+    _PyWstrList *list);
+
+
+/* --- Helper functions ------------------------------------------- */
+
+PyAPI_FUNC(int) _Py_str_to_int(
+    const char *str,
+    int *result);
+PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
+    const _PyWstrList *xoptions,
+    const wchar_t *name);
+PyAPI_FUNC(const char*) _Py_GetEnv(
+    int use_environment,
+    const char *name);
+PyAPI_FUNC(void) _Py_get_env_flag(
+    int use_environment,
+    int *flag,
+    const char *name);
+
+/* Py_GetArgcArgv() helper */
+PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
+
+
 /* --- _PyPreCmdline ------------------------------------------------- */
 
 typedef struct {
@@ -33,51 +81,8 @@ PyAPI_FUNC(int) _PyPreCmdline_SetCoreConfig(
     const _PyPreCmdline *cmdline,
     _PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline,
-    const _PyPreConfig *preconfig,
-    const _PyCoreConfig *coreconfig);
+    const _PyPreConfig *preconfig);
 
-
-/* --- _PyWstrList ------------------------------------------------ */
-
-#ifndef NDEBUG
-PyAPI_FUNC(int) _PyWstrList_CheckConsistency(const _PyWstrList *list);
-#endif
-PyAPI_FUNC(void) _PyWstrList_Clear(_PyWstrList *list);
-PyAPI_FUNC(int) _PyWstrList_Copy(_PyWstrList *list,
-    const _PyWstrList *list2);
-PyAPI_FUNC(int) _PyWstrList_Append(_PyWstrList *list,
-    const wchar_t *item);
-PyAPI_FUNC(PyObject*) _PyWstrList_AsList(const _PyWstrList *list);
-PyAPI_FUNC(int) _PyWstrList_Extend(_PyWstrList *list,
-    const _PyWstrList *list2);
-
-
-/* --- _PyArgv ---------------------------------------------------- */
-
-PyAPI_FUNC(_PyInitError) _PyArgv_AsWstrList(const _PyArgv *args,
-    _PyWstrList *list);
-
-
-/* --- Py_GetArgcArgv() helpers ----------------------------------- */
-
-PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
-
-
-/* --- Helper functions ------------------------------------------- */
-
-PyAPI_FUNC(int) _Py_str_to_int(
-    const char *str,
-    int *result);
-PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
-    const _PyWstrList *xoptions,
-    const wchar_t *name);
-PyAPI_FUNC(const char*) _Py_GetEnv(
-    int use_environment,
-    const char *name);
-PyAPI_FUNC(void) _Py_get_env_flag(
-    int use_environment,
-    int *flag,
-    const char *name);
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
@@ -85,9 +90,10 @@ PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
 PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
 PyAPI_FUNC(PyObject*) _PyPreConfig_AsDict(const _PyPreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
+    const _PyCoreConfig *core_config);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
-    const _PyArgv *args,
-    const _PyCoreConfig *coreconfig);
+    const _PyArgv *args);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(_PyPreConfig *config);
 
 

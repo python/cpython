@@ -86,7 +86,7 @@ main(int argc, char *argv[])
     config._frozen = 1;
     config._init_main = 0;
 
-    _PyInitError err = _Py_InitializeFromConfig(&config, NULL);
+    _PyInitError err = _Py_InitializeFromConfig(&config);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
        memory: program_name is a constant string. */
     if (_Py_INIT_FAILED(err)) {

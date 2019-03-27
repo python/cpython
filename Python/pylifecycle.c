@@ -718,40 +718,35 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 
 
 static _PyInitError
-pyinit_preinit(_PyPreConfig *config,
-               const _PyPreConfig *src_config,
-               const _PyCoreConfig *coreconfig)
+preinit(const _PyPreConfig *src_config, const _PyArgv *args)
 {
     _PyInitError err;
-    _PyPreConfig local_config = _PyPreConfig_INIT;
-    if (!config) {
-        config = &local_config;
-    }
 
     err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
     if (_PyRuntime.pre_initialized) {
         /* If it's already configured: ignored the new configuration */
-        err = _Py_INIT_OK();
-        goto done;
+        return _Py_INIT_OK();
     }
 
+    _PyPreConfig config = _PyPreConfig_INIT;
+
     if (src_config) {
-        if (_PyPreConfig_Copy(config, src_config) < 0) {
-            err = _Py_INIT_ERR("failed to copy pre config");
+        if (_PyPreConfig_Copy(&config, src_config) < 0) {
+            err = _Py_INIT_NO_MEMORY();
             goto done;
         }
     }
 
-    err = _PyPreConfig_Read(config, NULL, coreconfig);
+    err = _PyPreConfig_Read(&config, args);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyPreConfig_Write(config);
+    err = _PyPreConfig_Write(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -760,48 +755,55 @@ pyinit_preinit(_PyPreConfig *config,
     err = _Py_INIT_OK();
 
 done:
-    _PyPreConfig_Clear(&local_config);
+    _PyPreConfig_Clear(&config);
     return err;
 }
 
-
 _PyInitError
-_Py_PreInitialize(void)
+_Py_PreInitializeFromArgs(const _PyPreConfig *src_config, int argc, char **argv)
 {
-    return pyinit_preinit(NULL, NULL, NULL);
+    _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
+    return preinit(src_config, &args);
 }
 
 
 _PyInitError
-_Py_PreInitializeFromPreConfig(const _PyPreConfig *src_config)
+_Py_PreInitializeFromWideArgs(const _PyPreConfig *src_config, int argc, wchar_t **argv)
 {
-    return pyinit_preinit(NULL, src_config, NULL);
+    _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
+    return preinit(src_config, &args);
 }
 
 
 _PyInitError
-_Py_PreInitializeInPlace(_PyPreConfig *config)
+_Py_PreInitialize(const _PyPreConfig *src_config)
 {
-    return pyinit_preinit(config, NULL, NULL);
+    return preinit(src_config, NULL);
 }
 
 
 _PyInitError
-_Py_PreInitializeFromConfig(const _PyCoreConfig *coreconfig)
+_Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig)
 {
-    return pyinit_preinit(NULL, NULL, coreconfig);
+    _PyPreConfig config = _PyPreConfig_INIT;
+    _PyCoreConfig_GetCoreConfig(&config, coreconfig);
+    return _Py_PreInitialize(&config);
+    /* No need to clear config:
+       _PyCoreConfig_GetCoreConfig() doesn't allocate memory */
 }
 
 
 static _PyInitError
-pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
+pyinit_coreconfig(_PyCoreConfig *config,
+                  const _PyCoreConfig *src_config,
+                  const _PyArgv *args,
                   PyInterpreterState **interp_p)
 {
     if (_PyCoreConfig_Copy(config, src_config) < 0) {
         return _Py_INIT_ERR("failed to copy core config");
     }
 
-    _PyInitError err = _PyCoreConfig_Read(config, NULL);
+    _PyInitError err = _PyCoreConfig_Read(config, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -834,20 +836,22 @@ pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
  */
 static _PyInitError
 _Py_InitializeCore(const _PyCoreConfig *src_config,
+                   const _PyArgv *args,
                    PyInterpreterState **interp_p)
 {
     assert(src_config != NULL);
 
-    _PyInitError err = _Py_PreInitializeFromConfig(src_config);
+    _PyInitError err = _Py_PreInitializeFromCoreConfig(src_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
     _PyCoreConfig local_config = _PyCoreConfig_INIT;
-    err = pyinit_coreconfig(&local_config, src_config, interp_p);
+    err = pyinit_coreconfig(&local_config, src_config, args, interp_p);
     _PyCoreConfig_Clear(&local_config);
     return err;
 }
+
 
 /* Py_Initialize() has already been called: update the main interpreter
    configuration. Example of bpo-34008: Py_Main() called after
@@ -881,7 +885,7 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
  * Other errors should be reported as normal Python exceptions with a
  * non-zero return code.
  */
-_PyInitError
+static _PyInitError
 _Py_InitializeMainInterpreter(PyInterpreterState *interp)
 {
     if (!_PyRuntime.core_initialized) {
@@ -980,18 +984,14 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp)
 
 #undef _INIT_DEBUG_PRINT
 
-_PyInitError
-_Py_InitializeFromConfig(const _PyCoreConfig *config,
-                         PyInterpreterState **interp_p)
+static _PyInitError
+init_python(const _PyCoreConfig *config, const _PyArgv *args)
 {
     PyInterpreterState *interp = NULL;
     _PyInitError err;
-    err = _Py_InitializeCore(config, &interp);
+    err = _Py_InitializeCore(config, args, &interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
-    }
-    if (interp_p) {
-        *interp_p = interp;
     }
     config = &interp->core_config;
 
@@ -1006,6 +1006,29 @@ _Py_InitializeFromConfig(const _PyCoreConfig *config,
 }
 
 
+_PyInitError
+_Py_InitializeFromArgs(const _PyCoreConfig *config, int argc, char **argv)
+{
+    _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
+    return init_python(config, &args);
+}
+
+
+_PyInitError
+_Py_InitializeFromWideArgs(const _PyCoreConfig *config, int argc, wchar_t **argv)
+{
+    _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
+    return init_python(config, &args);
+}
+
+
+_PyInitError
+_Py_InitializeFromConfig(const _PyCoreConfig *config)
+{
+    return init_python(config, NULL);
+}
+
+
 void
 Py_InitializeEx(int install_sigs)
 {
@@ -1017,7 +1040,7 @@ Py_InitializeEx(int install_sigs)
     _PyCoreConfig config = _PyCoreConfig_INIT;
     config.install_signal_handlers = install_sigs;
 
-    _PyInitError err = _Py_InitializeFromConfig(&config, NULL);
+    _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }

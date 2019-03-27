@@ -34,27 +34,7 @@ extern "C" {
 /* --- pymain_init() ---------------------------------------------- */
 
 static _PyInitError
-pymain_init_preconfig(const _PyArgv *args)
-{
-    _PyInitError err;
-
-    _PyPreConfig config = _PyPreConfig_INIT;
-
-    err = _PyPreConfig_Read(&config, args, NULL);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
-
-    err = _Py_PreInitializeInPlace(&config);
-
-done:
-    _PyPreConfig_Clear(&config);
-    return err;
-}
-
-
-static _PyInitError
-pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
+pymain_init(const _PyArgv *args)
 {
     _PyInitError err;
 
@@ -72,28 +52,24 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
-    err = pymain_init_preconfig(args);
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    if (args->use_bytes_argv) {
+        err = _Py_PreInitializeFromArgs(NULL, args->argc, args->bytes_argv);
+    }
+    else {
+        err = _Py_PreInitializeFromWideArgs(NULL, args->argc, args->wchar_argv);
+    }
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
-
-    err = _PyCoreConfig_Read(&config, args);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
+    if (args->use_bytes_argv) {
+        return _Py_InitializeFromArgs(&config, args->argc, args->bytes_argv);
     }
-
-    err = _Py_InitializeFromConfig(&config, interp_p);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
+    else {
+        return _Py_InitializeFromWideArgs(&config, args->argc, args->wchar_argv);
     }
-
-    err = _Py_INIT_OK();
-
-done:
-    _PyCoreConfig_Clear(&config);
-    return err;
 }
 
 
@@ -468,9 +444,12 @@ pymain_repl(_PyCoreConfig *config, PyCompilerFlags *cf, int *exitcode)
 
 
 static _PyInitError
-pymain_run_python(PyInterpreterState *interp, int *exitcode)
+pymain_run_python(int *exitcode)
 {
     _PyInitError err;
+
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    /* pymain_run_stdin() modify the config */
     _PyCoreConfig *config = &interp->core_config;
 
     PyObject *main_importer_path = NULL;
@@ -586,14 +565,13 @@ pymain_main(_PyArgv *args)
 {
     _PyInitError err;
 
-    PyInterpreterState *interp;
-    err = pymain_init(args, &interp);
+    err = pymain_init(args);
     if (_Py_INIT_FAILED(err)) {
         goto exit_init_error;
     }
 
     int exitcode = 0;
-    err = pymain_run_python(interp, &exitcode);
+    err = pymain_run_python(&exitcode);
     if (_Py_INIT_FAILED(err)) {
         goto exit_init_error;
     }
