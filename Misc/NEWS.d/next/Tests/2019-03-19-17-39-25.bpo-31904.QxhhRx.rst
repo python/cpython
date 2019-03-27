@@ -1,2 +1,1 @@
-VxWorks uses UTF-8 as the system encoding. So the test case test_utf8_mode.py
-need to be updated to use UTF-8 on VxWorks.
+Fix test_utf8_mode on VxWorks: Python always use UTF-8 on VxWorks.
