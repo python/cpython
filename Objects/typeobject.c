@@ -987,9 +987,6 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
     memset(obj, '\0', size);
 
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-        Py_INCREF(type);
-
     if (type->tp_itemsize == 0)
         (void)PyObject_INIT(obj, type);
     else
