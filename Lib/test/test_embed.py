@@ -347,22 +347,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'legacy_windows_stdio': 0,
         })
 
-    # main config
-    COPY_MAIN_CONFIG = (
-        # Copy core config to main config for expected values
-        'argv',
-        'base_exec_prefix',
-        'base_prefix',
-        'exec_prefix',
-        'executable',
-        'install_signal_handlers',
-        'prefix',
-        'pycache_prefix',
-        'warnoptions',
-        # xoptions is created from core_config in check_main_config().
-        # 'module_search_paths' is copied to 'module_search_path'.
-    )
-
     # global config
     DEFAULT_GLOBAL_CONFIG = {
         'Py_HasFileSystemDefaultEncoding': 0,
@@ -409,18 +393,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             else:
                 xoptions[opt] = True
         return xoptions
-
-    def check_main_config(self, config):
-        core_config = config['core_config']
-        main_config = config['main_config']
-
-        # main config
-        expected = {}
-        for key in self.COPY_MAIN_CONFIG:
-            expected[key] = core_config[key]
-        expected['module_search_path'] = core_config['module_search_paths']
-        expected['xoptions'] = self.main_xoptions(core_config['xoptions'])
-        self.assertEqual(main_config, expected)
 
     def get_expected_config(self, expected, env):
         expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
@@ -523,7 +495,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         self.check_core_config(config, expected_config)
         self.check_pre_config(config, expected_preconfig)
-        self.check_main_config(config)
         self.check_global_config(config)
 
     def test_init_default_config(self):
