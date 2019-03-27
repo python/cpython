@@ -997,8 +997,8 @@ class HTMLDoc(Doc):
 
         if name:
             push('<dl><dt><strong>%s</strong></dt>\n' % name)
-        if object.__doc__ is not None:
-            doc = self.markup(getdoc(object), self.preformat)
+        doc = self.markup(getdoc(object), self.preformat)
+        if doc:
             push('<dd><tt>%s</tt></dd>\n' % doc)
         push('</dl>\n')
 

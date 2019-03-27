@@ -717,11 +717,32 @@ class TarInfo(object):
        usually created internally.
     """
 
-    __slots__ = ("name", "mode", "uid", "gid", "size", "mtime",
-                 "chksum", "type", "linkname", "uname", "gname",
-                 "devmajor", "devminor",
-                 "offset", "offset_data", "pax_headers", "sparse",
-                 "tarfile", "_sparse_structs", "_link_target")
+    __slots__ = dict(
+        name = 'Name of the archive member.',
+        mode = 'Permission bits.',
+        uid = 'User ID of the user who originally stored this member.',
+        gid = 'Group ID of the user who originally stored this member.',
+        size = 'Size in bytes.',
+        mtime = 'Time of last modification.',
+        chksum = 'Header checksum.',
+        type = ('File type. type is usually one of these constants: '
+                'REGTYPE, AREGTYPE, LNKTYPE, SYMTYPE, DIRTYPE, FIFOTYPE, '
+                'CONTTYPE, CHRTYPE, BLKTYPE, GNUTYPE_SPARSE.'),
+        linkname = ('Name of the target file name, which is only present '
+                    'in TarInfo objects of type LNKTYPE and SYMTYPE.'),
+        uname = 'User name.',
+        gname = 'Group name.',
+        devmajor = 'Device major number.',
+        devminor = 'Device minor number.',
+        offset = 'The tar header starts here.',
+        offset_data = "The file's data starts here.",
+        pax_headers = ('A dictionary containing key-value pairs of an '
+                       'associated pax extended header.'),
+        sparse = 'Sparse member information.',
+        tarfile = None,
+        _sparse_structs = None,
+        _link_target = None,
+        )
 
     def __init__(self, name=""):
         """Construct a TarInfo object. name is the optional name
@@ -747,10 +768,9 @@ class TarInfo(object):
         self.sparse = None      # sparse member information
         self.pax_headers = {}   # pax header information
 
-    # In pax headers the "name" and "linkname" field are called
-    # "path" and "linkpath".
     @property
     def path(self):
+        'In pax headers, "name" is called "path".'
         return self.name
 
     @path.setter
@@ -759,6 +779,7 @@ class TarInfo(object):
 
     @property
     def linkpath(self):
+        'In pax headers, "linkname" is called "linkpath".'
         return self.linkname
 
     @linkpath.setter
@@ -1350,24 +1371,42 @@ class TarInfo(object):
         return blocks * BLOCKSIZE
 
     def isreg(self):
+        'Return True if the Tarinfo object is a regular file.'
         return self.type in REGULAR_TYPES
+
     def isfile(self):
+        'Return True if the Tarinfo object is a regular file.'
         return self.isreg()
+
     def isdir(self):
+        'Return True if it is a directory.'
         return self.type == DIRTYPE
+
     def issym(self):
+        'Return True if it is a symbolic link.'
         return self.type == SYMTYPE
+
     def islnk(self):
+        'Return True if it is a hard link.'
         return self.type == LNKTYPE
+
     def ischr(self):
+        'Return True if it is a character device.'
         return self.type == CHRTYPE
+
     def isblk(self):
+        'Return True if it is a block device.'
         return self.type == BLKTYPE
+
     def isfifo(self):
+        'Return True if it is a FIFO.'
         return self.type == FIFOTYPE
+
     def issparse(self):
         return self.sparse is not None
+
     def isdev(self):
+        'Return True if it is one of character device, block device or FIFO.'
         return self.type in (CHRTYPE, BLKTYPE, FIFOTYPE)
 # class TarInfo
 
