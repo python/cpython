@@ -772,13 +772,13 @@ class PatchTest(unittest.TestCase):
 
 
     def test_stop_without_start(self):
-        # bpo-36366: calling stop without start will return None
+        # bpo-36366: calling stop without start will return None.
         patcher = patch(foo_name, 'bar', 3)
         self.assertIsNone(patcher.stop())
 
 
-    def test_stop_double_stop(self):
-        # bpo-36366: calling stop on an already stopped patch will return None
+    def test_stop_idempotent(self):
+        # bpo-36366: calling stop on an already stopped patch will return None.
         patcher = patch(foo_name, 'bar', 3)
 
         patcher.start()
