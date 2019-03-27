@@ -2635,6 +2635,7 @@ _PySys_InitMain(PyInterpreterState *interp)
         return -1;
     }
     SET_SYS_FROM_STRING_BORROW("_xoptions", xoptions);
+    Py_DECREF(xoptions);
 
 #undef COPY_LIST
 #undef SET_SYS_FROM_WSTR
