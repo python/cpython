@@ -63,12 +63,17 @@ static void
 structseq_dealloc(PyStructSequence *obj)
 {
     Py_ssize_t i, size;
+    PyTypeObject *tp;
 
+    tp = (PyTypeObject *) Py_TYPE(obj);
     size = REAL_SIZE(obj);
     for (i = 0; i < size; ++i) {
         Py_XDECREF(obj->ob_item[i]);
     }
     PyObject_GC_Del(obj);
+    if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
+        Py_DECREF(tp);
+    }
 }
 
 /*[clinic input]
