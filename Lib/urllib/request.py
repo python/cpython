@@ -426,8 +426,7 @@ class Request:
         self.unredirected_hdrs.pop(header_name, None)
 
     def header_items(self):
-        hdrs = self.unredirected_hdrs.copy()
-        hdrs.update(self.headers)
+        hdrs = {**self.unredirected_hdrs, **self.headers}
         return list(hdrs.items())
 
 class OpenerDirector:

@@ -491,8 +491,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Collect globals and locals.  It is usually not really sensible to also
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
-        ns = self.curframe.f_globals.copy()
-        ns.update(self.curframe_locals)
+        ns = {**self.curframe.f_globals, **self.curframe_locals}
         if '.' in text:
             # Walk an attribute chain up to the last part, similar to what
             # rlcompleter does.  This will bail if any of the parts are not
@@ -1377,8 +1376,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Start an interactive interpreter whose global namespace
         contains all the (global and local) names found in the current scope.
         """
-        ns = self.curframe.f_globals.copy()
-        ns.update(self.curframe_locals)
+        ns = {**self.curframe.f_globals, **self.curframe_locals}
         code.interact("*interactive*", local=ns)
 
     def do_alias(self, arg):
