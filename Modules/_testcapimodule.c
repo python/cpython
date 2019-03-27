@@ -5352,7 +5352,7 @@ MyList_dealloc(MyListObject* op)
     if (op->deallocated) {
         /* We cannot raise exceptions here but we still want the testsuite
          * to fail when we hit this */
-        abort();
+        Py_FatalError("MyList instance deallocated twice");
     }
     op->deallocated = 1;
     PyList_Type.tp_dealloc((PyObject *)op);

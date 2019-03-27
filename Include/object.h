@@ -666,7 +666,7 @@ mytype_dealloc(mytype *p)
     Py_TRASHCAN_BEGIN(p, mytype_dealloc)
     ... The body of the deallocator goes here, including all calls ...
     ... to Py_DECREF on contained objects.                         ...
-    Py_TRASHCAN_END
+    Py_TRASHCAN_END                // there should be no code after this
 }
 
 CAUTION:  Never return from the middle of the body!  If the body needs to

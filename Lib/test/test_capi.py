@@ -341,10 +341,18 @@ class CAPITest(unittest.TestCase):
         for i in range(1000):
             L = MyList((L,))
 
-    def test_trashcan_python_class(self):
+    def test_trashcan_python_class1(self):
+        self.do_test_trashcan_python_class(list)
+
+    def test_trashcan_python_class2(self):
+        from _testcapi import MyList
+        self.do_test_trashcan_python_class(MyList)
+
+    def do_test_trashcan_python_class(self, base):
         # Check that the trashcan mechanism works properly for a Python
-        # subclass of a class using the trashcan (list in this test)
-        class PyList(list):
+        # subclass of a class using the trashcan (this specific test assumes
+        # that the base class "base" behaves like list)
+        class PyList(base):
             # Count the number of PyList instances to verify that there is
             # no memory leak
             num = 0
@@ -356,6 +364,8 @@ class CAPITest(unittest.TestCase):
 
         for parity in (0, 1):
             L = None
+            # We need in the order of 2**20 iterations here such that a
+            # typical 8MB stack would overflow without the trashcan.
             for i in range(2**20):
                 L = PyList((L,))
                 L.attr = i
