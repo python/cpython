@@ -327,7 +327,7 @@ class CDLL(object):
     def __init__(self, name, mode=DEFAULT_MODE, handle=None,
                  use_errno=False,
                  use_last_error=False,
-                 dll_load_flags=0):
+                 winmode=None):
         self._name = name
         flags = self._func_flags_
         if use_errno:
@@ -343,8 +343,8 @@ class CDLL(object):
             if name and name.endswith(")") and ".a(" in name:
                 mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
         if _os.name == "nt":
-            if dll_load_flags:
-                mode = dll_load_flags
+            if winmode is not None:
+                mode = winmode
             else:
                 import nt
                 mode = nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
