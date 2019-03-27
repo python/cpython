@@ -2232,8 +2232,11 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 
-    res = PyDict_SetItemString(impl_info, "opt_levels",
-                               Py_BuildValue("(sii)", "", 1, 2));
+    value = Py_BuildValue("(sii)", "", 1, 2);
+    if (value == NULL)
+        goto error;
+    res = PyDict_SetItemString(impl_info, "opt_levels", value);
+    Py_DECREF(value);
     if (res < 0)
         goto error;
 
