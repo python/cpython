@@ -474,6 +474,9 @@ The :mod:`functools` module defines the following functions:
    The same pattern can be used for other similar decorators: ``staticmethod``,
    ``abstractmethod``, and others.
 
+   .. versionadded:: 3.8
+
+
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
    Update a *wrapper* function to look like the *wrapped* function. The optional
