@@ -1465,12 +1465,7 @@ static _PyInitError
 config_read(_PyCoreConfig *config, _PyPreCmdline *cmdline)
 {
     _PyInitError err;
-
     const _PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    err = _PyPreCmdline_Read(cmdline, preconfig, config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
 
     if (_PyPreCmdline_SetCoreConfig(cmdline, config) < 0) {
         return _Py_INIT_NO_MEMORY();
@@ -2016,6 +2011,35 @@ config_usage(int error, const wchar_t* program)
 }
 
 
+static _PyInitError
+core_read_precmdline(_PyCoreConfig *config, const _PyArgv *args,
+                     _PyPreCmdline *precmdline)
+{
+    _PyInitError err;
+
+    if (args) {
+        err = _PyPreCmdline_SetArgv(precmdline, args);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    if (_PyPreConfig_Copy(&preconfig, &_PyRuntime.preconfig) < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto done;
+    }
+
+    _PyCoreConfig_GetCoreConfig(&preconfig, config);
+
+    err = _PyPreCmdline_Read(precmdline, &preconfig);
+
+done:
+    _PyPreConfig_Clear(&preconfig);
+    return err;
+}
+
+
 /* Read the configuration into _PyCoreConfig from:
 
    * Command line arguments
@@ -2026,7 +2050,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyArgv *args)
 {
     _PyInitError err;
 
-    err = _Py_PreInitializeFromConfig(config);
+    err = _Py_PreInitializeFromCoreConfig(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -2034,11 +2058,9 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyArgv *args)
     _PyCoreConfig_GetGlobalConfig(config);
 
     _PyPreCmdline precmdline = _PyPreCmdline_INIT;
-    if (args) {
-        err = _PyPreCmdline_SetArgv(&precmdline, args);
-        if (_Py_INIT_FAILED(err)) {
-            goto done;
-        }
+    err = core_read_precmdline(config, args, &precmdline);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
     }
 
     if (config->program == NULL) {
@@ -2046,12 +2068,6 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyArgv *args)
         if (_Py_INIT_FAILED(err)) {
             goto done;
         }
-    }
-
-    const _PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    err = _PyPreCmdline_Read(&precmdline, preconfig, config);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
     }
 
     _PyCmdline cmdline;
