@@ -475,13 +475,13 @@ Callable types
       | :attr:`__doc__`         | The function's documentation  | Writable  |
       |                         | string, or ``None`` if        |           |
       |                         | unavailable; not inherited by |           |
-      |                         | subclasses                    |           |
+      |                         | subclasses.                   |           |
       +-------------------------+-------------------------------+-----------+
-      | :attr:`~definition.\    | The function's name           | Writable  |
+      | :attr:`~definition.\    | The function's name.          | Writable  |
       | __name__`               |                               |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`~definition.\    | The function's                | Writable  |
-      | __qualname__`           | :term:`qualified name`        |           |
+      | __qualname__`           | :term:`qualified name`.       |           |
       |                         |                               |           |
       |                         | .. versionadded:: 3.3         |           |
       +-------------------------+-------------------------------+-----------+
