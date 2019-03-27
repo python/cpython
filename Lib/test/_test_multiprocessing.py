@@ -3745,10 +3745,17 @@ class _TestSharedMemory(BaseTestCase):
         sl = smm.ShareableList(range(10))
 
         # the manager's server should ignore KeyboardInterrupt signals, and
-        # maintain its connection with the current process
+        # maintain its connection with the current process, and success when
+        # asked to deliver memory segments.
         os.kill(smm._process.pid, signal.SIGINT)
 
         sl2 = smm.ShareableList(range(10))
+
+        # test that the custom signal handler registered in the Manager do not
+        # affect signal handling in the parent process.
+        with self.assertRaises(KeyboardInterrupt):
+                os.kill(os.getpid(), signal.SIGINT)
+
         smm.shutdown()
 
     def test_shared_memory_SharedMemoryManager_basics(self):
