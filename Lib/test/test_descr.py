@@ -1956,7 +1956,11 @@ order (MRO) for bases """
         self.assertEqual(E().foo.__func__, C.foo) # i.e., unbound
         self.assertTrue(repr(C.foo.__get__(C(1))).startswith("<bound method "))
 
+    @support.impl_detail("testing error message from implementation")
     def test_methods_in_c(self):
+        # This test checks error messages in builtin method descriptor.
+        # It is allowed that other Python implementations use
+        # different error messages.
         set_add = set.add
 
         expected_errmsg = "descriptor 'add' of 'set' object needs an argument"
