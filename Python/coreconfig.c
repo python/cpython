@@ -610,6 +610,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_WSTR_ATTR(run_filename);
     COPY_ATTR(_check_hash_pycs_mode);
     COPY_ATTR(_frozen);
+    COPY_ATTR(_init_main);
 
 #undef COPY_ATTR
 #undef COPY_STR_ATTR
@@ -715,6 +716,7 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(_install_importlib);
     SET_ITEM_STR(_check_hash_pycs_mode);
     SET_ITEM_INT(_frozen);
+    SET_ITEM_INT(_init_main);
 
     return dict;
 
