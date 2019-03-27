@@ -971,7 +971,7 @@ function:
     >>> getattr(p, 'x')
     11
 
-To convert a dictionary to a named tuple, use the double-star-operator
+To convert a dictionary to a named tuple, use the ``**`` operator
 (as described in :ref:`tut-unpacking-arguments`):
 
     >>> d = {'x': 11, 'y': 22}
