@@ -14,23 +14,33 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 
-PyAPI_FUNC(_PyInitError) _Py_PreInitialize(void);
-PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPreConfig(
-    const _PyPreConfig *preconfig);
-PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromConfig(
-    const _PyCoreConfig *coreconfig);
+PyAPI_FUNC(_PyInitError) _Py_PreInitialize(
+    const _PyPreConfig *src_config);
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromArgs(
+    const _PyPreConfig *src_config,
+    int argc,
+    char **argv);
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromWideArgs(
+    const _PyPreConfig *src_config,
+    int argc,
+    wchar_t **argv);
 
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
-    PyInterpreterState *interp);
-
 /* Initialization and finalization */
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
+    const _PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _Py_InitializeFromArgs(
     const _PyCoreConfig *config,
-    PyInterpreterState **interp_p);
+    int argc,
+    char **argv);
+PyAPI_FUNC(_PyInitError) _Py_InitializeFromWideArgs(
+    const _PyCoreConfig *config,
+    int argc,
+    wchar_t **argv);
+
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_ExitInitError(_PyInitError err);
 
 /* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level

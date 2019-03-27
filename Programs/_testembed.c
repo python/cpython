@@ -408,7 +408,7 @@ static int test_init_from_config(void)
     Py_UTF8Mode = 0;
     preconfig.utf8_mode = 1;
 
-    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    err = _Py_PreInitialize(&preconfig);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -529,7 +529,7 @@ static int test_init_from_config(void)
     Py_FrozenFlag = 0;
     config._frozen = 1;
 
-    err = _Py_InitializeFromConfig(&config, NULL);
+    err = _Py_InitializeFromConfig(&config);
     /* Don't call _PyCoreConfig_Clear() since all strings are static */
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
@@ -623,7 +623,7 @@ static int test_init_isolated(void)
     preconfig.coerce_c_locale = 0;
     preconfig.utf8_mode = 0;
 
-    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    err = _Py_PreInitialize(&preconfig);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -638,7 +638,7 @@ static int test_init_isolated(void)
     config.program_name = L"./_testembed";
 
     test_init_env_dev_mode_putenvs();
-    err = _Py_InitializeFromConfig(&config, NULL);
+    err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -660,7 +660,7 @@ static int test_preinit_isolated1(void)
     preconfig.utf8_mode = 0;
     preconfig.isolated = 1;
 
-    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    err = _Py_PreInitialize(&preconfig);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -669,7 +669,7 @@ static int test_preinit_isolated1(void)
     config.program_name = L"./_testembed";
 
     test_init_env_dev_mode_putenvs();
-    err = _Py_InitializeFromConfig(&config, NULL);
+    err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -691,7 +691,7 @@ static int test_preinit_isolated2(void)
     preconfig.utf8_mode = 0;
     preconfig.isolated = 0;
 
-    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    err = _Py_PreInitialize(&preconfig);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -706,7 +706,7 @@ static int test_preinit_isolated2(void)
     config.program_name = L"./_testembed";
 
     test_init_env_dev_mode_putenvs();
-    err = _Py_InitializeFromConfig(&config, NULL);
+    err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -723,7 +723,7 @@ static int test_init_dev_mode(void)
     putenv("PYTHONMALLOC=");
     config.dev_mode = 1;
     config.program_name = L"./_testembed";
-    _PyInitError err = _Py_InitializeFromConfig(&config, NULL);
+    _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
