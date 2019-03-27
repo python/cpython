@@ -351,16 +351,6 @@ module os
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=94a0f0f978acae17]*/
 
-#ifndef _MSC_VER
-
-#if defined(__sgi)&&_COMPILER_VERSION>=700
-/* declare ctermid_r if compiling with MIPSPro 7.x in ANSI C mode
-   (default) */
-extern char        *ctermid_r(char *);
-#endif
-
-#endif /* !_MSC_VER */
-
 #if defined(__VXWORKS__)
 #  include <vxCpuLib.h>
 #  include <rtpLib.h>

@@ -19,11 +19,6 @@
 #include <rpcsvc/yp_prot.h>
 #include <rpcsvc/ypclnt.h>
 
-#ifdef __sgi
-/* This is missing from rpcsvc/ypclnt.h */
-extern int yp_get_default_domain(char **);
-#endif
-
 PyDoc_STRVAR(get_default_domain__doc__,
 "get_default_domain() -> str\n\
 Corresponds to the C library yp_get_default_domain() call, returning\n\

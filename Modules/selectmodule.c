@@ -42,11 +42,6 @@
 #include <sys/poll.h>
 #endif
 
-#ifdef __sgi
-/* This is missing from unistd.h */
-extern void bzero(void *, int);
-#endif
-
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif

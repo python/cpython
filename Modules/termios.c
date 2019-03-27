@@ -2,12 +2,6 @@
 
 #include "Python.h"
 
-/* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
-   is defined, so we define it here. */
-#if defined(__sgi)
-#define CTRL(c) ((c)&037)
-#endif
-
 #if defined(__sun)
 /* We could do better. Check issue-32660 */
 #include <sys/filio.h>
