@@ -529,7 +529,7 @@ static int test_init_from_config(void)
     Py_FrozenFlag = 0;
     config._frozen = 1;
 
-    err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config, NULL);
     /* Don't call _PyCoreConfig_Clear() since all strings are static */
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
@@ -638,7 +638,7 @@ static int test_init_isolated(void)
     config.program_name = L"./_testembed";
 
     test_init_env_dev_mode_putenvs();
-    err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config, NULL);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -669,7 +669,7 @@ static int test_preinit_isolated1(void)
     config.program_name = L"./_testembed";
 
     test_init_env_dev_mode_putenvs();
-    err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config, NULL);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -706,7 +706,7 @@ static int test_preinit_isolated2(void)
     config.program_name = L"./_testembed";
 
     test_init_env_dev_mode_putenvs();
-    err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config, NULL);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -723,7 +723,7 @@ static int test_init_dev_mode(void)
     putenv("PYTHONMALLOC=");
     config.dev_mode = 1;
     config.program_name = L"./_testembed";
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    _PyInitError err = _Py_InitializeFromConfig(&config, NULL);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }

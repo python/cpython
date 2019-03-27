@@ -458,7 +458,7 @@ _Py_SetLocaleFromEnv(int category)
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.
 
-   Every call to _Py_InitializeCore, Py_Initialize or Py_InitializeEx
+   Every call to _Py_InitializeFromConfig, Py_Initialize or Py_InitializeEx
    must have a corresponding call to Py_Finalize.
 
    Locking: you must hold the interpreter lock while calling these APIs.
@@ -832,7 +832,7 @@ pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
  * to the Python C API (unless the API is explicitly listed as being
  * safe to call without calling Py_Initialize first)
  */
-_PyInitError
+static _PyInitError
 _Py_InitializeCore(const _PyCoreConfig *src_config,
                    PyInterpreterState **interp_p)
 {
@@ -981,7 +981,8 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp)
 #undef _INIT_DEBUG_PRINT
 
 _PyInitError
-_Py_InitializeFromConfig(const _PyCoreConfig *config)
+_Py_InitializeFromConfig(const _PyCoreConfig *config,
+                         PyInterpreterState **interp_p)
 {
     PyInterpreterState *interp = NULL;
     _PyInitError err;
@@ -989,12 +990,18 @@ _Py_InitializeFromConfig(const _PyCoreConfig *config)
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
+    if (interp_p) {
+        *interp_p = interp;
+    }
     config = &interp->core_config;
 
-    err = _Py_InitializeMainInterpreter(interp);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (config->_init_main) {
+        err = _Py_InitializeMainInterpreter(interp);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
+
     return _Py_INIT_OK();
 }
 
@@ -1007,13 +1014,10 @@ Py_InitializeEx(int install_sigs)
         return;
     }
 
-    _PyInitError err;
     _PyCoreConfig config = _PyCoreConfig_INIT;
     config.install_signal_handlers = install_sigs;
 
-    err = _Py_InitializeFromConfig(&config);
-    _PyCoreConfig_Clear(&config);
-
+    _PyInitError err = _Py_InitializeFromConfig(&config, NULL);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }

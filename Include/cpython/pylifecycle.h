@@ -20,9 +20,6 @@ PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPreConfig(
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromConfig(
     const _PyCoreConfig *coreconfig);
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
-    const _PyCoreConfig *config,
-    PyInterpreterState **interp);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
 
@@ -32,7 +29,8 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
 /* Initialization and finalization */
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
-    const _PyCoreConfig *config);
+    const _PyCoreConfig *config,
+    PyInterpreterState **interp_p);
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_ExitInitError(_PyInitError err);
 
 /* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level

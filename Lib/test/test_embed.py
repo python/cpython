@@ -338,6 +338,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
         '_frozen': 0,
+        '_init_main': 1,
     }
     if MS_WINDOWS:
         DEFAULT_PRE_CONFIG.update({
