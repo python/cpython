@@ -720,6 +720,7 @@ Changes in the Python API
   :func:`~os.add_dll_directory` are searched for load-time dependencies.
   Specifically, :envvar:`PATH` is no longer used, and modifications to this
   environment variable will no longer have any effect on normal DLL resolution.
+  (See :issue:`36085`.)
 
 
 CPython bytecode changes
