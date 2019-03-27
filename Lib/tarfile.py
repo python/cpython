@@ -724,21 +724,21 @@ class TarInfo(object):
         gid = 'Group ID of the user who originally stored this member.',
         size = 'Size in bytes.',
         mtime = 'Time of last modification.',
-        chksum = 'Header checksum',
+        chksum = 'Header checksum.',
         type = ('File type. type is usually one of these constants: '
                 'REGTYPE, AREGTYPE, LNKTYPE, SYMTYPE, DIRTYPE, FIFOTYPE, '
                 'CONTTYPE, CHRTYPE, BLKTYPE, GNUTYPE_SPARSE.'),
         linkname = ('Name of the target file name, which is only present '
-                    'in TarInfo objects of type LNKTYPE and SYMTYPE'),
+                    'in TarInfo objects of type LNKTYPE and SYMTYPE.'),
         uname = 'User name.',
         gname = 'Group name.',
-        devmajor = 'Device major number',
-        devminor = 'Device minor number',
-        offset = 'The tar header starts here',
-        offset_data = "The file's data starts here",
+        devmajor = 'Device major number.',
+        devminor = 'Device minor number.',
+        offset = 'The tar header starts here.',
+        offset_data = "The file's data starts here.",
         pax_headers = ('A dictionary containing key-value pairs of an '
                        'associated pax extended header.'),
-        sparse = 'Sparse member information',
+        sparse = 'Sparse member information.',
         tarfile = None,
         _sparse_structs = None,
         _link_target = None,
@@ -770,7 +770,7 @@ class TarInfo(object):
 
     @property
     def path(self):
-        'In pax headers, "name" is called "path"'
+        'In pax headers, "name" is called "path".'
         return self.name
 
     @path.setter
