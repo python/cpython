@@ -1000,7 +1000,7 @@ Test cases
             int('XYZ')
 
       .. versionadded:: 3.1
-         under the name ``assertRaisesRegexp``.
+         Under the name ``assertRaisesRegexp``.
 
       .. versionchanged:: 3.2
          Renamed to :meth:`assertRaisesRegex`.
@@ -1145,7 +1145,7 @@ Test cases
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order      |              |
+   |                                       | regardless of their order.     |              |
    +---------------------------------------+--------------------------------+--------------+
 
 
@@ -1193,7 +1193,7 @@ Test cases
       expression suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.1
-         under the name ``assertRegexpMatches``.
+         Under the name ``assertRegexpMatches``.
       .. versionchanged:: 3.2
          The method ``assertRegexpMatches()`` has been renamed to
          :meth:`.assertRegex`.
