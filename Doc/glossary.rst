@@ -490,6 +490,11 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details.
 
+   magic method
+      .. index:: pair: magic; method
+
+      An informal synonym for :term:`special method`.
+
    mapping
       A container object that supports arbitrary key lookups and implements the
       methods specified in the :class:`~collections.Mapping` or
@@ -698,6 +703,8 @@ Glossary
       versions, :meth:`__getslice__` and :meth:`__setslice__`).
 
    special method
+      .. index:: pair: special; method
+
       A method that is called implicitly by Python to execute a certain
       operation on a type, such as addition.  Such methods have names starting
       and ending with double underscores.  Special methods are documented in
