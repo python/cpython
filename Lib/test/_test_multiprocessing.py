@@ -3734,7 +3734,7 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
-    @unittest.skipIf(WIN32, "test not feasible in Windows")
+    @unittest.skipIf(os.name != "posix", "not feasible in non-posix platforms")
     def test_shared_memory_SharedMemoryServer_ignores_sigint(self):
         # bpo-36368: protect SharedMemoryManager server process from
         # KeyboardInterrupt signals.
