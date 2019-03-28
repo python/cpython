@@ -1193,7 +1193,7 @@ Test cases
       expression suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.1
-         Under the name ``assertRegexpMatches``.
+         Added under the name ``assertRegexpMatches``.
       .. versionchanged:: 3.2
          The method ``assertRegexpMatches()`` has been renamed to
          :meth:`.assertRegex`.
@@ -1516,14 +1516,14 @@ along with their deprecated aliases:
    ==============================  ====================== =======================
 
    .. deprecated:: 3.1
-         The fail* aliases listed in the second column.
+         The fail* aliases listed in the second column have been deprecated.
    .. deprecated:: 3.2
-         The assert* aliases listed in the third column.
+         The assert* aliases listed in the third column have been deprecated.
    .. deprecated:: 3.2
          ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
          :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
    .. deprecated:: 3.5
-         The ``assertNotRegexpMatches`` name in favor of :meth:`.assertNotRegex`.
+         The ``assertNotRegexpMatches`` name is deprecated in favor of :meth:`.assertNotRegex`.
 
 .. _testsuite-objects:
 
