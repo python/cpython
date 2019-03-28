@@ -2,8 +2,8 @@
 setlocal
 rem Simple script to fetch source for external libraries
 
-if "%PCBUILD%"=="" (set PCBUILD=%~dp0)
-if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%\..\externals)
+if NOT DEFINED PCBUILD (set PCBUILD=%~dp0)
+if NOT DEFINED EXTERNALS_DIR (set EXTERNALS_DIR=%PCBUILD%\..\externals)
 
 set DO_FETCH=true
 set DO_CLEAN=false
