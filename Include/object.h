@@ -672,6 +672,10 @@ CAUTION:  Never return from the middle of the body!  If the body needs to
 call, and goto it.  Else the call-depth counter (see below) will stay
 above 0 forever, and the trashcan will never get emptied.
 
+CAUTION: Any object using the trashcan must be an untracked GC object.
+This is because the implementation of the trashcan reuses the GC data
+structure.
+
 How it works:  The BEGIN macro increments a call-depth counter.  So long
 as this counter is small, the body of the deallocator is run directly without
 further ado.  But if the counter gets large, it instead adds p to a list of
@@ -725,9 +729,12 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
 #define Py_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN_CONDITION(op, \
         Py_TYPE(op)->tp_dealloc == (destructor)(dealloc))
 
-/* For backwards compatibility, these macros enable the trashcan
- * unconditionally */
-#define Py_TRASHCAN_SAFE_BEGIN(op) Py_TRASHCAN_BEGIN_CONDITION(op, 1)
+/* Old trashcan macros which don't take a "dealloc" argument. To be safe, we
+ * enable the trashcan only for classes inheriting directly from "object",
+ * where the problem of a subclass also using the trashcan does not appear.
+ * This is probably the most common case anyway. */
+#define Py_TRASHCAN_SAFE_BEGIN(op) Py_TRASHCAN_BEGIN_CONDITION(op, \
+        Py_TYPE(op)->tp_base == &PyBaseObject_Type)
 #define Py_TRASHCAN_SAFE_END(op) Py_TRASHCAN_END
 
 

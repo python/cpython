@@ -341,6 +341,15 @@ class CAPITest(unittest.TestCase):
         for i in range(1000):
             L = MyList((L,))
 
+    def test_trashcan_compat(self):
+        # bpo-35983: Check that the trashcan works with the
+        # backwards-compatibility macros
+        # Py_TRASHCAN_SAFE_BEGIN/Py_TRASHCAN_SAFE_END
+        from _testcapi import SingleContainer
+        L = None
+        for i in range(2**20):
+            L = SingleContainer(L)
+
     def test_trashcan_python_class1(self):
         self.do_test_trashcan_python_class(list)
 

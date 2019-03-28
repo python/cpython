@@ -4334,7 +4334,7 @@ order (MRO) for bases """
         o.whatever = Provoker(o)
         del o
 
-    def test_wrapper_segfault(self):
+    def test_wrapper_trashcan(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
         f = lambda:None
         for i in range(1000000):
