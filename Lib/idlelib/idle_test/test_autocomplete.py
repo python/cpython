@@ -64,7 +64,7 @@ class AutoCompleteTest(unittest.TestCase):
         o_cs = Func()
         acp.open_completions = o_cs
         self.assertEqual(acp.force_open_completions_event('event'), 'break')
-        self.assertEqual(o_cs.args, (True, False, True))
+        self.assertEqual(o_cs.args[0], ac.FORCE)
 
     def test_autocomplete_event(self):
         Equal = self.assertEqual
@@ -92,10 +92,10 @@ class AutoCompleteTest(unittest.TestCase):
         o_cs = Func(result=False)
         acp.open_completions = o_cs
         Equal(acp.autocomplete_event(ev), None)
-        Equal(o_cs.args, (False, True, True))
+        Equal(o_cs.args[0], ac.TAB)
         o_cs.result = True
         Equal(acp.autocomplete_event(ev), 'break')
-        Equal(o_cs.args, (False, True, True))
+        Equal(o_cs.args[0], ac.TAB)
 
     def test_try_open_completions_event(self):
         Equal = self.assertEqual
@@ -111,16 +111,16 @@ class AutoCompleteTest(unittest.TestCase):
         trycompletions()
         Equal(o_c_l.called, 0)
 
-        # _open_completions_later called with COMPLETE_ATTRIBUTES (1).
+        # _open_completions_later called with ATTRS.
         self.text.insert('insert', 're.')
         trycompletions()
-        Equal(o_c_l.args, ((False, False, False, 1),))
+        Equal(o_c_l.args[0], ac.TRY_A)
 
-        # _open_completions_later called with COMPLETE_FILES (2).
+        # _open_completions_later called with FILES.
         self.text.delete('1.0', 'end')
         self.text.insert('1.0', '"./Lib/')
         trycompletions()
-        Equal(o_c_l.args, ((False, False, False, 2),))
+        Equal(o_c_l.args[0], ac.TRY_F)
 
     def test_open_completions_later(self):
         Equal = self.assertEqual
@@ -165,8 +165,8 @@ class AutoCompleteTest(unittest.TestCase):
 
         # Text index unchanged, call open_completions.
         acp._delayed_completion_index = self.text.index('insert')
-        acp._delayed_open_completions((1, 2, 3, ac.COMPLETE_FILES))
-        self.assertEqual(acp.open_completions.args, (1, 2, 3, 2))
+        acp._delayed_open_completions((1, 2, 3, ac.FILES))
+        self.assertEqual(acp.open_completions.args[0], (1, 2, 3, ac.FILES))
 
     def test_open_completions_none(self):
         # Test 4 None returns and delayed id.
@@ -174,7 +174,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp = self.autocomplete
 
         self.text.insert('1.0', 'int()')
-        none(acp.open_completions(False, True, True))
+        none(acp.open_completions(ac.TAB))
 
     def test_open_completions(self):
         # Test completions of files and attributes as well as non-completion
@@ -185,7 +185,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp._make_autocomplete_window = make
 
         self.text.insert('1.0', 'int.')
-        acp.open_completions(False, True, True)
+        acp.open_completions(ac.TAB)
         self.assertIsInstance(acp.autocompletewindow, acw.AutoCompleteWindow)
         self.text.delete('1.0', 'end')
 
@@ -196,11 +196,11 @@ class AutoCompleteTest(unittest.TestCase):
         self.text.delete('1.0', 'end')
 
         # Test with blank will fail.
-        self.assertFalse(acp.open_completions(False, True, True))
+        self.assertFalse(acp.open_completions(ac.TAB))
 
         # Test with only string quote will fail.
         self.text.insert('1.0', '"')
-        self.assertFalse(acp.open_completions(False, True, True))
+        self.assertFalse(acp.open_completions(ac.TAB))
         self.text.delete('1.0', 'end')
 
     def test_fetch_completions(self):
@@ -211,19 +211,19 @@ class AutoCompleteTest(unittest.TestCase):
         # and a small list containing files that do not start with '.'.
         acp = self.autocomplete
         small, large = acp.fetch_completions(
-                '', ac.COMPLETE_ATTRIBUTES)
+                '', ac.ATTRS)
         if __main__.__file__ != ac.__file__:
             self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
         # Test attributes
-        s, b = acp.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+        s, b = acp.fetch_completions('', ac.ATTRS)
         self.assertLess(len(small), len(large))
         self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
         self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
 
         # Test smalll should respect to __all__.
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
-            s, b = acp.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+            s, b = acp.fetch_completions('', ac.ATTRS)
             self.assertEqual(s, ['a', 'b'])
             self.assertIn('__name__', b)    # From __main__.__dict__
             self.assertIn('sum', b)         # From __main__.__builtins__.__dict__
@@ -232,7 +232,7 @@ class AutoCompleteTest(unittest.TestCase):
         mock = Mock()
         mock._private = Mock()
         with patch.dict('__main__.__dict__', {'foo': mock}):
-            s, b = acp.fetch_completions('foo', ac.COMPLETE_ATTRIBUTES)
+            s, b = acp.fetch_completions('foo', ac.ATTRS)
             self.assertNotIn('_private', s)
             self.assertIn('_private', b)
             self.assertEqual(s, [i for i in sorted(dir(mock)) if i[:1] != '_'])
@@ -246,11 +246,11 @@ class AutoCompleteTest(unittest.TestCase):
             return ['monty', 'python', '.hidden']
 
         with patch.object(os, 'listdir', _listdir):
-            s, b = acp.fetch_completions('', ac.COMPLETE_FILES)
+            s, b = acp.fetch_completions('', ac.FILES)
             self.assertEqual(s, ['bar', 'foo'])
             self.assertEqual(b, ['.hidden', 'bar', 'foo'])
 
-            s, b = acp.fetch_completions('~', ac.COMPLETE_FILES)
+            s, b = acp.fetch_completions('~', ac.FILES)
             self.assertEqual(s, ['monty', 'python'])
             self.assertEqual(b, ['.hidden', 'monty', 'python'])
 

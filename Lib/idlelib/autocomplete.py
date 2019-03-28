@@ -8,13 +8,18 @@ import os
 import string
 import sys
 
-# These constants represent the two different types of completions.
-# They must be defined here so autocomple_w can import them.
-COMPLETE_ATTRIBUTES, COMPLETE_FILES = range(1, 2+1)
-
+# Two types of completions; defined here for autocomplete_w import below.
+ATTRS, FILES = 0, 1
 from idlelib import autocomplete_w
 from idlelib.config import idleConf
 from idlelib.hyperparser import HyperParser
+
+# Tuples passed to open_completions.
+#       EvalFunc, Complete, WantWin, Mode
+FORCE = True,     False,    True,    None   # Control-Space.
+TAB   = False,    True,     True,    None   # Tab.
+TRY_A = False,    False,    False,   ATTRS  # '.' for attributes
+TRY_F = False,    False,    False,   FILES  # '/' in quotes for file name.
 
 # This string includes all chars that may be in an identifier.
 # TODO Update this here and elsewhere.
@@ -51,7 +56,7 @@ class AutoComplete:
 
     def force_open_completions_event(self, event):
         "(^space) Open completion list, even if a function call is needed."
-        self.open_completions(True, False, True)
+        self.open_completions(FORCE)
         return "break"
 
     def autocomplete_event(self, event):
@@ -65,42 +70,37 @@ class AutoComplete:
             self.autocompletewindow.complete()
             return "break"
         else:
-            opened = self.open_completions(False, True, True)
+            opened = self.open_completions(TAB)
             return "break" if opened else None
 
     def try_open_completions_event(self, event=None):
         "(./) Open completion list after pause with no movement."
         lastchar = self.text.get("insert-1c")
         if lastchar in TRIGGERS:
-            mode =  COMPLETE_ATTRIBUTES if lastchar == "." else COMPLETE_FILES
-            self._open_completions_later((False, False, False, mode))
+            self._open_completions_later(
+                TRY_A if lastchar == "." else TRY_F)
 
     def _open_completions_later(self, args):
         self._delayed_completion_index = self.text.index("insert")
         if self._delayed_completion_id is not None:
             self.text.after_cancel(self._delayed_completion_id)
-        self._delayed_completion_id = \
-            self.text.after(self.popupwait, self._delayed_open_completions,
-                            args)
+        self._delayed_completion_id = self.text.after(
+                self.popupwait, self._delayed_open_completions, args)
 
     def _delayed_open_completions(self, args):
         "Call open_completions if index unchanged."
         self._delayed_completion_id = None
         if self.text.index("insert") == self._delayed_completion_index:
-            self.open_completions(*args)
+            self.open_completions(args)
 
-    def open_completions(self, evalfuncs, complete, wantwin, mode=None):
+    def open_completions(self, args):
         """Find the completions and create the AutoCompleteWindow.
         Return True if successful (no syntax error or so found).
         If complete is True, then if there's nothing to complete and no
         start of completion, won't open completions and return False.
         If mode is given, will open a completion list only in this mode.
-
-        Action  Function                Eval   Complete WantWin Mode
-        ^space  force_open_completions  True,  False,   True    no
-        tab     autocomplete            False, True,    True    no
-        . or /  try_open_completions    False, False,   False   yes
         """
+        evalfuncs, complete, wantwin, mode = args
         # Cancel another delayed call, if it exists.
         if self._delayed_completion_id is not None:
             self.text.after_cancel(self._delayed_completion_id)
@@ -109,14 +109,14 @@ class AutoComplete:
         hp = HyperParser(self.editwin, "insert")
         curline = self.text.get("insert linestart", "insert")
         i = j = len(curline)
-        if hp.is_in_string() and (not mode or mode==COMPLETE_FILES):
+        if hp.is_in_string() and (not mode or mode==FILES):
             # Find the beginning of the string.
             # fetch_completions will look at the file system to determine
             # whether the string value constitutes an actual file name
             # XXX could consider raw strings here and unescape the string
             # value if it's not raw.
             self._remove_autocomplete_window()
-            mode = COMPLETE_FILES
+            mode = FILES
             # Find last separator or string start
             while i and curline[i-1] not in "'\"" + SEPS:
                 i -= 1
@@ -126,9 +126,9 @@ class AutoComplete:
             while i and curline[i-1] not in "'\"":
                 i -= 1
             comp_what = curline[i:j]
-        elif hp.is_in_code() and (not mode or mode==COMPLETE_ATTRIBUTES):
+        elif hp.is_in_code() and (not mode or mode==ATTRS):
             self._remove_autocomplete_window()
-            mode = COMPLETE_ATTRIBUTES
+            mode = ATTRS
             while i and (curline[i-1] in ID_CHARS or ord(curline[i-1]) > 127):
                 i -= 1
             comp_start = curline[i:j]
@@ -173,7 +173,7 @@ class AutoComplete:
             return rpcclt.remotecall("exec", "get_the_completion_list",
                                      (what, mode), {})
         else:
-            if mode == COMPLETE_ATTRIBUTES:
+            if mode == ATTRS:
                 if what == "":
                     namespace = {**__main__.__builtins__.__dict__,
                                  **__main__.__dict__}
@@ -195,7 +195,7 @@ class AutoComplete:
                     except:
                         return [], []
 
-            elif mode == COMPLETE_FILES:
+            elif mode == FILES:
                 if what == "":
                     what = "."
                 try:
