@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
 #endif
 
+#include "cpython/coreconfig.h"
 #include "pystate.h"
 #include "pythread.h"
 
@@ -58,7 +59,6 @@ struct _is {
     int fscodec_initialized;
 
     _PyCoreConfig core_config;
-    _PyMainInterpreterConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
@@ -176,6 +176,7 @@ typedef struct pyruntimestate {
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
+    _PyPreConfig preconfig;
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 

@@ -1,3 +1,0 @@
-Default buffer size used by ``shutil.copyfileobj()`` is changed from 16 KiB
-to 64 KiB on non-Windows platform to reduce system call overhead. Contributed
-by Inada Naoki.

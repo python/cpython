@@ -604,7 +604,9 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
         mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
         if (mp == NULL) {
             dictkeys_decref(keys);
-            free_values(values);
+            if (values != empty_values) {
+                free_values(values);
+            }
             return NULL;
         }
     }
@@ -3540,6 +3542,12 @@ dictiter_iternextkey(dictiterobject *di)
         if (i >= n)
             goto fail;
         key = entry_ptr->me_key;
+    }
+    // We found an element (key), but did not expect it
+    if (di->len == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "dictionary keys changed during iteration");
+        goto fail;
     }
     di->di_pos = i+1;
     di->len--;

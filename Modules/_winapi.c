@@ -850,15 +850,10 @@ getenvironment(PyObject* environment)
     *p++ = L'\0';
     assert(p == end);
 
-    Py_XDECREF(keys);
-    Py_XDECREF(values);
-
-    return buffer;
-
  error:
     Py_XDECREF(keys);
     Py_XDECREF(values);
-    return NULL;
+    return buffer;
 }
 
 static LPHANDLE
