@@ -30,6 +30,12 @@ always available.
    To loop over the standard input, or the list of files given on the
    command line, see the :mod:`fileinput` module.
 
+   .. note::
+      On Unix, command line arguments are passed by bytes from OS.  Python decode
+      them with filesystem encoding and "surrogateescape" error handler.
+      When you need original bytes, you can get it by
+      ``argv[0].decode(sys.getfilesystemencoding(), "surrogateescape")``.
+
 
 .. data:: base_exec_prefix
 
