@@ -597,9 +597,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. function:: create_server(address, *, family=AF_INET, backlog=0, reuse_port=False, dualstack_ipv6=False)
 
-   Convenience function which creates a :data:`SOCK_STREAM` type socket
-   bound to *address* (a 2-tuple ``(host, port)``) and return the socket
-   object.
+   Convenience function which creates a TCP socket bound to *address* (a 2-tuple
+   ``(host, port)``) and return the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
    *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
@@ -608,14 +607,13 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will
    be able to accept both IPv4 and IPv6 connections, else it will raise
-   :exc:`ValueError`. Most POSIX platforms are supposed to support this option.
-   When this option is enabled the address returned by :meth:`socket.getpeername`
-   when an IPv4 connection occurs will be an IPv6 address represented as an
-   IPv4-mapped IPv6 address.
+   :exc:`ValueError`. Most POSIX platforms and Windows are supposed to support
+   this functionality.
+   When this functionality is enabled the address returned by
+   :meth:`socket.getpeername` when an IPv4 connection occurs will be an IPv6
+   address represented as an IPv4-mapped IPv6 address.
    If *dualstack_ipv6* is false it will explicitly disable this functionality
    on platforms that enable it by default (e.g. Linux).
-   For platforms not supporting this functionality natively you could use this
-   `MultipleSocketsListener recipe <https://code.activestate.com/recipes/578504/>`__.
    This parameter can be used in conjunction with :func:`has_dualstack_ipv6`:
 
    ::

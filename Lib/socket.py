@@ -777,7 +777,7 @@ def create_server(address, *, family=AF_INET, backlog=0, reuse_port=False,
         # 1) It's unnecessary: bind() will succeed even in case of a
         # previous closed socket on the same address and still in
         # TIME_WAIT state.
-        # 2) If set, another socket may be free to bind() on the same
+        # 2) If set, another socket is free to bind() on the same
         # address, effectively preventing this one from accepting
         # connections. Also, it may set the process in a state where
         # it'll no longer respond to any signals or graceful kills.
