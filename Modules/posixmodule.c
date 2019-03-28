@@ -13172,8 +13172,8 @@ error:
  * on win32
  */
 
-typedef DLL_DIRECTORY_COOKIE (*PAddDllDirectory)(PCWSTR newDirectory);
-typedef BOOL (*PRemoveDllDirectory)(DLL_DIRECTORY_COOKIE cookie);
+typedef DLL_DIRECTORY_COOKIE (WINAPI *PAddDllDirectory)(PCWSTR newDirectory);
+typedef BOOL (WINAPI *PRemoveDllDirectory)(DLL_DIRECTORY_COOKIE cookie);
 
 /*[clinic input]
 os._add_dll_directory
