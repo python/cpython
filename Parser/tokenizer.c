@@ -963,7 +963,6 @@ tok_nextc(struct tok_state *tok)
                 newbuf = (char *)PyMem_REALLOC(newbuf,
                                                newsize);
                 if (newbuf == NULL) {
-                    PyMem_FREE(tok->buf);
                     tok->done = E_NOMEM;
                     tok->cur = tok->inp;
                     return EOF;
