@@ -364,14 +364,6 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     PyMemberDef *members;
     Py_ssize_t n_members, n_unnamed_members;
 
-#ifdef Py_TRACE_REFS
-    /* if the type object was chained, unchain it first
-       before overwriting its storage */
-    if (type->ob_base.ob_base._ob_next) {
-        _Py_ForgetReference((PyObject *)type);
-    }
-#endif
-
     /* PyTypeObject has already been initialized */
     if (Py_REFCNT(type) != 0) {
         PyErr_BadInternalCall();

@@ -2549,8 +2549,5 @@ static PyTypeObject _PySetDummy_Type = {
     Py_TPFLAGS_DEFAULT, /*tp_flags */
 };
 
-static PyObject _dummy_struct = {
-  _PyObject_EXTRA_INIT
-  2, &_PySetDummy_Type
-};
+static PyObject _dummy_struct = {2, &_PySetDummy_Type};
 

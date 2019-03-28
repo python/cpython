@@ -1165,9 +1165,6 @@ Py_FinalizeEx(void)
 #ifdef Py_REF_DEBUG
     int show_ref_count = interp->core_config.show_ref_count;
 #endif
-#ifdef Py_TRACE_REFS
-    int dump_refs = interp->core_config.dump_refs;
-#endif
 #ifdef WITH_PYMALLOC
     int malloc_stats = interp->core_config.malloc_stats;
 #endif
@@ -1260,17 +1257,6 @@ Py_FinalizeEx(void)
     }
 #endif
 
-#ifdef Py_TRACE_REFS
-    /* Display all objects still alive -- this can invoke arbitrary
-     * __repr__ overrides, so requires a mostly-intact interpreter.
-     * Alas, a lot of stuff may still be alive now that will be cleaned
-     * up later.
-     */
-    if (dump_refs) {
-        _Py_PrintReferences(stderr);
-    }
-#endif /* Py_TRACE_REFS */
-
     /* Clear interpreter state and all thread states. */
     PyInterpreterState_Clear(interp);
 
@@ -1321,15 +1307,6 @@ Py_FinalizeEx(void)
 
     PyInterpreterState_Delete(interp);
 
-#ifdef Py_TRACE_REFS
-    /* Display addresses (& refcnts) of all objects still alive.
-     * An address can be used to find the repr of the object, printed
-     * above by _Py_PrintReferences.
-     */
-    if (dump_refs) {
-        _Py_PrintReferenceAddresses(stderr);
-    }
-#endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
     if (malloc_stats) {
         _PyObject_DebugMallocStats(stderr);

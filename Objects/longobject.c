@@ -5721,7 +5721,7 @@ PyLong_Fini(void)
     PyLongObject *v = small_ints;
     for (i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++, v++) {
         _Py_DEC_REFTOTAL;
-        _Py_ForgetReference((PyObject*)v);
+        _Py_INC_TPFREES((PyObject*)v);
     }
 #endif
 }

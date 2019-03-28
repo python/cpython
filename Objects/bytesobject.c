@@ -3015,7 +3015,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     }
     /* XXX UNREF/NEWREF interface should be more symmetrical */
     _Py_DEC_REFTOTAL;
-    _Py_ForgetReference(v);
+    _Py_INC_TPFREES(op);
     *pv = (PyObject *)
         PyObject_REALLOC(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {

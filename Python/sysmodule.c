@@ -1581,11 +1581,6 @@ sys__debugmallocstats_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
-#ifdef Py_TRACE_REFS
-/* Defined in objects.c because it uses static globals if that file */
-extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
-#endif
-
 #ifdef DYNAMIC_EXECUTION_PROFILE
 /* Defined in ceval.c because it uses static globals if that file */
 extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
@@ -1659,9 +1654,6 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
-#ifdef Py_TRACE_REFS
-    {"getobjects",      _Py_GetObjects, METH_VARARGS},
-#endif
     SYS_GETTOTALREFCOUNT_METHODDEF
     SYS_GETREFCOUNT_METHODDEF
     SYS_GETRECURSIONLIMIT_METHODDEF

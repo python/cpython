@@ -1637,9 +1637,6 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "gettotalrefcount"):
-    _header = '2P' + _header
-    _align = '0P'
 _vheader = _header + 'n'
 
 def calcobjsize(fmt):

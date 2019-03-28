@@ -954,7 +954,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
     _Py_DEC_REFTOTAL;
-    _Py_ForgetReference(unicode);
+    _Py_INC_TPFREES(unicode);
 
     new_unicode = (PyObject *)PyObject_REALLOC(unicode, new_size);
     if (new_unicode == NULL) {

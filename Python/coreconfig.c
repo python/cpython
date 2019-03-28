@@ -562,7 +562,6 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(import_time);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(show_alloc_count);
-    COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
 
     COPY_WSTR_ATTR(pycache_prefix);
@@ -672,7 +671,6 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(show_ref_count);
     SET_ITEM_INT(show_alloc_count);
-    SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
     SET_ITEM_STR(filesystem_encoding);
     SET_ITEM_STR(filesystem_errors);
@@ -1085,9 +1083,6 @@ config_read_env_vars(_PyCoreConfig *config)
                  "PYTHONLEGACYWINDOWSSTDIO");
 #endif
 
-    if (_PyCoreConfig_GetEnv(config, "PYTHONDUMPREFS")) {
-        config->dump_refs = 1;
-    }
     if (_PyCoreConfig_GetEnv(config, "PYTHONMALLOCSTATS")) {
         config->malloc_stats = 1;
     }

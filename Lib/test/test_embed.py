@@ -293,7 +293,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'import_time': 0,
         'show_ref_count': 0,
         'show_alloc_count': 0,
-        'dump_refs': 0,
         'malloc_stats': 0,
 
         'filesystem_encoding': GET_DEFAULT_CONFIG,

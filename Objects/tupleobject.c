@@ -101,10 +101,6 @@ PyTuple_New(Py_ssize_t size)
         _Py_fast_tuple_allocs++;
 #endif
         /* Inline PyObject_InitVar */
-#ifdef Py_TRACE_REFS
-        Py_SIZE(op) = size;
-        Py_TYPE(op) = &PyTuple_Type;
-#endif
         _Py_NewReference((PyObject *)op);
     }
     else
@@ -906,7 +902,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     _Py_DEC_REFTOTAL;
     if (_PyObject_GC_IS_TRACKED(v))
         _PyObject_GC_UNTRACK(v);
-    _Py_ForgetReference((PyObject *) v);
+    _Py_INC_TPFREES((PyObject *) v);
     /* DECREF items deleted by shrinkage */
     for (i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);

@@ -36,47 +36,6 @@ sys.gettotalrefcount()
     Return current total of all refcounts.
 
 
-Py_TRACE_REFS
--------------
-
-Turn on heavy reference debugging.  This is major surgery.  Every PyObject grows
-two more pointers, to maintain a doubly-linked list of all live heap-allocated
-objects.  Most built-in type objects are not in this list, as they're statically
-allocated.  Starting in Python 2.3, if COUNT_ALLOCS (see below) is also defined,
-a static type object T does appear in this list if at least one object of type T
-has been created.
-
-Note that because the fundamental PyObject layout changes, Python modules
-compiled with Py_TRACE_REFS are incompatible with modules compiled without it.
-
-Py_TRACE_REFS implies Py_REF_DEBUG.
-
-Special gimmicks:
-
-sys.getobjects(max[, type])
-    Return list of the (no more than) max most-recently allocated objects, most
-    recently allocated first in the list, least-recently allocated last in the
-    list.  max=0 means no limit on list length.  If an optional type object is
-    passed, the list is also restricted to objects of that type.  The return
-    list itself, and some temp objects created just to call sys.getobjects(),
-    are excluded from the return list.  Note that the list returned is just
-    another object, though, so may appear in the return list the next time you
-    call getobjects(); note that every object in the list is kept alive too,
-    simply by virtue of being in the list.
-
-envvar PYTHONDUMPREFS
-    If this envvar exists, Py_FinalizeEx() arranges to print a list of all
-    still-live heap objects.  This is printed twice, in different formats,
-    before and after Py_FinalizeEx has cleaned up everything it can clean up.  The
-    first output block produces the repr() of each object so is more
-    informative; however, a lot of stuff destined to die is still alive then.
-    The second output block is much harder to work with (repr() can't be invoked
-    anymore -- the interpreter has been torn down too far), but doesn't list any
-    objects that will die.  The tool script combinerefs.py can be run over this
-    to combine the info from both output blocks.  The second output block, and
-    combinerefs.py, were new in Python 2.3b1.
-
-
 PYMALLOC_DEBUG
 --------------
 
@@ -156,7 +115,7 @@ Py_DEBUG
 
 This is what is generally meant by "a debug build" of Python.
 
-Py_DEBUG implies LLTRACE, Py_REF_DEBUG, Py_TRACE_REFS, and PYMALLOC_DEBUG (if
+Py_DEBUG implies LLTRACE, Py_REF_DEBUG, and PYMALLOC_DEBUG (if
 WITH_PYMALLOC is enabled).  In addition, C assert()s are enabled (via the C way:
 by not defining NDEBUG), and some routines do additional sanity checks inside
 "#ifdef Py_DEBUG" blocks.
@@ -191,10 +150,6 @@ objects can go away.  COUNT_ALLOCS can blow up in 2.2 and 2.2.1 because of this;
 this was fixed in 2.2.2.  Use of COUNT_ALLOCS makes all heap-allocated type
 objects immortal, except for those for which no object of that type is ever
 allocated.
-
-Starting with Python 2.3, If Py_TRACE_REFS is also defined, COUNT_ALLOCS
-arranges to ensure that the type object for each allocated object appears in the
-doubly-linked list of all objects maintained by Py_TRACE_REFS.
 
 Special gimmicks:
 

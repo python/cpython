@@ -927,8 +927,3 @@ if Python was configured with the ``--with-pydebug`` build option.
 
    If set, Python will print threading debug info.
 
-
-.. envvar:: PYTHONDUMPREFS
-
-   If set, Python will dump objects and reference counts still alive after
-   shutting down the interpreter.

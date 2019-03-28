@@ -710,11 +710,8 @@ extra checks are performed:
 
 There may be additional checks not mentioned here.
 
-Defining :c:macro:`Py_TRACE_REFS` enables reference tracing.  When defined, a
-circular doubly linked list of active objects is maintained by adding two extra
-fields to every :c:type:`PyObject`.  Total allocations are tracked as well.  Upon
-exit, all existing references are printed.  (In interactive mode this happens
-after every statement run by the interpreter.)  Implied by :c:macro:`Py_DEBUG`.
+Defining :c:macro:`Py_REF_DEBUG` enables reference tracing.  When defined,
+total allocations are tracked as well. Implied by :c:macro:`Py_DEBUG`.
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.

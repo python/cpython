@@ -54,40 +54,21 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
-/* Py_DEBUG implies Py_TRACE_REFS. */
-#if defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
-#define Py_TRACE_REFS
-#endif
-
-/* Py_TRACE_REFS implies Py_REF_DEBUG. */
-#if defined(Py_TRACE_REFS) && !defined(Py_REF_DEBUG)
+/* Py_DEBUG implies Py_REF_DEBUG. */
+#if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
 #define Py_REF_DEBUG
 #endif
 
 #if defined(Py_LIMITED_API) && defined(Py_REF_DEBUG)
-#error Py_LIMITED_API is incompatible with Py_DEBUG, Py_TRACE_REFS, and Py_REF_DEBUG
+#error Py_LIMITED_API is incompatible with Py_DEBUG and Py_REF_DEBUG
 #endif
 
-
-#ifdef Py_TRACE_REFS
-/* Define pointers to support a doubly-linked list of all live heap objects. */
-#define _PyObject_HEAD_EXTRA            \
-    struct _object *_ob_next;           \
-    struct _object *_ob_prev;
-
-#define _PyObject_EXTRA_INIT 0, 0,
-
-#else
-#define _PyObject_HEAD_EXTRA
-#define _PyObject_EXTRA_INIT
-#endif
 
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD                   PyObject ob_base;
 
 #define PyObject_HEAD_INIT(type)        \
-    { _PyObject_EXTRA_INIT              \
-    1, type },
+    { 1, type },
 
 #define PyVarObject_HEAD_INIT(type, size)       \
     { PyObject_HEAD_INIT(type) size },
@@ -107,7 +88,6 @@ whose size is determined when the object is allocated.
  * in addition, be cast to PyVarObject*.
  */
 typedef struct _object {
-    _PyObject_HEAD_EXTRA
     Py_ssize_t ob_refcnt;
     struct _typeobject *ob_type;
 } PyObject;
@@ -355,7 +335,7 @@ this can be the standard function free().  Both macros can be used
 wherever a void expression is allowed.  The argument must not be a
 NULL pointer.  If it may be NULL, use Py_XINCREF/Py_XDECREF instead.
 The macro _Py_NewReference(op) initialize reference counts to 1, and
-in special builds (Py_REF_DEBUG, Py_TRACE_REFS) performs additional
+in special build (Py_REF_DEBUG) performs additional
 bookkeeping appropriate to the special build.
 
 We assume that the reference count field can never overflow; this can
@@ -418,16 +398,6 @@ PyAPI_FUNC(void) _Py_dec_count(struct _typeobject *);
    when a memory block is reused from a free list. */
 PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
 
-#ifdef Py_TRACE_REFS
-/* Py_TRACE_REFS is such major surgery that we call external routines. */
-PyAPI_FUNC(void) _Py_NewReference(PyObject *);
-PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-PyAPI_FUNC(void) _Py_PrintReferences(FILE *);
-PyAPI_FUNC(void) _Py_PrintReferenceAddresses(FILE *);
-PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
-#else
-/* Without Py_TRACE_REFS, there's little enough to do that we expand code
-   inline. */
 static inline void _Py_NewReference(PyObject *op)
 {
     if (_Py_tracemalloc_config.tracing) {
@@ -437,13 +407,6 @@ static inline void _Py_NewReference(PyObject *op)
     _Py_INC_REFTOTAL;
     Py_REFCNT(op) = 1;
 }
-
-static inline void _Py_ForgetReference(PyObject *op)
-{
-    _Py_INC_TPFREES(op);
-}
-#endif /* !Py_TRACE_REFS */
-
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
