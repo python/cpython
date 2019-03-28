@@ -169,10 +169,8 @@ class Element:
         if not isinstance(attrib, dict):
             raise TypeError("attrib must be dict, not %s" % (
                 attrib.__class__.__name__,))
-        attrib = attrib.copy()
-        attrib.update(extra)
         self.tag = tag
-        self.attrib = attrib
+        self.attrib = {**attrib, **extra}
         self._children = []
 
     def __repr__(self):
@@ -451,8 +449,7 @@ def SubElement(parent, tag, attrib={}, **extra):
     additional attributes given as keyword arguments.
 
     """
-    attrib = attrib.copy()
-    attrib.update(extra)
+    attrib = {**attrib, **extra}
     element = parent.makeelement(tag, attrib)
     parent.append(element)
     return element

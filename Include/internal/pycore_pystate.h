@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
 #endif
 
+#include "cpython/coreconfig.h"
 #include "pystate.h"
 #include "pythread.h"
 
@@ -29,7 +30,10 @@ struct _is {
 
     int64_t id;
     int64_t id_refcount;
+    int requires_idref;
     PyThread_type_lock id_mutex;
+
+    int finalizing;
 
     PyObject *modules;
     PyObject *modules_by_index;
@@ -55,10 +59,11 @@ struct _is {
     int fscodec_initialized;
 
     _PyCoreConfig core_config;
-    _PyMainInterpreterConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
+
+    PyObject *dict;  /* Stores per-interpreter state */
 
     PyObject *builtins_copy;
     PyObject *import_func;
@@ -87,65 +92,11 @@ PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 
 
-/* cross-interpreter data */
-
-struct _xid;
-
-// _PyCrossInterpreterData is similar to Py_buffer as an effectively
-// opaque struct that holds data outside the object machinery.  This
-// is necessary to pass safely between interpreters in the same process.
-typedef struct _xid {
-    // data is the cross-interpreter-safe derivation of a Python object
-    // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
-    // new_object func (below) encodes the data.
-    void *data;
-    // obj is the Python object from which the data was derived.  This
-    // is non-NULL only if the data remains bound to the object in some
-    // way, such that the object must be "released" (via a decref) when
-    // the data is released.  In that case the code that sets the field,
-    // likely a registered "crossinterpdatafunc", is responsible for
-    // ensuring it owns the reference (i.e. incref).
-    PyObject *obj;
-    // interp is the ID of the owning interpreter of the original
-    // object.  It corresponds to the active interpreter when
-    // _PyObject_GetCrossInterpreterData() was called.  This should only
-    // be set by the cross-interpreter machinery.
-    //
-    // We use the ID rather than the PyInterpreterState to avoid issues
-    // with deleted interpreters.
-    int64_t interp;
-    // new_object is a function that returns a new object in the current
-    // interpreter given the data.  The resulting object (a new
-    // reference) will be equivalent to the original object.  This field
-    // is required.
-    PyObject *(*new_object)(struct _xid *);
-    // free is called when the data is released.  If it is NULL then
-    // nothing will be done to free the data.  For some types this is
-    // okay (e.g. bytes) and for those types this field should be set
-    // to NULL.  However, for most the data was allocated just for
-    // cross-interpreter use, so it must be freed when
-    // _PyCrossInterpreterData_Release is called or the memory will
-    // leak.  In that case, at the very least this field should be set
-    // to PyMem_RawFree (the default if not explicitly set to NULL).
-    // The call will happen with the original interpreter activated.
-    void (*free)(void *);
-} _PyCrossInterpreterData;
-
-typedef int (*crossinterpdatafunc)(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
-
-PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
-PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
-PyAPI_FUNC(void) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
-
 /* cross-interpreter data registry */
 
 /* For now we use a global registry of shareable classes.  An
    alternative would be to add a tp_* slot for a class's
    crossinterpdatafunc. It would be simpler and more efficient. */
-
-PyAPI_FUNC(int) _PyCrossInterpreterData_Register_Class(PyTypeObject *, crossinterpdatafunc);
-PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
 struct _xidregitem;
 
@@ -183,8 +134,15 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    int initialized;
+    /* Is Python pre-initialized? Set to 1 by _Py_PreInitialize() */
+    int pre_initialized;
+
+    /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
     int core_initialized;
+
+    /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+    int initialized;
+
     PyThreadState *finalizing;
 
     struct pyinterpreters {
@@ -207,6 +165,8 @@ typedef struct pyruntimestate {
         struct _xidregitem *head;
     } xidregistry;
 
+    unsigned long main_thread;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
@@ -216,19 +176,24 @@ typedef struct pyruntimestate {
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
+    _PyPreConfig preconfig;
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
-#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+#define _PyRuntimeState_INIT \
+    {.pre_initialized = 0, .core_initialized = 0, .initialized = 0}
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
 PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
+PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(void);
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
 PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
+
+PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)

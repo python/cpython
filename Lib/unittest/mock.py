@@ -2135,6 +2135,22 @@ class _Call(tuple):
     def index(self, *args, **kwargs):
         return self.__getattr__('index')(*args, **kwargs)
 
+    def _get_call_arguments(self):
+        if len(self) == 2:
+            args, kwargs = self
+        else:
+            name, args, kwargs = self
+
+        return args, kwargs
+
+    @property
+    def args(self):
+        return self._get_call_arguments()[0]
+
+    @property
+    def kwargs(self):
+        return self._get_call_arguments()[1]
+
     def __repr__(self):
         if not self._mock_from_kall:
             name = self._mock_name or 'call'

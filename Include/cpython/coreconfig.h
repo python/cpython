@@ -5,16 +5,6 @@
 extern "C" {
 #endif
 
-/* --- _PyArgv ---------------------------------------------------- */
-
-typedef struct {
-    int argc;
-    int use_bytes_argv;
-    char **bytes_argv;
-    wchar_t **wchar_argv;
-} _PyArgv;
-
-
 /* --- _PyInitError ----------------------------------------------- */
 
 typedef struct {
@@ -46,6 +36,18 @@ typedef struct {
 #define _Py_INIT_FAILED(err) \
     (err.msg != NULL || err.exitcode != -1)
 
+/* --- _PyWstrList ------------------------------------------------ */
+
+typedef struct {
+    /* If length is greater than zero, items must be non-NULL
+       and all items strings must be non-NULL */
+    Py_ssize_t length;
+    wchar_t **items;
+} _PyWstrList;
+
+#define _PyWstrList_INIT (_PyWstrList){.length = 0, .items = NULL}
+
+
 /* --- _PyPreConfig ----------------------------------------------- */
 
 typedef struct {
@@ -61,8 +63,20 @@ typedef struct {
        set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
 
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+    /* Coerce the LC_CTYPE locale if it's equal to "C"? (PEP 538)
+
+       Set to 0 by PYTHONCOERCECLOCALE=0. Set to 1 by PYTHONCOERCECLOCALE=1.
+       Set to 2 if the user preferred LC_CTYPE locale is "C".
+
+       If it is equal to 1, LC_CTYPE locale is read to decide it it should be
+       coerced or not (ex: PYTHONCOERCECLOCALE=1). Internally, it is set to 2
+       if the LC_CTYPE locale must be coerced. */
+    int coerce_c_locale;
+
+    /* Emit a warning if the LC_CTYPE locale is coerced?
+
+       Disabled by default. Set to 1 by PYTHONCOERCECLOCALE=warn. */
+    int coerce_c_locale_warn;
 
 #ifdef MS_WINDOWS
     /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
@@ -76,9 +90,17 @@ typedef struct {
     int legacy_windows_fs_encoding;
 #endif
 
-    /* Enable UTF-8 mode?
-       Set by -X utf8 command line option and PYTHONUTF8 environment variable.
-       If set to -1 (default), inherit Py_UTF8Mode value. */
+    /* Enable UTF-8 mode? (PEP 540)
+
+       Disabled by default (equals to 0).
+
+       Set to 1 by "-X utf8" and "-X utf8=1" command line options.
+       Set to 1 by PYTHONUTF8=1 environment variable.
+
+       Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
+
+       If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
+       "POSIX", otherwise inherit Py_UTF8Mode value. */
     int utf8_mode;
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
@@ -97,14 +119,16 @@ typedef struct {
         _PyPreConfig_WINDOWS_INIT \
         .isolated = -1, \
         .use_environment = -1, \
-        .coerce_c_locale = -1, \
-        .utf8_mode = -1}
+        .dev_mode = -1, \
+        .allocator = NULL}
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */
 
 typedef struct {
-    _PyPreConfig preconfig;
+    int isolated;
+    int use_environment;
+    int dev_mode;
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -162,19 +186,12 @@ typedef struct {
     char *filesystem_encoding;
     char *filesystem_errors;
 
-    wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
-
-    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
-    int argc;               /* Number of command line arguments,
-                               -1 means unset */
-    wchar_t **argv;         /* Command line arguments */
-    wchar_t *program;       /* argv[0] or "" */
-
-    int nxoption;           /* Number of -X options */
-    wchar_t **xoptions;     /* -X options */
-
-    int nwarnoption;        /* Number of warnings options */
-    wchar_t **warnoptions;  /* Warnings options */
+    wchar_t *pycache_prefix;  /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
+    wchar_t *program_name;    /* Program name, see also Py_GetProgramName() */
+    _PyWstrList argv;         /* Command line arguments */
+    wchar_t *program;         /* argv[0] or "" */
+    _PyWstrList xoptions;     /* Command line -X options */
+    _PyWstrList warnoptions;  /* Warnings options */
 
     /* Path configuration inputs */
     wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
@@ -182,9 +199,11 @@ typedef struct {
                                see also Py_SetPythonHome(). */
 
     /* Path configuration outputs */
-    int nmodule_search_path;        /* Number of sys.path paths,
-                                       -1 means unset */
-    wchar_t **module_search_paths;  /* sys.path paths */
+    int use_module_search_paths;  /* If non-zero, use module_search_paths */
+    _PyWstrList module_search_paths;  /* sys.path paths. Computed if
+                                       use_module_search_paths is equal
+                                       to zero. */
+
     wchar_t *executable;    /* sys.executable */
     wchar_t *prefix;        /* sys.prefix */
     wchar_t *base_prefix;   /* sys.base_prefix */
@@ -349,6 +368,9 @@ typedef struct {
        If set to -1 (default), inherit Py_FrozenFlag value. */
     int _frozen;
 
+    /* If non-zero, use "main" Python initialization */
+    int _init_main;
+
 } _PyCoreConfig;
 
 #ifdef MS_WINDOWS
@@ -361,13 +383,14 @@ typedef struct {
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         _PyCoreConfig_WINDOWS_INIT \
-        .preconfig = _PyPreConfig_INIT, \
+        .isolated = -1, \
+        .use_environment = -1, \
+        .dev_mode = -1, \
         .install_signal_handlers = 1, \
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
-        .argc = -1, \
-        .nmodule_search_path = -1, \
+        .use_module_search_paths = 0, \
         .site_import = -1, \
         .bytes_warning = -1, \
         .inspect = -1, \
@@ -381,14 +404,14 @@ typedef struct {
         .buffered_stdio = -1, \
         ._install_importlib = 1, \
         ._check_hash_pycs_mode = "default", \
-        ._frozen = -1}
+        ._frozen = -1, \
+        ._init_main = 1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 
 /* --- Function used for testing ---------------------------------- */
 
-PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
-PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
+PyAPI_FUNC(PyObject*) _Py_GetConfigsAsDict(void);
 
 #ifdef __cplusplus
 }
