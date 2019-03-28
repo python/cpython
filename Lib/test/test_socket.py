@@ -867,6 +867,8 @@ class GeneralModuleTests(unittest.TestCase):
     def testCrucialConstants(self):
         # Testing for mission critical constants
         socket.AF_INET
+        if socket.has_ipv6:
+            socket.AF_INET6
         socket.SOCK_STREAM
         socket.SOCK_DGRAM
         socket.SOCK_RAW
@@ -874,6 +876,23 @@ class GeneralModuleTests(unittest.TestCase):
         socket.SOCK_SEQPACKET
         socket.SOL_SOCKET
         socket.SO_REUSEADDR
+
+    def testCrucialIpProtoConstants(self):
+        socket.IPPROTO_TCP
+        socket.IPPROTO_UDP
+        if socket.has_ipv6:
+            socket.IPPROTO_IPV6
+
+    @unittest.skipUnless(os.name == "nt", "Windows specific")
+    def testWindowsSpecificConstants(self):
+        socket.IPPROTO_ICLFXBM
+        socket.IPPROTO_ST
+        socket.IPPROTO_CBT
+        socket.IPPROTO_IGP
+        socket.IPPROTO_RDP
+        socket.IPPROTO_PGM
+        socket.IPPROTO_L2TP
+        socket.IPPROTO_SCTP
 
     def testHostnameRes(self):
         # Testing hostname resolution mechanisms
