@@ -1448,10 +1448,10 @@ win32_error_object_err(const char* function, PyObject* filename, DWORD err)
     if (filename)
         return PyErr_SetExcFromWindowsErrWithFilenameObject(
                     PyExc_OSError,
-                    errno,
+                    err,
                     filename);
     else
-        return PyErr_SetFromWindowsErr(errno);
+        return PyErr_SetFromWindowsErr(err);
 }
 
 static PyObject *
@@ -13203,13 +13203,11 @@ os__add_dll_directory_impl(PyObject *module, path_t *path)
        infrequent operation, just do it each time. Kernel32 is always
        loaded. */
     Py_BEGIN_ALLOW_THREADS
-    if ((hKernel32 = GetModuleHandleW(L"kernel32")) &&
-        (AddDllDirectory = (PAddDllDirectory)GetProcAddress(
-            hKernel32, "AddDllDirectory"))) {
-        cookie = (*AddDllDirectory)(path->wide);
-        if (!cookie) {
-            err = GetLastError();
-        }
+    if (!(hKernel32 = GetModuleHandleW(L"kernel32")) ||
+        !(AddDllDirectory = (PAddDllDirectory)GetProcAddress(
+            hKernel32, "AddDllDirectory")) ||
+        !(cookie = (*AddDllDirectory)(path->wide))) {
+        err = GetLastError();
     }
     Py_END_ALLOW_THREADS
 
@@ -13255,12 +13253,11 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
        infrequent operation, just do it each time. Kernel32 is always
        loaded. */
     Py_BEGIN_ALLOW_THREADS
-    if ((hKernel32 = GetModuleHandleW(L"kernel32")) &&
-        (RemoveDllDirectory = (PRemoveDllDirectory)GetProcAddress(
-            hKernel32, "RemoveDllDirectory"))) {
-        if (!(*RemoveDllDirectory)(cookieValue)) {
-            err = GetLastError();
-        }
+    if (!(hKernel32 = GetModuleHandleW(L"kernel32")) ||
+        !(RemoveDllDirectory = (PRemoveDllDirectory)GetProcAddress(
+            hKernel32, "RemoveDllDirectory")) ||
+        !(*RemoveDllDirectory)(cookieValue)) {
+        err = GetLastError();
     }
     Py_END_ALLOW_THREADS
 
