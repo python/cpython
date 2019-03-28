@@ -46,16 +46,10 @@ def normcase(s):
 
     Makes all characters lowercase and all slashes into backslashes."""
     s = os.fspath(s)
-    try:
-        if isinstance(s, bytes):
-            return s.replace(b'/', b'\\').lower()
-        else:
-            return s.replace('/', '\\').lower()
-    except (TypeError, AttributeError):
-        if not isinstance(s, (bytes, str)):
-            raise TypeError("normcase() argument must be str or bytes, "
-                            "not %r" % s.__class__.__name__) from None
-        raise
+    if isinstance(s, bytes):
+        return s.replace(b'/', b'\\').lower()
+    else:
+        return s.replace('/', '\\').lower()
 
 
 # Return whether a path is absolute.
