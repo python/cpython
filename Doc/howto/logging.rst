@@ -49,7 +49,7 @@ states, for each of a set of common tasks, the best tool to use for it.
 |                                     | about the situation, but the event   |
 |                                     | should still be noted                |
 +-------------------------------------+--------------------------------------+
-| Report an error regarding a         | Raise an exception                   |
+| Report an error regarding a         | Raise an :exc:`Exception`            |
 | particular runtime event            |                                      |
 +-------------------------------------+--------------------------------------+
 | Report suppression of an error      | :func:`logging.error`,               |
@@ -326,7 +326,7 @@ favourite beverage and carry on.
 If your logging needs are simple, then use the above examples to incorporate
 logging into your own scripts, and if you run into problems or don't
 understand something, please post a question on the comp.lang.python Usenet
-group (available at https://groups.google.com/forum/#!forum/comp.lang.python) and you
+group (available at `https://groups.google.com/forum/#!forum/comp.lang.python`_) and you
 should receive help before too long.
 
 Still here? You can carry on reading the next few sections, which provide a
