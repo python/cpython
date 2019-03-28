@@ -90,7 +90,7 @@ noclean:
 
 // If the return value pointer is NULL, assume no return value.
 /*
-  Intel asm is weird. We have to explicitely specify 'DWORD PTR' in the nexr instruction,
+  Intel asm is weird. We have to explicitly specify 'DWORD PTR' in the next instruction,
   otherwise only one BYTE will be compared (instead of a DWORD)!
  */
 		cmp DWORD PTR [ebp + 24], 0

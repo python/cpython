@@ -14,8 +14,15 @@ sys.path.append(os.path.abspath('includes'))
 # ---------------------
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations']
+              'pyspecific', 'c_annotations', 'escape4chm']
 
+
+doctest_global_setup = '''
+try:
+    import _tkinter
+except ImportError:
+    _tkinter = None
+'''
 # General substitutions.
 project = 'Python'
 copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')
@@ -34,13 +41,20 @@ today_fmt = '%B %d, %Y'
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
-# Require Sphinx 1.2 for build.
-needs_sphinx = '1.2'
+# Minimum version of sphinx required
+needs_sphinx = '1.8'
 
 # Ignore any .rst files in the venv/ directory.
 venvdir = os.getenv('VENVDIR', 'venv')
 exclude_patterns = [venvdir+'/*', 'README.rst']
 
+# Disable Docutils smartquotes for several translations
+smartquotes_excludes = {
+    'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
+}
+
+# Avoid a warning with Sphinx >= 2.0
+master_doc = 'contents'
 
 # Options for HTML output
 # -----------------------

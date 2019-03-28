@@ -1,2 +1,0 @@
-Acquire the logging module's commonly used internal locks while fork()ing to
-avoid deadlocks in the child process.

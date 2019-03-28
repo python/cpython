@@ -3,7 +3,6 @@ import inspect
 import pydoc
 import sys
 import unittest
-import sys
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
@@ -12,10 +11,6 @@ from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from datetime import timedelta
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 # for pickle tests
 try:
@@ -121,6 +116,22 @@ class TestHelpers(unittest.TestCase):
         for s in ('a', 'a_', '_a', '__a', 'a__', '_a_', '_a__', '__a_', '_',
                 '__', '___', '____', '_____',):
             self.assertFalse(enum._is_dunder(s))
+
+# for subclassing tests
+
+class classproperty:
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+        if doc is None and fget is not None:
+            doc = fget.__doc__
+        self.__doc__ = doc
+
+    def __get__(self, instance, ownerclass):
+        return self.fget(ownerclass)
+
 
 # tests
 
@@ -1730,6 +1741,132 @@ class TestEnum(unittest.TestCase):
         else:
             raise Exception('Exception not raised.')
 
+    def test_multiple_mixin(self):
+        class MaxMixin:
+            @classproperty
+            def MAX(cls):
+                max = len(cls)
+                cls.MAX = max
+                return max
+        class StrMixin:
+            def __str__(self):
+                return self._name_.lower()
+        class SomeEnum(Enum):
+            def behavior(self):
+                return 'booyah'
+        class AnotherEnum(Enum):
+            def behavior(self):
+                return 'nuhuh!'
+            def social(self):
+                return "what's up?"
+        class Color(MaxMixin, Enum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 3)
+        self.assertEqual(Color.MAX, 3)
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
+        class Color(MaxMixin, StrMixin, Enum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 3)
+        self.assertEqual(Color.MAX, 3)
+        self.assertEqual(str(Color.BLUE), 'blue')
+        class Color(StrMixin, MaxMixin, Enum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 3)
+        self.assertEqual(Color.MAX, 3)
+        self.assertEqual(str(Color.BLUE), 'blue')
+        class CoolColor(StrMixin, SomeEnum, Enum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(CoolColor.RED.value, 1)
+        self.assertEqual(CoolColor.GREEN.value, 2)
+        self.assertEqual(CoolColor.BLUE.value, 3)
+        self.assertEqual(str(CoolColor.BLUE), 'blue')
+        self.assertEqual(CoolColor.RED.behavior(), 'booyah')
+        class CoolerColor(StrMixin, AnotherEnum, Enum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(CoolerColor.RED.value, 1)
+        self.assertEqual(CoolerColor.GREEN.value, 2)
+        self.assertEqual(CoolerColor.BLUE.value, 3)
+        self.assertEqual(str(CoolerColor.BLUE), 'blue')
+        self.assertEqual(CoolerColor.RED.behavior(), 'nuhuh!')
+        self.assertEqual(CoolerColor.RED.social(), "what's up?")
+        class CoolestColor(StrMixin, SomeEnum, AnotherEnum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(CoolestColor.RED.value, 1)
+        self.assertEqual(CoolestColor.GREEN.value, 2)
+        self.assertEqual(CoolestColor.BLUE.value, 3)
+        self.assertEqual(str(CoolestColor.BLUE), 'blue')
+        self.assertEqual(CoolestColor.RED.behavior(), 'booyah')
+        self.assertEqual(CoolestColor.RED.social(), "what's up?")
+        class ConfusedColor(StrMixin, AnotherEnum, SomeEnum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(ConfusedColor.RED.value, 1)
+        self.assertEqual(ConfusedColor.GREEN.value, 2)
+        self.assertEqual(ConfusedColor.BLUE.value, 3)
+        self.assertEqual(str(ConfusedColor.BLUE), 'blue')
+        self.assertEqual(ConfusedColor.RED.behavior(), 'nuhuh!')
+        self.assertEqual(ConfusedColor.RED.social(), "what's up?")
+        class ReformedColor(StrMixin, IntEnum, SomeEnum, AnotherEnum):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(ReformedColor.RED.value, 1)
+        self.assertEqual(ReformedColor.GREEN.value, 2)
+        self.assertEqual(ReformedColor.BLUE.value, 3)
+        self.assertEqual(str(ReformedColor.BLUE), 'blue')
+        self.assertEqual(ReformedColor.RED.behavior(), 'booyah')
+        self.assertEqual(ConfusedColor.RED.social(), "what's up?")
+        self.assertTrue(issubclass(ReformedColor, int))
+
+    def test_multiple_inherited_mixin(self):
+        class StrEnum(str, Enum):
+            def __new__(cls, *args, **kwargs):
+                for a in args:
+                    if not isinstance(a, str):
+                        raise TypeError("Enumeration '%s' (%s) is not"
+                                        " a string" % (a, type(a).__name__))
+                return str.__new__(cls, *args, **kwargs)
+        @unique
+        class Decision1(StrEnum):
+            REVERT = "REVERT"
+            REVERT_ALL = "REVERT_ALL"
+            RETRY = "RETRY"
+        class MyEnum(StrEnum):
+            pass
+        @unique
+        class Decision2(MyEnum):
+            REVERT = "REVERT"
+            REVERT_ALL = "REVERT_ALL"
+            RETRY = "RETRY"
+
+    def test_empty_globals(self):
+        # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
+        # when using compile and exec because f_globals is empty
+        code = "from enum import Enum; Enum('Animal', 'ANT BEE CAT DOG')"
+        code = compile(code, "<string>", "exec")
+        global_ns = {}
+        local_ls = {}
+        exec(code, global_ns, local_ls)
+
 
 class TestOrder(unittest.TestCase):
 
@@ -2092,6 +2229,49 @@ class TestFlag(unittest.TestCase):
             c = 4
             d = 6
         self.assertEqual(repr(Bizarre(7)), '<Bizarre.d|c|b: 7>')
+
+    def test_multiple_mixin(self):
+        class AllMixin:
+            @classproperty
+            def ALL(cls):
+                members = list(cls)
+                all_value = None
+                if members:
+                    all_value = members[0]
+                    for member in members[1:]:
+                        all_value |= member
+                cls.ALL = all_value
+                return all_value
+        class StrMixin:
+            def __str__(self):
+                return self._name_.lower()
+        class Color(AllMixin, Flag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
+        class Color(AllMixin, StrMixin, Flag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'blue')
+        class Color(StrMixin, AllMixin, Flag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'blue')
 
     @support.reap_threads
     def test_unique_composite(self):
@@ -2468,6 +2648,49 @@ class TestIntFlag(unittest.TestCase):
         for f in Open:
             self.assertEqual(bool(f.value), bool(f))
 
+    def test_multiple_mixin(self):
+        class AllMixin:
+            @classproperty
+            def ALL(cls):
+                members = list(cls)
+                all_value = None
+                if members:
+                    all_value = members[0]
+                    for member in members[1:]:
+                        all_value |= member
+                cls.ALL = all_value
+                return all_value
+        class StrMixin:
+            def __str__(self):
+                return self._name_.lower()
+        class Color(AllMixin, IntFlag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'Color.BLUE')
+        class Color(AllMixin, StrMixin, IntFlag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'blue')
+        class Color(StrMixin, AllMixin, IntFlag):
+            RED = auto()
+            GREEN = auto()
+            BLUE = auto()
+        self.assertEqual(Color.RED.value, 1)
+        self.assertEqual(Color.GREEN.value, 2)
+        self.assertEqual(Color.BLUE.value, 4)
+        self.assertEqual(Color.ALL.value, 7)
+        self.assertEqual(str(Color.BLUE), 'blue')
+
     @support.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only
@@ -2505,6 +2728,23 @@ class TestIntFlag(unittest.TestCase):
                 failed,
                 'at least one thread failed while creating composite members')
         self.assertEqual(256, len(seen), 'too many composite members created')
+
+
+class TestEmptyAndNonLatinStrings(unittest.TestCase):
+
+    def test_empty_string(self):
+        with self.assertRaises(ValueError):
+            empty_abc = Enum('empty_abc', ('', 'B', 'C'))
+
+    def test_non_latin_character_string(self):
+        greek_abc = Enum('greek_abc', ('\u03B1', 'B', 'C'))
+        item = getattr(greek_abc, '\u03B1')
+        self.assertEqual(item.value, 1)
+
+    def test_non_latin_number_string(self):
+        hebrew_123 = Enum('hebrew_123', ('\u05D0', '2', '3'))
+        item = getattr(hebrew_123, '\u05D0')
+        self.assertEqual(item.value, 1)
 
 
 class TestUnique(unittest.TestCase):
@@ -2553,6 +2793,7 @@ class TestUnique(unittest.TestCase):
             value = 4
 
 
+
 expected_help_output_with_docs = """\
 Help on class Color in module %s:
 
@@ -2584,7 +2825,7 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumMeta:
+ |  Readonly properties inherited from enum.EnumMeta:
  |\x20\x20
  |  __members__
  |      Returns a mapping of member name->value.

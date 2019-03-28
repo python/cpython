@@ -13,6 +13,11 @@ import weakref
 from copy import deepcopy
 from test import support
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 
 class OperatorsTest(unittest.TestCase):
 
@@ -1592,12 +1597,27 @@ order (MRO) for bases """
         self.assertEqual(x2, SubSpam)
         self.assertEqual(a2, a1)
         self.assertEqual(d2, d1)
-        with self.assertRaises(TypeError):
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm()
-        with self.assertRaises(TypeError):
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'classmeth' of 'xxsubtype.spamlist' "
+            "object needs an argument")
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm(spam.spamlist())
-        with self.assertRaises(TypeError):
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'classmeth' requires a type "
+            "but received a 'xxsubtype.spamlist' instance")
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm(list)
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'classmeth' requires a subtype of 'xxsubtype.spamlist' "
+            "but received 'list'")
 
     def test_staticmethods(self):
         # Testing static methods...
@@ -4320,7 +4340,11 @@ order (MRO) for bases """
             def __hash__(self):
                 return hash('attr')
             def __eq__(self, other):
-                del C.attr
+                try:
+                    del C.attr
+                except AttributeError:
+                    # possible race condition
+                    pass
                 return 0
 
         class Descr(object):
@@ -4756,6 +4780,22 @@ order (MRO) for bases """
         func.__qualname__ = "qualname"
         self.assertRegex(repr(method),
             r"<bound method qualname of <object object at .*>>")
+
+    @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+    def test_bpo25750(self):
+        # bpo-25750: calling a descriptor (implemented as built-in
+        # function with METH_FASTCALL) should not crash CPython if the
+        # descriptor deletes itself from the class.
+        class Descr:
+            __get__ = _testcapi.bad_get
+
+        class X:
+            descr = Descr()
+            def __new__(cls):
+                cls.descr = None
+                # Create this large list to corrupt some unused memory
+                cls.lst = [2**i for i in range(10000)]
+        X.descr
 
 
 class DictProxyTests(unittest.TestCase):
@@ -5321,16 +5361,16 @@ class SharedKeyTests(unittest.TestCase):
 
         a, b = A(), B()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
-        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
         # Initial hash table can contain at most 5 elements.
         # Set 6 attributes to cause internal resizing.
         a.x, a.y, a.z, a.w, a.v, a.u = range(6)
         self.assertNotEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(b)))
         a2 = A()
         self.assertEqual(sys.getsizeof(vars(a)), sys.getsizeof(vars(a2)))
-        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({}))
+        self.assertLess(sys.getsizeof(vars(a)), sys.getsizeof({"a":1}))
         b.u, b.v, b.w, b.t, b.s, b.r = range(6)
-        self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({}))
+        self.assertLess(sys.getsizeof(vars(b)), sys.getsizeof({"a":1}))
 
 
 class DebugHelperMeta(type):

@@ -1,1 +1,0 @@
-Prevent jumps from 'return' and 'exception' trace events.

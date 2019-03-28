@@ -1,7 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
 #include "longintrepr.h"
@@ -143,6 +143,7 @@ PyObject *
 PyObject_GetItem(PyObject *o, PyObject *key)
 {
     PyMappingMethods *m;
+    PySequenceMethods *ms;
 
     if (o == NULL || key == NULL) {
         return null_error();
@@ -155,7 +156,8 @@ PyObject_GetItem(PyObject *o, PyObject *key)
         return item;
     }
 
-    if (o->ob_type->tp_as_sequence) {
+    ms = o->ob_type->tp_as_sequence;
+    if (ms && ms->sq_item) {
         if (PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
@@ -163,9 +165,10 @@ PyObject_GetItem(PyObject *o, PyObject *key)
                 return NULL;
             return PySequence_GetItem(o, key_value);
         }
-        else if (o->ob_type->tp_as_sequence->sq_item)
+        else {
             return type_error("sequence index must "
                               "be integer, not '%.200s'", key);
+        }
     }
 
     if (PyType_Check(o)) {
@@ -756,8 +759,9 @@ int
 PyNumber_Check(PyObject *o)
 {
     return o && o->ob_type->tp_as_number &&
-           (o->ob_type->tp_as_number->nb_int ||
-        o->ob_type->tp_as_number->nb_float);
+           (o->ob_type->tp_as_number->nb_index ||
+            o->ob_type->tp_as_number->nb_int ||
+            o->ob_type->tp_as_number->nb_float);
 }
 
 /* Binary operators */
@@ -1363,7 +1367,7 @@ PyNumber_Long(PyObject *o)
     }
     m = o->ob_type->tp_as_number;
     if (m && m->nb_int) { /* This should include subclasses of int */
-        result = (PyObject *)_PyLong_FromNbInt(o);
+        result = _PyLong_FromNbInt(o);
         if (result != NULL && !PyLong_CheckExact(result)) {
             Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         }
@@ -1383,7 +1387,7 @@ PyNumber_Long(PyObject *o)
         /* __trunc__ is specified to return an Integral type,
            but int() needs to return an int. */
         m = result->ob_type->tp_as_number;
-        if (m == NULL || m->nb_int == NULL) {
+        if (m == NULL || (m->nb_index == NULL && m->nb_int == NULL)) {
             PyErr_Format(
                 PyExc_TypeError,
                 "__trunc__ returned non-Integral (type %.200s)",
@@ -1391,7 +1395,7 @@ PyNumber_Long(PyObject *o)
             Py_DECREF(result);
             return NULL;
         }
-        Py_SETREF(result, (PyObject *)_PyLong_FromNbInt(result));
+        Py_SETREF(result, _PyLong_FromNbIndexOrNbInt(result));
         if (result != NULL && !PyLong_CheckExact(result)) {
             Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         }

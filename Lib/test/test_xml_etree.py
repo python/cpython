@@ -91,6 +91,12 @@ ENTITY_XML = """\
 <document>&entity;</document>
 """
 
+EXTERNAL_ENTITY_XML = """\
+<!DOCTYPE points [
+<!ENTITY entity SYSTEM "file:///non-existing-file.xml">
+]>
+<document>&entity;</document>
+"""
 
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
@@ -861,6 +867,13 @@ class ElementTreeTest(unittest.TestCase):
         root = parser.close()
         self.serialize_check(root, '<document>text</document>')
 
+        # 4) external (SYSTEM) entity
+
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.XML(EXTERNAL_ENTITY_XML)
+        self.assertEqual(str(cm.exception),
+                'undefined entity &entity;: line 4, column 10')
+
     def test_namespace(self):
         # Test namespace issues.
 
@@ -1030,6 +1043,22 @@ class ElementTreeTest(unittest.TestCase):
                 serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
                                        method='html')
                 self.assertEqual(serialized, expected)
+
+    def test_dump_attribute_order(self):
+        # See BPO 34160
+        e = ET.Element('cirriculum', status='public', company='example')
+        with support.captured_stdout() as stdout:
+            ET.dump(e)
+        self.assertEqual(stdout.getvalue(),
+                         '<cirriculum status="public" company="example" />\n')
+
+    def test_tree_write_attribute_order(self):
+        # See BPO 34160
+        root = ET.Element('cirriculum', status='public', company='example')
+        self.assertEqual(serialize(root),
+                         '<cirriculum status="public" company="example" />')
+        self.assertEqual(serialize(root, method='html'),
+                '<cirriculum status="public" company="example"></cirriculum>')
 
 
 class XMLPullParserTest(unittest.TestCase):
@@ -1782,6 +1811,28 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         self.assertRaises(TypeError, e.append, 'b')
         self.assertRaises(TypeError, e.extend, [ET.Element('bar'), 'foo'])
         self.assertRaises(TypeError, e.insert, 0, 'foo')
+        e[:] = [ET.Element('bar')]
+        with self.assertRaises(TypeError):
+            e[0] = 'foo'
+        with self.assertRaises(TypeError):
+            e[:] = [ET.Element('bar'), 'foo']
+
+        if hasattr(e, '__setstate__'):
+            state = {
+                'tag': 'tag',
+                '_children': [None],  # non-Element
+                'attrib': 'attr',
+                'tail': 'tail',
+                'text': 'text',
+            }
+            self.assertRaises(TypeError, e.__setstate__, state)
+
+        if hasattr(e, '__deepcopy__'):
+            class E(ET.Element):
+                def __deepcopy__(self, memo):
+                    return None  # non-Element
+            e[:] = [E('bar')]
+            self.assertRaises(TypeError, copy.deepcopy, e)
 
     def test_cyclic_gc(self):
         class Dummy:
@@ -1968,26 +2019,6 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         elem = b.close()
         self.assertEqual(elem[0].tail, 'ABCDEFGHIJKL')
 
-    def test_element_iter(self):
-        # Issue #27863
-        state = {
-            'tag': 'tag',
-            '_children': [None],  # non-Element
-            'attrib': 'attr',
-            'tail': 'tail',
-            'text': 'text',
-        }
-
-        e = ET.Element('tag')
-        try:
-            e.__setstate__(state)
-        except AttributeError:
-            e.__dict__ = state
-
-        it = e.iter()
-        self.assertIs(next(it), e)
-        self.assertRaises(AttributeError, next, it)
-
     def test_subscr(self):
         # Issue #27863
         class X:
@@ -2146,6 +2177,21 @@ class ElementTreeTypeTest(unittest.TestCase):
 
         mye = MyElement('joe')
         self.assertEqual(mye.newmethod(), 'joe')
+
+    def test_Element_subclass_find(self):
+        class MyElement(ET.Element):
+            pass
+
+        e = ET.Element('foo')
+        e.text = 'text'
+        sub = MyElement('bar')
+        sub.text = 'subtext'
+        e.append(sub)
+        self.assertEqual(e.findtext('bar'), 'subtext')
+        self.assertEqual(e.find('bar').tag, 'bar')
+        found = list(e.findall('bar'))
+        self.assertEqual(len(found), 1, found)
+        self.assertEqual(found[0].tag, 'bar')
 
 
 class ElementFindTest(unittest.TestCase):
