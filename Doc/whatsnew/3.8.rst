@@ -714,12 +714,17 @@ Changes in the Python API
   environment variable and does not use :envvar:`HOME`, which is not normally
   set for regular user accounts.
 
+.. _bpo-36085-whatsnew:
+
 * DLL dependencies for extension modules and DLLs loaded with :mod:`ctypes` on
   Windows are now resolved more securely. Only the system paths, the directory
   containing the DLL or PYD file, and directories added with
   :func:`~os.add_dll_directory` are searched for load-time dependencies.
-  Specifically, :envvar:`PATH` is no longer used, and modifications to this
-  environment variable will no longer have any effect on normal DLL resolution.
+  Specifically, :envvar:`PATH` and the current working directory are no longer
+  used, and modifications to these will no longer have any effect on normal DLL
+  resolution. If your application relies on these mechanisms, you should check
+  for :func:`~os.add_dll_directory` and if it exists, use it to add your DLLs
+  directory while loading your library.
   (See :issue:`36085`.)
 
 

@@ -3085,7 +3085,7 @@ to be ignored.
 
    This search path is used when resolving dependencies for imported
    extension modules (the module itself is resolved through sys.path),
-   and also by ctypes.
+   and also by :mod:`ctypes`.
 
    Remove the directory by calling **close()** on the returned object
    or using it in a :keyword:`with` statement.
@@ -3097,6 +3097,16 @@ to be ignored.
    .. availability:: Windows.
 
    .. versionadded:: 3.8
+      Previous versions of CPython would resolve DLLs using the default
+      behavior for the current process. This led to inconsistencies,
+      such as only sometimes searching :envvar:`PATH` or the current
+      working directory, and OS functions such as ``AddDllDirectory``
+      having no effect.
+
+      In 3.8, the two primary ways DLLs are loaded now explicitly
+      override the process-wide behavior to ensure consistency. See the
+      :ref:`porting notes <bpo-36085-whatsnew>` for information on
+      updating libraries.
 
 
 .. function:: execl(path, arg0, arg1, ...)
