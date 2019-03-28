@@ -1,1 +1,0 @@
-Resolve potential name clash with libm's sinpi(). Patch by Dmitrii Pasechnik.

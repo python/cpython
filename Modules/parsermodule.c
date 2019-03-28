@@ -675,7 +675,12 @@ validate_node(node *tree)
         for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
             short a_label = dfa_state->s_arc[arc].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
-            if (_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type) {
+
+            const char *label_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+            if ((_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type)
+                && ((ch->n_str == NULL) || (label_str == NULL)
+                     || (strcmp(ch->n_str, label_str) == 0))
+               ) {
                 /* The child is acceptable; if non-terminal, validate it recursively. */
                 if (ISNONTERMINAL(ch_type) && !validate_node(ch))
                     return 0;
@@ -688,17 +693,24 @@ validate_node(node *tree)
         /* What would this state have accepted? */
         {
             short a_label = dfa_state->s_arc->a_lbl;
-            int next_type;
             if (!a_label) /* Wouldn't accept any more children */
                 goto illegal_num_children;
 
-            next_type = _PyParser_Grammar.g_ll.ll_label[a_label].lb_type;
-            if (ISNONTERMINAL(next_type))
+            int next_type = _PyParser_Grammar.g_ll.ll_label[a_label].lb_type;
+            const char *expected_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+
+            if (ISNONTERMINAL(next_type)) {
                 PyErr_Format(parser_error, "Expected node type %d, got %d.",
                              next_type, ch_type);
-            else
+            }
+            else if (expected_str != NULL) {
+                PyErr_Format(parser_error, "Illegal terminal: expected '%s'.",
+                             expected_str);
+            }
+            else {
                 PyErr_Format(parser_error, "Illegal terminal: expected %s.",
                              _PyParser_TokenNames[next_type]);
+            }
             return 0;
         }
 

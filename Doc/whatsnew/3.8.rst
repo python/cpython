@@ -184,6 +184,20 @@ gettext
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
 
+inspect
+-------
+
+The :func:`inspect.getdoc` function can now find docstrings for ``__slots__``
+if that attribute is a :class:`dict` where the values are docstrings.
+This provides documentation options similar to what we already have
+for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
+
+  class AudioClip:
+      __slots__ = {'bit_rate': 'expressed in kilohertz to one decimal place',
+                   'duration': 'in seconds, rounded up to an integer'}
+      def __init__(self, bit_rate, duration):
+          self.bit_rate = round(bit_rate / 1000.0, 1)
+          self.duration = ceil(duration)
 
 gc
 --
@@ -331,6 +345,16 @@ and manipulating normal distributions of a random variable.
     NormalDist(mu=50.0, sigma=12.294144947901014)
     >>> temperature_feb.samples(3)        # Generate random samples
     [7.672102882379219, 12.000027119750287, 4.647488369766392]
+
+
+tarfile
+-------
+
+The :mod:`tarfile` module now defaults to the modern pax (POSIX.1-2001)
+format for new archives, instead of the previous GNU-specific one.
+This improves cross-platform portability with a consistent encoding (UTF-8)
+in a standardized and extensible format, and offers several other benefits.
+(Contributed by C.A.M. Gerlach in :issue:`36268`.)
 
 
 tokenize
@@ -501,6 +525,12 @@ Build and C API Changes
   :class:`~fractions.Fraction`).  :c:func:`PyNumber_Check` will now return
   ``1`` for objects implementing ``__index__()``.
   (Contributed by Serhiy Storchaka in :issue:`36048`.)
+
+* Heap-allocated type objects will now increase their reference count
+  in :c:func:`PyObject_Init` (and its parallel macro ``PyObject_INIT``)
+  instead of in :c:func:`PyType_GenericAlloc`. Types that modify instance
+  allocation or deallocation may need to be adjusted.
+  (Contributed by Eddie Elizondo in :issue:`35810`.)
 
 
 Deprecated
@@ -726,6 +756,77 @@ Changes in the Python API
   for :func:`~os.add_dll_directory` and if it exists, use it to add your DLLs
   directory while loading your library.
   (See :issue:`36085`.)
+
+
+Changes in the C API
+--------------------
+
+* Use of ``#`` variants of formats in parsing or building value (e.g.
+  :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,
+  etc.) without ``PY_SSIZE_T_CLEAN`` defined raises ``DeprecationWarning`` now.
+  It will be removed in 3.10 or 4.0.  Read :ref:`arg-parsing` for detail.
+  (Contributed by Inada Naoki in :issue:`36381`.)
+
+
+Changes in the C API
+--------------------------
+
+* Instances of heap-allocated types (such as those created with
+  :c:func:`PyType_FromSpec`) hold a reference to their type object.
+  Increasing the reference count of these type objects has been moved from
+  :c:func:`PyType_GenericAlloc` to the more low-level functions,
+  :c:func:`PyObject_Init` and :c:func:`PyObject_INIT`.
+  This makes types created through :c:func:`PyType_FromSpec` behave like
+  other classes in managed code.
+
+  Statically allocated types are not affected.
+
+  For the vast majority of cases, there should be no side effect.
+  However, types that manually increase the reference count after allocating
+  an instance (perhaps to work around the bug) may now become immortal.
+  To avoid this, these classes need to call Py_DECREF on the type object
+  during instance deallocation.
+
+  To correctly port these types into 3.8, please apply the following
+  changes:
+
+  * Remove :c:macro:`Py_INCREF` on the type object after allocating an
+    instance - if any.
+    This may happen after calling :c:func:`PyObject_New`,
+    :c:func:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
+    :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
+    :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
+
+    Example::
+
+        static foo_struct *
+        foo_new(PyObject *type) {
+            foo_struct *foo = PyObject_GC_New(foo_struct, (PyTypeObject *) type);
+            if (foo == NULL)
+                return NULL;
+        #if PY_VERSION_HEX < 0x03080000
+            // Workaround for Python issue 35810; no longer necessary in Python 3.8
+            PY_INCREF(type)
+        #endif
+            return foo;
+        }
+
+  * Ensure that all custom ``tp_dealloc`` functions of heap-allocated types
+    decrease the type's reference count.
+
+    Example::
+
+        static void
+        foo_dealloc(foo_struct *instance) {
+            PyObject *type = Py_TYPE(instance);
+            PyObject_GC_Del(instance);
+        #if PY_VERSION_HEX >= 0x03080000
+            // This was not needed before Python 3.8 (Python issue 35810)
+            Py_DECREF(type);
+        #endif
+        }
+
+  (Contributed by Eddie Elizondo in :issue:`35810`.)
 
 
 CPython bytecode changes

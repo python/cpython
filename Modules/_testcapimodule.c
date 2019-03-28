@@ -4184,6 +4184,10 @@ pymem_buffer_overflow(PyObject *self, PyObject *args)
     /* Deliberate buffer overflow to check that PyMem_Free() detects
        the overflow when debug hooks are installed. */
     buffer = PyMem_Malloc(16);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     buffer[16] = 'x';
     PyMem_Free(buffer);
 
@@ -4675,27 +4679,9 @@ decode_locale_ex(PyObject *self, PyObject *args)
 
 
 static PyObject *
-get_global_config(PyObject *self, PyObject *Py_UNUSED(args))
+get_configs(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    return _Py_GetGlobalVariablesAsDict();
-}
-
-
-static PyObject *
-get_core_config(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyCoreConfig *config = _PyInterpreterState_GetCoreConfig(interp);
-    return _PyCoreConfig_AsDict(config);
-}
-
-
-static PyObject *
-get_main_config(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyMainInterpreterConfig *config = _PyInterpreterState_GetMainConfig(interp);
-    return _PyMainInterpreterConfig_AsDict(config);
+    return _Py_GetConfigsAsDict();
 }
 
 
@@ -4942,9 +4928,7 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", (PyCFunction)(void(*)(void))bad_get, METH_FASTCALL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
-    {"get_global_config", get_global_config, METH_NOARGS},
-    {"get_core_config", get_core_config, METH_NOARGS},
-    {"get_main_config", get_main_config, METH_NOARGS},
+    {"get_configs", get_configs, METH_NOARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif

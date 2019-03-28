@@ -1210,7 +1210,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
     PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
     if (t != key) {
         // o is registered in c_const_cache.  Just use it.
-        Py_INCREF(t);
+        Py_XINCREF(t);
         Py_DECREF(key);
         return t;
     }
@@ -3879,6 +3879,7 @@ check_index(struct compiler *c, expr_ty e, slice_ty s)
     }
 }
 
+// Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
@@ -3912,8 +3913,10 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
-    if (maybe_optimize_method_call(c, e) > 0)
-        return 1;
+    int ret = maybe_optimize_method_call(c, e);
+    if (ret >= 0) {
+        return ret;
+    }
     if (!check_caller(c, e->v.Call.func)) {
         return 0;
     }

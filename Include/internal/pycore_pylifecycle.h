@@ -77,6 +77,9 @@ extern void _PyGILState_Fini(void);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
 
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromCoreConfig(
+    const _PyCoreConfig *coreconfig);
+
 #ifdef __cplusplus
 }
 #endif

@@ -56,8 +56,7 @@ def quoteattr(data, entities={}):
     the optional entities parameter.  The keys and values must all be
     strings; each key will be replaced with its corresponding value.
     """
-    entities = entities.copy()
-    entities.update({'\n': '&#10;', '\r': '&#13;', '\t':'&#9;'})
+    entities = {**entities, '\n': '&#10;', '\r': '&#13;', '\t':'&#9;'}
     data = escape(data, entities)
     if '"' in data:
         if "'" in data:

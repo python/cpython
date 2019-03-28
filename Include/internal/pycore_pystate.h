@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
 #endif
 
+#include "cpython/coreconfig.h"
 #include "pystate.h"
 #include "pythread.h"
 
@@ -58,7 +59,6 @@ struct _is {
     int fscodec_initialized;
 
     _PyCoreConfig core_config;
-    _PyMainInterpreterConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
@@ -134,8 +134,15 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    int initialized;
+    /* Is Python pre-initialized? Set to 1 by _Py_PreInitialize() */
+    int pre_initialized;
+
+    /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
     int core_initialized;
+
+    /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+    int initialized;
+
     PyThreadState *finalizing;
 
     struct pyinterpreters {
@@ -169,10 +176,12 @@ typedef struct pyruntimestate {
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
+    _PyPreConfig preconfig;
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;
 
-#define _PyRuntimeState_INIT {.initialized = 0, .core_initialized = 0}
+#define _PyRuntimeState_INIT \
+    {.pre_initialized = 0, .core_initialized = 0, .initialized = 0}
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
@@ -183,6 +192,8 @@ PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(void);
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
 PyAPI_FUNC(_PyInitError) _PyRuntime_Initialize(void);
+
+PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 #define _Py_CURRENTLY_FINALIZING(tstate) \
     (_PyRuntime.finalizing == tstate)

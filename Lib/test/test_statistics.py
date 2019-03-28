@@ -2040,11 +2040,18 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
 
 class TestNormalDist(unittest.TestCase):
 
+    # General note on precision: The pdf(), cdf(), and overlap() methods
+    # depend on functions in the math libraries that do not make
+    # explicit accuracy guarantees.  Accordingly, some of the accuracy
+    # tests below may fail if the underlying math functions are
+    # inaccurate.  There isn't much we can do about this short of
+    # implementing our own implementations from scratch.
+
     def test_slots(self):
         nd = statistics.NormalDist(300, 23)
         with self.assertRaises(TypeError):
             vars(nd)
-        self.assertEqual(nd.__slots__, ('mu', 'sigma'))
+        self.assertEqual(tuple(nd.__slots__), ('mu', 'sigma'))
 
     def test_instantiation_and_attributes(self):
         nd = statistics.NormalDist(500, 17)
@@ -2062,6 +2069,12 @@ class TestNormalDist(unittest.TestCase):
         with self.assertRaises(statistics.StatisticsError):
             statistics.NormalDist(500, -10)
 
+        # verify that subclass type is honored
+        class NewNormalDist(statistics.NormalDist):
+            pass
+        nnd = NewNormalDist(200, 5)
+        self.assertEqual(type(nnd), NewNormalDist)
+
     def test_alternative_constructor(self):
         NormalDist = statistics.NormalDist
         data = [96, 107, 90, 92, 110]
@@ -2076,6 +2089,12 @@ class TestNormalDist(unittest.TestCase):
             NormalDist.from_samples([])                      # empty input
         with self.assertRaises(statistics.StatisticsError):
             NormalDist.from_samples([10])                    # only one input
+
+        # verify that subclass type is honored
+        class NewNormalDist(NormalDist):
+            pass
+        nnd = NewNormalDist.from_samples(data)
+        self.assertEqual(type(nnd), NewNormalDist)
 
     def test_sample_generation(self):
         NormalDist = statistics.NormalDist
@@ -2098,12 +2117,6 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(data1, data3)
         self.assertEqual(data2, data4)
         self.assertNotEqual(data1, data2)
-
-        # verify that subclass type is honored
-        class NewNormalDist(NormalDist):
-            pass
-        nnd = NewNormalDist(200, 5)
-        self.assertEqual(type(nnd), NewNormalDist)
 
     def test_pdf(self):
         NormalDist = statistics.NormalDist
@@ -2151,8 +2164,8 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(set(map(type, cdfs)), {float})
         # Verify montonic
         self.assertEqual(cdfs, sorted(cdfs))
-        # Verify center
-        self.assertAlmostEqual(X.cdf(100), 0.50)
+        # Verify center (should be exact)
+        self.assertEqual(X.cdf(100), 0.50)
         # Check against a table of known values
         # https://en.wikipedia.org/wiki/Standard_normal_table#Cumulative
         Z = NormalDist()
@@ -2173,6 +2186,73 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X.cdf(float('-Inf')), 0.0)
         self.assertEqual(X.cdf(float('Inf')), 1.0)
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
+
+    def test_inv_cdf(self):
+        NormalDist = statistics.NormalDist
+
+        # Center case should be exact.
+        iq = NormalDist(100, 15)
+        self.assertEqual(iq.inv_cdf(0.50), iq.mean)
+
+        # Test versus a published table of known percentage points.
+        # See the second table at the bottom of the page here:
+        # http://people.bath.ac.uk/masss/tables/normaltable.pdf
+        Z = NormalDist()
+        pp = {5.0: (0.000, 1.645, 2.576, 3.291, 3.891,
+                    4.417, 4.892, 5.327, 5.731, 6.109),
+              2.5: (0.674, 1.960, 2.807, 3.481, 4.056,
+                    4.565, 5.026, 5.451, 5.847, 6.219),
+              1.0: (1.282, 2.326, 3.090, 3.719, 4.265,
+                    4.753, 5.199, 5.612, 5.998, 6.361)}
+        for base, row in pp.items():
+            for exp, x in enumerate(row, start=1):
+                p = base * 10.0 ** (-exp)
+                self.assertAlmostEqual(-Z.inv_cdf(p), x, places=3)
+                p = 1.0 - p
+                self.assertAlmostEqual(Z.inv_cdf(p), x, places=3)
+
+        # Match published example for MS Excel
+        # https://support.office.com/en-us/article/norm-inv-function-54b30935-fee7-493c-bedb-2278a9db7e13
+        self.assertAlmostEqual(NormalDist(40, 1.5).inv_cdf(0.908789), 42.000002)
+
+        # One million equally spaced probabilities
+        n = 2**20
+        for p in range(1, n):
+            p /= n
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+
+        # One hundred ever smaller probabilities to test tails out to
+        # extreme probabilities: 1 / 2**50 and (2**50-1) / 2 ** 50
+        for e in range(1, 51):
+            p = 2.0 ** (-e)
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+            p = 1.0 - p
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+
+        # Now apply cdf() first.  Near the tails, the round-trip loses
+        # precision and is ill-conditioned (small changes in the inputs
+        # give large changes in the output), so only check to 5 places.
+        for x in range(200):
+            self.assertAlmostEqual(iq.inv_cdf(iq.cdf(x)), x, places=5)
+
+        # Error cases:
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(0.0)                         # p is zero
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(-0.1)                        # p under zero
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(1.0)                         # p is one
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(1.1)                         # p over one
+        with self.assertRaises(statistics.StatisticsError):
+            iq.sigma = 0.0                          # sigma is zero
+            iq.inv_cdf(0.5)
+        with self.assertRaises(statistics.StatisticsError):
+            iq.sigma = -0.1                         # sigma under zero
+            iq.inv_cdf(0.5)
+
+        # Special values
+        self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))
 
     def test_overlap(self):
         NormalDist = statistics.NormalDist
@@ -2212,6 +2292,7 @@ class TestNormalDist(unittest.TestCase):
                 (NormalDist(-100, 15), NormalDist(110, 15)),
                 (NormalDist(-100, 15), NormalDist(-110, 15)),
                 # Misc cases with unequal standard deviations
+                (NormalDist(100, 12), NormalDist(100, 15)),
                 (NormalDist(100, 12), NormalDist(110, 15)),
                 (NormalDist(100, 12), NormalDist(150, 15)),
                 (NormalDist(100, 12), NormalDist(150, 35)),
@@ -2242,18 +2323,6 @@ class TestNormalDist(unittest.TestCase):
         self.assertEqual(X.stdev, 15)
         self.assertEqual(X.variance, 225)
 
-    def test_unary_operations(self):
-        NormalDist = statistics.NormalDist
-        X = NormalDist(100, 12)
-        Y = +X
-        self.assertIsNot(X, Y)
-        self.assertEqual(X.mu, Y.mu)
-        self.assertEqual(X.sigma, Y.sigma)
-        Y = -X
-        self.assertIsNot(X, Y)
-        self.assertEqual(X.mu, -Y.mu)
-        self.assertEqual(X.sigma, Y.sigma)
-
     def test_same_type_addition_and_subtraction(self):
         NormalDist = statistics.NormalDist
         X = NormalDist(100, 12)
@@ -2277,13 +2346,27 @@ class TestNormalDist(unittest.TestCase):
         with self.assertRaises(TypeError):                  # __rtruediv__
             y / X
 
+    def test_unary_operations(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 12)
+        Y = +X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mu, Y.mu)
+        self.assertEqual(X.sigma, Y.sigma)
+        Y = -X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mu, -Y.mu)
+        self.assertEqual(X.sigma, Y.sigma)
+
     def test_equality(self):
         NormalDist = statistics.NormalDist
         nd1 = NormalDist()
         nd2 = NormalDist(2, 4)
         nd3 = NormalDist()
+        nd4 = NormalDist(2, 4)
         self.assertNotEqual(nd1, nd2)
         self.assertEqual(nd1, nd3)
+        self.assertEqual(nd2, nd4)
 
         # Test NotImplemented when types are different
         class A:

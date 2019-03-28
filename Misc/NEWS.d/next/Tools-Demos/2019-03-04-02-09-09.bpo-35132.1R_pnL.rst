@@ -1,1 +1,0 @@
-Fix py-list and py-bt commands of python-gdb.py on gdb7.
