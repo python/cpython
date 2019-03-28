@@ -41,6 +41,9 @@ class AutoComplete:
         cls.popupwait = idleConf.GetOption(
             "extensions", "AutoComplete", "popupwait", type="int", default=0)
 
+    def _make_autocomplete_window(self):  # Makes mocking easier.
+        return autocomplete_w.AutoCompleteWindow(self.text)
+
     def _remove_autocomplete_window(self, event=None):
         if self.autocompletewindow:
             self.autocompletewindow.hide_window()
@@ -86,7 +89,7 @@ class AutoComplete:
         if self.text.index("insert") == self._delayed_completion_index:
             self.open_completions(*args)
 
-    def open_completions(self, evalfuncs, complete, userWantsWin, mode=None):
+    def open_completions(self, evalfuncs, complete, wantwin, mode=None):
         """Find the completions and create the AutoCompleteWindow.
         Return True if successful (no syntax error or so found).
         If complete is True, then if there's nothing to complete and no
@@ -145,10 +148,10 @@ class AutoComplete:
         comp_lists = self.fetch_completions(comp_what, mode)
         if not comp_lists[0]:
             return None
-        self.autocompletewindow = autocomplete_w.AutoCompleteWindow(self.text)
+        self.autocompletewindow = self._make_autocomplete_window()
         return not self.autocompletewindow.show_window(
                 comp_lists, "insert-%dc" % len(comp_start),
-                complete, mode, userWantsWin)
+                complete, mode, wantwin)
 
     def fetch_completions(self, what, mode):
         """Return a pair of lists of completions for something. The first list

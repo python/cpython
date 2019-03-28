@@ -45,12 +45,15 @@ class AutoCompleteTest(unittest.TestCase):
 
     def test_init(self):
         self.assertEqual(self.autocomplete.editwin, self.editor)
-        acac = ac.AutoComplete()
-        self.assertEqual(acac.editwin, None)
+        self.assertEqual(self.autocomplete.text, self.text)
+
+    def test_make_autocomplete_window(self):
+        testwin = self.autocomplete._make_autocomplete_window()
+        self.assertIsInstance(testwin, acw.AutoCompleteWindow)
 
     def test_remove_autocomplete_window(self):
         acp = self.autocomplete
-        acp.autocompletewindow = m = Mock(spec=acw.AutoCompleteWindow)
+        acp.autocompletewindow = m = Mock()
         acp._remove_autocomplete_window()
         m.hide_window.assert_called_once()
         self.assertIsNone(acp.autocompletewindow)
@@ -79,7 +82,7 @@ class AutoCompleteTest(unittest.TestCase):
 
         # If active autocomplete window, complete() and 'break'.
         self.text.insert('1.0', 're.')
-        acp.autocompletewindow = m = Mock(spec=acw.AutoCompleteWindow)
+        acp.autocompletewindow = m = Mock()
         m.is_active = Mock(return_value=True)
         Equal(acp.autocomplete_event(ev), 'break')
         m.complete.assert_called_once()
@@ -165,14 +168,24 @@ class AutoCompleteTest(unittest.TestCase):
         acp._delayed_open_completions((1, 2, 3, ac.COMPLETE_FILES))
         self.assertEqual(acp.open_completions.args, (1, 2, 3, 2))
 
+    def test_open_completions_none(self):
+        # Test 4 None returns and delayed id.
+        none = self.assertIsNone
+        acp = self.autocomplete
+
+        self.text.insert('1.0', 'int()')
+        none(acp.open_completions(False, True, True))
+
     def test_open_completions(self):
         # Test completions of files and attributes as well as non-completion
         # of errors.
         # add 're.', others to complete coverage
         acp = self.autocomplete
-        self.text.insert('1.0', 'pr')
-        self.assertIsNone(acp.autocompletewindow)
-        self.assertTrue(acp.open_completions(False, True, True))
+        def make(): return Mock(spec=acw.AutoCompleteWindow)
+        acp._make_autocomplete_window = make
+
+        self.text.insert('1.0', 'int.')
+        acp.open_completions(False, True, True)
         self.assertIsInstance(acp.autocompletewindow, acw.AutoCompleteWindow)
         self.text.delete('1.0', 'end')
 
@@ -196,21 +209,21 @@ class AutoCompleteTest(unittest.TestCase):
         # a small list containing non-private variables.
         # For file completion, a large list containing all files in the path,
         # and a small list containing files that do not start with '.'.
-        autocomplete = self.autocomplete
-        small, large = self.autocomplete.fetch_completions(
+        acp = self.autocomplete
+        small, large = acp.fetch_completions(
                 '', ac.COMPLETE_ATTRIBUTES)
         if __main__.__file__ != ac.__file__:
             self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
         # Test attributes
-        s, b = autocomplete.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+        s, b = acp.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
         self.assertLess(len(small), len(large))
         self.assertTrue(all(filter(lambda x: x.startswith('_'), s)))
         self.assertTrue(any(filter(lambda x: x.startswith('_'), b)))
 
         # Test smalll should respect to __all__.
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
-            s, b = autocomplete.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
+            s, b = acp.fetch_completions('', ac.COMPLETE_ATTRIBUTES)
             self.assertEqual(s, ['a', 'b'])
             self.assertIn('__name__', b)    # From __main__.__dict__
             self.assertIn('sum', b)         # From __main__.__builtins__.__dict__
@@ -219,7 +232,7 @@ class AutoCompleteTest(unittest.TestCase):
         mock = Mock()
         mock._private = Mock()
         with patch.dict('__main__.__dict__', {'foo': mock}):
-            s, b = autocomplete.fetch_completions('foo', ac.COMPLETE_ATTRIBUTES)
+            s, b = acp.fetch_completions('foo', ac.COMPLETE_ATTRIBUTES)
             self.assertNotIn('_private', s)
             self.assertIn('_private', b)
             self.assertEqual(s, [i for i in sorted(dir(mock)) if i[:1] != '_'])
@@ -233,36 +246,36 @@ class AutoCompleteTest(unittest.TestCase):
             return ['monty', 'python', '.hidden']
 
         with patch.object(os, 'listdir', _listdir):
-            s, b = autocomplete.fetch_completions('', ac.COMPLETE_FILES)
+            s, b = acp.fetch_completions('', ac.COMPLETE_FILES)
             self.assertEqual(s, ['bar', 'foo'])
             self.assertEqual(b, ['.hidden', 'bar', 'foo'])
 
-            s, b = autocomplete.fetch_completions('~', ac.COMPLETE_FILES)
+            s, b = acp.fetch_completions('~', ac.COMPLETE_FILES)
             self.assertEqual(s, ['monty', 'python'])
             self.assertEqual(b, ['.hidden', 'monty', 'python'])
 
     def test_get_entity(self):
         # Test that a name is in the namespace of sys.modules and
         # __main__.__dict__.
-        autocomplete = self.autocomplete
+        acp = self.autocomplete
         Equal = self.assertEqual
 
-        Equal(self.autocomplete.get_entity('int'), int)
+        Equal(acp.get_entity('int'), int)
 
         # Test name from sys.modules.
         mock = Mock()
         with patch.dict('sys.modules', {'tempfile': mock}):
-            Equal(autocomplete.get_entity('tempfile'), mock)
+            Equal(acp.get_entity('tempfile'), mock)
 
         # Test name from __main__.__dict__.
         di = {'foo': 10, 'bar': 20}
         with patch.dict('__main__.__dict__', {'d': di}):
-            Equal(autocomplete.get_entity('d'), di)
+            Equal(acp.get_entity('d'), di)
 
         # Test name not in namespace.
         with patch.dict('__main__.__dict__', {}):
             with self.assertRaises(NameError):
-                autocomplete.get_entity('not_exist')
+                acp.get_entity('not_exist')
 
 
 if __name__ == '__main__':
