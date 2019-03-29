@@ -2068,13 +2068,15 @@ PyTypeObject PyStructType = {
 
 /* ---- Standalone functions  ---- */
 
-#define MAXCACHE 100
+#define MAXCACHE 512
 static PyObject *cache = NULL;
 
 static int
 cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
 {
-    PyObject * s_object;
+    PyObject *s_object;
+    PyObject *key, *value;
+    Py_ssize_t pos;
 
     if (fmt == NULL) {
         Py_DECREF(*ptr);
@@ -2100,8 +2102,14 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
 
     s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);
     if (s_object != NULL) {
-        if (PyDict_GET_SIZE(cache) >= MAXCACHE)
-            PyDict_Clear(cache);
+        if (PyDict_GET_SIZE(cache) >= MAXCACHE) {
+            /* Drop the oldest item */
+            pos = 0;
+            if (PyDict_Next(cache, &pos, &key, &value)) {
+                if (PyDict_DelItem(cache, key) == -1)
+                    PyErr_Clear();
+            }
+        }
         /* Attempt to cache the result */
         if (PyDict_SetItem(cache, fmt, s_object) == -1)
             PyErr_Clear();

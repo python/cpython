@@ -1,0 +1,1 @@
+Let struct module's internal cache use FIFO policy. Patch by Ma Lin.
