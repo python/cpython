@@ -992,14 +992,13 @@ class OptionContainer:
                     if not (c_option._short_opts or c_option._long_opts):
                         c_option.container.option_list.remove(c_option)
 
-    def add_option(self, *args, **kwargs):
+    def add_option(self, option, /, *args, **kwargs):
         """add_option(Option)
            add_option(opt_str, ..., kwarg=val, ...)
         """
-        if isinstance(args[0], str):
-            option = self.option_class(*args, **kwargs)
-        elif len(args) == 1 and not kwargs:
-            option = args[0]
+        if isinstance(option, str):
+            option = self.option_class(option, *args, **kwargs)
+        elif not args and not kwargs:
             if not isinstance(option, Option):
                 raise TypeError("not an Option instance: %r" % option)
         else:
@@ -1294,7 +1293,7 @@ class OptionParser (OptionContainer):
     def set_default(self, dest, value):
         self.defaults[dest] = value
 
-    def set_defaults(self, **kwargs):
+    def set_defaults(self, /, **kwargs):
         self.defaults.update(kwargs)
 
     def _get_all_options(self):
@@ -1320,12 +1319,11 @@ class OptionParser (OptionContainer):
 
     # -- OptionGroup methods -------------------------------------------
 
-    def add_option_group(self, *args, **kwargs):
+    def add_option_group(self, group, /, *args, **kwargs):
         # XXX lots of overlap with OptionContainer.add_option()
-        if isinstance(args[0], str):
-            group = OptionGroup(self, *args, **kwargs)
-        elif len(args) == 1 and not kwargs:
-            group = args[0]
+        if isinstance(group, str):
+            group = OptionGroup(self, group, *args, **kwargs)
+        elif not args and not kwargs:
             if not isinstance(group, OptionGroup):
                 raise TypeError("not an OptionGroup instance: %r" % group)
             if group.parser is not self:

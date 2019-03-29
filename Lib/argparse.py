@@ -1220,7 +1220,7 @@ class Namespace(_AttributeHolder):
     string representation.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, /, **kwargs):
         for name in kwargs:
             setattr(self, name, kwargs[name])
 
@@ -1297,7 +1297,7 @@ class _ActionsContainer(object):
     # ==================================
     # Namespace default accessor methods
     # ==================================
-    def set_defaults(self, **kwargs):
+    def set_defaults(self, /, **kwargs):
         self._defaults.update(kwargs)
 
         # if these defaults match any existing arguments, replace

@@ -86,7 +86,7 @@ def _id(obj):
 
 
 _module_cleanups = []
-def addModuleCleanup(function, *args, **kwargs):
+def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
     _module_cleanups.append((function, args, kwargs))
@@ -463,7 +463,7 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(self, function, *args, **kwargs):
+    def addCleanup(self, function, /, *args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
@@ -472,7 +472,7 @@ class TestCase(object):
         self._cleanups.append((function, args, kwargs))
 
     @classmethod
-    def addClassCleanup(cls, function, *args, **kwargs):
+    def addClassCleanup(cls, function, /, *args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
         cls._class_cleanups.append((function, args, kwargs))

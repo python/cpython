@@ -52,6 +52,8 @@ def capwords(s, sep=None):
 import re as _re
 from collections import ChainMap as _ChainMap
 
+_sentinel_dict = {}
+
 class _TemplateMetaclass(type):
     pattern = r"""
     %(delim)s(?:
@@ -104,19 +106,11 @@ class Template(metaclass=_TemplateMetaclass):
         raise ValueError('Invalid placeholder in string: line %d, col %d' %
                          (lineno, colno))
 
-    def substitute(*args, **kws):
-        if not args:
-            raise TypeError("descriptor 'substitute' of 'Template' object "
-                            "needs an argument")
-        self, *args = args  # allow the "self" keyword be passed
-        if len(args) > 1:
-            raise TypeError('Too many positional arguments')
-        if not args:
+    def substitute(self, mapping=_sentinel_dict, /, **kws):
+        if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, args[0])
-        else:
-            mapping = args[0]
+            mapping = _ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
@@ -131,19 +125,11 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
-    def safe_substitute(*args, **kws):
-        if not args:
-            raise TypeError("descriptor 'safe_substitute' of 'Template' object "
-                            "needs an argument")
-        self, *args = args  # allow the "self" keyword be passed
-        if len(args) > 1:
-            raise TypeError('Too many positional arguments')
-        if not args:
+    def safe_substitute(self, mapping=_sentinel_dict, /, **kws):
+        if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, args[0])
-        else:
-            mapping = args[0]
+            mapping = _ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named') or mo.group('braced')
@@ -173,16 +159,7 @@ class Template(metaclass=_TemplateMetaclass):
 # The field name parser is implemented in _string.formatter_field_name_split
 
 class Formatter:
-    def format(*args, **kwargs):
-        if not args:
-            raise TypeError("descriptor 'format' of 'Formatter' object "
-                            "needs an argument")
-        self, *args = args  # allow the "self" keyword be passed
-        try:
-            format_string, *args = args # allow the "format_string" keyword be passed
-        except ValueError:
-            raise TypeError("format() missing 1 required positional "
-                            "argument: 'format_string'") from None
+    def format(self, format_string, /, *args, **kwargs):
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):

@@ -618,7 +618,7 @@ class Bdb:
 
     # This method is more useful to debug a single function call.
 
-    def runcall(self, func, *args, **kwds):
+    def runcall(self, func, /, *args, **kwds):
         """Debug a single function call.
 
         Return the result of the function call.

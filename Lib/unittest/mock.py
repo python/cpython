@@ -99,7 +99,7 @@ def _check_signature(func, mock, skipfirst, instance=False):
     if sig is None:
         return
     func, sig = sig
-    def checksig(_mock_self, *args, **kwargs):
+    def checksig(self, /, *args, **kwargs):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
     type(mock)._mock_check_sig = checksig
@@ -783,10 +783,9 @@ class NonCallableMock(Base):
         else:
             return _call
 
-    def assert_not_called(_mock_self):
+    def assert_not_called(self):
         """assert that the mock was never called.
         """
-        self = _mock_self
         if self.call_count != 0:
             msg = ("Expected '%s' to not have been called. Called %s times.%s"
                    % (self._mock_name or 'mock',
@@ -794,19 +793,17 @@ class NonCallableMock(Base):
                       self._calls_repr()))
             raise AssertionError(msg)
 
-    def assert_called(_mock_self):
+    def assert_called(self):
         """assert that the mock was called at least once
         """
-        self = _mock_self
         if self.call_count == 0:
             msg = ("Expected '%s' to have been called." %
                    self._mock_name or 'mock')
             raise AssertionError(msg)
 
-    def assert_called_once(_mock_self):
+    def assert_called_once(self):
         """assert that the mock was called only once.
         """
-        self = _mock_self
         if not self.call_count == 1:
             msg = ("Expected '%s' to have been called once. Called %s times.%s"
                    % (self._mock_name or 'mock',
@@ -814,12 +811,11 @@ class NonCallableMock(Base):
                       self._calls_repr()))
             raise AssertionError(msg)
 
-    def assert_called_with(_mock_self, *args, **kwargs):
+    def assert_called_with(self, /, *args, **kwargs):
         """assert that the mock was called with the specified arguments.
 
         Raises an AssertionError if the args and keyword args passed in are
         different to the last call to the mock."""
-        self = _mock_self
         if self.call_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
             actual = 'not called.'
@@ -837,10 +833,9 @@ class NonCallableMock(Base):
             raise AssertionError(_error_message()) from cause
 
 
-    def assert_called_once_with(_mock_self, *args, **kwargs):
+    def assert_called_once_with(self, /, *args, **kwargs):
         """assert that the mock was called exactly once and that that call was
         with the specified arguments."""
-        self = _mock_self
         if not self.call_count == 1:
             msg = ("Expected '%s' to be called once. Called %s times.%s"
                    % (self._mock_name or 'mock',
@@ -978,15 +973,14 @@ class CallableMixin(Base):
         pass
 
 
-    def __call__(_mock_self, *args, **kwargs):
+    def __call__(self, /, *args, **kwargs):
         # can't use self in-case a function / method we are mocking uses self
         # in the signature
-        _mock_self._mock_check_sig(*args, **kwargs)
-        return _mock_self._mock_call(*args, **kwargs)
+        self._mock_check_sig(*args, **kwargs)
+        return self._mock_call(*args, **kwargs)
 
 
-    def _mock_call(_mock_self, *args, **kwargs):
-        self = _mock_self
+    def _mock_call(self, /, *args, **kwargs):
         self.called = True
         self.call_count += 1
 
@@ -1773,7 +1767,7 @@ _non_defaults = {
 
 def _get_method(name, func):
     "Turns a callable object (like a mock) into a real function"
-    def method(self, *args, **kw):
+    def method(self, /, *args, **kw):
         return func(self, *args, **kw)
     method.__name__ = name
     return method

@@ -451,7 +451,7 @@ class Trace:
                 sys.settrace(None)
                 threading.settrace(None)
 
-    def runfunc(self, func, *args, **kw):
+    def runfunc(self, func, /, *args, **kw):
         result = None
         if not self.donothing:
             sys.settrace(self.globaltrace)
