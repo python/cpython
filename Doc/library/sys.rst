@@ -34,7 +34,7 @@ always available.
       On Unix, command line arguments are passed by bytes from OS.  Python decode
       them with filesystem encoding and "surrogateescape" error handler.
       When you need original bytes, you can get it by
-      ``argv[0].decode(sys.getfilesystemencoding(), "surrogateescape")``.
+      ``[os.fsencode(arg) for arg in sys.argv]``.
 
 
 .. data:: base_exec_prefix
