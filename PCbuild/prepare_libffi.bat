@@ -119,7 +119,7 @@ if /I "%VCVARS_PLATFORM%" EQU "x86" (
     set SRC_ARCHITECTURE=x86
 )
 
-if NOT DEFINED LIBFFI_OUT set LIBFFI_OUT=%~dp0\..\externals\libffi-bin-3.3.0-rc0-r1
+if NOT DEFINED LIBFFI_OUT set LIBFFI_OUT=%~dp0\..\externals\libffi
 set _LIBFFI_OUT=%LIBFFI_OUT%\%ARCH%
 
 echo get VS build environment
