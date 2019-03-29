@@ -52,7 +52,7 @@ EXCLUDE_FROM_PACKAGED_LIB = FileNameSet("readme.txt")
 EXCLUDE_FROM_COMPILE = FileNameSet("badsyntax_*", "bad_*")
 EXCLUDE_FROM_CATALOG = FileSuffixSet(".exe", ".pyd", ".dll")
 
-REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*")
+REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*", "libffi*")
 
 LIB2TO3_GRAMMAR_FILES = FileNameSet("Grammar.txt", "PatternGrammar.txt")
 

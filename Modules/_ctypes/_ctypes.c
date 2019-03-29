@@ -403,24 +403,35 @@ static PyCArgObject *
 StructUnionType_paramfunc(CDataObject *self)
 {
     PyCArgObject *parg;
+    CDataObject *copied_self;
     StgDictObject *stgdict;
 
+    if (self->b_size > sizeof(void*)) {
+        void *new_ptr = PyMem_Malloc(self->b_size);
+        if (new_ptr == NULL)
+            return NULL;
+        memcpy(new_ptr, self->b_ptr, self->b_size);
+        copied_self = (CDataObject *)PyCData_AtAddress(
+            (PyObject *)Py_TYPE(self), new_ptr);
+        copied_self->b_needsfree = 1;
+    } else {
+        copied_self = self;
+        Py_INCREF(copied_self);
+    }
+
     parg = PyCArgObject_new();
-    if (parg == NULL)
+    if (parg == NULL) {
+        Py_DECREF(copied_self);
         return NULL;
+    }
 
     parg->tag = 'V';
-    stgdict = PyObject_stgdict((PyObject *)self);
+    stgdict = PyObject_stgdict((PyObject *)copied_self);
     assert(stgdict); /* Cannot be NULL for structure/union instances */
     parg->pffi_type = &stgdict->ffi_type_pointer;
-    /* For structure parameters (by value), parg->value doesn't contain the structure
-       data itself, instead parg->value.p *points* to the structure's data
-       See also _ctypes.c, function _call_function_pointer().
-    */
-    parg->value.p = self->b_ptr;
-    parg->size = self->b_size;
-    Py_INCREF(self);
-    parg->obj = (PyObject *)self;
+    parg->value.p = copied_self->b_ptr;
+    parg->size = copied_self->b_size;
+    parg->obj = (PyObject *)copied_self;
     return parg;
 }
 
