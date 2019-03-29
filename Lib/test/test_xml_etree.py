@@ -794,19 +794,19 @@ class ElementTreeTest(unittest.TestCase):
     def test_tostringlist_default_namespace(self):
         elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
         self.assertEqual(
-            ET.tostringlist(elem, encoding='unicode')[0:2],
-            ['<ns0:body', ' xmlns:ns0="http://effbot.org/ns"']
+            ''.join(ET.tostringlist(elem, encoding='unicode')),
+            '<ns0:body xmlns:ns0="http://effbot.org/ns"><ns0:tag /></ns0:body>'
         )
         self.assertEqual(
-            ET.tostringlist(elem, encoding='unicode', default_namespace='http://effbot.org/ns')[0:2],
-            ['<body', ' xmlns="http://effbot.org/ns"']
+            ''.join(ET.tostringlist(elem, encoding='unicode', default_namespace='http://effbot.org/ns')),
+            '<body xmlns="http://effbot.org/ns"><tag /></body>'
         )
 
     def test_tostringlist_xml_declaration(self):
         elem = ET.XML('<body><tag/></body>')
         self.assertEqual(
-            ET.tostringlist(elem, encoding='unicode'),
-            ['<body', '>', '<tag', ' />', '</body>']
+            ''.join(ET.tostringlist(elem, encoding='unicode')),
+            '<body><tag /></body>'
         )
         self.assertEqual(
             [str(bstr, encoding='us-ascii') for bstr in ET.tostringlist(elem, xml_declaration=True)],
