@@ -767,6 +767,19 @@ class ElementTreeTest(unittest.TestCase):
             '<body xmlns="http://effbot.org/ns"><tag /></body>'
         )
 
+    def test_tostring_default_namespace_different_namespace(self):
+        elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', default_namespace='foobar'),
+            '<ns1:body xmlns="foobar" xmlns:ns1="http://effbot.org/ns"><ns1:tag /></ns1:body>'
+        )
+
+    def test_tostring_default_namespace_original_no_namespace(self):
+        elem = ET.XML('<body><tag/></body>')
+        EXPECTED_MSG = '^cannot use non-qualified names with default_namespace option$'
+        with self.assertRaisesRegex(ValueError, EXPECTED_MSG):
+            ET.tostring(elem, encoding='unicode', default_namespace='foobar')
+
     def test_tostring_xml_declaration(self):
         elem = ET.XML('<body><tag/></body>')
         self.assertEqual(
