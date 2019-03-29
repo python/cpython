@@ -821,10 +821,16 @@ class ElementTreeTest(unittest.TestCase):
             '<body><tag /></body>'
         )
         self.assertEqual(
-            [str(bstr, encoding='us-ascii') for bstr in ET.tostringlist(elem, xml_declaration=True)],
-            ["<?xml version='1.0' encoding='us-ascii'?>\n<body><tag /></body>"]
+            b''.join(ET.tostringlist(elem, xml_declaration=True)),
+            b"<?xml version='1.0' encoding='us-ascii'?>\n<body><tag /></body>"
         )
+        import locale
+        preferredencoding = locale.getpreferredencoding()
         stringlist = ET.tostringlist(elem, encoding='unicode', xml_declaration=True)
+        self.assertEqual(
+            ''.join(stringlist),
+            f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>"
+        )
         self.assertRegex(stringlist[0], r"^<\?xml version='1.0' encoding='.+'?>")
         self.assertEqual(['<body', '>', '<tag', ' />', '</body>'], stringlist[1:])
 
