@@ -1,2 +1,2 @@
-Port following modules PEP 489 multiphase initialization
-- binascii
+Port binascii to PEP 489 multiphase initialization.
+Patch by Marcel Plch.
