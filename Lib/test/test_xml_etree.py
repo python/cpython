@@ -9,6 +9,7 @@ import copy
 import functools
 import html
 import io
+import locale
 import operator
 import pickle
 import sys
@@ -796,12 +797,56 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_tostring_xml_declaration_unicode_encoding(self):
         elem = ET.XML('<body><tag/></body>')
-        import locale
         preferredencoding = locale.getpreferredencoding()
         self.assertEqual(
             f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>",
             ET.tostring(elem, encoding='unicode', xml_declaration=True)
         )
+
+    def test_tostring_xml_declaration_cases(self):
+        elem = ET.XML('<body><tag>ø</tag></body>')
+        preferredencoding = locale.getpreferredencoding()
+        TESTCASES = [
+        #   (expected_retval,                  encoding, xml_declaration)
+            # ... xml_declaration = None
+            (b'<body><tag>&#248;</tag></body>', None, None),
+            (b'<body><tag>\xc3\xb8</tag></body>', 'UTF-8', None),
+            (b'<body><tag>&#248;</tag></body>', 'US-ASCII', None),
+            (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
+             b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', None),
+            ('<body><tag>ø</tag></body>', 'unicode', None),
+
+            # ... xml_declaration = False
+            (b"<body><tag>&#248;</tag></body>", None, False),
+            (b"<body><tag>\xc3\xb8</tag></body>", 'UTF-8', False),
+            (b"<body><tag>&#248;</tag></body>", 'US-ASCII', False),
+            (b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', False),
+            ("<body><tag>ø</tag></body>", 'unicode', False),
+
+            # ... xml_declaration = True
+            (b"<?xml version='1.0' encoding='us-ascii'?>\n"
+             b"<body><tag>&#248;</tag></body>", None, True),
+            (b"<?xml version='1.0' encoding='UTF-8'?>\n"
+             b"<body><tag>\xc3\xb8</tag></body>", 'UTF-8', True),
+            (b"<?xml version='1.0' encoding='US-ASCII'?>\n"
+             b"<body><tag>&#248;</tag></body>", 'US-ASCII', True),
+            (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
+             b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', True),
+            (f"<?xml version='1.0' encoding='{preferredencoding}'?>\n"
+             "<body><tag>ø</tag></body>", 'unicode', True),
+
+        ]
+        for expected_retval, encoding, xml_declaration in TESTCASES:
+            with self.subTest(f'encoding={encoding} '
+                              f'xml_declaration={xml_declaration}'):
+                self.assertEqual(
+                    ET.tostring(
+                        elem,
+                        encoding=encoding,
+                        xml_declaration=xml_declaration
+                    ),
+                    expected_retval
+                )
 
     def test_tostringlist_default_namespace(self):
         elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
@@ -824,7 +869,7 @@ class ElementTreeTest(unittest.TestCase):
             b''.join(ET.tostringlist(elem, xml_declaration=True)),
             b"<?xml version='1.0' encoding='us-ascii'?>\n<body><tag /></body>"
         )
-        import locale
+
         preferredencoding = locale.getpreferredencoding()
         stringlist = ET.tostringlist(elem, encoding='unicode', xml_declaration=True)
         self.assertEqual(
