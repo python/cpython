@@ -59,6 +59,7 @@ if NOT DEFINED VCVARSALL (
         set VCVARSALL="C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
     )
 )
+if ^%VCVARSALL:~0,1% NEQ ^" SET VCVARSALL="%VCVARSALL%"
 
 if NOT DEFINED LIBFFI_SOURCE echo.&&echo ERROR LIBFFI_SOURCE environment variable not set && goto :Usage
 if NOT DEFINED SH echo ERROR SH environment variable not set && goto :Usage
