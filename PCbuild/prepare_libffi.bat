@@ -44,7 +44,7 @@ goto :Usage
 
 :CheckOptsDone
 
-if "%BUILD_X64%"=="" if "%BUILD_X86%"=="" if "%BUILD_ARM32%"=="" (
+if NOT DEFINED BUILD_X64 if NOT DEFINED BUILD_X86 if NOT DEFINED BUILD_ARM32 (
     set BUILD_X64=1
     set BUILD_X86=1
 )
@@ -52,16 +52,16 @@ if "%BUILD_X64%"=="" if "%BUILD_X86%"=="" if "%BUILD_ARM32%"=="" (
 if "%INSTALL_CYGWIN%"=="1" call :InstallCygwin
 
 setlocal
-if "%SH%" EQU "" if exist c:\cygwin\bin\sh.exe set SH=c:\cygwin\bin\sh.exe
+if NOT DEFINED SH if exist c:\cygwin\bin\sh.exe set SH=c:\cygwin\bin\sh.exe
 
-if (%VCVARSALL%) EQU () (
+if NOT DEFINED VCVARSALL (
     if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
         set VCVARSALL="C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
     )
 )
 
-if "%LIBFFI_SOURCE%" EQU "" echo.&&echo ERROR LIBFFI_SOURCE environment variable not set && goto :Usage
-if "%SH%" EQU "" echo ERROR SH environment variable not set && goto :Usage
+if NOT DEFINED LIBFFI_SOURCE echo.&&echo ERROR LIBFFI_SOURCE environment variable not set && goto :Usage
+if NOT DEFINED SH echo ERROR SH environment variable not set && goto :Usage
 
 if not exist %SH% echo ERROR %SH% does not exist && goto :Usage
 if not exist %LIBFFI_SOURCE% echo ERROR %LIBFFI_SOURCE% does not exist && goto :Usage
@@ -103,7 +103,7 @@ set HOST=%3
 set ASSEMBLER=
 set SRC_ARCHITECTURE=x86
 
-if "%VCVARS_PLATFORM%" EQU "" echo ERROR bad VCVARS_PLATFORM&&exit /b 123
+if NOT DEFINED VCVARS_PLATFORM echo ERROR bad VCVARS_PLATFORM&&exit /b 123
 
 if /I "%VCVARS_PLATFORM%" EQU "x64" (
     set ARCH=amd64
@@ -154,9 +154,9 @@ exit /b
 :InstallCygwin
 setlocal
 
-if "%CYG_ROOT%"=="" (set CYG_ROOT=c:/cygwin)
-if "%CYG_CACHE%"=="" (set CYG_CACHE=C:/cygwin/var/cache/setup)
-if "%CYG_MIRROR%"=="" (set CYG_MIRROR=http://mirrors.kernel.org/sourceware/cygwin/)
+if NOT DEFINED CYG_ROOT (set CYG_ROOT=c:/cygwin)
+if NOT DEFINED CYG_CACHE (set CYG_CACHE=C:/cygwin/var/cache/setup)
+if NOT DEFINED CYG_MIRROR (set CYG_MIRROR=http://mirrors.kernel.org/sourceware/cygwin/)
 
 powershell -c "md $env:CYG_ROOT -ErrorAction SilentlyContinue"
 powershell -c "$setup = $env:CYG_ROOT+'/setup.exe'; if (!(Test-Path $setup)){invoke-webrequest https://cygwin.com/setup-x86.exe -outfile $setup}
