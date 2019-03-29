@@ -118,13 +118,14 @@ if /I "%VCVARS_PLATFORM%" EQU "x86" (
     set SRC_ARCHITECTURE=x86
 )
 
-set LIBFFI_OUT=%~dp0\..\externals\libffi-bin-3.3.0-rc0-r1\%ARCH%
+if NOT DEFINED LIBFFI_OUT set LIBFFI_OUT=%~dp0\..\externals\libffi-bin-3.3.0-rc0-r1
+set _LIBFFI_OUT=%LIBFFI_OUT%\%ARCH%
 
 echo get VS build environment
 call %VCVARSALL% %VCVARS_PLATFORM%
 
-echo clean %LIBFFI_OUT%
-if exist %LIBFFI_OUT% (rd %LIBFFI_OUT% /s/q)
+echo clean %_LIBFFI_OUT%
+if exist %_LIBFFI_OUT% (rd %_LIBFFI_OUT% /s/q)
 
 echo Configure the build to generate fficonfig.h and ffi.h
 %SH% -lc "(cd $OLDPWD; ./configure CC='%MSVCC% %ASSEMBLER%' CXX='%MSVCC% %ASSEMBLER%' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
@@ -141,12 +142,12 @@ if "%LIBFFI_TEST%" EQU "1" (
 )
 
 
-echo copying files to %LIBFFI_OUT%
-if not exist %LIBFFI_OUT%\include (md %LIBFFI_OUT%\include)
-copy %ARTIFACTS%\.libs\libffi-7.dll %LIBFFI_OUT%
-copy %ARTIFACTS%\.libs\libffi-7.lib %LIBFFI_OUT%
-copy %ARTIFACTS%\fficonfig.h %LIBFFI_OUT%\include
-copy %ARTIFACTS%\include\*.h %LIBFFI_OUT%\include
+echo copying files to %_LIBFFI_OUT%
+if not exist %_LIBFFI_OUT%\include (md %_LIBFFI_OUT%\include)
+copy %ARTIFACTS%\.libs\libffi-7.dll %_LIBFFI_OUT%
+copy %ARTIFACTS%\.libs\libffi-7.lib %_LIBFFI_OUT%
+copy %ARTIFACTS%\fficonfig.h %_LIBFFI_OUT%\include
+copy %ARTIFACTS%\include\*.h %_LIBFFI_OUT%\include
 
 endlocal
 exit /b
