@@ -780,15 +780,27 @@ class ElementTreeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, EXPECTED_MSG):
             ET.tostring(elem, encoding='unicode', default_namespace='foobar')
 
-    def test_tostring_xml_declaration(self):
+    def test_tostring_no_xml_declaration(self):
         elem = ET.XML('<body><tag/></body>')
         self.assertEqual(
             ET.tostring(elem, encoding='unicode'),
             '<body><tag /></body>'
         )
+
+    def test_tostring_xml_declaration(self):
+        elem = ET.XML('<body><tag/></body>')
         self.assertEqual(
-            str(ET.tostring(elem, encoding='utf8', xml_declaration=True), encoding='utf8'),
-            "<?xml version='1.0' encoding='utf8'?>\n<body><tag /></body>"
+            ET.tostring(elem, encoding='utf8', xml_declaration=True),
+            b"<?xml version='1.0' encoding='utf8'?>\n<body><tag /></body>"
+        )
+
+    def test_tostring_xml_declaration_unicode_encoding(self):
+        elem = ET.XML('<body><tag/></body>')
+        import locale
+        preferredencoding = locale.getpreferredencoding()
+        self.assertEqual(
+            f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>",
+            ET.tostring(elem, encoding='unicode', xml_declaration=True)
         )
 
     def test_tostringlist_default_namespace(self):
