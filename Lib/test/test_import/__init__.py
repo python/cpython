@@ -8,6 +8,8 @@ import os
 import platform
 import py_compile
 import random
+import shutil
+import subprocess
 import stat
 import sys
 import threading
@@ -459,6 +461,49 @@ class ImportTests(unittest.TestCase):
                     raise exc
         finally:
             del sys.path[0]
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific")
+    def test_dll_dependency_import(self):
+        from _winapi import GetModuleFileName
+        dllname = GetModuleFileName(sys.dllhandle)
+        pydname = importlib.util.find_spec("_sqlite3").origin
+        depname = os.path.join(
+            os.path.dirname(pydname), 
+            "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
+
+        with test.support.temp_dir() as tmp:
+            tmp2 = os.path.join(tmp, "DLLs")
+            os.mkdir(tmp2)
+
+            pyexe = os.path.join(tmp, os.path.basename(sys.executable))
+            shutil.copy(sys.executable, pyexe)
+            shutil.copy(dllname, tmp)
+
+            shutil.copy(pydname, tmp2)
+
+            env = None
+            env = {k.upper(): os.environ[k] for k in os.environ}
+            env["PYTHONPATH"] = tmp2 + ";" + os.path.dirname(os.__file__)
+
+            # Test 1: import with added DLL directory
+            subprocess.check_call([
+                pyexe, "-Sc", ";".join([
+                    "import os",
+                    "p = os.add_dll_directory({!r})".format(
+                        os.path.dirname(depname)),
+                    "import _sqlite3",
+                    "p.close"
+                ])],
+                stderr=subprocess.STDOUT,
+                env=env,
+                cwd=os.path.dirname(pyexe))
+
+            # Test 2: import with DLL adjacent to PYD
+            shutil.copy(depname, tmp2)
+            subprocess.check_call([pyexe, "-Sc", "import _sqlite3"],
+                                    stderr=subprocess.STDOUT,
+                                    env=env,
+                                    cwd=os.path.dirname(pyexe))
 
 
 @skip_if_dont_write_bytecode
