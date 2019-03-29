@@ -469,7 +469,7 @@ class ImportTests(unittest.TestCase):
         dllname = GetModuleFileName(sys.dllhandle)
         pydname = importlib.util.find_spec("_sqlite3").origin
         depname = os.path.join(
-            os.path.dirname(pydname), 
+            os.path.dirname(pydname),
             "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
 
         with test.support.temp_dir() as tmp:
