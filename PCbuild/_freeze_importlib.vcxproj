@@ -125,9 +125,9 @@
       <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
     </Copy>
     
-    <Warning Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes."
+    <Warning Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, you need to run 'make regen-all' and commit any changes."
              Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
-    <Error Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes."
+    <Error Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, you need to run 'make regen-all' and commit any changes."
            Condition="'@(_Updated)' != '' and $(Configuration) == 'Release'" />
   </Target>
   <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
