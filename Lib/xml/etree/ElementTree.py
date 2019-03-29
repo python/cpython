@@ -1132,8 +1132,10 @@ def tostring(element, encoding=None, method=None, *,
 
     """
     stream = io.StringIO() if encoding == 'unicode' else io.BytesIO()
-    ElementTree(element).write(stream, encoding, xml_declaration=xml_declaration,
-                               default_namespace=default_namespace, method=method,
+    ElementTree(element).write(stream, encoding,
+                               xml_declaration=xml_declaration,
+                               default_namespace=default_namespace,
+                               method=method,
                                short_empty_elements=short_empty_elements)
     return stream.getvalue()
 
@@ -1159,8 +1161,10 @@ def tostringlist(element, encoding=None, method=None, *,
                  short_empty_elements=True):
     lst = []
     stream = _ListDataStream(lst)
-    ElementTree(element).write(stream, encoding, xml_declaration=xml_declaration,
-                               default_namespace=default_namespace, method=method,
+    ElementTree(element).write(stream, encoding,
+                               xml_declaration=xml_declaration,
+                               default_namespace=default_namespace,
+                               method=method,
                                short_empty_elements=short_empty_elements)
     return lst
 
