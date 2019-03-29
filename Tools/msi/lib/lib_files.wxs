@@ -22,6 +22,9 @@
             <Component Id="libssl.dll" Directory="DLLs" Guid="*">
                 <File Name="libssl$(var.ssltag).dll" KeyPath="yes" />
             </Component>
+            <Component Id="libffi.dll" Directory="DLLs" Guid="*">
+                <File Name="libffi-7.dll" KeyPath="yes" />
+            </Component>
             <Component Id="venvlauncher.exe" Directory="Lib_venv_scripts_nt" Guid="*">
                 <File Name="python.exe" Source="venvlauncher.exe" KeyPath="yes" />
             </Component>
@@ -58,6 +61,9 @@
             </Component>
             <Component Id="libssl.pdb" Directory="DLLs" Guid="*">
                 <File Name="libssl$(var.ssltag).pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="libffi.pdb" Directory="DLLs" Guid="*">
+                <File Name="libffi-7.pdb" KeyPath="yes" />
             </Component>
             <Component Id="venvlauncher.pdb" Directory="Lib_venv_scripts_nt__pdbs" Guid="*">
                 <File Name="python.pdb" Source="venvlauncher.pdb" KeyPath="yes" />
