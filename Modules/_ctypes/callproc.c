@@ -1251,19 +1251,21 @@ static PyObject *format_error(PyObject *self, PyObject *args)
 }
 
 static const char load_library_doc[] =
-"LoadLibrary(name) -> handle\n\
+"LoadLibrary(name, load_flags) -> handle\n\
 \n\
 Load an executable (usually a DLL), and return a handle to it.\n\
 The handle may be used to locate exported functions in this\n\
-module.\n";
+module. load_flags are as defined for LoadLibraryEx in the\n\
+Windows API.\n";
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
     const WCHAR *name;
     PyObject *nameobj;
-    PyObject *ignored;
+    int load_flags = 0;
     HMODULE hMod;
+    DWORD err;
 
-    if (!PyArg_ParseTuple(args, "U|O:LoadLibrary", &nameobj, &ignored))
+    if (!PyArg_ParseTuple(args, "U|i:LoadLibrary", &nameobj, &load_flags))
         return NULL;
 
     name = _PyUnicode_AsUnicode(nameobj);
@@ -1271,11 +1273,22 @@ static PyObject *load_library(PyObject *self, PyObject *args)
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    hMod = LoadLibraryW(name);
+    /* bpo-36085: Limit DLL search directories to avoid pre-loading
+     * attacks and enable use of the AddDllDirectory function.
+     */
+    hMod = LoadLibraryExW(name, NULL, (DWORD)load_flags);
+    err = hMod ? 0 : GetLastError();
     Py_END_ALLOW_THREADS
 
-    if (!hMod)
-        return PyErr_SetFromWindowsErr(GetLastError());
+    if (err == ERROR_MOD_NOT_FOUND) {
+        PyErr_Format(PyExc_FileNotFoundError,
+                     ("Could not find module '%.500S'. Try using "
+                      "the full path with constructor syntax."),
+                     nameobj);
+        return NULL;
+    } else if (err) {
+        return PyErr_SetFromWindowsErr(err);
+    }
 #ifdef _WIN64
     return PyLong_FromVoidPtr(hMod);
 #else
@@ -1291,15 +1304,18 @@ static PyObject *free_library(PyObject *self, PyObject *args)
 {
     void *hMod;
     BOOL result;
+    DWORD err;
     if (!PyArg_ParseTuple(args, "O&:FreeLibrary", &_parse_voidp, &hMod))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS
     result = FreeLibrary((HMODULE)hMod);
+    err = result ? 0 : GetLastError();
     Py_END_ALLOW_THREADS
 
-    if (!result)
-        return PyErr_SetFromWindowsErr(GetLastError());
+    if (!result) {
+        return PyErr_SetFromWindowsErr(err);
+    }
     Py_RETURN_NONE;
 }
 

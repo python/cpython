@@ -168,6 +168,16 @@ asyncio
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 
 
+ctypes
+------
+
+On Windows, :class:`~ctypes.CDLL` and subclasses now accept a *winmode* parameter
+to specify flags for the underlying ``LoadLibraryEx`` call. The default flags are
+set to only load DLL dependencies from trusted locations, including the path
+where the DLL is stored (if a full or partial path is used to load the initial
+DLL) and paths added by :func:`~os.add_dll_directory`.
+
+
 gettext
 -------
 
@@ -237,6 +247,13 @@ Formerly, it only supported the 2-D case.
 Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
 numbers. (Contributed by Pablo Galindo in :issue:`35606`)
+
+os
+--
+
+Added new function :func:`~os.add_dll_directory` on Windows for providing
+additional search paths for native dependencies when importing extension
+modules or loading DLLs using :mod:`ctypes`.
 
 
 os.path
@@ -726,6 +743,19 @@ Changes in the Python API
 * :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
   environment variable and does not use :envvar:`HOME`, which is not normally
   set for regular user accounts.
+
+.. _bpo-36085-whatsnew:
+
+* DLL dependencies for extension modules and DLLs loaded with :mod:`ctypes` on
+  Windows are now resolved more securely. Only the system paths, the directory
+  containing the DLL or PYD file, and directories added with
+  :func:`~os.add_dll_directory` are searched for load-time dependencies.
+  Specifically, :envvar:`PATH` and the current working directory are no longer
+  used, and modifications to these will no longer have any effect on normal DLL
+  resolution. If your application relies on these mechanisms, you should check
+  for :func:`~os.add_dll_directory` and if it exists, use it to add your DLLs
+  directory while loading your library.
+  (See :issue:`36085`.)
 
 
 Changes in the C API

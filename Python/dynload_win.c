@@ -215,12 +215,14 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 #if HAVE_SXS
         cookie = _Py_ActivateActCtx();
 #endif
-        /* We use LoadLibraryEx so Windows looks for dependent DLLs
-            in directory of pathname first. */
-        /* XXX This call doesn't exist in Windows CE */
+        /* bpo-36085: We use LoadLibraryEx with restricted search paths
+           to avoid DLL preloading attacks and enable use of the
+           AddDllDirectory function. We add SEARCH_DLL_LOAD_DIR to
+           ensure DLLs adjacent to the PYD are preferred. */
         Py_BEGIN_ALLOW_THREADS
         hDLL = LoadLibraryExW(wpathname, NULL,
-                              LOAD_WITH_ALTERED_SEARCH_PATH);
+                              LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
+                              LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
         Py_END_ALLOW_THREADS
 #if HAVE_SXS
         _Py_DeactivateActCtx(cookie);
