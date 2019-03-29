@@ -447,9 +447,11 @@ static int test_init_from_config(void)
     Py_SetProgramName(L"./globalvar");
     config.program_name = L"./conf_program_name";
 
-    static wchar_t* argv[2] = {
+    static wchar_t* argv[] = {
+        L"python3",
         L"-c",
         L"pass",
+        L"arg2",
     };
     config.argv.length = Py_ARRAY_LENGTH(argv);
     config.argv.items = argv;
@@ -528,7 +530,6 @@ static int test_init_from_config(void)
     config._frozen = 1;
 
     err = _Py_InitializeFromConfig(&config);
-    /* Don't call _PyCoreConfig_Clear() since all strings are static */
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -712,6 +713,27 @@ static int test_init_dev_mode(void)
 }
 
 
+static int test_run_main(void)
+{
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import sys; "
+                        L"print(f'_Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.program_name = L"./python3";
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -748,6 +770,7 @@ static struct TestCase TestCases[] = {
     { "init_isolated", test_init_isolated },
     { "preinit_isolated1", test_preinit_isolated1 },
     { "preinit_isolated2", test_preinit_isolated2 },
+    { "run_main", test_run_main },
     { NULL, NULL }
 };
 
