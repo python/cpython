@@ -1,0 +1,1 @@
+Fix compatibility with ISO C89 needed by "gnu89" standard of GCC 4.8: use C89 for loops in backported pickle patch. Patch by Anthony Sottile.
