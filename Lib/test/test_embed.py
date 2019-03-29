@@ -53,7 +53,12 @@ class EmbeddingTestsMixin:
                              stderr=subprocess.PIPE,
                              universal_newlines=True,
                              env=env)
-        (out, err) = p.communicate()
+        try:
+            (out, err) = p.communicate()
+        except:
+            p.terminate()
+            p.wait()
+            raise
         if p.returncode != 0 and support.verbose:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
@@ -252,6 +257,11 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         """
         out, err = self.run_embedded_interpreter("initialize_pymain")
         self.assertEqual(out.rstrip(), "Py_Main() after Py_Initialize: sys.argv=['-c', 'arg2']")
+        self.assertEqual(err, '')
+
+    def test_run_main(self):
+        out, err = self.run_embedded_interpreter("run_main")
+        self.assertEqual(out.rstrip(), "_Py_RunMain(): sys.argv=['-c', 'arg2']")
         self.assertEqual(err, '')
 
 
@@ -549,10 +559,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
-            'argv': ['-c', 'pass'],
+            'argv': ['-c', 'arg2'],
             'program': 'conf_program',
             'xoptions': ['core_xoption1=3', 'core_xoption2=', 'core_xoption3'],
             'warnoptions': ['error::ResourceWarning', 'default::BytesWarning'],
+            'run_command': 'pass\n',
 
             'site_import': 0,
             'bytes_warning': 1,

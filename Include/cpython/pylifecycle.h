@@ -41,6 +41,9 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeFromWideArgs(
     int argc,
     wchar_t **argv);
 
+PyAPI_FUNC(int) _Py_RunMain(void);
+
+
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_ExitInitError(_PyInitError err);
 
 /* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level
