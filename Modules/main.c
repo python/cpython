@@ -567,20 +567,22 @@ exit_sigint(void)
 }
 
 
-static int
-pymain_main(_PyArgv *args)
+static void _Py_NO_RETURN
+pymain_exit_error(_PyInitError err)
 {
-    _PyInitError err;
+    pymain_free();
+    _Py_ExitInitError(err);
+}
 
-    err = pymain_init(args);
-    if (_Py_INIT_FAILED(err)) {
-        goto exit_init_error;
-    }
 
+int
+_Py_RunMain(void)
+{
     int exitcode = 0;
-    err = pymain_run_python(&exitcode);
+
+    _PyInitError err = pymain_run_python(&exitcode);
     if (_Py_INIT_FAILED(err)) {
-        goto exit_init_error;
+        pymain_exit_error(err);
     }
 
     if (Py_FinalizeEx() < 0) {
@@ -596,10 +598,18 @@ pymain_main(_PyArgv *args)
     }
 
     return exitcode;
+}
 
-exit_init_error:
-    pymain_free();
-    _Py_ExitInitError(err);
+
+static int
+pymain_main(_PyArgv *args)
+{
+    _PyInitError err = pymain_init(args);
+    if (_Py_INIT_FAILED(err)) {
+        pymain_exit_error(err);
+    }
+
+    return _Py_RunMain();
 }
 
 
