@@ -594,7 +594,8 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
-                       default_namespace=None, short_empty_elements=True)
+                       xml_declaration=None, default_namespace=None,
+                       short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
    subelements.  *element* is an :class:`Element` instance.  *encoding* [1]_ is
@@ -613,6 +614,7 @@ Functions
 
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
+                           xml_declaration=None, default_namespace=None,
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
