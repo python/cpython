@@ -283,7 +283,7 @@ static int
 pymain_run_file(_PyCoreConfig *config, PyCompilerFlags *cf)
 {
     const wchar_t *filename = config->run_filename;
-    FILE *fp = _Py_wfopen(filename, L"r");
+    FILE *fp = _Py_wfopen(filename, L"rb");
     if (fp == NULL) {
         char *cfilename_buffer;
         const char *cfilename;
