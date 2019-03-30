@@ -28,7 +28,7 @@
         <PythonArguments>$(PythonArguments) -b "$(BuildPath.TrimEnd(`\`))" -s "$(PySourcePath.TrimEnd(`\`))"</PythonArguments>
         <PythonArguments>$(PythonArguments) -t "$(IntermediateOutputPath)obj"</PythonArguments>
         <PythonArguments>$(PythonArguments) --copy "$(IntermediateOutputPath)pkg"</PythonArguments>
-        <PythonArguments>$(PythonArguments) --include-dev --include-tools --include-pip --include-stable --include-launcher --include-props</PythonArguments>
+        <PythonArguments>$(PythonArguments) --preset-nuget</PythonArguments>
         
         <PackageArguments Condition="$(Packages) != ''">"$(IntermediateOutputPath)pkg\pip.exe" -B -m pip install -U $(Packages)</PackageArguments>
         
