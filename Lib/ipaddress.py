@@ -1165,12 +1165,6 @@ class _BaseV4:
             raise ValueError(msg % octet_str)
         # Convert to integer (we know digits are legal)
         octet_int = int(octet_str, 10)
-        # Any octets that look like they *might* be written in octal,
-        # and which don't look exactly the same in both octal and
-        # decimal are rejected as ambiguous
-        if octet_int > 7 and octet_str[0] == '0':
-            msg = "Ambiguous (octal/decimal) value in %r not permitted"
-            raise ValueError(msg % octet_str)
         if octet_int > 255:
             raise ValueError("Octet %d (> 255) not permitted" % octet_int)
         return octet_int
