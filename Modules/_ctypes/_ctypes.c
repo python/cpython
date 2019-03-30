@@ -406,7 +406,7 @@ StructUnionType_paramfunc(CDataObject *self)
     CDataObject *copied_self;
     StgDictObject *stgdict;
 
-    if (self->b_size > sizeof(void*)) {
+    if ((size_t)self->b_size > sizeof(void*)) {
         void *new_ptr = PyMem_Malloc(self->b_size);
         if (new_ptr == NULL)
             return NULL;
