@@ -37,6 +37,7 @@ The following functions can be safely called before Python is initialized:
 
 * Informative functions:
 
+  * :c:func:`Py_IsInitialized`
   * :c:func:`PyMem_GetAllocator`
   * :c:func:`PyObject_GetArenaAllocator`
   * :c:func:`Py_GetBuildInfo`
