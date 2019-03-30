@@ -1414,6 +1414,7 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
             support.unlink(tmpname)
 
         pid = os.getpid()
+        os.mkdir(os.getenv("BUILD_BINARIESDIRECTORY") + "/tarfile")
         os.system("strace -p %d 2>$BUILD_BINARIESDIRECTORY/tarfile/strace.out &" % pid)
         time.sleep(2)   # get strace heaps of time to start
 
