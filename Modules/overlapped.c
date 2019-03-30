@@ -661,7 +661,6 @@ unparse_address(LPSOCKADDR Address, DWORD Length)
     char AddressString[40];
     unsigned int port;
     PVOID pSinAddr;
-    DWORD err;
 
     switch(Address->sa_family) {
     case AF_INET:
@@ -1653,7 +1652,6 @@ Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *args)
         self->type = TYPE_NOT_STARTED;
         return SetFromWindowsErr(err);
     }
->>>>>>> bpo-29883: Add UDP to Windows Proactor Event Loop
 }
 
 
