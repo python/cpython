@@ -19,6 +19,7 @@ At large scale, the structure of the module is following:
 """
 
 from abc import abstractmethod, abstractproperty
+import cachesreg
 import collections
 import collections.abc
 import contextlib
@@ -232,6 +233,12 @@ def _remove_dups_flatten(parameters):
 
 
 _cleanups = []
+
+def _clear_caches():
+    for f in _cleanups:
+        f()
+
+cachesreg.register(_clear_caches)
 
 
 def _tp_cache(func):

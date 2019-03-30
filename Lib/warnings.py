@@ -1,6 +1,7 @@
 """Python part of the warnings subsystem."""
 
 import sys
+import cachesreg
 
 
 __all__ = ["warn", "warn_explicit", "showwarning",
@@ -537,6 +538,15 @@ except ImportError:
 
     _warnings_defaults = False
 
+
+
+def _clear_warning_registry():
+    # Clear the warnings registry, so they can be displayed again
+    for mod in sys.modules.values():
+        if hasattr(mod, '__warningregistry__'):
+            del mod.__warningregistry__
+
+cachesreg.register(_clear_warning_registry)
 
 # Module initialization
 _processoptions(sys.warnoptions)

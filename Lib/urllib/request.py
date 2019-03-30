@@ -83,6 +83,7 @@ f = urllib.request.urlopen('http://www.python.org/')
 
 import base64
 import bisect
+import cachesreg
 import email
 import hashlib
 import http.client
@@ -301,6 +302,8 @@ def urlcleanup():
     global _opener
     if _opener:
         _opener = None
+
+cachesreg.register(urlcleanup)
 
 # copied from cookielib.py
 _cut_port_re = re.compile(r":\d+$", re.ASCII)

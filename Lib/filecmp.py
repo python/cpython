@@ -10,6 +10,7 @@ Functions:
 
 """
 
+import cachesreg
 import os
 import stat
 from itertools import filterfalse
@@ -25,6 +26,8 @@ DEFAULT_IGNORES = [
 def clear_cache():
     """Clear the filecmp cache."""
     _cache.clear()
+
+cachesreg.register(clear_cache)
 
 def cmp(f1, f2, shallow=True):
     """Compare two files.

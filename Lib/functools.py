@@ -14,6 +14,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'partialmethod', 'singledispatch', 'singledispatchmethod']
 
 from abc import get_cache_token
+import cachesreg
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
@@ -630,6 +631,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
 
     wrapper.cache_info = cache_info
     wrapper.cache_clear = cache_clear
+    cachesreg.register(cache_clear)
     return wrapper
 
 try:

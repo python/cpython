@@ -93,6 +93,7 @@ __all__ = [
 ]
 
 import __future__
+import cachesreg
 import difflib
 import inspect
 import linecache
@@ -1852,6 +1853,11 @@ class DebugRunner(DocTestRunner):
 # For backward compatibility, a global instance of a DocTestRunner
 # class, updated by testmod.
 master = None
+
+def _reset_master():
+    master = None
+
+cachesreg.register(_reset_master)
 
 def testmod(m=None, name=None, globs=None, verbose=None,
             report=True, optionflags=0, extraglobs=None,

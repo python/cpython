@@ -27,6 +27,7 @@ parsing quirks from older RFCs are retained. The testcases in
 test_urlparse.py provides a good indicator of parsing behavior.
 """
 
+import cachesreg
 import re
 import sys
 import collections
@@ -86,6 +87,7 @@ def clear_cache():
     _parse_cache.clear()
     _safe_quoters.clear()
 
+cachesreg.register(clear_cache)
 
 # Helpers for bytes handling
 # For 3.2, we deliberately require applications that

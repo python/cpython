@@ -119,6 +119,7 @@ This module also defines an exception 'error'.
 
 """
 
+import cachesreg
 import enum
 import sre_compile
 import sre_parse
@@ -237,6 +238,8 @@ def purge():
     "Clear the regular expression caches"
     _cache.clear()
     _compile_repl.cache_clear()
+
+cachesreg.register(purge)
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a Pattern object"

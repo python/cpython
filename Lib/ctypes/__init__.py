@@ -12,6 +12,7 @@ from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 
 from struct import calcsize as _calcsize
+import cachesreg as _cachesreg
 
 if __version__ != _ctypes_version:
     raise Exception("Version number mismatch", __version__, _ctypes_version)
@@ -266,6 +267,8 @@ def _reset_cache():
     # _SimpleCData.c_char_p_from_param
     POINTER(c_char).from_param = c_char_p.from_param
     _pointer_type_cache[None] = c_void_p
+
+_cachesreg.register(_reset_cache)
 
 def create_unicode_buffer(init, size=None):
     """create_unicode_buffer(aString) -> character array

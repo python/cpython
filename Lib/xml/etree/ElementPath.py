@@ -56,6 +56,7 @@
 # you, if needed.
 ##
 
+import cachesreg as _cachesreg
 import re
 
 xpath_tokenizer_re = re.compile(
@@ -251,6 +252,7 @@ ops = {
     }
 
 _cache = {}
+_cachesreg.register(_cache.clear)
 
 class _SelectorContext:
     parent_map = None

@@ -45,8 +45,7 @@ class BaseTestCase(TestCase):
             raise self.failureException(message)
 
     def clear_caches(self):
-        for f in typing._cleanups:
-            f()
+        typing._clear_caches()
 
 
 class Employee:
