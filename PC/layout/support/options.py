@@ -60,7 +60,6 @@ PRESETS = {
             "stable",
             "distutils",
             "venv",
-            "launchers",
             "props"
         ],
     },
