@@ -167,7 +167,8 @@ class LoaderTest(unittest.TestCase):
 
             # Full path load with DLL_LOAD_DIR should succeed
             should_pass("WinDLL(nt._getfullpathname('_sqlite3.dll'), " +
-                        "winmode=nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)")
+                        "winmode=nt._LOAD_LIBRARY_SEARCH_SYSTEM32|" +
+                        "nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)")
 
             # User-specified directory should succeed
             should_pass("import os; p = os.add_dll_directory(os.getcwd());" +
