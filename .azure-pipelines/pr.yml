@@ -33,7 +33,7 @@ jobs:
 - job: macOS_PR_Tests
   displayName: macOS PR Tests
   dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  condition: false # and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   variables:
     testRunTitle: '$(system.pullRequest.TargetBranch)-macos'
@@ -128,7 +128,7 @@ jobs:
 - job: Windows_PR_Tests
   displayName: Windows PR Tests
   dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  condition: false #and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
     vmImage: vs2017-win2016

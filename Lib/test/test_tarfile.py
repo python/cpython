@@ -1409,10 +1409,10 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
     def test_file_mode(self):
         # Test for issue #8464: Create files with correct
         # permissions.
+        import os, time
         if os.path.exists(tmpname):
             support.unlink(tmpname)
 
-        import os, time
         pid = os.getpid()
         os.system("strace -p %d 2>$BUILD_BINARIESDIRECTORY/tarfile/strace.out &" % pid)
         time.sleep(2)   # get strace heaps of time to start
