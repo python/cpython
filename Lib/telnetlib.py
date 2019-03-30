@@ -191,6 +191,14 @@ class Telnet:
             option will be chr(0) when there is no option.
         No other action is done afterwards by telnetlib.
 
+    set_fill_fill_rawq_callback(callback)
+        Each time after data is being read from socket, this callback
+        (if set) is called with the following parameters :
+        callback(buffer, eof)
+            buffer will be the data that is received from socket.
+            eof represents if connection closed or not
+            Callback must return the buffer back
+
     """
 
     def __init__(self, host=None, port=0,
@@ -214,6 +222,7 @@ class Telnet:
         self.sb = 0 # flag for SB and SE sequence.
         self.sbdataq = b''
         self.option_callback = None
+        self.fill_rawq_callback = None
         if host is not None:
             self.open(host, port, timeout)
 
@@ -419,6 +428,10 @@ class Telnet:
         """Provide a callback function called after each receipt of a telnet option."""
         self.option_callback = callback
 
+    def set_fill_rawq_callback(self, callback):
+        """Provide a callback function called after each recv() call from socket."""
+        self.fill_rawq_callback = callback
+
     def process_rawq(self):
         """Transfer from raw queue to cooked queue.
 
@@ -524,6 +537,10 @@ class Telnet:
         buf = self.sock.recv(50)
         self.msg("recv %r", buf)
         self.eof = (not buf)
+
+        if self.fill_rawq_callback is not None:
+            buf = self.fill_rawq_callback(buf, self.eof)
+
         self.rawq = self.rawq + buf
 
     def sock_avail(self):
