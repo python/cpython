@@ -15,6 +15,8 @@ import locale
 # strings to intern in test_intern()
 numruns = 0
 
+cache = []
+__clearcache__ = cache.clear
 
 class SysModuleTest(unittest.TestCase):
 
@@ -555,6 +557,11 @@ class SysModuleTest(unittest.TestCase):
         # Skip if not being run on Windows.
         test.support.get_attribute(sys, "getwindowsversion")
         self.assert_raise_on_new_sys_type(sys.getwindowsversion())
+
+    def test_clear_caches(self):
+        cache.append(True)
+        sys.clear_caches()
+        self.assertEqual(cache, [])
 
     @test.support.cpython_only
     def test_clear_type_cache(self):

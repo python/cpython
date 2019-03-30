@@ -268,6 +268,7 @@ _cache_lock = _thread_allocate_lock()
 _TimeRE_cache = TimeRE()
 _CACHE_MAX_SIZE = 5 # Max number of regexes stored in _regex_cache
 _regex_cache = {}
+__clearcache__ = _regex_cache.clear
 
 def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
     """Calculate the Julian day based on the year, week of the year, and day of

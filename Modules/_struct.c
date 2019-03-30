@@ -2112,14 +2112,14 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
 }
 
 /*[clinic input]
-_clearcache
+__clearcache__
 
 Clear the internal cache.
 [clinic start generated code]*/
 
 static PyObject *
-_clearcache_impl(PyObject *module)
-/*[clinic end generated code: output=ce4fb8a7bf7cb523 input=463eaae04bab3211]*/
+__clearcache___impl(PyObject *module)
+/*[clinic end generated code: output=7d1757711e960187 input=d8c1789f69c336ae]*/
 {
     Py_CLEAR(cache);
     Py_RETURN_NONE;
@@ -2264,7 +2264,7 @@ iter_unpack_impl(PyObject *module, PyStructObject *s_object,
 }
 
 static struct PyMethodDef module_functions[] = {
-    _CLEARCACHE_METHODDEF
+    __CLEARCACHE___METHODDEF
     CALCSIZE_METHODDEF
     ITER_UNPACK_METHODDEF
     {"pack",            (PyCFunction)(void(*)(void))pack, METH_FASTCALL,   pack_doc},

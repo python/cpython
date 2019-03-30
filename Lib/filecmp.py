@@ -26,6 +26,8 @@ def clear_cache():
     """Clear the filecmp cache."""
     _cache.clear()
 
+__clearcache__ = clear_cache
+
 def cmp(f1, f2, shallow=True):
     """Compare two files.
 

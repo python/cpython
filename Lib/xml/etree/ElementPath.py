@@ -251,6 +251,7 @@ ops = {
     }
 
 _cache = {}
+__clearcache__ = _cache.clear
 
 class _SelectorContext:
     parent_map = None

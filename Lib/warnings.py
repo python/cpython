@@ -538,6 +538,13 @@ except ImportError:
     _warnings_defaults = False
 
 
+def __clearcache__():
+    # Clear the warnings registry, so they can be displayed again
+    for mod in list(sys.modules.values()):
+        if hasattr(mod, '__warningregistry__'):
+            del mod.__warningregistry__
+
+
 # Module initialization
 _processoptions(sys.warnoptions)
 if not _warnings_defaults:

@@ -302,6 +302,8 @@ def urlcleanup():
     if _opener:
         _opener = None
 
+__clearcache__ = urlcleanup
+
 # copied from cookielib.py
 _cut_port_re = re.compile(r":\d+$", re.ASCII)
 def request_host(request):

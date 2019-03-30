@@ -1597,6 +1597,41 @@ extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 
 
 /*[clinic input]
+sys.clear_caches
+
+Clear all caches.
+
+Call the __clearcache__() function in every imported module.
+[clinic start generated code]*/
+
+static PyObject *
+sys_clear_caches_impl(PyObject *module)
+/*[clinic end generated code: output=7bbac9db7bbef6c3 input=9e739bbc710495ff]*/
+{
+    _Py_IDENTIFIER(__clearcache__);
+    PyObject *modules = PyMapping_Values(PyImport_GetModuleDict());
+    for (Py_ssize_t i = PyList_GET_SIZE(modules); i-- > 0;) {
+        PyObject *mod, *func, *res;
+        mod = PyList_GET_ITEM(modules, i);
+        if (_PyObject_LookupAttrId(mod, &PyId___clearcache__, &func) < 0) {
+            Py_DECREF(modules);
+            return NULL;
+        }
+        if (func) {
+            res = _PyObject_CallNoArg(func);
+            Py_DECREF(func);
+            if (res == NULL) {
+                Py_DECREF(modules);
+                return NULL;
+            }
+            Py_DECREF(res);
+        }
+    }
+    Py_DECREF(modules);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 sys._clear_type_cache
 
 Clear the internal type lookup cache.
@@ -1644,6 +1679,7 @@ static PyMethodDef sys_methods[] = {
     {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     SYS_CALLSTATS_METHODDEF
+    SYS_CLEAR_CACHES_METHODDEF
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF

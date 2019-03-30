@@ -311,7 +311,7 @@ defines.  It returns a sorted list of strings::
     '_clear_type_cache', '_current_frames', '_debugmallocstats', '_getframe',
     '_home', '_mercurial', '_xoptions', 'abiflags', 'api_version', 'argv',
     'base_exec_prefix', 'base_prefix', 'builtin_module_names', 'byteorder',
-    'call_tracing', 'callstats', 'copyright', 'displayhook',
+    'call_tracing', 'callstats', 'clear_caches', 'copyright', 'displayhook',
     'dont_write_bytecode', 'exc_info', 'excepthook', 'exec_prefix',
     'executable', 'exit', 'flags', 'float_info', 'float_repr_style',
     'getcheckinterval', 'getdefaultencoding', 'getdlopenflags',
