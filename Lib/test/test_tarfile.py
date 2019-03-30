@@ -1409,23 +1409,27 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
     def test_file_mode(self):
         # Test for issue #8464: Create files with correct
         # permissions.
-        import os, time
+        import os, time, signal
         if os.path.exists(tmpname):
             support.unlink(tmpname)
 
         pid = os.getpid()
         os.mkdir(os.getenv("BUILD_BINARIESDIRECTORY") + "/tarfile")
-        os.system("strace -p %d 2>$BUILD_BINARIESDIRECTORY/tarfile/strace.out &" % pid)
+        os.system("sudo strace -p %d 2>$BUILD_BINARIESDIRECTORY/tarfile/strace.out &" % pid)
         time.sleep(2)   # get strace heaps of time to start
 
-        original_umask = os.umask(0o022)
         try:
-            tar = tarfile.open(tmpname, self.mode)
-            tar.close()
-            mode = os.stat(tmpname).st_mode & 0o777
-            self.assertEqual(mode, 0o644, "wrong file permissions")
+            original_umask = os.umask(0o022)
+            try:
+                tar = tarfile.open(tmpname, self.mode)
+                tar.close()
+                mode = os.stat(tmpname).st_mode & 0o777
+                self.assertEqual(mode, 0o644, "wrong file permissions")
+            finally:
+                os.umask(original_umask)
         finally:
-            os.umask(original_umask)
+            time.sleep(5)
+            os.kill(os.getpid(), signal.SIGKILL)
 
 class GzipStreamWriteTest(GzipTest, StreamWriteTest):
     pass

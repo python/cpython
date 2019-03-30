@@ -53,7 +53,7 @@ steps:
   - script: make pythoninfo
     displayName: 'Display build info'
 
-  - script: $COMMAND buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
+  - script: $COMMAND buildbottest TESTOPTS="-uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
     displayName: 'Tests'
     env:
       ${{ if eq(parameters.xvfb, 'true') }}:
