@@ -4883,6 +4883,9 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
         case 2:
         case 3:
         case 4:
+            if (s == end || consumed) {
+                goto End;
+            }
             errmsg = "invalid continuation byte";
             startinpos = s - starts;
             endinpos = startinpos + ch - 1;
