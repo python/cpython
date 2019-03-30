@@ -70,6 +70,7 @@ steps:
   inputs:
     pathToPublish: $(build.binariesDirectory)/tarfile
     artifactName: tarfile
+  condition: succeededOrFailed()
 
 
 - task: PublishTestResults@2
