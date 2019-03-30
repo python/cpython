@@ -48,6 +48,15 @@ steps:
   - script: source ./venv/bin/activate && bash <(curl -s https://codecov.io/bash)
     displayName: 'Publish code coverage results'
 
+- script: |
+    DEVICE=$(df . | tail -n +2 | awk '{print $1}')
+    sudo tune2fs -l $DEVICE | grep -w "Default mount options"
+    mount | grep -w $DEVICE
+    getfacl .
+  displayName: Check ACLs
+
+- script: setfacl -b .
+  displayName: Clear ACLs
 
 - ${{ if ne(parameters.coverage, 'true') }}:
   - script: make pythoninfo

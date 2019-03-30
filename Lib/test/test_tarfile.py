@@ -1410,13 +1410,13 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
         # Test for issue #8464: Create files with correct
         # permissions.
         import os, time, signal
-        if os.path.exists(tmpname):
-            support.unlink(tmpname)
-
         pid = os.getpid()
         os.mkdir(os.getenv("BUILD_BINARIESDIRECTORY") + "/tarfile")
         os.system("sudo strace -p %d 2>$BUILD_BINARIESDIRECTORY/tarfile/strace.out &" % pid)
         time.sleep(2)   # get strace heaps of time to start
+
+        if os.path.exists(tmpname):
+            support.unlink(tmpname)
 
         try:
             original_umask = os.umask(0o022)
