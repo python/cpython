@@ -1412,6 +1412,11 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
         if os.path.exists(tmpname):
             support.unlink(tmpname)
 
+        import os, time
+        pid = os.getpid()
+        os.system("strace -p %d 2>$BUILD_BINARIESDIRECTORY/tarfile/strace.out &" % pid)
+        time.sleep(2)   # get strace heaps of time to start
+
         original_umask = os.umask(0o022)
         try:
             tar = tarfile.open(tmpname, self.mode)

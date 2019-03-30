@@ -66,6 +66,11 @@ steps:
     displayName: 'Run patchcheck.py'
     condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
 
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: $(build.binariesDirectory)/tarfile
+    artifactName: tarfile
+
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results'
