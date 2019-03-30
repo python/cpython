@@ -300,6 +300,11 @@ shutil
 :func:`shutil.copytree` now accepts a new ``dirs_exist_ok`` keyword argument.
 (Contributed by Josh Bronson in :issue:`20849`.)
 
+:func:`shutil.make_archive` now defaults to the modern pax (POSIX.1-2001)
+format for new archives to improve portability and standards conformance,
+inherited from the corresponding change to the :mod:`tarfile` module.
+(Contributed by C.A.M. Gerlach in :issue:`30661`.)
+
 
 ssl
 ---
