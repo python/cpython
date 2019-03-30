@@ -92,7 +92,7 @@ The following warnings category classes are currently defined:
 +----------------------------------+-----------------------------------------------+
 | :exc:`PendingDeprecationWarning` | Base category for warnings about features     |
 |                                  | that will be deprecated in the future         |
-|                                  | (ignored by default, and deprecated).         |
+|                                  | (ignored by default).                         |
 +----------------------------------+-----------------------------------------------+
 | :exc:`ImportWarning`             | Base category for warnings triggered during   |
 |                                  | the process of importing a module (ignored by |
@@ -114,13 +114,6 @@ The following warnings category classes are currently defined:
    changing its behaviour. They are now distinguished based on their
    intended audience and the way they're handled by the default warnings
    filters.
-
-.. versionchanged:: 3.8
-   :exc:`PendingDeprecationWarning` is now deprecated.  It was introduced
-   as an "ignored by default" version of :exc:`DeprecationWarning`.  But
-   :exc:`DeprecationWarning` is ignored by default since Python 2.7 and 3.2.
-   There is no reason to use :exc:`PendingDeprecationWarning` instead
-   of :exc:`DeprecationWarning` nowadays.
 
 
 .. _warning-filter:
