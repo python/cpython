@@ -269,14 +269,18 @@ class UtilTestCase(support.EnvironGuard, unittest.TestCase):
                          ['one', 'two', 'three', 'four'])
 
     def test_strtobool(self):
-        yes = ('y', 'Y', 'yes', 'True', 't', 'true', 'True', 'On', 'on', '1')
-        no = ('n', 'no', 'f', 'false', 'off', '0', 'Off', 'No', 'N')
+        yes = ('y', 'yes', 't', 'true', 'on', '1')
+        no = ('n', 'no', 'f', 'false', 'off', '0')
 
         for y in yes:
-            self.assertTrue(strtobool(y))
+            # Test if the alphabets are treated case-insensitively
+            self.assertTrue(strtobool(y.lower()))
+            self.assertTrue(strtobool(y.upper()))
 
         for n in no:
-            self.assertFalse(strtobool(n))
+            # Test if the alphabets are treated case-insensitively
+            self.assertFalse(strtobool(n.lower()))
+            self.assertFalse(strtobool(n.upper()))
 
     def test_rfc822_escape(self):
         header = 'I am a\npoor\nlonesome\nheader\n'
