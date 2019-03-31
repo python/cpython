@@ -1400,7 +1400,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     goto error;
                 asdl_seq_SET(kwonlyargs, j++, arg);
                 i += 1; /* the name */
-                if (TYPE(CHILD(n, i)) == COMMA)
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
                     i += 1; /* the comma, if present */
                 break;
             case TYPE_COMMENT:
@@ -1599,7 +1599,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (!kwarg)
                     return NULL;
                 i += 2; /* the double star and the name */
-                if (TYPE(CHILD(n, i)) == COMMA)
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
                     i += 1; /* the comma, if present */
                 break;
             case TYPE_COMMENT:
