@@ -594,6 +594,29 @@ Deprecated
   version they will be errors.
   (Contributed by Serhiy Storchaka in :issue:`36048`.)
 
+* Deprecated passing the following arguments as keyword arguments:
+
+  - *func* in :func:`functools.partialmethod`, :func:`weakref.finalize`,
+    :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
+    :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
+    :func:`curses.wrapper`.
+  - *function* in :func:`unittest.addModuleCleanup` and
+    :meth:`unittest.TestCase.addCleanup`.
+  - *fn* in the :meth:`~concurrent.futures.Executor.submit` method of
+    :class:`concurrent.futures.ThreadPoolExecutor` and
+    :class:`concurrent.futures.ProcessPoolExecutor`.
+  - *callback* in :meth:`contextlib.ExitStack.callback`,
+    :meth:`contextlib.AsyncExitStack.callback` and
+    :meth:`contextlib.AsyncExitStack.push_async_callback`.
+  - *c* and *typeid* in the :meth:`~multiprocessing.managers.Server.create`
+    method of :class:`multiprocessing.managers.Server` and
+    :class:`multiprocessing.managers.SharedMemoryServer`.
+  - *obj* in :func:`weakref.finalize`.
+
+  In future releases of Python they will be :ref:`positional-only
+  <positional-only_parameter>`.
+  (Contributed by Serhiy Storchaka in :issue:`36492`.)
+
 
 API and Feature Removals
 ========================
