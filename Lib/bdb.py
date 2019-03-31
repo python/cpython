@@ -328,6 +328,7 @@ class Bdb:
         self.reset()
         while frame:
             frame.f_trace = self.trace_dispatch
+            frame.f_trace_lines = True
             self.botframe = frame
             frame = frame.f_back
         self.set_step()
