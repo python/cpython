@@ -11,13 +11,14 @@ Calculating averages
 Function            Description
 ==================  =============================================
 mean                Arithmetic mean (average) of data.
+geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
 median              Median (middle value) of data.
 median_low          Low median of data.
 median_high         High median of data.
 median_grouped      Median, or 50th percentile, of grouped data.
 mode                Mode (most common value) of data.
-multimode           List of modes (most common values of data)
+multimode           List of modes (most common values of data).
 ==================  =============================================
 
 Calculate the arithmetic mean ("the average") of data:
@@ -81,6 +82,7 @@ __all__ = [ 'StatisticsError', 'NormalDist',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
             'mean', 'mode', 'multimode', 'harmonic_mean', 'fmean',
+            'geometric_mean',
           ]
 
 import math
@@ -327,6 +329,24 @@ def fmean(data):
         return total / n
     except ZeroDivisionError:
         raise StatisticsError('fmean requires at least one data point') from None
+
+def geometric_mean(data):
+    """Convert data to floats and compute the geometric mean.
+
+    Raises a StatisticsError if the input dataset is empty,
+    if it contains a zero, or if it contains a negative value.
+
+    No special efforts are made to achieve exact results.
+    (However, this may change in the future.)
+
+    >>> round(geometric_mean([54, 24, 36]), 9)
+    36.0
+    """
+    try:
+        return exp(fmean(map(log, data)))
+    except ValueError:
+        raise StatisticsError('geometric mean requires a non-empty dataset '
+                              ' containing positive numbers') from None
 
 def harmonic_mean(data):
     """Return the harmonic mean of data.
