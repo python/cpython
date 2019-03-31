@@ -666,7 +666,7 @@ class ExecutorTest:
         with self.assertWarns(DeprecationWarning):
             future = self.executor.submit(fn=capture, arg=1)
         self.assertEqual(future.result(), ((), {'arg': 1}))
-        with self.assertWarns(TypeError):
+        with self.assertRaises(TypeError):
             self.executor.submit(arg=1)
 
     def test_map(self):
