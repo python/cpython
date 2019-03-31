@@ -2735,12 +2735,8 @@ PyCData_reduce(PyObject *myself, PyObject *args)
     if (dict == NULL) {
         return NULL;
     }
-    PyObject *bytes = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
-    if (bytes == NULL) {
-        Py_DECREF(dict);
-        return NULL;
-    }
-    return Py_BuildValue("O(O(NN))", _unpickle, Py_TYPE(myself), dict, bytes);
+    return Py_BuildValue("O(O(NN))", _unpickle, Py_TYPE(myself), dict,
+                         PyBytes_FromStringAndSize(self->b_ptr, self->b_size));
 }
 
 static PyObject *
