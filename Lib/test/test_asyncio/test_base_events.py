@@ -1368,6 +1368,34 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             OSError, self.loop.run_until_complete, coro)
 
     @patch_socket
+    def test_create_connection_socket_bind_different_family(self, m_socket):
+        # https://bugs.python.org/issue35302
+        # Test the case where local_addr resolves to multiple addrinfos, and
+        # if the socket is bound to the first address, connect() will fail.
+        sock = m_socket.socket.return_value
+
+        def mock_connect_check_bind(address):
+            if sock.bind.call_count:
+                bind_addr = sock.bind.call_args[0][0]
+                if bind_addr[0][:4] != address[0][:4]:
+                    raise OSError
+
+        sock.connect.side_effect = mock_connect_check_bind
+
+        async def getaddrinfo(host, port, *args, **kwargs):
+            if host == 'bindaddr':
+                return [(2, 1, 6, '', ('192.0.2.1', port)),
+                        (10, 1, 6, '', ('2001:db8::1', port))]
+            else:
+                return [(10, 1, 6, '', ('2001:db8::1:1', port))]
+
+        self.loop.getaddrinfo = getaddrinfo
+
+        coro = self.loop.create_connection(
+            MyProto, 'connectaddr', 80, local_addr=('bindaddr', 0))
+        self.loop.run_until_complete(coro)
+
+    @patch_socket
     def test_create_connection_bluetooth(self, m_socket):
         # See http://bugs.python.org/issue27136, fallback to getaddrinfo when
         # we can't recognize an address is resolved, e.g. a Bluetooth address.
