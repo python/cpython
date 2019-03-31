@@ -2043,6 +2043,8 @@ class TestGeometricMean(unittest.TestCase):
     def test_basics(self):
         geometric_mean = statistics.geometric_mean
         self.assertAlmostEqual(geometric_mean([54, 24, 36]), 36.0)
+        self.assertAlmostEqual(geometric_mean([4.0, 9.0]), 6.0)
+        self.assertAlmostEqual(geometric_mean([17.625]), 17.625)
 
     def test_various_input_types(self):
         geometric_mean = statistics.geometric_mean
