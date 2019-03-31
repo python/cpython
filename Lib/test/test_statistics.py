@@ -2046,6 +2046,21 @@ class TestGeometricMean(unittest.TestCase):
         self.assertAlmostEqual(geometric_mean([4.0, 9.0]), 6.0)
         self.assertAlmostEqual(geometric_mean([17.625]), 17.625)
 
+        for rng in [
+                range(1, 100),
+                range(1, 1_000),
+                range(1, 10_000),
+                range(500, 10_000, 3),
+                range(10_000, 500, -3),
+                [12, 17, 13, 5, 120, 7],
+                [random.expovariate(50.0) for i in range(1_000)],
+                [random.triangular(2000, 3000, 2200) for i in range(10_000)],
+                [random.lognormvariate(20.0, 3.0) for i in range(100_000)],
+            ]:
+            gm_decimal = math.prod(map(Decimal, rng)) ** (Decimal(1) / len(rng))
+            gm_float = geometric_mean(rng)
+            self.assertTrue(math.isclose(gm_float, float(gm_decimal)))
+
     def test_various_input_types(self):
         geometric_mean = statistics.geometric_mean
         D = Decimal
