@@ -299,22 +299,7 @@ class IdbProxy:
         self.conn = conn
         self.shell = shell
 
-    def call(*args, **kwargs):
-        if len(args) >= 2:
-            self, methodname, *args = args
-        elif not args:
-            raise TypeError("descriptor 'call' of 'IdbProxy' object "
-                            "needs an argument")
-        elif 'methodname' in kwargs:
-            methodname = kwargs.pop('methodname')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'methodname' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('call expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
+    def call(self, methodname, *args, **kwargs):
         ##print("*** IdbProxy.call %s %s %s" % (methodname, args, kwargs))
         value = self.conn.remotecall(self.oid, methodname, args, kwargs)
         ##print("*** IdbProxy.call %s returns %r" % (methodname, value))
