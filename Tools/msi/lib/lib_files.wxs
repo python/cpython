@@ -62,9 +62,6 @@
             <Component Id="libssl.pdb" Directory="DLLs" Guid="*">
                 <File Name="libssl$(var.ssltag).pdb" KeyPath="yes" />
             </Component>
-            <Component Id="libffi.pdb" Directory="DLLs" Guid="*">
-                <File Name="libffi-7.pdb" KeyPath="yes" />
-            </Component>
             <Component Id="venvlauncher.pdb" Directory="Lib_venv_scripts_nt__pdbs" Guid="*">
                 <File Name="python.pdb" Source="venvlauncher.pdb" KeyPath="yes" />
             </Component>
