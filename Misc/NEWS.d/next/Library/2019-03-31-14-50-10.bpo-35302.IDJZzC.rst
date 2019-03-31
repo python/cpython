@@ -1,0 +1,2 @@
+Try each (remote addrinfo, local addrinfo) pair in
+BaseEventLoop.create_connection().
