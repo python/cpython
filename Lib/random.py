@@ -42,7 +42,6 @@ from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
-from hashlib import sha512 as _sha512
 from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
 import os as _os
@@ -137,9 +136,11 @@ class Random(_random.Random):
             a = -2 if x == -1 else x
 
         if version == 2 and isinstance(a, (str, bytes, bytearray)):
+            from hashlib import sha512
+
             if isinstance(a, str):
                 a = a.encode()
-            a += _sha512(a).digest()
+            a += sha512(a).digest()
             a = int.from_bytes(a, 'big')
 
         super().seed(a)

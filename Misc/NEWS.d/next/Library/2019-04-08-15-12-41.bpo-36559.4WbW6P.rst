@@ -1,0 +1,3 @@
+"import random" no longer imports the :mod:`hashlib` module by default. The
+:mod:`hashlib` module is now imported on demand, to hash a string seed in
+:meth:`random.Random.seed`.
