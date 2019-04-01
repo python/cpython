@@ -9,7 +9,7 @@ PyDoc_STRVAR(_heapq_heappush__doc__,
 "Push item onto heap, maintaining the heap invariant.");
 
 #define _HEAPQ_HEAPPUSH_METHODDEF    \
-    {"heappush", (PyCFunction)_heapq_heappush, METH_FASTCALL, _heapq_heappush__doc__},
+    {"heappush", (PyCFunction)(void(*)(void))_heapq_heappush, METH_FASTCALL, _heapq_heappush__doc__},
 
 static PyObject *
 _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -21,11 +21,11 @@ _heapq_heappush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_UnpackStack(args, nargs, "heappush",
-        2, 2,
-        &heap, &item)) {
+    if (!_PyArg_CheckPositional("heappush", nargs, 2, 2)) {
         goto exit;
     }
+    heap = args[0];
+    item = args[1];
     return_value = _heapq_heappush_impl(module, heap, item);
 
 exit:
@@ -56,7 +56,7 @@ PyDoc_STRVAR(_heapq_heapreplace__doc__,
 "        item = heapreplace(heap, item)");
 
 #define _HEAPQ_HEAPREPLACE_METHODDEF    \
-    {"heapreplace", (PyCFunction)_heapq_heapreplace, METH_FASTCALL, _heapq_heapreplace__doc__},
+    {"heapreplace", (PyCFunction)(void(*)(void))_heapq_heapreplace, METH_FASTCALL, _heapq_heapreplace__doc__},
 
 static PyObject *
 _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -68,11 +68,11 @@ _heapq_heapreplace(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_UnpackStack(args, nargs, "heapreplace",
-        2, 2,
-        &heap, &item)) {
+    if (!_PyArg_CheckPositional("heapreplace", nargs, 2, 2)) {
         goto exit;
     }
+    heap = args[0];
+    item = args[1];
     return_value = _heapq_heapreplace_impl(module, heap, item);
 
 exit:
@@ -89,7 +89,7 @@ PyDoc_STRVAR(_heapq_heappushpop__doc__,
 "a separate call to heappop().");
 
 #define _HEAPQ_HEAPPUSHPOP_METHODDEF    \
-    {"heappushpop", (PyCFunction)_heapq_heappushpop, METH_FASTCALL, _heapq_heappushpop__doc__},
+    {"heappushpop", (PyCFunction)(void(*)(void))_heapq_heappushpop, METH_FASTCALL, _heapq_heappushpop__doc__},
 
 static PyObject *
 _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -101,11 +101,11 @@ _heapq_heappushpop(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_UnpackStack(args, nargs, "heappushpop",
-        2, 2,
-        &heap, &item)) {
+    if (!_PyArg_CheckPositional("heappushpop", nargs, 2, 2)) {
         goto exit;
     }
+    heap = args[0];
+    item = args[1];
     return_value = _heapq_heappushpop_impl(module, heap, item);
 
 exit:
@@ -137,7 +137,7 @@ PyDoc_STRVAR(_heapq__heapreplace_max__doc__,
 "Maxheap variant of heapreplace.");
 
 #define _HEAPQ__HEAPREPLACE_MAX_METHODDEF    \
-    {"_heapreplace_max", (PyCFunction)_heapq__heapreplace_max, METH_FASTCALL, _heapq__heapreplace_max__doc__},
+    {"_heapreplace_max", (PyCFunction)(void(*)(void))_heapq__heapreplace_max, METH_FASTCALL, _heapq__heapreplace_max__doc__},
 
 static PyObject *
 _heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
@@ -150,11 +150,11 @@ _heapq__heapreplace_max(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_heapreplace_max",
-        2, 2,
-        &heap, &item)) {
+    if (!_PyArg_CheckPositional("_heapreplace_max", nargs, 2, 2)) {
         goto exit;
     }
+    heap = args[0];
+    item = args[1];
     return_value = _heapq__heapreplace_max_impl(module, heap, item);
 
 exit:
@@ -169,4 +169,4 @@ PyDoc_STRVAR(_heapq__heapify_max__doc__,
 
 #define _HEAPQ__HEAPIFY_MAX_METHODDEF    \
     {"_heapify_max", (PyCFunction)_heapq__heapify_max, METH_O, _heapq__heapify_max__doc__},
-/*[clinic end generated code: output=0bb0dd0df473ab14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37ef2a3319971c8d input=a9049054013a1b77]*/

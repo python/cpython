@@ -1,5 +1,5 @@
-:mod:`importlib` --- The implementation of :keyword:`import`
-============================================================
+:mod:`!importlib` --- The implementation of :keyword:`!import`
+==============================================================
 
 .. module:: importlib
    :synopsis: The implementation of the import machinery.
@@ -19,7 +19,7 @@ Introduction
 The purpose of the :mod:`importlib` package is two-fold. One is to provide the
 implementation of the :keyword:`import` statement (and thus, by extension, the
 :func:`__import__` function) in Python source code. This provides an
-implementation of :keyword:`import` which is portable to any Python
+implementation of :keyword:`!import` which is portable to any Python
 interpreter. This also provides an implementation which is easier to
 comprehend than one implemented in a programming language other than Python.
 
@@ -197,7 +197,7 @@ Functions
    If a module imports objects from another module using :keyword:`from` ...
    :keyword:`import` ..., calling :func:`reload` for the other module does not
    redefine the objects imported from it --- one way around this is to
-   re-execute the :keyword:`from` statement, another is to use :keyword:`import`
+   re-execute the :keyword:`!from` statement, another is to use :keyword:`!import`
    and qualified names (*module.name*) instead.
 
    If a module instantiates instances of a class, reloading the module that
@@ -1407,7 +1407,7 @@ an :term:`importer`.
    file path.  For example, if *path* is
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
-   to :pep:`3147` or :pep:`488` format, a ``ValueError`` is raised. If
+   to :pep:`3147` or :pep:`488` format, a :exc:`ValueError` is raised. If
    :attr:`sys.implementation.cache_tag` is not defined,
    :exc:`NotImplementedError` is raised.
 
@@ -1653,7 +1653,7 @@ Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
 To import a Python source file directly, use the following recipe
-(Python 3.4 and newer only)::
+(Python 3.5 and newer only)::
 
   import importlib.util
   import sys
@@ -1731,13 +1731,14 @@ Python 3.6 and newer for other parts of the code).
       if '.' in absolute_name:
           parent_name, _, child_name = absolute_name.rpartition('.')
           parent_module = import_module(parent_name)
-          path = parent_module.spec.submodule_search_locations
+          path = parent_module.__spec__.submodule_search_locations
       for finder in sys.meta_path:
           spec = finder.find_spec(absolute_name, path)
           if spec is not None:
               break
       else:
-          raise ImportError(f'No module named {absolute_name!r}')
+          msg = f'No module named {absolute_name!r}'
+          raise ModuleNotFoundError(msg, name=absolute_name)
       module = importlib.util.module_from_spec(spec)
       spec.loader.exec_module(module)
       sys.modules[absolute_name] = module

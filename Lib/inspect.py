@@ -168,30 +168,33 @@ def isfunction(object):
         __kwdefaults__  dict of keyword only parameters with defaults"""
     return isinstance(object, types.FunctionType)
 
-def isgeneratorfunction(object):
+def isgeneratorfunction(obj):
     """Return true if the object is a user-defined generator function.
 
     Generator function objects provide the same attributes as functions.
     See help(isfunction) for a list of attributes."""
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_GENERATOR)
+    obj = functools._unwrap_partial(obj)
+    return bool((isfunction(obj) or ismethod(obj)) and
+                obj.__code__.co_flags & CO_GENERATOR)
 
-def iscoroutinefunction(object):
+def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
     Coroutine functions are defined with "async def" syntax.
     """
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_COROUTINE)
+    obj = functools._unwrap_partial(obj)
+    return bool(((isfunction(obj) or ismethod(obj)) and
+                obj.__code__.co_flags & CO_COROUTINE))
 
-def isasyncgenfunction(object):
+def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.
 
     Asynchronous generator functions are defined with "async def"
     syntax and have "yield" expressions in their body.
     """
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_ASYNC_GENERATOR)
+    obj = functools._unwrap_partial(obj)
+    return bool((isfunction(obj) or ismethod(obj)) and
+                obj.__code__.co_flags & CO_ASYNC_GENERATOR)
 
 def isasyncgen(object):
     """Return true if the object is an asynchronous generator."""
@@ -579,9 +582,12 @@ def _finddoc(obj):
         cls = obj.__objclass__
         if getattr(cls, name) is not obj:
             return None
+        if ismemberdescriptor(obj):
+            slots = getattr(cls, '__slots__', None)
+            if isinstance(slots, dict) and name in slots:
+                return slots[name]
     else:
         return None
-
     for base in cls.__mro__:
         try:
             doc = getattr(base, name).__doc__
@@ -1070,8 +1076,10 @@ def getargspec(func):
     Alternatively, use getfullargspec() for an API with a similar namedtuple
     based interface, but full support for annotations and keyword-only
     parameters.
+
+    Deprecated since Python 3.5, use `inspect.getfullargspec()`.
     """
-    warnings.warn("inspect.getargspec() is deprecated, "
+    warnings.warn("inspect.getargspec() is deprecated since Python 3.0, "
                   "use inspect.signature() or inspect.getfullargspec()",
                   DeprecationWarning, stacklevel=2)
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
@@ -2797,19 +2805,25 @@ class Signature:
 
     @classmethod
     def from_function(cls, func):
-        """Constructs Signature for the given python function."""
+        """Constructs Signature for the given python function.
 
-        warnings.warn("inspect.Signature.from_function() is deprecated, "
-                      "use Signature.from_callable()",
+        Deprecated since Python 3.5, use `Signature.from_callable()`.
+        """
+
+        warnings.warn("inspect.Signature.from_function() is deprecated since "
+                      "Python 3.5, use Signature.from_callable()",
                       DeprecationWarning, stacklevel=2)
         return _signature_from_function(cls, func)
 
     @classmethod
     def from_builtin(cls, func):
-        """Constructs Signature for the given builtin function."""
+        """Constructs Signature for the given builtin function.
 
-        warnings.warn("inspect.Signature.from_builtin() is deprecated, "
-                      "use Signature.from_callable()",
+        Deprecated since Python 3.5, use `Signature.from_callable()`.
+        """
+
+        warnings.warn("inspect.Signature.from_builtin() is deprecated since "
+                      "Python 3.5, use Signature.from_callable()",
                       DeprecationWarning, stacklevel=2)
         return _signature_from_builtin(cls, func)
 

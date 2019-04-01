@@ -1,1 +1,0 @@
-Added :c:func:`PyCompile_OpcodeStackEffectWithJump`.

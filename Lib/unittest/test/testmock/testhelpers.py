@@ -1,3 +1,4 @@
+import inspect
 import time
 import types
 import unittest
@@ -8,6 +9,7 @@ from unittest.mock import (
 )
 
 from datetime import datetime
+from functools import partial
 
 class SomeClass(object):
     def one(self, a, b):
@@ -144,6 +146,8 @@ class CallTest(unittest.TestCase):
         self.assertEqual(args, ('foo', (1, 2, 3)))
         self.assertEqual(args, ('foo', (1, 2, 3), {}))
         self.assertEqual(args, ((1, 2, 3), {}))
+        self.assertEqual(args.args, (1, 2, 3))
+        self.assertEqual(args.kwargs, {})
 
 
     def test_named_call_with_args(self):
@@ -151,6 +155,8 @@ class CallTest(unittest.TestCase):
 
         self.assertEqual(args, ('foo', (1, 2, 3)))
         self.assertEqual(args, ('foo', (1, 2, 3), {}))
+        self.assertEqual(args.args, (1, 2, 3))
+        self.assertEqual(args.kwargs, {})
 
         self.assertNotEqual(args, ((1, 2, 3),))
         self.assertNotEqual(args, ((1, 2, 3), {}))
@@ -163,6 +169,8 @@ class CallTest(unittest.TestCase):
         self.assertEqual(args, ('foo', dict(a=3, b=4)))
         self.assertEqual(args, ('foo', (), dict(a=3, b=4)))
         self.assertEqual(args, ((), dict(a=3, b=4)))
+        self.assertEqual(args.args, ())
+        self.assertEqual(args.kwargs, dict(a=3, b=4))
 
 
     def test_named_call_with_kwargs(self):
@@ -170,6 +178,8 @@ class CallTest(unittest.TestCase):
 
         self.assertEqual(args, ('foo', dict(a=3, b=4)))
         self.assertEqual(args, ('foo', (), dict(a=3, b=4)))
+        self.assertEqual(args.args, ())
+        self.assertEqual(args.kwargs, dict(a=3, b=4))
 
         self.assertNotEqual(args, (dict(a=3, b=4),))
         self.assertNotEqual(args, ((), dict(a=3, b=4)))
@@ -177,6 +187,7 @@ class CallTest(unittest.TestCase):
 
     def test_call_with_args_call_empty_name(self):
         args = _Call(((1, 2, 3), {}))
+
         self.assertEqual(args, call(1, 2, 3))
         self.assertEqual(call(1, 2, 3), args)
         self.assertIn(call(1, 2, 3), [args])
@@ -267,6 +278,22 @@ class CallTest(unittest.TestCase):
         last_call = call.foo(1).bar()().baz.beep(a=6)
         self.assertEqual(mock.mock_calls[-1], last_call)
         self.assertEqual(mock.mock_calls, last_call.call_list())
+
+
+    def test_extended_not_equal(self):
+        a = call(x=1).foo
+        b = call(x=2).foo
+        self.assertEqual(a, a)
+        self.assertEqual(b, b)
+        self.assertNotEqual(a, b)
+
+
+    def test_nested_calls_not_equal(self):
+        a = call(x=1).foo().bar
+        b = call(x=2).foo().bar
+        self.assertEqual(a, a)
+        self.assertEqual(b, b)
+        self.assertNotEqual(a, b)
 
 
     def test_call_list(self):
@@ -869,6 +896,48 @@ class SpecSignatureTest(unittest.TestCase):
         mocked.reset_mock()
         mocked(4, 5, 6)
         mocked.assert_called_once_with(4, 5, 6)
+
+
+    def test_autospec_getattr_partial_function(self):
+        # bpo-32153 : getattr returning partial functions without
+        # __name__ should not create AttributeError in create_autospec
+        class Foo:
+
+            def __getattr__(self, attribute):
+                return partial(lambda name: name, attribute)
+
+        proxy = Foo()
+        autospec = create_autospec(proxy)
+        self.assertFalse(hasattr(autospec, '__name__'))
+
+
+    def test_spec_inspect_signature(self):
+
+        def myfunc(x, y):
+            pass
+
+        mock = create_autospec(myfunc)
+        mock(1, 2)
+        mock(x=1, y=2)
+
+        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(myfunc))
+        self.assertEqual(mock.mock_calls, [call(1, 2), call(x=1, y=2)])
+        self.assertRaises(TypeError, mock, 1)
+
+
+    def test_spec_inspect_signature_annotations(self):
+
+        def foo(a: int, b: int=10, *, c:int) -> int:
+            return a + b + c
+
+        mock = create_autospec(foo)
+        mock(1, 2, c=3)
+        mock(1, c=3)
+
+        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(foo))
+        self.assertEqual(mock.mock_calls, [call(1, 2, c=3), call(1, c=3)])
+        self.assertRaises(TypeError, mock, 1)
+        self.assertRaises(TypeError, mock, 1, 2, 3, c=4)
 
 
 class TestCallList(unittest.TestCase):

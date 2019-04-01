@@ -137,7 +137,7 @@ Running and stopping the loop
 
    Close the event loop.
 
-   The loop must be running when this function is called.
+   The loop must not be running when this function is called.
    Any pending callbacks will be discarded.
 
    This method clears all queues and shuts down the executor, but does
@@ -510,7 +510,7 @@ Opening network connections
    See the documentation of the :meth:`loop.create_connection` method
    for information about arguments to this method.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -630,7 +630,7 @@ Creating network servers
    See the documentation of the :meth:`loop.create_server` method
    for information about arguments to this method.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -756,7 +756,7 @@ Watching file descriptors
    writing.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
-   <asyncio-pass-keywords>` to *func*.
+   <asyncio-pass-keywords>` to *callback*.
 
 .. method:: loop.remove_writer(fd)
 
@@ -966,11 +966,19 @@ Unix signals
 
    Set *callback* as the handler for the *signum* signal.
 
+   The callback will be invoked by *loop*, along with other queued callbacks
+   and runnable coroutines of that event loop. Unlike signal handlers
+   registered using :func:`signal.signal`, a callback registered with this
+   function is allowed to interact with the event loop.
+
    Raise :exc:`ValueError` if the signal number is invalid or uncatchable.
    Raise :exc:`RuntimeError` if there is a problem setting up the handler.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
-   <asyncio-pass-keywords>` to *func*.
+   <asyncio-pass-keywords>` to *callback*.
+
+   Like :func:`signal.signal`, this function must be invoked in the main
+   thread.
 
 .. method:: loop.remove_signal_handler(sig)
 
@@ -979,7 +987,7 @@ Unix signals
    Return ``True`` if the signal handler was removed, or ``False`` if
    no handler was set for the given signal.
 
-Availability: Unix.
+   .. availability:: Unix.
 
 .. seealso::
 
@@ -1386,8 +1394,7 @@ Do not instantiate the class directly.
 
    .. attribute:: sockets
 
-      List of :class:`socket.socket` objects the server is listening on,
-      or ``None`` if the server is closed.
+      List of :class:`socket.socket` objects the server is listening on.
 
       .. versionchanged:: 3.7
          Prior to Python 3.7 ``Server.sockets`` used to return an
@@ -1423,14 +1430,14 @@ on all platforms.
       asyncio.set_event_loop(loop)
 
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
 
 .. class:: ProactorEventLoop
 
    An event loop for Windows that uses "I/O Completion Ports" (IOCP).
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. seealso::
 

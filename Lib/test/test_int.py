@@ -385,7 +385,8 @@ class IntTestCases(unittest.TestCase):
                 class TruncReturnsNonInt(base):
                     def __trunc__(self):
                         return Integral()
-                self.assertEqual(int(TruncReturnsNonInt()), 42)
+                with self.assertWarns(DeprecationWarning):
+                    self.assertEqual(int(TruncReturnsNonInt()), 42)
 
                 class NonIntegral(trunc_result_base):
                     def __trunc__(self):

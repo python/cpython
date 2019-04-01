@@ -169,10 +169,8 @@ class Element:
         if not isinstance(attrib, dict):
             raise TypeError("attrib must be dict, not %s" % (
                 attrib.__class__.__name__,))
-        attrib = attrib.copy()
-        attrib.update(extra)
         self.tag = tag
-        self.attrib = attrib
+        self.attrib = {**attrib, **extra}
         self._children = []
 
     def __repr__(self):
@@ -217,11 +215,11 @@ class Element:
         return self._children[index]
 
     def __setitem__(self, index, element):
-        # if isinstance(index, slice):
-        #     for elt in element:
-        #         assert iselement(elt)
-        # else:
-        #     assert iselement(element)
+        if isinstance(index, slice):
+            for elt in element:
+                self._assert_is_element(elt)
+        else:
+            self._assert_is_element(element)
         self._children[index] = element
 
     def __delitem__(self, index):
@@ -451,8 +449,7 @@ def SubElement(parent, tag, attrib={}, **extra):
     additional attributes given as keyword arguments.
 
     """
-    attrib = attrib.copy()
-    attrib.update(extra)
+    attrib = {**attrib, **extra}
     element = parent.makeelement(tag, attrib)
     parent.append(element)
     return element
@@ -923,7 +920,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                             k,
                             _escape_attrib(v)
                             ))
-                for k, v in sorted(items):  # lexical order
+                for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):
@@ -979,7 +976,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
                             k,
                             _escape_attrib(v)
                             ))
-                for k, v in sorted(items):  # lexical order
+                for k, v in items:
                     if isinstance(k, QName):
                         k = k.text
                     if isinstance(v, QName):

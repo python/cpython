@@ -243,7 +243,7 @@ Zijlstra.
 When an exception is raised within the context being managed by a
 contextlib.ExitStack() and one of the exit stack generators catches and
 raises it in a chain, do not re-raise the original exception when exiting,
-let the new chained one through.  This avoids the PEP 479 bug described in
+let the new chained one through.  This avoids the :pep:`479` bug described in
 issue25782.
 
 ..
@@ -476,7 +476,7 @@ Update Windows builds to use OpenSSL 1.0.2h.
 Rename the platform directory from plat-$(MACHDEP) to
 plat-$(PLATFORM_TRIPLET). Rename the config directory (LIBPL) from
 config-$(LDVERSION) to config-$(LDVERSION)-$(PLATFORM_TRIPLET). Install the
-platform specifc _sysconfigdata module into the platform directory and
+platform specific _sysconfigdata module into the platform directory and
 rename it to include the ABIFLAGS.
 
 ..

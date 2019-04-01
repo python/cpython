@@ -2,7 +2,6 @@
 
 import concurrent.futures
 import errno
-import logging
 import math
 import os
 import socket
@@ -15,7 +14,6 @@ from unittest import mock
 import asyncio
 from asyncio import base_events
 from asyncio import constants
-from asyncio import events
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -288,7 +286,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         loop.set_debug(debug)
         if debug:
             msg = ("Non-thread-safe operation invoked on an event loop other "
-                  "than the current one")
+                   "than the current one")
             with self.assertRaisesRegex(RuntimeError, msg):
                 loop.call_soon(cb)
             with self.assertRaisesRegex(RuntimeError, msg):
@@ -925,6 +923,74 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.stop()
         self.loop.run_forever()
         self.loop._selector.select.assert_called_once_with(0)
+
+    async def leave_unfinalized_asyncgen(self):
+        # Create an async generator, iterate it partially, and leave it
+        # to be garbage collected.
+        # Used in async generator finalization tests.
+        # Depends on implementation details of garbage collector. Changes
+        # in gc may break this function.
+        status = {'started': False,
+                  'stopped': False,
+                  'finalized': False}
+
+        async def agen():
+            status['started'] = True
+            try:
+                for item in ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR']:
+                    yield item
+            finally:
+                status['finalized'] = True
+
+        ag = agen()
+        ai = ag.__aiter__()
+
+        async def iter_one():
+            try:
+                item = await ai.__anext__()
+            except StopAsyncIteration:
+                return
+            if item == 'THREE':
+                status['stopped'] = True
+                return
+            asyncio.create_task(iter_one())
+
+        asyncio.create_task(iter_one())
+        return status
+
+    def test_asyncgen_finalization_by_gc(self):
+        # Async generators should be finalized when garbage collected.
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        with support.disable_gc():
+            status = self.loop.run_until_complete(self.leave_unfinalized_asyncgen())
+            while not status['stopped']:
+                test_utils.run_briefly(self.loop)
+            self.assertTrue(status['started'])
+            self.assertTrue(status['stopped'])
+            self.assertFalse(status['finalized'])
+            support.gc_collect()
+            test_utils.run_briefly(self.loop)
+            self.assertTrue(status['finalized'])
+
+    def test_asyncgen_finalization_by_gc_in_other_thread(self):
+        # Python issue 34769: If garbage collector runs in another
+        # thread, async generators will not finalize in debug
+        # mode.
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        self.loop.set_debug(True)
+        with support.disable_gc():
+            status = self.loop.run_until_complete(self.leave_unfinalized_asyncgen())
+            while not status['stopped']:
+                test_utils.run_briefly(self.loop)
+            self.assertTrue(status['started'])
+            self.assertTrue(status['stopped'])
+            self.assertFalse(status['finalized'])
+            self.loop.run_until_complete(
+                self.loop.run_in_executor(None, support.gc_collect))
+            test_utils.run_briefly(self.loop)
+            self.assertTrue(status['finalized'])
 
 
 class MyProto(asyncio.Protocol):
@@ -2005,6 +2071,32 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     "offset must be a non-negative integer"):
             self.run_loop(self.loop.sock_sendfile(sock, self.file, -1))
+
+
+class TestSelectorUtils(test_utils.TestCase):
+    def check_set_nodelay(self, sock):
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+        self.assertFalse(opt)
+
+        base_events._set_nodelay(sock)
+
+        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+        self.assertTrue(opt)
+
+    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
+                         'need socket.TCP_NODELAY')
+    def test_set_nodelay(self):
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                             proto=socket.IPPROTO_TCP)
+        with sock:
+            self.check_set_nodelay(sock)
+
+        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                             proto=socket.IPPROTO_TCP)
+        with sock:
+            sock.setblocking(False)
+            self.check_set_nodelay(sock)
+
 
 
 if __name__ == '__main__':

@@ -328,7 +328,7 @@ Random generation
    See http://egd.sourceforge.net/ or http://prngd.sourceforge.net/ for sources
    of entropy-gathering daemons.
 
-   Availability: not available with LibreSSL and OpenSSL > 1.1.0
+   .. availability:: not available with LibreSSL and OpenSSL > 1.1.0.
 
 .. function:: RAND_add(bytes, entropy)
 
@@ -460,8 +460,8 @@ Certificate handling
    * :attr:`openssl_capath_env` - OpenSSL's environment key that points to a capath,
    * :attr:`openssl_capath` - hard coded path to a capath directory
 
-   Availability: LibreSSL ignores the environment vars
-   :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`
+   .. availability:: LibreSSL ignores the environment vars
+     :attr:`openssl_cafile_env` and :attr:`openssl_capath_env`.
 
    .. versionadded:: 3.4
 
@@ -484,7 +484,7 @@ Certificate handling
       [(b'data...', 'x509_asn', {'1.3.6.1.5.5.7.3.1', '1.3.6.1.5.5.7.3.2'}),
        (b'data...', 'x509_asn', True)]
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -499,7 +499,7 @@ Certificate handling
    :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
    PKCS#7 ASN.1 data.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -1328,11 +1328,11 @@ SSL sockets also have the following additional methods and attributes:
    If any precondition isn't met (e.g. not TLS 1.3, PHA not enabled), an
    :exc:`SSLError` is raised.
 
-   .. versionadded:: 3.8
-
    .. note::
       Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
       support, the method raises :exc:`NotImplementedError`.
+
+   .. versionadded:: 3.8
 
 .. method:: SSLSocket.version()
 
@@ -1610,7 +1610,7 @@ to speed up repeated connections from the same clients.
          'strength_bits': 128,
          'symmetric': 'aes-128-gcm'}]
 
-   Availability: OpenSSL 1.0.2+
+   .. availability:: OpenSSL 1.0.2+.
 
    .. versionadded:: 3.6
 
@@ -1922,6 +1922,8 @@ to speed up repeated connections from the same clients.
      This attribute is not available unless the ssl module is compiled
      with OpenSSL 1.1.0g or newer.
 
+   .. versionadded:: 3.7
+
 .. attribute:: SSLContext.minimum_version
 
    Like :attr:`SSLContext.maximum_version` except it is the lowest
@@ -1932,6 +1934,8 @@ to speed up repeated connections from the same clients.
      This attribute is not available unless the ssl module is compiled
      with OpenSSL 1.1.0g or newer.
 
+   .. versionadded:: 3.7
+
 .. attribute:: SSLContext.options
 
    An integer representing the set of SSL options enabled on this context.
@@ -1941,7 +1945,7 @@ to speed up repeated connections from the same clients.
    .. note::
       With versions of OpenSSL older than 0.9.8m, it is only possible
       to set options, not to clear them.  Attempting to clear an option
-      (by resetting the corresponding bits) will raise a ``ValueError``.
+      (by resetting the corresponding bits) will raise a :exc:`ValueError`.
 
    .. versionchanged:: 3.6
       :attr:`SSLContext.options` returns :class:`Options` flags:
@@ -1965,11 +1969,11 @@ to speed up repeated connections from the same clients.
    :meth:`SSLSocket.verify_client_post_handshake` is called and some I/O is
    performed.
 
-   .. versionadded:: 3.8
-
    .. note::
       Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
       support, the property value is None and can't be modified
+
+   .. versionadded:: 3.8
 
 .. attribute:: SSLContext.protocol
 
@@ -1982,10 +1986,10 @@ to speed up repeated connections from the same clients.
    subject common name in the absence of a subject alternative name
    extension (default: true).
 
-   .. versionadded:: 3.7
-
    .. note::
       Only writeable with OpenSSL 1.1.0 or higher.
+
+   .. versionadded:: 3.7
 
 .. attribute:: SSLContext.verify_flags
 

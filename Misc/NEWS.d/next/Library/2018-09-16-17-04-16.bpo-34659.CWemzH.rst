@@ -1,1 +1,0 @@
-Add an optional *initial* argument to itertools.accumulate().
