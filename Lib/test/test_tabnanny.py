@@ -5,6 +5,7 @@ Glossary:
 """
 from unittest import TestCase, mock
 from unittest import mock
+import sys
 import errno
 import tabnanny
 import tokenize
@@ -233,8 +234,12 @@ class TestCheck(TestCase):
     def test_when_no_file(self):
         """A python file which does not exist actually in system."""
         path = 'no_file.py'
-        err = f"{path!r}: I/O Error: [Errno {errno.ENOENT}] " \
-              f"No such file or directory: {path!r}\n"
+        if sys.platform == "vxworks":
+            err = f"{path!r}: I/O Error: [Errno {errno.ENOENT}] " \
+                  f"no such file or directory: {path!r}\n"
+        else:
+            err = f"{path!r}: I/O Error: [Errno {errno.ENOENT}] " \
+                  f"No such file or directory: {path!r}\n"
         self.verify_tabnanny_check(path, err=err)
 
     def test_errored_directory(self):
