@@ -696,8 +696,8 @@ The following exceptions are used as warning categories; see the
 
    .. note::
       PendingDeprecationWarning was introduced as an "ignored by default"
-      version of DeprecationWarning.  But :exc:`DeprecationWarning` is ignored
-      by default since Python 2.7 and 3.2.
+      version of DeprecationWarning.  But :exc:`DeprecationWarning` is also
+      ignored by default since Python 2.7 and 3.2.
       There is not much difference between PendingDeprecationWarning and
       DeprecationWarning nowadays.  DeprecationWarning is recommended
       in general.
