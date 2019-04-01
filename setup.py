@@ -967,10 +967,11 @@ class PyBuildExt(build_ext):
 
         # If the curses module is enabled, check for the panel module
         # Issue 36210:
-        # On AIX, the 3rd-party ncurses packaging does not co-exist
-        # with the IBM provided libcurses.a -- ignore as default
+        # AIX libcurses does not support _curses_panel
+        # 3rd party support for _curses_panel is broken
+        # hence, ignore _curses_panel on AIX
         if not HOST_PLATFORM.startswith("aix"):
-            if (curses_enabled and not HOST_PLATFORM.startswith("aix") and
+            if (curses_enabled and
                 self.compiler.find_library_file(self.lib_dirs, panel_library)):
                 self.add(Extension('_curses_panel', ['_curses_panel.c'],
                                include_dirs=curses_includes,
