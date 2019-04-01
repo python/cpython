@@ -1395,6 +1395,11 @@ These functions are only intended to be used by advanced debugging tools.
    Return the interpreter state object at the head of the list of all such objects.
 
 
+.. c:function:: PyInterpreterState* PyInterpreterState_Main()
+
+   Return the main interpreter state object.
+
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Next(PyInterpreterState *interp)
 
    Return the next interpreter state object after *interp* from the list of all
