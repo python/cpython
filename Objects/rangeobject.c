@@ -121,6 +121,67 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return NULL;
 }
 
+
+static PyObject *
+range_vectorcall(
+    PyTypeObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    rangeobject *obj;
+    size_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *start = NULL, *stop = NULL, *step = NULL;
+    if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
+        PyErr_Format(PyExc_TypeError, "range() takes no keyword arguments");
+        return NULL;
+    }
+    switch(nargs) {
+        case 0:
+            PyErr_Format(PyExc_TypeError, "range()range expected 1 arguments, got 0");
+            return NULL;
+        case 1:
+            stop = PyNumber_Index(args[0]);
+            if (!stop)
+                return NULL;
+            Py_INCREF(_PyLong_Zero);
+            start = _PyLong_Zero;
+            Py_INCREF(_PyLong_One);
+            step = _PyLong_One;
+            break;
+        case 3:
+            step = args[2];
+            //Intentional fall through
+        case 2:
+            step = validate_step(step);  /* Caution, this can clear exceptions */
+            /* Convert borrowed refs to owned refs */
+            start = PyNumber_Index(args[0]);
+            if (!start)
+                return NULL;
+            stop = PyNumber_Index(args[1]);
+            if (!stop) {
+                Py_DECREF(start);
+                return NULL;
+            }
+            if (!step) {
+                Py_DECREF(start);
+                Py_DECREF(stop);
+                return NULL;
+            }
+            break;
+        default:
+            PyErr_Format(PyExc_TypeError, "range() expected at most 3 arguments, got %zd", nargs);
+            return NULL;
+    }
+    obj = make_range_object(type, start, stop, step);
+    if (obj != NULL)
+        return (PyObject *) obj;
+
+    /* Failed to create object, release attributes */
+    Py_DECREF(start);
+    Py_DECREF(stop);
+    Py_DECREF(step);
+    return NULL;
+}
+
 PyDoc_STRVAR(range_doc,
 "range(stop) -> range object\n\
 range(start, stop[, step]) -> range object\n\
@@ -702,6 +763,7 @@ PyTypeObject PyRange_Type = {
         0,                      /* tp_init */
         0,                      /* tp_alloc */
         range_new,              /* tp_new */
+        .tp_vectorcall = range_vectorcall
 };
 
 /*********************** range Iterator **************************/
