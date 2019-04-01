@@ -870,7 +870,8 @@ class PyBuildExt(build_ext):
         elif self.compiler.find_library_file(self.lib_dirs, 'ncursesw'):
             curses_library = 'ncursesw'
         # Issue 36210: AIX and ncurses does not co-exist with IBM supplied curses
-        elif not HOST_PLATFORM.startswith("aix") and self.compiler.find_library_file(self.lib_dirs, 'ncurses'):
+        elif self.compiler.find_library_file(self.lib_dirs, 'ncurses')
+                and not HOST_PLATFORM.startswith("aix"):
             curses_library = 'ncurses'
         elif self.compiler.find_library_file(self.lib_dirs, 'curses'):
             curses_library = 'curses'
