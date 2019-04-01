@@ -387,6 +387,23 @@ class CmdLineTest(unittest.TestCase):
                                       script_name, script_name, script_dir, '',
                                       importlib.machinery.SourceFileLoader)
 
+    def test_issue20884(self):
+        # On Windows, script with encoding cookie and LF line ending
+        # will be failed.
+        with support.temp_dir() as script_dir:
+            script_name = os.path.join(script_dir, "issue20884.py")
+            with open(script_name, "w", newline='\n') as f:
+                f.write("#coding: iso-8859-1\n")
+                f.write('"""\n')
+                for _ in range(30):
+                    f.write('x'*80 + '\n')
+                f.write('"""\n')
+
+            with support.change_cwd(path=script_dir):
+                rc, out, err = assert_python_ok(script_name)
+            self.assertEqual(b"", out)
+            self.assertEqual(b"", err)
+
     @contextlib.contextmanager
     def setup_test_pkg(self, *args):
         with support.temp_dir() as script_dir, \
