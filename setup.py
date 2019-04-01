@@ -980,12 +980,7 @@ class PyBuildExt(build_ext):
         else:
             libs = []
 
-        if not VXWORKS:
-            self.add(Extension('_crypt', ['_cryptmodule.c'],
-                               libraries=libs))
-        elif self.compiler.find_library_file(self.lib_dirs, 'OPENSSL'):
-            libs = ['OPENSSL']
-            self.add(Extension('_crypt', ['_cryptmodule.c'],
+        self.add(Extension('_crypt', ['_cryptmodule.c'],
                                libraries=libs))
 
     def detect_socket(self):
@@ -1641,7 +1636,8 @@ class PyBuildExt(build_ext):
         if TEST_EXTENSIONS:
             self.detect_test_extensions()
         self.detect_readline_curses()
-        self.detect_crypt()
+        if not VXWORKS:
+            self.detect_crypt()
         self.detect_socket()
         self.detect_openssl_hashlib()
         self.detect_dbm_gdbm()

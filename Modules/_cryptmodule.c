@@ -4,10 +4,7 @@
 #include "Python.h"
 
 #include <sys/types.h>
-#ifdef __VXWORKS__
-#include <openssl/des.h>
-#define crypt DES_crypt
-#endif
+
 /* Module crypt */
 
 /*[clinic input]

@@ -1,1 +1,1 @@
-Adapt _crypt module to VxWorks.
+Remove crypt module support for VxWorks.
