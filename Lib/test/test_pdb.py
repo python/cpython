@@ -1266,9 +1266,9 @@ class PdbTestCase(unittest.TestCase):
             any('main.py(5)foo()->None' in l for l in stdout.splitlines()),
             'Fail to step into the caller after a return')
 
-    def test_issue13210(self):
-        # invoking "continue" on a non-main thread triggered an exception
-        # inside signal.signal
+    def test_issue13120(self):
+        # Invoking "continue" on a non-main thread triggered an exception
+        # inside signal.signal.
 
         with open(support.TESTFN, 'wb') as f:
             f.write(textwrap.dedent("""
