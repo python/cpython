@@ -767,7 +767,7 @@ class PyBuildExt(build_ext):
         if (self.config_h_vars.get('HAVE_GETSPNAM', False) or
                 self.config_h_vars.get('HAVE_GETSPENT', False)):
             self.add(Extension('spwd', ['spwdmodule.c']))
-        else:
+        elif not HOST_PLATFORM.startswith("aix"):
             self.missing.append('spwd')
 
         # select(2); not on ancient System V
@@ -1429,7 +1429,7 @@ class PyBuildExt(build_ext):
         # Platform-specific libraries
         if HOST_PLATFORM.startswith(('linux', 'freebsd', 'gnukfreebsd')):
             self.add(Extension('ossaudiodev', ['ossaudiodev.c']))
-        else:
+        elif not HOST_PLATFORM.startswith("aix"):
             self.missing.append('ossaudiodev')
 
         if MACOS:
