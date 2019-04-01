@@ -1839,6 +1839,33 @@ class FinalizeTestCase(unittest.TestCase):
         self.assertEqual(f.alive, False)
         self.assertEqual(res, [199])
 
+    def test_arg_errors(self):
+        def fin(*args, **kwargs):
+            res.append((args, kwargs))
+
+        a = self.A()
+
+        res = []
+        f = weakref.finalize(a, fin, 1, 2, func=3, obj=4)
+        self.assertEqual(f.peek(), (a, fin, (1, 2), {'func': 3, 'obj': 4}))
+        f()
+        self.assertEqual(res, [((1, 2), {'func': 3, 'obj': 4})])
+
+        res = []
+        f = weakref.finalize(a, func=fin, arg=1)
+        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
+        f()
+        self.assertEqual(res, [((), {'arg': 1})])
+
+        res = []
+        f = weakref.finalize(obj=a, func=fin, arg=1)
+        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
+        f()
+        self.assertEqual(res, [((), {'arg': 1})])
+
+        self.assertRaises(TypeError, weakref.finalize, a)
+        self.assertRaises(TypeError, weakref.finalize)
+
     def test_order(self):
         a = self.A()
         res = []

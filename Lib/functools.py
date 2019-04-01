@@ -323,7 +323,20 @@ class partialmethod(object):
     callables as instance methods.
     """
 
-    def __init__(self, func, *args, **keywords):
+    def __init__(*args, **keywords):
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor '__init__' of partialmethod "
+                            "needs an argument")
+        elif 'func' in keywords:
+            func = keywords.pop('func')
+            self, *args = args
+        else:
+            raise TypeError("type 'partialmethod' takes at least one argument, "
+                            "got %d" % (len(args)-1))
+        args = tuple(args)
+
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError("{!r} is not callable or a descriptor"
                                  .format(func))
