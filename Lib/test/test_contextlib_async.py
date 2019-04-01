@@ -329,6 +329,15 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
 
         self.assertEqual(result, expected)
 
+        result = []
+        async with AsyncExitStack() as stack:
+            with self.assertRaises(TypeError):
+                stack.push_async_callback(arg=1)
+            with self.assertRaises(TypeError):
+                self.exit_stack.push_async_callback(arg=2)
+            stack.push_async_callback(callback=_exit, arg=3)
+        self.assertEqual(result, [((), {'arg': 3})])
+
     @_async_test
     async def test_async_push(self):
         exc_raised = ZeroDivisionError
