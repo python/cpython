@@ -1010,6 +1010,18 @@ def temp_dir(path=None, quiet=False):
         if dir_created and pid == os.getpid():
             rmtree(path)
 
+
+def clean_posix_acls(path):
+    """
+    Remove POSIX.1e default ACLs from directory *path* if the system
+    supports them and any are present.
+    """
+    if sys.platform.startswith('linux') and \
+            shutil.which('getfacl'):
+        if subprocess.check_output(('getfacl', '-cd', path)):
+            subprocess.check_call(('setfacl', '-b', path))
+
+
 @contextlib.contextmanager
 def change_cwd(path, quiet=False):
     """Return a context manager that changes the current working directory.

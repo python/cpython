@@ -1230,6 +1230,7 @@ class _BasePathTest(object):
             support.rmtree(BASE)
         self.addCleanup(cleanup)
         os.mkdir(BASE)
+        support.clean_posix_acls(BASE)
         os.mkdir(join('dirA'))
         os.mkdir(join('dirB'))
         os.mkdir(join('dirC'))

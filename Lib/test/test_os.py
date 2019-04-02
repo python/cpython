@@ -1128,6 +1128,7 @@ class BytesFwalkTests(FwalkTests):
 class MakedirTests(unittest.TestCase):
     def setUp(self):
         os.mkdir(support.TESTFN)
+        support.clean_posix_acls(support.TESTFN)
 
     def test_makedir(self):
         base = support.TESTFN

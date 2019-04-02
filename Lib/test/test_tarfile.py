@@ -2633,6 +2633,7 @@ class NumericOwnerTest(unittest.TestCase):
 def setUpModule():
     support.unlink(TEMPDIR)
     os.makedirs(TEMPDIR)
+    support.clean_posix_acls(TEMPDIR)
 
     global testtarnames
     testtarnames = [tarname]
