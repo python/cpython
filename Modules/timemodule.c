@@ -1005,18 +1005,23 @@ time_mktime(PyObject *self, PyObject *tup)
     {
         return NULL;
     }
-#ifndef _AIX
-    buf.tm_wday = -1;  /* sentinel; original value ignored */
-    tt = mktime(&buf);
-#else
+
+#if defined(_AIX) || (defined(__VXWORKS__) && !defined(_WRS_CONFIG_LP64))
     /* year < 1902 or year > 2037 */
     if ((buf.tm_year < 2) || (buf.tm_year > 137))  {
         /* Issue #19748: On AIX, mktime() doesn't report overflow error for
-         * timestamp < -2^31 or timestamp > 2**31-1. */
+         * timestamp < -2^31 or timestamp > 2**31-1. VxWorks has the same
+         * issue when working in 32 bit mode. */
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
+#endif
+
+#ifndef _AIX
+    buf.tm_wday = -1;  /* sentinel; original value ignored */
+    tt = mktime(&buf);
+#else
     year = buf.tm_year;
     /* year < 1970 - adjust buf.tm_year into legal range */
     while (buf.tm_year < 70) {
