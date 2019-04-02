@@ -2717,6 +2717,34 @@ list___init___impl(PyListObject *self, PyObject *iterable)
     return 0;
 }
 
+static PyObject *
+list_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
+        PyErr_Format(PyExc_TypeError, "list() takes no keyword arguments");
+        return NULL;
+    }
+    size_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs > 1) {
+        PyErr_Format(PyExc_TypeError, "list() expected at most 1 argument, got %zu", nargs);
+        return NULL;
+    }
+
+    assert(PyType_Check(type));
+    PyObject *list = PyType_GenericAlloc((PyTypeObject *)type, 0);
+    if (list == NULL) {
+        return NULL;
+    }
+    PyObject *iterator = nargs ? args[0] : NULL;
+    if (list___init___impl((PyListObject *)list, iterator)) {
+        Py_DECREF(list);
+        return NULL;
+    }
+    return list;
+}
+
+
 /*[clinic input]
 list.__sizeof__
 
@@ -3032,6 +3060,7 @@ PyTypeObject PyList_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = list_vectorcall,
 };
 
 /*********************** List Iterator **************************/
