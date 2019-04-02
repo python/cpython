@@ -1,0 +1,3 @@
+*future_factory* argument for ``concurrent.futures.ThreadExecutorPool``
+and ``concurrent.futures.ProcessExecutorPool`` to controle the type of
+Future created by ``concurrent.futures.Executor.submit``
