@@ -55,6 +55,10 @@ PRESETS = {
         "help": "nuget package",
         "options": ["stable", "pip", "distutils", "dev", "props"],
     },
+    "iot": {
+        "help": "Windows IoT Core",
+        "options": ["stable", "pip"],
+    },
     "default": {
         "help": "development kit package",
         "options": [
