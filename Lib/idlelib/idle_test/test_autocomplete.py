@@ -1,4 +1,4 @@
-"Test autocomplete, coverage 87%."
+"Test autocomplete, coverage 93%."
 
 import unittest
 from unittest.mock import Mock, patch
@@ -151,9 +151,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp = self.autocomplete
         o_c = Func()
         acp.open_completions = o_c
-        self.text.delete('1.0', 'end')
         self.text.insert('1.0', '"dict.')
-
 
         # Set autocomplete._delayed_completion_id to None.
         # Text index changed, don't call open_completions.
@@ -168,39 +166,69 @@ class AutoCompleteTest(unittest.TestCase):
         acp._delayed_open_completions((1, 2, 3, ac.FILES))
         self.assertEqual(acp.open_completions.args[0], (1, 2, 3, ac.FILES))
 
-    def test_open_completions_none(self):
-        # Test 4 None returns and delayed id.
+    def test_oc_cancel_comment(self):
         none = self.assertIsNone
         acp = self.autocomplete
 
-        self.text.insert('1.0', 'int()')
+        # Comment is in neither code or string.
+        acp._delayed_completion_id = 'after'
+        after = Func(result='after')
+        acp.text.after_cancel = after
+        self.text.insert(1.0, '# comment')
+        none(acp.open_completions(ac.TAB))  # From 'else' after 'elif'.
+        none(acp._delayed_completion_id)
+
+    def test_oc_no_list(self):
+        acp = self.autocomplete
+        fetch = Func(result=([],[]))
+        acp.fetch_completions = fetch
+        self.text.insert('1.0', 'object')
+        self.assertIsNone(acp.open_completions(ac.TAB))
+        self.text.insert('insert', '.')
+        self.assertIsNone(acp.open_completions(ac.TAB))
+        self.assertEqual(fetch.called, 2)
+
+
+    def test_open_completions_none(self):
+        # Test other two None returns.
+        none = self.assertIsNone
+        acp = self.autocomplete
+
+        # No object for attributes or need call not allowed.
+        self.text.insert(1.0, '.')
+        none(acp.open_completions(ac.TAB))
+        self.text.insert('insert', ' int().')
         none(acp.open_completions(ac.TAB))
 
+        # Blank or quote trigger 'if complete ...'.
+        self.text.delete(1.0, 'end')
+        self.assertFalse(acp.open_completions(ac.TAB))
+        self.text.insert('1.0', '"')
+        self.assertFalse(acp.open_completions(ac.TAB))
+        self.text.delete('1.0', 'end')
+
+    class dummy_acw():
+        __init__ = Func()
+        show_window = Func(result=False)
+        hide_window = Func()
+
     def test_open_completions(self):
-        # Test completions of files and attributes as well as non-completion
-        # of errors.
-        # add 're.', others to complete coverage
+        # Test completions of files and attributes.
         acp = self.autocomplete
-        def make(): return Mock(spec=acw.AutoCompleteWindow)
-        acp._make_autocomplete_window = make
+        fetch = Func(result=(['tem'],['tem', '_tem']))
+        acp.fetch_completions = fetch
+        def make_acw(): return self.dummy_acw()
+        acp._make_autocomplete_window = make_acw
 
         self.text.insert('1.0', 'int.')
         acp.open_completions(ac.TAB)
-        self.assertIsInstance(acp.autocompletewindow, acw.AutoCompleteWindow)
+        self.assertIsInstance(acp.autocompletewindow, self.dummy_acw)
         self.text.delete('1.0', 'end')
 
         # Test files.
         self.text.insert('1.0', '"t')
         # When run under regrtest, not comp_lists[0] (small)
-        #self.assertTrue(self.autocomplete.open_completions(False, True, True))
-        self.text.delete('1.0', 'end')
-
-        # Test with blank will fail.
-        self.assertFalse(acp.open_completions(ac.TAB))
-
-        # Test with only string quote will fail.
-        self.text.insert('1.0', '"')
-        self.assertFalse(acp.open_completions(ac.TAB))
+        self.assertTrue(acp.open_completions(ac.TAB))
         self.text.delete('1.0', 'end')
 
     def test_fetch_completions(self):

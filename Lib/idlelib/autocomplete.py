@@ -132,11 +132,11 @@ class AutoComplete:
             while i and (curline[i-1] in ID_CHARS or ord(curline[i-1]) > 127):
                 i -= 1
             comp_start = curline[i:j]
-            if i and curline[i-1] == '.':
+            if i and curline[i-1] == '.':  # Need object with attributes.
                 hp.set_index("insert-%dc" % (len(curline)-(i-1)))
                 comp_what = hp.get_expression()
-                if not comp_what or \
-                   (not evalfuncs and comp_what.find('(') != -1):
+                if (not comp_what or
+                   (not evalfuncs and comp_what.find('(') != -1)):
                     return None
             else:
                 comp_what = ""
