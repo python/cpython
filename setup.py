@@ -1884,9 +1884,6 @@ class PyBuildExt(build_ext):
         libs.append('tk'+ version)
         libs.append('tcl'+ version)
 
-        if HOST_PLATFORM in ['aix3', 'aix4']:
-            libs.append('ld')
-
         # Finally, link with the X11 libraries (not appropriate on cygwin)
         if not CYGWIN:
             libs.append('X11')
