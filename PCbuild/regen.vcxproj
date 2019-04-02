@@ -149,6 +149,16 @@
     </Copy>
     <Warning Text="Grammar updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
   </Target>
+  <Target Name="_RegenKeyword" AfterTargets="_RegenGrammar">
+    <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; -m Parser.pgen.keywordgen &quot;..\Grammar\Grammar&quot; &quot;..\Grammar\Tokens&quot; &quot;..\Lib\keyword.py.new&quot;" />
+    <Copy SourceFiles="..\Lib\keyword.py.new" DestinationFiles="..\Lib\keyword.py">
+      <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
+    </Copy>
+    <Warning Text="Keywords updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
+  </Target>
+  <Target Name="_RegenSymbol" AfterTargets="_RegenKeyword">
+    <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; ..\Tools\scripts\generate_symbol_py.py &quot;..\Include\graminit.h&quot;  &quot;..\Lib\symbol.py&quot;" />
+  </Target>
   <Target Name="_CleanFiles" BeforeTargets="CoreClean">
     <ItemGroup>
       <Clean Include="..\Include\graminit.h.new" />
