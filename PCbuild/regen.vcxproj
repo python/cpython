@@ -122,7 +122,23 @@
     </Copy>
     <Warning Text="Grammar updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != '' and $(Configuration) == 'Debug'" />
   </Target>
-  <Target Name="_RegenOpcodes" AfterTargets="_RegenGrammar">
+  <Target Name="_RegenAST_H" AfterTargets="_RegenGrammar">
+    <!-- Regenerate Include/Python-ast.h using Parser/asdl_c.py -h -->
+    <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; &quot;..\Parser\asdl_c.py&quot; -h &quot;..\Include\Python-ast.h.new&quot; &quot;..\Parser\Python.asdl&quot;" />
+    <Copy SourceFiles="..\Include\Python-ast.h.new" DestinationFiles="..\Include\Python-ast.h">
+      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedH" />
+    </Copy>
+    <Warning Text="Python-ast.h updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != '' and $(Configuration) == 'Debug'" />
+  </Target>
+  <Target Name="_RegenAST_C" AfterTargets="_RegenGrammar">
+    <!-- Regenerate Python/Python-ast.c using Parser/asdl_c.py -c -->
+    <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; &quot;..\Parser\asdl_c.py&quot; -c &quot;..\Python\Python-ast.c.new&quot; &quot;..\Parser\Python.asdl&quot;" />
+    <Copy SourceFiles="..\Python\Python-ast.c.new" DestinationFiles="..\Python\Python-ast.c">
+      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedH" />
+    </Copy>
+    <Warning Text="Python-ast.c updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != '' and $(Configuration) == 'Debug'" />
+  </Target>
+  <Target Name="_RegenOpcodes" AfterTargets="_RegenAST_C">
     <!-- Regenerate Include/opcode.h from Lib/opcode.py using Tools/scripts/generate_opcode_h.py-->
     <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; ..\Tools\scripts\generate_opcode_h.py &quot;..\Lib\opcode.py&quot; &quot;..\Include\opcode.h.new&quot;" />
     <Copy SourceFiles="..\Include\opcode.h.new" DestinationFiles="..\Include\opcode.h">
