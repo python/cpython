@@ -97,9 +97,12 @@
     <None Include="..\Grammar\Tokens"></None>
  
     <None Include="..\Include\graminit.h"></None>
-    <None Include="..\Include\graminit.c"></None>
+    <None Include="..\Python\graminit.c"></None>
     <None Include="..\Include\token.h"></None>
     <None Include="..\Include\opcode.h"></None>
+
+    <None Include="..\Include\Python-ast.h"></None>
+    <None Include="..\Python\Python-ast.c"></None>
 
     <None Include="..\Lib\keyword.py"></None>
     <None Include="..\Lib\symbol.py"></None>
