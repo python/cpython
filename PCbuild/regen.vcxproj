@@ -93,20 +93,26 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Grammar\Grammar">
-    </None>
-    <None Include="..\Grammar\Tokens">
-    </None>
-    <None Include="..\Include\graminit.h">
-    </None>
-    <None Include="..\Include\graminit.c">
-    </None>
+    <None Include="..\Grammar\Grammar"></None>
+    <None Include="..\Grammar\Tokens"></None>
+ 
+    <None Include="..\Include\graminit.h"></None>
+    <None Include="..\Include\graminit.c"></None>
+    <None Include="..\Include\token.h"></None>
+    <None Include="..\Include\opcode.h"></None>
+
+    <None Include="..\Lib\keyword.py"></None>
+    <None Include="..\Lib\symbol.py"></None>
+
+    <None Include="..\Doc\library\token-list.inc"></None>
+
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
 
   </ImportGroup>
   <Target Name="_RegenGrammar" BeforeTargets="Build">
+    <!-- Regenerate Include/graminit.h and Python/graminit.c from Grammar/Grammar using pgen-->
     <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; -m Parser.pgen &quot;..\Grammar\Grammar&quot; &quot;..\Grammar\Tokens&quot; &quot;..\Include\graminit.h.new&quot; &quot;..\Python\graminit.c.new&quot;" />
     <Copy SourceFiles="..\Include\graminit.h.new" DestinationFiles="..\Include\graminit.h">
       <Output TaskParameter="CopiedFiles" ItemName="_UpdatedH" />
@@ -117,13 +123,25 @@
     <Warning Text="Grammar updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != '' and $(Configuration) == 'Debug'" />
   </Target>
   <Target Name="_RegenOpcodes" AfterTargets="_RegenGrammar">
+    <!-- Regenerate Include/opcode.h from Lib/opcode.py using Tools/scripts/generate_opcode_h.py-->
     <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; ..\Tools\scripts\generate_opcode_h.py &quot;..\Lib\opcode.py&quot; &quot;..\Include\opcode.h.new&quot;" />
     <Copy SourceFiles="..\Include\opcode.h.new" DestinationFiles="..\Include\opcode.h">
       <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
     </Copy>
     <Warning Text="Opcodes updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
   </Target>
-  <Target Name="_RegenKeywords" AfterTargets="_RegenOpcodes">
+  <Target Name="_RegenTokens" AfterTargets="_RegenOpcodes">
+    <!-- Regenerate Doc/library/token-list.inc from Grammar/Tokens using Tools/scripts/generate_token.py-->
+    <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; ..\Tools\scripts\generate_token.py rst &quot;..\Grammar\Tokens&quot; &quot;..\Doc\library\token-list.inc&quot;" />
+    <!-- Regenerate Include/token.h from Grammar/Tokens using Tools/scripts/generate_token.py-->
+    <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; ..\Tools\scripts\generate_token.py h &quot;..\Grammar\Tokens&quot; &quot;..\Include\token.h&quot;" />
+    <!-- Regenerate Parser/token.c from Grammar/Tokens using Tools/scripts/generate_token.py-->
+    <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; ..\Tools\scripts\generate_token.py c &quot;..\Grammar\Tokens&quot; &quot;..\Parser\token.c&quot;" />
+    <!-- Regenerate Lib/token.py from Grammar/Tokens using Tools/scripts/generate_token.py -->
+    <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; ..\Tools\scripts\generate_token.py py &quot;..\Grammar\Tokens&quot; &quot;..\Lib\token.py&quot;" />
+  </Target>
+  <Target Name="_RegenKeywords" AfterTargets="_RegenTokens">
+    <!-- Regenerate Lib/keyword.py from Grammar/Grammar and Grammar/Tokens using Parser/pgen-->
     <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; -m Parser.pgen.keywordgen &quot;..\Grammar\Grammar&quot; &quot;..\Grammar\Tokens&quot; &quot;..\Lib\keyword.py.new&quot;" />
     <Copy SourceFiles="..\Lib\keyword.py.new" DestinationFiles="..\Lib\keyword.py">
       <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
@@ -131,6 +149,7 @@
     <Warning Text="Keywords updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
   </Target>
   <Target Name="_RegenSymbols" AfterTargets="_RegenKeywords">
+    <!-- Regenerate Lib/symbol.py from Include/graminit.h using Tools/scripts/generate_symbol_py.py-->
     <Exec Command="&quot;$(OutDir)python$(PyDebugExt).exe&quot; ..\Tools\scripts\generate_symbol_py.py &quot;..\Include\graminit.h&quot;  &quot;..\Lib\symbol.py&quot;" />
   </Target>
   <Target Name="_CleanFiles" BeforeTargets="CoreClean">
