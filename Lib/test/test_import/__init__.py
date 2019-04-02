@@ -833,6 +833,10 @@ class PycacheTests(unittest.TestCase):
         unlink(self.source)
 
     def setUp(self):
+        # must be different from test module name 'cuz curdir is also in path
+        self.ctx_mkdir = test.support.temp_dir(TESTFN + "_d")
+        self.ctx_chdir = test.support.change_cwd(self.ctx_mkdir.__enter__())
+        self.ctx_chdir.__enter__()
         self.source = TESTFN + '.py'
         self._clean()
         with open(self.source, 'w') as fp:
@@ -844,6 +848,8 @@ class PycacheTests(unittest.TestCase):
         assert sys.path[0] == os.curdir, 'Unexpected sys.path[0]'
         del sys.path[0]
         self._clean()
+        for ctx in self.ctx_chdir, self.ctx_mkdir:
+            ctx.__exit__(None, None, None)
 
     @skip_if_dont_write_bytecode
     def test_import_pyc_path(self):
@@ -863,6 +869,7 @@ class PycacheTests(unittest.TestCase):
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be
         # unwritable, the import still succeeds but no .pyc file is written.
+        test.support.clean_posix_acls(os.curdir)
         with temp_umask(0o222):
             __import__(TESTFN)
         self.assertTrue(os.path.exists('__pycache__'))
