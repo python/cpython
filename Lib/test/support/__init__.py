@@ -1018,7 +1018,9 @@ def clean_posix_acls(path):
     """
     if sys.platform.startswith('linux') and \
             shutil.which('getfacl'):
-        if subprocess.check_output(('getfacl', '-cd', path)):
+        # silence "getfacl: Removing leading '/' from absolute path names"
+        # `-p' option may not be present outside of Linux
+        if subprocess.check_output(('getfacl', '-cdp', path)):
             subprocess.check_call(('setfacl', '-b', path))
 
 
