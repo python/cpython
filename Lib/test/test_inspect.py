@@ -146,6 +146,7 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.isfunction, 'mod.spam')
         self.istest(inspect.isfunction, 'mod.StupidGit.abuse')
         self.istest(inspect.ismethod, 'git.argue')
+        self.istest(inspect.ismethod, 'mod.custom_method')
         self.istest(inspect.ismodule, 'mod')
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         self.istest(inspect.isgenerator, '(x for x in range(2))')
