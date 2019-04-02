@@ -407,13 +407,13 @@ typedef struct _Py_atomic_int {
 #define _Py_atomic_store_32bit(ATOMIC_VAL, NEW_VAL, ORDER) \
   switch (ORDER) { \
   case _Py_memory_order_acquire: \
-    _InterlockedExchange_acq((volatile long*)&((ATOMIC_VAL)->_value), (int)NEW_VAL); \
+    _InterlockedExchange_acq((volatile long*)(ATOMIC_VAL), (int)NEW_VAL); \
     break; \
   case _Py_memory_order_release: \
-    _InterlockedExchange_rel((volatile long*)&((ATOMIC_VAL)->_value), (int)NEW_VAL); \
+    _InterlockedExchange_rel((volatile long*)(ATOMIC_VAL), (int)NEW_VAL); \
     break; \
   default: \
-    _InterlockedExchange((volatile long*)&((ATOMIC_VAL)->_value), (int)NEW_VAL); \
+    _InterlockedExchange((volatile long*)(ATOMIC_VAL), (int)NEW_VAL); \
     break; \
   }
 
