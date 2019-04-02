@@ -408,7 +408,7 @@ static int test_init_from_config(void)
     Py_UTF8Mode = 0;
     preconfig.utf8_mode = 1;
 
-    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    err = _Py_PreInitialize(&preconfig);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -441,17 +441,17 @@ static int test_init_from_config(void)
     putenv("PYTHONMALLOCSTATS=0");
     config.malloc_stats = 1;
 
-    /* FIXME: test coerce_c_locale and coerce_c_locale_warn */
-
     putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
     config.pycache_prefix = L"conf_pycache_prefix";
 
     Py_SetProgramName(L"./globalvar");
     config.program_name = L"./conf_program_name";
 
-    static wchar_t* argv[2] = {
+    static wchar_t* argv[] = {
+        L"python3",
         L"-c",
         L"pass",
+        L"arg2",
     };
     config.argv.length = Py_ARRAY_LENGTH(argv);
     config.argv.items = argv;
@@ -530,7 +530,6 @@ static int test_init_from_config(void)
     config._frozen = 1;
 
     err = _Py_InitializeFromConfig(&config);
-    /* Don't call _PyCoreConfig_Clear() since all strings are static */
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -617,13 +616,62 @@ static int test_init_isolated(void)
 {
     _PyInitError err;
 
+    /* Test _PyCoreConfig.isolated=1 */
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    Py_IsolatedFlag = 0;
+    config.isolated = 1;
+
+    /* Use path starting with "./" avoids a search along the PATH */
+    config.program_name = L"./_testembed";
+
+    test_init_env_dev_mode_putenvs();
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* _PyPreConfig.isolated=1, _PyCoreConfig.isolated=0 */
+static int test_preinit_isolated1(void)
+{
+    _PyInitError err;
+
     _PyPreConfig preconfig = _PyPreConfig_INIT;
+    preconfig.isolated = 1;
 
-    /* Set coerce_c_locale and utf8_mode to not depend on the locale */
-    preconfig.coerce_c_locale = 0;
-    preconfig.utf8_mode = 0;
+    err = _Py_PreInitialize(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
 
-    err = _Py_PreInitializeFromPreConfig(&preconfig);
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config.program_name = L"./_testembed";
+
+    test_init_env_dev_mode_putenvs();
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* _PyPreConfig.isolated=0, _PyCoreConfig.isolated=1 */
+static int test_preinit_isolated2(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    preconfig.isolated = 0;
+
+    err = _Py_PreInitialize(&preconfig);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -665,6 +713,27 @@ static int test_init_dev_mode(void)
 }
 
 
+static int test_run_main(void)
+{
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import sys; "
+                        L"print(f'_Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.program_name = L"./python3";
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -699,6 +768,9 @@ static struct TestCase TestCases[] = {
     { "init_env_dev_mode_alloc", test_init_env_dev_mode_alloc },
     { "init_dev_mode", test_init_dev_mode },
     { "init_isolated", test_init_isolated },
+    { "preinit_isolated1", test_preinit_isolated1 },
+    { "preinit_isolated2", test_preinit_isolated2 },
+    { "run_main", test_run_main },
     { NULL, NULL }
 };
 

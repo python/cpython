@@ -53,7 +53,12 @@ class EmbeddingTestsMixin:
                              stderr=subprocess.PIPE,
                              universal_newlines=True,
                              env=env)
-        (out, err) = p.communicate()
+        try:
+            (out, err) = p.communicate()
+        except:
+            p.terminate()
+            p.wait()
+            raise
         if p.returncode != 0 and support.verbose:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
@@ -254,6 +259,11 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out.rstrip(), "Py_Main() after Py_Initialize: sys.argv=['-c', 'arg2']")
         self.assertEqual(err, '')
 
+    def test_run_main(self):
+        out, err = self.run_embedded_interpreter("run_main")
+        self.assertEqual(out.rstrip(), "_Py_RunMain(): sys.argv=['-c', 'arg2']")
+        self.assertEqual(err, '')
+
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
@@ -338,6 +348,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_install_importlib': 1,
         '_check_hash_pycs_mode': 'default',
         '_frozen': 0,
+        '_init_main': 1,
     }
     if MS_WINDOWS:
         DEFAULT_PRE_CONFIG.update({
@@ -346,22 +357,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         DEFAULT_CORE_CONFIG.update({
             'legacy_windows_stdio': 0,
         })
-
-    # main config
-    COPY_MAIN_CONFIG = (
-        # Copy core config to main config for expected values
-        'argv',
-        'base_exec_prefix',
-        'base_prefix',
-        'exec_prefix',
-        'executable',
-        'install_signal_handlers',
-        'prefix',
-        'pycache_prefix',
-        'warnoptions',
-        # xoptions is created from core_config in check_main_config().
-        # 'module_search_paths' is copied to 'module_search_path'.
-    )
 
     # global config
     DEFAULT_GLOBAL_CONFIG = {
@@ -409,18 +404,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             else:
                 xoptions[opt] = True
         return xoptions
-
-    def check_main_config(self, config):
-        core_config = config['core_config']
-        main_config = config['main_config']
-
-        # main config
-        expected = {}
-        for key in self.COPY_MAIN_CONFIG:
-            expected[key] = core_config[key]
-        expected['module_search_path'] = core_config['module_search_paths']
-        expected['xoptions'] = self.main_xoptions(core_config['xoptions'])
-        self.assertEqual(main_config, expected)
 
     def get_expected_config(self, expected, env):
         expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
@@ -521,9 +504,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if key not in expected_preconfig:
                 expected_preconfig[key] = expected_config[key]
 
-        self.check_core_config(config, expected_config)
         self.check_pre_config(config, expected_preconfig)
-        self.check_main_config(config)
+        self.check_core_config(config, expected_config)
         self.check_global_config(config)
 
     def test_init_default_config(self):
@@ -577,10 +559,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
-            'argv': ['-c', 'pass'],
+            'argv': ['-c', 'arg2'],
             'program': 'conf_program',
             'xoptions': ['core_xoption1=3', 'core_xoption2=', 'core_xoption3'],
             'warnoptions': ['error::ResourceWarning', 'default::BytesWarning'],
+            'run_command': 'pass\n',
 
             'site_import': 0,
             'bytes_warning': 1,
@@ -601,7 +584,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     INIT_ENV_PRECONFIG = {
         'allocator': 'malloc',
-        'utf8_mode': 1,
     }
     INIT_ENV_CONFIG = {
         'use_hash_seed': 1,
@@ -609,8 +591,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'tracemalloc': 2,
         'import_time': 1,
         'malloc_stats': 1,
-        'filesystem_encoding': 'utf-8',
-        'filesystem_errors': UTF8_MODE_ERRORS,
         'inspect': 1,
         'optimization_level': 2,
         'pycache_prefix': 'env_pycache_prefix',
@@ -661,6 +641,26 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
         }
         self.check_config("init_isolated", config, preconfig)
+
+    def test_preinit_isolated1(self):
+        # _PyPreConfig.isolated=1, _PyCoreConfig.isolated not set
+        preconfig = {}
+        config = {
+            'isolated': 1,
+            'use_environment': 0,
+            'user_site_directory': 0,
+        }
+        self.check_config("preinit_isolated1", config, preconfig)
+
+    def test_preinit_isolated2(self):
+        # _PyPreConfig.isolated=0, _PyCoreConfig.isolated=1
+        preconfig = {}
+        config = {
+            'isolated': 1,
+            'use_environment': 0,
+            'user_site_directory': 0,
+        }
+        self.check_config("preinit_isolated2", config, preconfig)
 
 
 if __name__ == "__main__":

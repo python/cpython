@@ -49,7 +49,7 @@ Fix a possible crash in ``structseq_repr()``.
 
 ..
 
-.. bpo: 12477
+.. bpo: 36256
 .. date: 2019-03-21-00-24-18
 .. nonce: OZHa0t
 .. section: Core and Builtins
@@ -236,7 +236,7 @@ deprecated.
 
 ..
 
-.. bpo: 11814
+.. bpo: 35808
 .. date: 2019-02-11-00-50-03
 .. nonce: M12CMH
 .. section: Core and Builtins

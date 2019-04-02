@@ -148,22 +148,6 @@ _PyPreCmdline_SetPreConfig(const _PyPreCmdline *cmdline, _PyPreConfig *config)
 }
 
 
-static void
-_PyPreCmdline_GetCoreConfig(_PyPreCmdline *cmdline, const _PyCoreConfig *config)
-{
-#define COPY_ATTR(ATTR) \
-    if (config->ATTR != -1) { \
-        cmdline->ATTR = config->ATTR; \
-    }
-
-    COPY_ATTR(isolated);
-    COPY_ATTR(use_environment);
-    COPY_ATTR(dev_mode);
-
-#undef COPY_ATTR
-}
-
-
 int
 _PyPreCmdline_SetCoreConfig(const _PyPreCmdline *cmdline, _PyCoreConfig *config)
 {
@@ -231,15 +215,10 @@ precmdline_parse_cmdline(_PyPreCmdline *cmdline)
 
 _PyInitError
 _PyPreCmdline_Read(_PyPreCmdline *cmdline,
-                    const _PyPreConfig *preconfig,
-                    const _PyCoreConfig *coreconfig)
+                    const _PyPreConfig *preconfig)
 {
     if (preconfig) {
         _PyPreCmdline_GetPreConfig(cmdline, preconfig);
-    }
-
-    if (coreconfig) {
-        _PyPreCmdline_GetCoreConfig(cmdline, coreconfig);
     }
 
     _PyInitError err = precmdline_parse_cmdline(cmdline);
@@ -373,6 +352,23 @@ fail:
 }
 
 
+void
+_PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
+                            const _PyCoreConfig *core_config)
+{
+#define COPY_ATTR(ATTR) \
+    if (core_config->ATTR != -1) { \
+        config->ATTR = core_config->ATTR; \
+    }
+
+    COPY_ATTR(isolated);
+    COPY_ATTR(use_environment);
+    COPY_ATTR(dev_mode);
+
+#undef COPY_ATTR
+}
+
+
 static void
 _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 {
@@ -390,7 +386,9 @@ _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
-    COPY_FLAG(utf8_mode, Py_UTF8Mode);
+    if (Py_UTF8Mode > 0) {
+        config->utf8_mode = 1;
+    }
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -640,12 +638,11 @@ preconfig_init_allocator(_PyPreConfig *config)
 
 
 static _PyInitError
-preconfig_read(_PyPreConfig *config, _PyPreCmdline *cmdline,
-               const _PyCoreConfig *coreconfig)
+preconfig_read(_PyPreConfig *config, _PyPreCmdline *cmdline)
 {
     _PyInitError err;
 
-    err = _PyPreCmdline_Read(cmdline, config, coreconfig);
+    err = _PyPreCmdline_Read(cmdline, config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -692,8 +689,7 @@ preconfig_read(_PyPreConfig *config, _PyPreCmdline *cmdline,
    - Py_xxx global configuration variables
    - the LC_CTYPE locale */
 _PyInitError
-_PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args,
-                  const _PyCoreConfig *coreconfig)
+_PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
 {
     _PyInitError err;
 
@@ -756,7 +752,7 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args,
         Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
 #endif
 
-        err = preconfig_read(config, &cmdline, coreconfig);
+        err = preconfig_read(config, &cmdline);
         if (_Py_INIT_FAILED(err)) {
             goto done;
         }

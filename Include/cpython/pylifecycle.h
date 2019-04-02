@@ -14,34 +14,36 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 
-PyAPI_FUNC(_PyInitError) _Py_PreInitialize(void);
-PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPreConfig(
-    const _PyPreConfig *preconfig);
-PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromConfig(
-    const _PyCoreConfig *coreconfig);
+PyAPI_FUNC(_PyInitError) _Py_PreInitialize(
+    const _PyPreConfig *src_config);
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromArgs(
+    const _PyPreConfig *src_config,
+    int argc,
+    char **argv);
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromWideArgs(
+    const _PyPreConfig *src_config,
+    int argc,
+    wchar_t **argv);
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeCore(
-    const _PyCoreConfig *config,
-    PyInterpreterState **interp);
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
-
-PyAPI_FUNC(_PyInitError) _PyMainInterpreterConfig_Read(
-    _PyMainInterpreterConfig *config,
-    const _PyCoreConfig *core_config);
-PyAPI_FUNC(void) _PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *);
-PyAPI_FUNC(int) _PyMainInterpreterConfig_Copy(
-    _PyMainInterpreterConfig *config,
-    const _PyMainInterpreterConfig *config2);
-
-PyAPI_FUNC(_PyInitError) _Py_InitializeMainInterpreter(
-    PyInterpreterState *interp,
-    const _PyMainInterpreterConfig *);
 
 /* Initialization and finalization */
 
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
     const _PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _Py_InitializeFromArgs(
+    const _PyCoreConfig *config,
+    int argc,
+    char **argv);
+PyAPI_FUNC(_PyInitError) _Py_InitializeFromWideArgs(
+    const _PyCoreConfig *config,
+    int argc,
+    wchar_t **argv);
+
+PyAPI_FUNC(int) _Py_RunMain(void);
+
+
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_ExitInitError(_PyInitError err);
 
 /* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level

@@ -31,311 +31,10 @@
 extern "C" {
 #endif
 
-/* --- PyMainInterpreter ------------------------------------------ */
-
-void
-_PyMainInterpreterConfig_Clear(_PyMainInterpreterConfig *config)
-{
-    Py_CLEAR(config->argv);
-    Py_CLEAR(config->executable);
-    Py_CLEAR(config->prefix);
-    Py_CLEAR(config->base_prefix);
-    Py_CLEAR(config->exec_prefix);
-    Py_CLEAR(config->base_exec_prefix);
-    Py_CLEAR(config->warnoptions);
-    Py_CLEAR(config->xoptions);
-    Py_CLEAR(config->module_search_path);
-    Py_CLEAR(config->pycache_prefix);
-}
-
-
-static int
-mainconfig_add_xoption(PyObject *opts, const wchar_t *s)
-{
-    PyObject *name, *value;
-
-    const wchar_t *name_end = wcschr(s, L'=');
-    if (!name_end) {
-        name = PyUnicode_FromWideChar(s, -1);
-        value = Py_True;
-        Py_INCREF(value);
-    }
-    else {
-        name = PyUnicode_FromWideChar(s, name_end - s);
-        value = PyUnicode_FromWideChar(name_end + 1, -1);
-    }
-    if (name == NULL || value == NULL) {
-        goto error;
-    }
-    if (PyDict_SetItem(opts, name, value) < 0) {
-        goto error;
-    }
-    Py_DECREF(name);
-    Py_DECREF(value);
-    return 0;
-
-error:
-    Py_XDECREF(name);
-    Py_XDECREF(value);
-    return -1;
-}
-
-
-static PyObject*
-mainconfig_create_xoptions_dict(const _PyCoreConfig *config)
-{
-    Py_ssize_t nxoption = config->xoptions.length;
-    wchar_t * const * xoptions = config->xoptions.items;
-    PyObject *dict = PyDict_New();
-    if (dict == NULL) {
-        return NULL;
-    }
-
-    for (Py_ssize_t i=0; i < nxoption; i++) {
-        const wchar_t *option = xoptions[i];
-        if (mainconfig_add_xoption(dict, option) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-    }
-
-    return dict;
-}
-
-
-static PyObject*
-mainconfig_copy_attr(PyObject *obj)
-{
-    if (PyUnicode_Check(obj)) {
-        Py_INCREF(obj);
-        return obj;
-    }
-    else if (PyList_Check(obj)) {
-        return PyList_GetSlice(obj, 0, Py_SIZE(obj));
-    }
-    else if (PyDict_Check(obj)) {
-        /* The dict type is used for xoptions. Make the assumption that keys
-           and values are immutables */
-        return PyDict_Copy(obj);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "cannot copy config attribute of type %.200s",
-                     Py_TYPE(obj)->tp_name);
-        return NULL;
-    }
-}
-
-
-int
-_PyMainInterpreterConfig_Copy(_PyMainInterpreterConfig *config,
-                              const _PyMainInterpreterConfig *config2)
-{
-    _PyMainInterpreterConfig_Clear(config);
-
-#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
-#define COPY_OBJ_ATTR(ATTR) \
-    do { \
-        if (config2->ATTR != NULL) { \
-            config->ATTR = mainconfig_copy_attr(config2->ATTR); \
-            if (config->ATTR == NULL) { \
-                return -1; \
-            } \
-        } \
-    } while (0)
-
-    COPY_ATTR(install_signal_handlers);
-    COPY_OBJ_ATTR(argv);
-    COPY_OBJ_ATTR(executable);
-    COPY_OBJ_ATTR(prefix);
-    COPY_OBJ_ATTR(base_prefix);
-    COPY_OBJ_ATTR(exec_prefix);
-    COPY_OBJ_ATTR(base_exec_prefix);
-    COPY_OBJ_ATTR(warnoptions);
-    COPY_OBJ_ATTR(xoptions);
-    COPY_OBJ_ATTR(module_search_path);
-    COPY_OBJ_ATTR(pycache_prefix);
-#undef COPY_ATTR
-#undef COPY_OBJ_ATTR
-    return 0;
-}
-
-
-PyObject*
-_PyMainInterpreterConfig_AsDict(const _PyMainInterpreterConfig *config)
-{
-    PyObject *dict, *obj;
-    int res;
-
-    dict = PyDict_New();
-    if (dict == NULL) {
-        return NULL;
-    }
-
-#define SET_ITEM_INT(ATTR) \
-    do { \
-        obj = PyLong_FromLong(config->ATTR); \
-        if (obj == NULL) { \
-            goto fail; \
-        } \
-        res = PyDict_SetItemString(dict, #ATTR, obj); \
-        Py_DECREF(obj); \
-        if (res < 0) { \
-            goto fail; \
-        } \
-    } while (0)
-
-#define SET_ITEM_OBJ(ATTR) \
-    do { \
-        obj = config->ATTR; \
-        if (obj == NULL) { \
-            obj = Py_None; \
-        } \
-        res = PyDict_SetItemString(dict, #ATTR, obj); \
-        if (res < 0) { \
-            goto fail; \
-        } \
-    } while (0)
-
-    SET_ITEM_INT(install_signal_handlers);
-    SET_ITEM_OBJ(argv);
-    SET_ITEM_OBJ(executable);
-    SET_ITEM_OBJ(prefix);
-    SET_ITEM_OBJ(base_prefix);
-    SET_ITEM_OBJ(exec_prefix);
-    SET_ITEM_OBJ(base_exec_prefix);
-    SET_ITEM_OBJ(warnoptions);
-    SET_ITEM_OBJ(xoptions);
-    SET_ITEM_OBJ(module_search_path);
-    SET_ITEM_OBJ(pycache_prefix);
-
-    return dict;
-
-fail:
-    Py_DECREF(dict);
-    return NULL;
-
-#undef SET_ITEM_OBJ
-}
-
-
-_PyInitError
-_PyMainInterpreterConfig_Read(_PyMainInterpreterConfig *main_config,
-                              const _PyCoreConfig *config)
-{
-    if (main_config->install_signal_handlers < 0) {
-        main_config->install_signal_handlers = config->install_signal_handlers;
-    }
-
-    if (main_config->xoptions == NULL) {
-        main_config->xoptions = mainconfig_create_xoptions_dict(config);
-        if (main_config->xoptions == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
-    }
-
-#define COPY_WSTR(ATTR) \
-    do { \
-        if (main_config->ATTR == NULL && config->ATTR != NULL) { \
-            main_config->ATTR = PyUnicode_FromWideChar(config->ATTR, -1); \
-            if (main_config->ATTR == NULL) { \
-                return _Py_INIT_NO_MEMORY(); \
-            } \
-        } \
-    } while (0)
-#define COPY_WSTRLIST(ATTR, LIST) \
-    do { \
-        if (ATTR == NULL) { \
-            ATTR = _PyWstrList_AsList(LIST); \
-            if (ATTR == NULL) { \
-                return _Py_INIT_NO_MEMORY(); \
-            } \
-        } \
-    } while (0)
-
-    COPY_WSTRLIST(main_config->warnoptions, &config->warnoptions);
-    COPY_WSTRLIST(main_config->argv, &config->argv);
-
-    if (config->_install_importlib) {
-        COPY_WSTR(executable);
-        COPY_WSTR(prefix);
-        COPY_WSTR(base_prefix);
-        COPY_WSTR(exec_prefix);
-        COPY_WSTR(base_exec_prefix);
-
-        COPY_WSTRLIST(main_config->module_search_path,
-                      &config->module_search_paths);
-
-        if (config->pycache_prefix != NULL) {
-            COPY_WSTR(pycache_prefix);
-        } else {
-            main_config->pycache_prefix = NULL;
-        }
-
-    }
-
-    return _Py_INIT_OK();
-#undef COPY_WSTR
-#undef COPY_WSTRLIST
-}
-
-
 /* --- pymain_init() ---------------------------------------------- */
 
 static _PyInitError
-pymain_init_preconfig(const _PyArgv *args)
-{
-    _PyInitError err;
-
-    _PyPreConfig config = _PyPreConfig_INIT;
-
-    err = _PyPreConfig_Read(&config, args, NULL);
-    if (_Py_INIT_FAILED(err)) {
-        goto done;
-    }
-
-    err = _Py_PreInitializeInPlace(&config);
-
-done:
-    _PyPreConfig_Clear(&config);
-    return err;
-}
-
-
-static _PyInitError
-pymain_init_coreconfig(_PyCoreConfig *config, const _PyArgv *args,
-                       PyInterpreterState **interp_p)
-{
-    _PyInitError err = _PyCoreConfig_Read(config, args);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    return _Py_InitializeCore(config, interp_p);
-}
-
-
-static _PyInitError
-pymain_init_python_main(PyInterpreterState *interp)
-{
-    _PyInitError err;
-
-    _PyMainInterpreterConfig main_config = _PyMainInterpreterConfig_INIT;
-    err = _PyMainInterpreterConfig_Read(&main_config, &interp->core_config);
-    if (!_Py_INIT_FAILED(err)) {
-        err = _Py_InitializeMainInterpreter(interp, &main_config);
-    }
-    _PyMainInterpreterConfig_Clear(&main_config);
-
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-    return _Py_INIT_OK();
-}
-
-
-static _PyInitError
-pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
+pymain_init(const _PyArgv *args)
 {
     _PyInitError err;
 
@@ -353,24 +52,31 @@ pymain_init(const _PyArgv *args, PyInterpreterState **interp_p)
     fedisableexcept(FE_OVERFLOW);
 #endif
 
-    err = pymain_init_preconfig(args);
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    /* Set to -1 to enable them depending on the LC_CTYPE locale and the
+       environment variables (PYTHONUTF8 and PYTHONCOERCECLOCALE)  */
+    preconfig.coerce_c_locale = -1;
+    preconfig.utf8_mode = -1;
+    if (args->use_bytes_argv) {
+        err = _Py_PreInitializeFromArgs(&preconfig,
+                                        args->argc, args->bytes_argv);
+    }
+    else {
+        err = _Py_PreInitializeFromWideArgs(&preconfig,
+                                            args->argc, args->wchar_argv);
+    }
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
-    err = pymain_init_coreconfig(&config, args, interp_p);
-    _PyCoreConfig_Clear(&config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    /* pass NULL as the config: config is read from command line arguments,
+       environment variables, configuration files */
+    if (args->use_bytes_argv) {
+        return _Py_InitializeFromArgs(NULL, args->argc, args->bytes_argv);
     }
-
-    err = pymain_init_python_main(*interp_p);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    else {
+        return _Py_InitializeFromWideArgs(NULL, args->argc, args->wchar_argv);
     }
-
-    return _Py_INIT_OK();
 }
 
 
@@ -577,7 +283,7 @@ static int
 pymain_run_file(_PyCoreConfig *config, PyCompilerFlags *cf)
 {
     const wchar_t *filename = config->run_filename;
-    FILE *fp = _Py_wfopen(filename, L"r");
+    FILE *fp = _Py_wfopen(filename, L"rb");
     if (fp == NULL) {
         char *cfilename_buffer;
         const char *cfilename;
@@ -745,9 +451,12 @@ pymain_repl(_PyCoreConfig *config, PyCompilerFlags *cf, int *exitcode)
 
 
 static _PyInitError
-pymain_run_python(PyInterpreterState *interp, int *exitcode)
+pymain_run_python(int *exitcode)
 {
     _PyInitError err;
+
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    /* pymain_run_stdin() modify the config */
     _PyCoreConfig *config = &interp->core_config;
 
     PyObject *main_importer_path = NULL;
@@ -858,21 +567,22 @@ exit_sigint(void)
 }
 
 
-static int
-pymain_main(_PyArgv *args)
+static void _Py_NO_RETURN
+pymain_exit_error(_PyInitError err)
 {
-    _PyInitError err;
+    pymain_free();
+    _Py_ExitInitError(err);
+}
 
-    PyInterpreterState *interp;
-    err = pymain_init(args, &interp);
-    if (_Py_INIT_FAILED(err)) {
-        goto exit_init_error;
-    }
 
+int
+_Py_RunMain(void)
+{
     int exitcode = 0;
-    err = pymain_run_python(interp, &exitcode);
+
+    _PyInitError err = pymain_run_python(&exitcode);
     if (_Py_INIT_FAILED(err)) {
-        goto exit_init_error;
+        pymain_exit_error(err);
     }
 
     if (Py_FinalizeEx() < 0) {
@@ -888,10 +598,18 @@ pymain_main(_PyArgv *args)
     }
 
     return exitcode;
+}
 
-exit_init_error:
-    pymain_free();
-    _Py_ExitInitError(err);
+
+static int
+pymain_main(_PyArgv *args)
+{
+    _PyInitError err = pymain_init(args);
+    if (_Py_INIT_FAILED(err)) {
+        pymain_exit_error(err);
+    }
+
+    return _Py_RunMain();
 }
 
 

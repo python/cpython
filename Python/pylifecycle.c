@@ -458,7 +458,7 @@ _Py_SetLocaleFromEnv(int category)
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.
 
-   Every call to _Py_InitializeCore, Py_Initialize or Py_InitializeEx
+   Every call to _Py_InitializeFromConfig, Py_Initialize or Py_InitializeEx
    must have a corresponding call to Py_Finalize.
 
    Locking: you must hold the interpreter lock while calling these APIs.
@@ -485,7 +485,7 @@ _Py_Initialize_ReconfigureCore(PyInterpreterState **interp_p,
     _PyCoreConfig_Write(core_config);
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
+        return _Py_INIT_NO_MEMORY();
     }
     core_config = &interp->core_config;
 
@@ -548,7 +548,7 @@ pycore_create_interpreter(const _PyCoreConfig *core_config,
     *interp_p = interp;
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
+        return _Py_INIT_NO_MEMORY();
     }
     core_config = &interp->core_config;
 
@@ -718,40 +718,35 @@ _Py_InitializeCore_impl(PyInterpreterState **interp_p,
 
 
 static _PyInitError
-pyinit_preinit(_PyPreConfig *config,
-               const _PyPreConfig *src_config,
-               const _PyCoreConfig *coreconfig)
+preinit(const _PyPreConfig *src_config, const _PyArgv *args)
 {
     _PyInitError err;
-    _PyPreConfig local_config = _PyPreConfig_INIT;
-    if (!config) {
-        config = &local_config;
-    }
 
     err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
     if (_PyRuntime.pre_initialized) {
         /* If it's already configured: ignored the new configuration */
-        err = _Py_INIT_OK();
-        goto done;
+        return _Py_INIT_OK();
     }
 
+    _PyPreConfig config = _PyPreConfig_INIT;
+
     if (src_config) {
-        if (_PyPreConfig_Copy(config, src_config) < 0) {
-            err = _Py_INIT_ERR("failed to copy pre config");
+        if (_PyPreConfig_Copy(&config, src_config) < 0) {
+            err = _Py_INIT_NO_MEMORY();
             goto done;
         }
     }
 
-    err = _PyPreConfig_Read(config, NULL, coreconfig);
+    err = _PyPreConfig_Read(&config, args);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
 
-    err = _PyPreConfig_Write(config);
+    err = _PyPreConfig_Write(&config);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
@@ -760,48 +755,58 @@ pyinit_preinit(_PyPreConfig *config,
     err = _Py_INIT_OK();
 
 done:
-    _PyPreConfig_Clear(&local_config);
+    _PyPreConfig_Clear(&config);
     return err;
 }
 
-
 _PyInitError
-_Py_PreInitialize(void)
+_Py_PreInitializeFromArgs(const _PyPreConfig *src_config, int argc, char **argv)
 {
-    return pyinit_preinit(NULL, NULL, NULL);
+    _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
+    return preinit(src_config, &args);
 }
 
 
 _PyInitError
-_Py_PreInitializeFromPreConfig(const _PyPreConfig *src_config)
+_Py_PreInitializeFromWideArgs(const _PyPreConfig *src_config, int argc, wchar_t **argv)
 {
-    return pyinit_preinit(NULL, src_config, NULL);
+    _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
+    return preinit(src_config, &args);
 }
 
 
 _PyInitError
-_Py_PreInitializeInPlace(_PyPreConfig *config)
+_Py_PreInitialize(const _PyPreConfig *src_config)
 {
-    return pyinit_preinit(config, NULL, NULL);
+    return preinit(src_config, NULL);
 }
 
 
 _PyInitError
-_Py_PreInitializeFromConfig(const _PyCoreConfig *coreconfig)
+_Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig)
 {
-    return pyinit_preinit(NULL, NULL, coreconfig);
+    assert(coreconfig != NULL);
+    _PyPreConfig config = _PyPreConfig_INIT;
+    _PyCoreConfig_GetCoreConfig(&config, coreconfig);
+    return _Py_PreInitialize(&config);
+    /* No need to clear config:
+       _PyCoreConfig_GetCoreConfig() doesn't allocate memory */
 }
 
 
 static _PyInitError
-pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
+pyinit_coreconfig(_PyCoreConfig *config,
+                  const _PyCoreConfig *src_config,
+                  const _PyArgv *args,
                   PyInterpreterState **interp_p)
 {
-    if (_PyCoreConfig_Copy(config, src_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
+    if (src_config) {
+        if (_PyCoreConfig_Copy(config, src_config) < 0) {
+            return _Py_INIT_NO_MEMORY();
+        }
     }
 
-    _PyInitError err = _PyCoreConfig_Read(config, NULL);
+    _PyInitError err = _PyCoreConfig_Read(config, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -832,35 +837,47 @@ pyinit_coreconfig(_PyCoreConfig *config, const _PyCoreConfig *src_config,
  * to the Python C API (unless the API is explicitly listed as being
  * safe to call without calling Py_Initialize first)
  */
-_PyInitError
+static _PyInitError
 _Py_InitializeCore(const _PyCoreConfig *src_config,
+                   const _PyArgv *args,
                    PyInterpreterState **interp_p)
 {
-    assert(src_config != NULL);
+    _PyInitError err;
 
-    _PyInitError err = _Py_PreInitializeFromConfig(src_config);
+    if (src_config) {
+        err = _Py_PreInitializeFromCoreConfig(src_config);
+    }
+    else {
+        err = _Py_PreInitialize(NULL);
+    }
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
     _PyCoreConfig local_config = _PyCoreConfig_INIT;
-    err = pyinit_coreconfig(&local_config, src_config, interp_p);
+    err = pyinit_coreconfig(&local_config, src_config, args, interp_p);
     _PyCoreConfig_Clear(&local_config);
     return err;
 }
+
 
 /* Py_Initialize() has already been called: update the main interpreter
    configuration. Example of bpo-34008: Py_Main() called after
    Py_Initialize(). */
 static _PyInitError
-_Py_ReconfigureMainInterpreter(PyInterpreterState *interp,
-                               const _PyMainInterpreterConfig *config)
+_Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
 {
-    if (config->argv != NULL) {
-        int res = PyDict_SetItemString(interp->sysdict, "argv", config->argv);
-        if (res < 0) {
-            return _Py_INIT_ERR("fail to set sys.argv");
-        }
+    _PyCoreConfig *core_config = &interp->core_config;
+
+    PyObject *argv = _PyWstrList_AsList(&core_config->argv);
+    if (argv == NULL) {
+        return _Py_INIT_NO_MEMORY(); \
+    }
+
+    int res = PyDict_SetItemString(interp->sysdict, "argv", argv);
+    Py_DECREF(argv);
+    if (res < 0) {
+        return _Py_INIT_ERR("fail to set sys.argv");
     }
     return _Py_INIT_OK();
 }
@@ -876,23 +893,18 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp,
  * Other errors should be reported as normal Python exceptions with a
  * non-zero return code.
  */
-_PyInitError
-_Py_InitializeMainInterpreter(PyInterpreterState *interp,
-                              const _PyMainInterpreterConfig *config)
+static _PyInitError
+_Py_InitializeMainInterpreter(PyInterpreterState *interp)
 {
     if (!_PyRuntime.core_initialized) {
         return _Py_INIT_ERR("runtime core not initialized");
     }
 
     /* Configure the main interpreter */
-    if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
-        return _Py_INIT_ERR("failed to copy main interpreter config");
-    }
-    config = &interp->config;
     _PyCoreConfig *core_config = &interp->core_config;
 
     if (_PyRuntime.initialized) {
-        return _Py_ReconfigureMainInterpreter(interp, config);
+        return _Py_ReconfigureMainInterpreter(interp);
     }
 
     if (!core_config->_install_importlib) {
@@ -929,7 +941,7 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
         return err;
     }
 
-    if (interp->config.install_signal_handlers) {
+    if (core_config->install_signal_handlers) {
         err = initsigs(); /* Signal handling stuff, including initintr() */
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -980,27 +992,48 @@ _Py_InitializeMainInterpreter(PyInterpreterState *interp,
 
 #undef _INIT_DEBUG_PRINT
 
-_PyInitError
-_Py_InitializeFromConfig(const _PyCoreConfig *config)
+static _PyInitError
+init_python(const _PyCoreConfig *config, const _PyArgv *args)
 {
     PyInterpreterState *interp = NULL;
     _PyInitError err;
-    err = _Py_InitializeCore(config, &interp);
+    err = _Py_InitializeCore(config, args, &interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
     config = &interp->core_config;
 
-    _PyMainInterpreterConfig main_config = _PyMainInterpreterConfig_INIT;
-    err = _PyMainInterpreterConfig_Read(&main_config, config);
-    if (!_Py_INIT_FAILED(err)) {
-        err = _Py_InitializeMainInterpreter(interp, &main_config);
+    if (config->_init_main) {
+        err = _Py_InitializeMainInterpreter(interp);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
-    _PyMainInterpreterConfig_Clear(&main_config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
+
     return _Py_INIT_OK();
+}
+
+
+_PyInitError
+_Py_InitializeFromArgs(const _PyCoreConfig *config, int argc, char **argv)
+{
+    _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
+    return init_python(config, &args);
+}
+
+
+_PyInitError
+_Py_InitializeFromWideArgs(const _PyCoreConfig *config, int argc, wchar_t **argv)
+{
+    _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
+    return init_python(config, &args);
+}
+
+
+_PyInitError
+_Py_InitializeFromConfig(const _PyCoreConfig *config)
+{
+    return init_python(config, NULL);
 }
 
 
@@ -1012,13 +1045,10 @@ Py_InitializeEx(int install_sigs)
         return;
     }
 
-    _PyInitError err;
     _PyCoreConfig config = _PyCoreConfig_INIT;
     config.install_signal_handlers = install_sigs;
 
-    err = _Py_InitializeFromConfig(&config);
-    _PyCoreConfig_Clear(&config);
-
+    _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
         _Py_ExitInitError(err);
     }
@@ -1364,24 +1394,18 @@ new_interpreter(PyThreadState **tstate_p)
 
     /* Copy the current interpreter config into the new interpreter */
     _PyCoreConfig *core_config;
-    _PyMainInterpreterConfig *config;
     if (save_tstate != NULL) {
         core_config = &save_tstate->interp->core_config;
-        config = &save_tstate->interp->config;
     } else {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = PyInterpreterState_Main();
         core_config = &main_interp->core_config;
-        config = &main_interp->config;
     }
 
     if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_ERR("failed to copy core config");
+        return _Py_INIT_NO_MEMORY();
     }
     core_config = &interp->core_config;
-    if (_PyMainInterpreterConfig_Copy(&interp->config, config) < 0) {
-        return _Py_INIT_ERR("failed to copy main interpreter config");
-    }
 
     err = _PyExc_Init();
     if (_Py_INIT_FAILED(err)) {
