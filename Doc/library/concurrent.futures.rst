@@ -132,7 +132,7 @@ And::
    executor.submit(wait_on_future)
 
 
-.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=(), future_factory=None)
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
@@ -142,6 +142,10 @@ And::
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
    as well as any attempt to submit more jobs to the pool.
+
+   *future_factory* is an optional callable that is called to create a
+   :class:`Future` returned by :meth:`ThreadPoolExecutor.submit`.
+   If ``None`` :class:`Future` is used.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -158,6 +162,9 @@ And::
 
    .. versionchanged:: 3.7
       Added the *initializer* and *initargs* arguments.
+
+   .. versionchanged:: 3.8
+      Added *future_factory* argument.
 
 
 .. _threadpoolexecutor-example:
@@ -209,7 +216,7 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
-.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=())
+.. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), future_factory=None)
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
@@ -226,6 +233,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
    as well any attempt to submit more jobs to the pool.
 
+   *future_factory* is an optional callable that is called to create a
+   :class:`Future` returned by :meth:`ThreadPoolExecutor.submit`.
+   If ``None`` :class:`Future` is used.
+
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
       :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
@@ -237,6 +248,9 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       start_method for worker processes created by the pool.
 
       Added the *initializer* and *initargs* arguments.
+
+   .. versionchanged:: 3.8
+      Added *future_factory* argument.
 
 
 .. _processpoolexecutor-example:
