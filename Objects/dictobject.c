@@ -3630,6 +3630,12 @@ dictiter_iternextvalue(dictiterobject *di)
             goto fail;
         value = entry_ptr->me_value;
     }
+    // We found an element, but did not expect it
+    if (di->len == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "dictionary keys changed during iteration");
+        goto fail;
+    }
     di->di_pos = i+1;
     di->len--;
     Py_INCREF(value);
@@ -3712,6 +3718,12 @@ dictiter_iternextitem(dictiterobject *di)
             goto fail;
         key = entry_ptr->me_key;
         value = entry_ptr->me_value;
+    }
+    // We found an element, but did not expect it
+    if (di->len == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "dictionary keys changed during iteration");
+        goto fail;
     }
     di->di_pos = i+1;
     di->len--;
