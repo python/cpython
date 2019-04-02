@@ -1115,7 +1115,7 @@ are cases where you need to create several independent interpreters in the
 same process and perhaps even in the same thread.
 
 Before sub-interpreters, there is a main interpreter which is the first one
-created by the CPython runtime during startup when the ``python`` command is
+created by the CPython runtime on startup when the ``python`` command is
 run. The :c:func:`PyInterpreterState_Main` funtion returns a pointer to this
 main interpreter's state.
 
