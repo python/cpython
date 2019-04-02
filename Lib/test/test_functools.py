@@ -464,6 +464,7 @@ class TestPartialMethod(unittest.TestCase):
         positional = functools.partialmethod(capture, 1)
         keywords = functools.partialmethod(capture, a=2)
         both = functools.partialmethod(capture, 3, b=4)
+        spec_keywords = functools.partialmethod(capture, self=1, func=2)
 
         nested = functools.partialmethod(positional, 5)
 
@@ -496,6 +497,8 @@ class TestPartialMethod(unittest.TestCase):
         self.assertEqual(self.a.both(5, c=6), ((self.a, 3, 5), {'b': 4, 'c': 6}))
 
         self.assertEqual(self.A.both(self.a, 5, c=6), ((self.a, 3, 5), {'b': 4, 'c': 6}))
+
+        self.assertEqual(self.a.spec_keywords(), ((self.a,), {'self': 1, 'func': 2}))
 
     def test_nested(self):
         self.assertEqual(self.a.nested(), ((self.a, 1, 5), {}))
@@ -550,6 +553,13 @@ class TestPartialMethod(unittest.TestCase):
         with self.assertRaises(TypeError):
             class B(object):
                 method = functools.partialmethod(None, 1)
+        with self.assertRaises(TypeError):
+            class B:
+                method = functools.partialmethod()
+        class B:
+            method = functools.partialmethod(func=capture, a=1)
+        b = B()
+        self.assertEqual(b.method(2, x=3), ((b, 2), {'a': 1, 'x': 3}))
 
     def test_repr(self):
         self.assertEqual(repr(vars(self.A)['both']),

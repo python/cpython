@@ -593,7 +593,19 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(*args, **kwargs):
+        if len(args) >= 2:
+            self, fn, *args = args
+        elif not args:
+            raise TypeError("descriptor 'submit' of 'ProcessPoolExecutor' object "
+                            "needs an argument")
+        elif 'fn' in kwargs:
+            fn = kwargs.pop('fn')
+            self, *args = args
+        else:
+            raise TypeError('submit expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)

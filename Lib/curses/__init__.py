@@ -60,13 +60,21 @@ except NameError:
 # raises an exception, wrapper() will restore the terminal to a sane state so
 # you can read the resulting traceback.
 
-def wrapper(func, *args, **kwds):
+def wrapper(*args, **kwds):
     """Wrapper function that initializes curses and calls another function,
     restoring normal keyboard/screen behavior on error.
     The callable object 'func' is then passed the main window 'stdscr'
     as its first argument, followed by any other arguments passed to
     wrapper().
     """
+
+    if args:
+        func, *args = args
+    elif 'func' in kwds:
+        func = kwds.pop('func')
+    else:
+        raise TypeError('wrapper expected at least 1 positional argument, '
+                        'got %d' % len(args))
 
     try:
         # Initialize curses

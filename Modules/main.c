@@ -1534,7 +1534,7 @@ pymain_open_filename(_PyMain *pymain)
     const _PyCoreConfig *config = &_PyGILState_GetInterpreterStateUnsafe()->core_config;
     FILE* fp;
 
-    fp = _Py_wfopen(pymain->filename, L"r");
+    fp = _Py_wfopen(pymain->filename, L"rb");
     if (fp == NULL) {
         char *cfilename_buffer;
         const char *cfilename;
