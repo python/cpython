@@ -2055,8 +2055,8 @@ class TestGeometricMean(unittest.TestCase):
                 range(10_000, 500, -3),
                 [12, 17, 13, 5, 120, 7],
                 [random.expovariate(50.0) for i in range(1_000)],
-                [random.lognormvariate(20.0, 3.0) for i in range(10_000)],
-                [random.triangular(2000, 3000, 2200) for i in range(100_000)],
+                [random.lognormvariate(20.0, 3.0) for i in range(2_000)],
+                [random.triangular(2000, 3000, 2200) for i in range(3_000)],
             ]:
             gm_decimal = math.prod(map(Decimal, rng)) ** (Decimal(1) / len(rng))
             gm_float = geometric_mean(rng)
