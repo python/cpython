@@ -277,6 +277,36 @@ create_executor_tests(InitializerMixin)
 create_executor_tests(FailingInitializerMixin)
 
 
+class DefaultFutureFactoryMixin(ExecutorMixin):
+    def test_default_future_factory(self):
+        future = self.executor.submit(mul, 1, 1)
+        future.result()
+
+        self.assertTrue(isinstance(future, Future))
+
+
+class FutureFactoryMixin(ExecutorMixin):
+    custom_future_class = type("CustomFuture", (Future,), {})
+    executor_kwargs = {"future_factory": custom_future_class}
+
+    def test_future_factory(self):
+        future = self.executor.submit(mul, 1, 1)
+        future.result()
+
+        self.assertTrue(isinstance(future, self.custom_future_class))
+
+
+class FutureFactoryCallableMixin(ExecutorMixin):
+    def test_future_factory_must_be_callable(self):
+        with self.assertRaises(TypeError):
+            self.executor_type(future_factory="not callable")
+
+
+create_executor_tests(DefaultFutureFactoryMixin)
+create_executor_tests(FutureFactoryMixin)
+create_executor_tests(FutureFactoryCallableMixin)
+
+
 class ExecutorShutdownTest:
     def test_run_after_shutdown(self):
         self.executor.shutdown()

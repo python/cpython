@@ -489,7 +489,7 @@ class BrokenProcessPool(_base.BrokenExecutor):
 
 class ProcessPoolExecutor(_base.Executor):
     def __init__(self, max_workers=None, mp_context=None,
-                 initializer=None, initargs=()):
+                 initializer=None, initargs=(), future_factory=None):
         """Initializes a new ProcessPoolExecutor instance.
 
         Args:
@@ -500,6 +500,7 @@ class ProcessPoolExecutor(_base.Executor):
                 object should provide SimpleQueue, Queue and Process.
             initializer: An callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
+            future_factory: An callable used to create Futures.
         """
         _check_system_limits()
 
@@ -517,8 +518,13 @@ class ProcessPoolExecutor(_base.Executor):
 
         if initializer is not None and not callable(initializer):
             raise TypeError("initializer must be a callable")
+
+        if future_factory is not None and not callable(future_factory):
+            raise TypeError("future_factory must be a callable")
+
         self._initializer = initializer
         self._initargs = initargs
+        self._future_factory = future_factory or _base.Future
 
         # Management thread
         self._queue_management_thread = None
@@ -619,7 +625,7 @@ class ProcessPoolExecutor(_base.Executor):
                 raise RuntimeError('cannot schedule new futures after '
                                    'interpreter shutdown')
 
-            f = _base.Future()
+            f = self._future_factory()
             w = _WorkItem(f, fn, args, kwargs)
 
             self._pending_work_items[self._queue_count] = w

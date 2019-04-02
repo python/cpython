@@ -111,7 +111,7 @@ class ThreadPoolExecutor(_base.Executor):
     _counter = itertools.count().__next__
 
     def __init__(self, max_workers=None, thread_name_prefix='',
-                 initializer=None, initargs=()):
+                 initializer=None, initargs=(), future_factory=None):
         """Initializes a new ThreadPoolExecutor instance.
 
         Args:
@@ -120,6 +120,7 @@ class ThreadPoolExecutor(_base.Executor):
             thread_name_prefix: An optional name prefix to give our threads.
             initializer: An callable used to initialize worker threads.
             initargs: A tuple of arguments to pass to the initializer.
+            future_factory: An callable used to create Futures.
         """
         if max_workers is None:
             # Use this number because ThreadPoolExecutor is often
@@ -131,6 +132,9 @@ class ThreadPoolExecutor(_base.Executor):
         if initializer is not None and not callable(initializer):
             raise TypeError("initializer must be a callable")
 
+        if future_factory is not None and not callable(future_factory):
+            raise TypeError("future_factory must be a callable")
+
         self._max_workers = max_workers
         self._work_queue = queue.SimpleQueue()
         self._threads = set()
@@ -141,6 +145,7 @@ class ThreadPoolExecutor(_base.Executor):
                                     ("ThreadPoolExecutor-%d" % self._counter()))
         self._initializer = initializer
         self._initargs = initargs
+        self._future_factory = future_factory or _base.Future
 
     def submit(*args, **kwargs):
         if len(args) >= 2:
@@ -168,7 +173,7 @@ class ThreadPoolExecutor(_base.Executor):
                 raise RuntimeError('cannot schedule new futures after '
                                    'interpreter shutdown')
 
-            f = _base.Future()
+            f = self._future_factory()
             w = _WorkItem(f, fn, args, kwargs)
 
             self._work_queue.put(w)
