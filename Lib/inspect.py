@@ -168,23 +168,30 @@ def isfunction(object):
         __kwdefaults__  dict of keyword only parameters with defaults"""
     return isinstance(object, types.FunctionType)
 
+def _has_code_flag(f, flag):
+    """Return true if ``f`` is a function (or a method or functools.partial
+    wrapper wrapping a function) whose code object has the given ``flag``
+    set in its flags."""
+    while ismethod(f):
+        f = f.__func__
+    f = functools._unwrap_partial(f)
+    if not isfunction(f):
+        return False
+    return bool(f.__code__.co_flags & flag)
+
 def isgeneratorfunction(obj):
     """Return true if the object is a user-defined generator function.
 
     Generator function objects provide the same attributes as functions.
     See help(isfunction) for a list of attributes."""
-    obj = functools._unwrap_partial(obj)
-    return bool((isfunction(obj) or ismethod(obj)) and
-                obj.__code__.co_flags & CO_GENERATOR)
+    return _has_code_flag(obj, CO_GENERATOR)
 
 def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
     Coroutine functions are defined with "async def" syntax.
     """
-    obj = functools._unwrap_partial(obj)
-    return bool(((isfunction(obj) or ismethod(obj)) and
-                obj.__code__.co_flags & CO_COROUTINE))
+    return _has_code_flag(obj, CO_COROUTINE)
 
 def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.
@@ -192,9 +199,7 @@ def isasyncgenfunction(obj):
     Asynchronous generator functions are defined with "async def"
     syntax and have "yield" expressions in their body.
     """
-    obj = functools._unwrap_partial(obj)
-    return bool((isfunction(obj) or ismethod(obj)) and
-                obj.__code__.co_flags & CO_ASYNC_GENERATOR)
+    return _has_code_flag(obj, CO_ASYNC_GENERATOR)
 
 def isasyncgen(object):
     """Return true if the object is an asynchronous generator."""
