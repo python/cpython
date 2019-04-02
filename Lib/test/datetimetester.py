@@ -2425,6 +2425,22 @@ class TestDateTime(TestDate):
                 self.assertEqual(expected, got)
 
         strptime = self.theclass.strptime
+        
+        # bpo-34903: Check that single digit dates and times are allowed.
+        with self.assertRaises(ValueError):
+            # %y does require two digits
+            newdate = strptime('1/2/3 4:5:6', '%d/%m/%y %H:%M:%S')
+        inputs = [
+            ('1/2/03 4:5:6', '%d/%m/%y %H:%M:%S', '2003-02-01T04:05:06'),
+            ('2/03 4am:5:6', '%j/%y %I%p:%M:%S','2003-01-02T04:05:06'),
+            ('6/4/03', '%w/%U/%y', '2003-02-01T00:00:00'),
+            ('6/4/03', '%w/%W/%y', '2003-02-01T00:00:00'),
+            ('6/4/2003', '%u/%V/%G', '2003-01-25T00:00:00')
+        ]
+        for string, format, target in inputs:
+            newdate = strptime(string, format)
+            self.assertEqual(newdate.isoformat(timespec='seconds'), target)
+        
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
         self.assertEqual(
