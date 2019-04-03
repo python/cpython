@@ -1534,7 +1534,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     itemsize = itemdict->size;
-    if (length * itemsize < 0) {
+    if (length > PY_SSIZE_T_MAX / itemsize) {
         PyErr_SetString(PyExc_OverflowError,
                         "array too large");
         Py_DECREF(stgdict);

@@ -134,6 +134,12 @@ class ArrayTestCase(unittest.TestCase):
         t2 = my_int * 1
         self.assertIs(t1, t2)
 
+    def test_bpo36504_signed_int_overflow(self):
+        # The overflow check in PyCArrayType_new() could cause signed integer
+        # overflow.
+        with self.assertRaises(OverflowError):
+            c_char * sys.maxsize * 2
+
     @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
     @precisionbigmemtest(size=_2G, memuse=1, dry_run=False)
     def test_large_array(self, size):
