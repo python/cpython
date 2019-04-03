@@ -1,2 +1,0 @@
-Raise ModuleNotFoundError in pyclbr when a module can't be found.
-Thanks to 'mental' for the bug report.

@@ -1,2 +1,0 @@
-The class documentation created by pydoc now has a separate section for
-readonly properties.

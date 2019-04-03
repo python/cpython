@@ -1,1 +1,0 @@
-Fix name collisions due to ``#define timezone _timezone`` in PC/pyconfig.h.

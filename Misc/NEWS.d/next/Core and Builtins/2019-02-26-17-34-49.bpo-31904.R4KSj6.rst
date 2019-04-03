@@ -1,1 +1,0 @@
-Use UTF-8 as the system encoding on VxWorks.

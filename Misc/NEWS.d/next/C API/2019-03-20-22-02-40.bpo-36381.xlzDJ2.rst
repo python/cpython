@@ -1,2 +1,0 @@
-Raise ``DeprecationWarning`` when '#' formats are used for building or
-parsing values without ``PY_SSIZE_T_CLEAN``.

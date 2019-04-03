@@ -772,10 +772,18 @@ class PatchTest(unittest.TestCase):
 
 
     def test_stop_without_start(self):
+        # bpo-36366: calling stop without start will return None.
+        patcher = patch(foo_name, 'bar', 3)
+        self.assertIsNone(patcher.stop())
+
+
+    def test_stop_idempotent(self):
+        # bpo-36366: calling stop on an already stopped patch will return None.
         patcher = patch(foo_name, 'bar', 3)
 
-        # calling stop without start used to produce a very obscure error
-        self.assertRaises(RuntimeError, patcher.stop)
+        patcher.start()
+        patcher.stop()
+        self.assertIsNone(patcher.stop())
 
 
     def test_patchobject_start_stop(self):
