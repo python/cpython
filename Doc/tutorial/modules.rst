@@ -416,21 +416,19 @@ your package (expressed in terms of a hierarchical filesystem):
                  reverse.py
                  ...
          filters/                  Subpackage for filters
-                 __init__.py
                  equalizer.py
                  vocoder.py
                  karaoke.py
                  ...
 
 When importing the package, Python searches through the directories on
-``sys.path`` looking for the package subdirectory.
+``sys.path`` looking for the package subdirectory. Any directory with
+a compatible name is a Python package.
 
-The :file:`__init__.py` files are required to make Python treat the directories
-as containing packages; this is done to prevent directories with a common name,
-such as ``string``, from unintentionally hiding valid modules that occur later
-on the module search path. In the simplest case, :file:`__init__.py` can just be
-an empty file, but it can also execute initialization code for the package or
-set the ``__all__`` variable, described later.
+The :file:`__init__.py` files exist to execute initialization code for
+the package or set the ``__all__`` variable, described later.
+Packages without :file:`__init__.py`, like :mod:`filters` in our example,
+are called :term:`namespace packages`.
 
 Users of the package can import individual modules from the package, for
 example::
