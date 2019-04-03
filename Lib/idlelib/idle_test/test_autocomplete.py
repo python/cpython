@@ -99,52 +99,40 @@ class AutoCompleteTest(unittest.TestCase):
 
     def test_try_open_completions_event(self):
         Equal = self.assertEqual
+        text = self.text
         acp = self.autocomplete
         trycompletions = acp.try_open_completions_event
-        o_c_l = Func()
-        acp._open_completions_later = o_c_l
-
-        # If no text or trigger, _open_completions_later not called.
-        trycompletions()
-        Equal(o_c_l.called, 0)
-        self.text.insert('1.0', 're')
-        trycompletions()
-        Equal(o_c_l.called, 0)
-
-        # _open_completions_later called with ATTRS.
-        self.text.insert('insert', 're.')
-        trycompletions()
-        Equal(o_c_l.args[0], ac.TRY_A)
-
-        # _open_completions_later called with FILES.
-        self.text.delete('1.0', 'end')
-        self.text.insert('1.0', '"./Lib/')
-        trycompletions()
-        Equal(o_c_l.args[0], ac.TRY_F)
-
-    def test_open_completions_later(self):
-        Equal = self.assertEqual
-
-        # Test after call and autocomplete._delayed_completion_id.
-        acp = self.autocomplete
         after = Func(result='after1')
         acp.text.after = after
+
+        # If no text or trigger, after not called.
+        trycompletions()
+        Equal(after.called, 0)
+        text.insert('1.0', 're')
+        trycompletions()
+        Equal(after.called, 0)
+
+        # Attribute needed, no existing callback.
+        text.insert('insert', ' re.')
         acp._delayed_completion_id = None
-        acp._open_completions_later('dummy1')
+        trycompletions()
+        Equal(acp._delayed_completion_index, text.index('insert'))
         Equal(after.args,
-              (acp.popupwait, acp._delayed_open_completions, 'dummy1'))
+              (acp.popupwait, acp._delayed_open_completions, ac.TRY_A))
         cb1 = acp._delayed_completion_id
         Equal(cb1, 'after1')
 
-        # Test that cb1 is cancelled and cb2 is new.
+        # File needed, existing callback cancelled.
+        text.insert('insert', ' "./Lib/')
         after.result = 'after2'
-        acp.text.after_cancel = Func()
-        acp._open_completions_later('dummy2')
+        cancel = Func()
+        acp.text.after_cancel = cancel
+        trycompletions()
+        Equal(acp._delayed_completion_index, text.index('insert'))
+        Equal(cancel.args, (cb1,))  
         Equal(after.args,
-              (acp.popupwait, acp._delayed_open_completions, 'dummy2'))
-        Equal(self.text.after_cancel.args, (cb1,))
-        cb2 = acp._delayed_completion_id
-        Equal(cb2, 'after2')
+              (acp.popupwait, acp._delayed_open_completions, ac.TRY_F))
+        Equal(acp._delayed_completion_id, 'after2')
 
     def test_delayed_open_completions(self):
         Equal = self.assertEqual

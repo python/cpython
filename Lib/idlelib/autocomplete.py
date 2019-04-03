@@ -18,7 +18,7 @@ from idlelib.hyperparser import HyperParser
 #       EvalFunc, Complete, WantWin, Mode
 FORCE = True,     False,    True,    None   # Control-Space.
 TAB   = False,    True,     True,    None   # Tab.
-TRY_A = False,    False,    False,   ATTRS  # '.' for attributes
+TRY_A = False,    False,    False,   ATTRS  # '.' for attributes.
 TRY_F = False,    False,    False,   FILES  # '/' in quotes for file name.
 
 # This string includes all chars that may be in an identifier.
@@ -77,14 +77,11 @@ class AutoComplete:
         "(./) Open completion list after pause with no movement."
         lastchar = self.text.get("insert-1c")
         if lastchar in TRIGGERS:
-            self._open_completions_later(
-                TRY_A if lastchar == "." else TRY_F)
-
-    def _open_completions_later(self, args):
-        self._delayed_completion_index = self.text.index("insert")
-        if self._delayed_completion_id is not None:
-            self.text.after_cancel(self._delayed_completion_id)
-        self._delayed_completion_id = self.text.after(
+            args = TRY_A if lastchar == "." else TRY_F
+            self._delayed_completion_index = self.text.index("insert")
+            if self._delayed_completion_id is not None:
+                self.text.after_cancel(self._delayed_completion_id)
+            self._delayed_completion_id = self.text.after(
                 self.popupwait, self._delayed_open_completions, args)
 
     def _delayed_open_completions(self, args):
