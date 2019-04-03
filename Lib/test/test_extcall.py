@@ -228,11 +228,13 @@ What about willful misconduct?
     >>> d
     {}
 
-
-    >>> g(1, 2, 3, **{'x': 4, 'y': 5})
+    >>> h(1, 2, **{'a': 4, 'h': 5})
     Traceback (most recent call last):
       ...
-    TypeError: g() got multiple values for argument 'x'
+    TypeError: h() got multiple values for argument 'a'
+
+    >>> g(1, 2, 3, **{'x': 4, 'y': 5})
+    1 (2, 3) {'x': 4, 'y': 5}
 
     >>> f(**{1:2})
     Traceback (most recent call last):

@@ -1362,6 +1362,7 @@ def getcallargs(*func_and_positional, **named):
     possible_kwargs = set(args + kwonlyargs)
     if varkw:
         arg2value[varkw] = {}
+        possible_kwargs -= set(args[:n])
     for kw, value in named.items():
         if kw not in possible_kwargs:
             if not varkw:

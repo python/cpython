@@ -3858,7 +3858,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         /* Speed hack: do raw pointer compares. As names are
            normally interned this should almost always hit. */
         co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
-        for (j = 0; j < total_args; j++) {
+        for (j = (kwdict ? n : 0); j < total_args; j++) {
             PyObject *name = co_varnames[j];
             if (name == keyword) {
                 goto kw_found;
@@ -3866,7 +3866,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         }
 
         /* Slow fallback, just in case */
-        for (j = 0; j < total_args; j++) {
+        for (j = (kwdict ? n : 0); j < total_args; j++) {
             PyObject *name = co_varnames[j];
             int cmp = PyObject_RichCompareBool( keyword, name, Py_EQ);
             if (cmp > 0) {

@@ -1436,6 +1436,7 @@ class TestGetcallargsFunctions(unittest.TestCase):
         self.assertEqualCallArgs(f, '**collections.UserDict(a=2, b=3, c=4)')
         self.assertEqualCallArgs(f, '2, c=4, **collections.UserDict(b=3)')
         self.assertEqualCallArgs(f, 'b=2, **collections.UserDict(a=3, c=4)')
+        self.assertEqualCallArgs(f, '1, a=2')
 
     def test_varkw_only(self):
         # issue11256:
