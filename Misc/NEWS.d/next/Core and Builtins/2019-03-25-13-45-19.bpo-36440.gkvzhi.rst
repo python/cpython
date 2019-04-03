@@ -1,0 +1,2 @@
+Include node names in ``ParserError`` messages, instead of numeric IDs.
+Patch by A. Skrobov.
