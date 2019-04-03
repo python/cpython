@@ -749,6 +749,22 @@ class IllegalSyntaxTestCase(unittest.TestCase):
         with self.assertRaises(UnicodeEncodeError):
             parser.sequence2st(tree)
 
+    def test_invalid_node_id(self):
+        tree = (257, (269, (-7, '')))
+        self.check_bad_tree(tree, "negative node id")
+        tree = (257, (269, (99, '')))
+        self.check_bad_tree(tree, "invalid token id")
+        tree = (257, (269, (9999, (0, ''))))
+        self.check_bad_tree(tree, "invalid symbol id")
+
+    def test_ParserError_message(self):
+        try:
+            parser.sequence2st((257,(269,(257,(0,'')))))
+        except parser.ParserError as why:
+            self.assertIn("compound_stmt", str(why))  # Expected
+            self.assertIn("file_input", str(why))     # Got
+
+
 
 class CompileTestCase(unittest.TestCase):
 
