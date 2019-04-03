@@ -13,8 +13,8 @@ extern "C" {
 PyAPI_DATA(int) _Py_HasFileSystemDefaultEncodeErrors;
 
 PyAPI_FUNC(int) _Py_DecodeUTF8Ex(
-    const char *arg,
-    Py_ssize_t arglen,
+    const char *str,
+    Py_ssize_t size,
     wchar_t **wstr,
     size_t *wlen,
     const char **reason,
