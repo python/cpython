@@ -32,13 +32,17 @@ def testfunction(self):
     """some doc"""
     return self
 
-class InstanceMethod:
-    id = _testcapi.instancemethod(id)
-    testfunction = _testcapi.instancemethod(testfunction)
 
 class CAPITest(unittest.TestCase):
 
     def test_instancemethod(self):
+        def instancemethod(f):
+            with self.assertWarns(DeprecationWarning):
+                return _testcapi.instancemethod(f)
+        class InstanceMethod:
+            id = instancemethod(id)
+            testfunction = instancemethod(testfunction)
+
         inst = InstanceMethod()
         self.assertEqual(id(inst), inst.id())
         self.assertTrue(inst.testfunction() is inst)

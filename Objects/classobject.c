@@ -40,7 +40,7 @@ PyMethod_Self(PyObject *im)
     return ((PyMethodObject *)im)->im_self;
 }
 
-/* Method objects are used for bound instance methods returned by
+/* Method objects are used for bound methods returned by
    instancename.methodname. ClassName.methodname returns an ordinary
    function.
 */
@@ -161,7 +161,7 @@ method_getattro(PyObject *obj, PyObject *name)
 PyDoc_STRVAR(method_doc,
 "method(function, instance)\n\
 \n\
-Create a bound instance method object.");
+Create a bound method object.");
 
 static PyObject *
 method_new(PyTypeObject* type, PyObject* args, PyObject *kw)
@@ -377,11 +377,18 @@ _PyMethod_DebugMallocStats(FILE *out)
 }
 
 /* ------------------------------------------------------------------------
- * instance method
+ * instancemethod
  */
 
 PyObject *
 PyInstanceMethod_New(PyObject *func) {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "The 'instancemethod' class is deprecated, "
+                     "use method descriptors or the descriptor protocol instead",
+                     1) < 0) {
+        return NULL;
+    }
+
     PyInstanceMethodObject *method;
     method = PyObject_GC_New(PyInstanceMethodObject,
                              &PyInstanceMethod_Type);

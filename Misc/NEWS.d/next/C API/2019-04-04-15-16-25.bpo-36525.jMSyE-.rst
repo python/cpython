@@ -1,0 +1,3 @@
+The ``instancemethod`` class (which was only exposed through the C API) is
+deprecated. Code using it should use method descriptors or the descriptor
+protocol instead.

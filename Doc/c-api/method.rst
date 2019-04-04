@@ -7,9 +7,9 @@ Instance Method Objects
 
 .. index:: object: instancemethod
 
-An instance method is a wrapper for a :c:data:`PyCFunction` and the new way
-to bind a :c:data:`PyCFunction` to a class object. It replaces the former call
-``PyMethod_New(func, NULL, class)``.
+.. deprecated:: 3.8
+   The ``instancemethod`` class is deprecated.
+   Use :ref:`descriptor-objects` or the descriptor protocol (``tp_descr_get``) instead.
 
 
 .. c:var:: PyTypeObject PyInstanceMethod_Type
