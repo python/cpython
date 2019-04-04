@@ -2994,6 +2994,19 @@ class AAA(object):
 class BBB(object):
     pass
 
+
+def setstate_bbb(obj, state, slotstate):
+    """Custom state setter for BBB objects
+
+    Such callable may be created by other persons than the ones who created the
+    BBB class. If passed as the state_setter item of a custom reducer, this
+    allows for custom state setting behavior of BBB objects. One can think of
+    it as the analogous of list_setitems or dict_setitems but for foreign
+    classes/functions.
+    """
+    obj.a = 'foo'
+
+
 class AbstractDispatchTableTests(unittest.TestCase):
 
     def test_default_dispatch_table(self):
@@ -3080,6 +3093,19 @@ class AbstractDispatchTableTests(unittest.TestCase):
         self.assertIsInstance(custom_load_dump(b), BBB)
         self.assertEqual(default_load_dump(a), REDUCE_A)
         self.assertIsInstance(default_load_dump(b), BBB)
+
+        # End-to-end testing of save_reduce with the state_setter keyword
+        # argument. This is a dispatch_table test as state_setter is useful to
+        # register custom state-setting behavior for classes that were not
+        # created by the user.
+        def reduce_bbb(obj):
+            return BBB, (), obj.__dict__, None, None, setstate_bbb
+
+        dispatch_table[BBB] = reduce_bbb
+
+        b = BBB()
+
+        self.assertEqual(custom_load_dump(b).a, 'foo')
 
 
 if __name__ == "__main__":
