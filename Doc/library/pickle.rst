@@ -629,7 +629,7 @@ or both.
      value``.  This is primarily used for dictionary subclasses, but may be used
      by other classes as long as they implement :meth:`__setitem__`.
 
-   * Optionally, an callable with a ``(obj, state, slotstate)`` signature. This
+   * Optionally, an callable with a ``(obj, state)`` signature. This
      callable allows the user to control the state-updating part of classes
      the user did not create. If not ``None``, this callable will have priority
      over any :meth:`__setitem__` method.
