@@ -320,8 +320,8 @@ class HTTPResponse(io.BufferedIOBase):
         self.headers = self.msg = parse_headers(self.fp)
 
         if self.debuglevel > 0:
-            for hdr in self.headers:
-                print("header:", hdr + ":", self.headers.get(hdr))
+            for hdr, val in self.headers.items():
+                print("header:", hdr + ":", val)
 
         # are we using the chunked-style of transfer encoding?
         tr_enc = self.headers.get("transfer-encoding")
