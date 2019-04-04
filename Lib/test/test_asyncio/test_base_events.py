@@ -1400,7 +1400,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, 'connectaddr', 80, local_addr=('bindaddr', 0))
         t, p = self.loop.run_until_complete(coro)
         try:
-            sock.connect.assert_called_with(('2001:db8::1', 80))
+            sock.connect.assert_called_with(('2001:db8::1:1', 80))
         finally:
             t.close()
             test_utils.run_briefly(self.loop)
