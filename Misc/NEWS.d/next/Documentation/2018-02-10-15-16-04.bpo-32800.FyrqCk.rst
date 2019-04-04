@@ -1,1 +1,0 @@
-Update link to w3c doc for xml default namespaces.

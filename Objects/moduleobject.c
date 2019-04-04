@@ -2,7 +2,7 @@
 /* Module object implementation */
 
 #include "Python.h"
-#include "pycore_state.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 static Py_ssize_t max_module_number;
@@ -792,16 +792,17 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__dir__);
     PyObject *result = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
-            PyObject *dirfunc = PyDict_GetItemString(dict, "__dir__");
+            PyObject *dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
             if (dirfunc) {
                 result = _PyObject_CallNoArg(dirfunc);
             }
-            else {
+            else if (!PyErr_Occurred()) {
                 result = PyDict_Keys(dict);
             }
         }

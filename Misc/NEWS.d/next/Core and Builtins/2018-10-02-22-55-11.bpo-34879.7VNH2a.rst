@@ -1,2 +1,0 @@
-Fix a possible null pointer dereference in bytesobject.c.  Patch by Zackery
-Spytz.

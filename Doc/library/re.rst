@@ -28,7 +28,10 @@ character for the same purpose in string literals; for example, to match
 a literal backslash, one might have to write ``'\\\\'`` as the pattern
 string, because the regular expression must be ``\\``, and each
 backslash must be expressed as ``\\`` inside a regular Python string
-literal.
+literal. Also, please note that any invalid escape sequences in Python's
+usage of the backslash in string literals now generate a :exc:`DeprecationWarning`
+and in the future this will become a :exc:`SyntaxError`. This behaviour
+will happen even if it is a valid escape sequence for a regular expression.
 
 The solution is to use Python's raw string notation for regular expression
 patterns; backslashes are not handled in any special way in a string literal
@@ -368,6 +371,8 @@ The special characters are:
 ``(?#...)``
    A comment; the contents of the parentheses are simply ignored.
 
+.. index:: single: (?=; in regular expressions
+
 ``(?=...)``
    Matches if ``...`` matches next, but doesn't consume any of the string.  This is
    called a :dfn:`lookahead assertion`.  For example, ``Isaac (?=Asimov)`` will match
@@ -568,7 +573,8 @@ accepted by the regular expression parser::
 only inside character classes.)
 
 ``'\u'``, ``'\U'``, and ``'\N'`` escape sequences are only recognized in Unicode
-patterns.  In bytes patterns they are errors.
+patterns.  In bytes patterns they are errors.  Unknown escapes of ASCII
+letters are reserved for future use and treated as errors.
 
 Octal escapes are included in a limited form.  If the first digit is a 0, or if
 there are three octal digits, it is considered an octal escape. Otherwise, it is
@@ -845,7 +851,9 @@ form.
    *string* is returned unchanged.  *repl* can be a string or a function; if it is
    a string, any backslash escapes in it are processed.  That is, ``\n`` is
    converted to a single newline character, ``\r`` is converted to a carriage return, and
-   so forth.  Unknown escapes such as ``\&`` are left alone.  Backreferences, such
+   so forth.  Unknown escapes of ASCII letters are reserved for future use and
+   treated as errors.  Other unknown escapes such as ``\&`` are left alone.
+   Backreferences, such
    as ``\6``, are replaced with the substring matched by group 6 in the pattern.
    For example::
 
@@ -1609,38 +1617,40 @@ successive matches::
     import collections
     import re
 
-    Token = collections.namedtuple('Token', ['typ', 'value', 'line', 'column'])
+    Token = collections.namedtuple('Token', ['type', 'value', 'line', 'column'])
 
     def tokenize(code):
         keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}
         token_specification = [
-            ('NUMBER',  r'\d+(\.\d*)?'),  # Integer or decimal number
-            ('ASSIGN',  r':='),           # Assignment operator
-            ('END',     r';'),            # Statement terminator
-            ('ID',      r'[A-Za-z]+'),    # Identifiers
-            ('OP',      r'[+\-*/]'),      # Arithmetic operators
-            ('NEWLINE', r'\n'),           # Line endings
-            ('SKIP',    r'[ \t]+'),       # Skip over spaces and tabs
-            ('MISMATCH',r'.'),            # Any other character
+            ('NUMBER',   r'\d+(\.\d*)?'),  # Integer or decimal number
+            ('ASSIGN',   r':='),           # Assignment operator
+            ('END',      r';'),            # Statement terminator
+            ('ID',       r'[A-Za-z]+'),    # Identifiers
+            ('OP',       r'[+\-*/]'),      # Arithmetic operators
+            ('NEWLINE',  r'\n'),           # Line endings
+            ('SKIP',     r'[ \t]+'),       # Skip over spaces and tabs
+            ('MISMATCH', r'.'),            # Any other character
         ]
         tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
         line_num = 1
         line_start = 0
         for mo in re.finditer(tok_regex, code):
             kind = mo.lastgroup
-            value = mo.group(kind)
-            if kind == 'NEWLINE':
+            value = mo.group()
+            column = mo.start() - line_start
+            if kind == 'NUMBER':
+                value = float(value) if '.' in value else int(value)
+            elif kind == 'ID' and value in keywords:
+                kind = value
+            elif kind == 'NEWLINE':
                 line_start = mo.end()
                 line_num += 1
+                continue
             elif kind == 'SKIP':
-                pass
+                continue
             elif kind == 'MISMATCH':
                 raise RuntimeError(f'{value!r} unexpected on line {line_num}')
-            else:
-                if kind == 'ID' and value in keywords:
-                    kind = value
-                column = mo.start() - line_start
-                yield Token(kind, value, line_num, column)
+            yield Token(kind, value, line_num, column)
 
     statements = '''
         IF quantity THEN
@@ -1654,25 +1664,25 @@ successive matches::
 
 The tokenizer produces the following output::
 
-    Token(typ='IF', value='IF', line=2, column=4)
-    Token(typ='ID', value='quantity', line=2, column=7)
-    Token(typ='THEN', value='THEN', line=2, column=16)
-    Token(typ='ID', value='total', line=3, column=8)
-    Token(typ='ASSIGN', value=':=', line=3, column=14)
-    Token(typ='ID', value='total', line=3, column=17)
-    Token(typ='OP', value='+', line=3, column=23)
-    Token(typ='ID', value='price', line=3, column=25)
-    Token(typ='OP', value='*', line=3, column=31)
-    Token(typ='ID', value='quantity', line=3, column=33)
-    Token(typ='END', value=';', line=3, column=41)
-    Token(typ='ID', value='tax', line=4, column=8)
-    Token(typ='ASSIGN', value=':=', line=4, column=12)
-    Token(typ='ID', value='price', line=4, column=15)
-    Token(typ='OP', value='*', line=4, column=21)
-    Token(typ='NUMBER', value='0.05', line=4, column=23)
-    Token(typ='END', value=';', line=4, column=27)
-    Token(typ='ENDIF', value='ENDIF', line=5, column=4)
-    Token(typ='END', value=';', line=5, column=9)
+    Token(type='IF', value='IF', line=2, column=4)
+    Token(type='ID', value='quantity', line=2, column=7)
+    Token(type='THEN', value='THEN', line=2, column=16)
+    Token(type='ID', value='total', line=3, column=8)
+    Token(type='ASSIGN', value=':=', line=3, column=14)
+    Token(type='ID', value='total', line=3, column=17)
+    Token(type='OP', value='+', line=3, column=23)
+    Token(type='ID', value='price', line=3, column=25)
+    Token(type='OP', value='*', line=3, column=31)
+    Token(type='ID', value='quantity', line=3, column=33)
+    Token(type='END', value=';', line=3, column=41)
+    Token(type='ID', value='tax', line=4, column=8)
+    Token(type='ASSIGN', value=':=', line=4, column=12)
+    Token(type='ID', value='price', line=4, column=15)
+    Token(type='OP', value='*', line=4, column=21)
+    Token(type='NUMBER', value=0.05, line=4, column=23)
+    Token(type='END', value=';', line=4, column=27)
+    Token(type='ENDIF', value='ENDIF', line=5, column=4)
+    Token(type='END', value=';', line=5, column=9)
 
 
 .. [Frie09] Friedl, Jeffrey. Mastering Regular Expressions. 3rd ed., O'Reilly

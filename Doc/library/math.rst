@@ -178,6 +178,18 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
+.. function:: prod(iterable, *, start=1)
+
+   Calculate the product of all the elements in the input *iterable*.
+   The default *start* value for the product is ``1``.
+
+   When the iterable is empty, return the start value.  This function is
+   intended specifically for use with numeric values and may reject
+   non-numeric types.
+
+   .. versionadded:: 3.8
+
+
 .. function:: remainder(x, y)
 
    Return the IEEE 754-style remainder of *x* with respect to *y*.  For

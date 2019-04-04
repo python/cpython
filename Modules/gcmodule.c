@@ -25,8 +25,9 @@
 
 #include "Python.h"
 #include "pycore_context.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"        /* for PyFrame_ClearFreeList */
 #include "pydtrace.h"
 #include "pytime.h"             /* for _PyTime_GetMonotonicClock() */
@@ -1501,27 +1502,61 @@ gc_get_referents(PyObject *self, PyObject *args)
 
 /*[clinic input]
 gc.get_objects
+    generation: Py_ssize_t(accept={int, NoneType}, c_default="-1") = None
+        Generation to extract the objects from.
 
 Return a list of objects tracked by the collector (excluding the list returned).
+
+If generation is not None, return only the objects tracked by the collector
+that are in that generation.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_objects_impl(PyObject *module)
-/*[clinic end generated code: output=fcb95d2e23e1f750 input=9439fe8170bf35d8]*/
+gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=ef7da9df9806754c]*/
 {
     int i;
     PyObject* result;
 
     result = PyList_New(0);
-    if (result == NULL)
+    if (result == NULL) {
         return NULL;
+    }
+
+    /* If generation is passed, we extract only that generation */
+    if (generation != -1) { 
+        if (generation >= NUM_GENERATIONS) {
+            PyErr_Format(PyExc_ValueError,
+                         "generation parameter must be less than the number of "
+                         "available generations (%i)",
+                          NUM_GENERATIONS);
+            goto error;
+        }
+
+        if (generation < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "generation parameter cannot be negative");
+            goto error;
+        }
+
+        if (append_objects(result, GEN_HEAD(generation))) {
+            goto error;
+        }
+
+        return result;
+    }
+
+    /* If generation is not passed or None, get all objects from all generations */
     for (i = 0; i < NUM_GENERATIONS; i++) {
         if (append_objects(result, GEN_HEAD(i))) {
-            Py_DECREF(result);
-            return NULL;
+            goto error;
         }
     }
     return result;
+
+error:
+    Py_DECREF(result);
+    return NULL;
 }
 
 /*[clinic input]
@@ -1845,20 +1880,22 @@ _PyGC_Dump(PyGC_Head *g)
 /* extension modules might be compiled with GC support so these
    functions must always be available */
 
-#undef PyObject_GC_Track
-#undef PyObject_GC_UnTrack
-#undef PyObject_GC_Del
-#undef _PyObject_GC_Malloc
-
 void
-PyObject_GC_Track(void *op)
+PyObject_GC_Track(void *op_raw)
 {
+    PyObject *op = _PyObject_CAST(op_raw);
+    if (_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_ASSERT_FAILED_MSG(op,
+                                    "object already tracked "
+                                    "by the garbage collector");
+    }
     _PyObject_GC_TRACK(op);
 }
 
 void
-PyObject_GC_UnTrack(void *op)
+PyObject_GC_UnTrack(void *op_raw)
 {
+    PyObject *op = _PyObject_CAST(op_raw);
     /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
      * call PyObject_GC_UnTrack twice on an object.
      */

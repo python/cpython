@@ -285,10 +285,7 @@ class partial:
 
         if hasattr(func, "func"):
             args = func.args + args
-            tmpkw = func.keywords.copy()
-            tmpkw.update(keywords)
-            keywords = tmpkw
-            del tmpkw
+            keywords = {**func.keywords, **keywords}
             func = func.func
 
         self = super(partial, cls).__new__(cls)
@@ -302,9 +299,8 @@ class partial:
         if not args:
             raise TypeError("descriptor '__call__' of partial needs an argument")
         self, *args = args
-        newkeywords = self.keywords.copy()
-        newkeywords.update(keywords)
-        return self.func(*self.args, *args, **newkeywords)
+        keywords = {**self.keywords, **keywords}
+        return self.func(*self.args, *args, **keywords)
 
     @recursive_repr()
     def __repr__(self):
@@ -358,7 +354,23 @@ class partialmethod(object):
     callables as instance methods.
     """
 
-    def __init__(self, func, *args, **keywords):
+    def __init__(*args, **keywords):
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor '__init__' of partialmethod "
+                            "needs an argument")
+        elif 'func' in keywords:
+            func = keywords.pop('func')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'func' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError("type 'partialmethod' takes at least one argument, "
+                            "got %d" % (len(args)-1))
+        args = tuple(args)
+
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError("{!r} is not callable or a descriptor"
                                  .format(func))
@@ -371,8 +383,7 @@ class partialmethod(object):
             # it's also more efficient since only one function will be called
             self.func = func.func
             self.args = func.args + args
-            self.keywords = func.keywords.copy()
-            self.keywords.update(keywords)
+            self.keywords = {**func.keywords, **keywords}
         else:
             self.func = func
             self.args = args
@@ -391,11 +402,9 @@ class partialmethod(object):
 
     def _make_unbound_method(self):
         def _method(*args, **keywords):
-            call_keywords = self.keywords.copy()
-            call_keywords.update(keywords)
-            cls_or_self, *rest = args
-            call_args = (cls_or_self,) + self.args + tuple(rest)
-            return self.func(*call_args, **call_keywords)
+            cls_or_self, *args = args
+            keywords = {**self.keywords, **keywords}
+            return self.func(cls_or_self, *self.args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method._partialmethod = self
         return _method
@@ -454,7 +463,7 @@ class _HashedSeq(list):
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
-             fasttypes = {int, str, frozenset, type(None)},
+             fasttypes = {int, str},
              tuple=tuple, type=type, len=len):
     """Make a cache key from optionally typed positional and keyword arguments
 
@@ -510,8 +519,11 @@ def lru_cache(maxsize=128, typed=False):
 
     # Early detection of an erroneous call to @lru_cache without any arguments
     # resulting in the inner function being passed to maxsize instead of an
-    # integer or None.
-    if maxsize is not None and not isinstance(maxsize, int):
+    # integer or None.  Negative maxsize is treated as 0.
+    if isinstance(maxsize, int):
+        if maxsize < 0:
+            maxsize = 0
+    elif maxsize is not None:
         raise TypeError('Expected maxsize to be an integer or None')
 
     def decorating_function(user_function):
@@ -538,10 +550,10 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     if maxsize == 0:
 
         def wrapper(*args, **kwds):
-            # No caching -- just a statistics update after a successful call
+            # No caching -- just a statistics update
             nonlocal misses
-            result = user_function(*args, **kwds)
             misses += 1
+            result = user_function(*args, **kwds)
             return result
 
     elif maxsize is None:
@@ -554,9 +566,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
             if result is not sentinel:
                 hits += 1
                 return result
+            misses += 1
             result = user_function(*args, **kwds)
             cache[key] = result
-            misses += 1
             return result
 
     else:
@@ -578,6 +590,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     link[NEXT] = root
                     hits += 1
                     return result
+                misses += 1
             result = user_function(*args, **kwds)
             with lock:
                 if key in cache:
@@ -615,7 +628,6 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
                     full = (cache_len() >= maxsize)
-                misses += 1
             return result
 
     def cache_info():

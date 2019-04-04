@@ -1,5 +1,5 @@
 """
-Tests common to genericpath, macpath, ntpath and posixpath
+Tests common to genericpath, ntpath and posixpath
 """
 
 import genericpath
@@ -334,7 +334,7 @@ class TestGenericTest(GenericTest, unittest.TestCase):
                         func(b'/tmp\x00abcds')
 
 # Following TestCase is not supposed to be run from test_genericpath.
-# It is inherited by other test modules (macpath, ntpath, posixpath).
+# It is inherited by other test modules (ntpath, posixpath).
 
 class CommonTest(GenericTest):
     common_attributes = GenericTest.common_attributes + [
@@ -373,8 +373,6 @@ class CommonTest(GenericTest):
         self.assertEqual(splitdrive(b":foo:bar"), (b"", b":foo:bar"))
 
     def test_expandvars(self):
-        if self.pathmodule.__name__ == 'macpath':
-            self.skipTest('macpath.expandvars is a stub')
         expandvars = self.pathmodule.expandvars
         with support.EnvironmentVarGuard() as env:
             env.clear()
@@ -407,8 +405,6 @@ class CommonTest(GenericTest):
 
     @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
     def test_expandvars_nonascii(self):
-        if self.pathmodule.__name__ == 'macpath':
-            self.skipTest('macpath.expandvars is a stub')
         expandvars = self.pathmodule.expandvars
         def check(value, expected):
             self.assertEqual(expandvars(value), expected)

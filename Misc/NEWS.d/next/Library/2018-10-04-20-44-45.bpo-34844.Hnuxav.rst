@@ -1,6 +1,0 @@
-logging.Formatter enhancement - Ensure styles and fmt matches in
-logging.Formatter - Added validate method in each format style class:
-StrFormatStyle, PercentStyle, StringTemplateStyle. - This method is called
-in the constructor of logging.Formatter class - Also re-raise the KeyError
-in the format method of each style class, so it would a bit clear that it's
-an error with the invalid format fields.

@@ -11,7 +11,6 @@ _closere - line that must be followed by dedent.
 _chew_ordinaryre - non-special characters.
 """
 import re
-import sys
 
 # Reason last statement is continued (or C_NONE if it's not).
 (C_NONE, C_BACKSLASH, C_STRING_FIRST_LINE,

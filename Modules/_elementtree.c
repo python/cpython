@@ -339,7 +339,7 @@ get_attrib_from_keywords(PyObject *kwds)
     if (attrib_str == NULL) {
         return NULL;
     }
-    PyObject *attrib = PyDict_GetItem(kwds, attrib_str);
+    PyObject *attrib = PyDict_GetItemWithError(kwds, attrib_str);
 
     if (attrib) {
         /* If attrib was found in kwds, copy its value and remove it from
@@ -352,8 +352,12 @@ get_attrib_from_keywords(PyObject *kwds)
             return NULL;
         }
         attrib = PyDict_Copy(attrib);
-        PyDict_DelItem(kwds, attrib_str);
-    } else {
+        if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
+            Py_DECREF(attrib);
+            attrib = NULL;
+        }
+    }
+    else if (!PyErr_Occurred()) {
         attrib = PyDict_New();
     }
 
@@ -1390,9 +1394,13 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
     if (!self->extra || self->extra->attrib == Py_None)
         value = default_value;
     else {
-        value = PyDict_GetItem(self->extra->attrib, key);
-        if (!value)
+        value = PyDict_GetItemWithError(self->extra->attrib, key);
+        if (!value) {
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
             value = default_value;
+        }
     }
 
     Py_INCREF(value);
@@ -2444,6 +2452,11 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 static int
 treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(self->end_ns_event_obj);
+    Py_VISIT(self->start_ns_event_obj);
+    Py_VISIT(self->end_event_obj);
+    Py_VISIT(self->start_event_obj);
+    Py_VISIT(self->events_append);
     Py_VISIT(self->root);
     Py_VISIT(self->this);
     Py_VISIT(self->last);
@@ -2840,11 +2853,12 @@ makeuniversal(XMLParserObject* self, const char* string)
     if (!key)
         return NULL;
 
-    value = PyDict_GetItem(self->names, key);
+    value = PyDict_GetItemWithError(self->names, key);
 
     if (value) {
         Py_INCREF(value);
-    } else {
+    }
+    else if (!PyErr_Occurred()) {
         /* new name.  convert to universal name, and decode as
            necessary */
 
@@ -2966,7 +2980,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
     if (!key)
         return;
 
-    value = PyDict_GetItem(self->entity, key);
+    value = PyDict_GetItemWithError(self->entity, key);
 
     if (value) {
         if (TreeBuilder_CheckExact(self->target))
@@ -3968,7 +3982,7 @@ static PyTypeObject XMLParser_Type = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", (PyCFunction) subelement, METH_VARARGS | METH_KEYWORDS},
+    {"SubElement", (PyCFunction)(void(*)(void)) subelement, METH_VARARGS | METH_KEYWORDS},
     {NULL, NULL}
 };
 

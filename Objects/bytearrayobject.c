@@ -2,8 +2,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_mem.h"
-#include "pycore_state.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 #include "bytes_methods.h"
 #include "bytesobject.h"
@@ -15,17 +16,6 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5535b77c37a119e0]*/
 
 char _PyByteArray_empty_string[] = "";
-
-void
-PyByteArray_Fini(void)
-{
-}
-
-int
-PyByteArray_Init(void)
-{
-    return 1;
-}
 
 /* end nullbytes support */
 
@@ -2357,11 +2347,12 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
     }
 }
 

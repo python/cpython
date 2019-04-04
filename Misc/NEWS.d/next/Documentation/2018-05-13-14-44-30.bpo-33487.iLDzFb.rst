@@ -1,3 +1,0 @@
-BZ2file now emit a DeprecationWarning when buffering=None is passed, the
-deprecation message and documentation also now explicitly state it is
-deprecated since 3.0.

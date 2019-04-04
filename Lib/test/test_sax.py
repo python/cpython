@@ -17,7 +17,6 @@ from xml.sax.handler import feature_namespaces, feature_external_ges
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
-import gc
 import os.path
 import shutil
 from urllib.error import URLError
