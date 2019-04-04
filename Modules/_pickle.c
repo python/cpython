@@ -6238,7 +6238,7 @@ load_additems(UnpicklerObject *self)
 static int
 load_build(UnpicklerObject *self)
 {
-    PyObject *state, *inst, *slotstate;
+    PyObject *state, *inst, *slotstate, *statearg;
     PyObject *setstate;
     int status = 0;
     _Py_IDENTIFIER(__setstate__);
@@ -6297,13 +6297,22 @@ load_build(UnpicklerObject *self)
         Py_INCREF(slotstate);
         Py_DECREF(tmp);
         /* call the setstate function */
-        if (PyObject_CallFunctionObjArgs(setstate, inst, state,
-                                         slotstate, NULL) == NULL){
+        if (slotstate != Py_None) {
+            statearg = Py_BuildValue("(OO)", state, slotstate);
+        }
+        else {
+            statearg = state;
+            Py_INCREF(state);
+        }
+
+        if (PyObject_CallFunctionObjArgs(setstate, inst, statearg,
+                                         NULL) == NULL){
             return -1;
         }
 
         Py_DECREF(setstate);
         Py_DECREF(state);
+        Py_DECREF(statearg);
         Py_DECREF(slotstate);
         return 0;
     }

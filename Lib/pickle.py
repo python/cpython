@@ -1567,8 +1567,11 @@ class _Unpickler:
 
         elif isinstance(state, tuple) and len(state) == 3:
             setstate, state, slostate = state
-            setstate(inst, state, slotstate)
-            return
+            if slotstate is None:
+                setstate(inst, (state, slotstate))
+            else:
+                setstate(inst, state)
+
         if state:
             inst_dict = inst.__dict__
             intern = sys.intern

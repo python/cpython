@@ -2995,7 +2995,7 @@ class BBB(object):
     pass
 
 
-def setstate_bbb(obj, state, slotstate):
+def setstate_bbb(obj, state):
     """Custom state setter for BBB objects
 
     Such callable may be created by other persons than the ones who created the
