@@ -13796,14 +13796,14 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
     assert(ucs1lib_find_max_char((Py_UCS1*)str, (Py_UCS1*)str + len) < 128);
 
     if (writer->buffer == NULL && !writer->overallocate) {
-        PyObject *str;
-
-        str = _PyUnicode_FromASCII(str, len);
+        PyObject *s;
+    
+        s = _PyUnicode_FromASCII(str, len);
         if (str == NULL)
             return -1;
 
         writer->readonly = 1;
-        writer->buffer = str;
+        writer->buffer = s;
         _PyUnicodeWriter_Update(writer);
         writer->pos += len;
         return 0;
@@ -13816,10 +13816,10 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
     {
     case PyUnicode_1BYTE_KIND:
     {
-        const Py_UCS1 *str = (const Py_UCS1 *)str;
+        const Py_UCS1 *s = (const Py_UCS1 *)str;
         Py_UCS1 *data = writer->data;
 
-        memcpy(data + writer->pos, str, len);
+        memcpy(data + writer->pos, s, len);
         break;
     }
     case PyUnicode_2BYTE_KIND:
