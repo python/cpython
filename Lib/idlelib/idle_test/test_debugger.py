@@ -58,14 +58,18 @@ class IdbTest(unittest.TestCase):
         self.gui.interaction = mock.Mock()
         self.idb = debugger.Idb(self.gui)
 
+    def tearDown(self):
+        self.gui.interaction.destroy()
+        del self.idb
+
     def test_init_runs_bdb_init(self):
-        """Test that Idb calls the base Bdb __init__."""
+        # Test that Idb calls the base Bdb __init__.
         idb = debugger.Idb(None)
         self.assertIsNone(idb.gui)
         self.assertTrue(hasattr(idb, 'breaks'))
 
     def test_user_line_basic_frame(self):
-        """Test that .user_line() creates a string message for a frame."""
+        # Test that .user_line() creates a string message for a frame.
 
         # Create a test code object to simulate a debug session.
         code_obj = compile(TEST_CODE,
@@ -85,7 +89,7 @@ class IdbTest(unittest.TestCase):
         self.gui.interaction.assert_called_with('test_user_line_basic_frame.py:2: <module>()', test_frame2)
 
     def test_user_exception(self):
-        """Test that .user_exception() creates a string message for a frame."""
+        # Test that .user_exception() creates a string message for a frame.
 
         # Create a test code object to simulate a debug session.
         code_obj = compile(TEST_CODE,
@@ -105,7 +109,7 @@ class IdbTest(unittest.TestCase):
         self.gui.interaction.assert_called_with('test_user_exception.py:1: <module>()', test_frame1, test_exc_info)
 
     def test_in_rpc_code_rpc_py(self):
-        """Test that .in_rpc_code detects position of rpc.py."""
+        # Test that .in_rpc_code detects position of rpc.py.
 
         # Create a test code object to simulate a debug session.
         code_obj = compile(TEST_CODE,
@@ -118,7 +122,7 @@ class IdbTest(unittest.TestCase):
         self.assertTrue(self.idb.in_rpc_code(test_frame))
 
     def test_in_rpc_code_debugger_star_dot_py(self):
-        """Test that .in_rpc_code detects position of idlelib/debugger*.py."""
+        # Test that .in_rpc_code detects position of idlelib/debugger*.py.
 
         # Create a test code object to simulate a debug session.
         for filename in ('idlelib/debugger.py', 'idlelib/debugger_r.py'):
@@ -157,14 +161,14 @@ class DebuggerTest(unittest.TestCase):
         self.debugger.root = self.root
 
     def test_setup_debugger(self):
-        """Test that Debugger can be instantiated with a mock PyShell."""
+        # Test that Debugger can be instantiated with a mock PyShell.
         test_debugger = debugger.Debugger(self.pyshell)
 
         self.assertEqual(test_debugger.pyshell, self.pyshell)
         self.assertIsNone(test_debugger.frame)
 
     def test_run_debugger_with_idb(self):
-        """Test Debugger.run() with an Idb instance."""
+        # Test Debugger.run() with an Idb instance.
         test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
         test_debugger.run(1, 'two')
         self.idb.run.assert_called_once()
@@ -172,7 +176,7 @@ class DebuggerTest(unittest.TestCase):
         self.assertEqual(test_debugger.interacting, 0)
 
     def test_run_debugger_no_idb(self):
-        """Test Debugger.run() with no Idb instance."""
+        # Test Debugger.run() with no Idb instance.
         test_debugger = debugger.Debugger(self.pyshell, idb=None)
         self.assertIsNotNone(test_debugger.idb)
         test_debugger.idb.run = mock.Mock()
@@ -182,18 +186,18 @@ class DebuggerTest(unittest.TestCase):
         self.assertEqual(test_debugger.interacting, 0)
 
     def test_close(self):
-        """Test closing the window in an idle state."""
+        # Test closing the window in an idle state.
         self.debugger.close()
         self.pyshell.close_debugger.assert_called_once()
 
     def test_close_whilst_interacting(self):
-        """Test closing the window in an interactive state."""
+        # Test closing the window in an interactive state.
         self.debugger.interacting = 1
         self.debugger.close()
         self.pyshell.close_debugger.assert_not_called()
 
     def test_interaction_with_message_and_frame(self):
-        """Test the interaction sets the window message."""
+        # Test the interaction sets the window message.
         test_message = "testing 1234.."
         test_code = compile(TEST_CODE, 'test_interaction.py', 'exec')
 
@@ -210,7 +214,7 @@ class DebuggerTest(unittest.TestCase):
         self.debugger.status.configure.assert_has_calls([mock.call(text='testing 1234..'), mock.call(text='')])
 
     def test_interaction_with_message_and_frame_and_exc_info(self):
-        """Test the interaction sets the window message with exception info."""
+        # Test the interaction sets the window message with exception info.
         test_message = "testing 1234.."
         test_exc_info = (type(ValueError), ValueError(), None)
         test_code = compile(TEST_CODE, 'test_interaction.py', 'exec')
@@ -227,7 +231,7 @@ class DebuggerTest(unittest.TestCase):
         self.debugger.status.configure.assert_has_calls([mock.call(text='testing 1234..'), mock.call(text='')])
 
     def test_sync_source_line(self):
-        """Test that .sync_source_line() will set the flist.gotofileline with fixed frame."""
+        # Test that .sync_source_line() will set the flist.gotofileline with fixed frame.
         test_code = compile(TEST_CODE, 'test_sync.py', 'exec')
         test_frame = MockFrameType(test_code, 1)
 
@@ -243,21 +247,21 @@ class DebuggerTest(unittest.TestCase):
         self.debugger.flist.gotofileline.assert_called_once_with('test_sync.py', 1)
 
     def test_cont(self):
-        """Test the .cont() method calls idb.set_continue()."""
+        # Test the .cont() method calls idb.set_continue().
         self.debugger.cont()
 
         # Check set_continue was called on the idb instance.
         self.idb.set_continue.assert_called_once()
 
     def test_step(self):
-        """Test the .step() method calls idb.set_step()."""
+        # Test the .step() method calls idb.set_step().
         self.debugger.step()
 
         # Check set_step was called on the idb instance.
         self.idb.set_step.assert_called_once()
 
     def test_next(self):
-        """Test the .next() method calls idb.set_next()."""
+        # Test the .next() method calls idb.set_next().
         test_frame = MockFrameType(None, None)
 
         self.debugger.frame = test_frame
@@ -267,7 +271,7 @@ class DebuggerTest(unittest.TestCase):
         self.idb.set_next.assert_called_once_with(test_frame)
 
     def test_ret(self):
-        """Test the .ret() method calls idb.set_return()."""
+        # Test the .ret() method calls idb.set_return().
         test_frame = MockFrameType(None, None)
 
         self.debugger.frame = test_frame
@@ -277,21 +281,22 @@ class DebuggerTest(unittest.TestCase):
         self.idb.set_return.assert_called_once_with(test_frame)
 
     def test_quit(self):
-        """Test the .quit() method calls idb.set_quit()."""
+        # Test the .quit() method calls idb.set_quit().
         self.debugger.quit()
 
         # Check set_quit was called on the idb instance.
         self.idb.set_quit.assert_called_once_with()
 
     def test_show_stack(self):
-        """Test the .show_stack() method calls with stackview"""
+        # Test the .show_stack() method calls with stackview.
         self.debugger.show_stack()
 
         # Check that the newly created stackviewer has the test gui as a field.
         self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
 
     def test_show_stack_with_frame(self):
-        """Test the .show_stack() method calls with stackview and frame"""
+        # Test the .show_stack() method calls with stackview and frame.
+
         # Set a frame on the GUI before showing stack
         test_frame = MockFrameType(None, None)
         self.debugger.frame = test_frame
@@ -308,25 +313,25 @@ class DebuggerTest(unittest.TestCase):
         self.idb.get_stack.assert_called_once_with(test_frame, None)
 
     def test_set_breakpoint_here(self):
-        """Test the .set_breakpoint_here() method calls idb."""
+        # Test the .set_breakpoint_here() method calls idb.
         self.debugger.set_breakpoint_here('test.py', 4)
 
         self.idb.set_break.assert_called_once_with('test.py', 4)
 
     def test_clear_breakpoint_here(self):
-        """Test the .clear_breakpoint_here() method calls idb."""
+        # Test the .clear_breakpoint_here() method calls idb.
         self.debugger.clear_breakpoint_here('test.py', 4)
 
         self.idb.clear_break.assert_called_once_with('test.py', 4)
 
     def test_clear_file_breaks(self):
-        """Test the .clear_file_breaks() method calls idb."""
+        # Test the .clear_file_breaks() method calls idb.
         self.debugger.clear_file_breaks('test.py')
 
         self.idb.clear_all_file_breaks.assert_called_once_with('test.py')
 
     def test_load_breakpoints(self):
-        """Test the .load_breakpoints() method calls idb."""
+        # Test the .load_breakpoints() method calls idb.
         FileIO = namedtuple('FileIO', 'filename')
 
         class MockEditWindow(object):
@@ -374,7 +379,7 @@ class StackViewerTest(unittest.TestCase):
         self.sv.load_stack(self.stack)
 
     def test_init(self):
-        """Test creation of StackViewer."""
+        # Test creation of StackViewer.
         gui = None
         flist = None
         master_window = self.root
@@ -382,14 +387,16 @@ class StackViewerTest(unittest.TestCase):
         self.assertTrue(hasattr(sv, 'stack'))
 
     def test_load_stack(self):
-        """Test the .load_stack() method against a fixed test stack."""
+        # Test the .load_stack() method against a fixed test stack.
+
         # Check the test stack is assigned and the list contains the repr of them.
         self.assertEqual(self.sv.stack, self.stack)
         self.assertEqual(self.sv.get(0), '?.<module>(), line 1: ')
         self.assertEqual(self.sv.get(1), '?.<module>(), line 2: ')
 
     def test_show_source(self):
-        """Test the .show_source() method against a fixed test stack."""
+        # Test the .show_source() method against a fixed test stack.
+
         # Patch out the file list to monitor it
         self.sv.flist = mock.Mock()
 
