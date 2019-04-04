@@ -3827,7 +3827,7 @@ unicode_decode_locale(const char *str, Py_ssize_t len,
 }
 
 PyObject*
-PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
+PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t length,
                               const char *errors)
 {
     _Py_error_handler error_handler = _Py_GetErrorHandler(errors);

@@ -722,7 +722,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCodePage(
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocaleAndSize(
     const char *str,
-    Py_ssize_t len,
+    Py_ssize_t length,
     const char *errors);
 
 /* Similar to PyUnicode_DecodeLocaleAndSize(), but compute the string
