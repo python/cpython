@@ -2425,7 +2425,7 @@ class TestDateTime(TestDate):
                 self.assertEqual(expected, got)
 
         strptime = self.theclass.strptime
-        
+
         # bpo-34903: Check that single digit dates and times are allowed.
         with self.assertRaises(ValueError):
             # %y does require two digits
@@ -2440,7 +2440,7 @@ class TestDateTime(TestDate):
         for string, format, target in inputs:
             newdate = strptime(string, format)
             self.assertEqual(newdate.isoformat(timespec='seconds'), target)
-        
+
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
         self.assertEqual(
