@@ -1374,6 +1374,11 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         # if the socket is bound to the first address, connect() will fail.
         sock = m_socket.socket.return_value
 
+        self.loop._add_reader = mock.Mock()
+        self.loop._add_reader._is_coroutine = False
+        self.loop._add_writer = mock.Mock()
+        self.loop._add_writer._is_coroutine = False
+
         def mock_connect_check_bind(address):
             if sock.bind.call_count:
                 bind_addr = sock.bind.call_args[0][0]
@@ -1393,7 +1398,12 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
         coro = self.loop.create_connection(
             MyProto, 'connectaddr', 80, local_addr=('bindaddr', 0))
-        self.loop.run_until_complete(coro)
+        t, p = self.loop.run_until_complete(coro)
+        try:
+            sock.connect.assert_called_with(('2001:db8::1', 80))
+        finally:
+            t.close()
+            test_utils.run_briefly(self.loop)
 
     @patch_socket
     def test_create_connection_bluetooth(self, m_socket):
