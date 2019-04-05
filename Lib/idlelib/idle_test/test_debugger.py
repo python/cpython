@@ -196,40 +196,6 @@ class DebuggerTest(unittest.TestCase):
         self.debugger.close()
         self.pyshell.close_debugger.assert_not_called()
 
-    def test_interaction_with_message_and_frame(self):
-        # Test the interaction sets the window message.
-        test_message = "testing 1234.."
-        test_code = compile(TEST_CODE, 'test_interaction.py', 'exec')
-
-        test_frame = MockFrameType(test_code, 1)
-
-        # Set the response of Idb.get_stack(), required for the stackviewer
-        self.idb.get_stack.return_value = ([], 0)
-
-        # Patch out the status label so we can check messages
-        self.debugger.status = mock.Mock()
-        self.debugger.interaction(test_message, test_frame)
-
-        # Check the test message was displayed and cleared
-        self.debugger.status.configure.assert_has_calls([mock.call(text='testing 1234..'), mock.call(text='')])
-
-    def test_interaction_with_message_and_frame_and_exc_info(self):
-        # Test the interaction sets the window message with exception info.
-        test_message = "testing 1234.."
-        test_exc_info = (type(ValueError), ValueError(), None)
-        test_code = compile(TEST_CODE, 'test_interaction.py', 'exec')
-        test_frame = MockFrameType(test_code, 1)
-
-        # Set the response of Idb.get_stack(), required for the stackviewer
-        self.idb.get_stack.return_value = ([], 0)
-
-        # Patch out the status label so we can check messages
-        self.debugger.status = mock.Mock()
-        self.debugger.interaction(test_message, test_frame, test_exc_info)
-
-        # Check the test message was displayed and cleared
-        self.debugger.status.configure.assert_has_calls([mock.call(text='testing 1234..'), mock.call(text='')])
-
     def test_sync_source_line(self):
         # Test that .sync_source_line() will set the flist.gotofileline with fixed frame.
         test_code = compile(TEST_CODE, 'test_sync.py', 'exec')

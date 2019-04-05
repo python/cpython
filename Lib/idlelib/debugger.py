@@ -277,7 +277,7 @@ class Debugger:
         # Tcl's vwait facility, which reenters the event loop until an
         # event handler sets the variable we're waiting on.
         self.nesting_level += 1
-        self.root.tk.call('vwait', '::idledebugwait')
+        self.root.tk.call('vwait', '::idledebugwait', timeout=0.1)
         self.nesting_level -= 1
 
         for b in self.buttons:
