@@ -535,7 +535,7 @@ make_pending_calls(PyInterpreterState *interp)
                                    &runtime->ceval, &interp->ceval,
                                    thread_id,
                                    func, arg);
-            return 0;
+            goto error;
         }
 
         /* having released the lock, perform the callback */
