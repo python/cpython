@@ -59,7 +59,8 @@ class IdbTest(unittest.TestCase):
         self.idb = debugger.Idb(self.gui)
 
     def tearDown(self):
-        self.gui.interaction.destroy()
+        del self.gui.interaction
+        del self.gui
         del self.idb
 
     def test_init_runs_bdb_init(self):
@@ -159,9 +160,14 @@ class DebuggerTest(unittest.TestCase):
     def setUp(self):
         self.pyshell = mock.Mock()
         self.pyshell.root = self.root
-        self.idb = mock.Mock()
-        self.debugger = debugger.Debugger(self.pyshell, self.idb)
+        self.debugger = debugger.Debugger(self.pyshell, None)
         self.debugger.root = self.root
+
+    def tearDown(self):
+        del self.pyshell.root
+        del self.pyshell
+        del self.debugger.root
+        del self.debugger
 
     def test_setup_debugger(self):
         # Test that Debugger can be instantiated with a mock PyShell.
@@ -170,13 +176,6 @@ class DebuggerTest(unittest.TestCase):
         self.assertEqual(test_debugger.pyshell, self.pyshell)
         self.assertIsNone(test_debugger.frame)
 
-    def test_run_debugger_with_idb(self):
-        # Test Debugger.run() with an Idb instance.
-        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
-        test_debugger.run(1, 'two')
-        self.idb.run.assert_called_once()
-        self.idb.run.called_with(1, 'two')
-        self.assertEqual(test_debugger.interacting, 0)
 
     def test_run_debugger_no_idb(self):
         # Test Debugger.run() with no Idb instance.
@@ -214,6 +213,49 @@ class DebuggerTest(unittest.TestCase):
             self.debugger.sync_source_line()
 
         self.debugger.flist.gotofileline.assert_called_once_with('test_sync.py', 1)
+
+    def test_show_stack(self):
+        # Test the .show_stack() method calls with stackview.
+        self.debugger.show_stack()
+
+        # Check that the newly created stackviewer has the test gui as a field.
+        self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
+
+
+class DebuggerIdbTest(unittest.TestCase):
+    """Tests for the idlelib.debugger.Debugger class with an Idb."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Tk()
+        cls.root.withdraw()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.destroy()
+        del cls.root
+
+    def setUp(self):
+        self.pyshell = mock.Mock()
+        self.pyshell.root = self.root
+        self.idb = mock.Mock()
+        self.debugger = debugger.Debugger(self.pyshell, self.idb)
+        self.debugger.root = self.root
+
+    def tearDown(self):
+        del self.pyshell.root
+        del self.pyshell
+        del self.idb
+        del self.debugger.root
+        del self.debugger
+
+    def test_run_debugger(self):
+        # Test Debugger.run() with an Idb instance.
+        test_debugger = debugger.Debugger(self.pyshell, idb=self.idb)
+        test_debugger.run(1, 'two')
+        self.idb.run.assert_called_once()
+        self.idb.run.called_with(1, 'two')
+        self.assertEqual(test_debugger.interacting, 0)
 
     def test_cont(self):
         # Test the .cont() method calls idb.set_continue().
@@ -255,13 +297,6 @@ class DebuggerTest(unittest.TestCase):
 
         # Check set_quit was called on the idb instance.
         self.idb.set_quit.assert_called_once_with()
-
-    def test_show_stack(self):
-        # Test the .show_stack() method calls with stackview.
-        self.debugger.show_stack()
-
-        # Check that the newly created stackviewer has the test gui as a field.
-        self.assertEqual(self.debugger.stackviewer.gui, self.debugger)
 
     def test_show_stack_with_frame(self):
         # Test the .show_stack() method calls with stackview and frame.
