@@ -1,0 +1,2 @@
+Add transparency methods to :class:`tkinter.PhotoImage`.  Patch by Zackery
+Spytz.
