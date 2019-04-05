@@ -109,11 +109,11 @@ The following warnings category classes are currently defined:
 +----------------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.7
-  Previously :exc:`DeprecationWarning` and :exc:`FutureWarning` were
-  distinguished based on whether a feature was being removed entirely or
-  changing its behaviour. They are now distinguished based on their
-  intended audience and the way they're handled by the default warnings
-  filters.
+   Previously :exc:`DeprecationWarning` and :exc:`FutureWarning` were
+   distinguished based on whether a feature was being removed entirely or
+   changing its behaviour. They are now distinguished based on their
+   intended audience and the way they're handled by the default warnings
+   filters.
 
 
 .. _warning-filter:
