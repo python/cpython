@@ -1242,8 +1242,8 @@ def get_terminal_size(fallback=(80, 24)):
     the value is a positive integer, it is used.
 
     When COLUMNS or LINES is not defined, which is the common case,
-    the terminal connected to sys.__stdout__ is queried
-    by invoking os.get_terminal_size.
+    the terminal connected to sys.__stdin__, sys.__stderr__, or sys.__stdout__
+    is queried by invoking os.get_terminal_size.
 
     If the terminal size cannot be successfully queried, either because
     the system doesn't support querying, or because we are not
@@ -1266,11 +1266,17 @@ def get_terminal_size(fallback=(80, 24)):
 
     # only query if necessary
     if columns <= 0 or lines <= 0:
-        try:
-            size = os.get_terminal_size(sys.__stdout__.fileno())
-        except (AttributeError, ValueError, OSError):
-            # stdout is None, closed, detached, or not a terminal, or
-            # os.get_terminal_size() is unsupported
+        for check in [sys.__stdin__, sys.__stderr__, sys.__stdout__]:
+            fd = check.fileno()
+            try:
+                size = os.get_terminal_size(fd)
+            except (AttributeError, ValueError, OSError):
+                # fd is None, closed, detached, or not a terminal, or
+                # os.get_terminal_size() is unsupported
+                continue
+            else:
+                break
+        else:
             size = os.terminal_size(fallback)
         if columns <= 0:
             columns = size.columns
