@@ -360,7 +360,7 @@ class StackViewerTest(unittest.TestCase):
 
         # Check the test stack is assigned and the list contains the repr of them.
         self.assertEqual(self.sv.stack, self.stack)
-        self.assertEqual(self.sv.get(0), '?.<module>(), line 1: "Test stackviewer, coverage 63%."')
+        self.assertTrue('?.<module>(), line 1:' in self.sv.get(0))
         self.assertEqual(self.sv.get(1), '?.<module>(), line 2: ')
 
     def test_show_source(self):
