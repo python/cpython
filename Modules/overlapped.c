@@ -789,6 +789,10 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
             addr = unparse_address((SOCKADDR*)&self->read_from.address,
                                    self->read_from.address_length);
 
+            if (addr == NULL) {
+                return NULL;
+            }
+
             // The result is a two item tuple: (message, (address, port))
             self->read_from.result = PyTuple_New(2);
             if (self->read_from.result == NULL) {
