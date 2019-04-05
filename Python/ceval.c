@@ -189,11 +189,6 @@ _PyEval_FiniThreads(void)
 
     destroy_gil();
     assert(!gil_created());
-
-    if (_PyRuntime.ceval.pending.lock != NULL) {
-        PyThread_free_lock(_PyRuntime.ceval.pending.lock);
-        _PyRuntime.ceval.pending.lock = NULL;
-    }
 }
 
 void
