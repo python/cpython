@@ -1934,8 +1934,6 @@ completely orthogonal to how an individual logging message is constructed.
 Example how to setup a formatter with the new str.format style::
 
     formatter = logging.Formatter("[{asctime:s}] [{name:25s}] {levelname:8s} | {message:s}", style='{')
-    # this now works:
-    logging.getLogger('MyLogger').info('test {:d}', 5)
 
 Logging calls (:meth:`~Logger.debug`, :meth:`~Logger.info` etc.) only take
 positional parameters for the actual logging message itself, with keyword
