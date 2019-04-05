@@ -73,7 +73,7 @@ class IdbTest(unittest.TestCase):
 
         # Create a test code object to simulate a debug session.
         code_obj = compile(TEST_CODE,
-                           'test_user_line_basic_frame.py',
+                           'idlelib/debugger.py',
                            mode='exec')
 
         # Create 2 test frames for lines 1 and 2 of the test code.
@@ -86,27 +86,30 @@ class IdbTest(unittest.TestCase):
 
         self.assertFalse(self.idb.in_rpc_code(test_frame2))
         self.gui.interaction.assert_called_once()
-        self.gui.interaction.assert_called_with('test_user_line_basic_frame.py:2: <module>()', test_frame2)
+        self.gui.interaction.assert_called_with('debugger.py:2: <module>()', test_frame2)
 
     def test_user_exception(self):
         # Test that .user_exception() creates a string message for a frame.
 
         # Create a test code object to simulate a debug session.
         code_obj = compile(TEST_CODE,
-                           'test_user_exception.py',
+                           'idlelib/debugger.py',
                            mode='exec')
 
-        # Create 1 test frame
+        # Create 2 test frames for lines 1 and 2 of the test code.
         test_frame1 = MockFrameType(code_obj, 1)
+
+        test_frame2 = MockFrameType(code_obj, 2)
+        test_frame2.f_back = test_frame1
 
         # Example from sys.exc_info()
         test_exc_info = (type(ValueError), ValueError(), None)
 
-        self.idb.user_exception(test_frame1, test_exc_info)
+        self.idb.user_exception(test_frame2, test_exc_info)
 
-        self.assertFalse(self.idb.in_rpc_code(test_frame1))
+        self.assertFalse(self.idb.in_rpc_code(test_frame2))
         self.gui.interaction.assert_called_once()
-        self.gui.interaction.assert_called_with('test_user_exception.py:1: <module>()', test_frame1, test_exc_info)
+        self.gui.interaction.assert_called_with('debugger.py:2: <module>()', test_frame2, test_exc_info)
 
     def test_in_rpc_code_rpc_py(self):
         # Test that .in_rpc_code detects position of rpc.py.
@@ -357,7 +360,7 @@ class StackViewerTest(unittest.TestCase):
 
         # Check the test stack is assigned and the list contains the repr of them.
         self.assertEqual(self.sv.stack, self.stack)
-        self.assertEqual(self.sv.get(0), '?.<module>(), line 1: ')
+        self.assertEqual(self.sv.get(0), '?.<module>(), line 1: "Test stackviewer, coverage 63%."')
         self.assertEqual(self.sv.get(1), '?.<module>(), line 2: ')
 
     def test_show_source(self):
