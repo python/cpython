@@ -2147,7 +2147,7 @@ dict_keys(PyDictObject *mp)
     PyObject *v;
     Py_ssize_t i, j;
     PyDictKeyEntry *ep;
-    Py_ssize_t size, n, offset;
+    Py_ssize_t n, offset;
     PyObject **value_ptr;
 
   again:
@@ -2163,7 +2163,6 @@ dict_keys(PyDictObject *mp)
         goto again;
     }
     ep = DK_ENTRIES(mp->ma_keys);
-    size = mp->ma_keys->dk_nentries;
     if (mp->ma_values) {
         value_ptr = mp->ma_values;
         offset = sizeof(PyObject *);
@@ -2172,7 +2171,7 @@ dict_keys(PyDictObject *mp)
         value_ptr = &ep[0].me_value;
         offset = sizeof(PyDictKeyEntry);
     }
-    for (i = 0, j = 0; i < size; i++) {
+    for (i = 0, j = 0; j < n; i++) {
         if (*value_ptr != NULL) {
             PyObject *key = ep[i].me_key;
             Py_INCREF(key);
@@ -2191,7 +2190,7 @@ dict_values(PyDictObject *mp)
     PyObject *v;
     Py_ssize_t i, j;
     PyDictKeyEntry *ep;
-    Py_ssize_t size, n, offset;
+    Py_ssize_t n, offset;
     PyObject **value_ptr;
 
   again:
@@ -2207,7 +2206,6 @@ dict_values(PyDictObject *mp)
         goto again;
     }
     ep = DK_ENTRIES(mp->ma_keys);
-    size = mp->ma_keys->dk_nentries;
     if (mp->ma_values) {
         value_ptr = mp->ma_values;
         offset = sizeof(PyObject *);
@@ -2216,7 +2214,7 @@ dict_values(PyDictObject *mp)
         value_ptr = &ep[0].me_value;
         offset = sizeof(PyDictKeyEntry);
     }
-    for (i = 0, j = 0; i < size; i++) {
+    for (i = 0, j = 0; j < n; i++) {
         PyObject *value = *value_ptr;
         value_ptr = (PyObject **)(((char *)value_ptr) + offset);
         if (value != NULL) {
@@ -2234,7 +2232,7 @@ dict_items(PyDictObject *mp)
 {
     PyObject *v;
     Py_ssize_t i, j, n;
-    Py_ssize_t size, offset;
+    Py_ssize_t offset;
     PyObject *item, *key;
     PyDictKeyEntry *ep;
     PyObject **value_ptr;
@@ -2265,7 +2263,6 @@ dict_items(PyDictObject *mp)
     }
     /* Nothing we do below makes any function calls. */
     ep = DK_ENTRIES(mp->ma_keys);
-    size = mp->ma_keys->dk_nentries;
     if (mp->ma_values) {
         value_ptr = mp->ma_values;
         offset = sizeof(PyObject *);
@@ -2274,7 +2271,7 @@ dict_items(PyDictObject *mp)
         value_ptr = &ep[0].me_value;
         offset = sizeof(PyDictKeyEntry);
     }
-    for (i = 0, j = 0; i < size; i++) {
+    for (i = 0, j = 0; j < n; i++) {
         PyObject *value = *value_ptr;
         value_ptr = (PyObject **)(((char *)value_ptr) + offset);
         if (value != NULL) {
