@@ -1267,9 +1267,8 @@ def get_terminal_size(fallback=(80, 24)):
     # only query if necessary
     if columns <= 0 or lines <= 0:
         for check in [sys.__stdin__, sys.__stderr__, sys.__stdout__]:
-            fd = check.fileno()
             try:
-                size = os.get_terminal_size(fd)
+                size = os.get_terminal_size(check.fileno())
             except (AttributeError, ValueError, OSError):
                 # fd is None, closed, detached, or not a terminal, or
                 # os.get_terminal_size() is unsupported
