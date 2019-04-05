@@ -466,7 +466,7 @@ make_pending_calls(PyInterpreterState *interp)
             // Thread mismatch, so move it to the end of the list
             // and start over.
             _Py_AddPendingCall(interp, thread_id, func, arg);
-            return 0;
+            goto error;
         }
 
         /* having released the lock, perform the callback */
