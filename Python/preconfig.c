@@ -720,6 +720,11 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
     _Py_SetLocaleFromEnv(LC_CTYPE);
 
     _PyPreCmdline cmdline = _PyPreCmdline_INIT;
+    int init_utf8_mode = Py_UTF8Mode;
+#ifdef MS_WINDOWS
+    int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
+#endif
+
     if (args) {
         err = _PyPreCmdline_SetArgv(&cmdline, args);
         if (_Py_INIT_FAILED(err)) {
@@ -727,10 +732,6 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
         }
     }
 
-    int init_utf8_mode = Py_UTF8Mode;
-#ifdef MS_WINDOWS
-    int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
-#endif
     int locale_coerced = 0;
     int loops = 0;
 
