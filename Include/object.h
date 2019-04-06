@@ -440,6 +440,7 @@ static inline void _Py_NewReference(PyObject *op)
 
 static inline void _Py_ForgetReference(PyObject *op)
 {
+    (void)op; /* may be unused, shut up -Wunused-parameter */
     _Py_INC_TPFREES(op);
 }
 #endif /* !Py_TRACE_REFS */
@@ -458,6 +459,8 @@ static inline void _Py_INCREF(PyObject *op)
 static inline void _Py_DECREF(const char *filename, int lineno,
                               PyObject *op)
 {
+    (void)filename; /* may be unused, shut up -Wunused-parameter */
+    (void)lineno; /* may be unused, shut up -Wunused-parameter */
     _Py_DEC_REFTOTAL;
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
