@@ -17,16 +17,17 @@
 
 The :mod:`venv` module provides support for creating lightweight "virtual
 environments" with their own site directories, optionally isolated from system
-site directories.  Each virtual environment has its own Python binary (allowing
-creation of environments with various Python versions) and can have its own
-independent set of installed Python packages in its site directories.
+site directories.  Each virtual environment has its own Python binary (which
+matches the version of the binary that was used to create this environment) and
+can have its own independent set of installed Python packages in its site
+directories.
 
 See :pep:`405` for more information about Python virtual environments.
 
-.. note::
-   The ``pyvenv`` script has been deprecated as of Python 3.6 in favor of using
-   ``python3 -m venv`` to help prevent any potential confusion as to which
-   Python interpreter a virtual environment will be based on.
+.. seealso::
+
+   `Python Packaging User Guide: Creating and using virtual environments
+   <https://packaging.python.org/installing/#creating-virtual-environments>`__
 
 
 Creating virtual environments
@@ -108,9 +109,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
       any existing target directory, before creating the environment.
 
     * ``symlinks`` -- a Boolean value indicating whether to attempt to symlink the
-      Python binary (and any necessary DLLs or other binaries,
-      e.g. ``pythonw.exe``), rather than copying. Defaults to ``True`` on Linux and
-      Unix systems, but ``False`` on Windows.
+      Python binary rather than copying.
 
     * ``upgrade`` -- a Boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
@@ -129,7 +128,6 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. versionadded:: 3.6
        Added the ``prompt`` parameter
-
 
     Creators of third-party virtual environment tools will be free to use the
     provided ``EnvBuilder`` class as a base class.
@@ -177,11 +175,10 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: setup_python(context)
 
-        Creates a copy of the Python executable (and, under Windows, DLLs) in
-        the environment. On a POSIX system, if a specific executable
-        ``python3.x`` was used, symlinks to ``python`` and ``python3`` will be
-        created pointing to that executable, unless files with those names
-        already exist.
+        Creates a copy or symlink to the Python executable in the environment.
+        On POSIX systems, if a specific executable ``python3.x`` was used,
+        symlinks to ``python`` and ``python3`` will be created pointing to that
+        executable, unless files with those names already exist.
 
     .. method:: setup_scripts(context)
 
@@ -193,6 +190,16 @@ creation according to their needs, the :class:`EnvBuilder` class.
         A placeholder method which can be overridden in third party
         implementations to pre-install packages in the virtual environment or
         perform other post-creation steps.
+
+    .. versionchanged:: 3.7.2
+       Windows now uses redirector scripts for ``python[w].exe`` instead of
+       copying the actual binaries. In 3.7.2 only :meth:`setup_python` does
+       nothing unless running from a build in the source tree.
+
+    .. versionchanged:: 3.7.3
+       Windows copies the redirector scripts as part of :meth:`setup_python`
+       instead of :meth:`setup_scripts`. This was not the case in 3.7.2.
+       When using symlinks, the original executables will be linked.
 
     In addition, :class:`EnvBuilder` provides this utility method that can be
     called from :meth:`setup_scripts` or :meth:`post_setup` in subclasses to

@@ -164,18 +164,18 @@ typedef int Py_ssize_clean_t;
  */
 
 #if defined(_MSC_VER)
-#if defined(PY_LOCAL_AGGRESSIVE)
-/* enable more aggressive optimization for visual studio */
-#pragma optimize("agtw", on)
+#  if defined(PY_LOCAL_AGGRESSIVE)
+   /* enable more aggressive optimization for visual studio */
+#  pragma optimize("agtw", on)
 #endif
-/* ignore warnings if the compiler decides not to inline a function */
-#pragma warning(disable: 4710)
-/* fastest possible local call under MSVC */
-#define Py_LOCAL(type) static type __fastcall
-#define Py_LOCAL_INLINE(type) static __inline type __fastcall
+   /* ignore warnings if the compiler decides not to inline a function */
+#  pragma warning(disable: 4710)
+   /* fastest possible local call under MSVC */
+#  define Py_LOCAL(type) static type __fastcall
+#  define Py_LOCAL_INLINE(type) static __inline type __fastcall
 #else
-#define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static inline type
+#  define Py_LOCAL(type) static type
+#  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
 /* Py_MEMCPY is kept for backwards compatibility,
@@ -406,7 +406,7 @@ extern "C" {
 #endif
 
 /* get and set x87 control word for VisualStudio/x86 */
-#if defined(_MSC_VER) && !defined(_WIN64) /* x87 not supported in 64-bit */
+#if defined(_MSC_VER) && defined(_M_IX86) /* x87 only supported in x86 */
 #define HAVE_PY_SET_53BIT_PRECISION 1
 #define _Py_SET_53BIT_PRECISION_HEADER \
     unsigned int old_387controlword, new_387controlword, out_387controlword
@@ -525,8 +525,10 @@ extern "C" {
  * Usage:
  *    int _Py_NO_INLINE x(void) { return 3; }
  */
-#if defined(__GNUC__) || defined(__clang__)
-#  define _Py_NO_INLINE __attribute__((noinline))
+#if defined(_MSC_VER)
+#  define _Py_NO_INLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define _Py_NO_INLINE __attribute__ ((noinline))
 #else
 #  define _Py_NO_INLINE
 #endif

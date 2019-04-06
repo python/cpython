@@ -235,6 +235,7 @@ EXPORTS
   PyExc_SystemError=python38.PyExc_SystemError DATA
   PyExc_SystemExit=python38.PyExc_SystemExit DATA
   PyExc_TabError=python38.PyExc_TabError DATA
+  PyExc_TargetScopeError=python38.PyExc_TargetScopeError DATA
   PyExc_TimeoutError=python38.PyExc_TimeoutError DATA
   PyExc_TypeError=python38.PyExc_TypeError DATA
   PyExc_UnboundLocalError=python38.PyExc_UnboundLocalError DATA
@@ -248,6 +249,7 @@ EXPORTS
   PyExc_Warning=python38.PyExc_Warning DATA
   PyExc_WindowsError=python38.PyExc_WindowsError DATA
   PyExc_ZeroDivisionError=python38.PyExc_ZeroDivisionError DATA
+  PyExceptionClass_Name=python38.PyExceptionClass_Name
   PyException_GetCause=python38.PyException_GetCause
   PyException_GetContext=python38.PyException_GetContext
   PyException_GetTraceback=python38.PyException_GetTraceback
@@ -284,6 +286,7 @@ EXPORTS
   PyImport_GetImporter=python38.PyImport_GetImporter
   PyImport_GetMagicNumber=python38.PyImport_GetMagicNumber
   PyImport_GetMagicTag=python38.PyImport_GetMagicTag
+  PyImport_GetModule=python38.PyImport_GetModule
   PyImport_GetModuleDict=python38.PyImport_GetModuleDict
   PyImport_Import=python38.PyImport_Import
   PyImport_ImportFrozenModule=python38.PyImport_ImportFrozenModule
@@ -293,9 +296,11 @@ EXPORTS
   PyImport_ImportModuleLevelObject=python38.PyImport_ImportModuleLevelObject
   PyImport_ImportModuleNoBlock=python38.PyImport_ImportModuleNoBlock
   PyImport_ReloadModule=python38.PyImport_ReloadModule
+  PyIndex_Check=python38.PyIndex_Check
   PyInterpreterState_Clear=python38.PyInterpreterState_Clear
   PyInterpreterState_Delete=python38.PyInterpreterState_Delete
   PyInterpreterState_New=python38.PyInterpreterState_New
+  PyIter_Check=python38.PyIter_Check
   PyIter_Next=python38.PyIter_Next
   PyListIter_Type=python38.PyListIter_Type DATA
   PyListRevIter_Type=python38.PyListRevIter_Type DATA
@@ -757,6 +762,7 @@ EXPORTS
   Py_SetPythonHome=python38.Py_SetPythonHome
   Py_SetRecursionLimit=python38.Py_SetRecursionLimit
   Py_SymtableString=python38.Py_SymtableString
+  Py_UTF8Mode=python38.Py_UTF8Mode DATA
   Py_VaBuildValue=python38.Py_VaBuildValue
   _PyArg_ParseTupleAndKeywords_SizeT=python38._PyArg_ParseTupleAndKeywords_SizeT
   _PyArg_ParseTuple_SizeT=python38._PyArg_ParseTuple_SizeT

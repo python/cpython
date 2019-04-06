@@ -344,6 +344,23 @@ class HeaderTests(TestCase):
                 with self.assertRaisesRegex(ValueError, 'Invalid header'):
                     conn.putheader(name, value)
 
+    def test_headers_debuglevel(self):
+        body = (
+            b'HTTP/1.1 200 OK\r\n'
+            b'First: val\r\n'
+            b'Second: val1\r\n'
+            b'Second: val2\r\n'
+        )
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock, debuglevel=1)
+        with support.captured_stdout() as output:
+            resp.begin()
+        lines = output.getvalue().splitlines()
+        self.assertEqual(lines[0], "reply: 'HTTP/1.1 200 OK\\r\\n'")
+        self.assertEqual(lines[1], "header: First: val")
+        self.assertEqual(lines[2], "header: Second: val1")
+        self.assertEqual(lines[3], "header: Second: val2")
+
 
 class TransferEncodingTest(TestCase):
     expected_body = b"It's just a flesh wound"

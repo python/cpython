@@ -50,13 +50,15 @@ def writefile(f,defs):
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        infile = open(sys.argv[1])
+        with open(sys.argv[1]) as infile:
+            text = infile.read()
     else:
-        infile = sys.stdin
-    if len(sys.argv) > 2:
-        outfile = open(sys.argv[2],'w')
-    else:
-        outfile = sys.stdout
-    text = infile.read()
+        text = sys.stdin.read()
+
     defs = parse(text)
-    writefile(outfile,defs)
+
+    if len(sys.argv) > 2:
+        with open(sys.argv[2],'w') as outfile:
+            writefile(outfile, defs)
+    else:
+        writefile(sys.stdout, defs)

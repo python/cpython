@@ -5,7 +5,6 @@ import os
 import time
 import pickle
 import warnings
-import logging
 from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
@@ -228,6 +227,14 @@ class TestBasicOps:
         with self.assertRaises(IndexError):
             choices([], cum_weights=[], k=5)
 
+    def test_choices_subnormal(self):
+        # Subnormal weights would occassionally trigger an IndexError
+        # in choices() when the value returned by random() was large
+        # enough to make `random() * total` round up to the total.
+        # See https://bugs.python.org/msg275594 for more detail.
+        choices = self.gen.choices
+        choices(population=[1, 2], weights=[1e-323, 1e-323], k=5000)
+
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
         # particular, through 2.2.1 it failed to reset a piece of state used
@@ -261,9 +268,8 @@ class TestBasicOps:
                  ("randv2_64.pck", 866),
                  ("randv3.pck", 343)]
         for file, value in files:
-            f = open(support.findfile(file),"rb")
-            r = pickle.load(f)
-            f.close()
+            with open(support.findfile(file),"rb") as f:
+                r = pickle.load(f)
             self.assertEqual(int(r.random()*1000), value)
 
     def test_bug_9025(self):
@@ -846,28 +852,48 @@ class TestDistributions(unittest.TestCase):
         self.assertRaises(ValueError, random.gammavariate, 2, 0)
         self.assertRaises(ValueError, random.gammavariate, 1, -3)
 
+    # There are three different possibilities in the current implementation
+    # of random.gammavariate(), depending on the value of 'alpha'. What we
+    # are going to do here is to fix the values returned by random() to
+    # generate test cases that provide 100% line coverage of the method.
     @unittest.mock.patch('random.Random.random')
-    def test_gammavariate_full_code_coverage(self, random_mock):
-        # There are three different possibilities in the current implementation
-        # of random.gammavariate(), depending on the value of 'alpha'. What we
-        # are going to do here is to fix the values returned by random() to
-        # generate test cases that provide 100% line coverage of the method.
+    def test_gammavariate_alpha_greater_one(self, random_mock):
 
-        # #1: alpha > 1.0: we want the first random number to be outside the
+        # #1: alpha > 1.0.
+        # We want the first random number to be outside the
         # [1e-7, .9999999] range, so that the continue statement executes
         # once. The values of u1 and u2 will be 0.5 and 0.3, respectively.
         random_mock.side_effect = [1e-8, 0.5, 0.3]
         returned_value = random.gammavariate(1.1, 2.3)
         self.assertAlmostEqual(returned_value, 2.53)
 
-        # #2: alpha == 1: first random number less than 1e-7 to that the body
-        # of the while loop executes once. Then random.random() returns 0.45,
-        # which causes while to stop looping and the algorithm to terminate.
-        random_mock.side_effect = [1e-8, 0.45]
-        returned_value = random.gammavariate(1.0, 3.14)
-        self.assertAlmostEqual(returned_value, 2.507314166123803)
+    @unittest.mock.patch('random.Random.random')
+    def test_gammavariate_alpha_equal_one(self, random_mock):
 
-        # #3: 0 < alpha < 1. This is the most complex region of code to cover,
+        # #2.a: alpha == 1.
+        # The execution body of the while loop executes once.
+        # Then random.random() returns 0.45,
+        # which causes while to stop looping and the algorithm to terminate.
+        random_mock.side_effect = [0.45]
+        returned_value = random.gammavariate(1.0, 3.14)
+        self.assertAlmostEqual(returned_value, 1.877208182372648)
+
+    @unittest.mock.patch('random.Random.random')
+    def test_gammavariate_alpha_equal_one_equals_expovariate(self, random_mock):
+
+        # #2.b: alpha == 1.
+        # It must be equivalent of calling expovariate(1.0 / beta).
+        beta = 3.14
+        random_mock.side_effect = [1e-8, 1e-8]
+        gammavariate_returned_value = random.gammavariate(1.0, beta)
+        expovariate_returned_value = random.expovariate(1.0 / beta)
+        self.assertAlmostEqual(gammavariate_returned_value, expovariate_returned_value)
+
+    @unittest.mock.patch('random.Random.random')
+    def test_gammavariate_alpha_between_zero_and_one(self, random_mock):
+
+        # #3: 0 < alpha < 1.
+        # This is the most complex region of code to cover,
         # as there are multiple if-else statements. Let's take a look at the
         # source code, and determine the values that we need accordingly:
         #
@@ -940,6 +966,7 @@ class TestDistributions(unittest.TestCase):
         gammavariate_mock.return_value = 0.0
         self.assertEqual(0.0, random.betavariate(2.71828, 3.14159))
 
+
 class TestRandomSubclassing(unittest.TestCase):
     def test_random_subclass_with_kwargs(self):
         # SF bug #1486663 -- this used to erroneously raise a TypeError
@@ -958,30 +985,80 @@ class TestRandomSubclassing(unittest.TestCase):
         # randrange
         class SubClass1(random.Random):
             def random(self):
-                return super().random()
+                called.add('SubClass1.random')
+                return random.Random.random(self)
 
             def getrandbits(self, n):
-                logging.getLogger('getrandbits').info('used getrandbits')
-                return super().getrandbits(n)
-        with self.assertLogs('getrandbits'):
-            SubClass1().randrange(42)
+                called.add('SubClass1.getrandbits')
+                return random.Random.getrandbits(self, n)
+        called = set()
+        SubClass1().randrange(42)
+        self.assertEqual(called, {'SubClass1.getrandbits'})
 
         # subclass providing only random => can only use random for randrange
         class SubClass2(random.Random):
             def random(self):
-                logging.getLogger('random').info('used random')
-                return super().random()
-        with self.assertLogs('random'):
-            SubClass2().randrange(42)
+                called.add('SubClass2.random')
+                return random.Random.random(self)
+        called = set()
+        SubClass2().randrange(42)
+        self.assertEqual(called, {'SubClass2.random'})
 
         # subclass defining getrandbits to complement its inherited random
         # => can now rely on getrandbits for randrange again
         class SubClass3(SubClass2):
             def getrandbits(self, n):
-                logging.getLogger('getrandbits').info('used getrandbits')
-                return super().getrandbits(n)
-        with self.assertLogs('getrandbits'):
-            SubClass3().randrange(42)
+                called.add('SubClass3.getrandbits')
+                return random.Random.getrandbits(self, n)
+        called = set()
+        SubClass3().randrange(42)
+        self.assertEqual(called, {'SubClass3.getrandbits'})
+
+        # subclass providing only random and inherited getrandbits
+        # => random takes precedence
+        class SubClass4(SubClass3):
+            def random(self):
+                called.add('SubClass4.random')
+                return random.Random.random(self)
+        called = set()
+        SubClass4().randrange(42)
+        self.assertEqual(called, {'SubClass4.random'})
+
+        # Following subclasses don't define random or getrandbits directly,
+        # but inherit them from classes which are not subclasses of Random
+        class Mixin1:
+            def random(self):
+                called.add('Mixin1.random')
+                return random.Random.random(self)
+        class Mixin2:
+            def getrandbits(self, n):
+                called.add('Mixin2.getrandbits')
+                return random.Random.getrandbits(self, n)
+
+        class SubClass5(Mixin1, random.Random):
+            pass
+        called = set()
+        SubClass5().randrange(42)
+        self.assertEqual(called, {'Mixin1.random'})
+
+        class SubClass6(Mixin2, random.Random):
+            pass
+        called = set()
+        SubClass6().randrange(42)
+        self.assertEqual(called, {'Mixin2.getrandbits'})
+
+        class SubClass7(Mixin1, Mixin2, random.Random):
+            pass
+        called = set()
+        SubClass7().randrange(42)
+        self.assertEqual(called, {'Mixin1.random'})
+
+        class SubClass8(Mixin2, Mixin1, random.Random):
+            pass
+        called = set()
+        SubClass8().randrange(42)
+        self.assertEqual(called, {'Mixin2.getrandbits'})
+
 
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):

@@ -3,7 +3,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-#ifdef HAVE_GETC_UNLOCKED
+#if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
+/* clang MemorySanitizer doesn't yet understand getc_unlocked. */
 #define GETC(f) getc_unlocked(f)
 #define FLOCKFILE(f) flockfile(f)
 #define FUNLOCKFILE(f) funlockfile(f)
@@ -358,6 +359,9 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
     Py_ssize_t n;
     int err;
 
+    /* The function can clear the current exception */
+    assert(!PyErr_Occurred());
+
     if (self->fd < 0) {
         /* fd might be invalid on Windows
          * I can't raise an exception here. It may lead to an
@@ -366,10 +370,11 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    if (!PyArg_ParseTuple(args, "U", &unicode))
+    if (!PyArg_ParseTuple(args, "U", &unicode)) {
         return NULL;
+    }
 
-    /* encode Unicode to UTF-8 */
+    /* Encode Unicode to UTF-8/surrogateescape */
     str = PyUnicode_AsUTF8AndSize(unicode, &n);
     if (str == NULL) {
         PyErr_Clear();
@@ -398,7 +403,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 }
 
 static PyObject *
-stdprinter_fileno(PyStdPrinter_Object *self)
+stdprinter_fileno(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong((long) self->fd);
 }
@@ -406,18 +411,18 @@ stdprinter_fileno(PyStdPrinter_Object *self)
 static PyObject *
 stdprinter_repr(PyStdPrinter_Object *self)
 {
-    return PyUnicode_FromFormat("<stdprinter(fd=%d) object at 0x%x>",
+    return PyUnicode_FromFormat("<stdprinter(fd=%d) object at %p>",
                                 self->fd, self);
 }
 
 static PyObject *
-stdprinter_noop(PyStdPrinter_Object *self)
+stdprinter_noop(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     Py_RETURN_NONE;
 }
 
 static PyObject *
-stdprinter_isatty(PyStdPrinter_Object *self)
+stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     long res;
     if (self->fd < 0) {

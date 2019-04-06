@@ -2,7 +2,6 @@ import contextlib
 import copy
 import inspect
 import pickle
-import re
 import sys
 import types
 import unittest
@@ -362,7 +361,22 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             """def foo():
                    async def bar():
                         pass\nawait a
-            """]
+            """,
+            """def foo():
+                   async for i in arange(2):
+                       pass
+            """,
+            """def foo():
+                   async with resource:
+                       pass
+            """,
+            """async with resource:
+                   pass
+            """,
+            """async for i in arange(2):
+                   pass
+            """,
+            ]
 
         for code in samples:
             with self.subTest(code=code), self.assertRaises(SyntaxError):
@@ -2127,7 +2141,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             pass
         finally:
             loop.close()
-            asyncio.set_event_loop(None)
+            asyncio.set_event_loop_policy(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 

@@ -1,6 +1,7 @@
 import functools
 import inspect
 import reprlib
+import sys
 import traceback
 
 from . import constants
@@ -45,10 +46,10 @@ def _format_callback(func, args, kwargs, suffix=''):
         suffix = _format_args_and_kwargs(args, kwargs) + suffix
         return _format_callback(func.func, func.args, func.keywords, suffix)
 
-    if hasattr(func, '__qualname__'):
-        func_repr = getattr(func, '__qualname__')
-    elif hasattr(func, '__name__'):
-        func_repr = getattr(func, '__name__')
+    if hasattr(func, '__qualname__') and func.__qualname__:
+        func_repr = func.__qualname__
+    elif hasattr(func, '__name__') and func.__name__:
+        func_repr = func.__name__
     else:
         func_repr = repr(func)
 

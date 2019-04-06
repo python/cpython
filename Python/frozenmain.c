@@ -2,7 +2,7 @@
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -41,7 +41,8 @@ Py_FrozenMain(int argc, char **argv)
         }
     }
 
-    Py_FrozenFlag = 1; /* Suppress errors from getpath.c */
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config._frozen = 1;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
         inspect = 1;
@@ -80,7 +81,14 @@ Py_FrozenMain(int argc, char **argv)
 #endif /* MS_WINDOWS */
     if (argc >= 1)
         Py_SetProgramName(argv_copy[0]);
-    Py_Initialize();
+
+    err = _Py_InitializeFromConfig(&config);
+    /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
+       memory: program_name is a constant string. */
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeInit();
 #endif

@@ -1025,6 +1025,22 @@ As we can easily check, our array is sorted now::
    1 5 7 33 99
    >>>
 
+The function factories can be used as decorator factories, so we may as well
+write::
+
+   >>> @CFUNCTYPE(c_int, POINTER(c_int), POINTER(c_int))
+   ... def py_cmp_func(a, b):
+   ...     print("py_cmp_func", a[0], b[0])
+   ...     return a[0] - b[0]
+   ...
+   >>> qsort(ia, len(ia), sizeof(c_int), py_cmp_func)
+   py_cmp_func 5 1
+   py_cmp_func 33 99
+   py_cmp_func 7 33
+   py_cmp_func 1 7
+   py_cmp_func 5 7
+   >>>
+
 .. note::
 
    Make sure you keep references to :func:`CFUNCTYPE` objects as long as they
@@ -1306,14 +1322,14 @@ There are several ways to load shared libraries into the Python process.  One
 way is to instantiate one of the following classes:
 
 
-.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Instances of this class represent loaded shared libraries. Functions in these
    libraries use the standard C calling convention, and are assumed to return
    :c:type:`int`.
 
 
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1326,7 +1342,7 @@ way is to instantiate one of the following classes:
       :exc:`WindowsError` used to be raised.
 
 
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1377,6 +1393,17 @@ the Windows error code which is managed by the :func:`GetLastError` and
 :func:`SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
 :func:`ctypes.set_last_error` are used to request and change the ctypes private
 copy of the windows error code.
+
+The *winmode* parameter is used on Windows to specify how the library is loaded
+(since *mode* is ignored). It takes any value that is valid for the Win32 API
+``LoadLibraryEx`` flags parameter. When omitted, the default is to use the flags
+that result in the most secure DLL load to avoiding issues such as DLL
+hijacking. Passing the full path to the DLL is the safest way to ensure the
+correct library and dependencies are loaded.
+
+.. versionchanged:: 3.8
+   Added *winmode* parameter.
+
 
 .. data:: RTLD_GLOBAL
    :noindex:
@@ -1577,7 +1604,9 @@ Foreign functions can also be created by instantiating function prototypes.
 Function prototypes are similar to function prototypes in C; they describe a
 function (return type, argument types, calling convention) without defining an
 implementation.  The factory functions must be called with the desired result
-type and the argument types of the function.
+type and the argument types of the function, and can be used as decorator
+factories, and as such, be applied to functions through the ``@wrapper`` syntax.
+See :ref:`ctypes-callback-functions` for examples.
 
 
 .. function:: CFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)

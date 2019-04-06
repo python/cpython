@@ -4,9 +4,8 @@
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/posixpath.py` (for POSIX),
-:source:`Lib/ntpath.py` (for Windows NT),
-and :source:`Lib/macpath.py` (for Macintosh)
+**Source code:** :source:`Lib/posixpath.py` (for POSIX) and
+:source:`Lib/ntpath.py` (for Windows NT).
 
 .. index:: single: path; operations
 
@@ -52,7 +51,14 @@ the :mod:`glob` module.)
 
    * :mod:`posixpath` for UNIX-style paths
    * :mod:`ntpath` for Windows paths
-   * :mod:`macpath` for old-style MacOS paths
+
+
+.. versionchanged:: 3.8
+
+   :func:`exists`, :func:`lexists`, :func:`isdir`, :func:`isfile`,
+   :func:`islink`, and :func:`ismount` now return ``False`` instead of
+   raising an exception for paths that contain characters or bytes
+   unrepresentable at the OS level.
 
 
 .. function:: abspath(path)
@@ -85,7 +91,7 @@ the :mod:`glob` module.)
    pathnames, or if *paths* is empty.  Unlike :func:`commonprefix`, this
    returns a valid path.
 
-   Availability: Unix, Windows
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.5
 
@@ -152,6 +158,8 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. index:: single: ~ (tilde); home directory expansion
+
 .. function:: expanduser(path)
 
    On Unix and Windows, return the argument with an initial component of ``~`` or
@@ -164,10 +172,10 @@ the :mod:`glob` module.)
    password directory through the built-in module :mod:`pwd`. An initial ``~user``
    is looked up directly in the password directory.
 
-   On Windows, :envvar:`HOME` and :envvar:`USERPROFILE` will be used if set,
-   otherwise a combination of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be
-   used.  An initial ``~user`` is handled by stripping the last directory component
-   from the created user path derived above.
+   On Windows, :envvar:`USERPROFILE` will be used if set, otherwise a combination
+   of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be used.  An initial
+   ``~user`` is handled by stripping the last directory component from the created
+   user path derived above.
 
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.
@@ -175,6 +183,12 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.8
+      No longer uses :envvar:`HOME` on Windows.
+
+.. index::
+   single: $ (dollar); environment variables expansion
+   single: % (percent); environment variables expansion (Windows)
 
 .. function:: expandvars(path)
 
@@ -272,10 +286,11 @@ the :mod:`glob` module.)
 
    Return ``True`` if pathname *path* is a :dfn:`mount point`: a point in a
    file system where a different file system has been mounted.  On POSIX, the
-   function checks whether *path*'s parent, :file:`path/..`, is on a different
-   device than *path*, or whether :file:`path/..` and *path* point to the same
+   function checks whether *path*'s parent, :file:`{path}/..`, is on a different
+   device than *path*, or whether :file:`{path}/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
-   and POSIX variants.  On Windows, a drive letter root and a share UNC are
+   and POSIX variants.  It is not able to reliably detect bind mounts on the
+   same filesystem.  On Windows, a drive letter root and a share UNC are
    always mount points, and for any other path ``GetVolumePathName`` is called
    to see if it is different from the input path.
 
@@ -312,7 +327,7 @@ the :mod:`glob` module.)
    Normalize the case of a pathname.  On Unix and Mac OS X, this returns the
    path unchanged; on case-insensitive filesystems, it converts the path to
    lowercase.  On Windows, it also converts forward slashes to backward slashes.
-   Raise a TypeError if the type of *path* is not ``str`` or ``bytes`` (directly
+   Raise a :exc:`TypeError` if the type of *path* is not ``str`` or ``bytes`` (directly
    or indirectly through the :class:`os.PathLike` interface).
 
    .. versionchanged:: 3.6
@@ -349,7 +364,7 @@ the :mod:`glob` module.)
 
    *start* defaults to :attr:`os.curdir`.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -361,7 +376,7 @@ the :mod:`glob` module.)
    This is determined by the device number and i-node number and raises an
    exception if an :func:`os.stat` call on either pathname fails.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -377,7 +392,7 @@ the :mod:`glob` module.)
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -393,7 +408,7 @@ the :mod:`glob` module.)
    :func:`os.lstat`, or :func:`os.stat`.  This function implements the
    underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
 
-   Availability: Unix, Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       Added Windows support.

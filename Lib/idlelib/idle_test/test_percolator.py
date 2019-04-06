@@ -1,10 +1,10 @@
-'''Test percolator.py.'''
+"Test percolator, coverage 100%."
+
+from idlelib.percolator import Percolator, Delegator
+import unittest
 from test.support import requires
 requires('gui')
-
-import unittest
 from tkinter import Text, Tk, END
-from idlelib.percolator import Percolator, Delegator
 
 
 class MyFilter(Delegator):

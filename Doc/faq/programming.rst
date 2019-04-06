@@ -71,6 +71,11 @@ length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
 https://docs.pylint.org/ provides a full list of Pylint's features.
 
+Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
+`Pyre <https://pyre-check.org/>`_, and
+`Pytype <https://github.com/google/pytype>`_ can check type hints in Python
+source code.
+
 
 How can I create a stand-alone binary from a Python script?
 -----------------------------------------------------------
@@ -371,8 +376,8 @@ compute, a common technique is to cache the parameters and the resulting value
 of each call to the function, and return the cached value if the same value is
 requested again.  This is called "memoizing", and can be implemented like this::
 
-   # Callers will never provide a third parameter for this function.
-   def expensive(arg1, arg2, _cache={}):
+   # Callers can only provide two parameters and optionally pass _cache by keyword
+   def expensive(arg1, arg2, *, _cache={}):
        if (arg1, arg2) in _cache:
            return _cache[(arg1, arg2)]
 
@@ -733,7 +738,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
 
    from functools import reduce
 
@@ -760,6 +765,41 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
    #        |____________________________ range on x axis
 
 Don't try this at home, kids!
+
+
+.. _faq-positional-only-arguments:
+
+What does the slash(/) in the parameter list of a function mean?
+----------------------------------------------------------------
+
+A slash in the argument list of a function denotes that the parameters prior to
+it are positional-only.  Positional-only parameters are the ones without an
+externally-usable name.  Upon calling a function that accepts positional-only
+parameters, arguments are mapped to parameters based solely on their position.
+For example, :func:`pow` is a function that accepts positional-only parameters.
+Its documentation looks like this::
+
+   >>> help(pow)
+   Help on built-in function pow in module builtins:
+
+   pow(x, y, z=None, /)
+      Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
+
+      Some types, such as ints, are able to use a more efficient algorithm when
+      invoked using the three argument form.
+
+The slash at the end of the parameter list means that all three parameters are
+positional-only. Thus, calling :func:`pow` with keyword aguments would lead to
+an error::
+
+   >>> pow(x=3, y=4)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: pow() takes no keyword arguments
+
+Note that as of this writing this is only documentational and no valid syntax
+in Python, although there is :pep:`570`, which proposes a syntax for
+position-only parameters in Python.
 
 
 Numbers and strings
@@ -1311,14 +1351,6 @@ The ``__iadd__`` succeeds, and thus the list is extended, but even though
 ``result`` points to the same object that ``a_tuple[0]`` already points to,
 that final assignment still results in an error, because tuples are immutable.
 
-
-Dictionaries
-============
-
-How can I get a dictionary to store and display its keys in a consistent order?
--------------------------------------------------------------------------------
-
-Use :class:`collections.OrderedDict`.
 
 I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 ------------------------------------------------------------------------------

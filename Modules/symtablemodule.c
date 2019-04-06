@@ -84,6 +84,7 @@ PyInit__symtable(void)
         return NULL;
     PyModule_AddIntMacro(m, USE);
     PyModule_AddIntMacro(m, DEF_GLOBAL);
+    PyModule_AddIntMacro(m, DEF_NONLOCAL);
     PyModule_AddIntMacro(m, DEF_LOCAL);
     PyModule_AddIntMacro(m, DEF_PARAM);
     PyModule_AddIntMacro(m, DEF_FREE);

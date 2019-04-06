@@ -108,7 +108,8 @@ Operating System Utilities
 
    Encoding, highest priority to lowest priority:
 
-   * ``UTF-8`` on macOS and Android;
+   * ``UTF-8`` on macOS, Android, and VxWorks;
+   * ``UTF-8`` on Windows if :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
    * ``UTF-8`` if the Python UTF-8 mode is enabled;
    * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
      ``nl_langinfo(CODESET)`` returns the ``ASCII`` encoding (or an alias),
@@ -140,6 +141,10 @@ Operating System Utilities
    .. versionchanged:: 3.7
       The function now uses the UTF-8 encoding in the UTF-8 mode.
 
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows if
+      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
+
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 
@@ -149,7 +154,8 @@ Operating System Utilities
 
    Encoding, highest priority to lowest priority:
 
-   * ``UTF-8`` on macOS and Android;
+   * ``UTF-8`` on macOS, Android, and VxWorks;
+   * ``UTF-8`` on Windows if :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
    * ``UTF-8`` if the Python UTF-8 mode is enabled;
    * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
      ``nl_langinfo(CODESET)`` returns the ``ASCII`` encoding (or an alias),
@@ -169,9 +175,6 @@ Operating System Utilities
    Use the :c:func:`Py_DecodeLocale` function to decode the bytes string back
    to a wide character string.
 
-   .. versionchanged:: 3.7
-      The function now uses the UTF-8 encoding in the UTF-8 mode.
-
    .. seealso::
 
       The :c:func:`PyUnicode_EncodeFSDefault` and
@@ -180,7 +183,11 @@ Operating System Utilities
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.7
-      The function now supports the UTF-8 mode.
+      The function now uses the UTF-8 encoding in the UTF-8 mode.
+
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows if
+      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
 
 
 .. _systemfunctions:
