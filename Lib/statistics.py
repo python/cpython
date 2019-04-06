@@ -562,7 +562,7 @@ def multimode(data):
     maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
     return list(map(itemgetter(0), mode_items))
 
-def quantiles(dist, n=4):
+def quantiles(dist, *, n=4):
     '''Divide *dist* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
@@ -575,6 +575,10 @@ def quantiles(dist, n=4):
     an instance of a class that defines an inv_cdf() method.  For sample
     data, the cut points are linearly interpolated between data points.
     '''
+    # Possible future API extensions:
+    #     quantiles(data, n=4, already_sorted=True)
+    #     quantiles(data, cut_points=[0.02, 0.25, 0.50, 0.75, 0.98])
+    #     quantiles(data, interp_method='nearest')
     if n < 1:
         raise StatisticsError('n must be at least 1')
     if hasattr(dist, 'inv_cdf'):

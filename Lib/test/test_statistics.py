@@ -2181,6 +2181,8 @@ class TestQuantiles(unittest.TestCase):
             quantiles()                         # Missing arguments
         with self.assertRaises(TypeError):
             quantiles([10, 20, 30], 13, n=4)    # Too many arguments
+        with self.assertRaises(TypeError):
+            quantiles([10, 20, 30], 4)          # n is a positional argument
         with self.assertRaises(StatisticsError):
             quantiles([10, 20, 30], n=0)        # n is zero
         with self.assertRaises(StatisticsError):
