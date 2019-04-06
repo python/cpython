@@ -622,6 +622,9 @@ Deprecated
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
+* Passing ``None`` as the first argument to the :func:`shlex.split` function
+  has been deprecated.  (Contributed by Zackery Spytz in :issue:`33262`.)
+
 
 API and Feature Removals
 ========================
