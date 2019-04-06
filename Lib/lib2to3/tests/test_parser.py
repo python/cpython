@@ -622,6 +622,20 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
+class TestStarArgumentsExpr(GrammarTest):
+
+    def test_arg_expressions(self):
+        driver.parse_string("f(*x)\n")
+        driver.parse_string("f(*x or [1])\n")
+        driver.parse_string("f(*x if x else [1])\n")
+
+    def test_kwarg_expressions(self):
+        driver.parse_string("f(**x)\n")
+        driver.parse_string("f(**not x)\n")
+        driver.parse_string("f(**x or {})\n")
+        driver.parse_string("f(**x if x else {})\n")
+
+
 class TestPickleableException(unittest.TestCase):
     def test_ParseError(self):
         err = ParseError('msg', 2, None, (1, 'context'))

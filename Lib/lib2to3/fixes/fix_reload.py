@@ -30,7 +30,7 @@ class FixReload(fixer_base.BaseFix):
                 if obj.type == self.syms.star_expr:
                     return  # Make no change.
                 if (obj.type == self.syms.argument and
-                    obj.children[0].value == '**'):
+                    obj.children[0].value in ('*', '**')):
                     return  # Make no change.
         names = ('importlib', 'reload')
         new = ImportAndCall(node, results, names)
