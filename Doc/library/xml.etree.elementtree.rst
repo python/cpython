@@ -776,18 +776,6 @@ Element Objects
       to full name.
 
 
-   .. method:: getchildren()
-
-      .. deprecated-removed:: 3.2 3.9
-         Use ``list(elem)`` or iteration.
-
-
-   .. method:: getiterator(tag=None)
-
-      .. deprecated-removed:: 3.2 3.9
-         Use method :meth:`Element.iter` instead.
-
-
    .. method:: insert(index, subelement)
 
       Inserts *subelement* at the given position in this element.  Raises
@@ -890,12 +878,6 @@ ElementTree Objects
    .. method:: findtext(match, default=None, namespaces=None)
 
       Same as :meth:`Element.findtext`, starting at the root of the tree.
-
-
-   .. method:: getiterator(tag=None)
-
-      .. deprecated-removed:: 3.2 3.9
-         Use method :meth:`ElementTree.iter` instead.
 
 
    .. method:: getroot()
