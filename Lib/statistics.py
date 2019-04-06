@@ -570,7 +570,7 @@ def quantiles(dist, *, n=4):
 
     Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
     Set *n* to 100 for percentiles which gives the 99 cuts points that
-    separate the *dist* into 100 equal sized groups.
+    separate *dist* in to 100 equal sized groups.
 
     The *dist* can be any iterable containing sample data or it can be
     an instance of a class that defines an inv_cdf() method.  For sample

@@ -48,6 +48,7 @@ or sample.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
 :func:`mode`             Single mode (most common value) of discrete or nominal data.
 :func:`multimode`        List of modes (most common values) of discrete or nomimal data.
+:func:`quantiles`        Divide data into intervals with equal probability
 =======================  ===============================================================
 
 Measures of spread
@@ -498,6 +499,39 @@ However, for reading convenience, most of the examples show sorted sequences.
       If you somehow know the actual population mean μ you should pass it to the
       :func:`pvariance` function as the *mu* parameter to get the variance of a
       sample.
+
+.. function:: quantiles(dist, *, n=4)
+
+   Divide *dist* into *n* continuous intervals with equal probability.
+   Returns a list of ``n-1`` cut points separating the intervals.
+
+   Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.  Set
+   *n* to 100 for percentiles which gives the 99 cuts points that separate
+   *dist* in to 100 equal sized groups.  Raises :exc:`StatisticsError` if *n*
+   is not least 1.
+
+   The *dist* can be any iterable containing sample data or it can be an
+   instance of a class that defines an :meth:`~inv_cdf` method.  For sample
+   data, the cut points are linearly interpolated between data points.
+   Raises :exc:`StatisticsError` if there are not at least two data points.
+
+   .. doctest::
+
+        >>> # Quartile cut points for the standard normal distibution
+        >>> [round(q, 4) for q in quantiles(Z, n=4)]
+        [-0.6745, 0.0, 0.6745]
+
+        # Decile cut points for empirically sampled data
+        >>> data = [105, 129, 87, 86, 111, 111, 89, 81, 108, 92, 110,
+        ...         100, 75, 105, 103, 109, 76, 119, 99, 91, 103, 129,
+        ...         106, 101, 84, 111, 74, 87, 86, 103, 103, 106, 86,
+        ...         111, 75, 87, 102, 121, 111, 88, 89, 101, 106, 95,
+        ...         103, 107, 101, 81, 109, 104]
+        >>> [round(q, 1) for q in quantiles(data, n=10)]
+        [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
+
+   .. versionadded:: 3.8
+
 
 Exceptions
 ----------
