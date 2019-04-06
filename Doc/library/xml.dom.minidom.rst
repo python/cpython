@@ -227,21 +227,7 @@ The following interfaces have no implementation in :mod:`xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`DocumentType`
-
-* :class:`DOMImplementation`
-
-* :class:`CharacterData`
-
-* :class:`CDATASection`
-
-* :class:`Notation`
-
-* :class:`Entity`
-
 * :class:`EntityReference`
-
-* :class:`DocumentFragment`
 
 Most of these reflect information in the XML document that is not of general
 utility to most DOM users.
