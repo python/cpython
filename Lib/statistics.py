@@ -7,9 +7,9 @@ averages, variance, and standard deviation.
 Calculating averages
 --------------------
 
-==================  =============================================
+==================  ==================================================
 Function            Description
-==================  =============================================
+==================  ==================================================
 mean                Arithmetic mean (average) of data.
 geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
@@ -19,7 +19,8 @@ median_high         High median of data.
 median_grouped      Median, or 50th percentile, of grouped data.
 mode                Mode (most common value) of data.
 multimode           List of modes (most common values of data).
-==================  =============================================
+quantiles           Divide data into intervals with equal probability.
+==================  ==================================================
 
 Calculate the arithmetic mean ("the average") of data:
 
@@ -78,7 +79,7 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 
 """
 
-__all__ = [ 'StatisticsError', 'NormalDist',
+__all__ = [ 'StatisticsError', 'NormalDist', 'quantiles',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
             'mean', 'mode', 'multimode', 'harmonic_mean', 'fmean',
