@@ -393,7 +393,7 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: PyObject* PyUnicode_FromKindAndData(int kind, const void *str, \
+.. c:function:: PyObject* PyUnicode_FromKindAndData(int kind, const void *buffer, \
                                                     Py_ssize_t size)
 
    Create a new Unicode object with the given *kind* (possible values are
@@ -622,7 +622,7 @@ APIs:
    .. versionadded:: 3.3
 
 
-.. c:function:: PyObject* PyUnicode_Substring(PyObject *self, Py_ssize_t start, \
+.. c:function:: PyObject* PyUnicode_Substring(PyObject *unicode, Py_ssize_t start, \
                                               Py_ssize_t end)
 
    Return a substring of *str*, from character index *start* (included) to
@@ -828,7 +828,7 @@ To encode and decode file names and other environment strings,
 argument parsing, the ``"O&"`` converter should be used, passing
 :c:func:`PyUnicode_FSConverter` as the conversion function:
 
-.. c:function:: int PyUnicode_FSConverter(PyObject* arg, void* addr)
+.. c:function:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
    ParseTuple converter: encode :class:`str` objects -- obtained directly or
    through the :class:`os.PathLike` interface -- to :class:`bytes` using
@@ -845,7 +845,7 @@ To decode file names to :class:`str` during argument parsing, the ``"O&"``
 converter should be used, passing :c:func:`PyUnicode_FSDecoder` as the
 conversion function:
 
-.. c:function:: int PyUnicode_FSDecoder(PyObject* arg, void* addr)
+.. c:function:: int PyUnicode_FSDecoder(PyObject* obj, void* result)
 
    ParseTuple converter: decode :class:`bytes` objects -- obtained either
    directly or indirectly through the :class:`os.PathLike` interface -- to
