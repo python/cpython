@@ -2337,7 +2337,7 @@ raw_unicode_escape(PyObject *obj)
         }
         /* Map 16-bit characters, '\\' and '\n' to '\uxxxx' */
         else if (ch >= 256 ||
-                 ch == '\\'  || ch == 0 || ch == '\n' || ch == '\r' ||
+                 ch == '\\' || ch == 0 || ch == '\n' || ch == '\r' ||
                  ch == 0x1a)
         {
             /* -1: subtract 1 preallocated byte */
