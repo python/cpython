@@ -511,16 +511,18 @@ However, for reading convenience, most of the examples show sorted sequences.
    is not least 1.
 
    The *dist* can be any iterable containing sample data or it can be an
-   instance of a class that defines an :meth:`~inv_cdf` method.  For sample
-   data, the cut points are linearly interpolated between data points.
+   instance of a class that defines an :meth:`~inv_cdf` method.
    Raises :exc:`StatisticsError` if there are not at least two data points.
 
-   .. doctest::
+   For sample data, the cut points are linearly interpolated between data
+   points.  For example, if a cut point falls one-third of the distance
+   between two sample values, ``100`` and ``112``, the cut-point will
+   evaluate to ``104``.  Other selection methods may be offered in the
+   future (for example choose ``100`` as the nearest value or compute
+   ``106`` as the midpoint).  This might matter if there are too few
+   samples for a given number of cut points.
 
-        >>> # Quartile cut points for the standard normal distibution
-        >>> Z = NormalDist()
-        >>> [round(q, 4) for q in quantiles(Z, n=4)]
-        [-0.6745, 0.0, 0.6745]
+   .. doctest::
 
         # Decile cut points for empirically sampled data
         >>> data = [105, 129, 87, 86, 111, 111, 89, 81, 108, 92, 110,
@@ -530,6 +532,11 @@ However, for reading convenience, most of the examples show sorted sequences.
         ...         103, 107, 101, 81, 109, 104]
         >>> [round(q, 1) for q in quantiles(data, n=10)]
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
+
+        >>> # Quartile cut points for the standard normal distibution
+        >>> Z = NormalDist()
+        >>> [round(q, 4) for q in quantiles(Z, n=4)]
+        [-0.6745, 0.0, 0.6745]
 
    .. versionadded:: 3.8
 
