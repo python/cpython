@@ -518,6 +518,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    .. doctest::
 
         >>> # Quartile cut points for the standard normal distibution
+        >>> Z = NormalDist()
         >>> [round(q, 4) for q in quantiles(Z, n=4)]
         [-0.6745, 0.0, 0.6745]
 
