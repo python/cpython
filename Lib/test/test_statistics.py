@@ -2038,6 +2038,94 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         expected = math.sqrt(statistics.variance(data))
         self.assertEqual(self.func(data), expected)
 
+class TestGeometricMean(unittest.TestCase):
+
+    def test_basics(self):
+        geometric_mean = statistics.geometric_mean
+        self.assertAlmostEqual(geometric_mean([54, 24, 36]), 36.0)
+        self.assertAlmostEqual(geometric_mean([4.0, 9.0]), 6.0)
+        self.assertAlmostEqual(geometric_mean([17.625]), 17.625)
+
+        random.seed(86753095551212)
+        for rng in [
+                range(1, 100),
+                range(1, 1_000),
+                range(1, 10_000),
+                range(500, 10_000, 3),
+                range(10_000, 500, -3),
+                [12, 17, 13, 5, 120, 7],
+                [random.expovariate(50.0) for i in range(1_000)],
+                [random.lognormvariate(20.0, 3.0) for i in range(2_000)],
+                [random.triangular(2000, 3000, 2200) for i in range(3_000)],
+            ]:
+            gm_decimal = math.prod(map(Decimal, rng)) ** (Decimal(1) / len(rng))
+            gm_float = geometric_mean(rng)
+            self.assertTrue(math.isclose(gm_float, float(gm_decimal)))
+
+    def test_various_input_types(self):
+        geometric_mean = statistics.geometric_mean
+        D = Decimal
+        F = Fraction
+        # https://www.wolframalpha.com/input/?i=geometric+mean+3.5,+4.0,+5.25
+        expected_mean = 4.18886
+        for data, kind in [
+            ([3.5, 4.0, 5.25], 'floats'),
+            ([D('3.5'), D('4.0'), D('5.25')], 'decimals'),
+            ([F(7, 2), F(4, 1), F(21, 4)], 'fractions'),
+            ([3.5, 4, F(21, 4)], 'mixed types'),
+            ((3.5, 4.0, 5.25), 'tuple'),
+            (iter([3.5, 4.0, 5.25]), 'iterator'),
+                ]:
+            actual_mean = geometric_mean(data)
+            self.assertIs(type(actual_mean), float, kind)
+            self.assertAlmostEqual(actual_mean, expected_mean, places=5)
+
+    def test_big_and_small(self):
+        geometric_mean = statistics.geometric_mean
+
+        # Avoid overflow to infinity
+        large = 2.0 ** 1000
+        big_gm = geometric_mean([54.0 * large, 24.0 * large, 36.0 * large])
+        self.assertTrue(math.isclose(big_gm, 36.0 * large))
+        self.assertFalse(math.isinf(big_gm))
+
+        # Avoid underflow to zero
+        small = 2.0 ** -1000
+        small_gm = geometric_mean([54.0 * small, 24.0 * small, 36.0 * small])
+        self.assertTrue(math.isclose(small_gm, 36.0 * small))
+        self.assertNotEqual(small_gm, 0.0)
+
+    def test_error_cases(self):
+        geometric_mean = statistics.geometric_mean
+        StatisticsError = statistics.StatisticsError
+        with self.assertRaises(StatisticsError):
+            geometric_mean([])                      # empty input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, 0.0, 5.25])        # zero input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, -4.0, 5.25])       # negative input
+        with self.assertRaises(StatisticsError):
+            geometric_mean(iter([]))                # empty iterator
+        with self.assertRaises(TypeError):
+            geometric_mean(None)                    # non-iterable input
+        with self.assertRaises(TypeError):
+            geometric_mean([10, None, 20])          # non-numeric input
+        with self.assertRaises(TypeError):
+            geometric_mean()                        # missing data argument
+        with self.assertRaises(TypeError):
+            geometric_mean([10, 20, 60], 70)        # too many arguments
+
+    def test_special_values(self):
+        # Rules for special values are inherited from math.fsum()
+        geometric_mean = statistics.geometric_mean
+        NaN = float('Nan')
+        Inf = float('Inf')
+        self.assertTrue(math.isnan(geometric_mean([10, NaN])), 'nan')
+        self.assertTrue(math.isnan(geometric_mean([NaN, Inf])), 'nan and infinity')
+        self.assertTrue(math.isinf(geometric_mean([10, Inf])), 'infinity')
+        with self.assertRaises(ValueError):
+            geometric_mean([Inf, -Inf])
+
 class TestNormalDist(unittest.TestCase):
 
     # General note on precision: The pdf(), cdf(), and overlap() methods
