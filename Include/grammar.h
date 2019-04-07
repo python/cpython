@@ -13,7 +13,7 @@ extern "C" {
 
 typedef struct {
     int          lb_type;
-    char        *lb_str;
+    const char  *lb_str;
 } label;
 
 #define EMPTY 0         /* Label number 0 is by definition the empty label */
@@ -22,7 +22,7 @@ typedef struct {
 
 typedef struct {
     int          ll_nlabels;
-    label       *ll_label;
+    const label *ll_label;
 } labellist;
 
 /* An arc from one state to another */
@@ -36,7 +36,7 @@ typedef struct {
 
 typedef struct {
     int          s_narcs;
-    arc         *s_arc;         /* Array of arcs */
+    const arc   *s_arc;         /* Array of arcs */
 
     /* Optional accelerators */
     int          s_lower;       /* Lowest label index */
@@ -59,8 +59,8 @@ typedef struct {
 
 typedef struct {
     int          g_ndfas;
-    dfa         *g_dfa;         /* Array of DFAs */
-    labellist    g_ll;
+    const dfa   *g_dfa;         /* Array of DFAs */
+    const labellist g_ll;
     int          g_start;       /* Start symbol of the grammar */
     int          g_accel;       /* Set if accelerators present */
 } grammar;
