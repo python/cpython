@@ -231,9 +231,9 @@ details.
 
    The default format for creating archives. This is currently :const:`PAX_FORMAT`.
 
-    .. versionchanged:: 3.8
-       The default format for new archives was changed to
-       :const:`PAX_FORMAT` from :const:`GNU_FORMAT`.
+   .. versionchanged:: 3.8
+      The default format for new archives was changed to
+      :const:`PAX_FORMAT` from :const:`GNU_FORMAT`.
 
 
 .. seealso::
@@ -813,8 +813,8 @@ Supported tar formats
 There are three tar formats that can be created with the :mod:`tarfile` module:
 
 * The POSIX.1-1988 ustar format (:const:`USTAR_FORMAT`). It supports filenames
-  up to a length of at best 256 characters and linknames up to 100 characters. The
-  maximum file size is 8 GiB. This is an old and limited but widely
+  up to a length of at best 256 characters and linknames up to 100 characters.
+  The maximum file size is 8 GiB. This is an old and limited but widely
   supported format.
 
 * The GNU tar format (:const:`GNU_FORMAT`). It supports long filenames and
@@ -826,14 +826,15 @@ There are three tar formats that can be created with the :mod:`tarfile` module:
   format with virtually no limits. It supports long filenames and linknames, large
   files and stores pathnames in a portable way. Modern tar implementations,
   including GNU tar, bsdtar/libarchive and star, fully support extended *pax*
-  features; some older or unmaintained libraries may not, but should treat
+  features; some old or unmaintained libraries may not, but should treat
   *pax* archives as if they were in the universally-supported *ustar* format.
+  It is the current default format for new archives.
 
-  The *pax* format is an extension to the existing *ustar* format. It uses extra
-  headers for information that cannot be stored otherwise. There are two flavours
-  of pax headers: Extended headers only affect the subsequent file header, global
-  headers are valid for the complete archive and affect all following files. All
-  the data in a pax header is encoded in *UTF-8* for portability reasons.
+  It extends the existing *ustar* format with extra headers for information
+  that cannot be stored otherwise. There are two flavours of pax headers:
+  Extended headers only affect the subsequent file header, global
+  headers are valid for the complete archive and affect all following files.
+  All the data in a pax header is encoded in *UTF-8* for portability reasons.
 
 There are some more variants of the tar format which can be read, but not
 created:
