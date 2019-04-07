@@ -559,6 +559,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    The *verbose* argument is unused and deprecated.
 
+   .. versionchanged:: 3.8
+      The modern pax (POSIX.1-2001) format is now used instead of
+      the legacy GNU format for archives created with ``format="tar"``.
+
 
 .. function:: get_archive_formats()
 
@@ -568,7 +572,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    By default :mod:`shutil` provides these formats:
 
    - *zip*: ZIP file (if the :mod:`zlib` module is available).
-   - *tar*: uncompressed tar file.
+   - *tar*: Uncompressed tar file. Uses POSIX.1-2001 pax format for new archives.
    - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
