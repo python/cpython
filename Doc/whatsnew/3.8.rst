@@ -322,6 +322,9 @@ Added :func:`statistics.fmean` as a faster, floating point variant of
 :func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
 
+Added :func:`statistics.geometric_mean()`
+(Contributed by Raymond Hettinger in :issue:`27181`.)
+
 Added :func:`statistics.multimode` that returns a list of the most
 common values. (Contributed by Raymond Hettinger in :issue:`35892`.)
 
