@@ -40,6 +40,7 @@ or sample.
 =======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
 :func:`fmean`            Fast, floating point arithmetic mean.
+:func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
@@ -126,6 +127,24 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       >>> fmean([3.5, 4.0, 5.25])
       4.25
+
+   .. versionadded:: 3.8
+
+
+.. function:: geometric_mean(data)
+
+   Convert *data* to floats and compute the geometric mean.
+
+   Raises a :exc:`StatisticsError` if the input dataset is empty,
+   if it contains a zero, or if it contains a negative value.
+
+   No special efforts are made to achieve exact results.
+   (However, this may change in the future.)
+
+   .. doctest::
+
+      >>> round(geometric_mean([54, 24, 36]), 9)
+      36.0
 
    .. versionadded:: 3.8
 
