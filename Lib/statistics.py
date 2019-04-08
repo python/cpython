@@ -580,6 +580,7 @@ def quantiles(dist, *, n=4):
     #     quantiles(data, n=4, already_sorted=True)
     #     quantiles(data, cut_points=[0.02, 0.25, 0.50, 0.75, 0.98])
     #     quantiles(data, interp_method='nearest')
+    #     quantiles(data, inclusive=True)
     if n < 1:
         raise StatisticsError('n must be at least 1')
     if hasattr(dist, 'inv_cdf'):
