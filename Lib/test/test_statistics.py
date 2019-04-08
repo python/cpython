@@ -2131,7 +2131,8 @@ class TestGeometricMean(unittest.TestCase):
 class TestQuantiles(unittest.TestCase):
 
     def test_specific_cases(self):
-        # Match results computed by hand
+        # Match results computed by hand and cross-checked
+        # against the PERCENTILE.EXC function in MS Excel.
         quantiles = statistics.quantiles
         data = [120, 200, 250, 320, 350]
         random.shuffle(data)
