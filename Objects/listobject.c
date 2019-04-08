@@ -198,6 +198,12 @@ PyList_New(Py_ssize_t size)
     return (PyObject *) op;
 }
 
+PyObject *
+_PyList_NewPrealloc(Py_ssize_t size)
+{
+    return list_new_prealloc(size);
+}
+
 static PyObject *
 list_new_prealloc(Py_ssize_t size)
 {

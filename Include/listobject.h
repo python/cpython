@@ -62,7 +62,7 @@ PyAPI_FUNC(int) PyList_Reverse(PyObject *);
 PyAPI_FUNC(PyObject *) PyList_AsTuple(PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
-
+PyAPI_FUNC(PyObject *) _PyList_NewPrealloc(Py_ssize_t size);
 PyAPI_FUNC(int) PyList_ClearFreeList(void);
 PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
 #endif
