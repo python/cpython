@@ -47,7 +47,7 @@ The :mod:`wave` module defines the following function and exception:
    .. versionchanged:: 3.4
       Added support for unseekable files.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       Added support for :term:`path-like objects <path-like object>`.
 
 .. function:: openfp(file, mode)
