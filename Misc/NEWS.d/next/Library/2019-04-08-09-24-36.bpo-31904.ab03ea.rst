@@ -1,0 +1,1 @@
+Skip setting RLIMIT_FSIZE and RLIMIT_CPU test case for VxWorks
