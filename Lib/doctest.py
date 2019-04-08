@@ -1060,8 +1060,7 @@ class DocTestFinder:
             filename = None
         else:
             # __file__ can be None for empty packages
-            filename = (getattr(module, '__file__', module.__name__) or
-                        module.__name__)
+            filename = getattr(module, '__file__', None) or module.__name__
             if filename[-4:] == ".pyc":
                 filename = filename[:-1]
         return self._parser.get_doctest(docstring, globs, name,
