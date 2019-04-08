@@ -1,0 +1,2 @@
+Change the compiled bytecode for list comprehensions where there is no if statement. Allocates the size of the list to the length of the iterator in order to avoid having to continuously resize the list. 
+Also fixes a bug for a list comprehension containing an iterator with a potential size > PY_SSIZE_MAX, e.g. range(2**256).
