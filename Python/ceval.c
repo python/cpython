@@ -2490,7 +2490,7 @@ main_loop:
             Py_ssize_t size = PyObject_LengthHint(target, 2);
             Py_DECREF(target);
             if (size < 0)
-                size = 0;
+                goto error;
 
             list = _PyList_NewPrealloc(size);
             PUSH(list);
