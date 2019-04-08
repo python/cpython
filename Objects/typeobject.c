@@ -917,6 +917,14 @@ subtype_clear(PyObject *self)
     return 0;
 }
 
+/* bpo-36556: lower the trashcan recursion limit for heap types: this gives
+ * __del__ 10 additional stack frames to work with. This makes it less likely
+ * that the trashcan is used in __del__. Otherwise, an object might seemingly
+ * be resurrected by __del__ when it's still referenced by an object in the
+ * trashcan. */
+#undef PyTrash_UNWIND_LEVEL
+#define PyTrash_UNWIND_LEVEL 40
+
 static void
 subtype_dealloc(PyObject *self)
 {

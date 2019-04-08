@@ -307,6 +307,24 @@ class GCTests(unittest.TestCase):
                 v = {1: v, 2: Ouch()}
         gc.disable()
 
+    def test_no_double_del(self):
+        # bpo-36556: instances of heap types should be deallocated once,
+        # even if the trashcan and __del__ are involved
+        class ObjectCounter(object):
+            count = 0
+            def __init__(self):
+                type(self).count += 1
+            def __del__(self):
+                # create temporary involving self, whose deallocation
+                # uses the trashcan
+                L = [self]
+                type(self).count -= 1
+        L = None
+        for i in range(10000):
+            L = (L, ObjectCounter())
+        del L
+        self.assertEqual(ObjectCounter.count, 0)
+
     @unittest.skipUnless(threading, "test meaningless on builds without threads")
     def test_trashcan_threads(self):
         # Issue #13992: trashcan mechanism should be thread-safe

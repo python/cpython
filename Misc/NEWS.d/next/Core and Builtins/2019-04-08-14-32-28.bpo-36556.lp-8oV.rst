@@ -1,0 +1,2 @@
+When deleting highly nested objects (where the trashcan mechanism is
+involved), it is less likely that ``__del__`` is called multiple times.
