@@ -2484,6 +2484,19 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(BUILD_LIST_PREALLOC): {
+            PyObject *list, *target = GETLOCAL(oparg);
+            Py_INCREF(target);
+            Py_ssize_t size = PyObject_LengthHint(target, 2);
+            Py_DECREF(target);
+            if (size < 0)
+                size = 0;
+
+            list = _PyList_NewPrealloc(size);
+            PUSH(list);
+            DISPATCH();
+        }
+
         case TARGET(BUILD_LIST): {
             PyObject *list =  PyList_New(oparg);
             if (list == NULL)
