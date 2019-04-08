@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import warnings
+import weakref
 from inspect import isabstract
 from test import support
 try:
@@ -11,10 +12,7 @@ except ImportError:
     import weakref
 
     def _get_dump(cls):
-        # Reimplement _get_dump() for pure-Python implementation of
-        # the abc module (Lib/_py_abc.py)
-        registry_weakrefs = set(weakref.ref(obj) for obj in cls._abc_registry)
-        return (registry_weakrefs, cls._abc_cache,
+        return (cls._abc_registry, cls._abc_cache,
                 cls._abc_negative_cache, cls._abc_negative_cache_version)
 
 
@@ -47,7 +45,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         if not isabstract(abc):
             continue
         for obj in abc.__subclasses__() + [abc]:
-            abcs[obj] = _get_dump(obj)[0]
+            abcs[obj] = set(weakref.ref(obj) for obj in _get_dump(obj)[0])
 
     # bpo-31217: Integer pool to get a single integer object for the same
     # value. The pool is used to prevent false alarm when checking for memory

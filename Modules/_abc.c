@@ -90,78 +90,86 @@ _get_impl(PyObject *self)
     return (_abc_data *)impl;
 }
 
+
 static int
-_in_weak_set(PyObject *set, PyObject *obj)
+weakset_contains(PyObject *set, PyObject *obj)
 {
-    if (set == NULL || PySet_GET_SIZE(set) == 0) {
+    if (set == NULL) {
         return 0;
     }
-    PyObject *ref = PyWeakref_NewRef(obj, NULL);
-    if (ref == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Clear();
-            return 0;
-        }
-        return -1;
+    return PySequence_Contains(set, obj);
+}
+
+
+static PyObject*
+weakset_new(void)
+{
+    PyObject *weakset = NULL, *res = NULL;
+
+    PyObject *weakref = PyImport_ImportModule("weakref");
+    if (weakref == NULL) {
+        goto done;
     }
-    int res = PySet_Contains(set, ref);
-    Py_DECREF(ref);
+
+    weakset = PyObject_GetAttrString(weakref, "WeakSet");
+    if (weakset == NULL) {
+        goto done;
+    }
+
+    res = _PyObject_CallNoArg(weakset);
+
+done:
+    Py_XDECREF(weakref);
+    Py_XDECREF(weakset);
     return res;
 }
 
-static PyObject *
-_destroy(PyObject *setweakref, PyObject *objweakref)
+
+/* Convert a WeakSet to a list. The conversion modifies the WeakSet:
+   broken weak references are removed. */
+static PyObject*
+weakset_as_list(PyObject *set)
 {
-    PyObject *set;
-    set = PyWeakref_GET_OBJECT(setweakref);
-    if (set == Py_None) {
-        Py_RETURN_NONE;
+    if (set != NULL) {
+        return PyObject_CallFunctionObjArgs((PyObject *)&PyList_Type, set, NULL);
     }
-    Py_INCREF(set);
-    if (PySet_Discard(set, objweakref) < 0) {
-        Py_DECREF(set);
-        return NULL;
+    else {
+        return PyList_New(0);
     }
-    Py_DECREF(set);
-    Py_RETURN_NONE;
 }
 
-static PyMethodDef _destroy_def = {
-    "_destroy", (PyCFunction) _destroy, METH_O
-};
 
 static int
-_add_to_weak_set(PyObject **pset, PyObject *obj)
+weakset_add(PyObject **pset, PyObject *obj)
 {
+    _Py_IDENTIFIER(add);
+
     if (*pset == NULL) {
-        *pset = PySet_New(NULL);
+        *pset = weakset_new();
         if (*pset == NULL) {
             return -1;
         }
     }
 
-    PyObject *set = *pset;
-    PyObject *ref, *wr;
-    PyObject *destroy_cb;
-    wr = PyWeakref_NewRef(set, NULL);
-    if (wr == NULL) {
+    PyObject *res = _PyObject_CallMethodIdObjArgs(*pset, &PyId_add, obj, NULL);
+    if (res == NULL) {
         return -1;
     }
-    destroy_cb = PyCFunction_NewEx(&_destroy_def, wr, NULL);
-    if (destroy_cb == NULL) {
-        Py_DECREF(wr);
+    Py_DECREF(res);
+    return 0;
+}
+
+
+static int
+weakset_clear(PyObject *set)
+{
+    _Py_IDENTIFIER(clear);
+    PyObject *res = _PyObject_CallMethodIdObjArgs(set, &PyId_clear, NULL);
+    if (res == NULL) {
         return -1;
     }
-    ref = PyWeakref_NewRef(obj, destroy_cb);
-    Py_DECREF(destroy_cb);
-    if (ref == NULL) {
-        Py_DECREF(wr);
-        return -1;
-    }
-    int ret = PySet_Add(set, ref);
-    Py_DECREF(wr);
-    Py_DECREF(ref);
-    return ret;
+    Py_DECREF(res);
+    return 0;
 }
 
 /*[clinic input]
@@ -183,7 +191,7 @@ _abc__reset_registry(PyObject *module, PyObject *self)
     if (impl == NULL) {
         return NULL;
     }
-    if (impl->_abc_registry != NULL && PySet_Clear(impl->_abc_registry) < 0) {
+    if (impl->_abc_registry != NULL && weakset_clear(impl->_abc_registry) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -210,13 +218,13 @@ _abc__reset_caches(PyObject *module, PyObject *self)
     if (impl == NULL) {
         return NULL;
     }
-    if (impl->_abc_cache != NULL && PySet_Clear(impl->_abc_cache) < 0) {
+    if (impl->_abc_cache != NULL && weakset_clear(impl->_abc_cache) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
     /* also the second cache */
     if (impl->_abc_negative_cache != NULL &&
-            PySet_Clear(impl->_abc_negative_cache) < 0) {
+            weakset_clear(impl->_abc_negative_cache) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -246,9 +254,9 @@ _abc__get_dump(PyObject *module, PyObject *self)
         return NULL;
     }
     PyObject *res = Py_BuildValue("NNNK",
-                                  PySet_New(impl->_abc_registry),
-                                  PySet_New(impl->_abc_cache),
-                                  PySet_New(impl->_abc_negative_cache),
+                                  weakset_as_list(impl->_abc_registry),
+                                  weakset_as_list(impl->_abc_cache),
+                                  weakset_as_list(impl->_abc_negative_cache),
                                   impl->_abc_negative_cache_version);
     Py_DECREF(impl);
     return res;
@@ -450,7 +458,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     if (impl == NULL) {
         return NULL;
     }
-    if (_add_to_weak_set(&impl->_abc_registry, subclass) < 0) {
+    if (weakset_add(&impl->_abc_registry, subclass) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
@@ -491,7 +499,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         return NULL;
     }
     /* Inline the cache checking. */
-    int incache = _in_weak_set(impl->_abc_cache, subclass);
+    int incache = weakset_contains(impl->_abc_cache, subclass);
     if (incache < 0) {
         goto end;
     }
@@ -503,7 +511,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
     subtype = (PyObject *)Py_TYPE(instance);
     if (subtype == subclass) {
         if (impl->_abc_negative_cache_version == abc_invalidation_counter) {
-            incache = _in_weak_set(impl->_abc_negative_cache, subclass);
+            incache = weakset_contains(impl->_abc_negative_cache, subclass);
             if (incache < 0) {
                 goto end;
             }
@@ -582,7 +590,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 1. Check cache. */
-    incache = _in_weak_set(impl->_abc_cache, subclass);
+    incache = weakset_contains(impl->_abc_cache, subclass);
     if (incache < 0) {
         goto end;
     }
@@ -595,14 +603,14 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     if (impl->_abc_negative_cache_version < abc_invalidation_counter) {
         /* Invalidate the negative cache. */
         if (impl->_abc_negative_cache != NULL &&
-                PySet_Clear(impl->_abc_negative_cache) < 0)
+                weakset_clear(impl->_abc_negative_cache) < 0)
         {
             goto end;
         }
         impl->_abc_negative_cache_version = abc_invalidation_counter;
     }
     else {
-        incache = _in_weak_set(impl->_abc_negative_cache, subclass);
+        incache = weakset_contains(impl->_abc_negative_cache, subclass);
         if (incache < 0) {
             goto end;
         }
@@ -620,7 +628,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
     if (ok == Py_True) {
         Py_DECREF(ok);
-        if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
+        if (weakset_add(&impl->_abc_cache, subclass) < 0) {
             goto end;
         }
         result = Py_True;
@@ -628,7 +636,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
     if (ok == Py_False) {
         Py_DECREF(ok);
-        if (_add_to_weak_set(&impl->_abc_negative_cache, subclass) < 0) {
+        if (weakset_add(&impl->_abc_negative_cache, subclass) < 0) {
             goto end;
         }
         result = Py_False;
@@ -649,7 +657,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
         assert(mro_item != NULL);
         if ((PyObject *)self == mro_item) {
-            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
+            if (weakset_add(&impl->_abc_cache, subclass) < 0) {
                 goto end;
             }
             result = Py_True;
@@ -678,7 +686,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         int r = PyObject_IsSubclass(subclass, scls);
         Py_DECREF(scls);
         if (r > 0) {
-            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
+            if (weakset_add(&impl->_abc_cache, subclass) < 0) {
                 goto end;
             }
             result = Py_True;
@@ -690,7 +698,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* No dice; update negative cache. */
-    if (_add_to_weak_set(&impl->_abc_negative_cache, subclass) < 0) {
+    if (weakset_add(&impl->_abc_negative_cache, subclass) < 0) {
         goto end;
     }
     result = Py_False;
@@ -708,7 +716,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                              PyObject **result)
 {
     // Fast path: check subclass is in weakref directly.
-    int ret = _in_weak_set(impl->_abc_registry, subclass);
+    int ret = weakset_contains(impl->_abc_registry, subclass);
     if (ret < 0) {
         *result = NULL;
         return -1;
@@ -721,47 +729,24 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     if (impl->_abc_registry == NULL) {
         return 0;
     }
-    Py_ssize_t registry_size = PySet_Size(impl->_abc_registry);
-    if (registry_size == 0) {
-        return 0;
-    }
-    // Weakref callback may remove entry from set.
-    // So we take snapshot of registry first.
-    PyObject **copy = PyMem_Malloc(sizeof(PyObject*) * registry_size);
-    if (copy == NULL) {
-        PyErr_NoMemory();
+
+    /* Convert WeakSet to a list: it's easier to iterate in C
+       (the list cannot be modified while we iterate on it). */
+    PyObject *registry = weakset_as_list(impl->_abc_registry);
+    if (registry == NULL) {
         return -1;
     }
-    PyObject *key;
-    Py_ssize_t pos = 0;
-    Py_hash_t hash;
-    Py_ssize_t i = 0;
 
-    while (_PySet_NextEntry(impl->_abc_registry, &pos, &key, &hash)) {
-        Py_INCREF(key);
-        copy[i++] = key;
-    }
-    assert(i == registry_size);
-
-    for (i = 0; i < registry_size; i++) {
-        PyObject *rkey = PyWeakref_GetObject(copy[i]);
-        if (rkey == NULL) {
-            // Someone inject non-weakref type in the registry.
-            ret = -1;
-            break;
-        }
-        if (rkey == Py_None) {
-            continue;
-        }
-        Py_INCREF(rkey);
+    Py_ssize_t i = 0, len = PyList_GET_SIZE(registry);
+    for (i = 0; i < len; i++) {
+        PyObject *rkey = PyList_GET_ITEM(registry, i);
         int r = PyObject_IsSubclass(subclass, rkey);
-        Py_DECREF(rkey);
         if (r < 0) {
             ret = -1;
             break;
         }
         if (r > 0) {
-            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
+            if (weakset_add(&impl->_abc_cache, subclass) < 0) {
                 ret = -1;
                 break;
             }
@@ -771,10 +756,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
         }
     }
 
-    for (i = 0; i < registry_size; i++) {
-        Py_DECREF(copy[i]);
-    }
-    PyMem_Free(copy);
+    Py_DECREF(registry);
     return ret;
 }
 
