@@ -1007,7 +1007,7 @@ stack_effect(int opcode, int oparg, int jump)
         case BUILD_STRING:
             return 1-oparg;
         case BUILD_LIST_PREALLOC:
-            return 0;
+            return 1;
         case BUILD_LIST_UNPACK:
         case BUILD_TUPLE_UNPACK:
         case BUILD_TUPLE_UNPACK_WITH_CALL:
