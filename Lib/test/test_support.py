@@ -91,14 +91,12 @@ class TestSupport(unittest.TestCase):
             support.rmtree('__pycache__')
 
     def test_HOST(self):
-        s = socket.socket()
-        s.bind((support.HOST, 0))
+        s = socket.create_server((support.HOST, 0))
         s.close()
 
     def test_find_unused_port(self):
         port = support.find_unused_port()
-        s = socket.socket()
-        s.bind((support.HOST, port))
+        s = socket.create_server((support.HOST, port))
         s.close()
 
     def test_bind_port(self):

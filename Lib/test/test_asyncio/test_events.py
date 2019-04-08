@@ -667,9 +667,7 @@ class EventLoopTestsMixin:
                 super().data_received(data)
                 self.transport.write(expected_response)
 
-        lsock = socket.socket()
-        lsock.bind(('127.0.0.1', 0))
-        lsock.listen(1)
+        lsock = socket.create_server(('127.0.0.1', 0), backlog=1)
         addr = lsock.getsockname()
 
         message = b'test data'
@@ -1118,9 +1116,7 @@ class EventLoopTestsMixin:
                 super().connection_made(transport)
                 proto.set_result(self)
 
-        sock_ob = socket.socket(type=socket.SOCK_STREAM)
-        sock_ob.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock_ob.bind(('0.0.0.0', 0))
+        sock_ob = socket.create_server(('0.0.0.0', 0))
 
         f = self.loop.create_server(TestMyProto, sock=sock_ob)
         server = self.loop.run_until_complete(f)
@@ -1136,9 +1132,7 @@ class EventLoopTestsMixin:
         server.close()
 
     def test_create_server_addr_in_use(self):
-        sock_ob = socket.socket(type=socket.SOCK_STREAM)
-        sock_ob.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock_ob.bind(('0.0.0.0', 0))
+        sock_ob = socket.create_server(('0.0.0.0', 0))
 
         f = self.loop.create_server(MyProto, sock=sock_ob)
         server = self.loop.run_until_complete(f)
