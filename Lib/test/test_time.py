@@ -428,6 +428,11 @@ class TimeTestCase(unittest.TestCase):
         self.assertAlmostEqual(t1, t0, delta=0.2)
 
     def test_mktime(self):
+        # mktime() returns an int
+        tm = time.localtime()
+        t = time.mktime(tm)
+        self.assertIsInstance(t, int)
+
         # Issue #1726687
         for t in (-2, -1, 0, 1):
             try:

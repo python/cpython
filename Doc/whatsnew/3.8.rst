@@ -690,6 +690,9 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* The function :func:`time.mktime` return type is now :class:`int`, rather than
+  class:`float`.
+
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
 

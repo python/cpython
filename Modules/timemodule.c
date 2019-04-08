@@ -1044,7 +1044,8 @@ time_mktime(PyObject *self, PyObject *tup)
                         "mktime argument out of range");
         return NULL;
     }
-    return PyFloat_FromDouble((double)tt);
+
+    return _PyLong_FromTime_t(tt);
 }
 
 PyDoc_STRVAR(mktime_doc,

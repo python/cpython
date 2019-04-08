@@ -259,7 +259,7 @@ Functions
 
 .. function:: gmtime([secs])
 
-   Convert a time expressed in seconds since the epoch to a :class:`struct_time` in
+   Convert a time expressed in seconds since the epoch_ to a :class:`struct_time` in
    UTC in which the dst flag is always zero.  If *secs* is not provided or
    :const:`None`, the current time as returned by :func:`.time` is used.  Fractions
    of a second are ignored.  See above for a description of the
@@ -274,16 +274,23 @@ Functions
    flag is set to ``1`` when DST applies to the given time.
 
 
-.. function:: mktime(t)
+.. function:: mktime(t) -> int
 
    This is the inverse function of :func:`localtime`.  Its argument is the
    :class:`struct_time` or full 9-tuple (since the dst flag is needed; use ``-1``
    as the dst flag if it is unknown) which expresses the time in *local* time, not
-   UTC.  It returns a floating point number, for compatibility with :func:`.time`.
+   UTC.
+
+   Return the time in seconds since the epoch_ as an integer. The specific date
+   of the epoch is platform dependent.
+
    If the input value cannot be represented as a valid time, either
    :exc:`OverflowError` or :exc:`ValueError` will be raised (which depends on
    whether the invalid value is caught by Python or the underlying C libraries).
    The earliest date for which it can generate a time is platform-dependent.
+
+   .. versionchanged:: 3.8
+      The return type is now :class:`int`, rather than class:`float`.
 
 
 .. function:: monotonic() -> float
