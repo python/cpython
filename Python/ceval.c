@@ -2487,13 +2487,16 @@ main_loop:
         case TARGET(BUILD_LIST_PREALLOC): {
             PyObject *list, *target = GETLOCAL(oparg);
             Py_INCREF(target);
-            Py_ssize_t size = PyObject_LengthHint(target, 2);
+            Py_ssize_t size = 0;
+            if (_PyObject_HasLen(target))
+                size = PyObject_Length(target);
             Py_DECREF(target);
             if (size < 0)
                 goto error;
 
             list = _PyList_NewPrealloc(size);
             PUSH(list);
+            PREDICTED(LOAD_FAST);
             DISPATCH();
         }
 
