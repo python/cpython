@@ -188,9 +188,9 @@ loops that truncate the stream.
    Alternate constructor for :func:`chain`.  Gets chained inputs from a
    single iterable argument that is evaluated lazily.  Roughly equivalent to::
 
-      def from_iterable(iterables):
+      def from_iterable(iterable):
           # chain.from_iterable(['ABC', 'DEF']) --> A B C D E F
-          for it in iterables:
+          for it in iterable:
               for element in it:
                   yield element
 
