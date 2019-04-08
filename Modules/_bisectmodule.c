@@ -241,13 +241,13 @@ Optional args lo (default 0) and hi (default len(a)) bound the\n\
 slice of a to be searched.\n");
 
 static PyMethodDef bisect_methods[] = {
-    {"bisect_right", (PyCFunction)bisect_right,
+    {"bisect_right", (PyCFunction)(void(*)(void))bisect_right,
         METH_VARARGS|METH_KEYWORDS, bisect_right_doc},
-    {"insort_right", (PyCFunction)insort_right,
+    {"insort_right", (PyCFunction)(void(*)(void))insort_right,
         METH_VARARGS|METH_KEYWORDS, insort_right_doc},
-    {"bisect_left", (PyCFunction)bisect_left,
+    {"bisect_left", (PyCFunction)(void(*)(void))bisect_left,
         METH_VARARGS|METH_KEYWORDS, bisect_left_doc},
-    {"insort_left", (PyCFunction)insort_left,
+    {"insort_left", (PyCFunction)(void(*)(void))insort_left,
         METH_VARARGS|METH_KEYWORDS, insort_left_doc},
     {NULL, NULL} /* sentinel */
 };

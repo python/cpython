@@ -50,6 +50,7 @@ import signal
 import sys
 import threading
 import warnings
+import contextlib
 from time import monotonic as _time
 
 
@@ -262,9 +263,7 @@ def _args_from_interpreter_flags():
         # 'inspect': 'i',
         # 'interactive': 'i',
         'dont_write_bytecode': 'B',
-        'no_user_site': 's',
         'no_site': 'S',
-        'ignore_environment': 'E',
         'verbose': 'v',
         'bytes_warning': 'b',
         'quiet': 'q',
@@ -275,6 +274,14 @@ def _args_from_interpreter_flags():
         v = getattr(sys.flags, flag)
         if v > 0:
             args.append('-' + opt * v)
+
+    if sys.flags.isolated:
+        args.append('-I')
+    else:
+        if sys.flags.ignore_environment:
+            args.append('-E')
+        if sys.flags.no_user_site:
+            args.append('-s')
 
     # -W options
     warnopts = sys.warnoptions[:]
@@ -600,6 +607,56 @@ def getoutput(cmd):
     return getstatusoutput(cmd)[1]
 
 
+def _use_posix_spawn():
+    """Check if posix_spawn() can be used for subprocess.
+
+    subprocess requires a posix_spawn() implementation that properly reports
+    errors to the parent process, & sets errno on the following failures:
+
+    * Process attribute actions failed.
+    * File actions failed.
+    * exec() failed.
+
+    Prefer an implementation which can use vfork() in some cases for best
+    performance.
+    """
+    if _mswindows or not hasattr(os, 'posix_spawn'):
+        # os.posix_spawn() is not available
+        return False
+
+    if sys.platform == 'darwin':
+        # posix_spawn() is a syscall on macOS and properly reports errors
+        return True
+
+    # Check libc name and runtime libc version
+    try:
+        ver = os.confstr('CS_GNU_LIBC_VERSION')
+        # parse 'glibc 2.28' as ('glibc', (2, 28))
+        parts = ver.split(maxsplit=1)
+        if len(parts) != 2:
+            # reject unknown format
+            raise ValueError
+        libc = parts[0]
+        version = tuple(map(int, parts[1].split('.')))
+
+        if sys.platform == 'linux' and libc == 'glibc' and version >= (2, 24):
+            # glibc 2.24 has a new Linux posix_spawn implementation using vfork
+            # which properly reports errors to the parent process.
+            return True
+        # Note: Don't use the implementation in earlier glibc because it doesn't
+        # use vfork (even if glibc 2.26 added a pipe to properly report errors
+        # to the parent process).
+    except (AttributeError, ValueError, OSError):
+        # os.confstr() or CS_GNU_LIBC_VERSION value not available
+        pass
+
+    # By default, assume that posix_spawn() does not properly report errors.
+    return False
+
+
+_USE_POSIX_SPAWN = _use_posix_spawn()
+
+
 class Popen(object):
     """ Execute a child program in a new process.
 
@@ -743,12 +800,21 @@ class Popen(object):
 
         self._closed_child_pipe_fds = False
 
+        if self.text_mode:
+            if bufsize == 1:
+                line_buffering = True
+                # Use the default buffer size for the underlying binary streams
+                # since they don't support line buffering.
+                bufsize = -1
+            else:
+                line_buffering = False
+
         try:
             if p2cwrite != -1:
                 self.stdin = io.open(p2cwrite, 'wb', bufsize)
                 if self.text_mode:
                     self.stdin = io.TextIOWrapper(self.stdin, write_through=True,
-                            line_buffering=(bufsize == 1),
+                            line_buffering=line_buffering,
                             encoding=encoding, errors=errors)
             if c2pread != -1:
                 self.stdout = io.open(c2pread, 'rb', bufsize)
@@ -1000,6 +1066,34 @@ class Popen(object):
                 pass
             raise  # resume the KeyboardInterrupt
 
+    def _close_pipe_fds(self,
+                        p2cread, p2cwrite,
+                        c2pread, c2pwrite,
+                        errread, errwrite):
+        # self._devnull is not always defined.
+        devnull_fd = getattr(self, '_devnull', None)
+
+        with contextlib.ExitStack() as stack:
+            if _mswindows:
+                if p2cread != -1:
+                    stack.callback(p2cread.Close)
+                if c2pwrite != -1:
+                    stack.callback(c2pwrite.Close)
+                if errwrite != -1:
+                    stack.callback(errwrite.Close)
+            else:
+                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
+                    stack.callback(os.close, p2cread)
+                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
+                    stack.callback(os.close, c2pwrite)
+                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
+                    stack.callback(os.close, errwrite)
+
+            if devnull_fd is not None:
+                stack.callback(os.close, devnull_fd)
+
+        # Prevent a double close of these handles/fds from __init__ on error.
+        self._closed_child_pipe_fds = True
 
     if _mswindows:
         #
@@ -1178,17 +1272,9 @@ class Popen(object):
                 # output pipe are maintained in this process or else the
                 # pipe will not close when the child process exits and the
                 # ReadFile will hang.
-                if p2cread != -1:
-                    p2cread.Close()
-                if c2pwrite != -1:
-                    c2pwrite.Close()
-                if errwrite != -1:
-                    errwrite.Close()
-                if hasattr(self, '_devnull'):
-                    os.close(self._devnull)
-                # Prevent a double close of these handles/fds from __init__
-                # on error.
-                self._closed_child_pipe_fds = True
+                self._close_pipe_fds(p2cread, p2cwrite,
+                                     c2pread, c2pwrite,
+                                     errread, errwrite)
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
@@ -1375,6 +1461,45 @@ class Popen(object):
                     errread, errwrite)
 
 
+        def _posix_spawn(self, args, executable, env, restore_signals,
+                         p2cread, p2cwrite,
+                         c2pread, c2pwrite,
+                         errread, errwrite):
+            """Execute program using os.posix_spawn()."""
+            if env is None:
+                env = os.environ
+
+            kwargs = {}
+            if restore_signals:
+                # See _Py_RestoreSignals() in Python/pylifecycle.c
+                sigset = []
+                for signame in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
+                    signum = getattr(signal, signame, None)
+                    if signum is not None:
+                        sigset.append(signum)
+                kwargs['setsigdef'] = sigset
+
+            file_actions = []
+            for fd in (p2cwrite, c2pread, errread):
+                if fd != -1:
+                    file_actions.append((os.POSIX_SPAWN_CLOSE, fd))
+            for fd, fd2 in (
+                (p2cread, 0),
+                (c2pwrite, 1),
+                (errwrite, 2),
+            ):
+                if fd != -1:
+                    file_actions.append((os.POSIX_SPAWN_DUP2, fd, fd2))
+            if file_actions:
+                kwargs['file_actions'] = file_actions
+
+            self.pid = os.posix_spawn(executable, args, env, **kwargs)
+            self._child_created = True
+
+            self._close_pipe_fds(p2cread, p2cwrite,
+                                 c2pread, c2pwrite,
+                                 errread, errwrite)
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
@@ -1399,6 +1524,23 @@ class Popen(object):
 
             if executable is None:
                 executable = args[0]
+
+            if (_USE_POSIX_SPAWN
+                    and os.path.dirname(executable)
+                    and preexec_fn is None
+                    and not close_fds
+                    and not pass_fds
+                    and cwd is None
+                    and (p2cread == -1 or p2cread > 2)
+                    and (c2pwrite == -1 or c2pwrite > 2)
+                    and (errwrite == -1 or errwrite > 2)
+                    and not start_new_session):
+                self._posix_spawn(args, executable, env, restore_signals,
+                                  p2cread, p2cwrite,
+                                  c2pread, c2pwrite,
+                                  errread, errwrite)
+                return
+
             orig_executable = executable
 
             # For transferring possible exec failure from child to parent.
@@ -1451,18 +1593,9 @@ class Popen(object):
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
 
-                # self._devnull is not always defined.
-                devnull_fd = getattr(self, '_devnull', None)
-                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
-                    os.close(p2cread)
-                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
-                    os.close(c2pwrite)
-                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
-                    os.close(errwrite)
-                if devnull_fd is not None:
-                    os.close(devnull_fd)
-                # Prevent a double close of these fds from __init__ on error.
-                self._closed_child_pipe_fds = True
+                self._close_pipe_fds(p2cread, p2cwrite,
+                                     c2pread, c2pwrite,
+                                     errread, errwrite)
 
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)

@@ -190,6 +190,8 @@ class Bdb:
 
     def is_skipped_module(self, module_name):
         "Return True if module_name matches any skip pattern."
+        if module_name is None:  # some modules do not have names
+            return False
         for pattern in self.skip:
             if fnmatch.fnmatch(module_name, pattern):
                 return True
@@ -616,11 +618,26 @@ class Bdb:
 
     # This method is more useful to debug a single function call.
 
-    def runcall(self, func, *args, **kwds):
+    def runcall(*args, **kwds):
         """Debug a single function call.
 
         Return the result of the function call.
         """
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor 'runcall' of 'Bdb' object "
+                            "needs an argument")
+        elif 'func' in kwds:
+            func = kwds.pop('func')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'func' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('runcall expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         self.reset()
         sys.settrace(self.trace_dispatch)
         res = None

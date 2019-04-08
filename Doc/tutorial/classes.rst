@@ -672,6 +672,9 @@ be treated as a non-public part of the API (whether it is a function, a method
 or a data member).  It should be considered an implementation detail and subject
 to change without notice.
 
+.. index::
+   pair: name; mangling
+
 Since there is a valid use-case for class-private members (namely to avoid name
 clashes of names with names defined by subclasses), there is limited support for
 such a mechanism, called :dfn:`name mangling`.  Any identifier of the form
@@ -702,6 +705,11 @@ breaking intraclass method calls.  For example::
            # but does not break __init__()
            for item in zip(keys, values):
                self.items_list.append(item)
+
+The above example would work even if ``MappingSubclass`` were to introduce a
+``__update`` identifier since it is replaced with ``_Mapping__update`` in the
+``Mapping`` class  and ``_MappingSubclass__update`` in the ``MappingSubclass``
+class respectively.
 
 Note that the mangling rules are designed mostly to avoid accidents; it still is
 possible to access or modify a variable that is considered private.  This can
@@ -775,7 +783,7 @@ calls :func:`iter` on the container object.  The function returns an iterator
 object that defines the method :meth:`~iterator.__next__` which accesses
 elements in the container one at a time.  When there are no more elements,
 :meth:`~iterator.__next__` raises a :exc:`StopIteration` exception which tells the
-:keyword:`for` loop to terminate.  You can call the :meth:`~iterator.__next__` method
+:keyword:`!for` loop to terminate.  You can call the :meth:`~iterator.__next__` method
 using the :func:`next` built-in function; this example shows how it all works::
 
    >>> s = 'abc'

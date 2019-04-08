@@ -340,7 +340,7 @@ get_int_unless_float(PyObject *v)
                         "array item must be integer");
         return NULL;
     }
-    return (PyObject *)_PyLong_FromNbInt(v);
+    return _PyLong_FromNbIndexOrNbInt(v);
 }
 
 static int
@@ -1174,7 +1174,7 @@ static PyObject *
 array_array_remove(arrayobject *self, PyObject *v)
 /*[clinic end generated code: output=bef06be9fdf9dceb input=0b1e5aed25590027]*/
 {
-    int i;
+    Py_ssize_t i;
 
     for (i = 0; i < Py_SIZE(self); i++) {
         PyObject *selfi;
@@ -1544,9 +1544,15 @@ array_array_fromlist(arrayobject *self, PyObject *list)
         if (array_resize(self, old_size + n) == -1)
             return NULL;
         for (i = 0; i < n; i++) {
-            PyObject *v = PyList_GetItem(list, i);
+            PyObject *v = PyList_GET_ITEM(list, i);
             if ((*self->ob_descr->setitem)(self,
                             Py_SIZE(self) - n + i, v) != 0) {
+                array_resize(self, old_size);
+                return NULL;
+            }
+            if (n != PyList_GET_SIZE(list)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "list changed size during iteration");
                 array_resize(self, old_size);
                 return NULL;
             }
@@ -1574,8 +1580,7 @@ array_array_tolist_impl(arrayobject *self)
         PyObject *v = getarrayitem((PyObject *)self, i);
         if (v == NULL)
             goto error;
-        if (PyList_SetItem(list, i, v) < 0)
-            goto error;
+        PyList_SET_ITEM(list, i, v);
     }
     return list;
 
@@ -1707,9 +1712,9 @@ some other type.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_fromunicode_impl(arrayobject *self, Py_UNICODE *ustr,
+array_array_fromunicode_impl(arrayobject *self, const Py_UNICODE *ustr,
                              Py_ssize_clean_t ustr_length)
-/*[clinic end generated code: output=ebb72fc16975e06d input=150f00566ffbca6e]*/
+/*[clinic end generated code: output=cf2f662908e2befc input=150f00566ffbca6e]*/
 {
     char typecode;
 
@@ -2024,7 +2029,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     switch (mformat_code) {
     case IEEE_754_FLOAT_LE:
     case IEEE_754_FLOAT_BE: {
-        int i;
+        Py_ssize_t i;
         int le = (mformat_code == IEEE_754_FLOAT_LE) ? 1 : 0;
         Py_ssize_t itemcount = Py_SIZE(items) / 4;
         const unsigned char *memstr =
@@ -2046,7 +2051,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     }
     case IEEE_754_DOUBLE_LE:
     case IEEE_754_DOUBLE_BE: {
-        int i;
+        Py_ssize_t i;
         int le = (mformat_code == IEEE_754_DOUBLE_LE) ? 1 : 0;
         Py_ssize_t itemcount = Py_SIZE(items) / 8;
         const unsigned char *memstr =
@@ -2101,7 +2106,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     case UNSIGNED_INT64_BE:
     case SIGNED_INT64_LE:
     case SIGNED_INT64_BE: {
-        int i;
+        Py_ssize_t i;
         const struct mformatdescr mf_descr =
             mformat_descriptors[mformat_code];
         Py_ssize_t itemcount = Py_SIZE(items) / mf_descr.size;
@@ -2938,7 +2943,8 @@ static PyObject *
 array_arrayiterator___reduce___impl(arrayiterobject *self)
 /*[clinic end generated code: output=7898a52e8e66e016 input=a062ea1e9951417a]*/
 {
-    PyObject *func = _PyObject_GetBuiltin("iter");
+    _Py_IDENTIFIER(iter);
+    PyObject *func = _PyEval_GetBuiltinId(&PyId_iter);
     if (self->ao == NULL) {
         return Py_BuildValue("N(())", func);
     }

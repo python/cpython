@@ -544,6 +544,10 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
    .. versionchanged:: 3.2
       The *style* parameter was added.
 
+   .. versionchanged:: 3.8
+      The *validate* parameter was added. Incorrect or mismatched style and fmt
+      will raise a ``ValueError``.
+      For example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
 
    .. method:: format(record)
 
@@ -900,7 +904,7 @@ re-entrant, and so cannot be invoked from such signal handlers.
 Module-Level Functions
 ----------------------
 
-In addition to the classes described above, there are a number of module- level
+In addition to the classes described above, there are a number of module-level
 functions.
 
 
@@ -949,8 +953,8 @@ functions.
    There are three keyword arguments in *kwargs* which are inspected: *exc_info*
    which, if it does not evaluate as false, causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
-   :func:`sys.exc_info`) is provided, it is used; otherwise, :func:`sys.exc_info`
-   is called to get the exception information.
+   :func:`sys.exc_info`) or an exception instance is provided, it is used;
+   otherwise, :func:`sys.exc_info` is called to get the exception information.
 
    The second optional keyword argument is *stack_info*, which defaults to
    ``False``. If true, stack information is added to the logging
@@ -1210,6 +1214,10 @@ functions.
    Informs the logging system to perform an orderly shutdown by flushing and
    closing all handlers. This should be called at application exit and no
    further use of the logging system should be made after this call.
+
+   When the logging module is imported, it registers this function as an exit
+   handler (see :mod:`atexit`), so normally there's no need to do that
+   manually.
 
 
 .. function:: setLoggerClass(klass)

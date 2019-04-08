@@ -379,6 +379,9 @@ then
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
+	*-*-vxworks*)
+	    ac_sys_system=VxWorks
+	    ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -422,6 +425,9 @@ if test "$cross_compiling" = yes; then
 		;;
 	*-*-cygwin*)
 		_host_cpu=
+		;;
+	*-*-vxworks*)
+		_host_cpu=$host_cpu
 		;;
 	*)
 		# for now, limit cross builds to known configurations
@@ -505,6 +511,11 @@ case $ac_sys_system/$ac_sys_release in
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
   QNX/6.3.2)
+    define_xopen_source=no
+    ;;
+  # On VxWorks, defining _XOPEN_SOURCE causes compile failures
+  # in network headers still using system V types.
+  VxWorks/*)
     define_xopen_source=no
     ;;
 
@@ -829,6 +840,8 @@ cat >> conftest.c <<EOF
         i386-gnu
 #elif defined(__APPLE__)
         darwin
+#elif defined(__VXWORKS__)
+        vxworks
 #else
 # error unknown platform triplet
 #endif
@@ -1265,6 +1278,26 @@ else
   DEF_MAKE_RULE="all"
 fi
 
+# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# normal names in the default $PATH (ie: Ubuntu).  They exist under the
+# non-suffixed name in their versioned llvm directory.
+
+llvm_bin_dir=''
+llvm_path="${PATH}"
+if test "${CC}" = "clang"
+then
+  clang_bin=`which clang`
+  # Some systems install clang elsewhere as a symlink to the real path
+  # which is where the related llvm tools are located.
+  if test -L "${clang_bin}"
+  then
+    clang_dir=`dirname "${clang_bin}"`
+    clang_bin=`readlink "${clang_bin}"`
+    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
+    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
+  fi
+fi
+
 # Enable LTO flags
 AC_MSG_CHECKING(for --with-lto)
 AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in any build. Disabled by default.]),
@@ -1281,6 +1314,33 @@ fi],
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+      AC_SUBST(LLVM_AR)
+      AC_PATH_TARGET_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
+      AC_SUBST(LLVM_AR_FOUND)
+      if test -n "${LLVM_AR}" -a -x "${LLVM_AR}"
+      then
+        LLVM_AR_FOUND="found"
+      else
+        LLVM_AR_FOUND="not-found"
+      fi
+      if test "$ac_sys_system" = "Darwin" -a "${LLVM_AR_FOUND}" = "not-found"
+      then
+        found_llvm_ar=`/usr/bin/xcrun -find llvm-ar 2>/dev/null`
+        if test -n "${found_llvm_ar}"
+        then
+          LLVM_AR='/usr/bin/xcrun llvm-ar'
+          LLVM_AR_FOUND=found
+          AC_MSG_NOTICE([llvm-ar found via xcrun: ${LLVM_AR}])
+        fi
+      fi
+      if test $LLVM_AR_FOUND = not-found
+      then
+        LLVM_PROFR_ERR=yes
+        AC_MSG_ERROR([llvm-ar is required for a --with-lto build with clang but could not be found.])
+      else
+        LLVM_AR_ERR=no
+      fi
+      AR="${LLVM_AR}"
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
@@ -1310,8 +1370,8 @@ if test "$Py_LTO" = 'true' ; then
       LTOFLAGS="$LTOFLAGS -g"
   fi
 
-  CFLAGS="$CFLAGS $LTOFLAGS"
-  LDFLAGS="$LDFLAGS $LTOFLAGS"
+  CFLAGS_NODIST="$CFLAGS_NODIST $LTOFLAGS"
+  LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
 # Enable PGO flags.
@@ -1320,24 +1380,6 @@ AC_SUBST(PGO_PROF_USE_FLAG)
 AC_SUBST(LLVM_PROF_MERGER)
 AC_SUBST(LLVM_PROF_FILE)
 AC_SUBST(LLVM_PROF_ERR)
-# Make this work on systems where llvm tools are not installed with their
-# normal names in the default $PATH (ie: Ubuntu).  They exist under the
-# non-suffixed name in their versioned llvm directory.
-llvm_bin_dir=''
-llvm_path="${PATH}"
-if test "${CC}" = "clang"
-then
-  clang_bin=`which clang`
-  # Some systems install clang elsewhere as a symlink to the real path
-  # which is where the related llvm tools are located.
-  if test -L "${clang_bin}"
-  then
-    clang_dir=`dirname "${clang_bin}"`
-    clang_bin=`readlink "${clang_bin}"`
-    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
-    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
-  fi
-fi
 AC_SUBST(LLVM_PROFDATA)
 AC_PATH_TARGET_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
 AC_SUBST(LLVM_PROF_FOUND)
@@ -1489,6 +1531,7 @@ fi
 
 AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
+AC_SUBST(LDFLAGS_NODIST)
 
 # The -arch flags for universal builds on OSX
 UNIVERSAL_ARCH_FLAGS=
@@ -2525,7 +2568,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Linux*|GNU*|QNX*)
+	Linux*|GNU*|QNX*|VxWorks*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	FreeBSD*)
@@ -2604,6 +2647,8 @@ then
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
+	VxWorks*)
+		CCSHARED="-fpic -D__SO_PICABILINUX__  -ftls-model=global-dynamic"
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -2660,6 +2705,8 @@ then
 		# to 2048 kilobytes so that the stack doesn't overflow
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
+	VxWorks*)
+		LINKFORSHARED='--export-dynamic';;		
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -2825,11 +2872,37 @@ esac
 AC_MSG_CHECKING(for --with-address-sanitizer)
 AC_ARG_WITH(address_sanitizer,
             AS_HELP_STRING([--with-address-sanitizer],
-                           [enable AddressSanitizer]),
+                           [enable AddressSanitizer (asan)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-memory-sanitizer)
+AC_ARG_WITH(memory_sanitizer,
+            AS_HELP_STRING([--with-memory-sanitizer],
+                           [enable MemorySanitizer (msan)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
+AC_ARG_WITH(undefined_behavior_sanitizer,
+            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
+                           [enable UndefinedBehaviorSanitizer (ubsan)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
 ],
 [AC_MSG_RESULT(no)])
 
@@ -3373,7 +3446,7 @@ then
     AC_CACHE_CHECK([whether DTrace probes require linking],
         [ac_cv_dtrace_link], [dnl
             ac_cv_dtrace_link=no
-            echo 'BEGIN' > conftest.d
+            echo 'BEGIN{}' > conftest.d
             "$DTRACE" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
@@ -3449,8 +3522,9 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
- pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+ posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
+ pthread_condattr_setclock pthread_init pthread_kill putenv pwrite pwritev pwritev2 \
+ readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
@@ -3760,6 +3834,23 @@ AC_CHECK_FUNCS(gettimeofday,
       [Define if gettimeofday() does not have second (timezone) argument
        This is the case on Motorola V4 (R40V4.2)])
     ])
+)
+
+# We search for both crypt and crypt_r as one or the other may be defined
+# This gets us our -lcrypt in LIBS when required on the target platform.
+AC_SEARCH_LIBS(crypt, crypt)
+AC_SEARCH_LIBS(crypt_r, crypt)
+
+AC_CHECK_FUNC(crypt_r,
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#define _GNU_SOURCE  /* Required for crypt_r()'s prototype in glibc. */
+#include <crypt.h>
+]], [[
+struct crypt_data d;
+char *r = crypt_r("", "", &d);
+]])],
+    [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
+    [])
 )
 
 AC_CHECK_FUNCS(clock_gettime, [], [
@@ -4504,7 +4595,7 @@ AC_MSG_RESULT($SOABI)
 
 AC_SUBST(EXT_SUFFIX)
 case $ac_sys_system in
-    Linux*|GNU*|Darwin)
+    Linux*|GNU*|Darwin|VxWorks)
 	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
     *)
 	EXT_SUFFIX=${SHLIB_SUFFIX};;
@@ -4653,6 +4744,8 @@ LIBS=$LIBS_no_readline
 AC_MSG_CHECKING(for broken nice())
 AC_CACHE_VAL(ac_cv_broken_nice, [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdlib.h>
+#include <unistd.h>
 int main()
 {
 	int val1 = nice(1);
@@ -5369,6 +5462,30 @@ if test "$have_getrandom" = yes; then
     AC_DEFINE(HAVE_GETRANDOM, 1,
               [Define to 1 if the getrandom() function is available])
 fi
+
+# checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
+# shm_* may only be available if linking against librt
+save_LIBS="$LIBS"
+save_includes_default="$ac_includes_default"
+AC_SEARCH_LIBS(shm_open, rt)
+if test "$ac_cv_search_shm_open" = "-lrt"; then
+    AC_DEFINE(SHM_NEEDS_LIBRT, 1,
+              [Define to 1 if you must link with -lrt for shm_open().])
+fi
+AC_CHECK_HEADERS(sys/mman.h)
+# temporarily override ac_includes_default for AC_CHECK_FUNCS below
+ac_includes_default="\
+${ac_includes_default}
+#ifndef __cplusplus
+#  ifdef HAVE_SYS_MMAN_H
+#    include <sys/mman.h>
+#  endif
+#endif
+"
+AC_CHECK_FUNCS([shm_open shm_unlink])
+# we don't want to link with librt always, restore LIBS
+LIBS="$save_LIBS"
+ac_includes_default="$save_includes_default"
 
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])

@@ -114,7 +114,7 @@ and work with streams:
 
    See also the documentation of :meth:`loop.create_unix_connection`.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -136,7 +136,7 @@ and work with streams:
 
    See also the documentation of :meth:`loop.create_unix_server`.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 

@@ -42,6 +42,9 @@ In addition to size-limiting tools, the module also provides a decorator for
 detecting recursive calls to :meth:`__repr__` and substituting a placeholder
 string instead.
 
+
+.. index:: single: ...; placeholder
+
 .. decorator:: recursive_repr(fillvalue="...")
 
    Decorator for :meth:`__repr__` methods to detect recursive calls within the

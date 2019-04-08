@@ -1,4 +1,4 @@
-This is Python version 3.8.0 alpha 0
+This is Python version 3.8.0 alpha 3
 ====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
@@ -22,9 +22,7 @@ This is Python version 3.8.0 alpha 0
    :target: https://python.zulipchat.com
 
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2019 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -65,7 +63,7 @@ On Unix, Linux, BSD, macOS, and Cygwin::
     make test
     sudo make install
 
-This will install Python as python3.
+This will install Python as ``python3``.
 
 You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
@@ -73,8 +71,8 @@ elsewhere it's just ``python``.
 
 If you are running on macOS with the latest updates installed, make sure to install
 openSSL or some other SSL software along with Homebrew or another package manager.
-If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
-information. 
+If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more
+information.
 
 On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
@@ -251,9 +249,7 @@ See :pep:`569` for Python 3.8 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2019 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

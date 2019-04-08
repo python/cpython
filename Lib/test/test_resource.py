@@ -1,6 +1,5 @@
 import contextlib
 import sys
-import os
 import unittest
 from test import support
 import time

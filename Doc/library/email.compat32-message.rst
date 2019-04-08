@@ -149,10 +149,10 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: is_multipart()
 
-      Return ``True`` if the message's payload is a list of sub-\
-      :class:`Message` objects, otherwise return ``False``.  When
+      Return ``True`` if the message's payload is a list of
+      sub-\ :class:`Message` objects, otherwise return ``False``.  When
       :meth:`is_multipart` returns ``False``, the payload should be a string
-      object (which might be a CTE encoded binary payload.  (Note that
+      object (which might be a CTE encoded binary payload).  (Note that
       :meth:`is_multipart` returning ``True`` does not necessarily mean that
       "msg.get_content_maintype() == 'multipart'" will return the ``True``.
       For example, ``is_multipart`` will return ``True`` when the

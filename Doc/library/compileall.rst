@@ -105,7 +105,7 @@ compile Python sources.
    byte-code file ending in ``.pyc``, never ``.pyo``.
 
 .. versionchanged:: 3.7
-   Added the ``--invalidation-mode`` parameter.
+   Added the ``--invalidation-mode`` option.
 
 
 There is no command-line option to control the optimization level used by the

@@ -728,7 +728,7 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.glob(pattern)
 
-   Glob the given *pattern* in the directory represented by this path,
+   Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
 
       >>> sorted(Path('.').glob('*.py'))
@@ -980,8 +980,8 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.rglob(pattern)
 
-   This is like calling :meth:`Path.glob` with "``**``" added in front of the
-   given *pattern*::
+   This is like calling :func:`Path.glob` with "``**/``" added in front of the
+   given relative *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),

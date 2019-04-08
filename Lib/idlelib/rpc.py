@@ -64,8 +64,7 @@ def dumps(obj, protocol=None):
 
 
 class CodePickler(pickle.Pickler):
-    dispatch_table = {types.CodeType: pickle_code}
-    dispatch_table.update(copyreg.dispatch_table)
+    dispatch_table = {types.CodeType: pickle_code, **copyreg.dispatch_table}
 
 
 BUFSIZE = 8*1024
