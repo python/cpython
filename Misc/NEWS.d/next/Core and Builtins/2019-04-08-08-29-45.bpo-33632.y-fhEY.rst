@@ -1,0 +1,1 @@
+Avoid signed integer overflow in the :mod:`_thread` module.
