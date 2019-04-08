@@ -4,6 +4,13 @@ import unittest
 from test import support
 import time
 
+_support_rlimit_fsize_set=True
+_support_rlimit_cpu_set=True
+
+if sys.platform == "vxworks":
+    _support_rlimit_fsize_set=False
+    _support_rlimit_cpu_set=False
+
 resource = support.import_module('resource')
 
 # This test is checking a few specific problem spots with the resource module.
@@ -28,7 +35,8 @@ class ResourceTest(unittest.TestCase):
             # the number to a C long long and that the conversion doesn't raise
             # an error.
             self.assertEqual(resource.RLIM_INFINITY, max)
-            resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
+            if _support_rlimit_fsize_set:
+                resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
 
     def test_fsize_enforced(self):
         try:
@@ -124,7 +132,8 @@ class ResourceTest(unittest.TestCase):
                         return len(tuple(range(1000000)))
                     raise IndexError
 
-            resource.setrlimit(resource.RLIMIT_CPU, BadSequence())
+            if _support_rlimit_cpu_set:
+                resource.setrlimit(resource.RLIMIT_CPU, BadSequence())
 
     def test_pagesize(self):
         pagesize = resource.getpagesize()

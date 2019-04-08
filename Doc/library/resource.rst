@@ -76,6 +76,8 @@ this module for those platforms.
    ``setrlimit`` may also raise :exc:`error` if the underlying system call
    fails.
 
+   VxWorks only support setting RLIMIT_NOFILE and idtype must be P_PID.
+
 .. function:: prlimit(pid, resource[, limits])
 
    Combines :func:`setrlimit` and :func:`getrlimit` in one function and
