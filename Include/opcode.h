@@ -124,6 +124,7 @@ extern "C" {
 #define BUILD_CONST_KEY_MAP     156
 #define BUILD_STRING            157
 #define BUILD_TUPLE_UNPACK_WITH_CALL 158
+#define BUILD_LIST_PREALLOC     159
 #define LOAD_METHOD             160
 #define CALL_METHOD             161
 #define CALL_FINALLY            162
