@@ -63,13 +63,15 @@ SMTP_PORT = 25
 SMTP_SSL_PORT = 465
 CRLF = "\r\n"
 bCRLF = b"\r\n"
-_MAXLINE = 8192 # more than 8 times larger than RFC 821, 4.5.3
+_MAXLINE = 8192  # more than 8 times larger than RFC 821, 4.5.3
 
 OLDSTYLE_AUTH = re.compile(r"auth=(.*)", re.I)
+
 
 # Exception classes used by this module.
 class SMTPException(OSError):
     """Base class for all exceptions raised by this module."""
+
 
 class SMTPNotSupportedError(SMTPException):
     """The command or option is not supported by the SMTP server.
@@ -78,6 +80,7 @@ class SMTPNotSupportedError(SMTPException):
     command with an option which is not supported by the server.
     """
 
+
 class SMTPServerDisconnected(SMTPException):
     """Not connected to any SMTP server.
 
@@ -85,6 +88,7 @@ class SMTPServerDisconnected(SMTPException):
     or when an attempt is made to use the SMTP instance before
     connecting it to a server.
     """
+
 
 class SMTPResponseException(SMTPException):
     """Base class for all exceptions that include an SMTP error code.
@@ -100,6 +104,7 @@ class SMTPResponseException(SMTPException):
         self.smtp_error = msg
         self.args = (code, msg)
 
+
 class SMTPSenderRefused(SMTPResponseException):
     """Sender address refused.
 
@@ -112,6 +117,7 @@ class SMTPSenderRefused(SMTPResponseException):
         self.smtp_error = msg
         self.sender = sender
         self.args = (code, msg, sender)
+
 
 class SMTPRecipientsRefused(SMTPException):
     """All recipient addresses refused.
@@ -129,11 +135,14 @@ class SMTPRecipientsRefused(SMTPException):
 class SMTPDataError(SMTPResponseException):
     """The SMTP server didn't accept the data."""
 
+
 class SMTPConnectError(SMTPResponseException):
     """Error during connection establishment."""
 
+
 class SMTPHeloError(SMTPResponseException):
     """The server refused our HELO reply."""
+
 
 class SMTPAuthenticationError(SMTPResponseException):
     """Authentication error.
@@ -141,6 +150,7 @@ class SMTPAuthenticationError(SMTPResponseException):
     Most probably the server didn't accept the username/password
     combination provided.
     """
+
 
 def quoteaddr(addrstring):
     """Quote a subset of the email addresses defined by RFC 821.
@@ -155,12 +165,14 @@ def quoteaddr(addrstring):
         return "<%s>" % addrstring
     return "<%s>" % addr
 
+
 def _addr_only(addrstring):
     displayname, addr = email.utils.parseaddr(addrstring)
     if (displayname, addr) == ('', ''):
         # parseaddr couldn't parse it, so use it as is.
         return addrstring
     return addr
+
 
 # Legacy method kept for backward compatibility.
 def quotedata(data):
@@ -170,13 +182,16 @@ def quotedata(data):
     Internet CRLF end-of-line.
     """
     return re.sub(r'(?m)^\.', '..',
-        re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
+                  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
+
 
 def _quote_periods(bindata):
     return re.sub(br'(?m)^\.', b'..', bindata)
 
+
 def _fix_eols(data):
-    return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
+    return re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
+
 
 try:
     import ssl
@@ -414,7 +429,8 @@ class SMTP:
 
         errmsg = b"\n".join(resp)
         if self.debuglevel > 0:
-            self._print_debug('reply: retcode (%s); Msg: %a' % (errcode, errmsg))
+            self._print_debug(
+                'reply: retcode (%s); Msg: %a' % (errcode, errmsg))
         return errcode, errmsg
 
     def docmd(self, cmd, args=""):
@@ -451,7 +467,7 @@ class SMTP:
         if code != 250:
             return (code, msg)
         self.does_esmtp = 1
-        #parse the ehlo response -ddm
+        # parse the ehlo response -ddm
         assert isinstance(self.ehlo_resp, bytes), repr(self.ehlo_resp)
         resp = self.ehlo_resp.decode("latin-1").split('\n')
         del resp[0]
@@ -462,24 +478,25 @@ class SMTP:
             # 1) Else our SMTP feature parser gets confused.
             # 2) There are some servers that only advertise the auth methods we
             #    support using the old style.
-            auth_match = OLDSTYLE_AUTH.match(each)
-            if auth_match:
+            if (auth_match := OLDSTYLE_AUTH.match(each)):
                 # This doesn't remove duplicates, but that's no problem
-                self.esmtp_features["auth"] = self.esmtp_features.get("auth", "") \
-                        + " " + auth_match.groups(0)[0]
+                self.esmtp_features["auth"] = \
+                    self.esmtp_features.get("auth", "") \
+                    + " " + auth_match.groups(0)[0]
                 continue
 
             # RFC 1869 requires a space between ehlo keyword and parameters.
             # It's actually stricter, in that only spaces are allowed between
             # parameters, but were not going to check for that here.  Note
             # that the space isn't present if there are no parameters.
-            m = re.match(r'(?P<feature>[A-Za-z0-9][A-Za-z0-9\-]*) ?', each)
-            if m:
+            if (m := re.match(r'(?P<feature>[A-Za-z0-9][A-Za-z0-9\-]*) ?',
+                              each)):
                 feature = m.group("feature").lower()
                 params = m.string[m.end("feature"):].strip()
                 if feature == "auth":
-                    self.esmtp_features[feature] = self.esmtp_features.get(feature, "") \
-                            + " " + params
+                    self.esmtp_features[feature] = \
+                        self.esmtp_features.get(feature, "") \
+                        + " " + params
                 else:
                     self.esmtp_features[feature] = params
         return (code, msg)
@@ -526,7 +543,7 @@ class SMTP:
         """
         optionlist = ''
         if options and self.does_esmtp:
-            if any(x.lower()=='smtputf8' for x in options):
+            if any(x.lower() == 'smtputf8' for x in options):
                 if self.has_extn('smtputf8'):
                     self.command_encoding = 'utf-8'
                 else:
@@ -835,7 +852,8 @@ class SMTP:
 
          >>> import smtplib
          >>> s=smtplib.SMTP("localhost")
-         >>> tolist=["one@one.org","two@two.org","three@three.org","four@four.org"]
+         >>> tolist=["one@one.org", "two@two.org", "three@three.org",
+         ... "four@four.org"]
          >>> msg = '''\\
          ... From: Me@my.org
          ... Subject: testin'...
@@ -888,7 +906,7 @@ class SMTP:
             else:
                 self._rset()
             raise SMTPDataError(code, resp)
-        #if we got here then somebody got our mail
+        # if we got here then somebody got our mail
         return senderrs
 
     def send_message(self, msg, from_addr=None, to_addrs=None,
@@ -898,8 +916,8 @@ class SMTP:
         The arguments are as for sendmail, except that msg is an
         email.message.Message object.  If from_addr is None or to_addrs is
         None, these arguments are taken from the headers of the Message as
-        described in RFC 2822 (a ValueError is raised if there is more than
-        one set of 'Resent-' headers).  Regardless of the values of from_addr and
+        described in RFC 2822 (a ValueError is raised if there is more than one
+        set of 'Resent-' headers). Regardless of the values of from_addr and
         to_addr, any Bcc field (or Resent-Bcc field, when the Message is a
         resent) of the Message object won't be transmitted.  The Message
         object is then serialized using email.generator.BytesGenerator and
@@ -913,13 +931,13 @@ class SMTP:
 
         """
         # 'Resent-Date' is a mandatory field if the Message is resent (RFC 2822
-        # Section 3.6.6). In such a case, we use the 'Resent-*' fields.  However,
-        # if there is more than one 'Resent-' block there's no way to
+        # Section 3.6.6). In such a case, we use the 'Resent-*' fields.
+        # However, if there is more than one 'Resent-' block there's no way to
         # unambiguously determine which one is the most recent in all cases,
         # so rather than guess we raise a ValueError in that case.
         #
         # TODO implement heuristics to guess the correct Resent-* block with an
-        # option allowing the user to enable the heuristics.  (It should be
+        # option allowing the user to enable the heuristics. (It should be
         # possible to guess correctly almost all of the time.)
 
         self.ehlo_or_helo_if_needed()
@@ -929,12 +947,13 @@ class SMTP:
         elif len(resent) == 1:
             header_prefix = 'Resent-'
         else:
-            raise ValueError("message has more than one 'Resent-' header block")
+            raise ValueError(
+                "message has more than one 'Resent-' header block")
         if from_addr is None:
             # Prefer the sender field per RFC 2822:3.6.2.
             from_addr = (msg[header_prefix + 'Sender']
-                           if (header_prefix + 'Sender') in msg
-                           else msg[header_prefix + 'From'])
+                         if (header_prefix + 'Sender') in msg
+                         else msg[header_prefix + 'From'])
             from_addr = email.utils.getaddresses([from_addr])[0][1]
         if to_addrs is None:
             addr_fields = [f for f in (msg[header_prefix + 'To'],
@@ -971,13 +990,11 @@ class SMTP:
     def close(self):
         """Close the connection to the SMTP server."""
         try:
-            file = self.file
-            self.file = None
+            file, self.file = self.file, None
             if file:
                 file.close()
         finally:
-            sock = self.sock
-            self.sock = None
+            sock, self.sock = self.sock, None
             if sock:
                 sock.close()
 
@@ -990,6 +1007,7 @@ class SMTP:
         self.does_esmtp = False
         self.close()
         return res
+
 
 if _have_ssl:
 
@@ -1030,13 +1048,13 @@ if _have_ssl:
                                                      keyfile=keyfile)
             self.context = context
             SMTP.__init__(self, host, port, local_hostname, timeout,
-                    source_address)
+                          source_address)
 
         def _get_socket(self, host, port, timeout):
             if self.debuglevel > 0:
                 self._print_debug('connect:', (host, port))
             new_socket = socket.create_connection((host, port), timeout,
-                    self.source_address)
+                                                  self.source_address)
             new_socket = self.context.wrap_socket(new_socket,
                                                   server_hostname=self._host)
             return new_socket
@@ -1047,6 +1065,7 @@ if _have_ssl:
 # LMTP extension
 #
 LMTP_PORT = 2003
+
 
 class LMTP(SMTP):
     """LMTP - Local Mail Transfer Protocol
@@ -1065,7 +1084,7 @@ class LMTP(SMTP):
     ehlo_msg = "lhlo"
 
     def __init__(self, host='', port=LMTP_PORT, local_hostname=None,
-            source_address=None):
+                 source_address=None):
         """Initialize a new instance."""
         SMTP.__init__(self, host, port, local_hostname=local_hostname,
                       source_address=source_address)
@@ -1073,7 +1092,8 @@ class LMTP(SMTP):
     def connect(self, host='localhost', port=0, source_address=None):
         """Connect to the LMTP daemon, on either a Unix or a TCP socket."""
         if host[0] != '/':
-            return SMTP.connect(self, host, port, source_address=source_address)
+            return SMTP.connect(
+                self, host, port, source_address=source_address)
 
         # Handle Unix-domain sockets.
         try:
@@ -1105,10 +1125,7 @@ if __name__ == '__main__':
     toaddrs = prompt("To").split(',')
     print("Enter message, end with ^D:")
     msg = ''
-    while 1:
-        line = sys.stdin.readline()
-        if not line:
-            break
+    while (line := sys.stdin.readline()):
         msg = msg + line
     print("Message length is %d" % len(msg))
 
