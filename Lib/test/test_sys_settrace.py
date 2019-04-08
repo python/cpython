@@ -7,7 +7,6 @@ import difflib
 import gc
 from functools import wraps
 import asyncio
-from itertools import islice
 
 
 def get_frame_lineno(caller_level=0):

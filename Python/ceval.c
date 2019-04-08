@@ -4282,6 +4282,7 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
 {
     PyObject *type, *value, *traceback;
     int err;
+    frame->f_lineno = PyFrame_GetLineNumber(frame);
     PyErr_Fetch(&type, &value, &traceback);
     err = call_trace(func, obj, tstate, frame, what, arg);
     if (err == 0)

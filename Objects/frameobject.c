@@ -123,12 +123,11 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    /* You can only do this from within a line trace function, not via
-     * _getframe or similar hackery or from the call trace function
-     * of a resumed generator. */
-    if (f->f_lineno == -1) {
+    /* You can only do this from within a trace function, not via
+     * _getframe or similar hackery. */
+    if (!f->f_trace) {
         PyErr_Format(PyExc_ValueError,
-                     "f_lineno can only be set by a line trace function");
+                     "f_lineno can only be set by a trace function");
         return -1;
     }
 
