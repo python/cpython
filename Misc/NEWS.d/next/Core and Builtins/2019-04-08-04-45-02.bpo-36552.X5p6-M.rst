@@ -1,0 +1,1 @@
+Calculating the length of range objects whose length is larger than PY_SIZE_MAX will now raise a ValueError instead of an OverflowError.
