@@ -874,6 +874,13 @@ All of the following opcodes use their arguments.
    Works as :opcode:`BUILD_TUPLE`, but creates a list.
 
 
+.. opcode:: BUILD_LIST_PREALLOC (var_num)
+
+   Creates a list with a pre-allocated size and pushes the resulting list onto the stack.
+   The size is the length-hint of the local ``co_varnames[var_num]``, if the length cannot
+   be established, it will default a length of 0.
+
+
 .. opcode:: BUILD_SET (count)
 
    Works as :opcode:`BUILD_TUPLE`, but creates a set.
