@@ -990,60 +990,61 @@ not present, current time as returned by localtime() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
-time_mktime(PyObject *self, PyObject *tup)
+time_mktime(PyObject *self, PyObject *tm_tuple)
 {
-    struct tm buf;
+    struct tm tm;
     time_t tt;
-#ifdef _AIX
-    time_t clk;
-    int     year = buf.tm_year;
-    int     delta_days = 0;
-#endif
 
-    if (!gettmarg(tup, &buf,
+    if (!gettmarg(tm_tuple, &tm,
                   "iiiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
     }
-#ifndef _AIX
-    buf.tm_wday = -1;  /* sentinel; original value ignored */
-    tt = mktime(&buf);
-#else
+
+#ifdef _AIX
     /* year < 1902 or year > 2037 */
-    if ((buf.tm_year < 2) || (buf.tm_year > 137))  {
-        /* Issue #19748: On AIX, mktime() doesn't report overflow error for
-         * timestamp < -2^31 or timestamp > 2**31-1. */
+    if (tm.tm_year < 2 || tm.tm_year > 137) {
+        /* bpo-19748: On AIX, mktime() does not report overflow error
+           for timestamp < -2^31 or timestamp > 2**31-1. */
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
-    year = buf.tm_year;
-    /* year < 1970 - adjust buf.tm_year into legal range */
-    while (buf.tm_year < 70) {
-        buf.tm_year += 4;
+
+    int orig_tm_year = tm.tm_year;
+    int delta_days = 0;
+    /* year < 1970 - adjust tm.tm_year into legal range */
+    while (tm.tm_year < 70) {
+        tm.tm_year += 4;
         delta_days -= (366 + (365 * 3));
     }
-
-    buf.tm_wday = -1;
-    clk = mktime(&buf);
-    buf.tm_year = year;
-
-    if ((buf.tm_wday != -1) && delta_days)
-        buf.tm_wday = (buf.tm_wday + delta_days) % 7;
-
-    tt = clk + (delta_days * (24 * 3600));
 #endif
+
+    tm.tm_wday = -1;  /* sentinel; original value ignored */
+    tt = mktime(&tm);
+
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
     if (tt == (time_t)(-1)
         /* Return value of -1 does not necessarily mean an error, but
          * tm_wday cannot remain set to -1 if mktime succeeded. */
-        && buf.tm_wday == -1)
+        && tm.tm_wday == -1)
     {
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
+
+#ifdef _AIX
+    if (delta_days != 0) {
+        tm.tm_year = orig_tm_year;
+        if (tm.tm_wday != -1) {
+            tm.tm_wday = (tm.tm_wday + delta_days) % 7;
+        }
+        tt += delta_days * (24 * 3600);
+    }
+#endif
+
     return PyFloat_FromDouble((double)tt);
 }
 
