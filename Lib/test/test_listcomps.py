@@ -123,6 +123,13 @@ We also repeat each of the above scoping tests inside a function
     >>> test_func()
     [2, 2, 2, 2, 2]
 
+Verify that an overflow error is raised for listcomps with very-large iterators
+
+    >>> [y for y in range(2**256)]          # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    OverflowError: ...
+
 """
 
 
