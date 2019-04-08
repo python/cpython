@@ -4370,7 +4370,10 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         int op;
         switch (type) {
         case COMP_LISTCOMP:
-            op = BUILD_LIST;
+            if (asdl_seq_LEN(outermost->ifs) > 0)
+                op = BUILD_LIST;
+            else
+                op = BUILD_LIST_PREALLOC;
             break;
         case COMP_SETCOMP:
             op = BUILD_SET;
