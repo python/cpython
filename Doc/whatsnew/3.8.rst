@@ -686,6 +686,11 @@ Changes in Python behavior
   to use equality tests (``==`` and ``!=``) instead.
   (Contributed by Serhiy Storchaka in :issue:`34850`.)
 
+* The CPython interpreter can swallow exceptions in some circumstances.
+  In Python 3.8 this happens in less cases.  In particular, exceptions
+  raised when getting the attribute from the type dictionary are no longer
+  ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
+
 
 Changes in the Python API
 -------------------------
