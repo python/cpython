@@ -1642,6 +1642,7 @@ class PyBuildExt(build_ext):
         self.detect_crypt()
         self.detect_socket()
         self.detect_openssl_hashlib()
+        self.detect_hash_builtins()
         self.detect_dbm_gdbm()
         self.detect_sqlite()
         self.detect_platform_specific_exts()
@@ -2184,6 +2185,7 @@ class PyBuildExt(build_ext):
                            library_dirs=openssl_libdirs,
                            libraries=openssl_libs))
 
+    def detect_hash_builtins(self):
         # We always compile these even when OpenSSL is available (issue #14693).
         # It's harmless and the object code is tiny (40-50 KiB per module,
         # only loaded when actually used).
