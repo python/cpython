@@ -1216,7 +1216,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
     }
 
     // We registered o in c_const_cache.
-    // When o is a tuple or frozenset, we want to merge it's
+    // When o is a tuple or frozenset, we want to merge its
     // items too.
     if (PyTuple_CheckExact(o)) {
         Py_ssize_t len = PyTuple_GET_SIZE(o);
@@ -1246,7 +1246,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
         }
     }
     else if (PyFrozenSet_CheckExact(o)) {
-        // *key* is tuple. And it's first item is frozenset of
+        // *key* is tuple. And its first item is frozenset of
         // constant keys.
         // See _PyCode_ConstantKey() for detail.
         assert(PyTuple_CheckExact(key));
