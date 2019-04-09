@@ -3,6 +3,8 @@
 #include "Python.h"
 #include "code.h"
 #include "structmember.h"
+#include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 
 /* Holder for co_extra information */
 typedef struct {
@@ -38,7 +40,7 @@ intern_strings(PyObject *tuple)
         if (v == NULL || !PyUnicode_CheckExact(v)) {
             Py_FatalError("non-string found in code slot");
         }
-        PyUnicode_InternInPlace(&PyTuple_GET_ITEM(tuple, i));
+        PyUnicode_InternInPlace(&_PyTuple_ITEMS(tuple)[i]);
     }
 }
 
@@ -428,7 +430,7 @@ static void
 code_dealloc(PyCodeObject *co)
 {
     if (co->co_extra != NULL) {
-        PyInterpreterState *interp = PyThreadState_Get()->interp;
+        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
         _PyCodeObjectExtra *co_extra = co->co_extra;
 
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
@@ -871,7 +873,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 int
 _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
 
     if (!PyCode_Check(code) || index < 0 ||
             index >= interp->co_extra_user_count) {

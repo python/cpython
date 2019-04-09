@@ -20,6 +20,39 @@ function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
 
+.. decorator:: cached_property(func)
+
+   Transform a method of a class into a property whose value is computed once
+   and then cached as a normal attribute for the life of the instance. Similar
+   to :func:`property`, with the addition of caching. Useful for expensive
+   computed properties of instances that are otherwise effectively immutable.
+
+   Example::
+
+       class DataSet:
+           def __init__(self, sequence_of_numbers):
+               self._data = sequence_of_numbers
+
+           @cached_property
+           def stdev(self):
+               return statistics.stdev(self._data)
+
+           @cached_property
+           def variance(self):
+               return statistics.variance(self._data)
+
+   .. versionadded:: 3.8
+
+   .. note::
+
+      This decorator requires that the ``__dict__`` attribute on each instance
+      be a mutable mapping. This means it will not work with some types, such as
+      metaclasses (since the ``__dict__`` attributes on type instances are
+      read-only proxies for the class namespace), and those that specify
+      ``__slots__`` without including ``__dict__`` as one of the defined slots
+      (as such classes don't provide a ``__dict__`` attribute at all).
+
+
 .. function:: cmp_to_key(func)
 
    Transform an old-style comparison function to a :term:`key function`.  Used
@@ -52,6 +85,11 @@ The :mod:`functools` module defines the following functions:
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be hashable.
 
+   Distinct argument patterns may be considered to be distinct calls with
+   separate cache entries.  For example, `f(a=1, b=2)` and `f(b=2, a=1)`
+   differ in their keyword argument order and may have two separate cache
+   entries.
+
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.  The LRU feature performs best when *maxsize* is a
    power-of-two.
@@ -79,6 +117,11 @@ The :mod:`functools` module defines the following functions:
    example, the most popular articles on a news server tend to change each day).
    The cache's size limit assures that the cache does not grow without bound on
    long-running processes such as web servers.
+
+   In general, the LRU cache should only be used when you want to reuse
+   previously computed values.  Accordingly, it doesn't make sense to cache
+   functions with side-effects, functions that need to create distinct mutable
+   objects on each call, or impure functions such as time() or random().
 
    Example of an LRU cache for static web content::
 
@@ -167,16 +210,16 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: partial(func, *args, **keywords)
 
-   Return a new :class:`partial` object which when called will behave like *func*
-   called with the positional arguments *args* and keyword arguments *keywords*. If
-   more arguments are supplied to the call, they are appended to *args*. If
-   additional keyword arguments are supplied, they extend and override *keywords*.
+   Return a new :ref:`partial object<partial-objects>` which when called
+   will behave like *func* called with the positional arguments *args*
+   and keyword arguments *keywords*. If more arguments are supplied to the
+   call, they are appended to *args*. If additional keyword arguments are
+   supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
       def partial(func, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
-              newkeywords = keywords.copy()
-              newkeywords.update(fkeywords)
+              newkeywords = {**keywords, **fkeywords}
               return func(*args, *fargs, **newkeywords)
           newfunc.func = func
           newfunc.args = args
@@ -209,7 +252,7 @@ The :mod:`functools` module defines the following functions:
    :func:`classmethod`, :func:`staticmethod`, :func:`abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
-   :class:`partial` object returned as the result.
+   :ref:`partial object<partial-objects>` returned as the result.
 
    When *func* is a non-descriptor callable, an appropriate bound method is
    created dynamically. This behaves like a normal Python function when
@@ -242,14 +285,14 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: reduce(function, iterable[, initializer])
 
-   Apply *function* of two arguments cumulatively to the items of *sequence*, from
-   left to right, so as to reduce the sequence to a single value.  For example,
+   Apply *function* of two arguments cumulatively to the items of *iterable*, from
+   left to right, so as to reduce the iterable to a single value.  For example,
    ``reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])`` calculates ``((((1+2)+3)+4)+5)``.
    The left argument, *x*, is the accumulated value and the right argument, *y*, is
-   the update value from the *sequence*.  If the optional *initializer* is present,
-   it is placed before the items of the sequence in the calculation, and serves as
-   a default when the sequence is empty.  If *initializer* is not given and
-   *sequence* contains only one item, the first item is returned.
+   the update value from the *iterable*.  If the optional *initializer* is present,
+   it is placed before the items of the iterable in the calculation, and serves as
+   a default when the iterable is empty.  If *initializer* is not given and
+   *iterable* contains only one item, the first item is returned.
 
    Roughly equivalent to::
 
@@ -430,6 +473,9 @@ The :mod:`functools` module defines the following functions:
 
    The same pattern can be used for other similar decorators: ``staticmethod``,
    ``abstractmethod``, and others.
+
+   .. versionadded:: 3.8
+
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 

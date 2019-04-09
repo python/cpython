@@ -335,6 +335,10 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (tvp) {
             timeout = deadline - _PyTime_GetMonotonicClock();
             if (timeout < 0) {
+                /* bpo-35310: lists were unmodified -- clear them explicitly */
+                FD_ZERO(&ifdset);
+                FD_ZERO(&ofdset);
+                FD_ZERO(&efdset);
                 n = 0;
                 break;
             }
@@ -430,30 +434,12 @@ update_ufd_array(pollObject *self)
     return 1;
 }
 
-static int
-ushort_converter(PyObject *obj, void *ptr)
-{
-    unsigned long uval;
-
-    uval = PyLong_AsUnsignedLong(obj);
-    if (uval == (unsigned long)-1 && PyErr_Occurred())
-        return 0;
-    if (uval > USHRT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large for C unsigned short");
-        return 0;
-    }
-
-    *(unsigned short *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned short);
-    return 1;
-}
-
 /*[clinic input]
 select.poll.register
 
     fd: fildes
       either an integer, or an object with a fileno() method returning an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
       an optional bitmask describing the type of events to check for
     /
 
@@ -462,7 +448,7 @@ Register a file descriptor with the polling object.
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=0dc7173c800a4a65 input=499d96a2836217f5]*/
+/*[clinic end generated code: output=0dc7173c800a4a65 input=f18711d9bb021e25]*/
 {
     PyObject *key, *value;
     int err;
@@ -495,7 +481,7 @@ select.poll.modify
     fd: fildes
       either an integer, or an object with a fileno() method returning
       an int
-    eventmask: object(converter="ushort_converter", type="unsigned short")
+    eventmask: unsigned_short
       a bitmask describing the type of events to check for
     /
 
@@ -504,7 +490,7 @@ Modify an already registered file descriptor.
 
 static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=1a7b88bf079eff17 input=b8e0e04a1264b78f]*/
+/*[clinic end generated code: output=1a7b88bf079eff17 input=a8e383df075c32cf]*/
 {
     PyObject *key, *value;
     int err;
@@ -513,9 +499,11 @@ select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
     key = PyLong_FromLong(fd);
     if (key == NULL)
         return NULL;
-    if (PyDict_GetItem(self->dict, key) == NULL) {
-        errno = ENOENT;
-        PyErr_SetFromErrno(PyExc_OSError);
+    if (PyDict_GetItemWithError(self->dict, key) == NULL) {
+        if (!PyErr_Occurred()) {
+            errno = ENOENT;
+            PyErr_SetFromErrno(PyExc_OSError);
+        }
         Py_DECREF(key);
         return NULL;
     }
@@ -707,10 +695,7 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
             goto error;
         }
         PyTuple_SET_ITEM(value, 1, num);
-        if ((PyList_SetItem(result_list, j, value)) == -1) {
-            Py_DECREF(value);
-            goto error;
-        }
+        PyList_SET_ITEM(result_list, j, value);
         i++;
     }
     return result_list;
@@ -832,7 +817,7 @@ select.devpoll.register
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -842,7 +827,7 @@ Register a file descriptor with the polling object.
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask)
-/*[clinic end generated code: output=6e07fe8b74abba0c input=389a0785bb8feb57]*/
+/*[clinic end generated code: output=6e07fe8b74abba0c input=5bd7cacc47a8ee46]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 0);
 }
@@ -853,7 +838,7 @@ select.devpoll.modify
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: object(converter="ushort_converter", type="unsigned short", c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -863,9 +848,7 @@ Modify a possible already registered file descriptor.
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask)
-/*[clinic end generated code: output=bc2e6d23aaff98b4 input=f0d7de3889cc55fb]*/
-static PyObject *
-devpoll_modify(devpollObject *self, PyObject *args)
+/*[clinic end generated code: output=bc2e6d23aaff98b4 input=48a820fc5967165d]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 1);
 }
@@ -913,7 +896,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
 /*[clinic end generated code: output=2654e5457cca0b3c input=fd0db698d84f0333]*/
 {
     struct dvpoll dvp;
-    PyObject *result_list = NULL, *timeout_obj = NULL;
+    PyObject *result_list = NULL;
     int poll_result, i;
     PyObject *value, *num1, *num2;
     _PyTime_t timeout, ms, deadline = 0;
@@ -1002,10 +985,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
         Py_DECREF(num2);
         if (value == NULL)
             goto error;
-        if ((PyList_SetItem(result_list, i, value)) == -1) {
-            Py_DECREF(value);
-            goto error;
-        }
+        PyList_SET_ITEM(result_list, i, value);
     }
 
     return result_list;
@@ -1051,7 +1031,7 @@ select_devpoll_close_impl(devpollObject *self)
 }
 
 static PyObject*
-devpoll_get_closed(devpollObject *self)
+devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
 {
     if (self->fd_devpoll < 0)
         Py_RETURN_TRUE;
@@ -1353,7 +1333,7 @@ select_epoll_close_impl(pyEpoll_Object *self)
 
 
 static PyObject*
-pyepoll_get_closed(pyEpoll_Object *self)
+pyepoll_get_closed(pyEpoll_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->epfd < 0)
         Py_RETURN_TRUE;
@@ -1518,17 +1498,12 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
     struct epoll_event *evs = NULL;
-    _PyTime_t timeout, ms, deadline;
+    _PyTime_t timeout = -1, ms = -1, deadline = 0;
 
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    if (timeout_obj == Py_None) {
-        timeout = -1;
-        ms = -1;
-        deadline = 0;   /* initialize to prevent gcc warning */
-    }
-    else {
+    if (timeout_obj != Py_None) {
         /* epoll_wait() has a resolution of 1 millisecond, round towards
            infinity to wait at least timeout seconds. */
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
@@ -1545,8 +1520,20 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
             PyErr_SetString(PyExc_OverflowError, "timeout is too large");
             return NULL;
         }
+        /* epoll_wait(2) treats all arbitrary negative numbers the same
+           for the timeout argument, but -1 is the documented way to block
+           indefinitely in the epoll_wait(2) documentation, so we set ms
+           to -1 if the value of ms is a negative number.
 
-        deadline = _PyTime_GetMonotonicClock() + timeout;
+           Note that we didn't use INFTIM here since it's non-standard and
+           isn't available under Linux. */
+        if (ms < 0) {
+            ms = -1;
+        }
+
+        if (timeout >= 0) {
+            deadline = _PyTime_GetMonotonicClock() + timeout;
+        }
     }
 
     if (maxevents == -1) {
@@ -1992,7 +1979,7 @@ select_kqueue_close_impl(kqueue_queue_Object *self)
 }
 
 static PyObject*
-kqueue_queue_get_closed(kqueue_queue_Object *self)
+kqueue_queue_get_closed(kqueue_queue_Object *self, void *Py_UNUSED(ignored))
 {
     if (self->kqfd < 0)
         Py_RETURN_TRUE;

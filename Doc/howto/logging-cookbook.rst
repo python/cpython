@@ -186,7 +186,7 @@ previous simple module-based configuration example::
     # 'application' code
     logger.debug('debug message')
     logger.info('info message')
-    logger.warn('warn message')
+    logger.warning('warn message')
     logger.error('error message')
     logger.critical('critical message')
 
@@ -295,7 +295,7 @@ Here is an example of a module using the logging configuration server::
         while True:
             logger.debug('debug message')
             logger.info('info message')
-            logger.warn('warn message')
+            logger.warning('warn message')
             logger.error('error message')
             logger.critical('critical message')
             time.sleep(5)
@@ -721,9 +721,8 @@ existing processes to perform this function.)
 includes a working socket receiver which can be used as a starting point for you
 to adapt in your own applications.
 
-If you are using a recent version of Python which includes the
-:mod:`multiprocessing` module, you could write your own handler which uses the
-:class:`~multiprocessing.Lock` class from this module to serialize access to the
+You could also write your own handler which uses the :class:`~multiprocessing.Lock`
+class from the :mod:`multiprocessing` module to serialize access to the
 file from your processes. The existing :class:`FileHandler` and subclasses do
 not make use of :mod:`multiprocessing` at present, though they may do so in the
 future. Note that at present, the :mod:`multiprocessing` module does not provide
@@ -1456,12 +1455,18 @@ works::
         which then get dispatched, by the logging system, to the handlers
         configured for those loggers.
         """
+
         def handle(self, record):
-            logger = logging.getLogger(record.name)
-            # The process name is transformed just to show that it's the listener
-            # doing the logging to files and console
-            record.processName = '%s (for %s)' % (current_process().name, record.processName)
-            logger.handle(record)
+            if record.name == "root":
+                logger = logging.getLogger()
+            else:
+                logger = logging.getLogger(record.name)
+
+            if logger.isEnabledFor(record.levelno):
+                # The process name is transformed just to show that it's the listener
+                # doing the logging to files and console
+                record.processName = '%s (for %s)' % (current_process().name, record.processName)
+                logger.handle(record)
 
     def listener_process(q, stop_event, config):
         """
@@ -1526,22 +1531,16 @@ works::
         # The main process gets a simple configuration which prints to the console.
         config_initial = {
             'version': 1,
-            'formatters': {
-                'detailed': {
-                    'class': 'logging.Formatter',
-                    'format': '%(asctime)s %(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
-                }
-            },
             'handlers': {
                 'console': {
                     'class': 'logging.StreamHandler',
-                    'level': 'INFO',
-                },
+                    'level': 'INFO'
+                }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['console']
-            },
+                'handlers': ['console'],
+                'level': 'DEBUG'
+            }
         }
         # The worker process configuration is just a QueueHandler attached to the
         # root logger, which allows all messages to be sent to the queue.
@@ -1554,13 +1553,13 @@ works::
             'handlers': {
                 'queue': {
                     'class': 'logging.handlers.QueueHandler',
-                    'queue': q,
-                },
+                    'queue': q
+                }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['queue']
-            },
+                'handlers': ['queue'],
+                'level': 'DEBUG'
+            }
         }
         # The listener process configuration shows that the full flexibility of
         # logging configuration is available to dispatch events to handlers however
@@ -1584,28 +1583,28 @@ works::
             'handlers': {
                 'console': {
                     'class': 'logging.StreamHandler',
-                    'level': 'INFO',
                     'formatter': 'simple',
+                    'level': 'INFO'
                 },
                 'file': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog.log',
                     'mode': 'w',
-                    'formatter': 'detailed',
+                    'formatter': 'detailed'
                 },
                 'foofile': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog-foo.log',
                     'mode': 'w',
-                    'formatter': 'detailed',
+                    'formatter': 'detailed'
                 },
                 'errors': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog-errors.log',
                     'mode': 'w',
-                    'level': 'ERROR',
                     'formatter': 'detailed',
-                },
+                    'level': 'ERROR'
+                }
             },
             'loggers': {
                 'foo': {
@@ -1613,9 +1612,9 @@ works::
                 }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['console', 'file', 'errors']
-            },
+                'handlers': ['console', 'file', 'errors'],
+                'level': 'DEBUG'
+            }
         }
         # Log some initial events, just to show that logging in the parent works
         # normally.
@@ -2549,3 +2548,164 @@ In this case, the message #5 printed to ``stdout`` doesn't appear, as expected.
 Of course, the approach described here can be generalised, for example to attach
 logging filters temporarily. Note that the above code works in Python 2 as well
 as Python 3.
+
+
+.. _starter-template:
+
+A CLI application starter template
+----------------------------------
+
+Here's an example which shows how you can:
+
+* Use a logging level based on command-line arguments
+* Dispatch to multiple subcommands in separate files, all logging at the same
+  level in a consistent way
+* Make use of simple, minimal configuration
+
+Suppose we have a command-line application whose job is to stop, start or
+restart some services. This could be organised for the purposes of illustration
+as a file ``app.py`` that is the main script for the application, with individual
+commands implemented in ``start.py``, ``stop.py`` and ``restart.py``. Suppose
+further that we want to control the verbosity of the application via a
+command-line argument, defaulting to ``logging.INFO``. Here's one way that
+``app.py`` could be written::
+
+    import argparse
+    import importlib
+    import logging
+    import os
+    import sys
+
+    def main(args=None):
+        scriptname = os.path.basename(__file__)
+        parser = argparse.ArgumentParser(scriptname)
+        levels = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
+        parser.add_argument('--log-level', default='INFO', choices=levels)
+        subparsers = parser.add_subparsers(dest='command',
+                                           help='Available commands:')
+        start_cmd = subparsers.add_parser('start', help='Start a service')
+        start_cmd.add_argument('name', metavar='NAME',
+                               help='Name of service to start')
+        stop_cmd = subparsers.add_parser('stop',
+                                         help='Stop one or more services')
+        stop_cmd.add_argument('names', metavar='NAME', nargs='+',
+                              help='Name of service to stop')
+        restart_cmd = subparsers.add_parser('restart',
+                                            help='Restart one or more services')
+        restart_cmd.add_argument('names', metavar='NAME', nargs='+',
+                                 help='Name of service to restart')
+        options = parser.parse_args()
+        # the code to dispatch commands could all be in this file. For the purposes
+        # of illustration only, we implement each command in a separate module.
+        try:
+            mod = importlib.import_module(options.command)
+            cmd = getattr(mod, 'command')
+        except (ImportError, AttributeError):
+            print('Unable to find the code for command \'%s\'' % options.command)
+            return 1
+        # Could get fancy here and load configuration from file or dictionary
+        logging.basicConfig(level=options.log_level,
+                            format='%(levelname)s %(name)s %(message)s')
+        cmd(options)
+
+    if __name__ == '__main__':
+        sys.exit(main())
+
+And the ``start``, ``stop`` and ``restart`` commands can be implemented in
+separate modules, like so for starting::
+
+    # start.py
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def command(options):
+        logger.debug('About to start %s', options.name)
+        # actually do the command processing here ...
+        logger.info('Started the \'%s\' service.', options.name)
+
+and thus for stopping::
+
+    # stop.py
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def command(options):
+        n = len(options.names)
+        if n == 1:
+            plural = ''
+            services = '\'%s\'' % options.names[0]
+        else:
+            plural = 's'
+            services = ', '.join('\'%s\'' % name for name in options.names)
+            i = services.rfind(', ')
+            services = services[:i] + ' and ' + services[i + 2:]
+        logger.debug('About to stop %s', services)
+        # actually do the command processing here ...
+        logger.info('Stopped the %s service%s.', services, plural)
+
+and similarly for restarting::
+
+    # restart.py
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    def command(options):
+        n = len(options.names)
+        if n == 1:
+            plural = ''
+            services = '\'%s\'' % options.names[0]
+        else:
+            plural = 's'
+            services = ', '.join('\'%s\'' % name for name in options.names)
+            i = services.rfind(', ')
+            services = services[:i] + ' and ' + services[i + 2:]
+        logger.debug('About to restart %s', services)
+        # actually do the command processing here ...
+        logger.info('Restarted the %s service%s.', services, plural)
+
+If we run this application with the default log level, we get output like this:
+
+.. code-block:: shell-session
+
+    $ python app.py start foo
+    INFO start Started the 'foo' service.
+
+    $ python app.py stop foo bar
+    INFO stop Stopped the 'foo' and 'bar' services.
+
+    $ python app.py restart foo bar baz
+    INFO restart Restarted the 'foo', 'bar' and 'baz' services.
+
+The first word is the logging level, and the second word is the module or
+package name of the place where the event was logged.
+
+If we change the logging level, then we can change the information sent to the
+log. For example, if we want more information:
+
+.. code-block:: shell-session
+
+    $ python app.py --log-level DEBUG start foo
+    DEBUG start About to start foo
+    INFO start Started the 'foo' service.
+
+    $ python app.py --log-level DEBUG stop foo bar
+    DEBUG stop About to stop 'foo' and 'bar'
+    INFO stop Stopped the 'foo' and 'bar' services.
+
+    $ python app.py --log-level DEBUG restart foo bar baz
+    DEBUG restart About to restart 'foo', 'bar' and 'baz'
+    INFO restart Restarted the 'foo', 'bar' and 'baz' services.
+
+And if we want less:
+
+.. code-block:: shell-session
+
+    $ python app.py --log-level WARNING start foo
+    $ python app.py --log-level WARNING stop foo bar
+    $ python app.py --log-level WARNING restart foo bar baz
+
+In this case, the commands don't print anything to the console, since nothing
+at ``WARNING`` level or above is logged by them.

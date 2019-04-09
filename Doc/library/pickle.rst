@@ -71,7 +71,9 @@ The :mod:`pickle` module differs from :mod:`marshal` in several significant ways
   :file:`.pyc` files, the Python implementers reserve the right to change the
   serialization format in non-backwards compatible ways should the need arise.
   The :mod:`pickle` serialization format is guaranteed to be backwards compatible
-  across Python releases.
+  across Python releases provided a compatible pickle protocol is chosen and
+  pickling and unpickling code deals with Python 2 to Python 3 type differences
+  if your data is crossing that unique breaking change language boundary.
 
 Comparison with ``json``
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -243,6 +245,9 @@ process more convenient:
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
    be 'bytes' to read these 8-bit string instances as bytes objects.
+   Using ``encoding='latin1'`` is required for unpickling NumPy arrays and
+   instances of :class:`~datetime.datetime`, :class:`~datetime.date` and
+   :class:`~datetime.time` pickled by Python 2.
 
 .. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
@@ -260,6 +265,9 @@ process more convenient:
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
    be 'bytes' to read these 8-bit string instances as bytes objects.
+   Using ``encoding='latin1'`` is required for unpickling NumPy arrays and
+   instances of :class:`~datetime.datetime`, :class:`~datetime.date` and
+   :class:`~datetime.time` pickled by Python 2.
 
 
 The :mod:`pickle` module defines three exceptions:
@@ -923,7 +931,7 @@ The following example reads the resulting pickled data. ::
 .. [#] Don't confuse this with the :mod:`marshal` module
 
 .. [#] This is why :keyword:`lambda` functions cannot be pickled:  all
-    :keyword:`lambda` functions share the same name:  ``<lambda>``.
+    :keyword:`!lambda` functions share the same name:  ``<lambda>``.
 
 .. [#] The exception raised will likely be an :exc:`ImportError` or an
    :exc:`AttributeError` but it could be something else.
