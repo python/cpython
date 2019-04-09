@@ -342,7 +342,7 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
                             f'not {s.__class__.__name__}')
         s = s.decode(detect_encoding(s), 'surrogatepass')
 
-    if "encoding" is not kw:
+    if "encoding" not in kw:
         import warnings
         warnings.warn(
             "passing 'encoding' as a keyword argument is deprecated since"
