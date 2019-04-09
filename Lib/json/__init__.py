@@ -342,7 +342,7 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
                             f'not {s.__class__.__name__}')
         s = s.decode(detect_encoding(s), 'surrogatepass')
 
-    if "encoding" not in kw:
+    if "encoding" in kw:
         import warnings
         warnings.warn(
             "'encoding' is ignored and deprecated. It will be removed in Python 3.9",
