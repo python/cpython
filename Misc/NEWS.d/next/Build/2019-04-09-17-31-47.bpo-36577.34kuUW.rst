@@ -1,0 +1,1 @@
+setup.py now correctly reports missing OpenSSL headers and libraries again.

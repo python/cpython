@@ -2153,6 +2153,7 @@ class PyBuildExt(build_ext):
         openssl_libs = split_var('OPENSSL_LIBS', '-l')
         if not openssl_libs:
             # libssl and libcrypto not found
+            self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
         # Find OpenSSL includes
@@ -2160,6 +2161,7 @@ class PyBuildExt(build_ext):
             'openssl/ssl.h', self.inc_dirs, openssl_includes
         )
         if ssl_incs is None:
+            self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
         # OpenSSL 1.0.2 uses Kerberos for KRB5 ciphers
