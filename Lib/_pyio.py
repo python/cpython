@@ -287,16 +287,15 @@ class IOBase(metaclass=abc.ABCMeta):
     derived classes can override selectively; the default implementations
     represent a file that cannot be read, written or seeked.
 
-    Even though IOBase does not declare read, readinto, or write because
+    Even though IOBase does not declare read or write because
     their signatures will vary, implementations and clients should
     consider those methods part of the interface. Also, implementations
     may raise UnsupportedOperation when operations they do not support are
     called.
 
     The basic type used for binary data read from or written to a file is
-    bytes. Other bytes-like objects are accepted as method arguments too. In
-    some cases (such as readinto), a writable object is required. Text I/O
-    classes work with str data.
+    bytes. Other bytes-like objects are accepted as method arguments too.
+    Text I/O classes work with str data.
 
     Note that calling any method (even inquiries) on a closed stream is
     undefined. Implementations may raise OSError in this case.
@@ -1759,8 +1758,7 @@ class TextIOBase(IOBase):
     """Base class for text I/O.
 
     This class provides a character and line based interface to stream
-    I/O. There is no readinto method because Python's character strings
-    are immutable. There is no public constructor.
+    I/O. There is no public constructor.
     """
 
     def read(self, size=-1):
