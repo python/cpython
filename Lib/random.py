@@ -136,11 +136,11 @@ class Random(_random.Random):
             a = -2 if x == -1 else x
 
         if version == 2 and isinstance(a, (str, bytes, bytearray)):
-            from hashlib import sha512
+            import hashlib
 
             if isinstance(a, str):
                 a = a.encode()
-            a += sha512(a).digest()
+            a += hashlib.sha512(a).digest()
             a = int.from_bytes(a, 'big')
 
         super().seed(a)
