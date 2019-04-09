@@ -92,7 +92,7 @@ following warnings category classes are currently defined:
 |                                  | Unicode.                                      |
 +----------------------------------+-----------------------------------------------+
 | :exc:`BytesWarning`              | Base category for warnings related to         |
-|                                  | str and bytearray.                            |
+|                                  | bytes and bytearray.                          |
 +----------------------------------+-----------------------------------------------+
 
 While these are technically built-in exceptions, they are documented here,
