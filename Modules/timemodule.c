@@ -1002,7 +1002,9 @@ time_mktime(PyObject *self, PyObject *tm_tuple)
     }
 
 #ifdef _AIX
-    /* year < 1902 or year > 2037 */
+    /* bpo-19748: AIX mktime() valid range is 00:00:00 UTC, January 1, 1970
+       to 03:14:07 UTC, January 19, 2038. Thanks to the workaround below,
+       it is possible to support years in range [1902; 2037] */
     if (tm.tm_year < 2 || tm.tm_year > 137) {
         /* bpo-19748: On AIX, mktime() does not report overflow error
            for timestamp < -2^31 or timestamp > 2**31-1. */
@@ -1011,10 +1013,15 @@ time_mktime(PyObject *self, PyObject *tm_tuple)
         return NULL;
     }
 
+    /* bpo-34373: AIX mktime() has an integer overflow for years in range
+       [1902; 1969]. Workaround the issue by using a year greater or equal than
+       1970 (tm_year >= 70): mktime() behaves correctly in that case
+       (ex: properly report errors). tm_year and tm_wday are adjusted after
+       mktime() call. */
     int orig_tm_year = tm.tm_year;
     int delta_days = 0;
-    /* year < 1970 - adjust tm.tm_year into legal range */
     while (tm.tm_year < 70) {
+        /* Use 4 years to account properly leap years */
         tm.tm_year += 4;
         delta_days -= (366 + (365 * 3));
     }
