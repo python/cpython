@@ -345,11 +345,11 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     if "encoding" not in kw:
         import warnings
         warnings.warn(
-            "passing 'encoding' as a keyword argument is deprecated since"
-            " Python 3.1, is ignored and will be removed in Python 3.9.",
+            "'encoding' is ignored and deprecated. It will be removed in Python 3.9",
             DeprecationWarning,
             stacklevel=2
         )
+        del kw['encoding']
 
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
