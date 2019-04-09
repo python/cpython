@@ -357,8 +357,21 @@ class FTP:
         size = None
         if self.passiveserver:
             host, port = self.makepasv()
-            conn = socket.create_connection((host, port), self.timeout,
-                                            source_address=self.source_address)
+
+            first_try_timeout = 0.1
+            if self.timeout is not None and self.timeout < first_try_timeout:
+                first_try_timeout = self.timeout
+
+            try:
+                conn = socket.create_connection((host, port), first_try_timeout,
+                                                source_address=self.source_address)
+            except socket.timeout:
+                # misconfigured FTP server can return unroutable host IP (eg. internal IP)
+                # so lets try user specified host
+                host = self.host
+                conn = socket.create_connection((host, port), self.timeout,
+                                                source_address=self.source_address)
+
             try:
                 if rest is not None:
                     self.sendcmd("REST %s" % rest)
