@@ -3,6 +3,7 @@ approx_equal function.
 
 """
 
+import bisect
 import collections
 import collections.abc
 import copy
@@ -2174,6 +2175,19 @@ class TestQuantiles(unittest.TestCase):
             actual = quantiles(statistics.NormalDist(), n=n)
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
+
+    def test_equal_sized_groups(self):
+        quantiles = statistics.quantiles
+        total = 10_000
+        data = [random.expovariate(0.2) for i in range(total)]
+        while len(set(data)) != total:
+            data.append(random.expovariate(0.2))
+        data.sort()
+        for n in (1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000):
+            group_size = total // n
+            self.assertEqual(
+                [bisect.bisect(data, q) for q in quantiles(data, n=n)],
+                list(range(group_size, total, group_size)))
 
     def test_error_cases(self):
         quantiles = statistics.quantiles
