@@ -595,7 +595,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.2
       *source_address* was added.
 
-.. function:: create_server(address, *, family=AF_INET, backlog=0, reuse_port=False, dualstack_ipv6=False)
+.. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
 
    Convenience function which creates a TCP socket bound to *address* (a 2-tuple
    ``(host, port)``) and return the socket object.
