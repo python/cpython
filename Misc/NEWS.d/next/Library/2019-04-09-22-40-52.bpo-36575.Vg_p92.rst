@@ -1,0 +1,3 @@
+``_lsprof`` module now uses ``_PyTime_GetPerfCounter`` private API for
+default timer. It will use better timer depending on platform.  Patch by
+Inada Naoki.
