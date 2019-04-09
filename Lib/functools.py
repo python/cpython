@@ -11,12 +11,8 @@
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'partialmethod', 'singledispatch']
+           'partialmethod', 'singledispatch', 'singledispatchmethod']
 
-try:
-    from _functools import reduce
-except ImportError:
-    pass
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
@@ -227,6 +223,45 @@ except ImportError:
 
 
 ################################################################################
+### reduce() sequence to a single item
+################################################################################
+
+_initial_missing = object()
+
+def reduce(function, sequence, initial=_initial_missing):
+    """
+    reduce(function, sequence[, initial]) -> value
+
+    Apply a function of two arguments cumulatively to the items of a sequence,
+    from left to right, so as to reduce the sequence to a single value.
+    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+    ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
+    of the sequence in the calculation, and serves as a default when the
+    sequence is empty.
+    """
+
+    it = iter(sequence)
+
+    if initial is _initial_missing:
+        try:
+            value = next(it)
+        except StopIteration:
+            raise TypeError("reduce() of empty sequence with no initial value") from None
+    else:
+        value = initial
+
+    for element in it:
+        value = function(value, element)
+
+    return value
+
+try:
+    from _functools import reduce
+except ImportError:
+    pass
+
+
+################################################################################
 ### partial() argument application
 ################################################################################
 
@@ -250,10 +285,7 @@ class partial:
 
         if hasattr(func, "func"):
             args = func.args + args
-            tmpkw = func.keywords.copy()
-            tmpkw.update(keywords)
-            keywords = tmpkw
-            del tmpkw
+            keywords = {**func.keywords, **keywords}
             func = func.func
 
         self = super(partial, cls).__new__(cls)
@@ -267,9 +299,8 @@ class partial:
         if not args:
             raise TypeError("descriptor '__call__' of partial needs an argument")
         self, *args = args
-        newkeywords = self.keywords.copy()
-        newkeywords.update(keywords)
-        return self.func(*self.args, *args, **newkeywords)
+        keywords = {**self.keywords, **keywords}
+        return self.func(*self.args, *args, **keywords)
 
     @recursive_repr()
     def __repr__(self):
@@ -323,7 +354,23 @@ class partialmethod(object):
     callables as instance methods.
     """
 
-    def __init__(self, func, *args, **keywords):
+    def __init__(*args, **keywords):
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor '__init__' of partialmethod "
+                            "needs an argument")
+        elif 'func' in keywords:
+            func = keywords.pop('func')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'func' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError("type 'partialmethod' takes at least one argument, "
+                            "got %d" % (len(args)-1))
+        args = tuple(args)
+
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError("{!r} is not callable or a descriptor"
                                  .format(func))
@@ -336,8 +383,7 @@ class partialmethod(object):
             # it's also more efficient since only one function will be called
             self.func = func.func
             self.args = func.args + args
-            self.keywords = func.keywords.copy()
-            self.keywords.update(keywords)
+            self.keywords = {**func.keywords, **keywords}
         else:
             self.func = func
             self.args = args
@@ -356,11 +402,9 @@ class partialmethod(object):
 
     def _make_unbound_method(self):
         def _method(*args, **keywords):
-            call_keywords = self.keywords.copy()
-            call_keywords.update(keywords)
-            cls_or_self, *rest = args
-            call_args = (cls_or_self,) + self.args + tuple(rest)
-            return self.func(*call_args, **call_keywords)
+            cls_or_self, *args = args
+            keywords = {**self.keywords, **keywords}
+            return self.func(cls_or_self, *self.args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method._partialmethod = self
         return _method
@@ -388,6 +432,12 @@ class partialmethod(object):
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
+# Helper functions
+
+def _unwrap_partial(func):
+    while isinstance(func, partial):
+        func = func.func
+    return func
 
 ################################################################################
 ### LRU Cache function decorator
@@ -413,7 +463,7 @@ class _HashedSeq(list):
 
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
-             fasttypes = {int, str, frozenset, type(None)},
+             fasttypes = {int, str},
              tuple=tuple, type=type, len=len):
     """Make a cache key from optionally typed positional and keyword arguments
 
@@ -469,8 +519,11 @@ def lru_cache(maxsize=128, typed=False):
 
     # Early detection of an erroneous call to @lru_cache without any arguments
     # resulting in the inner function being passed to maxsize instead of an
-    # integer or None.
-    if maxsize is not None and not isinstance(maxsize, int):
+    # integer or None.  Negative maxsize is treated as 0.
+    if isinstance(maxsize, int):
+        if maxsize < 0:
+            maxsize = 0
+    elif maxsize is not None:
         raise TypeError('Expected maxsize to be an integer or None')
 
     def decorating_function(user_function):
@@ -497,10 +550,10 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     if maxsize == 0:
 
         def wrapper(*args, **kwds):
-            # No caching -- just a statistics update after a successful call
+            # No caching -- just a statistics update
             nonlocal misses
-            result = user_function(*args, **kwds)
             misses += 1
+            result = user_function(*args, **kwds)
             return result
 
     elif maxsize is None:
@@ -513,9 +566,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
             if result is not sentinel:
                 hits += 1
                 return result
+            misses += 1
             result = user_function(*args, **kwds)
             cache[key] = result
-            misses += 1
             return result
 
     else:
@@ -537,6 +590,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     link[NEXT] = root
                     hits += 1
                     return result
+                misses += 1
             result = user_function(*args, **kwds)
             with lock:
                 if key in cache:
@@ -574,7 +628,6 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
                     full = (cache_len() >= maxsize)
-                misses += 1
             return result
 
     def cache_info():
@@ -817,8 +870,13 @@ def singledispatch(func):
         return func
 
     def wrapper(*args, **kw):
+        if not args:
+            raise TypeError(f'{funcname} requires at least '
+                            '1 positional argument')
+
         return dispatch(args[0].__class__)(*args, **kw)
 
+    funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
     wrapper.register = register
     wrapper.dispatch = dispatch
@@ -826,3 +884,95 @@ def singledispatch(func):
     wrapper._clear_cache = dispatch_cache.clear
     update_wrapper(wrapper, func)
     return wrapper
+
+
+# Descriptor version
+class singledispatchmethod:
+    """Single-dispatch generic method descriptor.
+
+    Supports wrapping existing descriptors and handles non-descriptor
+    callables as instance methods.
+    """
+
+    def __init__(self, func):
+        if not callable(func) and not hasattr(func, "__get__"):
+            raise TypeError(f"{func!r} is not callable or a descriptor")
+
+        self.dispatcher = singledispatch(func)
+        self.func = func
+
+    def register(self, cls, method=None):
+        """generic_method.register(cls, func) -> func
+
+        Registers a new implementation for the given *cls* on a *generic_method*.
+        """
+        return self.dispatcher.register(cls, func=method)
+
+    def __get__(self, obj, cls):
+        def _method(*args, **kwargs):
+            method = self.dispatcher.dispatch(args[0].__class__)
+            return method.__get__(obj, cls)(*args, **kwargs)
+
+        _method.__isabstractmethod__ = self.__isabstractmethod__
+        _method.register = self.register
+        update_wrapper(_method, self.func)
+        return _method
+
+    @property
+    def __isabstractmethod__(self):
+        return getattr(self.func, '__isabstractmethod__', False)
+
+
+################################################################################
+### cached_property() - computed once per instance, cached as attribute
+################################################################################
+
+_NOT_FOUND = object()
+
+
+class cached_property:
+    def __init__(self, func):
+        self.func = func
+        self.attrname = None
+        self.__doc__ = func.__doc__
+        self.lock = RLock()
+
+    def __set_name__(self, owner, name):
+        if self.attrname is None:
+            self.attrname = name
+        elif name != self.attrname:
+            raise TypeError(
+                "Cannot assign the same cached_property to two different names "
+                f"({self.attrname!r} and {name!r})."
+            )
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        if self.attrname is None:
+            raise TypeError(
+                "Cannot use cached_property instance without calling __set_name__ on it.")
+        try:
+            cache = instance.__dict__
+        except AttributeError:  # not all objects have __dict__ (e.g. class defines slots)
+            msg = (
+                f"No '__dict__' attribute on {type(instance).__name__!r} "
+                f"instance to cache {self.attrname!r} property."
+            )
+            raise TypeError(msg) from None
+        val = cache.get(self.attrname, _NOT_FOUND)
+        if val is _NOT_FOUND:
+            with self.lock:
+                # check if another thread filled cache while we awaited lock
+                val = cache.get(self.attrname, _NOT_FOUND)
+                if val is _NOT_FOUND:
+                    val = self.func(instance)
+                    try:
+                        cache[self.attrname] = val
+                    except TypeError:
+                        msg = (
+                            f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                            f"does not support item assignment for caching {self.attrname!r} property."
+                        )
+                        raise TypeError(msg) from None
+        return val

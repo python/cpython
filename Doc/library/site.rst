@@ -45,9 +45,13 @@ sys.prefix and sys.exec_prefix are set to that directory and
 it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "false"
-(case-insensitive), the system-level prefixes will still also be
-searched for site-packages; otherwise they won't.
+the key "include-system-site-packages" set to anything other than "true"
+(case-insensitive), the system-level prefixes will not be
+searched for site-packages; otherwise they will.
+
+.. index::
+   single: # (hash); comment
+   statement: import
 
 A path configuration file is a file whose name has the form :file:`{name}.pth`
 and exists in one of the four directories mentioned above; its contents are
@@ -222,7 +226,7 @@ Module contents
 The :mod:`site` module also provides a way to get the user directories from the
 command line:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 -m site --user-site
    /home/user/.local/lib/python3.3/site-packages
@@ -245,7 +249,7 @@ If it is called without arguments, it will print the contents of
 If both options are given, user base and user site will be printed (always in
 this order), separated by :data:`os.pathsep`.
 
-If any option is given, the script will exit with one of these values: ``O`` if
+If any option is given, the script will exit with one of these values: ``0`` if
 the user site-packages directory is enabled, ``1`` if it was disabled by the
 user, ``2`` if it is disabled for security reasons or by an administrator, and a
 value greater than 2 if there is an error.

@@ -15,8 +15,7 @@ import threading
 import sys
 import tempfile
 import _multiprocessing
-
-from time import time as _time
+import time
 
 from . import context
 from . import process
@@ -302,13 +301,13 @@ class Condition(object):
         if result:
             return result
         if timeout is not None:
-            endtime = _time() + timeout
+            endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
             if endtime is not None:
-                waittime = endtime - _time()
+                waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break
             self.wait(waittime)

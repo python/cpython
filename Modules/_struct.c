@@ -96,7 +96,7 @@ class cache_struct_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=49957cca130ffb63]*/
 
-static int cache_struct_converter(PyObject *, PyObject **);
+static int cache_struct_converter(PyObject *, PyStructObject **);
 
 #include "clinic/_struct.c.h"
 
@@ -1553,7 +1553,8 @@ Return a tuple containing unpacked values.
 
 Values are unpacked according to the format string Struct.format.
 
-The buffer's size in bytes, minus offset, must be at least Struct.size.
+The buffer's size in bytes, starting at position offset, must be
+at least Struct.size.
 
 See help(struct) for more on format strings.
 [clinic start generated code]*/
@@ -1561,16 +1562,38 @@ See help(struct) for more on format strings.
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset)
-/*[clinic end generated code: output=57fac875e0977316 input=97ade52422f8962f]*/
+/*[clinic end generated code: output=57fac875e0977316 input=cafd4851d473c894]*/
 {
     assert(self->s_codes != NULL);
 
-    if (offset < 0)
+    if (offset < 0) {
+        if (offset + self->s_size > 0) {
+            PyErr_Format(StructError,
+                         "not enough data to unpack %zd bytes at offset %zd",
+                         self->s_size,
+                         offset);
+            return NULL;
+        }
+
+        if (offset + buffer->len < 0) {
+            PyErr_Format(StructError,
+                         "offset %zd out of range for %zd-byte buffer",
+                         offset,
+                         buffer->len);
+            return NULL;
+        }
         offset += buffer->len;
-    if (offset < 0 || buffer->len - offset < self->s_size) {
+    }
+
+    if ((buffer->len - offset) < self->s_size) {
         PyErr_Format(StructError,
-            "unpack_from requires a buffer of at least %zd bytes",
-            self->s_size);
+                     "unpack_from requires a buffer of at least %zu bytes for "
+                     "unpacking %zd bytes at offset %zd "
+                     "(actual buffer size is %zd)",
+                     (size_t)self->s_size + (size_t)offset,
+                     self->s_size,
+                     offset,
+                     buffer->len);
         return NULL;
     }
     return s_unpack_internal(self, (char*)buffer->buf + offset);
@@ -1606,7 +1629,7 @@ unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-unpackiter_len(unpackiterobject *self)
+unpackiter_len(unpackiterobject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len;
     if (self->so == NULL)
@@ -1983,8 +2006,8 @@ s_sizeof(PyStructObject *self, void *unused)
 
 static struct PyMethodDef s_methods[] = {
     STRUCT_ITER_UNPACK_METHODDEF
-    {"pack",            (PyCFunction)s_pack, METH_FASTCALL, s_pack__doc__},
-    {"pack_into",       (PyCFunction)s_pack_into, METH_FASTCALL, s_pack_into__doc__},
+    {"pack",            (PyCFunction)(void(*)(void))s_pack, METH_FASTCALL, s_pack__doc__},
+    {"pack_into",       (PyCFunction)(void(*)(void))s_pack_into, METH_FASTCALL, s_pack_into__doc__},
     STRUCT_UNPACK_METHODDEF
     STRUCT_UNPACK_FROM_METHODDEF
     {"__sizeof__",      (PyCFunction)s_sizeof, METH_NOARGS, s_sizeof__doc__},
@@ -2049,7 +2072,7 @@ PyTypeObject PyStructType = {
 static PyObject *cache = NULL;
 
 static int
-cache_struct_converter(PyObject *fmt, PyObject **ptr)
+cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
 {
     PyObject * s_object;
 
@@ -2065,11 +2088,14 @@ cache_struct_converter(PyObject *fmt, PyObject **ptr)
             return 0;
     }
 
-    s_object = PyDict_GetItem(cache, fmt);
+    s_object = PyDict_GetItemWithError(cache, fmt);
     if (s_object != NULL) {
         Py_INCREF(s_object);
-        *ptr = s_object;
+        *ptr = (PyStructObject *)s_object;
         return Py_CLEANUP_SUPPORTED;
+    }
+    else if (PyErr_Occurred()) {
+        return 0;
     }
 
     s_object = PyObject_CallFunctionObjArgs((PyObject *)(&PyStructType), fmt, NULL);
@@ -2079,7 +2105,7 @@ cache_struct_converter(PyObject *fmt, PyObject **ptr)
         /* Attempt to cache the result */
         if (PyDict_SetItem(cache, fmt, s_object) == -1)
             PyErr_Clear();
-        *ptr = s_object;
+        *ptr = (PyStructObject *)s_object;
         return Py_CLEANUP_SUPPORTED;
     }
     return 0;
@@ -2134,7 +2160,7 @@ pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     format = args[0];
 
-    if (!cache_struct_converter(format, &s_object)) {
+    if (!cache_struct_converter(format, (PyStructObject **)&s_object)) {
         return NULL;
     }
     result = s_pack(s_object, args + 1, nargs - 1);
@@ -2162,7 +2188,7 @@ pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     format = args[0];
 
-    if (!cache_struct_converter(format, &s_object)) {
+    if (!cache_struct_converter(format, (PyStructObject **)&s_object)) {
         return NULL;
     }
     result = s_pack_into(s_object, args + 1, nargs - 1);
@@ -2241,8 +2267,8 @@ static struct PyMethodDef module_functions[] = {
     _CLEARCACHE_METHODDEF
     CALCSIZE_METHODDEF
     ITER_UNPACK_METHODDEF
-    {"pack",            (PyCFunction)pack, METH_FASTCALL,   pack_doc},
-    {"pack_into",       (PyCFunction)pack_into, METH_FASTCALL,   pack_into_doc},
+    {"pack",            (PyCFunction)(void(*)(void))pack, METH_FASTCALL,   pack_doc},
+    {"pack_into",       (PyCFunction)(void(*)(void))pack_into, METH_FASTCALL,   pack_into_doc},
     UNPACK_METHODDEF
     UNPACK_FROM_METHODDEF
     {NULL,       NULL}          /* sentinel */

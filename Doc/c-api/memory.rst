@@ -35,7 +35,7 @@ operate within the bounds of the private heap.
 
 It is important to understand that the management of the Python heap is
 performed by the interpreter itself and that the user has no control over it,
-even if she regularly manipulates object pointers to memory blocks inside that
+even if they regularly manipulate object pointers to memory blocks inside that
 heap.  The allocation of heap space for Python objects and other internal
 buffers is performed on demand by the Python memory manager through the Python/C
 API functions listed in this document.
@@ -342,7 +342,7 @@ Configuration                    Name                  PyMem_RawMalloc     PyMem
 Release build                    ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
 Debug build                      ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
 Release build, without pymalloc  ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
-Release build, without pymalloc  ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
+Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
 ===============================  ====================  ==================  =====================  ====================
 
 Legend:

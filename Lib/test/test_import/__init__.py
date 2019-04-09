@@ -8,6 +8,8 @@ import os
 import platform
 import py_compile
 import random
+import shutil
+import subprocess
 import stat
 import sys
 import threading
@@ -17,6 +19,7 @@ import unittest.mock as mock
 import textwrap
 import errno
 import contextlib
+import glob
 
 import test.support
 from test.support import (
@@ -90,13 +93,14 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(cm.exception.path, os.__file__)
         self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'os' \(.*os.py\)")
 
+    @cpython_only
     def test_from_import_missing_attr_has_name_and_so_path(self):
-        import select
+        import _testcapi
         with self.assertRaises(ImportError) as cm:
-            from select import i_dont_exist
-        self.assertEqual(cm.exception.name, 'select')
-        self.assertEqual(cm.exception.path, select.__file__)
-        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from 'select' \(.*\.(so|pyd)\)")
+            from _testcapi import i_dont_exist
+        self.assertEqual(cm.exception.name, '_testcapi')
+        self.assertEqual(cm.exception.path, _testcapi.__file__)
+        self.assertRegex(str(cm.exception), r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)")
 
     def test_from_import_missing_attr_has_name(self):
         with self.assertRaises(ImportError) as cm:
@@ -110,6 +114,27 @@ class ImportTests(unittest.TestCase):
             from os.path import i_dont_exist
         self.assertIn(cm.exception.name, {'posixpath', 'ntpath'})
         self.assertIsNotNone(cm.exception)
+
+    def test_from_import_star_invalid_type(self):
+        import re
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("__all__ = [b'invalid_type']")
+            globals = {}
+            with self.assertRaisesRegex(
+                TypeError, f"{re.escape(name)}\\.__all__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
+        with _ready_to_import() as (name, path):
+            with open(path, 'w') as f:
+                f.write("globals()[b'invalid_type'] = object()")
+            globals = {}
+            with self.assertRaisesRegex(
+                TypeError, f"{re.escape(name)}\\.__dict__ must be str"
+            ):
+                exec(f"from {name} import *", globals)
+            self.assertNotIn(b"invalid_type", globals)
 
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
@@ -437,6 +462,51 @@ class ImportTests(unittest.TestCase):
                     raise exc
         finally:
             del sys.path[0]
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows-specific")
+    def test_dll_dependency_import(self):
+        from _winapi import GetModuleFileName
+        dllname = GetModuleFileName(sys.dllhandle)
+        pydname = importlib.util.find_spec("_sqlite3").origin
+        depname = os.path.join(
+            os.path.dirname(pydname),
+            "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
+
+        with test.support.temp_dir() as tmp:
+            tmp2 = os.path.join(tmp, "DLLs")
+            os.mkdir(tmp2)
+
+            pyexe = os.path.join(tmp, os.path.basename(sys.executable))
+            shutil.copy(sys.executable, pyexe)
+            shutil.copy(dllname, tmp)
+            for f in glob.glob(os.path.join(sys.prefix, "vcruntime*.dll")):
+                shutil.copy(f, tmp)
+
+            shutil.copy(pydname, tmp2)
+
+            env = None
+            env = {k.upper(): os.environ[k] for k in os.environ}
+            env["PYTHONPATH"] = tmp2 + ";" + os.path.dirname(os.__file__)
+
+            # Test 1: import with added DLL directory
+            subprocess.check_call([
+                pyexe, "-Sc", ";".join([
+                    "import os",
+                    "p = os.add_dll_directory({!r})".format(
+                        os.path.dirname(depname)),
+                    "import _sqlite3",
+                    "p.close"
+                ])],
+                stderr=subprocess.STDOUT,
+                env=env,
+                cwd=os.path.dirname(pyexe))
+
+            # Test 2: import with DLL adjacent to PYD
+            shutil.copy(depname, tmp2)
+            subprocess.check_call([pyexe, "-Sc", "import _sqlite3"],
+                                    stderr=subprocess.STDOUT,
+                                    env=env,
+                                    cwd=os.path.dirname(pyexe))
 
 
 @skip_if_dont_write_bytecode
@@ -826,8 +896,11 @@ class PycacheTests(unittest.TestCase):
         unload(TESTFN)
         importlib.invalidate_caches()
         m = __import__(TESTFN)
-        self.assertEqual(m.__file__,
-                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        try:
+            self.assertEqual(m.__file__,
+                             os.path.join(os.curdir, os.path.relpath(pyc_file)))
+        finally:
+            os.remove(pyc_file)
 
     def test___cached__(self):
         # Modules now also have an __cached__ that points to the pyc file.
@@ -1245,6 +1318,19 @@ class CircularImportTests(unittest.TestCase):
             import test.test_import.data.circular_imports.binding
         except ImportError:
             self.fail('circular import with binding a submodule to a name failed')
+
+    def test_crossreference1(self):
+        import test.test_import.data.circular_imports.use
+        import test.test_import.data.circular_imports.source
+
+    def test_crossreference2(self):
+        with self.assertRaises(AttributeError) as cm:
+            import test.test_import.data.circular_imports.source
+        errmsg = str(cm.exception)
+        self.assertIn('test.test_import.data.circular_imports.source', errmsg)
+        self.assertIn('spam', errmsg)
+        self.assertIn('partially initialized module', errmsg)
+        self.assertIn('circular import', errmsg)
 
 
 if __name__ == '__main__':

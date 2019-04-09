@@ -41,6 +41,9 @@ Node classes
    with alternatives (aka "sums"), the left-hand side class is abstract: only
    instances of specific constructor nodes are ever created.
 
+   .. index:: single: ? (question mark); in AST grammar
+   .. index:: single: * (asterisk); in AST grammar
+
    .. attribute:: _fields
 
       Each concrete class has an attribute :attr:`_fields` which gives the names
@@ -58,13 +61,21 @@ Node classes
 
    .. attribute:: lineno
                   col_offset
+                  end_lineno
+                  end_col_offset
 
       Instances of :class:`ast.expr` and :class:`ast.stmt` subclasses have
-      :attr:`lineno` and :attr:`col_offset` attributes.  The :attr:`lineno` is
-      the line number of source text (1-indexed so the first line is line 1) and
-      the :attr:`col_offset` is the UTF-8 byte offset of the first token that
-      generated the node.  The UTF-8 offset is recorded because the parser uses
-      UTF-8 internally.
+      :attr:`lineno`, :attr:`col_offset`, :attr:`lineno`, and :attr:`col_offset`
+      attributes.  The :attr:`lineno` and :attr:`end_lineno` are the first and
+      last line numbers of source text span (1-indexed so the first line is line 1)
+      and the :attr:`col_offset` and :attr:`end_col_offset` are the corresponding
+      UTF-8 byte offsets of the first and last tokens that generated the node.
+      The UTF-8 offset is recorded because the parser uses UTF-8 internally.
+
+      Note that the end positions are not required by the compiler and are
+      therefore optional. The end offset is *after* the last symbol, for example
+      one can get the source segment of a one-line expression node using
+      ``source_line[node.col_offset : node.end_col_offset]``.
 
    The constructor of a class :class:`ast.T` parses its arguments as follows:
 
@@ -78,8 +89,8 @@ Node classes
 
       node = ast.UnaryOp()
       node.op = ast.USub()
-      node.operand = ast.Num()
-      node.operand.n = 5
+      node.operand = ast.Constant()
+      node.operand.value = 5
       node.operand.lineno = 0
       node.operand.col_offset = 0
       node.lineno = 0
@@ -87,8 +98,15 @@ Node classes
 
    or the more compact ::
 
-      node = ast.UnaryOp(ast.USub(), ast.Num(5, lineno=0, col_offset=0),
+      node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
+
+.. deprecated:: 3.8
+
+   Class :class:`ast.Constant` is now used for all constants. Old classes
+   :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
+   :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
+   but they will be removed in future Python releases.
 
 
 .. _abstract-grammar:
@@ -108,10 +126,38 @@ The abstract grammar is currently defined as follows:
 Apart from the node classes, the :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec')
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=-1)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
    filename, mode, ast.PyCF_ONLY_AST)``.
+
+   If ``type_comments=True`` is given, the parser is modified to check
+   and return type comments as specified by :pep:`484` and :pep:`526`.
+   This is equivalent to adding :data:`ast.PyCF_TYPE_COMMENTS` to the
+   flags passed to :func:`compile()`.  This will report syntax errors
+   for misplaced type comments.  Without this flag, type comments will
+   be ignored, and the ``type_comment`` field on selected AST nodes
+   will always be ``None``.  In addition, the locations of ``# type:
+   ignore`` comments will be returned as the ``type_ignores``
+   attribute of :class:`Module` (otherwise it is always an empty list).
+
+   In addition, if ``mode`` is ``'func_type'``, the input syntax is
+   modified to correspond to :pep:`484` "signature type comments",
+   e.g. ``(str, int) -> List[str]``.
+
+   Also, setting ``feature_version`` to the minor version of an
+   earlier Python 3 version will attempt to parse using that version's
+   grammar.  For example, setting ``feature_version=4`` will allow
+   the use of ``async`` and ``await`` as variable names.  The lowest
+   supported value is 4; the highest is ``sys.version_info[1]``.
+
+   .. warning::
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string due to stack depth limitations
+      in Python's AST compiler.
+
+   .. versionchanged:: 3.8
+      Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
 
 
 .. function:: literal_eval(node_or_string)
@@ -125,6 +171,11 @@ and classes for traversing abstract syntax trees:
    untrusted sources without the need to parse the values oneself.  It is not
    capable of evaluating arbitrarily complex expressions, for example involving
    operators or indexing.
+
+   .. warning::
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string due to stack depth limitations
+      in Python's AST compiler.
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
@@ -141,9 +192,17 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.5
       :class:`AsyncFunctionDef` is now supported.
 
-   .. versionchanged:: 3.7
-      The docstring is now exported from the node docstring field, instead of
-      the first body statement.
+
+.. function:: get_source_segment(source, node, *, padded=False)
+
+   Get source code segment of the *source* that generated *node*.
+   If some location information (:attr:`lineno`, :attr:`end_lineno`,
+   :attr:`col_offset`, or :attr:`end_col_offset`) is missing, return ``None``.
+
+   If *padded* is ``True``, the first line of a multi-line statement will
+   be padded with spaces to match its original position.
+
+   .. versionadded:: 3.8
 
 
 .. function:: fix_missing_locations(node)
@@ -157,14 +216,16 @@ and classes for traversing abstract syntax trees:
 
 .. function:: increment_lineno(node, n=1)
 
-   Increment the line number of each node in the tree starting at *node* by *n*.
-   This is useful to "move code" to a different location in a file.
+   Increment the line number and end line number of each node in the tree
+   starting at *node* by *n*. This is useful to "move code" to a different
+   location in a file.
 
 
 .. function:: copy_location(new_node, old_node)
 
-   Copy source location (:attr:`lineno` and :attr:`col_offset`) from *old_node*
-   to *new_node* if possible, and return *new_node*.
+   Copy source location (:attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`,
+   and :attr:`end_col_offset`) from *old_node* to *new_node* if possible,
+   and return *new_node*.
 
 
 .. function:: iter_fields(node)
@@ -233,7 +294,7 @@ and classes for traversing abstract syntax trees:
           def visit_Name(self, node):
               return copy_location(Subscript(
                   value=Name(id='data', ctx=Load()),
-                  slice=Index(value=Str(s=node.id)),
+                  slice=Index(value=Constant(value=node.id)),
                   ctx=node.ctx
               ), node)
 

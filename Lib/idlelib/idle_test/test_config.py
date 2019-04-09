@@ -1,10 +1,9 @@
-'''Test idlelib.config.
-
-Coverage: 96% (100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
+"""Test config, coverage 93%.
+(100% for IdleConfParser, IdleUserConfParser*, ConfigChanges).
 * Exception is OSError clause in Save method.
 Much of IdleConf is also exercised by ConfigDialog and test_configdialog.
-'''
-import copy
+"""
+from idlelib import config
 import sys
 import os
 import tempfile
@@ -12,7 +11,6 @@ from test.support import captured_stderr, findfile
 import unittest
 from unittest import mock
 import idlelib
-from idlelib import config
 from idlelib.idle_test.mock_idle import Func
 
 # Tests should not depend on fortuitous user configurations.
@@ -256,9 +254,9 @@ class IdleConfTest(unittest.TestCase):
                 with self.assertRaises(FileNotFoundError):
                     conf.GetUserCfgDir()
 
-    @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for windows system')
+    @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for Windows system')
     def test_get_user_cfg_dir_windows(self):
-        "Test to get user config directory under windows"
+        "Test to get user config directory under Windows"
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -357,11 +355,11 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.GetSectionList('default', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
         self.assertCountEqual(
             conf.GetSectionList('user', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
 
         with self.assertRaises(config.InvalidConfigSet):
@@ -375,10 +373,6 @@ class IdleConfTest(unittest.TestCase):
         eq = self.assertEqual
         eq(conf.GetHighlight('IDLE Classic', 'normal'), {'foreground': '#000000',
                                                          'background': '#ffffff'})
-        eq(conf.GetHighlight('IDLE Classic', 'normal', 'fg'), '#000000')
-        eq(conf.GetHighlight('IDLE Classic', 'normal', 'bg'), '#ffffff')
-        with self.assertRaises(config.InvalidFgBg):
-            conf.GetHighlight('IDLE Classic', 'normal', 'fb')
 
         # Test cursor (this background should be normal-background)
         eq(conf.GetHighlight('IDLE Classic', 'cursor'), {'foreground': 'black',
@@ -453,7 +447,7 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
-            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch','ZzDummy'])
+            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy'])
 
     def test_get_extn_name_for_event(self):
         userextn.read_string('''

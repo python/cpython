@@ -2,6 +2,7 @@
 #include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
+#include <wchar.h>
 
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
@@ -112,9 +113,9 @@ static int test_forced_io_encoding(void)
     printf("--- Set errors only ---\n");
     check_stdio_details(NULL, "ignore");
     printf("--- Set encoding only ---\n");
-    check_stdio_details("latin-1", NULL);
+    check_stdio_details("iso8859-1", NULL);
     printf("--- Set encoding and errors ---\n");
-    check_stdio_details("latin-1", "replace");
+    check_stdio_details("iso8859-1", "replace");
 
     /* Check calling after initialization fails */
     Py_Initialize();
@@ -130,23 +131,94 @@ static int test_forced_io_encoding(void)
  * Test parts of the C-API that work before initialization
  *********************************************************/
 
+/* The pre-initialization tests tend to break by segfaulting, so explicitly
+ * flushed progress messages make the broken API easier to find when they fail.
+ */
+#define _Py_EMBED_PREINIT_CHECK(msg) \
+    do {printf(msg); fflush(stdout);} while (0);
+
 static int test_pre_initialization_api(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* Leading "./" ensures getpath.c can still find the standard library */
+    _Py_EMBED_PREINIT_CHECK("Checking Py_DecodeLocale\n");
     wchar_t *program = Py_DecodeLocale("./spam", NULL);
     if (program == NULL) {
         fprintf(stderr, "Fatal error: cannot decode program name\n");
         return 1;
     }
+    _Py_EMBED_PREINIT_CHECK("Checking Py_SetProgramName\n");
     Py_SetProgramName(program);
 
+    _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
     Py_Initialize();
+    _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
+    PyRun_SimpleString("import sys; "
+                       "print('sys.executable:', sys.executable)");
+    _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
     Py_Finalize();
 
+    _Py_EMBED_PREINIT_CHECK("Freeing memory allocated by Py_DecodeLocale\n");
     PyMem_RawFree(program);
     return 0;
 }
 
+
+/* bpo-33042: Ensure embedding apps can predefine sys module options */
+static int test_pre_initialization_sys_options(void)
+{
+    /* We allocate a couple of the options dynamically, and then delete
+     * them before calling Py_Initialize. This ensures the interpreter isn't
+     * relying on the caller to keep the passed in strings alive.
+     */
+    const wchar_t *static_warnoption = L"once";
+    const wchar_t *static_xoption = L"also_not_an_option=2";
+    size_t warnoption_len = wcslen(static_warnoption);
+    size_t xoption_len = wcslen(static_xoption);
+    wchar_t *dynamic_once_warnoption = \
+             (wchar_t *) calloc(warnoption_len+1, sizeof(wchar_t));
+    wchar_t *dynamic_xoption = \
+             (wchar_t *) calloc(xoption_len+1, sizeof(wchar_t));
+    wcsncpy(dynamic_once_warnoption, static_warnoption, warnoption_len+1);
+    wcsncpy(dynamic_xoption, static_xoption, xoption_len+1);
+
+    _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption\n");
+    PySys_AddWarnOption(L"default");
+    _Py_EMBED_PREINIT_CHECK("Checking PySys_ResetWarnOptions\n");
+    PySys_ResetWarnOptions();
+    _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption linked list\n");
+    PySys_AddWarnOption(dynamic_once_warnoption);
+    PySys_AddWarnOption(L"module");
+    PySys_AddWarnOption(L"default");
+    _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
+    PySys_AddXOption(L"not_an_option=1");
+    PySys_AddXOption(dynamic_xoption);
+
+    /* Delete the dynamic options early */
+    free(dynamic_once_warnoption);
+    dynamic_once_warnoption = NULL;
+    free(dynamic_xoption);
+    dynamic_xoption = NULL;
+
+    _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
+    _testembed_Py_Initialize();
+    _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
+    PyRun_SimpleString("import sys; "
+                       "print('sys.warnoptions:', sys.warnoptions); "
+                       "print('sys._xoptions:', sys._xoptions); "
+                       "warnings = sys.modules['warnings']; "
+                       "latest_filters = [f[0] for f in warnings.filters[:3]]; "
+                       "print('warnings.filters[:3]:', latest_filters)");
+    _Py_EMBED_PREINIT_CHECK("Finalizing interpreter\n");
+    Py_Finalize();
+
+    return 0;
+}
+
+
+/* bpo-20891: Avoid race condition when initialising the GIL */
 static void bpo20891_thread(void *lockp)
 {
     PyThread_type_lock lock = *((PyThread_type_lock*)lockp);
@@ -166,6 +238,9 @@ static void bpo20891_thread(void *lockp)
 
 static int test_bpo20891(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
        call PyEval_InitThreads() for us in this case. */
@@ -194,6 +269,470 @@ static int test_bpo20891(void)
     return 0;
 }
 
+static int test_initialize_twice(void)
+{
+    _testembed_Py_Initialize();
+
+    /* bpo-33932: Calling Py_Initialize() twice should do nothing
+     * (and not crash!). */
+    Py_Initialize();
+
+    Py_Finalize();
+
+    return 0;
+}
+
+static int test_initialize_pymain(void)
+{
+    wchar_t *argv[] = {L"PYTHON", L"-c",
+                       L"import sys; print(f'Py_Main() after Py_Initialize: sys.argv={sys.argv}')",
+                       L"arg2"};
+    _testembed_Py_Initialize();
+
+    /* bpo-34008: Calling Py_Main() after Py_Initialize() must not crash */
+    Py_Main(Py_ARRAY_LENGTH(argv), argv);
+
+    Py_Finalize();
+
+    return 0;
+}
+
+
+static int
+dump_config_impl(void)
+{
+    PyObject *config = _Py_GetConfigsAsDict();
+    if (config == NULL) {
+        return -1;
+    }
+
+    PyObject *res;
+    PyObject *json = PyImport_ImportModule("json");
+    if (json) {
+        res = PyObject_CallMethod(json, "dumps", "O", config);
+        Py_DECREF(json);
+    }
+    else {
+        res = NULL;
+    }
+    Py_CLEAR(config);
+    if (res == NULL) {
+        return -1;
+    }
+
+    PySys_FormatStdout("%S\n", res);
+    Py_DECREF(res);
+
+    return 0;
+}
+
+
+static void
+dump_config(void)
+{
+    if (dump_config_impl() < 0) {
+        fprintf(stderr, "failed to dump the configuration:\n");
+        PyErr_Print();
+    }
+}
+
+
+static int test_init_default_config(void)
+{
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_global_config(void)
+{
+    /* FIXME: test Py_IgnoreEnvironmentFlag */
+
+    putenv("PYTHONUTF8=0");
+    Py_UTF8Mode = 1;
+
+    /* Test initialization from global configuration variables (Py_xxx) */
+    Py_SetProgramName(L"./globalvar");
+
+    /* Py_IsolatedFlag is not tested */
+    Py_NoSiteFlag = 1;
+    Py_BytesWarningFlag = 1;
+
+    putenv("PYTHONINSPECT=");
+    Py_InspectFlag = 1;
+
+    putenv("PYTHONOPTIMIZE=0");
+    Py_InteractiveFlag = 1;
+
+    putenv("PYTHONDEBUG=0");
+    Py_OptimizeFlag = 2;
+
+    /* Py_DebugFlag is not tested */
+
+    putenv("PYTHONDONTWRITEBYTECODE=");
+    Py_DontWriteBytecodeFlag = 1;
+
+    putenv("PYTHONVERBOSE=0");
+    Py_VerboseFlag = 1;
+
+    Py_QuietFlag = 1;
+    Py_NoUserSiteDirectory = 1;
+
+    putenv("PYTHONUNBUFFERED=");
+    Py_UnbufferedStdioFlag = 1;
+
+    Py_FrozenFlag = 1;
+
+    /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
+    /* FIXME: test Py_LegacyWindowsStdioFlag */
+
+    Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_from_config(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+
+    putenv("PYTHONMALLOC=malloc_debug");
+    preconfig.allocator = "malloc";
+
+    putenv("PYTHONUTF8=0");
+    Py_UTF8Mode = 0;
+    preconfig.utf8_mode = 1;
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    /* Test _Py_InitializeFromConfig() */
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config.install_signal_handlers = 0;
+
+    /* FIXME: test use_environment */
+
+    putenv("PYTHONHASHSEED=42");
+    config.use_hash_seed = 1;
+    config.hash_seed = 123;
+
+    /* dev_mode=1 is tested in test_init_dev_mode() */
+
+    putenv("PYTHONFAULTHANDLER=");
+    config.faulthandler = 1;
+
+    putenv("PYTHONTRACEMALLOC=0");
+    config.tracemalloc = 2;
+
+    putenv("PYTHONPROFILEIMPORTTIME=0");
+    config.import_time = 1;
+
+    config.show_ref_count = 1;
+    config.show_alloc_count = 1;
+    /* FIXME: test dump_refs: bpo-34223 */
+
+    putenv("PYTHONMALLOCSTATS=0");
+    config.malloc_stats = 1;
+
+    putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
+    config.pycache_prefix = L"conf_pycache_prefix";
+
+    Py_SetProgramName(L"./globalvar");
+    config.program_name = L"./conf_program_name";
+
+    static wchar_t* argv[] = {
+        L"python3",
+        L"-c",
+        L"pass",
+        L"arg2",
+    };
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+
+    config.program = L"conf_program";
+
+    static wchar_t* xoptions[3] = {
+        L"core_xoption1=3",
+        L"core_xoption2=",
+        L"core_xoption3",
+    };
+    config.xoptions.length = Py_ARRAY_LENGTH(xoptions);
+    config.xoptions.items = xoptions;
+
+    static wchar_t* warnoptions[1] = {
+        L"error::ResourceWarning",
+    };
+    config.warnoptions.length = Py_ARRAY_LENGTH(warnoptions);
+    config.warnoptions.items = warnoptions;
+
+    /* FIXME: test module_search_path_env */
+    /* FIXME: test home */
+    /* FIXME: test path config: module_search_path .. dll_path */
+
+    putenv("PYTHONVERBOSE=0");
+    Py_VerboseFlag = 0;
+    config.verbose = 1;
+
+    Py_NoSiteFlag = 0;
+    config.site_import = 0;
+
+    Py_BytesWarningFlag = 0;
+    config.bytes_warning = 1;
+
+    putenv("PYTHONINSPECT=");
+    Py_InspectFlag = 0;
+    config.inspect = 1;
+
+    Py_InteractiveFlag = 0;
+    config.interactive = 1;
+
+    putenv("PYTHONOPTIMIZE=0");
+    Py_OptimizeFlag = 1;
+    config.optimization_level = 2;
+
+    /* FIXME: test parser_debug */
+
+    putenv("PYTHONDONTWRITEBYTECODE=");
+    Py_DontWriteBytecodeFlag = 0;
+    config.write_bytecode = 0;
+
+    Py_QuietFlag = 0;
+    config.quiet = 1;
+
+    putenv("PYTHONUNBUFFERED=");
+    Py_UnbufferedStdioFlag = 0;
+    config.buffered_stdio = 0;
+
+    putenv("PYTHONIOENCODING=cp424");
+    Py_SetStandardStreamEncoding("ascii", "ignore");
+#ifdef MS_WINDOWS
+    /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
+       Force it to 0 through the config. */
+    config.legacy_windows_stdio = 0;
+#endif
+    config.stdio_encoding = "iso8859-1";
+    config.stdio_errors = "replace";
+
+    putenv("PYTHONNOUSERSITE=");
+    Py_NoUserSiteDirectory = 0;
+    config.user_site_directory = 0;
+
+    config._check_hash_pycs_mode = "always";
+
+    Py_FrozenFlag = 0;
+    config._frozen = 1;
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static void test_init_env_putenvs(void)
+{
+    putenv("PYTHONHASHSEED=42");
+    putenv("PYTHONMALLOC=malloc");
+    putenv("PYTHONTRACEMALLOC=2");
+    putenv("PYTHONPROFILEIMPORTTIME=1");
+    putenv("PYTHONMALLOCSTATS=1");
+    putenv("PYTHONUTF8=1");
+    putenv("PYTHONVERBOSE=1");
+    putenv("PYTHONINSPECT=1");
+    putenv("PYTHONOPTIMIZE=2");
+    putenv("PYTHONDONTWRITEBYTECODE=1");
+    putenv("PYTHONUNBUFFERED=1");
+    putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
+    putenv("PYTHONNOUSERSITE=1");
+    putenv("PYTHONFAULTHANDLER=1");
+    putenv("PYTHONIOENCODING=iso8859-1:replace");
+    /* FIXME: test PYTHONWARNINGS */
+    /* FIXME: test PYTHONEXECUTABLE */
+    /* FIXME: test PYTHONHOME */
+    /* FIXME: test PYTHONDEBUG */
+    /* FIXME: test PYTHONDUMPREFS */
+    /* FIXME: test PYTHONCOERCECLOCALE */
+    /* FIXME: test PYTHONPATH */
+}
+
+
+static int test_init_env(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    test_init_env_putenvs();
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static void test_init_env_dev_mode_putenvs(void)
+{
+    test_init_env_putenvs();
+    putenv("PYTHONMALLOC=");
+    putenv("PYTHONFAULTHANDLER=");
+    putenv("PYTHONDEVMODE=1");
+}
+
+
+static int test_init_env_dev_mode(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    test_init_env_dev_mode_putenvs();
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_env_dev_mode_alloc(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    test_init_env_dev_mode_putenvs();
+    putenv("PYTHONMALLOC=malloc");
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_isolated(void)
+{
+    _PyInitError err;
+
+    /* Test _PyCoreConfig.isolated=1 */
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    Py_IsolatedFlag = 0;
+    config.isolated = 1;
+
+    /* Use path starting with "./" avoids a search along the PATH */
+    config.program_name = L"./_testembed";
+
+    test_init_env_dev_mode_putenvs();
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* _PyPreConfig.isolated=1, _PyCoreConfig.isolated=0 */
+static int test_preinit_isolated1(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    preconfig.isolated = 1;
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config.program_name = L"./_testembed";
+
+    test_init_env_dev_mode_putenvs();
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* _PyPreConfig.isolated=0, _PyCoreConfig.isolated=1 */
+static int test_preinit_isolated2(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    preconfig.isolated = 0;
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    /* Test _PyCoreConfig.isolated=1 */
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    Py_IsolatedFlag = 0;
+    config.isolated = 1;
+
+    /* Use path starting with "./" avoids a search along the PATH */
+    config.program_name = L"./_testembed";
+
+    test_init_env_dev_mode_putenvs();
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_dev_mode(void)
+{
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    putenv("PYTHONFAULTHANDLER=");
+    putenv("PYTHONMALLOC=");
+    config.dev_mode = 1;
+    config.program_name = L"./_testembed";
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_run_main(void)
+{
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import sys; "
+                        L"print(f'_Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.program_name = L"./python3";
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -217,7 +756,21 @@ static struct TestCase TestCases[] = {
     { "forced_io_encoding", test_forced_io_encoding },
     { "repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters },
     { "pre_initialization_api", test_pre_initialization_api },
+    { "pre_initialization_sys_options", test_pre_initialization_sys_options },
     { "bpo20891", test_bpo20891 },
+    { "initialize_twice", test_initialize_twice },
+    { "initialize_pymain", test_initialize_pymain },
+    { "init_default_config", test_init_default_config },
+    { "init_global_config", test_init_global_config },
+    { "init_from_config", test_init_from_config },
+    { "init_env", test_init_env },
+    { "init_env_dev_mode", test_init_env_dev_mode },
+    { "init_env_dev_mode_alloc", test_init_env_dev_mode_alloc },
+    { "init_dev_mode", test_init_dev_mode },
+    { "init_isolated", test_init_isolated },
+    { "preinit_isolated1", test_preinit_isolated1 },
+    { "preinit_isolated2", test_preinit_isolated2 },
+    { "run_main", test_run_main },
     { NULL, NULL }
 };
 
@@ -232,13 +785,13 @@ int main(int argc, char *argv[])
 
     /* No match found, or no test name provided, so display usage */
     printf("Python " PY_VERSION " _testembed executable for embedded interpreter tests\n"
-           "Normally executed via 'EmbeddingTests' in Lib/test/test_capi.py\n\n"
+           "Normally executed via 'EmbeddingTests' in Lib/test/test_embed.py\n\n"
            "Usage: %s TESTNAME\n\nAll available tests:\n", argv[0]);
     for (struct TestCase *tc = TestCases; tc && tc->name; tc++) {
         printf("  %s\n", tc->name);
     }
 
-    /* Non-zero exit code will cause test_capi.py tests to fail.
+    /* Non-zero exit code will cause test_embed.py tests to fail.
        This is intentional. */
     return -1;
 }

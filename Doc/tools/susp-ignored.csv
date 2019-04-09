@@ -14,9 +14,7 @@ faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,
 faq/programming,,::,for x in sequence[::-1]:
 faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
-faq/windows,,:bd8afb90ebf2,"Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32"
-howto/cporting,,:encode,"if (!PyArg_ParseTuple(args, ""O:encode_object"", &myobj))"
-howto/cporting,,:say,"if (!PyArg_ParseTuple(args, ""U:say_hello"", &name))"
+faq/windows,,:d48eceb,"Python 3.6.4 (v3.6.4:d48eceb, Dec 19 2017, 06:04:45) [MSC v.1900 32 bit (Intel)] on win32"
 howto/curses,,:black,"colors when it activates color mode.  They are: 0:black, 1:red,"
 howto/curses,,:red,"colors when it activates color mode.  They are: 0:black, 1:red,"
 howto/curses,,:green,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
@@ -180,13 +178,23 @@ library/pathlib,,:Program,>>> PureWindowsPath('c:Program Files/').anchor
 library/pdb,,:lineno,filename:lineno
 library/pickle,,:memory,"conn = sqlite3.connect("":memory:"")"
 library/posix,,`,"CFLAGS=""`getconf LFS_CFLAGS`"" OPT=""-g -O2 $CFLAGS"""
-library/pprint,,::,"'Programming Language :: Python :: 2 :: Only'],"
 library/pprint,,::,"'Programming Language :: Python :: 2.6',"
 library/pprint,,::,"'Programming Language :: Python :: 2.7',"
+library/pprint,,::,"'classifiers': ['Development Status :: 3 - Alpha',"
+library/pprint,,::,"'Intended Audience :: Developers',"
+library/pprint,,::,"'License :: OSI Approved :: MIT License',"
+library/pprint,,::,"'Programming Language :: Python :: 2',"
+library/pprint,,::,"'Programming Language :: Python :: 3',"
+library/pprint,,::,"'Programming Language :: Python :: 3.2',"
+library/pprint,,::,"'Programming Language :: Python :: 3.3',"
+library/pprint,,::,"'Programming Language :: Python :: 3.4',"
+library/pprint,,::,"'Topic :: Software Development :: Build Tools'],"
 library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
 library/random,,:len,new_diff = mean(combined[:len(drug)]) - mean(combined[len(drug):])
+library/readline,,:bind,"python:bind -v"
+library/readline,,:bind,"python:bind ^I rl_complete"
 library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
@@ -207,6 +215,7 @@ library/stdtypes,,::,>>> hash(v[::-2]) == hash(b'abcefg'[::-2])
 library/stdtypes,,:len,s[len(s):len(s)]
 library/stdtypes,,::,>>> y = m[::2]
 library/stdtypes,,::,>>> z = y[::-2]
+library/string,,`,"!""#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
 library/subprocess,,`,"output=`dmesg | grep hda`"
 library/subprocess,,`,"output=`mycmd myarg`"
 library/tarfile,,:bz2,

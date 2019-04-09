@@ -54,7 +54,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
 
    This function is useful when creating a gateway that wraps CGI or a CGI-like
    protocol such as FastCGI.  Typically, servers providing such protocols will
-   include a ``HTTPS`` variable with a value of "1" "yes", or "on" when a request
+   include a ``HTTPS`` variable with a value of "1", "yes", or "on" when a request
    is received via SSL.  So, this function returns "https" if such a value is
    found, and "http" otherwise.
 
@@ -173,6 +173,8 @@ also provides these miscellaneous utilities:
       for chunk in wrapper:
           print(chunk)
 
+   .. deprecated:: 3.8
+      Support for :meth:`sequence protocol <__getitem__>` is deprecated.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -397,7 +399,7 @@ Paste" library.
    Wrap *application* and return a new WSGI application object.  The returned
    application will forward all requests to the original *application*, and will
    check that both the *application* and the server invoking it are conforming to
-   the WSGI specification and to RFC 2616.
+   the WSGI specification and to :rfc:`2616`.
 
    Any detected nonconformance results in an :exc:`AssertionError` being raised;
    note, however, that how these errors are handled is server-dependent.  For
@@ -737,7 +739,7 @@ input, output, and error streams.
 
 .. function:: read_environ()
 
-   Transcode CGI variables from ``os.environ`` to PEP 3333 "bytes in unicode"
+   Transcode CGI variables from ``os.environ`` to :pep:`3333` "bytes in unicode"
    strings, returning a new dictionary.  This function is used by
    :class:`CGIHandler` and :class:`IISCGIHandler` in place of directly using
    ``os.environ``, which is not necessarily WSGI-compliant on all platforms
@@ -779,3 +781,35 @@ This is a working "Hello World" WSGI application::
 
        # Serve until process is killed
        httpd.serve_forever()
+
+
+Example of a small wsgiref-based web server::
+
+   # Takes a path to serve from and an optional port number (defaults to 8000),
+   # then tries to serve files.  Mime types are guessed from the file names, 404
+   # errors are raised if the file is not found.
+   import sys
+   import os
+   import mimetypes
+   from wsgiref import simple_server, util
+
+   def app(environ, respond):
+       fn = os.path.join(path, environ['PATH_INFO'][1:])
+       if '.' not in fn.split(os.path.sep)[-1]:
+           fn = os.path.join(fn, 'index.html')
+       type = mimetypes.guess_type(fn)[0]
+
+       if os.path.exists(fn):
+           respond('200 OK', [('Content-Type', type)])
+           return util.FileWrapper(open(fn, "rb"))
+       else:
+           respond('404 Not Found', [('Content-Type', 'text/plain')])
+           return [b'not found']
+
+    path = sys.argv[1]
+    port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
+    with simple_server.make_server('', port, app) as httpd:
+        print("Serving {} on port {}, control-C to stop".format(path, port))
+
+        # Serve until process is killed
+        httpd.serve_forever()

@@ -579,13 +579,21 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('0c', 0)
 
     def test_boundary_error_message(self):
-        regex = (
+        regex1 = (
             r'pack_into requires a buffer of at least 6 '
             r'bytes for packing 1 bytes at offset 5 '
             r'\(actual buffer size is 1\)'
         )
-        with self.assertRaisesRegex(struct.error, regex):
+        with self.assertRaisesRegex(struct.error, regex1):
             struct.pack_into('b', bytearray(1), 5, 1)
+
+        regex2 = (
+            r'unpack_from requires a buffer of at least 6 '
+            r'bytes for unpacking 1 bytes at offset 5 '
+            r'\(actual buffer size is 1\)'
+        )
+        with self.assertRaisesRegex(struct.error, regex2):
+            struct.unpack_from('b', bytearray(1), 5)
 
     def test_boundary_error_message_with_negative_offset(self):
         byte_list = bytearray(10)
@@ -599,15 +607,33 @@ class StructTest(unittest.TestCase):
                 'offset -11 out of range for 10-byte buffer'):
             struct.pack_into('<B', byte_list, -11, 123)
 
+        with self.assertRaisesRegex(
+                struct.error,
+                r'not enough data to unpack 4 bytes at offset -2'):
+            struct.unpack_from('<I', byte_list, -2)
+
+        with self.assertRaisesRegex(
+                struct.error,
+                "offset -11 out of range for 10-byte buffer"):
+            struct.unpack_from('<B', byte_list, -11)
+
     def test_boundary_error_message_with_large_offset(self):
         # Test overflows cause by large offset and value size (issue 30245)
-        regex = (
+        regex1 = (
             r'pack_into requires a buffer of at least ' + str(sys.maxsize + 4) +
             r' bytes for packing 4 bytes at offset ' + str(sys.maxsize) +
             r' \(actual buffer size is 10\)'
         )
-        with self.assertRaisesRegex(struct.error, regex):
+        with self.assertRaisesRegex(struct.error, regex1):
             struct.pack_into('<I', bytearray(10), sys.maxsize, 1)
+
+        regex2 = (
+            r'unpack_from requires a buffer of at least ' + str(sys.maxsize + 4) +
+            r' bytes for unpacking 4 bytes at offset ' + str(sys.maxsize) +
+            r' \(actual buffer size is 10\)'
+        )
+        with self.assertRaisesRegex(struct.error, regex2):
+            struct.unpack_from('<I', bytearray(10), sys.maxsize)
 
     def test_issue29802(self):
         # When the second argument of struct.unpack() was of wrong type

@@ -91,6 +91,12 @@ ENTITY_XML = """\
 <document>&entity;</document>
 """
 
+EXTERNAL_ENTITY_XML = """\
+<!DOCTYPE points [
+<!ENTITY entity SYSTEM "file:///non-existing-file.xml">
+]>
+<document>&entity;</document>
+"""
 
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
@@ -617,6 +623,7 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 'junk after document element: line 1, column 12')
 
+        self.addCleanup(support.unlink, TESTFN)
         with open(TESTFN, "wb") as f:
             f.write(b"<document />junk")
         it = iterparse(TESTFN)
@@ -705,7 +712,7 @@ class ElementTreeTest(unittest.TestCase):
     # Element.getchildren() and ElementTree.getiterator() are deprecated.
     @checkwarnings(("This method will be removed in future versions.  "
                     "Use .+ instead.",
-                    (DeprecationWarning, PendingDeprecationWarning)))
+                    DeprecationWarning))
     def test_getchildren(self):
         # Test Element.getchildren()
 
@@ -859,6 +866,13 @@ class ElementTreeTest(unittest.TestCase):
         parser.feed(ENTITY_XML)
         root = parser.close()
         self.serialize_check(root, '<document>text</document>')
+
+        # 4) external (SYSTEM) entity
+
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.XML(EXTERNAL_ENTITY_XML)
+        self.assertEqual(str(cm.exception),
+                'undefined entity &entity;: line 4, column 10')
 
     def test_namespace(self):
         # Test namespace issues.
@@ -1029,6 +1043,22 @@ class ElementTreeTest(unittest.TestCase):
                 serialized = serialize(ET.XML('<%s></%s>' % (elem,elem)),
                                        method='html')
                 self.assertEqual(serialized, expected)
+
+    def test_dump_attribute_order(self):
+        # See BPO 34160
+        e = ET.Element('cirriculum', status='public', company='example')
+        with support.captured_stdout() as stdout:
+            ET.dump(e)
+        self.assertEqual(stdout.getvalue(),
+                         '<cirriculum status="public" company="example" />\n')
+
+    def test_tree_write_attribute_order(self):
+        # See BPO 34160
+        root = ET.Element('cirriculum', status='public', company='example')
+        self.assertEqual(serialize(root),
+                         '<cirriculum status="public" company="example" />')
+        self.assertEqual(serialize(root, method='html'),
+                '<cirriculum status="public" company="example"></cirriculum>')
 
 
 class XMLPullParserTest(unittest.TestCase):
@@ -1781,6 +1811,28 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         self.assertRaises(TypeError, e.append, 'b')
         self.assertRaises(TypeError, e.extend, [ET.Element('bar'), 'foo'])
         self.assertRaises(TypeError, e.insert, 0, 'foo')
+        e[:] = [ET.Element('bar')]
+        with self.assertRaises(TypeError):
+            e[0] = 'foo'
+        with self.assertRaises(TypeError):
+            e[:] = [ET.Element('bar'), 'foo']
+
+        if hasattr(e, '__setstate__'):
+            state = {
+                'tag': 'tag',
+                '_children': [None],  # non-Element
+                'attrib': 'attr',
+                'tail': 'tail',
+                'text': 'text',
+            }
+            self.assertRaises(TypeError, e.__setstate__, state)
+
+        if hasattr(e, '__deepcopy__'):
+            class E(ET.Element):
+                def __deepcopy__(self, memo):
+                    return None  # non-Element
+            e[:] = [E('bar')]
+            self.assertRaises(TypeError, copy.deepcopy, e)
 
     def test_cyclic_gc(self):
         class Dummy:
@@ -1967,26 +2019,6 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         elem = b.close()
         self.assertEqual(elem[0].tail, 'ABCDEFGHIJKL')
 
-    def test_element_iter(self):
-        # Issue #27863
-        state = {
-            'tag': 'tag',
-            '_children': [None],  # non-Element
-            'attrib': 'attr',
-            'tail': 'tail',
-            'text': 'text',
-        }
-
-        e = ET.Element('tag')
-        try:
-            e.__setstate__(state)
-        except AttributeError:
-            e.__dict__ = state
-
-        it = e.iter()
-        self.assertIs(next(it), e)
-        self.assertRaises(AttributeError, next, it)
-
     def test_subscr(self):
         # Issue #27863
         class X:
@@ -2145,6 +2177,21 @@ class ElementTreeTypeTest(unittest.TestCase):
 
         mye = MyElement('joe')
         self.assertEqual(mye.newmethod(), 'joe')
+
+    def test_Element_subclass_find(self):
+        class MyElement(ET.Element):
+            pass
+
+        e = ET.Element('foo')
+        e.text = 'text'
+        sub = MyElement('bar')
+        sub.text = 'subtext'
+        e.append(sub)
+        self.assertEqual(e.findtext('bar'), 'subtext')
+        self.assertEqual(e.find('bar').tag, 'bar')
+        found = list(e.findall('bar'))
+        self.assertEqual(len(found), 1, found)
+        self.assertEqual(found[0].tag, 'bar')
 
 
 class ElementFindTest(unittest.TestCase):
@@ -2398,7 +2445,7 @@ class ElementIterTest(unittest.TestCase):
 
     # Element.getiterator() is deprecated.
     @checkwarnings(("This method will be removed in future versions.  "
-                    "Use .+ instead.", PendingDeprecationWarning))
+                    "Use .+ instead.", DeprecationWarning))
     def test_getiterator(self):
         doc = ET.XML('''
             <document>
@@ -2604,14 +2651,6 @@ class XMLParserTest(unittest.TestCase):
         self.assertEqual(e[0].text, '22')
 
     def test_constructor_args(self):
-        # Positional args. The first (html) is not supported, but should be
-        # nevertheless correctly accepted.
-        with self.assertWarnsRegex(DeprecationWarning, r'\bhtml\b'):
-            parser = ET.XMLParser(None, ET.TreeBuilder(), 'utf-8')
-        parser.feed(self.sample1)
-        self._check_sample_element(parser.close())
-
-        # Now as keyword args.
         parser2 = ET.XMLParser(encoding='utf-8',
                                target=ET.TreeBuilder())
         parser2.feed(self.sample1)
@@ -2625,13 +2664,6 @@ class XMLParserTest(unittest.TestCase):
         self._check_sample_element(parser.close())
 
     def test_doctype_warning(self):
-        parser = ET.XMLParser()
-        with self.assertWarns(DeprecationWarning):
-            parser.doctype('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
-                'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd')
-        parser.feed('<html/>')
-        parser.close()
-
         with warnings.catch_warnings():
             warnings.simplefilter('error', DeprecationWarning)
             parser = ET.XMLParser()
@@ -2641,21 +2673,20 @@ class XMLParserTest(unittest.TestCase):
     def test_subclass_doctype(self):
         _doctype = None
         class MyParserWithDoctype(ET.XMLParser):
-            def doctype(self, name, pubid, system):
+            def doctype(self, *args, **kwargs):
                 nonlocal _doctype
-                _doctype = (name, pubid, system)
+                _doctype = (args, kwargs)
 
         parser = MyParserWithDoctype()
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(RuntimeWarning, 'doctype'):
             parser.feed(self.sample2)
         parser.close()
-        self.assertEqual(_doctype,
-            ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
-             'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+        self.assertIsNone(_doctype)
 
         _doctype = _doctype2 = None
         with warnings.catch_warnings():
             warnings.simplefilter('error', DeprecationWarning)
+            warnings.simplefilter('error', RuntimeWarning)
             class DoctypeParser:
                 def doctype(self, name, pubid, system):
                     nonlocal _doctype2
@@ -2673,6 +2704,7 @@ class XMLParserTest(unittest.TestCase):
         '''Ensure that ordinary usage is not deprecated (Issue 19176)'''
         with warnings.catch_warnings():
             warnings.simplefilter('error', DeprecationWarning)
+            warnings.simplefilter('error', RuntimeWarning)
             class MyParserWithoutDoctype(ET.XMLParser):
                 pass
             parser = MyParserWithoutDoctype()
@@ -2849,9 +2881,6 @@ class ElementSlicingTest(unittest.TestCase):
 
 
 class IOTest(unittest.TestCase):
-    def tearDown(self):
-        support.unlink(TESTFN)
-
     def test_encoding(self):
         # Test encoding issues.
         elem = ET.Element("tag")
@@ -2922,12 +2951,14 @@ class IOTest(unittest.TestCase):
                      "<tag key=\"åöö&lt;&gt;\" />" % enc).encode(enc))
 
     def test_write_to_filename(self):
+        self.addCleanup(support.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         tree.write(TESTFN)
         with open(TESTFN, 'rb') as f:
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_text_file(self):
+        self.addCleanup(support.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         with open(TESTFN, 'w', encoding='utf-8') as f:
             tree.write(f, encoding='unicode')
@@ -2936,6 +2967,7 @@ class IOTest(unittest.TestCase):
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_binary_file(self):
+        self.addCleanup(support.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         with open(TESTFN, 'wb') as f:
             tree.write(f)
@@ -2944,6 +2976,7 @@ class IOTest(unittest.TestCase):
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_binary_file_with_bom(self):
+        self.addCleanup(support.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         # test BOM writing to buffered file
         with open(TESTFN, 'wb') as f:
