@@ -2015,7 +2015,7 @@ SimpleExtendsException(PyExc_Warning, UnicodeWarning,
  */
 SimpleExtendsException(PyExc_Warning, BytesWarning,
     "Base class for warnings about bytes and bytearray related problems, \n"
-    "mostly related to conversion from str or comparing to str.");
+    "mostly related to comparing to str.");
 
 /* Pre-computed MemoryError instance.  Best to create this as early as
  * possible and not wait until a MemoryError is actually raised!
