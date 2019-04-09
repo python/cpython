@@ -63,28 +63,27 @@ static PyTypeObject PyProfiler_Type;
 
 static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
 {
-    _PyTime_t result;
     PyObject *o = _PyObject_CallNoArg(pObj->externalTimer);
     if (o == NULL) {
         PyErr_WriteUnraisable(pObj->externalTimer);
         return 0;
     }
+
+    _PyTime_t result;
+    int err;
     if (pObj->externalTimerUnit > 0.0) {
         /* interpret the result as an integer that will be scaled
            in profiler_getstats() */
-        (void)_PyTime_FromNanosecondsObject(&result, o);
-        // Error is checked below.
+        err = _PyTime_FromNanosecondsObject(&result, o);
     }
     else {
         /* interpret the result as a double measured in seconds.
            As the profiler works with _PyTime_t internally
            we convert it to a large integer */
-        double val = PyFloat_AsDouble(o);
-        /* error handling delayed to the code below */
-        result = (_PyTime_t)(val * SEC_TO_NS);
+        err = _PyTime_FromSecondsObject(&result, o, _PyTime_ROUND_FLOOR);
     }
     Py_DECREF(o);
-    if (PyErr_Occurred()) {
+    if (err < 0) {
         PyErr_WriteUnraisable(pObj->externalTimer);
         return 0;
     }
