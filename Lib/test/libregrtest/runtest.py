@@ -177,7 +177,7 @@ def runtest_inner(ns, test, display_failure=True):
                         raise Exception("errors while loading tests")
                     support.run_unittest(tests)
             if ns.huntrleaks:
-                refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
+                refleak = dash_R(ns, the_module, test, test_runner)
             else:
                 test_runner()
             test_time = time.perf_counter() - start_time
