@@ -73,6 +73,9 @@ class SysconfigTestCase(support.EnvironGuard,
         comp = compiler()
         old_vars = dict(sysconfig._config_vars)
         try:
+            # On macOS, disable _osx_support.customize_compiler()
+            sysconfig._config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
+
             for key, value in sysconfig_vars.items():
                 sysconfig._config_vars[key] = value
             sysconfig.customize_compiler(comp)
