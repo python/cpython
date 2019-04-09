@@ -268,8 +268,8 @@ class bdist_wininst(Command):
                 # We need to normalize newlines, so we open in text mode and
                 # convert back to bytes. "latin-1" simply avoids any possible
                 # failures.
-                with open(self.pre_install_script,
-                          "r", encoding="latin-1") as script:
+                with open(self.pre_install_script, "r",
+                          encoding="latin-1") as script:
                     script_data = script.read().encode("latin-1")
                 cfgdata = cfgdata + script_data + b"\n\0"
             else:
