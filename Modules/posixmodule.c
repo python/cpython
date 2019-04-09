@@ -7643,7 +7643,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     PyObject *result;
     BOOL is_link;
     USHORT pname_len;
-	
+        
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
     reparse_point_handle = CreateFileW(
