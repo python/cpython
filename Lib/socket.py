@@ -745,7 +745,7 @@ def has_dualstack_ipv6():
         return False
 
 
-def create_server(address, *, family=AF_INET, backlog=0, reuse_port=False,
+def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
                   dualstack_ipv6=False):
     """Convenience function which creates a SOCK_STREAM type socket
     bound to *address* (a 2-tuple (host, port)) and return the socket
@@ -804,7 +804,10 @@ def create_server(address, *, family=AF_INET, backlog=0, reuse_port=False,
             msg = '%s (while attempting to bind on address %r)' % \
                 (err.strerror, address)
             raise error(err.errno, msg) from None
-        sock.listen(backlog)
+        if backlog is None:
+            sock.listen()
+        else:
+            sock.listen(backlog)
         return sock
     except error:
         sock.close()
