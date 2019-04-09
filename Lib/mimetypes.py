@@ -23,6 +23,7 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
+import cachesreg
 import os
 import sys
 import posixpath
@@ -548,6 +549,7 @@ def _default_mime_types():
         }
 
 
+cachesreg.register(_default_mime_types)
 _default_mime_types()
 
 

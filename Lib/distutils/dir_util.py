@@ -3,6 +3,7 @@
 Utility functions for manipulating directories and directory trees."""
 
 import os
+import cachesreg as _cachesreg
 import errno
 from distutils.errors import DistutilsFileError, DistutilsInternalError
 from distutils import log
@@ -10,6 +11,7 @@ from distutils import log
 # cache for by mkpath() -- in addition to cheapening redundant calls,
 # eliminates redundant "creating /foo/bar/baz" messages in dry-run mode
 _path_created = {}
+_cachesreg.register(_path_created.clear)
 
 # I don't use os.makedirs because a) it's new to Python 1.5.2, and
 # b) it blows up if the directory already exists (I want to silently

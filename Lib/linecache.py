@@ -5,6 +5,7 @@ is not found, it will look down the module search path for a file by
 that name.
 """
 
+import cachesreg
 import functools
 import sys
 import os
@@ -33,6 +34,7 @@ def clearcache():
     global cache
     cache = {}
 
+cachesreg.register(clearcache)
 
 def getlines(filename, module_globals=None):
     """Get the lines for a Python source file from the cache.
