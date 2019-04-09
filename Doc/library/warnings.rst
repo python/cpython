@@ -91,6 +91,9 @@ following warnings category classes are currently defined:
 | :exc:`UnicodeWarning`            | Base category for warnings related to         |
 |                                  | Unicode.                                      |
 +----------------------------------+-----------------------------------------------+
+| :exc:`BytesWarning`              | Base category for warnings related to         |
+|                                  | str and bytearray.                            |
++----------------------------------+-----------------------------------------------+
 
 While these are technically built-in exceptions, they are documented here,
 because conceptually they belong to the warnings mechanism.
