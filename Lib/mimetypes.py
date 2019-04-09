@@ -548,6 +548,7 @@ def _default_mime_types():
         }
 
 
+__clearcache__ = _default_mime_types
 _default_mime_types()
 
 

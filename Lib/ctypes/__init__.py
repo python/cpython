@@ -267,6 +267,9 @@ def _reset_cache():
     POINTER(c_char).from_param = c_char_p.from_param
     _pointer_type_cache[None] = c_void_p
 
+
+__clearcache__ = _reset_cache
+
 def create_unicode_buffer(init, size=None):
     """create_unicode_buffer(aString) -> character array
     create_unicode_buffer(anInteger) -> character array

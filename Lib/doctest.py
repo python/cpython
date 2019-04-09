@@ -1853,6 +1853,10 @@ class DebugRunner(DocTestRunner):
 # class, updated by testmod.
 master = None
 
+def __clearcache__():
+    global master
+    master = None
+
 def testmod(m=None, name=None, globs=None, verbose=None,
             report=True, optionflags=0, extraglobs=None,
             raise_on_error=False, exclude_empty=False):

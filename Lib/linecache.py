@@ -33,6 +33,7 @@ def clearcache():
     global cache
     cache = {}
 
+__clearcache__ = clearcache
 
 def getlines(filename, module_globals=None):
     """Get the lines for a Python source file from the cache.

@@ -167,22 +167,22 @@ PyDoc_STRVAR(Struct_iter_unpack__doc__,
 #define STRUCT_ITER_UNPACK_METHODDEF    \
     {"iter_unpack", (PyCFunction)Struct_iter_unpack, METH_O, Struct_iter_unpack__doc__},
 
-PyDoc_STRVAR(_clearcache__doc__,
-"_clearcache($module, /)\n"
+PyDoc_STRVAR(__clearcache____doc__,
+"__clearcache__($module, /)\n"
 "--\n"
 "\n"
 "Clear the internal cache.");
 
-#define _CLEARCACHE_METHODDEF    \
-    {"_clearcache", (PyCFunction)_clearcache, METH_NOARGS, _clearcache__doc__},
+#define __CLEARCACHE___METHODDEF    \
+    {"__clearcache__", (PyCFunction)__clearcache__, METH_NOARGS, __clearcache____doc__},
 
 static PyObject *
-_clearcache_impl(PyObject *module);
+__clearcache___impl(PyObject *module);
 
 static PyObject *
-_clearcache(PyObject *module, PyObject *Py_UNUSED(ignored))
+__clearcache__(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return _clearcache_impl(module);
+    return __clearcache___impl(module);
 }
 
 PyDoc_STRVAR(calcsize__doc__,
@@ -386,4 +386,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b642e1002d25ebdd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c92e2f149a1703cb input=a9049054013a1b77]*/

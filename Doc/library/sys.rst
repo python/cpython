@@ -90,6 +90,16 @@ always available.
    A string containing the copyright pertaining to the Python interpreter.
 
 
+.. index:: single: __clearcache__
+
+.. function:: clear_caches()
+
+   Clear all caches. Call the ``__clearcache__()`` function for all
+   imported modules if it is defined.
+
+   ... versionadded: 3.8
+
+
 .. function:: _clear_type_cache()
 
    Clear the internal type cache. The type cache is used to speed up attribute

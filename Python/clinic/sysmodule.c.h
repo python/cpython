@@ -971,6 +971,26 @@ sys__debugmallocstats(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__debugmallocstats_impl(module);
 }
 
+PyDoc_STRVAR(sys_clear_caches__doc__,
+"clear_caches($module, /)\n"
+"--\n"
+"\n"
+"Clear all caches.\n"
+"\n"
+"Call the __clearcache__() function in every imported module.");
+
+#define SYS_CLEAR_CACHES_METHODDEF    \
+    {"clear_caches", (PyCFunction)sys_clear_caches, METH_NOARGS, sys_clear_caches__doc__},
+
+static PyObject *
+sys_clear_caches_impl(PyObject *module);
+
+static PyObject *
+sys_clear_caches(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_clear_caches_impl(module);
+}
+
 PyDoc_STRVAR(sys__clear_type_cache__doc__,
 "_clear_type_cache($module, /)\n"
 "--\n"
@@ -1060,4 +1080,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=3ba4c194d00f1866 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3fc46ed6688d455c input=a9049054013a1b77]*/

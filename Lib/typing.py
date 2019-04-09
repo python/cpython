@@ -233,6 +233,10 @@ def _remove_dups_flatten(parameters):
 
 _cleanups = []
 
+def __clearcache__():
+    for f in _cleanups:
+        f()
+
 
 def _tp_cache(func):
     """Internal wrapper caching __getitem__ of generic types with a fallback to

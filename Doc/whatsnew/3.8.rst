@@ -363,6 +363,12 @@ and manipulating normal distributions of a random variable.
     >>> temperature_feb.samples(3)        # Generate random samples
     [7.672102882379219, 12.000027119750287, 4.647488369766392]
 
+sys
+---
+
+Added the :func:`~sys.clear_caches` function. It clears all caches by
+calling the ``__clearcache__()`` function for every module if it is defined.
+(Contributed by Serhit Storchaka in :issue:`36485`.)
 
 tarfile
 -------

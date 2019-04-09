@@ -86,6 +86,7 @@ def clear_cache():
     _parse_cache.clear()
     _safe_quoters.clear()
 
+__clearcache__ = clear_cache
 
 # Helpers for bytes handling
 # For 3.2, we deliberately require applications that

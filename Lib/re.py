@@ -238,6 +238,8 @@ def purge():
     _cache.clear()
     _compile_repl.cache_clear()
 
+__clearcache__ = purge
+
 def template(pattern, flags=0):
     "Compile a template pattern, returning a Pattern object"
     return _compile(pattern, flags|T)
