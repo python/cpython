@@ -2699,19 +2699,15 @@ features:
    as a directory if *target_is_directory* is ``True`` or a file symlink (the
    default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
-   Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
-   will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
-
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
    .. note::
 
-      On Windows, the *SeCreateSymbolicLinkPrivilege* is required in order to
-      successfully create symlinks. This privilege is not typically granted to
-      regular users but is available to accounts which can escalate privileges
-      to the administrator level. Either obtaining the privilege or running your
-      application as an administrator are ways to successfully create symlinks.
+      On newer versions of Windows 10, unprivileged accounts can create symlinks
+      if Developer Mode is enabled. When Developer Mode is not available/enabled,
+      the *SeCreateSymbolicLinkPrivilege* privilege is required, or the process
+      must be run as an administrator.
 
 
       :exc:`OSError` is raised when the function is called by an unprivileged
@@ -2728,6 +2724,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
+
+   .. versionchanged:: 3.8
+      Added support for unelevated symlinks on Windows with Developer Mode.
 
 
 .. function:: sync()
