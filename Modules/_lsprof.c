@@ -58,7 +58,6 @@ static PyTypeObject PyProfiler_Type;
 
 /*** External Timers ***/
 
-#define SEC_TO_NS (1e9)
 #define NS_TO_SEC (1e-9)
 
 static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
@@ -584,6 +583,7 @@ profiler_getstats(ProfilerObject *pObj, PyObject* noarg)
     if (pending_exception(pObj))
         return NULL;
     if (!pObj->externalTimer || pObj->externalTimerUnit == 0.0) {
+        // We assume _PyTime_t is NS here.
         collect.factor = NS_TO_SEC;
     }
     else {
