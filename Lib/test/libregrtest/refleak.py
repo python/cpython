@@ -82,12 +82,14 @@ def dash_R(ns, the_module, test_name, test_func):
         print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
               flush=True)
 
+    dash_R_cleanup(fs, ps, pic, zdc, abcs)
+
     for i in rep_range:
         test_func()
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
 
-        # Collect cyclic trash and read memory statistics immediately after.
-        support.gc_collect()
+        # dash_R_cleanup() ends with collecting cyclic trash:
+        # read memory statistics immediately after.
         alloc_after = getallocatedblocks()
         rc_after = gettotalrefcount()
         fd_after = fd_count()
