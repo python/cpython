@@ -1168,6 +1168,7 @@ main_loop:
         }
 
         case TARGET(LOAD_FAST): {
+            PREDICTED(LOAD_FAST);
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
                 format_exc_check_arg(PyExc_UnboundLocalError,
@@ -2487,16 +2488,14 @@ main_loop:
         case TARGET(BUILD_LIST_PREALLOC): {
             PyObject *list, *target = GETLOCAL(oparg);
             Py_INCREF(target);
-            Py_ssize_t size = 0;
-            if (_PyObject_HasLen(target))
-                size = PyObject_Length(target);
+            Py_ssize_t size = PyObject_LengthHint(target, 0);
             Py_DECREF(target);
             if (size < 0)
                 goto error;
 
             list = _PyList_NewPrealloc(size);
             PUSH(list);
-            PREDICTED(LOAD_FAST);
+            PREDICT(LOAD_FAST);
             DISPATCH();
         }
 
