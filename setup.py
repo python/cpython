@@ -2151,16 +2151,17 @@ class PyBuildExt(build_ext):
         openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
         openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
         openssl_libs = split_var('OPENSSL_LIBS', '-l')
-        if not openssl_libs:
-            # libssl and libcrypto not found
-            return None, None
 
         # Find OpenSSL includes
         ssl_incs = find_file(
             'openssl/ssl.h', self.inc_dirs, openssl_includes
         )
-        if ssl_incs is None:
-            return None, None
+
+        if not openssl_libs or ssl_incs is None:
+            # libssl and libcrypto not found
+            self.missing.append('_ssl')
+            self.missing.append('_hashlib')
+            return
 
         # OpenSSL 1.0.2 uses Kerberos for KRB5 ciphers
         krb5_h = find_file(
