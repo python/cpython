@@ -9,7 +9,6 @@ import sysconfig
 import time
 import threading
 import unittest
-import warnings
 try:
     import _testcapi
 except ImportError:
@@ -45,12 +44,6 @@ ROUNDING_MODES = (
     (_PyTime.ROUND_HALF_EVEN, decimal.ROUND_HALF_EVEN),
     (_PyTime.ROUND_UP, decimal.ROUND_UP),
 )
-
-
-def busy_wait(duration):
-    deadline = time.monotonic() + duration
-    while time.monotonic() < deadline:
-        pass
 
 
 class TimeTestCase(unittest.TestCase):
@@ -126,7 +119,13 @@ class TimeTestCase(unittest.TestCase):
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
-        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # when in 32-bit mode AIX only returns the predefined constant
+        if not platform.system() == "AIX":
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        elif (sys.maxsize.bit_length() > 32):
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         t1 = time.clock_gettime(clk_id)
         t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)
@@ -431,13 +430,6 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
-            if sys.platform.startswith('aix') and t == -1:
-                # Issue #11188, #19748: mktime() returns -1 on error. On Linux,
-                # the tm_wday field is used as a sentinel () to detect if -1 is
-                # really an error or a valid timestamp. On AIX, tm_wday is
-                # unchanged even on success and so cannot be used as a
-                # sentinel.
-                continue
             try:
                 tt = time.localtime(t)
             except (OverflowError, OSError):
@@ -496,24 +488,6 @@ class TimeTestCase(unittest.TestCase):
         # on Windows
         self.assertLess(stop - start, 0.020)
 
-        # bpo-33723: A busy loop of 100 ms should increase process_time()
-        # by at least 15 ms
-        min_time = 0.015
-        busy_time = 0.100
-
-        # process_time() should include CPU time spent in any thread
-        start = time.process_time()
-        busy_wait(busy_time)
-        stop = time.process_time()
-        self.assertGreaterEqual(stop - start, min_time)
-
-        t = threading.Thread(target=busy_wait, args=(busy_time,))
-        start = time.process_time()
-        t.start()
-        t.join()
-        stop = time.process_time()
-        self.assertGreaterEqual(stop - start, min_time)
-
         info = time.get_clock_info('process_time')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
@@ -533,25 +507,6 @@ class TimeTestCase(unittest.TestCase):
         # use 20 ms because thread_time() has usually a resolution of 15 ms
         # on Windows
         self.assertLess(stop - start, 0.020)
-
-        # bpo-33723: A busy loop of 100 ms should increase thread_time()
-        # by at least 15 ms
-        min_time = 0.015
-        busy_time = 0.100
-
-        # thread_time() should include CPU time spent in current thread...
-        start = time.thread_time()
-        busy_wait(busy_time)
-        stop = time.thread_time()
-        self.assertGreaterEqual(stop - start, min_time)
-
-        # ...but not in other threads
-        t = threading.Thread(target=busy_wait, args=(busy_time,))
-        start = time.thread_time()
-        t.start()
-        t.join()
-        stop = time.thread_time()
-        self.assertLess(stop - start, min_time)
 
         info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
@@ -703,9 +658,9 @@ class _Test4dYear:
         self.assertEqual(func(9999), fmt % 9999)
 
     def test_large_year(self):
-        self.assertEqual(self.yearstr(12345), '12345')
-        self.assertEqual(self.yearstr(123456789), '123456789')
-        self.assertEqual(self.yearstr(TIME_MAXYEAR), str(TIME_MAXYEAR))
+        self.assertEqual(self.yearstr(12345).lstrip('+'), '12345')
+        self.assertEqual(self.yearstr(123456789).lstrip('+'), '123456789')
+        self.assertEqual(self.yearstr(TIME_MAXYEAR).lstrip('+'), str(TIME_MAXYEAR))
         self.assertRaises(OverflowError, self.yearstr, TIME_MAXYEAR + 1)
 
     def test_negative(self):

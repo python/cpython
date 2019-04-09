@@ -1291,6 +1291,19 @@ The :mod:`curses` module defines the following data members:
    A bytes object representing the current version of the module.  Also available as
    :const:`__version__`.
 
+
+.. data:: ncurses_version
+
+   A named tuple containing the three components of the ncurses library
+   version: *major*, *minor*, and *patch*.  All values are integers.  The
+   components can also be accessed by name,  so ``curses.ncurses_version[0]``
+   is equivalent to ``curses.ncurses_version.major`` and so on.
+
+   Availability: if the ncurses library is used.
+
+   .. versionadded:: 3.8
+
+
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.
 

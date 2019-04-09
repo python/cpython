@@ -45,16 +45,16 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.0.2o",
-    "1.1.0h",
-    # "1.1.1-pre7",
+    "1.0.2p",
+    "1.1.0i",
+    "1.1.1",
 ]
 
 LIBRESSL_OLD_VERSIONS = [
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    "2.7.3",
+    "2.7.4",
 ]
 
 # store files in ../multissl

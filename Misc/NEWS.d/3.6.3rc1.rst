@@ -406,7 +406,7 @@ avoid keeping a reference to yielded objects.
 .. nonce: nmAvfu
 .. section: Library
 
-Fix ctypes producing wrong PEP 3118 type codes for integer types.
+Fix ctypes producing wrong :pep:`3118` type codes for integer types.
 
 ..
 
@@ -517,7 +517,7 @@ LF. Patch by Dong-hee Na.
 .. section: Library
 
 multiprocessing.Queue.get() with a timeout now polls its reader in
-non-blocking mode if it succeeded to aquire the lock but the acquire took
+non-blocking mode if it succeeded to acquire the lock but the acquire took
 longer than the timeout.
 
 ..
@@ -818,7 +818,7 @@ IDLE - make tests pass with zzdummy extension disabled by default.
 Document how IDLE runs tkinter programs. IDLE calls tcl/tk update in the
 background in order to make live
 
-interaction and experimentatin with tkinter applications much easier.
+interaction and experimentation with tkinter applications much easier.
 
 ..
 
@@ -837,7 +837,7 @@ not the same as deleting and inserting because int('') will fail.
 .. nonce: 50Jp_Q
 .. section: IDLE
 
-Rearrange IDLE condigdialog GenPage into Window, Editor, and Help sections.
+Rearrange IDLE configdialog GenPage into Window, Editor, and Help sections.
 
 ..
 
@@ -1252,7 +1252,7 @@ by Cheryl Sabella.
 .. section: Tools/Demos
 
 gdb integration commands (py-bt, etc.) work on optimized shared builds now,
-too.  PEP 523 introduced _PyEval_EvalFrameDefault which inlines
+too.  :pep:`523` introduced _PyEval_EvalFrameDefault which inlines
 PyEval_EvalFrameEx on non-debug shared builds.  This broke the ability to
 use py-bt, py-up, and a few other Python-specific gdb integrations. The
 problem is fixed by only looking for _PyEval_EvalFrameDefault frames in

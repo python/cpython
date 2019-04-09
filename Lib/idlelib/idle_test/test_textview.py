@@ -73,7 +73,6 @@ class TextFrameTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        "By itself, this tests that file parsed without exception."
         cls.root = root = Tk()
         root.withdraw()
         cls.frame = tv.TextFrame(root, 'test text')
@@ -126,10 +125,14 @@ class ViewFunctionTest(unittest.TestCase):
     def test_bad_encoding(self):
         p = os.path
         fn = p.abspath(p.join(p.dirname(__file__), '..', 'CREDITS.txt'))
-        tv.showerror.title = None
         view = tv.view_file(root, 'Title', fn, 'ascii', modal=False)
         self.assertIsNone(view)
         self.assertEqual(tv.showerror.title, 'Unicode Decode Error')
+
+    def test_nowrap(self):
+        view = tv.view_text(root, 'Title', 'test', modal=False, wrap='none')
+        text_widget = view.viewframe.textframe.text
+        self.assertEqual(text_widget.cget('wrap'), 'none')
 
 
 # Call ViewWindow with _utest=True.

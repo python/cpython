@@ -2,7 +2,9 @@
 
 import logging
 import socket
+import sys
 import unittest
+import weakref
 from unittest import mock
 try:
     import ssl
@@ -252,7 +254,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 self.on_eof.set_result(True)
 
         async def client(addr):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await asyncio.sleep(0.5)
 
             on_data = self.loop.create_future()
             on_eof = self.loop.create_future()
@@ -271,7 +273,73 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), loop=self.loop, timeout=10))
+                asyncio.wait_for(client(srv.addr), timeout=10))
+
+        # No garbage is left if SSL is closed uncleanly
+        client_context = weakref.ref(client_context)
+        self.assertIsNone(client_context())
+
+    def test_create_connection_memory_leak(self):
+        HELLO_MSG = b'1' * self.PAYLOAD_SIZE
+
+        server_context = test_utils.simple_server_sslcontext()
+        client_context = test_utils.simple_client_sslcontext()
+
+        def serve(sock):
+            sock.settimeout(self.TIMEOUT)
+
+            sock.start_tls(server_context, server_side=True)
+
+            sock.sendall(b'O')
+            data = sock.recv_all(len(HELLO_MSG))
+            self.assertEqual(len(data), len(HELLO_MSG))
+
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+
+        class ClientProto(asyncio.Protocol):
+            def __init__(self, on_data, on_eof):
+                self.on_data = on_data
+                self.on_eof = on_eof
+                self.con_made_cnt = 0
+
+            def connection_made(proto, tr):
+                # XXX: We assume user stores the transport in protocol
+                proto.tr = tr
+                proto.con_made_cnt += 1
+                # Ensure connection_made gets called only once.
+                self.assertEqual(proto.con_made_cnt, 1)
+
+            def data_received(self, data):
+                self.on_data.set_result(data)
+
+            def eof_received(self):
+                self.on_eof.set_result(True)
+
+        async def client(addr):
+            await asyncio.sleep(0.5)
+
+            on_data = self.loop.create_future()
+            on_eof = self.loop.create_future()
+
+            tr, proto = await self.loop.create_connection(
+                lambda: ClientProto(on_data, on_eof), *addr,
+                ssl=client_context)
+
+            self.assertEqual(await on_data, b'O')
+            tr.write(HELLO_MSG)
+            await on_eof
+
+            tr.close()
+
+        with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
+            self.loop.run_until_complete(
+                asyncio.wait_for(client(srv.addr), timeout=10))
+
+        # No garbage is left for SSL client from loop.create_connection, even
+        # if user stores the SSLTransport in corresponding protocol instance
+        client_context = weakref.ref(client_context)
+        self.assertIsNone(client_context())
 
     def test_start_tls_client_buf_proto_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -332,7 +400,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 self.on_eof.set_result(True)
 
         async def client(addr):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await asyncio.sleep(0.5)
 
             on_data1 = self.loop.create_future()
             on_data2 = self.loop.create_future()
@@ -362,7 +430,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
                 asyncio.wait_for(client(srv.addr),
-                                 loop=self.loop, timeout=self.TIMEOUT))
+                                 timeout=self.TIMEOUT))
 
     def test_start_tls_slow_client_cancel(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -403,7 +471,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 self.on_eof.set_result(True)
 
         async def client(addr):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await asyncio.sleep(0.5)
 
             on_data = self.loop.create_future()
             on_eof = self.loop.create_future()
@@ -418,18 +486,23 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             with self.assertRaises(asyncio.TimeoutError):
                 await asyncio.wait_for(
                     self.loop.start_tls(tr, proto, client_context),
-                    0.5,
-                    loop=self.loop)
+                    0.5)
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), loop=self.loop, timeout=10))
+                asyncio.wait_for(client(srv.addr), timeout=10))
 
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
+        if sys.platform.startswith('freebsd'):
+            # bpo-35031: Some FreeBSD buildbots fail to run this test
+            # as the eof was not being received by the server if the payload
+            # size is not big enough. This behaviour only appears if the
+            # client is using TLS1.3.
+            client_context.options |= ssl.OP_NO_TLSv1_3
 
         def client(sock, addr):
             sock.settimeout(self.TIMEOUT)
@@ -496,7 +569,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                                  timeout=self.TIMEOUT):
                 await asyncio.wait_for(
                     main(proto, on_con, on_eof, on_con_lost),
-                    loop=self.loop, timeout=self.TIMEOUT)
+                    timeout=self.TIMEOUT)
 
             server.close()
             await server.wait_closed()
@@ -541,8 +614,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     ssl=client_sslctx,
                     server_hostname='',
                     ssl_handshake_timeout=10.0),
-                0.5,
-                loop=self.loop)
+                0.5)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -556,6 +628,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         # Python issue #23197: cancelling a handshake must not raise an
         # exception or log an error, even if the handshake failed
         self.assertEqual(messages, [])
+
+        # The 10s handshake timeout should be cancelled to free related
+        # objects without really waiting for 10s
+        client_sslctx = weakref.ref(client_sslctx)
+        self.assertIsNone(client_sslctx())
 
     def test_create_connection_ssl_slow_handshake(self):
         client_sslctx = test_utils.simple_client_sslcontext()

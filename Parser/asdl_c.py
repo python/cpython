@@ -855,17 +855,6 @@ static PyObject* ast2obj_int(long b)
 
 /* Conversion Python -> AST */
 
-static int obj2ast_singleton(PyObject *obj, PyObject** out, PyArena* arena)
-{
-    if (obj != Py_None && obj != Py_True && obj != Py_False) {
-        PyErr_SetString(PyExc_ValueError,
-                        "AST singleton must be True, False, or None");
-        return 1;
-    }
-    *out = obj;
-    return 0;
-}
-
 static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (obj == Py_None)
@@ -883,13 +872,11 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 
 static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (obj) {
-        if (PyArena_AddPyObject(arena, obj) < 0) {
-            *out = NULL;
-            return -1;
-        }
-        Py_INCREF(obj);
+    if (PyArena_AddPyObject(arena, obj) < 0) {
+        *out = NULL;
+        return -1;
     }
+    Py_INCREF(obj);
     *out = obj;
     return 0;
 }
@@ -907,15 +894,6 @@ static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
         PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
-        return 1;
-    }
-    return obj2ast_object(obj, out, arena);
-}
-
-static int obj2ast_bytes(PyObject* obj, PyObject** out, PyArena* arena)
-{
-    if (!PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST bytes must be of type bytes");
         return 1;
     }
     return obj2ast_object(obj, out, arena);
@@ -1023,6 +1001,8 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("d = PyModule_GetDict(m);", 1)
         self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
+        self.emit("return NULL;", 2)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)', 1)
         self.emit("return NULL;", 2)
         for dfn in mod.dfns:
             self.visit(dfn)
@@ -1209,6 +1189,11 @@ PyObject* PyAST_mod2obj(mod_ty t)
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
+    return PyAST_obj2mod_ex(ast, arena, mode, PY_MINOR_VERSION);
+}
+
+mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version)
+{
     mod_ty res;
     PyObject *req_type[3];
     char *req_name[] = {"Module", "Expression", "Interactive"};
@@ -1270,15 +1255,32 @@ def main(srcfile, dump_module=False):
     if H_FILE:
         with open(H_FILE, "w") as f:
             f.write(auto_gen_msg)
-            f.write('#include "asdl.h"\n\n')
+            f.write('#ifndef Py_PYTHON_AST_H\n')
+            f.write('#define Py_PYTHON_AST_H\n')
+            f.write('#ifdef __cplusplus\n')
+            f.write('extern "C" {\n')
+            f.write('#endif\n')
+            f.write('\n')
+            f.write('#include "asdl.h"\n')
+            f.write('\n')
+            f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
+            f.write('\n')
             c = ChainOfVisitors(TypeDefVisitor(f),
-                                StructVisitor(f),
-                                PrototypeVisitor(f),
-                                )
+                                StructVisitor(f))
+
             c.visit(mod)
+            f.write("// Note: these macros affect function definitions, not only call sites.\n")
+            PrototypeVisitor(f).visit(mod)
+            f.write("\n")
             f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
             f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
+            f.write("mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version);\n")
             f.write("int PyAST_Check(PyObject* obj);\n")
+            f.write('\n')
+            f.write('#ifdef __cplusplus\n')
+            f.write('}\n')
+            f.write('#endif\n')
+            f.write('#endif /* !Py_PYTHON_AST_H */\n')
 
     if C_FILE:
         with open(C_FILE, "w") as f:
@@ -1311,9 +1313,9 @@ if __name__ == "__main__":
     for o, v in opts:
         if o == '-h':
             H_FILE = v
-        if o == '-c':
+        elif o == '-c':
             C_FILE = v
-        if o == '-d':
+        elif o == '-d':
             dump_module = True
     if H_FILE and C_FILE:
         print('Must specify exactly one output file')

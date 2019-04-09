@@ -3,7 +3,7 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "structmember.h" /* offsetof */
 #include "pythread.h"
 
@@ -204,9 +204,9 @@ lock_repr(lockobject *self)
 }
 
 static PyMethodDef lock_methods[] = {
-    {"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock,
+    {"acquire_lock", (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
-    {"acquire",      (PyCFunction)lock_PyThread_acquire_lock,
+    {"acquire",      (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"release_lock", (PyCFunction)lock_PyThread_release_lock,
      METH_NOARGS, release_doc},
@@ -216,7 +216,7 @@ static PyMethodDef lock_methods[] = {
      METH_NOARGS, locked_doc},
     {"locked",       (PyCFunction)lock_locked_lock,
      METH_NOARGS, locked_doc},
-    {"__enter__",    (PyCFunction)lock_PyThread_acquire_lock,
+    {"__enter__",    (PyCFunction)(void(*)(void))lock_PyThread_acquire_lock,
      METH_VARARGS | METH_KEYWORDS, acquire_doc},
     {"__exit__",    (PyCFunction)lock_PyThread_release_lock,
      METH_VARARGS, release_doc},
@@ -226,7 +226,7 @@ static PyMethodDef lock_methods[] = {
 static PyTypeObject Locktype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_thread.lock",                     /*tp_name*/
-    sizeof(lockobject),                 /*tp_size*/
+    sizeof(lockobject),                 /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)lock_dealloc,           /*tp_dealloc*/
@@ -466,7 +466,7 @@ rlock_repr(rlockobject *self)
 
 
 static PyMethodDef rlock_methods[] = {
-    {"acquire",      (PyCFunction)rlock_acquire,
+    {"acquire",      (PyCFunction)(void(*)(void))rlock_acquire,
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      (PyCFunction)rlock_release,
      METH_NOARGS, rlock_release_doc},
@@ -476,7 +476,7 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS, rlock_acquire_restore_doc},
     {"_release_save", (PyCFunction)rlock_release_save,
      METH_NOARGS, rlock_release_save_doc},
-    {"__enter__",    (PyCFunction)rlock_acquire,
+    {"__enter__",    (PyCFunction)(void(*)(void))rlock_acquire,
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
      METH_VARARGS, rlock_release_doc},
@@ -487,7 +487,7 @@ static PyMethodDef rlock_methods[] = {
 static PyTypeObject RLocktype = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_thread.RLock",                    /*tp_name*/
-    sizeof(rlockobject),                /*tp_size*/
+    sizeof(rlockobject),                /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)rlock_dealloc,          /*tp_dealloc*/
@@ -777,9 +777,11 @@ local_clear(localobject *self)
         for(tstate = PyInterpreterState_ThreadHead(tstate->interp);
             tstate;
             tstate = PyThreadState_Next(tstate))
-            if (tstate->dict &&
-                PyDict_GetItem(tstate->dict, self->key))
-                PyDict_DelItem(tstate->dict, self->key);
+            if (tstate->dict && PyDict_GetItem(tstate->dict, self->key)) {
+                if (PyDict_DelItem(tstate->dict, self->key)) {
+                    PyErr_Clear();
+                }
+            }
     }
     return 0;
 }
@@ -812,8 +814,11 @@ _ldict(localobject *self)
         return NULL;
     }
 
-    dummy = PyDict_GetItem(tdict, self->key);
+    dummy = PyDict_GetItemWithError(tdict, self->key);
     if (dummy == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
         ldict = _local_create_dummy(self);
         if (ldict == NULL)
             return NULL;
@@ -929,14 +934,17 @@ local_getattro(localobject *self, PyObject *name)
             (PyObject *)self, name, ldict, 0);
 
     /* Optimization: just look in dict ourselves */
-    value = PyDict_GetItem(ldict, name);
-    if (value == NULL)
-        /* Fall back on generic to get __class__ and __dict__ */
-        return _PyObject_GenericGetAttrWithDict(
-            (PyObject *)self, name, ldict, 0);
-
-    Py_INCREF(value);
-    return value;
+    value = PyDict_GetItemWithError(ldict, name);
+    if (value != NULL) {
+        Py_INCREF(value);
+        return value;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
+    /* Fall back on generic to get __class__ and __dict__ */
+    return _PyObject_GenericGetAttrWithDict(
+        (PyObject *)self, name, ldict, 0);
 }
 
 /* Called when a dummy is destroyed. */
@@ -956,7 +964,7 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
     self = (localobject *) obj;
     if (self->dummies != NULL) {
         PyObject *ldict;
-        ldict = PyDict_GetItem(self->dummies, dummyweakref);
+        ldict = PyDict_GetItemWithError(self->dummies, dummyweakref);
         if (ldict != NULL) {
             PyDict_DelItem(self->dummies, dummyweakref);
         }
@@ -1171,8 +1179,9 @@ This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
 static void
-release_sentinel(void *wr)
+release_sentinel(void *wr_raw)
 {
+    PyObject *wr = _PyObject_CAST(wr_raw);
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
        execute here. */
