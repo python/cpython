@@ -526,7 +526,7 @@ module for more information.
 
 .. exception:: BytesWarning
 
-   Base class for warnings related to :class:`bytes` and :class:`bytearray`.
+   Base class for warnings related to :class:`str` and :class:`bytearray`.
 
    .. versionadded:: 2.6
 
