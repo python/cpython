@@ -439,6 +439,22 @@ class NetmaskTestMixin_v4(CommonTestMixin_v4):
             self.assertEqual(
                 str(self.factory('0.0.0.0/%s' % net.hostmask)), net_str)
 
+    def test_tuple_constructor(self):
+        tests = [
+            ('192.168.0.0/24', (('192.168.0.0', b'\xff\xff\xff\x00'))),
+            ('192.168.0.0/23', ((bytes([192, 168, 0, 0]), b'\xff\xff\xfe\x00'))),
+            ('10.0.0.0/8',
+             ((ipaddress.IPv4Address('10.0.0.0'), b'\x00\xff\xff\xff'))),
+            ('10.0.0.0/8',
+             ((ipaddress.IPv4Interface('10.0.0.0/32'), b'\x00\xff\xff\xff'))),
+            ('172.16.0.0/16',
+             (('172.16.0.0', ipaddress.IPv4Address('255.255.0.0')))),
+            ('172.16.0.0/16',
+             (('172.16.0.0', ipaddress.IPv4Address('0.0.255.255')))),
+        ]
+        for expected, arg in tests:
+            self.assertInstancesEqual(arg, expected)
+
     def test_netmask_errors(self):
         def assertBadNetmask(addr, netmask):
             msg = "%r is not a valid netmask" % netmask
@@ -554,6 +570,18 @@ class NetmaskTestMixin_v6(CommonTestMixin_v6):
             self.assertEqual(str(self.factory(net_str)), net_str)
             # Zero prefix is treated as decimal.
             self.assertEqual(str(self.factory('::/0%d' % i)), net_str)
+
+    def test_tuple_constructor(self):
+        tests = [
+            ('fc00::/8', (('fc00::', b'\xff' + 15 * b'\x00'))),
+            ('fc12:3456::/39',
+             ((b'\xfc\x12\x34\x56' + 12 * b'\x00',
+               4 * b'\xff' + b'\xfe' + 11 * b'\x00'))),
+            ('2001:db8::/32',
+             (('2001:db8::', ipaddress.IPv6Address('ffff:ffff::')))),
+        ]
+        for expected, arg in tests:
+            self.assertInstancesEqual(arg, expected)
 
     def test_netmask_errors(self):
         def assertBadNetmask(addr, netmask):
