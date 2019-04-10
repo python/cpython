@@ -137,6 +137,14 @@ _MAXHEADERS = 100
 _is_legal_header_name = re.compile(rb'[^:\s][^:\r\n]*').fullmatch
 _is_illegal_header_value = re.compile(rb'\n(?![ \t])|\r(?![ \t\n])').search
 
+# These characters are not allowed within http URL paths.
+#  https://tools.ietf.org/html/rfc3986#section-3.3
+# in order to prevent CVE-2019-9740.
+_contains_disallowed_url_pchar_re = re.compile('[\x00-\x20\x7f-\x9f]')
+# Arguably only these _should_ allowed:
+#  _is_allowed_url_pchars_re = re.compile(r"^[/!$&'()*+,;=:@%a-zA-Z0-9._~-]+$")
+# We are more lenient for assumed real world compatibility purposes.
+
 # We always set the Content-Length header for these methods because some
 # servers will otherwise respond with a 411
 _METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
@@ -1079,6 +1087,9 @@ class HTTPConnection:
         self._method = method
         if not url:
             url = '/'
+        # Prevent CVE-2019-9740.
+        if _contains_disallowed_url_pchar_re.search(url):
+            raise ValueError("URL can't contain control characters. {url!r}")
         request = '%s %s %s' % (method, url, self._http_vsn_str)
 
         # Non-ASCII characters should have been eliminated earlier

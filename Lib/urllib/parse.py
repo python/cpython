@@ -991,8 +991,6 @@ def splittype(url):
 
 
 _typeprog = None
-_control_char_re = None
-_schemes_disallowing_control_chars = frozenset({'http', 'https', 'ftp'})
 def _splittype(url):
     """splittype('type:opaquestring') --> 'type', 'opaquestring'."""
     global _typeprog
@@ -1002,26 +1000,7 @@ def _splittype(url):
     match = _typeprog.match(url)
     if match:
         scheme, data = match.groups()
-        scheme = scheme.lower()
-        if scheme in _schemes_disallowing_control_chars:
-            # Sanity check url data to avoid control characters.
-            #  https://bugs.python.org/issue14826
-            #  https://bugs.python.org/issue36276
-            # The same control characters check was adopted by Golang in:
-            #  https://go-review.googlesource.com/c/go/+/159157
-            # Isn't it odd to be performing validation within this utility
-            # function?  Yes... but it is in wide use in all of the right
-            # places where URLs need a sanity check to avoid potential security
-            # issues in newline delimited text based protocol implementations.
-            # This way many things get it for free without every use needing to
-            # be updated to explicitly sanity check the path contents.
-            global _control_char_re
-            if _control_char_re is None:
-                _control_char_re = re.compile('[\x00-\x1f\x7f-\x9f]')
-            if _control_char_re.search(data):
-                raise ValueError(f"{scheme} URL can't contain control "
-                                 f"characters. {data!r}")
-        return scheme, data
+        return scheme.lower(), data
     return None, url
 
 

@@ -329,6 +329,27 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
         finally:
             self.unfakehttp()
 
+    def test_url_with_newline_header_injection_rejected(self):
+        self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello.")
+        host = "localhost:7777?a=1 HTTP/1.1\r\nX-injected: header\r\nTEST: 123"
+        schemeless_url = "//" + host + ":8080/test/?test=a"
+        try:
+            # We explicitly test urllib.request.urlopen() instead of the top
+            # level 'def urlopen()' function defined in this... (quite ugly)
+            # test suite.  they use different url opening codepaths.  plain
+            # urlopen uses FancyURLOpener which goes via a codepath that
+            # calls urllib.parse.quote() on the URL which makes all of the
+            # above attempts at injection within the url _path_ safe.
+            with self.assertRaisesRegex(ValueError, "can't contain control"):
+                urllib.request.urlopen(f"http:{schemeless_url}")
+            with self.assertRaisesRegex(ValueError, "can't contain control"):
+                urllib.request.urlopen(f"https:{schemeless_url}")
+            resp = urlopen(f"http:{schemeless_url}")
+            self.assertNotIn('\r', resp.geturl())
+            self.assertNotIn('\n', resp.geturl())
+        finally:
+            self.unfakehttp()
+
     def test_read_0_9(self):
         # "0.9" response accepted (but not "simple responses" without
         # a status line)
