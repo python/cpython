@@ -1,0 +1,1 @@
+Corrected the unicode.isdecimal documentation and added a description of unicode.isdigit
