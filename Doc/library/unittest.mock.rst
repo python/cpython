@@ -2213,6 +2213,16 @@ And for reading files::
     >>> m.assert_called_once_with('foo')
     >>> assert result == 'bibble'
 
+If you want to mock open for use in another module you can mock
+builtins.open:
+
+    >>> with patch('builtins.open', mock_open(read_data='bibble')) as m:
+    ...     with open('foo') as h:
+    ...         result = h.read()
+    ...
+    >>> m.assert_called_once_with('foo')
+    >>> assert result == 'bibble'
+
 
 .. _auto-speccing:
 
