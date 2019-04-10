@@ -350,6 +350,14 @@ class Request:
     def full_url(self, url):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self._full_url = _unwrap(url)
+        # Sanity check self._full_url to avoid control characters in HTTP.
+        #  https://bugs.python.org/issue14826
+        #  https://bugs.python.org/issue36276
+        # The same control characters check was adopted by Golang in:
+        #  https://go-review.googlesource.com/c/go/+/159157
+        if (self._full_url.startswith('http') and
+            re.search("[\x00- \x7f-\x9f]", self._full_url)):
+            raise ValueError("URL can't contain control characters. %r" % (self._full_url,))
         self._full_url, self.fragment = _splittag(self._full_url)
         self._parse()
 
