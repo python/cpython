@@ -92,6 +92,9 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
             'CCSHARED': '--sc-ccshared',
             'LDSHARED': 'sc_ldshared',
             'SHLIB_SUFFIX': 'sc_shutil_suffix',
+
+            # On macOS, disable _osx_support.customize_compiler()
+            'CUSTOMIZED_OSX_COMPILER': 'True',
         }
 
         comp = compiler()
