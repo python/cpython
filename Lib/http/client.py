@@ -140,7 +140,8 @@ _is_illegal_header_value = re.compile(rb'\n(?![ \t])|\r(?![ \t\n])').search
 # These characters are not allowed within http URL paths.
 #  https://tools.ietf.org/html/rfc3986#section-3.3
 # in order to prevent CVE-2019-9740.
-_contains_disallowed_url_pchar_re = re.compile('[\x00-\x20\x7f-\x9f]')
+# We don't restrict chars above \x7f as putrequest() limits us to ASCII.
+_contains_disallowed_url_pchar_re = re.compile('[\x00-\x20\x7f]')
 # Arguably only these _should_ allowed:
 #  _is_allowed_url_pchars_re = re.compile(r"^[/!$&'()*+,;=:@%a-zA-Z0-9._~-]+$")
 # We are more lenient for assumed real world compatibility purposes.
