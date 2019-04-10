@@ -1112,16 +1112,19 @@ Sub-interpreter support
 
 While in most uses, you will only embed a single Python interpreter, there
 are cases where you need to create several independent interpreters in the
-same process and perhaps even in the same thread.
+same process and perhaps even in the same thread. Sub-interpreters allow
+you to do that.
 
-Before sub-interpreters, there is a main interpreter which is the first one
-created by the CPython runtime on startup when the ``python`` command is
-run. The :c:func:`PyInterpreterState_Main` funtion returns a pointer to this
-main interpreter's state.
+The main interpreter is the first one created when runtime initializes.
+The :c:func:`PyInterpreterState_Main` funtion returns a pointer to this main
+interpreter's state. It is usually the only Python interpreter in a process.
+The main interpreter also has other responsibilities like signal and public
+calls  handling in the main thread, can be taken over by a suninterpreter
+in the main thread, responsible for execution during runtime initialization
+and it is usually the active interpreter during runtime finalization.
 
-Sub-interpreters allow you to do that.  You can switch between
-sub-interpreters using the :c:func:`PyThreadState_Swap` function.
-You can create and destroy them using the following functions:
+You can switch between sub-interpreters using the :c:func:`PyThreadState_Swap`
+function. You can create and destroy them using the following functions:
 
 
 .. c:function:: PyThreadState* Py_NewInterpreter()
