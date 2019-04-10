@@ -946,8 +946,8 @@ class SimpleServerTestCase(BaseServerTestCase):
         with contextlib.closing(socket.create_connection((ADDR, PORT))) as conn:
             conn.send('POST /RPC2 HTTP/1.0\r\n'
                       'Content-Length: 100\r\n\r\n'
-                      f'bye HTTP/1.1\r\n'
-                      'Host: {ADDR}:{PORT}\r\n'
+                      'bye HTTP/1.1\r\n'
+                      f'Host: {ADDR}:{PORT}\r\n'
                       'Accept-Encoding: identity\r\n'
                       'Content-Length: 0\r\n\r\n'.encode('ascii'))
 
