@@ -1,0 +1,2 @@
+Add an example to unittest.mock.rst showing how to mock builtins.open in
+cases where builtins.open is mocked in another module.
