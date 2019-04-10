@@ -1435,6 +1435,7 @@ some point in the future.
       The *data* argument has the same meaning as the *data* argument of
       :func:`urlopen`.
 
+      This method always quotes *fullurl* using :func:`~urllib.parse.quote`.
 
    .. method:: open_unknown(fullurl, data=None)
 
