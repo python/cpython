@@ -344,7 +344,9 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
                 urllib.request.urlopen(f"http:{schemeless_url}")
             with self.assertRaisesRegex(ValueError, r"contain control.*\\n"):
                 urllib.request.urlopen(f"https:{schemeless_url}")
+            # This code path quotes the URL so there is no injection.
             resp = urlopen(f"http:{schemeless_url}")
+            self.assertNotIn(' ', resp.geturl())
             self.assertNotIn('\r', resp.geturl())
             self.assertNotIn('\n', resp.geturl())
         finally:
