@@ -1406,12 +1406,21 @@ The following methods are present only on unicode objects:
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.
 
+.. method:: unicode.isdigit()
+
+   Return ``True`` if there are only digit characters in S, ``False``
+   otherwise. Digits include decimal characters and digits that need
+   special handling, such as the compatibility superscript digits.
+   This covers digits which cannot be used to form numbers in base 10,
+   like the Kharosthi numbers. Formally, a digit is a character that has the
+   property value ``Numeric_Type=Digit`` or ``Numeric_Type=Decimal``.
+
 .. method:: unicode.isdecimal()
 
    Return ``True`` if there are only decimal characters in S, ``False``
-   otherwise. Decimal characters include digit characters, and all characters
-   that can be used to form decimal-radix numbers, e.g. U+0660,
-   ARABIC-INDIC DIGIT ZERO.
+   otherwise. Decimal characters are those that can be used to form
+   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT ZERO. Formally,
+   a decimal character is a character in the Unicode General Category "Nd".
 
 
 .. _string-formatting:
