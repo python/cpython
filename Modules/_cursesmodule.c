@@ -3705,39 +3705,39 @@ update_lines_cols(void)
     _Py_IDENTIFIER(COLS);
 
     if (!m)
-        return 0;
+        return -1;
 
     o = PyLong_FromLong(LINES);
     if (!o) {
         Py_DECREF(m);
-        return 0;
+        return -1;
     }
     if (_PyObject_SetAttrId(m, &PyId_LINES, o)) {
         Py_DECREF(m);
         Py_DECREF(o);
-        return 0;
+        return -1;
     }
     /* PyId_LINES.object will be initialized here. */
     if (PyDict_SetItem(ModDict, PyId_LINES.object, o)) {
         Py_DECREF(m);
         Py_DECREF(o);
-        return 0;
+        return -1;
     }
     Py_DECREF(o);
     o = PyLong_FromLong(COLS);
     if (!o) {
         Py_DECREF(m);
-        return 0;
+        return -1;
     }
     if (_PyObject_SetAttrId(m, &PyId_COLS, o)) {
         Py_DECREF(m);
         Py_DECREF(o);
-        return 0;
+        return -1;
     }
     if (PyDict_SetItem(ModDict, PyId_COLS.object, o)) {
         Py_DECREF(m);
         Py_DECREF(o);
-        return 0;
+        return -1;
     }
     Py_DECREF(o);
     Py_DECREF(m);
@@ -3837,8 +3837,10 @@ _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
     if (!result)
         return NULL;
-    if (!update_lines_cols())
+    if (update_lines_cols() < 0) {
+        Py_DECREF(result);
         return NULL;
+    }
     return result;
 }
 
@@ -3874,8 +3876,10 @@ _curses_resize_term_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
     if (!result)
         return NULL;
-    if (!update_lines_cols())
+    if (update_lines_cols() < 0) {
+        Py_DECREF(result);
         return NULL;
+    }
     return result;
 }
 #endif /* HAVE_CURSES_RESIZE_TERM */
@@ -3946,12 +3950,18 @@ _curses_start_color_impl(PyObject *module)
         c = PyLong_FromLong((long) COLORS);
         if (c == NULL)
             return NULL;
-        PyDict_SetItemString(ModDict, "COLORS", c);
+        if (PyDict_SetItemString(ModDict, "COLORS", c) < 0) {
+            Py_DECREF(c);
+            return NULL;
+        }
         Py_DECREF(c);
         cp = PyLong_FromLong((long) COLOR_PAIRS);
         if (cp == NULL)
             return NULL;
-        PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp);
+        if (PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp) < 0) {
+            Py_DECREF(cp);
+            return NULL;
+        }
         Py_DECREF(cp);
         Py_RETURN_NONE;
     } else {
