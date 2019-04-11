@@ -1098,9 +1098,11 @@ class Path(PurePath):
             other_st = os.stat(other_path)
         return os.path.samestat(st, other_st)
 
-    def iterdir(self):
+    def iterdir(self, *, recursive=False):
         """Iterate over the files in this directory.  Does not yield any
-        result for the special paths '.' and '..'.
+        result for the special paths '.' and '..'. Yields from
+        subdirectories if recursive=True (but then doesn't yield any
+        directories).
         """
         if self._closed:
             self._raise_closed()
@@ -1108,7 +1110,11 @@ class Path(PurePath):
             if name in {'.', '..'}:
                 # Yielding a path object for these makes little sense
                 continue
-            yield self._make_child_relpath(name)
+            path = self._make_child_relpath(name)
+            if recursive and path.is_dir():
+                yield from path.iterdir(recursive=recursive)
+            else:
+                yield path
             if self._closed:
                 self._raise_closed()
 

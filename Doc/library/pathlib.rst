@@ -844,7 +844,7 @@ call fails (for example because the path doesn't exist).
    other errors (such as permission errors) are propagated.
 
 
-.. method:: Path.iterdir()
+.. method:: Path.iterdir(recursive=False)
 
    When the path points to a directory, yield path objects of the directory
    contents::
@@ -859,6 +859,16 @@ call fails (for example because the path doesn't exist).
       PosixPath('docs/_build')
       PosixPath('docs/_static')
       PosixPath('docs/Makefile')
+
+   Also supports recursing into subdirectories::
+
+      >>> p = Path('foo')
+      >>> for child in p.iterdir(recursive=True): child
+      ...
+      PosixPath('foo/a.txt')
+      PosixPath('foo/b.py')
+      PosixPath('foo/bar/c.txt')
+      PosixPath('foo/bar/spam/d.rst')
 
 .. method:: Path.lchmod(mode)
 

@@ -1480,6 +1480,14 @@ class _BasePathTest(object):
             expected += ['linkA', 'linkB', 'brokenLink', 'brokenLinkLoop']
         self.assertEqual(paths, { P(BASE, q) for q in expected })
 
+    def test_iterdir_recursive(self):
+        P = self.cls
+        p = P(join('dirC'))
+        it = p.iterdir(recursive=True)
+        paths = set(it)
+        expected = [('dirD', 'fileD'), ('fileC',)]
+        self.assertEqual(paths, { P(join('dirC'), *q) for q in expected })
+
     @support.skip_unless_symlink
     def test_iterdir_symlink(self):
         # __iter__ on a symlink to a directory.
