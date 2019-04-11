@@ -1024,6 +1024,8 @@ always available.
           # FreeBSD-specific code here...
       elif sys.platform.startswith('linux'):
           # Linux-specific code here...
+      elif sys.platform.startswith('aix'):
+          # AIX-specific code here...
 
    For other systems, the values are:
 
@@ -1045,10 +1047,9 @@ always available.
 
    .. versionchanged:: 3.8
       On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
-      already uses the ``startswith`` idiom discussed above no changes to
-      existing code is expected. Remember, this is the version of AIX Python3
-      was built on, not running on. To get the version you are running on,
-      e.g., 6 or 7, use ``os.uname()[3]``
+      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
+      older Python versions include the version number, it is recommended to
+      always use the ``startswith`` idiom presented above.
 
    .. seealso::
 

@@ -1,4 +1,5 @@
-On AIX, remove the major version in sys.platform
-It is now always 'aix', instead of 'aix3', 'aix4', ..., 'aix7'
-that reflected the AIX version used to build Python.
-Contributed by M. Felt
+On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
+older Python versions include the version number, it is recommended to
+always use the ``sys.platform.startswith('aix')``.
+Contributed by M. Felt in :issue:`36588`:.
