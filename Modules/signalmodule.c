@@ -1356,8 +1356,7 @@ PyInit__signal(void)
     if (PyModule_AddObject(m, "SIG_IGN", x))
          goto finally;
 
-    x = PyLong_FromLong((long)NSIG);
-    if (PyModule_AddObject(m, "NSIG", x))
+    if (PyModule_AddIntMacro(m, NSIG))
          goto finally;
 
 #ifdef SIG_BLOCK
