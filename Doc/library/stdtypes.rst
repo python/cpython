@@ -2677,8 +2677,8 @@ arbitrary binary data.
    containing the part before the separator, the separator itself or its
    bytearray copy, and the part after the separator.
    If the separator is not found, return a 3-tuple
-   containing a copy of the original sequence, followed by two empty bytes or
-   bytearray objects.
+   containing two empty bytes or bytearray objects, followed by a copy of the
+   original sequence.
 
    The separator to search for may be any :term:`bytes-like object`.
 
