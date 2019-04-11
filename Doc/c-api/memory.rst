@@ -440,8 +440,9 @@ Customize Memory Allocators
 
    Setup hooks to detect bugs in the Python memory allocator functions.
 
-   Newly allocated memory is filled with the byte ``0xCB``, freed memory is
-   filled with the byte ``0xDB``.
+   Newly allocated memory is filled with the byte ``0xCD`` (``CLEANBYTE``),
+   freed memory is filled with the byte ``0xDD`` (``DEADBYTE``). Memory blocks
+   are surrounded by "forbidden bytes" (``FORBIDDENBYTE``: byte ``0xFD``).
 
    Runtime checks:
 
@@ -470,6 +471,12 @@ Customize Memory Allocators
       where a memory block was allocated. The debug hooks now also check
       if the GIL is held when functions of :c:data:`PYMEM_DOMAIN_OBJ` and
       :c:data:`PYMEM_DOMAIN_MEM` domains are called.
+
+   .. versionchanged:: 3.7.3
+      Byte patterns ``0xCB`` (``CLEANBYTE``), ``0xDB`` (``DEADBYTE``) and
+      ``0xFB`` (``FORBIDDENBYTE``) have been replaced with ``0xCD``, ``0xDD``
+      and ``0xFD`` to use the same values than Windows CRT debug ``malloc()``
+      and ``free()``.
 
 
 .. _pymalloc:
