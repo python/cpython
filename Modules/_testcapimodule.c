@@ -4247,7 +4247,7 @@ pyobject_is_freed(PyObject *self, PyObject *op)
 static PyObject*
 pyobject_uninitialized(PyObject *self, PyObject *args)
 {
-    PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject *));
+    PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
     if (op == NULL) {
         return NULL;
     }

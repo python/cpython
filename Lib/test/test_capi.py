@@ -528,13 +528,14 @@ class PyMemDebugTests(unittest.TestCase):
 
     def check_pyobject_is_freed(self, func):
         code = textwrap.dedent('''
-            import os, sys, _testcapi
+            import gc, os, sys, _testcapi
+            # Disable the GC to avoid crash on GC collection
+            gc.disable()
             obj = _testcapi.{func}()
-            if _testcapi.pyobject_is_freed(obj):
-                # Exit immediately to avoid crash on deallocation invalid obj
-                os._exit(0)
-            else:
-                sys.exit(2)
+            error = (_testcapi.pyobject_is_freed(obj) == False)
+            # Exit immediately to avoid a crash while deallocating
+            # the invalid object
+            os._exit(int(error))
         ''')
         code = code.format(func=func)
         assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
