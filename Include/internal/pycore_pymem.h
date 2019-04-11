@@ -161,16 +161,20 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
 
    The heuristic relies on the debug hooks on Python memory allocators which
    fills newly allocated memory with CLEANBYTE (0xCB) and newly freed memory
-   with DEADBYTE (0xDB). */
+   with DEADBYTE (0xDB). Detect also "untouchable bytes" marked
+   with FORBIDDENBYTE (0xFB). */
 static inline int _PyMem_IsPtrFreed(void *ptr)
 {
     uintptr_t value = (uintptr_t)ptr;
 #if SIZEOF_VOID_P == 8
     return (value == (uintptr_t)0xCBCBCBCBCBCBCBCB
-            || value == (uintptr_t)0xDBDBDBDBDBDBDBDB);
+            || value == (uintptr_t)0xDBDBDBDBDBDBDBDB
+            || value == (uintptr_t)0xFBFBFBFBFBFBFBFB
+            );
 #elif SIZEOF_VOID_P == 4
     return (value == (uintptr_t)0xCBCBCBCB
-            || value == (uintptr_t)0xDBDBDBDB);
+            || value == (uintptr_t)0xDBDBDBDB
+            || value == (uintptr_t)0xFBFBFBFB);
 #else
 #  error "unknown pointer size"
 #endif

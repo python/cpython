@@ -543,6 +543,9 @@ class PyMemDebugTests(unittest.TestCase):
     def test_pyobject_is_freed_uninitialized(self):
         self.check_pyobject_is_freed('pyobject_uninitialized')
 
+    def test_pyobject_is_freed_forbidden_bytes(self):
+        self.check_pyobject_is_freed('pyobject_forbidden_bytes')
+
     def test_pyobject_is_freed_free(self):
         self.check_pyobject_is_freed('pyobject_freed')
 

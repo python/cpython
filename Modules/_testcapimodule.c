@@ -4251,9 +4251,25 @@ pyobject_uninitialized(PyObject *self, PyObject *args)
     if (op == NULL) {
         return NULL;
     }
-    /* Initialize reference count to avoid early crash in ceval or the GC */
+    /* Initialize reference count to avoid early crash in ceval or GC */
     Py_REFCNT(op) = 1;
     /* object fields like ob_type are uninitialized! */
+    return op;
+}
+
+
+static PyObject*
+pyobject_forbidden_bytes(PyObject *self, PyObject *args)
+{
+    /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
+    PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_REFCNT(op) = 1;
+    /* ob_type field is after the memory block: part of "forbidden bytes"
+       when using debug hooks on memory allocatrs! */
     return op;
 }
 
@@ -4266,7 +4282,7 @@ pyobject_freed(PyObject *self, PyObject *args)
         return NULL;
     }
     Py_TYPE(op)->tp_dealloc(op);
-    /* Reset reference count to avoid early crash in ceval or the GC */
+    /* Reset reference count to avoid early crash in ceval or GC */
     Py_REFCNT(op) = 1;
     /* object memory is freed! */
     return op;
@@ -4946,6 +4962,7 @@ static PyMethodDef TestMethods[] = {
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
     {"pyobject_is_freed", (PyCFunction)(void(*)(void))pyobject_is_freed, METH_O},
     {"pyobject_uninitialized", pyobject_uninitialized, METH_NOARGS},
+    {"pyobject_forbidden_bytes", pyobject_forbidden_bytes, METH_NOARGS},
     {"pyobject_freed", pyobject_freed, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
