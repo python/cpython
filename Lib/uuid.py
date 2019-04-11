@@ -45,12 +45,19 @@ Typical usage:
 """
 
 import os
+import platform
 import sys
 
 from enum import Enum
 
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
+
+# The recognized platforms - known behaviors
+_AIX     = platform.system() == 'AIX'
+_DARWIN  = platform.system() == 'Darwin'
+_LINUX   = platform.system() == 'Linux'
+_WINDOWS = platform.system() == 'Windows'
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
@@ -673,12 +680,26 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
+if _LINUX:
+    _GETTERS = [_ifconfig_getnode, _ip_getnode,
+                          _arp_getnode, _lanscan_getnode]
+elif _DARWIN:
+    _GETTERS = [_arp_getnode, _ifconfig_getnode, _netstat_getnode]
+elif _WINDOWS:
+    _GETTERS = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+elif _AIX:
+    _GETTERS = [_netstat_getnode]
+else:
+    _GETTERS = [_ifconfig_getnode, _ip_getnode,
+                          _arp_getnode, _lanscan_getnode, _netstat_getnode]
+if os.name == 'posix':
+    _NODE_GETTERS = [_unix_getnode] + _GETTERS
+elif os.name == 'nt':
+    _NODE_GETTERS = [_windll_getnode] + _GETTERS
+else:
+    _NODE_GETTERS = _GETTERS
+
 _node = None
-
-_NODE_GETTERS_WIN32 = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
-
-_NODE_GETTERS_UNIX = [_unix_getnode, _ifconfig_getnode, _ip_getnode,
-                      _arp_getnode, _lanscan_getnode, _netstat_getnode]
 
 def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
@@ -692,12 +713,7 @@ def getnode(*, getters=None):
     if _node is not None:
         return _node
 
-    if sys.platform == 'win32':
-        getters = _NODE_GETTERS_WIN32
-    else:
-        getters = _NODE_GETTERS_UNIX
-
-    for getter in getters + [_random_getnode]:
+    for getter in _NODE_GETTERS + [_random_getnode]:
         try:
             _node = getter()
         except:
