@@ -796,6 +796,8 @@ The :mod:`socket` module also offers various network-related services:
    For IPv6 addresses, ``%scope`` is appended to the host part if *sockaddr*
    contains meaningful *scopeid*. Usually this happens for multicast addresses.
 
+   For more information about *flags* you can consult :manpage:`getnameinfo(3)`.
+
 .. function:: getprotobyname(protocolname)
 
    Translate an Internet protocol name (for example, ``'icmp'``) to a constant
