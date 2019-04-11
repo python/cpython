@@ -681,8 +681,7 @@ def _random_getnode():
 
 
 if _LINUX:
-    _GETTERS = [_ifconfig_getnode, _ip_getnode,
-                          _arp_getnode, _lanscan_getnode]
+    _GETTERS = [_ifconfig_getnode, _ip_getnode, _arp_getnode, _lanscan_getnode]
 elif _DARWIN:
     _GETTERS = [_arp_getnode, _ifconfig_getnode, _netstat_getnode]
 elif _WINDOWS:
@@ -690,8 +689,8 @@ elif _WINDOWS:
 elif _AIX:
     _GETTERS = [_netstat_getnode]
 else:
-    _GETTERS = [_ifconfig_getnode, _ip_getnode,
-                          _arp_getnode, _lanscan_getnode, _netstat_getnode]
+    _GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode,
+                   _lanscan_getnode, _ip_getnode]
 if os.name == 'posix':
     _NODE_GETTERS = [_unix_getnode] + _GETTERS
 elif os.name == 'nt':
