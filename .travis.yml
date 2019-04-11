@@ -56,22 +56,20 @@ matrix:
         - python -m pip install sphinx==1.8.2 blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
-    # FIXME: bpo-36597: the doctest job fails because it fails
-    # FIXME: for an unknown reason
-    #- os: linux
-    #  language: c
-    #  compiler: clang
-    #  env: TESTING=doctest
-    #  addons:
-    #    apt:
-    #      packages:
-    #        - xvfb
-    #  before_script:
-    #    - ./configure
-    #    - make -j4
-    #    - make -C Doc/ PYTHON=../python venv
-    #  script:
-    #    xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
+    - os: linux
+      language: c
+      compiler: clang
+      env: TESTING=doctest
+      addons:
+        apt:
+          packages:
+            - xvfb
+      before_script:
+        - ./configure
+        - make -j4
+        - make -C Doc/ PYTHON=../python venv
+      script:
+        xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
     - os: osx
       language: c
       compiler: clang

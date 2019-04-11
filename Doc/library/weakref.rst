@@ -492,7 +492,7 @@ is still alive.  For instance
     >>> obj = Object()
     >>> weakref.finalize(obj, print, "obj dead or exiting")  #doctest:+ELLIPSIS
     <finalize object at ...; for 'Object' at ...>
-    >>> exit()                                               #doctest:+SKIP
+    >>> del obj
     obj dead or exiting
 
 
