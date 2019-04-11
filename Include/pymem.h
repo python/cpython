@@ -23,8 +23,6 @@ PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
 
 /* Try to get the allocators name set by _PyMem_SetupAllocators(). */
 PyAPI_FUNC(const char*) _PyMem_GetAllocatorsName(void);
-
-PyAPI_FUNC(int) _PyMem_IsFreed(void *ptr, size_t size);
 #endif   /* !defined(Py_LIMITED_API) */
 
 
