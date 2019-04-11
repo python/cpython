@@ -490,7 +490,7 @@ Unless you set the :attr:`~finalize.atexit` attribute to
 is still alive.  For instance
 
 .. doctest::
-   :options: SKIP
+   :options: +SKIP
 
    >>> obj = Object()
    >>> weakref.finalize(obj, print, "obj dead or exiting")
