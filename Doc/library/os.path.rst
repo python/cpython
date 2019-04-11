@@ -324,8 +324,8 @@ the :mod:`glob` module.)
 
 .. function:: normcase(path)
 
-   Normalize the case of a pathname.  On Windows, converts all characters in the
-   pathname to lowercase, and also converts forward slashes to backward slashes.
+   Normalize the case of a pathname.  On Windows, convert all characters in the
+   pathname to lowercase, and also convert forward slashes to backward slashes.
    On other operating systems, return the path unchanged.
    Raise a :exc:`TypeError` if the type of *path* is not ``str`` or ``bytes`` (directly
    or indirectly through the :class:`os.PathLike` interface).
