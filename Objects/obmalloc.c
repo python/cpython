@@ -1914,7 +1914,7 @@ _Py_GetAllocatedBlocks(void)
 
 /* Special bytes broadcast into debug memory blocks at appropriate times.
  * Strings of these are unlikely to be valid addresses, floats, ints or
- * 7-bit ASCII.
+ * 7-bit ASCII. If modified, _PyMem_IsPtrFreed() should be updated as well.
  */
 #undef CLEANBYTE
 #undef DEADBYTE
@@ -2056,22 +2056,6 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
     return _PyMem_DebugRawAlloc(1, ctx, nbytes);
-}
-
-
-/* Heuristic checking if the memory has been freed. Rely on the debug hooks on
-   Python memory allocators which fills the memory with DEADBYTE (0xDB) when
-   memory is deallocated. */
-int
-_PyMem_IsFreed(void *ptr, size_t size)
-{
-    unsigned char *bytes = ptr;
-    for (size_t i=0; i < size; i++) {
-        if (bytes[i] != DEADBYTE) {
-            return 0;
-        }
-    }
-    return 1;
 }
 
 

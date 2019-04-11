@@ -526,6 +526,25 @@ class PyMemDebugTests(unittest.TestCase):
         code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
         self.check_malloc_without_gil(code)
 
+    def check_pyobject_is_freed(self, func):
+        code = textwrap.dedent('''
+            import os, sys, _testcapi
+            obj = _testcapi.{func}()
+            if _testcapi.pyobject_is_freed(obj):
+                # Exit immediately to avoid crash on deallocation invalid obj
+                os._exit(0)
+            else:
+                sys.exit(2)
+        ''')
+        code = code.format(func=func)
+        assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
+
+    def test_pyobject_is_freed_uninitialized(self):
+        self.check_pyobject_is_freed('pyobject_uninitialized')
+
+    def test_pyobject_is_freed_free(self):
+        self.check_pyobject_is_freed('pyobject_freed')
+
 
 class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'

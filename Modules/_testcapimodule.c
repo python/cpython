@@ -4237,6 +4237,43 @@ test_pymem_getallocatorsname(PyObject *self, PyObject *args)
 
 
 static PyObject*
+pyobject_is_freed(PyObject *self, PyObject *op)
+{
+    int res = _PyObject_IsFreed(op);
+    return PyBool_FromLong(res);
+}
+
+
+static PyObject*
+pyobject_uninitialized(PyObject *self, PyObject *args)
+{
+    PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject *));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or the GC */
+    Py_REFCNT(op) = 1;
+    /* object fields like ob_type are uninitialized! */
+    return op;
+}
+
+
+static PyObject*
+pyobject_freed(PyObject *self, PyObject *args)
+{
+    PyObject *op = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    if (op == NULL) {
+        return NULL;
+    }
+    Py_TYPE(op)->tp_dealloc(op);
+    /* Reset reference count to avoid early crash in ceval or the GC */
+    Py_REFCNT(op) = 1;
+    /* object memory is freed! */
+    return op;
+}
+
+
+static PyObject*
 pyobject_malloc_without_gil(PyObject *self, PyObject *args)
 {
     char *buffer;
@@ -4907,6 +4944,9 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
+    {"pyobject_is_freed", (PyCFunction)(void(*)(void))pyobject_is_freed, METH_O},
+    {"pyobject_uninitialized", pyobject_uninitialized, METH_NOARGS},
+    {"pyobject_freed", pyobject_freed, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
