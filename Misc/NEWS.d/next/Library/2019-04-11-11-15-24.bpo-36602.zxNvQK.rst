@@ -1,0 +1,1 @@
+``pathlib.Path.iterdir`` can now list items in subdirectories with the optional argument ``recursive=True``. Note that directories will not be yielded in recursive listing
