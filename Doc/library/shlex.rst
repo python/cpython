@@ -46,7 +46,7 @@ The :mod:`shlex` module defines the following functions:
       >>> print(join(['echo', '-n', 'Multiple words']))
       echo -n 'Multiple words'
 
-   The returned value is shell-escaped to prevent against injection
+   The returned value is shell-escaped to protect against injection
    vulnerabilities (see :func:`quote`).
    Nonetheless, it's safer to pass a list of tokens to a shell command line
    when possible.
