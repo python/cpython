@@ -679,6 +679,16 @@ Porting to Python 3.8
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Porting Python code
+-------------------
+  XXX :issue:`36588`: On AIX, sys.platform doesn't contain the major version
+  anymore. It is now always 'aix', instead of 'aix3', 'aix4', ..., 'aix7'
+  depending on the AIX version used to build Python.
+  Replace sys.platform == 'aixX' with sys.platform == 'aix' or
+  with sys.platform.startswith('aix').
+  Code using sys.platform.startswith('aix') will work without any change.
+
+  (Contributed by M. Felt)
 
 Changes in Python behavior
 --------------------------

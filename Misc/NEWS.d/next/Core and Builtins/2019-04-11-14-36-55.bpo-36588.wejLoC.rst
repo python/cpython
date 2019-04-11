@@ -1,0 +1,4 @@
+On AIX, remove the major version in sys.platform
+It is now always 'aix', instead of 'aix3', 'aix4', ..., 'aix7'
+that reflected the AIX version used to build Python.
+Contributed by M. Felt

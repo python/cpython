@@ -1014,7 +1014,7 @@ always available.
    This string contains a platform identifier that can be used to append
    platform-specific components to :data:`sys.path`, for instance.
 
-   For Unix systems, except on Linux, this is the lowercased OS name as
+   For Unix systems, except on Linux and AIX, this is the lowercased OS name as
    returned by ``uname -s`` with the first part of the version as returned by
    ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
    when Python was built*.  Unless you want to test for a specific system
@@ -1030,6 +1030,7 @@ always available.
    ================ ===========================
    System           ``platform`` value
    ================ ===========================
+   AIX              ``'aix'``
    Linux            ``'linux'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
@@ -1041,6 +1042,13 @@ always available.
       It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
+
+   .. versionchanged:: 3.8
+      On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+      already uses the ``startswith`` idiom discussed above no changes to
+      existing code is expected. Remember, this is the version of AIX Python3
+      was built on, not running on. To get the version you are running on,
+      e.g., 6 or 7, use ``os.uname()[3]``
 
    .. seealso::
 
