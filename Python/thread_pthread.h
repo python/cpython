@@ -339,7 +339,7 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", lock));
+    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock)lock;
 }
 
@@ -521,7 +521,7 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", lock));
+    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock) lock;
 }
 

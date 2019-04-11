@@ -531,11 +531,11 @@ PyCArg_repr(PyCArgObject *self)
     default:
         if (is_literal_char((unsigned char)self->tag)) {
             sprintf(buffer, "<cparam '%c' at %p>",
-                (unsigned char)self->tag, self);
+                (unsigned char)self->tag, (void *)self);
         }
         else {
             sprintf(buffer, "<cparam 0x%02x at %p>",
-                (unsigned char)self->tag, self);
+                (unsigned char)self->tag, (void *)self);
         }
         break;
     }
