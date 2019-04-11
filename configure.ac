@@ -1781,6 +1781,7 @@ yes)
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
+        AC_DEFINE_UNQUOTED([Py_MACOS_SYSROOT], [`xcrun --show-sdk-path`], [Get the root dir of XCode])
         if test "${CC}" = gcc
         then
             AC_MSG_CHECKING(which compiler should be used)

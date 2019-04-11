@@ -7345,6 +7345,11 @@ $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
+
+cat >>confdefs.h <<_ACEOF
+#define Py_MACOS_SYSROOT `xcrun --show-sdk-path`
+_ACEOF
+
         if test "${CC}" = gcc
         then
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking which compiler should be used" >&5

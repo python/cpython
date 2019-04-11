@@ -134,7 +134,7 @@ def macosx_sdk_root():
     cflags = sysconfig.get_config_var('CFLAGS')
     m = re.search(r'-isysroot\s+(\S+)', cflags)
     if m is None:
-        sysroot = '/'
+        sysroot = sysconfig.get_config_var('Py_MACOS_SYSROOT')
     else:
         sysroot = m.group(1)
     return sysroot
@@ -669,6 +669,7 @@ class PyBuildExt(build_ext):
             # NOTE: using shlex.split would technically be more correct, but
             # also gives a bootstrap problem. Let's hope nobody uses
             # directories with whitespace in the name to store libraries.
+            inc_dirs += ['/usr/include']
             cflags, ldflags = sysconfig.get_config_vars(
                     'CFLAGS', 'LDFLAGS')
             for item in cflags.split():

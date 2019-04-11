@@ -1374,6 +1374,9 @@
    externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Get the root dir of XCode */
+#undef Py_MACOS_SYSROOT
+
 /* assume C89 semantics that RETSIGTYPE is always void */
 #undef RETSIGTYPE
 
