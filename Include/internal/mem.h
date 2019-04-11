@@ -145,6 +145,16 @@ PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);
 
 #define _PyGC_generation0 _PyRuntime.gc.generation0
 
+/* Heuristic checking if a pointer value is newly allocated
+   (uninitialized) or newly freed. The pointer is not dereferenced, only the
+   pointer value is checked.
+
+   The heuristic relies on the debug hooks on Python memory allocators which
+   fills newly allocated memory with CLEANBYTE (0xCB) and newly freed memory
+   with DEADBYTE (0xDB). Detect also "untouchable bytes" marked
+   with FORBIDDENBYTE (0xFB). */
+PyAPI_FUNC(int) _PyMem_IsPtrFreed(void *ptr);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1955,6 +1955,23 @@ _Py_GetAllocatedBlocks(void)
 #define DEADBYTE       0xDB    /* dead (newly freed) memory */
 #define FORBIDDENBYTE  0xFB    /* untouchable bytes at each end of a block */
 
+int
+_PyMem_IsPtrFreed(void *ptr)
+{
+    uintptr_t value = (uintptr_t)ptr;
+#if SIZEOF_VOID_P == 8
+    return (value == (uintptr_t)0xCBCBCBCBCBCBCBCB
+            || value == (uintptr_t)0xDBDBDBDBDBDBDBDB
+            || value == (uintptr_t)0xFBFBFBFBFBFBFBFB);
+#elif SIZEOF_VOID_P == 4
+    return (value == (uintptr_t)0xCBCBCBCB
+            || value == (uintptr_t)0xDBDBDBDB
+            || value == (uintptr_t)0xFBFBFBFB);
+#else
+#  error "unknown pointer size"
+#endif
+}
+
 static size_t serialno = 0;     /* incremented on each debug {m,re}alloc */
 
 /* serialno is always incremented via calling this routine.  The point is
@@ -2088,22 +2105,6 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
     return _PyMem_DebugRawAlloc(1, ctx, nbytes);
-}
-
-
-/* Heuristic checking if the memory has been freed. Rely on the debug hooks on
-   Python memory allocators which fills the memory with DEADBYTE (0xDB) when
-   memory is deallocated. */
-int
-_PyMem_IsFreed(void *ptr, size_t size)
-{
-    unsigned char *bytes = ptr;
-    for (size_t i=0; i < size; i++) {
-        if (bytes[i] != DEADBYTE) {
-            return 0;
-        }
-    }
-    return 1;
 }
 
 
