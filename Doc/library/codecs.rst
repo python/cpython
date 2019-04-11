@@ -638,7 +638,7 @@ define in order to be compatible with the Python codec registry.
 
    .. method:: setstate(state)
 
-      Set the state of the encoder to *state*. *state* must be a decoder state
+      Set the state of the decoder to *state*. *state* must be a decoder state
       returned by :meth:`getstate`.
 
 
