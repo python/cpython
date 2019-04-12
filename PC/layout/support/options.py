@@ -63,6 +63,10 @@ PRESETS = {
             "props"
         ],
     },
+    "iot": {
+        "help": "Windows IoT Core",
+        "options": ["stable", "pip"],
+    },
     "default": {
         "help": "development kit package",
         "options": [
