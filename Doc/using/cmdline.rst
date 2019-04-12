@@ -437,6 +437,7 @@ Miscellaneous options
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
+     * :class:`io.IOBase` destructor logs ``close()`` exceptions.
 
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
@@ -465,7 +466,8 @@ Miscellaneous options
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
    .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option.
+      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+      ``close()`` exceptions in :class:`io.IOBase` destructor.
 
 
 Options you shouldn't use
