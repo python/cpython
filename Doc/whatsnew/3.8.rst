@@ -700,6 +700,11 @@ Changes in Python behavior
   raised when getting the attribute from the type dictionary are no longer
   ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
 
+* On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+  It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
+  older Python versions include the version number, it is recommended to
+  always use the ``sys.platform.startswith('aix')``.
+  (Contributed by M. Felt in :issue:`36588`.)
 
 Changes in the Python API
 -------------------------
