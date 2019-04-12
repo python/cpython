@@ -152,6 +152,26 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(dict_popitem__doc__,
+"popitem($self, /)\n"
+"--\n"
+"\n"
+"Remove and return some (key, value) pair as a 2-tuple.\n"
+"\n"
+"Riase KeyError if the dict is empty.");
+
+#define DICT_POPITEM_METHODDEF    \
+    {"popitem", (PyCFunction)dict_popitem, METH_NOARGS, dict_popitem__doc__},
+
+static PyObject *
+dict_popitem_impl(PyDictObject *self);
+
+static PyObject *
+dict_popitem(PyDictObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return dict_popitem_impl(self);
+}
+
 PyDoc_STRVAR(dict___reversed____doc__,
 "__reversed__($self, /)\n"
 "--\n"
@@ -169,4 +189,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=98eac653ad2b9353 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7daa98aae6f2ae5 input=a9049054013a1b77]*/

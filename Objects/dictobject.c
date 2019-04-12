@@ -3004,8 +3004,17 @@ dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     return _PyDict_Pop((PyObject*)self, key, default_value);
 }
 
+/*[clinic input]
+dict.popitem
+
+Remove and return some (key, value) pair as a 2-tuple.
+
+Raises KeyError if the dict is empty.
+[clinic start generated code]*/
+
 static PyObject *
-dict_popitem(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
+dict_popitem_impl(PyDictObject *self)
+/*[clinic end generated code: output=e65fcb04420d230d input=63e3f1db762b3e14]*/
 {
     Py_ssize_t i, j;
     PyDictKeyEntry *ep0, *ep;
@@ -3023,44 +3032,43 @@ dict_popitem(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     res = PyTuple_New(2);
     if (res == NULL)
         return NULL;
-    if (mp->ma_used == 0) {
+    if (self->ma_used == 0) {
         Py_DECREF(res);
-        PyErr_SetString(PyExc_KeyError,
-                        "popitem(): dictionary is empty");
+        PyErr_SetString(PyExc_KeyError, "popitem(): dictionary is empty");
         return NULL;
     }
     /* Convert split table to combined table */
-    if (mp->ma_keys->dk_lookup == lookdict_split) {
-        if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
+    if (self->ma_keys->dk_lookup == lookdict_split) {
+        if (dictresize(self, DK_SIZE(self->ma_keys))) {
             Py_DECREF(res);
             return NULL;
         }
     }
-    ENSURE_ALLOWS_DELETIONS(mp);
+    ENSURE_ALLOWS_DELETIONS(self);
 
     /* Pop last item */
-    ep0 = DK_ENTRIES(mp->ma_keys);
-    i = mp->ma_keys->dk_nentries - 1;
+    ep0 = DK_ENTRIES(self->ma_keys);
+    i = self->ma_keys->dk_nentries - 1;
     while (i >= 0 && ep0[i].me_value == NULL) {
         i--;
     }
     assert(i >= 0);
 
     ep = &ep0[i];
-    j = lookdict_index(mp->ma_keys, ep->me_hash, i);
+    j = lookdict_index(self->ma_keys, ep->me_hash, i);
     assert(j >= 0);
-    assert(dictkeys_get_index(mp->ma_keys, j) == i);
-    dictkeys_set_index(mp->ma_keys, j, DKIX_DUMMY);
+    assert(dictkeys_get_index(self->ma_keys, j) == i);
+    dictkeys_set_index(self->ma_keys, j, DKIX_DUMMY);
 
     PyTuple_SET_ITEM(res, 0, ep->me_key);
     PyTuple_SET_ITEM(res, 1, ep->me_value);
     ep->me_key = NULL;
     ep->me_value = NULL;
     /* We can't dk_usable++ since there is DKIX_DUMMY in indices */
-    mp->ma_keys->dk_nentries = i;
-    mp->ma_used--;
-    mp->ma_version_tag = DICT_NEXT_VERSION();
-    assert(_PyDict_CheckConsistency(mp));
+    self->ma_keys->dk_nentries = i;
+    self->ma_used--;
+    self->ma_version_tag = DICT_NEXT_VERSION();
+    assert(_PyDict_CheckConsistency(self));
     return res;
 }
 
@@ -3143,10 +3151,6 @@ PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 PyDoc_STRVAR(sizeof__doc__,
 "D.__sizeof__() -> size of D in memory, in bytes");
 
-PyDoc_STRVAR(popitem__doc__,
-"D.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
-2-tuple; but raise KeyError if D is empty.");
-
 PyDoc_STRVAR(update__doc__,
 "D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.\n\
 If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\n\
@@ -3180,8 +3184,7 @@ static PyMethodDef mapp_methods[] = {
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
     DICT_POP_METHODDEF
-    {"popitem",         (PyCFunction)(void(*)(void))dict_popitem,      METH_NOARGS,
-     popitem__doc__},
+    DICT_POPITEM_METHODDEF
     {"keys",            dictkeys_new,                   METH_NOARGS,
     keys__doc__},
     {"items",           dictitems_new,                  METH_NOARGS,
