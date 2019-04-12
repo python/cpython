@@ -1,0 +1,2 @@
+os.sendfile() on BSD, macOS don't return bytes sent on EINTR  (patch by
+Giampaolo Rodola)

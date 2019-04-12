@@ -8913,6 +8913,8 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
 #else
         ret = sendfile(in, out, offset, len, &sf, &sbytes, flags);
 #endif
+        if (sbytes > 0)
+            break;
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
@@ -8923,8 +8925,8 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
         iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
 
     if (ret < 0) {
-        if ((errno == EAGAIN) || (errno == EBUSY)) {
-            if (sbytes != 0) {
+        if ((errno == EAGAIN) || (errno == EBUSY) || (errno == EINTR)) {
+            if (sbytes > 0) {
                 // some data has been sent
                 goto done;
             }
