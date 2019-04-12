@@ -1540,9 +1540,14 @@ then
     # instead: slower but don't trigger a SIGSEGV if the memory is not aligned
     # on 16 bytes.
     #
-    # Sadly, the flag must be expected to CFLAGS and not just CFLAGS_NODIST,
+    # Sadly, the flag must be added to CFLAGS and not just CFLAGS_NODIST,
     # since third party C extensions can have the same issue.
-    CFLAGS="$CFLAGS -fmax-type-align=8"
+    #
+    # Check if -fmax-type-align flag is supported (it's not supported by old
+    # clang versions):
+    if "$CC" -v --help 2>/dev/null |grep -- -fmax-type-align > /dev/null; then
+        CFLAGS="$CFLAGS -fmax-type-align=8"
+    fi
 fi
 
 AC_SUBST(BASECFLAGS)
