@@ -1,0 +1,4 @@
+Remove serialno field from debug hooks on Python memory allocators to reduce
+the memory footprint by 5%. Enable tracemalloc to get the traceback where a
+memory block has been allocated when a fatal memory error is logged to decide
+where to put a breakpoint.

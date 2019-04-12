@@ -1926,17 +1926,6 @@ _Py_GetAllocatedBlocks(void)
 #define DEADBYTE       0xDD    /* dead (newly freed) memory */
 #define FORBIDDENBYTE  0xFD    /* untouchable bytes at each end of a block */
 
-static size_t serialno = 0;     /* incremented on each debug {m,re}alloc */
-
-/* serialno is always incremented via calling this routine.  The point is
- * to supply a single place to set a breakpoint.
- */
-static void
-bumpserialno(void)
-{
-    ++serialno;
-}
-
 #define SST SIZEOF_SIZE_T
 
 /* Read sizeof(size_t) bytes at p as a big-endian size_t. */
@@ -1967,7 +1956,7 @@ write_size_t(void *p, size_t n)
     }
 }
 
-/* Let S = sizeof(size_t).  The debug malloc asks for 4*S extra bytes and
+/* Let S = sizeof(size_t).  The debug malloc asks for 3 * S extra bytes and
    fills them with useful stuff, here calling the underlying malloc's result p:
 
 p[0: S]
@@ -1984,64 +1973,53 @@ p[2*S: 2*S+n]
     handled the request itself.
 p[2*S+n: 2*S+n+S]
     Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
-p[2*S+n+S: 2*S+n+2*S]
-    A serial number, incremented by 1 on each call to _PyMem_DebugMalloc
-    and _PyMem_DebugRealloc.
-    This is a big-endian size_t.
-    If "bad memory" is detected later, the serial number gives an
-    excellent way to set a breakpoint on the next run, to capture the
-    instant at which this block was passed out.
 */
 
 static void *
 _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uint8_t *p;           /* base address of malloc'ed pad block */
-    uint8_t *data;        /* p + 2*SST == pointer to data bytes */
+    uint8_t *head;        /* base address of malloc'ed pad block */
+    uint8_t *data;        /* head + 2*SST == pointer to data bytes */
     uint8_t *tail;        /* data + nbytes == pointer to tail pad bytes */
-    size_t total;         /* 2 * SST + nbytes + 2 * SST */
+    size_t total;         /* 2 * SST + nbytes + SST */
 
-    if (nbytes > (size_t)PY_SSIZE_T_MAX - 4 * SST) {
+    if (nbytes > (size_t)PY_SSIZE_T_MAX - 3 * SST) {
         /* integer overflow: can't represent total as a Py_ssize_t */
         return NULL;
     }
-    total = nbytes + 4 * SST;
+    total = nbytes + 3 * SST;
 
-    /* Layout: [SSSS IFFF CCCC...CCCC FFFF NNNN]
-     *          ^--- p    ^--- data   ^--- tail
+    /* Layout: [SSSS IFFF CCCC...CCCC FFFF]
+                ^--- head ^--- data   ^--- tail
        S: nbytes stored as size_t
        I: API identifier (1 byte)
        F: Forbidden bytes (size_t - 1 bytes before, size_t bytes after)
-       C: Clean bytes used later to store actual data
-       N: Serial number stored as size_t */
+       C: Clean bytes used later to store actual data */
 
     if (use_calloc) {
-        p = (uint8_t *)api->alloc.calloc(api->alloc.ctx, 1, total);
+        head = (uint8_t *)api->alloc.calloc(api->alloc.ctx, 1, total);
     }
     else {
-        p = (uint8_t *)api->alloc.malloc(api->alloc.ctx, total);
+        head = (uint8_t *)api->alloc.malloc(api->alloc.ctx, total);
     }
-    if (p == NULL) {
+    if (head == NULL) {
         return NULL;
     }
-    data = p + 2*SST;
+    data = head + 2 * SST;
 
-    bumpserialno();
-
-    /* at p, write size (SST bytes), id (1 byte), pad (SST-1 bytes) */
-    write_size_t(p, nbytes);
-    p[SST] = (uint8_t)api->api_id;
-    memset(p + SST + 1, FORBIDDENBYTE, SST-1);
+    /* at head, write size (SST bytes), id (1 byte), pad (SST-1 bytes) */
+    write_size_t(head, nbytes);
+    head[SST] = (uint8_t)api->api_id;
+    memset(head + SST + 1, FORBIDDENBYTE, SST-1);
 
     if (nbytes > 0 && !use_calloc) {
         memset(data, CLEANBYTE, nbytes);
     }
 
-    /* at tail, write pad (SST bytes) and serialno (SST bytes) */
+    /* at tail, write pad (SST bytes) */
     tail = data + nbytes;
     memset(tail, FORBIDDENBYTE, SST);
-    write_size_t(tail + SST, serialno);
 
     return data;
 }
@@ -2076,14 +2054,14 @@ _PyMem_DebugRawFree(void *ctx, void *p)
     }
 
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uint8_t *q = (uint8_t *)p - 2*SST;  /* address returned from malloc */
-    size_t nbytes;
+    uint8_t *head = (uint8_t *)p - 2*SST;  /* address returned from malloc */
+    size_t nbytes, total;
 
     _PyMem_DebugCheckAddress(api->api_id, p);
-    nbytes = read_size_t(q);
-    nbytes += 4 * SST;
-    memset(q, DEADBYTE, nbytes);
-    api->alloc.free(api->alloc.ctx, q);
+    nbytes = read_size_t(head);
+    total = nbytes + 3 * SST;
+    memset(head, DEADBYTE, total);
+    api->alloc.free(api->alloc.ctx, head);
 }
 
 
@@ -2099,58 +2077,57 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     uint8_t *data;        /* pointer to data bytes */
     uint8_t *r;
     uint8_t *tail;        /* data + nbytes == pointer to tail pad bytes */
-    size_t total;         /* 2 * SST + nbytes + 2 * SST */
+    size_t total;         /* 2 * SST + nbytes + SST */
     size_t original_nbytes;
-    size_t block_serialno;
 #define ERASED_SIZE 64
-    uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
+    uint8_t save[2 * ERASED_SIZE];  /* A copy of erased bytes. */
 
     _PyMem_DebugCheckAddress(api->api_id, p);
 
     data = (uint8_t *)p;
     head = data - 2*SST;
     original_nbytes = read_size_t(head);
-    if (nbytes > (size_t)PY_SSIZE_T_MAX - 4*SST) {
+    if (nbytes > (size_t)PY_SSIZE_T_MAX - 3 * SST) {
         /* integer overflow: can't represent total as a Py_ssize_t */
         return NULL;
     }
-    total = nbytes + 4*SST;
+    total = nbytes + 3 * SST;
 
     tail = data + original_nbytes;
-    block_serialno = read_size_t(tail + SST);
     /* Mark the header, the trailer, ERASED_SIZE bytes at the begin and
        ERASED_SIZE bytes at the end as dead and save the copy of erased bytes.
      */
     if (original_nbytes <= sizeof(save)) {
         memcpy(save, data, original_nbytes);
-        memset(data - 2*SST, DEADBYTE, original_nbytes + 4*SST);
+        memset(data - 2 * SST, DEADBYTE, original_nbytes + 3 * SST);
     }
     else {
         memcpy(save, data, ERASED_SIZE);
-        memset(head, DEADBYTE, ERASED_SIZE + 2*SST);
+        memset(head, DEADBYTE, ERASED_SIZE + 2 * SST);
         memcpy(&save[ERASED_SIZE], tail - ERASED_SIZE, ERASED_SIZE);
-        memset(tail - ERASED_SIZE, DEADBYTE, ERASED_SIZE + 2*SST);
+        memset(tail - ERASED_SIZE, DEADBYTE, ERASED_SIZE + SST);
     }
 
     /* Resize and add decorations. */
     r = (uint8_t *)api->alloc.realloc(api->alloc.ctx, head, total);
     if (r == NULL) {
+        /* if realloc() failed: rewrite header and footer which have
+           just been erased */
         nbytes = original_nbytes;
     }
     else {
         head = r;
-        bumpserialno();
-        block_serialno = serialno;
     }
+    data = head + 2 * SST;
 
+    /* at head, write size (SST bytes), id (1 byte), pad (SST-1 bytes) */
     write_size_t(head, nbytes);
     head[SST] = (uint8_t)api->api_id;
     memset(head + SST + 1, FORBIDDENBYTE, SST-1);
-    data = head + 2*SST;
 
+    /* at tail, write pad (SST bytes) */
     tail = data + nbytes;
     memset(tail, FORBIDDENBYTE, SST);
-    write_size_t(tail + SST, block_serialno);
 
     /* Restore saved bytes. */
     if (original_nbytes <= sizeof(save)) {
@@ -2170,7 +2147,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
 
     if (nbytes > original_nbytes) {
-        /* growing:  mark new extra memory clean */
+        /* growing: mark new extra memory clean */
         memset(data + original_nbytes, CLEANBYTE, nbytes - original_nbytes);
     }
 
@@ -2278,7 +2255,7 @@ _PyObject_DebugDumpAddress(const void *p)
 {
     const uint8_t *q = (const uint8_t *)p;
     const uint8_t *tail;
-    size_t nbytes, serial;
+    size_t nbytes;
     int i;
     int ok;
     char id;
@@ -2346,10 +2323,6 @@ _PyObject_DebugDumpAddress(const void *p)
             fputc('\n', stderr);
         }
     }
-
-    serial = read_size_t(tail + SST);
-    fprintf(stderr, "    The block was made by call #%" PY_FORMAT_SIZE_T
-                    "u to debug malloc/realloc.\n", serial);
 
     if (nbytes > 0) {
         i = 0;
@@ -2575,8 +2548,6 @@ _PyObject_DebugMallocStats(FILE *out)
         quantization += p * ((POOL_SIZE - POOL_OVERHEAD) % size);
     }
     fputc('\n', out);
-    if (_PyMem_DebugEnabled())
-        (void)printone(out, "# times object malloc called", serialno);
     (void)printone(out, "# arenas allocated total", ntimes_arena_allocated);
     (void)printone(out, "# arenas reclaimed", ntimes_arena_allocated - narenas);
     (void)printone(out, "# arenas highwater mark", narenas_highwater);
