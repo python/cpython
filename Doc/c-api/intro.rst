@@ -61,7 +61,7 @@ This implies inclusion of the following standard headers: ``<stdio.h>``,
    headers on some systems, you *must* include :file:`Python.h` before any standard
    headers are included.
 
-   It is recommended to define ``PY_SSIZE_T_CLEAN`` always before including
+   It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
    ``Python.h``.  See :ref:`arg-parsing` what this macro is.
 
 All user visible names defined by Python.h (except those defined by the included

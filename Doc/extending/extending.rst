@@ -69,7 +69,7 @@ the module and a copyright notice if you like).
    headers on some systems, you *must* include :file:`Python.h` before any standard
    headers are included.
 
-   It is recommended to define ``PY_SSIZE_T_CLEAN`` always before including
+   It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
    ``Python.h``.  See :ref:`parsetuple` what this macro is.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
