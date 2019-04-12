@@ -212,7 +212,7 @@ Functions
    e.g.: ``'Wed Jun  9 04:26:40 1993'``.
 
    If *secs* is not provided or
-   :const:`None`, the current time as returned by :func:`.time` is used. 
+   :const:`None`, the current time as returned by :func:`.time` is used.
    ``ctime(secs)`` is equivalent to ``asctime(localtime(secs))``.
    Locale information is not used by :func:`ctime`.
 
