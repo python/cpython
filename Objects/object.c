@@ -2165,7 +2165,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         fprintf(stderr, "<object: ob_type=NULL>\n");
     }
     else if (_PyObject_IsFreed((PyObject *)Py_TYPE(obj))) {
-        fprintf(stderr, "<object: freed type %p>\n", Py_TYPE(obj));
+        fprintf(stderr, "<object: freed type %p>\n", (void *)Py_TYPE(obj));
     }
     else {
         /* Diplay the traceback where the object has been allocated.
