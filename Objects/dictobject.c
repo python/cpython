@@ -2985,15 +2985,23 @@ dict_clear(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+dict.pop
+
+    key: object
+    default: object = NULL
+    /
+
+Remove specified key and return the corresponding value.
+
+If key is not found, default is returned if given, otherwise KeyError is raised
+[clinic start generated code]*/
+
 static PyObject *
-dict_pop(PyDictObject *mp, PyObject *args)
+dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
+/*[clinic end generated code: output=3abb47b89f24c21c input=016f6a000e4e633b]*/
 {
-    PyObject *key, *deflt = NULL;
-
-    if(!PyArg_UnpackTuple(args, "pop", 1, 2, &key, &deflt))
-        return NULL;
-
-    return _PyDict_Pop((PyObject*)mp, key, deflt);
+    return _PyDict_Pop((PyObject*)self, key, default_value);
 }
 
 static PyObject *
@@ -3135,10 +3143,6 @@ PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 PyDoc_STRVAR(sizeof__doc__,
 "D.__sizeof__() -> size of D in memory, in bytes");
 
-PyDoc_STRVAR(pop__doc__,
-"D.pop(k[,d]) -> v, remove specified key and return the corresponding value.\n\
-If key is not found, d is returned if given, otherwise KeyError is raised");
-
 PyDoc_STRVAR(popitem__doc__,
 "D.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
 2-tuple; but raise KeyError if D is empty.");
@@ -3175,8 +3179,7 @@ static PyMethodDef mapp_methods[] = {
      sizeof__doc__},
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
-    {"pop",         (PyCFunction)dict_pop,          METH_VARARGS,
-     pop__doc__},
+    DICT_POP_METHODDEF
     {"popitem",         (PyCFunction)(void(*)(void))dict_popitem,      METH_NOARGS,
      popitem__doc__},
     {"keys",            dictkeys_new,                   METH_NOARGS,
