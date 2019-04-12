@@ -11,11 +11,7 @@ extern "C" {
 #include "pycore_atomic.h"
 #include "pythread.h"
 
-struct _is;  // See PyInterpreterState in cpython/pystate.h.
-
-PyAPI_FUNC(int) _Py_AddPendingCall(struct _is*, unsigned long, int (*)(void *), void *);
-PyAPI_FUNC(int) _Py_MakePendingCalls(struct _is*);
-PyAPI_FUNC(void) _Py_FinishPendingCalls(struct _is*);
+PyAPI_FUNC(void) _Py_FinishPendingCalls(void);
 
 struct _pending_calls {
     int finishing;
@@ -28,19 +24,11 @@ struct _pending_calls {
     int async_exc;
 #define NPENDINGCALLS 32
     struct {
-        unsigned long thread_id;
         int (*func)(void *);
         void *arg;
     } calls[NPENDINGCALLS];
     int first;
     int last;
-};
-
-struct _ceval_interpreter_state {
-    /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
-    _Py_atomic_int eval_breaker;
-    struct _pending_calls pending;
 };
 
 #include "pycore_gil.h"
@@ -53,8 +41,12 @@ struct _ceval_runtime_state {
        c_tracefunc.  This speeds up the if statement in
        PyEval_EvalFrameEx() after fast_next_opcode. */
     int tracing_possible;
+    /* This single variable consolidates all requests to break out of
+       the fast path in the eval loop. */
+    _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
+    struct _pending_calls pending;
     /* Request for checking signals. */
     _Py_atomic_int signals_pending;
     struct _gil_runtime_state gil;
