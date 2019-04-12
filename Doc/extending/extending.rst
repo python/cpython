@@ -70,7 +70,7 @@ the module and a copyright notice if you like).
    headers are included.
 
    It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
-   ``Python.h``.  See :ref:`parsetuple` what this macro is.
+   ``Python.h``.  See :ref:`parsetuple` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files. For convenience, and
