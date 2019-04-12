@@ -6813,6 +6813,19 @@ esac
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
+case $CC in
+    *clang*)
+        cc_is_clang=1
+        ;;
+    *)
+        if $CC --version 2>&1 | grep -q clang
+        then
+            cc_is_clang=1
+        else
+            cc_is_clang=
+        fi
+esac
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
@@ -6825,19 +6838,6 @@ then
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
         fi
-
-        case $CC in
-            *clang*)
-                cc_is_clang=1
-                ;;
-            *)
-                if $CC --version 2>&1 | grep -q clang
-                then
-                    cc_is_clang=1
-                else
-                    cc_is_clang=
-                fi
-        esac
 
         if test -n "${cc_is_clang}"
         then
@@ -6877,6 +6877,21 @@ then
 	OPT="-O"
 	;;
     esac
+fi
+
+if test -n "${cc_is_clang}"
+then
+    # bpo-36618: Add -fmax-type-align=8 to CFLAGS when clang compiler is
+    # detected. The pymalloc memory allocator aligns memory on 8 bytes. On
+    # x86-64, clang expects alignment on 16 bytes by default and so uses MOVAPS
+    # instruction which can lead to segmentation fault. Instruct clang that
+    # Python is limited to alignemnt on 8 bytes to use MOVUPS instruction
+    # instead: slower but don't trigger a SIGSEGV if the memory is not aligned
+    # on 16 bytes.
+    #
+    # Sadly, the flag must be expected to CFLAGS and not just CFLAGS_NODIST,
+    # since third party C extensions can have the same issue.
+    CFLAGS="$CFLAGS -fmax-type-align=8"
 fi
 
 
@@ -10192,6 +10207,7 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
 
 
 
