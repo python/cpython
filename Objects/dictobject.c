@@ -3007,14 +3007,15 @@ dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 /*[clinic input]
 dict.popitem
 
-Remove and return some (key, value) pair as a 2-tuple.
+Remove and return a (key, value) pair as a 2-tuple.
 
+Pairs are returned in LIFO (last-in, first-out) order.
 Raises KeyError if the dict is empty.
 [clinic start generated code]*/
 
 static PyObject *
 dict_popitem_impl(PyDictObject *self)
-/*[clinic end generated code: output=e65fcb04420d230d input=d8f2b7a50b271c28]*/
+/*[clinic end generated code: output=e65fcb04420d230d input=1c38a49f21f64941]*/
 {
     Py_ssize_t i, j;
     PyDictKeyEntry *ep0, *ep;

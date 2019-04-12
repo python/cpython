@@ -156,8 +156,9 @@ PyDoc_STRVAR(dict_popitem__doc__,
 "popitem($self, /)\n"
 "--\n"
 "\n"
-"Remove and return some (key, value) pair as a 2-tuple.\n"
+"Remove and return a (key, value) pair as a 2-tuple.\n"
 "\n"
+"Pairs are returned in LIFO (last-in, first-out) order.\n"
 "Raises KeyError if the dict is empty.");
 
 #define DICT_POPITEM_METHODDEF    \
@@ -189,4 +190,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=6a587f82edc84b31 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0fd5cafc61a51d3c input=a9049054013a1b77]*/
