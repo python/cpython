@@ -796,6 +796,7 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
             // The result is a two item tuple: (message, (address, port))
             self->read_from.result = PyTuple_New(2);
             if (self->read_from.result == NULL) {
+                Py_CLEAR(addr);
                 return NULL;
             }
 
