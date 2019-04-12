@@ -22,6 +22,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
     def test_invalid_syntax_errors(self):
         self.assertRaisesSyntaxError("def f(a, b = 5, /, c): pass", "non-default argument follows default argument")
         self.assertRaisesSyntaxError("def f(a = 5, b, /, c): pass", "non-default argument follows default argument")
+        self.assertRaisesSyntaxError("def f(a = 5, b=1, /, c, *, d=2): pass", "non-default argument follows default argument")
         self.assertRaisesSyntaxError("def f(a = 5, b, /): pass", "non-default argument follows default argument")
         self.assertRaisesSyntaxError("def f(*args, /): pass")
         self.assertRaisesSyntaxError("def f(*args, a, /): pass")
@@ -38,6 +39,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
     def test_invalid_syntax_errors_async(self):
         self.assertRaisesSyntaxError("async def f(a, b = 5, /, c): pass", "non-default argument follows default argument")
         self.assertRaisesSyntaxError("async def f(a = 5, b, /, c): pass", "non-default argument follows default argument")
+        self.assertRaisesSyntaxError("async def f(a = 5, b=1, /, c, d=2): pass", "non-default argument follows default argument")
         self.assertRaisesSyntaxError("async def f(a = 5, b, /): pass", "non-default argument follows default argument")
         self.assertRaisesSyntaxError("async def f(*args, /): pass")
         self.assertRaisesSyntaxError("async def f(*args, a, /): pass")
@@ -145,6 +147,26 @@ class PositionalOnlyTestCase(unittest.TestCase):
             f()
         with self.assertRaisesRegex(TypeError, r"f\(\) takes from 2 to 3 positional arguments but 4 were given"):
             f(1, 2, 3, 4)
+
+    def test_positional_only_and_kwonlyargs_invalid_calls(self):
+        def f(a, b, /, c, *, d, e):
+            pass
+        f(1, 2, 3, d=1, e=2)  # does not raise
+        with self.assertRaisesRegex(TypeError, r"missing 1 required keyword-only argument: 'd'"):
+            f(1, 2, 3, e=2)
+        with self.assertRaisesRegex(TypeError, r"missing 2 required keyword-only arguments: 'd' and 'e'"):
+            f(1, 2, 3)
+        with self.assertRaisesRegex(TypeError, r"f\(\) missing 1 required positional argument: 'c'"):
+            f(1, 2)
+        with self.assertRaisesRegex(TypeError, r"f\(\) missing 2 required positional arguments: 'b' and 'c'"):
+            f(1)
+        with self.assertRaisesRegex(TypeError, r" missing 3 required positional arguments: 'a', 'b', and 'c'"):
+            f()
+        with self.assertRaisesRegex(TypeError, r"f\(\) takes 3 positional arguments but 6 positional arguments "
+                                               r"\(and 2 keyword-only arguments\) were given"):
+            f(1, 2, 3, 4, 5, 6, d=7, e=8)
+        with self.assertRaisesRegex(TypeError, r"f\(\) got an unexpected keyword argument 'f'"):
+            f(1, 2, 3, d=1, e=4, f=56)
 
     def test_positional_only_invalid_calls(self):
         def f(a, b, /):
