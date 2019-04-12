@@ -3,7 +3,7 @@
 
 """Implements ProcessPoolExecutor.
 
-The follow diagram and text describe the data-flow through the system:
+The following diagram and text describe the data-flow through the system:
 
 |======================= In-process =====================|== Out-of-process ==|
 
