@@ -3014,7 +3014,7 @@ Raises KeyError if the dict is empty.
 
 static PyObject *
 dict_popitem_impl(PyDictObject *self)
-/*[clinic end generated code: output=e65fcb04420d230d input=63e3f1db762b3e14]*/
+/*[clinic end generated code: output=e65fcb04420d230d input=d8f2b7a50b271c28]*/
 {
     Py_ssize_t i, j;
     PyDictKeyEntry *ep0, *ep;

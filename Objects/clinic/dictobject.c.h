@@ -158,7 +158,7 @@ PyDoc_STRVAR(dict_popitem__doc__,
 "\n"
 "Remove and return some (key, value) pair as a 2-tuple.\n"
 "\n"
-"Riase KeyError if the dict is empty.");
+"Raises KeyError if the dict is empty.");
 
 #define DICT_POPITEM_METHODDEF    \
     {"popitem", (PyCFunction)dict_popitem, METH_NOARGS, dict_popitem__doc__},
@@ -189,4 +189,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=d7daa98aae6f2ae5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a587f82edc84b31 input=a9049054013a1b77]*/
