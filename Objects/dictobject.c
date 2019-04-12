@@ -2615,6 +2615,142 @@ dict_copy(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     return PyDict_Copy((PyObject*)mp);
 }
 
+/*[clinic input]
+dict.with_values
+    iterable: object
+    /
+
+Create a new dictionary with keys from this dict and values from iterable.
+
+When length of iterable is different from len(self), ValueError is raised.
+This method does not support dict subclass.
+[clinic start generated code]*/
+
+static PyObject *
+dict_with_values(PyDictObject *self, PyObject *iterable)
+/*[clinic end generated code: output=f6085b5f997bddf7 input=4ce79ace2aaf207f]*/
+{
+    if (!PyDict_CheckExact(self)) {
+        PyErr_SetString(PyExc_TypeError,
+            "dict.with_values() does not support subclass of dict");
+        return NULL;
+    }
+
+    PyObject *seq = PySequence_Fast(iterable, "iterable must be iterable");
+    if (seq == NULL) {
+        return NULL;
+    }
+
+    // This should not be before PySequence_Fast().
+    // Iterating iterable may mutate self.
+    const Py_ssize_t len = PyDict_GET_SIZE(self);
+    if (len != PySequence_Fast_GET_SIZE(seq)) {
+        PyErr_SetString(PyExc_ValueError,
+            "length of iterable is different from length of this dict.");
+        goto fail;
+    }
+    if (len == 0) {
+        /* The dict is empty; just return a new dict. */
+        Py_DECREF(seq);
+        return PyDict_New();
+    }
+
+    PyObject **src_values = PySequence_Fast_ITEMS(seq);
+
+    // Try to use key sharing dict.
+    PyDictKeysObject *keys = make_keys_shared((PyObject*)self);
+    if (keys != NULL) {
+        PyDictObject *newdict = (PyDictObject*)new_dict_with_shared_keys(keys);
+        if (newdict == NULL) {
+            // keys is decref-ed in new_dict_with_shared_keys()
+            goto fail;
+        }
+
+        assert(!_PyObject_GC_IS_TRACKED(newdict));
+        int maybe_tracked = 0;
+
+        for (Py_ssize_t i = 0; i < len; i++) {
+            PyObject *v = src_values[i];
+            Py_INCREF(v);
+            newdict->ma_values[i] = v;
+            maybe_tracked |= _PyObject_GC_MAY_BE_TRACKED(v);
+        }
+
+        newdict->ma_used = len;
+        if (maybe_tracked) {
+            _PyObject_GC_TRACK(newdict);
+        }
+
+        Py_DECREF(seq);
+        assert(_PyDict_CheckConsistency(newdict));
+        return (PyObject*)newdict;
+    }
+
+    if (PyErr_Occurred()) {
+        goto fail;
+    }
+
+    // Create combined dict.
+    // similar to clone_combined_dict()
+    assert(!_PyDict_HasSplitTable(self));
+
+    Py_ssize_t keys_size = _PyDict_KeysSize(self->ma_keys);
+    keys = PyObject_Malloc(keys_size);
+    if (keys == NULL) {
+        PyErr_NoMemory();
+        goto fail;
+    }
+    memcpy(keys, self->ma_keys, keys_size);
+
+    // After copying key/value pairs, we need to incref all
+    // keys and overwrite values.
+    int maybe_tracked = 0;
+    PyObject **src = src_values;
+    PyDictKeyEntry *entry = DK_ENTRIES(keys);
+    Py_ssize_t n = keys->dk_nentries;
+    for (Py_ssize_t i = 0; i < n; i++, entry++) {
+        if (entry->me_value != NULL) {
+            assert(entry->me_key != NULL);
+            Py_INCREF(entry->me_key);
+            maybe_tracked |= _PyObject_GC_MAY_BE_TRACKED(entry->me_key);
+
+            PyObject *v = *src++;
+            Py_INCREF(v);
+            entry->me_value = v;
+            maybe_tracked |= _PyObject_GC_MAY_BE_TRACKED(v);
+        }
+        else {
+            assert(entry->me_key == NULL);
+        }
+    }
+    assert(src - src_values == len);
+
+    PyDictObject *newdict = (PyDictObject*)new_dict(keys, NULL);
+    if (newdict == NULL) {
+        /* In case of an error, `new_dict()` takes care of
+           cleaning up `keys`. */
+        goto fail;
+    }
+    newdict->ma_used = len;
+    if (maybe_tracked) {
+        /* Maintain tracking. */
+        _PyObject_GC_TRACK(newdict);
+    }
+
+    /* Since we copied the keys table we now have an extra reference
+       in the system.  Manually call _Py_INC_REFTOTAL to signal that
+       we have it now; calling dictkeys_incref would be an error as
+       keys->dk_refcnt is already set to 1 (after memcpy). */
+    _Py_INC_REFTOTAL;
+    Py_DECREF(seq);
+    return (PyObject*)newdict;
+
+fail:
+    Py_DECREF(seq);
+    return NULL;
+}
+
+
 PyObject *
 PyDict_Copy(PyObject *o)
 {
@@ -3195,6 +3331,7 @@ static PyMethodDef mapp_methods[] = {
     {"update",          (PyCFunction)(void(*)(void))dict_update, METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     DICT_FROMKEYS_METHODDEF
+    DICT_WITH_VALUES_METHODDEF
     {"clear",           (PyCFunction)dict_clear,        METH_NOARGS,
      clear__doc__},
     {"copy",            (PyCFunction)dict_copy,         METH_NOARGS,

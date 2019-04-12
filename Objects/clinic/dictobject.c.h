@@ -36,6 +36,18 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(dict_with_values__doc__,
+"with_values($self, iterable, /)\n"
+"--\n"
+"\n"
+"Create a new dictionary with keys from this dict and values from iterable.\n"
+"\n"
+"When length of iterable is different from len(self), ValueError is raised.\n"
+"This method does not support dict subclass.");
+
+#define DICT_WITH_VALUES_METHODDEF    \
+    {"with_values", (PyCFunction)dict_with_values, METH_O, dict_with_values__doc__},
+
 PyDoc_STRVAR(dict___contains____doc__,
 "__contains__($self, key, /)\n"
 "--\n"
@@ -190,4 +202,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=0fd5cafc61a51d3c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a91c20252985b01c input=a9049054013a1b77]*/
