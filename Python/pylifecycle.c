@@ -1146,7 +1146,7 @@ Py_FinalizeEx(void)
     interp = tstate->interp;
 
     // Make any remaining pending calls.
-    _Py_FinishPendingCalls(interp);
+    _Py_FinishPendingCalls();
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
@@ -1551,9 +1551,6 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
-
-    // Make any remaining pending calls.
-    _Py_FinishPendingCalls(interp);
 
     call_py_exitfuncs(interp);
 

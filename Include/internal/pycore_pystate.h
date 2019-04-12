@@ -12,7 +12,6 @@ extern "C" {
 #include "pystate.h"
 #include "pythread.h"
 
-#include "pycore_atomic.h"
 #include "pycore_ceval.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"
@@ -84,8 +83,6 @@ struct _is {
     PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
-
-    struct _ceval_interpreter_state ceval;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);

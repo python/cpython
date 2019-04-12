@@ -221,7 +221,7 @@ PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *);
+PyAPI_FUNC(void) _PyEval_SignalAsyncExc(void);
 #endif
 
 /* Masks and values used by FORMAT_VALUE opcode. */
