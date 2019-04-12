@@ -62,7 +62,7 @@ This implies inclusion of the following standard headers: ``<stdio.h>``,
    headers are included.
 
    It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
-   ``Python.h``.  See :ref:`arg-parsing` what this macro is.
+   ``Python.h``.  See :ref:`arg-parsing` for a description of this macro.
 
 All user visible names defined by Python.h (except those defined by the included
 standard headers) have one of the prefixes ``Py`` or ``_Py``.  Names beginning
