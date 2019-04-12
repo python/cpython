@@ -446,6 +446,21 @@ PyAPI_FUNC(void) _PyObject_AssertFailed(
     int line,
     const char *function);
 
+/* Check if an object is consistent. For example, ensure that the reference
+   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
+
+   Call _PyObject_AssertFailed() if the object is inconsistent.
+
+   If check_content is zero, only check header fields: reduce the overhead.
+
+   The function always return 1. The return value is just here to be able to
+   write:
+
+   assert(_PyObject_CheckConsistency(obj, 1)); */
+PyAPI_FUNC(int) _PyObject_CheckConsistency(
+    PyObject *op,
+    int check_content);
+
 #ifdef __cplusplus
 }
 #endif

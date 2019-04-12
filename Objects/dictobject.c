@@ -449,77 +449,77 @@ static PyObject *empty_values[1] = { NULL };
 /* Uncomment to check the dict content in _PyDict_CheckConsistency() */
 /* #define DEBUG_PYDICT */
 
+#ifdef DEBUG_PYDICT
+#  define ASSERT_CONSISTENT(op) assert(_PyDict_CheckConsistency((PyObject *)(op), 1))
+#else
+#  define ASSERT_CONSISTENT(op) assert(_PyDict_CheckConsistency((PyObject *)(op), 0))
+#endif
 
-#ifndef NDEBUG
-static int
-_PyDict_CheckConsistency(PyDictObject *mp)
+
+int
+_PyDict_CheckConsistency(PyObject *op, int check_content)
 {
-#define ASSERT(expr) _PyObject_ASSERT((PyObject *)mp, (expr))
+    _PyObject_ASSERT(op, PyDict_Check(op));
+    PyDictObject *mp = (PyDictObject *)op;
 
     PyDictKeysObject *keys = mp->ma_keys;
     int splitted = _PyDict_HasSplitTable(mp);
     Py_ssize_t usable = USABLE_FRACTION(keys->dk_size);
-#ifdef DEBUG_PYDICT
-    PyDictKeyEntry *entries = DK_ENTRIES(keys);
-    Py_ssize_t i;
-#endif
 
-    ASSERT(0 <= mp->ma_used && mp->ma_used <= usable);
-    ASSERT(IS_POWER_OF_2(keys->dk_size));
-    ASSERT(0 <= keys->dk_usable
-           && keys->dk_usable <= usable);
-    ASSERT(0 <= keys->dk_nentries
-           && keys->dk_nentries <= usable);
-    ASSERT(keys->dk_usable + keys->dk_nentries <= usable);
+    _PyObject_ASSERT(op, 0 <= mp->ma_used && mp->ma_used <= usable);
+    _PyObject_ASSERT(op, IS_POWER_OF_2(keys->dk_size));
+    _PyObject_ASSERT(op, 0 <= keys->dk_usable && keys->dk_usable <= usable);
+    _PyObject_ASSERT(op, 0 <= keys->dk_nentries && keys->dk_nentries <= usable);
+    _PyObject_ASSERT(op, keys->dk_usable + keys->dk_nentries <= usable);
 
     if (!splitted) {
         /* combined table */
-        ASSERT(keys->dk_refcnt == 1);
+        _PyObject_ASSERT(op, keys->dk_refcnt == 1);
     }
 
-#ifdef DEBUG_PYDICT
-    for (i=0; i < keys->dk_size; i++) {
-        Py_ssize_t ix = dictkeys_get_index(keys, i);
-        ASSERT(DKIX_DUMMY <= ix && ix <= usable);
-    }
+    if (check_content) {
+        PyDictKeyEntry *entries = DK_ENTRIES(keys);
+        Py_ssize_t i;
 
-    for (i=0; i < usable; i++) {
-        PyDictKeyEntry *entry = &entries[i];
-        PyObject *key = entry->me_key;
+        for (i=0; i < keys->dk_size; i++) {
+            Py_ssize_t ix = dictkeys_get_index(keys, i);
+            _PyObject_ASSERT(op, DKIX_DUMMY <= ix && ix <= usable);
+        }
 
-        if (key != NULL) {
-            if (PyUnicode_CheckExact(key)) {
-                Py_hash_t hash = ((PyASCIIObject *)key)->hash;
-                ASSERT(hash != -1);
-                ASSERT(entry->me_hash == hash);
+        for (i=0; i < usable; i++) {
+            PyDictKeyEntry *entry = &entries[i];
+            PyObject *key = entry->me_key;
+
+            if (key != NULL) {
+                if (PyUnicode_CheckExact(key)) {
+                    Py_hash_t hash = ((PyASCIIObject *)key)->hash;
+                    _PyObject_ASSERT(op, hash != -1);
+                    _PyObject_ASSERT(op, entry->me_hash == hash);
+                }
+                else {
+                    /* test_dict fails if PyObject_Hash() is called again */
+                    _PyObject_ASSERT(op, entry->me_hash != -1);
+                }
+                if (!splitted) {
+                    _PyObject_ASSERT(op, entry->me_value != NULL);
+                }
             }
-            else {
-                /* test_dict fails if PyObject_Hash() is called again */
-                ASSERT(entry->me_hash != -1);
-            }
-            if (!splitted) {
-                ASSERT(entry->me_value != NULL);
+
+            if (splitted) {
+                _PyObject_ASSERT(op, entry->me_value == NULL);
             }
         }
 
         if (splitted) {
-            ASSERT(entry->me_value == NULL);
+            /* splitted table */
+            for (i=0; i < mp->ma_used; i++) {
+                _PyObject_ASSERT(op, mp->ma_values[i] != NULL);
+            }
         }
     }
-
-    if (splitted) {
-        /* splitted table */
-        for (i=0; i < mp->ma_used; i++) {
-            ASSERT(mp->ma_values[i] != NULL);
-        }
-    }
-#endif
 
     return 1;
-
-#undef ASSERT
 }
-#endif
 
 
 static PyDictKeysObject *new_keys_object(Py_ssize_t size)
@@ -614,7 +614,7 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     mp->ma_values = values;
     mp->ma_used = 0;
     mp->ma_version_tag = DICT_NEXT_VERSION();
-    assert(_PyDict_CheckConsistency(mp));
+    ASSERT_CONSISTENT(mp);
     return (PyObject *)mp;
 }
 
@@ -675,7 +675,7 @@ clone_combined_dict(PyDictObject *orig)
         return NULL;
     }
     new->ma_used = orig->ma_used;
-    assert(_PyDict_CheckConsistency(new));
+    ASSERT_CONSISTENT(new);
     if (_PyObject_GC_IS_TRACKED(orig)) {
         /* Maintain tracking. */
         _PyObject_GC_TRACK(new);
@@ -1075,7 +1075,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         mp->ma_keys->dk_usable--;
         mp->ma_keys->dk_nentries++;
         assert(mp->ma_keys->dk_usable >= 0);
-        assert(_PyDict_CheckConsistency(mp));
+        ASSERT_CONSISTENT(mp);
         return 0;
     }
 
@@ -1094,7 +1094,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
 
     mp->ma_version_tag = DICT_NEXT_VERSION();
     Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
-    assert(_PyDict_CheckConsistency(mp));
+    ASSERT_CONSISTENT(mp);
     Py_DECREF(key);
     return 0;
 
@@ -1582,7 +1582,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     Py_DECREF(old_key);
     Py_DECREF(old_value);
 
-    assert(_PyDict_CheckConsistency(mp));
+    ASSERT_CONSISTENT(mp);
     return 0;
 }
 
@@ -1722,7 +1722,7 @@ PyDict_Clear(PyObject *op)
        assert(oldkeys->dk_refcnt == 1);
        dictkeys_decref(oldkeys);
     }
-    assert(_PyDict_CheckConsistency(mp));
+    ASSERT_CONSISTENT(mp);
 }
 
 /* Internal version of PyDict_Next that returns a hash value in addition
@@ -1852,7 +1852,7 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
     ep->me_value = NULL;
     Py_DECREF(old_key);
 
-    assert(_PyDict_CheckConsistency(mp));
+    ASSERT_CONSISTENT(mp);
     return old_value;
 }
 
@@ -2434,7 +2434,7 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
     }
 
     i = 0;
-    assert(_PyDict_CheckConsistency((PyDictObject *)d));
+    ASSERT_CONSISTENT(d);
     goto Return;
 Fail:
     Py_XDECREF(item);
@@ -2586,7 +2586,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
             /* Iterator completed, via error */
             return -1;
     }
-    assert(_PyDict_CheckConsistency((PyDictObject *)a));
+    ASSERT_CONSISTENT(a);
     return 0;
 }
 
@@ -2950,7 +2950,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         mp->ma_version_tag = DICT_NEXT_VERSION();
     }
 
-    assert(_PyDict_CheckConsistency(mp));
+    ASSERT_CONSISTENT(mp);
     return value;
 }
 
@@ -3069,7 +3069,7 @@ dict_popitem_impl(PyDictObject *self)
     self->ma_keys->dk_nentries = i;
     self->ma_used--;
     self->ma_version_tag = DICT_NEXT_VERSION();
-    assert(_PyDict_CheckConsistency(self));
+    ASSERT_CONSISTENT(self);
     return res;
 }
 
@@ -3275,7 +3275,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(self);
         return NULL;
     }
-    assert(_PyDict_CheckConsistency(d));
+    ASSERT_CONSISTENT(d);
     return self;
 }
 

@@ -131,8 +131,7 @@ skip_signature(const char *doc)
     return NULL;
 }
 
-#ifndef NDEBUG
-static int
+int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
 #define ASSERT(expr) _PyObject_ASSERT((PyObject *)type, (expr))
@@ -142,14 +141,16 @@ _PyType_CheckConsistency(PyTypeObject *type)
         return 1;
     }
 
-    ASSERT(!(type->tp_flags & Py_TPFLAGS_READYING));
-    ASSERT(type->tp_mro != NULL && PyTuple_Check(type->tp_mro));
-    ASSERT(type->tp_dict != NULL);
-    return 1;
+    ASSERT(!_PyObject_IsFreed((PyObject *)type));
+    ASSERT(Py_REFCNT(type) >= 1);
+    ASSERT(PyType_Check(type));
 
+    ASSERT(!(type->tp_flags & Py_TPFLAGS_READYING));
+    ASSERT(type->tp_dict != NULL);
+
+    return 1;
 #undef ASSERT
 }
-#endif
 
 static const char *
 _PyType_DocWithoutSignature(const char *name, const char *internal_doc)

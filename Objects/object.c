@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_context.h"
 #include "frameobject.h"
@@ -18,6 +19,28 @@ _Py_IDENTIFIER(Py_Repr);
 _Py_IDENTIFIER(__bytes__);
 _Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(__isabstractmethod__);
+
+
+int
+_PyObject_CheckConsistency(PyObject *op, int check_content)
+{
+    _PyObject_ASSERT(op, op != NULL);
+    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
+    _PyObject_ASSERT(op, Py_REFCNT(op) >= 1);
+
+    PyTypeObject *type = op->ob_type;
+    _PyObject_ASSERT(op, type != NULL);
+    _PyType_CheckConsistency(type);
+
+    if (PyUnicode_Check(op)) {
+        _PyUnicode_CheckConsistency(op, check_content);
+    }
+    else if (PyDict_Check(op)) {
+        _PyDict_CheckConsistency(op, check_content);
+    }
+    return 1;
+}
+
 
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
@@ -2136,7 +2159,13 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
     else if (_PyObject_IsFreed(obj)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<Freed object>\n");
+        fprintf(stderr, "<object: freed>\n");
+    }
+    else if (Py_TYPE(obj) == NULL) {
+        fprintf(stderr, "<object: ob_type=NULL>\n");
+    }
+    else if (_PyObject_IsFreed((PyObject *)Py_TYPE(obj))) {
+        fprintf(stderr, "<object: freed type %p>\n", Py_TYPE(obj));
     }
     else {
         /* Diplay the traceback where the object has been allocated.
