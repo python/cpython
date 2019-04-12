@@ -726,7 +726,8 @@ than raw I/O does.
    :data:`DEFAULT_BUFFER_SIZE`.
 
    :class:`BufferedRandom` is capable of anything :class:`BufferedReader` or
-   :class:`BufferedWriter` can do.
+   :class:`BufferedWriter` can do.  In addition, :meth:`seek` and :meth:`tell`
+   are guaranteed to be implemented.
 
 
 .. class:: BufferedRWPair(reader, writer, buffer_size=DEFAULT_BUFFER_SIZE)
