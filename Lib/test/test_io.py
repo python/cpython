@@ -67,6 +67,11 @@ MEMORY_SANITIZER = (
     '--with-memory-sanitizer' in _config_args
 )
 
+# Does io.IOBase logs unhandled exceptions on calling close()?
+# They are silenced by default in release build.
+DESTRUCTOR_LOG_ERRORS = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+
+
 def _default_chunk_size():
     """Get the default TextIOWrapper chunk size"""
     with open(__file__, "r", encoding="latin-1") as f:
@@ -1097,9 +1102,16 @@ class CommonBufferedTests:
         s = s.getvalue().strip()
         if s:
             # The destructor *may* have printed an unraisable error, check it
-            self.assertEqual(len(s.splitlines()), 1)
-            self.assertTrue(s.startswith("Exception OSError: "), s)
-            self.assertTrue(s.endswith(" ignored"), s)
+            lines = s.splitlines()
+            if DESTRUCTOR_LOG_ERRORS:
+                self.assertEqual(len(lines), 5)
+                self.assertTrue(lines[0].startswith("Exception ignored in: "), lines)
+                self.assertEqual(lines[1], "Traceback (most recent call last):", lines)
+                self.assertEqual(lines[4], 'OSError:', lines)
+            else:
+                self.assertEqual(len(lines), 1)
+                self.assertTrue(lines[-1].startswith("Exception OSError: "), lines)
+                self.assertTrue(lines[-1].endswith(" ignored"), lines)
 
     def test_repr(self):
         raw = self.MockRawIO()
@@ -2833,9 +2845,16 @@ class TextIOWrapperTest(unittest.TestCase):
         s = s.getvalue().strip()
         if s:
             # The destructor *may* have printed an unraisable error, check it
-            self.assertEqual(len(s.splitlines()), 1)
-            self.assertTrue(s.startswith("Exception OSError: "), s)
-            self.assertTrue(s.endswith(" ignored"), s)
+            lines = s.splitlines()
+            if DESTRUCTOR_LOG_ERRORS:
+                self.assertEqual(len(lines), 5)
+                self.assertTrue(lines[0].startswith("Exception ignored in: "), lines)
+                self.assertEqual(lines[1], "Traceback (most recent call last):", lines)
+                self.assertEqual(lines[4], 'OSError:', lines)
+            else:
+                self.assertEqual(len(lines), 1)
+                self.assertTrue(lines[-1].startswith("Exception OSError: "), lines)
+                self.assertTrue(lines[-1].endswith(" ignored"), lines)
 
     # Systematic tests of the text I/O API
 
