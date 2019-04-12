@@ -404,6 +404,7 @@ then
     MACHDEP="$ac_md_system$ac_md_release"
 
     case $MACHDEP in
+	aix*) MACHDEP="aix";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
