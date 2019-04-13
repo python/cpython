@@ -234,7 +234,7 @@ def find_library_file(compiler, libname, std_dirs, paths):
 
         if MACOS and is_macosx_sdk_path(p):
             if os.path.join(sysroot, p[1:]) == dirname:
-                return [ p ]
+                return [p]
 
         if p == dirname:
             return [p]
