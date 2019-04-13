@@ -1350,8 +1350,9 @@ r_object(RFILE *p)
             if (PyErr_Occurred())
                 goto code_error;
             posonlyargcount = (int)r_long(p);
-            if (PyErr_Occurred())
+            if (PyErr_Occurred()) {
                 goto code_error;
+            }
             kwonlyargcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
