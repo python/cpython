@@ -18,6 +18,7 @@ __all__ = (
     'NonCallableMagicMock',
     'mock_open',
     'PropertyMock',
+    'WaitableMock',
     'seal',
 )
 
@@ -2483,34 +2484,52 @@ class PropertyMock(Mock):
         self(val)
 
 
-class WaitableMock(Mock):
+class WaitableMock(MagicMock):
+    """
+    A mock that can be used to wait until it was called.
 
-    def __init__(self, *args, **kwargs):
+    `event_class` - Class to be used to create event object.
+    Defaults to Threading.Event and can take values like multiprocessing.Event.
+    """
+
+    def __init__(self, *args, event_class=threading.Event, **kwargs):
         _safe_super(WaitableMock, self).__init__(*args, **kwargs)
-        self.event_class = kwargs.pop('event_class', threading.Event)
-        self.event = self.event_class()
-        self.expected_calls = {}
+        self._event = event_class()
+        self._expected_calls = {}
 
     def _mock_call(self, *args, **kwargs):
-        _safe_super(WaitableMock, self)._mock_call(*args, **kwargs)
+        ret_value = _safe_super(WaitableMock, self)._mock_call(*args, **kwargs)
+
         for call in self._mock_mock_calls:
-            if (event := self.expected_calls.get(call.args)) and not event.is_set():
+            event = self._expected_calls.get(call.args)
+            if event and not event.is_set():
                 event.set()
-        else:
-            self.event.set()
 
-    def wait_until_called(self, timeout=1):
-        return self.event.wait(timeout=timeout)
+        self._event.set()
 
-    def wait_until_called_with(self, call=None, timeout=1):
-        if call:
-            if call.args not in self.expected_calls:
-                event = self.event_class()
-                self.expected_calls[call.args] = event
+        return ret_value
+
+    def wait_until_called(self, timeout=1.0):
+        """Wait until the mock object is called.
+
+        `timeout` - time to wait for in seconds. Defaults to 1.
+        """
+        return self._event.wait(timeout=timeout)
+
+    def wait_until_called_with(self, *args, timeout=1.0):
+        """Wait until the mock object is called with given args.
+        If args is empty then it waits for the mock object to be called.
+
+        `timeout` - time to wait for in seconds. Defaults to 1.
+        """
+        if args:
+            if args not in self.expected_calls:
+                event = self._event_class()
+                self._expected_calls[args] = event
             else:
-                event = self.expected_calls[call.args]
+                event = self._expected_calls[args]
         else:
-            event = self.event
+            event = self._event
 
         return event.is_set() or event.wait(timeout=timeout)
 
