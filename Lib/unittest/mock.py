@@ -28,6 +28,7 @@ __version__ = '1.0'
 import inspect
 import pprint
 import sys
+import threading
 import builtins
 from types import ModuleType
 from unittest.util import safe_repr
@@ -2481,6 +2482,37 @@ class PropertyMock(Mock):
     def __set__(self, obj, val):
         self(val)
 
+
+class WaitableMock(Mock):
+
+    def __init__(self, *args, **kwargs):
+        _safe_super(WaitableMock, self).__init__(*args, **kwargs)
+        self.event_class = kwargs.pop('event_class', threading.Event)
+        self.event = self.event_class()
+        self.expected_calls = {}
+
+    def _mock_call(self, *args, **kwargs):
+        _safe_super(WaitableMock, self)._mock_call(*args, **kwargs)
+        for call in self._mock_mock_calls:
+            if (event := self.expected_calls.get(call.args)) and not event.is_set():
+                event.set()
+        else:
+            self.event.set()
+
+    def wait_until_called(self, timeout=1):
+        return self.event.wait(timeout=timeout)
+
+    def wait_until_called_with(self, call=None, timeout=1):
+        if call:
+            if call.args not in self.expected_calls:
+                event = self.event_class()
+                self.expected_calls[call.args] = event
+            else:
+                event = self.expected_calls[call.args]
+        else:
+            event = self.event
+
+        return event.is_set() or event.wait(timeout=timeout)
 
 def seal(mock):
     """Disable the automatic generation of child mocks.
