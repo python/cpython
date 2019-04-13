@@ -1858,13 +1858,11 @@ class MockTest(unittest.TestCase):
 
         old_patch = unittest.mock.patch
 
-        def _cleanup(old_patch):
-            unittest.mock.patch = old_patch
-
         # Directly using __setattr__ on unittest.mock causes current imported
-        # reference to be updated. Use a function so that during cleanup the
+        # reference to be updated. Use a lambda so that during cleanup the
         # re-imported new reference is updated.
-        self.addCleanup(_cleanup, old_patch)
+        self.addCleanup(lambda patch: setattr(unittest.mock, 'patch', patch),
+                        old_patch)
 
         with patch.dict('sys.modules'):
             del sys.modules['unittest.mock']
