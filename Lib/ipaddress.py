@@ -1077,9 +1077,6 @@ class _BaseV4:
     # Equivalent to 255.255.255.255 or 32 bits of 1's.
     _ALL_ONES = (2**IPV4LENGTH) - 1
 
-    # the valid octets for host and netmasks. only useful for IPv4.
-    _valid_mask_octets = frozenset({255, 254, 252, 248, 240, 224, 192, 128, 0})
-
     _max_prefixlen = IPV4LENGTH
     # There are only a handful of valid v4 netmasks, so we cache them all
     # when constructed (see _make_netmask()).
@@ -1181,58 +1178,6 @@ class _BaseV4:
 
         """
         return '.'.join(map(str, ip_int.to_bytes(4, 'big')))
-
-    def _is_valid_netmask(self, netmask):
-        """Verify that the netmask is valid.
-
-        Args:
-            netmask: A string, either a prefix or dotted decimal
-              netmask.
-
-        Returns:
-            A boolean, True if the prefix represents a valid IPv4
-            netmask.
-
-        """
-        mask = netmask.split('.')
-        if len(mask) == 4:
-            try:
-                for x in mask:
-                    if int(x) not in self._valid_mask_octets:
-                        return False
-            except ValueError:
-                # Found something that isn't an integer or isn't valid
-                return False
-            for idx, y in enumerate(mask):
-                if idx > 0 and y > mask[idx - 1]:
-                    return False
-            return True
-        try:
-            netmask = int(netmask)
-        except ValueError:
-            return False
-        return 0 <= netmask <= self._max_prefixlen
-
-    def _is_hostmask(self, ip_str):
-        """Test if the IP string is a hostmask (rather than a netmask).
-
-        Args:
-            ip_str: A string, the potential hostmask.
-
-        Returns:
-            A boolean, True if the IP string is a hostmask.
-
-        """
-        bits = ip_str.split('.')
-        try:
-            parts = [x for x in map(int, bits) if x in self._valid_mask_octets]
-        except ValueError:
-            return False
-        if len(parts) != len(bits):
-            return False
-        if parts[0] < parts[-1]:
-            return True
-        return False
 
     def _reverse_pointer(self):
         """Return the reverse DNS pointer name for the IPv4 address.
