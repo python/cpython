@@ -26,6 +26,7 @@ __all__ = (
 __version__ = '1.0'
 
 
+from collections import defaultdict
 import inspect
 import pprint
 import sys
@@ -2495,15 +2496,14 @@ class WaitableMock(MagicMock):
     def __init__(self, *args, event_class=threading.Event, **kwargs):
         _safe_super(WaitableMock, self).__init__(*args, **kwargs)
         self._event = event_class()
-        self._expected_calls = {}
+        self._expected_calls = defaultdict(lambda: event_class())
 
     def _mock_call(self, *args, **kwargs):
         ret_value = _safe_super(WaitableMock, self)._mock_call(*args, **kwargs)
 
         for call in self._mock_mock_calls:
-            event = self._expected_calls.get(call.args)
-            if event and not event.is_set():
-                event.set()
+            event = self._expected_calls[call.args]
+            event.set()
 
         self._event.set()
 
@@ -2532,6 +2532,7 @@ class WaitableMock(MagicMock):
             event = self._event
 
         return event.is_set() or event.wait(timeout=timeout)
+
 
 def seal(mock):
     """Disable the automatic generation of child mocks.

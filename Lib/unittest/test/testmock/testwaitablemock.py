@@ -123,11 +123,21 @@ class TestWaitableMock(unittest.TestCase):
                 something.method_1.wait_until_called_with(1, timeout=0.1)
                 something.method_1.assert_not_called()
 
-                time.sleep(0.5)
-
+                something.method_1.wait_until_called(timeout=2.0)
                 something.method_1.assert_called_once_with(1)
                 something.method_2.assert_has_calls(
                     [call(1), call(2)], any_order=True)
+
+
+    def test_wait_until_called_with_default_event(self):
+        waitable_mock = WaitableMock(event_class=threading.Event)
+
+        with patch(f'{__name__}.Something', waitable_mock):
+            something = Something()
+            something.method_1(1)
+
+            something.method_1.assert_called_once_with(1)
+            something.method_1.wait_until_called_with()
 
 
 if __name__ == "__main__":
