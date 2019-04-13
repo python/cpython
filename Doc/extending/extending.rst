@@ -55,8 +55,9 @@ called ``spam``, the C file containing its implementation is called
 :file:`spammodule.c`; if the module name is very long, like ``spammify``, the
 module name can be just :file:`spammify.c`.)
 
-The first line of our file can be::
+The first two lines of our file can be::
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
 which pulls in the Python API (you can add a comment describing the purpose of
@@ -67,6 +68,9 @@ the module and a copyright notice if you like).
    Since Python may define some pre-processor definitions which affect the standard
    headers on some systems, you *must* include :file:`Python.h` before any standard
    headers are included.
+
+   It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
+   ``Python.h``.  See :ref:`parsetuple` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files. For convenience, and
@@ -729,7 +733,8 @@ it returns false and raises an appropriate exception.
 Here is an example module which uses keywords, based on an example by Geoff
 Philbrick (philbrick@hks.com)::
 
-   #include "Python.h"
+   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #include <Python.h>
 
    static PyObject *
    keywdarg_parrot(PyObject *self, PyObject *args, PyObject *keywds)
@@ -1228,7 +1233,7 @@ The function :c:func:`spam_system` is modified in a trivial way::
 
 In the beginning of the module, right after the line ::
 
-   #include "Python.h"
+   #include <Python.h>
 
 two more lines must be added::
 
