@@ -2519,20 +2519,16 @@ class WaitableMock(MagicMock):
 
     def wait_until_called_with(self, *args, timeout=1.0):
         """Wait until the mock object is called with given args.
-        If args is empty then it waits for the mock object to be called.
 
         `timeout` - time to wait for in seconds. Defaults to 1.
         """
-        if args:
-            if args not in self._expected_calls:
-                event = self._event_class()
-                self._expected_calls[args] = event
-            else:
-                event = self._expected_calls[args]
+        if args not in self._expected_calls:
+            event = self._event_class()
+            self._expected_calls[args] = event
         else:
-            event = self._event
+            event = self._expected_calls[args]
 
-        return event.is_set() or event.wait(timeout=timeout)
+        return event.wait(timeout=timeout)
 
 
 def seal(mock):

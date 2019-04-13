@@ -23,6 +23,12 @@ class TestWaitableMock(unittest.TestCase):
         func(*args)
 
 
+    def _create_thread(self, func, *args, **kwargs):
+        thread = threading.Thread(target=self._call_after_delay,
+                                  args=(func,) + args, kwargs=kwargs)
+        return thread
+
+
     def test_instance_check(self):
         waitable_mock = WaitableMock(event_class=threading.Event)
 
@@ -64,9 +70,7 @@ class TestWaitableMock(unittest.TestCase):
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
-            thread = threading.Thread(target=self._call_after_delay,
-                                      args=(something.method_1, ),
-                                      kwargs={'delay': 0.5})
+            thread = self._create_thread(something.method_1, delay=0.5)
 
             with start_threads([thread]):
                 something.method_1.wait_until_called()
@@ -78,9 +82,7 @@ class TestWaitableMock(unittest.TestCase):
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
-            thread = threading.Thread(target=self._call_after_delay,
-                                      args=(something.method_1.__str__, ),
-                                      kwargs={'delay': 0.5})
+            thread = self._create_thread(something.method_1.__str__, delay=0.5)
 
             with start_threads([thread]):
                 something.method_1.__str__.wait_until_called()
@@ -92,8 +94,7 @@ class TestWaitableMock(unittest.TestCase):
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
-            thread = threading.Thread(target=self._call_after_delay, args=(something.method_1, ),
-                                      kwargs={'delay': 0.5})
+            thread = self._create_thread(something.method_1, delay=0.5)
 
             with start_threads([thread]):
                 something.method_1.wait_until_called(timeout=0.1)
@@ -108,15 +109,9 @@ class TestWaitableMock(unittest.TestCase):
 
         with patch(f'{__name__}.Something', waitable_mock):
             something = Something()
-            thread_1 = threading.Thread(target=self._call_after_delay,
-                                        args=(something.method_1, 1),
-                                        kwargs={'delay': 0.5})
-            thread_2 = threading.Thread(target=self._call_after_delay,
-                                        args=(something.method_2, 1),
-                                        kwargs={'delay': 0.1})
-            thread_3 = threading.Thread(target=self._call_after_delay,
-                                        args=(something.method_2, 2),
-                                        kwargs={'delay': 0.1})
+            thread_1 = self._create_thread(something.method_1, 1, delay=0.5)
+            thread_2 = self._create_thread(something.method_2, 1, delay=0.1)
+            thread_3 = self._create_thread(something.method_2, 2, delay=0.1)
 
             with start_threads([thread_1, thread_2, thread_3]):
                 something.method_1.wait_until_called_with(1, timeout=0.1)
@@ -129,7 +124,7 @@ class TestWaitableMock(unittest.TestCase):
                     [call(1), call(2)], any_order=True)
 
 
-    def test_wait_until_called_with_default_event(self):
+    def test_wait_until_called_with_no_argument(self):
         waitable_mock = WaitableMock(event_class=threading.Event)
 
         with patch(f'{__name__}.Something', waitable_mock):
@@ -137,7 +132,12 @@ class TestWaitableMock(unittest.TestCase):
             something.method_1(1)
 
             something.method_1.assert_called_once_with(1)
-            something.method_1.wait_until_called_with()
+            self.assertFalse(
+                something.method_1.wait_until_called_with(timeout=0.1))
+
+            thread_1 = self._create_thread(something.method_1, delay=0.1)
+            with start_threads([thread_1]):
+                self.assertTrue(something.method_1.wait_until_called_with())
 
 
 if __name__ == "__main__":
