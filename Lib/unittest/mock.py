@@ -2497,7 +2497,7 @@ class WaitableMock(MagicMock):
         _safe_super(WaitableMock, self).__init__(*args, **kwargs)
         self._event_class = event_class
         self._event = event_class()
-        self._expected_calls = defaultdict(lambda: event_class())
+        self._expected_calls = defaultdict(event_class)
 
     def _mock_call(self, *args, **kwargs):
         ret_value = _safe_super(WaitableMock, self)._mock_call(*args, **kwargs)
