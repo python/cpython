@@ -10,7 +10,7 @@
    are not part of the static data structure written on graminit.[ch]
    by the parser generator. */
 
-#include "pgenheaders.h"
+#include "Python.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
