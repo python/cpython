@@ -739,7 +739,7 @@ class NonCallableMock(Base):
 
         obj = self._mock_children.get(name, _missing)
         if name in self.__dict__:
-            super().__delattr__(name)
+            _safe_super(NonCallableMock, self).__delattr__(name)
         elif obj is _deleted:
             raise AttributeError(name)
         if obj is not _missing:
