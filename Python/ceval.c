@@ -36,9 +36,10 @@ extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
-Py_LOCAL_INLINE(PyObject *) call_function(PyObject ***, Py_ssize_t,
-                                          PyObject *);
-static PyObject * do_call_core(PyObject *, PyObject *, PyObject *);
+static PyObject * profile_call(PyThreadState *, PyObject *,
+                               PyObject *, PyObject *);
+Py_LOCAL_INLINE(PyObject *) call_function(PyThreadState *,
+                                          PyObject ***, Py_ssize_t, PyObject *);
 
 #ifdef LLTRACE
 static int lltrace;
@@ -3241,9 +3242,7 @@ main_loop:
 
         case TARGET(CALL_METHOD): {
             /* Designed to work in tamdem with LOAD_METHOD. */
-            PyObject **sp, *res, *meth;
-
-            sp = stack_pointer;
+            PyObject *res, *meth;
 
             meth = PEEK(oparg + 2);
             if (meth == NULL) {
@@ -3261,8 +3260,7 @@ main_loop:
                    `callable` will be POPed by call_function.
                    NULL will will be POPed manually later.
                 */
-                res = call_function(&sp, oparg, NULL);
-                stack_pointer = sp;
+                res = call_function(tstate, &stack_pointer, oparg, NULL);
                 (void)POP(); /* POP the NULL. */
             }
             else {
@@ -3278,8 +3276,7 @@ main_loop:
                   We'll be passing `oparg + 1` to call_function, to
                   make it accept the `self` as a first argument.
                 */
-                res = call_function(&sp, oparg + 1, NULL);
-                stack_pointer = sp;
+                res = call_function(tstate, &stack_pointer, oparg + 1, NULL);
             }
 
             PUSH(res);
@@ -3290,10 +3287,8 @@ main_loop:
 
         case TARGET(CALL_FUNCTION): {
             PREDICTED(CALL_FUNCTION);
-            PyObject **sp, *res;
-            sp = stack_pointer;
-            res = call_function(&sp, oparg, NULL);
-            stack_pointer = sp;
+            PyObject *res;
+            res = call_function(tstate, &stack_pointer, oparg, NULL);
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -3302,13 +3297,11 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_KW): {
-            PyObject **sp, *res, *names;
+            PyObject *res, *names;
 
             names = POP();
             assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
-            sp = stack_pointer;
-            res = call_function(&sp, oparg, names);
-            stack_pointer = sp;
+            res = call_function(tstate, &stack_pointer, oparg, names);
             PUSH(res);
             Py_DECREF(names);
 
@@ -3351,7 +3344,18 @@ main_loop:
             }
             assert(PyTuple_CheckExact(callargs));
 
-            result = do_call_core(func, callargs, kwargs);
+            if (tstate->use_tracing) {
+                result = profile_call(tstate, func, callargs, kwargs);
+            }
+            else if (PyCFunction_Check(func)) {
+                result = _PyCFunction_FastCallDict(func,
+                                                   _PyTuple_ITEMS(callargs),
+                                                   PyTuple_GET_SIZE(callargs),
+                                                   kwargs);
+            }
+            else {
+                result = PyObject_Call(func, callargs, kwargs);
+            }
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
@@ -4624,7 +4628,7 @@ PyEval_GetFuncDesc(PyObject *func)
 }
 
 #define C_TRACE(x, call) \
-if (tstate->use_tracing && tstate->c_profilefunc) { \
+if (tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
         tstate, tstate->frame, \
         PyTrace_C_CALL, func)) { \
@@ -4652,55 +4656,103 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
     } \
 } else { \
     x = call; \
+}
+
+
+/* Call function when profiling is enabled */
+_Py_NO_INLINE static PyObject *
+profile_fastcall(PyThreadState *tstate, PyObject *func,
+                 PyObject *const *argv, Py_ssize_t nargs,
+                 PyObject *kwnames)
+{
+    PyObject *result;
+    if (PyCFunction_Check(func)) {
+        C_TRACE(result, _PyCFunction_FastCallKeywords(func, argv, nargs, kwnames));
+        return result;
     }
+    else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
+        /* We need to create a temporary bound method as argument
+           for profiling.
+
+           If nargs == 0, then this cannot work because we have no
+           "self". In any case, the call itself would raise
+           TypeError (foo needs an argument), so we just skip
+           profiling. */
+        PyObject *self = *(argv++);
+        nargs--;
+        func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
+        if (func == NULL) {
+            return NULL;
+        }
+        C_TRACE(result, _PyCFunction_FastCallKeywords(func,
+                                                      argv, nargs,
+                                                      kwnames));
+        Py_DECREF(func);
+        return result;
+    }
+    return _PyObject_FastCallKeywords(func, argv, nargs, kwnames);
+}
+
+/* Call function when profiling is enabled */
+_Py_NO_INLINE static PyObject *
+profile_call(PyThreadState *tstate, PyObject *func,
+             PyObject *args, PyObject *kwdict)
+{
+    PyObject *result;
+    PyObject * const* argv = _PyTuple_ITEMS(args);
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+
+    if (PyCFunction_Check(func)) {
+        C_TRACE(result, _PyCFunction_FastCallDict(func, argv, nargs, kwdict));
+        return result;
+    }
+    else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
+        /* We need to create a temporary bound method as argument
+           for profiling.
+
+           If nargs == 0, then this cannot work because we have no
+           "self". In any case, the call itself would raise
+           TypeError (foo needs an argument), so we just skip
+           profiling. */
+        PyObject *self = *(argv++);
+        nargs--;
+        func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
+        if (func == NULL) {
+            return NULL;
+        }
+        C_TRACE(result, _PyCFunction_FastCallDict(func,
+                                                  argv, nargs,
+                                                  kwdict));
+        Py_DECREF(func);
+        return result;
+    }
+    return PyObject_Call(func, args, kwdict);
+}
+
 
 /* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
    to reduce the stack consumption. */
 Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
-call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
+call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
 {
-    PyObject **pfunc = (*pp_stack) - oparg - 1;
+    PyObject **argv = (*pp_stack) - oparg;
+    PyObject **pfunc = argv - 1;
     PyObject *func = *pfunc;
     PyObject *x, *w;
     Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     Py_ssize_t nargs = oparg - nkwargs;
-    PyObject **stack = (*pp_stack) - nargs - nkwargs;
 
-    /* Always dispatch PyCFunction first, because these are
-       presumed to be the most frequent callable object.
-    */
-    if (PyCFunction_Check(func)) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack, nargs, kwnames));
+    if (tstate->use_tracing) {
+        x = profile_fastcall(tstate, func, argv, nargs, kwnames);
+    }
+    else if (PyCFunction_Check(func)) {
+        x = _PyCFunction_FastCallKeywords(func, argv, nargs, kwnames);
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (nargs > 0 && tstate->use_tracing) {
-            /* We need to create a temporary bound method as argument
-               for profiling.
-
-               If nargs == 0, then this cannot work because we have no
-               "self". In any case, the call itself would raise
-               TypeError (foo needs an argument), so we just skip
-               profiling. */
-            PyObject *self = stack[0];
-            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
-            if (func != NULL) {
-                C_TRACE(x, _PyCFunction_FastCallKeywords(func,
-                                                         stack+1, nargs-1,
-                                                         kwnames));
-                Py_DECREF(func);
-            }
-            else {
-                x = NULL;
-            }
-        }
-        else {
-            x = _PyMethodDescr_FastCallKeywords(func, stack, nargs, kwnames);
-        }
+        x = _PyMethodDescr_FastCallKeywords(func, argv, nargs, kwnames);
     }
     else {
-        if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
+        if (PyMethod_Check(func)) {
             /* Optimize access to bound methods. Reuse the Python stack
                to pass 'self' as the first argument, replace 'func'
                with 'self'. It avoids the creation of a new temporary tuple
@@ -4712,17 +4764,17 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
             Py_INCREF(func);
             Py_SETREF(*pfunc, self);
             nargs++;
-            stack--;
+            argv--;
         }
         else {
             Py_INCREF(func);
         }
 
         if (PyFunction_Check(func)) {
-            x = _PyFunction_FastCallKeywords(func, stack, nargs, kwnames);
+            x = _PyFunction_FastCallKeywords(func, argv, nargs, kwnames);
         }
         else {
-            x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
+            x = _PyObject_FastCallKeywords(func, argv, nargs, kwnames);
         }
         Py_DECREF(func);
     }
@@ -4738,43 +4790,6 @@ call_function(PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
     return x;
 }
 
-static PyObject *
-do_call_core(PyObject *func, PyObject *callargs, PyObject *kwdict)
-{
-    PyObject *result;
-
-    if (PyCFunction_Check(func)) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
-        return result;
-    }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-        if (nargs > 0 && tstate->use_tracing) {
-            /* We need to create a temporary bound method as argument
-               for profiling.
-
-               If nargs == 0, then this cannot work because we have no
-               "self". In any case, the call itself would raise
-               TypeError (foo needs an argument), so we just skip
-               profiling. */
-            PyObject *self = PyTuple_GET_ITEM(callargs, 0);
-            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
-            if (func == NULL) {
-                return NULL;
-            }
-
-            C_TRACE(result, _PyCFunction_FastCallDict(func,
-                                                      &_PyTuple_ITEMS(callargs)[1],
-                                                      nargs - 1,
-                                                      kwdict));
-            Py_DECREF(func);
-            return result;
-        }
-    }
-    return PyObject_Call(func, callargs, kwdict);
-}
 
 /* Extract a slice index from a PyLong or an object with the
    nb_index slot defined, and store in *pi.
