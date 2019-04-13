@@ -1193,7 +1193,8 @@ class _BaseV4:
         """
         addr, prefix = cls._split_addr_prefix(arg)
         if isinstance(addr, IPv4Address):
-            addr = IPv4Address(addr._ip)
+            if addr.__class__ is not IPv4Address:
+                addr = IPv4Address(addr._ip)
         else:
             addr = IPv4Address(addr)
         return (addr, cls._make_netmask(prefix))
@@ -1800,7 +1801,8 @@ class _BaseV6:
         """
         addr, prefix = cls._split_addr_prefix(arg)
         if isinstance(addr, IPv6Address):
-            addr = IPv6Address(addr._ip)
+            if addr.__class__ is not IPv6Address:
+                addr = IPv4Address(addr._ip)
         else:
             addr = IPv6Address(addr)
         return (addr, cls._make_netmask(prefix))
