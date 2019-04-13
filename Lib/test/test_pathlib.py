@@ -1489,6 +1489,44 @@ class _BasePathTest(object):
         self.assertEqual(paths, { P(join('dirC'), *q) for q in expected })
 
     @support.skip_unless_symlink
+    def test_iterdir_recursive_symlink(self):
+        P = self.cls
+        p = P(join('dirB'))
+        it = p.iterdir(recursive=True)
+        paths = set(it)
+        expected = ['fileB', 'linkD']
+        self.assertEqual(paths, { P(join('dirB'), q) for q in expected })
+
+    @support.skip_unless_symlink
+    def test_iterdir_recursive_symlink_cycle(self):
+        os.mkdir(join('dirF'))
+        os.mkdir(join('dirF', 'dirG'))
+        os.mkdir(join('dirF', 'dirH'))
+        with open(join('dirF', 'fileF'), 'wb') as f:
+            f.write(b"this is file F\n")
+        with open(join('dirF', 'dirG', 'fileG'), 'wb') as f:
+            f.write(b"this is file G\n")
+        with open(join('dirF', 'dirH', 'fileH'), 'wb') as f:
+            f.write(b"this is file H\n")
+        os.symlink(os.path.join('..', 'dirG'), join('dirF', 'dirH', 'linkG'))
+        os.symlink(os.path.join('..', 'dirH'), join('dirF', 'dirG', 'linkH'))
+        try:
+            P = self.cls
+            p = P(join('dirF'))
+            it = p.iterdir(recursive=True)
+            paths = set(it)
+            expected = [
+                ('fileF',),
+                ('dirG', 'fileG'),
+                ('dirG', 'linkH'),
+                ('dirH', 'fileH'),
+                ('dirH', 'linkG')]
+            self.assertEqual(paths, { P(join('dirF'), *q) for q in expected })
+        finally:
+            support.rmtree(join('dirF'))
+        assert not P(join('dirF')).exists()  # TODO: remove
+
+    @support.skip_unless_symlink
     def test_iterdir_symlink(self):
         # __iter__ on a symlink to a directory.
         P = self.cls
