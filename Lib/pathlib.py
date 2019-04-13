@@ -1111,7 +1111,7 @@ class Path(PurePath):
                 # Yielding a path object for these makes little sense
                 continue
             path = self._make_child_relpath(name)
-            if recursive and path.is_dir():
+            if recursive and path.is_dir() and not path.is_symlink():
                 yield from path.iterdir(recursive=recursive)
             else:
                 yield path
