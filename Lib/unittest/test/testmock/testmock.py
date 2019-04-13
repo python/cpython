@@ -1857,6 +1857,15 @@ class MockTest(unittest.TestCase):
         # causes the objects patched to go out of sync
 
         old_patch = unittest.mock.patch
+
+        def _cleanup(old_patch):
+            unittest.mock.patch = old_patch
+
+        # Directly using __setattr__ on unittest.mock causes current imported
+        # reference to be updated. Use a function so that during cleanup the
+        # re-imported new reference is updated.
+        self.addCleanup(_cleanup, old_patch)
+
         with patch.dict('sys.modules'):
             del sys.modules['unittest.mock']
 
@@ -1877,8 +1886,6 @@ class MockTest(unittest.TestCase):
             for mock in mocks:
                 obj = mock(spec=Something)
                 self.assertIsInstance(obj, Something)
-
-        unittest.mock.patch = old_patch
 
 
 if __name__ == '__main__':
