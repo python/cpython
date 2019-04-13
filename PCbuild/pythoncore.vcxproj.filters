@@ -267,9 +267,6 @@
     <ClInclude Include="..\Include\patchlevel.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pgenheaders.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\py_curses.h">
       <Filter>Include</Filter>
     </ClInclude>

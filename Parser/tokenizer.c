@@ -2,7 +2,6 @@
 /* Tokenizer implementation */
 
 #include "Python.h"
-#include "pgenheaders.h"
 
 #include <ctype.h>
 #include <assert.h>

@@ -1,7 +1,7 @@
 
 /* Parser-tokenizer link implementation */
 
-#include "pgenheaders.h"
+#include "Python.h"
 #include "tokenizer.h"
 #include "node.h"
 #include "grammar.h"

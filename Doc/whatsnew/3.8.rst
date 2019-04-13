@@ -814,6 +814,10 @@ Changes in the Python API
   by the installer).
   (See :issue:`36085`.)
 
+* The header files and functions related to pgen have been removed after its
+  replacement by a pure Python implementation. (Contributed by Pablo Galindo
+  in :issue:`36623`.)
+
 
 Changes in the C API
 --------------------
