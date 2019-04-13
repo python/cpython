@@ -2495,6 +2495,7 @@ class WaitableMock(MagicMock):
 
     def __init__(self, *args, event_class=threading.Event, **kwargs):
         _safe_super(WaitableMock, self).__init__(*args, **kwargs)
+        self._event_class = event_class
         self._event = event_class()
         self._expected_calls = defaultdict(lambda: event_class())
 
@@ -2523,7 +2524,7 @@ class WaitableMock(MagicMock):
         `timeout` - time to wait for in seconds. Defaults to 1.
         """
         if args:
-            if args not in self.expected_calls:
+            if args not in self._expected_calls:
                 event = self._event_class()
                 self._expected_calls[args] = event
             else:

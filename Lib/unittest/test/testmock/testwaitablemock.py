@@ -99,7 +99,6 @@ class TestWaitableMock(unittest.TestCase):
                 something.method_1.wait_until_called(timeout=0.1)
                 something.method_1.assert_not_called()
 
-                time.sleep(0.5)
                 something.method_1.wait_until_called()
                 something.method_1.assert_called_once()
 
@@ -125,6 +124,7 @@ class TestWaitableMock(unittest.TestCase):
 
                 something.method_1.wait_until_called(timeout=2.0)
                 something.method_1.assert_called_once_with(1)
+                self.assertEqual(something.method_1.mock_calls, [call(1)])
                 something.method_2.assert_has_calls(
                     [call(1), call(2)], any_order=True)
 
