@@ -2463,6 +2463,12 @@ class ElementFindTest(unittest.TestCase):
         nsmap = {'xx': 'Y'}
         self.assertEqual(len(root.findall(".//xx:b", namespaces=nsmap)), 1)
         self.assertEqual(len(root.findall(".//b", namespaces=nsmap)), 2)
+        nsmap = {'xx': 'X', None: 'Y'}
+        self.assertEqual(len(root.findall(".//xx:b", namespaces=nsmap)), 2)
+        self.assertEqual(len(root.findall(".//b", namespaces=nsmap)), 1)
+        nsmap = {'xx': 'X', '': 'Y'}
+        with self.assertRaisesRegex(ValueError, 'namespace prefix'):
+            root.findall(".//xx:b", namespaces=nsmap)
 
     def test_bad_find(self):
         e = ET.XML(SAMPLE_XML)
