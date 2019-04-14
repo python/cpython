@@ -72,7 +72,10 @@ def setup_tests(ns):
         else:
             soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
             newsoft = min(hard, max(soft, 1024*2048))
-            resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
+            try:
+                resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
+            except ValueError:
+                pass
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
