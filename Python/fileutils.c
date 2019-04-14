@@ -1871,9 +1871,11 @@ error:
 void*
 _Py_get_osfhandle_noraise(int fd)
 {
+    void *handle;
     _Py_BEGIN_SUPPRESS_IPH
-    return (void*)_get_osfhandle(fd);
+    handle = (void*)_get_osfhandle(fd);
     _Py_END_SUPPRESS_IPH
+    return handle;
 }
 
 void*
@@ -1889,9 +1891,11 @@ _Py_get_osfhandle(int fd)
 int
 _Py_open_osfhandle_noraise(void *handle, int flags)
 {
+    int fd;
     _Py_BEGIN_SUPPRESS_IPH
-    return _open_osfhandle((intptr_t)handle, flags);
+    fd = _open_osfhandle((intptr_t)handle, flags);
     _Py_END_SUPPRESS_IPH
+    return fd;
 }
 
 int
