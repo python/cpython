@@ -1113,6 +1113,7 @@ def _escape_attrib_html(text):
 # --------------------------------------------------------------------
 
 def tostring(element, encoding=None, method=None, *,
+             xml_declaration=None, default_namespace=None,
              short_empty_elements=True):
     """Generate string representation of XML element.
 
@@ -1121,13 +1122,17 @@ def tostring(element, encoding=None, method=None, *,
 
     *element* is an Element instance, *encoding* is an optional output
     encoding defaulting to US-ASCII, *method* is an optional output which can
-    be one of "xml" (default), "html", "text" or "c14n".
+    be one of "xml" (default), "html", "text" or "c14n", *default_namespace*
+    sets the default XML namespace (for "xmlns").
 
     Returns an (optionally) encoded string containing the XML data.
 
     """
     stream = io.StringIO() if encoding == 'unicode' else io.BytesIO()
-    ElementTree(element).write(stream, encoding, method=method,
+    ElementTree(element).write(stream, encoding,
+                               xml_declaration=xml_declaration,
+                               default_namespace=default_namespace,
+                               method=method,
                                short_empty_elements=short_empty_elements)
     return stream.getvalue()
 
@@ -1149,10 +1154,14 @@ class _ListDataStream(io.BufferedIOBase):
         return len(self.lst)
 
 def tostringlist(element, encoding=None, method=None, *,
+                 xml_declaration=None, default_namespace=None,
                  short_empty_elements=True):
     lst = []
     stream = _ListDataStream(lst)
-    ElementTree(element).write(stream, encoding, method=method,
+    ElementTree(element).write(stream, encoding,
+                               xml_declaration=xml_declaration,
+                               default_namespace=default_namespace,
+                               method=method,
                                short_empty_elements=short_empty_elements)
     return lst
 
