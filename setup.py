@@ -669,7 +669,7 @@ class PyBuildExt(build_ext):
             # NOTE: using shlex.split would technically be more correct, but
             # also gives a bootstrap problem. Let's hope nobody uses
             # directories with whitespace in the name to store libraries.
-            inc_dirs += ['/usr/include']
+            self.inc_dirs.append('/usr/include')
             cflags, ldflags = sysconfig.get_config_vars(
                     'CFLAGS', 'LDFLAGS')
             for item in cflags.split():
