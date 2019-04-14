@@ -190,14 +190,12 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[4], res.machine)
         self.assertEqual(res[5], res.processor)
 
+    @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
     def test_uname_processor(self):
         """
         On some systems, the processor must match the output
-        of 'uname -p'.
+        of 'uname -p'. See Issue 35967 for rationale.
         """
-        if sys.platform in ['win32', 'OpenVMS']:
-            return
-
         try:
             output = subprocess.check_output(['uname', '-p'], text=True)
         except subprocess.CalledProcessError:
