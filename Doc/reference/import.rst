@@ -933,7 +933,7 @@ after the first. For example, given the following package layout:
     package/
         __init__.py
         subpackage1/
-            __init__.py
+          __init__.py
             moduleX.py
             moduleY.py
         subpackage2/
