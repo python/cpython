@@ -280,6 +280,7 @@ solution then is to call :c:func:`PyParser_ParseString` and test for ``e.error``
 equal to ``E_EOF``, which means the input is incomplete.  Here's a sample code
 fragment, untested, inspired by code from Alex Farber::
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
    #include <node.h>
    #include <errcode.h>
@@ -318,6 +319,7 @@ complete example using the GNU readline library (you may want to ignore
    #include <stdio.h>
    #include <readline.h>
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
    #include <object.h>
    #include <compile.h>

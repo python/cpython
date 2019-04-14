@@ -700,6 +700,11 @@ Changes in Python behavior
   raised when getting the attribute from the type dictionary are no longer
   ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
 
+* On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+  It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
+  older Python versions include the version number, it is recommended to
+  always use the ``sys.platform.startswith('aix')``.
+  (Contributed by M. Felt in :issue:`36588`.)
 
 Changes in the Python API
 -------------------------
@@ -808,6 +813,10 @@ Changes in the Python API
   ensure that Windows Update KB2533625 has been installed (this is also verified
   by the installer).
   (See :issue:`36085`.)
+
+* The header files and functions related to pgen have been removed after its
+  replacement by a pure Python implementation. (Contributed by Pablo Galindo
+  in :issue:`36623`.)
 
 
 Changes in the C API
