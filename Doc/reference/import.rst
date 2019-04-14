@@ -922,6 +922,53 @@ it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 while raising an exception terminates it immediately.
 
 
+Package Relative Imports
+========================
+
+Relative imports use leading dots. A single leading dot indicates a relative
+import, starting with the current package. Two or more leading dots indicate a
+relative import to the parent(s) of the current package, one level per dot
+after the first. For example, given the following package layout:
+
+    package/
+        __init__.py
+        subpackage1/
+            __init__.py
+            moduleX.py
+            moduleY.py
+        subpackage2/
+            __init__.py
+            moduleZ.py
+        moduleA.py
+
+Given that the current file is either ``moduleX.py`` or ``subpackage1/__init__.py``,
+the following is the syntax for relative imports:
+
+    from .moduleY import spam
+    from .moduleY import spam as ham
+    from . import moduleY
+    from ..subpackage1 import moduleY
+    from ..subpackage2.moduleZ import eggs
+    from ..moduleA import foo
+    from ...package import bar
+
+Relative imports must always use ``from <> import``; ``import <>`` is always absolute.
+Of course, absolute imports can use ``from <> import`` by omitting the leading dots.
+The reason ``import .foo`` is prohibited is because after
+
+    import XXX.YYY.ZZZ
+
+then
+
+    XXX.YYY.ZZZ
+
+is usable in an expression. But
+
+    .moduleY
+
+is not usable in an expression.
+
+
 Special considerations for __main__
 ===================================
 
