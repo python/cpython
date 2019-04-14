@@ -38,12 +38,12 @@ Cell objects are not likely to be useful elsewhere.
 
 .. c:function:: PyObject* PyCell_Get(PyObject *cell)
 
-   Return the contents of the cell *cell*.
+   Return the contents of the *cell*.
 
 
 .. c:function:: PyObject* PyCell_GET(PyObject *cell)
 
-   Return the contents of the cell *cell*, but without checking that *cell* is
+   Return the contents of the *cell*, but without checking that *cell* is
    non-*NULL* and a cell object.
 
 
