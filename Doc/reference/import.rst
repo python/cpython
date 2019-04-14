@@ -928,12 +928,12 @@ Package Relative Imports
 Relative imports use leading dots. A single leading dot indicates a relative
 import, starting with the current package. Two or more leading dots indicate a
 relative import to the parent(s) of the current package, one level per dot
-after the first. For example, given the following package layout:
+after the first. For example, given the following package layout::
 
     package/
         __init__.py
         subpackage1/
-         __init__.py
+            __init__.py
             moduleX.py
             moduleY.py
         subpackage2/
