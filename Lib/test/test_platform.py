@@ -191,11 +191,20 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[5], res.processor)
 
     def test_uname_processor(self):
-        expected = collections.defaultdict(
-            set,
-            Darwin={'i386'},
-        )[platform.system()]
-        self.assertIn(platform.uname().processor, expected)
+        """
+        On some systems, the processor must match the output
+        of 'uname -p'.
+        """
+        if sys.platform in ['win32', 'OpenVMS']:
+            return
+
+        try:
+            output = subprocess.check_output(['uname', '-p'], text=True)
+        except subprocess.CalledProcessError:
+            return
+
+        expected = output.strip()
+        self.assertEqual(platform.uname().processor, expected)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
