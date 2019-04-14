@@ -140,19 +140,25 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(
 PyAPI_FUNC(int) _Py_wreadlink(
     const wchar_t *path,
     wchar_t *buf,
-    size_t bufsiz);
+    /* Number of characters of 'buf' buffer
+       including the trailing NUL character */
+    size_t buflen);
 #endif
 
 #ifdef HAVE_REALPATH
 PyAPI_FUNC(wchar_t*) _Py_wrealpath(
     const wchar_t *path,
     wchar_t *resolved_path,
-    size_t resolved_path_size);
+    /* Number of characters of 'resolved_path' buffer
+       including the trailing NUL character */
+    size_t resolved_path_len);
 #endif
 
 PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
     wchar_t *buf,
-    size_t size);
+    /* Number of characters of 'buf' buffer
+       including the trailing NUL character */
+    size_t buflen);
 
 PyAPI_FUNC(int) _Py_get_inheritable(int fd);
 

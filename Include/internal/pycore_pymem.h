@@ -155,6 +155,30 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
     PyMemAllocatorDomain domain,
     PyMemAllocatorEx *old_alloc);
 
+/* Heuristic checking if a pointer value is newly allocated
+   (uninitialized) or newly freed. The pointer is not dereferenced, only the
+   pointer value is checked.
+
+   The heuristic relies on the debug hooks on Python memory allocators which
+   fills newly allocated memory with CLEANBYTE (0xCD) and newly freed memory
+   with DEADBYTE (0xDD). Detect also "untouchable bytes" marked
+   with FORBIDDENBYTE (0xFD). */
+static inline int _PyMem_IsPtrFreed(void *ptr)
+{
+    uintptr_t value = (uintptr_t)ptr;
+#if SIZEOF_VOID_P == 8
+    return (value == (uintptr_t)0xCDCDCDCDCDCDCDCD
+            || value == (uintptr_t)0xDDDDDDDDDDDDDDDD
+            || value == (uintptr_t)0xFDFDFDFDFDFDFDFD);
+#elif SIZEOF_VOID_P == 4
+    return (value == (uintptr_t)0xCDCDCDCD
+            || value == (uintptr_t)0xDDDDDDDD
+            || value == (uintptr_t)0xFDFDFDFD);
+#else
+#  error "unknown pointer size"
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif

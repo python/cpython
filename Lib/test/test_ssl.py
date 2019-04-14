@@ -765,9 +765,7 @@ class BasicSocketTests(unittest.TestCase):
 
     def test_unknown_channel_binding(self):
         # should raise ValueError for unknown type
-        s = socket.socket(socket.AF_INET)
-        s.bind(('127.0.0.1', 0))
-        s.listen()
+        s = socket.create_server(('127.0.0.1', 0))
         c = socket.socket(socket.AF_INET)
         c.connect(s.getsockname())
         with test_wrap_socket(c, do_handshake_on_connect=False) as ss:
@@ -1663,11 +1661,8 @@ class SSLErrorTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-        with socket.socket() as s:
-            s.bind(("127.0.0.1", 0))
-            s.listen()
-            c = socket.socket()
-            c.connect(s.getsockname())
+        with socket.create_server(("127.0.0.1", 0)) as s:
+            c = socket.create_connection(s.getsockname())
             c.setblocking(False)
             with ctx.wrap_socket(c, False, do_handshake_on_connect=False) as c:
                 with self.assertRaises(ssl.SSLWantReadError) as cm:

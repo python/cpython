@@ -49,7 +49,7 @@ if os.name == 'posix':
 elif _WINDOWS:
     import nt
 
-COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 16 * 1024
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 

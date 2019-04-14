@@ -146,6 +146,7 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.isfunction, 'mod.spam')
         self.istest(inspect.isfunction, 'mod.StupidGit.abuse')
         self.istest(inspect.ismethod, 'git.argue')
+        self.istest(inspect.ismethod, 'mod.custom_method')
         self.istest(inspect.ismodule, 'mod')
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         self.istest(inspect.isgenerator, '(x for x in range(2))')
@@ -375,6 +376,11 @@ class GetSourceBase(unittest.TestCase):
         self.assertEqual(inspect.getsource(obj),
                          self.sourcerange(top, bottom))
 
+class SlotUser:
+    'Docstrings for __slots__'
+    __slots__ = {'power': 'measured in kilowatts',
+                 'distance': 'measured in kilometers'}
+
 class TestRetrievingSourceCode(GetSourceBase):
     fodderModule = mod
 
@@ -429,6 +435,10 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'A longer,\n\nindented\n\ndocstring.')
         self.assertEqual(inspect.getdoc(git.abuse),
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
+        self.assertEqual(inspect.getdoc(SlotUser.power),
+                         'measured in kilowatts')
+        self.assertEqual(inspect.getdoc(SlotUser.distance),
+                         'measured in kilometers')
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")

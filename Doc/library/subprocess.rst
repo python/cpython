@@ -55,7 +55,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
    ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be used as well.
+   not be supplied at the same time as *capture_output*.
 
    The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
    expires, the child process will be killed and waited for.  The
@@ -959,7 +959,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: CREATE_NO_WINDOW
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will not create a window
+   will not create a window.
 
    .. versionadded:: 3.7
 
@@ -1002,14 +1002,14 @@ calls these functions.
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
 
-   This is equivalent to::
+   Code needing to capture stdout or stderr should use :func:`run` instead:
 
        run(...).returncode
 
-   (except that the *input* and *check* parameters are not supported)
+   To suppress stdout or stderr, supply a value of :data:`DEVNULL`.
 
-   The arguments shown above are merely the most
-   common ones. The full function signature is largely the
+   The arguments shown above are merely some common ones.
+   The full function signature is the
    same as that of the :class:`Popen` constructor - this function passes all
    supplied arguments other than *timeout* directly through to that interface.
 
@@ -1030,14 +1030,14 @@ calls these functions.
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
 
-   This is equivalent to::
+   Code needing to capture stdout or stderr should use :func:`run` instead:
 
        run(..., check=True)
 
-   (except that the *input* parameter is not supported)
+   To suppress stdout or stderr, supply a value of :data:`DEVNULL`.
 
-   The arguments shown above are merely the most
-   common ones. The full function signature is largely the
+   The arguments shown above are merely some common ones.
+   The full function signature is the
    same as that of the :class:`Popen` constructor - this function passes all
    supplied arguments other than *timeout* directly through to that interface.
 
@@ -1067,7 +1067,7 @@ calls these functions.
 
        run(..., check=True, stdout=PIPE).stdout
 
-   The arguments shown above are merely the most common ones.
+   The arguments shown above are merely some common ones.
    The full function signature is largely the same as that of :func:`run` -
    most arguments are passed directly through to that interface.
    However, explicitly passing ``input=None`` to inherit the parent's
@@ -1077,8 +1077,9 @@ calls these functions.
    encoding of the output data may depend on the command being invoked, so the
    decoding to text will often need to be handled at the application level.
 
-   This behaviour may be overridden by setting *universal_newlines* to
-   ``True`` as described above in :ref:`frequently-used-arguments`.
+   This behaviour may be overridden by setting *text*, *encoding*, *errors*,
+   or *universal_newlines* to ``True`` as described in
+   :ref:`frequently-used-arguments` and :func:`run`.
 
    To also capture standard error in the result, use
    ``stderr=subprocess.STDOUT``::
@@ -1295,7 +1296,7 @@ Replacing functions from the :mod:`popen2` module
 
 * :class:`Popen` raises an exception if the execution fails.
 
-* the *capturestderr* argument is replaced with the *stderr* argument.
+* The *capturestderr* argument is replaced with the *stderr* argument.
 
 * ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
 

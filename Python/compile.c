@@ -330,6 +330,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         goto finally;
     if (!flags) {
         local_flags.cf_flags = 0;
+        local_flags.cf_feature_version = PY_MINOR_VERSION;
         flags = &local_flags;
     }
     merged = c.c_future->ff_features | flags->cf_flags;
@@ -1209,13 +1210,13 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
     PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
     if (t != key) {
         // o is registered in c_const_cache.  Just use it.
-        Py_INCREF(t);
+        Py_XINCREF(t);
         Py_DECREF(key);
         return t;
     }
 
     // We registered o in c_const_cache.
-    // When o is a tuple or frozenset, we want to merge it's
+    // When o is a tuple or frozenset, we want to merge its
     // items too.
     if (PyTuple_CheckExact(o)) {
         Py_ssize_t len = PyTuple_GET_SIZE(o);
@@ -1245,7 +1246,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
         }
     }
     else if (PyFrozenSet_CheckExact(o)) {
-        // *key* is tuple. And it's first item is frozenset of
+        // *key* is tuple. And its first item is frozenset of
         // constant keys.
         // See _PyCode_ConstantKey() for detail.
         assert(PyTuple_CheckExact(key));
@@ -3429,7 +3430,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
             op = (c->u->u_ste->ste_type == ClassBlock) ? LOAD_CLASSDEREF : LOAD_DEREF;
             break;
         case Store:
-        case NamedStore:
             op = STORE_DEREF;
             break;
         case AugLoad:
@@ -3447,7 +3447,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         switch (ctx) {
         case Load: op = LOAD_FAST; break;
         case Store:
-        case NamedStore:
             op = STORE_FAST;
             break;
         case Del: op = DELETE_FAST; break;
@@ -3466,7 +3465,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         switch (ctx) {
         case Load: op = LOAD_GLOBAL; break;
         case Store:
-        case NamedStore:
             op = STORE_GLOBAL;
             break;
         case Del: op = DELETE_GLOBAL; break;
@@ -3484,7 +3482,6 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         switch (ctx) {
         case Load: op = LOAD_NAME; break;
         case Store:
-        case NamedStore:
             op = STORE_NAME;
             break;
         case Del: op = DELETE_NAME; break;
@@ -3604,7 +3601,7 @@ static int
 compiler_list(struct compiler *c, expr_ty e)
 {
     asdl_seq *elts = e->v.List.elts;
-    if (e->v.List.ctx == Store || e->v.List.ctx == NamedStore) {
+    if (e->v.List.ctx == Store) {
         return assignment_helper(c, elts);
     }
     else if (e->v.List.ctx == Load) {
@@ -3620,7 +3617,7 @@ static int
 compiler_tuple(struct compiler *c, expr_ty e)
 {
     asdl_seq *elts = e->v.Tuple.elts;
-    if (e->v.Tuple.ctx == Store || e->v.Tuple.ctx == NamedStore) {
+    if (e->v.Tuple.ctx == Store) {
         return assignment_helper(c, elts);
     }
     else if (e->v.Tuple.ctx == Load) {
@@ -3882,6 +3879,7 @@ check_index(struct compiler *c, expr_ty e, slice_ty s)
     }
 }
 
+// Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
@@ -3915,8 +3913,10 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
-    if (maybe_optimize_method_call(c, e) > 0)
-        return 1;
+    int ret = maybe_optimize_method_call(c, e);
+    if (ret >= 0) {
+        return ret;
+    }
     if (!check_caller(c, e->v.Call.func)) {
         return 0;
     }
@@ -5154,7 +5154,6 @@ compiler_handle_subscr(struct compiler *c, const char *kind,
         case AugStore:/* fall through to Store */
         case Store:   op = STORE_SUBSCR; break;
         case Del:     op = DELETE_SUBSCR; break;
-        case NamedStore:
         case Param:
             PyErr_Format(PyExc_SystemError,
                          "invalid %s kind %d in subscript\n",

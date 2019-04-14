@@ -2699,19 +2699,15 @@ features:
    as a directory if *target_is_directory* is ``True`` or a file symlink (the
    default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
-   Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
-   will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
-
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
    .. note::
 
-      On Windows, the *SeCreateSymbolicLinkPrivilege* is required in order to
-      successfully create symlinks. This privilege is not typically granted to
-      regular users but is available to accounts which can escalate privileges
-      to the administrator level. Either obtaining the privilege or running your
-      application as an administrator are ways to successfully create symlinks.
+      On newer versions of Windows 10, unprivileged accounts can create symlinks
+      if Developer Mode is enabled. When Developer Mode is not available/enabled,
+      the *SeCreateSymbolicLinkPrivilege* privilege is required, or the process
+      must be run as an administrator.
 
 
       :exc:`OSError` is raised when the function is called by an unprivileged
@@ -2728,6 +2724,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
+
+   .. versionchanged:: 3.8
+      Added support for unelevated symlinks on Windows with Developer Mode.
 
 
 .. function:: sync()
@@ -3077,6 +3076,36 @@ to be ignored.
    an exit code of ``3``.  Be aware that calling this function will not call the
    Python signal handler registered for :const:`SIGABRT` with
    :func:`signal.signal`.
+
+
+.. function:: add_dll_directory(path)
+
+   Add a path to the DLL search path.
+
+   This search path is used when resolving dependencies for imported
+   extension modules (the module itself is resolved through sys.path),
+   and also by :mod:`ctypes`.
+
+   Remove the directory by calling **close()** on the returned object
+   or using it in a :keyword:`with` statement.
+
+   See the `Microsoft documentation
+   <https://msdn.microsoft.com/44228cf2-6306-466c-8f16-f513cd3ba8b5>`_
+   for more information about how DLLs are loaded.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.8
+      Previous versions of CPython would resolve DLLs using the default
+      behavior for the current process. This led to inconsistencies,
+      such as only sometimes searching :envvar:`PATH` or the current
+      working directory, and OS functions such as ``AddDllDirectory``
+      having no effect.
+
+      In 3.8, the two primary ways DLLs are loaded now explicitly
+      override the process-wide behavior to ensure consistency. See the
+      :ref:`porting notes <bpo-36085-whatsnew>` for information on
+      updating libraries.
 
 
 .. function:: execl(path, arg0, arg1, ...)
@@ -3465,7 +3494,7 @@ written in Python, such as a mail server's external command delivery program.
    :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
    .. availability:: Unix.
 

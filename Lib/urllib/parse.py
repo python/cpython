@@ -396,6 +396,21 @@ def _splitnetloc(url, start=0):
             delim = min(delim, wdelim)     # use earliest delim position
     return url[start:delim], url[delim:]   # return (domain, rest)
 
+def _checknetloc(netloc):
+    if not netloc or netloc.isascii():
+        return
+    # looking for characters like \u2100 that expand to 'a/c'
+    # IDNA uses NFKC equivalence, so normalize for this check
+    import unicodedata
+    netloc2 = unicodedata.normalize('NFKC', netloc)
+    if netloc == netloc2:
+        return
+    _, _, netloc = netloc.rpartition('@') # anything to the left of '@' is okay
+    for c in '/?#@:':
+        if c in netloc2:
+            raise ValueError("netloc '" + netloc2 + "' contains invalid " +
+                             "characters under NFKC normalization")
+
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
@@ -424,6 +439,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
                 url, fragment = url.split('#', 1)
             if '?' in url:
                 url, query = url.split('?', 1)
+            _checknetloc(netloc)
             v = SplitResult('http', netloc, url, query, fragment)
             _parse_cache[key] = v
             return _coerce_result(v)
@@ -447,6 +463,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
         url, fragment = url.split('#', 1)
     if '?' in url:
         url, query = url.split('?', 1)
+    _checknetloc(netloc)
     v = SplitResult(scheme, netloc, url, query, fragment)
     _parse_cache[key] = v
     return _coerce_result(v)
@@ -768,25 +785,32 @@ def quote(string, safe='/', encoding=None, errors=None):
     """quote('abc def') -> 'abc%20def'
 
     Each part of a URL, e.g. the path info, the query, etc., has a
-    different set of reserved characters that must be quoted.
+    different set of reserved characters that must be quoted. The
+    quote function offers a cautious (not minimal) way to quote a
+    string for most of these parts.
 
-    RFC 3986 Uniform Resource Identifiers (URI): Generic Syntax lists
-    the following reserved characters.
+    RFC 3986 Uniform Resource Identifier (URI): Generic Syntax lists
+    the following (un)reserved characters.
 
-    reserved    = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
-                  "$" | "," | "~"
+    unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+    reserved      = gen-delims / sub-delims
+    gen-delims    = ":" / "/" / "?" / "#" / "[" / "]" / "@"
+    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+                  / "*" / "+" / "," / ";" / "="
 
-    Each of these characters is reserved in some component of a URL,
+    Each of the reserved characters is reserved in some component of a URL,
     but not necessarily in all of them.
 
-    Python 3.7 updates from using RFC 2396 to RFC 3986 to quote URL strings.
-    Now, "~" is included in the set of reserved characters.
+    The quote function %-escapes all characters that are neither in the
+    unreserved chars ("always safe") nor the additional chars set via the
+    safe arg.
 
-    By default, the quote function is intended for quoting the path
-    section of a URL.  Thus, it will not encode '/'.  This character
-    is reserved, but in typical usage the quote function is being
-    called on a path where the existing slash characters are used as
-    reserved characters.
+    The default for the safe arg is '/'. The character is reserved, but in
+    typical usage the quote function is being called on a path where the
+    existing slash characters are to be preserved.
+
+    Python 3.7 updates from using RFC 2396 to RFC 3986 to quote URL strings.
+    Now, "~" is included in the set of unreserved characters.
 
     string and safe may be either str or bytes objects. encoding and errors
     must not be specified if string is a bytes object.

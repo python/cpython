@@ -16,6 +16,7 @@
 #>
 param(
     [Parameter(Mandatory=$true)][string]$catalog,
+    [switch]$sign,
     [string]$description,
     [string]$certname,
     [string]$certsha1,
@@ -31,4 +32,6 @@ MakeCat $catalog
 if (-not $?) {
     throw "Catalog compilation failed"
 }
-Sign-File -certname $certname -certsha1 $certsha1 -certfile $certfile -description $description -files @($catalog -replace 'cdf$', 'cat')
+if ($sign) {
+    Sign-File -certname $certname -certsha1 $certsha1 -certfile $certfile -description $description -files @($catalog -replace 'cdf$', 'cat')
+}

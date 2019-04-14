@@ -404,6 +404,7 @@ then
     MACHDEP="$ac_md_system$ac_md_release"
 
     case $MACHDEP in
+	aix*) MACHDEP="aix";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -1463,6 +1464,19 @@ esac
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
+case $CC in
+    *clang*)
+        cc_is_clang=1
+        ;;
+    *)
+        if $CC --version 2>&1 | grep -q clang
+        then
+            cc_is_clang=1
+        else
+            cc_is_clang=
+        fi
+esac
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
@@ -1475,19 +1489,6 @@ then
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
         fi
-
-        case $CC in
-            *clang*)
-                cc_is_clang=1
-                ;;
-            *)
-                if $CC --version 2>&1 | grep -q clang
-                then
-                    cc_is_clang=1
-                else
-                    cc_is_clang=
-                fi
-        esac
 
         if test -n "${cc_is_clang}"
         then
@@ -1527,6 +1528,26 @@ then
 	OPT="-O"
 	;;
     esac
+fi
+
+if test -n "${cc_is_clang}"
+then
+    # bpo-36618: Add -fmax-type-align=8 to CFLAGS when clang compiler is
+    # detected. The pymalloc memory allocator aligns memory on 8 bytes. On
+    # x86-64, clang expects alignment on 16 bytes by default and so uses MOVAPS
+    # instruction which can lead to segmentation fault. Instruct clang that
+    # Python is limited to alignemnt on 8 bytes to use MOVUPS instruction
+    # instead: slower but don't trigger a SIGSEGV if the memory is not aligned
+    # on 16 bytes.
+    #
+    # Sadly, the flag must be added to CFLAGS and not just CFLAGS_NODIST,
+    # since third party C extensions can have the same issue.
+    #
+    # Check if -fmax-type-align flag is supported (it's not supported by old
+    # clang versions):
+    if "$CC" -v --help 2>/dev/null |grep -- -fmax-type-align > /dev/null; then
+        CFLAGS="$CFLAGS -fmax-type-align=8"
+    fi
 fi
 
 AC_SUBST(BASECFLAGS)
@@ -2706,7 +2727,7 @@ then
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
 	VxWorks*)
-		LINKFORSHARED='--export-dynamic';;		
+		LINKFORSHARED='--export-dynamic';;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -5245,7 +5266,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Programs"
+SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

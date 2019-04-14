@@ -37,6 +37,7 @@ The following functions can be safely called before Python is initialized:
 
 * Informative functions:
 
+  * :c:func:`Py_IsInitialized`
   * :c:func:`PyMem_GetAllocator`
   * :c:func:`PyObject_GetArenaAllocator`
   * :c:func:`Py_GetBuildInfo`
@@ -855,6 +856,12 @@ code, or when embedding the Python interpreter:
    created, the current thread must not have acquired it, otherwise deadlock
    ensues.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
@@ -902,6 +909,12 @@ with sub-interpreters:
    When the function returns, the current thread will hold the GIL and be able
    to call arbitrary Python code.  Failure is a fatal error.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
 
 .. c:function:: void PyGILState_Release(PyGILState_STATE)
 
@@ -1024,6 +1037,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    so then ``-1`` is returned and an error is set.
 
    .. versionadded:: 3.7
+
+
+.. c:function:: PyObject* PyInterpreterState_GetDict(PyInterpreterState *interp)
+
+   Return a dictionary in which interpreter-specific data may be stored.
+   If this function returns *NULL* then no exception has been raised and
+   the caller should assume no interpreter-specific dict is available.
+
+   This is not a replacement for :c:func:`PyModule_GetState()`, which
+   extensions should use to store interpreter-specific state information.
+
+   .. versionadded:: 3.8
 
 
 .. c:function:: PyObject* PyThreadState_GetDict()
@@ -1380,6 +1405,11 @@ These functions are only intended to be used by advanced debugging tools.
 .. c:function:: PyInterpreterState* PyInterpreterState_Head()
 
    Return the interpreter state object at the head of the list of all such objects.
+
+
+.. c:function:: PyInterpreterState* PyInterpreterState_Main()
+
+   Return the main interpreter state object.
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_Next(PyInterpreterState *interp)

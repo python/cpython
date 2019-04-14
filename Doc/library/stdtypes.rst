@@ -351,7 +351,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/12.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -1509,6 +1509,10 @@ expression support in the :mod:`re` module).
    Return a copy of the string with its first character capitalized and the
    rest lowercased.
 
+   .. versionchanged:: 3.8
+      The first character is now put into titlecase rather than uppercase.
+      This means that characters like digraphs will only have their first
+      letter capitalized, instead of the full character.
 
 .. method:: str.casefold()
 
@@ -2052,8 +2056,7 @@ expression support in the :mod:`re` module).
         >>> import re
         >>> def titlecase(s):
         ...     return re.sub(r"[A-Za-z]+('[A-Za-z]+)?",
-        ...                   lambda mo: mo.group(0)[0].upper() +
-        ...                              mo.group(0)[1:].lower(),
+        ...                   lambda mo: mo.group(0).capitalize(),
         ...                   s)
         ...
         >>> titlecase("they're bill's friends.")
@@ -2696,8 +2699,8 @@ arbitrary binary data.
    containing the part before the separator, the separator itself or its
    bytearray copy, and the part after the separator.
    If the separator is not found, return a 3-tuple
-   containing a copy of the original sequence, followed by two empty bytes or
-   bytearray objects.
+   containing two empty bytes or bytearray objects, followed by a copy of the
+   original sequence.
 
    The separator to search for may be any :term:`bytes-like object`.
 
@@ -4020,7 +4023,7 @@ The constructors for both classes work the same:
 
    .. method:: copy()
 
-      Return a new set with a shallow copy of *s*.
+      Return a shallow copy of the set.
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,

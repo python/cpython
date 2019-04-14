@@ -17,6 +17,7 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
+#include "pycore_coreconfig.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
@@ -283,7 +284,9 @@ sys_displayhook(PyObject *module, PyObject *o)
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
     if (builtins == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        }
         return NULL;
     }
     Py_DECREF(builtins);
@@ -2156,6 +2159,7 @@ make_flags(void)
 {
     int pos = 0;
     PyObject *seq;
+    const _PyPreConfig *preconfig = &_PyRuntime.preconfig;
     const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
@@ -2181,7 +2185,7 @@ make_flags(void)
     SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
     SetFlag(config->isolated);
     PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
-    SetFlag(config->utf8_mode);
+    SetFlag(preconfig->utf8_mode);
 #undef SetFlag
 
     if (PyErr_Occurred()) {
@@ -2527,26 +2531,71 @@ err_occurred:
         }                                                  \
     } while (0)
 
+
+static int
+sys_add_xoption(PyObject *opts, const wchar_t *s)
+{
+    PyObject *name, *value;
+
+    const wchar_t *name_end = wcschr(s, L'=');
+    if (!name_end) {
+        name = PyUnicode_FromWideChar(s, -1);
+        value = Py_True;
+        Py_INCREF(value);
+    }
+    else {
+        name = PyUnicode_FromWideChar(s, name_end - s);
+        value = PyUnicode_FromWideChar(name_end + 1, -1);
+    }
+    if (name == NULL || value == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItem(opts, name, value) < 0) {
+        goto error;
+    }
+    Py_DECREF(name);
+    Py_DECREF(value);
+    return 0;
+
+error:
+    Py_XDECREF(name);
+    Py_XDECREF(value);
+    return -1;
+}
+
+
+static PyObject*
+sys_create_xoptions_dict(const _PyCoreConfig *config)
+{
+    Py_ssize_t nxoption = config->xoptions.length;
+    wchar_t * const * xoptions = config->xoptions.items;
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i=0; i < nxoption; i++) {
+        const wchar_t *option = xoptions[i];
+        if (sys_add_xoption(dict, option) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+
+    return dict;
+}
+
+
 int
 _PySys_InitMain(PyInterpreterState *interp)
 {
     PyObject *sysdict = interp->sysdict;
-    const _PyCoreConfig *core_config = &interp->core_config;
-    const _PyMainInterpreterConfig *config = &interp->config;
+    const _PyCoreConfig *config = &interp->core_config;
     int res;
 
-    /* _PyMainInterpreterConfig_Read() must set all these variables */
-    assert(config->module_search_path != NULL);
-    assert(config->executable != NULL);
-    assert(config->prefix != NULL);
-    assert(config->base_prefix != NULL);
-    assert(config->exec_prefix != NULL);
-    assert(config->base_exec_prefix != NULL);
-
-#define COPY_LIST(KEY, ATTR) \
+#define COPY_LIST(KEY, VALUE) \
     do { \
-        assert(PyList_Check(ATTR)); \
-        PyObject *list = PyList_GetSlice(ATTR, 0, PyList_GET_SIZE(ATTR)); \
+        PyObject *list = _PyWstrList_AsList(&(VALUE)); \
         if (list == NULL) { \
             return -1; \
         } \
@@ -2554,36 +2603,42 @@ _PySys_InitMain(PyInterpreterState *interp)
         Py_DECREF(list); \
     } while (0)
 
-    COPY_LIST("path", config->module_search_path);
+#define SET_SYS_FROM_WSTR(KEY, VALUE) \
+    do { \
+        PyObject *str = PyUnicode_FromWideChar(VALUE, -1); \
+        if (str == NULL) { \
+            return -1; \
+        } \
+        SET_SYS_FROM_STRING_BORROW(KEY, str); \
+        Py_DECREF(str); \
+    } while (0)
 
-    SET_SYS_FROM_STRING_BORROW("executable", config->executable);
-    SET_SYS_FROM_STRING_BORROW("prefix", config->prefix);
-    SET_SYS_FROM_STRING_BORROW("base_prefix", config->base_prefix);
-    SET_SYS_FROM_STRING_BORROW("exec_prefix", config->exec_prefix);
-    SET_SYS_FROM_STRING_BORROW("base_exec_prefix", config->base_exec_prefix);
+    COPY_LIST("path", config->module_search_paths);
+
+    SET_SYS_FROM_WSTR("executable", config->executable);
+    SET_SYS_FROM_WSTR("prefix", config->prefix);
+    SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
+    SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
+    SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
 
     if (config->pycache_prefix != NULL) {
-        SET_SYS_FROM_STRING_BORROW("pycache_prefix", config->pycache_prefix);
+        SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
     } else {
         PyDict_SetItemString(sysdict, "pycache_prefix", Py_None);
     }
 
-    if (config->argv != NULL) {
-        SET_SYS_FROM_STRING_BORROW("argv", config->argv);
+    COPY_LIST("argv", config->argv);
+    COPY_LIST("warnoptions", config->warnoptions);
+
+    PyObject *xoptions = sys_create_xoptions_dict(config);
+    if (xoptions == NULL) {
+        return -1;
     }
-    if (config->warnoptions != NULL) {
-        COPY_LIST("warnoptions", config->warnoptions);
-    }
-    if (config->xoptions != NULL) {
-        PyObject *dict = PyDict_Copy(config->xoptions);
-        if (dict == NULL) {
-            return -1;
-        }
-        SET_SYS_FROM_STRING_BORROW("_xoptions", dict);
-        Py_DECREF(dict);
-    }
+    SET_SYS_FROM_STRING_BORROW("_xoptions", xoptions);
+    Py_DECREF(xoptions);
 
 #undef COPY_LIST
+#undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
     SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
@@ -2599,7 +2654,7 @@ _PySys_InitMain(PyInterpreterState *interp)
     }
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
-                         PyBool_FromLong(!core_config->write_bytecode));
+                         PyBool_FromLong(!config->write_bytecode));
 
     if (get_warnoptions() == NULL)
         return -1;
@@ -2739,35 +2794,35 @@ PySys_SetPath(const wchar_t *path)
 }
 
 static PyObject *
-makeargvobject(int argc, wchar_t **argv)
+make_sys_argv(int argc, wchar_t * const * argv)
 {
-    PyObject *av;
-    if (argc <= 0 || argv == NULL) {
-        /* Ensure at least one (empty) argument is seen */
-        static wchar_t *empty_argv[1] = {L""};
-        argv = empty_argv;
-        argc = 1;
+    PyObject *list = PyList_New(argc);
+    if (list == NULL) {
+        return NULL;
     }
-    av = PyList_New(argc);
-    if (av != NULL) {
-        int i;
-        for (i = 0; i < argc; i++) {
-            PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
-            if (v == NULL) {
-                Py_DECREF(av);
-                av = NULL;
-                break;
-            }
-            PyList_SET_ITEM(av, i, v);
+
+    for (Py_ssize_t i = 0; i < argc; i++) {
+        PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
+        if (v == NULL) {
+            Py_DECREF(list);
+            return NULL;
         }
+        PyList_SET_ITEM(list, i, v);
     }
-    return av;
+    return list;
 }
 
 void
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
-    PyObject *av = makeargvobject(argc, argv);
+    if (argc < 1 || argv == NULL) {
+        /* Ensure at least one (empty) argument is seen */
+        wchar_t* empty_argv[1] = {L""};
+        argv = empty_argv;
+        argc = 1;
+    }
+
+    PyObject *av = make_sys_argv(argc, argv);
     if (av == NULL) {
         Py_FatalError("no mem for sys.argv");
     }
@@ -2780,19 +2835,22 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (updatepath) {
         /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
            If argv[0] is a symlink, use the real path. */
-        PyObject *argv0 = _PyPathConfig_ComputeArgv0(argc, argv);
-        if (argv0 == NULL) {
-            Py_FatalError("can't compute path0 from argv");
-        }
-
-        PyObject *sys_path = _PySys_GetObjectId(&PyId_path);
-        if (sys_path != NULL) {
-            if (PyList_Insert(sys_path, 0, argv0) < 0) {
-                Py_DECREF(argv0);
-                Py_FatalError("can't prepend path0 to sys.path");
+        const _PyWstrList argv_list = {.length = argc, .items = argv};
+        PyObject *path0 = NULL;
+        if (_PyPathConfig_ComputeSysPath0(&argv_list, &path0)) {
+            if (path0 == NULL) {
+                Py_FatalError("can't compute path0 from argv");
             }
+
+            PyObject *sys_path = _PySys_GetObjectId(&PyId_path);
+            if (sys_path != NULL) {
+                if (PyList_Insert(sys_path, 0, path0) < 0) {
+                    Py_DECREF(path0);
+                    Py_FatalError("can't prepend path0 to sys.path");
+                }
+            }
+            Py_DECREF(path0);
         }
-        Py_DECREF(argv0);
     }
 }
 

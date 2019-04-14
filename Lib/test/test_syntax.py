@@ -43,6 +43,10 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: cannot assign to True
 
+>>> (True := 1)
+Traceback (most recent call last):
+SyntaxError: cannot use named assignment with True
+
 >>> obj.__debug__ = 1
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__

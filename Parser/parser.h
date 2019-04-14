@@ -38,6 +38,11 @@ int PyParser_AddToken(parser_state *ps, int type, char *str,
                       int *expected_ret);
 void PyGrammar_AddAccelerators(grammar *g);
 
+
+#define showtree _Py_showtree
+#define printtree _Py_printtree
+#define dumptree _Py_dumptree
+
 #ifdef __cplusplus
 }
 #endif
