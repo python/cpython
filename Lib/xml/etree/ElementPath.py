@@ -275,8 +275,6 @@ def iterfind(elem, path, namespaces=None):
 
     cache_key = (path,)
     if namespaces:
-        if '' in namespaces:
-            raise ValueError("empty namespace prefix must be passed as None, not the empty string")
         if None in namespaces:
             cache_key += (namespaces[None],) + tuple(sorted(
                 item for item in namespaces.items() if item[0] is not None))
