@@ -51,7 +51,8 @@ class TextTestResult(result.TestResult):
         super(TextTestResult, self).startTest(test)
         if self.showAll:
             default_encoding = sys.getdefaultencoding()
-            encoding = getattr(self.stream, 'encoding', default_encoding)
+            encoding = (getattr(self.stream, 'encoding', None) or
+                        default_encoding)
             description = self.getDescription(test)
             description = description.encode(encoding, "backslashreplace") \
                                      .decode(encoding)
