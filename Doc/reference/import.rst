@@ -941,8 +941,8 @@ after the first. For example, given the following package layout::
             moduleZ.py
         moduleA.py
 
-Given that the current file is either ``moduleX.py`` or ``subpackage1/__init__.py``,
-the following is the syntax for relative imports:
+In either ``subpackage1/moduleX.py`` or ``subpackage1/__init__.py``,
+the following are valid relative imports:
 
     from .moduleY import spam
     from .moduleY import spam as ham
