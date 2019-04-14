@@ -71,7 +71,7 @@ PyDoc_STRVAR(unicode_center__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_CENTER_METHODDEF    \
-    {"center", (PyCFunction)unicode_center, METH_FASTCALL, unicode_center__doc__},
+    {"center", (PyCFunction)(void(*)(void))unicode_center, METH_FASTCALL, unicode_center__doc__},
 
 static PyObject *
 unicode_center_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
@@ -83,10 +83,33 @@ unicode_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:center",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_CheckPositional("center", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!convert_uc(args[1], &fillchar)) {
+        goto exit;
+    }
+skip_optional:
     return_value = unicode_center_impl(self, width, fillchar);
 
 exit:
@@ -109,7 +132,7 @@ PyDoc_STRVAR(unicode_encode__doc__,
 "    codecs.register_error that can handle UnicodeEncodeErrors.");
 
 #define UNICODE_ENCODE_METHODDEF    \
-    {"encode", (PyCFunction)unicode_encode, METH_FASTCALL|METH_KEYWORDS, unicode_encode__doc__},
+    {"encode", (PyCFunction)(void(*)(void))unicode_encode, METH_FASTCALL|METH_KEYWORDS, unicode_encode__doc__},
 
 static PyObject *
 unicode_encode_impl(PyObject *self, const char *encoding, const char *errors);
@@ -142,7 +165,7 @@ PyDoc_STRVAR(unicode_expandtabs__doc__,
 "If tabsize is not given, a tab size of 8 characters is assumed.");
 
 #define UNICODE_EXPANDTABS_METHODDEF    \
-    {"expandtabs", (PyCFunction)unicode_expandtabs, METH_FASTCALL|METH_KEYWORDS, unicode_expandtabs__doc__},
+    {"expandtabs", (PyCFunction)(void(*)(void))unicode_expandtabs, METH_FASTCALL|METH_KEYWORDS, unicode_expandtabs__doc__},
 
 static PyObject *
 unicode_expandtabs_impl(PyObject *self, int tabsize);
@@ -381,8 +404,8 @@ PyDoc_STRVAR(unicode_isidentifier__doc__,
 "\n"
 "Return True if the string is a valid Python identifier, False otherwise.\n"
 "\n"
-"Use keyword.iskeyword() to test for reserved identifiers such as \"def\" and\n"
-"\"class\".");
+"Call keyword.iskeyword(s) to test whether string s is a reserved identifier,\n"
+"such as \"def\" or \"class\".");
 
 #define UNICODE_ISIDENTIFIER_METHODDEF    \
     {"isidentifier", (PyCFunction)unicode_isidentifier, METH_NOARGS, unicode_isidentifier__doc__},
@@ -440,7 +463,7 @@ PyDoc_STRVAR(unicode_ljust__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_LJUST_METHODDEF    \
-    {"ljust", (PyCFunction)unicode_ljust, METH_FASTCALL, unicode_ljust__doc__},
+    {"ljust", (PyCFunction)(void(*)(void))unicode_ljust, METH_FASTCALL, unicode_ljust__doc__},
 
 static PyObject *
 unicode_ljust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
@@ -452,10 +475,33 @@ unicode_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:ljust",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_CheckPositional("ljust", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!convert_uc(args[1], &fillchar)) {
+        goto exit;
+    }
+skip_optional:
     return_value = unicode_ljust_impl(self, width, fillchar);
 
 exit:
@@ -489,7 +535,7 @@ PyDoc_STRVAR(unicode_strip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_STRIP_METHODDEF    \
-    {"strip", (PyCFunction)unicode_strip, METH_FASTCALL, unicode_strip__doc__},
+    {"strip", (PyCFunction)(void(*)(void))unicode_strip, METH_FASTCALL, unicode_strip__doc__},
 
 static PyObject *
 unicode_strip_impl(PyObject *self, PyObject *chars);
@@ -500,11 +546,14 @@ unicode_strip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "strip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("strip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_strip_impl(self, chars);
 
 exit:
@@ -520,7 +569,7 @@ PyDoc_STRVAR(unicode_lstrip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_LSTRIP_METHODDEF    \
-    {"lstrip", (PyCFunction)unicode_lstrip, METH_FASTCALL, unicode_lstrip__doc__},
+    {"lstrip", (PyCFunction)(void(*)(void))unicode_lstrip, METH_FASTCALL, unicode_lstrip__doc__},
 
 static PyObject *
 unicode_lstrip_impl(PyObject *self, PyObject *chars);
@@ -531,11 +580,14 @@ unicode_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "lstrip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("lstrip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_lstrip_impl(self, chars);
 
 exit:
@@ -551,7 +603,7 @@ PyDoc_STRVAR(unicode_rstrip__doc__,
 "If chars is given and not None, remove characters in chars instead.");
 
 #define UNICODE_RSTRIP_METHODDEF    \
-    {"rstrip", (PyCFunction)unicode_rstrip, METH_FASTCALL, unicode_rstrip__doc__},
+    {"rstrip", (PyCFunction)(void(*)(void))unicode_rstrip, METH_FASTCALL, unicode_rstrip__doc__},
 
 static PyObject *
 unicode_rstrip_impl(PyObject *self, PyObject *chars);
@@ -562,11 +614,14 @@ unicode_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *chars = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "rstrip",
-        0, 1,
-        &chars)) {
+    if (!_PyArg_CheckPositional("rstrip", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    chars = args[0];
+skip_optional:
     return_value = unicode_rstrip_impl(self, chars);
 
 exit:
@@ -587,7 +642,7 @@ PyDoc_STRVAR(unicode_replace__doc__,
 "replaced.");
 
 #define UNICODE_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)unicode_replace, METH_FASTCALL, unicode_replace__doc__},
+    {"replace", (PyCFunction)(void(*)(void))unicode_replace, METH_FASTCALL, unicode_replace__doc__},
 
 static PyObject *
 unicode_replace_impl(PyObject *self, PyObject *old, PyObject *new,
@@ -601,10 +656,46 @@ unicode_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *new;
     Py_ssize_t count = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "UU|n:replace",
-        &old, &new, &count)) {
+    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("replace", 1, "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    old = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("replace", 2, "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    new = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+skip_optional:
     return_value = unicode_replace_impl(self, old, new, count);
 
 exit:
@@ -620,7 +711,7 @@ PyDoc_STRVAR(unicode_rjust__doc__,
 "Padding is done using the specified fill character (default is a space).");
 
 #define UNICODE_RJUST_METHODDEF    \
-    {"rjust", (PyCFunction)unicode_rjust, METH_FASTCALL, unicode_rjust__doc__},
+    {"rjust", (PyCFunction)(void(*)(void))unicode_rjust, METH_FASTCALL, unicode_rjust__doc__},
 
 static PyObject *
 unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar);
@@ -632,10 +723,33 @@ unicode_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     Py_UCS4 fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|O&:rjust",
-        &width, convert_uc, &fillchar)) {
+    if (!_PyArg_CheckPositional("rjust", nargs, 1, 2)) {
         goto exit;
     }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!convert_uc(args[1], &fillchar)) {
+        goto exit;
+    }
+skip_optional:
     return_value = unicode_rjust_impl(self, width, fillchar);
 
 exit:
@@ -657,7 +771,7 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    -1 (the default value) means no limit.");
 
 #define UNICODE_SPLIT_METHODDEF    \
-    {"split", (PyCFunction)unicode_split, METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
+    {"split", (PyCFunction)(void(*)(void))unicode_split, METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -730,7 +844,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "Splits are done starting at the end of the string and working to the front.");
 
 #define UNICODE_RSPLIT_METHODDEF    \
-    {"rsplit", (PyCFunction)unicode_rsplit, METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
+    {"rsplit", (PyCFunction)(void(*)(void))unicode_rsplit, METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
 
 static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
@@ -764,7 +878,7 @@ PyDoc_STRVAR(unicode_splitlines__doc__,
 "true.");
 
 #define UNICODE_SPLITLINES_METHODDEF    \
-    {"splitlines", (PyCFunction)unicode_splitlines, METH_FASTCALL|METH_KEYWORDS, unicode_splitlines__doc__},
+    {"splitlines", (PyCFunction)(void(*)(void))unicode_splitlines, METH_FASTCALL|METH_KEYWORDS, unicode_splitlines__doc__},
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends);
@@ -820,7 +934,7 @@ PyDoc_STRVAR(unicode_maketrans__doc__,
 "must be a string, whose characters will be mapped to None in the result.");
 
 #define UNICODE_MAKETRANS_METHODDEF    \
-    {"maketrans", (PyCFunction)unicode_maketrans, METH_FASTCALL|METH_STATIC, unicode_maketrans__doc__},
+    {"maketrans", (PyCFunction)(void(*)(void))unicode_maketrans, METH_FASTCALL|METH_STATIC, unicode_maketrans__doc__},
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
@@ -833,10 +947,33 @@ unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
     PyObject *y = NULL;
     PyObject *z = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|UU:maketrans",
-        &x, &y, &z)) {
+    if (!_PyArg_CheckPositional("maketrans", nargs, 1, 3)) {
         goto exit;
     }
+    x = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("maketrans", 2, "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    y = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("maketrans", 3, "str", args[2]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[2]) == -1) {
+        goto exit;
+    }
+    z = args[2];
+skip_optional:
     return_value = unicode_maketrans_impl(x, y, z);
 
 exit:
@@ -898,8 +1035,22 @@ unicode_zfill(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t width;
 
-    if (!PyArg_Parse(arg, "n:zfill", &width)) {
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
         goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
     }
     return_value = unicode_zfill_impl(self, width);
 
@@ -925,9 +1076,14 @@ unicode___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", 0, "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = unicode___format___impl(self, format_spec);
 
 exit:
@@ -951,4 +1107,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=561c88c912b8fe3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=087ff163a10505ae input=a9049054013a1b77]*/

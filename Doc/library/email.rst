@@ -87,7 +87,7 @@ to advanced applications.
 Following those is a set of examples of using the fundamental parts of the APIs
 covered in the preceding sections.
 
-The forgoing represent the modern (unicode friendly) API of the email package.
+The foregoing represent the modern (unicode friendly) API of the email package.
 The remaining sections, starting with the :class:`~email.message.Message`
 class, cover the legacy :data:`~email.policy.compat32` API that deals much more
 directly with the details of how email messages are represented.  The
@@ -126,14 +126,14 @@ Legacy API:
    email.header.rst
    email.charset.rst
    email.encoders.rst
-   email.util.rst
+   email.utils.rst
    email.iterators.rst
 
 
 .. seealso::
 
    Module :mod:`smtplib`
-      SMTP (Simple Mail Transport Protcol) client
+      SMTP (Simple Mail Transport Protocol) client
 
    Module :mod:`poplib`
       POP (Post Office Protocol) client

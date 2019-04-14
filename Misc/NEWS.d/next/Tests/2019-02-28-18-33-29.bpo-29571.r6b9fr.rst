@@ -1,0 +1,3 @@
+Fix ``test_re.test_locale_flag()``:  use ``locale.getpreferredencoding()``
+rather than ``locale.getlocale()`` to get the locale encoding. With some
+locales, ``locale.getlocale()`` returns the wrong encoding.

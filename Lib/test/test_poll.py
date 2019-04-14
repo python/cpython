@@ -159,9 +159,9 @@ class PollTests(unittest.TestCase):
             self.fail('Overflow must have occurred')
 
         # Issues #15989, #17919
-        self.assertRaises(OverflowError, pollster.register, 0, -1)
+        self.assertRaises(ValueError, pollster.register, 0, -1)
         self.assertRaises(OverflowError, pollster.register, 0, 1 << 64)
-        self.assertRaises(OverflowError, pollster.modify, 1, -1)
+        self.assertRaises(ValueError, pollster.modify, 1, -1)
         self.assertRaises(OverflowError, pollster.modify, 1, 1 << 64)
 
     @cpython_only

@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
 
@@ -9,7 +9,6 @@ PyDoc_STRVAR(warnings__doc__,
 MODULE_NAME " provides basic warning filtering support.\n"
 "It is a helper module to speed up interpreter start-up.");
 
-_Py_IDENTIFIER(argv);
 _Py_IDENTIFIER(stderr);
 #ifndef Py_DEBUG
 _Py_IDENTIFIER(default);
@@ -79,7 +78,7 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
            gone, then we can't even use PyImport_GetModule without triggering
            an interpreter abort.
         */
-        if (!PyThreadState_GET()->interp->modules) {
+        if (!_PyInterpreterState_GET_UNSAFE()->modules) {
             return NULL;
         }
         warnings_module = PyImport_GetModule(warnings_str);
@@ -253,10 +252,14 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
     if (key == NULL)
         return -1;
 
-    version_obj = _PyDict_GetItemId(registry, &PyId_version);
+    version_obj = _PyDict_GetItemIdWithError(registry, &PyId_version);
     if (version_obj == NULL
         || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version) {
+        || PyLong_AsLong(version_obj) != _PyRuntime.warnings.filters_version)
+    {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(_PyRuntime.warnings.filters_version);
         if (version_obj == NULL)
@@ -268,11 +271,14 @@ already_warned(PyObject *registry, PyObject *key, int should_set)
         Py_DECREF(version_obj);
     }
     else {
-        already_warned = PyDict_GetItem(registry, key);
+        already_warned = PyDict_GetItemWithError(registry, key);
         if (already_warned != NULL) {
             int rc = PyObject_IsTrue(already_warned);
             if (rc != 0)
                 return rc;
+        }
+        else if (PyErr_Occurred()) {
+            return -1;
         }
     }
 
@@ -669,10 +675,12 @@ static int
 setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
               PyObject **module, PyObject **registry)
 {
+    _Py_IDENTIFIER(__warningregistry__);
+    _Py_IDENTIFIER(__name__);
     PyObject *globals;
 
-    /* Setup globals and lineno. */
-    PyFrameObject *f = PyThreadState_GET()->frame;
+    /* Setup globals, filename and lineno. */
+    PyFrameObject *f = _PyThreadState_GET()->frame;
     // Stack level comparisons to Python code is off by one as there is no
     // warnings-related stack level to avoid.
     if (stack_level <= 0 || is_internal_frame(f)) {
@@ -687,11 +695,14 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = PyThreadState_Get()->interp->sysdict;
+        globals = _PyInterpreterState_GET_UNSAFE()->sysdict;
+        *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
     else {
         globals = f->f_globals;
+        *filename = f->f_code->co_filename;
+        Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
     }
 
@@ -700,15 +711,18 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup registry. */
     assert(globals != NULL);
     assert(PyDict_Check(globals));
-    *registry = PyDict_GetItemString(globals, "__warningregistry__");
+    *registry = _PyDict_GetItemIdWithError(globals, &PyId___warningregistry__);
     if (*registry == NULL) {
         int rc;
 
+        if (PyErr_Occurred()) {
+            return 0;
+        }
         *registry = PyDict_New();
         if (*registry == NULL)
             return 0;
 
-         rc = PyDict_SetItemString(globals, "__warningregistry__", *registry);
+         rc = _PyDict_SetItemId(globals, &PyId___warningregistry__, *registry);
          if (rc < 0)
             goto handle_error;
     }
@@ -716,79 +730,17 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         Py_INCREF(*registry);
 
     /* Setup module. */
-    *module = PyDict_GetItemString(globals, "__name__");
+    *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
     if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
         Py_INCREF(*module);
+    }
+    else if (PyErr_Occurred()) {
+        goto handle_error;
     }
     else {
         *module = PyUnicode_FromString("<string>");
         if (*module == NULL)
             goto handle_error;
-    }
-
-    /* Setup filename. */
-    *filename = PyDict_GetItemString(globals, "__file__");
-    if (*filename != NULL && PyUnicode_Check(*filename)) {
-        Py_ssize_t len;
-        int kind;
-        void *data;
-
-        if (PyUnicode_READY(*filename))
-            goto handle_error;
-
-        len = PyUnicode_GetLength(*filename);
-        kind = PyUnicode_KIND(*filename);
-        data = PyUnicode_DATA(*filename);
-
-#define ascii_lower(c) ((c <= 127) ? Py_TOLOWER(c) : 0)
-        /* if filename.lower().endswith(".pyc"): */
-        if (len >= 4 &&
-            PyUnicode_READ(kind, data, len-4) == '.' &&
-            ascii_lower(PyUnicode_READ(kind, data, len-3)) == 'p' &&
-            ascii_lower(PyUnicode_READ(kind, data, len-2)) == 'y' &&
-            ascii_lower(PyUnicode_READ(kind, data, len-1)) == 'c')
-        {
-            *filename = PyUnicode_Substring(*filename, 0,
-                                            PyUnicode_GET_LENGTH(*filename)-1);
-            if (*filename == NULL)
-                goto handle_error;
-        }
-        else
-            Py_INCREF(*filename);
-    }
-    else {
-        *filename = NULL;
-        if (*module != Py_None && _PyUnicode_EqualToASCIIString(*module, "__main__")) {
-            PyObject *argv = _PySys_GetObjectId(&PyId_argv);
-            /* PyList_Check() is needed because sys.argv is set to None during
-               Python finalization */
-            if (argv != NULL && PyList_Check(argv) && PyList_Size(argv) > 0) {
-                int is_true;
-                *filename = PyList_GetItem(argv, 0);
-                Py_INCREF(*filename);
-                /* If sys.argv[0] is false, then use '__main__'. */
-                is_true = PyObject_IsTrue(*filename);
-                if (is_true < 0) {
-                    Py_DECREF(*filename);
-                    goto handle_error;
-                }
-                else if (!is_true) {
-                    Py_SETREF(*filename, PyUnicode_FromString("__main__"));
-                    if (*filename == NULL)
-                        goto handle_error;
-                }
-            }
-            else {
-                /* embedded interpreters don't have sys.argv, see bug #839151 */
-                *filename = PyUnicode_FromString("__main__");
-                if (*filename == NULL)
-                    goto handle_error;
-            }
-        }
-        if (*filename == NULL) {
-            *filename = *module;
-            Py_INCREF(*filename);
-        }
     }
 
     return 1;
@@ -951,7 +903,14 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
                 &registry, &module_globals, &sourceobj))
         return NULL;
 
-    if (module_globals) {
+    if (module_globals && module_globals != Py_None) {
+        if (!PyDict_Check(module_globals)) {
+            PyErr_Format(PyExc_TypeError,
+                         "module_globals must be a dict, not '%.200s'",
+                         Py_TYPE(module_globals)->tp_name);
+            return NULL;
+        }
+
         source_line = get_source_line(module_globals, lineno);
         if (source_line == NULL && PyErr_Occurred()) {
             return NULL;
@@ -1060,7 +1019,7 @@ PyErr_WarnEx(PyObject *category, const char *text, Py_ssize_t stack_level)
 
 #undef PyErr_Warn
 
-PyAPI_FUNC(int)
+int
 PyErr_Warn(PyObject *category, const char *text)
 {
     return PyErr_WarnEx(category, text, 1);
@@ -1206,7 +1165,7 @@ PyDoc_STRVAR(warn_explicit_doc,
 
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
-    {"warn_explicit", (PyCFunction)warnings_warn_explicit,
+    {"warn_explicit", (PyCFunction)(void(*)(void))warnings_warn_explicit,
         METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
     {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
         NULL},

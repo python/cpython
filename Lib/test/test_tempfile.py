@@ -8,6 +8,7 @@ import sys
 import re
 import warnings
 import contextlib
+import stat
 import weakref
 from unittest import mock
 
@@ -15,12 +16,6 @@ import unittest
 from test import support
 from test.support import script_helper
 
-
-if hasattr(os, 'stat'):
-    import stat
-    has_stat = 1
-else:
-    has_stat = 0
 
 has_textmode = (tempfile._text_openflags != tempfile._bin_openflags)
 has_spawnl = hasattr(os, 'spawnl')
@@ -433,7 +428,6 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
 
@@ -738,7 +732,6 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    @unittest.skipUnless(has_stat, 'os.stat not available')
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
@@ -1094,6 +1087,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
             f.newlines
         with self.assertRaises(AttributeError):
             f.encoding
+        with self.assertRaises(AttributeError):
+            f.errors
 
         f.write(b'x')
         self.assertTrue(f._rolled)
@@ -1103,6 +1098,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
             f.newlines
         with self.assertRaises(AttributeError):
             f.encoding
+        with self.assertRaises(AttributeError):
+            f.errors
 
     def test_text_mode(self):
         # Creating a SpooledTemporaryFile with a text mode should produce
@@ -1119,6 +1116,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNone(f.name)
         self.assertIsNone(f.newlines)
         self.assertIsNone(f.encoding)
+        self.assertIsNone(f.errors)
 
         f.write("xyzzy\n")
         f.seek(0)
@@ -1132,10 +1130,12 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNotNone(f.name)
         self.assertEqual(f.newlines, os.linesep)
         self.assertIsNotNone(f.encoding)
+        self.assertIsNotNone(f.errors)
 
     def test_text_newline_and_encoding(self):
         f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
-                                          newline='', encoding='utf-8')
+                                          newline='', encoding='utf-8',
+                                          errors='ignore')
         f.write("\u039B\r\n")
         f.seek(0)
         self.assertEqual(f.read(), "\u039B\r\n")
@@ -1144,6 +1144,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNone(f.name)
         self.assertIsNone(f.newlines)
         self.assertIsNone(f.encoding)
+        self.assertIsNone(f.errors)
 
         f.write("\u039B" * 20 + "\r\n")
         f.seek(0)
@@ -1153,6 +1154,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertIsNotNone(f.name)
         self.assertIsNotNone(f.newlines)
         self.assertEqual(f.encoding, 'utf-8')
+        self.assertEqual(f.errors, 'ignore')
 
     def test_context_manager_before_rollover(self):
         # A SpooledTemporaryFile can be used as a context manager
@@ -1212,8 +1214,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         f.write(b'abcdefg\n')
         f.truncate(20)
         self.assertTrue(f._rolled)
-        if has_stat:
-            self.assertEqual(os.fstat(f.fileno()).st_size, 20)
+        self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:

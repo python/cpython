@@ -745,6 +745,7 @@ def test_pdb_next_command_for_coroutine():
     ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
+    ...     asyncio.set_event_loop_policy(None)
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -804,6 +805,7 @@ def test_pdb_next_command_for_asyncgen():
     ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
+    ...     asyncio.set_event_loop_policy(None)
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -915,6 +917,7 @@ def test_pdb_return_command_for_coroutine():
     ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
+    ...     asyncio.set_event_loop_policy(None)
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -1005,6 +1008,7 @@ def test_pdb_until_command_for_coroutine():
     ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
+    ...     asyncio.set_event_loop_policy(None)
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -1482,6 +1486,14 @@ class PdbTestCase(unittest.TestCase):
         stdout, _ = self._run_pdb(['-m', self.module_name + '.runme'], commands)
         self.assertTrue(any("VAR from module" in l for l in stdout.splitlines()), stdout)
 
+    def test_syntaxerror_in_command(self):
+        commands = "print(\ndebug print("
+        stdout, _ = self.run_pdb_script("", commands)
+        self.assertEqual(stdout.splitlines()[1:], [
+            '(Pdb) *** SyntaxError: unexpected EOF while parsing',
+            '(Pdb) *** SyntaxError: unexpected EOF while parsing',
+            '(Pdb) ',
+        ])
 
 def load_tests(*args):
     from test import test_pdb

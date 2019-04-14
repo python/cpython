@@ -1,0 +1,46 @@
+parameters:
+  latex: false
+  upload: false
+
+steps:
+- checkout: self
+  clean: true
+  fetchDepth: 5
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python 3.6 or later'
+  inputs:
+    versionSpec: '>=3.6'
+
+- script: python -m pip install sphinx==1.8.2 blurb python-docs-theme
+  displayName: 'Install build dependencies'
+
+- ${{ if ne(parameters.latex, 'true') }}:
+  - script: make check suspicious html PYTHON=python
+    workingDirectory: '$(build.sourcesDirectory)/Doc'
+    displayName: 'Build documentation'
+
+- ${{ if eq(parameters.latex, 'true') }}:
+  - script: sudo apt-get update && sudo apt-get install -qy --force-yes texlive-full 
+    displayName: 'Install LaTeX'
+
+  - script: make dist PYTHON=python SPHINXBUILD='python -m sphinx' BLURB='python -m blurb'
+    workingDirectory: '$(build.sourcesDirectory)/Doc'
+    displayName: 'Build documentation'
+
+- ${{ if eq(parameters.upload, 'true') }}:
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish docs'
+  
+    inputs:
+      PathToPublish: '$(build.sourcesDirectory)/Doc/build'
+      ArtifactName: docs
+      publishLocation: Container
+
+  - ${{ if eq(parameters.latex, 'true') }}:
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish dist'
+      inputs:
+        PathToPublish: '$(build.sourcesDirectory)/Doc/dist'
+        ArtifactName: docs_dist
+        publishLocation: Container

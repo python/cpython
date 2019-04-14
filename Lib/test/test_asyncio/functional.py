@@ -15,7 +15,7 @@ class FunctionalTestCaseMixin:
         return asyncio.new_event_loop()
 
     def run_loop_briefly(self, *, delay=0.01):
-        self.loop.run_until_complete(asyncio.sleep(delay, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(delay))
 
     def loop_exception_handler(self, loop, context):
         self.__unhandled_exceptions.append(context)
@@ -150,9 +150,14 @@ class TestSocketWrapper:
             server_hostname=server_hostname,
             do_handshake_on_connect=False)
 
-        ssl_sock.do_handshake()
+        try:
+            ssl_sock.do_handshake()
+        except:
+            ssl_sock.close()
+            raise
+        finally:
+            self.__sock.close()
 
-        self.__sock.close()
         self.__sock = ssl_sock
 
     def __getattr__(self, name):

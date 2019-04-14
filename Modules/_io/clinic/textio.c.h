@@ -46,7 +46,7 @@ PyDoc_STRVAR(_io_IncrementalNewlineDecoder_decode__doc__,
 "\n");
 
 #define _IO_INCREMENTALNEWLINEDECODER_DECODE_METHODDEF    \
-    {"decode", (PyCFunction)_io_IncrementalNewlineDecoder_decode, METH_FASTCALL|METH_KEYWORDS, _io_IncrementalNewlineDecoder_decode__doc__},
+    {"decode", (PyCFunction)(void(*)(void))_io_IncrementalNewlineDecoder_decode, METH_FASTCALL|METH_KEYWORDS, _io_IncrementalNewlineDecoder_decode__doc__},
 
 static PyObject *
 _io_IncrementalNewlineDecoder_decode_impl(nldecoder_object *self,
@@ -186,7 +186,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_reconfigure__doc__,
 "This also does an implicit stream flush.");
 
 #define _IO_TEXTIOWRAPPER_RECONFIGURE_METHODDEF    \
-    {"reconfigure", (PyCFunction)_io_TextIOWrapper_reconfigure, METH_FASTCALL|METH_KEYWORDS, _io_TextIOWrapper_reconfigure__doc__},
+    {"reconfigure", (PyCFunction)(void(*)(void))_io_TextIOWrapper_reconfigure, METH_FASTCALL|METH_KEYWORDS, _io_TextIOWrapper_reconfigure__doc__},
 
 static PyObject *
 _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
@@ -250,9 +250,14 @@ _io_TextIOWrapper_write(textio *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *text;
 
-    if (!PyArg_Parse(arg, "U:write", &text)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("write", 0, "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    text = arg;
     return_value = _io_TextIOWrapper_write_impl(self, text);
 
 exit:
@@ -265,7 +270,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_read__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_READ_METHODDEF    \
-    {"read", (PyCFunction)_io_TextIOWrapper_read, METH_FASTCALL, _io_TextIOWrapper_read__doc__},
+    {"read", (PyCFunction)(void(*)(void))_io_TextIOWrapper_read, METH_FASTCALL, _io_TextIOWrapper_read__doc__},
 
 static PyObject *
 _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n);
@@ -276,10 +281,16 @@ _io_TextIOWrapper_read(textio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|O&:read",
-        _Py_convert_optional_to_ssize_t, &n)) {
+    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &n)) {
+        goto exit;
+    }
+skip_optional:
     return_value = _io_TextIOWrapper_read_impl(self, n);
 
 exit:
@@ -292,7 +303,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_readline__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)_io_TextIOWrapper_readline, METH_FASTCALL, _io_TextIOWrapper_readline__doc__},
+    {"readline", (PyCFunction)(void(*)(void))_io_TextIOWrapper_readline, METH_FASTCALL, _io_TextIOWrapper_readline__doc__},
 
 static PyObject *
 _io_TextIOWrapper_readline_impl(textio *self, Py_ssize_t size);
@@ -303,10 +314,30 @@ _io_TextIOWrapper_readline(textio *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:readline",
-        &size)) {
+    if (!_PyArg_CheckPositional("readline", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+skip_optional:
     return_value = _io_TextIOWrapper_readline_impl(self, size);
 
 exit:
@@ -319,7 +350,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_seek__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)_io_TextIOWrapper_seek, METH_FASTCALL, _io_TextIOWrapper_seek__doc__},
+    {"seek", (PyCFunction)(void(*)(void))_io_TextIOWrapper_seek, METH_FASTCALL, _io_TextIOWrapper_seek__doc__},
 
 static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence);
@@ -331,10 +362,23 @@ _io_TextIOWrapper_seek(textio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *cookieObj;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|i:seek",
-        &cookieObj, &whence)) {
+    if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
     }
+    cookieObj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    whence = _PyLong_AsInt(args[1]);
+    if (whence == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _io_TextIOWrapper_seek_impl(self, cookieObj, whence);
 
 exit:
@@ -364,7 +408,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_truncate__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)_io_TextIOWrapper_truncate, METH_FASTCALL, _io_TextIOWrapper_truncate__doc__},
+    {"truncate", (PyCFunction)(void(*)(void))_io_TextIOWrapper_truncate, METH_FASTCALL, _io_TextIOWrapper_truncate__doc__},
 
 static PyObject *
 _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos);
@@ -375,11 +419,14 @@ _io_TextIOWrapper_truncate(textio *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     PyObject *pos = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "truncate",
-        0, 1,
-        &pos)) {
+    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    pos = args[0];
+skip_optional:
     return_value = _io_TextIOWrapper_truncate_impl(self, pos);
 
 exit:
@@ -504,4 +551,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=b5be870b0039d577 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3d1b2a5d2d2d429 input=a9049054013a1b77]*/

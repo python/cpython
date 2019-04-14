@@ -137,7 +137,7 @@ or on combining URL components into a URL string.
       returning :const:`None`.
 
 
-.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace')
+.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None)
 
    Parse a query string given as a string argument (data of type
    :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a
@@ -158,6 +158,10 @@ or on combining URL components into a URL string.
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
+   The optional argument *max_num_fields* is the maximum number of fields to
+   read. If set, then throws a :exc:`ValueError` if there are more than
+   *max_num_fields* fields read.
+
    Use the :func:`urllib.parse.urlencode` function (with the ``doseq``
    parameter set to ``True``) to convert such dictionaries into query
    strings.
@@ -166,8 +170,11 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.2
       Add *encoding* and *errors* parameters.
 
+   .. versionchanged:: 3.8
+      Added *max_num_fields* parameter.
 
-.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace')
+
+.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None)
 
    Parse a query string given as a string argument (data of type
    :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a list of
@@ -187,11 +194,18 @@ or on combining URL components into a URL string.
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
+   The optional argument *max_num_fields* is the maximum number of fields to
+   read. If set, then throws a :exc:`ValueError` if there are more than
+   *max_num_fields* fields read.
+
    Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.
 
    .. versionchanged:: 3.2
       Add *encoding* and *errors* parameters.
+
+   .. versionchanged:: 3.8
+      Added *max_num_fields* parameter.
 
 
 .. function:: urlunparse(parts)
@@ -468,7 +482,7 @@ task isn't already covered by the URL parsing functions above.
    *string* may be either a :class:`str` or a :class:`bytes`.
 
    .. versionchanged:: 3.7
-      Moved from RFC 2396 to RFC 3986 for quoting URL strings. "~" is now
+      Moved from :rfc:`2396` to :rfc:`3986` for quoting URL strings. "~" is now
       included in the set of reserved characters.
 
    The optional *encoding* and *errors* parameters specify how to deal with

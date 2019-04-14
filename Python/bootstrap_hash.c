@@ -20,6 +20,10 @@
 #  endif
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+#  include <sanitizer/msan_interface.h>
+#endif
+
 #ifdef Py_DEBUG
 int _Py_HashSecret_Initialized = 0;
 #else
@@ -51,8 +55,6 @@ error:
 static int
 win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 {
-    Py_ssize_t chunk;
-
     if (hCryptProv == 0)
     {
         if (win32_urandom_init(raise) == -1) {
@@ -62,8 +64,8 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 
     while (size > 0)
     {
-        chunk = size > INT_MAX ? INT_MAX : size;
-        if (!CryptGenRandom(hCryptProv, (DWORD)chunk, buffer))
+        DWORD chunk = (DWORD)Py_MIN(size, PY_DWORD_MAX);
+        if (!CryptGenRandom(hCryptProv, chunk, buffer))
         {
             /* CryptGenRandom() failed */
             if (raise) {
@@ -112,7 +114,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
     flags = blocking ? 0 : GRND_NONBLOCK;
     dest = buffer;
     while (0 < size) {
-#ifdef sun
+#if defined(__sun) && defined(__SVR4)
         /* Issue #26735: On Solaris, getrandom() is limited to returning up
            to 1024 bytes. Call it multiple times if more bytes are
            requested. */
@@ -143,6 +145,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
         else {
             n = syscall(SYS_getrandom, dest, n, flags);
         }
+#  ifdef _Py_MEMORY_SANITIZER
+        if (n > 0) {
+             __msan_unpoison(dest, n);
+        }
+#  endif
 #endif
 
         if (n < 0) {
@@ -257,7 +264,7 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
     }
     return 1;
 }
-#endif /* defined(HAVE_GETENTROPY) && !defined(sun) */
+#endif /* defined(HAVE_GETENTROPY) && !(defined(__sun) && defined(__SVR4)) */
 
 
 static struct {
@@ -301,10 +308,15 @@ dev_urandom(char *buffer, Py_ssize_t size, int raise)
 
     if (raise) {
         struct _Py_stat_struct st;
+        int fstat_result;
 
         if (urandom_cache.fd >= 0) {
+            Py_BEGIN_ALLOW_THREADS
+            fstat_result = _Py_fstat_noraise(urandom_cache.fd, &st);
+            Py_END_ALLOW_THREADS
+
             /* Does the fd point to the same thing as before? (issue #21207) */
-            if (_Py_fstat_noraise(urandom_cache.fd, &st)
+            if (fstat_result
                 || st.st_dev != urandom_cache.st_dev
                 || st.st_ino != urandom_cache.st_ino) {
                 /* Something changed: forget the cached fd (but don't close it,
@@ -531,35 +543,6 @@ int
 _PyOS_URandomNonblock(void *buffer, Py_ssize_t size)
 {
     return pyurandom(buffer, size, 0, 1);
-}
-
-int
-_Py_ReadHashSeed(const char *seed_text,
-                 int *use_hash_seed,
-                 unsigned long *hash_seed)
-{
-    Py_BUILD_ASSERT(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc));
-    /* Convert a text seed to a numeric one */
-    if (seed_text && *seed_text != '\0' && strcmp(seed_text, "random") != 0) {
-        const char *endptr = seed_text;
-        unsigned long seed;
-        seed = strtoul(seed_text, (char **)&endptr, 10);
-        if (*endptr != '\0'
-            || seed > 4294967295UL
-            || (errno == ERANGE && seed == ULONG_MAX))
-        {
-            return -1;
-        }
-        /* Use a specific hash */
-        *use_hash_seed = 1;
-        *hash_seed = seed;
-    }
-    else {
-        /* Use a random hash */
-        *use_hash_seed = 0;
-        *hash_seed = 0;
-    }
-    return 0;
 }
 
 

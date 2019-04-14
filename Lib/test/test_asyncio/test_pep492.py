@@ -11,6 +11,10 @@ import asyncio
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 # Test that asyncio.iscoroutine() uses collections.abc.Coroutine
 class FakeCoro:
     def send(self, value):
@@ -48,12 +52,12 @@ class LockTests(BaseTest):
         ]
 
         async def test(lock):
-            await asyncio.sleep(0.01, loop=self.loop)
+            await asyncio.sleep(0.01)
             self.assertFalse(lock.locked())
             async with lock as _lock:
                 self.assertIs(_lock, None)
                 self.assertTrue(lock.locked())
-                await asyncio.sleep(0.01, loop=self.loop)
+                await asyncio.sleep(0.01)
                 self.assertTrue(lock.locked())
             self.assertFalse(lock.locked())
 
@@ -70,13 +74,13 @@ class LockTests(BaseTest):
         ]
 
         async def test(lock):
-            await asyncio.sleep(0.01, loop=self.loop)
+            await asyncio.sleep(0.01)
             self.assertFalse(lock.locked())
             with self.assertWarns(DeprecationWarning):
                 with await lock as _lock:
                     self.assertIs(_lock, None)
                     self.assertTrue(lock.locked())
-                    await asyncio.sleep(0.01, loop=self.loop)
+                    await asyncio.sleep(0.01)
                     self.assertTrue(lock.locked())
                 self.assertFalse(lock.locked())
 
@@ -194,13 +198,13 @@ class CoroutineTests(BaseTest):
 
     def test_double_await(self):
         async def afunc():
-            await asyncio.sleep(0.1, loop=self.loop)
+            await asyncio.sleep(0.1)
 
         async def runner():
             coro = afunc()
             t = asyncio.Task(coro, loop=self.loop)
             try:
-                await asyncio.sleep(0, loop=self.loop)
+                await asyncio.sleep(0)
                 await coro
             finally:
                 t.cancel()

@@ -3,18 +3,22 @@ import copyreg
 import dbm
 import io
 import functools
+import os
 import pickle
 import pickletools
+import shutil
 import struct
 import sys
+import threading
 import unittest
 import weakref
+from textwrap import dedent
 from http.cookies import SimpleCookie
 
 from test import support
 from test.support import (
     TestFailed, TESTFN, run_with_locale, no_tracing,
-    _2G, _4G, bigmemtest,
+    _2G, _4G, bigmemtest, reap_threads, forget,
     )
 
 from pickle import bytes_types
@@ -1174,6 +1178,67 @@ class AbstractUnpickleTests(unittest.TestCase):
         for p in badpickles:
             self.check_unpickling_error(self.truncated_errors, p)
 
+    @reap_threads
+    def test_unpickle_module_race(self):
+        # https://bugs.python.org/issue34572
+        locker_module = dedent("""
+        import threading
+        barrier = threading.Barrier(2)
+        """)
+        locking_import_module = dedent("""
+        import locker
+        locker.barrier.wait()
+        class ToBeUnpickled(object):
+            pass
+        """)
+
+        os.mkdir(TESTFN)
+        self.addCleanup(shutil.rmtree, TESTFN)
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        with open(os.path.join(TESTFN, "locker.py"), "wb") as f:
+            f.write(locker_module.encode('utf-8'))
+        with open(os.path.join(TESTFN, "locking_import.py"), "wb") as f:
+            f.write(locking_import_module.encode('utf-8'))
+        self.addCleanup(forget, "locker")
+        self.addCleanup(forget, "locking_import")
+
+        import locker
+
+        pickle_bytes = (
+            b'\x80\x03clocking_import\nToBeUnpickled\nq\x00)\x81q\x01.')
+
+        # Then try to unpickle two of these simultaneously
+        # One of them will cause the module import, and we want it to block
+        # until the other one either:
+        #   - fails (before the patch for this issue)
+        #   - blocks on the import lock for the module, as it should
+        results = []
+        barrier = threading.Barrier(3)
+        def t():
+            # This ensures the threads have all started
+            # presumably barrier release is faster than thread startup
+            barrier.wait()
+            results.append(pickle.loads(pickle_bytes))
+
+        t1 = threading.Thread(target=t)
+        t2 = threading.Thread(target=t)
+        t1.start()
+        t2.start()
+
+        barrier.wait()
+        # could have delay here
+        locker.barrier.wait()
+
+        t1.join()
+        t2.join()
+
+        from locking_import import ToBeUnpickled
+        self.assertEqual(
+            [type(x) for x in results],
+            [ToBeUnpickled] * 2)
+
+
 
 class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads.
@@ -1503,11 +1568,10 @@ class AbstractPickleTests(unittest.TestCase):
             s = self.dumps(t, proto)
             u = self.loads(s)
             self.assert_is_copy(t, u)
-            if hasattr(os, "stat"):
-                t = os.stat(os.curdir)
-                s = self.dumps(t, proto)
-                u = self.loads(s)
-                self.assert_is_copy(t, u)
+            t = os.stat(os.curdir)
+            s = self.dumps(t, proto)
+            u = self.loads(s)
+            self.assert_is_copy(t, u)
             if hasattr(os, "statvfs"):
                 t = os.statvfs(os.curdir)
                 s = self.dumps(t, proto)
@@ -2781,29 +2845,30 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         # object again, the third serialized form should be identical to the
         # first one we obtained.
         data = ["abcdefg", "abcdefg", 44]
-        f = io.BytesIO()
-        pickler = self.pickler_class(f)
+        for proto in protocols:
+            f = io.BytesIO()
+            pickler = self.pickler_class(f, proto)
 
-        pickler.dump(data)
-        first_pickled = f.getvalue()
+            pickler.dump(data)
+            first_pickled = f.getvalue()
 
-        # Reset BytesIO object.
-        f.seek(0)
-        f.truncate()
+            # Reset BytesIO object.
+            f.seek(0)
+            f.truncate()
 
-        pickler.dump(data)
-        second_pickled = f.getvalue()
+            pickler.dump(data)
+            second_pickled = f.getvalue()
 
-        # Reset the Pickler and BytesIO objects.
-        pickler.clear_memo()
-        f.seek(0)
-        f.truncate()
+            # Reset the Pickler and BytesIO objects.
+            pickler.clear_memo()
+            f.seek(0)
+            f.truncate()
 
-        pickler.dump(data)
-        third_pickled = f.getvalue()
+            pickler.dump(data)
+            third_pickled = f.getvalue()
 
-        self.assertNotEqual(first_pickled, second_pickled)
-        self.assertEqual(first_pickled, third_pickled)
+            self.assertNotEqual(first_pickled, second_pickled)
+            self.assertEqual(first_pickled, third_pickled)
 
     def test_priming_pickler_memo(self):
         # Verify that we can set the Pickler's memo attribute.

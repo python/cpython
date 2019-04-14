@@ -283,7 +283,9 @@ Windows, choose :menuselection:`Start --> Programs --> Python X.Y -->
 Python (command line)`.   Once the interpreter is started, you type Python code
 at the prompt.  For example, on my Linux system, I type the three Python
 statements shown below, and get the output as shown, to find out my
-:file:`{prefix}` and :file:`{exec-prefix}`::
+:file:`{prefix}` and :file:`{exec-prefix}`:
+
+.. code-block:: pycon
 
    Python 2.4 (#26, Aug  7 2004, 17:19:02)
    Type "help", "copyright", "credits" or "license" for more information.
@@ -552,10 +554,10 @@ C headers              ``--install-headers``
 
 These override options can be relative, absolute,
 or explicitly defined in terms of one of the installation base directories.
-(There are two installation base directories, and they are normally the same---
-they only differ when you use the Unix "prefix scheme" and supply different
-``--prefix`` and ``--exec-prefix`` options; using ``--install-lib`` will
-override values computed or given for ``--install-purelib`` and
+(There are two installation base directories, and they are normally the
+same---they only differ when you use the Unix "prefix scheme" and supply
+different ``--prefix`` and ``--exec-prefix`` options; using ``--install-lib``
+will override values computed or given for ``--install-purelib`` and
 ``--install-platlib``, and is recommended for schemes that don't make a
 difference between Python and extension modules.)
 
@@ -582,10 +584,10 @@ in this case.)
 
 If you maintain Python on Windows, you might want third-party modules to live in
 a subdirectory of :file:`{prefix}`, rather than right in :file:`{prefix}`
-itself.  This is almost as easy as customizing the script installation directory
----you just have to remember that there are two types of modules to worry about,
-Python and extension modules, which can conveniently be both controlled by one
-option::
+itself.  This is almost as easy as customizing the script installation
+directory---you just have to remember that there are two types of modules
+to worry about, Python and extension modules, which can conveniently be both
+controlled by one option::
 
    python setup.py install --install-lib=Site
 
@@ -622,7 +624,9 @@ parsing your configuration file(s).
 
 Obviously, specifying the entire installation scheme every time you install a
 new module distribution would be very tedious.  Thus, you can put these options
-into your Distutils config file (see section :ref:`inst-config-files`)::
+into your Distutils config file (see section :ref:`inst-config-files`):
+
+.. code-block:: ini
 
    [install]
    install-base=$HOME
@@ -631,7 +635,9 @@ into your Distutils config file (see section :ref:`inst-config-files`)::
    install-scripts=python/scripts
    install-data=python/data
 
-or, equivalently, ::
+or, equivalently,
+
+.. code-block:: ini
 
    [install]
    install-base=$HOME/python
@@ -718,7 +724,9 @@ A slightly less convenient way is to edit the :file:`site.py` file in Python's
 standard library, and modify ``sys.path``.  :file:`site.py` is automatically
 imported when the Python interpreter is executed, unless the :option:`-S` switch
 is supplied to suppress this behaviour.  So you could simply edit
-:file:`site.py` and add two lines to it::
+:file:`site.py` and add two lines to it:
+
+.. code-block:: python
 
    import sys
    sys.path.append('/www/python/')
@@ -839,7 +847,9 @@ plus a ``global`` section for global options that affect every command.  Each
 section consists of one option per line, specified as ``option=value``.
 
 For example, the following is a complete config file that just forces all
-commands to run quietly by default::
+commands to run quietly by default:
+
+.. code-block:: ini
 
    [global]
    verbose=0
@@ -853,7 +863,9 @@ distribution.
 
 You could override the default "build base" directory and make the
 :command:`build\*` commands always forcibly rebuild all files with the
-following::
+following:
+
+.. code-block:: ini
 
    [build]
    build-base=blib

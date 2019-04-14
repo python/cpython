@@ -30,7 +30,9 @@ spellings such as 'coöperate'.)
 
 For a while people just wrote programs that didn't display accents.
 In the mid-1980s an Apple II BASIC program written by a French speaker
-might have lines like these::
+might have lines like these:
+
+.. code-block:: basic
 
    PRINT "MISE A JOUR TERMINEE"
    PRINT "PARAMETRES ENREGISTRES"
