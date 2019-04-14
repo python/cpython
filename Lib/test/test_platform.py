@@ -5,6 +5,7 @@ import sys
 import sysconfig
 import tempfile
 import unittest
+import collections
 from unittest import mock
 
 from test import support
@@ -188,6 +189,13 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[3], res.version)
         self.assertEqual(res[4], res.machine)
         self.assertEqual(res[5], res.processor)
+
+    def test_uname_processor(self):
+        expected = collections.defaultdict(
+            set,
+            Darwin={'i386'},
+        )[platform.system()]
+        self.assertIn(platform.uname().processor, expected)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
