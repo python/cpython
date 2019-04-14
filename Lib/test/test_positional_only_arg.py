@@ -1,7 +1,7 @@
 """Unit tests for the positional only argument syntax specified in PEP 570."""
 
-import unittest
 import pickle
+import unittest
 
 
 def global_pos_only_f(a, b, /):

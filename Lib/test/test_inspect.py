@@ -784,7 +784,7 @@ class TestClassesAndFunctions(unittest.TestCase):
                              formatted)
 
     def test_getargspec(self):
-        # self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted='(x, y)')
+        self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted='(x, y)')
 
         self.assertRaises(ValueError, self.assertArgSpecEquals,
                           mod.spam, [])

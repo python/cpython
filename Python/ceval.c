@@ -3722,23 +3722,23 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
     PyObject *sig, *kwonly_sig;
     Py_ssize_t co_posonlyargcount = co->co_posonlyargcount;
     Py_ssize_t co_argcount = co->co_argcount;
-    Py_ssize_t co_total_positional = co_argcount + co_posonlyargcount;
+    Py_ssize_t total_positional = co_argcount + co_posonlyargcount;
 
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
-    for (i = co_total_positional; i < co_total_positional + co->co_kwonlyargcount; i++) {
+    for (i = total_positional; i < total_positional + co->co_kwonlyargcount; i++) {
         if (GETLOCAL(i) != NULL) {
             kwonly_given++;
         }
     }
     if (defcount) {
-        Py_ssize_t atleast = co_total_positional - defcount;
+        Py_ssize_t atleast = total_positional - defcount;
         plural = 1;
-        sig = PyUnicode_FromFormat("from %zd to %zd", atleast, co_total_positional);
+        sig = PyUnicode_FromFormat("from %zd to %zd", atleast, total_positional);
     }
     else {
-        plural = (co_total_positional != 1);
-        sig = PyUnicode_FromFormat("%zd", co_total_positional);
+        plural = (total_positional != 1);
+        sig = PyUnicode_FromFormat("%zd", total_positional);
     }
     if (sig == NULL)
         return;
