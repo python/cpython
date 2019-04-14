@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import textwrap
 from StringIO import StringIO
@@ -293,6 +294,22 @@ class Test_TestResult(unittest.TestCase):
         def test(result):
             self.assertTrue(result.failfast)
         runner.run(test)
+
+    def testUnicodeDescription(self):
+        import cStringIO
+
+        old_encoding = sys.getdefaultencoding()
+        with test_support.CleanImport('sys'):
+            import sys as temp_sys
+            temp_sys.setdefaultencoding("ascii")
+            try:
+                stream = cStringIO.StringIO()
+                runner = unittest.TextTestRunner(stream=stream, verbosity=2)
+                desc = u"""täst - docstring with unicode character"""
+                test = unittest.FunctionTestCase(lambda: None, description=desc)
+                runner.run(test)
+            finally:
+                temp_sys.setdefaultencoding(old_encoding)
 
 
 classDict = dict(unittest.TestResult.__dict__)

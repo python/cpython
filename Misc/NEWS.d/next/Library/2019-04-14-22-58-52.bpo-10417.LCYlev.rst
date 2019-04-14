@@ -1,0 +1,2 @@
+Fix unicode description in :class:`unittest.TestCase` for verbose mode.
+Based on patch by Victor Stinner.

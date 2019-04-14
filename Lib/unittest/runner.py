@@ -50,7 +50,12 @@ class TextTestResult(result.TestResult):
     def startTest(self, test):
         super(TextTestResult, self).startTest(test)
         if self.showAll:
-            self.stream.write(self.getDescription(test))
+            default_encoding = sys.getdefaultencoding()
+            encoding = getattr(self.stream, 'encoding', default_encoding)
+            description = self.getDescription(test)
+            description = description.encode(encoding, "backslashreplace") \
+                                     .decode(encoding)
+            self.stream.write(description)
             self.stream.write(" ... ")
             self.stream.flush()
 
