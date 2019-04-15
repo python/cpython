@@ -950,7 +950,6 @@ the following are valid relative imports:
     from ..subpackage1 import moduleY
     from ..subpackage2.moduleZ import eggs
     from ..moduleA import foo
-    from ...package import bar
 
 Relative imports must always use ``from <> import``; ``import <>`` is always absolute.
 Of course, absolute imports can use ``from <> import`` by omitting the leading dots.
