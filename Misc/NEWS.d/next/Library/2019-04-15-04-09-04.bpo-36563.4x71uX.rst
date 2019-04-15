@@ -1,0 +1,1 @@
+.pdbrc is not read twice anymore when the current directory is $HOME.
