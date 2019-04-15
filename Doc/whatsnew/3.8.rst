@@ -709,6 +709,9 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
+  exceptions.
+
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
 
