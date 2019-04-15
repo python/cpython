@@ -357,6 +357,12 @@ class MetaPathFinderFindModuleTests:
 
         return MetaPathSpecFinder()
 
+    def test_find_spec(self):
+        loader = object()
+        spec = self.util.spec_from_loader('blah', loader)
+        finder = self.finder(spec)
+        found = finder.find_spec('blah', 'blah', None)
+
     def test_no_spec(self):
         finder = self.finder(None)
         path = ['a', 'b', 'c']
