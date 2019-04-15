@@ -379,6 +379,9 @@ then
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
+	*-*-vxworks*)
+	    ac_sys_system=VxWorks
+	    ;;
 	*)
 		# for now, limit cross builds to known configurations
 		MACHDEP="unknown"
@@ -401,6 +404,7 @@ then
     MACHDEP="$ac_md_system$ac_md_release"
 
     case $MACHDEP in
+	aix*) MACHDEP="aix";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -422,6 +426,9 @@ if test "$cross_compiling" = yes; then
 		;;
 	*-*-cygwin*)
 		_host_cpu=
+		;;
+	*-*-vxworks*)
+		_host_cpu=$host_cpu
 		;;
 	*)
 		# for now, limit cross builds to known configurations
@@ -505,6 +512,11 @@ case $ac_sys_system/$ac_sys_release in
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
   QNX/6.3.2)
+    define_xopen_source=no
+    ;;
+  # On VxWorks, defining _XOPEN_SOURCE causes compile failures
+  # in network headers still using system V types.
+  VxWorks/*)
     define_xopen_source=no
     ;;
 
@@ -829,6 +841,8 @@ cat >> conftest.c <<EOF
         i386-gnu
 #elif defined(__APPLE__)
         darwin
+#elif defined(__VXWORKS__)
+        vxworks
 #else
 # error unknown platform triplet
 #endif
@@ -1265,6 +1279,26 @@ else
   DEF_MAKE_RULE="all"
 fi
 
+# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# normal names in the default $PATH (ie: Ubuntu).  They exist under the
+# non-suffixed name in their versioned llvm directory.
+
+llvm_bin_dir=''
+llvm_path="${PATH}"
+if test "${CC}" = "clang"
+then
+  clang_bin=`which clang`
+  # Some systems install clang elsewhere as a symlink to the real path
+  # which is where the related llvm tools are located.
+  if test -L "${clang_bin}"
+  then
+    clang_dir=`dirname "${clang_bin}"`
+    clang_bin=`readlink "${clang_bin}"`
+    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
+    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
+  fi
+fi
+
 # Enable LTO flags
 AC_MSG_CHECKING(for --with-lto)
 AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in any build. Disabled by default.]),
@@ -1281,6 +1315,33 @@ fi],
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
+      AC_SUBST(LLVM_AR)
+      AC_PATH_TARGET_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
+      AC_SUBST(LLVM_AR_FOUND)
+      if test -n "${LLVM_AR}" -a -x "${LLVM_AR}"
+      then
+        LLVM_AR_FOUND="found"
+      else
+        LLVM_AR_FOUND="not-found"
+      fi
+      if test "$ac_sys_system" = "Darwin" -a "${LLVM_AR_FOUND}" = "not-found"
+      then
+        found_llvm_ar=`/usr/bin/xcrun -find llvm-ar 2>/dev/null`
+        if test -n "${found_llvm_ar}"
+        then
+          LLVM_AR='/usr/bin/xcrun llvm-ar'
+          LLVM_AR_FOUND=found
+          AC_MSG_NOTICE([llvm-ar found via xcrun: ${LLVM_AR}])
+        fi
+      fi
+      if test $LLVM_AR_FOUND = not-found
+      then
+        LLVM_PROFR_ERR=yes
+        AC_MSG_ERROR([llvm-ar is required for a --with-lto build with clang but could not be found.])
+      else
+        LLVM_AR_ERR=no
+      fi
+      AR="${LLVM_AR}"
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
@@ -1310,8 +1371,8 @@ if test "$Py_LTO" = 'true' ; then
       LTOFLAGS="$LTOFLAGS -g"
   fi
 
-  CFLAGS="$CFLAGS $LTOFLAGS"
-  LDFLAGS="$LDFLAGS $LTOFLAGS"
+  CFLAGS_NODIST="$CFLAGS_NODIST $LTOFLAGS"
+  LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
 # Enable PGO flags.
@@ -1320,24 +1381,6 @@ AC_SUBST(PGO_PROF_USE_FLAG)
 AC_SUBST(LLVM_PROF_MERGER)
 AC_SUBST(LLVM_PROF_FILE)
 AC_SUBST(LLVM_PROF_ERR)
-# Make this work on systems where llvm tools are not installed with their
-# normal names in the default $PATH (ie: Ubuntu).  They exist under the
-# non-suffixed name in their versioned llvm directory.
-llvm_bin_dir=''
-llvm_path="${PATH}"
-if test "${CC}" = "clang"
-then
-  clang_bin=`which clang`
-  # Some systems install clang elsewhere as a symlink to the real path
-  # which is where the related llvm tools are located.
-  if test -L "${clang_bin}"
-  then
-    clang_dir=`dirname "${clang_bin}"`
-    clang_bin=`readlink "${clang_bin}"`
-    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
-    llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
-  fi
-fi
 AC_SUBST(LLVM_PROFDATA)
 AC_PATH_TARGET_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
 AC_SUBST(LLVM_PROF_FOUND)
@@ -1421,6 +1464,19 @@ esac
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
+case $CC in
+    *clang*)
+        cc_is_clang=1
+        ;;
+    *)
+        if $CC --version 2>&1 | grep -q clang
+        then
+            cc_is_clang=1
+        else
+            cc_is_clang=
+        fi
+esac
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
@@ -1433,19 +1489,6 @@ then
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
         fi
-
-        case $CC in
-            *clang*)
-                cc_is_clang=1
-                ;;
-            *)
-                if $CC --version 2>&1 | grep -q clang
-                then
-                    cc_is_clang=1
-                else
-                    cc_is_clang=
-                fi
-        esac
 
         if test -n "${cc_is_clang}"
         then
@@ -1487,8 +1530,29 @@ then
     esac
 fi
 
+if test -n "${cc_is_clang}"
+then
+    # bpo-36618: Add -fmax-type-align=8 to CFLAGS when clang compiler is
+    # detected. The pymalloc memory allocator aligns memory on 8 bytes. On
+    # x86-64, clang expects alignment on 16 bytes by default and so uses MOVAPS
+    # instruction which can lead to segmentation fault. Instruct clang that
+    # Python is limited to alignemnt on 8 bytes to use MOVUPS instruction
+    # instead: slower but don't trigger a SIGSEGV if the memory is not aligned
+    # on 16 bytes.
+    #
+    # Sadly, the flag must be added to CFLAGS and not just CFLAGS_NODIST,
+    # since third party C extensions can have the same issue.
+    #
+    # Check if -fmax-type-align flag is supported (it's not supported by old
+    # clang versions):
+    if "$CC" -v --help 2>/dev/null |grep -- -fmax-type-align > /dev/null; then
+        CFLAGS="$CFLAGS -fmax-type-align=8"
+    fi
+fi
+
 AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
+AC_SUBST(LDFLAGS_NODIST)
 
 # The -arch flags for universal builds on OSX
 UNIVERSAL_ARCH_FLAGS=
@@ -2112,6 +2176,16 @@ AC_CHECK_HEADERS(linux/netlink.h,,,[
 #endif
 ])
 
+# On Linux, qrtr.h requires asm/types.h
+AC_CHECK_HEADERS(linux/qrtr.h,,,[
+#ifdef HAVE_ASM_TYPES_H
+#include <asm/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+])
+
 AC_CHECK_HEADERS(linux/vm_sockets.h,,,[
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -2515,7 +2589,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Linux*|GNU*|QNX*)
+	Linux*|GNU*|QNX*|VxWorks*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	FreeBSD*)
@@ -2594,6 +2668,8 @@ then
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
+	VxWorks*)
+		CCSHARED="-fpic -D__SO_PICABILINUX__  -ftls-model=global-dynamic"
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -2650,6 +2726,8 @@ then
 		# to 2048 kilobytes so that the stack doesn't overflow
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
+	VxWorks*)
+		LINKFORSHARED='--export-dynamic';;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -2815,11 +2893,37 @@ esac
 AC_MSG_CHECKING(for --with-address-sanitizer)
 AC_ARG_WITH(address_sanitizer,
             AS_HELP_STRING([--with-address-sanitizer],
-                           [enable AddressSanitizer]),
+                           [enable AddressSanitizer (asan)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
+# ASan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-memory-sanitizer)
+AC_ARG_WITH(memory_sanitizer,
+            AS_HELP_STRING([--with-memory-sanitizer],
+                           [enable MemorySanitizer (msan)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+# MSan works by controlling memory allocation, our own malloc interferes.
+with_pymalloc="no"
+],
+[AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
+AC_ARG_WITH(undefined_behavior_sanitizer,
+            AS_HELP_STRING([--with-undefined-behavior-sanitizer],
+                           [enable UndefinedBehaviorSanitizer (ubsan)]),
+[
+AC_MSG_RESULT($withval)
+BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+LDFLAGS="-fsanitize=undefined $LDFLAGS"
 ],
 [AC_MSG_RESULT(no)])
 
@@ -2944,8 +3048,6 @@ else
   done
 fi])
 AC_MSG_RESULT($with_dbmliborder)
-
-AC_SUBST(LDLAST)
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -3365,7 +3467,7 @@ then
     AC_CACHE_CHECK([whether DTrace probes require linking],
         [ac_cv_dtrace_link], [dnl
             ac_cv_dtrace_link=no
-            echo 'BEGIN' > conftest.d
+            echo 'BEGIN{}' > conftest.d
             "$DTRACE" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
@@ -3441,8 +3543,9 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
- pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+ posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
+ pthread_condattr_setclock pthread_init pthread_kill putenv pwrite pwritev pwritev2 \
+ readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
@@ -3752,6 +3855,23 @@ AC_CHECK_FUNCS(gettimeofday,
       [Define if gettimeofday() does not have second (timezone) argument
        This is the case on Motorola V4 (R40V4.2)])
     ])
+)
+
+# We search for both crypt and crypt_r as one or the other may be defined
+# This gets us our -lcrypt in LIBS when required on the target platform.
+AC_SEARCH_LIBS(crypt, crypt)
+AC_SEARCH_LIBS(crypt_r, crypt)
+
+AC_CHECK_FUNC(crypt_r,
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#define _GNU_SOURCE  /* Required for crypt_r()'s prototype in glibc. */
+#include <crypt.h>
+]], [[
+struct crypt_data d;
+char *r = crypt_r("", "", &d);
+]])],
+    [AC_DEFINE(HAVE_CRYPT_R, 1, [Define if you have the crypt_r() function.])],
+    [])
 )
 
 AC_CHECK_FUNCS(clock_gettime, [], [
@@ -4206,74 +4326,24 @@ fi
 # * Check for various properties of floating point *
 # **************************************************
 
-AC_MSG_CHECKING(whether C doubles are little-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_little_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x05\x04\x03\x02\x01\xff\x3f\x43", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_little_endian_double=yes],
-[ac_cv_little_endian_double=no],
-[ac_cv_little_endian_double=no])])
-AC_MSG_RESULT($ac_cv_little_endian_double)
-if test "$ac_cv_little_endian_double" = yes
-then
-  AC_DEFINE(DOUBLE_IS_LITTLE_ENDIAN_IEEE754, 1,
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the least significant byte first])
-fi
-
-AC_MSG_CHECKING(whether C doubles are big-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_big_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x43\x3f\xff\x01\x02\x03\x04\x05", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_big_endian_double=yes],
-[ac_cv_big_endian_double=no],
-[ac_cv_big_endian_double=no])])
-AC_MSG_RESULT($ac_cv_big_endian_double)
-if test "$ac_cv_big_endian_double" = yes
+AX_C_FLOAT_WORDS_BIGENDIAN
+if test "$ax_cv_c_float_words_bigendian" = "yes"
 then
   AC_DEFINE(DOUBLE_IS_BIG_ENDIAN_IEEE754, 1,
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
    with the most significant byte first])
-fi
-
-# Some ARM platforms use a mixed-endian representation for doubles.
-# While Python doesn't currently have full support for these platforms
-# (see e.g., issue 1762561), we can at least make sure that float <-> string
-# conversions work.
-AC_MSG_CHECKING(whether C doubles are ARM mixed-endian IEEE 754 binary64)
-AC_CACHE_VAL(ac_cv_mixed_endian_double, [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <string.h>
-int main() {
-    double x = 9006104071832581.0;
-    if (memcmp(&x, "\x01\xff\x3f\x43\x05\x04\x03\x02", 8) == 0)
-        return 0;
-    else
-        return 1;
-}
-]])],
-[ac_cv_mixed_endian_double=yes],
-[ac_cv_mixed_endian_double=no],
-[ac_cv_mixed_endian_double=no])])
-AC_MSG_RESULT($ac_cv_mixed_endian_double)
-if test "$ac_cv_mixed_endian_double" = yes
+elif test "$ax_cv_c_float_words_bigendian" = "no"
 then
+  AC_DEFINE(DOUBLE_IS_LITTLE_ENDIAN_IEEE754, 1,
+  [Define if C doubles are 64-bit IEEE 754 binary format, stored
+   with the least significant byte first])
+else
+  # Some ARM platforms use a mixed-endian representation for doubles.
+  # While Python doesn't currently have full support for these platforms
+  # (see e.g., issue 1762561), we can at least make sure that float <-> string
+  # conversions work.
+  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
+  # or little, then it must be this?
   AC_DEFINE(DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754, 1,
   [Define if C doubles are 64-bit IEEE 754 binary format, stored
    in ARM mixed-endian order (byte order 45670123)])
@@ -4546,7 +4616,7 @@ AC_MSG_RESULT($SOABI)
 
 AC_SUBST(EXT_SUFFIX)
 case $ac_sys_system in
-    Linux*|GNU*|Darwin)
+    Linux*|GNU*|Darwin|VxWorks)
 	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
     *)
 	EXT_SUFFIX=${SHLIB_SUFFIX};;
@@ -4695,6 +4765,8 @@ LIBS=$LIBS_no_readline
 AC_MSG_CHECKING(for broken nice())
 AC_CACHE_VAL(ac_cv_broken_nice, [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdlib.h>
+#include <unistd.h>
 int main()
 {
 	int val1 = nice(1);
@@ -5194,7 +5266,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Programs"
+SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
@@ -5411,6 +5483,30 @@ if test "$have_getrandom" = yes; then
     AC_DEFINE(HAVE_GETRANDOM, 1,
               [Define to 1 if the getrandom() function is available])
 fi
+
+# checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
+# shm_* may only be available if linking against librt
+save_LIBS="$LIBS"
+save_includes_default="$ac_includes_default"
+AC_SEARCH_LIBS(shm_open, rt)
+if test "$ac_cv_search_shm_open" = "-lrt"; then
+    AC_DEFINE(SHM_NEEDS_LIBRT, 1,
+              [Define to 1 if you must link with -lrt for shm_open().])
+fi
+AC_CHECK_HEADERS(sys/mman.h)
+# temporarily override ac_includes_default for AC_CHECK_FUNCS below
+ac_includes_default="\
+${ac_includes_default}
+#ifndef __cplusplus
+#  ifdef HAVE_SYS_MMAN_H
+#    include <sys/mman.h>
+#  endif
+#endif
+"
+AC_CHECK_FUNCS([shm_open shm_unlink])
+# we don't want to link with librt always, restore LIBS
+LIBS="$save_LIBS"
+ac_includes_default="$save_includes_default"
 
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])

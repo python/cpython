@@ -371,10 +371,9 @@ class ProxyAuthTests(unittest.TestCase):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD)
         self.digest_auth_handler.set_qop("auth")
-        result = self.opener.open(self.URL)
-        while result.read():
-            pass
-        result.close()
+        with self.opener.open(self.URL) as result:
+            while result.read():
+                pass
 
     def test_proxy_qop_auth_int_works_or_throws_urlerror(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
@@ -386,11 +385,11 @@ class ProxyAuthTests(unittest.TestCase):
             # It's okay if we don't support auth-int, but we certainly
             # shouldn't receive any kind of exception here other than
             # a URLError.
-            result = None
-        if result:
-            while result.read():
-                pass
-            result.close()
+            pass
+        else:
+            with result:
+                while result.read():
+                    pass
 
 
 def GetRequestHandler(responses):
@@ -611,14 +610,11 @@ class TestUrlopen(unittest.TestCase):
 
     def test_basic(self):
         handler = self.start_server()
-        open_url = urllib.request.urlopen("http://localhost:%s" % handler.port)
-        for attr in ("read", "close", "info", "geturl"):
-            self.assertTrue(hasattr(open_url, attr), "object returned from "
-                         "urlopen lacks the %s attribute" % attr)
-        try:
+        with urllib.request.urlopen("http://localhost:%s" % handler.port) as open_url:
+            for attr in ("read", "close", "info", "geturl"):
+                self.assertTrue(hasattr(open_url, attr), "object returned from "
+                             "urlopen lacks the %s attribute" % attr)
             self.assertTrue(open_url.read(), "calling 'read' failed")
-        finally:
-            open_url.close()
 
     def test_info(self):
         handler = self.start_server()

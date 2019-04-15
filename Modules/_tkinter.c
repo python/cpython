@@ -617,7 +617,6 @@ Tkapp_New(const char *screenName, const char *className,
     v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
     if (v == NULL)
         return NULL;
-    Py_INCREF(Tkapp_Type);
 
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
@@ -802,7 +801,6 @@ newPyTclObject(Tcl_Obj *arg)
     self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
     if (self == NULL)
         return NULL;
-    Py_INCREF(PyTclObject_Type);
     Tcl_IncrRefCount(arg);
     self->value = arg;
     self->string = NULL;
@@ -842,7 +840,7 @@ PyTclObject_string(PyTclObject *self, void *ignored)
 }
 
 static PyObject *
-PyTclObject_str(PyTclObject *self, void *ignored)
+PyTclObject_str(PyTclObject *self)
 {
     if (self->string) {
         Py_INCREF(self->string);
@@ -855,7 +853,7 @@ PyTclObject_str(PyTclObject *self, void *ignored)
 static PyObject *
 PyTclObject_repr(PyTclObject *self)
 {
-    PyObject *repr, *str = PyTclObject_str(self, NULL);
+    PyObject *repr, *str = PyTclObject_str(self);
     if (str == NULL)
         return NULL;
     repr = PyUnicode_FromFormat("<%s object: %R>",
@@ -1101,9 +1099,7 @@ AsObj(PyObject *value)
     }
 
     if (PyTclObject_Check(value)) {
-        Tcl_Obj *v = ((PyTclObject*)value)->value;
-        Tcl_IncrRefCount(v);
-        return v;
+        return ((PyTclObject*)value)->value;
     }
 
     {
@@ -2724,7 +2720,6 @@ Tktt_New(PyObject *func)
     v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
     if (v == NULL)
         return NULL;
-    Py_INCREF(Tktt_Type);
 
     Py_INCREF(func);
     v->token = NULL;

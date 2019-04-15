@@ -1,2 +1,0 @@
-Ignore errors caused by missing / non-writable homedir while writing history
-during exit of an interactive session.  Patch by Anthony Sottile.

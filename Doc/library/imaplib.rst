@@ -39,7 +39,7 @@ base class:
 
    The :class:`IMAP4` class supports the :keyword:`with` statement.  When used
    like this, the IMAP4 ``LOGOUT`` command is issued automatically when the
-   :keyword:`with` statement exits.  E.g.::
+   :keyword:`!with` statement exits.  E.g.::
 
     >>> from imaplib import IMAP4
     >>> with IMAP4("domain.org") as M:
@@ -326,6 +326,9 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.logout()
 
    Shutdown connection to server. Returns server ``BYE`` response.
+
+   .. versionchanged:: 3.8
+      The method no longer ignores silently arbitrary exceptions.
 
 
 .. method:: IMAP4.lsub(directory='""', pattern='*')

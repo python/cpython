@@ -127,7 +127,7 @@ PyDoc_STRVAR(_io_open__doc__,
 "opened in a binary mode.");
 
 #define _IO_OPEN_METHODDEF    \
-    {"open", (PyCFunction)_io_open, METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
+    {"open", (PyCFunction)(void(*)(void))_io_open, METH_FASTCALL|METH_KEYWORDS, _io_open__doc__},
 
 static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
@@ -139,7 +139,9 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
-    static _PyArg_Parser _parser = {"O|sizzziO:open", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
+    PyObject *argsbuf[8];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *file;
     const char *mode = "r";
     int buffering = -1;
@@ -149,13 +151,134 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &file, &mode, &buffering, &encoding, &errors, &newline, &closefd, &opener)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 8, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    file = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        if (!PyUnicode_Check(args[1])) {
+            _PyArg_BadArgument("open", 2, "str", args[1]);
+            goto exit;
+        }
+        Py_ssize_t mode_length;
+        mode = PyUnicode_AsUTF8AndSize(args[1], &mode_length);
+        if (mode == NULL) {
+            goto exit;
+        }
+        if (strlen(mode) != (size_t)mode_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[2]) {
+        if (PyFloat_Check(args[2])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        buffering = _PyLong_AsInt(args[2]);
+        if (buffering == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[3]) {
+        if (args[3] == Py_None) {
+            encoding = NULL;
+        }
+        else if (PyUnicode_Check(args[3])) {
+            Py_ssize_t encoding_length;
+            encoding = PyUnicode_AsUTF8AndSize(args[3], &encoding_length);
+            if (encoding == NULL) {
+                goto exit;
+            }
+            if (strlen(encoding) != (size_t)encoding_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("open", 4, "str or None", args[3]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[4]) {
+        if (args[4] == Py_None) {
+            errors = NULL;
+        }
+        else if (PyUnicode_Check(args[4])) {
+            Py_ssize_t errors_length;
+            errors = PyUnicode_AsUTF8AndSize(args[4], &errors_length);
+            if (errors == NULL) {
+                goto exit;
+            }
+            if (strlen(errors) != (size_t)errors_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("open", 5, "str or None", args[4]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[5]) {
+        if (args[5] == Py_None) {
+            newline = NULL;
+        }
+        else if (PyUnicode_Check(args[5])) {
+            Py_ssize_t newline_length;
+            newline = PyUnicode_AsUTF8AndSize(args[5], &newline_length);
+            if (newline == NULL) {
+                goto exit;
+            }
+            if (strlen(newline) != (size_t)newline_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("open", 6, "str or None", args[5]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[6]) {
+        if (PyFloat_Check(args[6])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        closefd = _PyLong_AsInt(args[6]);
+        if (closefd == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    opener = args[7];
+skip_optional_pos:
     return_value = _io_open_impl(module, file, mode, buffering, encoding, errors, newline, closefd, opener);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a9de1ae79c960e81 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19fc9b69a5166f63 input=a9049054013a1b77]*/

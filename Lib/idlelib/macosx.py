@@ -1,6 +1,8 @@
 """
-A number of functions that enhance IDLE on Mac OSX.
+A number of functions that enhance IDLE on macOS.
 """
+from os.path import expanduser
+import plistlib
 from sys import platform  # Used in _init_tk_type, changed by test.
 
 import tkinter
@@ -79,12 +81,45 @@ def tkVersionWarning(root):
         patchlevel = root.tk.call('info', 'patchlevel')
         if patchlevel not in ('8.5.7', '8.5.9'):
             return False
-        return (r"WARNING: The version of Tcl/Tk ({0}) in use may"
-                r" be unstable.\n"
-                r"Visit http://www.python.org/download/mac/tcltk/"
-                r" for current information.".format(patchlevel))
+        return ("WARNING: The version of Tcl/Tk ({0}) in use may"
+                " be unstable.\n"
+                "Visit http://www.python.org/download/mac/tcltk/"
+                " for current information.".format(patchlevel))
     else:
         return False
+
+
+def readSystemPreferences():
+    """
+    Fetch the macOS system preferences.
+    """
+    if platform != 'darwin':
+        return None
+
+    plist_path = expanduser('~/Library/Preferences/.GlobalPreferences.plist')
+    try:
+        with open(plist_path, 'rb') as plist_file:
+            return plistlib.load(plist_file)
+    except OSError:
+        return None
+
+
+def preferTabsPreferenceWarning():
+    """
+    Warn if "Prefer tabs when opening documents" is set to "Always".
+    """
+    if platform != 'darwin':
+        return None
+
+    prefs = readSystemPreferences()
+    if prefs and prefs.get('AppleWindowTabbingMode') == 'always':
+        return (
+            'WARNING: The system preference "Prefer tabs when opening'
+            ' documents" is set to "Always". This will cause various problems'
+            ' with IDLE. For the best experience, change this setting when'
+            ' running IDLE (via System Preferences -> Dock).'
+        )
+    return None
 
 
 ## Fix the menu and related functions.
@@ -143,7 +178,7 @@ def overrideRootMenu(root, flist):
     del mainmenu.menudefs[-1][1][0:2]
     # Remove the 'Configure Idle' entry from the options menu, it is in the
     # application menu as 'Preferences'
-    del mainmenu.menudefs[-2][1][0]
+    del mainmenu.menudefs[-3][1][0:2]
     menubar = Menu(root)
     root.configure(menu=menubar)
     menudict = {}
@@ -192,7 +227,7 @@ def overrideRootMenu(root, flist):
         root.bind('<<close-all-windows>>', flist.close_all_callback)
 
         # The binding above doesn't reliably work on all versions of Tk
-        # on MacOSX. Adding command definition below does seem to do the
+        # on macOS. Adding command definition below does seem to do the
         # right thing for now.
         root.createcommand('exit', flist.close_all_callback)
 

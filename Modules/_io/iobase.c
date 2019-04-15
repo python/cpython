@@ -10,6 +10,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -285,10 +286,22 @@ iobase_finalize(PyObject *self)
         /* Silencing I/O errors is bad, but printing spurious tracebacks is
            equally as bad, and potentially more frequent (because of
            shutdown issues). */
-        if (res == NULL)
-            PyErr_Clear();
-        else
+        if (res == NULL) {
+#ifndef Py_DEBUG
+            const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+            if (config->dev_mode) {
+                PyErr_WriteUnraisable(self);
+            }
+            else {
+                PyErr_Clear();
+            }
+#else
+            PyErr_WriteUnraisable(self);
+#endif
+        }
+        else {
             Py_DECREF(res);
+        }
     }
 
     /* Restore the saved exception. */
