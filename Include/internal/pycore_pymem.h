@@ -113,8 +113,11 @@ struct gc_generation_stats {
 
 struct _gc_object_debugger {
     int enabled;
-    int threshold;
-    int count;
+    struct gc_obj_dbg_gen {
+        int threshold; /* collection threshold */
+        int count; /* count of allocations or collections of younger
+                      generations */
+    } generations[NUM_GENERATIONS];
 };
 
 struct _gc_runtime_state {

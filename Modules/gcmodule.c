@@ -1246,28 +1246,15 @@ collect_generations(void)
 
 /* Object Debugger */
 
-static void
-gc_enable_object_debugger(int threshold)
-{
-    struct _gc_object_debugger *debugger = &_PyRuntime.gc.object_debugger;
-
-    /* Clear some caches to run the debugger in next allocations */
-    clear_freelists();
-    PyType_ClearCache();
-
-    debugger->enabled = 1;
-    /* leave debugger->count unchanged */
-    debugger->threshold = threshold;
-}
-
-
 void
 _PyGC_DisableObjectDebugger(void)
 {
     struct _gc_object_debugger *debugger = &_PyRuntime.gc.object_debugger;
     debugger->enabled = 0;
-    debugger->count = 0;
-    debugger->threshold = 0;
+    for (int i=0; i < NUM_GENERATIONS; i++) {
+        debugger->generations[i].count = 0;
+        debugger->generations[i].threshold = 0;
+    }
 }
 
 
@@ -1314,13 +1301,44 @@ gc_check_object(PyObject *op)
 
 
 static void
+_PyGC_ObjectDebuggerGeneration(int gen)
+{
+    PyGC_Head *gc_list = GEN_HEAD(gen);
+    for (PyGC_Head *gc = GC_NEXT(gc_list); gc != gc_list; gc = GC_NEXT(gc)) {
+        PyObject *op = FROM_GC(gc);
+        gc_check_object(op);
+    }
+}
+
+
+static void
 _PyGC_ObjectDebugger(void)
 {
-    for (int i = 0; i < NUM_GENERATIONS; i++) {
-        PyGC_Head *gc_list = GEN_HEAD(i);
-        for (PyGC_Head *gc = GC_NEXT(gc_list); gc != gc_list; gc = GC_NEXT(gc)) {
-            PyObject *op = FROM_GC(gc);
-            gc_check_object(op);
+    struct _gc_object_debugger *debugger = &_PyRuntime.gc.object_debugger;
+
+    int gen = 0;
+    while (1) {
+        debugger->generations[gen].count = 0;
+
+        _PyGC_ObjectDebuggerGeneration(gen);
+
+        if ((gen + 1) >= NUM_GENERATIONS) {
+            break;
+        }
+        gen++;
+
+        debugger->generations[gen].count++;
+        if (debugger->generations[gen].count < debugger->generations[gen].threshold) {
+            break;
+        }
+
+        /* Avoid quadratic performance degradation in number
+           of tracked objects. See comments at the beginning
+           of this file, and issue #4074. */
+        if (gen == NUM_GENERATIONS - 1
+            && _PyRuntime.gc.long_lived_pending < _PyRuntime.gc.long_lived_total / 4)
+        {
+            break;
         }
     }
 }
@@ -1772,7 +1790,9 @@ gc_get_freeze_count_impl(PyObject *module)
 /*[clinic input]
 gc.enable_object_debugger as gc_py_enable_object_debugger -> NoneType
 
-    threshold: int
+    threshold0: int
+    threshold1: int = -1
+    threshold2: int = -1
 
 Enable the object debugger.
 
@@ -1781,16 +1801,37 @@ memory allocation or deallocation made by the garbage collector.
 [clinic start generated code]*/
 
 static PyObject *
-gc_py_enable_object_debugger_impl(PyObject *module, int threshold)
-/*[clinic end generated code: output=fd520f0e39d20687 input=26bda85590a9d241]*/
+gc_py_enable_object_debugger_impl(PyObject *module, int threshold0,
+                                  int threshold1, int threshold2)
+/*[clinic end generated code: output=5eb8b74e7df0e725 input=706b9e90db364bae]*/
 {
-    if (threshold < 1) {
+    if (threshold0 < 1) {
         PyErr_SetString(PyExc_ValueError,
-                        "threshold must be greater than or equal to 1");
+                        "threshold0 must be greater than or equal to 1");
         return NULL;
     }
 
-    gc_enable_object_debugger(threshold);
+    if (threshold1 < 0) {
+        threshold1 = _PyRuntime.gc.generations[1].threshold;
+    }
+    if (threshold2 < 0) {
+        threshold2 = _PyRuntime.gc.generations[2].threshold;
+    }
+
+    struct _gc_object_debugger *debugger = &_PyRuntime.gc.object_debugger;
+
+    /* Clear some caches to run the debugger in next allocations */
+    clear_freelists();
+    PyType_ClearCache();
+
+    debugger->enabled = 1;
+    debugger->generations[0].threshold = threshold0;
+    debugger->generations[0].count = 0;
+    debugger->generations[1].threshold = threshold1;
+    debugger->generations[1].count = 0;
+    debugger->generations[2].threshold = threshold2;
+    debugger->generations[2].count = 0;
+
     return Py_None;
 }
 
@@ -2040,10 +2081,10 @@ PyObject_GC_UnTrack(void *op_raw)
 static inline void
 gc_check_object_debugger(void)
 {
-    if (_PyRuntime.gc.object_debugger.enabled) {
-        _PyRuntime.gc.object_debugger.count++;
-        if (_PyRuntime.gc.object_debugger.count >= _PyRuntime.gc.object_debugger.threshold) {
-            _PyRuntime.gc.object_debugger.count = 0;
+    struct _gc_object_debugger *debugger = &_PyRuntime.gc.object_debugger;
+    if (debugger->enabled) {
+        debugger->generations[0].count++;
+        if (debugger->generations[0].count >= debugger->generations[0].threshold) {
             _PyGC_ObjectDebugger();
         }
     }
@@ -2139,9 +2180,6 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
         return (PyVarObject *)PyErr_NoMemory();
     op = (PyVarObject *) FROM_GC(g);
     Py_SIZE(op) = nitems;
-
-    gc_check_object_debugger();
-
     return op;
 }
 
@@ -2156,6 +2194,4 @@ PyObject_GC_Del(void *op)
         _PyRuntime.gc.generations[0].count--;
     }
     PyObject_FREE(g);
-
-    gc_check_object_debugger();
 }

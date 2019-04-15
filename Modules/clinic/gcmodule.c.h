@@ -375,7 +375,8 @@ exit:
 }
 
 PyDoc_STRVAR(gc_py_enable_object_debugger__doc__,
-"enable_object_debugger($module, /, threshold)\n"
+"enable_object_debugger($module, /, threshold0, threshold1=-1,\n"
+"                       threshold2=-1)\n"
 "--\n"
 "\n"
 "Enable the object debugger.\n"
@@ -387,19 +388,23 @@ PyDoc_STRVAR(gc_py_enable_object_debugger__doc__,
     {"enable_object_debugger", (PyCFunction)(void(*)(void))gc_py_enable_object_debugger, METH_FASTCALL|METH_KEYWORDS, gc_py_enable_object_debugger__doc__},
 
 static PyObject *
-gc_py_enable_object_debugger_impl(PyObject *module, int threshold);
+gc_py_enable_object_debugger_impl(PyObject *module, int threshold0,
+                                  int threshold1, int threshold2);
 
 static PyObject *
 gc_py_enable_object_debugger(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"threshold", NULL};
+    static const char * const _keywords[] = {"threshold0", "threshold1", "threshold2", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "enable_object_debugger", 0};
-    PyObject *argsbuf[1];
-    int threshold;
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int threshold0;
+    int threshold1 = -1;
+    int threshold2 = -1;
     PyObject *_return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -408,11 +413,38 @@ gc_py_enable_object_debugger(PyObject *module, PyObject *const *args, Py_ssize_t
                         "integer argument expected, got float" );
         goto exit;
     }
-    threshold = _PyLong_AsInt(args[0]);
-    if (threshold == -1 && PyErr_Occurred()) {
+    threshold0 = _PyLong_AsInt(args[0]);
+    if (threshold0 == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    _return_value = gc_py_enable_object_debugger_impl(module, threshold);
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        if (PyFloat_Check(args[1])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        threshold1 = _PyLong_AsInt(args[1]);
+        if (threshold1 == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    threshold2 = _PyLong_AsInt(args[2]);
+    if (threshold2 == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    _return_value = gc_py_enable_object_debugger_impl(module, threshold0, threshold1, threshold2);
     if (_return_value != Py_None) {
         goto exit;
     }
@@ -440,4 +472,4 @@ gc_py_disable_object_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return gc_py_disable_object_debugger_impl(module);
 }
-/*[clinic end generated code: output=341ba16a8fbc2b45 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=408f1549d404380c input=a9049054013a1b77]*/

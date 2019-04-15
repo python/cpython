@@ -822,19 +822,34 @@ class GCTests(unittest.TestCase):
         self.assertRaises(TypeError, gc.get_objects, "1")
         self.assertRaises(TypeError, gc.get_objects, 1.234)
 
-    @cpython_only
-    def test_object_debugger(self):
-        # Call the object debugger around 2 times
-        # (the test only needs that it's called at least once)
-        gc.enable_object_debugger(10)
-        objs = [{} for _ in range(20)]
-        gc.disable_object_debugger()
 
-    @cpython_only
-    def test_object_debugger_invalid_threshold(self):
+@unittest.skipUnless(hasattr(gc, 'enable_object_debugger'),
+                     'need gc.enable_object_debugger()')
+class ObjectDebuggerTests(unittest.TestCase):
+    def test_basic(self):
+        try:
+            # Call the object debugger around 2 times
+            # (the test only needs that it's called at least once)
+            gc.enable_object_debugger(10)
+            objs = [{} for _ in range(20)]
+        finally:
+            gc.disable_object_debugger()
+
+    def test_thresholds(self):
+        try:
+            big = 10 ** 7
+            gc.enable_object_debugger(big)
+            gc.enable_object_debugger(big, big)
+            gc.enable_object_debugger(big, big, big)
+        finally:
+            gc.disable_object_debugger()
+
+    def test_invalid_thresholds(self):
         self.assertRaises(ValueError, gc.enable_object_debugger, -1)
         self.assertRaises(ValueError, gc.enable_object_debugger, 0)
         self.assertRaises(OverflowError, gc.enable_object_debugger, 2 ** 100)
+        self.assertRaises(OverflowError, gc.enable_object_debugger, 1, 2 ** 100)
+        self.assertRaises(OverflowError, gc.enable_object_debugger, 1, 1, 2 ** 100)
 
 
 class GCCallbackTests(unittest.TestCase):
