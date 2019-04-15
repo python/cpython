@@ -597,15 +597,11 @@ class _BaseAddress(_IPAddressBase):
 
 @functools.total_ordering
 class _BaseNetwork(_IPAddressBase):
-
     """A generic IP network object.
 
     This IP class contains the version independent methods which are
     used by networks.
-
     """
-    def __init__(self, address):
-        self._cache = {}
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, str(self))
@@ -687,22 +683,14 @@ class _BaseNetwork(_IPAddressBase):
                 other.network_address in self or (
                     other.broadcast_address in self)))
 
-    @property
+    @functools.cached_property
     def broadcast_address(self):
-        x = self._cache.get('broadcast_address')
-        if x is None:
-            x = self._address_class(int(self.network_address) |
-                                    int(self.hostmask))
-            self._cache['broadcast_address'] = x
-        return x
+        return self._address_class(int(self.network_address) |
+                                   int(self.hostmask))
 
-    @property
+    @functools.cached_property
     def hostmask(self):
-        x = self._cache.get('hostmask')
-        if x is None:
-            x = self._address_class(int(self.netmask) ^ self._ALL_ONES)
-            self._cache['hostmask'] = x
-        return x
+        return self._address_class(int(self.netmask) ^ self._ALL_ONES)
 
     @property
     def with_prefixlen(self):
@@ -1346,7 +1334,7 @@ class IPv4Interface(IPv4Address):
 
     def __str__(self):
         return '%s/%d' % (self._string_from_ip_int(self._ip),
-                          self.network.prefixlen)
+                          self._prefixlen)
 
     def __eq__(self, other):
         address_equal = IPv4Address.__eq__(self, other)
@@ -1413,7 +1401,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
     _address_class = IPv4Address
 
     def __init__(self, address, strict=True):
-
         """Instantiate a new IPv4 network object.
 
         Args:
@@ -1447,10 +1434,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
               an IPv4 address.
             ValueError: If strict is True and a network address is not
               supplied.
-
         """
-        _BaseNetwork.__init__(self, address)
-
         # Constructing from a packed address or integer
         if isinstance(address, (int, bytes)):
             addr = address
@@ -2020,7 +2004,7 @@ class IPv6Interface(IPv6Address):
 
     def __str__(self):
         return '%s/%d' % (self._string_from_ip_int(self._ip),
-                          self.network.prefixlen)
+                          self._prefixlen)
 
     def __eq__(self, other):
         address_equal = IPv6Address.__eq__(self, other)
@@ -2125,10 +2109,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
               an IPv6 address.
             ValueError: If strict was True and a network address was not
               supplied.
-
         """
-        _BaseNetwork.__init__(self, address)
-
         # Constructing from a packed address or integer
         if isinstance(address, (int, bytes)):
             addr = address
