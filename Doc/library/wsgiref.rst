@@ -784,6 +784,6 @@ This is a working "Hello World" WSGI application::
 
 
 Example of a WSGI application serving the current directory, accept optional
-directory and port number on the command line:
+directory and port number (default: 8000) on the command line:
 
 .. literalinclude:: ../../Tools/scripts/serve.py
