@@ -512,16 +512,16 @@ class Fraction(numbers.Rational):
             return a._numerator // a._denominator
 
     def __floor__(a):
-        """Will be math.floor(a) in 3.0."""
+        """math.floor(a)"""
         return a.numerator // a.denominator
 
     def __ceil__(a):
-        """Will be math.ceil(a) in 3.0."""
+        """math.ceil(a)"""
         # The negations cleverly convince floordiv to return the ceiling.
         return -(-a.numerator // a.denominator)
 
     def __round__(self, ndigits=None):
-        """Will be round(self, ndigits) in 3.0.
+        """round(self, ndigits)
 
         Rounds half toward even.
         """
