@@ -783,6 +783,7 @@ This is a working "Hello World" WSGI application::
        httpd.serve_forever()
 
 
-Example of a small wsgiref-based web server
+Example of a WSGI application serving the current directory, accept optional
+directory and port number on the command line:
 
 .. literalinclude:: ../../Tools/scripts/serve.py
