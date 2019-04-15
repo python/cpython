@@ -7,10 +7,10 @@ import sys
 import textwrap
 import unittest
 from test import support
+from test.support import AIX, MS_WINDOWS
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 
-MS_WINDOWS = (sys.platform == 'win32')
 POSIX_LOCALES = ('C', 'POSIX')
 VXWORKS = (sys.platform == "vxworks")
 
@@ -227,7 +227,7 @@ class UTF8ModeTests(unittest.TestCase):
 
         if sys.platform == 'darwin' or support.is_android or VXWORKS:
             c_arg = arg_utf8
-        elif sys.platform.startswith("aix"):
+        elif AIX:
             c_arg = arg.decode('iso-8859-1')
         else:
             c_arg = arg_ascii

@@ -7,7 +7,7 @@ import subprocess
 import sys
 import sysconfig
 from test import support
-from test.support import script_helper, is_android
+from test.support import script_helper, is_android, AIX
 import tempfile
 import threading
 import unittest
@@ -130,8 +130,7 @@ class FaultHandlerTests(unittest.TestCase):
         fatal_error = 'Windows fatal exception: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
 
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     "the first page of memory is a mapped read-only on AIX")
+    @unittest.skipIf(AIX, "the first page of memory is a mapped read-only on AIX")
     def test_read_null(self):
         if not MS_WINDOWS:
             self.check_fatal_error("""

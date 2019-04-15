@@ -6,7 +6,7 @@ import time
 import sys
 import unittest
 from test.fork_wait import ForkWait
-from test.support import reap_children, get_attribute
+from test.support import reap_children, get_attribute, AIX
 
 # If either of these do not exist, skip this test.
 get_attribute(os, 'fork')
@@ -16,7 +16,7 @@ get_attribute(os, 'wait4')
 class Wait4Test(ForkWait):
     def wait_impl(self, cpid):
         option = os.WNOHANG
-        if sys.platform.startswith('aix'):
+        if AIX:
             # Issue #11185: wait4 is broken on AIX and will always return 0
             # with WNOHANG.
             option = 0

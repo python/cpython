@@ -97,12 +97,13 @@ __all__ = [
     "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
+    "ANDROID", "JYTHON",
     "setswitchinterval",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     "bind_unix_socket",
     # platform
-    "is_aix",
+    "AIX", "LINUX", "MACOS", "MS_WINDOWS",
     # processes
     'temp_umask', "reap_children",
     # logging
@@ -816,8 +817,15 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
+ANDROID  = hasattr(sys, 'getandroidapilevel')
+JYTHON = sys.platform.startswith('java')
+
+AIX = platform.system() == 'AIX'
+LINUX = platform.system() == 'Linux'
+MACOS = platform.system() == 'Darwin'
+MS_WINDOWS = platform.system() == 'Windows'
+
 is_jython = sys.platform.startswith('java')
-is_aix = platform.system() == 'AIX'
 
 is_android = hasattr(sys, 'getandroidapilevel')
 

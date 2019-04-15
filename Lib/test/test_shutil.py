@@ -30,11 +30,10 @@ except ImportError:
     posix = None
 
 from test import support
-from test.support import TESTFN, FakePath
+from test.support import TESTFN, FakePath, AIX, MACOS
 
 TESTFN2 = TESTFN + "2"
-MACOS = sys.platform.startswith("darwin")
-AIX = sys.platform[:3] == 'aix'
+
 try:
     import grp
     import pwd

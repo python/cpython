@@ -10,7 +10,7 @@ import unittest
 from collections import namedtuple
 
 from test import support
-is_aix = support.is_aix
+AIX = support.AIX
 from test.support.script_helper import (
     run_python_until_end,
     interpreter_requires_environment,
@@ -41,7 +41,7 @@ if sys.platform.startswith("linux"):
         # TODO: Once https://bugs.python.org/issue30672 is addressed, we'll be
         #       able to check this case unconditionally
         EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
-elif is_aix:
+elif AIX:
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
     EXPECTED_C_LOCALE_FS_ENCODING = "iso8859-1"

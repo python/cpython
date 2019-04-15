@@ -10,7 +10,7 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (TESTFN, TESTFN_UNICODE, check_warnings, run_unittest,
-                          make_bad_fd, cpython_only, swap_attr)
+                          make_bad_fd, cpython_only, swap_attr, AIX)
 from collections import UserList
 
 import _io  # C implementation of io
@@ -382,9 +382,9 @@ class OtherFileTests:
                 else:
                     self.assertEqual(f.readable(), False)
                     self.assertEqual(f.writable(), True)
-                    if sys.platform != "darwin" and \
-                       'bsd' not in sys.platform and \
-                       not sys.platform.startswith(('sunos', 'aix')):
+                    if sys.platform != "darwin" and not AIX \
+                       and 'bsd' not in sys.platform \
+                       and not sys.platform.startswith('sunos'):
                         # Somehow /dev/tty appears seekable on some BSDs
                         self.assertEqual(f.seekable(), False)
                     self.assertEqual(f.isatty(), True)

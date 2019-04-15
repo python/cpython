@@ -1,4 +1,4 @@
-from test.support import verbose, is_android, check_warnings
+from test.support import verbose, is_android, check_warnings, AIX
 import unittest
 import locale
 import sys
@@ -370,13 +370,11 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
             raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
         BaseLocalizedTest.setUp(self)
 
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     'bpo-29972: broken test on AIX')
+    @unittest.skipIf(AIX, 'bpo-29972: broken test on AIX')
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     'bpo-29972: broken test on AIX')
+    @unittest.skipIf(AIX, 'bpo-29972: broken test on AIX')
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 
