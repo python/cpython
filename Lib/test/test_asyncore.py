@@ -10,6 +10,7 @@ import struct
 import threading
 
 from test import support
+from test.support import MACOS
 from io import BytesIO
 
 if support.PGO:
@@ -658,7 +659,7 @@ class BaseTestAPI:
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
             self.skipTest("Not applicable to AF_UNIX sockets.")
 
-        if sys.platform == "darwin" and self.use_poll:
+        if MACOS and self.use_poll:
             self.skipTest("poll may fail on macOS; see issue #28087")
 
         class TestClient(BaseClient):

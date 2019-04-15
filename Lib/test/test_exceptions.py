@@ -11,9 +11,8 @@ import errno
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
                           no_tracing, unlink, import_module, script_helper,
-                          SuppressCrashReport)
+                          SuppressCrashReport, JYTHON, MS_WINDOWS)
 from test import support
-
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -273,7 +272,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
-        if not sys.platform.startswith('java'):
+        if not JYTHON:
             test_capi1()
             test_capi2()
             test_capi3()
@@ -317,8 +316,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(w.filename, None)
             self.assertEqual(w.filename2, None)
 
-    @unittest.skipUnless(sys.platform == 'win32',
-                         'test specific to Windows')
+    @unittest.skipUnless(MS_WINDOWS, 'test specific to Windows')
     def test_windows_message(self):
         """Should fill in unknown error code in Windows error message"""
         ctypes = import_module('ctypes')

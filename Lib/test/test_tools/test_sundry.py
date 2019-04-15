@@ -45,7 +45,7 @@ class TestSundryScripts(unittest.TestCase):
             # Unload all modules loaded in this test
             support.modules_cleanup(*old_modules)
 
-    @unittest.skipIf(sys.platform != "win32", "Windows-only test")
+    @unittest.skipUnless(support.MS_WINDOWS, "Windows-only test")
     def test_sundry_windows(self):
         for name in self.windows_only:
             import_tool(name)

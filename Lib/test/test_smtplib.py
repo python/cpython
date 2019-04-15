@@ -19,12 +19,12 @@ import threading
 
 import unittest
 from test import support, mock_socket
-from test.support import HOST, HOSTv4, HOSTv6
+from test.support import HOST, HOSTv4, HOSTv6, MACOS
 from test.support import threading_setup, threading_cleanup, join_thread
 from unittest.mock import Mock
 
 
-if sys.platform == 'darwin':
+if MACOS:
     # select.poll returns a select.POLLHUP at the end of the tests
     # on darwin, so just ignore it
     def handle_expt(self):

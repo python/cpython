@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import AIX, LINUX, MACOS, MS_WINDOWS
 
 import errno
 import io
@@ -40,7 +41,6 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 MAIN_TIMEOUT = 60.0
 
 VSOCKPORT = 1234
-AIX = platform.system() == "AIX"
 
 try:
     import _socket
@@ -1048,7 +1048,7 @@ class GeneralModuleTests(unittest.TestCase):
         # I've ordered this by protocols that have both a tcp and udp
         # protocol, at least for modern Linuxes.
         if (sys.platform.startswith(('freebsd', 'netbsd', 'gnukfreebsd'))
-            or sys.platform in ('linux', 'darwin')):
+            or LINUX or MACOS):
             # avoid the 'echo' service on this platform, as there is an
             # assumption breaking non-standard port/protocol entry
             services = ('daytime', 'qotd', 'domain')
@@ -1077,7 +1077,7 @@ class GeneralModuleTests(unittest.TestCase):
             eq(udpport, port)
         # Now make sure the lookup by port returns the same service name
         # Issue #26936: Android getservbyport() is broken.
-        if not support.is_android:
+        if not support.ANDROID:
             eq(socket.getservbyport(port2), service)
         eq(socket.getservbyport(port, 'tcp'), service)
         if udpport is not None:
@@ -1162,7 +1162,7 @@ class GeneralModuleTests(unittest.TestCase):
         except ImportError:
             self.skipTest('could not import needed symbols from socket')
 
-        if sys.platform == "win32":
+        if MS_WINDOWS:
             try:
                 inet_pton(AF_INET6, '::')
             except OSError as e:
@@ -1252,7 +1252,7 @@ class GeneralModuleTests(unittest.TestCase):
         except ImportError:
             self.skipTest('could not import needed symbols from socket')
 
-        if sys.platform == "win32":
+        if MS_WINDOWS:
             try:
                 inet_ntop(AF_INET6, b'\x00' * 16)
             except OSError as e:
@@ -1655,9 +1655,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(sockaddr, ('ff02::1de:c0:face:8d', 1234, 0, ifindex))
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipUnless(
-        sys.platform == 'win32',
-        'Numeric scope id does not work or undocumented')
+    @unittest.skipUnless(MS_WINDOWS, 'Numeric scope id does not work or undocumented')
     def test_getaddrinfo_ipv6_scopeid_numeric(self):
         # Also works on Linux and Mac OS X, but is not documented (?)
         # Windows, Linux and Max OS X allow nonexistent interface numbers here.
@@ -1684,8 +1682,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual(nameinfo, ('ff02::1de:c0:face:8d%' + test_interface, '1234'))
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
-    @unittest.skipUnless( sys.platform == 'win32',
-        'Numeric scope id does not work or undocumented')
+    @unittest.skipUnless(MS_WINDOWS, 'Numeric scope id does not work or undocumented')
     def test_getnameinfo_ipv6_scopeid_numeric(self):
         # Also works on Linux (undocumented), but does not work on Mac OS X
         # Windows and Linux allow nonexistent interface numbers here.
@@ -2742,7 +2739,7 @@ class SendmsgStreamTests(SendmsgTests):
     # Linux supports MSG_DONTWAIT when sending, but in general, it
     # only works when receiving.  Could add other platforms if they
     # support it too.
-    @skipWithClientIf(sys.platform not in {"linux"},
+    @skipWithClientIf(not LINUX,
                       "MSG_DONTWAIT not known to work on this platform when "
                       "sending")
     def testSendmsgDontWait(self):
@@ -3259,7 +3256,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def _testFDPassCMSG_LEN(self):
         self.createAndSendFDs(1)
 
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(MACOS, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
@@ -3270,7 +3267,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2)
 
     @testFDPassSeparate.client_skip
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(MACOS, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
@@ -3283,7 +3280,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                                           array.array("i", [fd1]))]),
             len(MSG))
 
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(MACOS, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
@@ -3297,7 +3294,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2, ignoreflags=socket.MSG_CTRUNC)
 
     @testFDPassSeparateMinSpace.client_skip
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(MACOS, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
@@ -3321,7 +3318,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             nbytes = self.sendmsgToServer([msg])
         self.assertEqual(nbytes, len(msg))
 
-    @unittest.skipIf(sys.platform == "darwin", "see issue #24725")
+    @unittest.skipIf(MACOS, "see issue #24725")
     def testFDPassEmpty(self):
         # Try to pass an empty FD array.  Can receive either no array
         # or an empty array.
@@ -5021,7 +5018,7 @@ class TestExceptions(unittest.TestCase):
             sock.setblocking(False)
 
 
-@unittest.skipUnless(sys.platform == 'linux', 'Linux specific test')
+@unittest.skipUnless(LINUX, 'Linux specific test')
 class TestLinuxAbstractNamespace(unittest.TestCase):
 
     UNIX_PATH_MAX = 108
@@ -6044,7 +6041,7 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             sock.bind(("type", "n" * 64))
 
 
-@unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
+@unittest.skipUnless(MS_WINDOWS, "requires Windows")
 class TestMSWindowsTCPFlags(unittest.TestCase):
     knownTCPFlags = {
                        # available since long time ago

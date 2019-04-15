@@ -1,0 +1,4 @@
+Add constants in Lib/test/support to support platform determination.
+From platform.system() determine AIX, LINUX, MACOS, WINDOWS.
+From sys determine ANDROID (was is_android) and JYTHON (was is_jython).
+Patch by M. Felt.

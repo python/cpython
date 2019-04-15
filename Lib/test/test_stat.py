@@ -1,8 +1,7 @@
-import unittest
 import os
 import socket
 import sys
-from test.support import (TESTFN, import_fresh_module,
+from test.support import (TESTFN, import_fresh_module, MS_WINDOWS,
                           skip_unless_bind_unix_socket)
 
 c_stat = import_fresh_module('stat', fresh=['_stat'])
@@ -219,7 +218,7 @@ class TestFilemode:
             self.assertTrue(callable(func))
             self.assertEqual(func(0), 0)
 
-    @unittest.skipUnless(sys.platform == "win32",
+    @unittest.skipUnless(MS_WINDOWS,
                          "FILE_ATTRIBUTE_* constants are Win32 specific")
     def test_file_attribute_constants(self):
         for key, value in sorted(self.file_attributes.items()):

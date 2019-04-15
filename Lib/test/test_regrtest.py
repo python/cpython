@@ -19,6 +19,7 @@ import unittest
 from test import libregrtest
 from test import support
 from test.libregrtest import utils
+from test.support import MS_WINDOWS
 
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
@@ -548,7 +549,7 @@ class ProgramsTestCase(BaseTestCase):
                               '--testdir=%s' % self.tmptestdir]
         if hasattr(faulthandler, 'dump_traceback_later'):
             self.regrtest_args.extend(('--timeout', '3600', '-j4'))
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             self.regrtest_args.append('-n')
 
     def check_output(self, output):
@@ -611,7 +612,7 @@ class ProgramsTestCase(BaseTestCase):
 
     @unittest.skipUnless(sysconfig.is_python_build(),
                          'test.bat script is not installed')
-    @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
+    @unittest.skipUnless(MS_WINDOWS, 'Windows only')
     def test_tools_buildbot_test(self):
         # Tools\buildbot\test.bat
         script = os.path.join(ROOT_DIR, 'Tools', 'buildbot', 'test.bat')
@@ -622,7 +623,7 @@ class ProgramsTestCase(BaseTestCase):
             test_args.append('+d')     # Release build, use python.exe
         self.run_batch(script, *test_args, *self.tests)
 
-    @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
+    @unittest.skipUnless(MS_WINDOWS, 'Windows only')
     def test_pcbuild_rt(self):
         # PCbuild\rt.bat
         script = os.path.join(ROOT_DIR, r'PCbuild\rt.bat')

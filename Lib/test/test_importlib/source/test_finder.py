@@ -9,7 +9,7 @@ import py_compile
 import stat
 import sys
 import tempfile
-from test.support import make_legacy_pyc
+from test.support import make_legacy_pyc, MS_WINDOWS
 import unittest
 import warnings
 
@@ -153,7 +153,7 @@ class FinderTests(abc.FinderTests):
         found = self._find(finder, 'mod', loader_only=True)
         self.assertIsNone(found)
 
-    @unittest.skipUnless(sys.platform != 'win32',
+    @unittest.skipIf(MS_WINDOWS,
             'os.chmod() does not support the needed arguments under Windows')
     def test_no_read_directory(self):
         # Issue #16730

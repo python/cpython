@@ -8,7 +8,7 @@ import unittest
 import test.support
 from test import support
 from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
-                          change_cwd)
+                          change_cwd, MACOS, MS_WINDOWS)
 import builtins
 import os
 import sys
@@ -186,7 +186,7 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
     def test_get_path(self):
-        if sys.platform == 'darwin' and sys._framework:
+        if MACOS and sys._framework:
             scheme = 'osx_framework_user'
         else:
             scheme = os.name + '_user'
@@ -470,7 +470,7 @@ class ImportSideEffectTests(unittest.TestCase):
         self.assertTrue(hasattr(builtins, "help"))
 
     def test_aliasing_mbcs(self):
-        if sys.platform == "win32":
+        if MS_WINDOWS:
             import locale
             if locale.getdefaultlocale()[1].startswith('cp'):
                 for value in encodings.aliases.aliases.values():
@@ -559,7 +559,7 @@ class StartupImportTests(unittest.TestCase):
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
 
 
-@unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
+@unittest.skipUnless(MS_WINDOWS, "only supported on Windows")
 class _pthFileTests(unittest.TestCase):
 
     def _create_underpth_exe(self, lines):

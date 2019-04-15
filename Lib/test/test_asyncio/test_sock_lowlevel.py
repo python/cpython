@@ -296,7 +296,7 @@ class BaseSockTestsMixin:
             tr.close()
 
 
-if sys.platform == 'win32':
+if support.MS_WINDOWS:
 
     class SelectEventLoopTests(BaseSockTestsMixin,
                                test_utils.TestCase):

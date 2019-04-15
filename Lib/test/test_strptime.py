@@ -7,6 +7,7 @@ import re
 import os
 import sys
 from test import support
+from test.support import AIX
 from datetime import date as datetime_date
 
 import _strptime
@@ -521,7 +522,7 @@ class CalculationTests(unittest.TestCase):
                         "Calculation of day of the week failed; "
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 
-    if support.is_android:
+    if support.ANDROID:
         # Issue #26929: strftime() on Android incorrectly formats %V or %G for
         # the last or the first incomplete week in a year.
         _ymd_excluded = ((1905, 1, 1), (1906, 12, 31), (2008, 12, 29),
@@ -531,8 +532,7 @@ class CalculationTests(unittest.TestCase):
         _ymd_excluded = ()
         _formats_excluded = ()
 
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     'bpo-29972: broken test on AIX')
+    @unittest.skipIf(AIX, 'bpo-29972: broken test on AIX')
     def test_week_of_year_and_day_of_week_calculation(self):
         # Should be able to infer date if given year, week of year (%U or %W)
         # and day of the week

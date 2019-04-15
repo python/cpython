@@ -54,7 +54,7 @@ def setup_module(machinery, name, path=None):
         delete_registry_tree(HKEY_CURRENT_USER, key)
 
 
-@unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')
+@unittest.skipUnless(support.MS_WINDOWS, 'requires Windows')
 class WindowsRegistryFinderTests:
     # The module name is process-specific, allowing for
     # simultaneous runs of the same test on a single machine.
@@ -86,7 +86,7 @@ class WindowsRegistryFinderTests:
  Source_WindowsRegistryFinderTests
  ) = test_util.test_both(WindowsRegistryFinderTests, machinery=machinery)
 
-@unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')
+@unittest.skipUnless(support.MS_WINDOWS, 'requires Windows')
 class WindowsExtensionSuffixTests:
     def test_tagged_suffix(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES

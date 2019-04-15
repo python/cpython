@@ -8,7 +8,7 @@ import tempfile
 import unittest
 import zipapp
 import zipfile
-from test.support import requires_zlib
+from test.support import requires_zlib, MS_WINDOWS
 
 from unittest.mock import patch
 
@@ -299,8 +299,7 @@ class ZipAppTest(unittest.TestCase):
             self.assertEqual(set(z.namelist()), {'__main__.py'})
 
     # (Unix only) tests that archives with shebang lines are made executable
-    @unittest.skipIf(sys.platform == 'win32',
-                     'Windows does not support an executable bit')
+    @unittest.skipIf(MS_WINDOWS, 'Windows does not support an executable bit')
     def test_shebang_is_executable(self):
         # Test that an archive with a shebang line is made executable.
         source = self.tmpdir / 'source'
@@ -310,8 +309,7 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(source), str(target), interpreter='python')
         self.assertTrue(target.stat().st_mode & stat.S_IEXEC)
 
-    @unittest.skipIf(sys.platform == 'win32',
-                     'Windows does not support an executable bit')
+    @unittest.skipIf(MS_WINDOWS, 'Windows does not support an executable bit')
     def test_no_shebang_is_not_executable(self):
         # Test that an archive with no shebang line is not made executable.
         source = self.tmpdir / 'source'

@@ -14,7 +14,8 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          can_symlink, EnvironmentVarGuard, rmtree)
+                          can_symlink, EnvironmentVarGuard, rmtree,
+                          MACOS, MS_WINDOWS)
 import threading
 import unittest
 import venv
@@ -94,8 +95,8 @@ class BasicTest(BaseTest):
         self.isdir(*self.lib)
         # Issue 21197
         p = self.get_env_file('lib64')
-        conditions = ((struct.calcsize('P') == 8) and (os.name == 'posix') and
-                      (sys.platform != 'darwin'))
+        conditions = ((struct.calcsize('P') == 8)
+                      and (os.name == 'posix') and not MACOS)
         if conditions:
             self.assertTrue(os.path.islink(p))
         else:
@@ -153,7 +154,7 @@ class BasicTest(BaseTest):
             out, err = check_output(cmd)
             self.assertEqual(out.strip(), expected.encode())
 
-    if sys.platform == 'win32':
+    if MS_WINDOWS:
         ENV_SUBDIRS = (
             ('Scripts',),
             ('Include',),

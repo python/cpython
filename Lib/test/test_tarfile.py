@@ -11,7 +11,7 @@ import unittest.mock
 import tarfile
 
 from test import support
-from test.support import script_helper
+from test.support import script_helper, LINUX, MS_WINDOWS
 
 # Check for our compression modules.
 try:
@@ -562,7 +562,7 @@ class MiscReadTestBase(CommonReadTest):
             tar.extractall(DIR, directories)
             for tarinfo in directories:
                 path = os.path.join(DIR, tarinfo.name)
-                if sys.platform != "win32":
+                if not MS_WINDOWS:
                     # Win32 has no support for fine grained permissions.
                     self.assertEqual(tarinfo.mode & 0o777,
                                      os.stat(path).st_mode & 0o777)
@@ -591,7 +591,7 @@ class MiscReadTestBase(CommonReadTest):
                 tar.extract(tarinfo, path=DIR)
                 extracted = os.path.join(DIR, dirtype)
                 self.assertEqual(os.path.getmtime(extracted), tarinfo.mtime)
-                if sys.platform != "win32":
+                if not MS_WINDOWS:
                     self.assertEqual(os.stat(extracted).st_mode & 0o777, 0o755)
         finally:
             support.rmtree(DIR)
@@ -974,7 +974,7 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
         #
         # The function returns False if page size is larger than 4 KiB.
         # For example, ppc64 uses pages of 64 KiB.
-        if sys.platform.startswith("linux"):
+        if LINUX:
             # Linux evidentially has 512 byte st_blocks units.
             name = os.path.join(TEMPDIR, "sparse-test")
             with open(name, "wb") as fobj:
@@ -1334,7 +1334,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         self._test_pathname("foo" + os.sep + os.sep, "foo", dir=True)
 
     def test_abs_pathnames(self):
-        if sys.platform == "win32":
+        if MS_WINDOWS:
             self._test_pathname("C:\\foo", "foo")
         else:
             self._test_pathname("/foo", "foo")
@@ -1404,7 +1404,7 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
         self.assertEqual(data.count(b"\0"), tarfile.RECORDSIZE,
                         "incorrect zero padding")
 
-    @unittest.skipUnless(sys.platform != "win32" and hasattr(os, "umask"),
+    @unittest.skipUnless(not MS_WINDOWS and hasattr(os, "umask"),
                          "Missing umask implementation")
     def test_file_mode(self):
         # Test for issue #8464: Create files with correct

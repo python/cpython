@@ -92,7 +92,7 @@ def test_both(test_class, base=None, **kwargs):
 CASE_INSENSITIVE_FS = True
 # Windows is the only OS that is *always* case-insensitive
 # (OS X *can* be case-sensitive).
-if sys.platform not in ('win32', 'cygwin'):
+if not (support.MS_WINDOWS or support.MACOS):
     changed_name = __file__.upper()
     if changed_name == __file__:
         changed_name = __file__.lower()

@@ -38,7 +38,7 @@ from collections import deque, UserList
 from itertools import cycle, count
 from test import support
 from test.support.script_helper import assert_python_ok, run_python_until_end
-from test.support import FakePath
+from test.support import FakePath, MACOS, MS_WINDOWS
 
 import codecs
 import io  # C implementation of io
@@ -500,7 +500,7 @@ class IOTest(unittest.TestCase):
                 else:
                     self.assertRaises(OSError, obj.write, data)
 
-                if sys.platform.startswith("win") and test in (
+                if MS_WINDOWS and test in (
                         pipe_reader, pipe_writer):
                     # Pipes seem to appear as seekable on Windows
                     continue
@@ -596,7 +596,7 @@ class IOTest(unittest.TestCase):
         # On Windows and Mac OSX this test consumes large resources; It takes
         # a long time to build the >2 GiB file and takes >2 GiB of disk space
         # therefore the resource must be enabled to run this test.
-        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+        if MACOS or MS_WINDOWS:
             support.requires(
                 'largefile',
                 'test requires %s bytes and a long time to run' % self.LARGE)

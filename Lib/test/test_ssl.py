@@ -3,6 +3,7 @@
 import sys
 import unittest
 from test import support
+from test.support import MS_WINDOWS
 import socket
 import select
 import time
@@ -805,7 +806,7 @@ class BasicSocketTests(unittest.TestCase):
             self.assertEqual(paths.cafile, CERTFILE)
             self.assertEqual(paths.capath, CAPATH)
 
-    @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    @unittest.skipUnless(MS_WINDOWS, "Windows specific")
     def test_enum_certificates(self):
         self.assertTrue(ssl.enum_certificates("CA"))
         self.assertTrue(ssl.enum_certificates("ROOT"))
@@ -830,7 +831,7 @@ class BasicSocketTests(unittest.TestCase):
         serverAuth = "1.3.6.1.5.5.7.3.1"
         self.assertIn(serverAuth, trust_oids)
 
-    @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    @unittest.skipUnless(MS_WINDOWS, "Windows specific")
     def test_enum_crls(self):
         self.assertTrue(ssl.enum_crls("CA"))
         self.assertRaises(TypeError, ssl.enum_crls)
@@ -1476,7 +1477,7 @@ class ContextTests(unittest.TestCase):
         self.assertRaises(TypeError, ctx.load_default_certs, None)
         self.assertRaises(TypeError, ctx.load_default_certs, 'SERVER_AUTH')
 
-    @unittest.skipIf(sys.platform == "win32", "not-Windows specific")
+    @unittest.skipIf(MS_WINDOWS, "not-Windows specific")
     @unittest.skipIf(IS_LIBRESSL, "LibreSSL doesn't support env vars")
     def test_load_default_certs_env(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1486,7 +1487,7 @@ class ContextTests(unittest.TestCase):
             ctx.load_default_certs()
             self.assertEqual(ctx.cert_store_stats(), {"crl": 0, "x509": 1, "x509_ca": 0})
 
-    @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    @unittest.skipUnless(MS_WINDOWS, "Windows specific")
     @unittest.skipIf(hasattr(sys, "gettotalrefcount"), "Debug build does not share environment between CRTs")
     def test_load_default_certs_env_windows(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)

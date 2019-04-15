@@ -1,6 +1,7 @@
 import datetime
 from email import utils
 import test.support
+from test.support import MS_WINDOWS
 import time
 import unittest
 import sys
@@ -124,8 +125,7 @@ class LocaltimeTests(unittest.TestCase):
         self.assertEqual(t1, t2)
 
     # XXX: Need a more robust test for Olson's tzdata
-    @unittest.skipIf(sys.platform.startswith('win'),
-                     "Windows does not use Olson's TZ database")
+    @unittest.skipIf(MS_WINDOWS, "Windows does not use Olson's TZ database")
     @unittest.skipUnless(os.path.exists('/usr/share/zoneinfo') or
                          os.path.exists('/usr/lib/zoneinfo'),
                          "Can't find the Olson's TZ database")

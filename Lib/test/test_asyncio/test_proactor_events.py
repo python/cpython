@@ -1143,8 +1143,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         close_transport(tr)
 
 
-@unittest.skipIf(sys.platform != 'win32',
-                 'Proactor is supported on Windows only')
+@unittest.skipUnless(support.MS_WINDOWS, 'Proactor is supported on Windows only')
 class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
 

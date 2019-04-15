@@ -7,8 +7,9 @@ import time
 import threading
 import unittest
 from unittest import mock
+from test.support import MS_WINDOWS
 
-if sys.platform != 'win32':
+if not MS_WINDOWS:
     raise unittest.SkipTest('Windows only')
 
 import _overlapped

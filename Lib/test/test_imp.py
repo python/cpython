@@ -5,7 +5,7 @@ import os.path
 import py_compile
 import sys
 from test import support
-from test.support import script_helper
+from test.support import script_helper, MACOS
 import unittest
 import warnings
 with warnings.catch_warnings():
@@ -136,7 +136,7 @@ class ImportTests(unittest.TestCase):
             'cp1258' : b'\xc0',
             }
 
-        if sys.platform == 'darwin':
+        if MACOS:
             self.assertEqual(fs_encoding, 'utf-8')
             # Mac OS X uses the Normal Form D decomposition
             # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html

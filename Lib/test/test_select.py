@@ -4,9 +4,9 @@ import select
 import sys
 import unittest
 from test import support
+from test.support import MS_WINDOWS
 
-@unittest.skipIf((sys.platform[:3]=='win'),
-                 "can't easily test on this system")
+@unittest.skipIf(MS_WINDOWS, "can't easily test on this system")
 class SelectTestCase(unittest.TestCase):
 
     class Nope:

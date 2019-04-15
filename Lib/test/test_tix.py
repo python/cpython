@@ -17,7 +17,7 @@ class TestTix(unittest.TestCase):
         try:
             self.root = tix.Tk()
         except TclError:
-            if sys.platform.startswith('win'):
+            if support.MS_WINDOWS:
                 self.fail('Tix should always be available on Windows')
             self.skipTest('Tix not available')
         else:
