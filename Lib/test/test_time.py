@@ -551,10 +551,10 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
+        clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
         if hasattr(time, 'clock'):
-            clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
-        else:
-            clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
+            clocks.append('clock')
+
         for name in clocks:
             if name == 'clock':
                 with self.assertWarns(DeprecationWarning):
