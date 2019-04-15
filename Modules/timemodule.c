@@ -145,7 +145,7 @@ perf_counter(_Py_clock_info_t *info)
     return _PyFloat_FromPyTime(t);
 }
 
-#if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
+#if (defined(MS_WINDOWS) || defined(HAVE_CLOCK)) && !defined(__VXWORKS__)
 #define PYCLOCK
 static PyObject*
 pyclock(_Py_clock_info_t *info)
@@ -765,7 +765,7 @@ time_strftime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX)
+#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX) || defined(__VXWORKS__)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
@@ -1001,18 +1001,21 @@ time_mktime(PyObject *self, PyObject *tm_tuple)
         return NULL;
     }
 
-#ifdef _AIX
+#if defined(_AIX) || (defined(__VXWORKS__) && !defined(_WRS_CONFIG_LP64))
     /* bpo-19748: AIX mktime() valid range is 00:00:00 UTC, January 1, 1970
        to 03:14:07 UTC, January 19, 2038. Thanks to the workaround below,
        it is possible to support years in range [1902; 2037] */
     if (tm.tm_year < 2 || tm.tm_year > 137) {
         /* bpo-19748: On AIX, mktime() does not report overflow error
-           for timestamp < -2^31 or timestamp > 2**31-1. */
+           for timestamp < -2^31 or timestamp > 2**31-1. VxWorks has the
+           same issue when working in 32 bit mode. */
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
+#endif
 
+#ifdef _AIX
     /* bpo-34373: AIX mktime() has an integer overflow for years in range
        [1902; 1969]. Workaround the issue by using a year greater or equal than
        1970 (tm_year >= 70): mktime() behaves correctly in that case
