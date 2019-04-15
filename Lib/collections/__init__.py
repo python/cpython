@@ -445,6 +445,8 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__doc__': f'{typename}({arg_list})',
         '__slots__': (),
         '_fields': field_names,
+        '_field_defaults': field_defaults,
+        # alternate spelling for backward compatiblity
         '_fields_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
@@ -1014,7 +1016,7 @@ class UserDict(_collections_abc.MutableMapping):
         self.data = {}
         if dict is not None:
             self.update(dict)
-        if len(kwargs):
+        if kwargs:
             self.update(kwargs)
     def __len__(self): return len(self.data)
     def __getitem__(self, key):

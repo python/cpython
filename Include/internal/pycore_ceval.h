@@ -11,7 +11,10 @@ extern "C" {
 #include "pycore_atomic.h"
 #include "pythread.h"
 
+PyAPI_FUNC(void) _Py_FinishPendingCalls(void);
+
 struct _pending_calls {
+    int finishing;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
     _Py_atomic_int calls_to_do;

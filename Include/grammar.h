@@ -66,26 +66,10 @@ typedef struct {
 } grammar;
 
 /* FUNCTIONS */
-
-grammar *newgrammar(int start);
-void freegrammar(grammar *g);
-dfa *adddfa(grammar *g, int type, const char *name);
-int addstate(dfa *d);
-void addarc(dfa *d, int from, int to, int lbl);
 dfa *PyGrammar_FindDFA(grammar *g, int type);
-
-int addlabel(labellist *ll, int type, const char *str);
-int findlabel(labellist *ll, int type, const char *str);
 const char *PyGrammar_LabelRepr(label *lb);
-void translatelabels(grammar *g);
-
-void addfirstsets(grammar *g);
-
 void PyGrammar_AddAccelerators(grammar *g);
 void PyGrammar_RemoveAccelerators(grammar *);
-
-void printgrammar(grammar *g, FILE *fp);
-void printnonterminals(grammar *g, FILE *fp);
 
 #ifdef __cplusplus
 }

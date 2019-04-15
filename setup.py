@@ -784,9 +784,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('syslog', ['syslogmodule.c']))
 
         # Python interface to subinterpreter C-API.
-        self.add(Extension('_xxsubinterpreters',
-                           ['_xxsubinterpretersmodule.c'],
-                           define_macros=[('Py_BUILD_CORE', '')]))
+        self.add(Extension('_xxsubinterpreters', ['_xxsubinterpretersmodule.c']))
 
         #
         # Here ends the simple stuff.  From here on, modules need certain
@@ -1644,6 +1642,7 @@ class PyBuildExt(build_ext):
         self.detect_crypt()
         self.detect_socket()
         self.detect_openssl_hashlib()
+        self.detect_hash_builtins()
         self.detect_dbm_gdbm()
         self.detect_sqlite()
         self.detect_platform_specific_exts()
@@ -1883,9 +1882,6 @@ class PyBuildExt(build_ext):
         # Add the Tcl/Tk libraries
         libs.append('tk'+ version)
         libs.append('tcl'+ version)
-
-        if HOST_PLATFORM in ['aix3', 'aix4']:
-            libs.append('ld')
 
         # Finally, link with the X11 libraries (not appropriate on cygwin)
         if not CYGWIN:
@@ -2157,6 +2153,7 @@ class PyBuildExt(build_ext):
         openssl_libs = split_var('OPENSSL_LIBS', '-l')
         if not openssl_libs:
             # libssl and libcrypto not found
+            self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
         # Find OpenSSL includes
@@ -2164,6 +2161,7 @@ class PyBuildExt(build_ext):
             'openssl/ssl.h', self.inc_dirs, openssl_includes
         )
         if ssl_incs is None:
+            self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
         # OpenSSL 1.0.2 uses Kerberos for KRB5 ciphers
@@ -2189,6 +2187,7 @@ class PyBuildExt(build_ext):
                            library_dirs=openssl_libdirs,
                            libraries=openssl_libs))
 
+    def detect_hash_builtins(self):
         # We always compile these even when OpenSSL is available (issue #14693).
         # It's harmless and the object code is tiny (40-50 KiB per module,
         # only loaded when actually used).

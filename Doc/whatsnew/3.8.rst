@@ -168,12 +168,36 @@ asyncio
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 
 
+ctypes
+------
+
+On Windows, :class:`~ctypes.CDLL` and subclasses now accept a *winmode* parameter
+to specify flags for the underlying ``LoadLibraryEx`` call. The default flags are
+set to only load DLL dependencies from trusted locations, including the path
+where the DLL is stored (if a full or partial path is used to load the initial
+DLL) and paths added by :func:`~os.add_dll_directory`.
+
+
 gettext
 -------
 
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
 
+inspect
+-------
+
+The :func:`inspect.getdoc` function can now find docstrings for ``__slots__``
+if that attribute is a :class:`dict` where the values are docstrings.
+This provides documentation options similar to what we already have
+for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
+
+  class AudioClip:
+      __slots__ = {'bit_rate': 'expressed in kilohertz to one decimal place',
+                   'duration': 'in seconds, rounded up to an integer'}
+      def __init__(self, bit_rate, duration):
+          self.bit_rate = round(bit_rate / 1000.0, 1)
+          self.duration = ceil(duration)
 
 gc
 --
@@ -224,6 +248,13 @@ Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
 numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 
+os
+--
+
+Added new function :func:`~os.add_dll_directory` on Windows for providing
+additional search paths for native dependencies when importing extension
+modules or loading DLLs using :mod:`ctypes`.
+
 
 os.path
 -------
@@ -263,11 +294,25 @@ contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
 
+socket
+------
+
+Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
+convenience functions to automate the necessary tasks usually involved when
+creating a server socket, including accepting both IPv4 and IPv6 connections
+on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
+
+
 shutil
 ------
 
 :func:`shutil.copytree` now accepts a new ``dirs_exist_ok`` keyword argument.
 (Contributed by Josh Bronson in :issue:`20849`.)
+
+:func:`shutil.make_archive` now defaults to the modern pax (POSIX.1-2001)
+format for new archives to improve portability and standards conformance,
+inherited from the corresponding change to the :mod:`tarfile` module.
+(Contributed by C.A.M. Gerlach in :issue:`30661`.)
 
 
 ssl
@@ -285,6 +330,9 @@ statistics
 Added :func:`statistics.fmean` as a faster, floating point variant of
 :func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
+
+Added :func:`statistics.geometric_mean()`
+(Contributed by Raymond Hettinger in :issue:`27181`.)
 
 Added :func:`statistics.multimode` that returns a list of the most
 common values. (Contributed by Raymond Hettinger in :issue:`35892`.)
@@ -316,6 +364,16 @@ and manipulating normal distributions of a random variable.
     [7.672102882379219, 12.000027119750287, 4.647488369766392]
 
 
+tarfile
+-------
+
+The :mod:`tarfile` module now defaults to the modern pax (POSIX.1-2001)
+format for new archives, instead of the previous GNU-specific one.
+This improves cross-platform portability with a consistent encoding (UTF-8)
+in a standardized and extensible format, and offers several other benefits.
+(Contributed by C.A.M. Gerlach in :issue:`36268`.)
+
+
 tokenize
 --------
 
@@ -337,6 +395,11 @@ in the :class:`tkinter.Spinbox` class.
 Added method :meth:`~tkinter.Canvas.moveto`
 in the :class:`tkinter.Canvas` class.
 (Contributed by Juliette Monsel in :issue:`23831`.)
+
+The :class:`tkinter.PhotoImage` class now has
+:meth:`~tkinter.PhotoImage.transparency_get` and
+:meth:`~tkinter.PhotoImage.transparency_set` methods.  (Contributed by
+Zackery Spytz in :issue:`25451`.)
 
 time
 ----
@@ -442,6 +505,11 @@ Optimizations
   (Contributed by Stefan Behnel, Pablo Galindo Salgado, Raymond Hettinger,
   Neil Schemenauer, and Serhiy Storchaka in :issue:`36012`.)
 
+* Reduced an overhead of converting arguments passed to many builtin functions
+  and methods.  This sped up calling some simple builtin functions and
+  methods up to 20--50%.  (Contributed by Serhiy Storchaka in :issue:`23867`,
+  :issue:`35582` and :issue:`36127`.)
+
 
 Build and C API Changes
 =======================
@@ -480,6 +548,12 @@ Build and C API Changes
   ``1`` for objects implementing ``__index__()``.
   (Contributed by Serhiy Storchaka in :issue:`36048`.)
 
+* Heap-allocated type objects will now increase their reference count
+  in :c:func:`PyObject_Init` (and its parallel macro ``PyObject_INIT``)
+  instead of in :c:func:`PyType_GenericAlloc`. Types that modify instance
+  allocation or deallocation may need to be adjusted.
+  (Contributed by Eddie Elizondo in :issue:`35810`.)
+
 
 Deprecated
 ==========
@@ -504,6 +578,10 @@ Deprecated
   and returning the next item instead.
 
   (Contributed by Berker Peksag in :issue:`9372`.)
+
+* The :class:`typing.NamedTuple` class has deprecated the ``_field_types``
+  attribute in favor of the ``__annotations__`` attribute which has the same
+  information.  (Contributed by Raymond Hettinger in :issue:`36320`.)
 
 * :mod:`ast` classes ``Num``, ``Str``, ``Bytes``, ``NameConstant`` and
   ``Ellipsis`` are considered deprecated and will be removed in future Python
@@ -538,6 +616,29 @@ Deprecated
   version they will be errors.
   (Contributed by Serhiy Storchaka in :issue:`36048`.)
 
+* Deprecated passing the following arguments as keyword arguments:
+
+  - *func* in :func:`functools.partialmethod`, :func:`weakref.finalize`,
+    :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
+    :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
+    :func:`curses.wrapper`.
+  - *function* in :func:`unittest.addModuleCleanup` and
+    :meth:`unittest.TestCase.addCleanup`.
+  - *fn* in the :meth:`~concurrent.futures.Executor.submit` method of
+    :class:`concurrent.futures.ThreadPoolExecutor` and
+    :class:`concurrent.futures.ProcessPoolExecutor`.
+  - *callback* in :meth:`contextlib.ExitStack.callback`,
+    :meth:`contextlib.AsyncExitStack.callback` and
+    :meth:`contextlib.AsyncExitStack.push_async_callback`.
+  - *c* and *typeid* in the :meth:`~multiprocessing.managers.Server.create`
+    method of :class:`multiprocessing.managers.Server` and
+    :class:`multiprocessing.managers.SharedMemoryServer`.
+  - *obj* in :func:`weakref.finalize`.
+
+  In future releases of Python they will be :ref:`positional-only
+  <positional-only_parameter>`.
+  (Contributed by Serhiy Storchaka in :issue:`36492`.)
+
 
 API and Feature Removals
 ========================
@@ -568,6 +669,9 @@ The following features and APIs have been removed from Python 3.8:
 * Removed the ``doctype()`` method of :class:`~xml.etree.ElementTree.XMLParser`.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
+* "unicode_internal" codec is removed.
+  (Contributed by Inada Naoki in :issue:`36297`.)
+
 
 Porting to Python 3.8
 =====================
@@ -591,6 +695,16 @@ Changes in Python behavior
   to use equality tests (``==`` and ``!=``) instead.
   (Contributed by Serhiy Storchaka in :issue:`34850`.)
 
+* The CPython interpreter can swallow exceptions in some circumstances.
+  In Python 3.8 this happens in less cases.  In particular, exceptions
+  raised when getting the attribute from the type dictionary are no longer
+  ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
+
+* On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+  It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
+  older Python versions include the version number, it is recommended to
+  always use the ``sys.platform.startswith('aix')``.
+  (Contributed by M. Felt in :issue:`36588`.)
 
 Changes in the Python API
 -------------------------
@@ -608,6 +722,11 @@ Changes in the Python API
   arguments for changing the selection was deprecated in Python 3.6.  Use
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
+
+* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of the
+  :mod:`xml.dom.minidom` module, and :mod:`xml.etree` now preserve the attribute
+  order specified by the user.
+  (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
 
 * A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
   :func:`dbm.dumb.open` with flags ``'r'`` and ``'w'`` no longer creates
@@ -679,6 +798,96 @@ Changes in the Python API
 * :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
   environment variable and does not use :envvar:`HOME`, which is not normally
   set for regular user accounts.
+
+.. _bpo-36085-whatsnew:
+
+* DLL dependencies for extension modules and DLLs loaded with :mod:`ctypes` on
+  Windows are now resolved more securely. Only the system paths, the directory
+  containing the DLL or PYD file, and directories added with
+  :func:`~os.add_dll_directory` are searched for load-time dependencies.
+  Specifically, :envvar:`PATH` and the current working directory are no longer
+  used, and modifications to these will no longer have any effect on normal DLL
+  resolution. If your application relies on these mechanisms, you should check
+  for :func:`~os.add_dll_directory` and if it exists, use it to add your DLLs
+  directory while loading your library. Note that Windows 7 users will need to
+  ensure that Windows Update KB2533625 has been installed (this is also verified
+  by the installer).
+  (See :issue:`36085`.)
+
+* The header files and functions related to pgen have been removed after its
+  replacement by a pure Python implementation. (Contributed by Pablo Galindo
+  in :issue:`36623`.)
+
+
+Changes in the C API
+--------------------
+
+* Use of ``#`` variants of formats in parsing or building value (e.g.
+  :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,
+  etc.) without ``PY_SSIZE_T_CLEAN`` defined raises ``DeprecationWarning`` now.
+  It will be removed in 3.10 or 4.0.  Read :ref:`arg-parsing` for detail.
+  (Contributed by Inada Naoki in :issue:`36381`.)
+
+
+Changes in the C API
+--------------------------
+
+* Instances of heap-allocated types (such as those created with
+  :c:func:`PyType_FromSpec`) hold a reference to their type object.
+  Increasing the reference count of these type objects has been moved from
+  :c:func:`PyType_GenericAlloc` to the more low-level functions,
+  :c:func:`PyObject_Init` and :c:func:`PyObject_INIT`.
+  This makes types created through :c:func:`PyType_FromSpec` behave like
+  other classes in managed code.
+
+  Statically allocated types are not affected.
+
+  For the vast majority of cases, there should be no side effect.
+  However, types that manually increase the reference count after allocating
+  an instance (perhaps to work around the bug) may now become immortal.
+  To avoid this, these classes need to call Py_DECREF on the type object
+  during instance deallocation.
+
+  To correctly port these types into 3.8, please apply the following
+  changes:
+
+  * Remove :c:macro:`Py_INCREF` on the type object after allocating an
+    instance - if any.
+    This may happen after calling :c:func:`PyObject_New`,
+    :c:func:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
+    :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
+    :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
+
+    Example::
+
+        static foo_struct *
+        foo_new(PyObject *type) {
+            foo_struct *foo = PyObject_GC_New(foo_struct, (PyTypeObject *) type);
+            if (foo == NULL)
+                return NULL;
+        #if PY_VERSION_HEX < 0x03080000
+            // Workaround for Python issue 35810; no longer necessary in Python 3.8
+            PY_INCREF(type)
+        #endif
+            return foo;
+        }
+
+  * Ensure that all custom ``tp_dealloc`` functions of heap-allocated types
+    decrease the type's reference count.
+
+    Example::
+
+        static void
+        foo_dealloc(foo_struct *instance) {
+            PyObject *type = Py_TYPE(instance);
+            PyObject_GC_Del(instance);
+        #if PY_VERSION_HEX >= 0x03080000
+            // This was not needed before Python 3.8 (Python issue 35810)
+            Py_DECREF(type);
+        #endif
+        }
+
+  (Contributed by Eddie Elizondo in :issue:`35810`.)
 
 
 CPython bytecode changes

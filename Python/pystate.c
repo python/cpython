@@ -41,6 +41,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
+    runtime->preconfig = _PyPreConfig_INIT;
 
     runtime->gilstate.check_enabled = 1;
 
@@ -91,6 +92,13 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         PyThread_free_lock(runtime->interpreters.mutex);
         runtime->interpreters.mutex = NULL;
     }
+
+    if (runtime->xidregistry.mutex != NULL) {
+        PyThread_free_lock(runtime->xidregistry.mutex);
+        runtime->xidregistry.mutex = NULL;
+    }
+
+    _PyPreConfig_Clear(&runtime->preconfig);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -166,7 +174,6 @@ PyInterpreterState_New(void)
     interp->id_refcount = -1;
     interp->check_interval = 100;
     interp->core_config = _PyCoreConfig_INIT;
-    interp->config = _PyMainInterpreterConfig_INIT;
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
@@ -213,7 +220,6 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
         PyThreadState_Clear(p);
     HEAD_UNLOCK();
     _PyCoreConfig_Clear(&interp->core_config);
-    _PyMainInterpreterConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
@@ -224,6 +230,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
+    Py_CLEAR(interp->dict);
 #ifdef HAVE_FORK
     Py_CLEAR(interp->before_forkers);
     Py_CLEAR(interp->after_forkers_parent);
@@ -418,7 +425,7 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     int64_t refcount = interp->id_refcount;
     PyThread_release_lock(interp->id_mutex);
 
-    if (refcount == 0) {
+    if (refcount == 0 && interp->requires_idref) {
         // XXX Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         // XXX Possible GILState issues?
@@ -428,16 +435,45 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     }
 }
 
+int
+_PyInterpreterState_RequiresIDRef(PyInterpreterState *interp)
+{
+    return interp->requires_idref;
+}
+
+void
+_PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
+{
+    interp->requires_idref = required ? 1 : 0;
+}
+
 _PyCoreConfig *
 _PyInterpreterState_GetCoreConfig(PyInterpreterState *interp)
 {
     return &interp->core_config;
 }
 
-_PyMainInterpreterConfig *
-_PyInterpreterState_GetMainConfig(PyInterpreterState *interp)
+PyObject *
+_PyInterpreterState_GetMainModule(PyInterpreterState *interp)
 {
-    return &interp->config;
+    if (interp->modules == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
+        return NULL;
+    }
+    return PyMapping_GetItemString(interp->modules, "__main__");
+}
+
+PyObject *
+PyInterpreterState_GetDict(PyInterpreterState *interp)
+{
+    if (interp->dict == NULL) {
+        interp->dict = PyDict_New();
+        if (interp->dict == NULL) {
+            PyErr_Clear();
+        }
+    }
+    /* Returning NULL means no per-interpreter dict is available. */
+    return interp->dict;
 }
 
 /* Default implementation for _PyThreadState_GetFrame */
@@ -1392,7 +1428,7 @@ _register_xidata(PyTypeObject *cls, crossinterpdatafunc getdata)
 static void _register_builtins_for_crossinterpreter_data(void);
 
 int
-_PyCrossInterpreterData_Register_Class(PyTypeObject *cls,
+_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
                                        crossinterpdatafunc getdata)
 {
     if (!PyType_Check(cls)) {

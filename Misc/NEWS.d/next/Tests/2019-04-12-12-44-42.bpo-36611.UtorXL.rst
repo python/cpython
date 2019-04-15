@@ -1,0 +1,2 @@
+Fix ``test_sys.test_getallocatedblocks()`` when :mod:`tracemalloc` is
+enabled.

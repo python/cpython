@@ -41,7 +41,7 @@ import socket
 import struct
 import sys
 import tempfile
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
 import textwrap
 import threading
@@ -3505,6 +3505,19 @@ class QueueHandlerTest(BaseTest):
         listener.stop()
         self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
 
+    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
+                         'logging.handlers.QueueListener required for this test')
+    def test_queue_listener_with_multiple_handlers(self):
+        # Test that queue handler format doesn't affect other handler formats (bpo-35726).
+        self.que_hdlr.setFormatter(self.root_formatter)
+        self.que_logger.addHandler(self.root_hdlr)
+
+        listener = logging.handlers.QueueListener(self.queue, self.que_hdlr)
+        listener.start()
+        self.que_logger.error("error")
+        listener.stop()
+        self.assertEqual(self.stream.getvalue().strip(), "que -> ERROR: error")
+
 if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing
     from unittest.mock import patch
@@ -4141,6 +4154,21 @@ class ModuleLevelMiscTest(BaseTest):
         err = err.decode()
         self.assertIn("exception in __del__", err)
         self.assertIn("ValueError: some error", err)
+
+    def test_recursion_error(self):
+        # Issue 36272
+        code = """if 1:
+            import logging
+
+            def rec():
+                logging.error("foo")
+                rec()
+
+            rec()"""
+        rc, out, err = assert_python_failure("-c", code)
+        err = err.decode()
+        self.assertNotIn("Cannot recover from stack overflow.", err)
+        self.assertEqual(rc, 1)
 
 
 class LogRecordTest(BaseTest):

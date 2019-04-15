@@ -70,7 +70,7 @@ except ImportError:
 #
 
 # Timeout to wait until a process completes
-TIMEOUT = 30.0 # seconds
+TIMEOUT = 60.0 # seconds
 
 def latin(s):
     return s.encode('latin')
@@ -3334,9 +3334,7 @@ class _TestPicklingConnections(BaseTestCase):
             new_conn.close()
             l.close()
 
-        l = socket.socket()
-        l.bind((test.support.HOST, 0))
-        l.listen()
+        l = socket.create_server((test.support.HOST, 0))
         conn.send(l.getsockname())
         new_conn, addr = l.accept()
         conn.send(new_conn)
@@ -4345,9 +4343,7 @@ class TestWait(unittest.TestCase):
 
     def test_wait_socket(self, slow=False):
         from multiprocessing.connection import wait
-        l = socket.socket()
-        l.bind((test.support.HOST, 0))
-        l.listen()
+        l = socket.create_server((test.support.HOST, 0))
         addr = l.getsockname()
         readers = []
         procs = []
