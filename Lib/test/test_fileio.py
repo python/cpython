@@ -10,7 +10,8 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (TESTFN, TESTFN_UNICODE, check_warnings, run_unittest,
-                          make_bad_fd, cpython_only, swap_attr)
+                          make_bad_fd, cpython_only, swap_attr,
+                          AIX, MACOS, MS_WINDOWS)
 from collections import UserList
 
 import _io  # C implementation of io
@@ -371,7 +372,7 @@ class OtherFileTests:
             self.assertEqual(f.isatty(), False)
             f.close()
 
-            if sys.platform != "win32":
+            if not MS_WINDOWS:
                 try:
                     f = self.FileIO("/dev/tty", "a")
                 except OSError:
@@ -382,9 +383,9 @@ class OtherFileTests:
                 else:
                     self.assertEqual(f.readable(), False)
                     self.assertEqual(f.writable(), True)
-                    if sys.platform != "darwin" and \
-                       'bsd' not in sys.platform and \
-                       not sys.platform.startswith(('sunos', 'aix')):
+                    if not (AIX or MACOS) \
+                       and 'bsd' not in sys.platform \
+                       and not sys.platform.startswith('sunos'):
                         # Somehow /dev/tty appears seekable on some BSDs
                         self.assertEqual(f.seekable(), False)
                     self.assertEqual(f.isatty(), True)
@@ -464,7 +465,7 @@ class OtherFileTests:
     def testInvalidFd(self):
         self.assertRaises(ValueError, self.FileIO, -10)
         self.assertRaises(OSError, self.FileIO, make_bad_fd())
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             import msvcrt
             self.assertRaises(OSError, msvcrt.get_osfhandle, make_bad_fd())
 

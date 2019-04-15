@@ -226,7 +226,7 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         self.assertRaises(TclError,tcl.eval,'package require DNE')
 
-    @unittest.skipUnless(sys.platform == 'win32', 'Requires Windows')
+    @unittest.skipUnless(support.MS_WINDOWS, 'Requires Windows')
     def testLoadWithUNC(self):
         # Build a UNC path from the regular path.
         # Something like

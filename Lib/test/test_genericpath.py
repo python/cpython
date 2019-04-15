@@ -9,7 +9,7 @@ import unittest
 import warnings
 from test import support
 from test.support.script_helper import assert_python_ok
-from test.support import FakePath
+from test.support import FakePath, MACOS, MS_WINDOWS
 
 
 def create_file(filename, data=b'foo'):
@@ -436,7 +436,7 @@ class CommonTest(GenericTest):
             self.assertIn(b"foo", self.pathmodule.abspath(b"foo"))
 
         # avoid UnicodeDecodeError on Windows
-        undecodable_path = b'' if sys.platform == 'win32' else b'f\xf2\xf2'
+        undecodable_path = b'' if MS_WINDOWS else b'f\xf2\xf2'
 
         # Abspath returns bytes when the arg is bytes
         with warnings.catch_warnings():
@@ -479,7 +479,7 @@ class CommonTest(GenericTest):
         # UTF-8 name. Windows allows creating a directory with an
         # arbitrary bytes name, but fails to enter this directory
         # (when the bytes name is used).
-        and sys.platform not in ('win32', 'darwin')):
+        and not (MACOS or MS_WINDOWS)):
             name = support.TESTFN_UNDECODABLE
         elif support.TESTFN_NONASCII:
             name = support.TESTFN_NONASCII

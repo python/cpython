@@ -10,6 +10,8 @@ import threading
 import unittest
 from unittest import mock
 from test import support
+from test.support import MS_WINDOWS
+
 try:
     import ssl
 except ImportError:
@@ -783,7 +785,7 @@ class StreamTests(test_utils.TestCase):
 
         self.assertEqual(messages, [])
 
-    @unittest.skipIf(sys.platform == 'win32', "Don't have pipes")
+    @unittest.skipIf(MS_WINDOWS, "Don't have pipes")
     def test_read_all_from_pipe_reader(self):
         # See asyncio issue 168.  This test is derived from the example
         # subprocess_attach_read_pipe.py, but we configure the

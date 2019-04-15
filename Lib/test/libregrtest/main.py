@@ -608,7 +608,7 @@ class Regrtest:
 
         # If we're on windows and this is the parent runner (not a worker),
         # track the load average.
-        if sys.platform == 'win32' and (self.ns.worker_args is None):
+        if support.MS_WINDOWS and (self.ns.worker_args is None):
             from test.libregrtest.win_utils import WindowsLoadTracker
 
             try:

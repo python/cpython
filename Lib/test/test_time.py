@@ -1,4 +1,5 @@
 from test import support
+from test.support import LINUX, MS_WINDOWS
 import decimal
 import enum
 import locale
@@ -497,7 +498,7 @@ class TimeTestCase(unittest.TestCase):
 
     def test_thread_time(self):
         if not hasattr(time, 'thread_time'):
-            if sys.platform.startswith(('linux', 'win')):
+            if LINUX or MS_WINDOWS:
                 self.fail("time.thread_time() should be available on %r"
                           % (sys.platform,))
             else:
@@ -946,7 +947,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             us = us_converter(ns)
             return divmod(us, SEC_TO_US)
 
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             from _testcapi import LONG_MIN, LONG_MAX
 
             # On Windows, timeval.tv_sec type is a C long

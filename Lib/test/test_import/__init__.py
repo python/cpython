@@ -23,10 +23,10 @@ import glob
 
 import test.support
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
+    EnvironmentVarGuard, TESTFN, check_warnings, forget, JYTHON,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
     unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir, DirsOnSysPath)
+    temp_dir, DirsOnSysPath, MS_WINDOWS)
 from test.support import script_helper
 from test.test_importlib.util import uncache
 
@@ -151,7 +151,7 @@ class ImportTests(unittest.TestCase):
         def test_with_extension(ext):
             # The extension is normally ".py", perhaps ".pyw".
             source = TESTFN + ext
-            if is_jython:
+            if JYTHON:
                 pyc = TESTFN + "$py.class"
             else:
                 pyc = TESTFN + ".pyc"
@@ -185,7 +185,7 @@ class ImportTests(unittest.TestCase):
         sys.path.insert(0, os.curdir)
         try:
             test_with_extension(".py")
-            if sys.platform.startswith("win"):
+            if MS_WINDOWS:
                 for ext in [".PY", ".Py", ".pY", ".pyw", ".PYW", ".pYw"]:
                     test_with_extension(ext)
         finally:
@@ -463,7 +463,7 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
 
-    @unittest.skipUnless(sys.platform == "win32", "Windows-specific")
+    @unittest.skipUnless(MS_WINDOWS, "Windows-specific")
     def test_dll_dependency_import(self):
         from _winapi import GetModuleFileName
         dllname = GetModuleFileName(sys.dllhandle)
@@ -711,7 +711,7 @@ class PathsTests(unittest.TestCase):
         unload("test_trailing_slash")
 
     # Regression test for http://bugs.python.org/issue3677.
-    @unittest.skipUnless(sys.platform == 'win32', 'Windows-specific')
+    @unittest.skipUnless(MS_WINDOWS, 'Windows-specific')
     def test_UNC_path(self):
         with open(os.path.join(self.path, 'test_unc_path.py'), 'w') as f:
             f.write("testdata = 'test_unc_path'")

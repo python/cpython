@@ -30,11 +30,10 @@ except ImportError:
     posix = None
 
 from test import support
-from test.support import TESTFN, FakePath
+from test.support import TESTFN, FakePath, AIX, MACOS, MS_WINDOWS
 
 TESTFN2 = TESTFN + "2"
-MACOS = sys.platform.startswith("darwin")
-AIX = sys.platform[:3] == 'aix'
+
 try:
     import grp
     import pwd
@@ -1577,7 +1576,7 @@ class TestWhich(unittest.TestCase):
         base_dir = os.path.dirname(self.dir)
         with support.change_cwd(path=self.dir):
             rv = shutil.which(self.file, path=base_dir)
-            if sys.platform == "win32":
+            if MS_WINDOWS:
                 # Windows: current directory implicitly on PATH
                 self.assertEqual(rv, os.path.join(self.curdir, self.file))
             else:
@@ -1605,7 +1604,7 @@ class TestWhich(unittest.TestCase):
         rv = shutil.which("foo.exe", path=self.dir)
         self.assertIsNone(rv)
 
-    @unittest.skipUnless(sys.platform == "win32",
+    @unittest.skipUnless(MS_WINDOWS,
                          "pathext check is Windows-only")
     def test_pathext_checking(self):
         # Ask for the file without the ".exe" extension, then ensure that

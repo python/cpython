@@ -460,6 +460,16 @@ in a standardized and extensible format, and offers several other benefits.
 (Contributed by C.A.M. Gerlach in :issue:`36268`.)
 
 
+test
+----
+
+The :mod:`test` module now uses ``CONSTANTS`` for the major platforms
+(``AIX``, ``ANDROID``, ``LINUX``, ``JYTHON``, ``MACOS``, ``MS_WINDOWS``)
+to standardize the style compared to the current practice of some constants
+and different styles of sys.platform and platform.system().
+The constants are defined in `test.support`.
+(Contributed by M. Felt in :issue:`36624`.)
+
 tokenize
 --------
 

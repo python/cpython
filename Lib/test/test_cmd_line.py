@@ -9,6 +9,7 @@ import sysconfig
 import tempfile
 import unittest
 from test import support
+from test.support import MS_WINDOWS, MACOS, ANDROID
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
@@ -152,8 +153,7 @@ class CmdLineTest(unittest.TestCase):
     # command line, but how subprocess does decode bytes to unicode. Python
     # doesn't decode the command line because Windows provides directly the
     # arguments as unicode (using wmain() instead of main()).
-    @unittest.skipIf(sys.platform == 'win32',
-                     'Windows has a native unicode API')
+    @unittest.skipIf(MS_WINDOWS, 'Windows has a native unicode API')
     def test_undecodable_code(self):
         undecodable = b"\xff"
         env = os.environ.copy()
@@ -187,8 +187,7 @@ class CmdLineTest(unittest.TestCase):
         if not stdout.startswith(pattern):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
-    @unittest.skipUnless((sys.platform == 'darwin' or
-                support.is_android), 'test specific to Mac OS X and Android')
+    @unittest.skipUnless((MACOS or ANDROID), 'test specific to Mac OS X and Android')
     def test_osx_android_utf8(self):
         def check_output(text):
             decoded = text.decode('utf-8', 'surrogateescape')
@@ -331,7 +330,7 @@ class CmdLineTest(unittest.TestCase):
             print(4, file=sys.stderr)"""
         rc, out, err = assert_python_ok('-c', code)
 
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             self.assertEqual(b'1\r\n2\r\n', out)
             self.assertEqual(b'3\r\n4', err)
         else:
@@ -729,8 +728,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
-    @unittest.skipUnless(sys.platform == 'win32',
-                         'bpo-32457 only applies on Windows')
+    @unittest.skipUnless(MS_WINDOWS, 'bpo-32457 only applies on Windows')
     def test_argv0_normalization(self):
         args = sys.executable, '-c', 'print(0)'
         prefix, exe = os.path.split(sys.executable)

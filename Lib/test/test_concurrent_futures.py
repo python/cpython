@@ -5,6 +5,7 @@ test.support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 test.support.import_module('multiprocessing.synchronize')
 
+from test.support import MS_WINDOWS
 from test.support.script_helper import assert_python_ok
 
 import contextlib
@@ -156,7 +157,7 @@ class ProcessPoolForkMixin(ExecutorMixin):
     ctx = "fork"
 
     def get_context(self):
-        if sys.platform == "win32":
+        if MS_WINDOWS:
             self.skipTest("require unix system")
         return super().get_context()
 
@@ -171,7 +172,7 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
     ctx = "forkserver"
 
     def get_context(self):
-        if sys.platform == "win32":
+        if MS_WINDOWS:
             self.skipTest("require unix system")
         return super().get_context()
 

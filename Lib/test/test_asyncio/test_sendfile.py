@@ -10,6 +10,7 @@ from asyncio import base_events
 from asyncio import constants
 from unittest import mock
 from test import support
+from test.support import MS_WINDOWS
 from test.test_asyncio import utils as test_utils
 
 try:
@@ -281,7 +282,7 @@ class SendfileMixin(SendfileBase):
         self.addCleanup(cleanup)
         return srv_proto, cli_proto
 
-    @unittest.skipIf(sys.platform == 'win32', "UDP sockets are not supported")
+    @unittest.skipIf(MS_WINDOWS, "UDP sockets are not supported")
     def test_sendfile_not_supported(self):
         tr, pr = self.run_loop(
             self.loop.create_datagram_endpoint(
@@ -327,7 +328,7 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(self.file.tell(), len(self.DATA))
 
     def test_sendfile_force_unsupported_native(self):
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             if isinstance(self.loop, asyncio.ProactorEventLoop):
                 self.skipTest("Fails on proactor event loop")
         srv_proto, cli_proto = self.prepare_sendfile()
@@ -507,7 +508,7 @@ class SendfileTestsBase(SendfileMixin, SockSendfileMixin):
     pass
 
 
-if sys.platform == 'win32':
+if MS_WINDOWS:
 
     class SelectEventLoopTests(SendfileTestsBase,
                                test_utils.TestCase):

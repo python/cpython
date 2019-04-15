@@ -8,6 +8,7 @@ import unittest
 from unittest import mock
 
 from test import support
+from test.support import JYTHON, MACOS, MS_WINDOWS
 
 class PlatformTest(unittest.TestCase):
     def clear_caches(self):
@@ -23,7 +24,7 @@ class PlatformTest(unittest.TestCase):
         # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
         # so we add the directory to the path, PYTHONHOME and PYTHONPATH.
         env = None
-        if sys.platform == "win32":
+        if MS_WINDOWS:
             env = {k.upper(): os.environ[k] for k in os.environ}
             env["PATH"] = "{};{}".format(
                 os.path.dirname(sys.executable), env.get("PATH", ""))
@@ -189,7 +190,7 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[4], res.machine)
         self.assertEqual(res[5], res.processor)
 
-    @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
+    @unittest.skipUnless(MS_WINDOWS, "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
         # Issue 7860: make sure we get architecture from the correct variable
         # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
@@ -212,7 +213,7 @@ class PlatformTest(unittest.TestCase):
 
     def test_java_ver(self):
         res = platform.java_ver()
-        if sys.platform == 'java':
+        if JYTHON:
             self.assertTrue(all(res))
 
     def test_win32_ver(self):
@@ -251,7 +252,7 @@ class PlatformTest(unittest.TestCase):
                 self.assertEqual(res[2], 'PowerPC')
 
 
-    @unittest.skipUnless(sys.platform == 'darwin', "OSX only test")
+    @unittest.skipUnless(MACOS, "OSX only test")
     def test_mac_ver_with_fork(self):
         # Issue7895: platform.mac_ver() crashes when using fork without exec
         #

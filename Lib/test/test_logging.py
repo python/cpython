@@ -42,6 +42,7 @@ import struct
 import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import LINUX, MACOS, MS_WINDOWS
 from test import support
 import textwrap
 import threading
@@ -543,7 +544,7 @@ class HandlerTest(BaseTest):
     def test_builtin_handlers(self):
         # We can't actually *use* too many handlers in the tests,
         # but we can try instantiating them with various options
-        if sys.platform in ('linux', 'darwin'):
+        if LINUX or MACOS:
             for existing in (True, False):
                 fd, fn = tempfile.mkstemp()
                 os.close(fd)
@@ -568,7 +569,7 @@ class HandlerTest(BaseTest):
                 h.close()
                 if existing:
                     os.unlink(fn)
-            if sys.platform == 'darwin':
+            if MACOS:
                 sockname = '/var/run/syslog'
             else:
                 sockname = '/dev/log'
@@ -609,7 +610,7 @@ class HandlerTest(BaseTest):
                     (logging.handlers.RotatingFileHandler, (pfn, 'a')),
                     (logging.handlers.TimedRotatingFileHandler, (pfn, 'h')),
                 )
-        if sys.platform in ('linux', 'darwin'):
+        if LINUX or MACOS:
             cases += ((logging.handlers.WatchedFileHandler, (pfn, 'w')),)
         for cls, args in cases:
             h = cls(*args)
@@ -617,7 +618,7 @@ class HandlerTest(BaseTest):
             h.close()
             os.unlink(fn)
 
-    @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
+    @unittest.skipIf(MS_WINDOWS, 'WatchedFileHandler not appropriate for Windows.')
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):

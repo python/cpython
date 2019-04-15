@@ -1,6 +1,7 @@
 # test asynchat
 
 from test import support
+from test.support import HOST, MACOS
 
 import asynchat
 import asyncore
@@ -13,7 +14,6 @@ import time
 import unittest
 import unittest.mock
 
-HOST = support.HOST
 SERVER_QUIT = b'QUIT\n'
 TIMEOUT = 3.0
 
@@ -77,9 +77,9 @@ class echo_client(asynchat.async_chat):
         def handle_connect(self):
             pass
 
-        if sys.platform == 'darwin':
+        if MACOS:
             # select.poll returns a select.POLLHUP at the end of the tests
-            # on darwin, so just ignore it
+            # on macOS, so just ignore it
             def handle_expt(self):
                 pass
 

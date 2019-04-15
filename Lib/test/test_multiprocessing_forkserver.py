@@ -7,7 +7,7 @@ from test import support
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
 
-if sys.platform == "win32":
+if support.MS_WINDOWS:
     raise unittest.SkipTest("forkserver is not available on Windows")
 
 test._test_multiprocessing.install_tests_in_module_dict(globals(), 'forkserver')

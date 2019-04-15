@@ -14,6 +14,7 @@ import sys
 import unittest
 import warnings
 from test import support, string_tests
+from test.support import JYTHON
 
 # Error handling (bad decoder return)
 def search_function(encoding):
@@ -81,7 +82,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertNotEqual(r"\u0020", " ")
 
     def test_ascii(self):
-        if not sys.platform.startswith('java'):
+        if not support.JYTHON:
             # Test basic sanity of repr()
             self.assertEqual(ascii('abc'), "'abc'")
             self.assertEqual(ascii('ab\\c'), "'ab\\\\c'")
@@ -123,7 +124,7 @@ class UnicodeTest(string_tests.CommonTest,
             self.assertRaises(TypeError, ascii, WrongRepr())
 
     def test_repr(self):
-        if not sys.platform.startswith('java'):
+        if not support.JYTHON:
             # Test basic sanity of repr()
             self.assertEqual(repr('abc'), "'abc'")
             self.assertEqual(repr('ab\\c'), "'ab\\\\c'")
@@ -584,7 +585,7 @@ class UnicodeTest(string_tests.CommonTest,
 
     def test_isupper(self):
         super().test_isupper()
-        if not sys.platform.startswith('java'):
+        if not support.JYTHON:
             self.checkequalnofix(False, '\u1FFc', 'isupper')
         self.assertTrue('\u2167'.isupper())
         self.assertFalse('\u2177'.isupper())
@@ -1344,7 +1345,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual("%s, %s, %i, %f, %5.2f" % ("abc", "abc", -1, -2, 3.5), 'abc, abc, -1, -2.000000,  3.50')
         self.assertEqual("%s, %s, %i, %f, %5.2f" % ("abc", "abc", -1, -2, 3.57), 'abc, abc, -1, -2.000000,  3.57')
         self.assertEqual("%s, %s, %i, %f, %5.2f" % ("abc", "abc", -1, -2, 1003.57), 'abc, abc, -1, -2.000000, 1003.57')
-        if not sys.platform.startswith('java'):
+        if not support.JYTHON:
             self.assertEqual("%r, %r" % (b"abc", "abc"), "b'abc', 'abc'")
             self.assertEqual("%r" % ("\u1234",), "'\u1234'")
             self.assertEqual("%a" % ("\u1234",), "'\\u1234'")
@@ -1537,7 +1538,7 @@ class UnicodeTest(string_tests.CommonTest,
         # unicode(obj, encoding, error) tests (this maps to
         # PyUnicode_FromEncodedObject() at C level)
 
-        if not sys.platform.startswith('java'):
+        if not support.JYTHON:
             self.assertRaises(
                 TypeError,
                 str,
@@ -1551,7 +1552,7 @@ class UnicodeTest(string_tests.CommonTest,
             'strings are decoded to unicode'
         )
 
-        if not sys.platform.startswith('java'):
+        if not support.JYTHON:
             self.assertEqual(
                 str(
                     memoryview(b'character buffers are decoded to unicode'),

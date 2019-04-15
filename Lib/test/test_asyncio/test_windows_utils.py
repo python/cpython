@@ -3,8 +3,9 @@
 import sys
 import unittest
 import warnings
+from test import support
 
-if sys.platform != 'win32':
+if not support.MS_WINDOWS:
     raise unittest.SkipTest('Windows only')
 
 import _overlapped
@@ -12,7 +13,6 @@ import _winapi
 
 import asyncio
 from asyncio import windows_utils
-from test import support
 
 
 def tearDownModule():

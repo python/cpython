@@ -1,7 +1,7 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import run_unittest, verbose, requires_IEEE_754
+from test.support import run_unittest, verbose, requires_IEEE_754, MACOS
 from test import support
 import unittest
 import itertools
@@ -1478,7 +1478,7 @@ class MathTests(unittest.TestCase):
         SKIP_ON_TIGER = {'tan0064'}
 
         osx_version = None
-        if sys.platform == 'darwin':
+        if MACOS:
             version_txt = platform.mac_ver()[0]
             try:
                 osx_version = tuple(map(int, version_txt.split('.')))

@@ -7,7 +7,7 @@ import subprocess
 import sys
 import sysconfig
 from test import support
-from test.support import script_helper, is_android
+from test.support import script_helper, ANDROID, AIX, MS_WINDOWS
 import tempfile
 import threading
 import unittest
@@ -19,7 +19,6 @@ except ImportError:
     _testcapi = None
 
 TIMEOUT = 0.5
-MS_WINDOWS = (os.name == 'nt')
 _cflags = sysconfig.get_config_var('CFLAGS') or ''
 _config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
 UB_SANITIZER = (
@@ -43,7 +42,7 @@ def expected_traceback(lineno1, lineno2, header, min_count=1):
 
 def skip_segfault_on_android(test):
     # Issue #32138: Raising SIGSEGV on Android may not cause a crash.
-    return unittest.skipIf(is_android,
+    return unittest.skipIf(ANDROID,
                            'raising SIGSEGV on Android is unreliable')(test)
 
 @contextmanager
@@ -130,8 +129,7 @@ class FaultHandlerTests(unittest.TestCase):
         fatal_error = 'Windows fatal exception: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
 
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     "the first page of memory is a mapped read-only on AIX")
+    @unittest.skipIf(AIX, "the first page of memory is a mapped read-only on AIX")
     def test_read_null(self):
         if not MS_WINDOWS:
             self.check_fatal_error("""
@@ -182,7 +180,7 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Aborted')
 
-    @unittest.skipIf(sys.platform == 'win32',
+    @unittest.skipIf(MS_WINDOWS,
                      "SIGFPE cannot be caught on Windows")
     def test_sigfpe(self):
         self.check_fatal_error("""
@@ -277,8 +275,7 @@ class FaultHandlerTests(unittest.TestCase):
                 'Segmentation fault',
                 filename=filename)
 
-    @unittest.skipIf(sys.platform == "win32",
-                     "subprocess doesn't support pass_fds on Windows")
+    @unittest.skipIf(MS_WINDOWS, "subprocess doesn't support pass_fds on Windows")
     @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
                      "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
@@ -434,8 +431,7 @@ class FaultHandlerTests(unittest.TestCase):
         with temporary_filename() as filename:
             self.check_dump_traceback(filename=filename)
 
-    @unittest.skipIf(sys.platform == "win32",
-                     "subprocess doesn't support pass_fds on Windows")
+    @unittest.skipIf(MS_WINDOWS, "subprocess doesn't support pass_fds on Windows")
     def test_dump_traceback_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback(fd=fp.fileno())
@@ -607,8 +603,7 @@ class FaultHandlerTests(unittest.TestCase):
         with temporary_filename() as filename:
             self.check_dump_traceback_later(filename=filename)
 
-    @unittest.skipIf(sys.platform == "win32",
-                     "subprocess doesn't support pass_fds on Windows")
+    @unittest.skipIf(MS_WINDOWS, "subprocess doesn't support pass_fds on Windows")
     def test_dump_traceback_later_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback_later(fd=fp.fileno())
@@ -709,8 +704,7 @@ class FaultHandlerTests(unittest.TestCase):
         with temporary_filename() as filename:
             self.check_register(filename=filename)
 
-    @unittest.skipIf(sys.platform == "win32",
-                     "subprocess doesn't support pass_fds on Windows")
+    @unittest.skipIf(MS_WINDOWS, "subprocess doesn't support pass_fds on Windows")
     def test_register_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_register(fd=fp.fileno())

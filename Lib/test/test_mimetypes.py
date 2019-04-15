@@ -7,6 +7,7 @@ import unittest
 
 from test import support
 from platform import win32_edition
+from test.support import MS_WINDOWS
 
 # Tell it we don't know about external files:
 mimetypes.knownfiles = []
@@ -103,7 +104,7 @@ class MimeTypesTestCase(unittest.TestCase):
             type='image/jpg', strict=False), '.jpg')
 
 
-@unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
+@unittest.skipUnless(MS_WINDOWS, "Windows only")
 class Win32MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         # ensure all entries actually come from the Windows registry

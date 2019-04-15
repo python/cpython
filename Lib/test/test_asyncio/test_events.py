@@ -22,7 +22,10 @@ import unittest
 from unittest import mock
 import weakref
 
-if sys.platform != 'win32':
+from test import support
+from test.support import AIX, MACOS, MS_WINDOWS
+
+if not MS_WINDOWS:
     import tty
 
 import asyncio
@@ -33,7 +36,6 @@ from asyncio import events
 from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
-from test import support
 
 
 def tearDownModule():
@@ -42,9 +44,9 @@ def tearDownModule():
 
 def broken_unix_getsockname():
     """Return True if the platform is Mac OS 10.4 or older."""
-    if sys.platform.startswith("aix"):
+    if AIX:
         return True
-    elif sys.platform != 'darwin':
+    elif not MACOS:
         return False
     version = platform.mac_ver()[0]
     version = tuple(map(int, version.split('.')))
@@ -710,7 +712,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_ssl_connect_accepted_socket(self):
-        if (sys.platform == 'win32' and
+        if (MS_WINDOWS and
             sys.version_info < (3, 5) and
             isinstance(self.loop, proactor_events.BaseProactorEventLoop)
             ):
@@ -1252,7 +1254,7 @@ class EventLoopTestsMixin:
         server.transport.close()
 
     def test_create_datagram_endpoint_sock(self):
-        if (sys.platform == 'win32' and
+        if (MS_WINDOWS and
                 isinstance(self.loop, proactor_events.BaseProactorEventLoop)):
             raise unittest.SkipTest(
                 'UDP is not supported with proactor event loops')
@@ -1294,8 +1296,7 @@ class EventLoopTestsMixin:
         self.assertIsNone(loop._csock)
         self.assertIsNone(loop._ssock)
 
-    @unittest.skipUnless(sys.platform != 'win32',
-                         "Don't support pipes for Windows")
+    @unittest.skipIf(MS_WINDOWS, "Don't support pipes for Windows")
     def test_read_pipe(self):
         proto = MyReadPipeProto(loop=self.loop)
 
@@ -1328,8 +1329,7 @@ class EventLoopTestsMixin:
         # extra info is available
         self.assertIsNotNone(proto.transport.get_extra_info('pipe'))
 
-    @unittest.skipUnless(sys.platform != 'win32',
-                         "Don't support pipes for Windows")
+    @unittest.skipIf(MS_WINDOWS, "Don't support pipes for Windows")
     def test_unclosed_pipe_transport(self):
         # This test reproduces the issue #314 on GitHub
         loop = self.create_event_loop()
@@ -1362,8 +1362,7 @@ class EventLoopTestsMixin:
         read_transport._pipe = None
         write_transport._pipe = None
 
-    @unittest.skipUnless(sys.platform != 'win32',
-                         "Don't support pipes for Windows")
+    @unittest.skipIf(MS_WINDOWS, "Don't support pipes for Windows")
     def test_read_pty_output(self):
         proto = MyReadPipeProto(loop=self.loop)
 
@@ -1397,8 +1396,7 @@ class EventLoopTestsMixin:
         # extra info is available
         self.assertIsNotNone(proto.transport.get_extra_info('pipe'))
 
-    @unittest.skipUnless(sys.platform != 'win32',
-                         "Don't support pipes for Windows")
+    @unittest.skipIf(MS_WINDOWS, "Don't support pipes for Windows")
     def test_write_pipe(self):
         rpipe, wpipe = os.pipe()
         pipeobj = io.open(wpipe, 'wb', 1024)
@@ -1436,8 +1434,7 @@ class EventLoopTestsMixin:
         self.loop.run_until_complete(proto.done)
         self.assertEqual('CLOSED', proto.state)
 
-    @unittest.skipUnless(sys.platform != 'win32',
-                         "Don't support pipes for Windows")
+    @unittest.skipIf(MS_WINDOWS, "Don't support pipes for Windows")
     def test_write_pipe_disconnect_on_close(self):
         rsock, wsock = socket.socketpair()
         rsock.setblocking(False)
@@ -1459,8 +1456,7 @@ class EventLoopTestsMixin:
         self.loop.run_until_complete(proto.done)
         self.assertEqual('CLOSED', proto.state)
 
-    @unittest.skipUnless(sys.platform != 'win32',
-                         "Don't support pipes for Windows")
+    @unittest.skipIf(MS_WINDOWS, "Don't support pipes for Windows")
     # select, poll and kqueue don't support character devices (PTY) on Mac OS X
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
@@ -1503,8 +1499,7 @@ class EventLoopTestsMixin:
         self.loop.run_until_complete(proto.done)
         self.assertEqual('CLOSED', proto.state)
 
-    @unittest.skipUnless(sys.platform != 'win32',
-                         "Don't support pipes for Windows")
+    @unittest.skipIf(MS_WINDOWS, "Don't support pipes for Windows")
     # select, poll and kqueue don't support character devices (PTY) on Mac OS X
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
@@ -1711,14 +1706,14 @@ class EventLoopTestsMixin:
 class SubprocessTestsMixin:
 
     def check_terminated(self, returncode):
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             self.assertIsInstance(returncode, int)
             # expect 1 but sometimes get 0
         else:
             self.assertEqual(-signal.SIGTERM, returncode)
 
     def check_killed(self, returncode):
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             self.assertIsInstance(returncode, int)
             # expect 1 but sometimes get 0
         else:
@@ -1839,7 +1834,7 @@ class SubprocessTestsMixin:
         self.check_terminated(proto.returncode)
         transp.close()
 
-    @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
+    @unittest.skipIf(MS_WINDOWS, "Don't have SIGHUP")
     def test_subprocess_send_signal(self):
         # bpo-31034: Make sure that we get the default signal handler (killing
         # the process). The parent process may have decided to ignore SIGHUP,
@@ -1925,7 +1920,7 @@ class SubprocessTestsMixin:
         self.loop.run_until_complete(proto.disconnects[1])
         stdin.write(b'xxx')
         self.loop.run_until_complete(proto.got_data[2].wait())
-        if sys.platform != 'win32':
+        if not MS_WINDOWS:
             self.assertEqual(b'ERR:BrokenPipeError', proto.data[2])
         else:
             # After closing the read-end of a pipe, writing to the
@@ -1982,7 +1977,7 @@ class SubprocessTestsMixin:
             self.loop.run_until_complete(connect(shell=False))
 
 
-if sys.platform == 'win32':
+if MS_WINDOWS:
 
     class SelectEventLoopTests(EventLoopTestsMixin,
                                test_utils.TestCase):
@@ -2601,14 +2596,14 @@ class GetEventLoopTestsMixin:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-        if sys.platform != 'win32':
+        if not MS_WINDOWS:
             watcher = asyncio.SafeChildWatcher()
             watcher.attach_loop(self.loop)
             asyncio.set_child_watcher(watcher)
 
     def tearDown(self):
         try:
-            if sys.platform != 'win32':
+            if not MS_WINDOWS:
                 asyncio.set_child_watcher(None)
 
             super().tearDown()
@@ -2626,7 +2621,7 @@ class GetEventLoopTestsMixin:
             asyncio.get_running_loop = self.get_running_loop_saved
             asyncio.get_event_loop = self.get_event_loop_saved
 
-    if sys.platform != 'win32':
+    if not MS_WINDOWS:
 
         def test_get_event_loop_new_process(self):
             # Issue bpo-32126: The multiprocessing module used by
