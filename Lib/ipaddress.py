@@ -1442,7 +1442,13 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         # Constructing from a tuple (addr, [mask])
         elif isinstance(address, tuple):
             addr = address[0]
-            mask = address[1] if len(address) > 1 else self._max_prefixlen
+            if len(address) > 1:
+                if isinstance(address[1], int) and address[1] > 32:
+                    raise NetmaskValueError(f"The netmask is not valid {address[1]}")
+                mask = address[1]
+            else:
+                mask = self._max_prefixlen
+            #mask = address[1] if len(address) > 1 else self._max_prefixlen
         # Assume input argument to be string or any object representation
         # which converts into a formatted IP prefix string.
         else:

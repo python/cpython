@@ -1,0 +1,2 @@
+IPv4Network raises a ``NetmaskValueError`` exception if the netmask is not
+between 0 and 32. Contributed by Stéphane Wirtel.
