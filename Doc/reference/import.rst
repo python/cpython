@@ -942,7 +942,7 @@ after the first. For example, given the following package layout::
         moduleA.py
 
 In either ``subpackage1/moduleX.py`` or ``subpackage1/__init__.py``,
-the following are valid relative imports:
+the following are valid relative imports::
 
     from .moduleY import spam
     from .moduleY import spam as ham
@@ -951,21 +951,14 @@ the following are valid relative imports:
     from ..subpackage2.moduleZ import eggs
     from ..moduleA import foo
 
-Relative imports must always use ``from <> import``; ``import <>`` is always absolute.
-Of course, absolute imports can use ``from <> import`` by omitting the leading dots.
-The reason ``import .foo`` is prohibited is because after
+Absolute imports may use either the ``import <>`` or ``from <> import <>`` 
+syntax, but relative imports may only use the second form; the reason
+for this is that::
 
     import XXX.YYY.ZZZ
 
-then
-
-    XXX.YYY.ZZZ
-
-is usable in an expression. But
-
-    .moduleY
-
-is not usable in an expression.
+should expose ``XXX.YYY.ZZZ`` as a usable expression, but .moduleY is
+not a valid expression.
 
 
 Special considerations for __main__
