@@ -1056,6 +1056,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
+		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
 		$(srcdir)/Include/cpython/unicodeobject.h \
