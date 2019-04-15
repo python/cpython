@@ -117,6 +117,7 @@
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
+    <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
