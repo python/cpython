@@ -961,20 +961,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(128, ipaddress._count_righthand_zero_bits(0, 128))
         self.assertEqual("IPv4Network('1.2.3.0/24')", repr(self.ipv4_network))
 
-    def testMissingNetworkVersion(self):
-        class Broken(ipaddress._BaseNetwork):
-            pass
-        broken = Broken('127.0.0.1')
-        with self.assertRaisesRegex(NotImplementedError, "Broken.*version"):
-            broken.version
-
-    def testMissingAddressClass(self):
-        class Broken(ipaddress._BaseNetwork):
-            pass
-        broken = Broken('127.0.0.1')
-        with self.assertRaisesRegex(NotImplementedError, "Broken.*address"):
-            broken._address_class
-
     def testGetNetwork(self):
         self.assertEqual(int(self.ipv4_network.network_address), 16909056)
         self.assertEqual(str(self.ipv4_network.network_address), '1.2.3.0')
@@ -1986,25 +1972,22 @@ class IpaddrUnitTest(unittest.TestCase):
 
     def testNetworkElementCaching(self):
         # V4 - make sure we're empty
-        self.assertNotIn('network_address', self.ipv4_network._cache)
-        self.assertNotIn('broadcast_address', self.ipv4_network._cache)
-        self.assertNotIn('hostmask', self.ipv4_network._cache)
+        self.assertNotIn('broadcast_address', self.ipv4_network.__dict__)
+        self.assertNotIn('hostmask', self.ipv4_network.__dict__)
 
         # V4 - populate and test
-        self.assertEqual(self.ipv4_network.network_address,
-                         ipaddress.IPv4Address('1.2.3.0'))
         self.assertEqual(self.ipv4_network.broadcast_address,
                          ipaddress.IPv4Address('1.2.3.255'))
         self.assertEqual(self.ipv4_network.hostmask,
                          ipaddress.IPv4Address('0.0.0.255'))
 
         # V4 - check we're cached
-        self.assertIn('broadcast_address', self.ipv4_network._cache)
-        self.assertIn('hostmask', self.ipv4_network._cache)
+        self.assertIn('broadcast_address', self.ipv4_network.__dict__)
+        self.assertIn('hostmask', self.ipv4_network.__dict__)
 
         # V6 - make sure we're empty
-        self.assertNotIn('broadcast_address', self.ipv6_network._cache)
-        self.assertNotIn('hostmask', self.ipv6_network._cache)
+        self.assertNotIn('broadcast_address', self.ipv6_network.__dict__)
+        self.assertNotIn('hostmask', self.ipv6_network.__dict__)
 
         # V6 - populate and test
         self.assertEqual(self.ipv6_network.network_address,
@@ -2024,10 +2007,10 @@ class IpaddrUnitTest(unittest.TestCase):
                          ipaddress.IPv6Address('::ffff:ffff:ffff:ffff'))
 
         # V6 - check we're cached
-        self.assertIn('broadcast_address', self.ipv6_network._cache)
-        self.assertIn('hostmask', self.ipv6_network._cache)
-        self.assertIn('broadcast_address', self.ipv6_interface.network._cache)
-        self.assertIn('hostmask', self.ipv6_interface.network._cache)
+        self.assertIn('broadcast_address', self.ipv6_network.__dict__)
+        self.assertIn('hostmask', self.ipv6_network.__dict__)
+        self.assertIn('broadcast_address', self.ipv6_interface.network.__dict__)
+        self.assertIn('hostmask', self.ipv6_interface.network.__dict__)
 
     def testTeredo(self):
         # stolen from wikipedia
