@@ -81,14 +81,8 @@ class TestImaplib(unittest.TestCase):
             except socket.error:
                 pass
 
-        expected_errnos = [
-            # This is the exception that should be raised.
-            errno.ECONNREFUSED,
-        ]
-        if hasattr(errno, 'EADDRNOTAVAIL'):
-            # socket.create_connection() fails randomly with
-            # EADDRNOTAVAIL on Travis CI.
-            expected_errnos.append(errno.EADDRNOTAVAIL)
+        # This is the exception that should be raised.
+        expected_errnos = support.get_socket_conn_refused_errs()
         with self.assertRaises(OSError) as cm:
             imaplib.IMAP4()
         self.assertIn(cm.exception.errno, expected_errnos)
