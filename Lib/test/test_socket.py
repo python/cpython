@@ -4720,14 +4720,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
         # On Solaris, ENETUNREACH is returned in this circumstance instead
         # of ECONNREFUSED.  So, if that errno exists, add it to our list of
         # expected errnos.
-        expected_errnos = [ errno.ECONNREFUSED, ]
-        if hasattr(errno, 'ENETUNREACH'):
-            expected_errnos.append(errno.ENETUNREACH)
-        if hasattr(errno, 'EADDRNOTAVAIL'):
-            # bpo-31910: socket.create_connection() fails randomly
-            # with EADDRNOTAVAIL on Travis CI
-            expected_errnos.append(errno.EADDRNOTAVAIL)
-
+        expected_errnos = support.get_socket_conn_refused_errs()
         self.assertIn(cm.exception.errno, expected_errnos)
 
     def test_create_connection_timeout(self):
