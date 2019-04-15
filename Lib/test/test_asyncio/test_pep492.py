@@ -38,6 +38,7 @@ class BaseTest(test_utils.TestCase):
         self.loop._process_events = mock.Mock()
         self.loop._selector = mock.Mock()
         self.loop._selector.select.return_value = ()
+        self.loop._write_to_self = mock.Mock()
         self.set_event_loop(self.loop)
 
 

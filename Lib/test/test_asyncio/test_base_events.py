@@ -255,6 +255,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             calls.append(arg)
 
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
         self.loop.call_later(-1, cb, 'a')
         self.loop.call_later(-2, cb, 'b')
         test_utils.run_briefly(self.loop)
@@ -265,6 +266,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.stop()
 
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
         delay = 0.1
 
         when = self.loop.time() + delay
@@ -486,6 +488,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             raise ShowStopper
 
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
         self.loop.call_soon(throw)
         try:
             self.loop.run_until_complete(foo(0.1))
@@ -547,6 +550,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     def test_default_exc_handler_callback(self):
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
 
         def zero_error(fut):
             fut.set_result(True)
@@ -574,6 +578,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     def test_default_exc_handler_coro(self):
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
 
         @asyncio.coroutine
         def zero_error_coro():
@@ -719,6 +724,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     def test_set_task_factory(self):
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
 
         class MyTask(asyncio.Task):
             pass
@@ -835,6 +841,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             raise KeyboardInterrupt
 
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
         self.loop.call_exception_handler = mock.Mock()
 
         try:
@@ -854,6 +861,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             raise KeyboardInterrupt
 
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
 
         try:
             self.loop.run_until_complete(raise_keyboard_interrupt())
@@ -894,6 +902,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         self.loop._process_events = proc_events
         self.loop._selector.select.return_value = (event_sentinel,)
+        self.loop._write_to_self = mock.Mock()
 
         for i in range(1, 3):
             with self.subTest('Loop %d/2' % i):
@@ -913,6 +922,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             count += 1
 
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
         self.loop.call_soon(callback)
         test_utils.run_once(self.loop)
         self.assertEqual(count, 1)
@@ -920,6 +930,7 @@ class BaseEventLoopTests(test_utils.TestCase):
     def test_run_forever_pre_stopped(self):
         # Test that the old idiom for pre-stopping the loop works.
         self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
         self.loop.stop()
         self.loop.run_forever()
         self.loop._selector.select.assert_called_once_with(0)
@@ -1860,6 +1871,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     @mock.patch('asyncio.base_events.logger')
     def test_log_slow_callbacks(self, m_logger):
+        self.loop._write_to_self = mock.Mock()
         def stop_loop_cb(loop):
             loop.stop()
 

@@ -412,6 +412,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             task = self._task_factory(self, coro)
             tasks._set_task_name(task, name)
+        self._write_to_self()
 
         return task
 
@@ -595,6 +596,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         Every callback already scheduled will still run.  This simply informs
         run_forever to stop looping after a complete iteration.
         """
+        self._write_to_self()
         self._stopping = True
 
     def close(self):
