@@ -102,6 +102,9 @@
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pymem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\pystate.h">
       <Filter>Include</Filter>
     </ClInclude>
