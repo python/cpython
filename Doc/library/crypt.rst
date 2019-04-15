@@ -30,7 +30,7 @@ the :manpage:`crypt(3)` routine in the running system.  Therefore, any
 extensions available on the current implementation will also  be available on
 this module.
 
-Note: VxWorks doesn't support this module.
+.. availability:: Unix. Not available on VxWorks.
 
 Hashing Methods
 ---------------
