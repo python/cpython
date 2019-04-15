@@ -1374,7 +1374,7 @@ gc_set_thresh(PyObject *self, PyObject *args)
                           &_PyRuntime.gc.generations[1].threshold,
                           &_PyRuntime.gc.generations[2].threshold))
         return NULL;
-    for (i = 2; i < NUM_GENERATIONS; i++) {
+    for (i = 3; i < NUM_GENERATIONS; i++) {
         /* generations higher than 2 get the same threshold */
         _PyRuntime.gc.generations[i].threshold = _PyRuntime.gc.generations[2].threshold;
     }
@@ -1524,7 +1524,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     /* If generation is passed, we extract only that generation */
-    if (generation != -1) { 
+    if (generation != -1) {
         if (generation >= NUM_GENERATIONS) {
             PyErr_Format(PyExc_ValueError,
                          "generation parameter must be less than the number of "
