@@ -101,6 +101,8 @@ __all__ = [
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     "bind_unix_socket",
+    # platform
+    "is_aix",
     # processes
     'temp_umask', "reap_children",
     # logging
@@ -815,6 +817,7 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
+is_aix = platform.system() == 'AIX'
 
 is_android = hasattr(sys, 'getandroidapilevel')
 
