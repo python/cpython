@@ -153,7 +153,7 @@ Functions
    :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
    microsecond.
 
-   VxWorks doesn't support this fucntion.
+   .. availability:: Windows, Unix. Not available on VxWorks.
 
    .. deprecated:: 3.3
       The behaviour of this function depends on the platform: use
