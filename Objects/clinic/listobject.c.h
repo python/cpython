@@ -268,6 +268,52 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(list_rindex__doc__,
+"rindex($self, value, start=0, stop=sys.maxsize, /)\n"
+"--\n"
+"\n"
+"Return last index of value.\n"
+"\n"
+"Raises ValueError if the value is not present.");
+
+#define LIST_RINDEX_METHODDEF    \
+    {"rindex", (PyCFunction)(void(*)(void))list_rindex, METH_FASTCALL, list_rindex__doc__},
+
+static PyObject *
+list_rindex_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
+                 Py_ssize_t stop);
+
+static PyObject *
+list_rindex(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *value;
+    Py_ssize_t start = 0;
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("rindex", nargs, 1, 3)) {
+        goto exit;
+    }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[2], &stop)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = list_rindex_impl(self, value, start, stop);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(list_count__doc__,
 "count($self, value, /)\n"
 "--\n"
@@ -359,4 +405,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=d1d5078edb7d3cf4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab60db7bfe0468c3 input=a9049054013a1b77]*/

@@ -2562,6 +2562,50 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
 }
 
 /*[clinic input]
+list.rindex
+
+    value: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Return last index of value.
+
+Raises ValueError if the value is not present.
+[clinic start generated code]*/
+
+static PyObject *
+list_rindex_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
+                 Py_ssize_t stop)
+/*[clinic end generated code: output=6e70fa3c21fecf28 input=1a4ec468c04e48d4]*/
+{
+    Py_ssize_t i;
+
+    if (start < 0) {
+        start += Py_SIZE(self);
+        if (start < 0)
+            start = 0;
+    }
+    if (stop < 0) {
+        stop += Py_SIZE(self);
+        if (stop < 0)
+            stop = 0;
+    }
+    if (stop > Py_SIZE(self)) {
+        stop = Py_SIZE(self);
+    }
+    for (i = stop; i >= start; i--) {
+        int cmp = PyObject_RichCompareBool(self->ob_item[i], value, Py_EQ);
+        if (cmp > 0)
+            return PyLong_FromSsize_t(i);
+        else if (cmp < 0)
+            return NULL;
+    }
+    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+    return NULL;
+}
+
+/*[clinic input]
 list.count
 
      value: object
@@ -2755,6 +2799,7 @@ static PyMethodDef list_methods[] = {
     LIST_POP_METHODDEF
     LIST_REMOVE_METHODDEF
     LIST_INDEX_METHODDEF
+    LIST_RINDEX_METHODDEF
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF

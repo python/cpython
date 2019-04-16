@@ -210,6 +210,7 @@ You can get the information from the list type:
      'pop',
      'remove',
      'reverse',
+     'rindex',
      'sort']
 
 The new introspection API gives more information than the old one:  in

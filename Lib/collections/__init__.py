@@ -1120,6 +1120,7 @@ class UserList(_collections_abc.MutableSequence):
     def copy(self): return self.__class__(self)
     def count(self, item): return self.data.count(item)
     def index(self, item, *args): return self.data.index(item, *args)
+    def rindex(self, item, *args): return self.data.rindex(item, *args)
     def reverse(self): self.data.reverse()
     def sort(self, *args, **kwds): self.data.sort(*args, **kwds)
     def extend(self, other):
