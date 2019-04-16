@@ -1,0 +1,3 @@
+pymalloc returns memory blocks aligned by 16 bytes instead of 8 bytes on 64
+bit platforms, as recent compilers assume malloc returns 16 byte aligned
+memory block. Patch by Inada Naoki.
