@@ -1030,7 +1030,7 @@ always available.
 
    .. note::
       Python is now `developed <https://docs.python.org/devguide/>`_ using
-      Mercurial.  In recent Python 2.7 bugfix releases, :data:`subversion`
+      Git.  In recent Python 2.7 bugfix releases, :data:`subversion`
       therefore contains placeholder information.  It is removed in Python
       3.3.
 
