@@ -557,7 +557,7 @@ SSLError_str(PyOSErrorObject *self)
 
 static PyType_Slot sslerror_type_slots[] = {
     {Py_tp_base, NULL},  /* Filled out in module init as it's not a constant */
-    {Py_tp_doc, SSLError_doc},
+    {Py_tp_doc, (void*)SSLError_doc},
     {Py_tp_str, SSLError_str},
     {0, 0},
 };
