@@ -43,12 +43,18 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
+# SQLite 3
+**/*sqlite*                   @berkerpeksag
+
 # subprocess
 **/*subprocess*               @gpshead
 
 # Windows
 /PC/                          @python/windows-team
 /PCbuild/                     @python/windows-team
+
+# Urllib
+**/*robotparser*              @berkerpeksag
 
 # Windows installer packages
 /Tools/msi/                   @python/windows-team
