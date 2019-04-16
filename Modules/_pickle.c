@@ -6283,7 +6283,7 @@ load_build(UnpicklerObject *self)
         Py_INCREF(slotstate);
         Py_DECREF(tmp);
     }
-    /* proto 5 addition: state can embed a callable state setter */
+    /* state can embed a callable state setter */
     else if (PyTuple_Check(state) && PyTuple_GET_SIZE(state) == 3) {
         PyObject *state_slotstate;
 
