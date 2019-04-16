@@ -1,4 +1,4 @@
-from test.support import verbose, is_android, check_warnings, AIX
+from test.support import verbose, check_warnings, ANDROID, AIX, MACOS, MS_WINDOWS
 import unittest
 import locale
 import sys
@@ -12,7 +12,7 @@ class BaseLocalizedTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if sys.platform == 'darwin':
+        if MACOS:
             import os
             tlocs = ("en_US.UTF-8", "en_US.ISO8859-1", "en_US")
             if int(os.uname().release.split('.')[0]) < 10:
@@ -20,7 +20,7 @@ class BaseLocalizedTest(unittest.TestCase):
                 # haven't had time yet to verify if tests work on OSX 10.5
                 # (10.4 is known to be bad)
                 raise unittest.SkipTest("Locale support on MacOSX is minimal")
-        elif sys.platform.startswith("win"):
+        elif MS_WINDOWS:
             tlocs = ("En", "English")
         else:
             tlocs = ("en_US.UTF-8", "en_US.ISO8859-1",
@@ -365,7 +365,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
         enc = codecs.lookup(locale.getpreferredencoding(False) or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
-        if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
+        if enc != 'iso8859-1' and (MACOS or ANDROID or
                                    sys.platform.startswith('freebsd')):
             raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
         BaseLocalizedTest.setUp(self)

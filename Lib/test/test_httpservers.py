@@ -29,6 +29,7 @@ from io import BytesIO
 
 import unittest
 from test import support
+from test.support import MACOS, MS_WINDOWS
 
 
 class NoLogRequestHandler:
@@ -385,10 +386,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         reader.close()
         return body
 
-    @unittest.skipIf(sys.platform == 'darwin',
-                     'undecodable name cannot always be decoded on macOS')
-    @unittest.skipIf(sys.platform == 'win32',
-                     'undecodable name cannot be decoded on win32')
+    @unittest.skipIf(MACOS, 'undecodable name cannot always be decoded on macOS')
+    @unittest.skipIf(MS_WINDOWS, 'undecodable name cannot be decoded on win32')
     @unittest.skipUnless(support.TESTFN_UNDECODABLE,
                          'need support.TESTFN_UNDECODABLE')
     def test_undecodable_filename(self):
@@ -397,7 +396,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
             f.write(support.TESTFN_UNDECODABLE)
         response = self.request(self.base_url + '/')
-        if sys.platform == 'darwin':
+        if MACOS:
             # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
             # UTF-8 into a percent-encoded value.
             for name in os.listdir(self.tempdir):

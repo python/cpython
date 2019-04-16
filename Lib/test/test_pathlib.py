@@ -12,7 +12,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import TESTFN, FakePath
+from test.support import TESTFN, FakePath, MACOS
 
 try:
     import grp, pwd
@@ -2207,8 +2207,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(p6.expanduser(), p6)
             self.assertRaises(RuntimeError, p7.expanduser)
 
-    @unittest.skipIf(sys.platform != "darwin",
-                     "Bad file descriptor in /dev/fd affects only macOS")
+    @unittest.skipIf(MACOS, "Bad file descriptor in /dev/fd affects only macOS")
     def test_handling_bad_descriptor(self):
         try:
             file_descriptors = list(pathlib.Path('/dev/fd').rglob("*"))[3:]

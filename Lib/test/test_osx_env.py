@@ -2,14 +2,13 @@
 Test suite for OS X interpreter environment variables.
 """
 
-from test.support import EnvironmentVarGuard
+from test.support import EnvironmentVarGuard, MACOS
 import subprocess
 import sys
 import sysconfig
 import unittest
 
-@unittest.skipUnless(sys.platform == 'darwin' and
-                     sysconfig.get_config_var('WITH_NEXT_FRAMEWORK'),
+@unittest.skipUnless(MACOS and sysconfig.get_config_var('WITH_NEXT_FRAMEWORK'),
                      'unnecessary on this platform')
 class OSXEnvironmentVariableTestCase(unittest.TestCase):
     def _check_sys(self, ev, cond, sv, val = sys.executable + 'dummy'):

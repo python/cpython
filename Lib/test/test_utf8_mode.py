@@ -7,7 +7,7 @@ import sys
 import textwrap
 import unittest
 from test import support
-from test.support import AIX, MS_WINDOWS
+from test.support import AIX, ANDROID, MACOS, MS_WINDOWS
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 
@@ -225,7 +225,7 @@ class UTF8ModeTests(unittest.TestCase):
             with self.subTest(LC_ALL=loc):
                 check('utf8', [arg_utf8], LC_ALL=loc)
 
-        if sys.platform == 'darwin' or support.is_android or VXWORKS:
+        if MACOS or ANDROID or VXWORKS:
             c_arg = arg_utf8
         elif AIX:
             c_arg = arg.decode('iso-8859-1')

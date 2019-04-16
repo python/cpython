@@ -1,5 +1,6 @@
 from test.support import (TESTFN, import_module, unlink,
-                          requires, _2G, _4G, gc_collect, cpython_only)
+                          requires, _2G, _4G, gc_collect, cpython_only,
+                          LINUX, MACOS, MS_WINDOWS)
 import unittest
 import os
 import re
@@ -184,14 +185,14 @@ class MmapTests(unittest.TestCase):
                 # CAUTION:  This also changes the size of the file on disk, and
                 # later tests assume that the length hasn't changed.  We need to
                 # repair that.
-                if sys.platform.startswith('win'):
+                if MS_WINDOWS:
                     self.fail("Opening mmap with size+1 should work on Windows.")
             else:
                 # we expect a ValueError on Unix, but not on Windows
-                if not sys.platform.startswith('win'):
+                if not MS_WINDOWS:
                     self.fail("Opening mmap with size+1 should raise ValueError.")
                 m.close()
-            if sys.platform.startswith('win'):
+            if MS_WINDOWS:
                 # Repair damage from the resizing test.
                 with open(TESTFN, 'r+b') as f:
                     f.truncate(mapsize)
@@ -734,7 +735,7 @@ class MmapTests(unittest.TestCase):
         mm.write(b'python')
         result = mm.flush()
         self.assertIsNone(result)
-        if sys.platform.startswith('linux'):
+        if LINUX:
             # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
             # See bpo-34754 for details.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
@@ -749,7 +750,7 @@ class LargeMmapTests(unittest.TestCase):
         unlink(TESTFN)
 
     def _make_test_file(self, num_zeroes, tail):
-        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+        if MACOS or MS_WINDOWS:
             requires('largefile',
                 'test requires %s bytes and a long time to run' % str(0x180000000))
         f = open(TESTFN, 'w+b')

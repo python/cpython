@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import JYTHON
 import os
 import sys
 
@@ -67,7 +68,7 @@ class AllTest(unittest.TestCase):
             '__future__',
         ])
 
-        if not sys.platform.startswith('java'):
+        if not JYTHON:
             # In case _socket fails to build, make this test fail more gracefully
             # than an AttributeError somewhere deep in CGIHTTPServer.
             import _socket

@@ -6,6 +6,7 @@ import signal
 import socket
 import sys
 from test import support
+from test.support import MACOS, MS_WINDOWS
 from time import sleep
 import unittest
 import unittest.mock
@@ -348,8 +349,7 @@ class BaseSelectorTestCase(unittest.TestCase):
 
         self.assertEqual(bufs, [MSG] * NUM_SOCKETS)
 
-    @unittest.skipIf(sys.platform == 'win32',
-                     'select.select() cannot be used with empty fd sets')
+    @unittest.skipIf(MS_WINDOWS, 'select.select() cannot be used with empty fd sets')
     def test_empty_select(self):
         # Issue #23009: Make sure EpollSelector.select() works when no FD is
         # registered.
@@ -484,7 +484,7 @@ class ScalableSelectorMixIn:
         try:
             fds = s.select()
         except OSError as e:
-            if e.errno == errno.EINVAL and sys.platform == 'darwin':
+            if e.errno == errno.EINVAL and MACOS:
                 # unexplainable errors on macOS don't need to fail the test
                 self.skipTest("Invalid argument error calling poll()")
             raise

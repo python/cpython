@@ -1,7 +1,7 @@
 """Do a minimal test of all the modules that aren't otherwise tested."""
 import importlib
-import sys
 from test import support
+from test.support import MS_WINDOWS
 import unittest
 
 class TestUntestedModules(unittest.TestCase):
@@ -25,7 +25,7 @@ class TestUntestedModules(unittest.TestCase):
             import distutils.unixccompiler
 
             import distutils.command.bdist_dumb
-            if sys.platform.startswith('win'):
+            if MS_WINDOWS:
                 import distutils.command.bdist_msi
             import distutils.command.bdist
             import distutils.command.bdist_rpm

@@ -25,6 +25,7 @@ import warnings
 import test.support
 import test.support.script_helper
 from test import support
+from test.support import LINUX, MACOS, MS_WINDOWS
 
 
 # Skip tests if _multiprocessing wasn't built.
@@ -107,8 +108,6 @@ else:
 
 HAVE_GETVALUE = not getattr(_multiprocessing,
                             'HAVE_BROKEN_SEM_GETVALUE', False)
-
-WIN32 = (sys.platform == "win32")
 
 from multiprocessing.connection import wait
 
@@ -508,7 +507,7 @@ class _TestProcess(BaseTestCase):
             join_process(p)
         if os.name != 'nt':
             exitcodes = [-signal.SIGTERM]
-            if sys.platform == 'darwin':
+            if MACOS:
                 # bpo-31510: On macOS, killing a freshly started process with
                 # SIGTERM sometimes kills the process with SIGKILL.
                 exitcodes.append(-signal.SIGKILL)
@@ -1487,7 +1486,7 @@ class _TestCondition(BaseTestCase):
             os.kill(pid, signal.SIGINT)
 
     def test_wait_result(self):
-        if isinstance(self, ProcessesMixin) and sys.platform != 'win32':
+        if isinstance(self, ProcessesMixin) and not MS_WINDOWS:
             pid = os.getpid()
         else:
             pid = None
@@ -3096,8 +3095,7 @@ class _TestConnection(BaseTestCase):
             self.assertEqual(f.read(), b"foo")
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
-    @unittest.skipIf(sys.platform == "win32",
-                     "test semantics don't make sense on Windows")
+    @unittest.skipIf(MS_WINDOWS, "test semantics don't make sense on Windows")
     @unittest.skipIf(MAXFD <= 256,
                      "largest assignable fd number is too small")
     @unittest.skipUnless(hasattr(os, "dup2"),
@@ -3133,7 +3131,7 @@ class _TestConnection(BaseTestCase):
         os.write(conn.fileno(), b"\0")
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
-    @unittest.skipIf(sys.platform == "win32", "doesn't make sense on Windows")
+    @unittest.skipIf(MS_WINDOWS, "doesn't make sense on Windows")
     def test_missing_fd_transfer(self):
         # Check that exception is raised when received data is not
         # accompanied by a file descriptor in ancillary data.
@@ -3747,7 +3745,7 @@ class _TestSharedMemory(BaseTestCase):
         self.assertGreaterEqual(len(doppleganger_shm0.buf), 32)
         held_name = lom[0].name
         smm1.shutdown()
-        if sys.platform != "win32":
+        if not MS_WINDOWS:
             # Calls to unlink() have no effect on Windows platform; shared
             # memory will only be released once final process exits.
             with self.assertRaises(FileNotFoundError):
@@ -3758,7 +3756,7 @@ class _TestSharedMemory(BaseTestCase):
             sl = smm2.ShareableList("howdy")
             shm = smm2.SharedMemory(size=128)
             held_name = sl.shm.name
-        if sys.platform != "win32":
+        if not MS_WINDOWS:
             with self.assertRaises(FileNotFoundError):
                 # No longer there to be attached to again.
                 absent_sl = shared_memory.ShareableList(name=held_name)
@@ -4011,7 +4009,7 @@ class _TestImportStar(unittest.TestCase):
 
     def test_import(self):
         modules = self.get_module_names()
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             modules.remove('multiprocessing.popen_fork')
             modules.remove('multiprocessing.popen_forkserver')
             modules.remove('multiprocessing.popen_spawn_posix')
@@ -4144,7 +4142,7 @@ class _TestPollEintr(BaseTestCase):
 
 class TestInvalidHandle(unittest.TestCase):
 
-    @unittest.skipIf(WIN32, "skipped on Windows")
+    @unittest.skipIf(MS_WINDOWS, "skipped on Windows")
     def test_invalid_handles(self):
         conn = multiprocessing.connection.Connection(44977608)
         # check that poll() doesn't crash
@@ -4470,12 +4468,12 @@ class TestWait(unittest.TestCase):
 
 class TestInvalidFamily(unittest.TestCase):
 
-    @unittest.skipIf(WIN32, "skipped on Windows")
+    @unittest.skipIf(MS_WINDOWS, "skipped on Windows")
     def test_invalid_family(self):
         with self.assertRaises(ValueError):
             multiprocessing.connection.Listener(r'\\.\test')
 
-    @unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
+    @unittest.skipUnless(MS_WINDOWS, "skipped on non-Windows platforms")
     def test_invalid_family_win32(self):
         with self.assertRaises(ValueError):
             multiprocessing.connection.Listener('/var/test.pipe')
@@ -4601,7 +4599,7 @@ class TestForkAwareThreadLock(unittest.TestCase):
 class TestCloseFds(unittest.TestCase):
 
     def get_high_socket_fd(self):
-        if WIN32:
+        if MS_WINDOWS:
             # The child process will not have any socket handles, so
             # calling socket.fromfd() should produce WSAENOTSOCK even
             # if there is a handle of the same number.
@@ -4619,7 +4617,7 @@ class TestCloseFds(unittest.TestCase):
             return fd
 
     def close(self, fd):
-        if WIN32:
+        if MS_WINDOWS:
             socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=fd).close()
         else:
             os.close(fd)
@@ -4782,7 +4780,7 @@ class TestStartMethod(unittest.TestCase):
 
     def test_get_all(self):
         methods = multiprocessing.get_all_start_methods()
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             self.assertEqual(methods, ['spawn'])
         else:
             self.assertTrue(methods == ['fork', 'spawn'] or
@@ -4801,8 +4799,7 @@ class TestStartMethod(unittest.TestCase):
             self.fail("failed spawning forkserver or grandchild")
 
 
-@unittest.skipIf(sys.platform == "win32",
-                 "test semantics don't make sense on Windows")
+@unittest.skipIf(MS_WINDOWS, "test semantics don't make sense on Windows")
 class TestSemaphoreTracker(unittest.TestCase):
 
     def test_semaphore_tracker(self):
@@ -5392,7 +5389,7 @@ def install_tests_in_module_dict(remote_globs, start_method):
             raise unittest.SkipTest(start_method +
                                     ' start method not supported')
 
-        if sys.platform.startswith("linux"):
+        if LINUX:
             try:
                 lock = multiprocessing.RLock()
             except OSError:

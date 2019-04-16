@@ -6,7 +6,8 @@ import shutil
 from copy import copy
 
 from test.support import (import_module, TESTFN, unlink, check_warnings,
-                          captured_stdout, skip_unless_symlink, change_cwd)
+                          captured_stdout, skip_unless_symlink, change_cwd,
+                          LINUX, MACOS, MS_WINDOWS)
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -236,7 +237,7 @@ class TestSysConfig(unittest.TestCase):
         # On Windows, the EXE needs to know where pythonXY.dll is at so we have
         # to add the directory to the path.
         env = None
-        if sys.platform == "win32":
+        if MS_WINDOWS:
             env = {k.upper(): os.environ[k] for k in os.environ}
             env["PATH"] = "{};{}".format(
                 os.path.dirname(sys.executable), env.get("PATH", ""))
@@ -294,14 +295,14 @@ class TestSysConfig(unittest.TestCase):
             _main()
         self.assertTrue(len(output.getvalue().split('\n')) > 0)
 
-    @unittest.skipIf(sys.platform == "win32", "Does not apply to Windows")
+    @unittest.skipIf(MS_WINDOWS, "Does not apply to Windows")
     def test_ldshared_value(self):
         ldflags = sysconfig.get_config_var('LDFLAGS')
         ldshared = sysconfig.get_config_var('LDSHARED')
 
         self.assertIn(ldflags, ldshared)
 
-    @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
+    @unittest.skipUnless(MACOS, "test only relevant on MacOSX")
     def test_platform_in_subprocess(self):
         my_platform = sysconfig.get_platform()
 
@@ -391,8 +392,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
 
-    @unittest.skipUnless(sys.platform == 'linux' and
-                         hasattr(sys.implementation, '_multiarch'),
+    @unittest.skipUnless(LINUX and hasattr(sys.implementation, '_multiarch'),
                          'multiarch-specific test')
     def test_triplet_in_ext_suffix(self):
         ctypes = import_module('ctypes')
@@ -409,15 +409,14 @@ class TestSysConfig(unittest.TestCase):
             else: # 8 byte pointer size
                 self.assertTrue(suffix.endswith('x86_64-linux-gnu.so'), suffix)
 
-    @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
+    @unittest.skipUnless(MACOS, 'OS X-specific test')
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
 class MakefileTests(unittest.TestCase):
 
-    @unittest.skipIf(sys.platform.startswith('win'),
-                     'Test is not Windows compatible')
+    @unittest.skipIf(MS_WINDOWS, 'Test is not Windows compatible')
     def test_get_makefile_filename(self):
         makefile = sysconfig.get_makefile_filename()
         self.assertTrue(os.path.isfile(makefile), makefile)

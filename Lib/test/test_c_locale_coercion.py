@@ -10,7 +10,8 @@ import unittest
 from collections import namedtuple
 
 from test import support
-AIX = support.AIX
+from test.support import AIX, ANDROID, LINUX, MACOS
+
 from test.support.script_helper import (
     run_python_until_end,
     interpreter_requires_environment,
@@ -30,8 +31,8 @@ EXPECT_COERCION_IN_DEFAULT_LOCALE = True
 TARGET_LOCALES = ["C.UTF-8", "C.utf8", "UTF-8"]
 
 # Apply some platform dependent overrides
-if sys.platform.startswith("linux"):
-    if support.is_android:
+if LINUX:
+    if ANDROID:
         # Android defaults to using UTF-8 for all system interfaces
         EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
         EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
@@ -45,7 +46,7 @@ elif AIX:
     # AIX uses iso8859-1 in the C locale, other *nix platforms use ASCII
     EXPECTED_C_LOCALE_STREAM_ENCODING = "iso8859-1"
     EXPECTED_C_LOCALE_FS_ENCODING = "iso8859-1"
-elif sys.platform == "darwin":
+elif MACOS:
     # FS encoding is UTF-8 on macOS
     EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
 elif sys.platform == "cygwin":
@@ -79,7 +80,7 @@ _C_UTF8_LOCALES = ("C.UTF-8", "C.utf8", "UTF-8")
 # `locale.nl_langinfo(locale.CODESET)` works, as if it fails, the interpreter
 # will skip locale coercion for that particular target locale
 _check_nl_langinfo_CODESET = bool(
-    sys.platform not in ("darwin", "linux") and
+    not (MACOS or LINUX) and
     hasattr(locale, "nl_langinfo") and
     hasattr(locale, "CODESET")
 )

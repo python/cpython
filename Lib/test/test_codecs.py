@@ -855,8 +855,7 @@ class UTF8Test(ReadTest, unittest.TestCase):
             b"abc\xed\xa0z".decode(self.encoding, "surrogatepass")
 
 
-@unittest.skipUnless(sys.platform == 'win32',
-                     'cp65001 is a Windows-only codec')
+@unittest.skipUnless(support.MS_WINDOWS, 'cp65001 is a Windows-only codec')
 class CP65001Test(ReadTest, unittest.TestCase):
     encoding = "cp65001"
 
@@ -2936,8 +2935,7 @@ class ExceptionChainingTest(unittest.TestCase):
 
 
 
-@unittest.skipUnless(sys.platform == 'win32',
-                     'code pages are specific to Windows')
+@unittest.skipUnless(support.MS_WINDOWS, 'code pages are specific to Windows')
 class CodePageTest(unittest.TestCase):
     # CP_UTF8 is already tested by CP65001Test
     CP_UTF8 = 65001

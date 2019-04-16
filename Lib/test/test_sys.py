@@ -1,4 +1,5 @@
 import unittest, test.support
+from test.support import MACOS, MS_WINDOWS
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import sys, io, os
 import struct
@@ -486,7 +487,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertTrue(vi > (1,0,0))
         self.assertIsInstance(sys.float_repr_style, str)
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
-        if not sys.platform.startswith('win'):
+        if not MS_WINDOWS:
             self.assertIsInstance(sys.abiflags, str)
 
     def test_thread_info(self):
@@ -647,7 +648,7 @@ class SysModuleTest(unittest.TestCase):
 
     def test_getfilesystemencoding(self):
         fs_encoding = sys.getfilesystemencoding()
-        if sys.platform == 'darwin':
+        if MACOS:
             expected = 'utf-8'
         else:
             expected = None

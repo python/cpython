@@ -3,7 +3,7 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import (verbose, import_module, cpython_only,
+from test.support import (verbose, import_module, cpython_only, MACOS,
                           requires_type_collecting)
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
@@ -970,7 +970,7 @@ class ThreadingExceptionTests(BaseTestCase):
         lock = threading.Lock()
         self.assertRaises(RuntimeError, lock.release)
 
-    @unittest.skipUnless(sys.platform == 'darwin' and test.support.python_is_optimized(),
+    @unittest.skipUnless(MACOS and test.support.python_is_optimized(),
                          'test macosx problem')
     def test_recursion_limit(self):
         # Issue 9670

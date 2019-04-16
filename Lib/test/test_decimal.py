@@ -35,7 +35,7 @@ import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings)
 from test.support import (import_fresh_module, TestFailed,
-                          run_with_locale, cpython_only)
+                          run_with_locale, cpython_only, MS_WINDOWS)
 import random
 import inspect
 import threading
@@ -4862,7 +4862,7 @@ class CWhitebox(unittest.TestCase):
         for attr in ('prec', 'Emin', 'Emax', 'capitals', 'clamp'):
             self.assertRaises(OverflowError, setattr, c, attr, int_max+1)
             self.assertRaises(OverflowError, setattr, c, attr, -int_max-2)
-            if sys.platform != 'win32':
+            if not MS_WINDOWS:
                 self.assertRaises(ValueError, setattr, c, attr, int_max)
                 self.assertRaises(ValueError, setattr, c, attr, -int_max-1)
 
@@ -4937,7 +4937,7 @@ class CWhitebox(unittest.TestCase):
         # OverflowError, general ValueError
         self.assertRaises(OverflowError, setattr, c, '_allcr', int_max+1)
         self.assertRaises(OverflowError, setattr, c, '_allcr', -int_max-2)
-        if sys.platform != 'win32':
+        if not MS_WINDOWS:
             self.assertRaises(ValueError, setattr, c, '_allcr', int_max)
             self.assertRaises(ValueError, setattr, c, '_allcr', -int_max-1)
 
@@ -4945,7 +4945,7 @@ class CWhitebox(unittest.TestCase):
         for attr in ('_flags', '_traps'):
             self.assertRaises(OverflowError, setattr, c, attr, int_max+1)
             self.assertRaises(OverflowError, setattr, c, attr, -int_max-2)
-            if sys.platform != 'win32':
+            if not MS_WINDOWS:
                 self.assertRaises(TypeError, setattr, c, attr, int_max)
                 self.assertRaises(TypeError, setattr, c, attr, -int_max-1)
 
