@@ -6238,7 +6238,7 @@ load_additems(UnpicklerObject *self)
 static int
 load_build(UnpicklerObject *self)
 {
-    PyObject *state, *inst, *slotstate, *statearg;
+    PyObject *state, *inst, *slotstate;
     PyObject *setstate;
     int status = 0;
     _Py_IDENTIFIER(__setstate__);
@@ -6285,35 +6285,23 @@ load_build(UnpicklerObject *self)
     }
     /* proto 5 addition: state can embed a callable state setter */
     else if (PyTuple_Check(state) && PyTuple_GET_SIZE(state) == 3) {
-        /* borrowed reference*/
-        PyObject *tmp = state;
+        PyObject *state_slotstate;
 
-        setstate = PyTuple_GET_ITEM(tmp, 0);
-        state = PyTuple_GET_ITEM(tmp, 1);
-        slotstate = PyTuple_GET_ITEM(tmp, 2);
+        setstate = PyTuple_GET_ITEM(state, 0);
+        state_slotstate = PyTuple_GetSlice(state, 1, 3);
 
         Py_INCREF(setstate);
-        Py_INCREF(state);
-        Py_INCREF(slotstate);
-        Py_DECREF(tmp);
-        /* call the setstate function */
-        if (slotstate != Py_None) {
-            statearg = Py_BuildValue("(OO)", state, slotstate);
-        }
-        else {
-            statearg = state;
-            Py_INCREF(state);
-        }
 
-        if (PyObject_CallFunctionObjArgs(setstate, inst, statearg,
+        /* call the setstate function */
+        if (PyObject_CallFunctionObjArgs(setstate, inst, state_slotstate,
                                          NULL) == NULL){
+            Py_DECREF(state_slotstate);
+            Py_DECREF(setstate);
             return -1;
         }
 
+        Py_DECREF(state_slotstate);
         Py_DECREF(setstate);
-        Py_DECREF(state);
-        Py_DECREF(statearg);
-        Py_DECREF(slotstate);
         return 0;
     }
     else
