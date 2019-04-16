@@ -3952,7 +3952,6 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         else {
             PyObject *statetup = NULL;
 
-
             /* If a state_setter is specified, and state is a dict, we could be
              * tempted to save a (state_setter, state) as state, but this would
              * collide with load_build's (state, slotstate) special handling.
@@ -3963,7 +3962,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
                 statetup = Py_BuildValue("(OOO)", state_setter, state,
                                          Py_None);
             else if PyTuple_Check(state) {
-                if (PyTuple_GET_SIZE(state) == 2){
+                if (PyTuple_GET_SIZE(state) == 2) {
                     statetup = Py_BuildValue("(OOO)", state_setter,
                                              PyTuple_GetItem(state, 0),
                                              PyTuple_GetItem(state, 1));
