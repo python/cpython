@@ -626,8 +626,13 @@ class Regrtest:
         elif sys.platform == 'win32' and (self.ns.worker_args is None):
             from test.libregrtest.win_utils import WindowsLoadTracker
 
-            load_tracker = WindowsLoadTracker()
-            self.getloadavg = load_tracker.getloadavg
+            try:
+                load_tracker = WindowsLoadTracker()
+                self.getloadavg = load_tracker.getloadavg
+            except FileNotFoundError as error:
+                # typeperf.exe is not present on small editions 
+                # of windows like Windows IoT Core or nanoserver
+                print ('Failed to create WindowsLoadTracker: {}'.format(str(error)))
 
         self.run_tests()
         self.display_result()
