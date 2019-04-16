@@ -630,7 +630,7 @@ class Regrtest:
                 load_tracker = WindowsLoadTracker()
                 self.getloadavg = load_tracker.getloadavg
             except FileNotFoundError as error:
-                # typeperf.exe is not present on small editions 
+                # typeperf.exe is not present on small editions
                 # of windows like Windows IoT Core or nanoserver
                 print ('Failed to create WindowsLoadTracker: {}'.format(str(error)))
 
