@@ -1750,7 +1750,7 @@ const Py_UCS4 _PyUnicode_ExtendedCase[] = {
 
 /* type indexes */
 #define SHIFT 7
-static unsigned short index1[] = {
+static const unsigned short index1[] = {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 34, 35, 36, 37,
     38, 39, 34, 34, 34, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
@@ -2359,7 +2359,7 @@ static unsigned short index1[] = {
     126, 126, 126, 126, 126, 126, 126, 269,
 };
 
-static unsigned short index2[] = {
+static const unsigned short index2[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 3, 3, 3, 2, 4, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6, 5,
     7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 6, 5, 5, 5, 5, 5, 5, 17, 17, 17, 17,

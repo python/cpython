@@ -1249,7 +1249,7 @@ class Array:
         size = getsize(self.data)
         if trace:
             print(self.name+":", size*len(self.data), "bytes", file=sys.stderr)
-        file.write("static ")
+        file.write("static const ")
         if size == 1:
             file.write("unsigned char")
         elif size == 2:
