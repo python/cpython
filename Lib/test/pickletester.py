@@ -3028,7 +3028,7 @@ class AbstractHookTests(unittest.TestCase):
                 return int, (5, )
 
             if obj_name == 'MyClass':
-                return str, ('NewClass', )
+                return str, ('some str',)
 
             elif obj_name == 'log':
                 # letting the pickler falling back to buitlin save_global to
@@ -3039,12 +3039,19 @@ class AbstractHookTests(unittest.TestCase):
                 # in this case, the callback returns an invalid result (not a
                 # 2-5 tuple), the pickler should raise a proper error.
                 return False
+            elif obj_name == 'h':
+                # Simulate a case when the reducer fails. The error should be
+                # propagated to the original ``dump`` call.
+                raise ValueError('The reducer just failed')
             return NotImplementedError
 
         def f():
             pass
 
         def g():
+            pass
+
+        def h():
             pass
 
         class MyClass:
@@ -3057,14 +3064,18 @@ class AbstractHookTests(unittest.TestCase):
                 p.global_hook = custom_reduction_callback
 
                 p.dump([f, MyClass, math.log])
-                new_f, NewClass, math_log = pickle.loads(bio.getvalue())
+                new_f, some_str, math_log = pickle.loads(bio.getvalue())
 
                 self.assertEqual(new_f, 5)
-                self.assertEqual(NewClass, 'NewClass')
+                self.assertEqual(some_str, 'some str')
                 self.assertIs(math_log, math.log)
 
                 with self.assertRaises(pickle.PicklingError):
                     p.dump(g)
+
+                with self.assertRaisesRegex(
+                        ValueError, 'The reducer just failed'):
+                    p.dump(h)
 
 
 class AbstractDispatchTableTests(unittest.TestCase):
