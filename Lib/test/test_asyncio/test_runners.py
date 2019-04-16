@@ -37,6 +37,7 @@ class BaseTest(unittest.TestCase):
         async def shutdown_asyncgens():
             loop.shutdown_ag_run = True
         loop.shutdown_asyncgens = shutdown_asyncgens
+
         loop._write_to_self = mock.Mock()
         return loop
 
