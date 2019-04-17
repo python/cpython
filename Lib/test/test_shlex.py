@@ -309,11 +309,23 @@ class ShlexTest(unittest.TestCase):
                              "'test%s'\"'\"'name'\"'\"''" % u)
 
     def testJoin(self):
+        for split_command, command in [
+            (['a ', 'b'], "'a ' b"),
+            (['a', ' b'], "a ' b'"),
+            (['a', ' ', 'b'], "a ' ' b"),
+            (['"a', 'b"'], '\'"a\' \'b"\''),
+        ]:
+            with self.subTest(command=command):
+                joined = shlex.join(split_command)
+                self.assertEqual(joined, command)
+
+    def testJoinRoundtrip(self):
         all_data = self.data + self.posix_data
         for command, *split_command in all_data:
-            joined = shlex.join(split_command)
-            resplit = shlex.split(joined)
-            self.assertEqual(split_command, resplit)
+            with self.subTest(command=command):
+                joined = shlex.join(split_command)
+                resplit = shlex.split(joined)
+                self.assertEqual(split_command, resplit)
 
 
 # Allow this test to be used with old shlex.py
