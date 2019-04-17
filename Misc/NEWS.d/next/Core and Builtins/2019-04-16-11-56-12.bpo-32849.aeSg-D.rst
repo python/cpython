@@ -1,0 +1,2 @@
+Fix Python Initialization code on FreeBSD to detect properly when stdin file
+descriptor (fd 0) is invalid.
