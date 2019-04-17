@@ -685,7 +685,7 @@ if _LINUX:
 elif _DARWIN:
     _GETTERS = [_arp_getnode, _ifconfig_getnode, _netstat_getnode]
 elif _WINDOWS:
-    _GETTERS = [_windll_getnode, _netbios_getnode, _ipconfig_getnode]
+    _GETTERS = [_netbios_getnode, _ipconfig_getnode]
 elif _AIX:
     _GETTERS = [_netstat_getnode]
 else:
