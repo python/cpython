@@ -4,13 +4,6 @@ import unittest
 from test import support
 import time
 
-_support_rlimit_fsize_set=True
-_support_rlimit_cpu_set=True
-
-if sys.platform == "vxworks":
-    _support_rlimit_fsize_set=False
-    _support_rlimit_cpu_set=False
-
 resource = support.import_module('resource')
 
 # This test is checking a few specific problem spots with the resource module.
@@ -23,6 +16,8 @@ class ResourceTest(unittest.TestCase):
         self.assertRaises(TypeError, resource.setrlimit)
         self.assertRaises(TypeError, resource.setrlimit, 42, 42, 42)
 
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "setting RLIMIT_FSIZE is not supported on VxWorks")
     def test_fsize_ismax(self):
         try:
             (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
@@ -35,8 +30,7 @@ class ResourceTest(unittest.TestCase):
             # the number to a C long long and that the conversion doesn't raise
             # an error.
             self.assertEqual(resource.RLIM_INFINITY, max)
-            if _support_rlimit_fsize_set:
-                resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
+            resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
 
     def test_fsize_enforced(self):
         try:
@@ -118,6 +112,8 @@ class ResourceTest(unittest.TestCase):
             pass
 
     # Issue 6083: Reference counting bug
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "setting RLIMIT_CPU is not supported on VxWorks")
     def test_setrusage_refcount(self):
         try:
             limits = resource.getrlimit(resource.RLIMIT_CPU)
@@ -132,8 +128,7 @@ class ResourceTest(unittest.TestCase):
                         return len(tuple(range(1000000)))
                     raise IndexError
 
-            if _support_rlimit_cpu_set:
-                resource.setrlimit(resource.RLIMIT_CPU, BadSequence())
+            resource.setrlimit(resource.RLIMIT_CPU, BadSequence())
 
     def test_pagesize(self):
         pagesize = resource.getpagesize()
