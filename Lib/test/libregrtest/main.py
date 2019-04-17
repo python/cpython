@@ -624,15 +624,15 @@ class Regrtest:
                 return os.getloadavg()[0]
             self.getloadavg = getloadavg_1m
         elif sys.platform == 'win32' and (self.ns.worker_args is None):
-            # Windows IoT Core and nanoserver do not provide
-            # typeperf.exe for x64, x86 or ARM
-            if os.path.isfile('c:/windows/system32/typeperf.exe'):
-                from test.libregrtest.win_utils import WindowsLoadTracker
+            from test.libregrtest.win_utils import WindowsLoadTracker
 
+            try:
                 load_tracker = WindowsLoadTracker()
                 self.getloadavg = load_tracker.getloadavg
-            else:
-                print('Not using WinLoadTracker: typeperf.exe not found')
+            except FileNotFoundError as error:
+                # Windows IoT Core and Windows Nano Server do not provide
+                # typeperf.exe for x64, x86 or ARM
+                print ('Failed to create WindowsLoadTracker: {}'.format(str(error)))
 
         self.run_tests()
         self.display_result()
