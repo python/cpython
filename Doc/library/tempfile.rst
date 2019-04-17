@@ -124,7 +124,7 @@ The module defines the following user-callable items:
 
    The directory name can be retrieved from the :attr:`name` attribute of the
    returned object.  When the returned object is used as a context manager, the
-   :attr:`name` will be assigned to the target of the :keyword:`as` clause in
+   :attr:`name` will be assigned to the target of the :keyword:`!as` clause in
    the :keyword:`with` statement, if there is one.
 
    The directory can be explicitly cleaned up by calling the
@@ -262,7 +262,7 @@ to specify the directory and this is the recommended approach.
    default value for the *dir* argument to the functions defined in this
    module.
 
-   If ``tempdir`` is unset or ``None`` at any call to any of the above
+   If ``tempdir`` is ``None`` (the default) at any call to any of the above
    functions except :func:`gettempprefix` it is initialized following the
    algorithm described in :func:`gettempdir`.
 

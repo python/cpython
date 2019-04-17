@@ -19,6 +19,7 @@ SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
+TEST_DID_NOT_RUN = -6   # error in a child process
 
 _FORMAT_TEST_RESULT = {
     PASSED: '%s passed',
@@ -28,6 +29,7 @@ _FORMAT_TEST_RESULT = {
     RESOURCE_DENIED: '%s skipped (resource denied)',
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
+    TEST_DID_NOT_RUN: '%s run no tests',
 }
 
 # Minimum duration of a test to display its duration or to mention that
@@ -85,8 +87,8 @@ def runtest(ns, test):
     ns -- regrtest namespace of options
     test -- the name of the test
 
-    Returns the tuple (result, test_time), where result is one of the
-    constants:
+    Returns the tuple (result, test_time, xml_data), where result is one
+    of the constants:
 
         INTERRUPTED      KeyboardInterrupt when run under -j
         RESOURCE_DENIED  test skipped because resource denied
@@ -94,6 +96,10 @@ def runtest(ns, test):
         ENV_CHANGED      test failed because it changed the execution environment
         FAILED           test failed
         PASSED           test passed
+        EMPTY_TEST_SUITE test ran no subtests.
+
+    If ns.xmlpath is not None, xml_data is a list containing each
+    generated testsuite element.
     """
 
     output_on_failure = ns.verbose3
@@ -106,22 +112,13 @@ def runtest(ns, test):
         # reset the environment_altered flag to detect if a test altered
         # the environment
         support.environment_altered = False
+        support.junit_xml_list = xml_list = [] if ns.xmlpath else None
         if ns.failfast:
             support.failfast = True
         if output_on_failure:
             support.verbose = True
 
-            # Reuse the same instance to all calls to runtest(). Some
-            # tests keep a reference to sys.stdout or sys.stderr
-            # (eg. test_argparse).
-            if runtest.stringio is None:
-                stream = io.StringIO()
-                runtest.stringio = stream
-            else:
-                stream = runtest.stringio
-                stream.seek(0)
-                stream.truncate()
-
+            stream = io.StringIO()
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
             try:
@@ -138,12 +135,18 @@ def runtest(ns, test):
         else:
             support.verbose = ns.verbose  # Tell tests to be moderately quiet
             result = runtest_inner(ns, test, display_failure=not ns.verbose)
-        return result
+
+        if xml_list:
+            import xml.etree.ElementTree as ET
+            xml_data = [ET.tostring(x).decode('us-ascii') for x in xml_list]
+        else:
+            xml_data = None
+        return result + (xml_data,)
     finally:
         if use_timeout:
             faulthandler.cancel_dump_traceback_later()
         cleanup_test_droppings(test, ns.verbose)
-runtest.stringio = None
+        support.junit_xml_list = None
 
 
 def post_test_cleanup():
@@ -159,7 +162,7 @@ def runtest_inner(ns, test, display_failure=True):
         abstest = get_abs_module(ns, test)
         clear_caches()
         with saved_test_environment(test, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
-            start_time = time.time()
+            start_time = time.perf_counter()
             the_module = importlib.import_module(abstest)
             # If the test has a test_main, that will run the appropriate
             # tests.  If not, use normal unittest test loading.
@@ -173,10 +176,11 @@ def runtest_inner(ns, test, display_failure=True):
                     if loader.errors:
                         raise Exception("errors while loading tests")
                     support.run_unittest(tests)
-            test_runner()
             if ns.huntrleaks:
-                refleak = dash_R(the_module, test, test_runner, ns.huntrleaks)
-            test_time = time.time() - start_time
+                refleak = dash_R(ns, the_module, test, test_runner)
+            else:
+                test_runner()
+            test_time = time.perf_counter() - start_time
         post_test_cleanup()
     except support.ResourceDenied as msg:
         if not ns.quiet and not ns.pgo:
@@ -196,6 +200,8 @@ def runtest_inner(ns, test, display_failure=True):
             else:
                 print("test", test, "failed", file=sys.stderr, flush=True)
         return FAILED, test_time
+    except support.TestDidNotRun:
+        return TEST_DID_NOT_RUN, test_time
     except:
         msg = traceback.format_exc()
         if not ns.pgo:
@@ -243,10 +249,8 @@ def cleanup_test_droppings(testname, verbose):
         if verbose:
             print("%r left behind %s %r" % (testname, kind, name))
         try:
-            # if we have chmod, fix possible permissions problems
-            # that might prevent cleanup
-            if (hasattr(os, 'chmod')):
-                os.chmod(name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            # fix possible permissions problems that might prevent cleanup
+            os.chmod(name, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
             nuker(name)
         except Exception as msg:
             print(("%r left behind %s %r and it couldn't be "

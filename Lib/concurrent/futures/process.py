@@ -3,7 +3,7 @@
 
 """Implements ProcessPoolExecutor.
 
-The follow diagram and text describe the data-flow through the system:
+The following diagram and text describe the data-flow through the system:
 
 |======================= In-process =====================|== Out-of-process ==|
 
@@ -235,6 +235,7 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
             _sendback_result(result_queue, call_item.work_id, exception=exc)
         else:
             _sendback_result(result_queue, call_item.work_id, result=r)
+            del r
 
         # Liberate the resource as soon as possible, to avoid holding onto
         # open files or shared memory that is not needed anymore
@@ -593,7 +594,22 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(*args, **kwargs):
+        if len(args) >= 2:
+            self, fn, *args = args
+        elif not args:
+            raise TypeError("descriptor 'submit' of 'ProcessPoolExecutor' object "
+                            "needs an argument")
+        elif 'fn' in kwargs:
+            fn = kwargs.pop('fn')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'fn' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('submit expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)

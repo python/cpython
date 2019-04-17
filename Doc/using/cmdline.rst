@@ -437,11 +437,15 @@ Miscellaneous options
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
+     * :class:`io.IOBase` destructor logs ``close()`` exceptions.
 
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
      mode (even when it would otherwise activate automatically).
      See :envvar:`PYTHONUTF8` for more details.
+   * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
+     tree rooted at the given directory instead of to the code tree. See also
+     :envvar:`PYTHONPYCACHEPREFIX`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -460,6 +464,10 @@ Miscellaneous options
 
    .. versionadded:: 3.7
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
+
+   .. versionadded:: 3.8
+      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+      ``close()`` exceptions in :class:`io.IOBase` destructor.
 
 
 Options you shouldn't use
@@ -585,6 +593,16 @@ conflict.
    If this is set to a non-empty string, Python won't try to write ``.pyc``
    files on the import of source modules.  This is equivalent to
    specifying the :option:`-B` option.
+
+
+.. envvar:: PYTHONPYCACHEPREFIX
+
+   If this is set, Python will write ``.pyc`` files in a mirror directory tree
+   at this path, instead of in ``__pycache__`` directories within the source
+   tree. This is equivalent to specifying the :option:`-X`
+   ``pycache_prefix=PATH`` option.
+
+   .. versionadded:: 3.8
 
 
 .. envvar:: PYTHONHASHSEED
@@ -769,7 +787,7 @@ conflict.
    This may also be enabled at runtime with
    :func:`sys._enablelegacywindowsfsencoding()`.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -783,7 +801,7 @@ conflict.
    This variable is ignored if the standard streams are redirected (to files
    or pipes) rather than referring to console buffers.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
 
@@ -834,7 +852,7 @@ conflict.
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
-   Availability: \*nix
+   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.
@@ -889,13 +907,13 @@ conflict.
    If this environment variable is not set at all, then the interpreter defaults
    to using the current locale settings, *unless* the current locale is
    identified as a legacy ASCII-based locale
-   (as descibed for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
+   (as described for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
    either disabled or fails. In such legacy locales, the interpreter will
    default to enabling UTF-8 mode unless explicitly instructed not to do so.
 
    Also available as the :option:`-X` ``utf8`` option.
 
-   Availability: \*nix
+   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`540` for more details.

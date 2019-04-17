@@ -259,6 +259,13 @@ class FileInput:
             # repeat with next file
 
     def __getitem__(self, i):
+        import warnings
+        warnings.warn(
+            "Support for indexing FileInput objects is deprecated. "
+            "Use iterator protocol instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         if i != self.lineno():
             raise RuntimeError("accessing lines out of order")
         try:
@@ -350,8 +357,7 @@ class FileInput:
                     fd = os.open(self._filename, mode, perm)
                     self._output = os.fdopen(fd, "w")
                     try:
-                        if hasattr(os, 'chmod'):
-                            os.chmod(self._filename, perm)
+                        os.chmod(self._filename, perm)
                     except OSError:
                         pass
                 self._savestdout = sys.stdout

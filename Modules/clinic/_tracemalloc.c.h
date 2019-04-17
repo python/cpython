@@ -84,7 +84,7 @@ PyDoc_STRVAR(_tracemalloc_start__doc__,
 "trace to nframe.");
 
 #define _TRACEMALLOC_START_METHODDEF    \
-    {"start", (PyCFunction)_tracemalloc_start, METH_FASTCALL, _tracemalloc_start__doc__},
+    {"start", (PyCFunction)(void(*)(void))_tracemalloc_start, METH_FASTCALL, _tracemalloc_start__doc__},
 
 static PyObject *
 _tracemalloc_start_impl(PyObject *module, int nframe);
@@ -95,10 +95,22 @@ _tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int nframe = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:start",
-        &nframe)) {
+    if (!_PyArg_CheckPositional("start", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    nframe = _PyLong_AsInt(args[0]);
+    if (nframe == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _tracemalloc_start_impl(module, nframe);
 
 exit:
@@ -185,4 +197,4 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=d98afded69c89d52 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1bc96dc569706afa input=a9049054013a1b77]*/

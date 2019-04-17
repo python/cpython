@@ -1,14 +1,19 @@
 """Test script for the gzip module.
 """
 
-import unittest
-from test import support
-from test.support import bigmemtest, _4G
+import array
+import functools
+import io
 import os
 import pathlib
-import io
 import struct
-import array
+import sys
+import unittest
+from subprocess import PIPE, Popen
+from test import support
+from test.support import _4G, bigmemtest
+from test.support.script_helper import assert_python_ok, assert_python_failure
+
 gzip = support.import_module('gzip')
 
 data1 = b"""  int length=DEFAULTALLOC, err = Z_OK;
@@ -22,6 +27,9 @@ data2 = b"""/* zlibmodule.c -- gzip-compatible data compression */
 /* See http://www.gzip.org/zlib/
 /* See http://www.winimage.com/zLibDll for Windows */
 """
+
+
+TEMPDIR = os.path.abspath(support.TESTFN) + '-gzdir'
 
 
 class UnseekableIO(io.BytesIO):
@@ -491,6 +499,17 @@ class TestGzip(BaseTest):
                 with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
                     self.assertEqual(f.read(), data)
 
+    def test_compress_mtime(self):
+        mtime = 123456789
+        for data in [data1, data2]:
+            for args in [(), (1,), (6,), (9,)]:
+                with self.subTest(data=data, args=args):
+                    datac = gzip.compress(data, *args, mtime=mtime)
+                    self.assertEqual(type(datac), bytes)
+                    with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
+                        f.read(1) # to set mtime attribute
+                        self.assertEqual(f.mtime, mtime)
+
     def test_decompress(self):
         for data in (data1, data2):
             buf = io.BytesIO()
@@ -665,8 +684,115 @@ class TestOpen(BaseTest):
         with gzip.open(self.filename, "rt", newline="\r") as f:
             self.assertEqual(f.readlines(), [uncompressed])
 
+
+def create_and_remove_directory(directory):
+    def decorator(function):
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            os.makedirs(directory)
+            try:
+                return function(*args, **kwargs)
+            finally:
+                support.rmtree(directory)
+        return wrapper
+    return decorator
+
+
+class TestCommandLine(unittest.TestCase):
+    data = b'This is a simple test with gzip'
+
+    def test_decompress_stdin_stdout(self):
+        with io.BytesIO() as bytes_io:
+            with gzip.GzipFile(fileobj=bytes_io, mode='wb') as gzip_file:
+                gzip_file.write(self.data)
+
+            args = sys.executable, '-m', 'gzip', '-d'
+            with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+                out, err = proc.communicate(bytes_io.getvalue())
+
+        self.assertEqual(err, b'')
+        self.assertEqual(out, self.data)
+
+    @create_and_remove_directory(TEMPDIR)
+    def test_decompress_infile_outfile(self):
+        gzipname = os.path.join(TEMPDIR, 'testgzip.gz')
+        self.assertFalse(os.path.exists(gzipname))
+
+        with gzip.open(gzipname, mode='wb') as fp:
+            fp.write(self.data)
+        rc, out, err = assert_python_ok('-m', 'gzip', '-d', gzipname)
+
+        with open(os.path.join(TEMPDIR, "testgzip"), "rb") as gunziped:
+            self.assertEqual(gunziped.read(), self.data)
+
+        self.assertTrue(os.path.exists(gzipname))
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    def test_decompress_infile_outfile_error(self):
+        rc, out, err = assert_python_ok('-m', 'gzip', '-d', 'thisisatest.out')
+        self.assertIn(b"filename doesn't end in .gz:", out)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b'')
+
+    @create_and_remove_directory(TEMPDIR)
+    def test_compress_stdin_outfile(self):
+        args = sys.executable, '-m', 'gzip'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            out, err = proc.communicate(self.data)
+
+        self.assertEqual(err, b'')
+        self.assertEqual(out[:2], b"\x1f\x8b")
+
+    @create_and_remove_directory(TEMPDIR)
+    def test_compress_infile_outfile_default(self):
+        local_testgzip = os.path.join(TEMPDIR, 'testgzip')
+        gzipname = local_testgzip + '.gz'
+        self.assertFalse(os.path.exists(gzipname))
+
+        with open(local_testgzip, 'wb') as fp:
+            fp.write(self.data)
+
+        rc, out, err = assert_python_ok('-m', 'gzip', local_testgzip)
+
+        self.assertTrue(os.path.exists(gzipname))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    @create_and_remove_directory(TEMPDIR)
+    def test_compress_infile_outfile(self):
+        for compress_level in ('--fast', '--best'):
+            with self.subTest(compress_level=compress_level):
+                local_testgzip = os.path.join(TEMPDIR, 'testgzip')
+                gzipname = local_testgzip + '.gz'
+                self.assertFalse(os.path.exists(gzipname))
+
+                with open(local_testgzip, 'wb') as fp:
+                    fp.write(self.data)
+
+                rc, out, err = assert_python_ok('-m', 'gzip', compress_level, local_testgzip)
+
+                self.assertTrue(os.path.exists(gzipname))
+                self.assertEqual(out, b'')
+                self.assertEqual(err, b'')
+                os.remove(gzipname)
+                self.assertFalse(os.path.exists(gzipname))
+
+    def test_compress_fast_best_are_exclusive(self):
+        rc, out, err = assert_python_failure('-m', 'gzip', '--fast', '--best')
+        self.assertIn(b"error: argument --best: not allowed with argument --fast", err)
+        self.assertEqual(out, b'')
+
+    def test_decompress_cannot_have_flags_compression(self):
+        rc, out, err = assert_python_failure('-m', 'gzip', '--fast', '-d')
+        self.assertIn(b'error: argument -d/--decompress: not allowed with argument --fast', err)
+        self.assertEqual(out, b'')
+
+
 def test_main(verbose=None):
-    support.run_unittest(TestGzip, TestOpen)
+    support.run_unittest(TestGzip, TestOpen, TestCommandLine)
+
 
 if __name__ == "__main__":
     test_main(verbose=True)

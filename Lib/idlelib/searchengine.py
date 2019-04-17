@@ -231,6 +231,7 @@ def get_line_col(index):
     line, col = map(int, index.split(".")) # Fails on invalid index
     return line, col
 
+
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_searchengine', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_searchengine', verbosity=2)

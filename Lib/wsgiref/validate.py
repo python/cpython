@@ -77,7 +77,7 @@ Some of the things this checks:
 
 * That wsgi.input is used properly:
 
-  - .read() is called with zero or one argument
+  - .read() is called with exactly one argument
 
   - That it returns a string
 

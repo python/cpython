@@ -18,7 +18,7 @@ Here are some of the useful functions provided by this module:
 
     getargvalues(), getcallargs() - get info about function arguments
     getfullargspec() - same, with support for Python 3 features
-    formatargspec(), formatargvalues() - format an argument spec
+    formatargvalues() - format an argument spec
     getouterframes(), getinnerframes() - get info about frames
     currentframe() - get the current stack frame
     stack(), trace() - get info about frames on the stack or in a traceback
@@ -168,30 +168,38 @@ def isfunction(object):
         __kwdefaults__  dict of keyword only parameters with defaults"""
     return isinstance(object, types.FunctionType)
 
-def isgeneratorfunction(object):
+def _has_code_flag(f, flag):
+    """Return true if ``f`` is a function (or a method or functools.partial
+    wrapper wrapping a function) whose code object has the given ``flag``
+    set in its flags."""
+    while ismethod(f):
+        f = f.__func__
+    f = functools._unwrap_partial(f)
+    if not isfunction(f):
+        return False
+    return bool(f.__code__.co_flags & flag)
+
+def isgeneratorfunction(obj):
     """Return true if the object is a user-defined generator function.
 
     Generator function objects provide the same attributes as functions.
     See help(isfunction) for a list of attributes."""
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_GENERATOR)
+    return _has_code_flag(obj, CO_GENERATOR)
 
-def iscoroutinefunction(object):
+def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
     Coroutine functions are defined with "async def" syntax.
     """
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_COROUTINE)
+    return _has_code_flag(obj, CO_COROUTINE)
 
-def isasyncgenfunction(object):
+def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.
 
     Asynchronous generator functions are defined with "async def"
     syntax and have "yield" expressions in their body.
     """
-    return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_ASYNC_GENERATOR)
+    return _has_code_flag(obj, CO_ASYNC_GENERATOR)
 
 def isasyncgen(object):
     """Return true if the object is an asynchronous generator."""
@@ -579,9 +587,12 @@ def _finddoc(obj):
         cls = obj.__objclass__
         if getattr(cls, name) is not obj:
             return None
+        if ismemberdescriptor(obj):
+            slots = getattr(cls, '__slots__', None)
+            if isinstance(slots, dict) and name in slots:
+                return slots[name]
     else:
         return None
-
     for base in cls.__mro__:
         try:
             doc = getattr(base, name).__doc__
@@ -954,7 +965,12 @@ def getsourcelines(object):
     object = unwrap(object)
     lines, lnum = findsource(object)
 
-    if ismodule(object):
+    if istraceback(object):
+        object = object.tb_frame
+
+    # for module or frame that corresponds to module, return all source lines
+    if (ismodule(object) or
+        (isframe(object) and object.f_code.co_name == "<module>")):
         return lines, 0
     else:
         return getblock(lines[lnum:]), lnum + 1
@@ -1065,8 +1081,10 @@ def getargspec(func):
     Alternatively, use getfullargspec() for an API with a similar namedtuple
     based interface, but full support for annotations and keyword-only
     parameters.
+
+    Deprecated since Python 3.5, use `inspect.getfullargspec()`.
     """
-    warnings.warn("inspect.getargspec() is deprecated, "
+    warnings.warn("inspect.getargspec() is deprecated since Python 3.0, "
                   "use inspect.signature() or inspect.getfullargspec()",
                   DeprecationWarning, stacklevel=2)
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
@@ -1211,7 +1229,19 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     kwonlyargs, kwonlydefaults, annotations).  The other five arguments
     are the corresponding optional formatting functions that are called to
     turn names and values into strings.  The last argument is an optional
-    function to format the sequence of arguments."""
+    function to format the sequence of arguments.
+
+    Deprecated since Python 3.5: use the `signature` function and `Signature`
+    objects.
+    """
+
+    from warnings import warn
+
+    warn("`formatargspec` is deprecated since Python 3.5. Use `signature` and "
+         "the `Signature` object directly",
+         DeprecationWarning,
+         stacklevel=2)
+
     def formatargandannotation(arg):
         result = formatarg(arg)
         if arg in annotations:
@@ -1971,7 +2001,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         module = sys.modules.get(module_name, None)
         if module:
             module_dict = module.__dict__
-    sys_module_dict = sys.modules
+    sys_module_dict = sys.modules.copy()
 
     def parse_name(node):
         assert isinstance(node, ast.arg)
@@ -1988,14 +2018,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise RuntimeError()
 
-        if isinstance(value, str):
-            return ast.Str(value)
-        if isinstance(value, (int, float)):
-            return ast.Num(value)
-        if isinstance(value, bytes):
-            return ast.Bytes(value)
-        if value in (True, False, None):
-            return ast.NameConstant(value)
+        if isinstance(value, (str, int, float, bytes, bool, type(None))):
+            return ast.Constant(value)
         raise RuntimeError()
 
     class RewriteSymbolics(ast.NodeTransformer):
@@ -2786,19 +2810,25 @@ class Signature:
 
     @classmethod
     def from_function(cls, func):
-        """Constructs Signature for the given python function."""
+        """Constructs Signature for the given python function.
 
-        warnings.warn("inspect.Signature.from_function() is deprecated, "
-                      "use Signature.from_callable()",
+        Deprecated since Python 3.5, use `Signature.from_callable()`.
+        """
+
+        warnings.warn("inspect.Signature.from_function() is deprecated since "
+                      "Python 3.5, use Signature.from_callable()",
                       DeprecationWarning, stacklevel=2)
         return _signature_from_function(cls, func)
 
     @classmethod
     def from_builtin(cls, func):
-        """Constructs Signature for the given builtin function."""
+        """Constructs Signature for the given builtin function.
 
-        warnings.warn("inspect.Signature.from_builtin() is deprecated, "
-                      "use Signature.from_callable()",
+        Deprecated since Python 3.5, use `Signature.from_callable()`.
+        """
+
+        warnings.warn("inspect.Signature.from_builtin() is deprecated since "
+                      "Python 3.5, use Signature.from_callable()",
                       DeprecationWarning, stacklevel=2)
         return _signature_from_builtin(cls, func)
 
