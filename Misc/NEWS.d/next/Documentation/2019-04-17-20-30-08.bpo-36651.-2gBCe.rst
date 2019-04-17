@@ -1,0 +1,2 @@
+In the documentation for the call_later and the call_at methods there is a note which says that the delay cannot be longer than a day, but both methods have a note saying that this limitation was removed in Python 3.8
+Here I fixed this issue by removing the pre-exising note and added a versionchanged.
