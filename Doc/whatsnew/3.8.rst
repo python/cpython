@@ -90,6 +90,12 @@ New Modules
 Improved Modules
 ================
 
+shlex
+----------
+
+The new :func:`shlex.join` function acts as the inverse of :func:`shlex.split`.
+(Contributed by Bo Bayles in :issue:`32102`.)
+
 
 Optimizations
 =============
