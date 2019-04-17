@@ -1317,7 +1317,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                 # os.confstr() or CS_PATH is not available
                 path = os.defpath
         # bpo-35755: Don't use os.defpath if the PATH environment variable is
-        # set to an empty string to mimick Unix which command behavior
+        # set to an empty string
 
     # PATH='' doesn't match, whereas PATH=':' looks in the current directory
     if not path:
