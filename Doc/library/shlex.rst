@@ -48,8 +48,6 @@ The :mod:`shlex` module defines the following functions:
 
    The returned value is shell-escaped to protect against injection
    vulnerabilities (see :func:`quote`).
-   Nonetheless, it's safer to pass a list of tokens to a shell command line
-   when possible.
 
    .. versionadded:: 3.8
 
