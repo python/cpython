@@ -30,6 +30,10 @@
 #define CHECKEXC 1      /* Double-check exception checking */
 #endif
 
+#if !defined(Py_BUILD_CORE)
+#  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
+#endif
+
 /* Private API for the LOAD_METHOD opcode. */
 extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 

@@ -1,8 +1,11 @@
+/* JSON accelerator C extensor: _json module.
+ *
+ * It is built as a built-in module (Py_BUILD_CORE_BUILTIN define) on Windows
+ * and as an extension module (Py_BUILD_CORE_MODULE define) on other
+ * platforms. */
 
-/* Core extension modules are built-in on some platforms (e.g. Windows). */
-#ifdef Py_BUILD_CORE
-#define Py_BUILD_CORE_BUILTIN
-#undef Py_BUILD_CORE
+#if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
+#  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
 #endif
 
 #include "Python.h"

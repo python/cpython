@@ -5,6 +5,11 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
+/* The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
+   define, but we only want to test the public C API, not the internal
+   C API. */
+#undef Py_BUILD_CORE_MODULE
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
