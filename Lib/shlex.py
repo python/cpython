@@ -306,6 +306,7 @@ def split(s, comments=False, posix=True):
 
 
 def join(split_command):
+    """Return a shell-escaped string from *split_command*."""
     return ' '.join(quote(arg) for arg in split_command)
 
 
