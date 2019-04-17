@@ -18,9 +18,6 @@ from test.support.script_helper import (
 # Debug build?
 Py_DEBUG = hasattr(sys, "gettotalrefcount")
 
-# Support preexec?
-SUBPROCESS_SUPPORTS_PREEXEC = (sys.platform != "vxworks")
-
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
     data = kill_python(p)
@@ -371,7 +368,7 @@ class CmdLineTest(unittest.TestCase):
     # Issue #7111: Python should work without standard streams
 
     @unittest.skipIf(os.name != 'posix', "test needs POSIX semantics")
-    @unittest.skipUnless(SUBPROCESS_SUPPORTS_PREEXEC,
+    @unittest.skipIf(sys.platform == "vxworks",
                          "test needs preexec support in subprocess.Popen")
     def _test_no_stdio(self, streams):
         code = """if 1:
