@@ -1,0 +1,1 @@
+Remove trailing spaces for registry keys when installed via the Store.
