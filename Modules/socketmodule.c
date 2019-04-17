@@ -1251,7 +1251,7 @@ setbdaddr(const char *name, bdaddr_t *bdaddr)
     char ch;
     int n;
 
-    n = sscanf(name, "%X:%X:%X:%X:%X:%X%c",
+    n = sscanf(name, "%2X:%2X:%2X:%2X:%2X:%2X%c",
                &b5, &b4, &b3, &b2, &b1, &b0, &ch);
     if (n == 6 && (b0 | b1 | b2 | b3 | b4 | b5) < 256) {
         bdaddr->b[0] = b0;

@@ -2356,6 +2356,41 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     def _testRecvFromNegative(self):
         self.cli.sendto(MSG, 0, (HOST, self.port))
 
+
+@requireSocket("AF_BLUETOOTH", "SOCK_STREAM", "BTPROTO_RFCOMM")
+class BasicBluetoothTest(unittest.TestCase):
+    def setUp(self):
+        self.bs  = socket.socket(socket.AF_BLUETOOTH,
+                                 socket.SOCK_STREAM,
+                                 socket.BTPROTO_RFCOMM)
+
+    def tearDown(self):
+        self.bs.close()
+
+    def test_address_invalid(self):
+        addr = 'ff:ff:ff:ff:fffa'
+        msg = '"{addr} is not a valid address.'.format(addr=addr)
+        with self.assertRaisesRegex(OSError, 'bad bluetooth address', msg=msg) as cm:
+            self.bs.connect((addr, 1))
+        self.assertIsNone(cm.exception.errno, msg)
+
+
+    def test_address_overflow(self):
+        addr = '{0:x}:10:60:0:AA:08'.format(2 ** (8 * struct.calcsize('I')))
+        msg = '"{addr}" is not a valid address.'.format(addr=addr)
+        with self.assertRaisesRegex(OSError, 'bad bluetooth address', msg=msg) as cm:
+            self.bs.connect((addr, 3))
+        self.assertIsNone(cm.exception.errno, msg)
+
+    def test_address_valid(self):
+        addr = 'C0:10:60:AA:36:F8'
+        msg = '"{addr}" is a valid address.'.format(addr=addr)
+        with self.assertRaises(OSError, msg=msg) as cm:
+            self.bs.connect((addr, 1))
+        # valid bluetooth address, failing connection
+        self.assertIsNotNone(cm.exception.errno, msg)
+
+
 # Tests for the sendmsg()/recvmsg() interface.  Where possible, the
 # same test code is used with different families and types of socket
 # (e.g. stream, datagram), and tests using recvmsg() are repeated
@@ -6211,6 +6246,7 @@ def test_main():
     tests.extend([TIPCTest, TIPCThreadableTest])
     tests.extend([BasicCANTest, CANTest])
     tests.extend([BasicRDSTest, RDSTest])
+    tests.append(BasicBluetoothTest)
     tests.append(LinuxKernelCryptoAPI)
     tests.append(BasicQIPCRTRTest)
     tests.extend([
