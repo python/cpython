@@ -632,7 +632,7 @@ class Regrtest:
             except FileNotFoundError as error:
                 # Windows IoT Core and Windows Nano Server do not provide
                 # typeperf.exe for x64, x86 or ARM
-                print('Failed to create WindowsLoadTracker: {}'.format(str(error)))
+                print('Failed to create WindowsLoadTracker: {}'.format(error))
 
         self.run_tests()
         self.display_result()
