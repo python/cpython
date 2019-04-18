@@ -1,0 +1,2 @@
+distutils UnixCCompiler now removes the standard library from the run-time
+search path ("rpath").
