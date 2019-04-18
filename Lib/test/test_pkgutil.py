@@ -357,6 +357,61 @@ class ExtendPathTests(unittest.TestCase):
     # XXX: test .pkg files
 
 
+class ExtendPathBaseTests(unittest.TestCase):
+    def test_input_type_invalid(self):
+        # path should be list instead of string
+        path = 'path'
+        name = 'foo'
+        self.assertEqual('path', pkgutil.extend_path(path, name))
+
+    def test_parent_package_raise_key_error(self):
+        path = ['path']
+        # sys.modules['foo'] raise KeyError
+        name = 'foo.bar'
+        self.assertEqual(['path'], pkgutil.extend_path(path, name))
+
+    def test_parent_package_raise_attr_error(self):
+        path = ['path']
+        # module 'datetime' has no attribute '__path__'
+        name = 'datetime.date'
+        self.assertEqual(['path'], pkgutil.extend_path(path, name))
+
+    def test_extend_path_files(self):
+        # create foo/bar.py
+        self.dirname = tempfile.mkdtemp()
+        sys.path.insert(0, self.dirname)
+        package_name = "foo"
+        package_path = os.path.join(self.dirname, package_name)
+        os.mkdir(package_path)
+        f = open(os.path.join(package_path, 'bar.py'), "w")
+        f.close()
+        # Search valid or invalid module
+        import foo
+        path = [foo.__path__]
+        name = 'foo'
+        self.assertEqual([path[0], package_path], pkgutil.extend_path(path, name))
+        name = 'other'
+        self.assertEqual(path, pkgutil.extend_path(path, name))
+        del sys.path[0]
+
+    def test_extend_pkg_files(self):
+        self.dirname = tempfile.mkdtemp()
+        sys.path.insert(0, self.dirname)
+        package_name = "foo"
+        package_path = os.path.join(self.dirname, package_name)
+        sys.path.insert(1, package_path)
+        os.mkdir(package_path)
+        f = open(os.path.join(package_path, 'bar.pkg'), "w")
+        f.write('foo\nbar\n#other\n')
+        f.close()
+        # Search valid or invalid module
+        import foo
+        path = [foo.__path__]
+        self.assertEqual([path[0], 'foo', 'bar'], pkgutil.extend_path(path, 'bar'))
+        del sys.path[0]
+        del sys.path[1]
+
+
 class NestedNamespacePackageTest(unittest.TestCase):
 
     def setUp(self):
