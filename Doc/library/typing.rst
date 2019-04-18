@@ -966,8 +966,8 @@ The module defines the following classes, functions and decorators:
 
       def fetch_response() -> Response: ...
 
-    Note that returning instances of private classes is not recommended.
-    It is usually preferable to make such classes public.
+   Note that returning instances of private classes is not recommended.
+   It is usually preferable to make such classes public.
 
 .. data:: Any
 
