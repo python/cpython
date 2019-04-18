@@ -737,12 +737,17 @@ of 1, 2, 4, 8, 16, 32, or 64 bits
 */
 int can_return_struct_as_int(size_t s)
 {
-  return s == 1 || s == 2 || s == 4;
+    return s == 1 || s == 2 || s == 4;
 }
 
 int can_return_struct_as_sint64(size_t s)
 {
-  return s == 8;
+#ifdef _M_ARM
+    // 8 byte structs cannot be returned in a register on ARM32
+    return 0;
+#else
+    return s == 8;
+#endif
 }
 #endif
 
@@ -807,7 +812,7 @@ static int _call_function_pointer(int flags,
     }
 
     cc = FFI_DEFAULT_ABI;
-#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(_WIN32_WCE)
+#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(_WIN32_WCE) && !defined(_M_ARM)
     if ((flags & FUNCFLAG_CDECL) == 0)
         cc = FFI_STDCALL;
 #endif
