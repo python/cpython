@@ -522,8 +522,9 @@ Signal Handling
    time :c:func:`PyErr_CheckSignals` is called,  the Python
    :data:`signal.SIGINT` signal handler will be raised.
 
-   The :data:`signal.SIGINT` signal must be handled by Python, otherwise an
-   exception is raised and ``-1`` is returned. ``0`` is returned on success.
+   A signal handler for the :data:`signal.SIGINT` signal must have been
+   installed by the `signal` function, otherwise an exception is raised and
+   return ``-1`` on error. Return ``0`` on success.
 
    .. versionadded:: 3.8
 
