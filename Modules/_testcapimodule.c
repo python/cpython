@@ -4736,13 +4736,6 @@ decode_locale_ex(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *
-get_configs(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    return _Py_GetConfigsAsDict();
-}
-
-
 #ifdef Py_REF_DEBUG
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
@@ -4990,7 +4983,6 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", (PyCFunction)(void(*)(void))bad_get, METH_FASTCALL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
-    {"get_configs", get_configs, METH_NOARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif

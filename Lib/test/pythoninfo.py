@@ -598,7 +598,7 @@ def collect_get_config(info_add):
     # Dump global configuration variables, _PyCoreConfig
     # and _PyMainInterpreterConfig
     try:
-        from _testcapi import get_configs
+        from _testinternalcapi import get_configs
     except ImportError:
         return
 
