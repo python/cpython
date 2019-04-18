@@ -814,6 +814,10 @@ class PyBuildExt(build_ext):
         self.add(Extension('_testcapi', ['_testcapimodule.c'],
                            depends=['testcapi_long.h']))
 
+        # Python Internal C API test module
+        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c'],
+                           extra_compile_args=['-D Py_BUILD_CORE_MODULE']))
+
         # Python PEP-3118 (buffer protocol) test module
         self.add(Extension('_testbuffer', ['_testbuffer.c']))
 
