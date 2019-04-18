@@ -24,6 +24,7 @@ echo.
 echo.Available flags:
 echo.  -x64    build for x64
 echo.  -x86    build for x86
+echo.  -arm32  build for arm32
 echo.  -?      this help
 echo.  --install-cygwin  install cygwin to c:\cygwin
 exit /b 127
@@ -32,12 +33,14 @@ exit /b 127
 
 set BUILD_X64=
 set BUILD_X86=
+set BUILD_ARM32=
 set INSTALL_CYGWIN=
 
 :CheckOpts
 if "%1"=="" goto :CheckOptsDone
 if /I "%1"=="-x64" (set BUILD_X64=1) & shift & goto :CheckOpts
 if /I "%1"=="-x86" (set BUILD_X86=1) & shift & goto :CheckOpts
+if /I "%1"=="-arm32" (set BUILD_ARM32=1) & shift & goto :CheckOpts
 if /I "%1"=="-?" goto :Usage
 if /I "%1"=="--install-cygwin" (set INSTALL_CYGWIN=1) & shift & goto :CheckOpts
 goto :Usage
@@ -47,6 +50,7 @@ goto :Usage
 if NOT DEFINED BUILD_X64 if NOT DEFINED BUILD_X86 if NOT DEFINED BUILD_ARM32 (
     set BUILD_X64=1
     set BUILD_X86=1
+    set BUILD_ARM32=1
 )
 
 if "%INSTALL_CYGWIN%"=="1" call :InstallCygwin
@@ -83,8 +87,9 @@ echo.
 
 if not exist Makefile.in (%SH% -lc "(cd $LIBFFI_SOURCE; ./autogen.sh;)")
 
-call :BuildOne x86 i686-pc-cygwin i686-pc-cygwin
-call :BuildOne x64 x86_64-w64-cygwin x86_64-w64-cygwin
+if "%BUILD_X64%"=="1" call :BuildOne x64 x86_64-w64-cygwin x86_64-w64-cygwin
+if "%BUILD_X86%"=="1" call :BuildOne x86 i686-pc-cygwin i686-pc-cygwin
+if "%BUILD_ARM32%"=="1" call :BuildOne x86_arm i686-pc-cygwin arm-w32-cygwin
 
 popd
 endlocal
@@ -117,6 +122,12 @@ if /I "%VCVARS_PLATFORM%" EQU "x86" (
     set ARTIFACTS=%LIBFFI_SOURCE%\i686-pc-cygwin
     set ASSEMBLER=
     set SRC_ARCHITECTURE=x86
+)
+if /I "%VCVARS_PLATFORM%" EQU "x86_arm" (
+    set ARCH=arm32
+    set ARTIFACTS=%LIBFFI_SOURCE%\arm-w32-cygwin
+    set ASSEMBLER=-marm
+    set SRC_ARCHITECTURE=ARM
 )
 
 if NOT DEFINED LIBFFI_OUT set LIBFFI_OUT=%~dp0\..\externals\libffi
