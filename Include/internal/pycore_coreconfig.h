@@ -110,6 +110,11 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
     const _PyArgv *args);
 PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
 
+
+/* --- Function used for testing ---------------------------------- */
+
+PyAPI_FUNC(PyObject*) _Py_GetConfigsAsDict(void);
+
 #ifdef __cplusplus
 }
 #endif
