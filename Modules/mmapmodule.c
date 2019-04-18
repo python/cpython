@@ -1163,7 +1163,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         /* BSD way to map anonymous memory */
         flags |= MAP_ANONYMOUS;
 
-        /* VxWorks only support MAP_ANONYMOUS with MAP_PRIVATE flag */
+        /* VxWorks only supports MAP_ANONYMOUS with MAP_PRIVATE flag */
 #ifdef __VXWORKS__
         flags &= ~MAP_SHARED;
         flags |= MAP_PRIVATE;
