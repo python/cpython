@@ -408,11 +408,6 @@ typedef struct {
         ._init_main = 1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
-
-/* --- Function used for testing ---------------------------------- */
-
-PyAPI_FUNC(PyObject*) _Py_GetConfigsAsDict(void);
-
 #ifdef __cplusplus
 }
 #endif
