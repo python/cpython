@@ -2463,7 +2463,7 @@ class ElementFindTest(unittest.TestCase):
         nsmap = {'xx': 'Y'}
         self.assertEqual(len(root.findall(".//xx:b", namespaces=nsmap)), 1)
         self.assertEqual(len(root.findall(".//b", namespaces=nsmap)), 2)
-        nsmap = {'xx': 'X', None: 'Y'}
+        nsmap = {'xx': 'X', '': 'Y'}
         self.assertEqual(len(root.findall(".//xx:b", namespaces=nsmap)), 2)
         self.assertEqual(len(root.findall(".//b", namespaces=nsmap)), 1)
 

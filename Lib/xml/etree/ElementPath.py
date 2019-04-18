@@ -71,7 +71,7 @@ xpath_tokenizer_re = re.compile(
     )
 
 def xpath_tokenizer(pattern, namespaces=None):
-    default_namespace = namespaces.get(None) if namespaces else None
+    default_namespace = namespaces.get('') if namespaces else None
     for token in xpath_tokenizer_re.findall(pattern):
         tag = token[1]
         if tag and tag[0] != "{":
@@ -275,11 +275,7 @@ def iterfind(elem, path, namespaces=None):
 
     cache_key = (path,)
     if namespaces:
-        if None in namespaces:
-            cache_key += (namespaces[None],) + tuple(sorted(
-                item for item in namespaces.items() if item[0] is not None))
-        else:
-            cache_key += tuple(sorted(namespaces.items()))
+        cache_key += tuple(sorted(namespaces.items()))
 
     try:
         selector = _cache[cache_key]
