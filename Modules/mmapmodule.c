@@ -692,8 +692,6 @@ mmap__repr__method(PyObject *self)
     const char *reprfmt;
     const char *access_str;
 
-    Py_ssize_t size = m_obj->size;
-
     switch (m_obj->access) {
         case ACCESS_DEFAULT:
             access_str = "ACCESS_DEFAULT";
@@ -716,17 +714,20 @@ mmap__repr__method(PyObject *self)
             return NULL;
     }
 
+    Py_ssize_t size = m_obj->size;
     const char *tp_name = self->ob_type->tp_name;
-    int fd = m_obj->fd;
+
 
 #ifdef MS_WINDOWS
+    int fileno = m_obj->file_handle;
     if (m_obj->map_handle == NULL)
 #elif defined(UNIX)
+    int fileno = m_obj->fd;
     if (m_obj->data == NULL)
 #endif
     {
         reprfmt = "<%s is_closed=True fileno=%d access=%s>";
-        repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str);
+        repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str);
     }
     else {
         const char *data = m_obj->data;
@@ -742,7 +743,7 @@ mmap__repr__method(PyObject *self)
             PyObject *entire_contents;
             entire_contents = PyBytes_FromStringAndSize(data, size);
 
-            repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str,
+            repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str,
                                         length, offset, entire_contents);
         }
         else {
@@ -753,7 +754,7 @@ mmap__repr__method(PyObject *self)
             PyObject *slice2 = PyBytes_FromStringAndSize(data + size - 32,
                                                          32);
 
-            repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str,
+            repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str,
                                         length, offset, slice1, slice2);
         }
     }

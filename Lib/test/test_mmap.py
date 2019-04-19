@@ -11,18 +11,15 @@ import weakref
 # Skip test if we can't import mmap.
 mmap = import_module('mmap')
 
-open_mmap_repr_template =\
-    "<mmap.mmap is_closed=False fileno={fileno} "\
-    "access={access} size={size} offset={offset} "\
-    "entire_contents={begin} ... {end}"
+open_mmap_repr_pat = re.compile(
+    r"<mmap.mmap is_closed=False fileno=-?\d+ "
+    r"access=(?P<access>\S+) size=(?P<size>\d+) "
+    r"offset=(?P<offset>\d+) "
+    r"entire_contents=(?P<entire_contents>[\w\W]+)>")
 
-open_tiny_mmap_repr_template =\
-    "<mmap.mmap is_closed=False fileno={fileno} "\
-    "access={access} size={size} offset={offset} "\
-    "entire_contents={entire_contents}>"
-
-closed_mmap_template =\
-    "<mmap.mmap is_closed=True fileno={fileno} access={access}>"
+closed_mmap_repr_pat = re.compile(
+    r"<mmap.mmap is_closed=True fileno=-?\d+ "
+    r"access=(?P<access>\S+)>")
 
 PAGESIZE = mmap.PAGESIZE
 
@@ -768,39 +765,39 @@ class MmapTests(unittest.TestCase):
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
 
     def test_open_mmap(self):
-        def make_entire_contents_keyword(size, data):
+        def show_entire_contents(size, data):
             if size < 64:
-                return dict(entire_contents=repr(data))
-            return dict(begin=repr(data[:32]), end=repr(data[-32:]))
+                return repr(data)
+            return repr(data[:32]) + ' ... ' + repr(data[-32:])
 
         for mapsize in (60, 120, 180, 240):
+
+            accesses =  ('ACCESS_DEFAULT', 'ACCESS_READ',
+                         'ACCESS_COPY', 'ACCESS_WRITE')
+
+            offsets = (0, mapsize//5, mapsize//4, mapsize//3, mapsize//2)
+
             with open(TESTFN, "wb+") as fp:
                 data = b'a'*mapsize
                 fp.write(data)
                 fp.flush()
 
-                with mmap.mmap(fp.fileno(), mapsize) as mm:
-                    mm = mmap.mmap(fp.fileno(), mapsize)
-                    repr_str = open_tiny_mmap_repr_template.format(
-                        fileno=fp.fileno(),
-                        access="ACCESS_DEFAULT",
-                        size=mapsize,
-                        offset=0,
-                        **make_entire_contents_keyword(mapsize, data)
-                    )
-                    self.assertEqual(repr(mm), repr_str)
-
-                    for offset in [mapsize//5, mapsize//4,
-                                   mapsize//3, mapsize//2]:
+                for access, offset in itertools.product(accesses, offsets):
+                    accint = getattr(mmap, access)
+                    with mmap.mmap(fp.fileno(), mapsize, access=accint) as mm:
                         mm.seek(offset)
-                        repr_str = open_tiny_mmap_repr_template.format(
-                            fileno=fp.fileno(),
-                            access="ACCESS_DEFAULT",
-                            size=mapsize,
-                            offset=offset,
-                            **make_entire_contents_keyword(mapsize, data)
-                        )
-                        self.assertEqual(repr(mm), repr_str)
+                        match = open_mmap_repr_pat.match(repr(mm))
+                        self.assertIsNotNone(match)
+                        self.assertEqual(match.group('access'), access)
+                        self.assertEqual(match.group('size'), str(mapsize))
+                        self.assertEqual(match.group('offset'), str(offset))
+                        self.assertEqual(match.group('entire_contents'),
+                                         show_entire_contents(mapsize, data))
+
+                    match = closed_mmap_repr_pat.match(repr(mm))
+                    self.assertIsNotNone(match)
+                    self.assertEqual(match.group('access'), access)
+
 
 class LargeMmapTests(unittest.TestCase):
 
