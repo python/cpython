@@ -17,6 +17,8 @@ typedef uint16_t _Py_CODEUNIT;
 #  define _Py_OPARG(word) ((word) >> 8)
 #endif
 
+typedef struct _PyOpCodeOpt _PyOpCodeOpt;
+
 /* Bytecode object */
 typedef struct {
     PyObject_HEAD
@@ -48,6 +50,14 @@ typedef struct {
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
+
+    /* Opcodes just-in-time cache */
+    unsigned char *co_opt_opcodemap;
+    _PyOpCodeOpt *co_opt;
+    PY_UINT64_T co_opt_flag;
+#ifdef Py_DEBUG
+    unsigned char co_opt_size;
+#endif
 } PyCodeObject;
 
 /* Masks for co_flags above */

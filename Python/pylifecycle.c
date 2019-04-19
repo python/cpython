@@ -1210,6 +1210,9 @@ Py_FinalizeEx(void)
     /* Destroy all modules */
     PyImport_Cleanup();
 
+    /* Print debug stats if any */
+    _PyEval_Fini();
+
     /* Flush sys.stdout and sys.stderr (again, in case more was printed) */
     if (flush_std_files() < 0) {
         status = -1;
