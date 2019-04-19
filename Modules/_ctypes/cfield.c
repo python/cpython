@@ -1243,7 +1243,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
     if (size < 0) {
         return NULL;
     }
-    // PyUnicode_AsWideChar() returns number of wchars including trailing NUL,
+    // PyUnicode_AsWideChar() returns number of wchars including trailing null byte,
     // when it is called with NULL.
     size--;
     assert(size >= 0);
