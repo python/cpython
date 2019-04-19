@@ -3017,28 +3017,9 @@ def setstate_bbb(obj, state):
 
 class AbstractHookTests(unittest.TestCase):
     def test_pickler_hook(self):
-        # test the CPickler ability to register custom, user-defined reduction
-        # callbacks to pickle functions and classes.
-
-        def custom_reduction_callback(obj):
-            obj_name = obj.__name__
-
-            if obj_name == 'f':
-                # asking the pickler to save f as 5
-                return int, (5, )
-
-            if obj_name == 'MyClass':
-                return str, ('some str',)
-
-            elif obj_name == 'g':
-                # in this case, the callback returns an invalid result (not a
-                # 2-5 tuple), the pickler should raise a proper error.
-                return False
-            elif obj_name == 'h':
-                # Simulate a case when the reducer fails. The error should be
-                # propagated to the original ``dump`` call.
-                raise ValueError('The reducer just failed')
-            return NotImplemented
+        # test the ability of a custom, user-defined CPickler subclass to
+        # override the default reducing routines of any type using the method
+        # reducer_override
 
         def f():
             pass
@@ -3056,7 +3037,6 @@ class AbstractHookTests(unittest.TestCase):
             with self.subTest(proto=proto):
                 bio = io.BytesIO()
                 p = self.pickler_class(bio, proto)
-                p.reducer_override = custom_reduction_callback
 
                 p.dump([f, MyClass, math.log])
                 new_f, some_str, math_log = pickle.loads(bio.getvalue())
