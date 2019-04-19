@@ -630,9 +630,10 @@ or both.
      by other classes as long as they implement :meth:`__setitem__`.
 
    * Optionally, an callable with a ``(obj, state)`` signature. This
-     callable allows the user to control the state-updating part of classes
-     the user did not create. If not ``None``, this callable will have priority
-     over any :meth:`__setitem__` method.
+     callable allows the user to programatically control the state-updating
+     behavior of a specific object, instead of using ``obj``'s static
+     :meth:`__setstate__` method. If not ``None``, this callable will have
+     priority over ``obj``'s :meth:`__setstate__`.
 
 
 .. method:: object.__reduce_ex__(protocol)
