@@ -616,7 +616,7 @@ typedef struct PicklerObject {
     PyObject *pers_func_self;   /* borrowed reference to self if pers_func
                                    is an unbound method, NULL otherwise */
     PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
-    PyObject *global_hook;      /* hook for invoking user-defined callbacks
+    PyObject *reducer_override;      /* hook for invoking user-defined callbacks
                                    instead of save_global when pickling
                                    functions and classes*/
 
@@ -1113,7 +1113,7 @@ _Pickler_New(void)
     self->fast_memo = NULL;
     self->max_output_len = WRITE_BUF_SIZE;
     self->output_len = 0;
-    self->global_hook = NULL;
+    self->reducer_override = NULL;
 
     self->memo = PyMemoTable_New();
     self->output_buffer = PyBytes_FromStringAndSize(NULL,
@@ -4063,12 +4063,12 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         goto done;
     }
     /*  The switch-on-type statement ends here because the next three
-     *  conditions are not exclusive anymore. If global_hook returns
+     *  conditions are not exclusive anymore. If reducer_override returns
      *  NotImplementedError, then we must fallback to save_type or save_global
      *  */
-    if (self->global_hook != NULL){
+    if (self->reducer_override != NULL){
         PyObject *reduce_value = NULL;
-        reduce_value = PyObject_CallFunctionObjArgs(self->global_hook, self, obj,
+        reduce_value = PyObject_CallFunctionObjArgs(self->reducer_override, self, obj,
                                                     NULL);
         if (reduce_value == NULL){
             goto error;
@@ -4725,7 +4725,7 @@ static PyMemberDef Pickler_members[] = {
     {"bin", T_INT, offsetof(PicklerObject, bin)},
     {"fast", T_INT, offsetof(PicklerObject, fast)},
     {"dispatch_table", T_OBJECT_EX, offsetof(PicklerObject, dispatch_table)},
-    {"global_hook", T_OBJECT_EX, offsetof(PicklerObject, global_hook)},
+    {"reducer_override", T_OBJECT_EX, offsetof(PicklerObject, reducer_override)},
     {NULL}
 };
 

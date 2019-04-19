@@ -3061,7 +3061,7 @@ class AbstractHookTests(unittest.TestCase):
             with self.subTest(proto=proto):
                 bio = io.BytesIO()
                 p = self.pickler_class(bio, proto)
-                p.global_hook = custom_reduction_callback
+                p.reducer_override = custom_reduction_callback
 
                 p.dump([f, MyClass, math.log])
                 new_f, some_str, math_log = pickle.loads(bio.getvalue())
