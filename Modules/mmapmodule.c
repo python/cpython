@@ -729,13 +729,13 @@ mmap__repr__method(PyObject *self)
         repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str);
     }
     else {
-        const char *data = &m_obj->data;
+        const char *data = m_obj->data;
         Py_ssize_t pos = m_obj->pos;
 
         PyObject *length = PyLong_FromSize_t(size);
         PyObject *offset = PyLong_FromSize_t(pos);
 
-        if (size < 100) {
+        if (size < 64) {
             reprfmt = "<%s is_closed=False fileno=%d access=%s length=%R "
                       "offset=%R entire_contents=%R>";
 
@@ -749,9 +749,9 @@ mmap__repr__method(PyObject *self)
             reprfmt = "<%s is_closed=False fileno=%d access=%s length=%R "
                       "offset=%R entire_contents=%R ... %R>";
 
-            PyObject *slice1 = PyBytes_FromStringAndSize(data, 50);
-            PyObject *slice2 = PyBytes_FromStringAndSize(data + size - 50,
-                                                         50);
+            PyObject *slice1 = PyBytes_FromStringAndSize(data, 32);
+            PyObject *slice2 = PyBytes_FromStringAndSize(data + size - 32,
+                                                         32);
 
             repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str,
                                         length, offset, slice1, slice2);
