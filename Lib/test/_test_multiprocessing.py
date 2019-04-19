@@ -4899,7 +4899,9 @@ class TestSemaphoreTracker(unittest.TestCase):
     def _is_semaphore_tracker_reused(conn, pid):
         from multiprocessing.semaphore_tracker import _semaphore_tracker
         _semaphore_tracker.ensure_running()
-        reused = _semaphore_tracker._pid is None
+        # The pid should be None in the child process, expect for the fork
+        # context. It should not be a new value.
+        reused = _semaphore_tracker._pid in (None, pid)
         reused &= _semaphore_tracker._check_alive()
         conn.send(reused)
 

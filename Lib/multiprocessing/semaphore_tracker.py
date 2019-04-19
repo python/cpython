@@ -59,7 +59,7 @@ class SemaphoreTracker(object):
                     if self._pid is not None:
                         os.waitpid(self._pid, 0)
                 except ChildProcessError:
-                    # The semaphore_tracker is already terminated.
+                    # The semaphore_tracker has already been terminated.
                     pass
                 self._fd = None
                 self._pid = None
