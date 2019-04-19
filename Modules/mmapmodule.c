@@ -719,14 +719,16 @@ mmap__repr__method(PyObject *self)
     const char *tp_name = self->ob_type->tp_name;
     int fd = m_obj->fd;
 
-    if (m_obj -> data == NULL) {
-
+#ifdef MS_WINDOWS
+    if (m_obj->map_handle == NULL)
+#elif defined(UNIX)
+    if (m_obj->data == NULL)
+#endif
+    {
         reprfmt = "<%s is_closed=True fileno=%d access=%s>";
         repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str);
-
     }
     else {
-
         const char *data = &m_obj->data;
         Py_ssize_t pos = m_obj->pos;
 
@@ -734,7 +736,6 @@ mmap__repr__method(PyObject *self)
         PyObject *offset = PyLong_FromSize_t(pos);
 
         if (size < 100) {
-
             reprfmt = "<%s is_closed=False fileno=%d access=%s length=%R "
                       "offset=%R entire_contents=%R>";
 
@@ -743,10 +744,8 @@ mmap__repr__method(PyObject *self)
 
             repr = PyUnicode_FromFormat(reprfmt, tp_name, fd, access_str,
                                         length, offset, entire_contents);
-
         }
         else {
-
             reprfmt = "<%s is_closed=False fileno=%d access=%s length=%R "
                       "offset=%R entire_contents=%R ... %R>";
 
