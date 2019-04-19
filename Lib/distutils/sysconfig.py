@@ -456,7 +456,8 @@ def _init_nt():
         g['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
     else:
         plat_tag = get_platform().replace('-', '_')
-        g['EXT_SUFFIX'] = '.cp{0.major}{0.minor}-{1}.pyd'.format(sys.version_info, plat_tag)
+        host_plat_tag = get_host_platform().replace('-', '_')
+        g['EXT_SUFFIX'] = _imp.extension_suffixes()[0].replace(host_plat_tag, plat_tag)
 
     g['EXE'] = ".exe"
     g['VERSION'] = get_python_version().replace(".", "")
