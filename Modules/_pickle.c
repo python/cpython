@@ -4064,7 +4064,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     }
     /*  The switch-on-type statement ends here because the next three
      *  conditions are not exclusive anymore. If reducer_override returns
-     *  NotImplementedError, then we must fallback to save_type or save_global
+     *  NotImplemented, then we must fallback to save_type or save_global
      *  */
     if (self->_reducer_override != NULL) {
         PyObject *reduce_value = NULL;
