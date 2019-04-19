@@ -3020,7 +3020,7 @@ class AbstractHookTests(unittest.TestCase):
         # test the CPickler ability to register custom, user-defined reduction
         # callbacks to pickle functions and classes.
 
-        def custom_reduction_callback(pickler, obj):
+        def custom_reduction_callback(obj):
             obj_name = obj.__name__
 
             if obj_name == 'f':

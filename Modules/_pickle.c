@@ -4068,8 +4068,8 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
      *  */
     if (self->reducer_override != NULL){
         PyObject *reduce_value = NULL;
-        reduce_value = PyObject_CallFunctionObjArgs(self->reducer_override, self, obj,
-                                                    NULL);
+        reduce_value = PyObject_CallFunctionObjArgs(self->reducer_override,
+                                                    obj, NULL);
         if (reduce_value == NULL){
             goto error;
         }
