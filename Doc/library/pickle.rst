@@ -629,7 +629,7 @@ or both.
      value``.  This is primarily used for dictionary subclasses, but may be used
      by other classes as long as they implement :meth:`__setitem__`.
 
-   * Optionally, an callable with a ``(obj, state)`` signature. This
+   * Optionally, a callable with a ``(obj, state)`` signature. This
      callable allows the user to programatically control the state-updating
      behavior of a specific object, instead of using ``obj``'s static
      :meth:`__setstate__` method. If not ``None``, this callable will have
