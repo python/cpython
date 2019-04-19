@@ -3030,11 +3030,6 @@ class AbstractHookTests(unittest.TestCase):
             if obj_name == 'MyClass':
                 return str, ('some str',)
 
-            elif obj_name == 'log':
-                # letting the pickler falling back to buitlin save_global to
-                # pickle functions named 'log' by attribute.
-                return NotImplemented
-
             elif obj_name == 'g':
                 # in this case, the callback returns an invalid result (not a
                 # 2-5 tuple), the pickler should raise a proper error.
@@ -3068,6 +3063,10 @@ class AbstractHookTests(unittest.TestCase):
 
                 self.assertEqual(new_f, 5)
                 self.assertEqual(some_str, 'some str')
+                # math.log does not have its usual reducer overriden, so the
+                # custom reduction callback should silently direct the pickler
+                # to the default pickling by attribute, by returning
+                # NotImplemented
                 self.assertIs(math_log, math.log)
 
                 with self.assertRaises(pickle.PicklingError):
