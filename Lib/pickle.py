@@ -497,6 +497,12 @@ class _Pickler:
             self.write(self.get(x[0]))
             return
 
+        reducer_override = getattr(self, "reducer_override", None)
+        if reducer_override is not None:
+            rv = reducer_override(obj)
+            if rv is not NotImplemented:
+                return self.save_reduce(obj=obj, *rv)
+
         # Check the type dispatch table
         t = type(obj)
         f = self.dispatch.get(t)

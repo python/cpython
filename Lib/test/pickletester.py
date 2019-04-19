@@ -3015,6 +3015,28 @@ def setstate_bbb(obj, state):
 
 
 
+class AbstractCustomPicklerClass:
+    """Pickler implementing a reducing hook using reducer_override."""
+    def reducer_override(self, obj):
+        obj_name = getattr(obj, "__name__", None)
+
+        if obj_name == 'f':
+            # asking the pickler to save f as 5
+            return int, (5, )
+
+        if obj_name == 'MyClass':
+            return str, ('some str',)
+
+        elif obj_name == 'g':
+            # in this case, the callback returns an invalid result (not
+            # a 2-5 tuple), the pickler should raise a proper error.
+            return False
+        elif obj_name == 'h':
+            # Simulate a case when the reducer fails. The error should
+            # be propagated to the original ``dump`` call.
+            raise ValueError('The reducer just failed')
+        return NotImplemented
+
 class AbstractHookTests(unittest.TestCase):
     def test_pickler_hook(self):
         # test the ability of a custom, user-defined CPickler subclass to
@@ -3049,7 +3071,7 @@ class AbstractHookTests(unittest.TestCase):
                 # NotImplemented
                 self.assertIs(math_log, math.log)
 
-                with self.assertRaises(pickle.PicklingError):
+                with self.assertRaises(Exception):
                     p.dump(g)
 
                 with self.assertRaisesRegex(

@@ -19,6 +19,7 @@ from test.pickletester import AbstractPersistentPicklerTests
 from test.pickletester import AbstractIdentityPersistentPicklerTests
 from test.pickletester import AbstractPicklerUnpicklerObjectTests
 from test.pickletester import AbstractDispatchTableTests
+from test.pickletester import AbstractCustomPicklerClass
 from test.pickletester import BigmemPickleTests
 
 try:
@@ -254,30 +255,16 @@ if has_c_implementation:
         def get_dispatch_table(self):
             return collections.ChainMap({}, pickle.dispatch_table)
 
+    class PyPicklerHookTests(AbstractHookTests):
+        class CustomPyPicklerClass(pickle._Pickler,
+                                   AbstractCustomPicklerClass):
+            pass
+        pickler_class = CustomPyPicklerClass
+
     class CPicklerHookTests(AbstractHookTests):
-        class CustomPicklerClass(_pickle.Pickler):
-            """Pickler implementing a reducing hook using reducer_override."""
-            def reducer_override(self, obj):
-                obj_name = obj.__name__
-
-                if obj_name == 'f':
-                    # asking the pickler to save f as 5
-                    return int, (5, )
-
-                if obj_name == 'MyClass':
-                    return str, ('some str',)
-
-                elif obj_name == 'g':
-                    # in this case, the callback returns an invalid result (not
-                    # a 2-5 tuple), the pickler should raise a proper error.
-                    return False
-                elif obj_name == 'h':
-                    # Simulate a case when the reducer fails. The error should
-                    # be propagated to the original ``dump`` call.
-                    raise ValueError('The reducer just failed')
-                return NotImplemented
-
-        pickler_class = CustomPicklerClass
+        class CustomCPicklerClass(_pickle.Pickler, AbstractCustomPicklerClass):
+            pass
+        pickler_class = CustomCPicklerClass
 
     @support.cpython_only
     class SizeofTests(unittest.TestCase):
@@ -524,7 +511,7 @@ def test_main():
     tests = [PyPickleTests, PyUnpicklerTests, PyPicklerTests,
              PyPersPicklerTests, PyIdPersPicklerTests,
              PyDispatchTableTests, PyChainDispatchTableTests,
-             CompatPickleTests]
+             CompatPickleTests, PyPicklerHookTests]
     if has_c_implementation:
         tests.extend([CPickleTests, CUnpicklerTests, CPicklerTests,
                       CPersPicklerTests, CIdPersPicklerTests,
