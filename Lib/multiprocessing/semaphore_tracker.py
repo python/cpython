@@ -51,12 +51,15 @@ class SemaphoreTracker(object):
                     return
                 # => dead, launch it again
                 os.close(self._fd)
+
+                # Clean-up to avoid dangling processes.
                 try:
-                    # Clean-up to avoid dangling processes.
-                    os.waitpid(self._pid, 0)
+                    # _pid can be None if this process is a child from another
+                    # python process, which has started the semaphore_tracker.
+                    if self._pid is not None:
+                        os.waitpid(self._pid, 0)
                 except ChildProcessError:
-                    # The process terminated or is a child from an ancestor of
-                    # the current process.
+                    # The semaphore_tracker is already terminated.
                     pass
                 self._fd = None
                 self._pid = None
