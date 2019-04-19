@@ -4074,7 +4074,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             goto error;
         }
 
-        if (reduce_value != PyExc_NotImplementedError){
+        if (reduce_value != Py_NotImplemented){
             status = save_reduce(self, reduce_value, obj);
             Py_DECREF(reduce_value);
             if (status < 0)

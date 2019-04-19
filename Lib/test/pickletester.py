@@ -3033,7 +3033,7 @@ class AbstractHookTests(unittest.TestCase):
             elif obj_name == 'log':
                 # letting the pickler falling back to buitlin save_global to
                 # pickle functions named 'log' by attribute.
-                return NotImplementedError
+                return NotImplemented
 
             elif obj_name == 'g':
                 # in this case, the callback returns an invalid result (not a
@@ -3043,7 +3043,7 @@ class AbstractHookTests(unittest.TestCase):
                 # Simulate a case when the reducer fails. The error should be
                 # propagated to the original ``dump`` call.
                 raise ValueError('The reducer just failed')
-            return NotImplementedError
+            return NotImplemented
 
         def f():
             pass
