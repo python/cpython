@@ -3095,9 +3095,10 @@ class AbstractDispatchTableTests(unittest.TestCase):
         self.assertIsInstance(default_load_dump(b), BBB)
 
         # End-to-end testing of save_reduce with the state_setter keyword
-        # argument. This is a dispatch_table test as state_setter is useful to
-        # register custom state-setting behavior for classes that were not
-        # created by the user.
+        # argument. This is a dispatch_table test as the primary goal of
+        # state_setter is to tweak objects reduction behavior.
+        # In particular, state_setter is useful when the default __setstate__
+        # behavior is not flexible enough.
         def reduce_bbb(obj):
             return BBB, (), obj.__dict__, None, None, setstate_bbb
 

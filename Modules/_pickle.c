@@ -3977,7 +3977,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             }
 
             if (save(self, statetup, 0) < 0 ||
-                _Pickler_Write(self, &build_op, 1) < 0){
+                _Pickler_Write(self, &build_op, 1) < 0) {
                 Py_DECREF(statetup);
                 return -1;
             }
