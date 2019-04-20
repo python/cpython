@@ -1169,6 +1169,18 @@ XMLParser Objects
     >>> parser.close()
     4
 
+   Additionally, if the target object provides one or both of the methods
+   ``start_ns(self, prefix, uri)`` and ``end_ns(self, prefix)``, then they
+   are called whenever the parser encounters a new namespace declaration.
+   The ``prefix`` is ``''`` for the default namespace and the declared
+   namespace prefix otherwise.  The ``start_ns()`` method is called before
+   the ``start()`` callback of the opening tag that defines the namespace,
+   and the ``end_ns()`` method is called after the corresponding ``end()``
+   callback.
+
+   .. versionchanged:: 3.8
+      The ``start_ns()`` and ``end_ns()`` callbacks were added.
+
 
 .. _elementtree-xmlpullparser-objects:
 
