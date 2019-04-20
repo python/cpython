@@ -1194,7 +1194,10 @@ class XMLPullParserTest(unittest.TestCase):
                 parser.feed(data[i:i+chunk_size])
 
     def assert_events(self, parser, expected):
-        self.assertEqual(list(parser.read_events()), expected)
+        self.assertEqual(
+            [(event, (elem.tag, elem.text))
+             for event, elem in parser.read_events()],
+            expected)
 
     def assert_event_tags(self, parser, expected):
         events = parser.read_events()
@@ -1321,30 +1324,29 @@ class XMLPullParserTest(unittest.TestCase):
     def test_events_comment(self):
         parser = ET.XMLPullParser(events=('start', 'comment', 'end'))
         self._feed(parser, "<!-- text here -->\n")
-        self.assert_events(parser, [('comment', ' text here ')])
+        self.assert_events(parser, [('comment', (ET.Comment, ' text here '))])
         self._feed(parser, "<!-- more text here -->\n")
-        self.assert_events(parser, [('comment', ' more text here ')])
+        self.assert_events(parser, [('comment', (ET.Comment, ' more text here '))])
         self._feed(parser, "<root-tag>text")
         self.assert_event_tags(parser, [('start', 'root-tag')])
         self._feed(parser, "<!-- inner comment-->\n")
-        self.assert_events(parser, [('comment', ' inner comment')])
+        self.assert_events(parser, [('comment', (ET.Comment, ' inner comment'))])
         self._feed(parser, "</root-tag>\n")
         self.assert_event_tags(parser, [('end', 'root-tag')])
         self._feed(parser, "<!-- outer comment -->\n")
-        self.assert_events(parser, [('comment', ' outer comment ')])
+        self.assert_events(parser, [('comment', (ET.Comment, ' outer comment '))])
 
         parser = ET.XMLPullParser(events=('comment',))
         self._feed(parser, "<!-- text here -->\n")
-        self.assert_events(parser, [('comment', ' text here ')])
+        self.assert_events(parser, [('comment', (ET.Comment, ' text here '))])
 
     def test_events_pi(self):
         parser = ET.XMLPullParser(events=('start', 'pi', 'end'))
         self._feed(parser, "<?pitarget?>\n")
-        self.assert_events(parser, [('pi', ('pitarget', ''))])
+        self.assert_events(parser, [('pi', (ET.PI, 'pitarget'))])
         parser = ET.XMLPullParser(events=('pi',))
         self._feed(parser, "<?pitarget some text ?>\n")
-        self.assert_events(parser, [('pi', ('pitarget', 'some text '))])
-
+        self.assert_events(parser, [('pi', (ET.PI, 'pitarget some text '))])
 
     def test_events_sequence(self):
         # Test that events can be some sequence that's not just a tuple or list
@@ -1364,7 +1366,6 @@ class XMLPullParserTest(unittest.TestCase):
         parser = ET.XMLPullParser(events=DummyIter())
         self._feed(parser, "<foo>bar</foo>")
         self.assert_event_tags(parser, [('start', 'foo'), ('end', 'foo')])
-
 
     def test_unknown_event(self):
         with self.assertRaises(ValueError):
@@ -2693,7 +2694,8 @@ class TreeBuilderTest(unittest.TestCase):
 
     def test_treebuilder_comment(self):
         b = ET.TreeBuilder()
-        self.assertEqual(b.comment('ctext'), 'ctext')
+        self.assertEqual(b.comment('ctext').tag, ET.Comment)
+        self.assertEqual(b.comment('ctext').text, 'ctext')
 
         b = ET.TreeBuilder(comment_factory=ET.Comment)
         self.assertEqual(b.comment('ctext').tag, ET.Comment)
@@ -2704,7 +2706,8 @@ class TreeBuilderTest(unittest.TestCase):
 
     def test_treebuilder_pi(self):
         b = ET.TreeBuilder()
-        self.assertEqual(b.pi('target', None), ('target', None))
+        self.assertEqual(b.pi('target', None).tag, ET.PI)
+        self.assertEqual(b.pi('target', None).text, 'target')
 
         b = ET.TreeBuilder(pi_factory=ET.PI)
         self.assertEqual(b.pi('target').tag, ET.PI)
@@ -3408,6 +3411,12 @@ def test_main(module=None):
     # Copy the path cache (should be empty)
     path_cache = ElementPath._cache
     ElementPath._cache = path_cache.copy()
+    # Align the Comment/PI factories.
+    if hasattr(ET, '_set_factories'):
+        old_factories = ET._set_factories(ET.Comment, ET.PI)
+    else:
+        old_factories = None
+
     try:
         support.run_unittest(*test_classes)
     finally:
@@ -3416,6 +3425,8 @@ def test_main(module=None):
         nsmap.clear()
         nsmap.update(nsmap_copy)
         ElementPath._cache = path_cache
+        if old_factories is not None:
+            ET._set_factories(*old_factories)
         # don't interfere with subsequent tests
         ET = pyET = None
 

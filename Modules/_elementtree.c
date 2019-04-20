@@ -92,6 +92,8 @@ typedef struct {
     PyObject *parseerror_obj;
     PyObject *deepcopy_obj;
     PyObject *elementpath_obj;
+    PyObject *comment_factory;
+    PyObject *pi_factory;
 } elementtreestate;
 
 static struct PyModuleDef elementtreemodule;
@@ -114,6 +116,8 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->parseerror_obj);
     Py_CLEAR(st->deepcopy_obj);
     Py_CLEAR(st->elementpath_obj);
+    Py_CLEAR(st->comment_factory);
+    Py_CLEAR(st->pi_factory);
     return 0;
 }
 
@@ -124,6 +128,8 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->parseerror_obj);
     Py_VISIT(st->deepcopy_obj);
     Py_VISIT(st->elementpath_obj);
+    Py_VISIT(st->comment_factory);
+    Py_VISIT(st->pi_factory);
     return 0;
 }
 
@@ -2396,6 +2402,9 @@ typedef struct {
     PyObject *end_ns_event_obj;
     PyObject *comment_event_obj;
     PyObject *pi_event_obj;
+
+    char insert_comments;
+    char insert_pis;
 } TreeBuilderObject;
 
 #define TreeBuilder_CheckExact(op) (Py_TYPE(op) == &TreeBuilder_Type)
@@ -2432,6 +2441,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->start_event_obj = t->end_event_obj = NULL;
         t->start_ns_event_obj = t->end_ns_event_obj = NULL;
         t->comment_event_obj = t->pi_event_obj = NULL;
+        t->insert_comments = t->insert_pis = 0;
     }
     return (PyObject *)t;
 }
@@ -2440,8 +2450,11 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 _elementtree.TreeBuilder.__init__
 
     element_factory: object = NULL
+    *
     comment_factory: object = NULL
     pi_factory: object = NULL
+    insert_comments: bool = False
+    insert_pis: bool = False
 
 [clinic start generated code]*/
 
@@ -2449,8 +2462,9 @@ static int
 _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *element_factory,
                                        PyObject *comment_factory,
-                                       PyObject *pi_factory)
-/*[clinic end generated code: output=da49f5ab76aee6d6 input=9b7d938a273ab7ad]*/
+                                       PyObject *pi_factory,
+                                       int insert_comments, int insert_pis)
+/*[clinic end generated code: output=8571d4dcadfdf952 input=1f967b5c245e0a71]*/
 {
     if (element_factory && element_factory != Py_None) {
         Py_INCREF(element_factory);
@@ -2458,17 +2472,31 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
     } else {
         Py_CLEAR(self->element_factory);
     }
-    if (comment_factory && comment_factory != Py_None) {
+
+    if (!comment_factory || comment_factory == Py_None) {
+        elementtreestate *st = ET_STATE_GLOBAL;
+        comment_factory = st->comment_factory;
+    }
+    if (comment_factory) {
         Py_INCREF(comment_factory);
         Py_XSETREF(self->comment_factory, comment_factory);
+        self->insert_comments = insert_comments;
     } else {
         Py_CLEAR(self->comment_factory);
+        self->insert_comments = 0;
     }
-    if (pi_factory && pi_factory != Py_None) {
+
+    if (!pi_factory || pi_factory == Py_None) {
+        elementtreestate *st = ET_STATE_GLOBAL;
+        pi_factory = st->pi_factory;
+    }
+    if (pi_factory) {
         Py_INCREF(pi_factory);
         Py_XSETREF(self->pi_factory, pi_factory);
+        self->insert_pis = insert_pis;
     } else {
         Py_CLEAR(self->pi_factory);
+        self->insert_pis = 0;
     }
 
     return 0;
@@ -2526,6 +2554,57 @@ treebuilder_dealloc(TreeBuilderObject *self)
 
 /* -------------------------------------------------------------------- */
 /* helpers for handling of arbitrary element-like objects */
+
+/*[clinic input]
+_elementtree._set_factories
+
+    comment_factory: object
+    pi_factory: object
+    /
+
+Change the factories used to create comments and processing instructions.
+
+For internal use only.
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
+                                 PyObject *pi_factory)
+/*[clinic end generated code: output=813b408adee26535 input=99d17627aea7fb3b]*/
+{
+    elementtreestate *st = ET_STATE_GLOBAL;
+    PyObject *old;
+
+    if (!PyCallable_Check(comment_factory) && comment_factory != Py_None) {
+        PyErr_Format(PyExc_TypeError, "Comment factory must be callable, not %.100s",
+                     Py_TYPE(comment_factory)->tp_name);
+        return NULL;
+    }
+    if (!PyCallable_Check(pi_factory) && pi_factory != Py_None) {
+        PyErr_Format(PyExc_TypeError, "PI factory must be callable, not %.100s",
+                     Py_TYPE(pi_factory)->tp_name);
+        return NULL;
+    }
+
+    old = PyTuple_Pack(2,
+        st->comment_factory ? st->comment_factory : Py_None,
+        st->pi_factory ? st->pi_factory : Py_None);
+
+    if (comment_factory == Py_None) {
+        Py_CLEAR(st->comment_factory);
+    } else {
+        Py_INCREF(comment_factory);
+        Py_XSETREF(st->comment_factory, comment_factory);
+    }
+    if (pi_factory == Py_None) {
+        Py_CLEAR(st->pi_factory);
+    } else {
+        Py_INCREF(pi_factory);
+        Py_XSETREF(st->pi_factory, pi_factory);
+    }
+
+    return old;
+}
 
 static int
 treebuilder_set_element_text_or_tail(PyObject *element, PyObject **data,
@@ -2770,7 +2849,7 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
             return NULL;
 
         this = self->this;
-        if (this != Py_None) {
+        if (self->insert_comments && this != Py_None) {
             if (treebuilder_add_subelement(this, comment) < 0)
                 goto error;
         }
@@ -2809,7 +2888,7 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
         }
 
         this = self->this;
-        if (this != Py_None) {
+        if (self->insert_pis && this != Py_None) {
             if (treebuilder_add_subelement(this, pi) < 0)
                 goto error;
         }
@@ -3411,31 +3490,51 @@ static void
 expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
                  const XML_Char* data_in)
 {
-    PyObject* parcel;
+    PyObject* pi_target = NULL;
+    PyObject* data;
     PyObject* res;
+    PyObject* stack[2];
 
     if (PyErr_Occurred())
         return;
 
     if (TreeBuilder_CheckExact(self->target)) {
-        /* shortcut: TreeBuilder does not handle PIs */
+        /* shortcut */
         TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
         if (target->events_append && target->pi_event_obj) {
-            parcel = Py_BuildValue("ss", target_in, data_in);
-            if (!parcel)
-                return;
-            treebuilder_append_event(target, target->pi_event_obj, parcel);
-            Py_DECREF(parcel);
+            pi_target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
+            if (!pi_target)
+                goto error;
+            data = PyUnicode_DecodeUTF8(data_in, strlen(data_in), "strict");
+            if (!data)
+                goto error;
+            res = treebuilder_handle_pi(target, pi_target, data);
+            Py_XDECREF(res);
+            Py_DECREF(data);
+            Py_DECREF(pi_target);
         }
     } else if (self->handle_pi) {
-        parcel = Py_BuildValue("ss", target_in, data_in);
-        if (!parcel)
-            return;
-        res = PyObject_Call(self->handle_pi, parcel, NULL);
+        pi_target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
+        if (!pi_target)
+            goto error;
+        data = PyUnicode_DecodeUTF8(data_in, strlen(data_in), "strict");
+        if (!data)
+            goto error;
+
+        stack[0] = pi_target;
+        stack[1] = data;
+        res = _PyObject_FastCall(self->handle_pi, stack, 2);
         Py_XDECREF(res);
-        Py_DECREF(parcel);
+        Py_DECREF(data);
+        Py_DECREF(pi_target);
     }
+
+    return;
+
+  error:
+    Py_XDECREF(pi_target);
+    return;
 }
 
 /* -------------------------------------------------------------------- */
@@ -4156,6 +4255,7 @@ static PyTypeObject XMLParser_Type = {
 
 static PyMethodDef _functions[] = {
     {"SubElement", (PyCFunction)(void(*)(void)) subelement, METH_VARARGS | METH_KEYWORDS},
+    _ELEMENTTREE__SET_FACTORIES_METHODDEF
     {NULL, NULL}
 };
 

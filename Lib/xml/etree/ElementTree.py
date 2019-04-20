@@ -1374,22 +1374,30 @@ class TreeBuilder:
     *element_factory* is an optional element factory which is called
     to create new Element instances, as necessary.
 
-    *comment_factory* is a factory to create comments. If not provided,
-    comments will not be inserted into the tree and "comment" pull parser
-    events will only return the plain text.
+    *comment_factory* is a factory to create comments to be used instead of
+    the standard factory.  If *insert_comments* is false (the default),
+    comments will not be inserted into the tree.
 
-    *pi_factory* is a factory to create processing instructions. If not
-    provided, PIs will not be inserted into the tree and "pi" pull parser
-    events will only return a (target, text) tuple.
+    *pi_factory* is a factory to create processing instructions to be used
+    instead of the standard factory.  If *insert_pis* is false (the default),
+    processing instructions will not be inserted into the tree.
     """
-    def __init__(self, element_factory=None, comment_factory=None, pi_factory=None):
+    def __init__(self, element_factory=None, *,
+                 comment_factory=None, pi_factory=None,
+                 insert_comments=False, insert_pis=False):
         self._data = [] # data collector
         self._elem = [] # element stack
         self._last = None # last element
         self._root = None # root element
         self._tail = None # true if we're after an end tag
+        if comment_factory is None:
+            comment_factory = Comment
         self._comment_factory = comment_factory
+        self.insert_comments = insert_comments
+        if pi_factory is None:
+            pi_factory = ProcessingInstruction
         self._pi_factory = pi_factory
+        self.insert_pis = insert_pis
         if element_factory is None:
             element_factory = Element
         self._factory = element_factory
@@ -1450,34 +1458,28 @@ class TreeBuilder:
     def comment(self, text):
         """Create a comment using the comment_factory.
 
-        If no factory is provided, comments are ignored
-        and the text returned as is.
-
         *text* is the text of the comment.
         """
-        if self._comment_factory is None:
-            return text
-        return self._handle_single(self._comment_factory, text)
+        return self._handle_single(
+            self._comment_factory, self.insert_comments, text)
 
     def pi(self, target, text=None):
         """Create a processing instruction using the pi_factory.
 
-        If no factory is provided, PIs are ignored and a (target, text)
-        tuple is returned.
-
         *target* is the target name of the processing instruction.
         *text* is the data of the processing instruction, or ''.
         """
-        if self._pi_factory is None:
-            return (target, text)
-        return self._handle_single(self._pi_factory, target, text)
+        return self._handle_single(
+            self._pi_factory, self.insert_pis, target, text)
 
-    def _handle_single(self, factory, *args):
-        self._flush()
-        self._last = elem = factory(*args)
-        if self._elem:
-            self._elem[-1].append(elem)
-        self._tail = 1
+    def _handle_single(self, factory, insert, *args):
+        elem = factory(*args)
+        if insert:
+            self._flush()
+            self._last = elem
+            if self._elem:
+                self._elem[-1].append(elem)
+            self._tail = 1
         return elem
 
 
@@ -1694,7 +1696,10 @@ try:
     # (see tests)
     _Element_Py = Element
 
-    # Element, SubElement, ParseError, TreeBuilder, XMLParser
+    # Element, SubElement, ParseError, TreeBuilder, XMLParser, _set_factories
     from _elementtree import *
+    from _elementtree import _set_factories
 except ImportError:
     pass
+else:
+    _set_factories(Comment, ProcessingInstruction)

@@ -637,23 +637,26 @@ static int
 _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *element_factory,
                                        PyObject *comment_factory,
-                                       PyObject *pi_factory);
+                                       PyObject *pi_factory,
+                                       int insert_comments, int insert_pis);
 
 static int
 _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"element_factory", "comment_factory", "pi_factory", NULL};
+    static const char * const _keywords[] = {"element_factory", "comment_factory", "pi_factory", "insert_comments", "insert_pis", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "TreeBuilder", 0};
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *element_factory = NULL;
     PyObject *comment_factory = NULL;
     PyObject *pi_factory = NULL;
+    int insert_comments = 0;
+    int insert_pis = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -666,15 +669,70 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
             goto skip_optional_pos;
         }
     }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
     if (fastargs[1]) {
         comment_factory = fastargs[1];
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
-    pi_factory = fastargs[2];
-skip_optional_pos:
-    return_value = _elementtree_TreeBuilder___init___impl((TreeBuilderObject *)self, element_factory, comment_factory, pi_factory);
+    if (fastargs[2]) {
+        pi_factory = fastargs[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[3]) {
+        insert_comments = PyObject_IsTrue(fastargs[3]);
+        if (insert_comments < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    insert_pis = PyObject_IsTrue(fastargs[4]);
+    if (insert_pis < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _elementtree_TreeBuilder___init___impl((TreeBuilderObject *)self, element_factory, comment_factory, pi_factory, insert_comments, insert_pis);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_elementtree__set_factories__doc__,
+"_set_factories($module, comment_factory, pi_factory, /)\n"
+"--\n"
+"\n"
+"Change the factories used to create comments and processing instructions.\n"
+"\n"
+"For internal use only.");
+
+#define _ELEMENTTREE__SET_FACTORIES_METHODDEF    \
+    {"_set_factories", (PyCFunction)(void(*)(void))_elementtree__set_factories, METH_FASTCALL, _elementtree__set_factories__doc__},
+
+static PyObject *
+_elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
+                                 PyObject *pi_factory);
+
+static PyObject *
+_elementtree__set_factories(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *comment_factory;
+    PyObject *pi_factory;
+
+    if (!_PyArg_CheckPositional("_set_factories", nargs, 2, 2)) {
+        goto exit;
+    }
+    comment_factory = args[0];
+    pi_factory = args[1];
+    return_value = _elementtree__set_factories_impl(module, comment_factory, pi_factory);
 
 exit:
     return return_value;
@@ -911,4 +969,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=94ec504fdbcea1d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=386a68425d072b5c input=a9049054013a1b77]*/
