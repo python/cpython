@@ -1275,7 +1275,8 @@ class TestLRU:
         # C version of lru_cache was treating a call with an empty **kwargs
         # dictionary as being distinct from a call with no keywords at all.
         # This did not result in an incorrect answer, but it did trigger
-        # an unexpected cache miss which broke a doctest for a method cache.
+        # an unexpected cache miss.
+
         @self.module.lru_cache()
         def f(x):
             pass
