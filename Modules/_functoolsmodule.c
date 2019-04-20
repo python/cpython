@@ -751,7 +751,7 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
     Py_ssize_t key_size, pos, key_pos, kwds_size;
 
     /* short path, key will match args anyway, which is a tuple */
-    if (!typed && !kwds) {
+    if (!typed && (!kwds || PyDict_GET_SIZE(kwds) == 0)) {
         if (PyTuple_GET_SIZE(args) == 1) {
             key = PyTuple_GET_ITEM(args, 0);
             if (PyUnicode_CheckExact(key) || PyLong_CheckExact(key)) {
