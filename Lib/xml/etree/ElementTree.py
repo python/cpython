@@ -1374,12 +1374,22 @@ class TreeBuilder:
     *element_factory* is an optional element factory which is called
     to create new Element instances, as necessary.
 
+    *comment_factory* is a factory to create comments. If not provided,
+    comments will not be inserted into the tree and "comment" pull parser
+    events will only return the plain text.
+
+    *pi_factory* is a factory to create processing instructions. If not
+    provided, PIs will not be inserted into the tree and "pi" pull parser
+    events will only return a (target, text) tuple.
     """
-    def __init__(self, element_factory=None):
+    def __init__(self, element_factory=None, comment_factory=None, pi_factory=None):
         self._data = [] # data collector
         self._elem = [] # element stack
         self._last = None # last element
+        self._root = None # root element
         self._tail = None # true if we're after an end tag
+        self._comment_factory = comment_factory
+        self._pi_factory = pi_factory
         if element_factory is None:
             element_factory = Element
         self._factory = element_factory
@@ -1387,8 +1397,8 @@ class TreeBuilder:
     def close(self):
         """Flush builder buffers and return toplevel document Element."""
         assert len(self._elem) == 0, "missing end tags"
-        assert self._last is not None, "missing toplevel element"
-        return self._last
+        assert self._root is not None, "missing toplevel element"
+        return self._root
 
     def _flush(self):
         if self._data:
@@ -1417,6 +1427,8 @@ class TreeBuilder:
         self._last = elem = self._factory(tag, attrs)
         if self._elem:
             self._elem[-1].append(elem)
+        elif self._root is None:
+            self._root = elem
         self._elem.append(elem)
         self._tail = 0
         return elem
@@ -1434,6 +1446,39 @@ class TreeBuilder:
                    self._last.tag, tag)
         self._tail = 1
         return self._last
+
+    def comment(self, text):
+        """Create a comment using the comment_factory.
+
+        If no factory is provided, comments are ignored
+        and the text returned as is.
+
+        *text* is the text of the comment.
+        """
+        if self._comment_factory is None:
+            return text
+        return self._handle_single(self._comment_factory, text)
+
+    def pi(self, target, text=None):
+        """Create a processing instruction using the pi_factory.
+
+        If no factory is provided, PIs are ignored and a (target, text)
+        tuple is returned.
+
+        *target* is the target name of the processing instruction.
+        *text* is the data of the processing instruction, or ''.
+        """
+        if self._pi_factory is None:
+            return (target, text)
+        return self._handle_single(self._pi_factory, target, text)
+
+    def _handle_single(self, factory, *args):
+        self._flush()
+        self._last = elem = factory(*args)
+        if self._elem:
+            self._elem[-1].append(elem)
+        self._tail = 1
+        return elem
 
 
 # also see ElementTree and TreeBuilder
@@ -1519,6 +1564,15 @@ class XMLParser:
                 def handler(prefix, event=event_name, append=append):
                     append((event, None))
                 parser.EndNamespaceDeclHandler = handler
+            elif event_name == 'comment':
+                def handler(text, event=event_name, append=append, self=self):
+                    append((event, self.target.comment(text)))
+                parser.CommentHandler = handler
+            elif event_name == 'pi':
+                def handler(pi_target, data, event=event_name, append=append,
+                            self=self):
+                    append((event, self.target.pi(pi_target, data)))
+                parser.ProcessingInstructionHandler = handler
             else:
                 raise ValueError("unknown event %r" % event_name)
 

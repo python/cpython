@@ -1193,6 +1193,9 @@ class XMLPullParserTest(unittest.TestCase):
             for i in range(0, len(data), chunk_size):
                 parser.feed(data[i:i+chunk_size])
 
+    def assert_events(self, parser, expected):
+        self.assertEqual(list(parser.read_events()), expected)
+
     def assert_event_tags(self, parser, expected):
         events = parser.read_events()
         self.assertEqual([(action, elem.tag) for action, elem in events],
@@ -1275,8 +1278,10 @@ class XMLPullParserTest(unittest.TestCase):
         self.assert_event_tags(parser, [])
 
         parser = ET.XMLPullParser(events=('start', 'end'))
-        self._feed(parser, "<!-- comment -->\n")
-        self.assert_event_tags(parser, [])
+        self._feed(parser, "<!-- text here -->\n")
+        self.assert_events(parser, [])
+
+        parser = ET.XMLPullParser(events=('start', 'end'))
         self._feed(parser, "<root>\n")
         self.assert_event_tags(parser, [('start', 'root')])
         self._feed(parser, "<element key='value'>text</element")
@@ -1312,6 +1317,34 @@ class XMLPullParserTest(unittest.TestCase):
             ])
         self._feed(parser, "</root>")
         self.assertIsNone(parser.close())
+
+    def test_events_comment(self):
+        parser = ET.XMLPullParser(events=('start', 'comment', 'end'))
+        self._feed(parser, "<!-- text here -->\n")
+        self.assert_events(parser, [('comment', ' text here ')])
+        self._feed(parser, "<!-- more text here -->\n")
+        self.assert_events(parser, [('comment', ' more text here ')])
+        self._feed(parser, "<root-tag>text")
+        self.assert_event_tags(parser, [('start', 'root-tag')])
+        self._feed(parser, "<!-- inner comment-->\n")
+        self.assert_events(parser, [('comment', ' inner comment')])
+        self._feed(parser, "</root-tag>\n")
+        self.assert_event_tags(parser, [('end', 'root-tag')])
+        self._feed(parser, "<!-- outer comment -->\n")
+        self.assert_events(parser, [('comment', ' outer comment ')])
+
+        parser = ET.XMLPullParser(events=('comment',))
+        self._feed(parser, "<!-- text here -->\n")
+        self.assert_events(parser, [('comment', ' text here ')])
+
+    def test_events_pi(self):
+        parser = ET.XMLPullParser(events=('start', 'pi', 'end'))
+        self._feed(parser, "<?pitarget?>\n")
+        self.assert_events(parser, [('pi', ('pitarget', ''))])
+        parser = ET.XMLPullParser(events=('pi',))
+        self._feed(parser, "<?pitarget some text ?>\n")
+        self.assert_events(parser, [('pi', ('pitarget', 'some text '))])
+
 
     def test_events_sequence(self):
         # Test that events can be some sequence that's not just a tuple or list
@@ -2658,6 +2691,31 @@ class TreeBuilderTest(unittest.TestCase):
         parser.feed(self.sample1)
         self.assertIsNone(parser.close())
 
+    def test_treebuilder_comment(self):
+        b = ET.TreeBuilder()
+        self.assertEqual(b.comment('ctext'), 'ctext')
+
+        b = ET.TreeBuilder(comment_factory=ET.Comment)
+        self.assertEqual(b.comment('ctext').tag, ET.Comment)
+        self.assertEqual(b.comment('ctext').text, 'ctext')
+
+        b = ET.TreeBuilder(comment_factory=len)
+        self.assertEqual(b.comment('ctext'), len('ctext'))
+
+    def test_treebuilder_pi(self):
+        b = ET.TreeBuilder()
+        self.assertEqual(b.pi('target', None), ('target', None))
+
+        b = ET.TreeBuilder(pi_factory=ET.PI)
+        self.assertEqual(b.pi('target').tag, ET.PI)
+        self.assertEqual(b.pi('target').text, "target")
+        self.assertEqual(b.pi('pitarget', ' text ').tag, ET.PI)
+        self.assertEqual(b.pi('pitarget', ' text ').text, "pitarget  text ")
+
+        b = ET.TreeBuilder(pi_factory=lambda target, text: (len(target), text))
+        self.assertEqual(b.pi('target'), (len('target'), None))
+        self.assertEqual(b.pi('pitarget', ' text '), (len('pitarget'), ' text '))
+
     def test_treebuilder_elementfactory_none(self):
         parser = ET.XMLParser(target=ET.TreeBuilder(element_factory=None))
         parser.feed(self.sample1)
@@ -2674,6 +2732,21 @@ class TreeBuilderTest(unittest.TestCase):
 
         parser = ET.XMLParser(target=tb)
         parser.feed(self.sample1)
+
+        e = parser.close()
+        self._check_sample1_element(e)
+
+    def test_subclass_comment_pi(self):
+        class MyTreeBuilder(ET.TreeBuilder):
+            def foobar(self, x):
+                return x * 2
+
+        tb = MyTreeBuilder(comment_factory=ET.Comment, pi_factory=ET.PI)
+        self.assertEqual(tb.foobar(10), 20)
+
+        parser = ET.XMLParser(target=tb)
+        parser.feed(self.sample1)
+        parser.feed('<!-- a comment--><?and a pi?>')
 
         e = parser.close()
         self._check_sample1_element(e)
