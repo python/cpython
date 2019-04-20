@@ -3287,6 +3287,56 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+dict_vectorcall(
+    PyObject *type, PyObject * const*args,
+    size_t nargsf, PyObject *kwnames)
+{
+    size_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs > 1) {
+        PyErr_Format(PyExc_TypeError, "dict() expected at most one argument, got %zd", nargs);
+        return NULL;
+    }
+    assert(PyType_Check(type));
+    PyObject *self = dict_new((PyTypeObject *)type, NULL, NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (nargs == 1) {
+        int err = 0;
+        PyObject *arg = args[0];
+        _Py_IDENTIFIER(keys);
+        PyObject *func;
+        if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+            err = -1;
+        }
+        else if (func != NULL) {
+            Py_DECREF(func);
+            err = PyDict_Merge(self, arg, 1);
+        }
+        else {
+            err = PyDict_MergeFromSeq2(self, arg, 1);
+        }
+        if (err < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        args += 1;
+    }
+    if (kwnames == NULL) {
+        return self;
+    }
+    Py_ssize_t items = PyTuple_GET_SIZE(kwnames);
+    for(Py_ssize_t index = 0; index < items; index++) {
+        int err = PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, index), args[index]);
+        if (err < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
+    return self;
+}
+
+static PyObject *
 dict_iter(PyDictObject *dict)
 {
     return dictiter_new(dict, &PyDictIterKey_Type);
@@ -3344,6 +3394,7 @@ PyTypeObject PyDict_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = dict_vectorcall,
 };
 
 PyObject *
