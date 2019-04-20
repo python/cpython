@@ -6,9 +6,13 @@ import shutil
 import os.path
 import subprocess
 import sysconfig
+import functools
 
 import reindent
 import untabify
+from io import StringIO
+from test.support import change_cwd
+from duplicate_meth_defs import main as find_duplicates
 
 
 # Excluded directories which are copies of external libraries:
@@ -21,9 +25,9 @@ EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi_osx'),
 SRCDIR = sysconfig.get_config_var('srcdir')
 
 
-def n_files_str(count):
-    """Return 'N file(s)' with the proper plurality on 'file'."""
-    return "{} file{}".format(count, "s" if count != 1 else "")
+def n_names_str(count, name=None):
+    """Return 'N name(s)' with the proper plurality on 'name'."""
+    return "{} {}{}".format(count, name, "s" if count > 1 else "")
 
 
 def status(message, modal=False, info=None):
@@ -90,7 +94,7 @@ def get_base_branch():
 
 
 @status("Getting the list of files that have been added/changed",
-        info=lambda x: n_files_str(len(x)))
+        info=lambda x: n_names_str(len(x), 'file'))
 def changed_files(base_branch=None):
     """Get the list of changed or added files from git."""
     if os.path.exists(os.path.join(SRCDIR, '.git')):
@@ -131,15 +135,24 @@ def changed_files(base_branch=None):
     return filenames2
 
 
-def report_modified_files(file_paths):
-    count = len(file_paths)
+def report_modified(lines, name=None):
+    count = len(lines)
     if count == 0:
-        return n_files_str(count)
+        return n_names_str(count, name)
     else:
-        lines = ["{}:".format(n_files_str(count))]
-        for path in file_paths:
-            lines.append("  {}".format(path))
-        return "\n".join(lines)
+        out = ["{}:".format(n_names_str(count, name))]
+        for line in lines:
+            out.append("  {}".format(line))
+        return "\n".join(out)
+
+report_modified_files = functools.partial(report_modified, name='file')
+
+def report_modified_dups(args):
+    got_exception, dups = args
+    if got_exception:
+        return ''
+    else:
+        return report_modified(dups, 'duplicate')
 
 
 @status("Fixing Python file whitespace", info=report_modified_files)
@@ -220,6 +233,23 @@ def regenerated_pyconfig_h_in(file_paths):
     else:
         return "not needed"
 
+@status("Duplicate method definitions", info=report_modified_dups)
+def duplicates_found(python_files):
+    argv = ['-i',
+            os.path.join(SRCDIR, 'Tools/scripts/duplicates_ignored.txt')]
+    argv.extend(python_files)
+    save_stdout = sys.stdout
+    try:
+        sys.stdout = StringIO()
+        with change_cwd(SRCDIR):
+            rc = find_duplicates(argv)
+        output = sys.stdout.getvalue()
+    finally:
+        sys.stdout = save_stdout
+    output = output.strip()
+    got_exception = True if not output and rc else False
+    return got_exception, output.split('\n') if output else []
+
 def travis(pull_request):
     if pull_request == 'false':
         print('Not a pull request; skipping')
@@ -230,6 +260,9 @@ def travis(pull_request):
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
+    got_exception, duplicates = duplicates_found(python_files)
+    if duplicates:
+        print('Please fix the duplicate method definitions found')
     fixed = []
     fixed.extend(normalize_whitespace(python_files))
     fixed.extend(normalize_c_whitespace(c_files))
@@ -239,6 +272,7 @@ def travis(pull_request):
     else:
         print(f'Please fix the {len(fixed)} file(s) with whitespace issues')
         print('(on UNIX you can run `make patchcheck` to make the fixes)')
+    if fixed or duplicates or got_exception :
         sys.exit(1)
 
 def main():
