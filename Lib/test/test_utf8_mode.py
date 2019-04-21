@@ -195,7 +195,7 @@ class UTF8ModeTests(unittest.TestCase):
     def test_io_encoding(self):
         self.check_io_encoding('io')
 
-    def test_io_encoding(self):
+    def test_pyio_encoding(self):
         self.check_io_encoding('_pyio')
 
     def test_locale_getpreferredencoding(self):
