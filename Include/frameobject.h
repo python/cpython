@@ -89,6 +89,14 @@ PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 /* Return the line of code the frame is currently executing. */
 PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
 
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
+/* Fast locals proxy for reliable write-through from trace functions */
+PyTypeObject PyFastLocalsProxy_Type;
+#define _PyFastLocalsProxy_CheckExact(self) \
+    (Py_TYPE(self) == &PyFastLocalsProxy_Type)
+#endif
+
 #ifdef __cplusplus
 }
 #endif

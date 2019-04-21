@@ -1813,6 +1813,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyMethod_Type, "method");
     INIT_TYPE(&PyFunction_Type, "function");
     INIT_TYPE(&PyDictProxy_Type, "dict proxy");
+    INIT_TYPE(&PyFastLocalsProxy_Type, "fast locals proxy");
     INIT_TYPE(&PyGen_Type, "generator");
     INIT_TYPE(&PyGetSetDescr_Type, "get-set descriptor");
     INIT_TYPE(&PyWrapperDescr_Type, "wrapper");

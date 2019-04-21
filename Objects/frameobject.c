@@ -22,6 +22,10 @@
  *
  */
 
+static PyObject *_PyFastLocalsProxy_New(PyObject *frame);
+static PyObject *_PyFastLocalsProxy_GetLocals(PyObject *flp);
+
+
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
     {"f_code",          T_OBJECT,       OFF(f_code),      READONLY},
@@ -840,11 +844,21 @@ _PyFrame_FastToLocalsInternal(PyFrameObject *f, int deref)
      *
      *   If a trace function is active, ensure f_locals is a fastlocalsproxy
      *   instance, while locals still refers to the underlying mapping.
-     *   If a trace function is *not* active, discard the proxy, if any (and
-     *   invalidate its reference back to the frame) to disallow further writes.
+     *   If a trace function is *not* active, leave any existing proxies alone,
+     *   but also don't create any new ones.
      */
-
     co = f->f_code;
+    if (f->f_trace && (co->co_flags & CO_OPTIMIZED) && PyDict_Check(locals)) {
+        PyObject *flp = _PyFastLocalsProxy_New((PyObject *) f);
+        if (!flp) {
+            return -1;
+        }
+        f->f_locals = flp;
+        Py_DECREF(locals); // The proxy now holds the reference to the snapshot
+    } else if (_PyFastLocalsProxy_CheckExact(locals)) {
+        locals = _PyFastLocalsProxy_GetLocals(locals);
+    }
+
     map = co->co_varnames;
     if (!PyTuple_Check(map)) {
         PyErr_Format(PyExc_SystemError,
@@ -1061,7 +1075,7 @@ _PyFrame_DebugMallocStats(FILE *out)
  * Subclass of PyDict_Proxy (currently defined in descrobject.h/.c)
  *
  * Mostly works just like PyDict_Proxy (backed by the frame locals), but
- * suflports setitem and delitem, with writes being delegated to both the
+ * supports setitem and delitem, with writes being delegated to both the
  * referenced mapping *and* the fast locals and/or cell reference on the
  * frame.
  */
@@ -1091,9 +1105,20 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
     if (fast_ref != NULL) {
         /* Key is also stored on the frame, so update that reference */
         if (PyCell_Check(fast_ref)) {
-            result = PyCell_Set(fast_ref, NULL);
+            result = PyCell_Set(fast_ref, value);
         } else {
-            /* TODO: It's Python integer mapping into the fast locals array */
+            /* Fast ref is a Python int mapping into the fast locals array */
+            Py_ssize_t offset = PyLong_AsSsize_t(fast_ref);
+            Py_ssize_t max_offset = flp->frame->f_code->co_nlocals;
+            if (offset < 0) {
+                result = -1;
+            } else if (offset > max_offset) {
+                PyErr_Format(PyExc_SystemError,
+                             "Fast locals ref (%d) exceeds array bound (%d)",
+                             offset, max_offset);
+                result = -1;
+            }
+            flp->frame->f_localsplus[offset] = value;
         }
     }
     return result;
@@ -1199,6 +1224,7 @@ fastlocalsproxy_check_frame(PyObject *maybe_frame)
     return 0;
 }
 
+
 static PyObject *
 _PyFastLocalsProxy_New(PyObject *frame)
 {
@@ -1208,7 +1234,7 @@ _PyFastLocalsProxy_New(PyObject *frame)
     if (fastlocalsproxy_check_frame(frame) == -1)
         return NULL;
 
-    flp = PyObject_GC_New(fastlocalsproxyobject, &PyDictProxy_Type);
+    flp = PyObject_GC_New(fastlocalsproxyobject, &PyFastLocalsProxy_Type);
     if (flp == NULL)
         return NULL;
     Py_INCREF(frame);
@@ -1219,6 +1245,16 @@ _PyFastLocalsProxy_New(PyObject *frame)
     flp->fast_refs = _PyFrame_BuildFastRefs(flp->frame);
     _PyObject_GC_TRACK(flp);
     return (PyObject *)flp;
+}
+
+static PyObject *
+_PyFastLocalsProxy_GetLocals(PyObject *self)
+{
+    if (!_PyFastLocalsProxy_CheckExact(self)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    return ((fastlocalsproxyobject *) self)->mapping;
 }
 
 /*[clinic input]

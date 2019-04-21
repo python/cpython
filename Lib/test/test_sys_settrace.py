@@ -1525,14 +1525,17 @@ class FrameLocalsTestCase(unittest.TestCase):
         for k in list(actual_ns.keys()):
             if k.startswith("_"):
                 del actual_ns[k]
+        # CURRENT FAILURE STATUS:
+        # - trace functions mutating state as expected
+        # - proxy is incorrectly being returned by locals(), so that also mutates
         expected_ns = {
             "a_global": "created1",
             "another_global": "modified2",
             "a_class_attribute": "created3",
             "another_class_attribute": "modified4",
-            "a_nonlocal": "modified5",
-            "a_nonlocal_via_ns": "modified5",
-            "a_nonlocal_via_inner_ns": "modified5",
+            "a_nonlocal": "original5",
+            "a_nonlocal_via_ns": "original5",
+            "a_nonlocal_via_inner_ns": "original5",
             "another_nonlocal": "modified6",
             "another_nonlocal_via_ns": "modified6",
             "another_nonlocal_via_inner_ns": "modified6",
