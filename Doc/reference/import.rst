@@ -951,7 +951,7 @@ the following are valid relative imports::
     from ..subpackage2.moduleZ import eggs
     from ..moduleA import foo
 
-Absolute imports may use either the ``import <>`` or ``from <> import <>`` 
+Absolute imports may use either the ``import <>`` or ``from <> import <>``
 syntax, but relative imports may only use the second form; the reason
 for this is that::
 
