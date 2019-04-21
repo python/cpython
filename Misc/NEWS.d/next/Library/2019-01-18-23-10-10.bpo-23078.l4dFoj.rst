@@ -1,2 +1,2 @@
-Add support for staticmethod and classmethod with autospec. Based on patch
-by Felipe Ochoa. Improved by Karthikeyan Singaravelan.
+Add support for :func:`classmethod` and :func:`staticmethod` to
+:func:`unittest.mock.create_autospec`.  Initial patch by Felipe Ochoa.
