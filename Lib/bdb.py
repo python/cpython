@@ -3,9 +3,11 @@
 import fnmatch
 import sys
 import os
-from inspect import CO_GENERATOR
+from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
+
+GENERATOR_AND_COROUTINE_FLAGS = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR
 
 
 class BdbQuit(Exception):
@@ -72,7 +74,7 @@ class Bdb:
             return: A function or other code block is about to return.
             exception: An exception has occurred.
             c_call: A C function is about to be called.
-            c_return: A C functon has returned.
+            c_return: A C function has returned.
             c_exception: A C function has raised an exception.
 
         For the Python events, specialized functions (see the dispatch_*()
@@ -127,7 +129,7 @@ class Bdb:
             # No need to trace this function
             return # None
         # Ignore call events in generator except when stepping.
-        if self.stopframe and frame.f_code.co_flags & CO_GENERATOR:
+        if self.stopframe and frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
             return self.trace_dispatch
         self.user_call(frame, arg)
         if self.quitting: raise BdbQuit
@@ -142,7 +144,7 @@ class Bdb:
         """
         if self.stop_here(frame) or frame == self.returnframe:
             # Ignore return events in generator except when stepping.
-            if self.stopframe and frame.f_code.co_flags & CO_GENERATOR:
+            if self.stopframe and frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
                 return self.trace_dispatch
             try:
                 self.frame_returning = frame
@@ -166,7 +168,7 @@ class Bdb:
             # When stepping with next/until/return in a generator frame, skip
             # the internal StopIteration exception (with no traceback)
             # triggered by a subiterator run with the 'yield from' statement.
-            if not (frame.f_code.co_flags & CO_GENERATOR
+            if not (frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS
                     and arg[0] is StopIteration and arg[2] is None):
                 self.user_exception(frame, arg)
                 if self.quitting: raise BdbQuit
@@ -175,7 +177,7 @@ class Bdb:
         # next/until command at the last statement in the generator before the
         # exception.
         elif (self.stopframe and frame is not self.stopframe
-                and self.stopframe.f_code.co_flags & CO_GENERATOR
+                and self.stopframe.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS
                 and arg[0] in (StopIteration, GeneratorExit)):
             self.user_exception(frame, arg)
             if self.quitting: raise BdbQuit
@@ -188,6 +190,8 @@ class Bdb:
 
     def is_skipped_module(self, module_name):
         "Return True if module_name matches any skip pattern."
+        if module_name is None:  # some modules do not have names
+            return False
         for pattern in self.skip:
             if fnmatch.fnmatch(module_name, pattern):
                 return True
@@ -255,7 +259,7 @@ class Bdb:
         pass
 
     def user_line(self, frame):
-        """Called when when we stop or break at a line."""
+        """Called when we stop or break at a line."""
         pass
 
     def user_return(self, frame, return_value):
@@ -309,7 +313,7 @@ class Bdb:
 
     def set_return(self, frame):
         """Stop when returning from the given frame."""
-        if frame.f_code.co_flags & CO_GENERATOR:
+        if frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
             self._set_stopinfo(frame, None, -1)
         else:
             self._set_stopinfo(frame.f_back, frame)
@@ -614,11 +618,26 @@ class Bdb:
 
     # This method is more useful to debug a single function call.
 
-    def runcall(self, func, *args, **kwds):
+    def runcall(*args, **kwds):
         """Debug a single function call.
 
         Return the result of the function call.
         """
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor 'runcall' of 'Bdb' object "
+                            "needs an argument")
+        elif 'func' in kwds:
+            func = kwds.pop('func')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'func' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('runcall expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         self.reset()
         sys.settrace(self.trace_dispatch)
         res = None

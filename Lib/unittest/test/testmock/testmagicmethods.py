@@ -1,4 +1,6 @@
+import math
 import unittest
+import os
 import sys
 from unittest.mock import Mock, MagicMock, _magics
 
@@ -280,12 +282,25 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(hash(mock), object.__hash__(mock))
         self.assertEqual(str(mock), object.__str__(mock))
         self.assertTrue(bool(mock))
+        self.assertEqual(round(mock), mock.__round__())
+        self.assertEqual(math.trunc(mock), mock.__trunc__())
+        self.assertEqual(math.floor(mock), mock.__floor__())
+        self.assertEqual(math.ceil(mock), mock.__ceil__())
 
         # in Python 3 oct and hex use __index__
         # so these tests are for __index__ in py3k
         self.assertEqual(oct(mock), '0o1')
         self.assertEqual(hex(mock), '0x1')
         # how to test __sizeof__ ?
+
+
+    def test_magic_methods_fspath(self):
+        mock = MagicMock()
+        expected_path = mock.__fspath__()
+        mock.reset_mock()
+
+        self.assertEqual(os.fspath(mock), expected_path)
+        mock.__fspath__.assert_called_once()
 
 
     def test_magic_methods_and_spec(self):
@@ -450,7 +465,7 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertIsInstance(bar_direct, MagicMock)
 
     # http://bugs.python.org/issue23310
-    # Check if you can change behaviour of magic methds in MagicMock init
+    # Check if you can change behaviour of magic methods in MagicMock init
     def test_magic_in_initialization(self):
         m = MagicMock(**{'__str__.return_value': "12"})
         self.assertEqual(str(m), "12")

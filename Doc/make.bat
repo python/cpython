@@ -6,17 +6,27 @@ pushd %~dp0
 set this=%~n0
 
 call ..\PCbuild\find_python.bat %PYTHON%
-if not defined SPHINXBUILD if defined PYTHON (
+
+if not defined PYTHON set PYTHON=py
+
+if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
         %PYTHON% -m pip install sphinx
         if errorlevel 1 exit /B
     )
-    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sphinx.main()"
+    set SPHINXBUILD=%PYTHON% -c "import sphinx.cmd.build, sys; sys.exit(sphinx.cmd.build.main())"
 )
 
-if not defined BLURB if defined PYTHON (
+%PYTHON% -c "import python_docs_theme" > nul 2> nul
+if errorlevel 1 (
+    echo Installing python-docs-theme with %PYTHON%
+    %PYTHON% -m pip install python-docs-theme
+    if errorlevel 1 exit /B
+)
+
+if not defined BLURB (
     %PYTHON% -c "import blurb" > nul 2> nul
     if errorlevel 1 (
         echo Installing blurb with %PYTHON%
@@ -26,16 +36,12 @@ if not defined BLURB if defined PYTHON (
     set BLURB=%PYTHON% -m blurb
 )
 
-if not defined PYTHON set PYTHON=py
-if not defined SPHINXBUILD set SPHINXBUILD=sphinx-build
-if not defined BLURB set BLURB=blurb
-
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
 if exist "%HTMLHELP%" goto :skiphhcsearch
 
 rem Search for HHC in likely places
 set HTMLHELP=
-where hhc /q && set HTMLHELP=hhc && goto :skiphhcsearch
+where hhc /q && set "HTMLHELP=hhc" && goto :skiphhcsearch
 where /R ..\externals hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
 if not exist "%HTMLHELP%" where /R "%ProgramFiles(x86)%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
 if not exist "%HTMLHELP%" where /R "%ProgramFiles%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
@@ -109,13 +115,16 @@ goto end
 :build
 if not exist "%BUILDDIR%" mkdir "%BUILDDIR%"
 
+rem PY_MISC_NEWS_DIR is also used by our Sphinx extension in tools/extensions/pyspecific.py
+if not defined PY_MISC_NEWS_DIR set PY_MISC_NEWS_DIR=%BUILDDIR%\%1
 if exist ..\Misc\NEWS (
-    echo.Copying Misc\NEWS to build\NEWS
-    copy ..\Misc\NEWS build\NEWS > nul
+    echo.Copying Misc\NEWS to %PY_MISC_NEWS_DIR%\NEWS
+    copy ..\Misc\NEWS "%PY_MISC_NEWS_DIR%\NEWS" > nul
 ) else if exist ..\Misc\NEWS.D (
     if defined BLURB (
         echo.Merging Misc/NEWS with %BLURB%
-        %BLURB% merge -f build\NEWS
+        if not exist build mkdir build
+        %BLURB% merge -f "%PY_MISC_NEWS_DIR%\NEWS"
     ) else (
         echo.No Misc/NEWS file and Blurb is not available.
         exit /B 1
@@ -124,6 +133,9 @@ if exist ..\Misc\NEWS (
 
 if NOT "%PAPER%" == "" (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
+)
+if "%1" EQU "htmlhelp" (
+    set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
 )
 cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
@@ -150,7 +162,7 @@ cmd /C %this% html
 
 if EXIST "%BUILDDIR%\html\index.html" (
     echo.Opening "%BUILDDIR%\html\index.html" in the default web browser...
-    start "%BUILDDIR%\html\index.html"
+    start "" "%BUILDDIR%\html\index.html"
 )
 
 goto end

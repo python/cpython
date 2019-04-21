@@ -10,8 +10,8 @@ control flow statements known from other languages, with some twists.
 
 .. _tut-if:
 
-:keyword:`if` Statements
-========================
+:keyword:`!if` Statements
+=========================
 
 Perhaps the most well-known statement type is the :keyword:`if` statement.  For
 example::
@@ -31,16 +31,16 @@ example::
    More
 
 There can be zero or more :keyword:`elif` parts, and the :keyword:`else` part is
-optional.  The keyword ':keyword:`elif`' is short for 'else if', and is useful
-to avoid excessive indentation.  An  :keyword:`if` ... :keyword:`elif` ...
-:keyword:`elif` ... sequence is a substitute for the ``switch`` or
+optional.  The keyword ':keyword:`!elif`' is short for 'else if', and is useful
+to avoid excessive indentation.  An  :keyword:`!if` ... :keyword:`!elif` ...
+:keyword:`!elif` ... sequence is a substitute for the ``switch`` or
 ``case`` statements found in other languages.
 
 
 .. _tut-for:
 
-:keyword:`for` Statements
-=========================
+:keyword:`!for` Statements
+==========================
 
 .. index::
    statement: for
@@ -48,7 +48,7 @@ to avoid excessive indentation.  An  :keyword:`if` ... :keyword:`elif` ...
 The :keyword:`for` statement in Python differs a bit from what you may be used
 to in C or Pascal.  Rather than always iterating over an arithmetic progression
 of numbers (like in Pascal), or giving the user the ability to define both the
-iteration step and halting condition (as C), Python's :keyword:`for` statement
+iteration step and halting condition (as C), Python's :keyword:`!for` statement
 iterates over the items of any sequence (a list or a string), in the order that
 they appear in the sequence.  For example (no pun intended):
 
@@ -105,7 +105,7 @@ is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
     range(5, 10)
-       5 through 9
+       5, 6, 7, 8, 9
 
     range(0, 10, 3)
        0, 3, 6, 9
@@ -154,13 +154,13 @@ Later we will see more functions that return iterables and take iterables as arg
 
 .. _tut-break:
 
-:keyword:`break` and :keyword:`continue` Statements, and :keyword:`else` Clauses on Loops
-=========================================================================================
+:keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
+============================================================================================
 
 The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-Loop statements may have an ``else`` clause; it is executed when the loop
+Loop statements may have an :keyword:`!else` clause; it is executed when the loop
 terminates through exhaustion of the list (with :keyword:`for`) or when the
 condition becomes false (with :keyword:`while`), but not when the loop is
 terminated by a :keyword:`break` statement.  This is exemplified by the
@@ -189,9 +189,9 @@ the :keyword:`for` loop, **not** the :keyword:`if` statement.)
 
 When used with a loop, the ``else`` clause has more in common with the
 ``else`` clause of a :keyword:`try` statement than it does that of
-:keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
+:keyword:`if` statements: a :keyword:`!try` statement's ``else`` clause runs
 when no exception occurs, and a loop's ``else`` clause runs when no ``break``
-occurs. For more on the :keyword:`try` statement and exceptions, see
+occurs. For more on the :keyword:`!try` statement and exceptions, see
 :ref:`tut-handling`.
 
 The :keyword:`continue` statement, also borrowed from C, continues with the next
@@ -213,8 +213,8 @@ iteration of the loop::
 
 .. _tut-pass:
 
-:keyword:`pass` Statements
-==========================
+:keyword:`!pass` Statements
+===========================
 
 The :keyword:`pass` statement does nothing. It can be used when a statement is
 required syntactically but the program requires no action. For example::
@@ -231,7 +231,7 @@ This is commonly used for creating minimal classes::
 
 Another place :keyword:`pass` can be used is as a place-holder for a function or
 conditional body when you are working on new code, allowing you to keep thinking
-at a more abstract level.  The :keyword:`pass` is silently ignored::
+at a more abstract level.  The :keyword:`!pass` is silently ignored::
 
    >>> def initlog(*args):
    ...     pass   # Remember to implement this!
@@ -331,7 +331,7 @@ Fibonacci series, instead of printing it::
 This example, as usual, demonstrates some new Python features:
 
 * The :keyword:`return` statement returns with a value from a function.
-  :keyword:`return` without an expression argument returns ``None``. Falling off
+  :keyword:`!return` without an expression argument returns ``None``. Falling off
   the end of a function also returns ``None``.
 
 * The statement ``result.append(a)`` calls a *method* of the list object
@@ -526,7 +526,7 @@ Arbitrary Argument Lists
 ------------------------
 
 .. index::
-  statement: *
+   single: * (asterisk); in function calls
 
 Finally, the least frequently used option is to specify that a function can be
 called with an arbitrary number of arguments.  These arguments will be wrapped
@@ -570,10 +570,10 @@ or tuple::
    [3, 4, 5]
 
 .. index::
-  statement: **
+   single: **; in function calls
 
-In the same fashion, dictionaries can deliver keyword arguments with the ``**``\
--operator::
+In the same fashion, dictionaries can deliver keyword arguments with the
+``**``\ -operator::
 
    >>> def parrot(voltage, state='a stiff', action='voom'):
    ...     print("-- This parrot wouldn't", action, end=' ')
@@ -675,16 +675,17 @@ Function Annotations
 .. sectionauthor:: Zachary Ware <zachary.ware@gmail.com>
 .. index::
    pair: function; annotations
-   single: -> (return annotation assignment)
+   single: ->; function annotations
+   single: : (colon); function annotations
 
 :ref:`Function annotations <function>` are completely optional metadata
-information about the types used by user-defined functions (see :pep:`484`
-for more information).
+information about the types used by user-defined functions (see :pep:`3107` and
+:pep:`484` for more information).
 
-Annotations are stored in the :attr:`__annotations__` attribute of the function
-as a dictionary and have no effect on any other part of the function.  Parameter
-annotations are defined by a colon after the parameter name, followed by an
-expression evaluating to the value of the annotation.  Return annotations are
+:term:`Annotations <function annotation>` are stored in the :attr:`__annotations__`
+attribute of the function as a dictionary and have no effect on any other part of the
+function.  Parameter annotations are defined by a colon after the parameter name, followed
+by an expression evaluating to the value of the annotation.  Return annotations are
 defined by a literal ``->``, followed by an expression, between the parameter
 list and the colon denoting the end of the :keyword:`def` statement.  The
 following example has a positional argument, a keyword argument, and the return

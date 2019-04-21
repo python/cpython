@@ -817,7 +817,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         }
 
         /* Check that timebase.numer and timebase.denom can be casted to
-           _PyTime_t. In pratice, timebase uses uint32_t, so casting cannot
+           _PyTime_t. In practice, timebase uses uint32_t, so casting cannot
            overflow. At the end, only make sure that the type is uint32_t
            (_PyTime_t is 64-bit long). */
         assert(sizeof(timebase.numer) < sizeof(_PyTime_t));
@@ -1062,12 +1062,23 @@ _PyTime_localtime(time_t t, struct tm *tm)
     }
     return 0;
 #else /* !MS_WINDOWS */
+
+#ifdef _AIX
+    /* bpo-34373: AIX does not return NULL if t is too small or too large */
+    if (t < -2145916800 /* 1902-01-01 */
+       || t > 2145916800 /* 2038-01-01 */) {
+        errno = EINVAL;
+        PyErr_SetString(PyExc_OverflowError,
+                        "localtime argument out of range");
+        return -1;
+    }
+#endif
+
+    errno = 0;
     if (localtime_r(&t, tm) == NULL) {
-#ifdef EINVAL
         if (errno == 0) {
             errno = EINVAL;
         }
-#endif
         PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }

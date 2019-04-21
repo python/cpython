@@ -10,8 +10,6 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.refleak import warm_caches
-
 
 def setup_tests(ns):
     try:
@@ -57,7 +55,7 @@ def setup_tests(ns):
         if hasattr(module, '__path__'):
             for index, path in enumerate(module.__path__):
                 module.__path__[index] = os.path.abspath(path)
-        if hasattr(module, '__file__'):
+        if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
     # MacOSX (a.k.a. Darwin) has a default stack size that is too small
@@ -78,10 +76,6 @@ def setup_tests(ns):
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
-
-        # Avoid false positives due to various caches
-        # filling slowly with random data:
-        warm_caches()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)

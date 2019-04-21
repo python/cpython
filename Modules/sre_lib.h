@@ -199,7 +199,7 @@ SRE(charset_loc_ignore)(SRE_STATE* state, SRE_CODE* set, SRE_CODE ch)
     return up != lo && SRE(charset)(state, set, up);
 }
 
-LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int match_all);
+LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int toplevel);
 
 LOCAL(Py_ssize_t)
 SRE(count)(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
@@ -510,12 +510,12 @@ do { \
 #define JUMP_ASSERT          12
 #define JUMP_ASSERT_NOT      13
 
-#define DO_JUMPX(jumpvalue, jumplabel, nextpattern, matchall) \
+#define DO_JUMPX(jumpvalue, jumplabel, nextpattern, toplevel_) \
     DATA_ALLOC(SRE(match_context), nextctx); \
     nextctx->last_ctx_pos = ctx_pos; \
     nextctx->jump = jumpvalue; \
     nextctx->pattern = nextpattern; \
-    nextctx->match_all = matchall; \
+    nextctx->toplevel = toplevel_; \
     ctx_pos = alloc_pos; \
     ctx = nextctx; \
     goto entrance; \
@@ -523,7 +523,7 @@ do { \
     while (0) /* gcc doesn't like labels at end of scopes */ \
 
 #define DO_JUMP(jumpvalue, jumplabel, nextpattern) \
-    DO_JUMPX(jumpvalue, jumplabel, nextpattern, ctx->match_all)
+    DO_JUMPX(jumpvalue, jumplabel, nextpattern, ctx->toplevel)
 
 #define DO_JUMP0(jumpvalue, jumplabel, nextpattern) \
     DO_JUMPX(jumpvalue, jumplabel, nextpattern, 0)
@@ -540,13 +540,13 @@ typedef struct {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
-    int match_all;
+    int toplevel;
 } SRE(match_context);
 
 /* check if string matches the given pattern.  returns <0 for
    error, 0 for failure, and 1 for success */
 LOCAL(Py_ssize_t)
-SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int match_all)
+SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int toplevel)
 {
     SRE_CHAR* end = (SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
@@ -563,7 +563,7 @@ SRE(match)(SRE_STATE* state, SRE_CODE* pattern, int match_all)
     ctx->last_ctx_pos = -1;
     ctx->jump = JUMP_NONE;
     ctx->pattern = pattern;
-    ctx->match_all = match_all;
+    ctx->toplevel = toplevel;
     ctx_pos = alloc_pos;
 
 entrance:
@@ -636,11 +636,14 @@ entrance:
         case SRE_OP_SUCCESS:
             /* end of pattern */
             TRACE(("|%p|%p|SUCCESS\n", ctx->pattern, ctx->ptr));
-            if (!ctx->match_all || ctx->ptr == state->end) {
-                state->ptr = ctx->ptr;
-                RETURN_SUCCESS;
+            if (ctx->toplevel &&
+                ((state->match_all && ctx->ptr != state->end) ||
+                 (state->must_advance && ctx->ptr == state->start)))
+            {
+                RETURN_FAILURE;
             }
-            RETURN_FAILURE;
+            state->ptr = ctx->ptr;
+            RETURN_SUCCESS;
 
         case SRE_OP_AT:
             /* match at given position */
@@ -856,7 +859,9 @@ entrance:
                 RETURN_FAILURE;
 
             if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
-                ctx->ptr == state->end) {
+                ctx->ptr == state->end &&
+                !(ctx->toplevel && state->must_advance && ctx->ptr == state->start))
+            {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;
@@ -941,7 +946,10 @@ entrance:
             }
 
             if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
-                (!match_all || ctx->ptr == state->end)) {
+                !(ctx->toplevel &&
+                  ((state->match_all && ctx->ptr != state->end) ||
+                   (state->must_advance && ctx->ptr == state->start))))
+            {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;
@@ -1355,6 +1363,10 @@ exit:
     return ret; /* should never get here */
 }
 
+/* need to reset capturing groups between two SRE(match) callings in loops */
+#define RESET_CAPTURE_GROUP() \
+    do { state->lastmark = state->lastindex = -1; } while (0)
+
 LOCAL(Py_ssize_t)
 SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
 {
@@ -1417,6 +1429,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             return 0; /* literal can't match: doesn't fit in char width */
 #endif
         end = (SRE_CHAR *)state->end;
+        state->must_advance = 0;
         while (ptr < end) {
             while (*ptr != c) {
                 if (++ptr >= end)
@@ -1431,6 +1444,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             if (status != 0)
                 return status;
             ++ptr;
+            RESET_CAPTURE_GROUP();
         }
         return 0;
     }
@@ -1458,6 +1472,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
                 return 0;
 
             i = 1;
+            state->must_advance = 0;
             do {
                 if (*ptr == (SRE_CHAR) prefix[i]) {
                     if (++i != prefix_len) {
@@ -1477,6 +1492,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
                     /* close but no cigar -- try again */
                     if (++ptr >= end)
                         return 0;
+                    RESET_CAPTURE_GROUP();
                 }
                 i = overlap[i];
             } while (i != 0);
@@ -1487,6 +1503,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
     if (charset) {
         /* pattern starts with a character from a known set */
         end = (SRE_CHAR *)state->end;
+        state->must_advance = 0;
         for (;;) {
             while (ptr < end && !SRE(charset)(state, charset, *ptr))
                 ptr++;
@@ -1499,17 +1516,21 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
             if (status != 0)
                 break;
             ptr++;
+            RESET_CAPTURE_GROUP();
         }
     } else {
         /* general case */
         assert(ptr <= end);
-        while (1) {
+        TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
+        state->start = state->ptr = ptr;
+        status = SRE(match)(state, pattern, 1);
+        state->must_advance = 0;
+        while (status == 0 && ptr < end) {
+            ptr++;
+            RESET_CAPTURE_GROUP();
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
             state->start = state->ptr = ptr;
             status = SRE(match)(state, pattern, 0);
-            if (status != 0 || ptr >= end)
-                break;
-            ptr++;
         }
     }
 

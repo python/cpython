@@ -315,6 +315,8 @@ expect a function argument.
    method.  Dictionaries accept any hashable value.  Lists, tuples, and
    strings accept an index or a slice:
 
+      >>> itemgetter('name')({'name': 'tu', 'age': 18})
+      'tu'
       >>> itemgetter(1)('ABCDEFG')
       'B'
       >>> itemgetter(1,3,5)('ABCDEFG')
@@ -438,8 +440,8 @@ Python syntax and the functions in the :mod:`operator` module.
 | Ordering              | ``a > b``               | ``gt(a, b)``                          |
 +-----------------------+-------------------------+---------------------------------------+
 
-Inplace Operators
------------------
+In-place Operators
+------------------
 
 Many operations have an "in-place" version.  Listed below are functions
 providing a more primitive access to in-place operators than the usual syntax
@@ -462,7 +464,7 @@ value is computed, but not assigned back to the input variable:
 >>> a
 'hello'
 
-For mutable targets such as lists and dictionaries, the inplace method
+For mutable targets such as lists and dictionaries, the in-place method
 will perform the update, so no subsequent assignment is necessary:
 
 >>> s = ['h', 'e', 'l', 'l', 'o']

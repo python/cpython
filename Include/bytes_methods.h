@@ -9,6 +9,7 @@
 extern PyObject* _Py_bytes_isspace(const char *cptr, Py_ssize_t len);
 extern PyObject* _Py_bytes_isalpha(const char *cptr, Py_ssize_t len);
 extern PyObject* _Py_bytes_isalnum(const char *cptr, Py_ssize_t len);
+extern PyObject* _Py_bytes_isascii(const char *cptr, Py_ssize_t len);
 extern PyObject* _Py_bytes_isdigit(const char *cptr, Py_ssize_t len);
 extern PyObject* _Py_bytes_islower(const char *cptr, Py_ssize_t len);
 extern PyObject* _Py_bytes_isupper(const char *cptr, Py_ssize_t len);
@@ -37,6 +38,7 @@ extern PyObject* _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to);
 extern const char _Py_isspace__doc__[];
 extern const char _Py_isalpha__doc__[];
 extern const char _Py_isalnum__doc__[];
+extern const char _Py_isascii__doc__[];
 extern const char _Py_isdigit__doc__[];
 extern const char _Py_islower__doc__[];
 extern const char _Py_isupper__doc__[];

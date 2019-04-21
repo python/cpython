@@ -52,9 +52,9 @@ PyAPI_FUNC(PyObject *) PyBytes_FromStringAndSize(const char *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyBytes_FromString(const char *);
 PyAPI_FUNC(PyObject *) PyBytes_FromObject(PyObject *);
 PyAPI_FUNC(PyObject *) PyBytes_FromFormatV(const char*, va_list)
-				Py_GCC_ATTRIBUTE((format(printf, 1, 0)));
+                                Py_GCC_ATTRIBUTE((format(printf, 1, 0)));
 PyAPI_FUNC(PyObject *) PyBytes_FromFormat(const char*, ...)
-				Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
+                                Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
 PyAPI_FUNC(Py_ssize_t) PyBytes_Size(PyObject *);
 PyAPI_FUNC(char *) PyBytes_AsString(PyObject *);
 PyAPI_FUNC(PyObject *) PyBytes_Repr(PyObject *, int);
@@ -72,8 +72,8 @@ PyAPI_FUNC(PyObject*) _PyBytes_FromHex(
     int use_bytearray);
 #endif
 PyAPI_FUNC(PyObject *) PyBytes_DecodeEscape(const char *, Py_ssize_t,
-						   const char *, Py_ssize_t,
-						   const char *);
+                                            const char *, Py_ssize_t,
+                                            const char *);
 #ifndef Py_LIMITED_API
 /* Helper for PyBytes_DecodeEscape that detects invalid escape chars. */
 PyAPI_FUNC(PyObject *) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
@@ -132,10 +132,10 @@ PyAPI_FUNC(Py_ssize_t) _PyBytes_InsertThousandsGrouping(char *buffer,
 
 /* Flags used by string formatting */
 #define F_LJUST (1<<0)
-#define F_SIGN	(1<<1)
+#define F_SIGN  (1<<1)
 #define F_BLANK (1<<2)
-#define F_ALT	(1<<3)
-#define F_ZERO	(1<<4)
+#define F_ALT   (1<<3)
+#define F_ZERO  (1<<4)
 
 #ifndef Py_LIMITED_API
 /* The _PyBytesWriter structure is big: it contains an embedded "stack buffer".

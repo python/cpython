@@ -29,7 +29,7 @@
    # Start playing the first bit of wav file asynchronously
    winsound.PlaySound('c:/windows/media/Chord.wav',
                    winsound.SND_FILENAME|winsound.SND_ASYNC)
-   # But dont let it go for too long...
+   # But don't let it go for too long...
    time.sleep(0.1)
    # ...Before stopping it
    winsound.PlaySound(None, 0)

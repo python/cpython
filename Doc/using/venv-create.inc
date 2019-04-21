@@ -7,9 +7,11 @@ Running this command creates the target directory (creating any parent
 directories that don't exist already) and places a ``pyvenv.cfg`` file in it
 with a ``home`` key pointing to the Python installation from which the command
 was run.  It also creates a ``bin`` (or ``Scripts`` on Windows) subdirectory
-containing a copy of the ``python`` binary (or binaries, in the case of
-Windows).  It also creates an (initially empty) ``lib/pythonX.Y/site-packages``
-subdirectory (on Windows, this is ``Lib\site-packages``).
+containing a copy/symlink of the Python binary/binaries (as appropriate for the
+platform or arguments used at environment creation time). It also creates an
+(initially empty) ``lib/pythonX.Y/site-packages`` subdirectory
+(on Windows, this is ``Lib\site-packages``). If an existing
+directory is specified, it will be re-used.
 
 .. deprecated:: 3.6
    ``pyvenv`` was the recommended tool for creating virtual environments for
@@ -18,11 +20,6 @@ subdirectory (on Windows, this is ``Lib\site-packages``).
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.
-
-.. seealso::
-
-   `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
 
 .. highlight:: none
 
@@ -38,7 +35,7 @@ your :ref:`Python installation <using-on-windows>`::
 The command, if run with ``-h``, will show the available options::
 
     usage: venv [-h] [--system-site-packages] [--symlinks | --copies] [--clear]
-                [--upgrade] [--without-pip]
+                [--upgrade] [--without-pip] [--prompt PROMPT]
                 ENV_DIR [ENV_DIR ...]
 
     Creates virtual Python environments in one or more target directories.
@@ -61,6 +58,8 @@ The command, if run with ``-h``, will show the available options::
                             of Python, assuming Python has been upgraded in-place.
       --without-pip         Skips installing or upgrading pip in the virtual
                             environment (pip is bootstrapped by default)
+      --prompt PROMPT       Provides an alternative prompt prefix for this
+                            environment.
 
     Once an environment has been created, you may wish to activate it, e.g. by
     sourcing an activate script in its bin directory.
@@ -71,9 +70,12 @@ The command, if run with ``-h``, will show the available options::
 
 .. versionchanged:: 3.4
    In earlier versions, if the target directory already existed, an error was
-   raised, unless the ``--clear`` or ``--upgrade`` option was provided. Now,
-   if an existing directory is specified, its contents are removed and
-   the directory is processed as if it had been newly created.
+   raised, unless the ``--clear`` or ``--upgrade`` option was provided.
+
+.. note::
+   While symlinks are supported on Windows, they are not recommended. Of
+   particular note is that double-clicking ``python.exe`` in File Explorer
+   will resolve the symlink eagerly and ignore the virtual environment.
 
 The created ``pyvenv.cfg`` file also includes the
 ``include-system-site-packages`` key, set to ``true`` if ``venv`` is
@@ -88,7 +90,8 @@ path.
 
 Once a virtual environment has been created, it can be "activated" using a
 script in the virtual environment's binary directory. The invocation of the
-script is platform-specific:
+script is platform-specific (`<venv>` must be replaced by the path of the
+directory containing the virtual environment):
 
 +-------------+-----------------+-----------------------------------------+
 | Platform    | Shell           | Command to activate virtual environment |
