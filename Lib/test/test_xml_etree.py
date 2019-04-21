@@ -1984,9 +1984,9 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         e1 = ET.Element('e1')
         e2 = ET.Element('e2')
         e3 = ET.Element('e3')
-        e1.append(e2)
-        e2.append(e2)
         e3.append(e1)
+        e2.append(e3)
+        e1.append(e2)
         wref = weakref.ref(e1)
         del e1, e2, e3
         gc_collect()
