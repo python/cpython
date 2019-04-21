@@ -31,11 +31,11 @@ class ClassFunctionVisitor(ast.NodeVisitor):
             if previous is not None and previous.type == 'ClassDef':
                 new.check_duplicate_meth(self.duplicates)
 
+    visit_AsyncFunctionDef = visit_FunctionDef
+
     def visit_ClassDef(self, node):
         with self._visit_new_scope(node) as (previous, new):
             pass
-
-    visit_AsyncFunctionDef = visit_ClassDef
 
 class Scope:
     def __init__(self, node, previous):
@@ -87,6 +87,17 @@ def duplicates_exist(source, fname='<unknown>', dups_to_ignore=[]):
     ... '''
     >>> duplicates_exist(test_basic)
     <unknown>:4 C.foo
+    True
+
+    >>> test_asyncdef = '''
+    ... class C:
+    ...     async def foo(self): pass
+    ...     async def foo(self): pass
+    ...     def foo(self): pass
+    ... '''
+    >>> duplicates_exist(test_asyncdef)
+    <unknown>:4 C.foo
+    <unknown>:5 C.foo
     True
 
     >>> test_ignore = '''
