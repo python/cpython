@@ -1346,6 +1346,7 @@ PyInit__signal(void)
     initialized = 1;
 #endif
 
+    /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
 
     x = DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
