@@ -1,0 +1,2 @@
+Fix running script with encoding cookie and LF line ending
+may fail on Windows.

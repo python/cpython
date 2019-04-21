@@ -2,7 +2,7 @@
 /* Module object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 static Py_ssize_t max_module_number;
@@ -35,7 +35,7 @@ bad_traverse_test(PyObject *self, void *arg) {
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
-    sizeof(struct PyModuleDef),                 /* tp_size */
+    sizeof(struct PyModuleDef),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
 
@@ -698,6 +698,27 @@ module_repr(PyModuleObject *m)
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
 
+/* Check if the "_initializing" attribute of the module spec is set to true.
+   Clear the exception and return 0 if spec is NULL.
+ */
+int
+_PyModuleSpec_IsInitializing(PyObject *spec)
+{
+    if (spec != NULL) {
+        _Py_IDENTIFIER(_initializing);
+        PyObject *value = _PyObject_GetAttrId(spec, &PyId__initializing);
+        if (value != NULL) {
+            int initializing = PyObject_IsTrue(value);
+            Py_DECREF(value);
+            if (initializing >= 0) {
+                return initializing;
+            }
+        }
+    }
+    PyErr_Clear();
+    return 0;
+}
+
 static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
@@ -717,8 +738,24 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
-            PyErr_Format(PyExc_AttributeError,
-                        "module '%U' has no attribute '%U'", mod_name, name);
+            _Py_IDENTIFIER(__spec__);
+            Py_INCREF(mod_name);
+            PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            Py_XINCREF(spec);
+            if (_PyModuleSpec_IsInitializing(spec)) {
+                PyErr_Format(PyExc_AttributeError,
+                             "partially initialized "
+                             "module '%U' has no attribute '%U' "
+                             "(most likely due to a circular import)",
+                             mod_name, name);
+            }
+            else {
+                PyErr_Format(PyExc_AttributeError,
+                             "module '%U' has no attribute '%U'",
+                             mod_name, name);
+            }
+            Py_XDECREF(spec);
+            Py_DECREF(mod_name);
             return NULL;
         }
     }
@@ -755,16 +792,17 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__dir__);
     PyObject *result = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
-            PyObject *dirfunc = PyDict_GetItemString(dict, "__dir__");
+            PyObject *dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
             if (dirfunc) {
                 result = _PyObject_CallNoArg(dirfunc);
             }
-            else {
+            else if (!PyErr_Occurred()) {
                 result = PyDict_Keys(dict);
             }
         }
@@ -790,7 +828,7 @@ static PyMethodDef module_methods[] = {
 PyTypeObject PyModule_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "module",                                   /* tp_name */
-    sizeof(PyModuleObject),                     /* tp_size */
+    sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
     0,                                          /* tp_print */

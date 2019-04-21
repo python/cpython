@@ -2,9 +2,7 @@ import importlib.abc
 import importlib.util
 import os
 import platform
-import re
 import string
-import sys
 import tokenize
 import traceback
 import webbrowser
@@ -50,7 +48,6 @@ class EditorWindow(object):
     from idlelib.undo import UndoDelegator
     from idlelib.iomenu import IOBinding, encoding
     from idlelib import mainmenu
-    from tkinter import Toplevel, EventType
     from idlelib.statusbar import MultiStatusBar
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
@@ -59,6 +56,7 @@ class EditorWindow(object):
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
     from idlelib.rstrip import Rstrip
+    from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
@@ -445,6 +443,16 @@ class EditorWindow(object):
             menu.delete(self.wmenu_end+1, end)
         window.add_windows_to_menu(menu)
 
+    def update_menu_label(self, menu, index, label):
+        "Update label for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, label=label)
+
+    def update_menu_state(self, menu, index, state):
+        "Update state for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, state=state)
+
     def handle_yview(self, event, *args):
         "Handle scrollbar."
         if event == 'moveto':
@@ -457,12 +465,19 @@ class EditorWindow(object):
         return 'break'
 
     def mousescroll(self, event):
-        "Handle scroll wheel."
-        up = {EventType.MouseWheel: event.delta >= 0 == darwin,
+        """Handle scrollwheel event.
+
+        For wheel up, event.delta = 120*n on Windows, -1*n on darwin,
+        where n can be > 1 if one scrolls fast.  Flicking the wheel
+        generates up to maybe 20 events with n up to 10 or more 1.
+        Macs use wheel down (delta = 1*n) to scroll up, so positive
+        delta means to scroll up on both systems.
+
+        X-11 sends Control-Button-4 event instead.
+        """
+        up = {EventType.MouseWheel: event.delta > 0,
               EventType.Button: event.num == 4}
-        lines = 5
-        if up[event.type]:
-            lines = -lines
+        lines = -5 if up[event.type] else 5
         self.text.yview_scroll(lines, 'units')
         return 'break'
 
@@ -928,7 +943,7 @@ class EditorWindow(object):
         elif long:
             title = long
         else:
-            title = "Untitled"
+            title = "untitled"
         icon = short or long or title
         if not self.get_saved():
             title = "*%s*" % title
@@ -950,7 +965,7 @@ class EditorWindow(object):
         if filename:
             filename = os.path.basename(filename)
         else:
-            filename = "Untitled"
+            filename = "untitled"
         # return unicode string to display non-ASCII chars correctly
         return self._filename_to_unicode(filename)
 
@@ -1018,7 +1033,7 @@ class EditorWindow(object):
         self.io = None
         self.undo = None
         if self.color:
-            self.color.close(False)
+            self.color.close()
             self.color = None
         self.text = None
         self.tkinter_vars = None
@@ -1701,7 +1716,11 @@ def _editor_window(parent):  # htest #
         filename = None
     macosx.setupApp(root, None)
     edit = EditorWindow(root=root, filename=filename)
-    edit.text.bind("<<close-all-windows>>", edit.close_event)
+    text = edit.text
+    text['height'] = 10
+    for i in range(20):
+        text.insert('insert', '  '*i + str(i) + '\n')
+    # text.bind("<<close-all-windows>>", edit.close_event)
     # Does not stop error, neither does following
     # edit.text.bind("<<close-window>>", edit.close_event)
 

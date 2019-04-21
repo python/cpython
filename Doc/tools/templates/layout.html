@@ -21,5 +21,14 @@
       {% if pagename == 'whatsnew/changelog' and not embedded %}
       <script type="text/javascript" src="{{ pathto('_static/changelog_search.js', 1) }}"></script>{% endif %}
     {% endif %}
+
+    {# custom CSS; used in asyncio docs! #}
+    <style>
+      @media only screen {{ "{" }}
+        table.full-width-table {{ "{" }}
+            width: 100%;
+        {{ "}" }}
+      {{ "}" }}
+    </style>
 {{ super() }}
 {% endblock %}

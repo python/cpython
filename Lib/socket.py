@@ -60,8 +60,8 @@ EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
-__all__ = ["fromfd", "getfqdn", "create_connection",
-        "AddressFamily", "SocketKind"]
+__all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
+           "has_dualstack_ipv6", "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
@@ -70,22 +70,22 @@ __all__.extend(os._get_exports_list(_socket))
 # in this module understands the enums and translates them back from integers
 # where needed (e.g. .family property of a socket object).
 
-IntEnum._convert(
+IntEnum._convert_(
         'AddressFamily',
         __name__,
         lambda C: C.isupper() and C.startswith('AF_'))
 
-IntEnum._convert(
+IntEnum._convert_(
         'SocketKind',
         __name__,
         lambda C: C.isupper() and C.startswith('SOCK_'))
 
-IntFlag._convert(
+IntFlag._convert_(
         'MsgFlag',
         __name__,
         lambda C: C.isupper() and C.startswith('MSG_'))
 
-IntFlag._convert(
+IntFlag._convert_(
         'AddressInfo',
         __name__,
         lambda C: C.isupper() and C.startswith('AI_'))
@@ -189,7 +189,7 @@ class socket(_socket.socket):
         return s
 
     def __getstate__(self):
-        raise TypeError("Cannot serialize socket object")
+        raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
 
     def dup(self):
         """dup() -> socket object
@@ -727,6 +727,92 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
         raise err
     else:
         raise error("getaddrinfo returns an empty list")
+
+
+def has_dualstack_ipv6():
+    """Return True if the platform supports creating a SOCK_STREAM socket
+    which can handle both AF_INET and AF_INET6 (IPv4 / IPv6) connections.
+    """
+    if not has_ipv6 \
+            or not hasattr(_socket, 'IPPROTO_IPV6') \
+            or not hasattr(_socket, 'IPV6_V6ONLY'):
+        return False
+    try:
+        with socket(AF_INET6, SOCK_STREAM) as sock:
+            sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
+            return True
+    except error:
+        return False
+
+
+def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
+                  dualstack_ipv6=False):
+    """Convenience function which creates a SOCK_STREAM type socket
+    bound to *address* (a 2-tuple (host, port)) and return the socket
+    object.
+
+    *family* should be either AF_INET or AF_INET6.
+    *backlog* is the queue size passed to socket.listen().
+    *reuse_port* dictates whether to use the SO_REUSEPORT socket option.
+    *dualstack_ipv6*: if true and the platform supports it, it will
+    create an AF_INET6 socket able to accept both IPv4 or IPv6
+    connections. When false it will explicitly disable this option on
+    platforms that enable it by default (e.g. Linux).
+
+    >>> with create_server((None, 8000)) as server:
+    ...     while True:
+    ...         conn, addr = server.accept()
+    ...         # handle new connection
+    """
+    if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
+        raise ValueError("SO_REUSEPORT not supported on this platform")
+    if dualstack_ipv6:
+        if not has_dualstack_ipv6():
+            raise ValueError("dualstack_ipv6 not supported on this platform")
+        if family != AF_INET6:
+            raise ValueError("dualstack_ipv6 requires AF_INET6 family")
+    sock = socket(family, SOCK_STREAM)
+    try:
+        # Note about Windows. We don't set SO_REUSEADDR because:
+        # 1) It's unnecessary: bind() will succeed even in case of a
+        # previous closed socket on the same address and still in
+        # TIME_WAIT state.
+        # 2) If set, another socket is free to bind() on the same
+        # address, effectively preventing this one from accepting
+        # connections. Also, it may set the process in a state where
+        # it'll no longer respond to any signals or graceful kills.
+        # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+        if os.name not in ('nt', 'cygwin') and \
+                hasattr(_socket, 'SO_REUSEADDR'):
+            try:
+                sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            except error:
+                # Fail later on bind(), for platforms which may not
+                # support this option.
+                pass
+        if reuse_port:
+            sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+        if has_ipv6 and family == AF_INET6:
+            if dualstack_ipv6:
+                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
+            elif hasattr(_socket, "IPV6_V6ONLY") and \
+                    hasattr(_socket, "IPPROTO_IPV6"):
+                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
+        try:
+            sock.bind(address)
+        except error as err:
+            msg = '%s (while attempting to bind on address %r)' % \
+                (err.strerror, address)
+            raise error(err.errno, msg) from None
+        if backlog is None:
+            sock.listen()
+        else:
+            sock.listen(backlog)
+        return sock
+    except error:
+        sock.close()
+        raise
+
 
 def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     """Resolve host and port into list of address info entries.

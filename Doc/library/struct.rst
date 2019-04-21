@@ -117,6 +117,13 @@ By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
 rules used by the C compiler).
 
+.. index::
+   single: @ (at); in struct format strings
+   single: = (equals); in struct format strings
+   single: < (less); in struct format strings
+   single: > (greater); in struct format strings
+   single: ! (exclamation); in struct format strings
+
 Alternatively, the first character of the format string can be used to indicate
 the byte order, size and alignment of the packed data, according to the
 following table:
@@ -240,6 +247,8 @@ platform-dependent.
 Notes:
 
 (1)
+   .. index:: single: ? (question mark); in struct format strings
+
    The ``'?'`` conversion code corresponds to the :c:type:`_Bool` type defined by
    C99. If this type is not available, it is simulated using a :c:type:`char`. In
    standard mode, it is always represented by one byte.
@@ -321,6 +330,8 @@ smaller.  The bytes of the string follow.  If the string passed in to
 are used.  Note that for :func:`unpack`, the ``'p'`` format character consumes
 ``count`` bytes, but that the string returned can never contain more than 255
 bytes.
+
+.. index:: single: ? (question mark); in struct format strings
 
 For the ``'?'`` format character, the return value is either :const:`True` or
 :const:`False`. When packing, the truth value of the argument object is used.
@@ -405,6 +416,12 @@ The :mod:`struct` module also defines the following type:
    methods is more efficient than calling the :mod:`struct` functions with the
    same format since the format string only needs to be compiled once.
 
+   .. note::
+
+      The compiled versions of the most recent format strings passed to
+      :class:`Struct` and the module-level functions are cached, so programs
+      that use only a few format strings needn't worry about reusing a single
+      :class:`Struct` instance.
 
    Compiled Struct objects support the following methods and attributes:
 

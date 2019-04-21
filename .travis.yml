@@ -1,6 +1,5 @@
 language: c
-dist: trusty
-sudo: false
+dist: xenial
 group: beta
 
 # To cache doc-building dependencies and C compiler output.
@@ -12,7 +11,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.0h
+    - OPENSSL=1.1.0i
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     # Use -O3 because we don't use debugger on Travis-CI
@@ -53,10 +52,24 @@ matrix:
         - cd Doc
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
-        # The theme used by the docs is stored seperately, so we need to install that as well.
-        - python -m pip install sphinx~=1.6.1 blurb python-docs-theme
+        # The theme used by the docs is stored separately, so we need to install that as well.
+        - python -m pip install sphinx==1.8.2 blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
+    - os: linux
+      language: c
+      compiler: clang
+      env: TESTING=doctest
+      addons:
+        apt:
+          packages:
+            - xvfb
+      before_script:
+        - ./configure
+        - make -j4
+        - make -C Doc/ PYTHON=../python venv
+      script:
+        xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
     - os: osx
       language: c
       compiler: clang
@@ -96,7 +109,7 @@ before_install:
   - set -e
   - |
       # Check short-circuit conditions
-      if [[ "${TESTING}" != "docs" ]]
+      if [[ "${TESTING}" != "docs" && "${TESTING}" != "doctest" ]]
       then
         if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]
         then
@@ -121,6 +134,7 @@ before_install:
 install:
   - |
       # Install OpenSSL as necessary
+      # Note: doctest needs OpenSSL
       if [[ "${TESTING}" != "docs" ]]
       then
         # clang complains about unused-parameter a lot, redirect stderr
@@ -155,15 +169,13 @@ script:
   # Check that all symbols exported by libpython start with "Py" or "_Py"
   - make smelly
   # `-r -w` implicitly provided through `make buildbottest`.
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then XVFB_RUN=xvfb-run; fi; $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
-
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      XVFB_RUN=xvfb-run;
+    fi
+    $XVFB_RUN make buildbottest TESTOPTS="-j4 -uall,-cpu"
 notifications:
   email: false
-  webhooks:
-    urls:
-      - https://python.zulipchat.com/api/v1/external/travis?api_key=QTP4LAknlFml0NuPQmAetvH4KQaokiQE&stream=core%2Ftest+runs
-    on_success: change
-    on_failure: always
   irc:
     channels:
       # This is set to a secure variable to prevent forks from notifying the
@@ -174,3 +186,11 @@ notifications:
     on_success: change
     on_failure: always
     skip_join: true
+  webhooks:
+    urls:
+      # For the same reasons as above for IRC, we encrypt the webhook address
+      # for Zulip.  The actual value is:
+      # https://python.zulipchat.com/api/v1/external/travis?api_key=<api-key-redacted>&stream=core%2Ftest+runs
+      - secure: "vLz2TodSL7wQ8DsIu86koRS9i4dsK40PH8+wzY93PBCCAzJAz113LTxK3/9PamMv+ObDRUSe5OpXcquE3d5Gwpu8IymF113qK0I3uNr+O3FtmKlj/Kd1P/V+z4pTpS3zh3lW9gyKV9EMWXIWS0IYKKZQU144XqUlIiucWK2jHJF/cSz2cRAx/6Kx68X4mZwEC7hiMOF4ZsWUMbCglM89ybeS0pr0kK9mmh88qsPyRQov3mRKswmVPlePk7clVLNAL43qSe3SzmrmACZfQ9KJYmpYnr/cjo2b6svYHcQBAwAUarZZ9KBMXeV7HwGWsSXAvHH2ynR0P++braBHGEMTGMSitdVWzFTmeiHnrkp08WAB+uFs54iEx3VklTk9bCzozTm2S94TRxbrsG9SypMvQxG570JV6P2XYuR+taCb/GMtMqrtGQm2e1Ht+nDLtiUb+/+rwEbicJJ13knptOQZI4tPOZESI/kXkORkSNwFfLSNLSl9jTlMmO7KjAAPApURHEdx26RbItAn8mIX2NcHTRjKn2qV4h3C54nmHmKWn/ZudHHJc6ieZSEUBoaLGAYmcWJRqrM6jiy2h9I9TRrCKAiGh5jT47FYKLwosTtV245l/ZhDb6eTVfEFT6TSLEoyfx9cCtTUvfMtXYl8eN9wlFYYpH8MSWbMD14eEkKBTWg="
+    on_success: change
+    on_failure: always

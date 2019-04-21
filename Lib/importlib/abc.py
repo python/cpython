@@ -66,7 +66,7 @@ class MetaPathFinder(Finder):
 
         """
         warnings.warn("MetaPathFinder.find_module() is deprecated since Python "
-                      "3.4 in favor of MetaPathFinder.find_spec()"
+                      "3.4 in favor of MetaPathFinder.find_spec() "
                       "(available since 3.4)",
                       DeprecationWarning,
                       stacklevel=2)

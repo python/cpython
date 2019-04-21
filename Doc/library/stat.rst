@@ -81,9 +81,9 @@ mode:
 
 .. function:: S_IMODE(mode)
 
-   Return the portion of the file's mode that can be set by :func:`os.chmod`\
-   ---that is, the file's permission bits, plus the sticky bit, set-group-id, and
-   set-user-id bits (on systems that support them).
+   Return the portion of the file's mode that can be set by
+   :func:`os.chmod`\ ---that is, the file's permission bits, plus the sticky
+   bit, set-group-id, and set-user-id bits (on systems that support them).
 
 
 .. function:: S_IFMT(mode)

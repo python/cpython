@@ -74,3 +74,20 @@ class FesteringGob(MalodorousPervert, ParrotDroppings):
 
 async def lobbest(grenade):
     pass
+
+currentframe = inspect.currentframe()
+try:
+    raise Exception()
+except:
+    tb = sys.exc_info()[2]
+
+class Callable:
+    def __call__(self, *args):
+        return args
+
+    def as_method_of(self, obj):
+        from types import MethodType
+        return MethodType(self, obj)
+
+custom_method = Callable().as_method_of(42)
+del Callable

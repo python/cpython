@@ -72,15 +72,15 @@ latest release's source or just grab a fresh `clone
 <https://devguide.python.org/setup/#getting-the-source-code>`_.  (If you want
 to contribute patches, you will need a clone.)
 
-The build process consists in the usual ::
+The build process consists of the usual commands::
 
    ./configure
    make
    make install
 
-invocations. Configuration options and caveats for specific Unix platforms are
-extensively documented in the :source:`README.rst` file in the root of the Python
-source tree.
+Configuration options and caveats for specific Unix platforms are extensively
+documented in the :source:`README.rst` file in the root of the Python source
+tree.
 
 .. warning::
 
@@ -140,7 +140,7 @@ Editors and IDEs
 ================
 
 There are a number of IDEs that support Python programming language.
-Many editors and IDEs provide syntax highlighting, debugging tools, and PEP-8 checks.
+Many editors and IDEs provide syntax highlighting, debugging tools, and :pep:`8` checks.
 
 Please go to `Python Editors <https://wiki.python.org/moin/PythonEditors>`_ and
 `Integrated Development Environments <https://wiki.python.org/moin/IntegratedDevelopmentEnvironments>`_
