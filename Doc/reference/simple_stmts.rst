@@ -829,7 +829,7 @@ So if you execute ``from . import mod`` from a module in the ``pkg`` package
 then you will end up importing ``pkg.mod``. If you execute ``from ..subpkg2
 import mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
 The specification for relative imports is contained in
-the :ref:`Package Relative Imports` section.
+the :ref:`relativeimports` section.
 
 :func:`importlib.import_module` is provided to support applications that
 determine dynamically the modules to be loaded.

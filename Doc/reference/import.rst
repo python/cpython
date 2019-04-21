@@ -921,6 +921,7 @@ it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 ``None``. The latter indicates that the meta path search should continue,
 while raising an exception terminates it immediately.
 
+.. _relativeimports:
 
 Package Relative Imports
 ========================
