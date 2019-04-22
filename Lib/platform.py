@@ -343,16 +343,12 @@ def win32_edition():
     except ImportError:
         from _winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
 
-    key = None
     try:
-        key = OpenKeyEx(HKEY_LOCAL_MACHINE,
-                        r'SOFTWARE\Microsoft\Windows NT\CurrentVersion')
-        return QueryValueEx(key, 'EditionId')[0]
+        with OpenKeyEx(HKEY_LOCAL_MACHINE,
+                       r'SOFTWARE\Microsoft\Windows NT\CurrentVersion') as key:
+            return QueryValueEx(key, 'EditionId')[0]
     except OSError:
         pass
-    finally:
-        if key:
-            CloseKey(key)
 
     return None
 

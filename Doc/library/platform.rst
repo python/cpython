@@ -222,10 +222,14 @@ Windows Platform
    values include but are not limited to ``'Enterprise'``, ``'IoTUAP'``,
    ``'ServerStandard'``, and ``'nanoserver'``.
 
+   .. versionadded:: 3.8
+
 .. function:: win32_is_iot()
 
-   Returns True if the windows edition returned by win32_edition is recognized 
+   Returns True if the windows edition returned by win32_edition is recognized
    as an IoT edition.
+
+   .. versionadded:: 3.8
 
 
 Mac OS Platform

@@ -29,7 +29,7 @@ def coding_checker(self, coder):
 
 # On small versions of Windows like Windows IoT or Windows Nano Server not all codepages are present
 def is_code_page_present(cp):
-    from ctypes import POINTER, WINFUNCTYPE, windll, WinError, Structure
+    from ctypes import POINTER, WINFUNCTYPE, windll, WinError, Structure, WinDLL
     from ctypes.wintypes import BOOL, UINT, BYTE, WCHAR, UINT, DWORD
 
     MAX_LEADBYTES = 12  # 5 ranges, 2 bytes ea., 0 term.
@@ -44,22 +44,9 @@ def is_code_page_present(cp):
                     ("CodePageName", WCHAR*MAX_PATH)]
 
     prototype = WINFUNCTYPE(BOOL, UINT, DWORD, POINTER(CPINFOEXW))
-    GetCPInfoEx = prototype(("GetCPInfoExW", windll.kernel32))
-
-    def errcheck(result, func, args):
-        if not result:
-            from ctypes import WinError
-            raise OSError(2, "code page not found")
-        return args
-
-    from ctypes import WinError
-    try:
-        GetCPInfoEx.errcheck = errcheck
-        info = CPINFOEXW()
-        GetCPInfoEx(cp,0, info)
-        return True
-    except OSError:
-        return False
+    GetCPInfoEx = prototype(("GetCPInfoExW", WinDLL("kernel32")))
+    info = CPINFOEXW()
+    return GetCPInfoEx(cp, 0, info)
 
 class Queue(object):
     """
@@ -3120,12 +3107,10 @@ class CodePageTest(unittest.TestCase):
             # A missing codepage causes an OSError exception
             # so check for the codepage before decoding
             if is_code_page_present(cp):
-                if support.verbose:
-                    sys.stdout.write("  testing cp={}\n".format(cp))
-                self.assertEqual(codecs.code_page_decode(cp, b'abc'), ('abc', 3))
+                self.assertEqual(codecs.code_page_decode(cp, b'abc'), ('abc', 3), f'cp{cp}')
             else:
                 if support.verbose:
-                    sys.stdout.write("  skipping cp={}\n".format(cp))
+                    print(f"  skipping cp={cp}")
         self.assertEqual(codecs.code_page_decode(42, b'abc'),
                          ('\uf061\uf062\uf063', 3))
 

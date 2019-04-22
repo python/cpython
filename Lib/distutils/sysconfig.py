@@ -450,15 +450,7 @@ def _init_nt():
     # XXX hmmm.. a normal install puts include files here
     g['INCLUDEPY'] = get_python_inc(plat_specific=0)
 
-    # if cross-compiling replace hardcoded platform-specific EXT_SUFFIX
-    # with an EXT_SUFFIX that matches the target platform
-    if get_platform() == get_host_platform():
-        g['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
-    else:
-        plat_tag = get_platform().replace('-', '_')
-        host_plat_tag = get_host_platform().replace('-', '_')
-        g['EXT_SUFFIX'] = _imp.extension_suffixes()[0].replace(host_plat_tag, plat_tag)
-
+    g['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
     g['EXE'] = ".exe"
     g['VERSION'] = get_python_version().replace(".", "")
     g['BINDIR'] = os.path.dirname(os.path.abspath(sys.executable))
