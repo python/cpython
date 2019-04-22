@@ -2148,26 +2148,25 @@ class ReadlinkTests(unittest.TestCase):
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 @support.skip_unless_symlink
 class Win32SymlinkTests(unittest.TestCase):
-    filelink = 'filelinktest'
-    filelink_target = os.path.abspath(__file__)
-    dirlink = 'dirlinktest'
-    dirlink_target = os.path.dirname(filelink_target)
-    missing_link = 'missing link'
+    dirlink_target = os.path.join(support.TESTFN, 'win32_symlink_tests')
+    filelink_target = os.path.join(dirlink_target, support.TESTFN)
+    dirlink = os.path.join(support.TESTFN, 'dirlinktest')
+    filelink = os.path.join(support.TESTFN, 'filelinktest')
+    missing_link = os.path.join(support.TESTFN, 'missinglinktest')
 
     def setUp(self):
-        assert os.path.exists(self.dirlink_target)
-        assert os.path.exists(self.filelink_target)
-        assert not os.path.exists(self.dirlink)
-        assert not os.path.exists(self.filelink)
-        assert not os.path.exists(self.missing_link)
-
-    def tearDown(self):
-        if os.path.exists(self.filelink):
-            os.remove(self.filelink)
-        if os.path.exists(self.dirlink):
-            os.rmdir(self.dirlink)
-        if os.path.lexists(self.missing_link):
-            os.remove(self.missing_link)
+        self.assertFalse(os.path.lexists(self.dirlink))
+        self.assertFalse(os.path.lexists(self.filelink))
+        self.assertFalse(os.path.lexists(self.missing_link))
+        self.assertFalse(os.path.lexists(self.dirlink_target))
+        self.assertFalse(os.path.lexists(self.filelink_target))
+        self.addCleanup(support.rmtree, self.dirlink_target)
+        self.addCleanup(support.rmdir, self.dirlink)
+        self.addCleanup(support.rmdir, self.missing_link)
+        self.addCleanup(support.unlink, self.missing_link)
+        self.addCleanup(support.unlink, self.filelink)
+        os.mkdir(self.dirlink_target)
+        create_file(self.filelink_target)
 
     def test_directory_link(self):
         os.symlink(self.dirlink_target, self.dirlink)
@@ -2200,16 +2199,12 @@ class Win32SymlinkTests(unittest.TestCase):
         #  was created with target_is_dir==True.
         os.remove(self.missing_link)
 
-    @unittest.skip("currently fails; consider for improvement")
     def test_isdir_on_directory_link_to_missing_target(self):
         self._create_missing_dir_link()
-        # consider having isdir return true for directory links
         self.assertTrue(os.path.isdir(self.missing_link))
 
-    @unittest.skip("currently fails; consider for improvement")
     def test_rmdir_on_directory_link_to_missing_target(self):
         self._create_missing_dir_link()
-        # consider allowing rmdir to remove directory links
         os.rmdir(self.missing_link)
 
     def check_stat(self, link, target):
@@ -2221,21 +2216,13 @@ class Win32SymlinkTests(unittest.TestCase):
         self.assertNotEqual(os.lstat(bytes_link), os.stat(bytes_link))
 
     def test_12084(self):
-        level1 = os.path.abspath(support.TESTFN)
+        file1 = self.filelink_target
+        level1 = self.dirlink_target
         level2 = os.path.join(level1, "level2")
         level3 = os.path.join(level2, "level3")
-        self.addCleanup(support.rmtree, level1)
+        os.makedirs(level3)
 
-        os.mkdir(level1)
-        os.mkdir(level2)
-        os.mkdir(level3)
-
-        file1 = os.path.abspath(os.path.join(level1, "file1"))
-        create_file(file1)
-
-        orig_dir = os.getcwd()
-        try:
-            os.chdir(level2)
+        with support.change_cwd(level2):
             link = os.path.join(level2, "link")
             os.symlink(os.path.relpath(file1), "link")
             self.assertIn("link", os.listdir(os.getcwd()))
@@ -2252,8 +2239,6 @@ class Win32SymlinkTests(unittest.TestCase):
             os.chdir(level3)
             self.assertEqual(os.stat(file1),
                              os.stat(os.path.relpath(link)))
-        finally:
-            os.chdir(orig_dir)
 
     @unittest.skipUnless(os.path.lexists(r'C:\Users\All Users')
                             and os.path.exists(r'C:\ProgramData'),
