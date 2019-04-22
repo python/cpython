@@ -1772,9 +1772,11 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     return title % desc + '\n\n' + renderer.document(object, name)
 
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
-        output=None):
+        output=None, follow_wrapped=False):
     """Display text documentation, given an object or a path to an object."""
     try:
+        if follow_wrapped:
+            thing = inspect.unwrap(thing)
         if output is None:
             pager(render_doc(thing, title, forceload))
         else:
@@ -1995,9 +1997,9 @@ class Helper:
                                      self.__class__.__qualname__)
 
     _GoInteractive = object()
-    def __call__(self, request=_GoInteractive):
+    def __call__(self, request=_GoInteractive, follow_wrapped=False):
         if request is not self._GoInteractive:
-            self.help(request)
+            self.help(request, follow_wrapped=follow_wrapped)
         else:
             self.intro()
             self.interact()
@@ -2038,7 +2040,7 @@ has the same effect as typing a particular string at the help> prompt.
             self.output.flush()
             return self.input.readline()
 
-    def help(self, request):
+    def help(self, request, follow_wrapped=False):
         if type(request) is type(''):
             request = request.strip()
             if request == 'keywords': self.listkeywords()
@@ -2050,13 +2052,16 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in ['True', 'False', 'None']:
                 # special case these keywords since they are objects too
-                doc(eval(request), 'Help on %s:')
+                doc(eval(request), 'Help on %s:', follow_wrapped=follow_wrapped)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
-            elif request: doc(request, 'Help on %s:', output=self._output)
-            else: doc(str, 'Help on %s:', output=self._output)
+            elif request: doc(request, 'Help on %s:', output=self._output, 
+                              follow_wrapped=follow_wrapped)
+            else: doc(str, 'Help on %s:', output=self._output,
+                      follow_wrapped=follow_wrapped)
         elif isinstance(request, Helper): self()
-        else: doc(request, 'Help on %s:', output=self._output)
+        else: doc(request, 'Help on %s:', output=self._output,
+                  follow_wrapped=follow_wrapped)
         self.output.write('\n')
 
     def intro(self):
