@@ -503,7 +503,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: quantiles(dist, *, n=4)
 
    Divide *dist* into *n* continuous intervals with equal probability.
-   Returns a list of ``n-1`` cut points separating the intervals.
+   Returns a list of ``n - 1`` cut points separating the intervals.
 
    Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.  Set
    *n* to 100 for percentiles which gives the 99 cuts points that separate
@@ -654,7 +654,7 @@ of applications in statistics.
        <http://www.iceaaonline.com/ready/wp-content/uploads/2014/06/MM-9-Presentation-Meet-the-Overlapping-Coefficient-A-Measure-for-Elevator-Speeches.pdf>`_
        between two normal distributions, giving a measure of agreement.
        Returns a value between 0.0 and 1.0 giving `the overlapping area for
-       two probability density functions
+       the two probability density functions
        <https://www.rasch.org/rmt/rmt101r.htm>`_.
 
     Instances of :class:`NormalDist` support addition, subtraction,
@@ -697,8 +697,8 @@ of applications in statistics.
 For example, given `historical data for SAT exams
 <https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
 are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with scores between 1100 and 1200, after
-rounding to the nearest whole number:
+determine the percentage of students with test scores between 1100 and
+1200, after rounding to the nearest whole number:
 
 .. doctest::
 
