@@ -682,7 +682,7 @@ class PEP3147Tests:
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag not be None')
-    def test_source_from_cache_path_like_arg(self):
+    def test_cache_from_source_path_like_arg(self):
         path = pathlib.PurePath('foo', 'bar', 'baz', 'qux.py')
         expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
                               'qux.{}.pyc'.format(self.tag))
