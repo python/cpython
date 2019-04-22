@@ -1,0 +1,2 @@
+Add follow_wrapped to help function to print the docstring of a wrapped
+function.
