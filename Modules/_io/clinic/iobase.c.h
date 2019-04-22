@@ -283,4 +283,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=61b6ea7153ef9940 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f8d078401fb9d48 input=a9049054013a1b77]*/
