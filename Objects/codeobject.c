@@ -224,11 +224,9 @@ PyCode_New(int argcount, int kwonlyargcount,
     co->co_extra = NULL;
 
     co->co_opt_flag = 0;
+    co->co_opt_size = 0;
     co->co_opt_opcodemap = NULL;
     co->co_opt = NULL;
-#ifdef Py_DEBUG
-    co->co_opt_size = 0;
-#endif
     return co;
 }
 
@@ -270,10 +268,7 @@ _PyCode_InitOptCache(PyCodeObject *co)
         co->co_opt = NULL;
     }
 
-#ifdef Py_DEBUG
     co->co_opt_size = opts;
-#endif
-
     return 0;
 }
 
@@ -490,9 +485,7 @@ code_dealloc(PyCodeObject *co)
         PyMem_FREE(co->co_opt_opcodemap);
     }
     co->co_opt_flag = 0;
-#ifdef Py_DEBUG
     co->co_opt_size = 0;
-#endif
 
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
@@ -539,6 +532,13 @@ code_sizeof(PyCodeObject *co, void *unused)
     if (co_extra != NULL) {
         res += sizeof(_PyCodeObjectExtra) +
                (co_extra->ce_size-1) * sizeof(co_extra->ce_extras[0]);
+    }
+    if (co->co_opt != NULL) {
+        assert(co->co_opt_opcodemap != NULL);
+        // opcodemap
+        res += PyBytes_GET_SIZE(co->co_code) / sizeof(_Py_CODEUNIT);
+        // opcode
+        res += co->co_opt_size * sizeof(_PyOpCodeOpt);
     }
     return PyLong_FromSsize_t(res);
 }

@@ -103,10 +103,7 @@ static long dxp[256];
 
 #if OPCODE_CACHE_STATS
 static size_t opcode_cache_code_objects = 0;
-
-#ifdef Py_DEBUG
 static size_t opcode_cache_code_objects_extra_mem = 0;
-#endif
 
 static size_t opcode_cache_global_opts = 0;
 static size_t opcode_cache_global_hits = 0;
@@ -230,10 +227,8 @@ _PyEval_Fini(void)
     fprintf(stderr, "-- Opcode cache number of objects  = %zd\n",
             opcode_cache_code_objects);
 
-#ifdef Py_DEBUG
     fprintf(stderr, "-- Opcode cache total extra mem    = %zd\n",
             opcode_cache_code_objects_extra_mem);
-#endif
 
     fprintf(stderr, "\n");
 
@@ -1112,11 +1107,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
                 return NULL;
             }
 #if OPCODE_CACHE_STATS
-#ifdef Py_DEBUG
             opcode_cache_code_objects_extra_mem +=
                 PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT) +
                 sizeof(_PyOpCodeOpt) * co->co_opt_size;
-#endif
             opcode_cache_code_objects++;
 #endif
         }

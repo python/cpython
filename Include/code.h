@@ -55,9 +55,7 @@ typedef struct {
     unsigned char *co_opt_opcodemap;
     _PyOpCodeOpt *co_opt;
     PY_UINT64_T co_opt_flag;
-#ifdef Py_DEBUG
     unsigned char co_opt_size;
-#endif
 } PyCodeObject;
 
 /* Masks for co_flags above */
