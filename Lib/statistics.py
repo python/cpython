@@ -563,7 +563,7 @@ def multimode(data):
     maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
     return list(map(itemgetter(0), mode_items))
 
-def quantiles(dist, *, n=4):
+def quantiles(dist, *, n=4, inclusive=False):
     '''Divide *dist* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
@@ -575,12 +575,15 @@ def quantiles(dist, *, n=4):
     The *dist* can be any iterable containing sample data or it can be
     an instance of a class that defines an inv_cdf() method.  For sample
     data, the cut points are linearly interpolated between data points.
+
+    If *inclusive* is set to True, *dist* is treated as population
+    data.  The minimum value is treated as the 0th percentile and the
+    maximum value is treated as the 100th percentile.
     '''
     # Possible future API extensions:
-    #     quantiles(data, n=4, already_sorted=True)
+    #     quantiles(data, already_sorted=True)
     #     quantiles(data, cut_points=[0.02, 0.25, 0.50, 0.75, 0.98])
     #     quantiles(data, interp_method='nearest')
-    #     quantiles(data, inclusive=True)
     if n < 1:
         raise StatisticsError('n must be at least 1')
     if hasattr(dist, 'inv_cdf'):
@@ -589,6 +592,15 @@ def quantiles(dist, *, n=4):
     ld = len(data)
     if ld < 2:
         raise StatisticsError('must have at least two data points')
+    if inclusive:
+        m = ld - 1
+        result = []
+        for i in range(1, n):
+            j = i * m // n
+            delta = i*m - j*n
+            interpolated = (data[j]*(n-delta) + data[j+1]*delta) / n
+            result.append(interpolated)
+        return result
     m = ld + 1
     result = []
     for i in range(1, n):

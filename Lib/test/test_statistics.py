@@ -2176,6 +2176,51 @@ class TestQuantiles(unittest.TestCase):
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
 
+    def test_specific_cases_inclusive(self):
+        # Match results computed by hand and cross-checked
+        # against the PERCENTILE.EXC function in MS Excel.
+        quantiles = statistics.quantiles
+        data = [100, 200, 400, 800]
+        random.shuffle(data)
+        for n, expected in [
+            (1, []),
+            (2, [300.0]),
+            (3, [200.0, 400.0]),
+            (4, [175.0, 300.0, 500.0]),
+            (5, [160.0, 240.0, 360.0, 560.0]),
+            (6, [150.0, 200.0, 300.0, 400.0, 600.0]),
+            (8, [137.5, 175, 225.0, 300.0, 375.0, 500.0,650.0]),
+            (10, [130.0, 160.0, 190.0, 240.0, 300.0, 360.0, 440.0, 560.0, 680.0]),
+            (12, [125.0, 150.0, 175.0, 200.0, 250.0, 300.0, 350.0, 400.0,
+                  500.0, 600.0, 700.0]),
+            (15, [120.0, 140.0, 160.0, 180.0, 200.0, 240.0, 280.0, 320.0, 360.0,
+                  400.0, 480.0, 560.0, 640.0, 720.0]),
+                ]:
+            self.assertEqual(expected, quantiles(data, n=n, inclusive=True))
+            self.assertEqual(len(quantiles(data, n=n, inclusive=True)), n - 1)
+            self.assertEqual(list(map(float, expected)),
+                             quantiles(map(Decimal, data), n=n, inclusive=True))
+            self.assertEqual(list(map(Decimal, expected)),
+                             quantiles(map(Decimal, data), n=n, inclusive=True))
+            self.assertEqual(list(map(Fraction, expected)),
+                             quantiles(map(Fraction, data), n=n, inclusive=True))
+            # Invariant under tranlation and scaling
+            def f(x):
+                return 3.5 * x - 1234.675
+            exp = list(map(f, expected))
+            act = quantiles(map(f, data), n=n, inclusive=True)
+            self.assertTrue(all(math.isclose(e, a) for e, a in zip(exp, act)))
+        # Quartiles of a standard normal distribution
+        for n, expected in [
+            (1, []),
+            (2, [0.0]),
+            (3, [-0.4307, 0.4307]),
+            (4 ,[-0.6745, 0.0, 0.6745]),
+                ]:
+            actual = quantiles(statistics.NormalDist(), n=n, inclusive=True)
+            self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
+                            for e, a in zip(expected, actual)))
+
     def test_equal_sized_groups(self):
         quantiles = statistics.quantiles
         total = 10_000

@@ -48,7 +48,7 @@ or sample.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
 :func:`mode`             Single mode (most common value) of discrete or nominal data.
 :func:`multimode`        List of modes (most common values) of discrete or nomimal data.
-:func:`quantiles`        Divide data into intervals with equal probability
+:func:`quantiles`        Divide data into intervals with equal probability.
 =======================  ===============================================================
 
 Measures of spread
@@ -521,6 +521,12 @@ However, for reading convenience, most of the examples show sorted sequences.
    future (for example choose ``100`` as the nearest value or compute
    ``106`` as the midpoint).  This might matter if there are too few
    samples for a given number of cut points.
+
+   If *inclusive* is set to True, *dist* is treated as population data.
+   The minimum value is treated as the 0th percentile and the maximum
+   value is treated as the 100th percentile.  If *dist* is an instance of
+   a class that defines an :meth:`~inv_cdf` method, the *inclusive* flag
+   has no effect.
 
    .. doctest::
 
