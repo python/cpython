@@ -1952,7 +1952,7 @@ has the same effect as typing a particular string at the help> prompt.
                 doc(eval(request), 'Help on %s:', follow_wrapped=follow_wrapped)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
-            elif request: doc(request, 'Help on %s:', output=self._output, 
+            elif request: doc(request, 'Help on %s:', output=self._output,
                               follow_wrapped=follow_wrapped)
             else: doc(str, 'Help on %s:', output=self._output,
                       follow_wrapped=follow_wrapped)
