@@ -52,11 +52,11 @@ class Foo(object):
     foo = 'bar'
 
     @staticmethod
-    def a_static():
+    def static_method():
         return 24
 
     @classmethod
-    def a_class(cls):
+    def class_method(cls):
         return 42
 
     class Bar(object):
@@ -1007,14 +1007,14 @@ class PatchTest(unittest.TestCase):
 
 
     def test_autospec_staticmethod(self):
-        with patch('%s.Foo.a_static' % __name__, autospec=True) as method:
-            Foo.a_static()
+        with patch('%s.Foo.static_method' % __name__, autospec=True) as method:
+            Foo.static_method()
             method.assert_called_once_with()
 
 
     def test_autospec_classmethod(self):
-        with patch('%s.Foo.a_class' % __name__, autospec=True) as method:
-            Foo.a_class()
+        with patch('%s.Foo.class_method' % __name__, autospec=True) as method:
+            Foo.class_method()
             method.assert_called_once_with()
 
 

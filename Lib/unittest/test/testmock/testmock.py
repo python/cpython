@@ -1414,26 +1414,21 @@ class MockTest(unittest.TestCase):
         self.assertIn('sweet_func', repr(m))
 
     #Issue23078
-    def test_create_autospec_classmethod(self):
+    def test_create_autospec_classmethod_and_staticmethod(self):
         class TestClass:
             @classmethod
-            def method(cls):
+            def class_method(cls):
                 pass
-        mock_bound_meth = mock.create_autospec(TestClass.method)
-        mock_bound_meth()
-        mock_bound_meth.assert_called_once_with()
-        self.assertRaises(TypeError, mock_bound_meth, 'extra_arg')
 
-    #Issue23078
-    def test_create_autospec_staticmethod(self):
-        class TestClass:
             @staticmethod
-            def method():
+            def static_method():
                 pass
-        mock_meth = mock.create_autospec(TestClass.method)
-        mock_meth()
-        mock_meth.assert_called_once_with()
-        self.assertRaises(TypeError, mock_meth, 'extra_arg')
+        for method in ('class_method', 'static_method'):
+            with self.subTest(method=method):
+                mock_method = mock.create_autospec(getattr(TestClass, method))
+                mock_method()
+                mock_method.assert_called_once_with()
+                self.assertRaises(TypeError, mock_method, 'extra_arg')
 
     #Issue21238
     def test_mock_unsafe(self):
