@@ -1350,17 +1350,15 @@ PyInit__signal(void)
     d = PyModule_GetDict(m);
 
     x = DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
-    if (!x || PyDict_SetItemString(d, "SIG_DFL", x) < 0)
+    if (PyModule_AddObject(m, "SIG_DFL", x))
         goto finally;
 
     x = IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
-    if (!x || PyDict_SetItemString(d, "SIG_IGN", x) < 0)
+    if (PyModule_AddObject(m, "SIG_IGN", x))
         goto finally;
 
-    x = PyLong_FromLong((long)NSIG);
-    if (!x || PyDict_SetItemString(d, "NSIG", x) < 0)
+    if (PyModule_AddIntMacro(m, NSIG))
         goto finally;
-    Py_DECREF(x);
 
 #ifdef SIG_BLOCK
     if (PyModule_AddIntMacro(m, SIG_BLOCK))
@@ -1569,8 +1567,8 @@ PyInit__signal(void)
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
             PyExc_OSError, NULL);
-    if (ItimerError != NULL)
-        PyDict_SetItemString(d, "ItimerError", ItimerError);
+    if (PyModule_AddObject(m, "ItimerError", ItimerError))
+        goto finally;
 #endif
 
 #ifdef CTRL_C_EVENT
