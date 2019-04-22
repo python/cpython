@@ -1,0 +1,46 @@
+# Files or duplicates ignored by Tools/scripts/duplicate_meth_defs.py
+# when run with the '--ignore' command line option.
+#
+# Format:
+#           filename[: mfqn]
+#
+# The whole file is ignored when mfqn (method fully qualified name) is
+# missing. Use instead the '--exclude' command line option of
+# duplicate_meth_defs.py to ignore a directory tree.
+
+# Files with bad encoding or bad syntax.
+Lib/lib2to3/tests/data/py3_test_grammar.py
+Lib/test/bad_coding.py
+Lib/test/bad_coding2.py
+Lib/test/bad_coding3.py
+Lib/test/badsyntax_nocaret.py
+PCbuild/get_external.py
+
+# False positives.
+Demo/rpc/xdr.py: Packer.pack_uint
+Demo/rpc/xdr.py: Unpacker.unpack_uint
+Lib/ctypes/__init__.py: c_char_p.__repr__
+Lib/idlelib/ScriptBinding.py: ScriptBinding.run_module_event
+Lib/os.py: _Environ.__delitem__
+Lib/pickle.py: Pickler.save_string
+Lib/subprocess.py: Popen._get_handles
+Lib/subprocess.py: Popen._execute_child
+Lib/subprocess.py: Popen._internal_poll
+Lib/subprocess.py: Popen.wait
+Lib/subprocess.py: Popen._communicate
+Lib/subprocess.py: Popen.send_signal
+Lib/subprocess.py: Popen.terminate
+Lib/tempfile.py: _TemporaryFileWrapper.__exit__
+Lib/test/test_bz2.py: BaseTest.decompress
+
+
+# Duplicates that must be fixed and that are temporarily ignored.
+# Issue bpo-19113
+Lib/ctypes/test/test_functions.py: FunctionTestCase.test_errors
+
+# Issue bpo-XXX
+Lib/email/feedparser.py: BufferedSubFile.pushlines
+Lib/email/test/test_email_renamed.py: TestEncoders.test_default_cte
+
+# Issue bpo-XXX
+Lib/ctypes/test/test_unicode.py: StringTestCase.test_ascii_replace
