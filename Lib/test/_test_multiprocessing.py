@@ -857,11 +857,12 @@ class _TestSubclassingProcess(BaseTestCase):
             ]
 
         for args, expected in cases:
-            p = self.Process(target=sys.exit, args=args)
-            p.daemon = True
-            p.start()
-            join_process(p)
-            self.assertEqual(p.exitcode, expected)
+            with self.subTest(args=args):
+                p = self.Process(target=sys.exit, args=args)
+                p.daemon = True
+                p.start()
+                join_process(p)
+                self.assertEqual(p.exitcode, expected)
 
 #
 #
