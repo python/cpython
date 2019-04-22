@@ -514,13 +514,13 @@ However, for reading convenience, most of the examples show sorted sequences.
    instance of a class that defines an :meth:`~inv_cdf` method.
    Raises :exc:`StatisticsError` if there are not at least two data points.
 
-   For sample data, the cut points are linearly interpolated between data
-   points.  For example, if a cut point falls one-third of the distance
-   between two sample values, ``100`` and ``112``, the cut-point will
-   evaluate to ``104``.  Other selection methods may be offered in the
-   future (for example choose ``100`` as the nearest value or compute
-   ``106`` as the midpoint).  This might matter if there are too few
-   samples for a given number of cut points.
+   For sample data, the cut points are linearly interpolated from the
+   two nearest data points.  For example, if a cut point falls one-third
+   of the distance between two sample values, ``100`` and ``112``, the
+   cut-point will evaluate to ``104``.  Other selection methods may be
+   offered in the future (for example choose ``100`` as the nearest
+   value or compute ``106`` as the midpoint).  This might matter if
+   there are too few samples for a given number of cut points.
 
    If *inclusive* is set to True, *dist* is treated as population data.
    The minimum value is treated as the 0th percentile and the maximum
