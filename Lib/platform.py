@@ -339,16 +339,19 @@ def win32_is_iot():
 
 def win32_edition():
     try:
-        from winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
+        try:
+            import winreg
+        except ImportError:
+            import _winreg as winreg
     except ImportError:
-        from _winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
-
-    try:
-        with OpenKeyEx(HKEY_LOCAL_MACHINE,
-                       r'SOFTWARE\Microsoft\Windows NT\CurrentVersion') as key:
-            return QueryValueEx(key, 'EditionId')[0]
-    except OSError:
         pass
+    else:
+        try:
+            cvkey = r'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+            with winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, cvkey) as key:
+                return winreg.QueryValueEx(key, 'EditionId')[0]
+        except OSError:
+            pass
 
     return None
 
