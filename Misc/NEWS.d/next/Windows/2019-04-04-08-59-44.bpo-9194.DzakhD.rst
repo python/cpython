@@ -1,1 +1,0 @@
-Fix the bounds checking in winreg.c's ``fixupMultiSZ()``.
