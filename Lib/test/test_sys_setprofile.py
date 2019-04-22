@@ -351,7 +351,7 @@ class ProfileSimulatorTestCase(TestCaseBase):
                               (1, 'return', f_ident)])
 
     # Test an invalid call (bpo-34125)
-    def test_unbound_method_no_args(self):
+    def test_unbound_method_no_keyword_args(self):
         kwargs = {}
         def f(p):
             dict.get(**kwargs)
@@ -360,7 +360,7 @@ class ProfileSimulatorTestCase(TestCaseBase):
                               (1, 'return', f_ident)])
 
     # Test an invalid call (bpo-34125)
-    def test_unbound_method_invalid_args(self):
+    def test_unbound_method_invalid_keyword_args(self):
         kwargs = {}
         def f(p):
             dict.get(print, 42, **kwargs)
