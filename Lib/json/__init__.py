@@ -296,7 +296,7 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
 
 
-def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
+def loads(s, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
     """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python object.
@@ -330,7 +330,7 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
 
-    The ``encoding`` argument is ignored and deprecated.
+    The ``encoding`` argument is ignored and deprecated since Python 3.1.
     """
     if isinstance(s, str):
         if s.startswith('\ufeff'):
@@ -341,6 +341,15 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
             raise TypeError(f'the JSON object must be str, bytes or bytearray, '
                             f'not {s.__class__.__name__}')
         s = s.decode(detect_encoding(s), 'surrogatepass')
+
+    if "encoding" in kw:
+        import warnings
+        warnings.warn(
+            "'encoding' is ignored and deprecated. It will be removed in Python 3.9",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        del kw['encoding']
 
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and

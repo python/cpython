@@ -489,11 +489,17 @@ Functions
 
    *elem* is an element tree or an individual element.
 
+   .. versionchanged:: 3.8
+      The :func:`dump` function now preserves the attribute order specified
+      by the user.
 
-.. function:: fromstring(text)
+
+.. function:: fromstring(text, parser=None)
 
    Parses an XML section from a string constant.  Same as :func:`XML`.  *text*
-   is a string containing XML data.  Returns an :class:`Element` instance.
+   is a string containing XML data.  *parser* is an optional parser instance.
+   If not given, the standard :class:`XMLParser` parser is used.
+   Returns an :class:`Element` instance.
 
 
 .. function:: fromstringlist(sequence, parser=None)
@@ -588,6 +594,7 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
+                       xml_declaration=None, default_namespace=None,
                        short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -595,14 +602,19 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
-   Returns an (optionally) encoded string containing the XML data.
+   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
+   meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
+   containing the XML data.
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
 
+   .. versionadded:: 3.8
+      The *xml_declaration* and *default_namespace* parameters.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
+                           xml_declaration=None, default_namespace=None,
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -610,15 +622,18 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
-   Returns a list of (optionally) encoded strings containing the XML data.
-   It does not guarantee any specific sequence, except that
-   ``b"".join(tostringlist(element)) == tostring(element)``.
+   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
+   meaning as in :meth:`ElementTree.write`. Returns a list of (optionally) encoded
+   strings containing the XML data. It does not guarantee any specific sequence,
+   except that ``b"".join(tostringlist(element)) == tostring(element)``.
 
    .. versionadded:: 3.2
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
+
+   .. versionadded:: 3.8
+      The *xml_declaration* and *default_namespace* parameters.
 
 
 .. function:: XML(text, parser=None)
@@ -749,7 +764,8 @@ Element Objects
       Finds the first subelement matching *match*.  *match* may be a tag name
       or a :ref:`path <elementtree-xpath>`.  Returns an element instance
       or ``None``.  *namespaces* is an optional mapping from namespace prefix
-      to full name.
+      to full name.  Pass ``''`` as prefix to move all unprefixed tag names
+      in the expression into the given namespace.
 
 
    .. method:: findall(match, namespaces=None)
@@ -757,7 +773,8 @@ Element Objects
       Finds all matching subelements, by tag name or
       :ref:`path <elementtree-xpath>`.  Returns a list containing all matching
       elements in document order.  *namespaces* is an optional mapping from
-      namespace prefix to full name.
+      namespace prefix to full name.  Pass ``''`` as prefix to move all
+      unprefixed tag names in the expression into the given namespace.
 
 
    .. method:: findtext(match, default=None, namespaces=None)
@@ -767,18 +784,19 @@ Element Objects
       of the first matching element, or *default* if no element was found.
       Note that if the matching element has no text content an empty string
       is returned. *namespaces* is an optional mapping from namespace prefix
-      to full name.
+      to full name.  Pass ``''`` as prefix to move all unprefixed tag names
+      in the expression into the given namespace.
 
 
    .. method:: getchildren()
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use ``list(elem)`` or iteration.
 
 
    .. method:: getiterator(tag=None)
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use method :meth:`Element.iter` instead.
 
 
@@ -888,7 +906,7 @@ ElementTree Objects
 
    .. method:: getiterator(tag=None)
 
-      .. deprecated:: 3.2
+      .. deprecated-removed:: 3.2 3.9
          Use method :meth:`ElementTree.iter` instead.
 
 
@@ -946,6 +964,10 @@ ElementTree Objects
 
       .. versionadded:: 3.4
          The *short_empty_elements* parameter.
+
+      .. versionchanged:: 3.8
+         The :meth:`write` method now preserves the attribute order specified
+         by the user.
 
 
 This is the XML file that is going to be manipulated::
@@ -1050,33 +1072,26 @@ XMLParser Objects
 ^^^^^^^^^^^^^^^^^
 
 
-.. class:: XMLParser(html=0, target=None, encoding=None)
+.. class:: XMLParser(*, target=None, encoding=None)
 
    This class is the low-level building block of the module.  It uses
    :mod:`xml.parsers.expat` for efficient, event-based parsing of XML.  It can
    be fed XML data incrementally with the :meth:`feed` method, and parsing
    events are translated to a push API - by invoking callbacks on the *target*
    object.  If *target* is omitted, the standard :class:`TreeBuilder` is used.
-   The *html* argument was historically used for backwards compatibility and is
-   now deprecated.  If *encoding* [1]_ is given, the value overrides the
+   If *encoding* [1]_ is given, the value overrides the
    encoding specified in the XML file.
 
-   .. deprecated:: 3.4
-      The *html* argument.  The remaining arguments should be passed via
-      keyword to prepare for the removal of the *html* argument.
+   .. versionchanged:: 3.8
+      Parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+      The *html* argument no longer supported.
+
 
    .. method:: close()
 
       Finishes feeding data to the parser.  Returns the result of calling the
       ``close()`` method of the *target* passed during construction; by default,
       this is the toplevel document element.
-
-
-   .. method:: doctype(name, pubid, system)
-
-      .. deprecated:: 3.2
-         Define the :meth:`TreeBuilder.doctype` method on a custom TreeBuilder
-         target.
 
 
    .. method:: feed(data)

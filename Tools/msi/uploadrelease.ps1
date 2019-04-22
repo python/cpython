@@ -39,6 +39,12 @@ param(
 if (-not $build) { throw "-build option is required" }
 if (-not $user) { throw "-user option is required" }
 
+$tools = $script:MyInvocation.MyCommand.Path | Split-Path -parent;
+
+if (-not ((Test-Path "$build\win32\python-*.exe") -or (Test-Path "$build\amd64\python-*.exe"))) {
+    throw "-build argument does not look like a 'build' directory"
+}
+
 function find-putty-tool {
     param ([string]$n)
     $t = gcm $n -EA 0
@@ -57,13 +63,15 @@ $p = gci -r "$build\python-*.exe" | `
 "Uploading version $($p[0]) $($p[1])"
 "  from: $build"
 "    to: $($server):$target/$($p[0])"
-" using: $plink and $pscp"
 ""
 
 if (-not $skipupload) {
     # Upload files to the server
     $pscp = find-putty-tool "pscp"
     $plink = find-putty-tool "plink"
+
+    "Upload using $pscp and $plink"
+    ""
 
     pushd $build
     $doc = gci python*.chm, python*.chm.asc
@@ -99,7 +107,7 @@ if (-not $skipupload) {
 
 if (-not $skippurge) {
     # Run a CDN purge
-    py purge.py "$($p[0])$($p[1])"
+    py $tools\purge.py "$($p[0])$($p[1])"
 }
 
 if (-not $skiptest) {
@@ -120,8 +128,11 @@ if (-not $skiptest) {
 if (-not $skiphash) {
     # Display MD5 hash and size of each downloadable file
     pushd $build
-    gci python*.chm, *\*.exe, *\*.zip | `
+    $hashes = gci python*.chm, *\*.exe, *\*.zip | `
         Sort-Object Name | `
-        Format-Table Name, @{Label="MD5"; Expression={(Get-FileHash $_ -Algorithm MD5).Hash}}, Length
+        Format-Table Name, @{Label="MD5"; Expression={(Get-FileHash $_ -Algorithm MD5).Hash}}, Length -AutoSize | `
+        Out-String -Width 4096
+    $hashes | clip
+    $hashes
     popd
 }

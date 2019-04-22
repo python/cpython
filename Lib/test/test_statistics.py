@@ -5,9 +5,11 @@ approx_equal function.
 
 import collections
 import collections.abc
+import copy
 import decimal
 import doctest
 import math
+import pickle
 import random
 import sys
 import unittest
@@ -1767,7 +1769,7 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
     def test_range_data(self):
         # Override test from UnivariateCommonMixin.
         data = range(20, 50, 3)
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        self.assertEqual(self.func(data), 20)
 
     def test_nominal_data(self):
         # Test mode with nominal data.
@@ -1788,13 +1790,14 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # Test mode with bimodal data.
         data = [1, 1, 2, 2, 2, 2, 3, 4, 5, 6, 6, 6, 6, 7, 8, 9, 9]
         assert data.count(2) == data.count(6) == 4
-        # Check for an exception.
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        # mode() should return 2, the first encounted mode
+        self.assertEqual(self.func(data), 2)
 
-    def test_unique_data_failure(self):
-        # Test mode exception when data points are all unique.
+    def test_unique_data(self):
+        # Test mode when data points are all unique.
         data = list(range(10))
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        # mode() should return 0, the first encounted mode
+        self.assertEqual(self.func(data), 0)
 
     def test_none_data(self):
         # Test that mode raises TypeError if given None as data.
@@ -1807,9 +1810,64 @@ class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # Test that a Counter is treated like any other iterable.
         data = collections.Counter([1, 1, 1, 2])
         # Since the keys of the counter are treated as data points, not the
-        # counts, this should raise.
-        self.assertRaises(statistics.StatisticsError, self.func, data)
+        # counts, this should return the first mode encountered, 1
+        self.assertEqual(self.func(data), 1)
 
+
+class TestMultiMode(unittest.TestCase):
+
+    def test_basics(self):
+        multimode = statistics.multimode
+        self.assertEqual(multimode('aabbbbbbbbcc'), ['b'])
+        self.assertEqual(multimode('aabbbbccddddeeffffgg'), ['b', 'd', 'f'])
+        self.assertEqual(multimode(''), [])
+
+
+class TestFMean(unittest.TestCase):
+
+    def test_basics(self):
+        fmean = statistics.fmean
+        D = Decimal
+        F = Fraction
+        for data, expected_mean, kind in [
+            ([3.5, 4.0, 5.25], 4.25, 'floats'),
+            ([D('3.5'), D('4.0'), D('5.25')], 4.25, 'decimals'),
+            ([F(7, 2), F(4, 1), F(21, 4)], 4.25, 'fractions'),
+            ([True, False, True, True, False], 0.60, 'booleans'),
+            ([3.5, 4, F(21, 4)], 4.25, 'mixed types'),
+            ((3.5, 4.0, 5.25), 4.25, 'tuple'),
+            (iter([3.5, 4.0, 5.25]), 4.25, 'iterator'),
+                ]:
+            actual_mean = fmean(data)
+            self.assertIs(type(actual_mean), float, kind)
+            self.assertEqual(actual_mean, expected_mean, kind)
+
+    def test_error_cases(self):
+        fmean = statistics.fmean
+        StatisticsError = statistics.StatisticsError
+        with self.assertRaises(StatisticsError):
+            fmean([])                               # empty input
+        with self.assertRaises(StatisticsError):
+            fmean(iter([]))                         # empty iterator
+        with self.assertRaises(TypeError):
+            fmean(None)                             # non-iterable input
+        with self.assertRaises(TypeError):
+            fmean([10, None, 20])                   # non-numeric input
+        with self.assertRaises(TypeError):
+            fmean()                                 # missing data argument
+        with self.assertRaises(TypeError):
+            fmean([10, 20, 60], 70)                 # too many arguments
+
+    def test_special_values(self):
+        # Rules for special values are inherited from math.fsum()
+        fmean = statistics.fmean
+        NaN = float('Nan')
+        Inf = float('Inf')
+        self.assertTrue(math.isnan(fmean([10, NaN])), 'nan')
+        self.assertTrue(math.isnan(fmean([NaN, Inf])), 'nan and infinity')
+        self.assertTrue(math.isinf(fmean([10, Inf])), 'infinity')
+        with self.assertRaises(ValueError):
+            fmean([Inf, -Inf])
 
 
 # === Tests for variances and standard deviations ===
@@ -1979,6 +2037,467 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         data = [random.uniform(-2, 9) for _ in range(1000)]
         expected = math.sqrt(statistics.variance(data))
         self.assertEqual(self.func(data), expected)
+
+class TestGeometricMean(unittest.TestCase):
+
+    def test_basics(self):
+        geometric_mean = statistics.geometric_mean
+        self.assertAlmostEqual(geometric_mean([54, 24, 36]), 36.0)
+        self.assertAlmostEqual(geometric_mean([4.0, 9.0]), 6.0)
+        self.assertAlmostEqual(geometric_mean([17.625]), 17.625)
+
+        random.seed(86753095551212)
+        for rng in [
+                range(1, 100),
+                range(1, 1_000),
+                range(1, 10_000),
+                range(500, 10_000, 3),
+                range(10_000, 500, -3),
+                [12, 17, 13, 5, 120, 7],
+                [random.expovariate(50.0) for i in range(1_000)],
+                [random.lognormvariate(20.0, 3.0) for i in range(2_000)],
+                [random.triangular(2000, 3000, 2200) for i in range(3_000)],
+            ]:
+            gm_decimal = math.prod(map(Decimal, rng)) ** (Decimal(1) / len(rng))
+            gm_float = geometric_mean(rng)
+            self.assertTrue(math.isclose(gm_float, float(gm_decimal)))
+
+    def test_various_input_types(self):
+        geometric_mean = statistics.geometric_mean
+        D = Decimal
+        F = Fraction
+        # https://www.wolframalpha.com/input/?i=geometric+mean+3.5,+4.0,+5.25
+        expected_mean = 4.18886
+        for data, kind in [
+            ([3.5, 4.0, 5.25], 'floats'),
+            ([D('3.5'), D('4.0'), D('5.25')], 'decimals'),
+            ([F(7, 2), F(4, 1), F(21, 4)], 'fractions'),
+            ([3.5, 4, F(21, 4)], 'mixed types'),
+            ((3.5, 4.0, 5.25), 'tuple'),
+            (iter([3.5, 4.0, 5.25]), 'iterator'),
+                ]:
+            actual_mean = geometric_mean(data)
+            self.assertIs(type(actual_mean), float, kind)
+            self.assertAlmostEqual(actual_mean, expected_mean, places=5)
+
+    def test_big_and_small(self):
+        geometric_mean = statistics.geometric_mean
+
+        # Avoid overflow to infinity
+        large = 2.0 ** 1000
+        big_gm = geometric_mean([54.0 * large, 24.0 * large, 36.0 * large])
+        self.assertTrue(math.isclose(big_gm, 36.0 * large))
+        self.assertFalse(math.isinf(big_gm))
+
+        # Avoid underflow to zero
+        small = 2.0 ** -1000
+        small_gm = geometric_mean([54.0 * small, 24.0 * small, 36.0 * small])
+        self.assertTrue(math.isclose(small_gm, 36.0 * small))
+        self.assertNotEqual(small_gm, 0.0)
+
+    def test_error_cases(self):
+        geometric_mean = statistics.geometric_mean
+        StatisticsError = statistics.StatisticsError
+        with self.assertRaises(StatisticsError):
+            geometric_mean([])                      # empty input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, 0.0, 5.25])        # zero input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, -4.0, 5.25])       # negative input
+        with self.assertRaises(StatisticsError):
+            geometric_mean(iter([]))                # empty iterator
+        with self.assertRaises(TypeError):
+            geometric_mean(None)                    # non-iterable input
+        with self.assertRaises(TypeError):
+            geometric_mean([10, None, 20])          # non-numeric input
+        with self.assertRaises(TypeError):
+            geometric_mean()                        # missing data argument
+        with self.assertRaises(TypeError):
+            geometric_mean([10, 20, 60], 70)        # too many arguments
+
+    def test_special_values(self):
+        # Rules for special values are inherited from math.fsum()
+        geometric_mean = statistics.geometric_mean
+        NaN = float('Nan')
+        Inf = float('Inf')
+        self.assertTrue(math.isnan(geometric_mean([10, NaN])), 'nan')
+        self.assertTrue(math.isnan(geometric_mean([NaN, Inf])), 'nan and infinity')
+        self.assertTrue(math.isinf(geometric_mean([10, Inf])), 'infinity')
+        with self.assertRaises(ValueError):
+            geometric_mean([Inf, -Inf])
+
+class TestNormalDist(unittest.TestCase):
+
+    # General note on precision: The pdf(), cdf(), and overlap() methods
+    # depend on functions in the math libraries that do not make
+    # explicit accuracy guarantees.  Accordingly, some of the accuracy
+    # tests below may fail if the underlying math functions are
+    # inaccurate.  There isn't much we can do about this short of
+    # implementing our own implementations from scratch.
+
+    def test_slots(self):
+        nd = statistics.NormalDist(300, 23)
+        with self.assertRaises(TypeError):
+            vars(nd)
+        self.assertEqual(tuple(nd.__slots__), ('mu', 'sigma'))
+
+    def test_instantiation_and_attributes(self):
+        nd = statistics.NormalDist(500, 17)
+        self.assertEqual(nd.mu, 500)
+        self.assertEqual(nd.sigma, 17)
+        self.assertEqual(nd.variance, 17**2)
+
+        # default arguments
+        nd = statistics.NormalDist()
+        self.assertEqual(nd.mu, 0)
+        self.assertEqual(nd.sigma, 1)
+        self.assertEqual(nd.variance, 1**2)
+
+        # error case: negative sigma
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.NormalDist(500, -10)
+
+        # verify that subclass type is honored
+        class NewNormalDist(statistics.NormalDist):
+            pass
+        nnd = NewNormalDist(200, 5)
+        self.assertEqual(type(nnd), NewNormalDist)
+
+    def test_alternative_constructor(self):
+        NormalDist = statistics.NormalDist
+        data = [96, 107, 90, 92, 110]
+        # list input
+        self.assertEqual(NormalDist.from_samples(data), NormalDist(99, 9))
+        # tuple input
+        self.assertEqual(NormalDist.from_samples(tuple(data)), NormalDist(99, 9))
+        # iterator input
+        self.assertEqual(NormalDist.from_samples(iter(data)), NormalDist(99, 9))
+        # error cases
+        with self.assertRaises(statistics.StatisticsError):
+            NormalDist.from_samples([])                      # empty input
+        with self.assertRaises(statistics.StatisticsError):
+            NormalDist.from_samples([10])                    # only one input
+
+        # verify that subclass type is honored
+        class NewNormalDist(NormalDist):
+            pass
+        nnd = NewNormalDist.from_samples(data)
+        self.assertEqual(type(nnd), NewNormalDist)
+
+    def test_sample_generation(self):
+        NormalDist = statistics.NormalDist
+        mu, sigma = 10_000, 3.0
+        X = NormalDist(mu, sigma)
+        n = 1_000
+        data = X.samples(n)
+        self.assertEqual(len(data), n)
+        self.assertEqual(set(map(type, data)), {float})
+        # mean(data) expected to fall within 8 standard deviations
+        xbar = statistics.mean(data)
+        self.assertTrue(mu - sigma*8 <= xbar <= mu + sigma*8)
+
+        # verify that seeding makes reproducible sequences
+        n = 100
+        data1 = X.samples(n, seed='happiness and joy')
+        data2 = X.samples(n, seed='trouble and despair')
+        data3 = X.samples(n, seed='happiness and joy')
+        data4 = X.samples(n, seed='trouble and despair')
+        self.assertEqual(data1, data3)
+        self.assertEqual(data2, data4)
+        self.assertNotEqual(data1, data2)
+
+    def test_pdf(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        # Verify peak around center
+        self.assertLess(X.pdf(99), X.pdf(100))
+        self.assertLess(X.pdf(101), X.pdf(100))
+        # Test symmetry
+        for i in range(50):
+            self.assertAlmostEqual(X.pdf(100 - i), X.pdf(100 + i))
+        # Test vs CDF
+        dx = 2.0 ** -10
+        for x in range(90, 111):
+            est_pdf = (X.cdf(x + dx) - X.cdf(x)) / dx
+            self.assertAlmostEqual(X.pdf(x), est_pdf, places=4)
+        # Test vs table of known values -- CRC 26th Edition
+        Z = NormalDist()
+        for x, px in enumerate([
+            0.3989, 0.3989, 0.3989, 0.3988, 0.3986,
+            0.3984, 0.3982, 0.3980, 0.3977, 0.3973,
+            0.3970, 0.3965, 0.3961, 0.3956, 0.3951,
+            0.3945, 0.3939, 0.3932, 0.3925, 0.3918,
+            0.3910, 0.3902, 0.3894, 0.3885, 0.3876,
+            0.3867, 0.3857, 0.3847, 0.3836, 0.3825,
+            0.3814, 0.3802, 0.3790, 0.3778, 0.3765,
+            0.3752, 0.3739, 0.3725, 0.3712, 0.3697,
+            0.3683, 0.3668, 0.3653, 0.3637, 0.3621,
+            0.3605, 0.3589, 0.3572, 0.3555, 0.3538,
+        ]):
+            self.assertAlmostEqual(Z.pdf(x / 100.0), px, places=4)
+            self.assertAlmostEqual(Z.pdf(-x / 100.0), px, places=4)
+        # Error case: variance is zero
+        Y = NormalDist(100, 0)
+        with self.assertRaises(statistics.StatisticsError):
+            Y.pdf(90)
+        # Special values
+        self.assertEqual(X.pdf(float('-Inf')), 0.0)
+        self.assertEqual(X.pdf(float('Inf')), 0.0)
+        self.assertTrue(math.isnan(X.pdf(float('NaN'))))
+
+    def test_cdf(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        cdfs = [X.cdf(x) for x in range(1, 200)]
+        self.assertEqual(set(map(type, cdfs)), {float})
+        # Verify montonic
+        self.assertEqual(cdfs, sorted(cdfs))
+        # Verify center (should be exact)
+        self.assertEqual(X.cdf(100), 0.50)
+        # Check against a table of known values
+        # https://en.wikipedia.org/wiki/Standard_normal_table#Cumulative
+        Z = NormalDist()
+        for z, cum_prob in [
+            (0.00, 0.50000), (0.01, 0.50399), (0.02, 0.50798),
+            (0.14, 0.55567), (0.29, 0.61409), (0.33, 0.62930),
+            (0.54, 0.70540), (0.60, 0.72575), (1.17, 0.87900),
+            (1.60, 0.94520), (2.05, 0.97982), (2.89, 0.99807),
+            (3.52, 0.99978), (3.98, 0.99997), (4.07, 0.99998),
+            ]:
+            self.assertAlmostEqual(Z.cdf(z), cum_prob, places=5)
+            self.assertAlmostEqual(Z.cdf(-z), 1.0 - cum_prob, places=5)
+        # Error case: variance is zero
+        Y = NormalDist(100, 0)
+        with self.assertRaises(statistics.StatisticsError):
+            Y.cdf(90)
+        # Special values
+        self.assertEqual(X.cdf(float('-Inf')), 0.0)
+        self.assertEqual(X.cdf(float('Inf')), 1.0)
+        self.assertTrue(math.isnan(X.cdf(float('NaN'))))
+
+    def test_inv_cdf(self):
+        NormalDist = statistics.NormalDist
+
+        # Center case should be exact.
+        iq = NormalDist(100, 15)
+        self.assertEqual(iq.inv_cdf(0.50), iq.mean)
+
+        # Test versus a published table of known percentage points.
+        # See the second table at the bottom of the page here:
+        # http://people.bath.ac.uk/masss/tables/normaltable.pdf
+        Z = NormalDist()
+        pp = {5.0: (0.000, 1.645, 2.576, 3.291, 3.891,
+                    4.417, 4.892, 5.327, 5.731, 6.109),
+              2.5: (0.674, 1.960, 2.807, 3.481, 4.056,
+                    4.565, 5.026, 5.451, 5.847, 6.219),
+              1.0: (1.282, 2.326, 3.090, 3.719, 4.265,
+                    4.753, 5.199, 5.612, 5.998, 6.361)}
+        for base, row in pp.items():
+            for exp, x in enumerate(row, start=1):
+                p = base * 10.0 ** (-exp)
+                self.assertAlmostEqual(-Z.inv_cdf(p), x, places=3)
+                p = 1.0 - p
+                self.assertAlmostEqual(Z.inv_cdf(p), x, places=3)
+
+        # Match published example for MS Excel
+        # https://support.office.com/en-us/article/norm-inv-function-54b30935-fee7-493c-bedb-2278a9db7e13
+        self.assertAlmostEqual(NormalDist(40, 1.5).inv_cdf(0.908789), 42.000002)
+
+        # One million equally spaced probabilities
+        n = 2**20
+        for p in range(1, n):
+            p /= n
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+
+        # One hundred ever smaller probabilities to test tails out to
+        # extreme probabilities: 1 / 2**50 and (2**50-1) / 2 ** 50
+        for e in range(1, 51):
+            p = 2.0 ** (-e)
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+            p = 1.0 - p
+            self.assertAlmostEqual(iq.cdf(iq.inv_cdf(p)), p)
+
+        # Now apply cdf() first.  Near the tails, the round-trip loses
+        # precision and is ill-conditioned (small changes in the inputs
+        # give large changes in the output), so only check to 5 places.
+        for x in range(200):
+            self.assertAlmostEqual(iq.inv_cdf(iq.cdf(x)), x, places=5)
+
+        # Error cases:
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(0.0)                         # p is zero
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(-0.1)                        # p under zero
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(1.0)                         # p is one
+        with self.assertRaises(statistics.StatisticsError):
+            iq.inv_cdf(1.1)                         # p over one
+        with self.assertRaises(statistics.StatisticsError):
+            iq.sigma = 0.0                          # sigma is zero
+            iq.inv_cdf(0.5)
+        with self.assertRaises(statistics.StatisticsError):
+            iq.sigma = -0.1                         # sigma under zero
+            iq.inv_cdf(0.5)
+
+        # Special values
+        self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))
+
+    def test_overlap(self):
+        NormalDist = statistics.NormalDist
+
+        # Match examples from Imman and Bradley
+        for X1, X2, published_result in [
+                (NormalDist(0.0, 2.0), NormalDist(1.0, 2.0), 0.80258),
+                (NormalDist(0.0, 1.0), NormalDist(1.0, 2.0), 0.60993),
+            ]:
+            self.assertAlmostEqual(X1.overlap(X2), published_result, places=4)
+            self.assertAlmostEqual(X2.overlap(X1), published_result, places=4)
+
+        # Check against integration of the PDF
+        def overlap_numeric(X, Y, *, steps=8_192, z=5):
+            'Numerical integration cross-check for overlap() '
+            fsum = math.fsum
+            center = (X.mu + Y.mu) / 2.0
+            width = z * max(X.sigma, Y.sigma)
+            start = center - width
+            dx = 2.0 * width / steps
+            x_arr = [start + i*dx for i in range(steps)]
+            xp = list(map(X.pdf, x_arr))
+            yp = list(map(Y.pdf, x_arr))
+            total = max(fsum(xp), fsum(yp))
+            return fsum(map(min, xp, yp)) / total
+
+        for X1, X2 in [
+                # Examples from Imman and Bradley
+                (NormalDist(0.0, 2.0), NormalDist(1.0, 2.0)),
+                (NormalDist(0.0, 1.0), NormalDist(1.0, 2.0)),
+                # Example from https://www.rasch.org/rmt/rmt101r.htm
+                (NormalDist(0.0, 1.0), NormalDist(1.0, 2.0)),
+                # Gender heights from http://www.usablestats.com/lessons/normal
+                (NormalDist(70, 4), NormalDist(65, 3.5)),
+                # Misc cases with equal standard deviations
+                (NormalDist(100, 15), NormalDist(110, 15)),
+                (NormalDist(-100, 15), NormalDist(110, 15)),
+                (NormalDist(-100, 15), NormalDist(-110, 15)),
+                # Misc cases with unequal standard deviations
+                (NormalDist(100, 12), NormalDist(100, 15)),
+                (NormalDist(100, 12), NormalDist(110, 15)),
+                (NormalDist(100, 12), NormalDist(150, 15)),
+                (NormalDist(100, 12), NormalDist(150, 35)),
+                # Misc cases with small values
+                (NormalDist(1.000, 0.002), NormalDist(1.001, 0.003)),
+                (NormalDist(1.000, 0.002), NormalDist(1.006, 0.0003)),
+                (NormalDist(1.000, 0.002), NormalDist(1.001, 0.099)),
+            ]:
+            self.assertAlmostEqual(X1.overlap(X2), overlap_numeric(X1, X2), places=5)
+            self.assertAlmostEqual(X2.overlap(X1), overlap_numeric(X1, X2), places=5)
+
+        # Error cases
+        X = NormalDist()
+        with self.assertRaises(TypeError):
+            X.overlap()                             # too few arguments
+        with self.assertRaises(TypeError):
+            X.overlap(X, X)                         # too may arguments
+        with self.assertRaises(TypeError):
+            X.overlap(None)                         # right operand not a NormalDist
+        with self.assertRaises(statistics.StatisticsError):
+            X.overlap(NormalDist(1, 0))             # right operand sigma is zero
+        with self.assertRaises(statistics.StatisticsError):
+            NormalDist(1, 0).overlap(X)             # left operand sigma is zero
+
+    def test_properties(self):
+        X = statistics.NormalDist(100, 15)
+        self.assertEqual(X.mean, 100)
+        self.assertEqual(X.stdev, 15)
+        self.assertEqual(X.variance, 225)
+
+    def test_same_type_addition_and_subtraction(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 12)
+        Y = NormalDist(40, 5)
+        self.assertEqual(X + Y, NormalDist(140, 13))        # __add__
+        self.assertEqual(X - Y, NormalDist(60, 13))         # __sub__
+
+    def test_translation_and_scaling(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 15)
+        y = 10
+        self.assertEqual(+X, NormalDist(100, 15))           # __pos__
+        self.assertEqual(-X, NormalDist(-100, 15))          # __neg__
+        self.assertEqual(X + y, NormalDist(110, 15))        # __add__
+        self.assertEqual(y + X, NormalDist(110, 15))        # __radd__
+        self.assertEqual(X - y, NormalDist(90, 15))         # __sub__
+        self.assertEqual(y - X, NormalDist(-90, 15))        # __rsub__
+        self.assertEqual(X * y, NormalDist(1000, 150))      # __mul__
+        self.assertEqual(y * X, NormalDist(1000, 150))      # __rmul__
+        self.assertEqual(X / y, NormalDist(10, 1.5))        # __truediv__
+        with self.assertRaises(TypeError):                  # __rtruediv__
+            y / X
+
+    def test_unary_operations(self):
+        NormalDist = statistics.NormalDist
+        X = NormalDist(100, 12)
+        Y = +X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mu, Y.mu)
+        self.assertEqual(X.sigma, Y.sigma)
+        Y = -X
+        self.assertIsNot(X, Y)
+        self.assertEqual(X.mu, -Y.mu)
+        self.assertEqual(X.sigma, Y.sigma)
+
+    def test_equality(self):
+        NormalDist = statistics.NormalDist
+        nd1 = NormalDist()
+        nd2 = NormalDist(2, 4)
+        nd3 = NormalDist()
+        nd4 = NormalDist(2, 4)
+        self.assertNotEqual(nd1, nd2)
+        self.assertEqual(nd1, nd3)
+        self.assertEqual(nd2, nd4)
+
+        # Test NotImplemented when types are different
+        class A:
+            def __eq__(self, other):
+                return 10
+        a = A()
+        self.assertEqual(nd1.__eq__(a), NotImplemented)
+        self.assertEqual(nd1 == a, 10)
+        self.assertEqual(a == nd1, 10)
+
+        # All subclasses to compare equal giving the same behavior
+        # as list, tuple, int, float, complex, str, dict, set, etc.
+        class SizedNormalDist(NormalDist):
+            def __init__(self, mu, sigma, n):
+                super().__init__(mu, sigma)
+                self.n = n
+        s = SizedNormalDist(100, 15, 57)
+        nd4 = NormalDist(100, 15)
+        self.assertEqual(s, nd4)
+
+        # Don't allow duck type equality because we wouldn't
+        # want a lognormal distribution to compare equal
+        # to a normal distribution with the same parameters
+        class LognormalDist:
+            def __init__(self, mu, sigma):
+                self.mu = mu
+                self.sigma = sigma
+        lnd = LognormalDist(100, 15)
+        nd = NormalDist(100, 15)
+        self.assertNotEqual(nd, lnd)
+
+    def test_pickle_and_copy(self):
+        nd = statistics.NormalDist(37.5, 5.625)
+        nd1 = copy.copy(nd)
+        self.assertEqual(nd, nd1)
+        nd2 = copy.deepcopy(nd)
+        self.assertEqual(nd, nd2)
+        nd3 = pickle.loads(pickle.dumps(nd))
+        self.assertEqual(nd, nd3)
+
+    def test_repr(self):
+        nd = statistics.NormalDist(37.5, 5.625)
+        self.assertEqual(repr(nd), 'NormalDist(mu=37.5, sigma=5.625)')
 
 
 # === Run tests ===

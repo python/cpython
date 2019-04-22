@@ -22,10 +22,12 @@ PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
 #define PyCF_ONLY_AST 0x0400
 #define PyCF_IGNORE_COOKIE 0x0800
+#define PyCF_TYPE_COMMENTS 0x1000
 
 #ifndef Py_LIMITED_API
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
+    int cf_feature_version;  /* minor Python version (PyCF_ONLY_AST) */
 } PyCompilerFlags;
 #endif
 
@@ -75,6 +77,7 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 
 #define PY_INVALID_STACK_EFFECT INT_MAX
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
+PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
 
 PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
 
@@ -84,10 +87,10 @@ PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
 
 #endif /* !Py_LIMITED_API */
 
-/* These definitions must match corresponding definitions in graminit.h.
-   There's code in compile.c that checks that they are the same. */
+/* These definitions must match corresponding definitions in graminit.h. */
 #define Py_single_input 256
 #define Py_file_input 257
 #define Py_eval_input 258
+#define Py_func_type_input 345
 
 #endif /* !Py_COMPILE_H */

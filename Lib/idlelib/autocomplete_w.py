@@ -4,7 +4,7 @@ An auto-completion window for IDLE, used by the autocomplete extension
 import platform
 
 from tkinter import *
-from tkinter.ttk import Scrollbar
+from tkinter.ttk import Frame, Scrollbar
 
 from idlelib.autocomplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
 from idlelib.multicall import MC_SHIFT
@@ -189,7 +189,7 @@ class AutoCompleteWindow:
             pass
         self.scrollbar = scrollbar = Scrollbar(acw, orient=VERTICAL)
         self.listbox = listbox = Listbox(acw, yscrollcommand=scrollbar.set,
-                                         exportselection=False, bg="white")
+                                         exportselection=False)
         for item in self.completions:
             listbox.insert(END, item)
         self.origselforeground = listbox.cget("selectforeground")
@@ -246,7 +246,7 @@ class AutoCompleteWindow:
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
         if platform.system().startswith('Windows'):
-            # See issue 15786. When on windows platform, Tk will misbehave
+            # See issue 15786. When on Windows platform, Tk will misbehave
             # to call winconfig_event multiple times, we need to prevent this,
             # otherwise mouse button double click will not be able to used.
             acw.unbind(WINCONFIG_SEQUENCE, self.winconfigid)
@@ -269,7 +269,7 @@ class AutoCompleteWindow:
         # mouse click on widget / text area.
         if self.is_active():
             if event.type == EventType.FocusOut:
-                # On windows platform, it will need to delay the check for
+                # On Windows platform, it will need to delay the check for
                 # acw.focus_get() when click on acw, otherwise it will return
                 # None and close the window
                 self.widget.after(1, self._hide_event_check)
@@ -458,3 +458,10 @@ class AutoCompleteWindow:
         self.listbox = None
         self.autocompletewindow.destroy()
         self.autocompletewindow = None
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_autocomplete_w', verbosity=2, exit=False)
+
+# TODO: autocomplete/w htest here
