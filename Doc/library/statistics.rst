@@ -607,7 +607,7 @@ of applications in statistics.
        :exc:`StatisticsError` because it takes at least one point to estimate
        a central value and at least two points to estimate dispersion.
 
-    .. method:: NormalDist.samples(n, seed=None)
+    .. method:: NormalDist.samples(n, *, seed=None)
 
        Generates *n* random samples for a given mean and standard deviation.
        Returns a :class:`list` of :class:`float` values.
