@@ -10,7 +10,7 @@ set dparam=-d
 
 :CheckOpts
 if "%1"=="-x64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-arm32" (set arm32_ssh=true) & shift & goto CheckOpts
+if "%1"=="-arm32" (set rt_opts=%rt_opts% %1) & (set arm32_ssh=true) & shift & goto CheckOpts
 if "%1"=="-d" (set rt_opts=%rt_opts% %1) & (set dparam=-d)& shift & goto CheckOpts
 if "%1"=="-O" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
 if "%1"=="-q" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
@@ -26,18 +26,26 @@ call "%here%..\..\PCbuild\rt.bat" %rt_args%
 exit /b 0
 
 :Arm32Ssh
-if "%SSH_SERVER%"=="" (echo SSH_SERVER environment variable must be set & exit /b 127)
+if "%SSH_SERVER%"=="" goto :Arm32SshHelp
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
 if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=c:\python\)
-if "%REMOTE_PYTHON_SHARE%"=="" (set REMOTE_PYTHON_SHARE=P:\python)
-REM #ssh %SSH_SERVER% "if EXIST %REMOTE_PYTHON_DIR% (rd %REMOTE_PYTHON_DIR% /s/q)"
-REM #scp "%PYTHON_SOURCE%python.bat" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%python.bat"
-REM #scp -r "%PYTHON_SOURCE%PCBuild" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
-REM #scp -r "%PYTHON_SOURCE%Lib" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Lib"
-if EXIST %REMOTE_PYTHON_SHARE% (rd %REMOTE_PYTHON_SHARE% /s/q)
-python.exe PC/layout -vv %dparam% -s %PYTHON_SOURCE% -b "%PYTHON_SOURCE%\PCBuild\arm32" -t "%REMOTE_PYTHON_SHARE%\temp" --copy "%REMOTE_PYTHON_SHARE%" --preset-iot --include-tests --include-venv
-if NOT EXIST %REMOTE_PYTHON_SHARE%\PCbuild (md %REMOTE_PYTHON_SHARE%\PCbuild)
-copy %PYTHON_SOURCE%PCBuild\*.bat %REMOTE_PYTHON_SHARE%\PCbuild
-copy %PYTHON_SOURCE%PCBuild\*.py %REMOTE_PYTHON_SHARE%\PCbuild
-ssh %SSH_SERVER% call "%REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
+ssh %SSH_SERVER% "if EXIST %REMOTE_PYTHON_DIR% (rd %REMOTE_PYTHON_DIR% /s/q)"
+ssh %SSH_SERVER% "md %REMOTE_PYTHON_DIR%PCBuild\arm32"
+for /f "USEBACKQ" %%i in (`dir PCbuild\*.bat /b`) do @scp PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
+for /f "USEBACKQ" %%i in (`dir PCbuild\*.py /b`) do @scp PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
+for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.exe /b`) do @scp PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
+for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.pyd /b`) do @scp PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
+for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.dll /b`) do @scp PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
+scp -r "%PYTHON_SOURCE%Include" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Include"
+scp -r "%PYTHON_SOURCE%Lib" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Lib"
+ssh %SSH_SERVER% "%REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
 exit /b 0
+
+:Arm32SshHelp
+echo SSH_SERVER environment variable must be set to administrator@[ip address]
+echo where [ip address] is the address of a Windows IoT Core ARM32 device.
+echo.
+echo The test worker should have the SSH agent running.
+echo Also a key must be created with ssh-keygen and added to both the buildbot worker machine
+echo and the ARM32 worker device: see https://docs.microsoft.com/en-us/windows/iot-core/connect-your-device/ssh
+exit /b 127
