@@ -598,7 +598,7 @@ def quantiles(dist, *, n=4, inclusive=False):
         for i in range(1, n):
             j = i * m // n
             delta = i*m - j*n
-            interpolated = (data[j]*(n-delta) + data[j+1]*delta) / n
+            interpolated = (data[j] * (n - delta) + data[j+1] * delta) / n
             result.append(interpolated)
         return result
     m = ld + 1
