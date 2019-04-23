@@ -16,11 +16,6 @@ class CookieTests(unittest.TestCase):
              'repr': "<SimpleCookie: chips='ahoy' vienna='finger'>",
              'output': 'Set-Cookie: chips=ahoy\nSet-Cookie: vienna=finger'},
 
-            {'data': 'keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;"',
-             'dict': {'keebler' : 'E=mc2; L="Loves"; fudge=\012;'},
-             'repr': '''<SimpleCookie: keebler='E=mc2; L="Loves"; fudge=\\n;'>''',
-             'output': 'Set-Cookie: keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;"'},
-
             # Check illegal cookies that have an '=' char in an unquoted value
             {'data': 'keebler=E=mc2',
              'dict': {'keebler' : 'E=mc2'},

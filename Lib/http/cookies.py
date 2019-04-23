@@ -131,6 +131,7 @@ Finis.
 #
 import re
 import string
+import http.cookiejar
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
 
@@ -420,37 +421,6 @@ class Morsel(dict):
         return _semispacejoin(result)
 
 
-#
-# Pattern for finding cookie
-#
-# This used to be strict parsing based on the RFC2109 and RFC2068
-# specifications.  I have since discovered that MSIE 3.0x doesn't
-# follow the character rules outlined in those specs.  As a
-# result, the parsing rules here are less strict.
-#
-
-_LegalKeyChars  = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
-_LegalValueChars = _LegalKeyChars + r'\[\]'
-_CookiePattern = re.compile(r"""
-    \s*                            # Optional whitespace at start of cookie
-    (?P<key>                       # Start of group 'key'
-    [""" + _LegalKeyChars + r"""]+?   # Any word of at least one letter
-    )                              # End of group 'key'
-    (                              # Optional group: there may not be a value.
-    \s*=\s*                          # Equal Sign
-    (?P<val>                         # Start of group 'val'
-    "(?:[^\\"]|\\.)*"                  # Any doublequoted string
-    |                                  # or
-    \w{3},\s?[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
-    |                                  # or
-    [""" + _LegalValueChars + r"""]*      # Any word or empty string
-    )                                # End of group 'val'
-    )?                             # End of optional value group
-    \s*                            # Any number of spaces.
-    (\s+|;|$)                      # Ending either at space, semicolon, or EOS.
-    """, re.ASCII | re.VERBOSE)    # re.ASCII may be removed if safe.
-
-
 # At long last, here is the cookie class.  Using this class is almost just like
 # using a dictionary.  See this module's docstring for example usage.
 #
@@ -533,9 +503,7 @@ class BaseCookie(dict):
                 self[key] = value
         return
 
-    def __parse_string(self, str, patt=_CookiePattern):
-        i = 0                 # Our starting point
-        n = len(str)          # Length of string
+    def __parse_string(self, rawstr):
         parsed_items = []     # Parsed (type, key, value) triples
         morsel_seen = False   # A key=value pair was previously encountered
 
@@ -545,16 +513,9 @@ class BaseCookie(dict):
         # We first parse the whole cookie string and reject it if it's
         # syntactically invalid (this helps avoid some classes of injection
         # attacks).
-        while 0 <= i < n:
-            # Start looking for a cookie
-            match = patt.match(str, i)
-            if not match:
-                # No more cookies
-                break
-
-            key, value = match.group("key"), match.group("val")
-            i = match.end(0)
-
+        for key, value in http.cookiejar.parse_ns_headers([rawstr,])[0]:
+            if not isinstance(value, str):
+                value = str(value)
             if key[0] == "$":
                 if not morsel_seen:
                     # We ignore attributes which pertain to the cookie
