@@ -1344,7 +1344,7 @@ class PyBuildExt(build_ext):
                         break
                     else:
                         if sqlite_setup_debug:
-                            print("%s: version %d is too old, need >= %s"%(d,
+                            print("%s: version %s is too old, need >= %s"%(d,
                                         sqlite_version, MIN_SQLITE_VERSION))
                 elif sqlite_setup_debug:
                     print("sqlite: %s had no SQLITE_VERSION"%(f,))
