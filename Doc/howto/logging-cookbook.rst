@@ -2549,7 +2549,7 @@ This can be achieved with a filter as shown below::
     logger.setLevel(logging.DEBUG)
     stdout = logging.StreamHandler(sys.stdout)
     stdout.setLevel("DEBUG")
-    stdout.addFilter(MaxLevelFilter("INFO"))
+    stdout.addFilter(MaxLevelFilter(logging.INFO))
     stderr = logging.StreamHandler(sys.stderr)
     stderr.setLevel(logging.WARNING)
     logger.addHandler(stdout)
