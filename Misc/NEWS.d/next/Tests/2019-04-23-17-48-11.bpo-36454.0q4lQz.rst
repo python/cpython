@@ -1,0 +1,2 @@
+Fix test_time.test_monotonic() on slow buildbots: only test the minimum
+time, not the maximum time.
