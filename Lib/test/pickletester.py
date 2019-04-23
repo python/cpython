@@ -3005,7 +3005,7 @@ def setstate_bbb(obj, state):
     classes/functions.
     """
     obj.a = 'foo'
-
+    return obj
 
 class AbstractDispatchTableTests(unittest.TestCase):
 
