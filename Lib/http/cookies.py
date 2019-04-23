@@ -514,6 +514,8 @@ class BaseCookie(dict):
         # syntactically invalid (this helps avoid some classes of injection
         # attacks).
         for key, value in http.cookiejar.parse_ns_headers([rawstr,])[0]:
+            if key == 'version':
+                continue
             if not isinstance(value, str):
                 value = str(value)
             if key[0] == "$":
