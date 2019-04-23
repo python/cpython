@@ -149,6 +149,25 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertEqual(D.foo(), 4)
             self.assertEqual(D().foo(), 4)
 
+        def test_object_new_with_one_abstractmethod(self):
+            class C(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def method_one(self):
+                    pass
+            msg = r"class C with abstract method method_one"
+            self.assertRaisesRegex(TypeError, msg, C)
+
+        def test_object_new_with_many_abstractmethods(self):
+            class C(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def method_one(self):
+                    pass
+                @abc.abstractmethod
+                def method_two(self):
+                    pass
+            msg = r"class C with abstract methods method_one, method_two"
+            self.assertRaisesRegex(TypeError, msg, C)
+
         def test_abstractmethod_integration(self):
             for abstractthing in [abc.abstractmethod, abc.abstractproperty,
                                   abc.abstractclassmethod,

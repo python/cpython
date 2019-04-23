@@ -1,0 +1,2 @@
+Use singular/plural noun in error message when instantiating an abstract
+class with non-overriden abstract method(s).

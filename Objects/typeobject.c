@@ -3782,6 +3782,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *joined;
         PyObject *comma;
         _Py_static_string(comma_id, ", ");
+        Py_ssize_t method_count;
 
         /* Compute ", ".join(sorted(type.__abstractmethods__))
            into joined. */
@@ -3805,11 +3806,15 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(sorted_methods);
         if (joined == NULL)
             return NULL;
+        method_count = PyObject_Length(abstract_methods);
+        if (method_count == -1)
+            return NULL;
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
-                     "with abstract methods %U",
+                     "with abstract method%s %U",
                      type->tp_name,
+                     method_count > 1 ? "s" : "",
                      joined);
         Py_DECREF(joined);
         return NULL;
