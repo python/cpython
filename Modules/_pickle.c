@@ -3950,11 +3950,20 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
                 return -1;
         }
         else {
+
+            /* If a state_setter is specified, call it instead of load_build to
+             * update obj's with its previous state.
+             * The first 4 save/write instructions push state_setter and its
+             * tuple of expected arguments (obj, state) onto the stack. The
+             * REDUCE opcode triggers the state_setter(obj, state) function
+             * call. Finally, because state-updating routines only do in-place
+             * modification, the whole operation has to be stack-transparent.
+             * Thus, we finally pop the call's output from the stack.*/
+
             const char tupletwo_op = TUPLE2;
             const char pop_op = POP;
             if (save(self, state_setter, 0) < 0 ||
-                save(self, obj, 0) < 0 ||
-                save(self, state, 0) < 0 ||
+                save(self, obj, 0) < 0 || save(self, state, 0) < 0 ||
                 _Pickler_Write(self, &tupletwo_op, 1) < 0 ||
                 _Pickler_Write(self, &reduce_op, 1) < 0 ||
                 _Pickler_Write(self, &pop_op, 1) < 0)
