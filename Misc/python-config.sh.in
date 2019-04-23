@@ -44,7 +44,6 @@ ABIFLAGS="@ABIFLAGS@"
 LIBS="-lpython${VERSION}${ABIFLAGS} @LIBS@ $SYSLIBS"
 BASECFLAGS="@BASECFLAGS@"
 LDLIBRARY="@LDLIBRARY@"
-LINKFORSHARED="@LINKFORSHARED@"
 OPT="@OPT@"
 PY_ENABLE_SHARED="@PY_ENABLE_SHARED@"
 LDVERSION="@LDVERSION@"
@@ -89,15 +88,11 @@ do
             echo "$LIBS"
         ;;
         --ldflags)
-            LINKFORSHAREDUSED=
-            if [ -z "$PYTHONFRAMEWORK" ] ; then
-                LINKFORSHAREDUSED=$LINKFORSHARED
-            fi
             LIBPLUSED=
             if [ "$PY_ENABLE_SHARED" = "0" ] ; then
                 LIBPLUSED="-L$LIBPL"
             fi
-            echo "$LIBPLUSED -L$libdir $LIBS $LINKFORSHAREDUSED"
+            echo "$LIBPLUSED -L$libdir $LIBS"
         ;;
         --extension-suffix)
             echo "$SO"

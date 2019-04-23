@@ -348,7 +348,8 @@ class HeaderTests(TestCase):
         body = (
             b'HTTP/1.1 200 OK\r\n'
             b'First: val\r\n'
-            b'Second: val\r\n'
+            b'Second: val1\r\n'
+            b'Second: val2\r\n'
         )
         sock = FakeSocket(body)
         resp = client.HTTPResponse(sock, debuglevel=1)
@@ -357,7 +358,8 @@ class HeaderTests(TestCase):
         lines = output.getvalue().splitlines()
         self.assertEqual(lines[0], "reply: 'HTTP/1.1 200 OK\\r\\n'")
         self.assertEqual(lines[1], "header: First: val")
-        self.assertEqual(lines[2], "header: Second: val")
+        self.assertEqual(lines[2], "header: Second: val1")
+        self.assertEqual(lines[3], "header: Second: val2")
 
 
 class TransferEncodingTest(TestCase):
@@ -1116,11 +1118,8 @@ class BasicTest(TestCase):
 
     def test_response_fileno(self):
         # Make sure fd returned by fileno is valid.
-        serv = socket.socket(
-            socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        serv = socket.create_server((HOST, 0))
         self.addCleanup(serv.close)
-        serv.bind((HOST, 0))
-        serv.listen()
 
         result = None
         def run_server():

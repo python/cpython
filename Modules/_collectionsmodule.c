@@ -7,6 +7,14 @@
 #include <sys/types.h>          /* For size_t */
 #endif
 
+/*[clinic input]
+class _tuplegetter "_tuplegetterobject *" "&tuplegetter_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ee5ed5baabe35068]*/
+
+static PyTypeObject tuplegetter_type;
+#include "clinic/_collectionsmodule.c.h"
+
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
 */
@@ -478,6 +486,7 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
 static PyObject *
 deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *result;
     dequeobject *old_deque = (dequeobject *)deque;
     if (Py_TYPE(deque) == &deque_type) {
         dequeobject *new_deque;
@@ -502,11 +511,19 @@ deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
     if (old_deque->maxlen < 0)
-        return PyObject_CallFunctionObjArgs((PyObject *)(Py_TYPE(deque)),
-                                            deque, NULL);
+        result = PyObject_CallFunctionObjArgs((PyObject *)(Py_TYPE(deque)),
+                                              deque, NULL);
     else
-        return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
-            deque, old_deque->maxlen, NULL);
+        result = PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
+                                       deque, old_deque->maxlen, NULL);
+    if (result != NULL && !PyObject_TypeCheck(result, &deque_type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "%.200s() must return a deque, not %.200s",
+                     Py_TYPE(deque)->tp_name, Py_TYPE(result)->tp_name);
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
 }
 
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");
@@ -1041,8 +1058,10 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
         start = stop;
     assert(0 <= start && start <= stop && stop <= Py_SIZE(deque));
 
-    /* XXX Replace this loop with faster code from deque_item() */
-    for (i=0 ; i<start ; i++) {
+    for (i=0 ; i < start - BLOCKLEN ; i += BLOCKLEN) {
+        b = b->rightlink;
+    }
+    for ( ; i < start ; i++) {
         index++;
         if (index == BLOCKLEN) {
             b = b->rightlink;
@@ -1299,7 +1318,7 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 }
 
 static PyObject *
-deque_reduce(dequeobject *deque)
+deque_reduce(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *dict, *it;
     _Py_IDENTIFIER(__dict__);
@@ -1444,9 +1463,13 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
     Py_ssize_t maxlen = -1;
     char *kwlist[] = {"iterable", "maxlen", 0};
 
-    if (kwdargs == NULL) {
-        if (!PyArg_UnpackTuple(args, "deque()", 0, 2, &iterable, &maxlenobj))
-            return -1;
+    if (kwdargs == NULL && PyTuple_GET_SIZE(args) <= 2) {
+        if (PyTuple_GET_SIZE(args) > 0) {
+            iterable = PyTuple_GET_ITEM(args, 0);
+        }
+        if (PyTuple_GET_SIZE(args) > 1) {
+            maxlenobj = PyTuple_GET_ITEM(args, 1);
+        }
     } else {
         if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist,
                                          &iterable, &maxlenobj))
@@ -1497,7 +1520,7 @@ deque_bool(dequeobject *deque)
 }
 
 static PyObject *
-deque_get_maxlen(dequeobject *deque)
+deque_get_maxlen(dequeobject *deque, void *Py_UNUSED(ignored))
 {
     if (deque->maxlen < 0)
         Py_RETURN_NONE;
@@ -1562,9 +1585,9 @@ static PyMethodDef deque_methods[] = {
         METH_O,                  extend_doc},
     {"extendleft",              (PyCFunction)deque_extendleft,
         METH_O,                  extendleft_doc},
-    {"index",                   (PyCFunction)deque_index,
+    {"index",                   (PyCFunction)(void(*)(void))deque_index,
         METH_FASTCALL,            index_doc},
-    {"insert",                  (PyCFunction)deque_insert,
+    {"insert",                  (PyCFunction)(void(*)(void))deque_insert,
         METH_FASTCALL,            insert_doc},
     {"pop",                     (PyCFunction)deque_pop,
         METH_NOARGS,             pop_doc},
@@ -1578,7 +1601,7 @@ static PyMethodDef deque_methods[] = {
         METH_NOARGS,             reversed_doc},
     {"reverse",                 (PyCFunction)deque_reverse,
         METH_NOARGS,             reverse_doc},
-    {"rotate",                  (PyCFunction)deque_rotate,
+    {"rotate",                  (PyCFunction)(void(*)(void))deque_rotate,
         METH_FASTCALL,            rotate_doc},
     {"__sizeof__",              (PyCFunction)deque_sizeof,
         METH_NOARGS,             sizeof_doc},
@@ -2317,6 +2340,167 @@ done:
     Py_RETURN_NONE;
 }
 
+/* Helper function for namedtuple() ************************************/
+
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t index;
+    PyObject* doc;
+} _tuplegetterobject;
+
+/*[clinic input]
+@classmethod
+_tuplegetter.__new__ as tuplegetter_new
+
+    index: Py_ssize_t
+    doc: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc)
+/*[clinic end generated code: output=014be444ad80263f input=87c576a5bdbc0bbb]*/
+{
+    _tuplegetterobject* self;
+    self = (_tuplegetterobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    self->index = index;
+    Py_INCREF(doc);
+    self->doc = doc;
+    return (PyObject *)self;
+}
+
+static PyObject *
+tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    Py_ssize_t index = ((_tuplegetterobject*)self)->index;
+    PyObject *result;
+
+    if (obj == NULL) {
+        Py_INCREF(self);
+        return self;
+    }
+    if (!PyTuple_Check(obj)) {
+        if (obj == Py_None) {
+            Py_INCREF(self);
+            return self;
+        }
+        PyErr_Format(PyExc_TypeError,
+                     "descriptor for index '%zd' for tuple subclasses "
+                     "doesn't apply to '%s' object",
+                     index,
+                     obj->ob_type->tp_name);
+        return NULL;
+    }
+
+    if (!valid_index(index, PyTuple_GET_SIZE(obj))) {
+        PyErr_SetString(PyExc_IndexError, "tuple index out of range");
+        return NULL;
+    }
+
+    result = PyTuple_GET_ITEM(obj, index);
+    Py_INCREF(result);
+    return result;
+}
+
+static int
+tuplegetter_descr_set(PyObject *self, PyObject *obj, PyObject *value)
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "can't delete attribute");
+    } else {
+        PyErr_SetString(PyExc_AttributeError, "can't set attribute");
+    }
+    return -1;
+}
+
+static int
+tuplegetter_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    Py_VISIT(tuplegetter->doc);
+    return 0;
+}
+
+static int
+tuplegetter_clear(PyObject *self)
+{
+    _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    Py_CLEAR(tuplegetter->doc);
+    return 0;
+}
+
+static void
+tuplegetter_dealloc(_tuplegetterobject *self)
+{
+    PyObject_GC_UnTrack(self);
+    tuplegetter_clear((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+static PyObject*
+tuplegetter_reduce(_tuplegetterobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
+}
+
+
+static PyMemberDef tuplegetter_members[] = {
+    {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
+    {0}
+};
+
+static PyMethodDef tuplegetter_methods[] = {
+    {"__reduce__", (PyCFunction)tuplegetter_reduce, METH_NOARGS, NULL},
+    {NULL},
+};
+
+static PyTypeObject tuplegetter_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_collections._tuplegetter",                /* tp_name */
+    sizeof(_tuplegetterobject),                 /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)tuplegetter_dealloc,            /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)tuplegetter_traverse,         /* tp_traverse */
+    (inquiry)tuplegetter_clear,                 /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    tuplegetter_methods,                        /* tp_methods */
+    tuplegetter_members,                        /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    tuplegetter_descr_get,                      /* tp_descr_get */
+    tuplegetter_descr_set,                      /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    tuplegetter_new,                            /* tp_new */
+    0,
+};
+
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
@@ -2374,6 +2558,11 @@ PyInit__collections(void)
         return NULL;
     Py_INCREF(&dequereviter_type);
     PyModule_AddObject(m, "_deque_reverse_iterator", (PyObject *)&dequereviter_type);
+
+    if (PyType_Ready(&tuplegetter_type) < 0)
+        return NULL;
+    Py_INCREF(&tuplegetter_type);
+    PyModule_AddObject(m, "_tuplegetter", (PyObject *)&tuplegetter_type);
 
     return m;
 }

@@ -2,7 +2,6 @@
 /* Tokenizer implementation */
 
 #include "Python.h"
-#include "pgenheaders.h"
 
 #include <ctype.h>
 #include <assert.h>
@@ -10,13 +9,11 @@
 #include "tokenizer.h"
 #include "errcode.h"
 
-#ifndef PGEN
 #include "unicodeobject.h"
 #include "bytesobject.h"
 #include "fileobject.h"
 #include "codecs.h"
 #include "abstract.h"
-#endif /* PGEN */
 
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
@@ -48,71 +45,9 @@ static int tok_nextc(struct tok_state *tok);
 static void tok_backup(struct tok_state *tok, int c);
 
 
-/* Token names */
-
-const char *_PyParser_TokenNames[] = {
-    "ENDMARKER",
-    "NAME",
-    "NUMBER",
-    "STRING",
-    "NEWLINE",
-    "INDENT",
-    "DEDENT",
-    "LPAR",
-    "RPAR",
-    "LSQB",
-    "RSQB",
-    "COLON",
-    "COMMA",
-    "SEMI",
-    "PLUS",
-    "MINUS",
-    "STAR",
-    "SLASH",
-    "VBAR",
-    "AMPER",
-    "LESS",
-    "GREATER",
-    "EQUAL",
-    "DOT",
-    "PERCENT",
-    "LBRACE",
-    "RBRACE",
-    "EQEQUAL",
-    "NOTEQUAL",
-    "LESSEQUAL",
-    "GREATEREQUAL",
-    "TILDE",
-    "CIRCUMFLEX",
-    "LEFTSHIFT",
-    "RIGHTSHIFT",
-    "DOUBLESTAR",
-    "PLUSEQUAL",
-    "MINEQUAL",
-    "STAREQUAL",
-    "SLASHEQUAL",
-    "PERCENTEQUAL",
-    "AMPEREQUAL",
-    "VBAREQUAL",
-    "CIRCUMFLEXEQUAL",
-    "LEFTSHIFTEQUAL",
-    "RIGHTSHIFTEQUAL",
-    "DOUBLESTAREQUAL",
-    "DOUBLESLASH",
-    "DOUBLESLASHEQUAL",
-    "AT",
-    "ATEQUAL",
-    "RARROW",
-    "ELLIPSIS",
-    /* This table must match the #defines in token.h! */
-    "OP",
-    "<ERRORTOKEN>",
-    "COMMENT",
-    "NL",
-    "ENCODING",
-    "<N_TOKENS>"
-};
-
+/* Spaces in this constant are treated as "zero or more spaces or tabs" when
+   tokenizing. */
+static const char* type_comment_prefix = "# type: ";
 
 /* Create and initialize a new tok_state structure */
 
@@ -143,11 +78,15 @@ tok_new(void)
     tok->enc = NULL;
     tok->encoding = NULL;
     tok->cont_line = 0;
-#ifndef PGEN
     tok->filename = NULL;
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
-#endif
+    tok->type_comments = 0;
+
+    tok->async_hacks = 0;
+    tok->async_def = 0;
+    tok->async_def_indent = 0;
+    tok->async_def_nl = 0;
 
     return tok;
 }
@@ -164,28 +103,6 @@ new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
     result[len] = '\0';
     return result;
 }
-
-#ifdef PGEN
-
-static char *
-decoding_fgets(char *s, int size, struct tok_state *tok)
-{
-    return fgets(s, size, tok->fp);
-}
-
-static int
-decoding_feof(struct tok_state *tok)
-{
-    return feof(tok->fp);
-}
-
-static char *
-decode_str(const char *str, int exec_input, struct tok_state *tok)
-{
-    return new_string(str, strlen(str), tok);
-}
-
-#else /* PGEN */
 
 static char *
 error_ret(struct tok_state *tok) /* XXX */
@@ -612,7 +529,6 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
             return error_ret(tok);
         }
     }
-#ifndef PGEN
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
     if (line && !tok->encoding) {
@@ -635,7 +551,6 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
                 badchar, tok->filename, tok->lineno + 1);
         return error_ret(tok);
     }
-#endif
     return line;
 }
 
@@ -733,9 +648,14 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     }
     *current = '\0';
     final_length = current - buf + 1;
-    if (final_length < needed_length && final_length)
+    if (final_length < needed_length && final_length) {
         /* should never fail */
-        buf = PyMem_REALLOC(buf, final_length);
+        char* result = PyMem_REALLOC(buf, final_length);
+        if (result == NULL) {
+            PyMem_FREE(buf);
+        }
+        buf = result;
+    }
     return buf;
 }
 
@@ -799,8 +719,6 @@ decode_str(const char *input, int single, struct tok_state *tok)
     return str;
 }
 
-#endif /* PGEN */
-
 /* Set up tokenizer for string */
 
 struct tok_state *
@@ -826,9 +744,7 @@ PyTokenizer_FromUTF8(const char *str, int exec_input)
     struct tok_state *tok = tok_new();
     if (tok == NULL)
         return NULL;
-#ifndef PGEN
     tok->input = str = translate_newlines(str, exec_input, tok);
-#endif
     if (str == NULL) {
         PyTokenizer_Free(tok);
         return NULL;
@@ -889,11 +805,9 @@ PyTokenizer_Free(struct tok_state *tok)
 {
     if (tok->encoding != NULL)
         PyMem_FREE(tok->encoding);
-#ifndef PGEN
     Py_XDECREF(tok->decoding_readline);
     Py_XDECREF(tok->decoding_buffer);
     Py_XDECREF(tok->filename);
-#endif
     if (tok->fp != NULL && tok->buf != NULL)
         PyMem_FREE(tok->buf);
     if (tok->input)
@@ -932,7 +846,6 @@ tok_nextc(struct tok_state *tok)
         }
         if (tok->prompt != NULL) {
             char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
-#ifndef PGEN
             if (newtok != NULL) {
                 char *translated = translate_newlines(newtok, 0, tok);
                 PyMem_FREE(newtok);
@@ -953,10 +866,14 @@ tok_nextc(struct tok_state *tok)
                 buflen = PyBytes_GET_SIZE(u);
                 buf = PyBytes_AS_STRING(u);
                 newtok = PyMem_MALLOC(buflen+1);
+                if (newtok == NULL) {
+                    Py_DECREF(u);
+                    tok->done = E_NOMEM;
+                    return EOF;
+                }
                 strcpy(newtok, buf);
                 Py_DECREF(u);
             }
-#endif
             if (tok->nextprompt != NULL)
                 tok->prompt = tok->nextprompt;
             if (newtok == NULL)
@@ -1109,181 +1026,9 @@ tok_backup(struct tok_state *tok, int c)
 }
 
 
-/* Return the token corresponding to a single character */
-
-int
-PyToken_OneChar(int c)
-{
-    switch (c) {
-    case '(':           return LPAR;
-    case ')':           return RPAR;
-    case '[':           return LSQB;
-    case ']':           return RSQB;
-    case ':':           return COLON;
-    case ',':           return COMMA;
-    case ';':           return SEMI;
-    case '+':           return PLUS;
-    case '-':           return MINUS;
-    case '*':           return STAR;
-    case '/':           return SLASH;
-    case '|':           return VBAR;
-    case '&':           return AMPER;
-    case '<':           return LESS;
-    case '>':           return GREATER;
-    case '=':           return EQUAL;
-    case '.':           return DOT;
-    case '%':           return PERCENT;
-    case '{':           return LBRACE;
-    case '}':           return RBRACE;
-    case '^':           return CIRCUMFLEX;
-    case '~':           return TILDE;
-    case '@':           return AT;
-    default:            return OP;
-    }
-}
-
-
-int
-PyToken_TwoChars(int c1, int c2)
-{
-    switch (c1) {
-    case '=':
-        switch (c2) {
-        case '=':               return EQEQUAL;
-        }
-        break;
-    case '!':
-        switch (c2) {
-        case '=':               return NOTEQUAL;
-        }
-        break;
-    case '<':
-        switch (c2) {
-        case '>':               return NOTEQUAL;
-        case '=':               return LESSEQUAL;
-        case '<':               return LEFTSHIFT;
-        }
-        break;
-    case '>':
-        switch (c2) {
-        case '=':               return GREATEREQUAL;
-        case '>':               return RIGHTSHIFT;
-        }
-        break;
-    case '+':
-        switch (c2) {
-        case '=':               return PLUSEQUAL;
-        }
-        break;
-    case '-':
-        switch (c2) {
-        case '=':               return MINEQUAL;
-        case '>':               return RARROW;
-        }
-        break;
-    case '*':
-        switch (c2) {
-        case '*':               return DOUBLESTAR;
-        case '=':               return STAREQUAL;
-        }
-        break;
-    case '/':
-        switch (c2) {
-        case '/':               return DOUBLESLASH;
-        case '=':               return SLASHEQUAL;
-        }
-        break;
-    case '|':
-        switch (c2) {
-        case '=':               return VBAREQUAL;
-        }
-        break;
-    case '%':
-        switch (c2) {
-        case '=':               return PERCENTEQUAL;
-        }
-        break;
-    case '&':
-        switch (c2) {
-        case '=':               return AMPEREQUAL;
-        }
-        break;
-    case '^':
-        switch (c2) {
-        case '=':               return CIRCUMFLEXEQUAL;
-        }
-        break;
-    case '@':
-        switch (c2) {
-        case '=':               return ATEQUAL;
-        }
-        break;
-    }
-    return OP;
-}
-
-int
-PyToken_ThreeChars(int c1, int c2, int c3)
-{
-    switch (c1) {
-    case '<':
-        switch (c2) {
-        case '<':
-            switch (c3) {
-            case '=':
-                return LEFTSHIFTEQUAL;
-            }
-            break;
-        }
-        break;
-    case '>':
-        switch (c2) {
-        case '>':
-            switch (c3) {
-            case '=':
-                return RIGHTSHIFTEQUAL;
-            }
-            break;
-        }
-        break;
-    case '*':
-        switch (c2) {
-        case '*':
-            switch (c3) {
-            case '=':
-                return DOUBLESTAREQUAL;
-            }
-            break;
-        }
-        break;
-    case '/':
-        switch (c2) {
-        case '/':
-            switch (c3) {
-            case '=':
-                return DOUBLESLASHEQUAL;
-            }
-            break;
-        }
-        break;
-    case '.':
-        switch (c2) {
-        case '.':
-            switch (c3) {
-            case '.':
-                return ELLIPSIS;
-            }
-            break;
-        }
-        break;
-    }
-    return OP;
-}
-
 static int
 syntaxerror(struct tok_state *tok, const char *format, ...)
 {
-#ifndef PGEN
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
@@ -1296,9 +1041,6 @@ syntaxerror(struct tok_state *tok, const char *format, ...)
                                tok->lineno,
                                (int)(tok->cur - tok->line_start));
     tok->done = E_ERROR;
-#else
-    tok->done = E_TOKEN;
-#endif
     return ERRORTOKEN;
 }
 
@@ -1310,9 +1052,6 @@ indenterror(struct tok_state *tok)
     return ERRORTOKEN;
 }
 
-#ifdef PGEN
-#define verify_identifier(tok) 1
-#else
 /* Verify that the identifier follows PEP 3131.
    All identifier strings are guaranteed to be "ready" unicode objects.
  */
@@ -1324,7 +1063,7 @@ verify_identifier(struct tok_state *tok)
     if (tok->decoding_erred)
         return 0;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
-    if (s == NULL || PyUnicode_READY(s) == -1) {
+    if (s == NULL) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
             PyErr_Clear();
             tok->done = E_IDENTIFIER;
@@ -1339,7 +1078,6 @@ verify_identifier(struct tok_state *tok)
         tok->done = E_IDENTIFIER;
     return result;
 }
-#endif
 
 static int
 tok_decimal_tail(struct tok_state *tok)
@@ -1467,6 +1205,31 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         }
     }
 
+    /* Peek ahead at the next character */
+    c = tok_nextc(tok);
+    tok_backup(tok, c);
+    /* Check if we are closing an async function */
+    if (tok->async_def
+        && !blankline
+        /* Due to some implementation artifacts of type comments,
+         * a TYPE_COMMENT at the start of a function won't set an
+         * indentation level and it will produce a NEWLINE after it.
+         * To avoid spuriously ending an async function due to this,
+         * wait until we have some non-newline char in front of us. */
+        && c != '\n'
+        && tok->level == 0
+        /* There was a NEWLINE after ASYNC DEF,
+           so we're past the signature. */
+        && tok->async_def_nl
+        /* Current indentation level is less than where
+           the async function was defined */
+        && tok->async_def_indent >= tok->indent)
+    {
+        tok->async_def = 0;
+        tok->async_def_indent = 0;
+        tok->async_def_nl = 0;
+    }
+
  again:
     tok->start = NULL;
     /* Skip spaces */
@@ -1477,10 +1240,60 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Set start of current token */
     tok->start = tok->cur - 1;
 
-    /* Skip comment */
+    /* Skip comment, unless it's a type comment */
     if (c == '#') {
+        const char *prefix, *p, *type_start;
+
         while (c != EOF && c != '\n') {
             c = tok_nextc(tok);
+        }
+
+        if (tok->type_comments) {
+            p = tok->start;
+            prefix = type_comment_prefix;
+            while (*prefix && p < tok->cur) {
+                if (*prefix == ' ') {
+                    while (*p == ' ' || *p == '\t') {
+                        p++;
+                    }
+                } else if (*prefix == *p) {
+                    p++;
+                } else {
+                    break;
+                }
+
+                prefix++;
+            }
+
+            /* This is a type comment if we matched all of type_comment_prefix. */
+            if (!*prefix) {
+                int is_type_ignore = 1;
+                tok_backup(tok, c);  /* don't eat the newline or EOF */
+
+                type_start = p;
+
+                is_type_ignore = tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0;
+                p += 6;
+                while (is_type_ignore && p < tok->cur) {
+                    if (*p == '#')
+                        break;
+                    is_type_ignore = is_type_ignore && (*p == ' ' || *p == '\t');
+                    p++;
+                }
+
+                if (is_type_ignore) {
+                    /* If this type ignore is the only thing on the line, consume the newline also. */
+                    if (blankline) {
+                        tok_nextc(tok);
+                        tok->atbol = 1;
+                    }
+                    return TYPE_IGNORE;
+                } else {
+                    *p_start = (char *) type_start;  /* after type_comment_prefix */
+                    *p_end = tok->cur;
+                    return TYPE_COMMENT;
+                }
+            }
         }
     }
 
@@ -1531,6 +1344,50 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur;
 
+        /* async/await parsing block. */
+        if (tok->cur - tok->start == 5 && tok->start[0] == 'a') {
+            /* May be an 'async' or 'await' token.  For Python 3.7 or
+               later we recognize them unconditionally.  For Python
+               3.5 or 3.6 we recognize 'async' in front of 'def', and
+               either one inside of 'async def'.  (Technically we
+               shouldn't recognize these at all for 3.4 or earlier,
+               but there's no *valid* Python 3.4 code that would be
+               rejected, and async functions will be rejected in a
+               later phase.) */
+            if (!tok->async_hacks || tok->async_def) {
+                /* Always recognize the keywords. */
+                if (memcmp(tok->start, "async", 5) == 0) {
+                    return ASYNC;
+                }
+                if (memcmp(tok->start, "await", 5) == 0) {
+                    return AWAIT;
+                }
+            }
+            else if (memcmp(tok->start, "async", 5) == 0) {
+                /* The current token is 'async'.
+                   Look ahead one token to see if that is 'def'. */
+
+                struct tok_state ahead_tok;
+                char *ahead_tok_start = NULL, *ahead_tok_end = NULL;
+                int ahead_tok_kind;
+
+                memcpy(&ahead_tok, tok, sizeof(ahead_tok));
+                ahead_tok_kind = tok_get(&ahead_tok, &ahead_tok_start,
+                                         &ahead_tok_end);
+
+                if (ahead_tok_kind == NAME
+                    && ahead_tok.cur - ahead_tok.start == 3
+                    && memcmp(ahead_tok.start, "def", 3) == 0)
+                {
+                    /* The next token is going to be 'def', so instead of
+                       returning a plain NAME token, return ASYNC. */
+                    tok->async_def_indent = tok->indent;
+                    tok->async_def = 1;
+                    return ASYNC;
+                }
+            }
+        }
+
         return NAME;
     }
 
@@ -1543,6 +1400,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur - 1; /* Leave '\n' out of the string */
         tok->cont_line = 0;
+        if (tok->async_def) {
+            /* We're somewhere inside an 'async def' function, and
+               we've encountered a NEWLINE after its signature. */
+            tok->async_def_nl = 1;
+        }
         return NEWLINE;
     }
 
@@ -1751,6 +1613,13 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         int quote_size = 1;             /* 1 or 3 */
         int end_quote_size = 0;
 
+        /* Nodes of type STRING, especially multi line strings
+           must be handled differently in order to get both
+           the starting line number and the column offset right.
+           (cf. issue 16806) */
+        tok->first_lineno = tok->lineno;
+        tok->multi_line_start = tok->line_start;
+
         /* Find the quote size and start of string */
         c = tok_nextc(tok);
         if (c == quote) {
@@ -1837,12 +1706,38 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     case '(':
     case '[':
     case '{':
+        if (tok->level >= MAXLEVEL) {
+            return syntaxerror(tok, "too many nested parentheses");
+        }
+        tok->parenstack[tok->level] = c;
+        tok->parenlinenostack[tok->level] = tok->lineno;
         tok->level++;
         break;
     case ')':
     case ']':
     case '}':
+        if (!tok->level) {
+            return syntaxerror(tok, "unmatched '%c'", c);
+        }
         tok->level--;
+        int opening = tok->parenstack[tok->level];
+        if (!((opening == '(' && c == ')') ||
+              (opening == '[' && c == ']') ||
+              (opening == '{' && c == '}')))
+        {
+            if (tok->parenlinenostack[tok->level] != tok->lineno) {
+                return syntaxerror(tok,
+                        "closing parenthesis '%c' does not match "
+                        "opening parenthesis '%c' on line %d",
+                        c, opening, tok->parenlinenostack[tok->level]);
+            }
+            else {
+                return syntaxerror(tok,
+                        "closing parenthesis '%c' does not match "
+                        "opening parenthesis '%c'",
+                        c, opening);
+            }
+        }
         break;
     }
 
@@ -1880,11 +1775,7 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     FILE *fp;
     char *p_start =NULL , *p_end =NULL , *encoding = NULL;
 
-#ifndef PGEN
     fd = _Py_dup(fd);
-#else
-    fd = dup(fd);
-#endif
     if (fd < 0) {
         return NULL;
     }
@@ -1898,7 +1789,6 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         fclose(fp);
         return NULL;
     }
-#ifndef PGEN
     if (filename != NULL) {
         Py_INCREF(filename);
         tok->filename = filename;
@@ -1911,7 +1801,6 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
             return encoding;
         }
     }
-#endif
     while (tok->lineno < 2 && tok->done == E_OK) {
         PyTokenizer_Get(tok, &p_start, &p_end);
     }

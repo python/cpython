@@ -34,6 +34,7 @@ from test.support import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
 MACOS = sys.platform.startswith("darwin")
+AIX = sys.platform[:3] == 'aix'
 try:
     import grp
     import pwd
@@ -141,6 +142,17 @@ def supports_file2file_sendfile():
 
 SUPPORTS_SENDFILE = supports_file2file_sendfile()
 
+# AIX 32-bit mode, by default, lacks enough memory for the xz/lzma compiler test
+# The AIX command 'dump -o program' gives XCOFF header information
+# The second word of the last line in the maxdata value
+# when 32-bit maxdata must be greater than 0x1000000 for the xz test to succeed
+def _maxdataOK():
+    if AIX and sys.maxsize == 2147483647:
+        hdrs=subprocess.getoutput("/usr/bin/dump -o %s" % sys.executable)
+        maxdata=hdrs.split("\n")[-1].split()[1]
+        return int(maxdata,16) >= 0x20000000
+    else:
+        return True
 
 class TestShutil(unittest.TestCase):
 
@@ -250,7 +262,6 @@ class TestShutil(unittest.TestCase):
         self.assertIn(errors[1][2][1].filename, possible_args)
 
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod()')
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
@@ -325,7 +336,6 @@ class TestShutil(unittest.TestCase):
         finally:
             os.lstat = orig_lstat
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     @support.skip_unless_symlink
     def test_copymode_follow_symlinks(self):
         tmp_dir = self.mkdtemp()
@@ -691,6 +701,31 @@ class TestShutil(unittest.TestCase):
         actual = read_file((dst_dir, 'test_dir', 'test.txt'))
         self.assertEqual(actual, '456')
 
+    def test_copytree_dirs_exist_ok(self):
+        src_dir = tempfile.mkdtemp()
+        dst_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, src_dir)
+        self.addCleanup(shutil.rmtree, dst_dir)
+
+        write_file((src_dir, 'nonexisting.txt'), '123')
+        os.mkdir(os.path.join(src_dir, 'existing_dir'))
+        os.mkdir(os.path.join(dst_dir, 'existing_dir'))
+        write_file((dst_dir, 'existing_dir', 'existing.txt'), 'will be replaced')
+        write_file((src_dir, 'existing_dir', 'existing.txt'), 'has been replaced')
+
+        shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'nonexisting.txt')))
+        self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'existing_dir')))
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'existing_dir',
+                                                    'existing.txt')))
+        actual = read_file((dst_dir, 'nonexisting.txt'))
+        self.assertEqual(actual, '123')
+        actual = read_file((dst_dir, 'existing_dir', 'existing.txt'))
+        self.assertEqual(actual, 'has been replaced')
+
+        with self.assertRaises(FileExistsError):
+            shutil.copytree(src_dir, dst_dir, dirs_exist_ok=False)
+
     @support.skip_unless_symlink
     def test_copytree_symlinks(self):
         tmp_dir = self.mkdtemp()
@@ -823,6 +858,24 @@ class TestShutil(unittest.TestCase):
         mock_patch.side_effect = PermissionError('ka-boom')
         with self.assertRaises(shutil.Error):
             shutil.copytree(src_dir, dst_dir)
+
+    def test_copytree_custom_copy_function(self):
+        # See: https://bugs.python.org/issue35648
+        def custom_cpfun(a, b):
+            flag.append(None)
+            self.assertIsInstance(a, str)
+            self.assertIsInstance(b, str)
+            self.assertEqual(a, os.path.join(src, 'foo'))
+            self.assertEqual(b, os.path.join(dst, 'foo'))
+
+        flag = []
+        src = tempfile.mkdtemp()
+        dst = tempfile.mktemp()
+        self.addCleanup(shutil.rmtree, src)
+        with open(os.path.join(src, 'foo'), 'w') as f:
+            f.close()
+        shutil.copytree(src, dst, copy_function=custom_cpfun)
+        self.assertEqual(len(flag), 1)
 
     @unittest.skipIf(os.name == 'nt', 'temporarily disabled on Windows')
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
@@ -985,14 +1038,12 @@ class TestShutil(unittest.TestCase):
         file2 = os.path.join(tmpdir2, fname)
         return (file1, file2)
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     def test_copy(self):
         # Ensure that the copied file exists and has the same mode bits.
         file1, file2 = self._copy_file(shutil.copy)
         self.assertTrue(os.path.exists(file2))
         self.assertEqual(os.stat(file1).st_mode, os.stat(file2).st_mode)
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     @unittest.skipUnless(hasattr(os, 'utime'), 'requires os.utime')
     def test_copy2(self):
         # Ensure that the copied file exists and has the same mode and
@@ -1181,6 +1232,8 @@ class TestShutil(unittest.TestCase):
                 subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as exc:
                 details = exc.output.decode(errors="replace")
+                if 'unrecognized option: t' in details:
+                    self.skipTest("unzip doesn't support -t")
                 msg = "{}\n\n**Unzip Output**\n{}"
                 self.fail(msg.format(exc, details))
 
@@ -1324,6 +1377,7 @@ class TestShutil(unittest.TestCase):
         self.check_unpack_archive('bztar')
 
     @support.requires_lzma
+    @unittest.skipIf(AIX and not _maxdataOK(), "AIX MAXDATA must be 0x20000000 or larger")
     def test_unpack_archive_xztar(self):
         self.check_unpack_archive('xztar')
 
@@ -1361,11 +1415,16 @@ class TestShutil(unittest.TestCase):
                          "disk_usage not available on this platform")
     def test_disk_usage(self):
         usage = shutil.disk_usage(os.path.dirname(__file__))
+        for attr in ('total', 'used', 'free'):
+            self.assertIsInstance(getattr(usage, attr), int)
         self.assertGreater(usage.total, 0)
         self.assertGreater(usage.used, 0)
         self.assertGreaterEqual(usage.free, 0)
         self.assertGreaterEqual(usage.total, usage.used)
         self.assertGreater(usage.total, usage.free)
+
+        # bpo-32557: Check that disk_usage() also accepts a filename
+        shutil.disk_usage(__file__)
 
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
@@ -1485,6 +1544,9 @@ class TestWhich(unittest.TestCase):
         os.chmod(self.temp_file.name, stat.S_IXUSR)
         self.addCleanup(self.temp_file.close)
         self.dir, self.file = os.path.split(self.temp_file.name)
+        self.env_path = self.dir
+        self.curdir = os.curdir
+        self.ext = ".EXE"
 
     def test_basic(self):
         # Given an EXE in a directory, it should be returned.
@@ -1517,7 +1579,7 @@ class TestWhich(unittest.TestCase):
             rv = shutil.which(self.file, path=base_dir)
             if sys.platform == "win32":
                 # Windows: current directory implicitly on PATH
-                self.assertEqual(rv, os.path.join(os.curdir, self.file))
+                self.assertEqual(rv, os.path.join(self.curdir, self.file))
             else:
                 # Other platforms: shouldn't match in the current directory.
                 self.assertIsNone(rv)
@@ -1549,19 +1611,70 @@ class TestWhich(unittest.TestCase):
         # Ask for the file without the ".exe" extension, then ensure that
         # it gets found properly with the extension.
         rv = shutil.which(self.file[:-4], path=self.dir)
-        self.assertEqual(rv, self.temp_file.name[:-4] + ".EXE")
+        self.assertEqual(rv, self.temp_file.name[:-4] + self.ext)
 
     def test_environ_path(self):
         with support.EnvironmentVarGuard() as env:
-            env['PATH'] = self.dir
+            env['PATH'] = self.env_path
             rv = shutil.which(self.file)
+            self.assertEqual(rv, self.temp_file.name)
+
+    def test_environ_path_empty(self):
+        # PATH='': no match
+        with support.EnvironmentVarGuard() as env:
+            env['PATH'] = ''
+            with unittest.mock.patch('os.confstr', return_value=self.dir, \
+                                     create=True), \
+                 support.swap_attr(os, 'defpath', self.dir), \
+                 support.change_cwd(self.dir):
+                rv = shutil.which(self.file)
+                self.assertIsNone(rv)
+
+    def test_environ_path_cwd(self):
+        expected_cwd = os.path.basename(self.temp_file.name)
+        if sys.platform == "win32":
+            curdir = os.curdir
+            if isinstance(expected_cwd, bytes):
+                curdir = os.fsencode(curdir)
+            expected_cwd = os.path.join(curdir, expected_cwd)
+
+        # PATH=':': explicitly looks in the current directory
+        with support.EnvironmentVarGuard() as env:
+            env['PATH'] = os.pathsep
+            with unittest.mock.patch('os.confstr', return_value=self.dir, \
+                                     create=True), \
+                 support.swap_attr(os, 'defpath', self.dir):
+                rv = shutil.which(self.file)
+                self.assertIsNone(rv)
+
+                # look in current directory
+                with support.change_cwd(self.dir):
+                    rv = shutil.which(self.file)
+                    self.assertEqual(rv, expected_cwd)
+
+    def test_environ_path_missing(self):
+        with support.EnvironmentVarGuard() as env:
+            env.pop('PATH', None)
+
+            # without confstr
+            with unittest.mock.patch('os.confstr', side_effect=ValueError, \
+                                     create=True), \
+                 support.swap_attr(os, 'defpath', self.dir):
+                rv = shutil.which(self.file)
+            self.assertEqual(rv, self.temp_file.name)
+
+            # with confstr
+            with unittest.mock.patch('os.confstr', return_value=self.dir, \
+                                     create=True), \
+                 support.swap_attr(os, 'defpath', ''):
+                rv = shutil.which(self.file)
             self.assertEqual(rv, self.temp_file.name)
 
     def test_empty_path(self):
         base_dir = os.path.dirname(self.dir)
         with support.change_cwd(path=self.dir), \
              support.EnvironmentVarGuard() as env:
-            env['PATH'] = self.dir
+            env['PATH'] = self.env_path
             rv = shutil.which(self.file, path='')
             self.assertIsNone(rv)
 
@@ -1570,6 +1683,33 @@ class TestWhich(unittest.TestCase):
             env.pop('PATH', None)
             rv = shutil.which(self.file)
             self.assertIsNone(rv)
+
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_pathext(self):
+        ext = ".xyz"
+        temp_filexyz = tempfile.NamedTemporaryFile(dir=self.temp_dir,
+                                                   prefix="Tmp2", suffix=ext)
+        os.chmod(temp_filexyz.name, stat.S_IXUSR)
+        self.addCleanup(temp_filexyz.close)
+
+        # strip path and extension
+        program = os.path.basename(temp_filexyz.name)
+        program = os.path.splitext(program)[0]
+
+        with support.EnvironmentVarGuard() as env:
+            env['PATHEXT'] = ext
+            rv = shutil.which(program, path=self.temp_dir)
+            self.assertEqual(rv, temp_filexyz.name)
+
+
+class TestWhichBytes(TestWhich):
+    def setUp(self):
+        TestWhich.setUp(self)
+        self.dir = os.fsencode(self.dir)
+        self.file = os.fsencode(self.file)
+        self.temp_file.name = os.fsencode(self.temp_file.name)
+        self.curdir = os.fsencode(self.curdir)
+        self.ext = os.fsencode(self.ext)
 
 
 class TestMove(unittest.TestCase):

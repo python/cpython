@@ -302,45 +302,38 @@ class TestVectorsTestCase(unittest.TestCase):
                 hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
                 self.fail('Expected warning about small block_size')
 
-    def test_with_digestmod_warning(self):
-        with self.assertWarns(DeprecationWarning):
+    def test_with_digestmod_no_default(self):
+        with self.assertRaises(ValueError):
             key = b"\x0b" * 16
             data = b"Hi There"
-            digest = "9294727A3638BB1C13F48EF8158BFC9D"
-            h = hmac.HMAC(key, data)
-            self.assertEqual(h.hexdigest().upper(), digest)
-
+            hmac.HMAC(key, data, digestmod=None)
 
 class ConstructorTestCase(unittest.TestCase):
 
-    @ignore_warning
     def test_normal(self):
         # Standard constructor call.
         failed = 0
         try:
-            h = hmac.HMAC(b"key")
+            h = hmac.HMAC(b"key", digestmod='md5')
         except Exception:
             self.fail("Standard constructor call raised exception.")
 
-    @ignore_warning
     def test_with_str_key(self):
         # Pass a key of type str, which is an error, because it expects a key
         # of type bytes
         with self.assertRaises(TypeError):
-            h = hmac.HMAC("key")
+            h = hmac.HMAC("key", digestmod='md5')
 
-    @ignore_warning
     def test_dot_new_with_str_key(self):
         # Pass a key of type str, which is an error, because it expects a key
         # of type bytes
         with self.assertRaises(TypeError):
-            h = hmac.new("key")
+            h = hmac.new("key", digestmod='md5')
 
-    @ignore_warning
     def test_withtext(self):
         # Constructor call with text.
         try:
-            h = hmac.HMAC(b"key", b"hash this!")
+            h = hmac.HMAC(b"key", b"hash this!", digestmod='md5')
         except Exception:
             self.fail("Constructor call with text argument raised exception.")
         self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
@@ -368,13 +361,6 @@ class ConstructorTestCase(unittest.TestCase):
             self.fail("Constructor call with hashlib.sha1 raised exception.")
 
 class SanityTestCase(unittest.TestCase):
-
-    @ignore_warning
-    def test_default_is_md5(self):
-        # Testing if HMAC defaults to MD5 algorithm.
-        # NOTE: this whitebox test depends on the hmac class internals
-        h = hmac.HMAC(b"key")
-        self.assertEqual(h.digest_cons, hashlib.md5)
 
     def test_exercise_all_methods(self):
         # Exercising all methods once.

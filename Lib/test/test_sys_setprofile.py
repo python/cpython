@@ -350,6 +350,24 @@ class ProfileSimulatorTestCase(TestCaseBase):
         self.check_events(f, [(1, 'call', f_ident),
                               (1, 'return', f_ident)])
 
+    # Test an invalid call (bpo-34125)
+    def test_unbound_method_no_keyword_args(self):
+        kwargs = {}
+        def f(p):
+            dict.get(**kwargs)
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'return', f_ident)])
+
+    # Test an invalid call (bpo-34125)
+    def test_unbound_method_invalid_keyword_args(self):
+        kwargs = {}
+        def f(p):
+            dict.get(print, 42, **kwargs)
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'return', f_ident)])
+
 
 def ident(function):
     if hasattr(function, "f_code"):

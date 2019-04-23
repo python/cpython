@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -8,6 +12,10 @@
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|ARM">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>ARM</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="PGInstrument|Win32">
       <Configuration>PGInstrument</Configuration>
@@ -17,6 +25,10 @@
       <Configuration>PGInstrument</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|ARM">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="PGUpdate|Win32">
       <Configuration>PGUpdate</Configuration>
       <Platform>Win32</Platform>
@@ -24,6 +36,10 @@
     <ProjectConfiguration Include="PGUpdate|x64">
       <Configuration>PGUpdate</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -70,7 +86,7 @@
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -79,7 +95,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\abstract.h" />
-    <ClInclude Include="..\Include\accu.h" />
     <ClInclude Include="..\Include\asdl.h" />
     <ClInclude Include="..\Include\ast.h" />
     <ClInclude Include="..\Include\bitset.h" />
@@ -95,7 +110,17 @@
     <ClInclude Include="..\Include\compile.h" />
     <ClInclude Include="..\Include\complexobject.h" />
     <ClInclude Include="..\Include\context.h" />
-    <ClInclude Include="..\Include\coreconfig.h" />
+    <ClInclude Include="..\Include\cpython\abstract.h" />
+    <ClInclude Include="..\Include\cpython\coreconfig.h" />
+    <ClInclude Include="..\Include\cpython\dictobject.h" />
+    <ClInclude Include="..\Include\cpython\object.h" />
+    <ClInclude Include="..\Include\cpython\objimpl.h" />
+    <ClInclude Include="..\Include\cpython\pyerrors.h" />
+    <ClInclude Include="..\Include\cpython\pylifecycle.h" />
+    <ClInclude Include="..\Include\cpython\pymem.h" />
+    <ClInclude Include="..\Include\cpython\pystate.h" />
+    <ClInclude Include="..\Include\cpython\tupleobject.h" />
+    <ClInclude Include="..\Include\cpython\unicodeobject.h" />
     <ClInclude Include="..\Include\datetime.h" />
     <ClInclude Include="..\Include\descrobject.h" />
     <ClInclude Include="..\Include\dictobject.h" />
@@ -112,14 +137,25 @@
     <ClInclude Include="..\Include\graminit.h" />
     <ClInclude Include="..\Include\grammar.h" />
     <ClInclude Include="..\Include\import.h" />
-    <ClInclude Include="..\Include\internal\ceval.h" />
-    <ClInclude Include="..\Include\internal\condvar.h" />
-    <ClInclude Include="..\Include\internal\context.h" />
-    <ClInclude Include="..\Include\internal\gil.h" />
-    <ClInclude Include="..\Include\internal\hamt.h" />
-    <ClInclude Include="..\Include\internal\mem.h" />
-    <ClInclude Include="..\Include\internal\pystate.h" />
-    <ClInclude Include="..\Include\internal\warnings.h" />
+    <ClInclude Include="..\Include\internal\pycore_accu.h" />
+    <ClInclude Include="..\Include\internal\pycore_atomic.h" />
+    <ClInclude Include="..\Include\internal\pycore_ceval.h" />
+    <ClInclude Include="..\Include\internal\pycore_condvar.h" />
+    <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_coreconfig.h" />
+    <ClInclude Include="..\Include\internal\pycore_fileutils.h" />
+    <ClInclude Include="..\Include\internal\pycore_getopt.h" />
+    <ClInclude Include="..\Include\internal\pycore_gil.h" />
+    <ClInclude Include="..\Include\internal\pycore_hamt.h" />
+    <ClInclude Include="..\Include\internal\pycore_object.h" />
+    <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
+    <ClInclude Include="..\Include\internal\pycore_pyhash.h" />
+    <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
+    <ClInclude Include="..\Include\internal\pycore_pymem.h" />
+    <ClInclude Include="..\Include\internal\pycore_pystate.h" />
+    <ClInclude Include="..\Include\internal\pycore_tupleobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_warnings.h" />
+    <ClInclude Include="..\Include\interpreteridobject.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
@@ -127,7 +163,6 @@
     <ClInclude Include="..\Include\longobject.h" />
     <ClInclude Include="..\Include\marshal.h" />
     <ClInclude Include="..\Include\memoryobject.h" />
-    <ClInclude Include="..\Include\metagrammar.h" />
     <ClInclude Include="..\Include\methodobject.h" />
     <ClInclude Include="..\Include\modsupport.h" />
     <ClInclude Include="..\Include\moduleobject.h" />
@@ -141,8 +176,6 @@
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\parsetok.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
-    <ClInclude Include="..\Include\pgen.h" />
-    <ClInclude Include="..\Include\pgenheaders.h" />
     <ClInclude Include="..\Include\pyhash.h" />
     <ClInclude Include="..\Include\py_curses.h" />
     <ClInclude Include="..\Include\pyarena.h" />
@@ -152,7 +185,6 @@
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />
     <ClInclude Include="..\Include\pyfpe.h" />
-    <ClInclude Include="..\Include\internal\pygetopt.h" />
     <ClInclude Include="..\Include\pylifecycle.h" />
     <ClInclude Include="..\Include\pymath.h" />
     <ClInclude Include="..\Include\pytime.h" />
@@ -177,6 +209,7 @@
     <ClInclude Include="..\Include\sysmodule.h" />
     <ClInclude Include="..\Include\token.h" />
     <ClInclude Include="..\Include\traceback.h" />
+    <ClInclude Include="..\Include\tracemalloc.h" />
     <ClInclude Include="..\Include\tupleobject.h" />
     <ClInclude Include="..\Include\ucnhash.h" />
     <ClInclude Include="..\Include\unicodeobject.h" />
@@ -230,7 +263,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_abc.c" />
-    <ClCompile Include="..\Modules\_asynciomodule.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
     <ClCompile Include="..\Modules\_blake2\blake2module.c" />
     <ClCompile Include="..\Modules\_blake2\blake2b_impl.c" />
@@ -282,7 +314,6 @@
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
-    <ClCompile Include="..\Modules\zipimport.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
     <ClCompile Include="..\Modules\_io\bytesio.c" />
     <ClCompile Include="..\Modules\_io\stringio.c" />
@@ -320,6 +351,7 @@
     <ClCompile Include="..\Objects\frameobject.c" />
     <ClCompile Include="..\Objects\funcobject.c" />
     <ClCompile Include="..\Objects\genobject.c" />
+    <ClCompile Include="..\Objects\interpreteridobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
     <ClCompile Include="..\Objects\listobject.c" />
     <ClCompile Include="..\Objects\longobject.c" />
@@ -340,17 +372,14 @@
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\acceler.c" />
-    <ClCompile Include="..\Parser\bitset.c" />
-    <ClCompile Include="..\Parser\firstsets.c" />
-    <ClCompile Include="..\Parser\grammar.c" />
     <ClCompile Include="..\Parser\grammar1.c" />
     <ClCompile Include="..\Parser\listnode.c" />
-    <ClCompile Include="..\Parser\metagrammar.c" />
     <ClCompile Include="..\Parser\myreadline.c" />
     <ClCompile Include="..\Parser\node.c" />
     <ClCompile Include="..\Parser\parser.c" />
     <ClCompile Include="..\Parser\parsetok.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
+    <ClCompile Include="..\Parser\token.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\winreg.c" />
     <ClCompile Include="..\PC\config.c" />
@@ -392,6 +421,7 @@
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\peephole.c" />
+    <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
     <ClCompile Include="..\Python\pyfpe.c" />
@@ -462,5 +492,20 @@
   </Target>
   <Target Name="_WarnAboutZlib" BeforeTargets="PrepareForBuild" Condition="!$(IncludeExternals)">
     <Warning Text="Not including zlib is not a supported configuration." />
+  </Target>
+
+  <PropertyGroup>
+    <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
+    <VCRedistDir Condition="$(Platform) == 'Win32'">$(VCRedistDir)x86\</VCRedistDir>
+    <VCRedistDir Condition="$(Platform) != 'Win32'">$(VCRedistDir)$(Platform)\</VCRedistDir>
+  </PropertyGroup>
+  <ItemGroup Condition="$(VCInstallDir) != ''">
+    <VCRuntimeDLL Include="$(VCRedistDir)\**\vcruntime*.dll" />
+  </ItemGroup>
+  <Target Name="_CopyVCRuntime" AfterTargets="Build" Inputs="@(VCRuntimeDLL)" Outputs="$(OutDir)%(Filename)%(Extension)">
+    <Copy SourceFiles="%(VCRuntimeDLL.FullPath)" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanVCRuntime" AfterTargets="Clean">
+    <Delete Files="@(VCRuntimeDLL->'$(OutDir)%(Filename)%(Extension)')" />
   </Target>
 </Project>

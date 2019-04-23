@@ -9,6 +9,23 @@ import struct
 import collections
 import itertools
 
+
+class FunctionCalls(unittest.TestCase):
+
+    def test_kwargs_order(self):
+        # bpo-34320:  **kwargs should preserve order of passed OrderedDict
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        def fn(**kw):
+            return kw
+
+        res = fn(**od)
+        self.assertIsInstance(res, dict)
+        self.assertEqual(list(res.items()), expected)
+
+
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C
 # function, which can't be verified from Python.  If the METH_XXX decl
@@ -140,22 +157,25 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, {}.__contains__, 0, 1)
 
     def test_varargs3(self):
-        msg = r"^from_bytes\(\) takes at most 2 positional arguments \(3 given\)"
+        msg = r"^from_bytes\(\) takes exactly 2 positional arguments \(3 given\)"
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
-    def test_varargs4(self):
+    def test_varargs1min(self):
         msg = r"get expected at least 1 argument, got 0"
         self.assertRaisesRegex(TypeError, msg, {}.get)
 
-    def test_varargs5(self):
+        msg = r"expected 1 argument, got 0"
+        self.assertRaisesRegex(TypeError, msg, {}.__delattr__)
+
+    def test_varargs2min(self):
         msg = r"getattr expected at least 2 arguments, got 0"
         self.assertRaisesRegex(TypeError, msg, getattr)
 
-    def test_varargs6(self):
+    def test_varargs1max(self):
         msg = r"input expected at most 1 argument, got 2"
         self.assertRaisesRegex(TypeError, msg, input, 1, 2)
 
-    def test_varargs7(self):
+    def test_varargs2max(self):
         msg = r"get expected at most 2 arguments, got 3"
         self.assertRaisesRegex(TypeError, msg, {}.get, 1, 2, 3)
 

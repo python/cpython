@@ -1,2 +1,0 @@
-A :keyword:`continue` statement is now allowed in the :keyword:`finally`
-clause.

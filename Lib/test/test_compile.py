@@ -1,3 +1,4 @@
+import dis
 import math
 import os
 import unittest
@@ -285,7 +286,7 @@ if 1:
             'from sys import stdin)',
             'from sys import stdin, stdout,\nstderr',
             'from sys import stdin si',
-            'from sys import stdin,'
+            'from sys import stdin,',
             'from sys import (*)',
             'from sys import (stdin,, stdout, stderr)',
             'from sys import (stdin, stdout),',
@@ -614,12 +615,38 @@ if 1:
         self.check_constant(f1, Ellipsis)
         self.assertEqual(repr(f1()), repr(Ellipsis))
 
+        # Merge constants in tuple or frozenset
+        f1, f2 = lambda: "not a name", lambda: ("not a name",)
+        f3 = lambda x: x in {("not a name",)}
+        self.assertIs(f1.__code__.co_consts[1],
+                      f2.__code__.co_consts[1][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[1])),
+                      f2.__code__.co_consts[1])
+
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
         f1, f2 = lambda x: x in {0}, lambda x: x in {0}
         self.assertIs(f1.__code__, f2.__code__)
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
+
+    # This is a regression test for a CPython specific peephole optimizer
+    # implementation bug present in a few releases.  It's assertion verifies
+    # that peephole optimization was actually done though that isn't an
+    # indication of the bugs presence or not (crashing is).
+    @support.cpython_only
+    def test_peephole_opt_unreachable_code_array_access_in_bounds(self):
+        """Regression test for issue35193 when run under clang msan."""
+        def unused_code_at_end():
+            return 3
+            raise RuntimeError("unreachable")
+        # The above function definition will trigger the out of bounds
+        # bug in the peephole optimizer as it scans opcodes past the
+        # RETURN_VALUE opcode.  This does not always crash an interpreter.
+        # When you build with the clang memory sanitizer it reliably aborts.
+        self.assertEqual(
+            'RETURN_VALUE',
+            list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal

@@ -29,7 +29,8 @@ printing space-separated values. There are several ways to format output.
 
   ::
 
-     >>> year = 2016 ; event = 'Referendum'
+     >>> year = 2016
+     >>> event = 'Referendum'
      >>> f'Results of the {year} {event}'
      'Results of the 2016 Referendum'
 
@@ -40,8 +41,9 @@ printing space-separated values. There are several ways to format output.
 
   ::
 
-     >>> yes_votes = 42_572_654 ; no_votes = 43_132_495
-     >>> percentage = yes_votes/(yes_votes+no_votes)
+     >>> yes_votes = 42_572_654
+     >>> no_votes = 43_132_495
+     >>> percentage = yes_votes / (yes_votes + no_votes)
      >>> '{:-9} YES votes  {:2.2%}'.format(yes_votes, percentage)
      ' 42572654 YES votes  49.67%'
 
@@ -108,6 +110,7 @@ three places after the decimal::
 
    >>> import math
    >>> print(f'The value of pi is approximately {math.pi:.3f}.')
+   The value of pi is approximately 3.142.
 
 Passing an integer after the ``':'`` will cause that field to be a minimum
 number of characters wide.  This is useful for making columns line up. ::
@@ -127,7 +130,7 @@ applies :func:`repr`::
    >>> animals = 'eels'
    >>> print(f'My hovercraft is full of {animals}.')
    My hovercraft is full of eels.
-   >>> print('My hovercraft is full of {animals !r}.')
+   >>> print(f'My hovercraft is full of {animals!r}.')
    My hovercraft is full of 'eels'.
 
 For a reference on these format specifications, see
@@ -314,11 +317,13 @@ reading and writing such files.
 It is good practice to use the :keyword:`with` keyword when dealing
 with file objects.  The advantage is that the file is properly closed
 after its suite finishes, even if an exception is raised at some
-point.  Using :keyword:`with` is also much shorter than writing
+point.  Using :keyword:`!with` is also much shorter than writing
 equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
     >>> with open('workfile') as f:
     ...     read_data = f.read()
+
+    >>> # We can check that the file has been automatically closed.
     >>> f.closed
     True
 

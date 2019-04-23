@@ -437,6 +437,7 @@ Miscellaneous options
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
        ``True``
+     * :class:`io.IOBase` destructor logs ``close()`` exceptions.
 
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
@@ -465,7 +466,8 @@ Miscellaneous options
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
    .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option.
+      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+      ``close()`` exceptions in :class:`io.IOBase` destructor.
 
 
 Options you shouldn't use
@@ -785,7 +787,7 @@ conflict.
    This may also be enabled at runtime with
    :func:`sys._enablelegacywindowsfsencoding()`.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -799,7 +801,7 @@ conflict.
    This variable is ignored if the standard streams are redirected (to files
    or pipes) rather than referring to console buffers.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
 
@@ -850,7 +852,7 @@ conflict.
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
-   Availability: \*nix
+   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.
@@ -911,7 +913,7 @@ conflict.
 
    Also available as the :option:`-X` ``utf8`` option.
 
-   Availability: \*nix
+   .. availability:: \*nix.
 
    .. versionadded:: 3.7
       See :pep:`540` for more details.
