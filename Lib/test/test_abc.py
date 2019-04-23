@@ -154,7 +154,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 @abc.abstractmethod
                 def method_one():
                     pass
-            msg = (r"class C with abstract method method_one")
+            msg = r"class C with abstract method method_one"
             self.assertRaisesRegex(TypeError, msg, C)
 
         def test_object_new_with_many_abstractmethods(self):
@@ -165,7 +165,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 @abc.abstractmethod
                 def method_two():
                     pass
-            msg = (r"class C with abstract methods method_one, method_two")
+            msg = r"class C with abstract methods method_one, method_two"
             self.assertRaisesRegex(TypeError, msg, C)
 
         def test_abstractmethod_integration(self):
