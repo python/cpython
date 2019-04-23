@@ -337,6 +337,10 @@ Added :func:`statistics.geometric_mean()`
 Added :func:`statistics.multimode` that returns a list of the most
 common values. (Contributed by Raymond Hettinger in :issue:`35892`.)
 
+Added :func:`statistics.quantiles` that divides data or a distribution
+in to equiprobable intervals (e.g. quartiles, deciles, or percentiles).
+(Contributed by Raymond Hettinger in :issue:`36546`.)
+
 Added :class:`statistics.NormalDist`, a tool for creating
 and manipulating normal distributions of a random variable.
 (Contributed by Raymond Hettinger in :issue:`36018`.)
