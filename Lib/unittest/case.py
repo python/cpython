@@ -1244,9 +1244,8 @@ class TestCase(object):
 
 
     def assertCountEqual(self, first, second, msg=None):
-        """An unordered sequence comparison asserting that the same elements,
-        regardless of order.  If the same element occurs more than once,
-        it verifies that the elements occur the same number of times.
+        """Asserts that two iterables have the same elements, the same number of
+        times, without regard to order.
 
             self.assertEqual(Counter(list(first)),
                              Counter(list(second)))
