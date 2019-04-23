@@ -38,7 +38,7 @@ def get_host_platform():
     if os.name == 'nt':
         if 'amd64' in sys.version.lower():
             return 'win-amd64'
-        if 'arm32' in sys.version.lower():
+        if 'arm' in sys.version.lower():
             return 'win-arm32'
         return sys.platform
 
@@ -93,13 +93,12 @@ def get_host_platform():
     return "%s-%s-%s" % (osname, release, machine)
 
 def get_platform():
-    TARGET_TO_PLAT = {
-        'x86' : 'win32',
-        'x64' : 'win-amd64',
-        'arm' : 'win-arm32',
-    }
-
     if os.name == 'nt':
+        TARGET_TO_PLAT = {
+            'x86' : 'win32',
+            'x64' : 'win-amd64',
+            'arm' : 'win-arm32',
+        }
         return TARGET_TO_PLAT.get(os.environ.get('VSCMD_ARG_TGT_ARCH')) or get_host_platform()
     else:
         return get_host_platform()
