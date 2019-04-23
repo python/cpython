@@ -2,15 +2,15 @@
 
 #include "grammar.h"
 grammar _PyParser_Grammar;
-static arc arcs_0_0[3] = {
+static const arc arcs_0_0[3] = {
     {2, 1},
     {3, 2},
     {4, 1},
 };
-static arc arcs_0_1[1] = {
+static const arc arcs_0_1[1] = {
     {0, 1},
 };
-static arc arcs_0_2[1] = {
+static const arc arcs_0_2[1] = {
     {2, 1},
 };
 static state states_0[3] = {
@@ -18,26 +18,26 @@ static state states_0[3] = {
     {1, arcs_0_1},
     {1, arcs_0_2},
 };
-static arc arcs_1_0[3] = {
+static const arc arcs_1_0[3] = {
     {44, 1},
     {2, 0},
     {45, 0},
 };
-static arc arcs_1_1[1] = {
+static const arc arcs_1_1[1] = {
     {0, 1},
 };
 static state states_1[2] = {
     {3, arcs_1_0},
     {1, arcs_1_1},
 };
-static arc arcs_2_0[1] = {
+static const arc arcs_2_0[1] = {
     {47, 1},
 };
-static arc arcs_2_1[2] = {
+static const arc arcs_2_1[2] = {
     {44, 2},
     {2, 1},
 };
-static arc arcs_2_2[1] = {
+static const arc arcs_2_2[1] = {
     {0, 2},
 };
 static state states_2[3] = {
@@ -45,27 +45,27 @@ static state states_2[3] = {
     {2, arcs_2_1},
     {1, arcs_2_2},
 };
-static arc arcs_3_0[1] = {
+static const arc arcs_3_0[1] = {
     {10, 1},
 };
-static arc arcs_3_1[1] = {
+static const arc arcs_3_1[1] = {
     {49, 2},
 };
-static arc arcs_3_2[2] = {
+static const arc arcs_3_2[2] = {
     {5, 3},
     {2, 4},
 };
-static arc arcs_3_3[2] = {
+static const arc arcs_3_3[2] = {
     {50, 5},
     {51, 6},
 };
-static arc arcs_3_4[1] = {
+static const arc arcs_3_4[1] = {
     {0, 4},
 };
-static arc arcs_3_5[1] = {
+static const arc arcs_3_5[1] = {
     {2, 4},
 };
-static arc arcs_3_6[1] = {
+static const arc arcs_3_6[1] = {
     {50, 5},
 };
 static state states_3[7] = {
@@ -77,10 +77,10 @@ static state states_3[7] = {
     {1, arcs_3_5},
     {1, arcs_3_6},
 };
-static arc arcs_4_0[1] = {
+static const arc arcs_4_0[1] = {
     {48, 1},
 };
-static arc arcs_4_1[2] = {
+static const arc arcs_4_1[2] = {
     {48, 1},
     {0, 1},
 };
@@ -88,15 +88,15 @@ static state states_4[2] = {
     {1, arcs_4_0},
     {2, arcs_4_1},
 };
-static arc arcs_5_0[1] = {
+static const arc arcs_5_0[1] = {
     {52, 1},
 };
-static arc arcs_5_1[3] = {
+static const arc arcs_5_1[3] = {
     {54, 2},
     {55, 2},
     {56, 2},
 };
-static arc arcs_5_2[1] = {
+static const arc arcs_5_2[1] = {
     {0, 2},
 };
 static state states_5[3] = {
@@ -104,13 +104,13 @@ static state states_5[3] = {
     {3, arcs_5_1},
     {1, arcs_5_2},
 };
-static arc arcs_6_0[1] = {
+static const arc arcs_6_0[1] = {
     {38, 1},
 };
-static arc arcs_6_1[1] = {
+static const arc arcs_6_1[1] = {
     {56, 2},
 };
-static arc arcs_6_2[1] = {
+static const arc arcs_6_2[1] = {
     {0, 2},
 };
 static state states_6[3] = {
@@ -118,33 +118,33 @@ static state states_6[3] = {
     {1, arcs_6_1},
     {1, arcs_6_2},
 };
-static arc arcs_7_0[1] = {
+static const arc arcs_7_0[1] = {
     {19, 1},
 };
-static arc arcs_7_1[1] = {
+static const arc arcs_7_1[1] = {
     {40, 2},
 };
-static arc arcs_7_2[1] = {
+static const arc arcs_7_2[1] = {
     {57, 3},
 };
-static arc arcs_7_3[2] = {
+static const arc arcs_7_3[2] = {
     {58, 4},
     {59, 5},
 };
-static arc arcs_7_4[1] = {
+static const arc arcs_7_4[1] = {
     {60, 6},
 };
-static arc arcs_7_5[2] = {
+static const arc arcs_7_5[2] = {
     {61, 7},
     {62, 8},
 };
-static arc arcs_7_6[1] = {
+static const arc arcs_7_6[1] = {
     {59, 5},
 };
-static arc arcs_7_7[1] = {
+static const arc arcs_7_7[1] = {
     {62, 8},
 };
-static arc arcs_7_8[1] = {
+static const arc arcs_7_8[1] = {
     {0, 8},
 };
 static state states_7[9] = {
@@ -158,17 +158,17 @@ static state states_7[9] = {
     {1, arcs_7_7},
     {1, arcs_7_8},
 };
-static arc arcs_8_0[1] = {
+static const arc arcs_8_0[1] = {
     {5, 1},
 };
-static arc arcs_8_1[2] = {
+static const arc arcs_8_1[2] = {
     {50, 2},
     {63, 3},
 };
-static arc arcs_8_2[1] = {
+static const arc arcs_8_2[1] = {
     {0, 2},
 };
-static arc arcs_8_3[1] = {
+static const arc arcs_8_3[1] = {
     {50, 2},
 };
 static state states_8[4] = {
@@ -177,113 +177,113 @@ static state states_8[4] = {
     {1, arcs_8_2},
     {1, arcs_8_3},
 };
-static arc arcs_9_0[3] = {
+static const arc arcs_9_0[3] = {
     {6, 1},
     {64, 2},
     {65, 3},
 };
-static arc arcs_9_1[4] = {
+static const arc arcs_9_1[4] = {
     {66, 4},
     {61, 5},
     {65, 6},
     {0, 1},
 };
-static arc arcs_9_2[1] = {
+static const arc arcs_9_2[1] = {
     {65, 7},
 };
-static arc arcs_9_3[4] = {
+static const arc arcs_9_3[4] = {
     {66, 8},
     {67, 9},
     {61, 5},
     {0, 3},
 };
-static arc arcs_9_4[4] = {
+static const arc arcs_9_4[4] = {
     {64, 2},
     {61, 10},
     {65, 11},
     {0, 4},
 };
-static arc arcs_9_5[1] = {
+static const arc arcs_9_5[1] = {
     {0, 5},
 };
-static arc arcs_9_6[3] = {
+static const arc arcs_9_6[3] = {
     {66, 4},
     {61, 5},
     {0, 6},
 };
-static arc arcs_9_7[3] = {
+static const arc arcs_9_7[3] = {
     {66, 12},
     {61, 5},
     {0, 7},
 };
-static arc arcs_9_8[5] = {
+static const arc arcs_9_8[5] = {
     {6, 13},
     {64, 2},
     {61, 14},
     {65, 3},
     {0, 8},
 };
-static arc arcs_9_9[1] = {
+static const arc arcs_9_9[1] = {
     {60, 15},
 };
-static arc arcs_9_10[3] = {
+static const arc arcs_9_10[3] = {
     {64, 2},
     {65, 11},
     {0, 10},
 };
-static arc arcs_9_11[4] = {
+static const arc arcs_9_11[4] = {
     {66, 4},
     {67, 16},
     {61, 5},
     {0, 11},
 };
-static arc arcs_9_12[2] = {
+static const arc arcs_9_12[2] = {
     {61, 5},
     {0, 12},
 };
-static arc arcs_9_13[4] = {
+static const arc arcs_9_13[4] = {
     {66, 17},
     {61, 5},
     {65, 18},
     {0, 13},
 };
-static arc arcs_9_14[4] = {
+static const arc arcs_9_14[4] = {
     {6, 13},
     {64, 2},
     {65, 3},
     {0, 14},
 };
-static arc arcs_9_15[3] = {
+static const arc arcs_9_15[3] = {
     {66, 8},
     {61, 5},
     {0, 15},
 };
-static arc arcs_9_16[1] = {
+static const arc arcs_9_16[1] = {
     {60, 6},
 };
-static arc arcs_9_17[4] = {
+static const arc arcs_9_17[4] = {
     {64, 2},
     {61, 19},
     {65, 20},
     {0, 17},
 };
-static arc arcs_9_18[3] = {
+static const arc arcs_9_18[3] = {
     {66, 17},
     {61, 5},
     {0, 18},
 };
-static arc arcs_9_19[3] = {
+static const arc arcs_9_19[3] = {
     {64, 2},
     {65, 20},
     {0, 19},
 };
-static arc arcs_9_20[4] = {
+static const arc arcs_9_20[4] = {
     {66, 17},
     {67, 21},
     {61, 5},
     {0, 20},
 };
-static arc arcs_9_21[1] = {
+static const arc arcs_9_21[1] = {
     {60, 18},
 };
 static state states_9[22] = {
@@ -310,17 +310,17 @@ static state states_9[22] = {
     {4, arcs_9_20},
     {1, arcs_9_21},
 };
-static arc arcs_10_0[1] = {
+static const arc arcs_10_0[1] = {
     {40, 1},
 };
-static arc arcs_10_1[2] = {
+static const arc arcs_10_1[2] = {
     {59, 2},
     {0, 1},
 };
-static arc arcs_10_2[1] = {
+static const arc arcs_10_2[1] = {
     {60, 3},
 };
-static arc arcs_10_3[1] = {
+static const arc arcs_10_3[1] = {
     {0, 3},
 };
 static state states_10[4] = {
@@ -329,81 +329,81 @@ static state states_10[4] = {
     {1, arcs_10_2},
     {1, arcs_10_3},
 };
-static arc arcs_11_0[3] = {
+static const arc arcs_11_0[3] = {
     {6, 1},
     {64, 2},
     {69, 3},
 };
-static arc arcs_11_1[3] = {
+static const arc arcs_11_1[3] = {
     {66, 4},
     {69, 5},
     {0, 1},
 };
-static arc arcs_11_2[1] = {
+static const arc arcs_11_2[1] = {
     {69, 6},
 };
-static arc arcs_11_3[3] = {
+static const arc arcs_11_3[3] = {
     {66, 7},
     {67, 8},
     {0, 3},
 };
-static arc arcs_11_4[3] = {
+static const arc arcs_11_4[3] = {
     {64, 2},
     {69, 9},
     {0, 4},
 };
-static arc arcs_11_5[2] = {
+static const arc arcs_11_5[2] = {
     {66, 4},
     {0, 5},
 };
-static arc arcs_11_6[2] = {
+static const arc arcs_11_6[2] = {
     {66, 10},
     {0, 6},
 };
-static arc arcs_11_7[4] = {
+static const arc arcs_11_7[4] = {
     {6, 11},
     {64, 2},
     {69, 3},
     {0, 7},
 };
-static arc arcs_11_8[1] = {
+static const arc arcs_11_8[1] = {
     {60, 12},
 };
-static arc arcs_11_9[3] = {
+static const arc arcs_11_9[3] = {
     {66, 4},
     {67, 13},
     {0, 9},
 };
-static arc arcs_11_10[1] = {
+static const arc arcs_11_10[1] = {
     {0, 10},
 };
-static arc arcs_11_11[3] = {
+static const arc arcs_11_11[3] = {
     {66, 14},
     {69, 15},
     {0, 11},
 };
-static arc arcs_11_12[2] = {
+static const arc arcs_11_12[2] = {
     {66, 7},
     {0, 12},
 };
-static arc arcs_11_13[1] = {
+static const arc arcs_11_13[1] = {
     {60, 5},
 };
-static arc arcs_11_14[3] = {
+static const arc arcs_11_14[3] = {
     {64, 2},
     {69, 16},
     {0, 14},
 };
-static arc arcs_11_15[2] = {
+static const arc arcs_11_15[2] = {
     {66, 14},
     {0, 15},
 };
-static arc arcs_11_16[3] = {
+static const arc arcs_11_16[3] = {
     {66, 14},
     {67, 17},
     {0, 16},
 };
-static arc arcs_11_17[1] = {
+static const arc arcs_11_17[1] = {
     {60, 15},
 };
 static state states_11[18] = {
@@ -426,39 +426,39 @@ static state states_11[18] = {
     {3, arcs_11_16},
     {1, arcs_11_17},
 };
-static arc arcs_12_0[1] = {
+static const arc arcs_12_0[1] = {
     {40, 1},
 };
-static arc arcs_12_1[1] = {
+static const arc arcs_12_1[1] = {
     {0, 1},
 };
 static state states_12[2] = {
     {1, arcs_12_0},
     {1, arcs_12_1},
 };
-static arc arcs_13_0[2] = {
+static const arc arcs_13_0[2] = {
     {3, 1},
     {4, 1},
 };
-static arc arcs_13_1[1] = {
+static const arc arcs_13_1[1] = {
     {0, 1},
 };
 static state states_13[2] = {
     {2, arcs_13_0},
     {1, arcs_13_1},
 };
-static arc arcs_14_0[1] = {
+static const arc arcs_14_0[1] = {
     {70, 1},
 };
-static arc arcs_14_1[2] = {
+static const arc arcs_14_1[2] = {
     {71, 2},
     {2, 3},
 };
-static arc arcs_14_2[2] = {
+static const arc arcs_14_2[2] = {
     {2, 3},
     {70, 1},
 };
-static arc arcs_14_3[1] = {
+static const arc arcs_14_3[1] = {
     {0, 3},
 };
 static state states_14[4] = {
@@ -467,7 +467,7 @@ static state states_14[4] = {
     {2, arcs_14_2},
     {1, arcs_14_3},
 };
-static arc arcs_15_0[8] = {
+static const arc arcs_15_0[8] = {
     {72, 1},
     {73, 1},
     {74, 1},
@@ -477,34 +477,34 @@ static arc arcs_15_0[8] = {
     {78, 1},
     {79, 1},
 };
-static arc arcs_15_1[1] = {
+static const arc arcs_15_1[1] = {
     {0, 1},
 };
 static state states_15[2] = {
     {8, arcs_15_0},
     {1, arcs_15_1},
 };
-static arc arcs_16_0[1] = {
+static const arc arcs_16_0[1] = {
     {80, 1},
 };
-static arc arcs_16_1[4] = {
+static const arc arcs_16_1[4] = {
     {67, 2},
     {81, 3},
     {82, 4},
     {0, 1},
 };
-static arc arcs_16_2[2] = {
+static const arc arcs_16_2[2] = {
     {80, 5},
     {83, 5},
 };
-static arc arcs_16_3[1] = {
+static const arc arcs_16_3[1] = {
     {0, 3},
 };
-static arc arcs_16_4[2] = {
+static const arc arcs_16_4[2] = {
     {47, 3},
     {83, 3},
 };
-static arc arcs_16_5[3] = {
+static const arc arcs_16_5[3] = {
     {67, 2},
     {61, 3},
     {0, 5},
@@ -517,21 +517,21 @@ static state states_16[6] = {
     {2, arcs_16_4},
     {3, arcs_16_5},
 };
-static arc arcs_17_0[1] = {
+static const arc arcs_17_0[1] = {
     {59, 1},
 };
-static arc arcs_17_1[1] = {
+static const arc arcs_17_1[1] = {
     {60, 2},
 };
-static arc arcs_17_2[2] = {
+static const arc arcs_17_2[2] = {
     {67, 3},
     {0, 2},
 };
-static arc arcs_17_3[2] = {
+static const arc arcs_17_3[2] = {
     {47, 4},
     {83, 4},
 };
-static arc arcs_17_4[1] = {
+static const arc arcs_17_4[1] = {
     {0, 4},
 };
 static state states_17[5] = {
@@ -541,15 +541,15 @@ static state states_17[5] = {
     {2, arcs_17_3},
     {1, arcs_17_4},
 };
-static arc arcs_18_0[2] = {
+static const arc arcs_18_0[2] = {
     {84, 1},
     {60, 1},
 };
-static arc arcs_18_1[2] = {
+static const arc arcs_18_1[2] = {
     {66, 2},
     {0, 1},
 };
-static arc arcs_18_2[3] = {
+static const arc arcs_18_2[3] = {
     {84, 1},
     {60, 1},
     {0, 2},
@@ -559,7 +559,7 @@ static state states_18[3] = {
     {2, arcs_18_1},
     {3, arcs_18_2},
 };
-static arc arcs_19_0[13] = {
+static const arc arcs_19_0[13] = {
     {85, 1},
     {86, 1},
     {87, 1},
@@ -574,20 +574,20 @@ static arc arcs_19_0[13] = {
     {96, 1},
     {97, 1},
 };
-static arc arcs_19_1[1] = {
+static const arc arcs_19_1[1] = {
     {0, 1},
 };
 static state states_19[2] = {
     {13, arcs_19_0},
     {1, arcs_19_1},
 };
-static arc arcs_20_0[1] = {
+static const arc arcs_20_0[1] = {
     {20, 1},
 };
-static arc arcs_20_1[1] = {
+static const arc arcs_20_1[1] = {
     {98, 2},
 };
-static arc arcs_20_2[1] = {
+static const arc arcs_20_2[1] = {
     {0, 2},
 };
 static state states_20[3] = {
@@ -595,58 +595,58 @@ static state states_20[3] = {
     {1, arcs_20_1},
     {1, arcs_20_2},
 };
-static arc arcs_21_0[1] = {
+static const arc arcs_21_0[1] = {
     {29, 1},
 };
-static arc arcs_21_1[1] = {
+static const arc arcs_21_1[1] = {
     {0, 1},
 };
 static state states_21[2] = {
     {1, arcs_21_0},
     {1, arcs_21_1},
 };
-static arc arcs_22_0[5] = {
+static const arc arcs_22_0[5] = {
     {99, 1},
     {100, 1},
     {101, 1},
     {102, 1},
     {103, 1},
 };
-static arc arcs_22_1[1] = {
+static const arc arcs_22_1[1] = {
     {0, 1},
 };
 static state states_22[2] = {
     {5, arcs_22_0},
     {1, arcs_22_1},
 };
-static arc arcs_23_0[1] = {
+static const arc arcs_23_0[1] = {
     {16, 1},
 };
-static arc arcs_23_1[1] = {
+static const arc arcs_23_1[1] = {
     {0, 1},
 };
 static state states_23[2] = {
     {1, arcs_23_0},
     {1, arcs_23_1},
 };
-static arc arcs_24_0[1] = {
+static const arc arcs_24_0[1] = {
     {18, 1},
 };
-static arc arcs_24_1[1] = {
+static const arc arcs_24_1[1] = {
     {0, 1},
 };
 static state states_24[2] = {
     {1, arcs_24_0},
     {1, arcs_24_1},
 };
-static arc arcs_25_0[1] = {
+static const arc arcs_25_0[1] = {
     {31, 1},
 };
-static arc arcs_25_1[2] = {
+static const arc arcs_25_1[2] = {
     {80, 2},
     {0, 1},
 };
-static arc arcs_25_2[1] = {
+static const arc arcs_25_2[1] = {
     {0, 2},
 };
 static state states_25[3] = {
@@ -654,31 +654,31 @@ static state states_25[3] = {
     {2, arcs_25_1},
     {1, arcs_25_2},
 };
-static arc arcs_26_0[1] = {
+static const arc arcs_26_0[1] = {
     {83, 1},
 };
-static arc arcs_26_1[1] = {
+static const arc arcs_26_1[1] = {
     {0, 1},
 };
 static state states_26[2] = {
     {1, arcs_26_0},
     {1, arcs_26_1},
 };
-static arc arcs_27_0[1] = {
+static const arc arcs_27_0[1] = {
     {30, 1},
 };
-static arc arcs_27_1[2] = {
+static const arc arcs_27_1[2] = {
     {60, 2},
     {0, 1},
 };
-static arc arcs_27_2[2] = {
+static const arc arcs_27_2[2] = {
     {22, 3},
     {0, 2},
 };
-static arc arcs_27_3[1] = {
+static const arc arcs_27_3[1] = {
     {60, 4},
 };
-static arc arcs_27_4[1] = {
+static const arc arcs_27_4[1] = {
     {0, 4},
 };
 static state states_27[5] = {
@@ -688,24 +688,24 @@ static state states_27[5] = {
     {1, arcs_27_3},
     {1, arcs_27_4},
 };
-static arc arcs_28_0[2] = {
+static const arc arcs_28_0[2] = {
     {104, 1},
     {105, 1},
 };
-static arc arcs_28_1[1] = {
+static const arc arcs_28_1[1] = {
     {0, 1},
 };
 static state states_28[2] = {
     {2, arcs_28_0},
     {1, arcs_28_1},
 };
-static arc arcs_29_0[1] = {
+static const arc arcs_29_0[1] = {
     {25, 1},
 };
-static arc arcs_29_1[1] = {
+static const arc arcs_29_1[1] = {
     {106, 2},
 };
-static arc arcs_29_2[1] = {
+static const arc arcs_29_2[1] = {
     {0, 2},
 };
 static state states_29[3] = {
@@ -713,35 +713,35 @@ static state states_29[3] = {
     {1, arcs_29_1},
     {1, arcs_29_2},
 };
-static arc arcs_30_0[1] = {
+static const arc arcs_30_0[1] = {
     {22, 1},
 };
-static arc arcs_30_1[3] = {
+static const arc arcs_30_1[3] = {
     {107, 2},
     {9, 2},
     {49, 3},
 };
-static arc arcs_30_2[4] = {
+static const arc arcs_30_2[4] = {
     {107, 2},
     {9, 2},
     {25, 4},
     {49, 3},
 };
-static arc arcs_30_3[1] = {
+static const arc arcs_30_3[1] = {
     {25, 4},
 };
-static arc arcs_30_4[3] = {
+static const arc arcs_30_4[3] = {
     {5, 5},
     {6, 6},
     {108, 6},
 };
-static arc arcs_30_5[1] = {
+static const arc arcs_30_5[1] = {
     {108, 7},
 };
-static arc arcs_30_6[1] = {
+static const arc arcs_30_6[1] = {
     {0, 6},
 };
-static arc arcs_30_7[1] = {
+static const arc arcs_30_7[1] = {
     {50, 6},
 };
 static state states_30[8] = {
@@ -754,17 +754,17 @@ static state states_30[8] = {
     {1, arcs_30_6},
     {1, arcs_30_7},
 };
-static arc arcs_31_0[1] = {
+static const arc arcs_31_0[1] = {
     {40, 1},
 };
-static arc arcs_31_1[2] = {
+static const arc arcs_31_1[2] = {
     {110, 2},
     {0, 1},
 };
-static arc arcs_31_2[1] = {
+static const arc arcs_31_2[1] = {
     {40, 3},
 };
-static arc arcs_31_3[1] = {
+static const arc arcs_31_3[1] = {
     {0, 3},
 };
 static state states_31[4] = {
@@ -773,17 +773,17 @@ static state states_31[4] = {
     {1, arcs_31_2},
     {1, arcs_31_3},
 };
-static arc arcs_32_0[1] = {
+static const arc arcs_32_0[1] = {
     {49, 1},
 };
-static arc arcs_32_1[2] = {
+static const arc arcs_32_1[2] = {
     {110, 2},
     {0, 1},
 };
-static arc arcs_32_2[1] = {
+static const arc arcs_32_2[1] = {
     {40, 3},
 };
-static arc arcs_32_3[1] = {
+static const arc arcs_32_3[1] = {
     {0, 3},
 };
 static state states_32[4] = {
@@ -792,14 +792,14 @@ static state states_32[4] = {
     {1, arcs_32_2},
     {1, arcs_32_3},
 };
-static arc arcs_33_0[1] = {
+static const arc arcs_33_0[1] = {
     {109, 1},
 };
-static arc arcs_33_1[2] = {
+static const arc arcs_33_1[2] = {
     {66, 2},
     {0, 1},
 };
-static arc arcs_33_2[2] = {
+static const arc arcs_33_2[2] = {
     {109, 1},
     {0, 2},
 };
@@ -808,10 +808,10 @@ static state states_33[3] = {
     {2, arcs_33_1},
     {2, arcs_33_2},
 };
-static arc arcs_34_0[1] = {
+static const arc arcs_34_0[1] = {
     {111, 1},
 };
-static arc arcs_34_1[2] = {
+static const arc arcs_34_1[2] = {
     {66, 0},
     {0, 1},
 };
@@ -819,10 +819,10 @@ static state states_34[2] = {
     {1, arcs_34_0},
     {2, arcs_34_1},
 };
-static arc arcs_35_0[1] = {
+static const arc arcs_35_0[1] = {
     {40, 1},
 };
-static arc arcs_35_1[2] = {
+static const arc arcs_35_1[2] = {
     {107, 0},
     {0, 1},
 };
@@ -830,13 +830,13 @@ static state states_35[2] = {
     {1, arcs_35_0},
     {2, arcs_35_1},
 };
-static arc arcs_36_0[1] = {
+static const arc arcs_36_0[1] = {
     {23, 1},
 };
-static arc arcs_36_1[1] = {
+static const arc arcs_36_1[1] = {
     {40, 2},
 };
-static arc arcs_36_2[2] = {
+static const arc arcs_36_2[2] = {
     {66, 1},
     {0, 2},
 };
@@ -845,13 +845,13 @@ static state states_36[3] = {
     {1, arcs_36_1},
     {2, arcs_36_2},
 };
-static arc arcs_37_0[1] = {
+static const arc arcs_37_0[1] = {
     {27, 1},
 };
-static arc arcs_37_1[1] = {
+static const arc arcs_37_1[1] = {
     {40, 2},
 };
-static arc arcs_37_2[2] = {
+static const arc arcs_37_2[2] = {
     {66, 1},
     {0, 2},
 };
@@ -860,20 +860,20 @@ static state states_37[3] = {
     {1, arcs_37_1},
     {2, arcs_37_2},
 };
-static arc arcs_38_0[1] = {
+static const arc arcs_38_0[1] = {
     {15, 1},
 };
-static arc arcs_38_1[1] = {
+static const arc arcs_38_1[1] = {
     {60, 2},
 };
-static arc arcs_38_2[2] = {
+static const arc arcs_38_2[2] = {
     {66, 3},
     {0, 2},
 };
-static arc arcs_38_3[1] = {
+static const arc arcs_38_3[1] = {
     {60, 4},
 };
-static arc arcs_38_4[1] = {
+static const arc arcs_38_4[1] = {
     {0, 4},
 };
 static state states_38[5] = {
@@ -883,7 +883,7 @@ static state states_38[5] = {
     {1, arcs_38_3},
     {1, arcs_38_4},
 };
-static arc arcs_39_0[9] = {
+static const arc arcs_39_0[9] = {
     {112, 1},
     {55, 1},
     {53, 1},
@@ -894,22 +894,22 @@ static arc arcs_39_0[9] = {
     {116, 1},
     {117, 1},
 };
-static arc arcs_39_1[1] = {
+static const arc arcs_39_1[1] = {
     {0, 1},
 };
 static state states_39[2] = {
     {9, arcs_39_0},
     {1, arcs_39_1},
 };
-static arc arcs_40_0[1] = {
+static const arc arcs_40_0[1] = {
     {38, 1},
 };
-static arc arcs_40_1[3] = {
+static const arc arcs_40_1[3] = {
     {113, 2},
     {56, 2},
     {117, 2},
 };
-static arc arcs_40_2[1] = {
+static const arc arcs_40_2[1] = {
     {0, 2},
 };
 static state states_40[3] = {
@@ -917,30 +917,30 @@ static state states_40[3] = {
     {3, arcs_40_1},
     {1, arcs_40_2},
 };
-static arc arcs_41_0[1] = {
+static const arc arcs_41_0[1] = {
     {24, 1},
 };
-static arc arcs_41_1[1] = {
+static const arc arcs_41_1[1] = {
     {118, 2},
 };
-static arc arcs_41_2[1] = {
+static const arc arcs_41_2[1] = {
     {59, 3},
 };
-static arc arcs_41_3[1] = {
+static const arc arcs_41_3[1] = {
     {119, 4},
 };
-static arc arcs_41_4[3] = {
+static const arc arcs_41_4[3] = {
     {120, 1},
     {121, 5},
     {0, 4},
 };
-static arc arcs_41_5[1] = {
+static const arc arcs_41_5[1] = {
     {59, 6},
 };
-static arc arcs_41_6[1] = {
+static const arc arcs_41_6[1] = {
     {119, 7},
 };
-static arc arcs_41_7[1] = {
+static const arc arcs_41_7[1] = {
     {0, 7},
 };
 static state states_41[8] = {
@@ -953,29 +953,29 @@ static state states_41[8] = {
     {1, arcs_41_6},
     {1, arcs_41_7},
 };
-static arc arcs_42_0[1] = {
+static const arc arcs_42_0[1] = {
     {33, 1},
 };
-static arc arcs_42_1[1] = {
+static const arc arcs_42_1[1] = {
     {118, 2},
 };
-static arc arcs_42_2[1] = {
+static const arc arcs_42_2[1] = {
     {59, 3},
 };
-static arc arcs_42_3[1] = {
+static const arc arcs_42_3[1] = {
     {119, 4},
 };
-static arc arcs_42_4[2] = {
+static const arc arcs_42_4[2] = {
     {121, 5},
     {0, 4},
 };
-static arc arcs_42_5[1] = {
+static const arc arcs_42_5[1] = {
     {59, 6},
 };
-static arc arcs_42_6[1] = {
+static const arc arcs_42_6[1] = {
     {119, 7},
 };
-static arc arcs_42_7[1] = {
+static const arc arcs_42_7[1] = {
     {0, 7},
 };
 static state states_42[8] = {
@@ -988,39 +988,39 @@ static state states_42[8] = {
     {1, arcs_42_6},
     {1, arcs_42_7},
 };
-static arc arcs_43_0[1] = {
+static const arc arcs_43_0[1] = {
     {21, 1},
 };
-static arc arcs_43_1[1] = {
+static const arc arcs_43_1[1] = {
     {98, 2},
 };
-static arc arcs_43_2[1] = {
+static const arc arcs_43_2[1] = {
     {122, 3},
 };
-static arc arcs_43_3[1] = {
+static const arc arcs_43_3[1] = {
     {47, 4},
 };
-static arc arcs_43_4[1] = {
+static const arc arcs_43_4[1] = {
     {59, 5},
 };
-static arc arcs_43_5[2] = {
+static const arc arcs_43_5[2] = {
     {61, 6},
     {119, 7},
 };
-static arc arcs_43_6[1] = {
+static const arc arcs_43_6[1] = {
     {119, 7},
 };
-static arc arcs_43_7[2] = {
+static const arc arcs_43_7[2] = {
     {121, 8},
     {0, 7},
 };
-static arc arcs_43_8[1] = {
+static const arc arcs_43_8[1] = {
     {59, 9},
 };
-static arc arcs_43_9[1] = {
+static const arc arcs_43_9[1] = {
     {119, 10},
 };
-static arc arcs_43_10[1] = {
+static const arc arcs_43_10[1] = {
     {0, 10},
 };
 static state states_43[11] = {
@@ -1036,47 +1036,47 @@ static state states_43[11] = {
     {1, arcs_43_9},
     {1, arcs_43_10},
 };
-static arc arcs_44_0[1] = {
+static const arc arcs_44_0[1] = {
     {32, 1},
 };
-static arc arcs_44_1[1] = {
+static const arc arcs_44_1[1] = {
     {59, 2},
 };
-static arc arcs_44_2[1] = {
+static const arc arcs_44_2[1] = {
     {119, 3},
 };
-static arc arcs_44_3[2] = {
+static const arc arcs_44_3[2] = {
     {123, 4},
     {124, 5},
 };
-static arc arcs_44_4[1] = {
+static const arc arcs_44_4[1] = {
     {59, 6},
 };
-static arc arcs_44_5[1] = {
+static const arc arcs_44_5[1] = {
     {59, 7},
 };
-static arc arcs_44_6[1] = {
+static const arc arcs_44_6[1] = {
     {119, 8},
 };
-static arc arcs_44_7[1] = {
+static const arc arcs_44_7[1] = {
     {119, 9},
 };
-static arc arcs_44_8[1] = {
+static const arc arcs_44_8[1] = {
     {0, 8},
 };
-static arc arcs_44_9[4] = {
+static const arc arcs_44_9[4] = {
     {121, 10},
     {123, 4},
     {124, 5},
     {0, 9},
 };
-static arc arcs_44_10[1] = {
+static const arc arcs_44_10[1] = {
     {59, 11},
 };
-static arc arcs_44_11[1] = {
+static const arc arcs_44_11[1] = {
     {119, 12},
 };
-static arc arcs_44_12[2] = {
+static const arc arcs_44_12[2] = {
     {123, 4},
     {0, 12},
 };
@@ -1095,24 +1095,24 @@ static state states_44[13] = {
     {1, arcs_44_11},
     {2, arcs_44_12},
 };
-static arc arcs_45_0[1] = {
+static const arc arcs_45_0[1] = {
     {34, 1},
 };
-static arc arcs_45_1[1] = {
+static const arc arcs_45_1[1] = {
     {125, 2},
 };
-static arc arcs_45_2[2] = {
+static const arc arcs_45_2[2] = {
     {66, 1},
     {59, 3},
 };
-static arc arcs_45_3[2] = {
+static const arc arcs_45_3[2] = {
     {61, 4},
     {119, 5},
 };
-static arc arcs_45_4[1] = {
+static const arc arcs_45_4[1] = {
     {119, 5},
 };
-static arc arcs_45_5[1] = {
+static const arc arcs_45_5[1] = {
     {0, 5},
 };
 static state states_45[6] = {
@@ -1123,17 +1123,17 @@ static state states_45[6] = {
     {1, arcs_45_4},
     {1, arcs_45_5},
 };
-static arc arcs_46_0[1] = {
+static const arc arcs_46_0[1] = {
     {60, 1},
 };
-static arc arcs_46_1[2] = {
+static const arc arcs_46_1[2] = {
     {110, 2},
     {0, 1},
 };
-static arc arcs_46_2[1] = {
+static const arc arcs_46_2[1] = {
     {126, 3},
 };
-static arc arcs_46_3[1] = {
+static const arc arcs_46_3[1] = {
     {0, 3},
 };
 static state states_46[4] = {
@@ -1142,21 +1142,21 @@ static state states_46[4] = {
     {1, arcs_46_2},
     {1, arcs_46_3},
 };
-static arc arcs_47_0[1] = {
+static const arc arcs_47_0[1] = {
     {127, 1},
 };
-static arc arcs_47_1[2] = {
+static const arc arcs_47_1[2] = {
     {60, 2},
     {0, 1},
 };
-static arc arcs_47_2[2] = {
+static const arc arcs_47_2[2] = {
     {110, 3},
     {0, 2},
 };
-static arc arcs_47_3[1] = {
+static const arc arcs_47_3[1] = {
     {40, 4},
 };
-static arc arcs_47_4[1] = {
+static const arc arcs_47_4[1] = {
     {0, 4},
 };
 static state states_47[5] = {
@@ -1166,20 +1166,20 @@ static state states_47[5] = {
     {1, arcs_47_3},
     {1, arcs_47_4},
 };
-static arc arcs_48_0[2] = {
+static const arc arcs_48_0[2] = {
     {2, 1},
     {4, 2},
 };
-static arc arcs_48_1[1] = {
+static const arc arcs_48_1[1] = {
     {128, 3},
 };
-static arc arcs_48_2[1] = {
+static const arc arcs_48_2[1] = {
     {0, 2},
 };
-static arc arcs_48_3[1] = {
+static const arc arcs_48_3[1] = {
     {45, 4},
 };
-static arc arcs_48_4[2] = {
+static const arc arcs_48_4[2] = {
     {129, 2},
     {45, 4},
 };
@@ -1190,17 +1190,17 @@ static state states_48[5] = {
     {1, arcs_48_3},
     {2, arcs_48_4},
 };
-static arc arcs_49_0[1] = {
+static const arc arcs_49_0[1] = {
     {60, 1},
 };
-static arc arcs_49_1[2] = {
+static const arc arcs_49_1[2] = {
     {130, 2},
     {0, 1},
 };
-static arc arcs_49_2[1] = {
+static const arc arcs_49_2[1] = {
     {60, 3},
 };
-static arc arcs_49_3[1] = {
+static const arc arcs_49_3[1] = {
     {0, 3},
 };
 static state states_49[4] = {
@@ -1209,24 +1209,24 @@ static state states_49[4] = {
     {1, arcs_49_2},
     {1, arcs_49_3},
 };
-static arc arcs_50_0[2] = {
+static const arc arcs_50_0[2] = {
     {131, 1},
     {132, 2},
 };
-static arc arcs_50_1[1] = {
+static const arc arcs_50_1[1] = {
     {0, 1},
 };
-static arc arcs_50_2[2] = {
+static const arc arcs_50_2[2] = {
     {24, 3},
     {0, 2},
 };
-static arc arcs_50_3[1] = {
+static const arc arcs_50_3[1] = {
     {132, 4},
 };
-static arc arcs_50_4[1] = {
+static const arc arcs_50_4[1] = {
     {121, 5},
 };
-static arc arcs_50_5[1] = {
+static const arc arcs_50_5[1] = {
     {60, 1},
 };
 static state states_50[6] = {
@@ -1237,31 +1237,31 @@ static state states_50[6] = {
     {1, arcs_50_4},
     {1, arcs_50_5},
 };
-static arc arcs_51_0[2] = {
+static const arc arcs_51_0[2] = {
     {134, 1},
     {132, 1},
 };
-static arc arcs_51_1[1] = {
+static const arc arcs_51_1[1] = {
     {0, 1},
 };
 static state states_51[2] = {
     {2, arcs_51_0},
     {1, arcs_51_1},
 };
-static arc arcs_52_0[1] = {
+static const arc arcs_52_0[1] = {
     {26, 1},
 };
-static arc arcs_52_1[2] = {
+static const arc arcs_52_1[2] = {
     {59, 2},
     {68, 3},
 };
-static arc arcs_52_2[1] = {
+static const arc arcs_52_2[1] = {
     {60, 4},
 };
-static arc arcs_52_3[1] = {
+static const arc arcs_52_3[1] = {
     {59, 2},
 };
-static arc arcs_52_4[1] = {
+static const arc arcs_52_4[1] = {
     {0, 4},
 };
 static state states_52[5] = {
@@ -1271,20 +1271,20 @@ static state states_52[5] = {
     {1, arcs_52_3},
     {1, arcs_52_4},
 };
-static arc arcs_53_0[1] = {
+static const arc arcs_53_0[1] = {
     {26, 1},
 };
-static arc arcs_53_1[2] = {
+static const arc arcs_53_1[2] = {
     {59, 2},
     {68, 3},
 };
-static arc arcs_53_2[1] = {
+static const arc arcs_53_2[1] = {
     {133, 4},
 };
-static arc arcs_53_3[1] = {
+static const arc arcs_53_3[1] = {
     {59, 2},
 };
-static arc arcs_53_4[1] = {
+static const arc arcs_53_4[1] = {
     {0, 4},
 };
 static state states_53[5] = {
@@ -1294,10 +1294,10 @@ static state states_53[5] = {
     {1, arcs_53_3},
     {1, arcs_53_4},
 };
-static arc arcs_54_0[1] = {
+static const arc arcs_54_0[1] = {
     {135, 1},
 };
-static arc arcs_54_1[2] = {
+static const arc arcs_54_1[2] = {
     {136, 0},
     {0, 1},
 };
@@ -1305,10 +1305,10 @@ static state states_54[2] = {
     {1, arcs_54_0},
     {2, arcs_54_1},
 };
-static arc arcs_55_0[1] = {
+static const arc arcs_55_0[1] = {
     {137, 1},
 };
-static arc arcs_55_1[2] = {
+static const arc arcs_55_1[2] = {
     {138, 0},
     {0, 1},
 };
@@ -1316,14 +1316,14 @@ static state states_55[2] = {
     {1, arcs_55_0},
     {2, arcs_55_1},
 };
-static arc arcs_56_0[2] = {
+static const arc arcs_56_0[2] = {
     {28, 1},
     {139, 2},
 };
-static arc arcs_56_1[1] = {
+static const arc arcs_56_1[1] = {
     {137, 2},
 };
-static arc arcs_56_2[1] = {
+static const arc arcs_56_2[1] = {
     {0, 2},
 };
 static state states_56[3] = {
@@ -1331,10 +1331,10 @@ static state states_56[3] = {
     {1, arcs_56_1},
     {1, arcs_56_2},
 };
-static arc arcs_57_0[1] = {
+static const arc arcs_57_0[1] = {
     {126, 1},
 };
-static arc arcs_57_1[2] = {
+static const arc arcs_57_1[2] = {
     {140, 0},
     {0, 1},
 };
@@ -1342,7 +1342,7 @@ static state states_57[2] = {
     {1, arcs_57_0},
     {2, arcs_57_1},
 };
-static arc arcs_58_0[10] = {
+static const arc arcs_58_0[10] = {
     {141, 1},
     {142, 1},
     {143, 1},
@@ -1354,14 +1354,14 @@ static arc arcs_58_0[10] = {
     {147, 2},
     {28, 3},
 };
-static arc arcs_58_1[1] = {
+static const arc arcs_58_1[1] = {
     {0, 1},
 };
-static arc arcs_58_2[2] = {
+static const arc arcs_58_2[2] = {
     {28, 1},
     {0, 2},
 };
-static arc arcs_58_3[1] = {
+static const arc arcs_58_3[1] = {
     {122, 1},
 };
 static state states_58[4] = {
@@ -1370,13 +1370,13 @@ static state states_58[4] = {
     {2, arcs_58_2},
     {1, arcs_58_3},
 };
-static arc arcs_59_0[1] = {
+static const arc arcs_59_0[1] = {
     {6, 1},
 };
-static arc arcs_59_1[1] = {
+static const arc arcs_59_1[1] = {
     {126, 2},
 };
-static arc arcs_59_2[1] = {
+static const arc arcs_59_2[1] = {
     {0, 2},
 };
 static state states_59[3] = {
@@ -1384,10 +1384,10 @@ static state states_59[3] = {
     {1, arcs_59_1},
     {1, arcs_59_2},
 };
-static arc arcs_60_0[1] = {
+static const arc arcs_60_0[1] = {
     {148, 1},
 };
-static arc arcs_60_1[2] = {
+static const arc arcs_60_1[2] = {
     {149, 0},
     {0, 1},
 };
@@ -1395,10 +1395,10 @@ static state states_60[2] = {
     {1, arcs_60_0},
     {2, arcs_60_1},
 };
-static arc arcs_61_0[1] = {
+static const arc arcs_61_0[1] = {
     {150, 1},
 };
-static arc arcs_61_1[2] = {
+static const arc arcs_61_1[2] = {
     {151, 0},
     {0, 1},
 };
@@ -1406,10 +1406,10 @@ static state states_61[2] = {
     {1, arcs_61_0},
     {2, arcs_61_1},
 };
-static arc arcs_62_0[1] = {
+static const arc arcs_62_0[1] = {
     {152, 1},
 };
-static arc arcs_62_1[2] = {
+static const arc arcs_62_1[2] = {
     {153, 0},
     {0, 1},
 };
@@ -1417,10 +1417,10 @@ static state states_62[2] = {
     {1, arcs_62_0},
     {2, arcs_62_1},
 };
-static arc arcs_63_0[1] = {
+static const arc arcs_63_0[1] = {
     {154, 1},
 };
-static arc arcs_63_1[3] = {
+static const arc arcs_63_1[3] = {
     {155, 0},
     {156, 0},
     {0, 1},
@@ -1429,10 +1429,10 @@ static state states_63[2] = {
     {1, arcs_63_0},
     {3, arcs_63_1},
 };
-static arc arcs_64_0[1] = {
+static const arc arcs_64_0[1] = {
     {157, 1},
 };
-static arc arcs_64_1[3] = {
+static const arc arcs_64_1[3] = {
     {7, 0},
     {8, 0},
     {0, 1},
@@ -1441,10 +1441,10 @@ static state states_64[2] = {
     {1, arcs_64_0},
     {3, arcs_64_1},
 };
-static arc arcs_65_0[1] = {
+static const arc arcs_65_0[1] = {
     {158, 1},
 };
-static arc arcs_65_1[6] = {
+static const arc arcs_65_1[6] = {
     {159, 0},
     {6, 0},
     {160, 0},
@@ -1456,16 +1456,16 @@ static state states_65[2] = {
     {1, arcs_65_0},
     {6, arcs_65_1},
 };
-static arc arcs_66_0[4] = {
+static const arc arcs_66_0[4] = {
     {7, 1},
     {8, 1},
     {37, 1},
     {162, 2},
 };
-static arc arcs_66_1[1] = {
+static const arc arcs_66_1[1] = {
     {158, 2},
 };
-static arc arcs_66_2[1] = {
+static const arc arcs_66_2[1] = {
     {0, 2},
 };
 static state states_66[3] = {
@@ -1473,17 +1473,17 @@ static state states_66[3] = {
     {1, arcs_66_1},
     {1, arcs_66_2},
 };
-static arc arcs_67_0[1] = {
+static const arc arcs_67_0[1] = {
     {163, 1},
 };
-static arc arcs_67_1[2] = {
+static const arc arcs_67_1[2] = {
     {64, 2},
     {0, 1},
 };
-static arc arcs_67_2[1] = {
+static const arc arcs_67_2[1] = {
     {158, 3},
 };
-static arc arcs_67_3[1] = {
+static const arc arcs_67_3[1] = {
     {0, 3},
 };
 static state states_67[4] = {
@@ -1492,14 +1492,14 @@ static state states_67[4] = {
     {1, arcs_67_2},
     {1, arcs_67_3},
 };
-static arc arcs_68_0[2] = {
+static const arc arcs_68_0[2] = {
     {39, 1},
     {164, 2},
 };
-static arc arcs_68_1[1] = {
+static const arc arcs_68_1[1] = {
     {164, 2},
 };
-static arc arcs_68_2[2] = {
+static const arc arcs_68_2[2] = {
     {165, 2},
     {0, 2},
 };
@@ -1508,7 +1508,7 @@ static state states_68[3] = {
     {1, arcs_68_1},
     {2, arcs_68_2},
 };
-static arc arcs_69_0[10] = {
+static const arc arcs_69_0[10] = {
     {5, 1},
     {9, 2},
     {11, 2},
@@ -1520,33 +1520,33 @@ static arc arcs_69_0[10] = {
     {41, 2},
     {42, 5},
 };
-static arc arcs_69_1[3] = {
+static const arc arcs_69_1[3] = {
     {50, 2},
     {166, 6},
     {83, 6},
 };
-static arc arcs_69_2[1] = {
+static const arc arcs_69_2[1] = {
     {0, 2},
 };
-static arc arcs_69_3[2] = {
+static const arc arcs_69_3[2] = {
     {167, 2},
     {166, 7},
 };
-static arc arcs_69_4[2] = {
+static const arc arcs_69_4[2] = {
     {168, 2},
     {169, 8},
 };
-static arc arcs_69_5[2] = {
+static const arc arcs_69_5[2] = {
     {42, 5},
     {0, 5},
 };
-static arc arcs_69_6[1] = {
+static const arc arcs_69_6[1] = {
     {50, 2},
 };
-static arc arcs_69_7[1] = {
+static const arc arcs_69_7[1] = {
     {167, 2},
 };
-static arc arcs_69_8[1] = {
+static const arc arcs_69_8[1] = {
     {168, 2},
 };
 static state states_69[9] = {
@@ -1560,24 +1560,24 @@ static state states_69[9] = {
     {1, arcs_69_7},
     {1, arcs_69_8},
 };
-static arc arcs_70_0[2] = {
+static const arc arcs_70_0[2] = {
     {118, 1},
     {84, 1},
 };
-static arc arcs_70_1[3] = {
+static const arc arcs_70_1[3] = {
     {66, 2},
     {170, 3},
     {0, 1},
 };
-static arc arcs_70_2[3] = {
+static const arc arcs_70_2[3] = {
     {118, 4},
     {84, 4},
     {0, 2},
 };
-static arc arcs_70_3[1] = {
+static const arc arcs_70_3[1] = {
     {0, 3},
 };
-static arc arcs_70_4[2] = {
+static const arc arcs_70_4[2] = {
     {66, 2},
     {0, 4},
 };
@@ -1588,28 +1588,28 @@ static state states_70[5] = {
     {1, arcs_70_3},
     {2, arcs_70_4},
 };
-static arc arcs_71_0[3] = {
+static const arc arcs_71_0[3] = {
     {5, 1},
     {107, 2},
     {14, 3},
 };
-static arc arcs_71_1[2] = {
+static const arc arcs_71_1[2] = {
     {50, 4},
     {51, 5},
 };
-static arc arcs_71_2[1] = {
+static const arc arcs_71_2[1] = {
     {40, 4},
 };
-static arc arcs_71_3[1] = {
+static const arc arcs_71_3[1] = {
     {171, 6},
 };
-static arc arcs_71_4[1] = {
+static const arc arcs_71_4[1] = {
     {0, 4},
 };
-static arc arcs_71_5[1] = {
+static const arc arcs_71_5[1] = {
     {50, 4},
 };
-static arc arcs_71_6[1] = {
+static const arc arcs_71_6[1] = {
     {167, 4},
 };
 static state states_71[7] = {
@@ -1621,14 +1621,14 @@ static state states_71[7] = {
     {1, arcs_71_5},
     {1, arcs_71_6},
 };
-static arc arcs_72_0[1] = {
+static const arc arcs_72_0[1] = {
     {172, 1},
 };
-static arc arcs_72_1[2] = {
+static const arc arcs_72_1[2] = {
     {66, 2},
     {0, 1},
 };
-static arc arcs_72_2[2] = {
+static const arc arcs_72_2[2] = {
     {172, 1},
     {0, 2},
 };
@@ -1637,23 +1637,23 @@ static state states_72[3] = {
     {2, arcs_72_1},
     {2, arcs_72_2},
 };
-static arc arcs_73_0[2] = {
+static const arc arcs_73_0[2] = {
     {59, 1},
     {60, 2},
 };
-static arc arcs_73_1[3] = {
+static const arc arcs_73_1[3] = {
     {173, 3},
     {60, 4},
     {0, 1},
 };
-static arc arcs_73_2[2] = {
+static const arc arcs_73_2[2] = {
     {59, 1},
     {0, 2},
 };
-static arc arcs_73_3[1] = {
+static const arc arcs_73_3[1] = {
     {0, 3},
 };
-static arc arcs_73_4[2] = {
+static const arc arcs_73_4[2] = {
     {173, 3},
     {0, 4},
 };
@@ -1664,14 +1664,14 @@ static state states_73[5] = {
     {1, arcs_73_3},
     {2, arcs_73_4},
 };
-static arc arcs_74_0[1] = {
+static const arc arcs_74_0[1] = {
     {59, 1},
 };
-static arc arcs_74_1[2] = {
+static const arc arcs_74_1[2] = {
     {60, 2},
     {0, 1},
 };
-static arc arcs_74_2[1] = {
+static const arc arcs_74_2[1] = {
     {0, 2},
 };
 static state states_74[3] = {
@@ -1679,15 +1679,15 @@ static state states_74[3] = {
     {2, arcs_74_1},
     {1, arcs_74_2},
 };
-static arc arcs_75_0[2] = {
+static const arc arcs_75_0[2] = {
     {126, 1},
     {84, 1},
 };
-static arc arcs_75_1[2] = {
+static const arc arcs_75_1[2] = {
     {66, 2},
     {0, 1},
 };
-static arc arcs_75_2[3] = {
+static const arc arcs_75_2[3] = {
     {126, 1},
     {84, 1},
     {0, 2},
@@ -1697,14 +1697,14 @@ static state states_75[3] = {
     {2, arcs_75_1},
     {3, arcs_75_2},
 };
-static arc arcs_76_0[1] = {
+static const arc arcs_76_0[1] = {
     {60, 1},
 };
-static arc arcs_76_1[2] = {
+static const arc arcs_76_1[2] = {
     {66, 2},
     {0, 1},
 };
-static arc arcs_76_2[2] = {
+static const arc arcs_76_2[2] = {
     {60, 1},
     {0, 2},
 };
@@ -1713,61 +1713,61 @@ static state states_76[3] = {
     {2, arcs_76_1},
     {2, arcs_76_2},
 };
-static arc arcs_77_0[3] = {
+static const arc arcs_77_0[3] = {
     {64, 1},
     {84, 2},
     {60, 3},
 };
-static arc arcs_77_1[1] = {
+static const arc arcs_77_1[1] = {
     {126, 4},
 };
-static arc arcs_77_2[3] = {
+static const arc arcs_77_2[3] = {
     {66, 5},
     {170, 6},
     {0, 2},
 };
-static arc arcs_77_3[4] = {
+static const arc arcs_77_3[4] = {
     {66, 5},
     {59, 7},
     {170, 6},
     {0, 3},
 };
-static arc arcs_77_4[3] = {
+static const arc arcs_77_4[3] = {
     {66, 8},
     {170, 6},
     {0, 4},
 };
-static arc arcs_77_5[3] = {
+static const arc arcs_77_5[3] = {
     {84, 9},
     {60, 9},
     {0, 5},
 };
-static arc arcs_77_6[1] = {
+static const arc arcs_77_6[1] = {
     {0, 6},
 };
-static arc arcs_77_7[1] = {
+static const arc arcs_77_7[1] = {
     {60, 4},
 };
-static arc arcs_77_8[3] = {
+static const arc arcs_77_8[3] = {
     {64, 10},
     {60, 11},
     {0, 8},
 };
-static arc arcs_77_9[2] = {
+static const arc arcs_77_9[2] = {
     {66, 5},
     {0, 9},
 };
-static arc arcs_77_10[1] = {
+static const arc arcs_77_10[1] = {
     {126, 12},
 };
-static arc arcs_77_11[1] = {
+static const arc arcs_77_11[1] = {
     {59, 13},
 };
-static arc arcs_77_12[2] = {
+static const arc arcs_77_12[2] = {
     {66, 8},
     {0, 12},
 };
-static arc arcs_77_13[1] = {
+static const arc arcs_77_13[1] = {
     {60, 12},
 };
 static state states_77[14] = {
@@ -1786,30 +1786,30 @@ static state states_77[14] = {
     {2, arcs_77_12},
     {1, arcs_77_13},
 };
-static arc arcs_78_0[1] = {
+static const arc arcs_78_0[1] = {
     {17, 1},
 };
-static arc arcs_78_1[1] = {
+static const arc arcs_78_1[1] = {
     {40, 2},
 };
-static arc arcs_78_2[2] = {
+static const arc arcs_78_2[2] = {
     {5, 3},
     {59, 4},
 };
-static arc arcs_78_3[2] = {
+static const arc arcs_78_3[2] = {
     {50, 5},
     {51, 6},
 };
-static arc arcs_78_4[1] = {
+static const arc arcs_78_4[1] = {
     {119, 7},
 };
-static arc arcs_78_5[1] = {
+static const arc arcs_78_5[1] = {
     {59, 4},
 };
-static arc arcs_78_6[1] = {
+static const arc arcs_78_6[1] = {
     {50, 5},
 };
-static arc arcs_78_7[1] = {
+static const arc arcs_78_7[1] = {
     {0, 7},
 };
 static state states_78[8] = {
@@ -1822,14 +1822,14 @@ static state states_78[8] = {
     {1, arcs_78_6},
     {1, arcs_78_7},
 };
-static arc arcs_79_0[1] = {
+static const arc arcs_79_0[1] = {
     {174, 1},
 };
-static arc arcs_79_1[2] = {
+static const arc arcs_79_1[2] = {
     {66, 2},
     {0, 1},
 };
-static arc arcs_79_2[2] = {
+static const arc arcs_79_2[2] = {
     {174, 1},
     {0, 2},
 };
@@ -1838,21 +1838,21 @@ static state states_79[3] = {
     {2, arcs_79_1},
     {2, arcs_79_2},
 };
-static arc arcs_80_0[3] = {
+static const arc arcs_80_0[3] = {
     {6, 1},
     {64, 1},
     {60, 2},
 };
-static arc arcs_80_1[1] = {
+static const arc arcs_80_1[1] = {
     {60, 3},
 };
-static arc arcs_80_2[4] = {
+static const arc arcs_80_2[4] = {
     {130, 1},
     {67, 1},
     {170, 3},
     {0, 2},
 };
-static arc arcs_80_3[1] = {
+static const arc arcs_80_3[1] = {
     {0, 3},
 };
 static state states_80[4] = {
@@ -1861,34 +1861,34 @@ static state states_80[4] = {
     {4, arcs_80_2},
     {1, arcs_80_3},
 };
-static arc arcs_81_0[2] = {
+static const arc arcs_81_0[2] = {
     {170, 1},
     {176, 1},
 };
-static arc arcs_81_1[1] = {
+static const arc arcs_81_1[1] = {
     {0, 1},
 };
 static state states_81[2] = {
     {2, arcs_81_0},
     {1, arcs_81_1},
 };
-static arc arcs_82_0[1] = {
+static const arc arcs_82_0[1] = {
     {21, 1},
 };
-static arc arcs_82_1[1] = {
+static const arc arcs_82_1[1] = {
     {98, 2},
 };
-static arc arcs_82_2[1] = {
+static const arc arcs_82_2[1] = {
     {122, 3},
 };
-static arc arcs_82_3[1] = {
+static const arc arcs_82_3[1] = {
     {132, 4},
 };
-static arc arcs_82_4[2] = {
+static const arc arcs_82_4[2] = {
     {175, 5},
     {0, 4},
 };
-static arc arcs_82_5[1] = {
+static const arc arcs_82_5[1] = {
     {0, 5},
 };
 static state states_82[6] = {
@@ -1899,14 +1899,14 @@ static state states_82[6] = {
     {2, arcs_82_4},
     {1, arcs_82_5},
 };
-static arc arcs_83_0[2] = {
+static const arc arcs_83_0[2] = {
     {38, 1},
     {177, 2},
 };
-static arc arcs_83_1[1] = {
+static const arc arcs_83_1[1] = {
     {177, 2},
 };
-static arc arcs_83_2[1] = {
+static const arc arcs_83_2[1] = {
     {0, 2},
 };
 static state states_83[3] = {
@@ -1914,17 +1914,17 @@ static state states_83[3] = {
     {1, arcs_83_1},
     {1, arcs_83_2},
 };
-static arc arcs_84_0[1] = {
+static const arc arcs_84_0[1] = {
     {24, 1},
 };
-static arc arcs_84_1[1] = {
+static const arc arcs_84_1[1] = {
     {133, 2},
 };
-static arc arcs_84_2[2] = {
+static const arc arcs_84_2[2] = {
     {175, 3},
     {0, 2},
 };
-static arc arcs_84_3[1] = {
+static const arc arcs_84_3[1] = {
     {0, 3},
 };
 static state states_84[4] = {
@@ -1933,24 +1933,24 @@ static state states_84[4] = {
     {2, arcs_84_2},
     {1, arcs_84_3},
 };
-static arc arcs_85_0[1] = {
+static const arc arcs_85_0[1] = {
     {40, 1},
 };
-static arc arcs_85_1[1] = {
+static const arc arcs_85_1[1] = {
     {0, 1},
 };
 static state states_85[2] = {
     {1, arcs_85_0},
     {1, arcs_85_1},
 };
-static arc arcs_86_0[1] = {
+static const arc arcs_86_0[1] = {
     {35, 1},
 };
-static arc arcs_86_1[2] = {
+static const arc arcs_86_1[2] = {
     {179, 2},
     {0, 1},
 };
-static arc arcs_86_2[1] = {
+static const arc arcs_86_2[1] = {
     {0, 2},
 };
 static state states_86[3] = {
@@ -1958,14 +1958,14 @@ static state states_86[3] = {
     {2, arcs_86_1},
     {1, arcs_86_2},
 };
-static arc arcs_87_0[2] = {
+static const arc arcs_87_0[2] = {
     {22, 1},
     {80, 2},
 };
-static arc arcs_87_1[1] = {
+static const arc arcs_87_1[1] = {
     {60, 2},
 };
-static arc arcs_87_2[1] = {
+static const arc arcs_87_2[1] = {
     {0, 2},
 };
 static state states_87[3] = {
@@ -1973,28 +1973,28 @@ static state states_87[3] = {
     {1, arcs_87_1},
     {1, arcs_87_2},
 };
-static arc arcs_88_0[2] = {
+static const arc arcs_88_0[2] = {
     {2, 1},
     {4, 2},
 };
-static arc arcs_88_1[2] = {
+static const arc arcs_88_1[2] = {
     {128, 3},
     {61, 4},
 };
-static arc arcs_88_2[1] = {
+static const arc arcs_88_2[1] = {
     {0, 2},
 };
-static arc arcs_88_3[1] = {
+static const arc arcs_88_3[1] = {
     {45, 5},
 };
-static arc arcs_88_4[1] = {
+static const arc arcs_88_4[1] = {
     {2, 6},
 };
-static arc arcs_88_5[2] = {
+static const arc arcs_88_5[2] = {
     {129, 2},
     {45, 5},
 };
-static arc arcs_88_6[1] = {
+static const arc arcs_88_6[1] = {
     {128, 3},
 };
 static state states_88[7] = {
@@ -2006,14 +2006,14 @@ static state states_88[7] = {
     {2, arcs_88_5},
     {1, arcs_88_6},
 };
-static arc arcs_89_0[1] = {
+static const arc arcs_89_0[1] = {
     {181, 1},
 };
-static arc arcs_89_1[2] = {
+static const arc arcs_89_1[2] = {
     {44, 2},
     {2, 1},
 };
-static arc arcs_89_2[1] = {
+static const arc arcs_89_2[1] = {
     {0, 2},
 };
 static state states_89[3] = {
@@ -2021,23 +2021,23 @@ static state states_89[3] = {
     {2, arcs_89_1},
     {1, arcs_89_2},
 };
-static arc arcs_90_0[1] = {
+static const arc arcs_90_0[1] = {
     {5, 1},
 };
-static arc arcs_90_1[2] = {
+static const arc arcs_90_1[2] = {
     {50, 2},
     {182, 3},
 };
-static arc arcs_90_2[1] = {
+static const arc arcs_90_2[1] = {
     {58, 4},
 };
-static arc arcs_90_3[1] = {
+static const arc arcs_90_3[1] = {
     {50, 2},
 };
-static arc arcs_90_4[1] = {
+static const arc arcs_90_4[1] = {
     {60, 5},
 };
-static arc arcs_90_5[1] = {
+static const arc arcs_90_5[1] = {
     {0, 5},
 };
 static state states_90[6] = {
@@ -2048,50 +2048,50 @@ static state states_90[6] = {
     {1, arcs_90_4},
     {1, arcs_90_5},
 };
-static arc arcs_91_0[3] = {
+static const arc arcs_91_0[3] = {
     {6, 1},
     {64, 2},
     {60, 3},
 };
-static arc arcs_91_1[3] = {
+static const arc arcs_91_1[3] = {
     {66, 4},
     {60, 5},
     {0, 1},
 };
-static arc arcs_91_2[1] = {
+static const arc arcs_91_2[1] = {
     {60, 6},
 };
-static arc arcs_91_3[2] = {
+static const arc arcs_91_3[2] = {
     {66, 7},
     {0, 3},
 };
-static arc arcs_91_4[2] = {
+static const arc arcs_91_4[2] = {
     {64, 2},
     {60, 5},
 };
-static arc arcs_91_5[2] = {
+static const arc arcs_91_5[2] = {
     {66, 4},
     {0, 5},
 };
-static arc arcs_91_6[1] = {
+static const arc arcs_91_6[1] = {
     {0, 6},
 };
-static arc arcs_91_7[4] = {
+static const arc arcs_91_7[4] = {
     {6, 8},
     {64, 2},
     {60, 3},
     {0, 7},
 };
-static arc arcs_91_8[3] = {
+static const arc arcs_91_8[3] = {
     {66, 9},
     {60, 10},
     {0, 8},
 };
-static arc arcs_91_9[2] = {
+static const arc arcs_91_9[2] = {
     {64, 2},
     {60, 10},
 };
-static arc arcs_91_10[2] = {
+static const arc arcs_91_10[2] = {
     {66, 9},
     {0, 10},
 };
@@ -2108,7 +2108,7 @@ static state states_91[11] = {
     {2, arcs_91_9},
     {2, arcs_91_10},
 };
-static dfa dfas[92] = {
+static const dfa dfas[92] = {
     {256, "single_input", 3, states_0,
      "\344\377\377\377\377\007\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"},
     {257, "file_input", 2, states_1,
@@ -2294,7 +2294,7 @@ static dfa dfas[92] = {
     {347, "typelist", 11, states_91,
      "\340\173\000\024\260\007\000\000\001\000\000\000\000\000\000\000\000\000\000\000\000\000\000"},
 };
-static label labels[183] = {
+static const label labels[183] = {
     {0, "EMPTY"},
     {256, 0},
     {4, 0},
