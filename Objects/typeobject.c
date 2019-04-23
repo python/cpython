@@ -3782,7 +3782,6 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *joined;
         PyObject *comma;
         _Py_static_string(comma_id, ", ");
-        _Py_IDENTIFIER(sorted);
         Py_ssize_t method_count;
 
         /* Compute ", ".join(sorted(type.__abstractmethods__))
