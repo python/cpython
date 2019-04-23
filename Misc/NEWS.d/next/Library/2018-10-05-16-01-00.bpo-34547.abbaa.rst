@@ -1,3 +1,2 @@
-``wsgiref`` now handles abrupt client connection terminations gracefully.
-Previously, long stack traces with Python TypeErrors and AttributeErrors
-were printed. Patch by Petter Strandmark.
+:class:`wsgiref.handlers.BaseHandler` now handles abrupt client connection
+terminations gracefully. Patch by Petter Strandmark.

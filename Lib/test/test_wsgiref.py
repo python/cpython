@@ -14,6 +14,7 @@ from io import StringIO, BytesIO, BufferedReader
 from socketserver import BaseServer
 from platform import python_implementation
 
+import io
 import os
 import re
 import signal
@@ -788,17 +789,26 @@ class HandlerTests(TestCase):
             b"Hello, world!",
             written)
 
-    def testConnectionAbortedError(self):
+    def runTestWithException(self, ExceptionClass):
         class AbortingWriter:
             def write(self, b):
-                raise ConnectionAbortedError()
-
-            def flush(self):
-                pass
+                raise ExceptionClass()
 
         environ = {"SERVER_PROTOCOL": "HTTP/1.0"}
-        h = SimpleHandler(BytesIO(), AbortingWriter(), sys.stderr, environ)
+        stderr = io.StringIO()
+        h = SimpleHandler(BytesIO(), AbortingWriter(), stderr, environ)
         h.run(hello_app)
+
+        self.assertFalse(stderr.getvalue())
+
+    def testConnectionAbortedError(self):
+        self.runTestWithException(ConnectionAbortedError)
+
+    def testBrokenPipeError(self):
+        self.runTestWithException(BrokenPipeError)
+
+    def testConnectionResetError(self):
+        self.runTestWithException(ConnectionResetError)
 
 
 if __name__ == "__main__":

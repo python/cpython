@@ -136,7 +136,7 @@ class BaseHandler:
             self.setup_environ()
             self.result = application(self.environ, self.start_response)
             self.finish_response()
-        except ConnectionAbortedError:
+        except (ConnectionAbortedError, BrokenPipeError, ConnectionResetError):
             # We expect the client to close the connection abruptly from time
             # to time.
             return
