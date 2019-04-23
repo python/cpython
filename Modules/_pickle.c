@@ -1119,6 +1119,8 @@ _Pickler_New(void)
         Py_DECREF(self);
         return NULL;
     }
+
+    PyObject_GC_Track(self);
     return self;
 }
 
@@ -1496,6 +1498,7 @@ _Unpickler_New(void)
         return NULL;
     }
 
+    PyObject_GC_Track(self);
     return self;
 }
 
