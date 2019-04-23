@@ -7,9 +7,9 @@ averages, variance, and standard deviation.
 Calculating averages
 --------------------
 
-==================  =============================================
+==================  ==================================================
 Function            Description
-==================  =============================================
+==================  ==================================================
 mean                Arithmetic mean (average) of data.
 geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
@@ -19,7 +19,8 @@ median_high         High median of data.
 median_grouped      Median, or 50th percentile, of grouped data.
 mode                Mode (most common value) of data.
 multimode           List of modes (most common values of data).
-==================  =============================================
+quantiles           Divide data into intervals with equal probability.
+==================  ==================================================
 
 Calculate the arithmetic mean ("the average") of data:
 
@@ -78,7 +79,7 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 
 """
 
-__all__ = [ 'StatisticsError', 'NormalDist',
+__all__ = [ 'StatisticsError', 'NormalDist', 'quantiles',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
             'mean', 'mode', 'multimode', 'harmonic_mean', 'fmean',
@@ -562,6 +563,54 @@ def multimode(data):
     maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
     return list(map(itemgetter(0), mode_items))
 
+def quantiles(dist, *, n=4, method='exclusive'):
+    '''Divide *dist* into *n* continuous intervals with equal probability.
+
+    Returns a list of (n - 1) cut points separating the intervals.
+
+    Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+    Set *n* to 100 for percentiles which gives the 99 cuts points that
+    separate *dist* in to 100 equal sized groups.
+
+    The *dist* can be any iterable containing sample data or it can be
+    an instance of a class that defines an inv_cdf() method.  For sample
+    data, the cut points are linearly interpolated between data points.
+
+    If *method* is set to *inclusive*, *dist* is treated as population
+    data.  The minimum value is treated as the 0th percentile and the
+    maximum value is treated as the 100th percentile.
+    '''
+    # Possible future API extensions:
+    #     quantiles(data, already_sorted=True)
+    #     quantiles(data, cut_points=[0.02, 0.25, 0.50, 0.75, 0.98])
+    if n < 1:
+        raise StatisticsError('n must be at least 1')
+    if hasattr(dist, 'inv_cdf'):
+        return [dist.inv_cdf(i / n) for i in range(1, n)]
+    data = sorted(dist)
+    ld = len(data)
+    if ld < 2:
+        raise StatisticsError('must have at least two data points')
+    if method == 'inclusive':
+        m = ld - 1
+        result = []
+        for i in range(1, n):
+            j = i * m // n
+            delta = i*m - j*n
+            interpolated = (data[j] * (n - delta) + data[j+1] * delta) / n
+            result.append(interpolated)
+        return result
+    if method == 'exclusive':
+        m = ld + 1
+        result = []
+        for i in range(1, n):
+            j = i * m // n                               # rescale i to m/n
+            j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
+            delta = i*m - j*n                            # exact integer math
+            interpolated = (data[j-1] * (n - delta) + data[j] * delta) / n
+            result.append(interpolated)
+        return result
+    raise ValueError(f'Unknown method: {method!r}')
 
 # === Measures of spread ===
 
