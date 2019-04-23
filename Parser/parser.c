@@ -35,7 +35,7 @@ s_reset(stack *s)
 #define s_empty(s) ((s)->s_top == &(s)->s_base[MAXSTACK])
 
 static int
-s_push(stack *s, dfa *d, node *parent)
+s_push(stack *s, const dfa *d, node *parent)
 {
     stackentry *top;
     if (s->s_top == s->s_base) {
@@ -144,7 +144,7 @@ classify(parser_state *ps, int type, const char *str)
     int n = g->g_ll.ll_nlabels;
 
     if (type == NAME) {
-        label *l = g->g_ll.ll_label;
+        const label *l = g->g_ll.ll_label;
         int i;
         for (i = n; i > 0; i--, l++) {
             if (l->lb_type != NAME || l->lb_str == NULL ||
@@ -168,7 +168,7 @@ classify(parser_state *ps, int type, const char *str)
     }
 
     {
-        label *l = g->g_ll.ll_label;
+        const label *l = g->g_ll.ll_label;
         int i;
         for (i = n; i > 0; i--, l++) {
             if (l->lb_type == type && l->lb_str == NULL) {
