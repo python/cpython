@@ -14,7 +14,6 @@ from io import StringIO, BytesIO, BufferedReader
 from socketserver import BaseServer
 from platform import python_implementation
 
-import io
 import os
 import re
 import signal
@@ -795,7 +794,7 @@ class HandlerTests(TestCase):
                 raise ExceptionClass()
 
         environ = {"SERVER_PROTOCOL": "HTTP/1.0"}
-        stderr = io.StringIO()
+        stderr = StringIO()
         h = SimpleHandler(BytesIO(), AbortingWriter(), stderr, environ)
         h.run(hello_app)
 
