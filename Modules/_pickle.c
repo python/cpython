@@ -3952,12 +3952,12 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         else {
             const char tupletwo_op = TUPLE2;
             const char pop_op = POP;
-            if (_Pickler_Write(self, &pop_op, 1) < 0 ||
-                save(self, state_setter, 0) < 0 ||
+            if (save(self, state_setter, 0) < 0 ||
                 save(self, obj, 0) < 0 ||
                 save(self, state, 0) < 0 ||
                 _Pickler_Write(self, &tupletwo_op, 1) < 0 ||
-                _Pickler_Write(self, &reduce_op, 1) < 0)
+                _Pickler_Write(self, &reduce_op, 1) < 0 ||
+                _Pickler_Write(self, &pop_op, 1) < 0)
                 return -1;
         }
     }
