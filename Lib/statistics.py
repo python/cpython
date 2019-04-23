@@ -797,7 +797,7 @@ class NormalDist:
         xbar = fmean(data)
         return cls(xbar, stdev(data, xbar))
 
-    def samples(self, n, seed=None):
+    def samples(self, n, *, seed=None):
         'Generate *n* samples for a given mean and standard deviation.'
         gauss = random.gauss if seed is None else random.Random(seed).gauss
         mu, sigma = self.mu, self.sigma
