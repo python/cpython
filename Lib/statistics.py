@@ -563,7 +563,7 @@ def multimode(data):
     maxcount, mode_items = next(groupby(counts, key=itemgetter(1)), (0, []))
     return list(map(itemgetter(0), mode_items))
 
-def quantiles(dist, *, n=4, inclusive=False):
+def quantiles(dist, *, n=4, method='exclusive'):
     '''Divide *dist* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
@@ -576,14 +576,13 @@ def quantiles(dist, *, n=4, inclusive=False):
     an instance of a class that defines an inv_cdf() method.  For sample
     data, the cut points are linearly interpolated between data points.
 
-    If *inclusive* is set to True, *dist* is treated as population
+    If *method* is set to *inclusive*, *dist* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
     maximum value is treated as the 100th percentile.
     '''
     # Possible future API extensions:
     #     quantiles(data, already_sorted=True)
     #     quantiles(data, cut_points=[0.02, 0.25, 0.50, 0.75, 0.98])
-    #     quantiles(data, interp_method='nearest')
     if n < 1:
         raise StatisticsError('n must be at least 1')
     if hasattr(dist, 'inv_cdf'):
@@ -592,7 +591,7 @@ def quantiles(dist, *, n=4, inclusive=False):
     ld = len(data)
     if ld < 2:
         raise StatisticsError('must have at least two data points')
-    if inclusive:
+    if method == 'inclusive':
         m = ld - 1
         result = []
         for i in range(1, n):
@@ -601,16 +600,17 @@ def quantiles(dist, *, n=4, inclusive=False):
             interpolated = (data[j] * (n - delta) + data[j+1] * delta) / n
             result.append(interpolated)
         return result
-    m = ld + 1
-    result = []
-    for i in range(1, n):
-        j = i * m // n                               # rescale i to m/n
-        j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
-        delta = i*m - j*n                            # exact integer math
-        interpolated = (data[j-1] * (n - delta) + data[j] * delta) / n
-        result.append(interpolated)
-    return result
-
+    if method == 'exclusive':
+        m = ld + 1
+        result = []
+        for i in range(1, n):
+            j = i * m // n                               # rescale i to m/n
+            j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
+            delta = i*m - j*n                            # exact integer math
+            interpolated = (data[j-1] * (n - delta) + data[j] * delta) / n
+            result.append(interpolated)
+        return result
+    raise ValueError(f'Unknown method: {method!r}')
 
 # === Measures of spread ===
 

@@ -2197,19 +2197,19 @@ class TestQuantiles(unittest.TestCase):
             (15, [120.0, 140.0, 160.0, 180.0, 200.0, 240.0, 280.0, 320.0, 360.0,
                   400.0, 480.0, 560.0, 640.0, 720.0]),
                 ]:
-            self.assertEqual(expected, quantiles(data, n=n, inclusive=True))
-            self.assertEqual(len(quantiles(data, n=n, inclusive=True)), n - 1)
+            self.assertEqual(expected, quantiles(data, n=n, method="inclusive"))
+            self.assertEqual(len(quantiles(data, n=n, method="inclusive")), n - 1)
             self.assertEqual(list(map(float, expected)),
-                             quantiles(map(Decimal, data), n=n, inclusive=True))
+                             quantiles(map(Decimal, data), n=n, method="inclusive"))
             self.assertEqual(list(map(Decimal, expected)),
-                             quantiles(map(Decimal, data), n=n, inclusive=True))
+                             quantiles(map(Decimal, data), n=n, method="inclusive"))
             self.assertEqual(list(map(Fraction, expected)),
-                             quantiles(map(Fraction, data), n=n, inclusive=True))
+                             quantiles(map(Fraction, data), n=n, method="inclusive"))
             # Invariant under tranlation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
-            act = quantiles(map(f, data), n=n, inclusive=True)
+            act = quantiles(map(f, data), n=n, method="inclusive")
             self.assertTrue(all(math.isclose(e, a) for e, a in zip(exp, act)))
         # Quartiles of a standard normal distribution
         for n, expected in [
@@ -2218,7 +2218,7 @@ class TestQuantiles(unittest.TestCase):
             (3, [-0.4307, 0.4307]),
             (4 ,[-0.6745, 0.0, 0.6745]),
                 ]:
-            actual = quantiles(statistics.NormalDist(), n=n, inclusive=True)
+            actual = quantiles(statistics.NormalDist(), n=n, method="inclusive")
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
 
@@ -2260,6 +2260,8 @@ class TestQuantiles(unittest.TestCase):
             quantiles([10, 20, 30], n=-1)       # n is negative
         with self.assertRaises(TypeError):
             quantiles([10, 20, 30], n=1.5)      # n is not an integer
+        with self.assertRaises(ValueError):
+            quantiles([10, 20, 30], method='X') # method is unknown
         with self.assertRaises(StatisticsError):
             quantiles([10], n=4)                # not enough data points
         with self.assertRaises(TypeError):

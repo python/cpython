@@ -500,7 +500,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       :func:`pvariance` function as the *mu* parameter to get the variance of a
       sample.
 
-.. function:: quantiles(dist, *, n=4)
+.. function:: quantiles(dist, *, n=4, method='exclusive')
 
    Divide *dist* into *n* continuous intervals with equal probability.
    Returns a list of ``n - 1`` cut points separating the intervals.
@@ -522,10 +522,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    value or compute ``106`` as the midpoint).  This might matter if
    there are too few samples for a given number of cut points.
 
-   If *inclusive* is set to True, *dist* is treated as population data.
+   If *method* is set to *inclusive*, *dist* is treated as population data.
    The minimum value is treated as the 0th percentile and the maximum
    value is treated as the 100th percentile.  If *dist* is an instance of
-   a class that defines an :meth:`~inv_cdf` method, the *inclusive* flag
+   a class that defines an :meth:`~inv_cdf` method, setting *method*
    has no effect.
 
    .. doctest::
