@@ -250,7 +250,7 @@ since it is impossible to detect the termination of alien threads.
 
       You may override this method in a subclass.  The standard :meth:`run`
       method invokes the callable object passed to the object's constructor as
-      the *target* argument, if any, with sequential and keyword arguments taken
+      the *target* argument, if any, with positional and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
 
    .. method:: join(timeout=None)
