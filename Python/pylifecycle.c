@@ -65,7 +65,7 @@ static _PyInitError init_sys_streams(PyInterpreterState *interp);
 static _PyInitError initsigs(void);
 static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
-static void call_ll_exitfuncs(void);
+static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
 int _Py_UnhandledKeyboardInterrupt = 0;
 _PyRuntimeState _PyRuntime = _PyRuntimeState_INIT;
@@ -1131,22 +1131,22 @@ flush_std_files(void)
 int
 Py_FinalizeEx(void)
 {
-    PyInterpreterState *interp;
-    PyThreadState *tstate;
     int status = 0;
 
-    if (!_PyRuntime.initialized)
+    _PyRuntimeState *runtime = &_PyRuntime;
+    if (!runtime->initialized) {
         return status;
+    }
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
 
-    /* Get current thread state and interpreter pointer */
-    tstate = _PyThreadState_GET();
-    interp = tstate->interp;
-
     // Make any remaining pending calls.
     _Py_FinishPendingCalls();
+
+    /* Get current thread state and interpreter pointer */
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
@@ -1174,9 +1174,9 @@ Py_FinalizeEx(void)
 
     /* Remaining threads (e.g. daemon threads) will automatically exit
        after taking the GIL (in PyEval_RestoreThread()). */
-    _PyRuntime.finalizing = tstate;
-    _PyRuntime.initialized = 0;
-    _PyRuntime.core_initialized = 0;
+    runtime->finalizing = tstate;
+    runtime->initialized = 0;
+    runtime->core_initialized = 0;
 
     /* Flush sys.stdout and sys.stderr */
     if (flush_std_files() < 0) {
@@ -1294,7 +1294,7 @@ Py_FinalizeEx(void)
     PyFloat_Fini();
     PyDict_Fini();
     PySlice_Fini();
-    _PyGC_Fini();
+    _PyGC_Fini(runtime);
     _Py_HashRandomization_Fini();
     _PyArg_Fini();
     PyAsyncGen_Fini();
@@ -1314,7 +1314,7 @@ Py_FinalizeEx(void)
     PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
 
     /* Cleanup auto-thread-state */
-    _PyGILState_Fini();
+    _PyGILState_Fini(runtime);
 
     /* Delete current thread. After this, many C API calls become crashy. */
     PyThreadState_Swap(NULL);
@@ -1336,7 +1336,7 @@ Py_FinalizeEx(void)
     }
 #endif
 
-    call_ll_exitfuncs();
+    call_ll_exitfuncs(runtime);
 
     _PyRuntime_Finalize();
     return status;
@@ -2223,10 +2223,11 @@ int Py_AtExit(void (*func)(void))
 }
 
 static void
-call_ll_exitfuncs(void)
+call_ll_exitfuncs(_PyRuntimeState *runtime)
 {
-    while (_PyRuntime.nexitfuncs > 0)
-        (*_PyRuntime.exitfuncs[--_PyRuntime.nexitfuncs])();
+    while (runtime->nexitfuncs > 0) {
+        (*runtime->exitfuncs[--runtime->nexitfuncs])();
+    }
 
     fflush(stdout);
     fflush(stderr);
