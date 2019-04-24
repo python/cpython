@@ -3006,6 +3006,7 @@ def setstate_bbb(obj, state):
     """
     obj.a = 'foo'
 
+
 class AbstractDispatchTableTests(unittest.TestCase):
 
     def test_default_dispatch_table(self):
