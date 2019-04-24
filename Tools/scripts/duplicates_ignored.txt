@@ -45,27 +45,5 @@ Lib/test/test_pathlib.py: _BasePathTest.dirlink
 # Issue bpo-19113
 Lib/ctypes/test/test_functions.py: FunctionTestCase.test_errors
 
-# Issue bpo-36678
-Lib/test/test_dataclasses.py: TestCase.test_helper_asdict_builtin_containers
-Lib/test/test_dataclasses.py: TestCase.test_helper_astuple_builtin_containers
-Lib/test/test_dataclasses.py: TestCase.test_not_tuple
-Lib/test/test_dataclasses.py: TestReplace.test_recursive_repr_two_attrs
-
-# Issue bpo-36679
-Lib/test/test_genericclass.py: TestClassGetitem.test_class_getitem
-
 # Issue bpo-19119
 Lib/test/test_heapq.py: TestErrorHandling.test_get_only
-
-# Issue bpo-36680
-Lib/test/test_importlib/test_util.py: PEP3147Tests.test_source_from_cache_path_like_arg
-
-# Issue bpo-36681
-Lib/test/test_logging.py: BuiltinLevelsTest.test_regression_29220
-
-# Issue bpo-36682
-Lib/test/test_sys_setprofile.py: ProfileSimulatorTestCase.test_unbound_method_invalid_args
-Lib/test/test_sys_setprofile.py: ProfileSimulatorTestCase.test_unbound_method_no_args
-
-# Issue bpo-36683
-Lib/test/test_utf8_mode.py: UTF8ModeTests.test_io_encoding
