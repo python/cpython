@@ -726,12 +726,12 @@ class PyBuildExt(build_ext):
         self.add(Extension("_heapq", ["_heapqmodule.c"]))
         # C-optimized pickle replacement
         self.add(Extension("_pickle", ["_pickle.c"],
-                           extra_compile_args=['-D Py_BUILD_CORE_MODULE']))
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # atexit
         self.add(Extension("atexit", ["atexitmodule.c"]))
         # _json speedups
         self.add(Extension("_json", ["_json.c"],
-                           extra_compile_args=['-D Py_BUILD_CORE_MODULE']))
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
@@ -816,7 +816,7 @@ class PyBuildExt(build_ext):
 
         # Python Internal C API test module
         self.add(Extension('_testinternalcapi', ['_testinternalcapi.c'],
-                           extra_compile_args=['-D Py_BUILD_CORE_MODULE']))
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # Python PEP-3118 (buffer protocol) test module
         self.add(Extension('_testbuffer', ['_testbuffer.c']))
