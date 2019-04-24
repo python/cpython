@@ -133,7 +133,9 @@ _PyRuntimeState_ReInitThreads(void)
                                           WAIT_LOCK)
 #define HEAD_UNLOCK() PyThread_release_lock(_PyRuntime.interpreters.mutex)
 
-static void _PyGILState_NoteThreadState(PyThreadState* tstate);
+/* Forward declaration */
+static void _PyGILState_NoteThreadState(
+    struct _gilstate_runtime_state *gilstate, PyThreadState* tstate);
 
 _PyInitError
 _PyInterpreterState_Enable(_PyRuntimeState *runtime)
@@ -487,70 +489,73 @@ static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
 {
     PyThreadState *tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
-
-    if (_PyThreadState_GetFrame == NULL)
-        _PyThreadState_GetFrame = threadstate_getframe;
-
-    if (tstate != NULL) {
-        tstate->interp = interp;
-
-        tstate->frame = NULL;
-        tstate->recursion_depth = 0;
-        tstate->overflowed = 0;
-        tstate->recursion_critical = 0;
-        tstate->stackcheck_counter = 0;
-        tstate->tracing = 0;
-        tstate->use_tracing = 0;
-        tstate->gilstate_counter = 0;
-        tstate->async_exc = NULL;
-        tstate->thread_id = PyThread_get_thread_ident();
-
-        tstate->dict = NULL;
-
-        tstate->curexc_type = NULL;
-        tstate->curexc_value = NULL;
-        tstate->curexc_traceback = NULL;
-
-        tstate->exc_state.exc_type = NULL;
-        tstate->exc_state.exc_value = NULL;
-        tstate->exc_state.exc_traceback = NULL;
-        tstate->exc_state.previous_item = NULL;
-        tstate->exc_info = &tstate->exc_state;
-
-        tstate->c_profilefunc = NULL;
-        tstate->c_tracefunc = NULL;
-        tstate->c_profileobj = NULL;
-        tstate->c_traceobj = NULL;
-
-        tstate->trash_delete_nesting = 0;
-        tstate->trash_delete_later = NULL;
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-
-        tstate->coroutine_origin_tracking_depth = 0;
-
-        tstate->coroutine_wrapper = NULL;
-        tstate->in_coroutine_wrapper = 0;
-
-        tstate->async_gen_firstiter = NULL;
-        tstate->async_gen_finalizer = NULL;
-
-        tstate->context = NULL;
-        tstate->context_ver = 1;
-
-        tstate->id = ++interp->tstate_next_unique_id;
-
-        if (init)
-            _PyThreadState_Init(tstate);
-
-        HEAD_LOCK();
-        tstate->prev = NULL;
-        tstate->next = interp->tstate_head;
-        if (tstate->next)
-            tstate->next->prev = tstate;
-        interp->tstate_head = tstate;
-        HEAD_UNLOCK();
+    if (tstate == NULL) {
+        return NULL;
     }
+
+    if (_PyThreadState_GetFrame == NULL) {
+        _PyThreadState_GetFrame = threadstate_getframe;
+    }
+
+    tstate->interp = interp;
+
+    tstate->frame = NULL;
+    tstate->recursion_depth = 0;
+    tstate->overflowed = 0;
+    tstate->recursion_critical = 0;
+    tstate->stackcheck_counter = 0;
+    tstate->tracing = 0;
+    tstate->use_tracing = 0;
+    tstate->gilstate_counter = 0;
+    tstate->async_exc = NULL;
+    tstate->thread_id = PyThread_get_thread_ident();
+
+    tstate->dict = NULL;
+
+    tstate->curexc_type = NULL;
+    tstate->curexc_value = NULL;
+    tstate->curexc_traceback = NULL;
+
+    tstate->exc_state.exc_type = NULL;
+    tstate->exc_state.exc_value = NULL;
+    tstate->exc_state.exc_traceback = NULL;
+    tstate->exc_state.previous_item = NULL;
+    tstate->exc_info = &tstate->exc_state;
+
+    tstate->c_profilefunc = NULL;
+    tstate->c_tracefunc = NULL;
+    tstate->c_profileobj = NULL;
+    tstate->c_traceobj = NULL;
+
+    tstate->trash_delete_nesting = 0;
+    tstate->trash_delete_later = NULL;
+    tstate->on_delete = NULL;
+    tstate->on_delete_data = NULL;
+
+    tstate->coroutine_origin_tracking_depth = 0;
+
+    tstate->coroutine_wrapper = NULL;
+    tstate->in_coroutine_wrapper = 0;
+
+    tstate->async_gen_firstiter = NULL;
+    tstate->async_gen_finalizer = NULL;
+
+    tstate->context = NULL;
+    tstate->context_ver = 1;
+
+    tstate->id = ++interp->tstate_next_unique_id;
+
+    if (init) {
+        _PyThreadState_Init(&_PyRuntime, tstate);
+    }
+
+    HEAD_LOCK();
+    tstate->prev = NULL;
+    tstate->next = interp->tstate_head;
+    if (tstate->next)
+        tstate->next->prev = tstate;
+    interp->tstate_head = tstate;
+    HEAD_UNLOCK();
 
     return tstate;
 }
@@ -568,9 +573,9 @@ _PyThreadState_Prealloc(PyInterpreterState *interp)
 }
 
 void
-_PyThreadState_Init(PyThreadState *tstate)
+_PyThreadState_Init(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
-    _PyGILState_NoteThreadState(tstate);
+    _PyGILState_NoteThreadState(&runtime->gilstate, tstate);
 }
 
 PyObject*
@@ -1037,17 +1042,23 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
    Py_Initialize/Py_FinalizeEx
 */
 void
-_PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
+_PyGILState_Init(PyInterpreterState *interp, PyThreadState *tstate)
 {
-    assert(i && t); /* must init with valid states */
-    if (PyThread_tss_create(&_PyRuntime.gilstate.autoTSSkey) != 0) {
+    /* must init with valid states */
+    assert(interp != NULL);
+    assert(tstate != NULL);
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
+
+    if (PyThread_tss_create(&gilstate->autoTSSkey) != 0) {
         Py_FatalError("Could not allocate TSS entry");
     }
-    _PyRuntime.gilstate.autoInterpreterState = i;
-    assert(PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey) == NULL);
-    assert(t->gilstate_counter == 0);
+    gilstate->autoInterpreterState = interp;
+    assert(PyThread_tss_get(&gilstate->autoTSSkey) == NULL);
+    assert(tstate->gilstate_counter == 0);
 
-    _PyGILState_NoteThreadState(t);
+    _PyGILState_NoteThreadState(gilstate, tstate);
 }
 
 PyInterpreterState *
@@ -1104,13 +1115,14 @@ _PyGILState_Reinit(void)
    a better fix for SF bug #1010677 than the first one attempted).
 */
 static void
-_PyGILState_NoteThreadState(PyThreadState* tstate)
+_PyGILState_NoteThreadState(struct _gilstate_runtime_state *gilstate, PyThreadState* tstate)
 {
     /* If autoTSSkey isn't initialized, this must be the very first
        threadstate created in Py_Initialize().  Don't do anything for now
        (we'll be back here when _PyGILState_Init is called). */
-    if (!_PyRuntime.gilstate.autoInterpreterState)
+    if (!gilstate->autoInterpreterState) {
         return;
+    }
 
     /* Stick the thread state for this thread in thread specific storage.
 
@@ -1124,10 +1136,8 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
        The first thread state created for that given OS level thread will
        "win", which seems reasonable behaviour.
     */
-    if (PyThread_tss_get(&_PyRuntime.gilstate.autoTSSkey) == NULL) {
-        if ((PyThread_tss_set(&_PyRuntime.gilstate.autoTSSkey, (void *)tstate)
-             ) != 0)
-        {
+    if (PyThread_tss_get(&gilstate->autoTSSkey) == NULL) {
+        if ((PyThread_tss_set(&gilstate->autoTSSkey, (void *)tstate)) != 0) {
             Py_FatalError("Couldn't create autoTSSkey mapping");
         }
     }

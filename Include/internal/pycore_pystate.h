@@ -231,6 +231,11 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 /* Other */
 
+PyAPI_FUNC(void) _PyThreadState_Init(
+    _PyRuntimeState *runtime,
+    PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+
 PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
 PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(void);
 
