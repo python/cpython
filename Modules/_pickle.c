@@ -2224,7 +2224,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
            Python 2 *and* the appropriate 'bytes' object when unpickled
            using Python 3. Again this is a hack and we don't need to do this
            with newer protocols. */
-        PyObject *reduce_value = NULL;
+        PyObject *reduce_value;
         int status;
 
         if (PyBytes_GET_SIZE(obj) == 0) {
@@ -4070,15 +4070,16 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         PyObject *reduce_value = NULL;
         reduce_value = PyObject_CallFunctionObjArgs(self->_reducer_override,
                                                     obj, NULL);
-        if (reduce_value == NULL){
+        if (reduce_value == NULL) {
             goto error;
         }
 
         if (reduce_value != Py_NotImplemented) {
             status = save_reduce(self, reduce_value, obj);
             Py_DECREF(reduce_value);
-            if (status < 0)
+            if (status < 0) {
                 goto error;
+            }
             goto done;
         }
         Py_DECREF(reduce_value);
