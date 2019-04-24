@@ -35,6 +35,10 @@ class PositionalOnlyTestCase(unittest.TestCase):
         self.assertRaisesSyntaxError("def f(a, /, a): pass", "duplicate argument 'a' in function definition")
         self.assertRaisesSyntaxError("def f(a, /, *, a): pass", "duplicate argument 'a' in function definition")
         self.assertRaisesSyntaxError("def f(a, b/2, c): pass")
+        self.assertRaisesSyntaxError("def f(a, /, c, /): pass")
+        self.assertRaisesSyntaxError("def f(a, /, c, /, d): pass")
+        self.assertRaisesSyntaxError("def f(a, /, c, /, d, *, e): pass")
+        self.assertRaisesSyntaxError("def f(a, *, c, /, d, e): pass")
 
     def test_invalid_syntax_errors_async(self):
         self.assertRaisesSyntaxError("async def f(a, b = 5, /, c): pass", "non-default argument follows default argument")
@@ -52,6 +56,10 @@ class PositionalOnlyTestCase(unittest.TestCase):
         self.assertRaisesSyntaxError("async def f(a, /, a): pass", "duplicate argument 'a' in function definition")
         self.assertRaisesSyntaxError("async def f(a, /, *, a): pass", "duplicate argument 'a' in function definition")
         self.assertRaisesSyntaxError("async def f(a, b/2, c): pass")
+        self.assertRaisesSyntaxError("async def f(a, /, c, /): pass")
+        self.assertRaisesSyntaxError("async def f(a, /, c, /, d): pass")
+        self.assertRaisesSyntaxError("async def f(a, /, c, /, d, *, e): pass")
+        self.assertRaisesSyntaxError("async def f(a, *, c, /, d, e): pass")
 
     def test_optional_positional_only_args(self):
         def f(a, b=10, /, c=100):
@@ -233,6 +241,10 @@ class PositionalOnlyTestCase(unittest.TestCase):
         self.assertRaisesSyntaxError("lambda *, /, a: None")
         self.assertRaisesSyntaxError("lambda a, /, a: None", "duplicate argument 'a' in function definition")
         self.assertRaisesSyntaxError("lambda a, /, *, a: None", "duplicate argument 'a' in function definition")
+        self.assertRaisesSyntaxError("lambda a, /, b, /: None")
+        self.assertRaisesSyntaxError("lambda a, /, b, /, c: None")
+        self.assertRaisesSyntaxError("lambda a, /, b, /, c, *, d: None")
+        self.assertRaisesSyntaxError("lambda a, *, b, /, c: None")
 
     def test_posonly_methods(self):
         class Example:
