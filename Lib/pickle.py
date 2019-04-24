@@ -660,16 +660,19 @@ class _Pickler:
                 write(BUILD)
             else:
                 # If a state_setter is specified, call it instead of load_build
-                # to update obj's with its previous state.  The first 4
-                # save/write instructions push state_setter and its tuple of
-                # expected arguments (obj, state) onto the stack. The REDUCE
-                # opcode triggers the state_setter(obj, state) function call.
-                # Finally, because state-updating routines only do in-place
-                # modification, the whole operation has to be
-                # stack-transparent.  Thus, we finally pop the call's output
-                # from the stack.
-                save(state_setter), save(obj), save(state), write(TUPLE2)
+                # to update obj's with its previous state.
+                # First, push state_setter and its tuple of expected arguments
+                # (obj, state) onto the stack.
+                save(state_setter)
+                save(obj)
+                save(state)
+                write(TUPLE2)
+                # Trigger a state_setter(obj, state) function call.
                 write(REDUCE)
+                # The purpose of state_setter is to carry-out an
+                # inplace modification of obj. We do not care about what the
+                # method might return, so its output is eventually removed from
+                # the stack.
                 write(POP)
 
     # Methods below this point are dispatched through the dispatch table
