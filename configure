@@ -11238,7 +11238,6 @@ then
 
 $as_echo "#define WITH_PYMALLOC 1" >>confdefs.h
 
-    ABIFLAGS="${ABIFLAGS}m"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 $as_echo "$with_pymalloc" >&6; }
@@ -15086,12 +15085,13 @@ $as_echo "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
 # * --with-pydebug (adds a 'd')
-# * --with-pymalloc (adds a 'm')
-# * --with-wide-unicode (adds a 'u')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
 # would get a shared library ABI version tag of 'cpython-32dmu' and shared
 # libraries would be named 'foo.cpython-32dmu.so'.
+#
+# In Python 3.2 and older, --with-wide-unicode added a 'u' flag.
+# In Python 3.7 and older, --with-pymalloc added a 'm' flag.
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking ABIFLAGS" >&5
 $as_echo_n "checking ABIFLAGS... " >&6; }
