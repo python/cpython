@@ -1052,13 +1052,13 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
    Py_Initialize/Py_FinalizeEx
 */
 void
-_PyGILState_Init(PyInterpreterState *interp, PyThreadState *tstate)
+_PyGILState_Init(_PyRuntimeState *runtime,
+                 PyInterpreterState *interp, PyThreadState *tstate)
 {
     /* must init with valid states */
     assert(interp != NULL);
     assert(tstate != NULL);
 
-    _PyRuntimeState *runtime = &_PyRuntime;
     struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
 
     if (PyThread_tss_create(&gilstate->autoTSSkey) != 0) {
