@@ -1296,8 +1296,7 @@ class EventLoopTestsMixin:
         self.assertIsNone(loop._csock)
         self.assertIsNone(loop._ssock)
 
-    @unittest.skipUnless(MS_WINDOWS,
-                         "Don't support pipes for Windows")
+    @unittest.skipIf(MS_WINDOWS, "Don't support pipes for Windows")
     def test_read_pipe(self):
         proto = MyReadPipeProto(loop=self.loop)
 
