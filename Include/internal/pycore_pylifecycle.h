@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pystate.h"   /* _PyRuntimeState */
+
 /* True if the main interpreter thread exited due to an unhandled
  * KeyboardInterrupt exception, suggesting the user pressed ^C. */
 PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
@@ -63,7 +65,7 @@ extern void PyAsyncGen_Fini(void);
 extern void _PyExc_Fini(void);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
-extern void _PyGC_Fini(void);
+extern void _PyGC_Fini(_PyRuntimeState *runtime);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(void);
@@ -73,7 +75,7 @@ extern void _PyHash_Fini(void);
 extern int _PyTraceMalloc_Fini(void);
 
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
-extern void _PyGILState_Fini(void);
+extern void _PyGILState_Fini(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
 
