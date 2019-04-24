@@ -814,6 +814,7 @@ with_suffix
 enable_shared
 enable_profiling
 with_pydebug
+with_trace_refs
 with_assertions
 enable_optimizations
 with_lto
@@ -1500,6 +1501,7 @@ Optional Packages:
                           compiler
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
+  --with-trace-refs       enable tracing references for debugging purpose
   --with-assertions       build with C assertions enabled
   --with-lto              Enable Link Time Optimization in any build. Disabled
                           by default.
@@ -6333,8 +6335,30 @@ $as_echo "no" >&6; }
 fi
 
 
-# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
-# the ABI. This allows enabling assertions without changing the ABI.
+# Check for --with-trace-refs
+# --with-trace-refs
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-trace-refs" >&5
+$as_echo_n "checking for --with-trace-refs... " >&6; }
+
+# Check whether --with-trace-refs was given.
+if test "${with_trace_refs+set}" = set; then :
+  withval=$with_trace_refs;
+else
+  with_trace_refs=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_trace_refs" >&5
+$as_echo "$with_trace_refs" >&6; }
+
+if test "$with_trace_refs" = "yes"
+then
+
+$as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
+
+fi
+
+# Check for --with-assertions.
+# This allows enabling assertions without Py_DEBUG.
 assertions='false'
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-assertions" >&5
 $as_echo_n "checking for --with-assertions... " >&6; }
