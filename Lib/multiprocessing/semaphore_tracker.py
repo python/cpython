@@ -44,20 +44,23 @@ class SemaphoreTracker(object):
         This can be run from any process.  Usually a child process will use
         the semaphore created by its parent.'''
         with self._lock:
-            if self._pid is not None:
+            if self._fd is not None:
                 # semaphore tracker was launched before, is it still running?
-                try:
-                    pid, _ = os.waitpid(self._pid, os.WNOHANG)
-                except ChildProcessError:
-                    # The process terminated
-                    pass
-                else:
-                    if not pid:
-                        # => still alive
-                        return
-
+                if self._check_alive():
+                    # => still alive
+                    return
                 # => dead, launch it again
                 os.close(self._fd)
+
+                # Clean-up to avoid dangling processes.
+                try:
+                    # _pid can be None if this process is a child from another
+                    # python process, which has started the semaphore_tracker.
+                    if self._pid is not None:
+                        os.waitpid(self._pid, 0)
+                except ChildProcessError:
+                    # The semaphore_tracker has already been terminated.
+                    pass
                 self._fd = None
                 self._pid = None
 
@@ -98,6 +101,17 @@ class SemaphoreTracker(object):
                 self._pid = pid
             finally:
                 os.close(r)
+
+    def _check_alive(self):
+        '''Check that the pipe has not been closed by sending a probe.'''
+        try:
+            # We cannot use send here as it calls ensure_running, creating
+            # a cycle.
+            os.write(self._fd, b'PROBE:0\n')
+        except OSError:
+            return False
+        else:
+            return True
 
     def register(self, name):
         '''Register name of semaphore with semaphore tracker.'''
@@ -150,6 +164,8 @@ def main(fd):
                         cache.add(name)
                     elif cmd == b'UNREGISTER':
                         cache.remove(name)
+                    elif cmd == b'PROBE':
+                        pass
                     else:
                         raise RuntimeError('unrecognized command %r' % cmd)
                 except Exception:
