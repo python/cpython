@@ -38,9 +38,11 @@ Lib/test/test_bz2.py: BaseTest.decompress
 # Issue bpo-19113
 Lib/ctypes/test/test_functions.py: FunctionTestCase.test_errors
 
-# Issue bpo-XXX
+# Issue bpo-36711
 Lib/email/feedparser.py: BufferedSubFile.pushlines
+
+# Issue bpo-36712
 Lib/email/test/test_email_renamed.py: TestEncoders.test_default_cte
 
-# Issue bpo-XXX
+# Issue bpo-36713
 Lib/ctypes/test/test_unicode.py: StringTestCase.test_ascii_replace

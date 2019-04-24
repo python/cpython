@@ -1,0 +1,2 @@
+Add the `duplicate_meth_defs.py` tool to report duplicate method definitions
+in a given list of files or directories.
