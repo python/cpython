@@ -1078,10 +1078,11 @@ _PyGILState_GetInterpreterStateUnsafe(void)
 }
 
 void
-_PyGILState_Fini(void)
+_PyGILState_Fini(_PyRuntimeState *runtime)
 {
-    PyThread_tss_delete(&_PyRuntime.gilstate.autoTSSkey);
-    _PyRuntime.gilstate.autoInterpreterState = NULL;
+    struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
+    PyThread_tss_delete(&gilstate->autoTSSkey);
+    gilstate->autoInterpreterState = NULL;
 }
 
 /* Reset the TSS key - called by PyOS_AfterFork_Child().

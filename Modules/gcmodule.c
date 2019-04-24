@@ -1865,9 +1865,10 @@ _PyGC_DumpShutdownStats(void)
 }
 
 void
-_PyGC_Fini(void)
+_PyGC_Fini(_PyRuntimeState *runtime)
 {
-    Py_CLEAR(_PyRuntime.gc.callbacks);
+    struct _gc_runtime_state *gc = &runtime->gc;
+    Py_CLEAR(gc->callbacks);
 }
 
 /* for debugging */
