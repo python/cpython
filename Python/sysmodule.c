@@ -2155,12 +2155,12 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static PyObject*
-make_flags(void)
+make_flags(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     int pos = 0;
     PyObject *seq;
-    const _PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    const _PyPreConfig *preconfig = &runtime->preconfig;
+    const _PyCoreConfig *config = &interp->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2375,7 +2375,8 @@ static struct PyModuleDef sysmodule = {
     } while (0)
 
 static _PyInitError
-_PySys_InitCore(PyObject *sysdict)
+_PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
+                PyObject *sysdict)
 {
     PyObject *version_info;
     int res;
@@ -2465,8 +2466,8 @@ _PySys_InitCore(PyObject *sysdict)
             goto type_init_failed;
         }
     }
-    /* Set flags to their default values */
-    SET_SYS_FROM_STRING("flags", make_flags());
+    /* Set flags to their default values (updated by _PySys_InitMain()) */
+    SET_SYS_FROM_STRING("flags", make_flags(runtime, interp));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2587,7 +2588,7 @@ sys_create_xoptions_dict(const _PyCoreConfig *config)
 
 
 int
-_PySys_InitMain(PyInterpreterState *interp)
+_PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     PyObject *sysdict = interp->sysdict;
     const _PyCoreConfig *config = &interp->core_config;
@@ -2641,7 +2642,7 @@ _PySys_InitMain(PyInterpreterState *interp)
 #undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, interp));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -2708,7 +2709,8 @@ error:
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
 _PyInitError
-_PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
+_PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
+              PyObject **sysmod_p)
 {
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
@@ -2737,7 +2739,7 @@ _PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
         return err;
     }
 
-    err = _PySys_InitCore(sysdict);
+    err = _PySys_InitCore(runtime, interp, sysdict);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
