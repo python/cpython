@@ -6267,27 +6267,6 @@ load_build(UnpicklerObject *self)
         Py_INCREF(slotstate);
         Py_DECREF(tmp);
     }
-    /* state can embed a callable state setter */
-    else if (PyTuple_Check(state) && PyTuple_GET_SIZE(state) == 3) {
-        PyObject *state_slotstate;
-
-        setstate = PyTuple_GET_ITEM(state, 0);
-        state_slotstate = PyTuple_GetSlice(state, 1, 3);
-
-        Py_INCREF(setstate);
-
-        /* call the setstate function */
-        if (PyObject_CallFunctionObjArgs(setstate, inst, state_slotstate,
-                                         NULL) == NULL){
-            Py_DECREF(state_slotstate);
-            Py_DECREF(setstate);
-            return -1;
-        }
-
-        Py_DECREF(state_slotstate);
-        Py_DECREF(setstate);
-        return 0;
-    }
     else
         slotstate = NULL;
 
