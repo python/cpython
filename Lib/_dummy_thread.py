@@ -148,6 +148,25 @@ class LockType(object):
             hex(id(self))
         )
 
+
+class RLock(LockType):
+    def __init__(self):
+        super().__init__()
+        self._levels = 0
+
+    def acquire(self, waitflag=None, timeout=-1):
+        locked = super().acquire(waitflag, timeout)
+        if locked:
+            self._levels += 1
+        return locked
+
+    def release(self):
+        if self._levels == 0:
+            raise error
+        if self._levels == 1:
+            super().release()
+        self._levels -= 1
+
 # Used to signal that interrupt_main was called in a "thread"
 _interrupt = False
 # True when not executing in a "thread"
