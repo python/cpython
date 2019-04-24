@@ -108,7 +108,7 @@ class SemaphoreTracker(object):
             # We cannot use send here as it calls ensure_running, creating
             # a cycle.
             os.write(self._fd, b'PROBE:0\n')
-        except BrokenPipeError:
+        except OSError:
             return False
         else:
             return True
