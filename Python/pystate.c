@@ -108,23 +108,31 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
  */
 
 void
-_PyRuntimeState_ReInitThreads(void)
+_PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 {
     // This was initially set in _PyRuntimeState_Init().
-    _PyRuntime.main_thread = PyThread_get_thread_ident();
+    runtime->main_thread = PyThread_get_thread_ident();
 
-    _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
-    if (_PyRuntime.interpreters.mutex == NULL) {
+    /* Force default allocator, since _PyRuntimeState_Fini() must
+       use the same allocator than this function. */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    runtime->interpreters.mutex = PyThread_allocate_lock();
+    runtime->interpreters.main->id_mutex = PyThread_allocate_lock();
+    runtime->xidregistry.mutex = PyThread_allocate_lock();
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (runtime->interpreters.mutex == NULL) {
         Py_FatalError("Can't initialize lock for runtime interpreters");
     }
 
-    _PyRuntime.interpreters.main->id_mutex = PyThread_allocate_lock();
-    if (_PyRuntime.interpreters.main->id_mutex == NULL) {
+    if (runtime->interpreters.main->id_mutex == NULL) {
         Py_FatalError("Can't initialize ID lock for main interpreter");
     }
 
-    _PyRuntime.xidregistry.mutex = PyThread_allocate_lock();
-    if (_PyRuntime.xidregistry.mutex == NULL) {
+    if (runtime->xidregistry.mutex == NULL) {
         Py_FatalError("Can't initialize lock for cross-interpreter data registry");
     }
 }
@@ -290,20 +298,22 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
  * is a current interpreter state, it *must* be the main interpreter.
  */
 void
-_PyInterpreterState_DeleteExceptMain()
+_PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 {
+    struct pyinterpreters *interpreters = &runtime->interpreters;
+
     PyThreadState *tstate = PyThreadState_Swap(NULL);
-    if (tstate != NULL && tstate->interp != _PyRuntime.interpreters.main) {
+    if (tstate != NULL && tstate->interp != interpreters->main) {
         Py_FatalError("PyInterpreterState_DeleteExceptMain: not main interpreter");
     }
 
     HEAD_LOCK();
-    PyInterpreterState *interp = _PyRuntime.interpreters.head;
-    _PyRuntime.interpreters.head = NULL;
+    PyInterpreterState *interp = interpreters->head;
+    interpreters->head = NULL;
     while (interp != NULL) {
-        if (interp == _PyRuntime.interpreters.main) {
-            _PyRuntime.interpreters.main->next = NULL;
-            _PyRuntime.interpreters.head = interp;
+        if (interp == interpreters->main) {
+            interpreters->main->next = NULL;
+            interpreters->head = interp;
             interp = interp->next;
             continue;
         }
@@ -319,7 +329,7 @@ _PyInterpreterState_DeleteExceptMain()
     }
     HEAD_UNLOCK();
 
-    if (_PyRuntime.interpreters.head == NULL) {
+    if (interpreters->head == NULL) {
         Py_FatalError("PyInterpreterState_DeleteExceptMain: missing main");
     }
     PyThreadState_Swap(tstate);
@@ -1079,31 +1089,20 @@ _PyGILState_Fini(void)
  * don't reset TSS upon fork(), see issue #10517.
  */
 void
-_PyGILState_Reinit(void)
+_PyGILState_Reinit(_PyRuntimeState *runtime)
 {
-    /* Force default allocator, since _PyRuntimeState_Fini() must
-       use the same allocator than this function. */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    _PyRuntime.interpreters.mutex = PyThread_allocate_lock();
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    if (_PyRuntime.interpreters.mutex == NULL) {
-        Py_FatalError("Can't initialize threads for interpreter");
-    }
-
+    struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
     PyThreadState *tstate = PyGILState_GetThisThreadState();
-    PyThread_tss_delete(&_PyRuntime.gilstate.autoTSSkey);
-    if (PyThread_tss_create(&_PyRuntime.gilstate.autoTSSkey) != 0) {
+
+    PyThread_tss_delete(&gilstate->autoTSSkey);
+    if (PyThread_tss_create(&gilstate->autoTSSkey) != 0) {
         Py_FatalError("Could not allocate TSS entry");
     }
 
     /* If the thread had an associated auto thread state, reassociate it with
      * the new key. */
     if (tstate &&
-        PyThread_tss_set(&_PyRuntime.gilstate.autoTSSkey, (void *)tstate) != 0)
+        PyThread_tss_set(&gilstate->autoTSSkey, (void *)tstate) != 0)
     {
         Py_FatalError("Couldn't create autoTSSkey mapping");
     }
