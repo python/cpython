@@ -1,0 +1,2 @@
+regrtest: fixed typeperf encoding for cpu usage evaluation on win 10, lookup
+of correct typeperf key in winreg removed closing of the stdout pipe

@@ -1,18 +1,19 @@
 import _winapi
+import winreg
 import msvcrt
-import os
 import subprocess
 import uuid
 from test import support
-
 
 # Max size of asynchronous reads
 BUFSIZE = 8192
 # Exponential damping factor (see below)
 LOAD_FACTOR_1 = 0.9200444146293232478931553241
+
 # Seconds per measurement
 SAMPLING_INTERVAL = 5
-COUNTER_NAME = r'\System\Processor Queue Length'
+# windows registry subkey of HKEY_LOCAL_MACHINE where the counter names of typeperf are registered
+COUNTER_REGISTRY_KEY = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Perflib\\CurrentLanguage"
 
 
 class WindowsLoadTracker():
@@ -25,14 +26,15 @@ class WindowsLoadTracker():
 
     def __init__(self):
         self.load = 0.0
-        self.p = None
+        self.typePerfProcess = None
+        self.counter_name = ''
         self.start()
 
     def start(self):
         # Create a named pipe which allows for asynchronous IO in Windows
-        pipe_name =  r'\\.\pipe\typeperf_output_' + str(uuid.uuid4())
+        pipe_name = r'\\.\pipe\typeperf_output_' + str(uuid.uuid4())
 
-        open_mode =  _winapi.PIPE_ACCESS_INBOUND
+        open_mode = _winapi.PIPE_ACCESS_INBOUND
         open_mode |= _winapi.FILE_FLAG_FIRST_PIPE_INSTANCE
         open_mode |= _winapi.FILE_FLAG_OVERLAPPED
 
@@ -55,31 +57,39 @@ class WindowsLoadTracker():
         overlap.GetOverlappedResult(True)
 
         # Spawn off the load monitor
-        command = ['typeperf', COUNTER_NAME, '-si', str(SAMPLING_INTERVAL)]
-        self.p = subprocess.Popen(command, stdout=command_stdout, cwd=support.SAVEDCWD)
+        self.counter_name = self._get_counter_name()
+        command = ['typeperf', self.counter_name, '-si', str(SAMPLING_INTERVAL)]
+        self.typePerfProcess = subprocess.Popen(' '.join(command), stdout=command_stdout, cwd=support.SAVEDCWD)
 
-        # Close our copy of the write end of the pipe
-        os.close(command_stdout)
+    def _get_counter_name(self):
+        # accessing the registry to get the counter localization name
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, COUNTER_REGISTRY_KEY) as perfkey:
+            counter_list = winreg.QueryValueEx(perfkey, 'Counter')[0]
+            # converting the alternating counter list to dict
+            i = iter(counter_list)
+            counter_dict = dict(zip(i, i))
+            # system counter is at '2' and processor queue length is '44'
+            counter_name = r'"\{}\{}"'.format(counter_dict['2'], counter_dict['44'])
+        return counter_name
 
     def close(self):
-        if self.p is None:
+        if self.typePerfProcess is None:
             return
-        self.p.kill()
-        self.p.wait()
-        self.p = None
+        self.typePerfProcess.kill()
+        self.typePerfProcess.wait()
+        self.typePerfProcess = None
 
     def __del__(self):
         self.close()
 
     def read_output(self):
-        import _winapi
-
         overlapped, _ = _winapi.ReadFile(self.pipe, BUFSIZE, True)
         bytes_read, res = overlapped.GetOverlappedResult(False)
         if res != 0:
             return
-
-        return overlapped.getbuffer().decode()
+        response = overlapped.getbuffer()
+        # output is windows 'oem' encoded
+        return response.decode(encoding='oem', errors='ignore')
 
     def getloadavg(self):
         typeperf_output = self.read_output()
@@ -93,7 +103,7 @@ class WindowsLoadTracker():
             # "07/19/2018 01:32:26.605","3.000000"
             toks = line.split(',')
             # Ignore blank lines and the initial header
-            if line.strip() == '' or (COUNTER_NAME in line) or len(toks) != 2:
+            if line.strip() == '' or '\\\\' in line or len(toks) != 2:
                 continue
 
             load = float(toks[1].replace('"', ''))
