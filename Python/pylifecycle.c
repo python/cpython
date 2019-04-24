@@ -1054,7 +1054,7 @@ Py_InitializeEx(int install_sigs)
 
     err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
-        return err;
+        _Py_ExitInitError(err);
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
