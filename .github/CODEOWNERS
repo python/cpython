@@ -43,6 +43,9 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
+# Parser/Pgen
+/Parser/pgen/                 @pablogsal
+
 # SQLite 3
 **/*sqlite*                   @berkerpeksag
 
