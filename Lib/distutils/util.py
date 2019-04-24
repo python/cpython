@@ -38,7 +38,7 @@ def get_host_platform():
     if os.name == 'nt':
         if 'amd64' in sys.version.lower():
             return 'win-amd64'
-        if 'arm' in sys.version.lower():
+        if '(arm)' in sys.version.lower():
             return 'win-arm32'
         return sys.platform
 
