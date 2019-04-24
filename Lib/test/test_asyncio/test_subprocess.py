@@ -9,8 +9,9 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import MS_WINDOWS
 
-if sys.platform != 'win32':
+if not MS_WINDOWS:
     from asyncio import unix_events
 
 # Program blocking
@@ -171,7 +172,7 @@ class SubprocessMixin:
         proc = self.loop.run_until_complete(create)
         proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             self.assertIsInstance(returncode, int)
             # expect 1 but sometimes get 0
         else:
@@ -183,13 +184,13 @@ class SubprocessMixin:
         proc = self.loop.run_until_complete(create)
         proc.terminate()
         returncode = self.loop.run_until_complete(proc.wait())
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             self.assertIsInstance(returncode, int)
             # expect 1 but sometimes get 0
         else:
             self.assertEqual(-signal.SIGTERM, returncode)
 
-    @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
+    @unittest.skipIf(MS_WINDOWS, "Don't have SIGHUP")
     def test_send_signal(self):
         # bpo-31034: Make sure that we get the default signal handler (killing
         # the process). The parent process may have decided to ignore SIGHUP,
@@ -464,14 +465,14 @@ class SubprocessMixin:
         # Unlike SafeChildWatcher, FastChildWatcher does not pop the
         # callbacks if waitpid() is called elsewhere. Let's clear them
         # manually to avoid a warning when the watcher is detached.
-        if (sys.platform != 'win32' and
+        if (not MS_WINDOWS and
                 isinstance(self, SubprocessFastWatcherTests)):
             asyncio.get_child_watcher()._callbacks.clear()
 
     def test_popen_error(self):
         # Issue #24763: check that the subprocess transport is closed
         # when BaseSubprocessTransport fails
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             target = 'asyncio.windows_utils.Popen'
         else:
             target = 'subprocess.Popen'
@@ -511,7 +512,7 @@ class SubprocessMixin:
         self.loop.run_until_complete(execute())
 
 
-if sys.platform != 'win32':
+if not MS_WINDOWS:
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):
 

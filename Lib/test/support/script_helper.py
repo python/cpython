@@ -11,7 +11,7 @@ import py_compile
 import zipfile
 
 from importlib.util import source_from_cache
-from test.support import make_legacy_pyc, strip_python_stderr
+from test.support import make_legacy_pyc, strip_python_stderr, MS_WINDOWS
 
 
 # Cached result of the expensive test performed in the function below.
@@ -105,7 +105,7 @@ def run_python_until_end(*args, **env_vars):
     # caller is responsible to pass the full environment.
     if env_vars.pop('__cleanenv', None):
         env = {}
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             # Windows requires at least the SYSTEMROOT environment variable to
             # start Python.
             env['SYSTEMROOT'] = os.environ['SYSTEMROOT']

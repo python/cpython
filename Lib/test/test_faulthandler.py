@@ -7,7 +7,7 @@ import subprocess
 import sys
 import sysconfig
 from test import support
-from test.support import script_helper, is_android, AIX, MS_WINDOWS
+from test.support import script_helper, ANDROID, AIX, MS_WINDOWS
 import tempfile
 import threading
 import unittest
@@ -42,7 +42,7 @@ def expected_traceback(lineno1, lineno2, header, min_count=1):
 
 def skip_segfault_on_android(test):
     # Issue #32138: Raising SIGSEGV on Android may not cause a crash.
-    return unittest.skipIf(is_android,
+    return unittest.skipIf(ANDROID,
                            'raising SIGSEGV on Android is unreliable')(test)
 
 @contextmanager

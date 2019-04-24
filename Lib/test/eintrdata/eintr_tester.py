@@ -22,6 +22,7 @@ import time
 import unittest
 
 from test import support
+from test.support import MACOS
 
 @contextlib.contextmanager
 def kill_on_error(proc):
@@ -347,8 +348,7 @@ class SocketEINTRTest(EINTRBaseTest):
         fp = open(path, 'w')
         fp.close()
 
-    @unittest.skipIf(sys.platform == "darwin",
-                     "hangs under macOS; see bpo-25234, bpo-35363")
+    @unittest.skipIf(MACOS, "hangs under macOS; see bpo-25234, bpo-35363")
     def test_open(self):
         self._test_open("fp = open(path, 'r')\nfp.close()",
                         self.python_open)
@@ -357,8 +357,7 @@ class SocketEINTRTest(EINTRBaseTest):
         fd = os.open(path, os.O_WRONLY)
         os.close(fd)
 
-    @unittest.skipIf(sys.platform == "darwin",
-                     "hangs under macOS; see bpo-25234, bpo-35363")
+    @unittest.skipIf(MACOS, "hangs under macOS; see bpo-25234, bpo-35363")
     def test_os_open(self):
         self._test_open("fd = os.open(path, os.O_RDONLY)\nos.close(fd)",
                         self.os_open)
@@ -439,8 +438,7 @@ class SelectEINTRTest(EINTRBaseTest):
         self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
 
-    @unittest.skipIf(sys.platform == "darwin",
-                     "poll may fail on macOS; see issue #28087")
+    @unittest.skipIf(MACOS, "poll may fail on macOS; see issue #28087")
     @unittest.skipUnless(hasattr(select, 'poll'), 'need select.poll')
     def test_poll(self):
         poller = select.poll()

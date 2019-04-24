@@ -36,6 +36,14 @@ import unittest
 import urllib.error
 import warnings
 
+ANDROID  = hasattr(sys, 'getandroidapilevel')
+JYTHON = sys.platform.startswith('java')
+
+AIX = platform.system() == 'AIX'
+LINUX = platform.system() == 'Linux'
+MACOS = platform.system() == 'Darwin'
+MS_WINDOWS = platform.system() == 'Windows'
+
 from .testresult import get_test_runner
 
 try:
@@ -96,7 +104,7 @@ __all__ = [
     "check__all__", "skip_unless_bind_unix_socket",
     "ignore_warnings",
     # sys
-    "is_jython", "is_android", "check_impl_detail", "unix_shell",
+    "check_impl_detail", "unix_shell",
     "ANDROID", "JYTHON",
     "setswitchinterval",
     # network
@@ -337,7 +345,7 @@ def _force_run(path, func, *args):
         os.chmod(path, stat.S_IRWXU)
         return func(*args)
 
-if sys.platform.startswith("win"):
+if MS_WINDOWS:
     def _waitfor(func, pathname, waitall=False):
         # Perform the operation
         func(pathname)
@@ -488,7 +496,7 @@ def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
     reason = None
-    if sys.platform.startswith('win'):
+    if MS_WINDOWS:
         # if Python is running as a service (such as the buildbot service),
         # gui interaction may be disallowed
         import ctypes
@@ -514,7 +522,7 @@ def _is_gui_available():
             raise ctypes.WinError()
         if not bool(uof.dwFlags & WSF_VISIBLE):
             reason = "gui not available (WSF_VISIBLE flag not set)"
-    elif sys.platform == 'darwin':
+    elif MACOS:
         # The Aqua Tk implementations on OS X can abort the process if
         # being called in an environment where a window server connection
         # cannot be made, for instance when invoked by a buildbot or ssh
@@ -630,7 +638,7 @@ def requires_mac_ver(*min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            if sys.platform == 'darwin':
+            if MACOS:
                 version_txt = platform.mac_ver()[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
@@ -817,20 +825,8 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
-ANDROID  = hasattr(sys, 'getandroidapilevel')
-JYTHON = sys.platform.startswith('java')
-
-AIX = platform.system() == 'AIX'
-LINUX = platform.system() == 'Linux'
-MACOS = platform.system() == 'Darwin'
-MS_WINDOWS = platform.system() == 'Windows'
-
-is_jython = sys.platform.startswith('java')
-
-is_android = hasattr(sys, 'getandroidapilevel')
-
-if sys.platform != 'win32':
-    unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
+if not MS_WINDOWS:
+    unix_shell = '/system/bin/sh' if ANDROID else '/bin/sh'
 else:
     unix_shell = None
 
@@ -899,7 +895,7 @@ for character in (
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
-if sys.platform == 'darwin':
+if MACOS:
     # In Mac OS X's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
@@ -927,7 +923,7 @@ if os.name == 'nt':
                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
             TESTFN_UNENCODABLE = None
 # Mac OS X denies unencodable filenames (invalid utf-8)
-elif sys.platform != 'darwin':
+elif not MACOS:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(TESTFN_ENCODING)
@@ -1620,7 +1616,7 @@ def gc_collect():
     objects to disappear.
     """
     gc.collect()
-    if is_jython:
+    if JYTHON:
         time.sleep(0.1)
     gc.collect()
     gc.collect()
@@ -2084,7 +2080,7 @@ def _check_docstrings():
     """Just used to check if docstrings are enabled"""
 
 MISSING_C_DOCSTRINGS = (check_impl_detail() and
-                        sys.platform != 'win32' and
+                        not MS_WINDOWS and
                         not sysconfig.get_config_var('WITH_DOC_STRINGS'))
 
 HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
@@ -2656,7 +2652,7 @@ class SuppressCrashReport:
         On UNIX, try to save the previous core file size limit, then set
         soft limit to 0.
         """
-        if sys.platform.startswith('win'):
+        if MS_WINDOWS:
             # see http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx
             # GetErrorMode is not available on Windows XP and Windows Server 2003,
             # but SetErrorMode returns the previous value, so we can use that
@@ -2694,7 +2690,7 @@ class SuppressCrashReport:
                 except (ValueError, OSError):
                     pass
 
-            if sys.platform == 'darwin':
+            if MACOS:
                 # Check if the 'Crash Reporter' on OSX was configured
                 # in 'Developer' mode and warn that it will get triggered
                 # when it is.
@@ -2719,7 +2715,7 @@ class SuppressCrashReport:
         if self.old_value is None:
             return
 
-        if sys.platform.startswith('win'):
+        if MS_WINDOWS:
             self._k32.SetErrorMode(self.old_value)
 
             if self.old_modes:
@@ -2838,7 +2834,7 @@ def setswitchinterval(interval):
     # Setting a very low gil interval on the Android emulator causes python
     # to hang (issue #26939).
     minimum_interval = 1e-5
-    if is_android and interval < minimum_interval:
+    if ANDROID and interval < minimum_interval:
         global _is_android_emulator
         if _is_android_emulator is None:
             _is_android_emulator = (subprocess.check_output(
@@ -2867,7 +2863,7 @@ def disable_faulthandler():
 def fd_count():
     """Count the number of open file descriptors.
     """
-    if sys.platform.startswith(('linux', 'freebsd')):
+    if LINUX or sys.platform.startswith('freebsd'):
         try:
             names = os.listdir("/proc/self/fd")
             # Substract one because listdir() opens internally a file
@@ -2884,7 +2880,7 @@ def fd_count():
             pass
 
     old_modes = None
-    if sys.platform == 'win32':
+    if MACOS:
         # bpo-25306, bpo-31009: Call CrtSetReportMode() to not kill the process
         # on invalid file descriptor if Python is compiled in debug mode
         try:

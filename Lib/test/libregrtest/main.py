@@ -623,7 +623,7 @@ class Regrtest:
             def getloadavg_1m():
                 return os.getloadavg()[0]
             self.getloadavg = getloadavg_1m
-        elif sys.platform == 'win32' and (self.ns.worker_args is None):
+        elif support.MS_WINDOWS and (self.ns.worker_args is None):
             from test.libregrtest.win_utils import WindowsLoadTracker
 
             load_tracker = WindowsLoadTracker()
