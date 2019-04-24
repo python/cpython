@@ -725,6 +725,69 @@ share the same dispatch table.  The equivalent code using the
    f = io.BytesIO()
    p = pickle.Pickler(f)
 
+.. _reducer_override:
+
+Subclassing the Pickler class
+-----------------------------
+
+For most use-cases, it is recommended to simply use the ``dispatch_table`` of a
+``Pickler`` instance to customize its behavior, as explained above.
+
+However, using the ``dispatch_table`` may not be flexible enough. in particular
+if we want to customize the pickling logic based on another criterion than the
+object's type, or if we want to customize the pickling of functions and
+classes.
+
+For those cases, it is possible to subclass from the ``Pickler`` class and
+implement a `reducer_override` method. This method can return an arbitrary
+reduction tuple (see :meth:`__reduce__`). It can alternatively return
+``NotImplemented`` to fallback to the traditional behavior.
+
+If both the ``dispatch_table`` and ``reducer_override`` are defined, then
+``reducer_override`` method takes priority.
+
+.. Note::
+   For performance reasons, the C implementation of pickle does not allow to
+   override the pickling of the following objects: ``None``, ``True``,
+   ``False``, and instances of ``long``, ``float``, ``bytes``, ``str``,
+   ``dict``, ``set``, ``frozenset``, ``list``, ``tuple``,
+
+
+Here is a simple example::
+
+   import io
+   import pickle
+
+
+   class MyClass:
+       my_attribute = 1
+
+
+   class MyPickler(pickle.Pickler):
+       def reducer_override(self, obj):
+           """Custom reducer for MyClass."""
+
+           if getattr(obj, "__name__", None) == "MyClass":
+               return type, (obj.__name__, obj.__bases__,
+                             {'my_attribute': obj.my_attribute})
+           else:
+               # For any other object, fallback to the usual pickling routines
+               # (builtin or dispatch_table)
+               return NotImplemented
+
+
+   f = io.BytesIO()
+   p = MyPickler(f)
+   p.dump(MyClass)
+
+   del MyClass
+
+   my_depickled_class = pickle.loads(f.getvalue())
+
+   assert my_depickled_class.__name__ == "MyClass"
+   assert my_depickled_class.my_attribute == 1
+
+
 .. _pickle-state:
 
 Handling Stateful Objects
