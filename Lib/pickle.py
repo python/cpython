@@ -655,25 +655,22 @@ class _Pickler:
             self._batch_setitems(dictitems)
 
         if state is not None:
-            msg = "state must be either a dict or a tuple of length 2"
             if state_setter is None:
                 save(state)
-
-            elif isinstance(state, dict):
-                # If a state_setter is specified, and state is a dict, we could
-                # be tempted to save a (state_setter, state) as state, but this
-                # would collide with load_build's (state, slotstate) special
-                # handling.  Therefore, create a new format for state saving:
-                # (state_setter, state, slotstate)
-                save((state_setter, state, None))
-            elif isinstance(state, tuple):
-                if len(state) != 2:
-                    raise PicklingError(msg)
-                save((state_setter, *state))
+                write(BUILD)
             else:
-                raise PicklingError(msg)
-
-            write(BUILD)
+                # If a state_setter is specified, call it instead of load_build
+                # to update obj's with its previous state.  The first 4
+                # save/write instructions push state_setter and its tuple of
+                # expected arguments (obj, state) onto the stack. The REDUCE
+                # opcode triggers the state_setter(obj, state) function call.
+                # Finally, because state-updating routines only do in-place
+                # modification, the whole operation has to be
+                # stack-transparent.  Thus, we finally pop the call's output
+                # from the stack.
+                save(state_setter), save(obj), save(state), write(TUPLE2)
+                write(REDUCE)
+                write(POP)
 
     # Methods below this point are dispatched through the dispatch table
 
@@ -1564,14 +1561,6 @@ class _Unpickler:
         slotstate = None
         if isinstance(state, tuple) and len(state) == 2:
             state, slotstate = state
-
-        elif isinstance(state, tuple) and len(state) == 3:
-            setstate, state, slostate = state
-            if slotstate is None:
-                setstate(inst, (state, slotstate))
-            else:
-                setstate(inst, state)
-
         if state:
             inst_dict = inst.__dict__
             intern = sys.intern
