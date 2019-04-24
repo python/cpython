@@ -3028,8 +3028,8 @@ class AbstractCustomPicklerClass:
             return str, ('some str',)
 
         elif obj_name == 'g':
-            # in this case, the callback returns an invalid result (not
-            # a 2-5 tuple), the pickler should raise a proper error.
+            # in this case, the callback returns an invalid result (not a 2-5
+            # tuple or a string), the pickler should raise a proper error.
             return False
         elif obj_name == 'h':
             # Simulate a case when the reducer fails. The error should
@@ -3071,7 +3071,7 @@ class AbstractHookTests(unittest.TestCase):
                 # NotImplemented
                 self.assertIs(math_log, math.log)
 
-                with self.assertRaises(Exception):
+                with self.assertRaises(pickle.PicklingError):
                     p.dump(g)
 
                 with self.assertRaisesRegex(
