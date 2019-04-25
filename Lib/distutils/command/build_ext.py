@@ -714,20 +714,5 @@ class build_ext(Command):
                 # don't extend ext.libraries, it may be shared with other
                 # extensions, it is a reference to the original list
                 return ext.libraries + [pythonlib]
-            else:
-                return ext.libraries
-        elif sys.platform == 'darwin':
-            # Don't use the default code below
-            return ext.libraries
-        elif sys.platform[:3] == 'aix':
-            # Don't use the default code below
-            return ext.libraries
-        else:
-            from distutils import sysconfig
-            if sysconfig.get_config_var('Py_ENABLE_SHARED'):
-                pythonlib = 'python{}.{}{}'.format(
-                    sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff,
-                    sysconfig.get_config_var('ABIFLAGS'))
-                return ext.libraries + [pythonlib]
-            else:
-                return ext.libraries
+
+        return ext.libraries

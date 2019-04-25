@@ -277,6 +277,10 @@ the full reference.
    |                        | simply skip the extension.     |                           |
    +------------------------+--------------------------------+---------------------------+
 
+   .. versionchanged:: 3.8
+
+      On Unix, C extensions are no longer linked to libpython.
+
 
 .. class:: Distribution
 
