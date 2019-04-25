@@ -33,16 +33,19 @@ rep = sys.stdout.write
 new_interpreter = None
 preserve_timestamps = False
 create_backup = True
+add_flag = ''
+
 
 
 def main():
     global new_interpreter
     global preserve_timestamps
     global create_backup
+    global add_flag
     usage = ('usage: %s -i /interpreter -p -n file-or-directory ...\n' %
              sys.argv[0])
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i:pn')
+        opts, args = getopt.getopt(sys.argv[1:], 'i:f:pn')
     except getopt.error as msg:
         err(str(msg) + '\n')
         err(usage)
@@ -54,6 +57,8 @@ def main():
             preserve_timestamps = True
         if o == '-n':
             create_backup = False
+        if o == '-f':
+            add_flag = a.encode()
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
         err('-i option or file-or-directory missing\n')
@@ -169,7 +174,13 @@ def fixline(line):
         return line
     if b"python" not in line:
         return line
-    return b'#! ' + new_interpreter + b'\n'
+    fixedline = b'#! ' + new_interpreter
+    if not add_flag:
+        return fixedline + b'\n'
+    if b'-' in line:
+        return fixedline + b' -' + add_flag + line[(line.index(b'-') + 1):]
+    return fixedline + b' -' + add_flag + b'\n'
+
 
 if __name__ == '__main__':
     main()
