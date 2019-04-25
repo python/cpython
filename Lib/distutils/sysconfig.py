@@ -28,7 +28,12 @@ BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 if "_PYTHON_PROJECT_BASE" in os.environ:
     project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
 else:
-    project_base = os.path.dirname(os.path.abspath(sys.executable))
+    if sys.executable:
+        project_base = os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        # sys.executable can be empty if argv[0] has been changed and Python is
+        # unable to retrieve the real program name
+        project_base = os.getcwd()
 
 
 # python_build: (Boolean) if true, we're either building Python or
