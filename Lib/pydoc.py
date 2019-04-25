@@ -1669,10 +1669,10 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     return title % desc + '\n\n' + renderer.document(object, name)
 
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
-        output=None, follow_wrapped=False):
+        output=None, follow_wrapped=True):
     """Display text documentation, given an object or a path to an object."""
     try:
-        if follow_wrapped:
+        if not follow_wrapped:
             thing = inspect.unwrap(thing)
         if output is None:
             pager(render_doc(thing, title, forceload))
@@ -1937,7 +1937,7 @@ has the same effect as typing a particular string at the help> prompt.
             self.output.flush()
             return self.input.readline()
 
-    def help(self, request, follow_wrapped=False):
+    def help(self, request, follow_wrapped=True):
         if type(request) is type(''):
             request = request.strip()
             if request == 'keywords': self.listkeywords()
