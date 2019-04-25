@@ -299,6 +299,21 @@ class IntegrationTests(TestCase):
         background.join()
         self.assertEqual(received, support.SOCK_MAX_SIZE - 100)
 
+    def test_no_content_length_header_on_304(self):
+        def app(environ, start_response):
+            start_response(
+                '304 Not Modified',
+                [('Date', 'Wed, 24 Dec 2008 13:29:32 GMT')]
+            )
+            return []
+
+        stdout, _ = run_amock(validator(app))
+        self.assertNotIn(b'Content-Length: 0', stdout)
+
+    # TODO: Test POST request + Content-Length: 0.
+    # TODO: Test 204 No Content.
+    # TODO: Test HEAD request.
+
 
 class UtilityTests(TestCase):
 
