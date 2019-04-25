@@ -114,7 +114,7 @@ class build(Command):
             self.build_scripts = os.path.join(self.build_base,
                                               'scripts-' + sys.version[0:3])
 
-        if self.executable is None:
+        if self.executable is None and sys.executable:
             self.executable = os.path.normpath(sys.executable)
 
     def run(self):
