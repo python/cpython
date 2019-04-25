@@ -1,0 +1,67 @@
+# Files or duplicates ignored by Tools/scripts/duplicate_meth_defs.py
+# when run with the '--ignore' command line option.
+#
+# Format:
+#           filename[: mfqn]
+#
+# The whole file is ignored when mfqn (method fully qualified name) is
+# missing. Use instead the '--exclude' command line option of
+# duplicate_meth_defs.py to ignore a directory tree.
+
+# Files with bad encoding or bad syntax.
+Lib/lib2to3/tests/data/bom.py
+Lib/lib2to3/tests/data/crlf.py
+Lib/lib2to3/tests/data/different_encoding.py
+Lib/lib2to3/tests/data/false_encoding.py
+Lib/lib2to3/tests/data/py2_test_grammar.py
+Lib/test/bad_coding.py
+Lib/test/bad_coding2.py
+Lib/test/badsyntax_pep3120.py
+Lib/test/badsyntax_3131.py
+Tools/test2to3/maintest.py
+Tools/test2to3/test2to3/hello.py
+Tools/test2to3/test/test_foo.py
+
+# False positives.
+Lib/multiprocessing/connection.py: Connection._close
+Lib/pathlib.py: _NormalAccessor.symlink
+Lib/socket.py: socket._sendfile_use_sendfile
+Lib/socket.py: socket.get_inheritable
+Lib/socket.py: socket.set_inheritable
+Lib/ssl.py: SSLContext.hostname_checks_common_name
+Lib/subprocess.py: Popen._get_handles
+Lib/subprocess.py: Popen._execute_child
+Lib/subprocess.py: Popen._internal_poll
+Lib/subprocess.py: Popen._wait
+Lib/subprocess.py: Popen._communicate
+Lib/subprocess.py: Popen.send_signal
+Lib/subprocess.py: Popen.terminate
+Lib/tempfile.py: _TemporaryFileCloser.close
+Lib/test/test_socket.py: InterruptedTimeoutBase.setAlarm
+Lib/test/test_pathlib.py: _BasePathTest.dirlink
+
+
+# Duplicates that must be fixed and that are temporarily ignored.
+# Issue bpo-19113
+Lib/ctypes/test/test_functions.py: FunctionTestCase.test_errors
+
+# Issue bpo-36678
+Lib/test/test_dataclasses.py: TestCase.test_helper_asdict_builtin_containers
+Lib/test/test_dataclasses.py: TestCase.test_helper_astuple_builtin_containers
+Lib/test/test_dataclasses.py: TestCase.test_not_tuple
+Lib/test/test_dataclasses.py: TestReplace.test_recursive_repr_two_attrs
+
+# Issue bpo-36679
+Lib/test/test_genericclass.py: TestClassGetitem.test_class_getitem
+
+# Issue bpo-19119
+Lib/test/test_heapq.py: TestErrorHandling.test_get_only
+
+# Issue bpo-36680
+Lib/test/test_importlib/test_util.py: PEP3147Tests.test_source_from_cache_path_like_arg
+
+# Issue bpo-36681
+Lib/test/test_logging.py: BuiltinLevelsTest.test_regression_29220
+
+# Issue bpo-36683
+Lib/test/test_utf8_mode.py: UTF8ModeTests.test_io_encoding

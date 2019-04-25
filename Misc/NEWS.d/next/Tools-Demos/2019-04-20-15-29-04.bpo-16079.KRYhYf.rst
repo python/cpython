@@ -1,0 +1,5 @@
+Add the `duplicate_meth_defs.py` tool as a pre-commit check on Travis. The
+`duplicate_meth_defs.py` tool reports duplicate method definitions in a
+given list of files or directories. One must add an entry in
+`Tools/scripts/duplicates_ignored.txt` to by-pass the pre-commit check when
+the reported duplicate is a false positive.
