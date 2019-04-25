@@ -1,0 +1,1 @@
+Add flag -k to pathscript.py. This flag preserve flags from shebang before change and adds them after change.
