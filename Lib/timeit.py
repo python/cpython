@@ -205,8 +205,9 @@ class Timer:
             r.append(t)
         return r
 
-    def autorange(self, callback=None):
-        """Return the number of loops and time taken so that total time >= 0.2.
+    def autorange(self, callback=None, total_time=0.2):
+        """Return the number of loops and time taken so that total time
+        is greater than *total_time*.
 
         Calls the timeit method with increasing numbers from the sequence
         1, 2, 5, 10, 20, 50, ... until the time taken is at least 0.2
@@ -222,7 +223,7 @@ class Timer:
                 time_taken = self.timeit(number)
                 if callback:
                     callback(number, time_taken)
-                if time_taken >= 0.2:
+                if time_taken >= total_time:
                     return (number, time_taken)
             i *= 10
 
