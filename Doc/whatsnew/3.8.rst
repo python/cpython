@@ -725,7 +725,7 @@ Changes in Python behavior
   older Python versions include the version number, it is recommended to
   always use the ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
-  
+
 * :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
   terminate the current thread if called while the interpreter is
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
