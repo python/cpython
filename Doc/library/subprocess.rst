@@ -567,6 +567,13 @@ functions.
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
 
+   .. versionchanged:: 3.8
+      Popen can use :func:`os.posix_spawn` in some cases for better
+      performance. On Windows Subsystem for Linux and QEMU User Emulation,
+      Popen constructor using :func:`os.posix_spawn` no longer raise an
+      exception on errors like missing program, but the child process fails
+      with a non-zero :attr:`~Popen.returncode`.
+
 
 Exceptions
 ^^^^^^^^^^
