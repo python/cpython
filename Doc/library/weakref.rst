@@ -140,7 +140,7 @@ Extension types can easily be made to support weak references; see
    of the same name to the :func:`ref` function.
 
    .. versionchanged:: 3.8
-      Extended the operator support on proxys object to include the matrix
+      Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
 
 
