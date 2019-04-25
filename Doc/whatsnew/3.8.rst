@@ -729,6 +729,12 @@ Changes in Python behavior
 Changes in the Python API
 -------------------------
 
+* :class:`subprocess.Popen` can now use :func:`os.posix_spawn` in some cases
+  for better performance. On Windows Subsystem for Linux and QEMU User
+  Emulation, Popen constructor using :func:`os.posix_spawn` no longer raise an
+  exception on errors like missing program, but the child process fails with a
+  non-zero :attr:`~Popen.returncode`.
+
 * The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.
 
