@@ -632,6 +632,7 @@ THREADHEADERS
 LIBPL
 PY_ENABLE_SHARED
 EXT_SUFFIX
+ALT_SOABI
 SOABI
 LIBC
 LIBM
@@ -15126,6 +15127,17 @@ $as_echo_n "checking SOABI... " >&6; }
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SOABI" >&5
 $as_echo "$SOABI" >&6; }
+
+if test "$Py_DEBUG" = 'true'; then
+  # Similar to SOABI but remove "d" flag from ABIFLAGS
+
+  ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
+
+cat >>confdefs.h <<_ACEOF
+#define ALT_SOABI "${ALT_SOABI}"
+_ACEOF
+
+fi
 
 
 case $ac_sys_system in

@@ -12,6 +12,10 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* Alternative SOABI used in debug build to load C extensions built in release
+   mode */
+#undef ALT_SOABI
+
 /* The Android API level. */
 #undef ANDROID_API_LEVEL
 

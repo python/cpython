@@ -4627,6 +4627,14 @@ AC_MSG_CHECKING(SOABI)
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 AC_MSG_RESULT($SOABI)
 
+if test "$Py_DEBUG" = 'true'; then
+  # Similar to SOABI but remove "d" flag from ABIFLAGS
+  AC_SUBST(ALT_SOABI)
+  ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
+  AC_DEFINE_UNQUOTED(ALT_SOABI, "${ALT_SOABI}",
+            [Alternative SOABI used in debug build to load C extensions built in release mode])
+fi
+
 AC_SUBST(EXT_SUFFIX)
 case $ac_sys_system in
     Linux*|GNU*|Darwin|VxWorks)
