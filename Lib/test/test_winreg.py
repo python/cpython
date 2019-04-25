@@ -5,7 +5,7 @@ import os, sys, errno
 import unittest
 from test import support
 import threading
-from platform import machine
+from platform import machine, win32_edition
 
 # Do this first so test will be skipped if module doesn't exist
 support.import_module('winreg', required_on=['win'])
@@ -399,6 +399,7 @@ class Win64WinregTests(BaseWinregTests):
         DeleteKeyEx(key=HKEY_CURRENT_USER, sub_key=test_key_name,
                     access=KEY_ALL_ACCESS, reserved=0)
 
+    @unittest.skipIf(win32_edition() in ('WindowsCoreHeadless', 'IoTEdgeOS'), "APIs not available on WindowsCoreHeadless")
     def test_reflection_functions(self):
         # Test that we can call the query, enable, and disable functions
         # on a key which isn't on the reflection list with no consequences.

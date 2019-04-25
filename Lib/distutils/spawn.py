@@ -81,7 +81,6 @@ def _spawn_nt(cmd, search_path=1, verbose=0, dry_run=0):
                   "command %r failed with exit status %d" % (cmd, rc))
 
 if sys.platform == 'darwin':
-    from distutils import sysconfig
     _cfg_target = None
     _cfg_target_split = None
 
@@ -95,6 +94,7 @@ def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
     if sys.platform == 'darwin':
         global _cfg_target, _cfg_target_split
         if _cfg_target is None:
+            from distutils import sysconfig
             _cfg_target = sysconfig.get_config_var(
                                   'MACOSX_DEPLOYMENT_TARGET') or ''
             if _cfg_target:

@@ -41,7 +41,7 @@ echo.
 echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
 echo.     Set the configuration (default: Release)
-echo.  -p x64 ^| Win32
+echo.  -p x64 ^| Win32 ^| ARM
 echo.     Set the platform (default: Win32)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
