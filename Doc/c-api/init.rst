@@ -863,7 +863,6 @@ code, or when embedding the Python interpreter:
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
-
 .. c:function:: PyThreadState* PyThreadState_Get()
 
    Return the current thread state.  The global interpreter lock must be held.
