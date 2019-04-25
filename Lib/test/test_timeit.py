@@ -354,13 +354,8 @@ class TestTimeit(unittest.TestCase):
             s = self.run_main(switches=['-n1', '1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
-    def autorange(self, seconds_per_increment=1/1024, callback=None):
-        timer = FakeTimer(seconds_per_increment=seconds_per_increment)
-        t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
-        return t.autorange(callback)
-
-    def autorange_with_argument(self, total_time, seconds_per_increment=1/1024,
-            callback=None):
+    def autorange(self, seconds_per_increment=1/1024, callback=None,
+            total_time=0.2):
         timer = FakeTimer(seconds_per_increment=seconds_per_increment)
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
         return t.autorange(callback, total_time)
@@ -370,15 +365,10 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(num_loops, 500)
         self.assertEqual(time_taken, 500/1024)
 
-    def test_autorange_with_argument(self):
-        num_loops, time_taken = self.autorange_with_argument(total_time=0.6)
+    def test_autorange_with_total_time(self):
+        num_loops, time_taken = self.autorange(total_time=0.6)
         self.assertEqual(num_loops, 1000)
         self.assertEqual(time_taken, 1000/1024)
-
-    def test_autorange_with_argument(self):
-        num_loops, time_taken = self.autorange_with_argument(total_time=0.4)
-        self.assertEqual(num_loops, 500)
-        self.assertEqual(time_taken, 500/1024)
 
     def test_autorange_second(self):
         num_loops, time_taken = self.autorange(seconds_per_increment=1.0)
@@ -403,11 +393,11 @@ class TestTimeit(unittest.TestCase):
                     '500 0.488\n')
         self.assertEqual(s.getvalue(), expected)
 
-    def test_autorange_with_callback_with_argument(self):
+    def test_autorange_with_callback_and_total_time(self):
         def callback(a, b):
             print("{} {:.3f}".format(a, b))
         with captured_stdout() as s:
-            num_loops, time_taken = self.autorange_with_argument(callback=callback,
+            num_loops, time_taken = self.autorange(callback=callback,
                     total_time=0.6)
         self.assertEqual(num_loops, 1000)
         self.assertEqual(time_taken, 1000/1024)
@@ -423,24 +413,6 @@ class TestTimeit(unittest.TestCase):
                     '1000 0.977\n')
         self.assertEqual(s.getvalue(), expected)
 
-    def test_autorange_with_callback_with_argument(self):
-        def callback(a, b):
-            print("{} {:.3f}".format(a, b))
-        with captured_stdout() as s:
-            num_loops, time_taken = self.autorange_with_argument(callback=callback,
-                    total_time=0.4)
-        self.assertEqual(num_loops, 500)
-        self.assertEqual(time_taken, 500/1024)
-        expected = ('1 0.001\n'
-                    '2 0.002\n'
-                    '5 0.005\n'
-                    '10 0.010\n'
-                    '20 0.020\n'
-                    '50 0.049\n'
-                    '100 0.098\n'
-                    '200 0.195\n'
-                    '500 0.488\n')
-        self.assertEqual(s.getvalue(), expected)
 
 if __name__ == '__main__':
     unittest.main()
