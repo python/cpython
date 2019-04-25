@@ -851,15 +851,18 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
+* On Unix, C extensions are no longer linked to libpython. When Python is
+  embedded, ``libpython`` must not be loaded with ``RTLD_LOCAL``, but
+  ``RTLD_GLOBAL`` instead. Previously, using ``RTLD_LOCAL``, it was already not
+  possible to load C extensions which were not linked to ``libpython``, like C
+  extensions of the standard library built by the ``*shared*`` section of
+  ``Modules/Setup``.
+
 * Use of ``#`` variants of formats in parsing or building value (e.g.
   :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,
   etc.) without ``PY_SSIZE_T_CLEAN`` defined raises ``DeprecationWarning`` now.
   It will be removed in 3.10 or 4.0.  Read :ref:`arg-parsing` for detail.
   (Contributed by Inada Naoki in :issue:`36381`.)
-
-
-Changes in the C API
---------------------------
 
 * Instances of heap-allocated types (such as those created with
   :c:func:`PyType_FromSpec`) hold a reference to their type object.
