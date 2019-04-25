@@ -107,8 +107,8 @@ class TestTimeit(unittest.TestCase):
             kwargs['number'] = number
         delta_time = t.timeit(**kwargs)
         self.assertEqual(self.fake_timer.setup_calls, 1)
-        self.assertEqual(self.fake_timer.count, number)
-        self.assertEqual(delta_time, number)
+        self.assertEqual(self.fake_timer.count, number or 1)
+        self.assertEqual(delta_time, number or (1, 1.0))
 
     # Takes too long to run in debug build.
     #def test_timeit_default_iters(self):
@@ -139,7 +139,11 @@ class TestTimeit(unittest.TestCase):
     def test_timeit_function_zero_iters(self):
         delta_time = timeit.timeit(self.fake_stmt, self.fake_setup, number=0,
                 timer=FakeTimer())
-        self.assertEqual(delta_time, 0)
+        self.assertEqual(delta_time, (1, 1.0))
+
+    def test_timeit_function_max_time_taken(self):
+        delta_time = timeit.timeit(self.fake_stmt, self.fake_setup, number=0,
+                timer=FakeTimer(), max_time_taken=1)
 
     def test_timeit_globals_args(self):
         global _global_timer
@@ -152,9 +156,9 @@ class TestTimeit(unittest.TestCase):
         timeit.timeit(stmt='local_timer.inc()', timer=local_timer,
                       globals=locals(), number=3)
 
-    def repeat(self, stmt, setup, repeat=None, number=None):
+    def repeat(self, stmt, setup, repeat=None, number=None, max_time_taken=0.5):
         self.fake_timer = FakeTimer()
-        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer)
+        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer, max_time_taken=max_time_taken)
         kwargs = {}
         if repeat is None:
             repeat = DEFAULT_REPEAT
@@ -166,8 +170,8 @@ class TestTimeit(unittest.TestCase):
             kwargs['number'] = number
         delta_times = t.repeat(**kwargs)
         self.assertEqual(self.fake_timer.setup_calls, repeat)
-        self.assertEqual(self.fake_timer.count, repeat * number)
-        self.assertEqual(delta_times, repeat * [float(number)])
+        self.assertEqual(self.fake_timer.count, (repeat * number) if number else repeat)
+        self.assertEqual(delta_times, repeat * [float(number) or (1, 1.0)])
 
     # Takes too long to run in debug build.
     #def test_repeat_default(self):
@@ -185,6 +189,10 @@ class TestTimeit(unittest.TestCase):
     def test_repeat_callable_stmt(self):
         self.repeat(self.fake_callable_stmt, self.fake_setup,
                 repeat=3, number=5)
+
+    def test_repeat_callable_max_time_taken(self):
+        self.repeat(self.fake_callable_stmt, self.fake_setup,
+                repeat=3, number=5, max_time_taken=1)
 
     def test_repeat_callable_setup(self):
         self.repeat(self.fake_stmt, self.fake_callable_setup,
@@ -208,7 +216,7 @@ class TestTimeit(unittest.TestCase):
     def test_repeat_function_zero_iters(self):
         delta_times = timeit.repeat(self.fake_stmt, self.fake_setup, number=0,
                 timer=FakeTimer())
-        self.assertEqual(delta_times, DEFAULT_REPEAT * [0.0])
+        self.assertEqual(delta_times, DEFAULT_REPEAT * [(1, 1.0)])
 
     def assert_exc_string(self, exc_string, expected_exc_name):
         exc_lines = exc_string.splitlines()
