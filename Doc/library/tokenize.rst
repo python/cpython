@@ -278,3 +278,15 @@ The exact token type names can be displayed using the :option:`-e` option:
     4,10-4,11:          RPAR           ')'
     4,11-4,12:          NEWLINE        '\n'
     5,0-5,0:            ENDMARKER      ''
+
+Example of tokenizing from another file::
+
+    import tokenize
+    f = open('example.py', 'rb')
+    token_gen = tokenize.tokenize(f.readline)
+
+    for token in token_gen:
+        # TokenInfo(type=59 (ENCODING), string='utf-8', start=(0, 0), end=(0, 0), line='')
+        # TokenInfo(type=1 (NAME), string='def', start=(1, 0), end=(1, 3), line='def foo:\n')
+        # ...
+        print(token)
