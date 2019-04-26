@@ -450,6 +450,13 @@ venv
   activating virtual environments under PowerShell Core 6.1.
   (Contributed by Brett Cannon in :issue:`32718`.)
 
+weakref
+-------
+
+* The proxy objects returned by :func:`weakref.proxy` now support the matrix
+  multiplication operators ``@`` and ``@=`` in addition to the other
+  numeric operators. (Contributed by Mark Dickinson in :issue:`36669`.)
+
 xml
 ---
 
