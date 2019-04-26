@@ -711,7 +711,7 @@ mmap__repr__method(PyObject *self)
 
         default:
             // should not get here
-            assert(false);
+            assert(0);
             return NULL;
     }
 
