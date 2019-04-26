@@ -83,7 +83,7 @@ extern void _PyGILState_Init(
     PyThreadState *tstate);
 extern void _PyGILState_Fini(_PyRuntimeState *runtime);
 
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
+PyAPI_FUNC(void) _PyGC_DumpShutdownStats(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromCoreConfig(
     const _PyCoreConfig *coreconfig);
