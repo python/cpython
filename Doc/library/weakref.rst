@@ -139,6 +139,10 @@ Extension types can easily be made to support weak references; see
    prevent their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
 
+   .. versionchanged:: 3.8
+      Extended the operator support on proxy objects to include the matrix
+      multiplication operators ``@`` and ``@=``.
+
 
 .. function:: getweakrefcount(object)
 
