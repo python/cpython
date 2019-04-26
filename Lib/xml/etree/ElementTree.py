@@ -1898,18 +1898,24 @@ class C14NWriterTarget:
             qnames, key=lambda n: n.split('}', 1))}
 
         # Write namespace declarations in prefix order ...
-        attr_list = sorted(
-            ('xmlns:' + prefix if prefix else 'xmlns', uri)
-            for uri, prefix in new_namespaces
-        ) if new_namespaces else []  # almost always empty
+        if new_namespaces:
+            attr_list = [
+                ('xmlns:' + prefix if prefix else 'xmlns', uri)
+                for uri, prefix in new_namespaces
+            ]
+            attr_list.sort()
+        else:
+            # almost always empty
+            attr_list = []
 
         # ... followed by attributes in URI+name order
-        for k, v in sorted(attrs.items()):
-            if qattrs is not None and k in qattrs and v in resolved_names:
-                v = parsed_qnames[resolved_names[v]][0]
-            attr_qname, attr_name, uri = parsed_qnames[k]
-            # No prefix for attributes in default ('') namespace.
-            attr_list.append((attr_qname if uri else attr_name, v))
+        if attrs:
+            for k, v in sorted(attrs.items()):
+                if qattrs is not None and k in qattrs and v in resolved_names:
+                    v = parsed_qnames[resolved_names[v]][0]
+                attr_qname, attr_name, uri = parsed_qnames[k]
+                # No prefix for attributes in default ('') namespace.
+                attr_list.append((attr_qname if uri else attr_name, v))
 
         # Honour xml:space attributes.
         space_behaviour = attrs.get('{http://www.w3.org/XML/1998/namespace}space')
