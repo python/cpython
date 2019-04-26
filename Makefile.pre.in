@@ -791,7 +791,7 @@ regen-grammar: regen-token
 	# Regenerate Include/graminit.h and Python/graminit.c
 	# from Grammar/Grammar using pgen
 	@$(MKDIR_P) Include
-	$(PYTHON_FOR_REGEN) -m Parser.pgen $(srcdir)/Grammar/Grammar \
+	PYTHONPATH=$(srcdir) $(PYTHON_FOR_REGEN) -m Parser.pgen $(srcdir)/Grammar/Grammar \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Include/graminit.h.new \
 		$(srcdir)/Python/graminit.c.new
@@ -849,7 +849,7 @@ regen-token:
 regen-keyword:
 	# Regenerate Lib/keyword.py from Grammar/Grammar and Grammar/Tokens
 	# using Parser/pgen
-	$(PYTHON_FOR_REGEN) -m Parser.pgen.keywordgen $(srcdir)/Grammar/Grammar \
+	PYTHONPATH=$(srcdir) $(PYTHON_FOR_REGEN) -m Parser.pgen.keywordgen $(srcdir)/Grammar/Grammar \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Lib/keyword.py.new
 	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
