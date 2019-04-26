@@ -22,6 +22,10 @@ from test.libregrtest.utils import format_duration
 PROGRESS_UPDATE = 30.0   # seconds
 
 
+def must_stop(result):
+    return result.result in (INTERRUPTED, CHILD_ERROR)
+
+
 def run_test_in_subprocess(testname, ns):
     ns_dict = vars(ns)
     worker_args = (ns_dict, testname)
@@ -149,7 +153,7 @@ class MultiprocessThread(threading.Thread):
                 mp_result = self._runtest(test_name)
                 self.output.put((False, mp_result))
 
-                if mp_result.result.result == CHILD_ERROR:
+                if must_stop(mp_result.result):
                     break
             except BaseException:
                 self.output.put((True, traceback.format_exc()))
@@ -251,11 +255,10 @@ class MultiprocessRunner:
         if mp_result.stderr and not self.ns.pgo:
             print(mp_result.stderr, file=sys.stderr, flush=True)
 
-        ok = mp_result.result.result
-        if ok == INTERRUPTED:
+        if mp_result.result.result == INTERRUPTED:
             self.regrtest.interrupted = True
-            return True
-        if ok == CHILD_ERROR:
+
+        if must_stop(mp_result.result):
             return True
 
         return False
@@ -270,8 +273,8 @@ class MultiprocessRunner:
                 if item is None:
                     break
 
-                interrupt = self._process_result(item)
-                if interrupt:
+                stop = self._process_result(item)
+                if stop:
                     break
         except KeyboardInterrupt:
             print()
