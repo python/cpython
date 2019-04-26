@@ -1,3 +1,4 @@
+import collections
 import faulthandler
 import json
 import os
@@ -5,13 +6,12 @@ import queue
 import sys
 import threading
 import time
-import traceback
 import types
 from test import support
 
 from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
-    format_test_result)
+    format_test_result, TestResult)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration
 
@@ -64,15 +64,9 @@ def run_tests_worker(worker_args):
 
     setup_tests(ns)
 
-    try:
-        result = runtest(ns, testname)
-    except KeyboardInterrupt:
-        result = INTERRUPTED, '', None
-    except BaseException as e:
-        traceback.print_exc()
-        result = CHILD_ERROR, str(e)
-
+    result = runtest(ns, testname)
     print()   # Force a newline (just in case)
+
     print(json.dumps(result), flush=True)
     sys.exit(0)
 
@@ -97,45 +91,51 @@ class MultiprocessIterator:
             return next(self.tests)
 
 
+MultiprocessResult = collections.namedtuple('MultiprocessResult',
+    'result stdout stderr error_msg')
+
 class MultiprocessThread(threading.Thread):
     def __init__(self, pending, output, ns):
         super().__init__()
         self.pending = pending
         self.output = output
         self.ns = ns
-        self.current_test = None
+        self.current_test_name = None
         self.start_time = None
 
     def _runtest(self):
         try:
-            test = next(self.pending)
+            test_name = next(self.pending)
         except StopIteration:
-            self.output.put((None, None, None, None))
+            self.output.put(None)
             return True
 
         try:
             self.start_time = time.monotonic()
-            self.current_test = test
+            self.current_test_name = test_name
 
-            retcode, stdout, stderr = run_test_in_subprocess(test, self.ns)
+            retcode, stdout, stderr = run_test_in_subprocess(test_name, self.ns)
         finally:
-            self.current_test = None
+            self.current_test_name = None
 
         if retcode != 0:
-            result = (CHILD_ERROR, "Exit code %s" % retcode, None)
-            self.output.put((test, stdout.rstrip(), stderr.rstrip(),
-                             result))
+            test_time = time.monotonic() - self.start_time
+            result = TestResult(test_name, CHILD_ERROR, test_time, None)
+            err_msg = "Exit code %s" % retcode
+            mp_result = MultiprocessResult(result, stdout.rstrip(), stderr.rstrip(), err_msg)
+            self.output.put(mp_result)
             return False
 
         stdout, _, result = stdout.strip().rpartition("\n")
         if not result:
-            self.output.put((None, None, None, None))
+            self.output.put(None)
             return True
 
+        # deserialize run_tests_worker() output
         result = json.loads(result)
-        assert len(result) == 3, f"Invalid result tuple: {result!r}"
-        self.output.put((test, stdout.rstrip(), stderr.rstrip(),
-                         result))
+        result = TestResult(*result)
+        mp_result = MultiprocessResult(result, stdout.rstrip(), stderr.rstrip(), None)
+        self.output.put(mp_result)
         return False
 
     def run(self):
@@ -144,7 +144,7 @@ class MultiprocessThread(threading.Thread):
             while not stop:
                 stop = self._runtest()
         except BaseException:
-            self.output.put((None, None, None, None))
+            self.output.put(None)
             raise
 
 
@@ -164,12 +164,12 @@ def run_tests_multiprocess(regrtest):
     def get_running(workers):
         running = []
         for worker in workers:
-            current_test = worker.current_test
-            if not current_test:
+            current_test_name = worker.current_test_name
+            if not current_test_name:
                 continue
             dt = time.monotonic() - worker.start_time
             if dt >= PROGRESS_MIN_TIME:
-                text = '%s (%s)' % (current_test, format_duration(dt))
+                text = '%s (%s)' % (current_test_name, format_duration(dt))
                 running.append(text)
         return running
 
@@ -182,40 +182,41 @@ def run_tests_multiprocess(regrtest):
                 faulthandler.dump_traceback_later(test_timeout, exit=True)
 
             try:
-                item = output.get(timeout=get_timeout)
+                mp_result = output.get(timeout=get_timeout)
             except queue.Empty:
                 running = get_running(workers)
                 if running and not regrtest.ns.pgo:
                     print('running: %s' % ', '.join(running), flush=True)
                 continue
 
-            test, stdout, stderr, result = item
-            if test is None:
+            if mp_result is None:
                 finished += 1
                 continue
-            regrtest.accumulate_result(test, result)
+            result = mp_result.result
+            regrtest.accumulate_result(result)
 
             # Display progress
-            ok, test_time, xml_data = result
-            text = format_test_result(test, ok)
+            ok = result.result
+
+            text = format_test_result(result)
             if (ok not in (CHILD_ERROR, INTERRUPTED)
-                and test_time >= PROGRESS_MIN_TIME
+                and result.test_time >= PROGRESS_MIN_TIME
                 and not regrtest.ns.pgo):
-                text += ' (%s)' % format_duration(test_time)
+                text += ' (%s)' % format_duration(result.test_time)
             elif ok == CHILD_ERROR:
-                text = '%s (%s)' % (text, test_time)
+                text = '%s (%s)' % (text, mp_result.error_msg)
             running = get_running(workers)
             if running and not regrtest.ns.pgo:
                 text += ' -- running: %s' % ', '.join(running)
             regrtest.display_progress(test_index, text)
 
             # Copy stdout and stderr from the child process
-            if stdout:
-                print(stdout, flush=True)
-            if stderr and not regrtest.ns.pgo:
-                print(stderr, file=sys.stderr, flush=True)
+            if mp_result.stdout:
+                print(mp_result.stdout, flush=True)
+            if mp_result.stderr and not regrtest.ns.pgo:
+                print(mp_result.stderr, file=sys.stderr, flush=True)
 
-            if result[0] == INTERRUPTED:
+            if result.result == INTERRUPTED:
                 raise KeyboardInterrupt
             test_index += 1
     except KeyboardInterrupt:
@@ -229,7 +230,7 @@ def run_tests_multiprocess(regrtest):
     # If tests are interrupted, wait until tests complete
     wait_start = time.monotonic()
     while True:
-        running = [worker.current_test for worker in workers]
+        running = [worker.current_test_name for worker in workers]
         running = list(filter(bool, running))
         if not running:
             break
