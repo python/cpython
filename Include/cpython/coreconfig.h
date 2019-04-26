@@ -33,8 +33,10 @@ typedef struct {
 #define _Py_INIT_NO_MEMORY() _Py_INIT_USER_ERR("memory allocation failed")
 #define _Py_INIT_EXIT(EXITCODE) \
     (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = (EXITCODE)}
+#define _Py_INIT_HAS_EXITCODE(err) \
+    (err.exitcode != -1)
 #define _Py_INIT_FAILED(err) \
-    (err.msg != NULL || err.exitcode != -1)
+    (err.msg != NULL || _Py_INIT_HAS_EXITCODE(err))
 
 /* --- _PyWstrList ------------------------------------------------ */
 
