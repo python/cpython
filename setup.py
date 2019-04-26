@@ -1299,7 +1299,7 @@ class PyBuildExt(build_ext):
         sqlite_setup_debug = False   # verbose debug prints from this script?
 
         # We hunt for #define SQLITE_VERSION "n.n.n"
-        # We need to find >= sqlite version 3.0.8
+        # We need to find >= sqlite version 3.3.9, for sqlite3_prepare_v2
         sqlite_incdir = sqlite_libdir = None
         sqlite_inc_paths = [ '/usr/include',
                              '/usr/include/sqlite',
@@ -1310,7 +1310,7 @@ class PyBuildExt(build_ext):
                              ]
         if CROSS_COMPILING:
             sqlite_inc_paths = []
-        MIN_SQLITE_VERSION_NUMBER = (3, 0, 8)
+        MIN_SQLITE_VERSION_NUMBER = (3, 3, 9)
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
 
@@ -1344,7 +1344,7 @@ class PyBuildExt(build_ext):
                         break
                     else:
                         if sqlite_setup_debug:
-                            print("%s: version %d is too old, need >= %s"%(d,
+                            print("%s: version %s is too old, need >= %s"%(d,
                                         sqlite_version, MIN_SQLITE_VERSION))
                 elif sqlite_setup_debug:
                     print("sqlite: %s had no SQLITE_VERSION"%(f,))
