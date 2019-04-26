@@ -503,7 +503,6 @@ class _Pickler:
             rv = reduce(obj)
 
         if rv is NotImplemented:
-
             # Check the type dispatch table
             t = type(obj)
             f = self.dispatch.get(t)
