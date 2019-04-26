@@ -1,8 +1,7 @@
-import subprocess
-import sys
-import os
 import _winapi
 import msvcrt
+import os
+import subprocess
 import uuid
 from test import support
 

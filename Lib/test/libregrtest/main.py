@@ -105,26 +105,30 @@ class Regrtest:
         # used by --junit-xml
         self.testsuite_xml = None
 
-    def accumulate_result(self, test, result):
-        ok, test_time, xml_data = result
+    def accumulate_result(self, result):
+        test_name = result.test_name
+        ok = result.result
+
         if ok not in (CHILD_ERROR, INTERRUPTED):
-            self.test_times.append((test_time, test))
+            self.test_times.append((result.test_time, test_name))
+
         if ok == PASSED:
-            self.good.append(test)
+            self.good.append(test_name)
         elif ok in (FAILED, CHILD_ERROR):
-            self.bad.append(test)
+            self.bad.append(test_name)
         elif ok == ENV_CHANGED:
-            self.environment_changed.append(test)
+            self.environment_changed.append(test_name)
         elif ok == SKIPPED:
-            self.skipped.append(test)
+            self.skipped.append(test_name)
         elif ok == RESOURCE_DENIED:
-            self.skipped.append(test)
-            self.resource_denieds.append(test)
+            self.skipped.append(test_name)
+            self.resource_denieds.append(test_name)
         elif ok == TEST_DID_NOT_RUN:
-            self.run_no_tests.append(test)
+            self.run_no_tests.append(test_name)
         elif ok != INTERRUPTED:
             raise ValueError("invalid test result: %r" % ok)
 
+        xml_data = result.xml_data
         if xml_data:
             import xml.etree.ElementTree as ET
             for e in xml_data:
@@ -134,7 +138,7 @@ class Regrtest:
                     print(xml_data, file=sys.__stderr__)
                     raise
 
-    def display_progress(self, test_index, test):
+    def display_progress(self, test_index, text):
         if self.ns.quiet:
             return
 
@@ -143,7 +147,7 @@ class Regrtest:
         fails = len(self.bad) + len(self.environment_changed)
         if fails and not self.ns.pgo:
             line = f"{line}/{fails}"
-        line = f"[{line}] {test}"
+        line = f"[{line}] {text}"
 
         # add the system load prefix: "load avg: 1.80 "
         if self.getloadavg:
@@ -275,13 +279,13 @@ class Regrtest:
         support.verbose = False
         support.set_match_tests(self.ns.match_tests)
 
-        for test in self.selected:
-            abstest = get_abs_module(self.ns, test)
+        for test_name in self.selected:
+            abstest = get_abs_module(self.ns, test_name)
             try:
                 suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
                 self._list_cases(suite)
             except unittest.SkipTest:
-                self.skipped.append(test)
+                self.skipped.append(test_name)
 
         if self.skipped:
             print(file=sys.stderr)
@@ -298,19 +302,19 @@ class Regrtest:
         print()
         print("Re-running failed tests in verbose mode")
         self.rerun = self.bad[:]
-        for test in self.rerun:
-            print("Re-running test %r in verbose mode" % test, flush=True)
-            try:
-                self.ns.verbose = True
-                ok = runtest(self.ns, test)
-            except KeyboardInterrupt:
-                self.interrupted = True
+        for test_name in self.rerun:
+            print("Re-running test %r in verbose mode" % test_name, flush=True)
+            self.ns.verbose = True
+            ok = runtest(self.ns, test_name)
+
+            if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
+                self.bad.remove(test_name)
+
+            if ok.result == INTERRUPTED:
                 # print a newline separate from the ^C
                 print()
+                self.interrupted = True
                 break
-            else:
-                if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
-                    self.bad.remove(test)
         else:
             if self.bad:
                 print(count(len(self.bad), 'test'), "failed again:")
@@ -348,8 +352,8 @@ class Regrtest:
             self.test_times.sort(reverse=True)
             print()
             print("10 slowest tests:")
-            for time, test in self.test_times[:10]:
-                print("- %s: %s" % (test, format_duration(time)))
+            for test_time, test in self.test_times[:10]:
+                print("- %s: %s" % (test, format_duration(test_time)))
 
         if self.bad:
             print()
@@ -387,10 +391,10 @@ class Regrtest:
         print("Run tests sequentially")
 
         previous_test = None
-        for test_index, test in enumerate(self.tests, 1):
+        for test_index, test_name in enumerate(self.tests, 1):
             start_time = time.monotonic()
 
-            text = test
+            text = test_name
             if previous_test:
                 text = '%s -- %s' % (text, previous_test)
             self.display_progress(test_index, text)
@@ -398,22 +402,20 @@ class Regrtest:
             if self.tracer:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                cmd = ('result = runtest(self.ns, test); '
-                       'self.accumulate_result(test, result)')
+                cmd = ('result = runtest(self.ns, test_name); '
+                       'self.accumulate_result(result)')
                 ns = dict(locals())
                 self.tracer.runctx(cmd, globals=globals(), locals=ns)
                 result = ns['result']
             else:
-                try:
-                    result = runtest(self.ns, test)
-                except KeyboardInterrupt:
-                    self.interrupted = True
-                    self.accumulate_result(test, (INTERRUPTED, None, None))
-                    break
-                else:
-                    self.accumulate_result(test, result)
+                result = runtest(self.ns, test_name)
+                self.accumulate_result(result)
 
-            previous_test = format_test_result(test, result[0])
+            if result.result == INTERRUPTED:
+                self.interrupted = True
+                break
+
+            previous_test = format_test_result(result)
             test_time = time.monotonic() - start_time
             if test_time >= PROGRESS_MIN_TIME:
                 previous_test = "%s in %s" % (previous_test, format_duration(test_time))
@@ -441,8 +443,8 @@ class Regrtest:
 
     def _test_forever(self, tests):
         while True:
-            for test in tests:
-                yield test
+            for test_name in tests:
+                yield test_name
                 if self.bad:
                     return
                 if self.ns.fail_env_changed and self.environment_changed:
