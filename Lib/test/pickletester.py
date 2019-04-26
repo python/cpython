@@ -3031,10 +3031,12 @@ class AbstractCustomPicklerClass:
             # in this case, the callback returns an invalid result (not a 2-5
             # tuple or a string), the pickler should raise a proper error.
             return False
+
         elif obj_name == 'h':
             # Simulate a case when the reducer fails. The error should
             # be propagated to the original ``dump`` call.
             raise ValueError('The reducer just failed')
+
         return NotImplemented
 
 class AbstractHookTests(unittest.TestCase):
