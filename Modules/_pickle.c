@@ -3720,7 +3720,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         state_setter = NULL;
     else if (!PyFunction_Check(state_setter)) {
         PyErr_Format(st->PicklingError, "sixth element of the tuple "
-                     "returned by __reduce__ must be an function, not %s",
+                     "returned by __reduce__ must be a function, not %s",
                      Py_TYPE(state_setter)->tp_name);
         return -1;
     }
