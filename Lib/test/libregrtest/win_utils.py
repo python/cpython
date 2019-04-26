@@ -60,9 +60,15 @@ class WindowsLoadTracker():
         # Close our copy of the write end of the pipe
         os.close(command_stdout)
 
-    def __del__(self):
+    def close(self):
+        if self.p is None:
+            return
         self.p.kill()
         self.p.wait()
+        self.p = None
+
+    def __del__(self):
+        self.close()
 
     def read_output(self):
         import _winapi
