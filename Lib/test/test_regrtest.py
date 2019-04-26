@@ -26,9 +26,8 @@ ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 
 TEST_INTERRUPTED = textwrap.dedent("""
-    from signal import SIGINT
+    from signal import SIGINT, raise_signal
     try:
-        from signal import raise_signal
         raise_signal(SIGINT)
     except ImportError:
         import os
@@ -255,9 +254,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid int value')
                 self.checkError([opt, '2', '-T'], "don't go together")
-                self.checkError([opt, '2', '-l'], "don't go together")
                 self.checkError([opt, '0', '-T'], "don't go together")
-                self.checkError([opt, '0', '-l'], "don't go together")
 
     def test_coverage(self):
         for opt in '-T', '--coverage':
@@ -454,8 +451,8 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s re-run test%s', rerun)
             self.check_line(output, regex)
             self.check_line(output, "Re-running failed tests in verbose mode")
-            for name in rerun:
-                regex = "Re-running test %r in verbose mode" % name
+            for test_name in rerun:
+                regex = f"Re-running {test_name} in verbose mode"
                 self.check_line(output, regex)
 
         if no_test_ran:
@@ -1069,6 +1066,38 @@ class ArgsTestCase(BaseTestCase):
                                 "-m", "test_other_bug", exitcode=0)
         self.check_executed_tests(output, [testname, testname2],
                                   no_test_ran=[testname])
+
+    @support.cpython_only
+    def test_findleaks(self):
+        code = textwrap.dedent(r"""
+            import _testcapi
+            import gc
+            import unittest
+
+            @_testcapi.with_tp_del
+            class Garbage:
+                def __tp_del__(self):
+                    pass
+
+            class Tests(unittest.TestCase):
+                def test_garbage(self):
+                    # create an uncollectable object
+                    obj = Garbage()
+                    obj.ref_cycle = obj
+                    obj = None
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+
+        # --findleaks is now basically an alias to --fail-env-changed
+        output = self.run_tests("--findleaks", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
 
 
 class TestUtils(unittest.TestCase):
