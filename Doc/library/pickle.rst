@@ -635,6 +635,9 @@ or both.
      :meth:`__setstate__` method. If not ``None``, this callable will have
      priority over ``obj``'s :meth:`__setstate__`.
 
+     .. versionadded:: 3.8
+        The ``state_setter`` option was added.
+
 
 .. method:: object.__reduce_ex__(protocol)
 
