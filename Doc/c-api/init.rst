@@ -1095,6 +1095,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    :c:func:`PyEval_RestoreThread` is a higher-level function which is always
    available (even when threads have not been initialized).
 
+
 .. c:function:: void PyEval_ReleaseThread(PyThreadState *tstate)
 
    Reset the current thread state to *NULL* and release the global interpreter
