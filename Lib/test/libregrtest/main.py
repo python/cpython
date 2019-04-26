@@ -316,8 +316,6 @@ class Regrtest:
                 self.bad.remove(test_name)
 
             if ok.result == INTERRUPTED:
-                # print a newline separate from the ^C
-                print()
                 self.interrupted = True
                 break
         else:
