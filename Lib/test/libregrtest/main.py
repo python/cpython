@@ -98,6 +98,8 @@ class Regrtest:
         # used by --junit-xml
         self.testsuite_xml = None
 
+        self.win_load_tracker = None
+
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
                 | set(self.resource_denieds) | set(self.environment_changed)
@@ -154,9 +156,9 @@ class Regrtest:
         line = f"[{line}] {text}"
 
         # add the system load prefix: "load avg: 1.80 "
-        if self.getloadavg:
-            load_avg_1min = self.getloadavg()
-            line = f"load avg: {load_avg_1min:.2f} {line}"
+        load_avg = self.getloadavg()
+        if load_avg is not None:
+            line = f"load avg: {load_avg:.2f} {line}"
 
         # add the timestamp prefix:  "0:01:05 "
         test_time = time.monotonic() - self.start_time
@@ -490,6 +492,10 @@ class Regrtest:
             self.run_tests_sequential()
 
     def finalize(self):
+        if self.win_load_tracker is not None:
+            self.win_load_tracker.close()
+            self.win_load_tracker = None
+
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -560,6 +566,15 @@ class Regrtest:
         with support.temp_cwd(test_cwd, quiet=True):
             self._main(tests, kwargs)
 
+    def getloadavg(self):
+        if self.win_load_tracker is not None:
+            return self.win_load_tracker.getloadavg()
+
+        if hasattr(os, 'getloadavg'):
+            return os.getloadavg()[0]
+
+        return None
+
     def _main(self, tests, kwargs):
         if self.ns.huntrleaks:
             warmup, repetitions, _ = self.ns.huntrleaks
@@ -591,23 +606,17 @@ class Regrtest:
             self.list_cases()
             sys.exit(0)
 
-        self.getloadavg = None
         # If we're on windows and this is the parent runner (not a worker),
-        # report the load average.
-        if hasattr(os, 'getloadavg'):
-            def getloadavg_1m():
-                return os.getloadavg()[0]
-            self.getloadavg = getloadavg_1m
-        elif sys.platform == 'win32' and (self.ns.worker_args is None):
+        # track the load average.
+        if sys.platform == 'win32' and (self.ns.worker_args is None):
             from test.libregrtest.win_utils import WindowsLoadTracker
 
             try:
-                load_tracker = WindowsLoadTracker()
-                self.getloadavg = load_tracker.getloadavg
+                self.win_load_tracker = WindowsLoadTracker()
             except FileNotFoundError as error:
                 # Windows IoT Core and Windows Nano Server do not provide
                 # typeperf.exe for x64, x86 or ARM
-                print('Failed to create WindowsLoadTracker: {}'.format(error))
+                print(f'Failed to create WindowsLoadTracker: {error}')
 
         self.run_tests()
         self.display_result()
