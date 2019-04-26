@@ -4255,9 +4255,9 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       :meth:`fromkeys` is a class method that returns a new dictionary. *value*
       defaults to ``None``.  The same instance of *value* is used for every
-      key, so it generally doesn't make sense for *value* to be a mutable object
-      such as an empty list.  To get distinct values, use a :ref:`dict display
-      <dict>` instead.
+      key, so it generally doesn't make sense for *value* to be a mutable
+      object such as an empty list.  To get distinct values, use a :ref:`dict
+      comprehension <dict>` instead.
 
    .. method:: get(key[, default])
 
