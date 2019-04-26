@@ -797,9 +797,9 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* Py_BUILD_CORE */
 
 #ifdef __ANDROID__
-/* The Android langinfo.h header is not used. */
-#undef HAVE_LANGINFO_H
-#undef CODESET
+   /* The Android langinfo.h header is not used. */
+#  undef HAVE_LANGINFO_H
+#  undef CODESET
 #endif
 
 /* Maximum value of the Windows DWORD type */
@@ -810,7 +810,13 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
  * for compatibility.
  */
 #ifndef WITH_THREAD
-#define WITH_THREAD
+#  define WITH_THREAD
+#endif
+
+/* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
+   ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
+#if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
+#  error "Py_TRACE_REFS ABI is not compatible with release and debug ABI"
 #endif
 
 #endif /* Py_PYPORT_H */

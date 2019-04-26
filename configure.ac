@@ -4627,7 +4627,8 @@ AC_MSG_CHECKING(SOABI)
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 AC_MSG_RESULT($SOABI)
 
-if test "$Py_DEBUG" = 'true'; then
+# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
+if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
   AC_SUBST(ALT_SOABI)
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
