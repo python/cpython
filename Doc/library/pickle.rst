@@ -366,6 +366,18 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
       Use :func:`pickletools.optimize` if you need more compact pickles.
 
+   .. method:: reducer_override(self, obj)
+
+      Special reducer that can be defined in ``Pickler`` subclasses. This method has
+      priority over any reducer in the ``dispatch_table``.
+      It should conform to the same interface as a :meth:`__reduce__` method,
+      and can optionally return ``NotImplemented`` to fallback on
+      ``dispatch_table``-registered reducers to pickle ``obj``.
+
+      For a detailed example on how to use ``reducer_override``, see: `Subclassing the Pickler class`_
+
+      .. versionadded:: 3.8
+
 
 .. class:: Unpickler(file, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
@@ -727,7 +739,7 @@ share the same dispatch table.  The equivalent code using the
 
 .. _reducer_override:
 
-Subclassing the ``Pickler`` class
+Subclassing the Pickler class
 ---------------------------------
 
 For most use-cases, it is recommended to simply use the ``dispatch_table`` of a
