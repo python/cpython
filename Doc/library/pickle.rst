@@ -374,8 +374,8 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       can optionally return ``NotImplemented`` to fallback on
       :attr:`dispatch_table`-registered reducers to pickle ``obj``.
 
-      For a detailed example on how to use :meth:`~Pickler.reducer_override`, see:
-      :ref:`reducer_override`.
+      For a detailed example on how to use :meth:`~Pickler.reducer_override`,
+      see: :ref:`reducer_override`.
 
       .. versionadded:: 3.8
 
@@ -743,21 +743,23 @@ share the same dispatch table.  The equivalent code using the
 Subclassing the ``Pickler`` class
 ---------------------------------
 
-For most use-cases, it is recommended to simply use the :attr:`~Pickler.dispatch_table` of a
-:class:`Pickler` instance to customize its behavior, as explained above.
+For most use-cases, it is recommended to simply use the
+:attr:`~Pickler.dispatch_table` of a :class:`Pickler` instance to customize its
+behavior, as explained above.
 
-However, using the :attr:`~Pickler.dispatch_table` may not be flexible enough. In particular
-we may want to customize the pickling logic based on another criterion than the
-object's type, or we may want to customize the pickling of functions and
-classes.
+However, using the :attr:`~Pickler.dispatch_table` may not be flexible enough.
+In particular we may want to customize the pickling logic based on another
+criterion than the object's type, or we may want to customize the pickling of
+functions and classes.
 
 For those cases, it is possible to subclass from the :class:`Pickler` class and
-implement a :meth:`~Pickler.reducer_override` method. This method can return an arbitrary
-reduction tuple (see :meth:`__reduce__`). It can alternatively return
+implement a :meth:`~Pickler.reducer_override` method. This method can return an
+arbitrary reduction tuple (see :meth:`__reduce__`). It can alternatively return
 ``NotImplemented`` to fallback to the traditional behavior.
 
-If both the :attr:`~Pickler.dispatch_table` and :meth:`~Pickler.reducer_override` are defined, then
-the :meth:`~Pickler.reducer_override` method takes priority.
+If both the :attr:`~Pickler.dispatch_table` and
+:meth:`~Pickler.reducer_override` are defined, then the
+:meth:`~Pickler.reducer_override` method takes priority.
 
 .. Note::
    For performance reasons, the C implementation of pickle does not allow to
