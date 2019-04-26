@@ -98,12 +98,12 @@ subdirectories).
 
 (Contributed by Carl Meyer in :issue:`33499`.)
 
-Debug build uses the same ABI than release build
-------------------------------------------------
+Debug build uses the same ABI as release build
+-----------------------------------------------
 
-Python now uses the same ABI when built in release or debug mode. On Unix, when
-Python is build in debug mode, it is now possible to load C extensions built in
-release mode and C extensions built using the stable ABI.
+Python now uses the same ABI when built in release and in debug mode. On Unix,
+when Python is build in debug mode, it is now possible to load C extensions
+built in release mode and C extensions built using the stable ABI.
 
 Release build and debug build are now ABI compatible: the ``Py_DEBUG`` define
 no longer implies the ``Py_TRACE_REFS`` define which introduces the only ABI
