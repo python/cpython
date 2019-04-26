@@ -2053,6 +2053,10 @@ Loading and running tests
    .. versionadded:: 3.8
       Added *durations* keyword argument.
 
+   .. versionchanged:: 3.8
+      Subclasses should accept **kwargs to ensure compatibility as the
+      interface changes.
+
 .. data:: defaultTestLoader
 
    Instance of the :class:`TestLoader` class intended to be shared.  If no

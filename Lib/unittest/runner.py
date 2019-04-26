@@ -170,11 +170,12 @@ class TextTestRunner(object):
                                     self.verbosity)
 
     def _printDurations(self, result):
-        ls = sorted(result.collectedDurations, key=lambda x: x[1])
-        if self.durations > 0:
-            ls = ls[-self.durations:]
+        ls = sorted(result.collectedDurations, key=lambda x: x[1],
+                    reverse=True)
         if not ls:
             return
+        if self.durations > 0:
+            ls = ls[:self.durations]
         self.stream.writeln("Slowest test durations")
         if hasattr(result, 'separator2'):
             self.stream.writeln(result.separator2)
