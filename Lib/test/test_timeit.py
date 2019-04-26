@@ -355,7 +355,7 @@ class TestTimeit(unittest.TestCase):
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
     def autorange(self, seconds_per_increment=1/1024, callback=None,
-            total_time=0.2):
+                    total_time=0.2):
         timer = FakeTimer(seconds_per_increment=seconds_per_increment)
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
         return t.autorange(callback, total_time)
@@ -382,15 +382,17 @@ class TestTimeit(unittest.TestCase):
             num_loops, time_taken = self.autorange(callback=callback)
         self.assertEqual(num_loops, 500)
         self.assertEqual(time_taken, 500/1024)
-        expected = ('1 0.001\n'
-                    '2 0.002\n'
-                    '5 0.005\n'
-                    '10 0.010\n'
-                    '20 0.020\n'
-                    '50 0.049\n'
-                    '100 0.098\n'
-                    '200 0.195\n'
-                    '500 0.488\n')
+        expected = dedent('''\
+                    1 0.001
+                    2 0.002
+                    5 0.005
+                    10 0.010
+                    20 0.020
+                    50 0.049
+                    100 0.098
+                    200 0.195
+                    500 0.488
+        ''')
         self.assertEqual(s.getvalue(), expected)
 
     def test_autorange_with_callback_and_total_time(self):
@@ -398,19 +400,21 @@ class TestTimeit(unittest.TestCase):
             print("{} {:.3f}".format(a, b))
         with captured_stdout() as s:
             num_loops, time_taken = self.autorange(callback=callback,
-                    total_time=0.6)
+                                                    total_time=0.6)
         self.assertEqual(num_loops, 1000)
         self.assertEqual(time_taken, 1000/1024)
-        expected = ('1 0.001\n'
-                    '2 0.002\n'
-                    '5 0.005\n'
-                    '10 0.010\n'
-                    '20 0.020\n'
-                    '50 0.049\n'
-                    '100 0.098\n'
-                    '200 0.195\n'
-                    '500 0.488\n'
-                    '1000 0.977\n')
+        expected = dedent('''\
+                    1 0.001
+                    2 0.002
+                    5 0.005
+                    10 0.010
+                    20 0.020
+                    50 0.049
+                    100 0.098
+                    200 0.195
+                    500 0.488
+                    1000 0.977
+        ''')
         self.assertEqual(s.getvalue(), expected)
 
 

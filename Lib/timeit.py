@@ -207,7 +207,7 @@ class Timer:
 
     def autorange(self, callback=None, total_time=0.2):
         """Return the number of loops and time taken so that total time
-        is greater than *total_time*.
+        is greater than or equal to *total_time*.
 
         Calls the timeit method with increasing numbers from the sequence
         1, 2, 5, 10, 20, 50, ... until the time taken is at least 0.2
