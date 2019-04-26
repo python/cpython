@@ -1259,35 +1259,46 @@ _PyWarnings_Init(void)
     if (m == NULL)
         return NULL;
 
-    if (_PyRuntime.warnings.filters == NULL) {
-        _PyRuntime.warnings.filters = init_filters();
-        if (_PyRuntime.warnings.filters == NULL)
+    struct _warnings_runtime_state *state = &_PyRuntime.warnings;
+    if (state->filters == NULL) {
+        state->filters = init_filters();
+        if (state->filters == NULL)
             return NULL;
     }
-    Py_INCREF(_PyRuntime.warnings.filters);
-    if (PyModule_AddObject(m, "filters", _PyRuntime.warnings.filters) < 0)
+    Py_INCREF(state->filters);
+    if (PyModule_AddObject(m, "filters", state->filters) < 0)
         return NULL;
 
-    if (_PyRuntime.warnings.once_registry == NULL) {
-        _PyRuntime.warnings.once_registry = PyDict_New();
-        if (_PyRuntime.warnings.once_registry == NULL)
+    if (state->once_registry == NULL) {
+        state->once_registry = PyDict_New();
+        if (state->once_registry == NULL)
             return NULL;
     }
-    Py_INCREF(_PyRuntime.warnings.once_registry);
+    Py_INCREF(state->once_registry);
     if (PyModule_AddObject(m, "_onceregistry",
-                           _PyRuntime.warnings.once_registry) < 0)
+                           state->once_registry) < 0)
         return NULL;
 
-    if (_PyRuntime.warnings.default_action == NULL) {
-        _PyRuntime.warnings.default_action = PyUnicode_FromString("default");
-        if (_PyRuntime.warnings.default_action == NULL)
+    if (state->default_action == NULL) {
+        state->default_action = PyUnicode_FromString("default");
+        if (state->default_action == NULL)
             return NULL;
     }
-    Py_INCREF(_PyRuntime.warnings.default_action);
+    Py_INCREF(state->default_action);
     if (PyModule_AddObject(m, "_defaultaction",
-                           _PyRuntime.warnings.default_action) < 0)
+                           state->default_action) < 0)
         return NULL;
 
-    _PyRuntime.warnings.filters_version = 0;
+    state->filters_version = 0;
     return m;
+}
+
+
+void
+_PyWarnings_Fini(_PyRuntimeState *runtime)
+{
+    struct _warnings_runtime_state *state = &runtime->warnings;
+    Py_CLEAR(state->filters);
+    Py_CLEAR(state->once_registry);
+    Py_CLEAR(state->default_action);
 }
