@@ -764,7 +764,7 @@ class MmapTests(unittest.TestCase):
             # See bpo-34754 for details.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
 
-    def test_open_mmap(self):
+    def test_repr(self):
         def show_entire_contents(size, data):
             if size < 64:
                 return repr(data)

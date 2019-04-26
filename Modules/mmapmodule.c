@@ -710,12 +710,13 @@ mmap__repr__method(PyObject *self)
             break;
 
         default:
-            PyErr_SetString(PyExc_IOError, "Unknown access mode for mmap object.");
+            // should not get here
+            assert(false);
             return NULL;
     }
 
     Py_ssize_t size = m_obj->size;
-    const char *tp_name = self->ob_type->tp_name;
+    const char *tp_name = Py_TYPE(self)->tp_name;
 
 
 #ifdef MS_WINDOWS
