@@ -450,9 +450,9 @@ unittest
     .....
     Slowest test durations
     ----------------------------------------------------------------------
-    0.518s     test_timeout (Lib.test.test_threading.EventTests)
+    1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
     1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
-    1.010s     test_timeout (Lib.test.test_threading.BarrierTests)
+    0.518s     test_timeout (Lib.test.test_threading.EventTests)
 
     (0.000 durations hidden.  Use -v to show these durations.)
     ----------------------------------------------------------------------
