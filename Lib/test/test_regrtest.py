@@ -109,7 +109,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertTrue(ns.quiet)
                 self.assertEqual(ns.verbose, 0)
 
-    def test_slow(self):
+    def test_slowest(self):
         for opt in '-o', '--slowest':
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt])
@@ -781,22 +781,23 @@ class ArgsTestCase(BaseTestCase):
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
 
-    def test_slow_interrupted(self):
+    def test_slowest_interrupted(self):
         # Issue #25373: test --slowest with an interrupted test
         code = TEST_INTERRUPTED
         test = self.create_test("sigint", code=code)
 
         for multiprocessing in (False, True):
-            if multiprocessing:
-                args = ("--slowest", "-j2", test)
-            else:
-                args = ("--slowest", test)
-            output = self.run_tests(*args, exitcode=130)
-            self.check_executed_tests(output, test,
-                                      omitted=test, interrupted=True)
+            with self.subTest(multiprocessing=multiprocessing):
+                if multiprocessing:
+                    args = ("--slowest", "-j2", test)
+                else:
+                    args = ("--slowest", test)
+                output = self.run_tests(*args, exitcode=130)
+                self.check_executed_tests(output, test,
+                                          omitted=test, interrupted=True)
 
-            regex = ('10 slowest tests:\n')
-            self.check_line(output, regex)
+                regex = ('10 slowest tests:\n')
+                self.check_line(output, regex)
 
     def test_coverage(self):
         # test --coverage
