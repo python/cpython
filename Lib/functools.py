@@ -285,10 +285,7 @@ class partial:
 
         if hasattr(func, "func"):
             args = func.args + args
-            tmpkw = func.keywords.copy()
-            tmpkw.update(keywords)
-            keywords = tmpkw
-            del tmpkw
+            keywords = {**func.keywords, **keywords}
             func = func.func
 
         self = super(partial, cls).__new__(cls)
@@ -302,9 +299,8 @@ class partial:
         if not args:
             raise TypeError("descriptor '__call__' of partial needs an argument")
         self, *args = args
-        newkeywords = self.keywords.copy()
-        newkeywords.update(keywords)
-        return self.func(*self.args, *args, **newkeywords)
+        keywords = {**self.keywords, **keywords}
+        return self.func(*self.args, *args, **keywords)
 
     @recursive_repr()
     def __repr__(self):
@@ -358,7 +354,23 @@ class partialmethod(object):
     callables as instance methods.
     """
 
-    def __init__(self, func, *args, **keywords):
+    def __init__(*args, **keywords):
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor '__init__' of partialmethod "
+                            "needs an argument")
+        elif 'func' in keywords:
+            func = keywords.pop('func')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'func' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError("type 'partialmethod' takes at least one argument, "
+                            "got %d" % (len(args)-1))
+        args = tuple(args)
+
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError("{!r} is not callable or a descriptor"
                                  .format(func))
@@ -371,8 +383,7 @@ class partialmethod(object):
             # it's also more efficient since only one function will be called
             self.func = func.func
             self.args = func.args + args
-            self.keywords = func.keywords.copy()
-            self.keywords.update(keywords)
+            self.keywords = {**func.keywords, **keywords}
         else:
             self.func = func
             self.args = args
@@ -391,11 +402,9 @@ class partialmethod(object):
 
     def _make_unbound_method(self):
         def _method(*args, **keywords):
-            call_keywords = self.keywords.copy()
-            call_keywords.update(keywords)
-            cls_or_self, *rest = args
-            call_args = (cls_or_self,) + self.args + tuple(rest)
-            return self.func(*call_args, **call_keywords)
+            cls_or_self, *args = args
+            keywords = {**self.keywords, **keywords}
+            return self.func(cls_or_self, *self.args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method._partialmethod = self
         return _method

@@ -815,7 +815,7 @@ The module defines the following classes, functions and decorators:
 
 .. class:: NamedTuple
 
-   Typed version of namedtuple.
+   Typed version of :func:`collections.namedtuple`.
 
    Usage::
 
@@ -838,10 +838,11 @@ The module defines the following classes, functions and decorators:
 
    Fields with a default value must come after any fields without a default.
 
-   The resulting class has two extra attributes: ``_field_types``,
-   giving a dict mapping field names to types, and ``_field_defaults``, a dict
-   mapping field names to default values.  (The field names are in the
-   ``_fields`` attribute, which is part of the namedtuple API.)
+   The resulting class has an extra attribute ``__annotations__`` giving a
+   dict that maps the field names to the field types.  (The field names are in
+   the ``_fields`` attribute and the default values are in the
+   ``_field_defaults`` attribute both of which are part of the namedtuple
+   API.)
 
    ``NamedTuple`` subclasses can also have docstrings and methods::
 
@@ -862,6 +863,15 @@ The module defines the following classes, functions and decorators:
 
    .. versionchanged:: 3.6.1
       Added support for default values, methods, and docstrings.
+
+   .. versionchanged:: 3.8
+      Deprecated the ``_field_types`` attribute in favor of the more
+      standard ``__annotations__`` attribute which has the same information.
+
+   .. versionchanged:: 3.8
+      The ``_field_types`` and ``__annotations__`` attributes are
+      now regular dictionaries instead of instances of ``OrderedDict``.
+
 
 .. function:: NewType(typ)
 
@@ -940,6 +950,24 @@ The module defines the following classes, functions and decorators:
 
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
+
+.. decorator:: type_check_only
+
+   Decorator to mark a class or function to be unavailable at runtime.
+
+   This decorator is itself not available at runtime. It is mainly
+   intended to mark classes that are defined in type stub files if
+   an implementation returns an instance of a private class::
+
+      @type_check_only
+      class Response:  # private or not available at runtime
+          code: int
+          def get_header(self, name: str) -> str: ...
+
+      def fetch_response() -> Response: ...
+
+   Note that returning instances of private classes is not recommended.
+   It is usually preferable to make such classes public.
 
 .. data:: Any
 

@@ -146,8 +146,8 @@ class Regrtest:
         line = f"[{line}] {test}"
 
         # add the system load prefix: "load avg: 1.80 "
-        if hasattr(os, 'getloadavg'):
-            load_avg_1min = os.getloadavg()[0]
+        if self.getloadavg:
+            load_avg_1min = self.getloadavg()
             line = f"load avg: {load_avg_1min:.2f} {line}"
 
         # add the timestamp prefix:  "0:01:05 "
@@ -615,6 +615,24 @@ class Regrtest:
         if self.ns.list_cases:
             self.list_cases()
             sys.exit(0)
+
+        self.getloadavg = None
+        # If we're on windows and this is the parent runner (not a worker),
+        # report the load average.
+        if hasattr(os, 'getloadavg'):
+            def getloadavg_1m():
+                return os.getloadavg()[0]
+            self.getloadavg = getloadavg_1m
+        elif sys.platform == 'win32' and (self.ns.worker_args is None):
+            from test.libregrtest.win_utils import WindowsLoadTracker
+
+            try:
+                load_tracker = WindowsLoadTracker()
+                self.getloadavg = load_tracker.getloadavg
+            except FileNotFoundError as error:
+                # Windows IoT Core and Windows Nano Server do not provide
+                # typeperf.exe for x64, x86 or ARM
+                print('Failed to create WindowsLoadTracker: {}'.format(error))
 
         self.run_tests()
         self.display_result()

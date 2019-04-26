@@ -254,8 +254,9 @@ Supported operations:
 |                                | rounded to the nearest multiple of            |
 |                                | timedelta.resolution using round-half-to-even.|
 +--------------------------------+-----------------------------------------------+
-| ``f = t2 / t3``                | Division (3) of *t2* by *t3*.  Returns a      |
-|                                | :class:`float` object.                        |
+| ``f = t2 / t3``                | Division (3) of overall duration *t2* by      |
+|                                | interval unit *t3*. Returns a :class:`float`  |
+|                                | object.                                       |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 / f or t1 = t2 / i`` | Delta divided by a float or an int. The result|
 |                                | is rounded to the nearest multiple of         |
@@ -351,7 +352,8 @@ Instance methods:
 .. method:: timedelta.total_seconds()
 
    Return the total number of seconds contained in the duration. Equivalent to
-   ``td / timedelta(seconds=1)``.
+   ``td / timedelta(seconds=1)``. For interval units other than seconds, use the
+   division form directly (e.g. ``td / timedelta(microseconds=1)``).
 
    Note that for very large time intervals (greater than 270 years on
    most platforms) this method will lose microsecond accuracy.

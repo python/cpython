@@ -70,6 +70,7 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="pyproject.props" />
+    <Import Project="libffi.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -77,7 +78,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\Modules\_ctypes\libffi_msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FFI_BUILDING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalOptions>/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE %(AdditionalOptions)</AdditionalOptions>
@@ -86,32 +87,14 @@
   <ItemGroup>
     <ClInclude Include="..\Modules\_ctypes\ctypes.h" />
     <ClInclude Include="..\Modules\_ctypes\ctypes_dlfcn.h" />
-    <ClInclude Include="..\Modules\_ctypes\libffi_msvc\ffi.h" />
-    <ClInclude Include="..\Modules\_ctypes\libffi_msvc\ffi_common.h" />
-    <ClInclude Include="..\Modules\_ctypes\libffi_msvc\fficonfig.h" />
-    <ClInclude Include="..\Modules\_ctypes\libffi_msvc\ffitarget.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ctypes\_ctypes.c" />
     <ClCompile Include="..\Modules\_ctypes\callbacks.c" />
     <ClCompile Include="..\Modules\_ctypes\callproc.c" />
     <ClCompile Include="..\Modules\_ctypes\cfield.c" />
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\ffi.c" />
     <ClCompile Include="..\Modules\_ctypes\malloc_closure.c" />
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\prep_cif.c">
-      <DisableSpecificWarnings Condition="'$(Platform)'=='x64'">4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
     <ClCompile Include="..\Modules\_ctypes\stgdict.c" />
-    <ClCompile Include="..\Modules\_ctypes\libffi_msvc\win32.c">
-      <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\Modules\_ctypes\libffi_msvc\win64.asm">
-      <ExcludedFromBuild Condition="'$(Platform)'=='Win32'">true</ExcludedFromBuild>
-      <Command>ml64 /nologo /c /Zi /Fo "$(IntDir)win64.obj" "%(FullPath)"</Command>
-      <Outputs>$(IntDir)win64.obj;%(Outputs)</Outputs>
-    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

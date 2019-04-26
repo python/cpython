@@ -5,6 +5,27 @@
 
 #include <inttypes.h>
 
+
+/* Defines to build Python and its standard library:
+ *
+ * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
+ *   should not be used by third-party modules.
+ * - Py_BUILD_CORE_BUILTIN: Build a Python stdlib module as a built-in module.
+ * - Py_BUILD_CORE_MODULE: Build a Python stdlib module as a dynamic library.
+ *
+ * Py_BUILD_CORE_BUILTIN and Py_BUILD_CORE_MODULE imply Py_BUILD_CORE.
+ *
+ * On Windows, Py_BUILD_CORE_MODULE exports "PyInit_xxx" symbol, whereas
+ * Py_BUILD_CORE_BUILTIN does not.
+ */
+#if defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE)
+#  define Py_BUILD_CORE
+#endif
+#if defined(Py_BUILD_CORE_MODULE) && !defined(Py_BUILD_CORE)
+#  define Py_BUILD_CORE
+#endif
+
+
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
@@ -406,7 +427,7 @@ extern "C" {
 #endif
 
 /* get and set x87 control word for VisualStudio/x86 */
-#if defined(_MSC_VER) && defined(_M_IX86) /* x87 only supported in x86 */
+#if defined(_MSC_VER) && !defined(_WIN64) && !defined(_M_ARM) /* x87 not supported in 64-bit or ARM */
 #define HAVE_PY_SET_53BIT_PRECISION 1
 #define _Py_SET_53BIT_PRECISION_HEADER \
     unsigned int old_387controlword, new_387controlword, out_387controlword
@@ -623,7 +644,7 @@ extern char * _getpty(int *, int, mode_t, int);
 /* only get special linkage if built as shared or platform is Cygwin */
 #if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #       if defined(HAVE_DECLSPEC_DLL)
-#               if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
+#               if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #                       define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
 #                       define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
         /* module init functions inside the core need no external linkage */
@@ -755,7 +776,7 @@ extern char * _getpty(int *, int, mode_t, int);
 #define PY_LITTLE_ENDIAN 1
 #endif
 
-#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
+#ifdef Py_BUILD_CORE
 /*
  * Macros to protect CRT calls against instant termination when passed an
  * invalid parameter (issue23524).

@@ -54,13 +54,8 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
-/* Py_DEBUG implies Py_TRACE_REFS. */
-#if defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
-#define Py_TRACE_REFS
-#endif
-
-/* Py_TRACE_REFS implies Py_REF_DEBUG. */
-#if defined(Py_TRACE_REFS) && !defined(Py_REF_DEBUG)
+/* Py_DEBUG implies Py_REF_DEBUG. */
+#if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
 #define Py_REF_DEBUG
 #endif
 
@@ -440,6 +435,7 @@ static inline void _Py_NewReference(PyObject *op)
 
 static inline void _Py_ForgetReference(PyObject *op)
 {
+    (void)op; /* may be unused, shut up -Wunused-parameter */
     _Py_INC_TPFREES(op);
 }
 #endif /* !Py_TRACE_REFS */
@@ -458,6 +454,8 @@ static inline void _Py_INCREF(PyObject *op)
 static inline void _Py_DECREF(const char *filename, int lineno,
                               PyObject *op)
 {
+    (void)filename; /* may be unused, shut up -Wunused-parameter */
+    (void)lineno; /* may be unused, shut up -Wunused-parameter */
     _Py_DEC_REFTOTAL;
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG

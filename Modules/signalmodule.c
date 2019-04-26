@@ -1079,11 +1079,18 @@ fill_siginfo(siginfo_t *si)
 
     PyStructSequence_SET_ITEM(result, 0, PyLong_FromLong((long)(si->si_signo)));
     PyStructSequence_SET_ITEM(result, 1, PyLong_FromLong((long)(si->si_code)));
+#ifdef __VXWORKS__   
+    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong(0L));
+    PyStructSequence_SET_ITEM(result, 5, PyLong_FromLong(0L));
+#else   
     PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si->si_errno)));
     PyStructSequence_SET_ITEM(result, 3, PyLong_FromPid(si->si_pid));
     PyStructSequence_SET_ITEM(result, 4, _PyLong_FromUid(si->si_uid));
     PyStructSequence_SET_ITEM(result, 5,
                                 PyLong_FromLong((long)(si->si_status)));
+#endif   
 #ifdef HAVE_SIGINFO_T_SI_BAND
     PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(si->si_band));
 #else
@@ -1343,17 +1350,15 @@ PyInit__signal(void)
     d = PyModule_GetDict(m);
 
     x = DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
-    if (!x || PyDict_SetItemString(d, "SIG_DFL", x) < 0)
+    if (PyModule_AddObject(m, "SIG_DFL", x))
         goto finally;
 
     x = IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
-    if (!x || PyDict_SetItemString(d, "SIG_IGN", x) < 0)
+    if (PyModule_AddObject(m, "SIG_IGN", x))
         goto finally;
 
-    x = PyLong_FromLong((long)NSIG);
-    if (!x || PyDict_SetItemString(d, "NSIG", x) < 0)
+    if (PyModule_AddIntMacro(m, NSIG))
         goto finally;
-    Py_DECREF(x);
 
 #ifdef SIG_BLOCK
     if (PyModule_AddIntMacro(m, SIG_BLOCK))
@@ -1562,8 +1567,8 @@ PyInit__signal(void)
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
             PyExc_OSError, NULL);
-    if (ItimerError != NULL)
-        PyDict_SetItemString(d, "ItimerError", ItimerError);
+    if (PyModule_AddObject(m, "ItimerError", ItimerError))
+        goto finally;
 #endif
 
 #ifdef CTRL_C_EVENT
