@@ -484,7 +484,7 @@ class BaseTestCase(unittest.TestCase):
             result.append('SUCCESS')
         result = ', '.join(result)
         if rerun:
-            self.check_line(output, 'Tests result: %s' % result)
+            self.check_line(output, 'Tests result: FAILURE')
             result = 'FAILURE then %s' % result
 
         self.check_line(output, 'Tests result: %s' % result)
@@ -989,6 +989,7 @@ class ArgsTestCase(BaseTestCase):
                                   fail_env_changed=True)
 
     def test_rerun_fail(self):
+        # FAILURE then FAILURE
         code = textwrap.dedent("""
             import unittest
 
@@ -1002,6 +1003,26 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("-w", testname, exitcode=2)
         self.check_executed_tests(output, [testname],
                                   failed=testname, rerun=testname)
+
+    def test_rerun_success(self):
+        # FAILURE then SUCCESS
+        code = textwrap.dedent("""
+            import builtins
+            import unittest
+
+            class Tests(unittest.TestCase):
+                failed = False
+
+                def test_fail_once(self):
+                    if not hasattr(builtins, '_test_failed'):
+                        builtins._test_failed = True
+                        self.fail("bug")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=0)
+        self.check_executed_tests(output, [testname],
+                                  rerun=testname)
 
     def test_no_tests_ran(self):
         code = textwrap.dedent("""

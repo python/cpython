@@ -103,17 +103,18 @@ class Regrtest:
                 | set(self.resource_denieds) | set(self.environment_changed)
                 | set(self.run_no_tests))
 
-    def accumulate_result(self, result):
+    def accumulate_result(self, result, rerun=False):
         test_name = result.test_name
         ok = result.result
 
-        if ok not in (CHILD_ERROR, INTERRUPTED):
+        if ok not in (CHILD_ERROR, INTERRUPTED) and not rerun:
             self.test_times.append((result.test_time, test_name))
 
         if ok == PASSED:
             self.good.append(test_name)
         elif ok in (FAILED, CHILD_ERROR):
-            self.bad.append(test_name)
+            if not rerun:
+                self.bad.append(test_name)
         elif ok == ENV_CHANGED:
             self.environment_changed.append(test_name)
         elif ok == SKIPPED:
@@ -123,8 +124,13 @@ class Regrtest:
             self.resource_denieds.append(test_name)
         elif ok == TEST_DID_NOT_RUN:
             self.run_no_tests.append(test_name)
-        elif ok != INTERRUPTED:
+        elif ok == INTERRUPTED:
+            self.interrupted = True
+        else:
             raise ValueError("invalid test result: %r" % ok)
+
+        if rerun and ok not in {FAILED, CHILD_ERROR, INTERRUPTED}:
+            self.bad.remove(test_name)
 
         xml_data = result.xml_data
         if xml_data:
@@ -287,13 +293,11 @@ class Regrtest:
         for test_name in self.rerun:
             print(f"Re-running {test_name} in verbose mode", flush=True)
             self.ns.verbose = True
-            ok = runtest(self.ns, test_name)
+            result = runtest(self.ns, test_name)
 
-            if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
-                self.bad.remove(test_name)
+            self.accumulate_result(result, rerun=True)
 
-            if ok.result == INTERRUPTED:
-                self.interrupted = True
+            if result.result == INTERRUPTED:
                 break
 
         if self.bad:
@@ -392,7 +396,6 @@ class Regrtest:
                 self.accumulate_result(result)
 
             if result.result == INTERRUPTED:
-                self.interrupted = True
                 break
 
             previous_test = format_test_result(result)
