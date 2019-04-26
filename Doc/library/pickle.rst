@@ -375,7 +375,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       ``dispatch_table``-registered reducers to pickle ``obj``.
 
       For a detailed example on how to use ``reducer_override``, see:
-      :ref:`reducer_override`
+      :ref:`reducer_override`.
 
       .. versionadded:: 3.8
 
