@@ -255,9 +255,6 @@ class MultiprocessRunner:
         if mp_result.stderr and not self.ns.pgo:
             print(mp_result.stderr, file=sys.stderr, flush=True)
 
-        if mp_result.result.result == INTERRUPTED:
-            self.regrtest.interrupted = True
-
         if must_stop(mp_result.result):
             return True
 
