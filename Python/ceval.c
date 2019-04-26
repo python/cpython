@@ -204,6 +204,17 @@ _PyEval_FiniThreads(void)
     }
 }
 
+static inline void
+exit_thread_if_finalizing(PyThreadState *tstate)
+{
+    /* _Py_Finalizing is protected by the GIL */
+    if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
+        drop_gil(tstate);
+        PyThread_exit_thread();
+        Py_UNREACHABLE();
+    }
+}
+
 void
 PyEval_AcquireLock(void)
 {
@@ -5189,17 +5200,6 @@ format_awaitable_error(PyTypeObject *type, int prevopcode)
                          "that does not implement __await__: %.100s",
                          type->tp_name);
         }
-    }
-}
-
-static inline void
-exit_thread_if_finalizing(PyThreadState *tstate)
-{
-    /* _Py_Finalizing is protected by the GIL */
-    if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
-        drop_gil(tstate);
-        PyThread_exit_thread();
-        Py_UNREACHABLE();
     }
 }
 

@@ -1096,13 +1096,6 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    :c:func:`PyEval_RestoreThread` is a higher-level function which is always
    available (even when threads have not been initialized).
 
-   .. note::
-      Calling this function from a thread when the runtime is finalizing
-      will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
-      check if the interpreter is in process of being finalized before calling
-      this function to avoid unwanted termination.
-
 .. c:function:: void PyEval_ReleaseThread(PyThreadState *tstate)
 
    Reset the current thread state to *NULL* and release the global interpreter
