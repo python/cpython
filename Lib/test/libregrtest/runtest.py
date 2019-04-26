@@ -1,6 +1,7 @@
 import collections
 import faulthandler
 import functools
+import gc
 import importlib
 import io
 import os
@@ -8,6 +9,7 @@ import sys
 import time
 import traceback
 import unittest
+
 from test import support
 from test.libregrtest.refleak import dash_R, clear_caches
 from test.libregrtest.save_env import saved_test_environment
@@ -59,7 +61,7 @@ NOTTESTS = set()
 
 
 # used by --findleaks, store for gc.garbage
-found_garbage = []
+FOUND_GARBAGE = []
 
 
 def format_test_result(result):
@@ -182,11 +184,6 @@ def runtest(ns, test_name):
         return TestResult(test_name, FAILED, 0.0, None)
 
 
-def post_test_cleanup():
-    support.gc_collect()
-    support.reap_children()
-
-
 def _test_module(the_module):
     loader = unittest.TestLoader()
     tests = loader.loadTestsFromModule(the_module)
@@ -224,21 +221,19 @@ def _runtest_inner2(ns, test_name):
     finally:
         cleanup_test_droppings(test_name, ns.verbose)
 
-    if ns.findleaks:
-        import gc
-        support.gc_collect()
-        if gc.garbage:
-            import gc
-            gc.garbage = [1]
-            print_warning(f"{test_name} created {len(gc.garbage)} "
-                          f"uncollectable object(s).")
-            # move the uncollectable objects somewhere,
-            # so we don't see them again
-            found_garbage.extend(gc.garbage)
-            gc.garbage.clear()
-            support.environment_altered = True
+    support.gc_collect()
 
-    post_test_cleanup()
+    if gc.garbage:
+        support.environment_altered = True
+        print_warning(f"{test_name} created {len(gc.garbage)} "
+                      f"uncollectable object(s).")
+
+        # move the uncollectable objects somewhere,
+        # so we don't see them again
+        FOUND_GARBAGE.extend(gc.garbage)
+        gc.garbage.clear()
+
+    support.reap_children()
 
     return refleak
 

@@ -20,10 +20,6 @@ from test.libregrtest.runtest import (
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
-try:
-    import gc
-except ImportError:
-    gc = None
 
 
 # When tests are run from the Python build directory, it is best practice
@@ -89,9 +85,6 @@ class Regrtest:
 
         # used by --coverage, trace.Trace instance
         self.tracer = None
-
-        # used by --findleaks, store for gc.garbage
-        self.found_garbage = []
 
         # used to display the progress bar "[ 3/100]"
         self.start_time = time.monotonic()
@@ -172,22 +165,6 @@ class Regrtest:
             print("Warning: The timeout option requires "
                   "faulthandler.dump_traceback_later", file=sys.stderr)
             ns.timeout = None
-
-        if ns.threshold is not None and gc is None:
-            print('No GC available, ignore --threshold.', file=sys.stderr)
-            ns.threshold = None
-
-        if ns.findleaks:
-            if gc is not None:
-                # Uncomment the line below to report garbage that is not
-                # freeable by reference counting alone.  By default only
-                # garbage that is not collectable by the GC is reported.
-                pass
-                #gc.set_debug(gc.DEBUG_SAVEALL)
-            else:
-                print('No GC available, disabling --findleaks',
-                      file=sys.stderr)
-                ns.findleaks = False
 
         if ns.xmlpath:
             support.junit_xml_list = self.testsuite_xml = []
@@ -308,7 +285,7 @@ class Regrtest:
         print("Re-running failed tests in verbose mode")
         self.rerun = self.bad[:]
         for test_name in self.rerun:
-            print("Re-running test %r in verbose mode" % test_name, flush=True)
+            print(f"Re-running {test_name} in verbose mode", flush=True)
             self.ns.verbose = True
             ok = runtest(self.ns, test_name)
 
@@ -318,10 +295,10 @@ class Regrtest:
             if ok.result == INTERRUPTED:
                 self.interrupted = True
                 break
-        else:
-            if self.bad:
-                print(count(len(self.bad), 'test'), "failed again:")
-                printlist(self.bad)
+
+        if self.bad:
+            print(count(len(self.bad), 'test'), "failed again:")
+            printlist(self.bad)
 
         self.display_result()
 
@@ -425,16 +402,6 @@ class Regrtest:
             elif result[0] == PASSED:
                 # be quiet: say nothing if the test passed shortly
                 previous_test = None
-
-            if self.ns.findleaks:
-                gc.collect()
-                if gc.garbage:
-                    print("Warning: test created", len(gc.garbage), end=' ')
-                    print("uncollectable object(s).")
-                    # move the uncollectable objects somewhere so we don't see
-                    # them again
-                    self.found_garbage.extend(gc.garbage)
-                    del gc.garbage[:]
 
             # Unload the newly imported modules (best effort finalization)
             for module in sys.modules.keys():
