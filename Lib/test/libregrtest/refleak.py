@@ -1,4 +1,3 @@
-import errno
 import os
 import re
 import sys
@@ -18,7 +17,7 @@ except ImportError:
                 cls._abc_negative_cache, cls._abc_negative_cache_version)
 
 
-def dash_R(ns, the_module, test_name, test_func):
+def dash_R(ns, test_name, test_func):
     """Run a test multiple times, looking for reference leaks.
 
     Returns:
