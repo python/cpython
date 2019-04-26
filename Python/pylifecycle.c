@@ -2172,7 +2172,7 @@ Py_FatalError(const char *msg)
 void _Py_NO_RETURN
 _Py_ExitInitError(_PyInitError err)
 {
-    if (err.exitcode >= 0) {
+    if (_Py_INIT_HAS_EXITCODE(err)) {
         exit(err.exitcode);
     }
     else {
