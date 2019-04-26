@@ -916,13 +916,13 @@ class ArgsTestCase(BaseTestCase):
                                 testname)
         self.assertEqual(output.splitlines(), all_methods)
 
+    @support.cpython_only
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import faulthandler; faulthandler._sigsegv()'
         crash_test = self.create_test(name="crash", code=code)
-        ok_test = self.create_test(name="ok")
 
-        tests = [crash_test, ok_test]
+        tests = [crash_test]
         output = self.run_tests("-j2", *tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=crash_test,
                                   randomize=True)

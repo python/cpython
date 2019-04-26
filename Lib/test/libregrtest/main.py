@@ -79,8 +79,8 @@ class Regrtest:
         self.skipped = []
         self.resource_denieds = []
         self.environment_changed = []
-        self.rerun = []
         self.run_no_tests = []
+        self.rerun = []
         self.first_result = None
         self.interrupted = False
 
@@ -104,6 +104,11 @@ class Regrtest:
 
         # used by --junit-xml
         self.testsuite_xml = None
+
+    def get_executed(self):
+        return (set(self.good) | set(self.bad) | set(self.skipped)
+                | set(self.resource_denieds) | set(self.environment_changed)
+                | set(self.run_no_tests))
 
     def accumulate_result(self, result):
         test_name = result.test_name
@@ -311,8 +316,6 @@ class Regrtest:
                 self.bad.remove(test_name)
 
             if ok.result == INTERRUPTED:
-                # print a newline separate from the ^C
-                print()
                 self.interrupted = True
                 break
         else:
@@ -331,11 +334,11 @@ class Regrtest:
         print("== Tests result: %s ==" % self.get_tests_result())
 
         if self.interrupted:
-            print()
-            # print a newline after ^C
             print("Test suite interrupted by signal SIGINT.")
-            executed = set(self.good) | set(self.bad) | set(self.skipped)
-            omitted = set(self.selected) - executed
+
+        omitted = set(self.selected) - self.get_executed()
+        if omitted:
+            print()
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
 

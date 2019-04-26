@@ -275,6 +275,7 @@ def _runtest_inner(ns, test_name, display_failure=True):
     except support.TestDidNotRun:
         return TEST_DID_NOT_RUN
     except KeyboardInterrupt:
+        print()
         return INTERRUPTED
     except:
         if not ns.pgo:
