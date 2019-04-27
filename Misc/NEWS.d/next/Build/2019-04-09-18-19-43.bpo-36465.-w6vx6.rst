@@ -1,5 +1,6 @@
-Release build and debug build are now ABI compatible: the ``Py_DEBUG`` define
-no longer implies ``Py_TRACE_REFS`` define which introduces the only ABI
-incompatibility. A new ``./configure --with-trace-refs`` build option is now
-required to get ``Py_TRACE_REFS`` define which adds :func:`sys.getobjects`
-function and ``PYTHONDUMPREFS`` environment variable.
+Release builds and debug builds are now ABI compatible: defining the
+``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro, which
+introduces the only ABI incompatibility. The ``Py_TRACE_REFS`` macro, which
+adds the :func:`sys.getobjects` function and the :envvar:`PYTHONDUMPREFS`
+environment variable, can be set using the new ``./configure --with-trace-refs``
+build option.

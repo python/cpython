@@ -1,5 +1,5 @@
 This file describes some special Python build types enabled via compile-time
-preprocessor defines.
+preprocessor directives.
 
 IMPORTANT: if you want to build a debug-enabled Python, it is recommended that
 you use ``./configure --with-pydebug``, rather than the options listed here.

@@ -101,20 +101,21 @@ subdirectories).
 Debug build uses the same ABI as release build
 -----------------------------------------------
 
-Python now uses the same ABI when built in release and in debug mode. On Unix,
-when Python is build in debug mode, it is now possible to load C extensions
-built in release mode and C extensions built using the stable ABI.
+Python now uses the same ABI whether it built in release or debug mode. On
+Unix, when Python is built in debug mode, it is now possible to load C
+extensions built in release mode and C extensions built using the stable ABI.
 
-Release build and debug build are now ABI compatible: the ``Py_DEBUG`` define
-no longer implies the ``Py_TRACE_REFS`` define which introduces the only ABI
-incompatibility. A new ``./configure --with-trace-refs`` build option is now
-required to get ``Py_TRACE_REFS`` define which adds :func:`sys.getobjects`
-function and :envvar:`PYTHONDUMPREFS` environment variable.
+Release builds and debug builds are now ABI compatible: defining the
+``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro, which
+introduces the only ABI incompatibility. The ``Py_TRACE_REFS`` macro, which
+adds the :func:`sys.getobjects` function and the :envvar:`PYTHONDUMPREFS`
+environment variable, can be set using the new ``./configure --with-trace-refs``
+build option.
 (Contributed by Victor Stinner in :issue:`36465`.)
 
-On Unix, C extensions are no longer linked to libpython. It is now possible to
-load a C extension built using a shared library Python
-with a statically linked Python.
+On Unix, C extensions are no longer linked to libpython. It is now possible
+for a statically linked Python to load a C extension built using a shared
+library Python.
 (Contributed by Victor Stinner in :issue:`21536`.)
 
 On Unix, when Python is built in debug mode, import now also looks for C
