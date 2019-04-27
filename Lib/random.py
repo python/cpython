@@ -248,7 +248,7 @@ class Random(_random.Random):
         return self.randrange(a, b+1)
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Raises ValueError if n==0."
+        "Return a random int in the range [0, n].  Raises ValueError if n==0."
 
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
@@ -258,7 +258,7 @@ class Random(_random.Random):
         return r
 
     def _randbelow_without_getrandbits(self, n, int=int, maxsize=1<<BPF):
-        """Return a random int in the range [0,n).  Raises ValueError if n==0.
+        """Return a random int in the range [0, n].  Raises ValueError if n==0.
 
         The implementation does not use getrandbits, but only random.
         """
