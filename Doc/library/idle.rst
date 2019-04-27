@@ -724,11 +724,9 @@ to begin after the next tab stop. (They occur every 8 'characters').  Newline
 characters cause following text to appear on a new line.  Other control
 characters are ignored or displayed as a space, box, or something else,
 depending on the operating system and font.  (Moving the text cursor through
-such output with arrow keys may exhibit some surprising spacing behavior.)
+such output with arrow keys may exhibit some surprising spacing behavior.) ::
 
-.. code-block:: none
-
-   >>> s = 'a\tb\a<\x02><\r>\bc\nd'
+   >>> s = 'a\tb\a<\x02><\r>\bc\nd'  # Enter 22 chars.
    >>> len(s)
    14
    >>> s  # Display repr(s)
