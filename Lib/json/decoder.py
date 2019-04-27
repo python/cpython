@@ -250,9 +250,9 @@ def JSONArray(s_and_end, scan_once, array_hook,
                     end = _w(s, end + 1).end()
         except IndexError:
             pass
-    
+
     if array_hook is not None:
-            values = array_hook(values)
+        values = array_hook(values)
     return values, end
 
 
