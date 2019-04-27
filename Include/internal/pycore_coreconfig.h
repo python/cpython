@@ -4,9 +4,11 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN defined"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
+
+#include "pycore_pystate.h"   /* _PyRuntimeState */
 
 
 /* --- _PyWstrList ------------------------------------------------ */
@@ -108,7 +110,13 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config,
+    _PyRuntimeState *runtime);
+
+
+/* --- Function used for testing ---------------------------------- */
+
+PyAPI_FUNC(PyObject*) _Py_GetConfigsAsDict(void);
 
 #ifdef __cplusplus
 }

@@ -315,12 +315,6 @@ class BuiltinLevelsTest(BaseTest):
         self.assertEqual(logging.getLevelName('INFO'), logging.INFO)
         self.assertEqual(logging.getLevelName(logging.INFO), 'INFO')
 
-    def test_regression_29220(self):
-        """See issue #29220 for more information."""
-        logging.addLevelName(logging.INFO, '')
-        self.addCleanup(logging.addLevelName, logging.INFO, 'INFO')
-        self.assertEqual(logging.getLevelName(logging.INFO), '')
-
     def test_issue27935(self):
         fatal = logging.getLevelName('FATAL')
         self.assertEqual(fatal, logging.FATAL)
@@ -3504,6 +3498,19 @@ class QueueHandlerTest(BaseTest):
             self.que_logger.exception(self.next_message(), exc_info=exc)
         listener.stop()
         self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
+
+    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
+                         'logging.handlers.QueueListener required for this test')
+    def test_queue_listener_with_multiple_handlers(self):
+        # Test that queue handler format doesn't affect other handler formats (bpo-35726).
+        self.que_hdlr.setFormatter(self.root_formatter)
+        self.que_logger.addHandler(self.root_hdlr)
+
+        listener = logging.handlers.QueueListener(self.queue, self.que_hdlr)
+        listener.start()
+        self.que_logger.error("error")
+        listener.stop()
+        self.assertEqual(self.stream.getvalue().strip(), "que -> ERROR: error")
 
 if hasattr(logging.handlers, 'QueueListener'):
     import multiprocessing
