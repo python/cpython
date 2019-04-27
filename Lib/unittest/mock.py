@@ -29,7 +29,7 @@ import inspect
 import pprint
 import sys
 import builtins
-from types import ModuleType
+from types import ModuleType, MethodType
 from functools import wraps, partial
 
 
@@ -121,6 +121,8 @@ def _copy_func_details(func, funcopy):
 def _callable(obj):
     if isinstance(obj, type):
         return True
+    if isinstance(obj, (staticmethod, classmethod, MethodType)):
+        return _callable(obj.__func__)
     if getattr(obj, '__call__', None) is not None:
         return True
     return False
@@ -738,7 +740,7 @@ class NonCallableMock(Base):
 
         obj = self._mock_children.get(name, _missing)
         if name in self.__dict__:
-            super().__delattr__(name)
+            _safe_super(NonCallableMock, self).__delattr__(name)
         elif obj is _deleted:
             raise AttributeError(name)
         if obj is not _missing:

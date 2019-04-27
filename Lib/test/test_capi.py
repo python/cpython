@@ -462,11 +462,11 @@ class PyMemDebugTests(unittest.TestCase):
                  r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
                  r"    The [0-9] pad bytes at tail={ptr} are not all FORBIDDENBYTE \(0x[0-9a-f]{{2}}\):\n"
                  r"        at tail\+0: 0x78 \*\*\* OUCH\n"
-                 r"        at tail\+1: 0xfb\n"
-                 r"        at tail\+2: 0xfb\n"
+                 r"        at tail\+1: 0xfd\n"
+                 r"        at tail\+2: 0xfd\n"
                  r"        .*\n"
                  r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
-                 r"    Data at p: cb cb cb .*\n"
+                 r"    Data at p: cd cd cd .*\n"
                  r"\n"
                  r"Enable tracemalloc to get the memory block allocation traceback\n"
                  r"\n"
@@ -482,7 +482,7 @@ class PyMemDebugTests(unittest.TestCase):
                  r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
                  r"    The [0-9] pad bytes at tail={ptr} are FORBIDDENBYTE, as expected.\n"
                  r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
-                 r"    Data at p: cb cb cb .*\n"
+                 r"    Data at p: cd cd cd .*\n"
                  r"\n"
                  r"Enable tracemalloc to get the memory block allocation traceback\n"
                  r"\n"
@@ -507,6 +507,29 @@ class PyMemDebugTests(unittest.TestCase):
         # without holding the GIL
         code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
         self.check_malloc_without_gil(code)
+
+    def check_pyobject_is_freed(self, func):
+        code = textwrap.dedent('''
+            import gc, os, sys, _testcapi
+            # Disable the GC to avoid crash on GC collection
+            gc.disable()
+            obj = _testcapi.{func}()
+            error = (_testcapi.pyobject_is_freed(obj) == False)
+            # Exit immediately to avoid a crash while deallocating
+            # the invalid object
+            os._exit(int(error))
+        ''')
+        code = code.format(func=func)
+        assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
+
+    def test_pyobject_is_freed_uninitialized(self):
+        self.check_pyobject_is_freed('pyobject_uninitialized')
+
+    def test_pyobject_is_freed_forbidden_bytes(self):
+        self.check_pyobject_is_freed('pyobject_forbidden_bytes')
+
+    def test_pyobject_is_freed_free(self):
+        self.check_pyobject_is_freed('pyobject_freed')
 
 
 class PyMemMallocDebugTests(PyMemDebugTests):

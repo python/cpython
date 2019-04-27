@@ -8,6 +8,7 @@ import sysconfig
 import threading
 import warnings
 from test import support
+from test.libregrtest.utils import print_warning
 try:
     import _multiprocessing, multiprocessing.process
 except ImportError:
@@ -276,8 +277,7 @@ class saved_test_environment:
                 self.changed = True
                 restore(original)
                 if not self.quiet and not self.pgo:
-                    print(f"Warning -- {name} was modified by {self.testname}",
-                          file=sys.stderr, flush=True)
+                    print_warning(f"{name} was modified by {self.testname}")
                     print(f"  Before: {original}\n  After:  {current} ",
                           file=sys.stderr, flush=True)
         return False
