@@ -279,9 +279,11 @@ variables of the function.  More precisely, all variable assignments in a
 function store the value in the local symbol table; whereas variable references
 first look in the local symbol table, then in the local symbol tables of
 enclosing functions, then in the global symbol table, and finally in the table
-of built-in names. Thus, global variables cannot be directly assigned a value
-within a function (unless named in a :keyword:`global` statement), although they
-may be referenced.
+of built-in names. Thus, global variables and variables of enclosing functions
+cannot be directly assigned a value within a function (unless, for global
+variables, named in a :keyword:`global` statement, or, for variables of enclosing
+functions, named in a :keyword:`nonlocal` statement), although they may be
+referenced.
 
 The actual parameters (arguments) to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
