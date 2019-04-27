@@ -2921,6 +2921,23 @@ datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
     return date_fromtimestamp((PyObject *) type, timestamp);
 }
 
+/* bpo-36025: This is a wrapper for API compatibility with the public C API,
+ * which expects a function that takes an *args tuple, whereas the argument
+ * clinic generates code that takes METH_O.
+ */
+static PyObject *
+datetime_date_fromtimestamp_capi(PyObject *cls, PyObject *args)
+{
+    PyObject *timestamp;
+    PyObject *result = NULL;
+
+    if (PyArg_UnpackTuple(args, "fromtimestamp", 1, 1, &timestamp)) {
+        result = date_fromtimestamp(cls, timestamp);
+    }
+
+    return result;
+}
+
 /* Return new date from proleptic Gregorian ordinal.  Raises ValueError if
  * the ordinal is out of range.
  */
@@ -6275,7 +6292,7 @@ static PyDateTime_CAPI CAPI = {
     new_delta_ex,
     new_timezone,
     datetime_fromtimestamp,
-    date_fromtimestamp,
+    datetime_date_fromtimestamp_capi,
     new_datetime_ex2,
     new_time_ex2
 };
