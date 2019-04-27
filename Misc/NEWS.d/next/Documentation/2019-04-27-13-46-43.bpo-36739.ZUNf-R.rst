@@ -1,0 +1,4 @@
+Update controlflow.rst: 
+
+in addition to global-statement also mention nonlocal-statement
+(in the paragraph describing access to variables which are non local to a function
