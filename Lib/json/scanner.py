@@ -72,4 +72,3 @@ def py_make_scanner(context):
     return scan_once
 
 make_scanner = c_make_scanner or py_make_scanner
-# make_scanner = py_make_scanner
