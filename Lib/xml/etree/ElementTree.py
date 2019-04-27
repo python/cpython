@@ -1750,7 +1750,7 @@ class C14NWriterTarget:
 
     Configuration options:
 
-    - *comments*: set to true to include comments
+    - *with_comments*: set to true to include comments
     - *strip_text*: set to true to strip whitespace before and after text content
     - *rewrite_prefixes*: set to true to replace namespace prefixes by "n{number}"
     - *qname_aware_tags*: a set of qname aware tag names in which prefixes
@@ -1759,11 +1759,11 @@ class C14NWriterTarget:
                            should be replaced in text content
     """
     def __init__(self, write, *,
-                 comments=False, strip_text=False, rewrite_prefixes=False,
+                 with_comments=False, strip_text=False, rewrite_prefixes=False,
                  qname_aware_tags=None, qname_aware_attrs=None):
         self._write = write
         self._data = []
-        self._comments = comments
+        self._with_comments = with_comments
         self._strip_text = strip_text
 
         self._rewrite_prefixes = rewrite_prefixes
@@ -1947,7 +1947,7 @@ class C14NWriterTarget:
         self._ns_stack.pop()
 
     def comment(self, text):
-        if not self._comments:
+        if not self._with_comments:
             return
         if self._root_done:
             self._write('\n')

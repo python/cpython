@@ -3565,7 +3565,7 @@ class C14NTest(unittest.TestCase):
 
                         ET.canonicalize(
                             out.write, file=f,
-                            comments=keep_comments,
+                            with_comments=keep_comments,
                             strip_text=strip_text,
                             rewrite_prefixes=rewrite_prefixes,
                             qname_aware_tags=qtags, qname_aware_attrs=qattrs)
