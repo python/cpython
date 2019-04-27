@@ -271,8 +271,8 @@ def detect_encoding(b):
     return 'utf-8'
 
 
-def load(fp, *, cls=None, object_hook=None, parse_float=None,
-        parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+def load(fp, *, cls=None, object_hook=None, parse_float=None, parse_int=None, 
+        parse_constant=None, object_pairs_hook=None, array_hook=None, **kw):
     """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
     a JSON document) to a Python object.
 
@@ -287,17 +287,24 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     This feature can be used to implement custom decoders.  If ``object_hook``
     is also defined, the ``object_pairs_hook`` takes priority.
 
+    ``array_hook`` is an optional function that will be called with the
+    result of any array literal decoded (a ``list``).  The return value of
+    ``array_hook`` will be used instead of the ``list``.  This can be used
+    to use another datatype for JSON Arrays (e.g. ``tuple``), or to provide
+    custom deserializations.
+
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
     """
     return loads(fp.read(),
         cls=cls, object_hook=object_hook,
         parse_float=parse_float, parse_int=parse_int,
-        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook,
+        array_hook=array_hook, **kw)
 
 
-def loads(s, *, cls=None, object_hook=None, parse_float=None,
-        parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+def loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, 
+        parse_constant=None, object_pairs_hook=None, array_hook=None, **kw):
     """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python object.
 
@@ -311,6 +318,12 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     return value of ``object_pairs_hook`` will be used instead of the ``dict``.
     This feature can be used to implement custom decoders.  If ``object_hook``
     is also defined, the ``object_pairs_hook`` takes priority.
+
+    ``array_hook`` is an optional function that will be called with the
+    result of any array literal decoded (a ``list``).  The return value of
+    ``array_hook`` will be used instead of the ``list``. This can be used
+    to use another datatype for JSON Arrays (e.g. ``tuple``), or to provide
+    custom deserializations.
 
     ``parse_float``, if specified, will be called with the string
     of every JSON float to be decoded. By default this is equivalent to
@@ -350,10 +363,11 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
             stacklevel=2
         )
         del kw['encoding']
-
+    # cached decoder
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
-            parse_constant is None and object_pairs_hook is None and not kw):
+            parse_constant is None and object_pairs_hook is None and
+            array_hook is None and not kw):
         return _default_decoder.decode(s)
     if cls is None:
         cls = JSONDecoder
@@ -361,6 +375,8 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
         kw['object_hook'] = object_hook
     if object_pairs_hook is not None:
         kw['object_pairs_hook'] = object_pairs_hook
+    if array_hook is not None:
+        kw['array_hook'] = array_hook
     if parse_float is not None:
         kw['parse_float'] = parse_float
     if parse_int is not None:
