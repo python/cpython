@@ -279,10 +279,10 @@ The exact token type names can be displayed using the :option:`-e` option:
     4,11-4,12:          NEWLINE        '\n'
     5,0-5,0:            ENDMARKER      ''
 
-Example of tokenizing from another file::
+Example of tokenizing a file programmatically::
 
     import tokenize
-    f = open('example.py', 'rb')
+    f = open('hello.py', 'rb')
     token_gen = tokenize.tokenize(f.readline)
 
     for token in token_gen:
