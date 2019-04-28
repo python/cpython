@@ -4254,7 +4254,10 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Create a new dictionary with keys from *iterable* and values set to *value*.
 
       :meth:`fromkeys` is a class method that returns a new dictionary. *value*
-      defaults to ``None``.
+      defaults to ``None``.  All of the values refer to just a single instance,
+      so it generally doesn't make sense for *value* to be a mutable object
+      such as an empty list.  To get distinct values, use a :ref:`dict
+      comprehension <dict>` instead.
 
    .. method:: get(key[, default])
 
