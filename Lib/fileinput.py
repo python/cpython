@@ -352,7 +352,7 @@ class FileInput:
                     self._output = open(self._filename, self._write_mode)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
-                    if hasattr(os, 'O_BINARY') and 'b' in self._mode:
+                    if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
