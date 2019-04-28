@@ -1902,6 +1902,13 @@ class MockTest(unittest.TestCase):
                 obj = mock(spec=Something)
                 self.assertIsInstance(obj, Something)
 
+    def test_assert_message_attribute(self):
+        for mock in Mock(), MagicMock():
+            with self.assertRaisesRegex(AttributeError,
+                                        "Attributes cannot start with "
+                                        "'assert'"):
+                mock.assert_screen_status
+
 
 if __name__ == '__main__':
     unittest.main()
