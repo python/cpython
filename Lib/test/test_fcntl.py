@@ -12,8 +12,6 @@ from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
 fcntl = import_module('fcntl')
 
 
-# TODO - Write tests for flock() and lockf().
-
 def get_lockdata():
     try:
         os.O_LARGEFILE
@@ -137,6 +135,39 @@ class TestFcntl(unittest.TestCase):
 
         self.assertRaises(ValueError, fcntl.flock, -1, fcntl.LOCK_SH)
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
+
+    def test_lockf(self):
+
+        self.f = open(TESTFN, 'wb+')
+
+        self.assertRaises(TypeError, fcntl.lockf, self.f, "foo")
+        self.assertRaises(TypeError, fcntl.lockf, self.f, fcntl.LOCK_UN, "foo")
+        self.assertRaises(ValueError, fcntl.lockf, self.f, -256)
+        self.assertRaises(ValueError, fcntl.lockf, self.f, 256)
+
+        fcntl.lockf(self.f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+        pid = os.fork()
+        if pid == 0:
+            rval = 2
+            try:
+                fcntl.lockf(open(self.f.name, self.f.mode), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except IOError as e:
+                if e.errno not in (errno.EACCES, errno.EAGAIN):
+                    raise
+                rval = 0
+            else:
+                rval = 1
+            finally:
+                os._exit(rval)
+
+        assert pid > 0
+        (pid, status) = os.waitpid(pid, 0)
+        self.assertEqual(os.WIFEXITED(status), True)
+
+        fcntl.lockf(self.f, fcntl.LOCK_UN)
+
+        self.f.close()
 
     @cpython_only
     def test_flock_overflow(self):
