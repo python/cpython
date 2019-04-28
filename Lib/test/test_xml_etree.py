@@ -14,6 +14,7 @@ import operator
 import os
 import pickle
 import sys
+import textwrap
 import types
 import unittest
 import warnings
@@ -3470,6 +3471,59 @@ class C14NTest(unittest.TestCase):
         # fragments from PJ's tests
         #self.assertEqual(c14n_roundtrip("<doc xmlns:x='http://example.com/x' xmlns='http://example.com/default'><b y:a1='1' xmlns='http://example.com/default' a3='3' xmlns:y='http://example.com/y' y:a2='2'/></doc>"),
         #'<doc xmlns:x="http://example.com/x"><b xmlns:y="http://example.com/y" a3="3" y:a1="1" y:a2="2"></b></doc>')
+
+    def test_c14n_exclusion(self):
+        xml = textwrap.dedent("""\
+        <root xmlns:x="http://example.com/x">
+            <a x:attr="attrx">
+                <b>abtext</b>
+            </a>
+            <b>btext</b>
+            <c>
+                <x:d>dtext</x:d>
+            </c>
+        </root>
+        """)
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True),
+            '<root>'
+            '<a xmlns:x="http://example.com/x" x:attr="attrx"><b>abtext</b></a>'
+            '<b>btext</b>'
+            '<c><x:d xmlns:x="http://example.com/x">dtext</x:d></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_attrs=['{http://example.com/x}attr']),
+            '<root>'
+            '<a><b>abtext</b></a>'
+            '<b>btext</b>'
+            '<c><x:d xmlns:x="http://example.com/x">dtext</x:d></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_tags=['{http://example.com/x}d']),
+            '<root>'
+            '<a xmlns:x="http://example.com/x" x:attr="attrx"><b>abtext</b></a>'
+            '<b>btext</b>'
+            '<c></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_attrs=['{http://example.com/x}attr'],
+                           exclude_tags=['{http://example.com/x}d']),
+            '<root>'
+            '<a><b>abtext</b></a>'
+            '<b>btext</b>'
+            '<c></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_tags=['a', 'b']),
+            '<root>'
+            '<c><x:d xmlns:x="http://example.com/x">dtext</x:d></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_tags=['{http://example.com/x}d', 'b']),
+            '<root>'
+            '<a xmlns:x="http://example.com/x" x:attr="attrx"></a>'
+            '<c></c>'
+            '</root>')
 
     #
     # basic method=c14n tests from the c14n 2.0 specification.  uses

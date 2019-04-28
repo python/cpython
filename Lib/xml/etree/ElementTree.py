@@ -1757,14 +1757,19 @@ class C14NWriterTarget:
                           should be replaced in text content
     - *qname_aware_attrs*: a set of qname aware attribute names in which prefixes
                            should be replaced in text content
+    - *exclude_attrs*: a set of attribute names that should not be serialised
+    - *exclude_tags*: a set of tag names that should not be serialised
     """
     def __init__(self, write, *,
                  with_comments=False, strip_text=False, rewrite_prefixes=False,
-                 qname_aware_tags=None, qname_aware_attrs=None):
+                 qname_aware_tags=None, qname_aware_attrs=None,
+                 exclude_attrs=None, exclude_tags=None):
         self._write = write
         self._data = []
         self._with_comments = with_comments
         self._strip_text = strip_text
+        self._exclude_attrs = set(exclude_attrs) if exclude_attrs else None
+        self._exclude_tags = set(exclude_tags) if exclude_tags else None
 
         self._rewrite_prefixes = rewrite_prefixes
         if qname_aware_tags:
@@ -1790,6 +1795,7 @@ class C14NWriterTarget:
         self._pending_start = None
         self._root_seen = False
         self._root_done = False
+        self._ignored_depth = 0
 
     def _iter_namespaces(self, ns_stack, _reversed=reversed):
         for namespaces in _reversed(ns_stack):
@@ -1836,7 +1842,8 @@ class C14NWriterTarget:
         raise ValueError(f'Namespace "{uri}" is not declared in scope')
 
     def data(self, data):
-        self._data.append(data)
+        if not self._ignored_depth:
+            self._data.append(data)
 
     def _flush(self, _join_text=''.join):
         data = _join_text(self._data)
@@ -1853,12 +1860,18 @@ class C14NWriterTarget:
             self._write(_escape_cdata_c14n(data))
 
     def start_ns(self, prefix, uri):
+        if self._ignored_depth:
+            return
         # we may have to resolve qnames in text content
         if self._data:
             self._flush()
         self._ns_stack[-1].append((uri, prefix))
 
     def start(self, tag, attrs):
+        if self._exclude_tags is not None and (
+                self._ignored_depth or tag in self._exclude_tags):
+            self._ignored_depth += 1
+            return
         if self._data:
             self._flush()
 
@@ -1872,6 +1885,9 @@ class C14NWriterTarget:
         self._start(tag, attrs, new_namespaces)
 
     def _start(self, tag, attrs, new_namespaces, qname_text=None):
+        if self._exclude_attrs is not None and attrs:
+            attrs = {k: v for k, v in attrs.items() if k not in self._exclude_attrs}
+
         qnames = {tag, *attrs}
         resolved_names = {}
 
@@ -1938,6 +1954,9 @@ class C14NWriterTarget:
         self._ns_stack.append([])
 
     def end(self, tag):
+        if self._ignored_depth:
+            self._ignored_depth -= 1
+            return
         if self._data:
             self._flush()
         self._write(f'</{self._qname(tag)[0]}>')
@@ -1949,6 +1968,8 @@ class C14NWriterTarget:
     def comment(self, text):
         if not self._with_comments:
             return
+        if self._ignored_depth:
+            return
         if self._root_done:
             self._write('\n')
         elif self._root_seen and self._data:
@@ -1958,6 +1979,8 @@ class C14NWriterTarget:
             self._write('\n')
 
     def pi(self, target, data):
+        if self._ignored_depth:
+            return
         if self._root_done:
             self._write('\n')
         elif self._root_seen and self._data:
