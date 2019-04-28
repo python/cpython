@@ -1044,8 +1044,10 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     }
     if (tp->tp_setattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
-        if (name_str == NULL)
+        if (name_str == NULL) {
+            Py_DECREF(name);
             return -1;
+        }
         err = (*tp->tp_setattr)(v, (char *)name_str, value);
         Py_DECREF(name);
         return err;
