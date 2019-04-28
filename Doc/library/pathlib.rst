@@ -1054,6 +1054,12 @@ call fails (for example because the path doesn't exist).
    use :func:`Path.rmdir` instead.
 
 
+.. method:: Path.link(target)
+
+   Create a hard link pointing to a path named *target*. If the path is a directory,
+   use :func:`Path.mkdir` instead.
+
+
 .. method:: Path.write_bytes(data)
 
    Open the file pointed to in bytes mode, write *data* to it, and close the
