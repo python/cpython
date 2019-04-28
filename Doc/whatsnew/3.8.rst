@@ -333,8 +333,11 @@ pathlib
 :exc:`ValueError` or its subclass :exc:`UnicodeEncodeError` for paths that
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
+
 Added :meth:`pathlib.Path.link()`.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
+
+
 socket
 ------
 
