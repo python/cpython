@@ -9,6 +9,7 @@ import copy
 import functools
 import html
 import io
+import itertools
 import locale
 import operator
 import pickle
@@ -1929,6 +1930,88 @@ class BugsTest(unittest.TestCase):
 
 
 class BasicElementTest(ElementTestCase, unittest.TestCase):
+
+    def test___init__(self):
+        tag = "foo"
+        attrib = { "zix": "wyp" }
+
+        element_foo = ET.Element(tag, attrib)
+
+        # traits of an element
+        self.assertIsInstance(element_foo, ET.Element)
+        self.assertIn("tag", dir(element_foo))
+        self.assertIn("attrib", dir(element_foo))
+        self.assertIn("text", dir(element_foo))
+        self.assertIn("tail", dir(element_foo))
+
+        # string attributes have expected values
+        self.assertEqual(element_foo.tag, tag)
+        self.assertIsNone(element_foo.text)
+        self.assertIsNone(element_foo.tail)
+
+        # attrib is a copy
+        self.assertIsNot(element_foo.attrib, attrib)
+        self.assertEqual(element_foo.attrib, attrib)
+
+        # attrib isn't linked
+        attrib["bar"] = "baz"
+        self.assertIsNot(element_foo.attrib, attrib)
+        self.assertNotEqual(element_foo.attrib, attrib)
+
+    def test___copy__(self):
+        element_foo = ET.Element("foo", { "zix": "wyp" })
+        element_foo.append(ET.Element("bar", { "baz": "qix" }))
+
+        element_foo2 = copy.copy(element_foo)
+
+        # elements are not the same
+        self.assertIsNot(element_foo2, element_foo)
+
+        # string attributes are equal
+        self.assertEqual(element_foo2.tag, element_foo.tag)
+        self.assertEqual(element_foo2.text, element_foo.text)
+        self.assertEqual(element_foo2.tail, element_foo.tail)
+
+        # number of children is the same
+        self.assertEqual(len(element_foo2), len(element_foo))
+
+        # children are the same
+        for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
+            self.assertIs(child1, child2)
+
+        # attrib is a copy
+        self.assertEqual(element_foo2.attrib, element_foo.attrib)
+
+    def test___deepcopy__(self):
+        element_foo = ET.Element("foo", { "zix": "wyp" })
+        element_foo.append(ET.Element("bar", { "baz": "qix" }))
+
+        element_foo2 = copy.deepcopy(element_foo)
+
+        # elements are not the same
+        self.assertIsNot(element_foo2, element_foo)
+
+        # string attributes are equal
+        self.assertEqual(element_foo2.tag, element_foo.tag)
+        self.assertEqual(element_foo2.text, element_foo.text)
+        self.assertEqual(element_foo2.tail, element_foo.tail)
+
+        # number of children is the same
+        self.assertEqual(len(element_foo2), len(element_foo))
+
+        # children are not the same
+        for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
+            self.assertIsNot(child1, child2)
+
+        # attrib is a copy
+        self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+        self.assertEqual(element_foo2.attrib, element_foo.attrib)
+
+        # attrib isn't linked
+        element_foo.attrib["bar"] = "baz"
+        self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+        self.assertNotEqual(element_foo2.attrib, element_foo.attrib)
+
     def test_augmentation_type_errors(self):
         e = ET.Element('joe')
         self.assertRaises(TypeError, e.append, 'b')
@@ -1984,9 +2067,9 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         e1 = ET.Element('e1')
         e2 = ET.Element('e2')
         e3 = ET.Element('e3')
-        e1.append(e2)
-        e2.append(e2)
         e3.append(e1)
+        e2.append(e3)
+        e1.append(e2)
         wref = weakref.ref(e1)
         del e1, e2, e3
         gc_collect()
