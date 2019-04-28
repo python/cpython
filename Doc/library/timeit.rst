@@ -69,7 +69,7 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The optional *max_time_taken* parameter was added.
 
 
@@ -123,7 +123,7 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The optional *max_time_taken* parameter was added.
 
    .. method:: Timer.timeit(number=1000000)
@@ -247,7 +247,7 @@ Where the following options are understood:
 
     calls :meth:`.timeit` repeatedly so that the total time >= *max_time_taken* second
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.8
 
 .. cmdoption:: -v, --verbose
 
