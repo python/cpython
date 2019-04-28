@@ -1,0 +1,1 @@
+`pathlib.path.link()` is now implemented.
