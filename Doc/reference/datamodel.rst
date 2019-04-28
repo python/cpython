@@ -1620,12 +1620,13 @@ class' :attr:`~object.__dict__`.
 
 .. method:: object.__get__(self, instance, owner)
 
-   Called to get the attribute of the owner class (class attribute access) or of an
-   instance of that class (instance attribute access). *owner* is always the owner
-   class, while *instance* is the instance that the attribute was accessed through,
-   or ``None`` when the attribute is accessed through the *owner*.  This method
-   should return the (computed) attribute value or raise an :exc:`AttributeError`
-   exception.
+   Called to get the attribute of the owner class (class attribute access) or
+   of an instance of that class (instance attribute access). The optional
+   *owner* argument is the owner class, while *instance* is the instance that
+   the attribute was accessed through, or ``None`` when the attribute is
+   accessed through the *owner*.  Note that callers are allowed to omit the
+   *owner* argument when it isn't needed.  This method should return the
+   (computed) attribute value or raise an :exc:`AttributeError` exception.
 
 
 .. method:: object.__set__(self, instance, value)
