@@ -1283,7 +1283,6 @@ foo(...)
 """)
 
         X.attr.__name__ = 'foo'
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), """\
 foo
     Custom descriptor
