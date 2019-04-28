@@ -1,1 +1,0 @@
-A test for `fcntl.lockf()` is now implemented.
