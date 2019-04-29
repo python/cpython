@@ -19,13 +19,14 @@ if "%1"=="+q" (set rt_opts=%rt_opts:-q=%) & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtest_args=%regrtest_args% %1) & shift & goto CheckOpts
 
 echo on
-set rt_args=%rt_opts% -uall -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args%
 if "%arm32_ssh%"=="true" goto :Arm32Ssh
 
-call "%here%..\..\PCbuild\rt.bat" %rt_args%
+call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args%
 exit /b 0
 
 :Arm32Ssh
+set dashU=-unetwork,decimal,subprocess,urlfetch,tzdata
+set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args%
 if "%SSH_SERVER%"=="" goto :Arm32SshHelp
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
 if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=c:\python\)
