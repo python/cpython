@@ -571,13 +571,23 @@ def collect_cc(info_add):
     except ImportError:
         args = CC.split()
     args.append('--version')
-    proc = subprocess.Popen(args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            universal_newlines=True)
-    stdout = proc.communicate()[0]
-    if proc.returncode:
-        # CC --version failed: ignore error
+    proc = None
+    try:
+        proc = subprocess.Popen(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True)
+    except (FileNotFoundError, PermissionError):
+        # Cannot run the compiler, for example when Python has been
+        # cross-compiled and installed on the target platform where the
+        # compiler is missing.
+        pass
+    else:
+        stdout = proc.communicate()[0]
+
+    # Failed to run the compiler or 'CC --version' failed.
+    if proc is None or proc.returncode:
+        info_add('CC.name', normalize_text(CC))
         return
 
     text = stdout.splitlines()[0]

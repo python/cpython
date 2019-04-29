@@ -1,0 +1,1 @@
+pythoninfo prints the compiler name when failing to get its version.
