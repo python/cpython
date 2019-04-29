@@ -4648,6 +4648,14 @@ AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
 
+# On Android the shared libraries must be linked with libpython.
+AC_SUBST(LIBPYTHON)
+if test -z "$ANDROID_API_LEVEL"; then
+  LIBPYTHON=''
+else
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+fi
+
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)
 if test x$PLATFORM_TRIPLET = x; then
