@@ -1618,7 +1618,6 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     if (self->encodefunc != NULL) {
         if (PyUnicode_IS_ASCII(text) && is_asciicompat_encoding(self->encodefunc)) {
             b = text;
-            Py_INCREF(b);
         }
         else {
             b = (*self->encodefunc)((PyObject *) self, text);
@@ -1628,7 +1627,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     else
         b = PyObject_CallMethodObjArgs(self->encoder,
                                        _PyIO_str_encode, text, NULL);
-    Py_DECREF(text);
+
     if (b == NULL)
         return NULL;
     if (b != text && !PyBytes_Check(b)) {
@@ -1637,6 +1636,15 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
                      Py_TYPE(b)->tp_name);
         Py_DECREF(b);
         return NULL;
+    }
+
+    Py_ssize_t bytes_len;
+    if (b == text) {
+        bytes_len = PyUnicode_GET_LENGTH(b);
+    }
+    else {
+        bytes_len = PyBytes_GET_SIZE(b);
+        Py_DECREF(text);
     }
 
     if (self->pending_bytes == NULL) {
@@ -1661,7 +1669,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         Py_DECREF(b);
     }
 
-    self->pending_bytes_count += PyBytes_GET_SIZE(b);
+    self->pending_bytes_count += bytes_len;
     if (self->pending_bytes_count > self->chunk_size || needflush ||
         text_needflush) {
         if (_textiowrapper_writeflush(self) < 0)
