@@ -3628,18 +3628,19 @@ class C14NTest(unittest.TestCase):
                         self.skipTest(
                             f"QName rewriting in XPath text is not supported in {output_file}")
 
-                    with open(full_path(input_file + ".xml"), 'rb') as f:
-                        if input_file == 'inC14N5':
-                            # Hack: avoid setting up external entity resolution in the parser.
-                            with open(full_path('world.txt'), 'rb') as entity_file:
+                    f = full_path(input_file + ".xml")
+                    if input_file == 'inC14N5':
+                        # Hack: avoid setting up external entity resolution in the parser.
+                        with open(full_path('world.txt'), 'rb') as entity_file:
+                            with open(f, 'rb') as f:
                                 f = io.BytesIO(f.read().replace(b'&ent2;', entity_file.read()))
 
-                        text = ET.canonicalize(
-                            from_file=f,
-                            with_comments=keep_comments,
-                            strip_text=strip_text,
-                            rewrite_prefixes=rewrite_prefixes,
-                            qname_aware_tags=qtags, qname_aware_attrs=qattrs)
+                    text = ET.canonicalize(
+                        from_file=f,
+                        with_comments=keep_comments,
+                        strip_text=strip_text,
+                        rewrite_prefixes=rewrite_prefixes,
+                        qname_aware_tags=qtags, qname_aware_attrs=qattrs)
 
                     with open(full_path(output_file + ".xml"), 'r', encoding='utf8') as f:
                         expected = f.read()

@@ -1736,14 +1736,11 @@ def canonicalize(xml_data=None, *, out=None, from_file=None, **options):
 
     parser = XMLParser(target=C14NWriterTarget(out.write, **options))
 
-    try:
-        if xml_data is not None:
-            parser.feed(xml_data)
-        elif from_file is not None:
-            while (d := from_file.read(64*1024)):
-                parser.feed(d)
-    finally:
+    if xml_data is not None:
+        parser.feed(xml_data)
         parser.close()
+    elif from_file is not None:
+        parse(from_file, parser=parser)
 
     return sio.getvalue() if sio is not None else None
 
