@@ -727,7 +727,7 @@ mmap__repr__method(PyObject *self)
     if (m_obj->data == NULL)
 #endif
     {
-        reprfmt = "<%s is_closed=True fileno=%d access=%s>";
+        reprfmt = "<%s closed=True fileno=%d access=%s>";
         repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str);
     }
     else {
@@ -738,25 +738,18 @@ mmap__repr__method(PyObject *self)
         PyObject *offset = PyLong_FromSize_t(pos);
 
         if (size < 64) {
-            reprfmt = "<%s is_closed=False fileno=%d access=%s size=%R "
-                      "offset=%R entire_contents=%R>";
-
-            PyObject *entire_contents;
-            entire_contents = PyBytes_FromStringAndSize(data, size);
+            reprfmt = "<%s closed=False fileno=%d access=%s size=%R "
+                      "offset=%R>";
 
             repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str,
-                                        length, offset, entire_contents);
+                                        length, offset);
         }
         else {
-            reprfmt = "<%s is_closed=False fileno=%d access=%s size=%R "
-                      "offset=%R entire_contents=%R ... %R>";
-
-            PyObject *slice1 = PyBytes_FromStringAndSize(data, 32);
-            PyObject *slice2 = PyBytes_FromStringAndSize(data + size - 32,
-                                                         32);
+            reprfmt = "<%s closed=False fileno=%d access=%s size=%R "
+                      "offset=%R>";
 
             repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str,
-                                        length, offset, slice1, slice2);
+                                        length, offset);
         }
     }
 

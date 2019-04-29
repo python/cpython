@@ -12,13 +12,12 @@ import weakref
 mmap = import_module('mmap')
 
 open_mmap_repr_pat = re.compile(
-    r"<mmap.mmap is_closed=False fileno=-?\d+ "
+    r"<mmap.mmap closed=False fileno=-?\d+ "
     r"access=(?P<access>\S+) size=(?P<size>\d+) "
-    r"offset=(?P<offset>\d+) "
-    r"entire_contents=(?P<entire_contents>[\w\W]+)>")
+    r"offset=(?P<offset>\d+)>")
 
 closed_mmap_repr_pat = re.compile(
-    r"<mmap.mmap is_closed=True fileno=-?\d+ "
+    r"<mmap.mmap closed=True fileno=-?\d+ "
     r"access=(?P<access>\S+)>")
 
 PAGESIZE = mmap.PAGESIZE
@@ -765,11 +764,6 @@ class MmapTests(unittest.TestCase):
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
 
     def test_repr(self):
-        def show_entire_contents(size, data):
-            if size < 64:
-                return repr(data)
-            return repr(data[:32]) + ' ... ' + repr(data[-32:])
-
         for mapsize in (60, 120, 180, 240):
 
             accesses =  ('ACCESS_DEFAULT', 'ACCESS_READ',
@@ -791,8 +785,6 @@ class MmapTests(unittest.TestCase):
                         self.assertEqual(match.group('access'), access)
                         self.assertEqual(match.group('size'), str(mapsize))
                         self.assertEqual(match.group('offset'), str(offset))
-                        self.assertEqual(match.group('entire_contents'),
-                                         show_entire_contents(mapsize, data))
 
                     match = closed_mmap_repr_pat.match(repr(mm))
                     self.assertIsNotNone(match)
