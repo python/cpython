@@ -710,9 +710,7 @@ mmap__repr__method(PyObject *self)
             break;
 
         default:
-            // should not get here
-            assert(0);
-            return NULL;
+            Py_UNREACHABLE();
     }
 
     Py_ssize_t size = m_obj->size;
