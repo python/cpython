@@ -1,0 +1,3 @@
+Avoid failures setting macOS stack resource limit with resource.setrlimit.
+This reverts an earlier fix for bpo-18075 which forced a non-default stack
+size when building the interpreter executable on macOS.
