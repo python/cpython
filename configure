@@ -15155,12 +15155,22 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 $as_echo "$LDVERSION" >&6; }
 
-# On Android the shared libraries must be linked with libpython.
 
-if test -z "$ANDROID_API_LEVEL"; then
-  LIBPYTHON=''
+link_libpython=
+if test -n "$ANDROID_API_LEVEL"; then
+  # On Android the shared libraries must be linked with libpython.
+  link_libpython = 1
 else
-  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+  case $ac_sys_system/$ac_sys_release in
+  AIX*)
+    # bpo-36749: AIX dynamic linker requires that C extensions
+    # are linked to libpython
+    link_libpython = 1
+    ;;
+  esac
+fi
+if test -n "$link_libpython"; then
+  LIBPYTHON="-lpython${LDVERSION}"
 fi
 
 

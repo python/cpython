@@ -884,7 +884,7 @@ Changes in the C API
 --------------------
 
 * On Unix, C extensions are no longer linked to libpython except on
-  Android. When Python is embedded, ``libpython`` must not be loaded with
+  Android and AIX. When Python is embedded, ``libpython`` must not be loaded with
   ``RTLD_LOCAL``, but ``RTLD_GLOBAL`` instead. Previously, using
   ``RTLD_LOCAL``, it was already not possible to load C extensions which were
   not linked to ``libpython``, like C extensions of the standard library built

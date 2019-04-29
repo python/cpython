@@ -4648,12 +4648,22 @@ AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
 
-# On Android the shared libraries must be linked with libpython.
 AC_SUBST(LIBPYTHON)
-if test -z "$ANDROID_API_LEVEL"; then
-  LIBPYTHON=''
+link_libpython=
+if test -n "$ANDROID_API_LEVEL"; then
+  # On Android the shared libraries must be linked with libpython.
+  link_libpython = 1
 else
-  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+  case $ac_sys_system/$ac_sys_release in
+  AIX*)
+    # bpo-36749: AIX dynamic linker requires that C extensions
+    # are linked to libpython
+    link_libpython = 1
+    ;;
+  esac
+fi
+if test -n "$link_libpython"; then
+  LIBPYTHON="-lpython${LDVERSION}"
 fi
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.

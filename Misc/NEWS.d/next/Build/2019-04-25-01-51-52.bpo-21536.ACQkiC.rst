@@ -1,4 +1,5 @@
-On Unix, C extensions are no longer linked to libpython except on Android.
+On Unix, C extensions are no longer linked to libpython except on Android
+and AIX.
 
 It is now possible for a statically linked Python to load a C extension built
 using a shared library Python.
