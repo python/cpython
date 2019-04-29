@@ -182,7 +182,7 @@ Other Language Changes
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
 * fcntl now has File Sealing operations.(Contributed by Joannah Nanjekye
-in :issue:`26835`.)
+  in :issue:`26835`.)
 
 
 New Modules
