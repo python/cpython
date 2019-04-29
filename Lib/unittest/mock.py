@@ -29,7 +29,7 @@ import inspect
 import pprint
 import sys
 import builtins
-from types import ModuleType
+from types import ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
 
@@ -122,6 +122,8 @@ def _copy_func_details(func, funcopy):
 def _callable(obj):
     if isinstance(obj, type):
         return True
+    if isinstance(obj, (staticmethod, classmethod, MethodType)):
+        return _callable(obj.__func__)
     if getattr(obj, '__call__', None) is not None:
         return True
     return False
@@ -739,7 +741,7 @@ class NonCallableMock(Base):
 
         obj = self._mock_children.get(name, _missing)
         if name in self.__dict__:
-            super().__delattr__(name)
+            _safe_super(NonCallableMock, self).__delattr__(name)
         elif obj is _deleted:
             raise AttributeError(name)
         if obj is not _missing:
@@ -1398,7 +1400,7 @@ class _patch(object):
     def __exit__(self, *exc_info):
         """Undo the patch."""
         if not _is_started(self):
-            raise RuntimeError('stop called on unstarted patcher')
+            return
 
         if self.is_local and self.temp_original is not DEFAULT:
             setattr(self.target, self.attribute, self.temp_original)
@@ -2134,6 +2136,22 @@ class _Call(tuple):
 
     def index(self, *args, **kwargs):
         return self.__getattr__('index')(*args, **kwargs)
+
+    def _get_call_arguments(self):
+        if len(self) == 2:
+            args, kwargs = self
+        else:
+            name, args, kwargs = self
+
+        return args, kwargs
+
+    @property
+    def args(self):
+        return self._get_call_arguments()[0]
+
+    @property
+    def kwargs(self):
+        return self._get_call_arguments()[1]
 
     def __repr__(self):
         if not self._mock_from_kall:

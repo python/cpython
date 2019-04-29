@@ -1,2 +1,0 @@
-shutil.copytree(copy_function=...) erroneously pass DirEntry instead of a
-path string.

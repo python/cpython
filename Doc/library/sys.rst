@@ -30,6 +30,12 @@ always available.
    To loop over the standard input, or the list of files given on the
    command line, see the :mod:`fileinput` module.
 
+   .. note::
+      On Unix, command line arguments are passed by bytes from OS.  Python decodes
+      them with filesystem encoding and "surrogateescape" error handler.
+      When you need original bytes, you can get it by
+      ``[os.fsencode(arg) for arg in sys.argv]``.
+
 
 .. data:: base_exec_prefix
 
@@ -1008,7 +1014,7 @@ always available.
    This string contains a platform identifier that can be used to append
    platform-specific components to :data:`sys.path`, for instance.
 
-   For Unix systems, except on Linux, this is the lowercased OS name as
+   For Unix systems, except on Linux and AIX, this is the lowercased OS name as
    returned by ``uname -s`` with the first part of the version as returned by
    ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
    when Python was built*.  Unless you want to test for a specific system
@@ -1018,12 +1024,15 @@ always available.
           # FreeBSD-specific code here...
       elif sys.platform.startswith('linux'):
           # Linux-specific code here...
+      elif sys.platform.startswith('aix'):
+          # AIX-specific code here...
 
    For other systems, the values are:
 
    ================ ===========================
    System           ``platform`` value
    ================ ===========================
+   AIX              ``'aix'``
    Linux            ``'linux'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
@@ -1033,6 +1042,12 @@ always available.
    .. versionchanged:: 3.3
       On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
       It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
+      older Python versions include the version number, it is recommended to
+      always use the ``startswith`` idiom presented above.
+
+   .. versionchanged:: 3.8
+      On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 

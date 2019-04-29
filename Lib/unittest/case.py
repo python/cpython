@@ -86,9 +86,21 @@ def _id(obj):
 
 
 _module_cleanups = []
-def addModuleCleanup(function, *args, **kwargs):
+def addModuleCleanup(*args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
+    if args:
+        function, *args = args
+    elif 'function' in kwargs:
+        function = kwargs.pop('function')
+        import warnings
+        warnings.warn("Passing 'function' as keyword argument is deprecated",
+                      DeprecationWarning, stacklevel=2)
+    else:
+        raise TypeError('addModuleCleanup expected at least 1 positional '
+                        'argument, got %d' % (len(args)-1))
+    args = tuple(args)
+
     _module_cleanups.append((function, args, kwargs))
 
 
@@ -463,18 +475,44 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(self, function, *args, **kwargs):
+    def addCleanup(*args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
+        if len(args) >= 2:
+            self, function, *args = args
+        elif not args:
+            raise TypeError("descriptor 'addCleanup' of 'TestCase' object "
+                            "needs an argument")
+        elif 'function' in kwargs:
+            function = kwargs.pop('function')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'function' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('addCleanup expected at least 1 positional '
+                            'argument, got %d' % (len(args)-1))
+        args = tuple(args)
+
         self._cleanups.append((function, args, kwargs))
 
     @classmethod
-    def addClassCleanup(cls, function, *args, **kwargs):
+    def addClassCleanup(*args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
+        if len(args) >= 2:
+            cls, function, *args = args
+        elif not args:
+            raise TypeError("descriptor 'addClassCleanup' of 'TestCase' object "
+                            "needs an argument")
+        else:
+            raise TypeError('addClassCleanup expected at least 1 positional '
+                            'argument, got %d' % (len(args)-1))
+        args = tuple(args)
+
         cls._class_cleanups.append((function, args, kwargs))
 
     def setUp(self):
@@ -1206,9 +1244,8 @@ class TestCase(object):
 
 
     def assertCountEqual(self, first, second, msg=None):
-        """An unordered sequence comparison asserting that the same elements,
-        regardless of order.  If the same element occurs more than once,
-        it verifies that the elements occur the same number of times.
+        """Asserts that two iterables have the same elements, the same number of
+        times, without regard to order.
 
             self.assertEqual(Counter(list(first)),
                              Counter(list(second)))

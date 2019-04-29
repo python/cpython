@@ -110,8 +110,9 @@ expr_context_name(expr_context_ty ctx)
 static int
 validate_arguments(arguments_ty args)
 {
-    if (!validate_args(args->args))
+    if (!validate_args(args->posonlyargs) || !validate_args(args->args)) {
         return 0;
+    }
     if (args->vararg && args->vararg->annotation
         && !validate_expr(args->vararg->annotation, Load)) {
             return 0;
@@ -316,13 +317,14 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         return validate_exprs(exp->v.List.elts, ctx, 0);
     case Tuple_kind:
         return validate_exprs(exp->v.Tuple.elts, ctx, 0);
+    case NamedExpr_kind:
+        return validate_expr(exp->v.NamedExpr.value, Load);
     /* This last case doesn't have any checking. */
     case Name_kind:
         return 1;
-    default:
-        PyErr_SetString(PyExc_SystemError, "unexpected expression");
-        return 0;
     }
+    PyErr_SetString(PyExc_SystemError, "unexpected expression");
+    return 0;
 }
 
 static int
@@ -1399,7 +1401,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     goto error;
                 asdl_seq_SET(kwonlyargs, j++, arg);
                 i += 1; /* the name */
-                if (TYPE(CHILD(n, i)) == COMMA)
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
                     i += 1; /* the comma, if present */
                 break;
             case TYPE_COMMENT:
@@ -1430,31 +1432,73 @@ ast_for_arguments(struct compiling *c, const node *n)
        and varargslist (lambda definition).
 
        parameters: '(' [typedargslist] ')'
-       typedargslist: (tfpdef ['=' test] (',' tfpdef ['=' test])* [',' [
-               '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
-             | '**' tfpdef [',']]]
-         | '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
-         | '**' tfpdef [','])
+
+       The following definition for typedarglist is equivalent to this set of rules:
+
+         arguments = argument (',' [TYPE_COMMENT] argument)*
+         argument = tfpdef ['=' test]
+         kwargs = '**' tfpdef [','] [TYPE_COMMENT]
+         args = '*' [tfpdef]
+         kwonly_kwargs = (',' [TYPE_COMMENT] argument)* (TYPE_COMMENT | [','
+                         [TYPE_COMMENT] [kwargs]])
+         args_kwonly_kwargs = args kwonly_kwargs | kwargs
+         poskeyword_args_kwonly_kwargs = arguments ( TYPE_COMMENT | [','
+                                         [TYPE_COMMENT] [args_kwonly_kwargs]])
+         typedargslist_no_posonly  = poskeyword_args_kwonly_kwargs | args_kwonly_kwargs
+         typedarglist = (arguments ',' [TYPE_COMMENT] '/' [',' [[TYPE_COMMENT]
+                        typedargslist_no_posonly]])|(typedargslist_no_posonly)"
+
+       typedargslist: ( (tfpdef ['=' test] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           ',' [TYPE_COMMENT] '/' [',' [ [TYPE_COMMENT] tfpdef ['=' test] ( ','
+           [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [ '*'
+           [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [','
+           [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) | '**' tfpdef [',']
+           [TYPE_COMMENT]]]) | '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) |
+           '**' tfpdef [','] [TYPE_COMMENT]]] ) |  (tfpdef ['=' test] (','
+           [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [ '*'
+           [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [','
+           [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) | '**' tfpdef [',']
+           [TYPE_COMMENT]]]) | '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) |
+           '**' tfpdef [','] [TYPE_COMMENT]))
+
        tfpdef: NAME [':' test]
-       varargslist: (vfpdef ['=' test] (',' vfpdef ['=' test])* [',' [
-               '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-             | '**' vfpdef [',']]]
-         | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-         | '**' vfpdef [',']
-       )
+
+       The following definition for varargslist is equivalent to this set of rules:
+
+         arguments = argument (',' argument )*
+         argument = vfpdef ['=' test]
+         kwargs = '**' vfpdef [',']
+         args = '*' [vfpdef]
+         kwonly_kwargs = (',' argument )* [',' [kwargs]]
+         args_kwonly_kwargs = args kwonly_kwargs | kwargs
+         poskeyword_args_kwonly_kwargs = arguments [',' [args_kwonly_kwargs]]
+         vararglist_no_posonly = poskeyword_args_kwonly_kwargs | args_kwonly_kwargs
+         varargslist = arguments ',' '/' [','[(vararglist_no_posonly)]] |
+                       (vararglist_no_posonly)
+
+       varargslist: vfpdef ['=' test ](',' vfpdef ['=' test])* ',' '/' [',' [ (vfpdef ['='
+           test] (',' vfpdef ['=' test])* [',' [ '*' [vfpdef] (',' vfpdef ['=' test])* [','
+           ['**' vfpdef [',']]] | '**' vfpdef [',']]] | '*' [vfpdef] (',' vfpdef ['=' test])*
+           [',' ['**' vfpdef [',']]] | '**' vfpdef [',']) ]] | (vfpdef ['=' test] (',' vfpdef
+           ['=' test])* [',' [ '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
+           | '**' vfpdef [',']]] | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef
+           [',']]] | '**' vfpdef [','])
+
        vfpdef: NAME
 
     */
-    int i, j, k, nposargs = 0, nkwonlyargs = 0;
+    int i, j, k, l, nposonlyargs=0, nposargs = 0, nkwonlyargs = 0;
     int nposdefaults = 0, found_default = 0;
-    asdl_seq *posargs, *posdefaults, *kwonlyargs, *kwdefaults;
+    asdl_seq *posonlyargs, *posargs, *posdefaults, *kwonlyargs, *kwdefaults;
     arg_ty vararg = NULL, kwarg = NULL;
     arg_ty arg = NULL;
     node *ch;
 
     if (TYPE(n) == parameters) {
         if (NCH(n) == 2) /* () as argument list */
-            return arguments(NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
+            return arguments(NULL, NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
         n = CHILD(n, 1);
     }
     assert(TYPE(n) == typedargslist || TYPE(n) == varargslist);
@@ -1478,6 +1522,10 @@ ast_for_arguments(struct compiling *c, const node *n)
         if (TYPE(ch) == DOUBLESTAR) break;
         if (TYPE(ch) == vfpdef || TYPE(ch) == tfpdef) nposargs++;
         if (TYPE(ch) == EQUAL) nposdefaults++;
+        if (TYPE(ch) == SLASH ) {
+            nposonlyargs = nposargs;
+            nposargs = 0;
+        }
     }
     /* count the number of keyword only args &
        defaults for keyword only args */
@@ -1485,6 +1533,10 @@ ast_for_arguments(struct compiling *c, const node *n)
         ch = CHILD(n, i);
         if (TYPE(ch) == DOUBLESTAR) break;
         if (TYPE(ch) == tfpdef || TYPE(ch) == vfpdef) nkwonlyargs++;
+    }
+    posonlyargs = (nposonlyargs ? _Py_asdl_seq_new(nposonlyargs, c->c_arena) : NULL);
+    if (!posonlyargs && nposonlyargs) {
+        return NULL;
     }
     posargs = (nposargs ? _Py_asdl_seq_new(nposargs, c->c_arena) : NULL);
     if (!posargs && nposargs)
@@ -1511,6 +1563,7 @@ ast_for_arguments(struct compiling *c, const node *n)
     i = 0;
     j = 0;  /* index for defaults */
     k = 0;  /* index for args */
+    l = 0;  /* index for posonlyargs */
     while (i < NCH(n)) {
         ch = CHILD(n, i);
         switch (TYPE(ch)) {
@@ -1536,10 +1589,22 @@ ast_for_arguments(struct compiling *c, const node *n)
                 arg = ast_for_arg(c, ch);
                 if (!arg)
                     return NULL;
-                asdl_seq_SET(posargs, k++, arg);
+                if (l < nposonlyargs) {
+                    asdl_seq_SET(posonlyargs, l++, arg);
+                } else {
+                    asdl_seq_SET(posargs, k++, arg);
+                }
                 i += 1; /* the name */
                 if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
                     i += 1; /* the comma, if present */
+                break;
+             case SLASH:
+                /* Advance the slash and the comma. If there are more names
+                 * after the slash there will be a comma so we are advancing
+                 * the correct number of nodes. If the slash is the last item,
+                 * we will be advancing an extra token but then * i > NCH(n)
+                 * and the enclosing while will finish correctly. */
+                i += 2;
                 break;
             case STAR:
                 if (i+1 >= NCH(n) ||
@@ -1598,7 +1663,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (!kwarg)
                     return NULL;
                 i += 2; /* the double star and the name */
-                if (TYPE(CHILD(n, i)) == COMMA)
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
                     i += 1; /* the comma, if present */
                 break;
             case TYPE_COMMENT:
@@ -1620,7 +1685,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(posargs, posonlyargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
@@ -1908,7 +1973,7 @@ ast_for_lambdef(struct compiling *c, const node *n)
     expr_ty expression;
 
     if (NCH(n) == 3) {
-        args = arguments(NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
+        args = arguments(NULL, NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
         if (!args)
             return NULL;
         expression = ast_for_expr(c, CHILD(n, 2));
@@ -2313,13 +2378,13 @@ ast_for_atom(struct compiling *c, const node *n)
         size_t len = strlen(s);
         if (len >= 4 && len <= 5) {
             if (!strcmp(s, "None"))
-                return Constant(Py_None, LINENO(n), n->n_col_offset,
+                return Constant(Py_None, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             if (!strcmp(s, "True"))
-                return Constant(Py_True, LINENO(n), n->n_col_offset,
+                return Constant(Py_True, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             if (!strcmp(s, "False"))
-                return Constant(Py_False, LINENO(n), n->n_col_offset,
+                return Constant(Py_False, NULL, LINENO(n), n->n_col_offset,
                                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
         name = new_identifier(s, c);
@@ -2374,11 +2439,11 @@ ast_for_atom(struct compiling *c, const node *n)
             Py_DECREF(pynum);
             return NULL;
         }
-        return Constant(pynum, LINENO(n), n->n_col_offset,
+        return Constant(pynum, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     case ELLIPSIS: /* Ellipsis */
-        return Constant(Py_Ellipsis, LINENO(n), n->n_col_offset,
+        return Constant(Py_Ellipsis, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     case LPAR: /* some parenthesized expressions */
         ch = CHILD(n, 1);
@@ -5388,18 +5453,57 @@ FstringParser_Dealloc(FstringParser *state)
     ExprList_Dealloc(&state->expr_list);
 }
 
+/* Constants for the following */
+static PyObject *u_kind;
+
+/* Compute 'kind' field for string Constant (either 'u' or None) */
+static PyObject *
+make_kind(struct compiling *c, const node *n)
+{
+    char *s = NULL;
+    PyObject *kind = NULL;
+
+    /* Find the first string literal, if any */
+    while (TYPE(n) != STRING) {
+        if (NCH(n) == 0)
+            return NULL;
+        n = CHILD(n, 0);
+    }
+    REQ(n, STRING);
+
+    /* If it starts with 'u', return a PyUnicode "u" string */
+    s = STR(n);
+    if (s && *s == 'u') {
+        if (!u_kind) {
+            u_kind = PyUnicode_InternFromString("u");
+            if (!u_kind)
+                return NULL;
+        }
+        kind = u_kind;
+        if (PyArena_AddPyObject(c->c_arena, kind) < 0) {
+            return NULL;
+        }
+        Py_INCREF(kind);
+    }
+    return kind;
+}
+
 /* Make a Constant node, but decref the PyUnicode object being added. */
 static expr_ty
 make_str_node_and_del(PyObject **str, struct compiling *c, const node* n)
 {
     PyObject *s = *str;
+    PyObject *kind = NULL;
     *str = NULL;
     assert(PyUnicode_CheckExact(s));
     if (PyArena_AddPyObject(c->c_arena, s) < 0) {
         Py_DECREF(s);
         return NULL;
     }
-    return Constant(s, LINENO(n), n->n_col_offset,
+    kind = make_kind(c, n);
+    if (kind == NULL && PyErr_Occurred())
+        return NULL;
+    return Constant(s, kind, LINENO(n), n->n_col_offset,
                     n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
@@ -5774,7 +5878,7 @@ parsestrplus(struct compiling *c, const node *n)
         /* Just return the bytes object and we're done. */
         if (PyArena_AddPyObject(c->c_arena, bytes_str) < 0)
             goto error;
-        return Constant(bytes_str, LINENO(n), n->n_col_offset,
+        return Constant(bytes_str, NULL, LINENO(n), n->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
 

@@ -781,3 +781,9 @@ This is a working "Hello World" WSGI application::
 
        # Serve until process is killed
        httpd.serve_forever()
+
+
+Example of a WSGI application serving the current directory, accept optional
+directory and port number (default: 8000) on the command line:
+
+.. literalinclude:: ../../Tools/scripts/serve.py

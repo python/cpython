@@ -1,0 +1,2 @@
+Change str.capitalize to use titlecase for the first character instead of
+uppercase.

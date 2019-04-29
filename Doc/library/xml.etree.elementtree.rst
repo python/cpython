@@ -594,6 +594,7 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
+                       xml_declaration=None, default_namespace=None,
                        short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -601,14 +602,19 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
-   Returns an (optionally) encoded string containing the XML data.
+   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
+   meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
+   containing the XML data.
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
 
+   .. versionadded:: 3.8
+      The *xml_declaration* and *default_namespace* parameters.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
+                           xml_declaration=None, default_namespace=None,
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -616,15 +622,18 @@ Functions
    the output encoding (default is US-ASCII).  Use ``encoding="unicode"`` to
    generate a Unicode string (otherwise, a bytestring is generated).  *method*
    is either ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).
-   *short_empty_elements* has the same meaning as in :meth:`ElementTree.write`.
-   Returns a list of (optionally) encoded strings containing the XML data.
-   It does not guarantee any specific sequence, except that
-   ``b"".join(tostringlist(element)) == tostring(element)``.
+   *xml_declaration*, *default_namespace* and *short_empty_elements* has the same
+   meaning as in :meth:`ElementTree.write`. Returns a list of (optionally) encoded
+   strings containing the XML data. It does not guarantee any specific sequence,
+   except that ``b"".join(tostringlist(element)) == tostring(element)``.
 
    .. versionadded:: 3.2
 
    .. versionadded:: 3.4
       The *short_empty_elements* parameter.
+
+   .. versionadded:: 3.8
+      The *xml_declaration* and *default_namespace* parameters.
 
 
 .. function:: XML(text, parser=None)
@@ -755,7 +764,8 @@ Element Objects
       Finds the first subelement matching *match*.  *match* may be a tag name
       or a :ref:`path <elementtree-xpath>`.  Returns an element instance
       or ``None``.  *namespaces* is an optional mapping from namespace prefix
-      to full name.
+      to full name.  Pass ``''`` as prefix to move all unprefixed tag names
+      in the expression into the given namespace.
 
 
    .. method:: findall(match, namespaces=None)
@@ -763,7 +773,8 @@ Element Objects
       Finds all matching subelements, by tag name or
       :ref:`path <elementtree-xpath>`.  Returns a list containing all matching
       elements in document order.  *namespaces* is an optional mapping from
-      namespace prefix to full name.
+      namespace prefix to full name.  Pass ``''`` as prefix to move all
+      unprefixed tag names in the expression into the given namespace.
 
 
    .. method:: findtext(match, default=None, namespaces=None)
@@ -773,7 +784,8 @@ Element Objects
       of the first matching element, or *default* if no element was found.
       Note that if the matching element has no text content an empty string
       is returned. *namespaces* is an optional mapping from namespace prefix
-      to full name.
+      to full name.  Pass ``''`` as prefix to move all unprefixed tag names
+      in the expression into the given namespace.
 
 
    .. method:: getchildren()

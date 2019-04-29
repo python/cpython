@@ -1,0 +1,1 @@
+Added re.Match.groupdict example to regex HOWTO.

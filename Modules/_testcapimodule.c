@@ -5,6 +5,11 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
+/* The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
+   define, but we only want to test the public C API, not the internal
+   C API. */
+#undef Py_BUILD_CORE_MODULE
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -2335,6 +2340,71 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
     }
 }
 
+static PyObject *
+get_date_fromtimestamp(PyObject* self, PyObject *args)
+{
+    PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
+    int macro = 0;
+
+    if (!PyArg_ParseTuple(args, "O|p", &ts, &macro)) {
+        return NULL;
+    }
+
+    // Construct the argument tuple
+    if ((tsargs = PyTuple_Pack(1, ts)) == NULL) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDate_FromTimestamp(tsargs);
+    }
+    else {
+        rv = PyDateTimeAPI->Date_FromTimestamp(
+                (PyObject *)PyDateTimeAPI->DateType, tsargs
+        );
+    }
+
+    Py_DECREF(tsargs);
+    return rv;
+}
+
+static PyObject *
+get_datetime_fromtimestamp(PyObject* self, PyObject *args)
+{
+    int macro = 0;
+    int usetz = 0;
+    PyObject *tsargs = NULL, *ts = NULL, *tzinfo = Py_None, *rv = NULL;
+    if (!PyArg_ParseTuple(args, "OO|pp", &ts, &tzinfo, &usetz, &macro)) {
+        return NULL;
+    }
+
+    // Construct the argument tuple
+    if (usetz) {
+        tsargs = PyTuple_Pack(2, ts, tzinfo);
+    }
+    else {
+        tsargs = PyTuple_Pack(1, ts);
+    }
+
+    if (tsargs == NULL) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDateTime_FromTimestamp(tsargs);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromTimestamp(
+                (PyObject *)PyDateTimeAPI->DateTimeType, tsargs, NULL
+        );
+    }
+
+    Py_DECREF(tsargs);
+    return rv;
+}
+
 
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
@@ -4184,6 +4254,10 @@ pymem_buffer_overflow(PyObject *self, PyObject *args)
     /* Deliberate buffer overflow to check that PyMem_Free() detects
        the overflow when debug hooks are installed. */
     buffer = PyMem_Malloc(16);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     buffer[16] = 'x';
     PyMem_Free(buffer);
 
@@ -4229,6 +4303,59 @@ test_pymem_getallocatorsname(PyObject *self, PyObject *args)
         return NULL;
     }
     return PyUnicode_FromString(name);
+}
+
+
+static PyObject*
+pyobject_is_freed(PyObject *self, PyObject *op)
+{
+    int res = _PyObject_IsFreed(op);
+    return PyBool_FromLong(res);
+}
+
+
+static PyObject*
+pyobject_uninitialized(PyObject *self, PyObject *args)
+{
+    PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_REFCNT(op) = 1;
+    /* object fields like ob_type are uninitialized! */
+    return op;
+}
+
+
+static PyObject*
+pyobject_forbidden_bytes(PyObject *self, PyObject *args)
+{
+    /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
+    PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_REFCNT(op) = 1;
+    /* ob_type field is after the memory block: part of "forbidden bytes"
+       when using debug hooks on memory allocatrs! */
+    return op;
+}
+
+
+static PyObject*
+pyobject_freed(PyObject *self, PyObject *args)
+{
+    PyObject *op = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    if (op == NULL) {
+        return NULL;
+    }
+    Py_TYPE(op)->tp_dealloc(op);
+    /* Reset reference count to avoid early crash in ceval or GC */
+    Py_REFCNT(op) = 1;
+    /* object memory is freed! */
+    return op;
 }
 
 
@@ -4674,31 +4801,6 @@ decode_locale_ex(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *
-get_global_config(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    return _Py_GetGlobalVariablesAsDict();
-}
-
-
-static PyObject *
-get_core_config(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyCoreConfig *config = _PyInterpreterState_GetCoreConfig(interp);
-    return _PyCoreConfig_AsDict(config);
-}
-
-
-static PyObject *
-get_main_config(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyMainInterpreterConfig *config = _PyInterpreterState_GetMainConfig(interp);
-    return _PyMainInterpreterConfig_AsDict(config);
-}
-
-
 #ifdef Py_REF_DEBUG
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
@@ -4732,7 +4834,9 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
-    {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
+    {"get_timezone_utc_capi",    get_timezone_utc_capi,          METH_VARARGS},
+    {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
+    {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -4921,6 +5025,10 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
+    {"pyobject_is_freed", (PyCFunction)(void(*)(void))pyobject_is_freed, METH_O},
+    {"pyobject_uninitialized", pyobject_uninitialized, METH_NOARGS},
+    {"pyobject_forbidden_bytes", pyobject_forbidden_bytes, METH_NOARGS},
+    {"pyobject_freed", pyobject_freed, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
@@ -4942,9 +5050,6 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", (PyCFunction)(void(*)(void))bad_get, METH_FASTCALL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
-    {"get_global_config", get_global_config, METH_NOARGS},
-    {"get_core_config", get_core_config, METH_NOARGS},
-    {"get_main_config", get_main_config, METH_NOARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif

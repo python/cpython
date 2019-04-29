@@ -87,14 +87,22 @@ EVP_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"name", "string", NULL};
-    static _PyArg_Parser _parser = {"O|O:new", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "new", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name_obj;
     PyObject *data_obj = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name_obj, &data_obj)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    name_obj = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    data_obj = args[1];
+skip_optional_pos:
     return_value = EVP_new_impl(module, name_obj, data_obj);
 
 exit:
@@ -123,17 +131,60 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"hash_name", "password", "salt", "iterations", "dklen", NULL};
-    static _PyArg_Parser _parser = {"sy*y*l|O:pbkdf2_hmac", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "pbkdf2_hmac", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     const char *hash_name;
     Py_buffer password = {NULL, NULL};
     Py_buffer salt = {NULL, NULL};
     long iterations;
     PyObject *dklen_obj = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &hash_name, &password, &salt, &iterations, &dklen_obj)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 5, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("pbkdf2_hmac", 1, "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t hash_name_length;
+    hash_name = PyUnicode_AsUTF8AndSize(args[0], &hash_name_length);
+    if (hash_name == NULL) {
+        goto exit;
+    }
+    if (strlen(hash_name) != (size_t)hash_name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &password, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&password, 'C')) {
+        _PyArg_BadArgument("pbkdf2_hmac", 2, "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[2], &salt, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&salt, 'C')) {
+        _PyArg_BadArgument("pbkdf2_hmac", 3, "contiguous buffer", args[2]);
+        goto exit;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    iterations = PyLong_AsLong(args[3]);
+    if (iterations == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    dklen_obj = args[4];
+skip_optional_pos:
     return_value = pbkdf2_hmac_impl(module, hash_name, &password, &salt, iterations, dklen_obj);
 
 exit:
@@ -173,7 +224,9 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"password", "salt", "n", "r", "p", "maxmem", "dklen", NULL};
-    static _PyArg_Parser _parser = {"y*|$y*O!O!O!ll:scrypt", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "scrypt", 0};
+    PyObject *argsbuf[7];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer password = {NULL, NULL};
     Py_buffer salt = {NULL, NULL};
     PyObject *n_obj = Py_None;
@@ -182,10 +235,86 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     long maxmem = 0;
     long dklen = 64;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &password, &salt, &PyLong_Type, &n_obj, &PyLong_Type, &r_obj, &PyLong_Type, &p_obj, &maxmem, &dklen)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &password, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&password, 'C')) {
+        _PyArg_BadArgument("scrypt", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        if (PyObject_GetBuffer(args[1], &salt, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&salt, 'C')) {
+            _PyArg_BadArgument("scrypt", 2, "contiguous buffer", args[1]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        if (!PyLong_Check(args[2])) {
+            _PyArg_BadArgument("scrypt", 3, "int", args[2]);
+            goto exit;
+        }
+        n_obj = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        if (!PyLong_Check(args[3])) {
+            _PyArg_BadArgument("scrypt", 4, "int", args[3]);
+            goto exit;
+        }
+        r_obj = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        if (!PyLong_Check(args[4])) {
+            _PyArg_BadArgument("scrypt", 5, "int", args[4]);
+            goto exit;
+        }
+        p_obj = args[4];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[5]) {
+        if (PyFloat_Check(args[5])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        maxmem = PyLong_AsLong(args[5]);
+        if (maxmem == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyFloat_Check(args[6])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    dklen = PyLong_AsLong(args[6]);
+    if (dklen == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = _hashlib_scrypt_impl(module, &password, &salt, n_obj, r_obj, p_obj, maxmem, dklen);
 
 exit:
@@ -221,13 +350,41 @@ _hashlib_hmac_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "msg", "digest", NULL};
-    static _PyArg_Parser _parser = {"y*y*s:hmac_digest", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "hmac_digest", 0};
+    PyObject *argsbuf[3];
     Py_buffer key = {NULL, NULL};
     Py_buffer msg = {NULL, NULL};
     const char *digest;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &key, &msg, &digest)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &key, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&key, 'C')) {
+        _PyArg_BadArgument("hmac_digest", 1, "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &msg, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&msg, 'C')) {
+        _PyArg_BadArgument("hmac_digest", 2, "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("hmac_digest", 3, "str", args[2]);
+        goto exit;
+    }
+    Py_ssize_t digest_length;
+    digest = PyUnicode_AsUTF8AndSize(args[2], &digest_length);
+    if (digest == NULL) {
+        goto exit;
+    }
+    if (strlen(digest) != (size_t)digest_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _hashlib_hmac_digest_impl(module, &key, &msg, digest);
@@ -252,4 +409,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=fe5931d2b301ca12 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5955ec791260045a input=a9049054013a1b77]*/

@@ -9,6 +9,8 @@ import copy
 import functools
 import html
 import io
+import itertools
+import locale
 import operator
 import pickle
 import sys
@@ -755,6 +757,128 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(ET.tostring(elem), b'<html><body>text</body></html>')
         elem = ET.fromstring("<html><body>text</body></html>")
         self.assertEqual(ET.tostring(elem), b'<html><body>text</body></html>')
+
+    def test_tostring_default_namespace(self):
+        elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode'),
+            '<ns0:body xmlns:ns0="http://effbot.org/ns"><ns0:tag /></ns0:body>'
+        )
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', default_namespace='http://effbot.org/ns'),
+            '<body xmlns="http://effbot.org/ns"><tag /></body>'
+        )
+
+    def test_tostring_default_namespace_different_namespace(self):
+        elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode', default_namespace='foobar'),
+            '<ns1:body xmlns="foobar" xmlns:ns1="http://effbot.org/ns"><ns1:tag /></ns1:body>'
+        )
+
+    def test_tostring_default_namespace_original_no_namespace(self):
+        elem = ET.XML('<body><tag/></body>')
+        EXPECTED_MSG = '^cannot use non-qualified names with default_namespace option$'
+        with self.assertRaisesRegex(ValueError, EXPECTED_MSG):
+            ET.tostring(elem, encoding='unicode', default_namespace='foobar')
+
+    def test_tostring_no_xml_declaration(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='unicode'),
+            '<body><tag /></body>'
+        )
+
+    def test_tostring_xml_declaration(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            ET.tostring(elem, encoding='utf8', xml_declaration=True),
+            b"<?xml version='1.0' encoding='utf8'?>\n<body><tag /></body>"
+        )
+
+    def test_tostring_xml_declaration_unicode_encoding(self):
+        elem = ET.XML('<body><tag/></body>')
+        preferredencoding = locale.getpreferredencoding()
+        self.assertEqual(
+            f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>",
+            ET.tostring(elem, encoding='unicode', xml_declaration=True)
+        )
+
+    def test_tostring_xml_declaration_cases(self):
+        elem = ET.XML('<body><tag>ø</tag></body>')
+        preferredencoding = locale.getpreferredencoding()
+        TESTCASES = [
+        #   (expected_retval,                  encoding, xml_declaration)
+            # ... xml_declaration = None
+            (b'<body><tag>&#248;</tag></body>', None, None),
+            (b'<body><tag>\xc3\xb8</tag></body>', 'UTF-8', None),
+            (b'<body><tag>&#248;</tag></body>', 'US-ASCII', None),
+            (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
+             b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', None),
+            ('<body><tag>ø</tag></body>', 'unicode', None),
+
+            # ... xml_declaration = False
+            (b"<body><tag>&#248;</tag></body>", None, False),
+            (b"<body><tag>\xc3\xb8</tag></body>", 'UTF-8', False),
+            (b"<body><tag>&#248;</tag></body>", 'US-ASCII', False),
+            (b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', False),
+            ("<body><tag>ø</tag></body>", 'unicode', False),
+
+            # ... xml_declaration = True
+            (b"<?xml version='1.0' encoding='us-ascii'?>\n"
+             b"<body><tag>&#248;</tag></body>", None, True),
+            (b"<?xml version='1.0' encoding='UTF-8'?>\n"
+             b"<body><tag>\xc3\xb8</tag></body>", 'UTF-8', True),
+            (b"<?xml version='1.0' encoding='US-ASCII'?>\n"
+             b"<body><tag>&#248;</tag></body>", 'US-ASCII', True),
+            (b"<?xml version='1.0' encoding='ISO-8859-1'?>\n"
+             b"<body><tag>\xf8</tag></body>", 'ISO-8859-1', True),
+            (f"<?xml version='1.0' encoding='{preferredencoding}'?>\n"
+             "<body><tag>ø</tag></body>", 'unicode', True),
+
+        ]
+        for expected_retval, encoding, xml_declaration in TESTCASES:
+            with self.subTest(f'encoding={encoding} '
+                              f'xml_declaration={xml_declaration}'):
+                self.assertEqual(
+                    ET.tostring(
+                        elem,
+                        encoding=encoding,
+                        xml_declaration=xml_declaration
+                    ),
+                    expected_retval
+                )
+
+    def test_tostringlist_default_namespace(self):
+        elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
+        self.assertEqual(
+            ''.join(ET.tostringlist(elem, encoding='unicode')),
+            '<ns0:body xmlns:ns0="http://effbot.org/ns"><ns0:tag /></ns0:body>'
+        )
+        self.assertEqual(
+            ''.join(ET.tostringlist(elem, encoding='unicode', default_namespace='http://effbot.org/ns')),
+            '<body xmlns="http://effbot.org/ns"><tag /></body>'
+        )
+
+    def test_tostringlist_xml_declaration(self):
+        elem = ET.XML('<body><tag/></body>')
+        self.assertEqual(
+            ''.join(ET.tostringlist(elem, encoding='unicode')),
+            '<body><tag /></body>'
+        )
+        self.assertEqual(
+            b''.join(ET.tostringlist(elem, xml_declaration=True)),
+            b"<?xml version='1.0' encoding='us-ascii'?>\n<body><tag /></body>"
+        )
+
+        preferredencoding = locale.getpreferredencoding()
+        stringlist = ET.tostringlist(elem, encoding='unicode', xml_declaration=True)
+        self.assertEqual(
+            ''.join(stringlist),
+            f"<?xml version='1.0' encoding='{preferredencoding}'?>\n<body><tag /></body>"
+        )
+        self.assertRegex(stringlist[0], r"^<\?xml version='1.0' encoding='.+'?>")
+        self.assertEqual(['<body', '>', '<tag', ' />', '</body>'], stringlist[1:])
 
     def test_encoding(self):
         def check(encoding, body=''):
@@ -1806,6 +1930,88 @@ class BugsTest(unittest.TestCase):
 
 
 class BasicElementTest(ElementTestCase, unittest.TestCase):
+
+    def test___init__(self):
+        tag = "foo"
+        attrib = { "zix": "wyp" }
+
+        element_foo = ET.Element(tag, attrib)
+
+        # traits of an element
+        self.assertIsInstance(element_foo, ET.Element)
+        self.assertIn("tag", dir(element_foo))
+        self.assertIn("attrib", dir(element_foo))
+        self.assertIn("text", dir(element_foo))
+        self.assertIn("tail", dir(element_foo))
+
+        # string attributes have expected values
+        self.assertEqual(element_foo.tag, tag)
+        self.assertIsNone(element_foo.text)
+        self.assertIsNone(element_foo.tail)
+
+        # attrib is a copy
+        self.assertIsNot(element_foo.attrib, attrib)
+        self.assertEqual(element_foo.attrib, attrib)
+
+        # attrib isn't linked
+        attrib["bar"] = "baz"
+        self.assertIsNot(element_foo.attrib, attrib)
+        self.assertNotEqual(element_foo.attrib, attrib)
+
+    def test___copy__(self):
+        element_foo = ET.Element("foo", { "zix": "wyp" })
+        element_foo.append(ET.Element("bar", { "baz": "qix" }))
+
+        element_foo2 = copy.copy(element_foo)
+
+        # elements are not the same
+        self.assertIsNot(element_foo2, element_foo)
+
+        # string attributes are equal
+        self.assertEqual(element_foo2.tag, element_foo.tag)
+        self.assertEqual(element_foo2.text, element_foo.text)
+        self.assertEqual(element_foo2.tail, element_foo.tail)
+
+        # number of children is the same
+        self.assertEqual(len(element_foo2), len(element_foo))
+
+        # children are the same
+        for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
+            self.assertIs(child1, child2)
+
+        # attrib is a copy
+        self.assertEqual(element_foo2.attrib, element_foo.attrib)
+
+    def test___deepcopy__(self):
+        element_foo = ET.Element("foo", { "zix": "wyp" })
+        element_foo.append(ET.Element("bar", { "baz": "qix" }))
+
+        element_foo2 = copy.deepcopy(element_foo)
+
+        # elements are not the same
+        self.assertIsNot(element_foo2, element_foo)
+
+        # string attributes are equal
+        self.assertEqual(element_foo2.tag, element_foo.tag)
+        self.assertEqual(element_foo2.text, element_foo.text)
+        self.assertEqual(element_foo2.tail, element_foo.tail)
+
+        # number of children is the same
+        self.assertEqual(len(element_foo2), len(element_foo))
+
+        # children are not the same
+        for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
+            self.assertIsNot(child1, child2)
+
+        # attrib is a copy
+        self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+        self.assertEqual(element_foo2.attrib, element_foo.attrib)
+
+        # attrib isn't linked
+        element_foo.attrib["bar"] = "baz"
+        self.assertIsNot(element_foo2.attrib, element_foo.attrib)
+        self.assertNotEqual(element_foo2.attrib, element_foo.attrib)
+
     def test_augmentation_type_errors(self):
         e = ET.Element('joe')
         self.assertRaises(TypeError, e.append, 'b')
@@ -1861,9 +2067,9 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         e1 = ET.Element('e1')
         e2 = ET.Element('e2')
         e3 = ET.Element('e3')
-        e1.append(e2)
-        e2.append(e2)
         e3.append(e1)
+        e2.append(e3)
+        e1.append(e2)
         wref = weakref.ref(e1)
         del e1, e2, e3
         gc_collect()
@@ -2340,6 +2546,9 @@ class ElementFindTest(unittest.TestCase):
         nsmap = {'xx': 'Y'}
         self.assertEqual(len(root.findall(".//xx:b", namespaces=nsmap)), 1)
         self.assertEqual(len(root.findall(".//b", namespaces=nsmap)), 2)
+        nsmap = {'xx': 'X', '': 'Y'}
+        self.assertEqual(len(root.findall(".//xx:b", namespaces=nsmap)), 2)
+        self.assertEqual(len(root.findall(".//b", namespaces=nsmap)), 1)
 
     def test_bad_find(self):
         e = ET.XML(SAMPLE_XML)

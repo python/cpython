@@ -37,9 +37,9 @@
 extern "C" {
 #endif
 
-int _PyOS_opterr = 1;          /* generate error messages */
-int _PyOS_optind = 1;          /* index into argv array   */
-wchar_t *_PyOS_optarg = NULL;     /* optional argument       */
+int _PyOS_opterr = 1;                 /* generate error messages */
+Py_ssize_t _PyOS_optind = 1;          /* index into argv array   */
+const wchar_t *_PyOS_optarg = NULL;   /* optional argument       */
 
 static wchar_t *opt_ptr = L"";
 
@@ -61,7 +61,7 @@ void _PyOS_ResetGetOpt(void)
     opt_ptr = L"";
 }
 
-int _PyOS_GetOpt(int argc, wchar_t **argv, int *longindex)
+int _PyOS_GetOpt(Py_ssize_t argc, wchar_t **argv, int *longindex)
 {
     wchar_t *ptr;
     wchar_t option;

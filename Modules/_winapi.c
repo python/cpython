@@ -752,12 +752,12 @@ gethandle(PyObject* obj, const char* name)
     return ret;
 }
 
-static PyObject*
+static wchar_t *
 getenvironment(PyObject* environment)
 {
     Py_ssize_t i, envsize, totalsize;
-    Py_UCS4 *buffer = NULL, *p, *end;
-    PyObject *keys, *values, *res;
+    wchar_t *buffer = NULL, *p, *end;
+    PyObject *keys, *values;
 
     /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
@@ -775,8 +775,8 @@ getenvironment(PyObject* environment)
         goto error;
     }
 
-    envsize = PySequence_Fast_GET_SIZE(keys);
-    if (PySequence_Fast_GET_SIZE(values) != envsize) {
+    envsize = PyList_GET_SIZE(keys);
+    if (PyList_GET_SIZE(values) != envsize) {
         PyErr_SetString(PyExc_RuntimeError,
             "environment changed size during iteration");
         goto error;
@@ -784,8 +784,9 @@ getenvironment(PyObject* environment)
 
     totalsize = 1; /* trailing null character */
     for (i = 0; i < envsize; i++) {
-        PyObject* key = PySequence_Fast_GET_ITEM(keys, i);
-        PyObject* value = PySequence_Fast_GET_ITEM(values, i);
+        PyObject* key = PyList_GET_ITEM(keys, i);
+        PyObject* value = PyList_GET_ITEM(values, i);
+        Py_ssize_t size;
 
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
@@ -806,19 +807,25 @@ getenvironment(PyObject* environment)
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
             goto error;
         }
-        if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(key) - 1) {
+
+        size = PyUnicode_AsWideChar(key, NULL, 0);
+        assert(size > 1);
+        if (totalsize > PY_SSIZE_T_MAX - size) {
             PyErr_SetString(PyExc_OverflowError, "environment too long");
             goto error;
         }
-        totalsize += PyUnicode_GET_LENGTH(key) + 1;    /* +1 for '=' */
-        if (totalsize > PY_SSIZE_T_MAX - PyUnicode_GET_LENGTH(value) - 1) {
+        totalsize += size;    /* including '=' */
+
+        size = PyUnicode_AsWideChar(value, NULL, 0);
+        assert(size > 0);
+        if (totalsize > PY_SSIZE_T_MAX - size) {
             PyErr_SetString(PyExc_OverflowError, "environment too long");
             goto error;
         }
-        totalsize += PyUnicode_GET_LENGTH(value) + 1;  /* +1 for '\0' */
+        totalsize += size;  /* including trailing '\0' */
     }
 
-    buffer = PyMem_NEW(Py_UCS4, totalsize);
+    buffer = PyMem_NEW(wchar_t, totalsize);
     if (! buffer) {
         PyErr_NoMemory();
         goto error;
@@ -827,34 +834,25 @@ getenvironment(PyObject* environment)
     end = buffer + totalsize;
 
     for (i = 0; i < envsize; i++) {
-        PyObject* key = PySequence_Fast_GET_ITEM(keys, i);
-        PyObject* value = PySequence_Fast_GET_ITEM(values, i);
-        if (!PyUnicode_AsUCS4(key, p, end - p, 0))
-            goto error;
-        p += PyUnicode_GET_LENGTH(key);
-        *p++ = '=';
-        if (!PyUnicode_AsUCS4(value, p, end - p, 0))
-            goto error;
-        p += PyUnicode_GET_LENGTH(value);
-        *p++ = '\0';
+        PyObject* key = PyList_GET_ITEM(keys, i);
+        PyObject* value = PyList_GET_ITEM(values, i);
+        Py_ssize_t size = PyUnicode_AsWideChar(key, p, end - p);
+        assert(1 <= size && size < end - p);
+        p += size;
+        *p++ = L'=';
+        size = PyUnicode_AsWideChar(value, p, end - p);
+        assert(0 <= size && size < end - p);
+        p += size + 1;
     }
 
-    /* add trailing null byte */
-    *p++ = '\0';
+    /* add trailing null character */
+    *p++ = L'\0';
     assert(p == end);
 
-    Py_XDECREF(keys);
-    Py_XDECREF(values);
-
-    res = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer, p - buffer);
-    PyMem_Free(buffer);
-    return res;
-
  error:
-    PyMem_Free(buffer);
     Py_XDECREF(keys);
     Py_XDECREF(values);
-    return NULL;
+    return buffer;
 }
 
 static LPHANDLE
@@ -1053,8 +1051,7 @@ _winapi_CreateProcess_impl(PyObject *module,
     BOOL result;
     PROCESS_INFORMATION pi;
     STARTUPINFOEXW si;
-    PyObject *environment = NULL;
-    wchar_t *wenvironment;
+    wchar_t *wenvironment = NULL;
     wchar_t *command_line_copy = NULL;
     AttributeList attribute_list = {0};
 
@@ -1071,19 +1068,10 @@ _winapi_CreateProcess_impl(PyObject *module,
         goto cleanup;
 
     if (env_mapping != Py_None) {
-        environment = getenvironment(env_mapping);
-        if (environment == NULL) {
-            goto cleanup;
-        }
-        /* contains embedded null characters */
-        wenvironment = PyUnicode_AsUnicode(environment);
+        wenvironment = getenvironment(env_mapping);
         if (wenvironment == NULL) {
             goto cleanup;
         }
-    }
-    else {
-        environment = NULL;
-        wenvironment = NULL;
     }
 
     if (getattributelist(startup_info, "lpAttributeList", &attribute_list) < 0)
@@ -1131,7 +1119,7 @@ _winapi_CreateProcess_impl(PyObject *module,
 
 cleanup:
     PyMem_Free(command_line_copy);
-    Py_XDECREF(environment);
+    PyMem_Free(wenvironment);
     freeattributelist(&attribute_list);
 
     return ret;
