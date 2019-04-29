@@ -631,6 +631,7 @@ SRCDIRS
 THREADHEADERS
 LIBPL
 PY_ENABLE_SHARED
+LIBPYTHON
 EXT_SUFFIX
 ALT_SOABI
 SOABI
@@ -15153,6 +15154,14 @@ $as_echo_n "checking LDVERSION... " >&6; }
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 $as_echo "$LDVERSION" >&6; }
+
+# On Android the shared libraries must be linked with libpython.
+
+if test -z "$ANDROID_API_LEVEL"; then
+  LIBPYTHON=''
+else
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+fi
 
 
 if test x$PLATFORM_TRIPLET = x; then
