@@ -1848,17 +1848,22 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                     self.theclass.fromisocalendar(*isocal)
 
     def test_fromisocalendar_type_errors(self):
-        isocals = [
-            ("2019", 1, 1),
-            (2019, "1", 1),
-            (2019, 1, "1"),
-            (None, 1, 1),
-            (2019, None, 1),
-            (2019, 1, None),
-            (2019.0, 1, 1),
-            (2019, 1.0, 1),
-            (2019, 1, 1.0),
+        err_txformers = [
+            str,
+            float,
+            lambda x: None,
         ]
+
+        # Take a valid base tuple and transform it to contain one argument
+        # with the wrong type. Repeat this for each argument, e.g.
+        # [("2019", 1, 1), (2019, "1", 1), (2019, 1, "1"), ...]
+        isocals = []
+        base = (2019, 1, 1)
+        for i in range(3):
+            for txformer in err_txformers:
+                err_val = list(base)
+                err_val[i] = txformer(err_val[i])
+                isocals.append(tuple(err_val))
 
         for isocal in isocals:
             with self.subTest(isocal=isocal):
