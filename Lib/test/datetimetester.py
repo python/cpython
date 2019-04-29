@@ -1812,6 +1812,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (2004, 12, 31),
             (1, 1, 1),
             (9999, 12, 31),
+            (MINYEAR, 1, 1),
+            (MAXYEAR, 12, 31),
         ]
 
         for datecomps in dates:
