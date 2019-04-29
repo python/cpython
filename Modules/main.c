@@ -1,7 +1,6 @@
 /* Python interpreter main program */
 
 #include "Python.h"
-#include "pycore_ceval.h"   /* _PyEval_FiniThreads2() */
 #include "pycore_coreconfig.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
@@ -526,15 +525,15 @@ done:
 
 /* --- pymain_main() ---------------------------------------------- */
 
-/* Free global variables which cannot be freed in Py_Finalize():
-   configuration options set before Py_Initialize() which should
-   remain valid after Py_Finalize(), since
-   Py_Initialize()-Py_Finalize() can be called multiple times. */
 static void
 pymain_free(void)
 {
     _PyImport_Fini2();
-    _PyEval_FiniThreads2();
+
+    /* Free global variables which cannot be freed in Py_Finalize():
+       configuration options set before Py_Initialize() which should
+       remain valid after Py_Finalize(), since
+       Py_Initialize()-Py_Finalize() can be called multiple times. */
     _PyPathConfig_ClearGlobal();
     _Py_ClearStandardStreamEncoding();
     _Py_ClearArgcArgv();
