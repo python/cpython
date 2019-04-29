@@ -475,11 +475,12 @@ Functions
    representation.  The main restrictions regard the placement of namespace
    declarations, the ordering of attributes, and ignorable whitespace.
 
-   This function takes an XML data string (*xml_data*) or a file-like object
-   (*from_file*) as input, converts it to the canonical form, and writes it
-   out using the *out* file(-like) object, if provided, or returns it as a
-   text string if not.  The output file receives text, not bytes.  It should
-   therefore be opened in text mode with ``utf-8`` encoding.
+   This function takes an XML data string (*xml_data*) or a file path or
+   file-like object (*from_file*) as input, converts it to the canonical
+   form, and writes it out using the *out* file(-like) object, if provided,
+   or returns it as a text string if not.  The output file receives text,
+   not bytes.  It should therefore be opened in text mode with ``utf-8``
+   encoding.
 
    Typical uses::
 
@@ -488,6 +489,9 @@ Functions
 
       with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
           canonicalize(xml_data, out=out_file)
+
+      with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
+          canonicalize(from_file="inputfile.xml", out=out_file)
 
    The configuration *options* are as follows:
 

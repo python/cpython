@@ -1723,8 +1723,8 @@ def canonicalize(xml_data=None, *, out=None, from_file=None, **options):
     method.  To write to a file, open it in text mode with encoding "utf-8".
     If *out* is not provided, this function returns the output as text string.
 
-    Either *xml_data* (an XML string) or *from_file* (a file-like object)
-    must be provided as input.
+    Either *xml_data* (an XML string) or *from_file* (a file path or
+    file-like object) must be provided as input.
 
     The configuration options are the same as for the ``C14NWriterTarget``.
     """
