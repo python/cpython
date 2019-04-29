@@ -2153,12 +2153,11 @@ class TestQuantiles(unittest.TestCase):
                 ]:
             self.assertEqual(expected, quantiles(data, n=n))
             self.assertEqual(len(quantiles(data, n=n)), n - 1)
-            self.assertEqual(list(map(float, expected)),
-                             quantiles(map(Decimal, data), n=n))
-            self.assertEqual(list(map(Decimal, expected)),
-                             quantiles(map(Decimal, data), n=n))
-            self.assertEqual(list(map(Fraction, expected)),
-                             quantiles(map(Fraction, data), n=n))
+            # Preserve datatype when possible
+            for datatype in (float, Decimal, Fraction):
+                result = quantiles(map(datatype, data), n=n)
+                self.assertTrue(all(type(x) == datatype) for x in result)
+                self.assertEqual(result, list(map(datatype, expected)))
             # Invariant under tranlation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
@@ -2199,12 +2198,11 @@ class TestQuantiles(unittest.TestCase):
                 ]:
             self.assertEqual(expected, quantiles(data, n=n, method="inclusive"))
             self.assertEqual(len(quantiles(data, n=n, method="inclusive")), n - 1)
-            self.assertEqual(list(map(float, expected)),
-                             quantiles(map(Decimal, data), n=n, method="inclusive"))
-            self.assertEqual(list(map(Decimal, expected)),
-                             quantiles(map(Decimal, data), n=n, method="inclusive"))
-            self.assertEqual(list(map(Fraction, expected)),
-                             quantiles(map(Fraction, data), n=n, method="inclusive"))
+            # Preserve datatype when possible
+            for datatype in (float, Decimal, Fraction):
+                result = quantiles(map(datatype, data), n=n, method="inclusive")
+                self.assertTrue(all(type(x) == datatype) for x in result)
+                self.assertEqual(result, list(map(datatype, expected)))
             # Invariant under tranlation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
@@ -2221,6 +2219,14 @@ class TestQuantiles(unittest.TestCase):
             actual = quantiles(statistics.NormalDist(), n=n, method="inclusive")
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
+
+    def test_equal_inputs(self):
+        quantiles = statistics.quantiles
+        for n in range(2, 10):
+            data = [10.0] * n
+            self.assertEqual(quantiles(data), [10.0, 10.0, 10.0])
+            self.assertEqual(quantiles(data, method='inclusive'),
+                            [10.0, 10.0, 10.0])
 
     def test_equal_sized_groups(self):
         quantiles = statistics.quantiles
