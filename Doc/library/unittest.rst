@@ -2054,7 +2054,7 @@ Loading and running tests
       Added *durations* keyword argument.
 
    .. versionchanged:: 3.8
-      Subclasses should accept **kwargs to ensure compatibility as the
+      Subclasses should accept ``**kwargs`` to ensure compatibility as the
       interface changes.
 
 .. data:: defaultTestLoader
