@@ -758,6 +758,13 @@ Changes in Python behavior
   always use the ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
 
+* :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+  terminate the current thread if called while the interpreter is
+  finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
+  :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
+  behaviour is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
+  or :c:func:`sys.is_finalizing`.
+
 Changes in the Python API
 -------------------------
 
