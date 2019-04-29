@@ -98,6 +98,31 @@ subdirectories).
 
 (Contributed by Carl Meyer in :issue:`33499`.)
 
+Debug build uses the same ABI as release build
+-----------------------------------------------
+
+Python now uses the same ABI whether it built in release or debug mode. On
+Unix, when Python is built in debug mode, it is now possible to load C
+extensions built in release mode and C extensions built using the stable ABI.
+
+Release builds and debug builds are now ABI compatible: defining the
+``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro, which
+introduces the only ABI incompatibility. The ``Py_TRACE_REFS`` macro, which
+adds the :func:`sys.getobjects` function and the :envvar:`PYTHONDUMPREFS`
+environment variable, can be set using the new ``./configure --with-trace-refs``
+build option.
+(Contributed by Victor Stinner in :issue:`36465`.)
+
+On Unix, C extensions are no longer linked to libpython. It is now possible
+for a statically linked Python to load a C extension built using a shared
+library Python.
+(Contributed by Victor Stinner in :issue:`21536`.)
+
+On Unix, when Python is built in debug mode, import now also looks for C
+extensions compiled in release mode and for C extensions compiled with the
+stable ABI.
+(Contributed by Victor Stinner in :issue:`36722`.)
+
 
 Other Language Changes
 ======================
@@ -468,6 +493,13 @@ venv
 * :mod:`venv` now includes an ``Activate.ps1`` script on all platforms for
   activating virtual environments under PowerShell Core 6.1.
   (Contributed by Brett Cannon in :issue:`32718`.)
+
+weakref
+-------
+
+* The proxy objects returned by :func:`weakref.proxy` now support the matrix
+  multiplication operators ``@`` and ``@=`` in addition to the other
+  numeric operators. (Contributed by Mark Dickinson in :issue:`36669`.)
 
 xml
 ---
@@ -877,12 +909,12 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* On Unix, C extensions are no longer linked to libpython. When Python is
-  embedded, ``libpython`` must not be loaded with ``RTLD_LOCAL``, but
-  ``RTLD_GLOBAL`` instead. Previously, using ``RTLD_LOCAL``, it was already not
-  possible to load C extensions which were not linked to ``libpython``, like C
-  extensions of the standard library built by the ``*shared*`` section of
-  ``Modules/Setup``.
+* On Unix, C extensions are no longer linked to libpython except on
+  Android. When Python is embedded, ``libpython`` must not be loaded with
+  ``RTLD_LOCAL``, but ``RTLD_GLOBAL`` instead. Previously, using
+  ``RTLD_LOCAL``, it was already not possible to load C extensions which were
+  not linked to ``libpython``, like C extensions of the standard library built
+  by the ``*shared*`` section of ``Modules/Setup``.
 
 * Use of ``#`` variants of formats in parsing or building value (e.g.
   :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,

@@ -1313,6 +1313,7 @@ Py_FinalizeEx(void)
     PyDict_Fini();
     PySlice_Fini();
     _PyGC_Fini(runtime);
+    _PyWarnings_Fini(runtime);
     _Py_HashRandomization_Fini();
     _PyArg_Fini();
     PyAsyncGen_Fini();
@@ -2171,7 +2172,7 @@ Py_FatalError(const char *msg)
 void _Py_NO_RETURN
 _Py_ExitInitError(_PyInitError err)
 {
-    if (err.exitcode >= 0) {
+    if (_Py_INIT_HAS_EXITCODE(err)) {
         exit(err.exitcode);
     }
     else {
@@ -2248,7 +2249,12 @@ static void
 call_ll_exitfuncs(_PyRuntimeState *runtime)
 {
     while (runtime->nexitfuncs > 0) {
-        (*runtime->exitfuncs[--runtime->nexitfuncs])();
+        /* pop last function from the list */
+        runtime->nexitfuncs--;
+        void (*exitfunc)(void) = runtime->exitfuncs[runtime->nexitfuncs];
+        runtime->exitfuncs[runtime->nexitfuncs] = NULL;
+
+        exitfunc();
     }
 
     fflush(stdout);

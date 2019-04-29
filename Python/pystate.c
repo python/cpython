@@ -826,7 +826,7 @@ _PyThreadState_Delete(_PyRuntimeState *runtime, PyThreadState *tstate)
 void
 PyThreadState_Delete(PyThreadState *tstate)
 {
-    return _PyThreadState_Delete(&_PyRuntime, tstate);
+    _PyThreadState_Delete(&_PyRuntime, tstate);
 }
 
 
