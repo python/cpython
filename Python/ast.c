@@ -1432,18 +1432,60 @@ ast_for_arguments(struct compiling *c, const node *n)
        and varargslist (lambda definition).
 
        parameters: '(' [typedargslist] ')'
-       typedargslist: (tfpdef ['=' test] (',' tfpdef ['=' test])* [',' [
-               '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
-             | '**' tfpdef [',']]]
-         | '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
-         | '**' tfpdef [','])
+
+       The following definition for typedarglist is equivalent to this set of rules:
+
+         arguments = argument (',' [TYPE_COMMENT] argument)*
+         argument = tfpdef ['=' test]
+         kwargs = '**' tfpdef [','] [TYPE_COMMENT]
+         args = '*' [tfpdef]
+         kwonly_kwargs = (',' [TYPE_COMMENT] argument)* (TYPE_COMMENT | [','
+                         [TYPE_COMMENT] [kwargs]])
+         args_kwonly_kwargs = args kwonly_kwargs | kwargs
+         poskeyword_args_kwonly_kwargs = arguments ( TYPE_COMMENT | [','
+                                         [TYPE_COMMENT] [args_kwonly_kwargs]])
+         typedargslist_no_posonly  = poskeyword_args_kwonly_kwargs | args_kwonly_kwargs
+         typedarglist = (arguments ',' [TYPE_COMMENT] '/' [',' [[TYPE_COMMENT]
+                        typedargslist_no_posonly]])|(typedargslist_no_posonly)"
+
+       typedargslist: ( (tfpdef ['=' test] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           ',' [TYPE_COMMENT] '/' [',' [ [TYPE_COMMENT] tfpdef ['=' test] ( ','
+           [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [ '*'
+           [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [','
+           [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) | '**' tfpdef [',']
+           [TYPE_COMMENT]]]) | '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) |
+           '**' tfpdef [','] [TYPE_COMMENT]]] ) |  (tfpdef ['=' test] (','
+           [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [ '*'
+           [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [','
+           [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) | '**' tfpdef [',']
+           [TYPE_COMMENT]]]) | '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) |
+           '**' tfpdef [','] [TYPE_COMMENT]))
+
        tfpdef: NAME [':' test]
-       varargslist: (vfpdef ['=' test] (',' vfpdef ['=' test])* [',' [
-               '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-             | '**' vfpdef [',']]]
-         | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-         | '**' vfpdef [',']
-       )
+
+       The following definition for varargslist is equivalent to this set of rules:
+
+         arguments = argument (',' argument )*
+         argument = vfpdef ['=' test]
+         kwargs = '**' vfpdef [',']
+         args = '*' [vfpdef]
+         kwonly_kwargs = (',' argument )* [',' [kwargs]]
+         args_kwonly_kwargs = args kwonly_kwargs | kwargs
+         poskeyword_args_kwonly_kwargs = arguments [',' [args_kwonly_kwargs]]
+         vararglist_no_posonly = poskeyword_args_kwonly_kwargs | args_kwonly_kwargs
+         varargslist = arguments ',' '/' [','[(vararglist_no_posonly)]] |
+                       (vararglist_no_posonly)
+
+       varargslist: vfpdef ['=' test ](',' vfpdef ['=' test])* ',' '/' [',' [ (vfpdef ['='
+           test] (',' vfpdef ['=' test])* [',' [ '*' [vfpdef] (',' vfpdef ['=' test])* [','
+           ['**' vfpdef [',']]] | '**' vfpdef [',']]] | '*' [vfpdef] (',' vfpdef ['=' test])*
+           [',' ['**' vfpdef [',']]] | '**' vfpdef [',']) ]] | (vfpdef ['=' test] (',' vfpdef
+           ['=' test])* [',' [ '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
+           | '**' vfpdef [',']]] | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef
+           [',']]] | '**' vfpdef [','])
+
        vfpdef: NAME
 
     */

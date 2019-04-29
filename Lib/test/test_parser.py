@@ -242,6 +242,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("def f(a, b, /, c, *, d): pass")
         self.check_suite("def f(a, b, /, c = 1, *, d): pass")
         self.check_suite("def f(a, b, /, c, *, d = 1): pass")
+        self.check_suite("def f(a, b=1, /, c=2, *, d = 3): pass")
+        self.check_suite("def f(a=0, b=1, /, c=2, *, d = 3): pass")
 
         # function annotations
         self.check_suite("def f(a: int): pass")

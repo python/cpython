@@ -108,7 +108,7 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
     Py_ssize_t i, n_cellvars, n_varnames, total_args;
 
     /* Check argument types */
-    if (argcount < 0 || posonlyargcount <0 || kwonlyargcount < 0 ||
+    if (argcount < 0 || posonlyargcount < 0 || kwonlyargcount < 0 ||
         nlocals < 0 || code == NULL || !PyBytes_Check(code) ||
         consts == NULL || !PyTuple_Check(consts) ||
         names == NULL || !PyTuple_Check(names) ||
@@ -278,22 +278,22 @@ failed:
 #define OFF(x) offsetof(PyCodeObject, x)
 
 static PyMemberDef code_memberlist[] = {
-    {"co_argcount",     T_INT,          OFF(co_argcount),       READONLY},
-    {"co_posonlyargcount",      T_INT,  OFF(co_posonlyargcount),READONLY},
-    {"co_kwonlyargcount",       T_INT,  OFF(co_kwonlyargcount), READONLY},
-    {"co_nlocals",      T_INT,          OFF(co_nlocals),        READONLY},
-    {"co_stacksize",T_INT,              OFF(co_stacksize),      READONLY},
-    {"co_flags",        T_INT,          OFF(co_flags),          READONLY},
-    {"co_code",         T_OBJECT,       OFF(co_code),           READONLY},
-    {"co_consts",       T_OBJECT,       OFF(co_consts),         READONLY},
-    {"co_names",        T_OBJECT,       OFF(co_names),          READONLY},
-    {"co_varnames",     T_OBJECT,       OFF(co_varnames),       READONLY},
-    {"co_freevars",     T_OBJECT,       OFF(co_freevars),       READONLY},
-    {"co_cellvars",     T_OBJECT,       OFF(co_cellvars),       READONLY},
-    {"co_filename",     T_OBJECT,       OFF(co_filename),       READONLY},
-    {"co_name",         T_OBJECT,       OFF(co_name),           READONLY},
-    {"co_firstlineno", T_INT,           OFF(co_firstlineno),    READONLY},
-    {"co_lnotab",       T_OBJECT,       OFF(co_lnotab),         READONLY},
+    {"co_argcount",     T_INT,          OFF(co_argcount),        READONLY},
+    {"co_posonlyargcount",      T_INT,  OFF(co_posonlyargcount), READONLY},
+    {"co_kwonlyargcount",       T_INT,  OFF(co_kwonlyargcount),  READONLY},
+    {"co_nlocals",      T_INT,          OFF(co_nlocals),         READONLY},
+    {"co_stacksize",T_INT,              OFF(co_stacksize),       READONLY},
+    {"co_flags",        T_INT,          OFF(co_flags),           READONLY},
+    {"co_code",         T_OBJECT,       OFF(co_code),            READONLY},
+    {"co_consts",       T_OBJECT,       OFF(co_consts),          READONLY},
+    {"co_names",        T_OBJECT,       OFF(co_names),           READONLY},
+    {"co_varnames",     T_OBJECT,       OFF(co_varnames),        READONLY},
+    {"co_freevars",     T_OBJECT,       OFF(co_freevars),        READONLY},
+    {"co_cellvars",     T_OBJECT,       OFF(co_cellvars),        READONLY},
+    {"co_filename",     T_OBJECT,       OFF(co_filename),        READONLY},
+    {"co_name",         T_OBJECT,       OFF(co_name),            READONLY},
+    {"co_firstlineno", T_INT,           OFF(co_firstlineno),     READONLY},
+    {"co_lnotab",       T_OBJECT,       OFF(co_lnotab),          READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -658,9 +658,9 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     cp = (PyCodeObject *)other;
 
     eq = PyObject_RichCompareBool(co->co_name, cp->co_name, Py_EQ);
-    if (eq <= 0) goto unequal;
+    if (!eq) goto unequal;
     eq = co->co_argcount == cp->co_argcount;
-    if (eq <= 0) goto unequal;
+    if (!eq) goto unequal;
     eq = co->co_posonlyargcount == cp->co_posonlyargcount;
     if (!eq) goto unequal;
     eq = co->co_kwonlyargcount == cp->co_kwonlyargcount;

@@ -1032,16 +1032,6 @@ def getargs(co):
     'args' is the list of argument names. Keyword-only arguments are
     appended. 'varargs' and 'varkw' are the names of the * and **
     arguments or None."""
-    args, varargs, posonlyargs, kwonlyargs, varkw = _getfullargs(co)
-    return Arguments(posonlyargs + args + kwonlyargs, varargs, varkw)
-
-def _getfullargs(co):
-    """Get information about the arguments accepted by a code object.
-
-    Four things are returned: (args, varargs, kwonlyargs, varkw), where
-    'args' and 'kwonlyargs' are lists of argument names, and 'varargs'
-    and 'varkw' are the names of the * and ** arguments or None."""
-
     if not iscode(co):
         raise TypeError('{!r} is not a code object'.format(co))
 
@@ -1064,8 +1054,7 @@ def _getfullargs(co):
     varkw = None
     if co.co_flags & CO_VARKEYWORDS:
         varkw = co.co_varnames[nargs]
-    return args, varargs, posonlyargs, kwonlyargs, varkw
-
+    return Arguments(posonlyargs + args + kwonlyargs, varargs, varkw)
 
 ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 
@@ -1261,7 +1250,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     if defaults:
         firstdefault = len(posonlyargs) + len(args) - len(defaults)
     posonly_left = len(posonlyargs)
-    for i, arg in enumerate(list(posonlyargs) + list(args)):
+    for i, arg in enumerate([*posonlyargs, *args]):
         spec = formatargandannotation(arg)
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
