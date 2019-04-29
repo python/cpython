@@ -188,19 +188,8 @@ PyEval_InitThreads(void)
     }
 }
 
-
 void
 _PyEval_FiniThreads(void)
-{
-    if (_PyRuntime.ceval.pending.lock != NULL) {
-        PyThread_free_lock(_PyRuntime.ceval.pending.lock);
-        _PyRuntime.ceval.pending.lock = NULL;
-    }
-}
-
-
-void
-_PyEval_FiniThreads2(void)
 {
     if (!gil_created()) {
         return;
@@ -208,6 +197,11 @@ _PyEval_FiniThreads2(void)
 
     destroy_gil();
     assert(!gil_created());
+
+    if (_PyRuntime.ceval.pending.lock != NULL) {
+        PyThread_free_lock(_PyRuntime.ceval.pending.lock);
+        _PyRuntime.ceval.pending.lock = NULL;
+    }
 }
 
 static inline void

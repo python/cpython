@@ -4,9 +4,8 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "pycore_ceval.h"   /* _PyEval_FiniThreads() */
-#include "pycore_context.h"
 #include "pycore_coreconfig.h"
+#include "pycore_context.h"
 #include "pycore_fileutils.h"
 #include "pycore_hamt.h"
 #include "pycore_pathconfig.h"
@@ -556,11 +555,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return _Py_INIT_ERR("can't make first thread");
     (void) PyThreadState_Swap(tstate);
 
-    /* Destroying the GIL in Py_FinalizeEx might fail when it is being
-       referenced from another running thread (see bpo-9901).
+    /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
+       destroying the GIL might fail when it is being referenced from
+       another running thread (see issue #9901).
        Instead we destroy the previously created GIL here, which ensures
        that we can call Py_Initialize / Py_FinalizeEx multiple times. */
-    _PyEval_FiniThreads2();
+    _PyEval_FiniThreads();
 
     /* Auto-thread-state API */
     _PyGILState_Init(runtime, interp, tstate);
@@ -1357,7 +1357,6 @@ Py_FinalizeEx(void)
 
     call_ll_exitfuncs(runtime);
 
-    _PyEval_FiniThreads();
     _PyRuntime_Finalize();
     return status;
 }
