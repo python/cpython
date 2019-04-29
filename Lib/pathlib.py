@@ -1098,6 +1098,21 @@ class Path(PurePath):
             other_st = os.stat(other_path)
         return os.path.samestat(st, other_st)
 
+    def _iterdir_recursive(self):
+        """Recursive directory listing."""
+        to_list = [self]
+        listed = set()
+        while len(to_list) > 0:
+            dirpath = to_list.pop(0)
+            for path in dirpath.iterdir(recursive=False):
+                if path.is_dir():
+                    resolved = path.resolve()
+                    if resolved not in listed:
+                        to_list.append(path)
+                        listed.add(resolved)
+                else:
+                    yield path
+
     def iterdir(self, *, recursive=False):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'. Yields from
@@ -1106,15 +1121,14 @@ class Path(PurePath):
         """
         if self._closed:
             self._raise_closed()
+        if recursive:
+            yield from self._iterdir_recursive()
+            return
         for name in self._accessor.listdir(self):
             if name in {'.', '..'}:
                 # Yielding a path object for these makes little sense
                 continue
-            path = self._make_child_relpath(name)
-            if recursive and path.is_dir() and not path.is_symlink():
-                yield from path.iterdir(recursive=recursive)
-            else:
-                yield path
+            yield self._make_child_relpath(name)
             if self._closed:
                 self._raise_closed()
 

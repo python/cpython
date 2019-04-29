@@ -1494,8 +1494,8 @@ class _BasePathTest(object):
         p = P(join('dirB'))
         it = p.iterdir(recursive=True)
         paths = set(it)
-        expected = ['fileB', 'linkD']
-        self.assertEqual(paths, { P(join('dirB'), q) for q in expected })
+        expected = [('fileB',), ('linkD', 'fileB')]
+        self.assertEqual(paths, { P(join('dirB'), *q) for q in expected })
 
     @support.skip_unless_symlink
     def test_iterdir_recursive_symlink_cycle(self):
@@ -1518,9 +1518,7 @@ class _BasePathTest(object):
             expected = [
                 ('fileF',),
                 ('dirG', 'fileG'),
-                ('dirG', 'linkH'),
-                ('dirH', 'fileH'),
-                ('dirH', 'linkG')]
+                ('dirH', 'fileH')]
             self.assertEqual(paths, { P(join('dirF'), *q) for q in expected })
         finally:
             support.rmtree(join('dirF'))
