@@ -15,6 +15,33 @@
 #include <stropts.h>
 #endif
 
+#ifndef F_LINUX_SPECIFIC_BASE
+#    define F_LINUX_SPECIFIC_BASE      1024
+#endif
+
+/* fcntl.h */
+#ifndef F_ADD_SEALS
+
+/*
+ * Set/Get seals
+ */
+#define F_ADD_SEALS     (F_LINUX_SPECIFIC_BASE + 9)
+#define F_GET_SEALS     (F_LINUX_SPECIFIC_BASE + 10)
+
+#endif /* F_ADD_SEALS */
+
+#ifndef F_SEAL_SEAL
+
+/*
+ * Available Seals
+ */
+#define F_SEAL_SEAL     0x0001      /* prevent further seals from being set */
+#define F_SEAL_SHRINK   0x0002      /* prevent file from shrinking */
+#define F_SEAL_GROW     0x0004      /* prevent file from growing */
+#define F_SEAL_WRITE    0x0008      /* prevent writes */
+
+#endif /* F_SEAL_SEAL */
+
 /*[clinic input]
 module fcntl
 [clinic start generated code]*/
@@ -454,6 +481,13 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, LOCK_EX)) return -1;
     if (PyModule_AddIntMacro(m, LOCK_NB)) return -1;
     if (PyModule_AddIntMacro(m, LOCK_UN)) return -1;
+
+    if (PyModule_AddIntMacro(m, F_ADD_SEALS)) return -1;
+    if (PyModule_AddIntMacro(m, F_GET_SEALS)) return -1;
+    if (PyModule_AddIntMacro(m, F_SEAL_SEAL)) return -1;
+    if (PyModule_AddIntMacro(m, F_SEAL_SHRINK)) return -1;
+    if (PyModule_AddIntMacro(m, F_SEAL_GROW)) return -1;
+    if (PyModule_AddIntMacro(m, F_SEAL_WRITE)) return -1;
 /* GNU extensions, as of glibc 2.2.4 */
 #ifdef LOCK_MAND
     if (PyModule_AddIntMacro(m, LOCK_MAND)) return -1;
