@@ -83,6 +83,31 @@ See :pep:`572` for a full description.
 .. TODO: Emily will sprint on docs at PyCon US 2019.
 
 
+Positional-only parameters
+--------------------------
+
+There is new syntax (``/``) to indicate that some function parameters
+must be specified positionally (i.e., cannot be used as keyword
+arguments).  This is the same notation as shown by ``help()`` for
+functions implemented in C (produced by Larry Hastings' "Argument
+Clinic" tool).  Example::
+
+  def pow(x, y, z=None, /):
+      r = x**y
+      if z is not None:
+          r %= z
+      return r
+
+Now ``pow(2, 10)`` and ``pow(2, 10, 17)`` are valid calls, but
+``pow(x=2, y=10)`` and ``pow(2, 10, z=17)`` are invalid.
+
+See :pep:`570` for a full description.
+
+(Contributed by Pablo Galindo in :issue:`36540`.)
+
+.. TODO: Pablo will sprint on docs at PyCon US 2019.
+
+
 Parallel filesystem cache for compiled bytecode files
 -----------------------------------------------------
 
