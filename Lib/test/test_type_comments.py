@@ -101,7 +101,7 @@ def fab(
 
 def fab(
     a,  # type: A
-    b  # type: B
+    b   # type: B
 ):
     pass
 
