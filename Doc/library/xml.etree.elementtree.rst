@@ -465,7 +465,7 @@ Reference
 Functions
 ^^^^^^^^^
 
-.. function:: canonicalize(write, xml_data=None, *, file=None, **options)
+.. function:: canonicalize(xml_data=None, *, out=None, from_file=None, **options)
 
    `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
 
@@ -476,14 +476,18 @@ Functions
    declarations, the ordering of attributes, and ignorable whitespace.
 
    This function takes an XML data string (*xml_data*) or a file-like object
-   (*file*) as input, converts it to the canonical form, and writes it out
-   using the provided *write* function, e.g. the ``.write`` method of an
-   open file object.  The write-function receives text, not bytes.  Output
-   files should therefore be opened in text mode with ``utf-8`` encoding.
-   Typical use::
+   (*from_file*) as input, converts it to the canonical form, and writes it
+   out using the *out* file(-like) object, if provided, or returns it as a
+   text string if not.  The output file receives text, not bytes.  It should
+   therefore be opened in text mode with ``utf-8`` encoding.
 
-      with open("c14n_output.xml", mode='w', encoding='utf-8') as out:
-          canonicalize(out.write, xml_data)
+   Typical uses::
+
+      xml_data = "<root>...</root>"
+      print(canonicalize(xml_data))
+
+      with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
+          canonicalize(xml_data, out=out_file)
 
    The configuration *options* are as follows:
 
