@@ -763,30 +763,31 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def assertFullArgSpecEquals(self, routine, args_e, varargs_e=None,
                                     varkw_e=None, defaults_e=None,
-                                    kwonlyargs_e=[], kwonlydefaults_e=None,
+                                    posonlyargs_e=[], kwonlyargs_e=[],
+                                    kwonlydefaults_e=None,
                                     ann_e={}, formatted=None):
-        args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
+        args, varargs, varkw, defaults, posonlyargs, kwonlyargs, kwonlydefaults, ann = \
             inspect.getfullargspec(routine)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
         self.assertEqual(defaults, defaults_e)
+        self.assertEqual(posonlyargs, posonlyargs_e)
         self.assertEqual(kwonlyargs, kwonlyargs_e)
         self.assertEqual(kwonlydefaults, kwonlydefaults_e)
         self.assertEqual(ann, ann_e)
         if formatted is not None:
             with self.assertWarns(DeprecationWarning):
                 self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
-                                                       kwonlyargs, kwonlydefaults, ann),
+                                                       posonlyargs, kwonlyargs,
+                                                       kwonlydefaults, ann),
                              formatted)
 
     def test_getargspec(self):
         self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted='(x, y)')
 
-        self.assertArgSpecEquals(mod.spam,
-                                 ['a', 'b', 'c', 'd', 'e', 'f'],
-                                 'g', 'h', (3, 4, 5),
-                                 '(a, b, c, d=3, e=4, f=5, *g, **h)')
+        self.assertRaises(ValueError, self.assertArgSpecEquals,
+                          mod.spam, [])
 
         self.assertRaises(ValueError, self.assertArgSpecEquals,
                           mod2.keyworded, [])
@@ -809,6 +810,26 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertFullArgSpecEquals(mod2.keyword_only_arg, [],
                                      kwonlyargs_e=['arg'],
                                      formatted='(*, arg)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers, ['c', 'd'],
+                                     posonlyargs_e=['a', 'b'],
+                                     kwonlyargs_e=['e', 'f'],
+                                     formatted='(a, b, /, c, d, *, e, f)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers_with_args_and_kwargs,
+                                     ['c', 'd'],
+                                     posonlyargs_e=['a', 'b'],
+                                     varargs_e='args',
+                                     varkw_e='kwargs',
+                                     kwonlyargs_e=['e', 'f'],
+                                     formatted='(a, b, /, c, d, *args, e, f, **kwargs)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers_with_defaults, ['c', 'd'],
+                                     defaults_e=(1,2,3),
+                                     posonlyargs_e=['a', 'b'],
+                                     kwonlyargs_e=['e', 'f'],
+                                     kwonlydefaults_e={'e': 4, 'f': 5},
+                                     formatted='(a, b=1, /, c=2, d=3, *, e=4, f=5)')
 
     def test_argspec_api_ignores_wrapped(self):
         # Issue 20684: low level introspection API must ignore __wrapped__
@@ -856,7 +877,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         spam_param = inspect.Parameter('spam', inspect.Parameter.POSITIONAL_ONLY)
         test.__signature__ = inspect.Signature(parameters=(spam_param,))
 
-        self.assertFullArgSpecEquals(test, args_e=['spam'], formatted='(spam)')
+        self.assertFullArgSpecEquals(test, [], posonlyargs_e=['spam'], formatted='(spam, /)')
 
     def test_getfullargspec_signature_annos(self):
         def test(a:'spam') -> 'ham': pass
@@ -870,11 +891,11 @@ class TestClassesAndFunctions(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_methods(self):
-        self.assertFullArgSpecEquals(_pickle.Pickler.dump,
-                                     args_e=['self', 'obj'], formatted='(self, obj)')
+        self.assertFullArgSpecEquals(_pickle.Pickler.dump, [],
+                                     posonlyargs_e=['self', 'obj'], formatted='(self, obj, /)')
 
-        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump,
-                                     args_e=['self', 'obj'], formatted='(self, obj)')
+        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump, [],
+                                     posonlyargs_e=['self', 'obj'], formatted='(self, obj, /)')
 
         self.assertFullArgSpecEquals(
              os.stat,

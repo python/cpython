@@ -263,7 +263,7 @@ def coroutine(func):
             # TODO: Implement this in C.
             co = func.__code__
             func.__code__ = CodeType(
-                co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
+                co.co_argcount, co.co_posonlyargcount, co.co_kwonlyargcount, co.co_nlocals,
                 co.co_stacksize,
                 co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
                 co.co_code,

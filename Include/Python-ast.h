@@ -427,6 +427,7 @@ struct _excepthandler {
 
 struct _arguments {
     asdl_seq *args;
+    asdl_seq *posonlyargs;
     arg_ty vararg;
     asdl_seq *kwonlyargs;
     asdl_seq *kw_defaults;
@@ -684,10 +685,11 @@ excepthandler_ty _Py_ExceptHandler(expr_ty type, identifier name, asdl_seq *
                                    body, int lineno, int col_offset, int
                                    end_lineno, int end_col_offset, PyArena
                                    *arena);
-#define arguments(a0, a1, a2, a3, a4, a5, a6) _Py_arguments(a0, a1, a2, a3, a4, a5, a6)
-arguments_ty _Py_arguments(asdl_seq * args, arg_ty vararg, asdl_seq *
-                           kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg,
-                           asdl_seq * defaults, PyArena *arena);
+#define arguments(a0, a1, a2, a3, a4, a5, a6, a7) _Py_arguments(a0, a1, a2, a3, a4, a5, a6, a7)
+arguments_ty _Py_arguments(asdl_seq * args, asdl_seq * posonlyargs, arg_ty
+                           vararg, asdl_seq * kwonlyargs, asdl_seq *
+                           kw_defaults, arg_ty kwarg, asdl_seq * defaults,
+                           PyArena *arena);
 #define arg(a0, a1, a2, a3, a4, a5, a6, a7) _Py_arg(a0, a1, a2, a3, a4, a5, a6, a7)
 arg_ty _Py_arg(identifier arg, expr_ty annotation, string type_comment, int
                lineno, int col_offset, int end_lineno, int end_col_offset,

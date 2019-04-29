@@ -272,6 +272,7 @@ def iscode(object):
                             | 16=nested | 32=generator | 64=nofree | 128=coroutine
                             | 256=iterable_coroutine | 512=async_generator
         co_freevars         tuple of names of free variables
+        co_posonlyargcount  number of positional only arguments
         co_kwonlyargcount   number of keyword only arguments (not including ** arg)
         co_lnotab           encoded mapping of line numbers to bytecode indices
         co_name             name with which this code object was defined
@@ -1031,26 +1032,20 @@ def getargs(co):
     'args' is the list of argument names. Keyword-only arguments are
     appended. 'varargs' and 'varkw' are the names of the * and **
     arguments or None."""
-    args, varargs, kwonlyargs, varkw = _getfullargs(co)
-    return Arguments(args + kwonlyargs, varargs, varkw)
-
-def _getfullargs(co):
-    """Get information about the arguments accepted by a code object.
-
-    Four things are returned: (args, varargs, kwonlyargs, varkw), where
-    'args' and 'kwonlyargs' are lists of argument names, and 'varargs'
-    and 'varkw' are the names of the * and ** arguments or None."""
-
     if not iscode(co):
         raise TypeError('{!r} is not a code object'.format(co))
 
-    nargs = co.co_argcount
     names = co.co_varnames
+    nargs = co.co_argcount
+    nposonlyargs = co.co_posonlyargcount
     nkwargs = co.co_kwonlyargcount
-    args = list(names[:nargs])
-    kwonlyargs = list(names[nargs:nargs+nkwargs])
+    nposargs = nargs + nposonlyargs
+    posonlyargs = list(names[:nposonlyargs])
+    args = list(names[nposonlyargs:nposonlyargs+nargs])
+    kwonlyargs = list(names[nposargs:nposargs+nkwargs])
     step = 0
 
+    nargs += nposonlyargs
     nargs += nkwargs
     varargs = None
     if co.co_flags & CO_VARARGS:
@@ -1059,8 +1054,7 @@ def _getfullargs(co):
     varkw = None
     if co.co_flags & CO_VARKEYWORDS:
         varkw = co.co_varnames[nargs]
-    return args, varargs, kwonlyargs, varkw
-
+    return Arguments(posonlyargs + args + kwonlyargs, varargs, varkw)
 
 ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
 
@@ -1087,15 +1081,16 @@ def getargspec(func):
     warnings.warn("inspect.getargspec() is deprecated since Python 3.0, "
                   "use inspect.signature() or inspect.getfullargspec()",
                   DeprecationWarning, stacklevel=2)
-    args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-        getfullargspec(func)
-    if kwonlyargs or ann:
-        raise ValueError("Function has keyword-only parameters or annotations"
-                         ", use getfullargspec() API which can support them")
+    args, varargs, varkw, defaults, posonlyargs, kwonlyargs, \
+    kwonlydefaults, ann = getfullargspec(func)
+    if posonlyargs or kwonlyargs or ann:
+        raise ValueError("Function has positional-only, keyword-only parameters"
+                         " or annotations, use getfullargspec() API which can"
+                         " support them")
     return ArgSpec(args, varargs, varkw, defaults)
 
 FullArgSpec = namedtuple('FullArgSpec',
-    'args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations')
+    'args, varargs, varkw, defaults, posonlyargs, kwonlyargs, kwonlydefaults, annotations')
 
 def getfullargspec(func):
     """Get the names and default values of a callable object's parameters.
@@ -1145,6 +1140,7 @@ def getfullargspec(func):
     args = []
     varargs = None
     varkw = None
+    posonlyargs = []
     kwonlyargs = []
     defaults = ()
     annotations = {}
@@ -1159,7 +1155,9 @@ def getfullargspec(func):
         name = param.name
 
         if kind is _POSITIONAL_ONLY:
-            args.append(name)
+            posonlyargs.append(name)
+            if param.default is not param.empty:
+                defaults += (param.default,)
         elif kind is _POSITIONAL_OR_KEYWORD:
             args.append(name)
             if param.default is not param.empty:
@@ -1185,7 +1183,7 @@ def getfullargspec(func):
         defaults = None
 
     return FullArgSpec(args, varargs, varkw, defaults,
-                       kwonlyargs, kwdefaults, annotations)
+                       posonlyargs, kwonlyargs, kwdefaults, annotations)
 
 
 ArgInfo = namedtuple('ArgInfo', 'args varargs keywords locals')
@@ -1216,7 +1214,8 @@ def formatannotationrelativeto(object):
     return _formatannotation
 
 def formatargspec(args, varargs=None, varkw=None, defaults=None,
-                  kwonlyargs=(), kwonlydefaults={}, annotations={},
+                  posonlyargs=(), kwonlyargs=(), kwonlydefaults={},
+                  annotations={},
                   formatarg=str,
                   formatvarargs=lambda name: '*' + name,
                   formatvarkw=lambda name: '**' + name,
@@ -1249,12 +1248,17 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
         return result
     specs = []
     if defaults:
-        firstdefault = len(args) - len(defaults)
-    for i, arg in enumerate(args):
+        firstdefault = len(posonlyargs) + len(args) - len(defaults)
+    posonly_left = len(posonlyargs)
+    for i, arg in enumerate([*posonlyargs, *args]):
         spec = formatargandannotation(arg)
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
+        posonly_left -= 1
+        if posonlyargs and posonly_left == 0:
+            specs.append('/')
+
     if varargs is not None:
         specs.append(formatvarargs(formatargandannotation(varargs)))
     else:
@@ -1342,7 +1346,8 @@ def getcallargs(*func_and_positional, **named):
     func = func_and_positional[0]
     positional = func_and_positional[1:]
     spec = getfullargspec(func)
-    args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = spec
+    (args, varargs, varkw, defaults, posonlyargs,
+     kwonlyargs, kwonlydefaults, ann) = spec
     f_name = func.__name__
     arg2value = {}
 
@@ -1351,12 +1356,16 @@ def getcallargs(*func_and_positional, **named):
         # implicit 'self' (or 'cls' for classmethods) argument
         positional = (func.__self__,) + positional
     num_pos = len(positional)
+    num_posonlyargs = len(posonlyargs)
     num_args = len(args)
     num_defaults = len(defaults) if defaults else 0
 
+    n = min(num_pos, num_posonlyargs)
+    for i in range(num_posonlyargs):
+        arg2value[posonlyargs[i]] = positional[i]
     n = min(num_pos, num_args)
     for i in range(n):
-        arg2value[args[i]] = positional[i]
+        arg2value[args[i]] = positional[num_posonlyargs+i]
     if varargs:
         arg2value[varargs] = tuple(positional[n:])
     possible_kwargs = set(args + kwonlyargs)
@@ -2137,9 +2146,12 @@ def _signature_from_function(cls, func):
     func_code = func.__code__
     pos_count = func_code.co_argcount
     arg_names = func_code.co_varnames
-    positional = tuple(arg_names[:pos_count])
+    posonly_count = func_code.co_posonlyargcount
+    positional_count = posonly_count + pos_count
+    positional_only = tuple(arg_names[:posonly_count])
+    positional = tuple(arg_names[posonly_count:positional_count])
     keyword_only_count = func_code.co_kwonlyargcount
-    keyword_only = arg_names[pos_count:(pos_count + keyword_only_count)]
+    keyword_only = arg_names[positional_count:(positional_count + keyword_only_count)]
     annotations = func.__annotations__
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
@@ -2151,23 +2163,33 @@ def _signature_from_function(cls, func):
 
     parameters = []
 
+    non_default_count = positional_count - pos_default_count
+    all_positional = positional_only + positional
+
+    posonly_left = posonly_count
+
     # Non-keyword-only parameters w/o defaults.
-    non_default_count = pos_count - pos_default_count
-    for name in positional[:non_default_count]:
+    for name in all_positional[:non_default_count]:
+        kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
         parameters.append(Parameter(name, annotation=annotation,
-                                    kind=_POSITIONAL_OR_KEYWORD))
+                                    kind=kind))
+        if posonly_left:
+            posonly_left -= 1
 
     # ... w/ defaults.
-    for offset, name in enumerate(positional[non_default_count:]):
+    for offset, name in enumerate(all_positional[non_default_count:]):
+        kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
         parameters.append(Parameter(name, annotation=annotation,
-                                    kind=_POSITIONAL_OR_KEYWORD,
+                                    kind=kind,
                                     default=defaults[offset]))
+        if posonly_left:
+            posonly_left -= 1
 
     # *args
     if func_code.co_flags & CO_VARARGS:
-        name = arg_names[pos_count + keyword_only_count]
+        name = arg_names[positional_count + keyword_only_count]
         annotation = annotations.get(name, _empty)
         parameters.append(Parameter(name, annotation=annotation,
                                     kind=_VAR_POSITIONAL))
@@ -2184,7 +2206,7 @@ def _signature_from_function(cls, func):
                                     default=default))
     # **kwargs
     if func_code.co_flags & CO_VARKEYWORDS:
-        index = pos_count + keyword_only_count
+        index = positional_count + keyword_only_count
         if func_code.co_flags & CO_VARARGS:
             index += 1
 

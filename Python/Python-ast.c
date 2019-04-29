@@ -469,6 +469,7 @@ static char *ExceptHandler_fields[]={
 };
 static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
+_Py_IDENTIFIER(posonlyargs);
 _Py_IDENTIFIER(vararg);
 _Py_IDENTIFIER(kwonlyargs);
 _Py_IDENTIFIER(kw_defaults);
@@ -476,6 +477,7 @@ _Py_IDENTIFIER(kwarg);
 _Py_IDENTIFIER(defaults);
 static char *arguments_fields[]={
     "args",
+    "posonlyargs",
     "vararg",
     "kwonlyargs",
     "kw_defaults",
@@ -1141,7 +1143,7 @@ static int init_types(void)
     ExceptHandler_type = make_type("ExceptHandler", excepthandler_type,
                                    ExceptHandler_fields, 3);
     if (!ExceptHandler_type) return 0;
-    arguments_type = make_type("arguments", &AST_type, arguments_fields, 6);
+    arguments_type = make_type("arguments", &AST_type, arguments_fields, 7);
     if (!arguments_type) return 0;
     if (!add_attributes(arguments_type, NULL, 0)) return 0;
     arg_type = make_type("arg", &AST_type, arg_fields, 3);
@@ -2569,14 +2571,16 @@ ExceptHandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
 }
 
 arguments_ty
-arguments(asdl_seq * args, arg_ty vararg, asdl_seq * kwonlyargs, asdl_seq *
-          kw_defaults, arg_ty kwarg, asdl_seq * defaults, PyArena *arena)
+arguments(asdl_seq * args, asdl_seq * posonlyargs, arg_ty vararg, asdl_seq *
+          kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg, asdl_seq *
+          defaults, PyArena *arena)
 {
     arguments_ty p;
     p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->args = args;
+    p->posonlyargs = posonlyargs;
     p->vararg = vararg;
     p->kwonlyargs = kwonlyargs;
     p->kw_defaults = kw_defaults;
@@ -3952,6 +3956,11 @@ ast2obj_arguments(void* _o)
     value = ast2obj_list(o->args, ast2obj_arg);
     if (!value) goto failed;
     if (_PyObject_SetAttrId(result, &PyId_args, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_list(o->posonlyargs, ast2obj_arg);
+    if (!value) goto failed;
+    if (_PyObject_SetAttrId(result, &PyId_posonlyargs, value) == -1)
         goto failed;
     Py_DECREF(value);
     value = ast2obj_arg(o->vararg);
@@ -8267,6 +8276,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
 {
     PyObject* tmp = NULL;
     asdl_seq* args;
+    asdl_seq* posonlyargs;
     arg_ty vararg;
     asdl_seq* kwonlyargs;
     asdl_seq* kw_defaults;
@@ -8300,6 +8310,36 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
                 goto failed;
             }
             asdl_seq_SET(args, i, val);
+        }
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttrId(obj, &PyId_posonlyargs, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"posonlyargs\" missing from arguments");
+        return 1;
+    }
+    else {
+        int res;
+        Py_ssize_t len;
+        Py_ssize_t i;
+        if (!PyList_Check(tmp)) {
+            PyErr_Format(PyExc_TypeError, "arguments field \"posonlyargs\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+            goto failed;
+        }
+        len = PyList_GET_SIZE(tmp);
+        posonlyargs = _Py_asdl_seq_new(len, arena);
+        if (posonlyargs == NULL) goto failed;
+        for (i = 0; i < len; i++) {
+            arg_ty val;
+            res = obj2ast_arg(PyList_GET_ITEM(tmp, i), &val, arena);
+            if (res != 0) goto failed;
+            if (len != PyList_GET_SIZE(tmp)) {
+                PyErr_SetString(PyExc_RuntimeError, "arguments field \"posonlyargs\" changed size during iteration");
+                goto failed;
+            }
+            asdl_seq_SET(posonlyargs, i, val);
         }
         Py_CLEAR(tmp);
     }
@@ -8419,8 +8459,8 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     }
-    *out = arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults,
-                     arena);
+    *out = arguments(args, posonlyargs, vararg, kwonlyargs, kw_defaults, kwarg,
+                     defaults, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
