@@ -295,7 +295,7 @@ def strtobool (val):
     """Convert a string representation of truth to true (1) or false (0).
 
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'. Alphabets are treated
+    are 'n', 'no', 'f', 'false', 'off', and '0'. Letters are treated
     case-insensitively. Raises ValueError if 'val' is anything else.
     """
     val = val.lower()
