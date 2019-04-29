@@ -465,6 +465,45 @@ Reference
 Functions
 ^^^^^^^^^
 
+.. function:: canonicalize(write, xml_data=None, *, file=None, **options)
+
+   `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
+
+   Canonicalization is a way to normalise XML output in a way that allows
+   byte-by-byte comparisons and digital signatures.  It reduced the freedom
+   that XML serializers have and instead generates a more constrained XML
+   representation.  The main restrictions regard the placement of namespace
+   declarations, the ordering of attributes, and ignorable whitespace.
+
+   This function takes an XML data string (*xml_data*) or a file-like object
+   (*file*) as input, converts it to the canonical form, and writes it out
+   using the provided *write* function, e.g. the ``.write`` method of an
+   open file object.  The write-function receives text, not bytes.  Output
+   files should therefore be opened in text mode with ``utf-8`` encoding.
+   Typical use::
+
+      with open("c14n_output.xml", mode='w', encoding='utf-8') as out:
+          canonicalize(out.write, xml_data)
+
+   The configuration *options* are as follows:
+
+   - *with_comments*: set to true to include comments (default: false)
+   - *strip_text*: set to true to strip whitespace before and after text content
+                   (default: false)
+   - *rewrite_prefixes*: set to true to replace namespace prefixes by "n{number}"
+                         (default: false)
+   - *qname_aware_tags*: a set of qname aware tag names in which prefixes
+                         should be replaced in text content (default: empty)
+   - *qname_aware_attrs*: a set of qname aware attribute names in which prefixes
+                          should be replaced in text content (default: empty)
+   - *exclude_attrs*: a set of attribute names that should not be serialised
+   - *exclude_tags*: a set of tag names that should not be serialised
+
+   In the option list above, "a set" refers to any collection or iterable of
+   strings, no ordering is expected.
+
+   .. versionadded:: 3.8
+
 
 .. function:: Comment(text=None)
 
@@ -1096,6 +1135,17 @@ TreeBuilder Objects
       does not exist on the default :class:`TreeBuilder` class.
 
       .. versionadded:: 3.2
+
+
+.. class:: C14NWriterTarget(write, *, \
+             with_comments=False, strip_text=False, rewrite_prefixes=False, \
+             qname_aware_tags=None, qname_aware_attrs=None, \
+             exclude_attrs=None, exclude_tags=None)
+
+   A `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ writer.  Arguments are the
+   same as for the :func:`canonicalize` function.  This class does not build a
+   tree but translates the callback events directly into a serialised form
+   using the *write* function.
 
 
 .. _elementtree-xmlparser-objects:
