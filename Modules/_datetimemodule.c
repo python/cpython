@@ -3024,7 +3024,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     }
 
     // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
-    if (year <= 0 || year >= 10000) {
+    if (year < MINYEAR || year > MAXYEAR) {
         PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
         return NULL;
     }
