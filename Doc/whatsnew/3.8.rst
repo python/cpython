@@ -181,7 +181,7 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
-* fcntl now File Sealing operations.(Contributed by Joannah Nanjekye 
+* fcntl now has File Sealing operations.(Contributed by Joannah Nanjekye 
 in :issue:`26835`.)
 
 
