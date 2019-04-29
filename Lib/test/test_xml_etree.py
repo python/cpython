@@ -3519,10 +3519,30 @@ class C14NTest(unittest.TestCase):
             '<c><x:d xmlns:x="http://example.com/x">dtext</x:d></c>'
             '</root>')
         self.assertEqual(
+            c14n_roundtrip(xml, exclude_tags=['a', 'b']),
+            '<root>\n'
+            '    \n'
+            '    \n'
+            '    <c>\n'
+            '        <x:d xmlns:x="http://example.com/x">dtext</x:d>\n'
+            '    </c>\n'
+            '</root>')
+        self.assertEqual(
             c14n_roundtrip(xml, strip_text=True, exclude_tags=['{http://example.com/x}d', 'b']),
             '<root>'
             '<a xmlns:x="http://example.com/x" x:attr="attrx"></a>'
             '<c></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, exclude_tags=['{http://example.com/x}d', 'b']),
+            '<root>\n'
+            '    <a xmlns:x="http://example.com/x" x:attr="attrx">\n'
+            '        \n'
+            '    </a>\n'
+            '    \n'
+            '    <c>\n'
+            '        \n'
+            '    </c>\n'
             '</root>')
 
     #
