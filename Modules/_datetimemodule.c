@@ -3003,6 +3003,67 @@ invalid_string_error:
     return NULL;
 }
 
+
+static PyObject *
+date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
+{
+    static char *keywords[] = {
+        "year", "week", "day", NULL
+    };
+
+    int year, week, day;
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
+                keywords,
+                &year, &week, &day) == 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Format(PyExc_ValueError,
+                    "ISO calendar component out of range");
+
+        }
+        return NULL;
+    }
+
+    // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
+    if (year < MINYEAR || year > MAXYEAR) {
+        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
+        return NULL;
+    }
+
+    if (week <= 0 || week >= 53) {
+        int out_of_range = 1;
+        if (week == 53) {
+            // ISO years have 53 weeks in it on years starting with a Thursday
+            // and on leap years starting on Wednesday
+            int first_weekday = weekday(year, 1, 1);
+            if (first_weekday == 3 || (first_weekday == 2 && is_leap(year))) {
+                out_of_range = 0;
+            }
+        }
+
+        if (out_of_range) {
+            PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
+            return NULL;
+        }
+    }
+
+    if (day <= 0 || day >= 8) {
+        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])",
+                     day);
+        return NULL;
+    }
+
+    // Convert (Y, W, D) to (Y, M, D) in-place
+    int day_1 = iso_week1_monday(year);
+
+    int month = week;
+    int day_offset = (month - 1)*7 + day - 1;
+
+    ord_to_ymd(day_1 + day_offset, &year, &month, &day);
+
+    return new_date_subclass_ex(year, month, day, cls);
+}
+
+
 /*
  * Date arithmetic.
  */
@@ -3295,6 +3356,12 @@ static PyMethodDef date_methods[] = {
      {"fromisoformat", (PyCFunction)date_fromisoformat,  METH_O |
                                                          METH_CLASS,
       PyDoc_STR("str -> Construct a date from the output of date.isoformat()")},
+
+     {"fromisocalendar", (PyCFunction)(void(*)(void))date_fromisocalendar,
+      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+      PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
+                "number and weekday.\n\n"
+                "This is the inverse of the date.isocalendar() function")},
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
