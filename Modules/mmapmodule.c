@@ -731,26 +731,13 @@ mmap__repr__method(PyObject *self)
         repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str);
     }
     else {
-        const char *data = m_obj->data;
         Py_ssize_t pos = m_obj->pos;
 
-        PyObject *length = PyLong_FromSize_t(size);
-        PyObject *offset = PyLong_FromSize_t(pos);
+        reprfmt = "<%s closed=False fileno=%d access=%s size=%ld "
+                  "offset=%ld>";
 
-        if (size < 64) {
-            reprfmt = "<%s closed=False fileno=%d access=%s size=%R "
-                      "offset=%R>";
-
-            repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str,
-                                        length, offset);
-        }
-        else {
-            reprfmt = "<%s closed=False fileno=%d access=%s size=%R "
-                      "offset=%R>";
-
-            repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str,
-                                        length, offset);
-        }
+        repr = PyUnicode_FromFormat(reprfmt, tp_name, fileno, access_str,
+                                    size, pos);
     }
 
     return repr;

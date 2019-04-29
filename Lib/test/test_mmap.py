@@ -764,8 +764,7 @@ class MmapTests(unittest.TestCase):
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
 
     def test_repr(self):
-        for mapsize in (60, 120, 180, 240):
-
+        for mapsize in (60, 120, 180, 240, 180 * 240, 240 * 120 * 60):
             accesses =  ('ACCESS_DEFAULT', 'ACCESS_READ',
                          'ACCESS_COPY', 'ACCESS_WRITE')
 
