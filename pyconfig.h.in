@@ -12,6 +12,10 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* Alternative SOABI used in debug build to load C extensions built in release
+   mode */
+#undef ALT_SOABI
+
 /* The Android API level. */
 #undef ANDROID_API_LEVEL
 
@@ -1373,6 +1377,9 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    externally defined: 0 */
 #undef Py_HASH_ALGORITHM
+
+/* Define if you want to enable tracing references for debugging purpose */
+#undef Py_TRACE_REFS
 
 /* assume C89 semantics that RETSIGTYPE is always void */
 #undef RETSIGTYPE

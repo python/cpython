@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pystate.h"   /* _PyRuntimeState */
+
 
 /* --- _PyWstrList ------------------------------------------------ */
 
@@ -108,7 +110,8 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config,
+    _PyRuntimeState *runtime);
 
 
 /* --- Function used for testing ---------------------------------- */

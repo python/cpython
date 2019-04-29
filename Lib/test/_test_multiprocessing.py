@@ -4891,6 +4891,34 @@ class TestSemaphoreTracker(unittest.TestCase):
         # Uncatchable signal.
         self.check_semaphore_tracker_death(signal.SIGKILL, True)
 
+    @staticmethod
+    def _is_semaphore_tracker_reused(conn, pid):
+        from multiprocessing.semaphore_tracker import _semaphore_tracker
+        _semaphore_tracker.ensure_running()
+        # The pid should be None in the child process, expect for the fork
+        # context. It should not be a new value.
+        reused = _semaphore_tracker._pid in (None, pid)
+        reused &= _semaphore_tracker._check_alive()
+        conn.send(reused)
+
+    def test_semaphore_tracker_reused(self):
+        from multiprocessing.semaphore_tracker import _semaphore_tracker
+        _semaphore_tracker.ensure_running()
+        pid = _semaphore_tracker._pid
+
+        r, w = multiprocessing.Pipe(duplex=False)
+        p = multiprocessing.Process(target=self._is_semaphore_tracker_reused,
+                                    args=(w, pid))
+        p.start()
+        is_semaphore_tracker_reused = r.recv()
+
+        # Clean up
+        p.join()
+        w.close()
+        r.close()
+
+        self.assertTrue(is_semaphore_tracker_reused)
+
 
 class TestSimpleQueue(unittest.TestCase):
 

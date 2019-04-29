@@ -283,7 +283,7 @@ class GzipFile(_compression.BaseStream):
     def read1(self, size=-1):
         """Implements BufferedIOBase.read1()
 
-        Reads up to a buffer's worth of data is size is negative."""
+        Reads up to a buffer's worth of data if size is negative."""
         self._check_not_closed()
         if self.mode != READ:
             import errno

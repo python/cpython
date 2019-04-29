@@ -1605,13 +1605,13 @@ config_init_stdio(const _PyCoreConfig *config)
    - set Py_xxx global configuration variables
    - initialize C standard streams (stdin, stdout, stderr) */
 void
-_PyCoreConfig_Write(const _PyCoreConfig *config)
+_PyCoreConfig_Write(const _PyCoreConfig *config, _PyRuntimeState *runtime)
 {
     _PyCoreConfig_SetGlobalConfig(config);
     config_init_stdio(config);
 
     /* Write the new pre-configuration into _PyRuntime */
-    _PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    _PyPreConfig *preconfig = &runtime->preconfig;
     preconfig->isolated = config->isolated;
     preconfig->use_environment = config->use_environment;
     preconfig->dev_mode = config->dev_mode;
