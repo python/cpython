@@ -25,6 +25,7 @@ import re
 import os
 from stat import *
 import getopt
+import pytest
 
 err = sys.stderr.write
 dbg = err
@@ -169,17 +170,42 @@ def fix(filename):
     # Return success
     return 0
 
+
+def parse_shebang(shebangline):
+    # find doesn't search last character
+    shebangline = shebangline.decode()
+    end = len(shebangline)
+    start = shebangline.find(' -', 0, end) + 2  # find returns index at space
+    err(str(shebangline[start]))
+    if shebangline[start].isalpha():
+        flags = shebangline[start:end].split()
+        args = ''
+        if len(flags) > 1:
+            args = ' '.join(flags[1:len(flags)])
+        flags = flags[0]
+        return flags.encode(), args.encode()
+    return b'', b''
+
+
 def fixline(line):
     if not line.startswith(b'#!'):
         return line
+
     if b"python" not in line:
         return line
+
     fixedline = b'#! ' + new_interpreter
     if not add_flag:
         return fixedline + b'\n'
-    if b'-' in line:
-        return fixedline + b' -' + add_flag + line[(line.index(b'-') + 1):]
-    return fixedline + b' -' + add_flag + b'\n'
+
+    flags, args = parse_shebang(line)
+    if args:
+        args = b' ' + args
+
+    if add_flag in flags:
+        return fixedline + b' -' + flags + args
+
+    return fixedline + b' -' + add_flag + flags + args
 
 
 if __name__ == '__main__':
