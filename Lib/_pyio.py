@@ -551,6 +551,11 @@ class IOBase(metaclass=abc.ABCMeta):
         return lines
 
     def writelines(self, lines):
+        """Write a list of lines to the stream.
+
+        Line separators are not added, so it is usual for each of the lines
+        provided to have a line separator at the end.
+        """
         self._checkClosed()
         for line in lines:
             self.write(line)
