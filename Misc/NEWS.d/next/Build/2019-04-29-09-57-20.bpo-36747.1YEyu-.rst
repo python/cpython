@@ -1,1 +1,1 @@
-Remove the stale scriptsinstall Makefile target
+Remove the stale scriptsinstall Makefile target.
