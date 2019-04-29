@@ -54,6 +54,9 @@ struct _ceval_runtime_state {
 
 PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
 
+PyAPI_FUNC(void) _PyEval_FiniThreads(void);
+PyAPI_FUNC(void) _PyEval_FiniThreads2(void);
+
 #ifdef __cplusplus
 }
 #endif
