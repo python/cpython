@@ -3207,7 +3207,7 @@ main_loop:
         }
 
         case TARGET(LOAD_METHOD): {
-            /* Designed to work in tamdem with CALL_METHOD. */
+            /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
             PyObject *meth = NULL;
