@@ -697,8 +697,7 @@ class _BaseNetwork(_IPAddressBase):
         # dealing with another address
         else:
             # address
-            return (int(self.network_address) <= int(other._ip) <=
-                    int(self.broadcast_address))
+            return other._ip & self.netmask._ip == self.network_address._ip
 
     def overlaps(self, other):
         """Tell if self is partly contained in other."""
