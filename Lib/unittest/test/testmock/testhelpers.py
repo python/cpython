@@ -920,7 +920,7 @@ class SpecSignatureTest(unittest.TestCase):
         mock(1, 2)
         mock(x=1, y=2)
 
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(myfunc))
+        self.assertEqual(inspect.signature(mock), inspect.signature(myfunc))
         self.assertEqual(mock.mock_calls, [call(1, 2), call(x=1, y=2)])
         self.assertRaises(TypeError, mock, 1)
 
@@ -934,7 +934,7 @@ class SpecSignatureTest(unittest.TestCase):
         mock(1, 2, c=3)
         mock(1, c=3)
 
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(foo))
+        self.assertEqual(inspect.signature(mock), inspect.signature(foo))
         self.assertEqual(mock.mock_calls, [call(1, 2, c=3), call(1, c=3)])
         self.assertRaises(TypeError, mock, 1)
         self.assertRaises(TypeError, mock, 1, 2, 3, c=4)
