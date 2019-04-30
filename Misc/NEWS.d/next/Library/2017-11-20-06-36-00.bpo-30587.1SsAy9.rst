@@ -1,0 +1,3 @@
+mock: Added autospec argument to the constructors and mock_add_spec. Passing
+the autospec argument, will also check the method signatures of the mocked
+methods.
