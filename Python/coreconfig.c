@@ -375,6 +375,7 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
      * Py_Initialize hasn't been called yet.
      */
     if (encoding) {
+        PyMem_RawFree(_Py_StandardStreamEncoding);
         _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
         if (!_Py_StandardStreamEncoding) {
             res = -2;
@@ -382,11 +383,11 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
         }
     }
     if (errors) {
+        PyMem_RawFree(_Py_StandardStreamErrors);
         _Py_StandardStreamErrors = _PyMem_RawStrdup(errors);
         if (!_Py_StandardStreamErrors) {
-            if (_Py_StandardStreamEncoding) {
-                PyMem_RawFree(_Py_StandardStreamEncoding);
-            }
+            PyMem_RawFree(_Py_StandardStreamEncoding);
+            _Py_StandardStreamEncoding = NULL;
             res = -3;
             goto done;
         }
