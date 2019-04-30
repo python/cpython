@@ -329,6 +329,31 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
         finally:
             self.unfakehttp()
 
+    def test_url_with_control_char_rejected(self):
+        for char_no in list(range(0, 0x21)) + [0x7f]:
+            char = chr(char_no)
+            schemeless_url = f"//localhost:7777/test{char}/"
+            self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello.")
+            try:
+                # We explicitly test urllib.request.urlopen() instead of the top
+                # level 'def urlopen()' function defined in this... (quite ugly)
+                # test suite.  They use different url opening codepaths.  Plain
+                # urlopen uses FancyURLOpener which goes via a codepath that
+                # calls urllib.parse.quote() on the URL which makes all of the
+                # above attempts at injection within the url _path_ safe.
+                escaped_char_repr = repr(char).replace('\\', r'\\')
+                with self.assertRaisesRegex(
+                    ValueError, f"contain control.*{escaped_char_repr}"):
+                    urllib.request.urlopen(f"http:{schemeless_url}")
+                with self.assertRaisesRegex(
+                    ValueError, f"contain control.*{escaped_char_repr}"):
+                    urllib.request.urlopen(f"https:{schemeless_url}")
+                # This code path quotes the URL so there is no injection.
+                resp = urlopen(f"http:{schemeless_url}")
+                self.assertNotIn(char, resp.geturl())
+            finally:
+                self.unfakehttp()
+
     def test_url_with_newline_header_injection_rejected(self):
         self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello.")
         host = "localhost:7777?a=1 HTTP/1.1\r\nX-injected: header\r\nTEST: 123"
@@ -336,7 +361,7 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
         try:
             # We explicitly test urllib.request.urlopen() instead of the top
             # level 'def urlopen()' function defined in this... (quite ugly)
-            # test suite.  they use different url opening codepaths.  plain
+            # test suite.  They use different url opening codepaths.  Plain
             # urlopen uses FancyURLOpener which goes via a codepath that
             # calls urllib.parse.quote() on the URL which makes all of the
             # above attempts at injection within the url _path_ safe.
