@@ -2329,9 +2329,8 @@ class ThreadedEchoServer(threading.Thread):
                             sys.stdout.write(" server: read %r (%s), sending back %r (%s)...\n"
                                              % (msg, ctype, msg.lower(), ctype))
                         self.write(msg.lower())
-                except (ConnectionResetError, ConnectionAbortedError):
+                except (ConnectionResetError):
                     # XXX: OpenSSL 1.1.1 sometimes raises ConnectionResetError
-                    # or ConnectionAbortedError (on Windows)
                     # when connection is not shut down gracefully.
                     if self.server.chatty and support.verbose:
                         sys.stdout.write(
