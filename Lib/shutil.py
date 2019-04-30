@@ -1309,9 +1309,20 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     use_bytes = isinstance(cmd, bytes)
 
     if path is None:
-        path = os.environ.get("PATH", os.defpath)
+        path = os.environ.get("PATH", None)
+        if path is None:
+            try:
+                path = os.confstr("CS_PATH")
+            except (AttributeError, ValueError):
+                # os.confstr() or CS_PATH is not available
+                path = os.defpath
+        # bpo-35755: Don't use os.defpath if the PATH environment variable is
+        # set to an empty string
+
+    # PATH='' doesn't match, whereas PATH=':' looks in the current directory
     if not path:
         return None
+
     if use_bytes:
         path = os.fsencode(path)
         path = path.split(os.fsencode(os.pathsep))

@@ -4,8 +4,8 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 #include "cpython/coreconfig.h"
@@ -185,9 +185,9 @@ typedef struct pyruntimestate {
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
-PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *);
-PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *);
-PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(void);
+PyAPI_FUNC(_PyInitError) _PyRuntimeState_Init(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
 
 /* Initialize _PyRuntimeState.
    Return NULL on success, or return an error message on failure. */
@@ -231,8 +231,15 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 /* Other */
 
-PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *);
-PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(void);
+PyAPI_FUNC(void) _PyThreadState_Init(
+    _PyRuntimeState *runtime,
+    PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+
+PyAPI_FUNC(_PyInitError) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
+
+PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
 
 #ifdef __cplusplus
 }

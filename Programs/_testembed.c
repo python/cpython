@@ -298,42 +298,13 @@ static int test_initialize_pymain(void)
 }
 
 
-static int
-dump_config_impl(void)
-{
-    PyObject *config = _Py_GetConfigsAsDict();
-    if (config == NULL) {
-        return -1;
-    }
-
-    PyObject *res;
-    PyObject *json = PyImport_ImportModule("json");
-    if (json) {
-        res = PyObject_CallMethod(json, "dumps", "O", config);
-        Py_DECREF(json);
-    }
-    else {
-        res = NULL;
-    }
-    Py_CLEAR(config);
-    if (res == NULL) {
-        return -1;
-    }
-
-    PySys_FormatStdout("%S\n", res);
-    Py_DECREF(res);
-
-    return 0;
-}
-
-
 static void
 dump_config(void)
 {
-    if (dump_config_impl() < 0) {
-        fprintf(stderr, "failed to dump the configuration:\n");
-        PyErr_Print();
-    }
+    (void) PyRun_SimpleStringFlags(
+        "import _testinternalcapi, json; "
+        "print(json.dumps(_testinternalcapi.get_configs()))",
+        0);
 }
 
 

@@ -320,11 +320,11 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
-        if (argdefs == NULL && co->co_argcount == nargs) {
+        if (argdefs == NULL && co->co_argcount + co->co_posonlyargcount == nargs) {
             return function_code_fastcall(co, args, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
+                 && co->co_argcount + co->co_posonlyargcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             args = _PyTuple_ITEMS(argdefs);
@@ -406,11 +406,11 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject *const *stack,
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
-        if (argdefs == NULL && co->co_argcount == nargs) {
+        if (argdefs == NULL && co->co_argcount + co->co_posonlyargcount== nargs) {
             return function_code_fastcall(co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
+                 && co->co_argcount + co->co_posonlyargcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = _PyTuple_ITEMS(argdefs);

@@ -5,7 +5,7 @@ import unittest
 
 from unittest.mock import (
     call, _Call, create_autospec, MagicMock,
-    Mock, ANY, _CallList, patch, PropertyMock
+    Mock, ANY, _CallList, patch, PropertyMock, _callable
 )
 
 from datetime import datetime
@@ -920,7 +920,7 @@ class SpecSignatureTest(unittest.TestCase):
         mock(1, 2)
         mock(x=1, y=2)
 
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(myfunc))
+        self.assertEqual(inspect.signature(mock), inspect.signature(myfunc))
         self.assertEqual(mock.mock_calls, [call(1, 2), call(x=1, y=2)])
         self.assertRaises(TypeError, mock, 1)
 
@@ -934,7 +934,7 @@ class SpecSignatureTest(unittest.TestCase):
         mock(1, 2, c=3)
         mock(1, c=3)
 
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(foo))
+        self.assertEqual(inspect.signature(mock), inspect.signature(foo))
         self.assertEqual(mock.mock_calls, [call(1, 2, c=3), call(1, c=3)])
         self.assertRaises(TypeError, mock, 1)
         self.assertRaises(TypeError, mock, 1, 2, 3, c=4)
@@ -1009,6 +1009,44 @@ class TestCallList(unittest.TestCase):
         p.assert_called_once_with()
         self.assertIsInstance(returned, MagicMock)
         self.assertNotIsInstance(returned, PropertyMock)
+
+
+class TestCallablePredicate(unittest.TestCase):
+
+    def test_type(self):
+        for obj in [str, bytes, int, list, tuple, SomeClass]:
+            self.assertTrue(_callable(obj))
+
+    def test_call_magic_method(self):
+        class Callable:
+            def __call__(self):
+                pass
+        instance = Callable()
+        self.assertTrue(_callable(instance))
+
+    def test_staticmethod(self):
+        class WithStaticMethod:
+            @staticmethod
+            def staticfunc():
+                pass
+        self.assertTrue(_callable(WithStaticMethod.staticfunc))
+
+    def test_non_callable_staticmethod(self):
+        class BadStaticMethod:
+            not_callable = staticmethod(None)
+        self.assertFalse(_callable(BadStaticMethod.not_callable))
+
+    def test_classmethod(self):
+        class WithClassMethod:
+            @classmethod
+            def classfunc(cls):
+                pass
+        self.assertTrue(_callable(WithClassMethod.classfunc))
+
+    def test_non_callable_classmethod(self):
+        class BadClassMethod:
+            not_callable = classmethod(None)
+        self.assertFalse(_callable(BadClassMethod.not_callable))
 
 
 if __name__ == '__main__':

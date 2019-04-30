@@ -3,7 +3,7 @@
 #define NAME_MAXLEN 256
 
 /* lexicon */
-static unsigned char lexicon[] = {
+static const unsigned char lexicon[] = {
     76, 69, 84, 84, 69, 210, 83, 73, 71, 206, 87, 73, 84, 200, 83, 77, 65,
     76, 204, 83, 89, 76, 76, 65, 66, 76, 197, 67, 65, 80, 73, 84, 65, 204,
     72, 73, 69, 82, 79, 71, 76, 89, 80, 200, 76, 65, 84, 73, 206, 65, 82, 65,
@@ -6442,7 +6442,7 @@ static unsigned char lexicon[] = {
     45, 68, 90, 85, 196, 45, 67, 72, 65, 210, 45, 67, 72, 65, 76, 128,
 };
 
-static unsigned int lexicon_offset[] = {
+static const unsigned int lexicon_offset[] = {
     0, 0, 6, 10, 14, 19, 27, 34, 44, 49, 55, 64, 66, 69, 81, 89, 102, 108,
     113, 118, 124, 129, 137, 146, 157, 162, 167, 170, 174, 183, 189, 195,
     201, 206, 214, 221, 229, 171, 232, 241, 242, 250, 256, 261, 266, 273,
@@ -8012,7 +8012,7 @@ static unsigned int lexicon_offset[] = {
 /* code->name phrasebook */
 #define phrasebook_shift 7
 #define phrasebook_short 194
-static unsigned char phrasebook[] = {
+static const unsigned char phrasebook[] = {
     0, 205, 148, 236, 89, 78, 211, 61, 78, 31, 55, 239, 9, 55, 213, 44, 55,
     251, 110, 251, 29, 50, 213, 139, 53, 213, 139, 250, 178, 98, 55, 244,
     158, 231, 5, 234, 216, 204, 226, 205, 177, 17, 195, 79, 17, 100, 17, 102,
@@ -19073,7 +19073,7 @@ static unsigned char phrasebook[] = {
     73, 241, 124, 152, 154,
 };
 
-static unsigned short phrasebook_offset1[] = {
+static const unsigned short phrasebook_offset1[] = {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
     39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
@@ -19696,7 +19696,7 @@ static unsigned short phrasebook_offset1[] = {
     104, 104, 104, 104, 104, 104, 104, 104, 104, 104, 104, 104, 104,
 };
 
-static unsigned int phrasebook_offset2[] = {
+static const unsigned int phrasebook_offset2[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 6, 9, 11, 14, 17, 19, 21, 24, 27, 29, 31,
     33, 35, 39, 41, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 69, 72,
@@ -23496,7 +23496,7 @@ static unsigned int phrasebook_offset2[] = {
 };
 
 /* name->code dictionary */
-static unsigned int code_hash[] = {
+static const unsigned int code_hash[] = {
     74224, 4851, 0, 0, 0, 0, 7929, 0, 0, 0, 0, 127931, 0, 42833, 983091,
     12064, 0, 129548, 194597, 69850, 65842, 0, 0, 0, 78159, 68476, 72392,
     1373, 0, 0, 5816, 0, 0, 4231, 0, 0, 4233, 4234, 4232, 68885, 70351, 0,

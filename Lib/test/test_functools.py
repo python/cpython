@@ -581,6 +581,13 @@ class TestPartialMethod(unittest.TestCase):
         for func in [self.A.static, self.A.cls, self.A.over_partial, self.A.nested, self.A.both]:
             self.assertFalse(getattr(func, '__isabstractmethod__', False))
 
+    def test_positional_only(self):
+        def f(a, b, /):
+            return a + b
+
+        p = functools.partial(f, 1)
+        self.assertEqual(p(2), f(1, 2))
+
 
 class TestUpdateWrapper(unittest.TestCase):
 
@@ -1270,6 +1277,20 @@ class TestLRU:
         # Make a recursive call and make sure the cache remains full
         self.assertEqual(f(20), '.20.')
         self.assertEqual(f.cache_info().currsize, 10)
+
+    def test_lru_bug_36650(self):
+        # C version of lru_cache was treating a call with an empty **kwargs
+        # dictionary as being distinct from a call with no keywords at all.
+        # This did not result in an incorrect answer, but it did trigger
+        # an unexpected cache miss.
+
+        @self.module.lru_cache()
+        def f(x):
+            pass
+
+        f(0)
+        f(0, **{})
+        self.assertEqual(f.cache_info().hits, 1)
 
     def test_lru_hash_only_once(self):
         # To protect against weird reentrancy bugs and to improve

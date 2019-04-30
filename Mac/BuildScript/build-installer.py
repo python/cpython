@@ -1207,7 +1207,8 @@ def buildPython():
             if ln.startswith('VERSION='):
                 VERSION=ln.split()[1]
             if ln.startswith('ABIFLAGS='):
-                ABIFLAGS=ln.split()[1]
+                ABIFLAGS=ln.split()
+                ABIFLAGS=ABIFLAGS[1] if len(ABIFLAGS) > 1 else ''
             if ln.startswith('LDVERSION='):
                 LDVERSION=ln.split()[1]
         fp.close()
@@ -1258,7 +1259,8 @@ def buildPython():
     import pprint
     if getVersionMajorMinor() >= (3, 6):
         # XXX this is extra-fragile
-        path = os.path.join(path_to_lib, '_sysconfigdata_m_darwin_darwin.py')
+        path = os.path.join(path_to_lib,
+            '_sysconfigdata_%s_darwin_darwin.py' % (ABIFLAGS,))
     else:
         path = os.path.join(path_to_lib, '_sysconfigdata.py')
     fp = open(path, 'r')

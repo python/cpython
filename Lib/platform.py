@@ -334,15 +334,32 @@ _WIN32_SERVER_RELEASES = {
     (6, None): "post2012ServerR2",
 }
 
+def win32_is_iot():
+    return win32_edition() in ('IoTUAP', 'NanoServer', 'WindowsCoreHeadless', 'IoTEdgeOS')
+
+def win32_edition():
+    try:
+        try:
+            import winreg
+        except ImportError:
+            import _winreg as winreg
+    except ImportError:
+        pass
+    else:
+        try:
+            cvkey = r'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+            with winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, cvkey) as key:
+                return winreg.QueryValueEx(key, 'EditionId')[0]
+        except OSError:
+            pass
+
+    return None
+
 def win32_ver(release='', version='', csd='', ptype=''):
     try:
         from sys import getwindowsversion
     except ImportError:
         return release, version, csd, ptype
-    try:
-        from winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
-    except ImportError:
-        from _winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
 
     winver = getwindowsversion()
     maj, min, build = winver.platform_version or winver[:3]
@@ -368,16 +385,20 @@ def win32_ver(release='', version='', csd='', ptype=''):
                    _WIN32_SERVER_RELEASES.get((maj, None)) or
                    release)
 
-    key = None
     try:
-        key = OpenKeyEx(HKEY_LOCAL_MACHINE,
-                        r'SOFTWARE\Microsoft\Windows NT\CurrentVersion')
-        ptype = QueryValueEx(key, 'CurrentType')[0]
-    except:
+        try:
+            import winreg
+        except ImportError:
+            import _winreg as winreg
+    except ImportError:
         pass
-    finally:
-        if key:
-            CloseKey(key)
+    else:
+        try:
+            cvkey = r'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+            with winreg.OpenKeyEx(HKEY_LOCAL_MACHINE, cvkey) as key:
+                ptype = QueryValueEx(key, 'CurrentType')[0]
+        except:
+            pass
 
     return release, version, csd, ptype
 

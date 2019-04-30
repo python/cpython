@@ -458,6 +458,13 @@ Other constructors, all class methods:
   .. versionadded:: 3.7
 
 
+.. classmethod:: date.fromisocalendar(year, week, day)
+
+   Return a :class:`date` corresponding to the ISO calendar date specified by
+   year, week and day. This is the inverse of the function :meth:`date.isocalendar`.
+
+   .. versionadded:: 3.8
+
 
 Class attributes:
 
@@ -853,6 +860,16 @@ Other constructors, all class methods:
     as the inverse operation of :meth:`datetime.isoformat`.
 
   .. versionadded:: 3.7
+
+
+.. classmethod:: datetime.fromisocalendar(year, week, day)
+
+   Return a :class:`datetime` corresponding to the ISO calendar date specified
+   by year, week and day. The non-date components of the datetime are populated
+   with their normal default values. This is the inverse of the function
+   :meth:`datetime.isocalendar`.
+
+   .. versionadded:: 3.8
 
 .. classmethod:: datetime.strptime(date_string, format)
 

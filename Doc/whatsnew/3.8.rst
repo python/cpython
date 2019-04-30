@@ -67,6 +67,47 @@ Summary -- Release highlights
 New Features
 ============
 
+Assignment expressions
+----------------------
+
+There is new syntax (the "walrus operator", ``:=``) to assign values
+to variables as part of an expression.  Example::
+
+  if (n := len(a)) > 10:
+      print(f"List is too long ({n} elements, expected <= 10)")
+
+See :pep:`572` for a full description.
+
+(Contributed by Emily Morehouse in :issue:`35224`.)
+
+.. TODO: Emily will sprint on docs at PyCon US 2019.
+
+
+Positional-only parameters
+--------------------------
+
+There is new syntax (``/``) to indicate that some function parameters
+must be specified positionally (i.e., cannot be used as keyword
+arguments).  This is the same notation as shown by ``help()`` for
+functions implemented in C (produced by Larry Hastings' "Argument
+Clinic" tool).  Example::
+
+  def pow(x, y, z=None, /):
+      r = x**y
+      if z is not None:
+          r %= z
+      return r
+
+Now ``pow(2, 10)`` and ``pow(2, 10, 17)`` are valid calls, but
+``pow(x=2, y=10)`` and ``pow(2, 10, z=17)`` are invalid.
+
+See :pep:`570` for a full description.
+
+(Contributed by Pablo Galindo in :issue:`36540`.)
+
+.. TODO: Pablo will sprint on docs at PyCon US 2019.
+
+
 Parallel filesystem cache for compiled bytecode files
 -----------------------------------------------------
 
@@ -81,6 +122,31 @@ The location of the cache is reported in :data:`sys.pycache_prefix`
 subdirectories).
 
 (Contributed by Carl Meyer in :issue:`33499`.)
+
+Debug build uses the same ABI as release build
+-----------------------------------------------
+
+Python now uses the same ABI whether it built in release or debug mode. On
+Unix, when Python is built in debug mode, it is now possible to load C
+extensions built in release mode and C extensions built using the stable ABI.
+
+Release builds and debug builds are now ABI compatible: defining the
+``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro, which
+introduces the only ABI incompatibility. The ``Py_TRACE_REFS`` macro, which
+adds the :func:`sys.getobjects` function and the :envvar:`PYTHONDUMPREFS`
+environment variable, can be set using the new ``./configure --with-trace-refs``
+build option.
+(Contributed by Victor Stinner in :issue:`36465`.)
+
+On Unix, C extensions are no longer linked to libpython. It is now possible
+for a statically linked Python to load a C extension built using a shared
+library Python.
+(Contributed by Victor Stinner in :issue:`21536`.)
+
+On Unix, when Python is built in debug mode, import now also looks for C
+extensions compiled in release mode and for C extensions compiled with the
+stable ABI.
+(Contributed by Victor Stinner in :issue:`36722`.)
 
 
 Other Language Changes
@@ -176,6 +242,16 @@ to specify flags for the underlying ``LoadLibraryEx`` call. The default flags ar
 set to only load DLL dependencies from trusted locations, including the path
 where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
+
+
+datetime
+--------
+
+Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
+:class:`datetime` objects respectively from ISO year, week number and weekday;
+these are the inverse of each class's ``isocalendar`` method.
+(Contributed by Paul Ganssle in :issue:`36004`.)
 
 
 gettext
@@ -337,6 +413,10 @@ Added :func:`statistics.geometric_mean()`
 Added :func:`statistics.multimode` that returns a list of the most
 common values. (Contributed by Raymond Hettinger in :issue:`35892`.)
 
+Added :func:`statistics.quantiles` that divides data or a distribution
+in to equiprobable intervals (e.g. quartiles, deciles, or percentiles).
+(Contributed by Raymond Hettinger in :issue:`36546`.)
+
 Added :class:`statistics.NormalDist`, a tool for creating
 and manipulating normal distributions of a random variable.
 (Contributed by Raymond Hettinger in :issue:`36018`.)
@@ -429,6 +509,13 @@ venv
 * :mod:`venv` now includes an ``Activate.ps1`` script on all platforms for
   activating virtual environments under PowerShell Core 6.1.
   (Contributed by Brett Cannon in :issue:`32718`.)
+
+weakref
+-------
+
+* The proxy objects returned by :func:`weakref.proxy` now support the matrix
+  multiplication operators ``@`` and ``@=`` in addition to the other
+  numeric operators. (Contributed by Mark Dickinson in :issue:`36669`.)
 
 xml
 ---
@@ -639,6 +726,10 @@ Deprecated
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
+* The function :func:`~inspect.getfullargspec` in the :mod:`inspect`
+  module is deprecated in favor of the :func:`inspect.signature`
+  API.  (Contributed by Pablo Galindo in :issue:`36751`.)
+
 
 API and Feature Removals
 ========================
@@ -706,8 +797,24 @@ Changes in Python behavior
   always use the ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
 
+* :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+  terminate the current thread if called while the interpreter is
+  finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
+  :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
+  behaviour is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
+  or :c:func:`sys.is_finalizing`.
+
 Changes in the Python API
 -------------------------
+
+* :class:`subprocess.Popen` can now use :func:`os.posix_spawn` in some cases
+  for better performance. On Windows Subsystem for Linux and QEMU User
+  Emulation, Popen constructor using :func:`os.posix_spawn` no longer raise an
+  exception on errors like missing program, but the child process fails with a
+  non-zero :attr:`~Popen.returncode`.
+
+* The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
+  exceptions.
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
@@ -814,19 +921,26 @@ Changes in the Python API
   by the installer).
   (See :issue:`36085`.)
 
+* The header files and functions related to pgen have been removed after its
+  replacement by a pure Python implementation. (Contributed by Pablo Galindo
+  in :issue:`36623`.)
+
 
 Changes in the C API
 --------------------
+
+* On Unix, C extensions are no longer linked to libpython except on
+  Android. When Python is embedded, ``libpython`` must not be loaded with
+  ``RTLD_LOCAL``, but ``RTLD_GLOBAL`` instead. Previously, using
+  ``RTLD_LOCAL``, it was already not possible to load C extensions which were
+  not linked to ``libpython``, like C extensions of the standard library built
+  by the ``*shared*`` section of ``Modules/Setup``.
 
 * Use of ``#`` variants of formats in parsing or building value (e.g.
   :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,
   etc.) without ``PY_SSIZE_T_CLEAN`` defined raises ``DeprecationWarning`` now.
   It will be removed in 3.10 or 4.0.  Read :ref:`arg-parsing` for detail.
   (Contributed by Inada Naoki in :issue:`36381`.)
-
-
-Changes in the C API
---------------------------
 
 * Instances of heap-allocated types (such as those created with
   :c:func:`PyType_FromSpec`) hold a reference to their type object.

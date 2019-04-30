@@ -5,6 +5,11 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
+/* The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
+   define, but we only want to test the public C API, not the internal
+   C API. */
+#undef Py_BUILD_CORE_MODULE
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -2333,6 +2338,71 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
         Py_INCREF(PyDateTimeAPI->TimeZone_UTC);
         return PyDateTimeAPI->TimeZone_UTC;
     }
+}
+
+static PyObject *
+get_date_fromtimestamp(PyObject* self, PyObject *args)
+{
+    PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
+    int macro = 0;
+
+    if (!PyArg_ParseTuple(args, "O|p", &ts, &macro)) {
+        return NULL;
+    }
+
+    // Construct the argument tuple
+    if ((tsargs = PyTuple_Pack(1, ts)) == NULL) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDate_FromTimestamp(tsargs);
+    }
+    else {
+        rv = PyDateTimeAPI->Date_FromTimestamp(
+                (PyObject *)PyDateTimeAPI->DateType, tsargs
+        );
+    }
+
+    Py_DECREF(tsargs);
+    return rv;
+}
+
+static PyObject *
+get_datetime_fromtimestamp(PyObject* self, PyObject *args)
+{
+    int macro = 0;
+    int usetz = 0;
+    PyObject *tsargs = NULL, *ts = NULL, *tzinfo = Py_None, *rv = NULL;
+    if (!PyArg_ParseTuple(args, "OO|pp", &ts, &tzinfo, &usetz, &macro)) {
+        return NULL;
+    }
+
+    // Construct the argument tuple
+    if (usetz) {
+        tsargs = PyTuple_Pack(2, ts, tzinfo);
+    }
+    else {
+        tsargs = PyTuple_Pack(1, ts);
+    }
+
+    if (tsargs == NULL) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDateTime_FromTimestamp(tsargs);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromTimestamp(
+                (PyObject *)PyDateTimeAPI->DateTimeType, tsargs, NULL
+        );
+    }
+
+    Py_DECREF(tsargs);
+    return rv;
 }
 
 
@@ -4731,13 +4801,6 @@ decode_locale_ex(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *
-get_configs(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    return _Py_GetConfigsAsDict();
-}
-
-
 #ifdef Py_REF_DEBUG
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
@@ -4771,7 +4834,9 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
-    {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
+    {"get_timezone_utc_capi",    get_timezone_utc_capi,          METH_VARARGS},
+    {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
+    {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -4985,7 +5050,6 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", (PyCFunction)(void(*)(void))bad_get, METH_FASTCALL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
-    {"get_configs", get_configs, METH_NOARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
