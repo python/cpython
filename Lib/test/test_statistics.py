@@ -2158,6 +2158,20 @@ class TestQuantiles(unittest.TestCase):
                 result = quantiles(map(datatype, data), n=n)
                 self.assertTrue(all(type(x) == datatype) for x in result)
                 self.assertEqual(result, list(map(datatype, expected)))
+            # Quantiles should be idempotent
+            if len(expected) >= 2:
+                self.assertEqual(quantiles(expected, n=n), expected)
+            # Cross-check against other methods
+            if len(data) >= n:
+                # After end caps are added, method='inclusive' should
+                # give the same result as method='exclusive' whenever
+                # there are more data points than desired cut points.
+                padded_data = [min(data) - 1000] + data + [max(data) + 1000]
+                self.assertEqual(
+                    quantiles(data, n=n),
+                    quantiles(padded_data, n=n, method='inclusive'),
+                    (n, data),
+                )
             # Invariant under tranlation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
@@ -2219,6 +2233,15 @@ class TestQuantiles(unittest.TestCase):
             actual = quantiles(statistics.NormalDist(), n=n, method="inclusive")
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
+        # Whenever n is smaller than the number of data points, running
+        # method='inclusive' should give the same result as method='exclusive'
+        # after the two included extreme points are removed.
+        data = [random.randrange(10_000) for i in range(501)]
+        actual = quantiles(data, n=32, method='inclusive')
+        data.remove(min(data))
+        data.remove(max(data))
+        expected = quantiles(data, n=32)
+        self.assertEqual(expected, actual)
 
     def test_equal_inputs(self):
         quantiles = statistics.quantiles
