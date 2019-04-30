@@ -201,17 +201,11 @@ class BaseHandler:
         if cannot_have_content_length:
             return
         try:
-            blocks = len(self.result)
+            len(self.result)
         except (TypeError,AttributeError,NotImplementedError):
             pass
         else:
-            if blocks == 0:
-                # Only zero Content-Length if not set by the application and
-                # have appropriote HTTP status so that HEAD requests can be
-                # satisfied properly. (bpo-3839)
-                self.headers.setdefault('Content-Length', "0")
-            elif blocks == 1:
-                self.headers['Content-Length'] = str(self.bytes_sent)
+            self.headers['Content-Length'] = str(self.bytes_sent)
         # XXX Try for chunked encoding if origin server and client is 1.1
 
 
@@ -320,6 +314,8 @@ class BaseHandler:
     def finish_content(self):
         """Ensure headers and content have both been sent"""
         if not self.headers_sent:
+            # bpo-3839: Set an empty iterable to support HEAD requests.
+            self.result = []
             self.send_headers()
         else:
             pass # XXX check if content-length was too short?
