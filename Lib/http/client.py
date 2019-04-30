@@ -1091,8 +1091,8 @@ class HTTPConnection:
             url = '/'
         # Prevent CVE-2019-9740.
         if match := _contains_disallowed_url_pchar_re.search(url):
-          raise ValueError(f"URL can't contain control characters. {url!r} "
-                           f"(found at least {match.group()!r})")
+            raise ValueError(f"URL can't contain control characters. {url!r} "
+                             f"(found at least {match.group()!r})")
         request = '%s %s %s' % (method, url, self._http_vsn_str)
 
         # Non-ASCII characters should have been eliminated earlier
