@@ -137,9 +137,10 @@ _MAXHEADERS = 100
 _is_legal_header_name = re.compile(rb'[^:\s][^:\r\n]*').fullmatch
 _is_illegal_header_value = re.compile(rb'\n(?![ \t])|\r(?![ \t\n])').search
 
-# These characters are not allowed within http URL paths.
-#  https://tools.ietf.org/html/rfc3986#section-3.3
-# in order to prevent CVE-2019-9740.
+# These characters are not allowed within HTTP URL paths.
+#  See https://tools.ietf.org/html/rfc3986#section-3.3 and the
+#  https://tools.ietf.org/html/rfc3986#appendix-A pchar definition.
+# Prevents CVE-2019-9740.  Includes control characters such as \r\n.
 # We don't restrict chars above \x7f as putrequest() limits us to ASCII.
 _contains_disallowed_url_pchar_re = re.compile('[\x00-\x20\x7f]')
 # Arguably only these _should_ allowed:
@@ -1089,8 +1090,9 @@ class HTTPConnection:
         if not url:
             url = '/'
         # Prevent CVE-2019-9740.
-        if _contains_disallowed_url_pchar_re.search(url):
-            raise ValueError(f"URL can't contain control characters. {url!r}")
+        if match := _contains_disallowed_url_pchar_re.search(url):
+          raise ValueError(f"URL can't contain control characters. {url!r} "
+                           f"(found at least {match.group()!r})")
         request = '%s %s %s' % (method, url, self._http_vsn_str)
 
         # Non-ASCII characters should have been eliminated earlier

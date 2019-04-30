@@ -340,7 +340,8 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
             # urlopen uses FancyURLOpener which goes via a codepath that
             # calls urllib.parse.quote() on the URL which makes all of the
             # above attempts at injection within the url _path_ safe.
-            with self.assertRaisesRegex(ValueError, r"contain control.*\\r"):
+            with self.assertRaisesRegex(
+                ValueError, r"contain control.*\\r.*(found at least . .)"):
                 urllib.request.urlopen(f"http:{schemeless_url}")
             with self.assertRaisesRegex(ValueError, r"contain control.*\\n"):
                 urllib.request.urlopen(f"https:{schemeless_url}")
