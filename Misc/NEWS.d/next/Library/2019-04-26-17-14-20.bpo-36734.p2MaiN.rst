@@ -1,0 +1,2 @@
+Fix compilation of ``faulthandler.c`` on HP-UX. Initialize ``stack_t
+current_stack`` to zero using ``memset()``.
