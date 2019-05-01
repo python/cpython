@@ -108,10 +108,20 @@ PyAPI_FUNC(int) _PyCoreConfig_Copy(
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
-    const _PyArgv *args);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config,
     _PyRuntimeState *runtime);
+
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPyArgv(
+    _PyCoreConfig *config,
+    const _PyArgv *args);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
+    _PyCoreConfig *config,
+    int argc,
+    char **argv);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
+    int argc,
+    wchar_t **argv);
 
 
 /* --- Function used for testing ---------------------------------- */

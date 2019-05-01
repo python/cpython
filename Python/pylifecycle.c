@@ -801,13 +801,22 @@ pyinit_coreconfig(_PyRuntimeState *runtime,
                   const _PyArgv *args,
                   PyInterpreterState **interp_p)
 {
+    _PyInitError err;
+
     if (src_config) {
         if (_PyCoreConfig_Copy(config, src_config) < 0) {
             return _Py_INIT_NO_MEMORY();
         }
     }
 
-    _PyInitError err = _PyCoreConfig_Read(config, args);
+    if (args) {
+        err = _PyCoreConfig_SetPyArgv(config, args);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
+    err = _PyCoreConfig_Read(config);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
