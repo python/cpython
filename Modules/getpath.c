@@ -114,10 +114,10 @@ extern "C" {
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     ((LEN) == (size_t)-2) \
-     ? _Py_INIT_USER_ERR("cannot decode " NAME) \
+     ? _Py_INIT_ERR("cannot decode " NAME) \
      : _Py_INIT_NO_MEMORY()
 
-#define PATHLEN_ERR() _Py_INIT_USER_ERR("path configuration: path too long")
+#define PATHLEN_ERR() _Py_INIT_ERR("path configuration: path too long")
 
 typedef struct {
     wchar_t *path_env;                 /* PATH environment variable */
