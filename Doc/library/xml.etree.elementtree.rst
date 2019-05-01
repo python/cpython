@@ -465,6 +465,53 @@ Reference
 Functions
 ^^^^^^^^^
 
+.. function:: canonicalize(xml_data=None, *, out=None, from_file=None, **options)
+
+   `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
+
+   Canonicalization is a way to normalise XML output in a way that allows
+   byte-by-byte comparisons and digital signatures.  It reduced the freedom
+   that XML serializers have and instead generates a more constrained XML
+   representation.  The main restrictions regard the placement of namespace
+   declarations, the ordering of attributes, and ignorable whitespace.
+
+   This function takes an XML data string (*xml_data*) or a file path or
+   file-like object (*from_file*) as input, converts it to the canonical
+   form, and writes it out using the *out* file(-like) object, if provided,
+   or returns it as a text string if not.  The output file receives text,
+   not bytes.  It should therefore be opened in text mode with ``utf-8``
+   encoding.
+
+   Typical uses::
+
+      xml_data = "<root>...</root>"
+      print(canonicalize(xml_data))
+
+      with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
+          canonicalize(xml_data, out=out_file)
+
+      with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
+          canonicalize(from_file="inputfile.xml", out=out_file)
+
+   The configuration *options* are as follows:
+
+   - *with_comments*: set to true to include comments (default: false)
+   - *strip_text*: set to true to strip whitespace before and after text content
+                   (default: false)
+   - *rewrite_prefixes*: set to true to replace namespace prefixes by "n{number}"
+                         (default: false)
+   - *qname_aware_tags*: a set of qname aware tag names in which prefixes
+                         should be replaced in text content (default: empty)
+   - *qname_aware_attrs*: a set of qname aware attribute names in which prefixes
+                          should be replaced in text content (default: empty)
+   - *exclude_attrs*: a set of attribute names that should not be serialised
+   - *exclude_tags*: a set of tag names that should not be serialised
+
+   In the option list above, "a set" refers to any collection or iterable of
+   strings, no ordering is expected.
+
+   .. versionadded:: 3.8
+
 
 .. function:: Comment(text=None)
 
@@ -1112,6 +1159,19 @@ TreeBuilder Objects
       out of scope.
 
       .. versionadded:: 3.8
+
+
+.. class:: C14NWriterTarget(write, *, \
+             with_comments=False, strip_text=False, rewrite_prefixes=False, \
+             qname_aware_tags=None, qname_aware_attrs=None, \
+             exclude_attrs=None, exclude_tags=None)
+
+   A `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ writer.  Arguments are the
+   same as for the :func:`canonicalize` function.  This class does not build a
+   tree but translates the callback events directly into a serialised form
+   using the *write* function.
+
+   .. versionadded:: 3.8
 
 
 .. _elementtree-xmlparser-objects:

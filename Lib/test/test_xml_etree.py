@@ -12,6 +12,7 @@ import io
 import itertools
 import locale
 import operator
+import os
 import pickle
 import sys
 import textwrap
@@ -20,6 +21,7 @@ import unittest
 import warnings
 import weakref
 
+from functools import partial
 from itertools import product, islice
 from test import support
 from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap_attr
@@ -3527,6 +3529,231 @@ class NoAcceleratorTest(unittest.TestCase):
         self.assertIsInstance(pyET.Element.__init__, types.FunctionType)
         self.assertIsInstance(pyET.XMLParser.__init__, types.FunctionType)
 
+
+# --------------------------------------------------------------------
+
+def c14n_roundtrip(xml, **options):
+    return pyET.canonicalize(xml, **options)
+
+
+class C14NTest(unittest.TestCase):
+    maxDiff = None
+
+    #
+    # simple roundtrip tests (from c14n.py)
+
+    def test_simple_roundtrip(self):
+        # Basics
+        self.assertEqual(c14n_roundtrip("<doc/>"), '<doc></doc>')
+        self.assertEqual(c14n_roundtrip("<doc xmlns='uri'/>"), # FIXME
+                '<doc xmlns="uri"></doc>')
+        self.assertEqual(c14n_roundtrip("<prefix:doc xmlns:prefix='uri'/>"),
+            '<prefix:doc xmlns:prefix="uri"></prefix:doc>')
+        self.assertEqual(c14n_roundtrip("<doc xmlns:prefix='uri'><prefix:bar/></doc>"),
+            '<doc><prefix:bar xmlns:prefix="uri"></prefix:bar></doc>')
+        self.assertEqual(c14n_roundtrip("<elem xmlns:wsu='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd' xmlns:SOAP-ENV='http://schemas.xmlsoap.org/soap/envelope/' />"),
+            '<elem></elem>')
+
+        # C14N spec
+        self.assertEqual(c14n_roundtrip("<doc>Hello, world!<!-- Comment 1 --></doc>"),
+            '<doc>Hello, world!</doc>')
+        self.assertEqual(c14n_roundtrip("<value>&#x32;</value>"),
+            '<value>2</value>')
+        self.assertEqual(c14n_roundtrip('<compute><![CDATA[value>"0" && value<"10" ?"valid":"error"]]></compute>'),
+            '<compute>value&gt;"0" &amp;&amp; value&lt;"10" ?"valid":"error"</compute>')
+        self.assertEqual(c14n_roundtrip('''<compute expr='value>"0" &amp;&amp; value&lt;"10" ?"valid":"error"'>valid</compute>'''),
+            '<compute expr="value>&quot;0&quot; &amp;&amp; value&lt;&quot;10&quot; ?&quot;valid&quot;:&quot;error&quot;">valid</compute>')
+        self.assertEqual(c14n_roundtrip("<norm attr=' &apos;   &#x20;&#13;&#xa;&#9;   &apos; '/>"),
+            '<norm attr=" \'    &#xD;&#xA;&#x9;   \' "></norm>')
+        self.assertEqual(c14n_roundtrip("<normNames attr='   A   &#x20;&#13;&#xa;&#9;   B   '/>"),
+            '<normNames attr="   A    &#xD;&#xA;&#x9;   B   "></normNames>')
+        self.assertEqual(c14n_roundtrip("<normId id=' &apos;   &#x20;&#13;&#xa;&#9;   &apos; '/>"),
+            '<normId id=" \'    &#xD;&#xA;&#x9;   \' "></normId>')
+
+        # fragments from PJ's tests
+        #self.assertEqual(c14n_roundtrip("<doc xmlns:x='http://example.com/x' xmlns='http://example.com/default'><b y:a1='1' xmlns='http://example.com/default' a3='3' xmlns:y='http://example.com/y' y:a2='2'/></doc>"),
+        #'<doc xmlns:x="http://example.com/x"><b xmlns:y="http://example.com/y" a3="3" y:a1="1" y:a2="2"></b></doc>')
+
+    def test_c14n_exclusion(self):
+        xml = textwrap.dedent("""\
+        <root xmlns:x="http://example.com/x">
+            <a x:attr="attrx">
+                <b>abtext</b>
+            </a>
+            <b>btext</b>
+            <c>
+                <x:d>dtext</x:d>
+            </c>
+        </root>
+        """)
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True),
+            '<root>'
+            '<a xmlns:x="http://example.com/x" x:attr="attrx"><b>abtext</b></a>'
+            '<b>btext</b>'
+            '<c><x:d xmlns:x="http://example.com/x">dtext</x:d></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_attrs=['{http://example.com/x}attr']),
+            '<root>'
+            '<a><b>abtext</b></a>'
+            '<b>btext</b>'
+            '<c><x:d xmlns:x="http://example.com/x">dtext</x:d></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_tags=['{http://example.com/x}d']),
+            '<root>'
+            '<a xmlns:x="http://example.com/x" x:attr="attrx"><b>abtext</b></a>'
+            '<b>btext</b>'
+            '<c></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_attrs=['{http://example.com/x}attr'],
+                           exclude_tags=['{http://example.com/x}d']),
+            '<root>'
+            '<a><b>abtext</b></a>'
+            '<b>btext</b>'
+            '<c></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_tags=['a', 'b']),
+            '<root>'
+            '<c><x:d xmlns:x="http://example.com/x">dtext</x:d></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, exclude_tags=['a', 'b']),
+            '<root>\n'
+            '    \n'
+            '    \n'
+            '    <c>\n'
+            '        <x:d xmlns:x="http://example.com/x">dtext</x:d>\n'
+            '    </c>\n'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, strip_text=True, exclude_tags=['{http://example.com/x}d', 'b']),
+            '<root>'
+            '<a xmlns:x="http://example.com/x" x:attr="attrx"></a>'
+            '<c></c>'
+            '</root>')
+        self.assertEqual(
+            c14n_roundtrip(xml, exclude_tags=['{http://example.com/x}d', 'b']),
+            '<root>\n'
+            '    <a xmlns:x="http://example.com/x" x:attr="attrx">\n'
+            '        \n'
+            '    </a>\n'
+            '    \n'
+            '    <c>\n'
+            '        \n'
+            '    </c>\n'
+            '</root>')
+
+    #
+    # basic method=c14n tests from the c14n 2.0 specification.  uses
+    # test files under xmltestdata/c14n-20.
+
+    # note that this uses generated C14N versions of the standard ET.write
+    # output, not roundtripped C14N (see above).
+
+    def test_xml_c14n2(self):
+        datadir = findfile("c14n-20", subdir="xmltestdata")
+        full_path = partial(os.path.join, datadir)
+
+        files = [filename[:-4] for filename in sorted(os.listdir(datadir))
+                 if filename.endswith('.xml')]
+        input_files = [
+            filename for filename in files
+            if filename.startswith('in')
+        ]
+        configs = {
+            filename: {
+                # <c14n2:PrefixRewrite>sequential</c14n2:PrefixRewrite>
+                option.tag.split('}')[-1]: ((option.text or '').strip(), option)
+                for option in ET.parse(full_path(filename) + ".xml").getroot()
+            }
+            for filename in files
+            if filename.startswith('c14n')
+        }
+
+        tests = {
+            input_file: [
+                (filename, configs[filename.rsplit('_', 1)[-1]])
+                for filename in files
+                if filename.startswith(f'out_{input_file}_')
+                and filename.rsplit('_', 1)[-1] in configs
+            ]
+            for input_file in input_files
+        }
+
+        # Make sure we found all test cases.
+        self.assertEqual(30, len([
+            output_file for output_files in tests.values()
+            for output_file in output_files]))
+
+        def get_option(config, option_name, default=None):
+            return config.get(option_name, (default, ()))[0]
+
+        for input_file, output_files in tests.items():
+            for output_file, config in output_files:
+                keep_comments = get_option(
+                    config, 'IgnoreComments') == 'true'  # no, it's right :)
+                strip_text = get_option(
+                    config, 'TrimTextNodes') == 'true'
+                rewrite_prefixes = get_option(
+                    config, 'PrefixRewrite') == 'sequential'
+                if 'QNameAware' in config:
+                    qattrs = [
+                        f"{{{el.get('NS')}}}{el.get('Name')}"
+                        for el in config['QNameAware'][1].findall(
+                            '{http://www.w3.org/2010/xml-c14n2}QualifiedAttr')
+                    ]
+                    qtags = [
+                        f"{{{el.get('NS')}}}{el.get('Name')}"
+                        for el in config['QNameAware'][1].findall(
+                            '{http://www.w3.org/2010/xml-c14n2}Element')
+                    ]
+                else:
+                    qtags = qattrs = None
+
+                # Build subtest description from config.
+                config_descr = ','.join(
+                    f"{name}={value or ','.join(c.tag.split('}')[-1] for c in children)}"
+                    for name, (value, children) in sorted(config.items())
+                )
+
+                with self.subTest(f"{output_file}({config_descr})"):
+                    if input_file == 'inNsRedecl' and not rewrite_prefixes:
+                        self.skipTest(
+                            f"Redeclared namespace handling is not supported in {output_file}")
+                    if input_file == 'inNsSuperfluous' and not rewrite_prefixes:
+                        self.skipTest(
+                            f"Redeclared namespace handling is not supported in {output_file}")
+                    if 'QNameAware' in config and config['QNameAware'][1].find(
+                            '{http://www.w3.org/2010/xml-c14n2}XPathElement') is not None:
+                        self.skipTest(
+                            f"QName rewriting in XPath text is not supported in {output_file}")
+
+                    f = full_path(input_file + ".xml")
+                    if input_file == 'inC14N5':
+                        # Hack: avoid setting up external entity resolution in the parser.
+                        with open(full_path('world.txt'), 'rb') as entity_file:
+                            with open(f, 'rb') as f:
+                                f = io.BytesIO(f.read().replace(b'&ent2;', entity_file.read()))
+
+                    text = ET.canonicalize(
+                        from_file=f,
+                        with_comments=keep_comments,
+                        strip_text=strip_text,
+                        rewrite_prefixes=rewrite_prefixes,
+                        qname_aware_tags=qtags, qname_aware_attrs=qattrs)
+
+                    with open(full_path(output_file + ".xml"), 'r', encoding='utf8') as f:
+                        expected = f.read()
+                        if input_file == 'inC14N3':
+                            # FIXME: cET resolves default attributes but ET does not!
+                            expected = expected.replace(' attr="default"', '')
+                            text = text.replace(' attr="default"', '')
+                    self.assertEqual(expected, text)
+
 # --------------------------------------------------------------------
 
 
@@ -3559,6 +3786,8 @@ def test_main(module=None):
         XMLParserTest,
         XMLPullParserTest,
         BugsTest,
+        KeywordArgsTest,
+        C14NTest,
         ]
 
     # These tests will only run for the pure-Python version that doesn't import
