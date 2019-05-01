@@ -1,0 +1,1 @@
+Add an optional `direntries` argument to `os.walk`.
