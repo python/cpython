@@ -525,6 +525,10 @@ xml
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
 
+* The :mod:`xml.etree.ElementTree` module provides a new function
+  :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
+  (Contributed by Stefan Behnel in :issue:`13611`.)
+
 
 Optimizations
 =============
