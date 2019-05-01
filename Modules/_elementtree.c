@@ -3417,8 +3417,10 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
             if (!prefix)
                 return;
             uri = PyUnicode_DecodeUTF8(uri_in, strlen(uri_in), "strict");
-            if (!uri)
+            if (!uri) {
+                Py_DECREF(prefix);
                 return;
+            }
 
             res = treebuilder_handle_start_ns(target, prefix, uri);
             Py_DECREF(uri);
@@ -3429,8 +3431,10 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
         if (!prefix)
             return;
         uri = PyUnicode_DecodeUTF8(uri_in, strlen(uri_in), "strict");
-        if (!uri)
+        if (!uri) {
+            Py_DECREF(prefix);
             return;
+        }
 
         stack[0] = prefix;
         stack[1] = uri;
@@ -3783,6 +3787,8 @@ xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
     Py_VISIT(self->handle_data);
     Py_VISIT(self->handle_start);
     Py_VISIT(self->handle_start_ns);
+    Py_VISIT(self->handle_end_ns);
+    Py_VISIT(self->handle_doctype);
 
     Py_VISIT(self->target);
     Py_VISIT(self->entity);
@@ -3807,6 +3813,7 @@ xmlparser_gc_clear(XMLParserObject *self)
     Py_CLEAR(self->handle_data);
     Py_CLEAR(self->handle_start);
     Py_CLEAR(self->handle_start_ns);
+    Py_CLEAR(self->handle_end_ns);
     Py_CLEAR(self->handle_doctype);
 
     Py_CLEAR(self->target);
