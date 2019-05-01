@@ -719,6 +719,27 @@ class ElementTreeTest(unittest.TestCase):
                 ('end-ns', ''),
             ])
 
+    def test_custom_builder_only_end_ns(self):
+        class Builder(list):
+            def end_ns(self, prefix):
+                self.append(("end-ns", prefix))
+
+        builder = Builder()
+        parser = ET.XMLParser(target=builder)
+        parser.feed(textwrap.dedent("""\
+            <?pi data?>
+            <!-- comment -->
+            <root xmlns='namespace' xmlns:p='pns' xmlns:a='ans'>
+               <a:element key='value'>text</a:element>
+               <p:element>text</p:element>tail
+               <empty-element/>
+            </root>
+            """))
+        self.assertEqual(builder, [
+                ('end-ns', 'a'),
+                ('end-ns', 'p'),
+                ('end-ns', ''),
+            ])
 
     # Element.getchildren() and ElementTree.getiterator() are deprecated.
     @checkwarnings(("This method will be removed in future versions.  "
