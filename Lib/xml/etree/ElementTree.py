@@ -1745,7 +1745,7 @@ def canonicalize(xml_data=None, *, out=None, from_file=None, **options):
     return sio.getvalue() if sio is not None else None
 
 
-_looks_like_prefix_name = re.compile('^\w+:\w+$', re.UNICODE).match
+_looks_like_prefix_name = re.compile(r'^\w+:\w+$', re.UNICODE).match
 
 
 class C14NWriterTarget:
