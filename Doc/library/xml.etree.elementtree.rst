@@ -1087,7 +1087,7 @@ TreeBuilder Objects
 
 
    In addition, a custom :class:`TreeBuilder` object can provide the
-   following method:
+   following methods:
 
    .. method:: doctype(name, pubid, system)
 
@@ -1096,6 +1096,23 @@ TreeBuilder Objects
       does not exist on the default :class:`TreeBuilder` class.
 
       .. versionadded:: 3.2
+
+   .. method:: start_ns(prefix, uri)
+
+      Is called whenever the parser encounters a new namespace declaration,
+      before the ``start()`` callback for the opening element that defines it.
+      *prefix* is ``''`` for the default namespace and the declared
+      namespace prefix name otherwise.  *uri* is the namespace URI.
+
+      .. versionadded:: 3.8
+
+   .. method:: end_ns(prefix)
+
+      Is called after the ``end()`` callback of an element that declared
+      a namespace prefix mapping, with the name of the *prefix* that went
+      out of scope.
+
+      .. versionadded:: 3.8
 
 
 .. _elementtree-xmlparser-objects:
@@ -1132,7 +1149,8 @@ XMLParser Objects
 
    :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
    for each opening tag, its ``end(tag)`` method for each closing tag, and data
-   is processed by method ``data(data)``.  :meth:`XMLParser.close` calls
+   is processed by method ``data(data)``.  For further supported callback
+   methods, see the :class:`TreeBuilder` class.  :meth:`XMLParser.close` calls
    *target*\'s method ``close()``. :class:`XMLParser` can be used not only for
    building a tree structure. This is an example of counting the maximum depth
    of an XML file::
@@ -1168,18 +1186,6 @@ XMLParser Objects
     >>> parser.feed(exampleXml)
     >>> parser.close()
     4
-
-   Additionally, if the target object provides one or both of the methods
-   ``start_ns(self, prefix, uri)`` and ``end_ns(self, prefix)``, then they
-   are called whenever the parser encounters a new namespace declaration.
-   The ``prefix`` is ``''`` for the default namespace and the declared
-   namespace prefix otherwise.  The ``start_ns()`` method is called before
-   the ``start()`` callback of the opening tag that defines the namespace,
-   and the ``end_ns()`` method is called after the corresponding ``end()``
-   callback.
-
-   .. versionchanged:: 3.8
-      The ``start_ns()`` and ``end_ns()`` callbacks were added.
 
 
 .. _elementtree-xmlpullparser-objects:
