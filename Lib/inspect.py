@@ -1112,7 +1112,7 @@ def getfullargspec(func):
     """
 
     warnings.warn("Use inspect.signature() instead of inspect.getfullargspec()",
-                  DeprecationWarning)
+                  DeprecationWarning, stacklevel=2)
     try:
         # Re: `skip_bound_arg=False`
         #
