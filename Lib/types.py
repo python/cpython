@@ -50,6 +50,11 @@ ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 
 ModuleType = type(sys)
 
+from abc import ABC
+class _D(ABC):
+    pass
+ABCData = type(_D._abc_impl)
+
 try:
     raise TypeError
 except TypeError:
