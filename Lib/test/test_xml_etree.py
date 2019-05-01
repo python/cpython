@@ -14,12 +14,13 @@ import locale
 import operator
 import pickle
 import sys
+import textwrap
 import types
 import unittest
 import warnings
 import weakref
 
-from itertools import product
+from itertools import product, islice
 from test import support
 from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap_attr
 
@@ -694,12 +695,17 @@ class ElementTreeTest(unittest.TestCase):
                 self.append(("pi", target, data))
             def comment(self, data):
                 self.append(("comment", data))
+            def start_ns(self, prefix, uri):
+                self.append(("start-ns", prefix, uri))
+            def end_ns(self, prefix):
+                self.append(("end-ns", prefix))
         builder = Builder()
         parser = ET.XMLParser(target=builder)
         parser.feed(data)
         self.assertEqual(builder, [
                 ('pi', 'pi', 'data'),
                 ('comment', ' comment '),
+                ('start-ns', '', 'namespace'),
                 ('start', '{namespace}root'),
                 ('start', '{namespace}element'),
                 ('end', '{namespace}element'),
@@ -708,8 +714,30 @@ class ElementTreeTest(unittest.TestCase):
                 ('start', '{namespace}empty-element'),
                 ('end', '{namespace}empty-element'),
                 ('end', '{namespace}root'),
+                ('end-ns', ''),
             ])
 
+    def test_custom_builder_only_end_ns(self):
+        class Builder(list):
+            def end_ns(self, prefix):
+                self.append(("end-ns", prefix))
+
+        builder = Builder()
+        parser = ET.XMLParser(target=builder)
+        parser.feed(textwrap.dedent("""\
+            <?pi data?>
+            <!-- comment -->
+            <root xmlns='namespace' xmlns:p='pns' xmlns:a='ans'>
+               <a:element key='value'>text</a:element>
+               <p:element>text</p:element>tail
+               <empty-element/>
+            </root>
+            """))
+        self.assertEqual(builder, [
+                ('end-ns', 'a'),
+                ('end-ns', 'p'),
+                ('end-ns', ''),
+            ])
 
     # Element.getchildren() and ElementTree.getiterator() are deprecated.
     @checkwarnings(("This method will be removed in future versions.  "
@@ -1194,14 +1222,19 @@ class XMLPullParserTest(unittest.TestCase):
             for i in range(0, len(data), chunk_size):
                 parser.feed(data[i:i+chunk_size])
 
-    def assert_events(self, parser, expected):
+    def assert_events(self, parser, expected, max_events=None):
         self.assertEqual(
             [(event, (elem.tag, elem.text))
-             for event, elem in parser.read_events()],
+             for event, elem in islice(parser.read_events(), max_events)],
             expected)
 
-    def assert_event_tags(self, parser, expected):
-        events = parser.read_events()
+    def assert_event_tuples(self, parser, expected, max_events=None):
+        self.assertEqual(
+            list(islice(parser.read_events(), max_events)),
+            expected)
+
+    def assert_event_tags(self, parser, expected, max_events=None):
+        events = islice(parser.read_events(), max_events)
         self.assertEqual([(action, elem.tag) for action, elem in events],
                          expected)
 
@@ -1275,6 +1308,56 @@ class XMLPullParserTest(unittest.TestCase):
         self._feed(parser, "</root>\n")
         self.assertEqual(list(parser.read_events()), [('end-ns', None)])
         self.assertIsNone(parser.close())
+
+    def test_ns_events_start(self):
+        parser = ET.XMLPullParser(events=('start-ns', 'start', 'end'))
+        self._feed(parser, "<tag xmlns='abc' xmlns:p='xyz'>\n")
+        self.assert_event_tuples(parser, [
+            ('start-ns', ('', 'abc')),
+            ('start-ns', ('p', 'xyz')),
+        ], max_events=2)
+        self.assert_event_tags(parser, [
+            ('start', '{abc}tag'),
+        ], max_events=1)
+
+        self._feed(parser, "<child />\n")
+        self.assert_event_tags(parser, [
+            ('start', '{abc}child'),
+            ('end', '{abc}child'),
+        ])
+
+        self._feed(parser, "</tag>\n")
+        parser.close()
+        self.assert_event_tags(parser, [
+            ('end', '{abc}tag'),
+        ])
+
+    def test_ns_events_start_end(self):
+        parser = ET.XMLPullParser(events=('start-ns', 'start', 'end', 'end-ns'))
+        self._feed(parser, "<tag xmlns='abc' xmlns:p='xyz'>\n")
+        self.assert_event_tuples(parser, [
+            ('start-ns', ('', 'abc')),
+            ('start-ns', ('p', 'xyz')),
+        ], max_events=2)
+        self.assert_event_tags(parser, [
+            ('start', '{abc}tag'),
+        ], max_events=1)
+
+        self._feed(parser, "<child />\n")
+        self.assert_event_tags(parser, [
+            ('start', '{abc}child'),
+            ('end', '{abc}child'),
+        ])
+
+        self._feed(parser, "</tag>\n")
+        parser.close()
+        self.assert_event_tags(parser, [
+            ('end', '{abc}tag'),
+        ], max_events=1)
+        self.assert_event_tuples(parser, [
+            ('end-ns', None),
+            ('end-ns', None),
+        ])
 
     def test_events(self):
         parser = ET.XMLPullParser(events=())
