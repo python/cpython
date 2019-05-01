@@ -2911,6 +2911,39 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
     return NULL;
 }
 
+LOCAL(PyObject*)
+treebuilder_handle_start_ns(TreeBuilderObject* self, PyObject* prefix, PyObject* uri)
+{
+    PyObject* parcel;
+
+    if (self->events_append && self->start_ns_event_obj) {
+        parcel = PyTuple_Pack(2, prefix, uri);
+        if (!parcel) {
+            return NULL;
+        }
+
+        if (treebuilder_append_event(self, self->start_ns_event_obj, parcel) < 0) {
+            Py_DECREF(parcel);
+            return NULL;
+        }
+        Py_DECREF(parcel);
+    }
+
+    Py_RETURN_NONE;
+}
+
+LOCAL(PyObject*)
+treebuilder_handle_end_ns(TreeBuilderObject* self, PyObject* prefix)
+{
+    if (self->events_append && self->end_ns_event_obj) {
+        if (treebuilder_append_event(self, self->end_ns_event_obj, prefix) < 0) {
+            return NULL;
+        }
+    }
+
+    Py_RETURN_NONE;
+}
+
 /* -------------------------------------------------------------------- */
 /* methods (in alphabetical order) */
 
@@ -3046,6 +3079,8 @@ typedef struct {
 
     PyObject *names;
 
+    PyObject *handle_start_ns;
+    PyObject *handle_end_ns;
     PyObject *handle_start;
     PyObject *handle_data;
     PyObject *handle_end;
@@ -3357,42 +3392,89 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
 }
 
 static void
-expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
-                       const XML_Char *uri)
+expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
+                       const XML_Char *uri_in)
 {
-    TreeBuilderObject *target = (TreeBuilderObject*) self->target;
-    PyObject *parcel;
+    PyObject* res = NULL;
+    PyObject* uri;
+    PyObject* prefix;
+    PyObject* stack[2];
 
     if (PyErr_Occurred())
         return;
 
-    if (!target->events_append || !target->start_ns_event_obj)
-        return;
+    if (!uri_in)
+        uri_in = "";
+    if (!prefix_in)
+        prefix_in = "";
 
-    if (!uri)
-        uri = "";
-    if (!prefix)
-        prefix = "";
+    if (TreeBuilder_CheckExact(self->target)) {
+        /* shortcut - TreeBuilder does not actually implement .start_ns() */
+        TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
-    parcel = Py_BuildValue("ss", prefix, uri);
-    if (!parcel)
-        return;
-    treebuilder_append_event(target, target->start_ns_event_obj, parcel);
-    Py_DECREF(parcel);
+        if (target->events_append && target->start_ns_event_obj) {
+            prefix = PyUnicode_DecodeUTF8(prefix_in, strlen(prefix_in), "strict");
+            if (!prefix)
+                return;
+            uri = PyUnicode_DecodeUTF8(uri_in, strlen(uri_in), "strict");
+            if (!uri) {
+                Py_DECREF(prefix);
+                return;
+            }
+
+            res = treebuilder_handle_start_ns(target, prefix, uri);
+            Py_DECREF(uri);
+            Py_DECREF(prefix);
+        }
+    } else if (self->handle_start_ns) {
+        prefix = PyUnicode_DecodeUTF8(prefix_in, strlen(prefix_in), "strict");
+        if (!prefix)
+            return;
+        uri = PyUnicode_DecodeUTF8(uri_in, strlen(uri_in), "strict");
+        if (!uri) {
+            Py_DECREF(prefix);
+            return;
+        }
+
+        stack[0] = prefix;
+        stack[1] = uri;
+        res = _PyObject_FastCall(self->handle_start_ns, stack, 2);
+        Py_DECREF(uri);
+        Py_DECREF(prefix);
+    }
+
+    Py_XDECREF(res);
 }
 
 static void
 expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
 {
-    TreeBuilderObject *target = (TreeBuilderObject*) self->target;
+    PyObject *res = NULL;
+    PyObject* prefix;
 
     if (PyErr_Occurred())
         return;
 
-    if (!target->events_append)
-        return;
+    if (!prefix_in)
+        prefix_in = "";
 
-    treebuilder_append_event(target, target->end_ns_event_obj, Py_None);
+    if (TreeBuilder_CheckExact(self->target)) {
+        /* shortcut - TreeBuilder does not actually implement .end_ns() */
+        TreeBuilderObject *target = (TreeBuilderObject*) self->target;
+
+        if (target->events_append && target->end_ns_event_obj) {
+            res = treebuilder_handle_end_ns(target, Py_None);
+        }
+    } else if (self->handle_end_ns) {
+        prefix = PyUnicode_DecodeUTF8(prefix_in, strlen(prefix_in), "strict");
+        if (!prefix)
+            return;
+
+        res = _PyObject_FastCall(self->handle_end_ns, &prefix, 1);
+        Py_DECREF(prefix);
+    }
+
+    Py_XDECREF(res);
 }
 
 static void
@@ -3546,6 +3628,7 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self) {
         self->parser = NULL;
         self->target = self->entity = self->names = NULL;
+        self->handle_start_ns = self->handle_end_ns = NULL;
         self->handle_start = self->handle_data = self->handle_end = NULL;
         self->handle_comment = self->handle_pi = self->handle_close = NULL;
         self->handle_doctype = NULL;
@@ -3614,6 +3697,14 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
     }
     self->target = target;
 
+    self->handle_start_ns = PyObject_GetAttrString(target, "start_ns");
+    if (ignore_attribute_error(self->handle_start_ns)) {
+        return -1;
+    }
+    self->handle_end_ns = PyObject_GetAttrString(target, "end_ns");
+    if (ignore_attribute_error(self->handle_end_ns)) {
+        return -1;
+    }
     self->handle_start = PyObject_GetAttrString(target, "start");
     if (ignore_attribute_error(self->handle_start)) {
         return -1;
@@ -3645,6 +3736,12 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
 
     /* configure parser */
     EXPAT(SetUserData)(self->parser, self);
+    if (self->handle_start_ns || self->handle_end_ns)
+        EXPAT(SetNamespaceDeclHandler)(
+            self->parser,
+            (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
+            (XML_EndNamespaceDeclHandler) expat_end_ns_handler
+            );
     EXPAT(SetElementHandler)(
         self->parser,
         (XML_StartElementHandler) expat_start_handler,
@@ -3689,6 +3786,9 @@ xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
     Py_VISIT(self->handle_end);
     Py_VISIT(self->handle_data);
     Py_VISIT(self->handle_start);
+    Py_VISIT(self->handle_start_ns);
+    Py_VISIT(self->handle_end_ns);
+    Py_VISIT(self->handle_doctype);
 
     Py_VISIT(self->target);
     Py_VISIT(self->entity);
@@ -3712,6 +3812,8 @@ xmlparser_gc_clear(XMLParserObject *self)
     Py_CLEAR(self->handle_end);
     Py_CLEAR(self->handle_data);
     Py_CLEAR(self->handle_start);
+    Py_CLEAR(self->handle_start_ns);
+    Py_CLEAR(self->handle_end_ns);
     Py_CLEAR(self->handle_doctype);
 
     Py_CLEAR(self->target);
