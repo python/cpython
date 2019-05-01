@@ -32,6 +32,7 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 import abc
+import ast
 import dis
 import collections.abc
 import enum
@@ -770,6 +771,42 @@ def getmodule(object, _filename=None):
         if builtinobject is object:
             return builtin
 
+
+class ClassFoundException(Exception):
+    pass
+
+
+class _ClassFinder(ast.NodeVisitor):
+
+    def __init__(self, qualname):
+        self.stack = []
+        self.qualname = qualname
+
+    def visit_FunctionDef(self, node):
+        self.stack.append(node.name)
+        self.stack.append('<locals>')
+        self.generic_visit(node)
+        self.stack.pop()
+        self.stack.pop()
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_ClassDef(self, node):
+        self.stack.append(node.name)
+        if self.qualname == '.'.join(self.stack):
+            # Return the decorator for the class if present
+            if node.decorator_list:
+                line_number = node.decorator_list[0].lineno
+            else:
+                line_number = node.lineno
+
+            # decrement by one since lines starts with indexing by zero
+            line_number -= 1
+            raise ClassFoundException(line_number)
+        self.generic_visit(node)
+        self.stack.pop()
+
+
 def findsource(object):
     """Return the entire source file and starting line number for an object.
 
@@ -802,47 +839,14 @@ def findsource(object):
         return lines, 0
 
     if isclass(object):
-        # Lazy import ast because it's relatively heavy and
-        # it's not used for other than this part.
-        import ast
-
-        class ClassFinder(ast.NodeVisitor):
-
-            def visit_FunctionDef(self, node):
-                stack.append(node.name)
-                stack.append('<locals>')
-                self.generic_visit(node)
-                stack.pop()
-                stack.pop()
-
-            visit_AsyncFunctionDef = visit_FunctionDef
-
-            def visit_ClassDef(self, node):
-                nonlocal line_number
-                stack.append(node.name)
-                if qualname == '.'.join(stack):
-                    # Return the decorator for the class if present
-                    if node.decorator_list:
-                        line_number = node.decorator_list[0].lineno
-                    else:
-                        line_number = node.lineno
-
-                    # decrement by one since lines starts with indexing by zero
-                    line_number -= 1
-                    raise StopIteration(line_number)
-                self.generic_visit(node)
-                stack.pop()
-
-        stack = []
-        line_number = None
         qualname = object.__qualname__
         source = ''.join(lines)
         tree = ast.parse(source)
-        class_finder = ClassFinder()
+        class_finder = _ClassFinder(qualname)
         try:
             class_finder.visit(tree)
-        except StopIteration as e:
-            line_number = e.value
+        except ClassFoundException as e:
+            line_number = e.args[0]
             return lines, line_number
         else:
             raise OSError('could not find class definition')
