@@ -748,6 +748,26 @@ class MockTest(unittest.TestCase):
         self.assertIsInstance(mock, X)
 
 
+    def test_spec_class_no_object_base(self):
+        class X:
+            pass
+
+        mock = Mock(spec=X)
+        self.assertIsInstance(mock, X)
+
+        mock = Mock(spec=X())
+        self.assertIsInstance(mock, X)
+
+        self.assertIs(mock.__class__, X)
+        self.assertEqual(Mock().__class__.__name__, 'Mock')
+
+        mock = Mock(spec_set=X)
+        self.assertIsInstance(mock, X)
+
+        mock = Mock(spec_set=X())
+        self.assertIsInstance(mock, X)
+
+
     def test_setting_attribute_with_spec_set(self):
         class X(object):
             y = 3

@@ -63,10 +63,7 @@ def _get_signature_object(func, as_instance, eat_self):
     """
     if isinstance(func, type) and not as_instance:
         # If it's a type and should be modelled as a type, use __init__.
-        try:
-            func = func.__init__
-        except AttributeError:
-            return None
+        func = func.__init__
         # Skip the `self` argument in __init__
         eat_self = True
     elif not isinstance(func, FunctionTypes):
