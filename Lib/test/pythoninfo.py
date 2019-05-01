@@ -602,8 +602,7 @@ def collect_gdbm(info_add):
 
 
 def collect_get_config(info_add):
-    # Dump global configuration variables, _PyCoreConfig
-    # and _PyMainInterpreterConfig
+    # Get global configuration variables, _PyPreConfig and _PyCoreConfig
     try:
         from _testinternalcapi import get_configs
     except ImportError:

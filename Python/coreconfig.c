@@ -2003,8 +2003,7 @@ config_init_argv(_PyCoreConfig *config, const _PyPreCmdline *cmdline)
 
 
 static _PyInitError
-core_read_precmdline(_PyCoreConfig *config, const _PyArgv *args,
-                     _PyPreCmdline *precmdline)
+core_read_precmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
 {
     _PyInitError err;
 
@@ -2072,22 +2071,46 @@ done:
 }
 
 
+_PyInitError
+_PyCoreConfig_SetPyArgv(_PyCoreConfig *config, const _PyArgv *args)
+{
+    return _PyArgv_AsWstrList(args, &config->argv);
+}
+
+
+_PyInitError
+_PyCoreConfig_SetArgv(_PyCoreConfig *config, int argc, char **argv)
+{
+    _PyArgv args = {
+        .argc = argc,
+        .use_bytes_argv = 1,
+        .bytes_argv = argv,
+        .wchar_argv = NULL};
+    return _PyCoreConfig_SetPyArgv(config, &args);
+}
+
+
+_PyInitError
+_PyCoreConfig_SetWideArgv(_PyCoreConfig *config, int argc, wchar_t **argv)
+{
+    _PyArgv args = {
+        .argc = argc,
+        .use_bytes_argv = 0,
+        .bytes_argv = NULL,
+        .wchar_argv = argv};
+    return _PyCoreConfig_SetPyArgv(config, &args);
+}
+
+
 /* Read the configuration into _PyCoreConfig from:
 
    * Command line arguments
    * Environment variables
    * Py_xxx global configuration variables */
 _PyInitError
-_PyCoreConfig_Read(_PyCoreConfig *config, const _PyArgv *args)
+_PyCoreConfig_Read(_PyCoreConfig *config)
 {
     _PyInitError err;
-
-    if (args) {
-        err = _PyArgv_AsWstrList(args, &config->argv);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
 
     err = _Py_PreInitializeFromCoreConfig(config);
     if (_Py_INIT_FAILED(err)) {
@@ -2097,7 +2120,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config, const _PyArgv *args)
     _PyCoreConfig_GetGlobalConfig(config);
 
     _PyPreCmdline precmdline = _PyPreCmdline_INIT;
-    err = core_read_precmdline(config, args, &precmdline);
+    err = core_read_precmdline(config, &precmdline);
     if (_Py_INIT_FAILED(err)) {
         goto done;
     }
