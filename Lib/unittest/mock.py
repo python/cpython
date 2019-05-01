@@ -342,8 +342,6 @@ def _check_and_set_parent(parent, value, name, new_name):
 class _MockIter(object):
     def __init__(self, obj):
         self.obj = iter(obj)
-    def __iter__(self):
-        return self
     def __next__(self):
         return next(self.obj)
 
@@ -1928,10 +1926,6 @@ class MagicProxy(object):
     def __init__(self, name, parent):
         self.name = name
         self.parent = parent
-
-    def __call__(self, *args, **kwargs):
-        m = self.create_mock()
-        return m(*args, **kwargs)
 
     def create_mock(self):
         entry = self.name
