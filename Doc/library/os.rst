@@ -2808,7 +2808,7 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: walk(top, topdown=True, onerror=None, followlinks=False)
+.. function:: walk(top, topdown=True, onerror=None, followlinks=False, direntries=False)
 
    .. index::
       single: directory; walking
@@ -2864,6 +2864,10 @@ features:
       If you pass a relative pathname, don't change the current working directory
       between resumptions of :func:`walk`.  :func:`walk` never changes the current
       directory, and assumes that its caller doesn't either.
+
+   By default, the ``dirnames`` and ``filenames`` parts of the return tuple are
+   strings, but if the optional argument *direntries* is True, these will be lists
+   of :class:`os.DirEntry` objects instead.
 
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any

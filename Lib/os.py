@@ -275,7 +275,7 @@ def renames(old, new):
 
 __all__.extend(["makedirs", "removedirs", "renames"])
 
-def walk(top, topdown=True, onerror=None, followlinks=False):
+def walk(top, topdown=True, onerror=None, followlinks=False, direntries=False):
     """Directory tree generator.
 
     For each directory in the directory tree rooted at top (including top
@@ -320,6 +320,9 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     current working directory between resumptions of walk.  walk never
     changes the current directory, and assumes that the client doesn't
     either.
+
+    If the optional arg 'direntries' is true, the dirnames and filenames
+    tuple entries will be os.DirEntry objects instead of strings.
 
     Example:
 
@@ -372,9 +375,15 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                 is_dir = False
 
             if is_dir:
-                dirs.append(entry.name)
+                if direntries:
+                    dirs.append(entry)
+                else:
+                    dirs.append(entry.name)
             else:
-                nondirs.append(entry.name)
+                if direntries:
+                    nondirs.append(entry)
+                else:
+                    nondirs.append(entry.name)
 
             if not topdown and is_dir:
                 # Bottom-up: recurse into sub-directory, but exclude symlinks to
@@ -401,17 +410,19 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         # Recurse into sub-directories
         islink, join = path.islink, path.join
         for dirname in dirs:
+            if direntries:
+                dirname = dirname.name
             new_path = join(top, dirname)
             # Issue #23605: os.path.islink() is used instead of caching
             # entry.is_symlink() result during the loop on os.scandir() because
             # the caller can replace the directory entry during the "yield"
             # above.
             if followlinks or not islink(new_path):
-                yield from walk(new_path, topdown, onerror, followlinks)
+                yield from walk(new_path, topdown, onerror, followlinks, direntries)
     else:
         # Recurse into sub-directories
         for new_path in walk_dirs:
-            yield from walk(new_path, topdown, onerror, followlinks)
+            yield from walk(new_path, topdown, onerror, followlinks, direntries)
         # Yield after recursion if going bottom up
         yield top, dirs, nondirs
 
