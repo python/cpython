@@ -1849,12 +1849,7 @@ def _set_return_value(mock, method, name):
 
     return_calulator = _calculate_return_value.get(name)
     if return_calulator is not None:
-        try:
-            return_value = return_calulator(mock)
-        except AttributeError:
-            # XXXX why do we return AttributeError here?
-            #      set it as a side_effect instead?
-            return_value = AttributeError(name)
+        return_value = return_calulator(mock)
         method.return_value = return_value
         return
 
