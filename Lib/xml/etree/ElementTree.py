@@ -1518,6 +1518,10 @@ class XMLParser:
             parser.StartElementHandler = self._start
         if hasattr(target, 'end'):
             parser.EndElementHandler = self._end
+        if hasattr(target, 'start_ns'):
+            parser.StartNamespaceDeclHandler = self._start_ns
+        if hasattr(target, 'end_ns'):
+            parser.EndNamespaceDeclHandler = self._end_ns
         if hasattr(target, 'data'):
             parser.CharacterDataHandler = target.data
         # miscellaneous callbacks
@@ -1559,12 +1563,24 @@ class XMLParser:
                     append((event, end(tag)))
                 parser.EndElementHandler = handler
             elif event_name == "start-ns":
-                def handler(prefix, uri, event=event_name, append=append):
-                    append((event, (prefix or "", uri or "")))
+                # TreeBuilder does not implement .start_ns()
+                if hasattr(self.target, "start_ns"):
+                    def handler(prefix, uri, event=event_name, append=append,
+                                start_ns=self._start_ns):
+                        append((event, start_ns(prefix, uri)))
+                else:
+                    def handler(prefix, uri, event=event_name, append=append):
+                        append((event, (prefix or '', uri or '')))
                 parser.StartNamespaceDeclHandler = handler
             elif event_name == "end-ns":
-                def handler(prefix, event=event_name, append=append):
-                    append((event, None))
+                # TreeBuilder does not implement .end_ns()
+                if hasattr(self.target, "end_ns"):
+                    def handler(prefix, event=event_name, append=append,
+                                end_ns=self._end_ns):
+                        append((event, end_ns(prefix)))
+                else:
+                    def handler(prefix, event=event_name, append=append):
+                        append((event, None))
                 parser.EndNamespaceDeclHandler = handler
             elif event_name == 'comment':
                 def handler(text, event=event_name, append=append, self=self):
@@ -1594,6 +1610,12 @@ class XMLParser:
                 name = "{" + name
             self._names[key] = name
         return name
+
+    def _start_ns(self, prefix, uri):
+        return self.target.start_ns(prefix or '', uri or '')
+
+    def _end_ns(self, prefix):
+        return self.target.end_ns(prefix or '')
 
     def _start(self, tag, attr_list):
         # Handler for expat's StartElementHandler. Since ordered_attributes
