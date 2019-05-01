@@ -1312,7 +1312,6 @@ class PatchTest(unittest.TestCase):
 
 
     def test_patch_multiple_create_mocks_different_order(self):
-        # bug revealed by Jython!
         original_f = Foo.f
         original_g = Foo.g
 
