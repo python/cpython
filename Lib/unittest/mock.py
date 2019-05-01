@@ -254,12 +254,6 @@ _missing = sentinel.MISSING
 _deleted = sentinel.DELETED
 
 
-def _copy(value):
-    if type(value) in (dict, list, tuple, set):
-        return type(value)(value)
-    return value
-
-
 _allowed_names = {
     'return_value', '_mock_return_value', 'side_effect',
     '_mock_side_effect', '_mock_parent', '_mock_new_parent',
