@@ -1171,6 +1171,8 @@ TreeBuilder Objects
    tree but translates the callback events directly into a serialised form
    using the *write* function.
 
+   .. versionadded:: 3.8
+
 
 .. _elementtree-xmlparser-objects:
 
