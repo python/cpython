@@ -788,26 +788,23 @@ class HandlerTests(TestCase):
             b"Hello, world!",
             written)
 
-    def runTestWithException(self, ExceptionClass):
-        class AbortingWriter:
-            def write(self, b):
-                raise ExceptionClass()
-
+    def testClientConnectionTerminations(self):
         environ = {"SERVER_PROTOCOL": "HTTP/1.0"}
-        stderr = StringIO()
-        h = SimpleHandler(BytesIO(), AbortingWriter(), stderr, environ)
-        h.run(hello_app)
+        for exception in (
+            ConnectionAbortedError,
+            BrokenPipeError,
+            ConnectionResetError,
+        ):
+            with self.subTest(exception=exception):
+                class AbortingWriter:
+                    def write(self, b):
+                        raise exception
 
-        self.assertFalse(stderr.getvalue())
+                stderr = StringIO()
+                h = SimpleHandler(BytesIO(), AbortingWriter(), stderr, environ)
+                h.run(hello_app)
 
-    def testConnectionAbortedError(self):
-        self.runTestWithException(ConnectionAbortedError)
-
-    def testBrokenPipeError(self):
-        self.runTestWithException(BrokenPipeError)
-
-    def testConnectionResetError(self):
-        self.runTestWithException(ConnectionResetError)
+                self.assertFalse(stderr.getvalue())
 
 
 if __name__ == "__main__":
