@@ -345,12 +345,11 @@ of what happens during the loading portion of import::
     _init_module_attrs(spec, module)
 
     if spec.loader is None:
-        if spec.submodule_search_locations is not None:
-            # namespace package
-            sys.modules[spec.name] = module
-        else:
-            # unsupported
-            raise ImportError
+        # unsupported
+        raise ImportError
+    if spec.origin is None and spec.submodule_search_locations is not None:
+        # namespace package
+        sys.modules[spec.name] = module
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
         # Set __loader__ and __package__ if missing.
