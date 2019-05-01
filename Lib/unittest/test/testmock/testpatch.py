@@ -51,6 +51,14 @@ class Foo(object):
         pass
     foo = 'bar'
 
+    @staticmethod
+    def static_method():
+        return 24
+
+    @classmethod
+    def class_method(cls):
+        return 42
+
     class Bar(object):
         def a(self):
             pass
@@ -1023,6 +1031,18 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(result, 3)
 
 
+    def test_autospec_staticmethod(self):
+        with patch('%s.Foo.static_method' % __name__, autospec=True) as method:
+            Foo.static_method()
+            method.assert_called_once_with()
+
+
+    def test_autospec_classmethod(self):
+        with patch('%s.Foo.class_method' % __name__, autospec=True) as method:
+            Foo.class_method()
+            method.assert_called_once_with()
+
+
     def test_autospec_with_new(self):
         patcher = patch('%s.function' % __name__, new=3, autospec=True)
         self.assertRaises(TypeError, patcher.start)
@@ -1292,7 +1312,6 @@ class PatchTest(unittest.TestCase):
 
 
     def test_patch_multiple_create_mocks_different_order(self):
-        # bug revealed by Jython!
         original_f = Foo.f
         original_g = Foo.g
 

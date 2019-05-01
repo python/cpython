@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pystate.h"   /* _PyRuntimeState */
+
 /* True if the main interpreter thread exited due to an unhandled
  * KeyboardInterrupt exception, suggesting the user pressed ^C. */
 PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
@@ -32,10 +34,13 @@ extern _PyInitError _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(void);
 extern _PyInitError _PySys_Create(
+    _PyRuntimeState *runtime,
     PyInterpreterState *interp,
     PyObject **sysmod_p);
 extern _PyInitError _PySys_SetPreliminaryStderr(PyObject *sysdict);
-extern int _PySys_InitMain(PyInterpreterState *interp);
+extern int _PySys_InitMain(
+    _PyRuntimeState *runtime,
+    PyInterpreterState *interp);
 extern _PyInitError _PyImport_Init(PyInterpreterState *interp);
 extern _PyInitError _PyExc_Init(void);
 extern _PyInitError _PyBuiltins_AddExceptions(PyObject * bltinmod);
@@ -63,7 +68,7 @@ extern void PyAsyncGen_Fini(void);
 extern void _PyExc_Fini(void);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
-extern void _PyGC_Fini(void);
+extern void _PyGC_Fini(_PyRuntimeState *runtime);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(void);
@@ -71,11 +76,15 @@ extern void PyLong_Fini(void);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern int _PyTraceMalloc_Fini(void);
+extern void _PyWarnings_Fini(_PyRuntimeState *runtime);
 
-extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
-extern void _PyGILState_Fini(void);
+extern void _PyGILState_Init(
+    _PyRuntimeState *runtime,
+    PyInterpreterState *interp,
+    PyThreadState *tstate);
+extern void _PyGILState_Fini(_PyRuntimeState *runtime);
 
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(void);
+PyAPI_FUNC(void) _PyGC_DumpShutdownStats(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromCoreConfig(
     const _PyCoreConfig *coreconfig);

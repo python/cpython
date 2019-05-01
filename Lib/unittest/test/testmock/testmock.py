@@ -184,21 +184,6 @@ class MockTest(unittest.TestCase):
         mock.side_effect = ValueError('Bazinga!')
         self.assertRaisesRegex(ValueError, 'Bazinga!', mock)
 
-    @unittest.skipUnless('java' in sys.platform,
-                          'This test only applies to Jython')
-    def test_java_exception_side_effect(self):
-        import java
-        mock = Mock(side_effect=java.lang.RuntimeException("Boom!"))
-
-        # can't use assertRaises with java exceptions
-        try:
-            mock(1, 2, fish=3)
-        except java.lang.RuntimeException:
-            pass
-        else:
-            self.fail('java exception not raised')
-        mock.assert_called_with(1,2, fish=3)
-
 
     def test_reset_mock(self):
         parent = Mock()
@@ -885,6 +870,15 @@ class MockTest(unittest.TestCase):
             patcher.stop()
 
 
+    def test_dir_does_not_include_deleted_attributes(self):
+        mock = Mock()
+        mock.child.return_value = 1
+
+        self.assertIn('child', dir(mock))
+        del mock.child
+        self.assertNotIn('child', dir(mock))
+
+
     def test_configure_mock(self):
         mock = Mock(foo='bar')
         self.assertEqual(mock.foo, 'bar')
@@ -1418,6 +1412,23 @@ class MockTest(unittest.TestCase):
     def test_create_autospec_with_name(self):
         m = mock.create_autospec(object(), name='sweet_func')
         self.assertIn('sweet_func', repr(m))
+
+    #Issue23078
+    def test_create_autospec_classmethod_and_staticmethod(self):
+        class TestClass:
+            @classmethod
+            def class_method(cls):
+                pass
+
+            @staticmethod
+            def static_method():
+                pass
+        for method in ('class_method', 'static_method'):
+            with self.subTest(method=method):
+                mock_method = mock.create_autospec(getattr(TestClass, method))
+                mock_method()
+                mock_method.assert_called_once_with()
+                self.assertRaises(TypeError, mock_method, 'extra_arg')
 
     #Issue21238
     def test_mock_unsafe(self):

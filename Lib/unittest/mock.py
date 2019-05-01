@@ -29,19 +29,12 @@ import inspect
 import pprint
 import sys
 import builtins
-from types import ModuleType
+from types import ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
 
 
 _builtins = {name for name in dir(builtins) if not name.startswith('_')}
-
-BaseExceptions = (BaseException,)
-if 'java' in sys.platform:
-    # jython
-    import java
-    BaseExceptions = (BaseException, java.lang.Throwable)
-
 
 FILTER_DIR = True
 
@@ -57,8 +50,8 @@ def _is_instance_mock(obj):
 
 def _is_exception(obj):
     return (
-        isinstance(obj, BaseExceptions) or
-        isinstance(obj, type) and issubclass(obj, BaseExceptions)
+        isinstance(obj, BaseException) or
+        isinstance(obj, type) and issubclass(obj, BaseException)
     )
 
 
@@ -122,6 +115,8 @@ def _copy_func_details(func, funcopy):
 def _callable(obj):
     if isinstance(obj, type):
         return True
+    if isinstance(obj, (staticmethod, classmethod, MethodType)):
+        return _callable(obj.__func__)
     if getattr(obj, '__call__', None) is not None:
         return True
     return False
@@ -682,12 +677,14 @@ class NonCallableMock(Base):
         extras = self._mock_methods or []
         from_type = dir(type(self))
         from_dict = list(self.__dict__)
+        from_child_mocks = [
+            m_name for m_name, m_value in self._mock_children.items()
+            if m_value is not _deleted]
 
         from_type = [e for e in from_type if not e.startswith('_')]
         from_dict = [e for e in from_dict if not e.startswith('_') or
                      _is_magic(e)]
-        return sorted(set(extras + from_type + from_dict +
-                          list(self._mock_children)))
+        return sorted(set(extras + from_type + from_dict + from_child_mocks))
 
 
     def __setattr__(self, name, value):
