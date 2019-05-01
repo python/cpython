@@ -472,6 +472,7 @@ _Py_Initialize_ReconfigureCore(_PyRuntimeState *runtime,
                                PyInterpreterState **interp_p,
                                const _PyCoreConfig *core_config)
 {
+    _PyInitError err;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
         return _Py_INIT_ERR("failed to read thread state");
@@ -485,13 +486,14 @@ _Py_Initialize_ReconfigureCore(_PyRuntimeState *runtime,
 
     _PyCoreConfig_Write(core_config, runtime);
 
-    if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_NO_MEMORY();
+    err = _PyCoreConfig_Copy(&interp->core_config, core_config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
     core_config = &interp->core_config;
 
     if (core_config->_install_importlib) {
-        _PyInitError err = _PyCoreConfig_SetPathConfig(core_config);
+        err = _PyCoreConfig_SetPathConfig(core_config);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -545,8 +547,9 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     *interp_p = interp;
 
-    if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_NO_MEMORY();
+    _PyInitError err = _PyCoreConfig_Copy(&interp->core_config, core_config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
     core_config = &interp->core_config;
 
@@ -804,8 +807,9 @@ pyinit_coreconfig(_PyRuntimeState *runtime,
     _PyInitError err;
 
     if (src_config) {
-        if (_PyCoreConfig_Copy(config, src_config) < 0) {
-            return _Py_INIT_NO_MEMORY();
+        err = _PyCoreConfig_Copy(config, src_config);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
         }
     }
 
@@ -1433,8 +1437,9 @@ new_interpreter(PyThreadState **tstate_p)
         core_config = &main_interp->core_config;
     }
 
-    if (_PyCoreConfig_Copy(&interp->core_config, core_config) < 0) {
-        return _Py_INIT_NO_MEMORY();
+    err = _PyCoreConfig_Copy(&interp->core_config, core_config);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
     }
     core_config = &interp->core_config;
 
