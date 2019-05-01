@@ -36,13 +36,6 @@ from functools import wraps, partial
 
 _builtins = {name for name in dir(builtins) if not name.startswith('_')}
 
-BaseExceptions = (BaseException,)
-if 'java' in sys.platform:
-    # jython
-    import java
-    BaseExceptions = (BaseException, java.lang.Throwable)
-
-
 FILTER_DIR = True
 
 # Workaround for issue #12370
@@ -57,8 +50,8 @@ def _is_instance_mock(obj):
 
 def _is_exception(obj):
     return (
-        isinstance(obj, BaseExceptions) or
-        isinstance(obj, type) and issubclass(obj, BaseExceptions)
+        isinstance(obj, BaseException) or
+        isinstance(obj, type) and issubclass(obj, BaseException)
     )
 
 
