@@ -643,9 +643,9 @@ class UrlParseTestCase(unittest.TestCase):
 
         # bpo-36742: Verify port separators are ignored when they
         # existed prior to decomposition
-        urlparse.urlsplit('http://\u30d5\u309a:80')
+        urlparse.urlsplit(u'http://\u30d5\u309a:80')
         with self.assertRaises(ValueError):
-            urlparse.urlsplit('http://\u30d5\u309a\ufe1380')
+            urlparse.urlsplit(u'http://\u30d5\u309a\ufe1380')
 
         for scheme in [u"http", u"https", u"ftp"]:
             for c in denorm_chars:
