@@ -1685,7 +1685,7 @@ initsite(void)
     PyObject *m;
     m = PyImport_ImportModule("site");
     if (m == NULL) {
-        return _Py_INIT_USER_ERR("Failed to import the site module");
+        return _Py_INIT_ERR("Failed to import the site module");
     }
     Py_DECREF(m);
     return _Py_INIT_OK();
@@ -1872,8 +1872,7 @@ init_sys_streams(PyInterpreterState *interp)
     struct _Py_stat_struct sb;
     if (_Py_fstat_noraise(fileno(stdin), &sb) == 0 &&
         S_ISDIR(sb.st_mode)) {
-        return _Py_INIT_USER_ERR("<stdin> is a directory, "
-                                 "cannot continue");
+        return _Py_INIT_ERR("<stdin> is a directory, cannot continue");
     }
 #endif
 
@@ -2181,14 +2180,17 @@ Py_FatalError(const char *msg)
 void _Py_NO_RETURN
 _Py_ExitInitError(_PyInitError err)
 {
-    if (_Py_INIT_HAS_EXITCODE(err)) {
+    assert(_Py_INIT_FAILED(err));
+    if (_Py_INIT_IS_EXIT(err)) {
+#ifdef MS_WINDOWS
+        ExitProcess(err.exitcode);
+#else
         exit(err.exitcode);
+#endif
     }
     else {
-        /* On "user" error: exit with status 1.
-           For all other errors, call abort(). */
-        int status = err.user_err ? 1 : -1;
-        fatal_error(err.prefix, err.msg, status);
+        assert(_Py_INIT_IS_ERROR(err));
+        fatal_error(err._func, err.err_msg, 1);
     }
 }
 

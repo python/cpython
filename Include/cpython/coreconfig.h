@@ -8,10 +8,18 @@ extern "C" {
 /* --- _PyInitError ----------------------------------------------- */
 
 typedef struct {
-    const char *prefix;
-    const char *msg;
-    int user_err;
+    enum {
+        _Py_INIT_ERR_TYPE_OK=0,
+        _Py_INIT_ERR_TYPE_ERROR=1,
+        _Py_INIT_ERR_TYPE_EXIT=2
+    } _type;
+    const char *_func;
+    const char *err_msg;
+#ifdef MS_WINDOWS
+    unsigned int exitcode;
+#else
     int exitcode;
+#endif
 } _PyInitError;
 
 /* Almost all errors causing Python initialization to fail */
@@ -23,20 +31,25 @@ typedef struct {
 #endif
 
 #define _Py_INIT_OK() \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = -1}
-#define _Py_INIT_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 0, .exitcode = -1}
-/* Error that can be fixed by the user like invalid input parameter.
-   Don't abort() the process on such error. */
-#define _Py_INIT_USER_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1, .exitcode = -1}
-#define _Py_INIT_NO_MEMORY() _Py_INIT_USER_ERR("memory allocation failed")
+    (_PyInitError){._type = _Py_INIT_ERR_TYPE_OK,}
+    /* other fields are set to 0 */
+#define _Py_INIT_ERR(ERR_MSG) \
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_ERROR, \
+        ._func = _Py_INIT_GET_FUNC(), \
+        .err_msg = (ERR_MSG)}
+        /* other fields are set to 0 */
+#define _Py_INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
 #define _Py_INIT_EXIT(EXITCODE) \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = (EXITCODE)}
-#define _Py_INIT_HAS_EXITCODE(err) \
-    (err.exitcode != -1)
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_EXIT, \
+        .exitcode = (EXITCODE)}
+#define _Py_INIT_IS_ERROR(err) \
+    (err._type == _Py_INIT_ERR_TYPE_ERROR)
+#define _Py_INIT_IS_EXIT(err) \
+    (err._type == _Py_INIT_ERR_TYPE_EXIT)
 #define _Py_INIT_FAILED(err) \
-    (err.msg != NULL || _Py_INIT_HAS_EXITCODE(err))
+    (err._type != _Py_INIT_ERR_TYPE_OK)
 
 /* --- _PyWstrList ------------------------------------------------ */
 
