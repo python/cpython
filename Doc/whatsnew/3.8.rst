@@ -244,6 +244,20 @@ where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
 
 
+functools
+---------
+
+:func:`functools.lru_cache` can now be used as a straight decorator rather
+as a function that returns a decorator.  So both of these are now supported::
+
+    @lru_cache
+    def f(x):
+        ...
+
+    @lru_cache(maxsize=256)
+    def f(x):
+        ...
+
 datetime
 --------
 
