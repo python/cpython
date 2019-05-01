@@ -523,8 +523,9 @@ Functions
    Parses an XML section into an element tree incrementally, and reports what's
    going on to the user.  *source* is a filename or :term:`file object`
    containing XML data.  *events* is a sequence of events to report back.  The
-   supported events are the strings ``"start"``, ``"end"``, ``"start-ns"`` and
-   ``"end-ns"`` (the "ns" events are used to get detailed namespace
+   supported events are the strings ``"start"``, ``"end"``, ``"comment"``,
+   ``"pi"``, ``"start-ns"`` and ``"end-ns"``
+   (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
    *parser* is an optional parser instance.  If not given, the standard
    :class:`XMLParser` parser is used.  *parser* must be a subclass of
@@ -548,6 +549,10 @@ Functions
 
    .. deprecated:: 3.4
       The *parser* argument.
+
+   .. versionchanged:: 3.8
+      The ``comment`` and ``pi`` events were added.
+
 
 .. function:: parse(source, parser=None)
 
@@ -1021,14 +1026,24 @@ TreeBuilder Objects
 ^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: TreeBuilder(element_factory=None)
+.. class:: TreeBuilder(element_factory=None, *, comment_factory=None, \
+                       pi_factory=None, insert_comments=False, insert_pis=False)
 
    Generic element structure builder.  This builder converts a sequence of
-   start, data, and end method calls to a well-formed element structure.  You
-   can use this class to build an element structure using a custom XML parser,
-   or a parser for some other XML-like format.  *element_factory*, when given,
-   must be a callable accepting two positional arguments: a tag and
-   a dict of attributes.  It is expected to return a new element instance.
+   start, data, end, comment and pi method calls to a well-formed element
+   structure.  You can use this class to build an element structure using
+   a custom XML parser, or a parser for some other XML-like format.
+
+   *element_factory*, when given, must be a callable accepting two positional
+   arguments: a tag and a dict of attributes.  It is expected to return a new
+   element instance.
+
+   The *comment_factory* and *pi_factory* functions, when given, should behave
+   like the :func:`Comment` and :func:`ProcessingInstruction` functions to
+   create comments and processing instructions.  When not given, the default
+   factories will be used.  When *insert_comments* and/or *insert_pis* is true,
+   comments/pis will be inserted into the tree if they appear within the root
+   element (but not outside of it).
 
    .. method:: close()
 
@@ -1052,6 +1067,22 @@ TreeBuilder Objects
 
       Opens a new element.  *tag* is the element name.  *attrs* is a dictionary
       containing element attributes.  Returns the opened element.
+
+
+   .. method:: comment(text)
+
+      Creates a comment with the given *text*.  If ``insert_comments`` is true,
+      this will also add it to the tree.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: pi(target, text)
+
+      Creates a comment with the given *target* name and *text*.  If
+      ``insert_pis`` is true, this will also add it to the tree.
+
+      .. versionadded:: 3.8
 
 
    In addition, a custom :class:`TreeBuilder` object can provide the
@@ -1150,9 +1181,9 @@ XMLPullParser Objects
    callback target, :class:`XMLPullParser` collects an internal list of parsing
    events and lets the user read from it. *events* is a sequence of events to
    report back.  The supported events are the strings ``"start"``, ``"end"``,
-   ``"start-ns"`` and ``"end-ns"`` (the "ns" events are used to get detailed
-   namespace information).  If *events* is omitted, only ``"end"`` events are
-   reported.
+   ``"comment"``, ``"pi"``, ``"start-ns"`` and ``"end-ns"`` (the "ns" events
+   are used to get detailed namespace information).  If *events* is omitted,
+   only ``"end"`` events are reported.
 
    .. method:: feed(data)
 
@@ -1171,7 +1202,13 @@ XMLPullParser Objects
       data fed to the
       parser.  The iterator yields ``(event, elem)`` pairs, where *event* is a
       string representing the type of event (e.g. ``"end"``) and *elem* is the
-      encountered :class:`Element` object.
+      encountered :class:`Element` object, or other context value as follows.
+
+      * ``start``, ``end``: the current Element.
+      * ``comment``, ``pi``: the current comment / processing instruction
+      * ``start-ns``: a tuple ``(prefix, uri)`` naming the declared namespace
+        mapping.
+      * ``end-ns``: :const:`None` (this may change in a future version)
 
       Events provided in a previous call to :meth:`read_events` will not be
       yielded again.  Events are consumed from the internal queue only when
@@ -1190,6 +1227,10 @@ XMLPullParser Objects
       If you need a fully populated element, look for "end" events instead.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+      The ``comment`` and ``pi`` events were added.
+
 
 Exceptions
 ^^^^^^^^^^
