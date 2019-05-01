@@ -72,10 +72,11 @@ import email.parser
 import email.message
 import http
 import io
+import os
 import re
 import socket
 import collections.abc
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urljoin
 
 # HTTPMessage, parse_headers(), and the HTTP status code constants are
 # intentionally omitted for simplicity
@@ -758,6 +759,7 @@ class HTTPConnection:
 
     _http_vsn = 11
     _http_vsn_str = 'HTTP/1.1'
+    _scheme = 'http'
 
     response_class = HTTPResponse
     default_port = HTTP_PORT
@@ -803,7 +805,7 @@ class HTTPConnection:
         return None
 
     def __init__(self, host, port=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 source_address=None, blocksize=8192):
+                 source_address=None, blocksize=8192, use_proxy_from_environ=False):
         self.timeout = timeout
         self.source_address = source_address
         self.blocksize = blocksize
@@ -815,6 +817,8 @@ class HTTPConnection:
         self._tunnel_host = None
         self._tunnel_port = None
         self._tunnel_headers = {}
+        self._use_proxy_from_environ = use_proxy_from_environ
+        self._proxy = None
 
         (self.host, self.port) = self._get_hostport(host, port)
 
@@ -869,9 +873,8 @@ class HTTPConnection:
     def set_debuglevel(self, level):
         self.debuglevel = level
 
-    def _tunnel(self):
-        connect_str = "CONNECT %s:%d HTTP/1.0\r\n" % (self._tunnel_host,
-            self._tunnel_port)
+    def _tunnel(self, host, port):
+        connect_str = "CONNECT %s:%d HTTP/1.0\r\n" % (host, port)
         connect_bytes = connect_str.encode("ascii")
         self.send(connect_bytes)
         for header, value in self._tunnel_headers.items():
@@ -902,12 +905,34 @@ class HTTPConnection:
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
+        proxy_from_environ = None
+        host, port = self.host, self.port
+
+        if self._use_proxy_from_environ:
+            proxy_from_environ = self._get_proxy_from_environ()
+            if self._proxy is None:
+                self._proxy = self._get_hostport(proxy_from_environ, None)
+
+        if self._use_proxy_from_environ and self._proxy:
+            host, port = self._proxy
+
         self.sock = self._create_connection(
-            (self.host,self.port), self.timeout, self.source_address)
+            (host, port), self.timeout, self.source_address)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         if self._tunnel_host:
-            self._tunnel()
+            if proxy_from_environ is not None:
+                tunnel_host, tunnel_port = self.host, self.port
+            else:
+                tunnel_host, tunnel_port = self._tunnel_host, self._tunnel_port
+
+            self._tunnel(tunnel_host, tunnel_port)
+
+    def _get_proxy_from_environ(self):
+        return self._from_environ('http_proxy')
+
+    def _from_environ(self, key):
+        return os.environ.get(key) or os.environ.get(key)
 
     def close(self):
         """Close the connection to the HTTP server."""
@@ -1079,7 +1104,21 @@ class HTTPConnection:
         self._method = method
         if not url:
             url = '/'
-        request = '%s %s %s' % (method, url, self._http_vsn_str)
+
+        if self._proxy is None:
+            # ensure there isn't a proxy set through the environ, which can happen if
+            # request is called before connect
+            proxy_from_environ = self._get_proxy_from_environ()
+            if proxy_from_environ is not None:
+                self._proxy = self._get_hostport(proxy_from_environ, None)
+                host, port = self._proxy
+
+        # if a direct request is being sent or a proxy tunnel has been established, then just use the path.
+        # otherwise the entire URL is required
+        if self._proxy is None or self._tunnel_host is not None:
+            request = '%s %s %s' % (method, url, self._http_vsn_str)
+        else:
+            request = '%s %s %s' % (method, urljoin(f'{self._scheme}://{self.host}:{self.port}', url), self._http_vsn_str)
 
         # Non-ASCII characters should have been eliminated earlier
         self._output(request.encode('ascii'))
@@ -1324,16 +1363,18 @@ else:
         "This class allows communication via SSL."
 
         default_port = HTTPS_PORT
+        _scheme = 'https'
 
         # XXX Should key_file and cert_file be deprecated in favour of context?
 
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, *, context=None,
-                     check_hostname=None, blocksize=8192):
+                     check_hostname=None, blocksize=8192, use_proxy_from_environ=False):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
-                                                  blocksize=blocksize)
+                                                  blocksize=blocksize,
+                                                  use_proxy_from_environ=use_proxy_from_environ)
             if (key_file is not None or cert_file is not None or
                         check_hostname is not None):
                 import warnings
@@ -1355,6 +1396,9 @@ else:
             self._context = context
             if check_hostname is not None:
                 self._context.check_hostname = check_hostname
+
+        def _get_proxy_from_environ(self):
+            return self._from_environ('https_proxy')
 
         def connect(self):
             "Connect to a host on a given (SSL) port."
