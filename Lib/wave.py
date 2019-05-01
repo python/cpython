@@ -150,11 +150,7 @@ class Wave_read:
                 self._nframes = chunk.chunksize // self._framesize
                 self._data_seek_needed = 0
                 break
-            try:
-                chunk.skip()
-            except RuntimeError:
-                raise Error('failed to skip through chunks of WAVE file')
-
+            chunk.skip()
         if not self._fmt_chunk_read or not self._data_chunk:
             raise Error('fmt chunk and/or data chunk missing')
 
