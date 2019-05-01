@@ -1,0 +1,3 @@
+The C implementation of :mod:`pickle` no longer memoizes temporary objects.
+This produces more optimal pickle data and reduces memory consumption on
+pickling and unpickling.

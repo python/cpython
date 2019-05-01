@@ -572,6 +572,8 @@ DATA_SET = b'\x80\x02c__builtin__\nset\nq\x00]q\x01(K\x01K\x02e\x85q\x02Rq\x03.'
 
 # xrange(5) pickled from 2.x with protocol 2
 DATA_XRANGE = b'\x80\x02c__builtin__\nxrange\nq\x00K\x00K\x05K\x01\x87q\x01Rq\x02.'
+# optimized pickle produced by the C implementation in 3.8
+DATA_XRANGE_X = b'\x80\x02c__builtin__\nxrange\nq\x00K\x00K\x05K\x01\x87Rq\x01.'
 
 # a SimpleCookie() object pickled from 2.x with protocol 2
 DATA_COOKIE = (b'\x80\x02cCookie\nSimpleCookie\nq\x00)\x81q\x01U\x03key'
@@ -583,6 +585,8 @@ DATA_COOKIE = (b'\x80\x02cCookie\nSimpleCookie\nq\x00)\x81q\x01U\x03key'
 
 # set([3]) pickled from 2.x with protocol 2
 DATA_SET2 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01K\x03a\x85q\x02Rq\x03.'
+# optimized pickle produced by the C implementation in 3.8
+DATA_SET2_X = b'\x80\x02c__builtin__\nset\nq\x00]q\x01K\x03a\x85Rq\x02.'
 
 python2_exceptions_without_args = (
     ArithmeticError,
@@ -2050,9 +2054,9 @@ class AbstractPickleTests(unittest.TestCase):
         # NOTE: this test is a bit too strong since we can produce different
         # bytecode that 2.x will still understand.
         dumped = self.dumps(range(5), 2)
-        self.assertEqual(dumped, DATA_XRANGE)
+        self.assertIn(dumped, (DATA_XRANGE, DATA_XRANGE_X))
         dumped = self.dumps(set([3]), 2)
-        self.assertEqual(dumped, DATA_SET2)
+        self.assertIn(dumped, (DATA_SET2, DATA_SET2_X))
 
     def test_large_pickles(self):
         # Test the correctness of internal buffering routines when handling
