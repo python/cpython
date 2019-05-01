@@ -408,24 +408,6 @@ class SpecSignatureTest(unittest.TestCase):
         mock_foo.assert_called_with(1)
 
 
-    def test_create_autospec_unbound_methods(self):
-        # see mock issue 128
-        # this is expected to fail until the issue is fixed
-        return
-        class Foo(object):
-            def foo(self):
-                pass
-
-        klass = create_autospec(Foo)
-        instance = klass()
-        self.assertRaises(TypeError, instance.foo, 1)
-
-        # Note: no type checking on the "self" parameter
-        klass.foo(1)
-        klass.foo.assert_called_with(1)
-        self.assertRaises(TypeError, klass.foo)
-
-
     def test_create_autospec_keyword_arguments(self):
         class Foo(object):
             a = 3

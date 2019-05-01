@@ -689,49 +689,6 @@ class PatchTest(unittest.TestCase):
             support.target = original
 
 
-    def test_patch_descriptor(self):
-        # would be some effort to fix this - we could special case the
-        # builtin descriptors: classmethod, property, staticmethod
-        return
-        class Nothing(object):
-            foo = None
-
-        class Something(object):
-            foo = {}
-
-            @patch.object(Nothing, 'foo', 2)
-            @classmethod
-            def klass(cls):
-                self.assertIs(cls, Something)
-
-            @patch.object(Nothing, 'foo', 2)
-            @staticmethod
-            def static(arg):
-                return arg
-
-            @patch.dict(foo)
-            @classmethod
-            def klass_dict(cls):
-                self.assertIs(cls, Something)
-
-            @patch.dict(foo)
-            @staticmethod
-            def static_dict(arg):
-                return arg
-
-        # these will raise exceptions if patching descriptors is broken
-        self.assertEqual(Something.static('f00'), 'f00')
-        Something.klass()
-        self.assertEqual(Something.static_dict('f00'), 'f00')
-        Something.klass_dict()
-
-        something = Something()
-        self.assertEqual(something.static('f00'), 'f00')
-        something.klass()
-        self.assertEqual(something.static_dict('f00'), 'f00')
-        something.klass_dict()
-
-
     def test_patch_spec_set(self):
         @patch('%s.SomeClass' % __name__, spec=SomeClass, spec_set=True)
         def test(MockClass):
