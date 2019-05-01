@@ -170,10 +170,6 @@ def _set_signature(mock, original, instance=False):
 def _setup_func(funcopy, mock, sig):
     funcopy.mock = mock
 
-    # can't use isinstance with mocks
-    if not _is_instance_mock(mock):
-        return
-
     def assert_called_with(*args, **kwargs):
         return mock.assert_called_with(*args, **kwargs)
     def assert_called(*args, **kwargs):
