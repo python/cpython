@@ -821,8 +821,14 @@ def findsource(object):
                 nonlocal line_number
                 stack.append(node.name)
                 if qualname == '.'.join(stack):
+                    # Return the decorator for the class if present
+                    if node.decorator_list:
+                        line_number = node.decorator_list[0].lineno
+                    else:
+                        line_number = node.lineno
+
                     # decrement by one since lines starts with indexing by zero
-                    line_number = node.lineno - 1
+                    line_number -= 1
                     raise StopIteration(line_number)
                 self.generic_visit(node)
                 stack.pop()

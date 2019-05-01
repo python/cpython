@@ -724,8 +724,8 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls183.cls185, 185, 188)
 
     def test_class_decorator(self):
-        self.assertSourceEqual(mod2.cls196, 196, 201)
-        self.assertSourceEqual(mod2.cls196.cls200, 200, 201)
+        self.assertSourceEqual(mod2.cls196, 194, 201)
+        self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
     def test_class_inside_conditional(self):
         self.assertSourceEqual(mod2.cls238, 238, 240)
