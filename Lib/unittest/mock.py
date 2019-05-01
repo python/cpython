@@ -443,7 +443,7 @@ class NonCallableMock(Base):
             if isinstance(spec, type):
                 _spec_class = spec
             else:
-                _spec_class = _get_class(spec)
+                _spec_class = type(spec)
             res = _get_signature_object(spec,
                                         _spec_as_instance, _eat_self)
             _spec_signature = res and res[1]
@@ -2324,14 +2324,6 @@ def _must_skip(spec, entry, is_type):
     # shouldn't get here unless function is a dynamically provided attribute
     # XXXX untested behaviour
     return is_type
-
-
-def _get_class(obj):
-    try:
-        return obj.__class__
-    except AttributeError:
-        # it is possible for objects to have no __class__
-        return type(obj)
 
 
 class _SpecState(object):
