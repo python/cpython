@@ -541,11 +541,15 @@ _PyCoreConfig_SetString(wchar_t **config_str, const wchar_t *str)
 }
 
 
-/* Decode str using Py_DecodeLocale() and set the result into *config_str */
 static _PyInitError
 _PyCoreConfig_DecodeLocaleErr(wchar_t **config_str, const char *str,
                               const char *decode_err_msg)
 {
+    _PyInitError err = _Py_PreInitialize(NULL);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     wchar_t *str2;
     if (str != NULL) {
         size_t len;
@@ -572,6 +576,9 @@ _PyCoreConfig_DecodeLocaleErr(wchar_t **config_str, const char *str,
     _PyCoreConfig_DecodeLocaleErr(config_str, str, "cannot decode " NAME)
 
 
+/* Decode str using Py_DecodeLocale() and set the result into *config_str.
+   Pre-initialize Python if needed to ensure that encodings are properly
+   configured. */
 _PyInitError
 _PyCoreConfig_DecodeLocale(wchar_t **config_str, const char *str)
 {
@@ -2100,10 +2107,30 @@ done:
 _PyInitError
 _PyCoreConfig_SetPyArgv(_PyCoreConfig *config, const _PyArgv *args)
 {
+    if (args->use_bytes_argv) {
+        _PyInitError err;
+
+        err = _PyRuntime_Initialize();
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+        _PyRuntimeState *runtime = &_PyRuntime;
+
+        /* do nothing if Python is already pre-initialized:
+           _PyCoreConfig_Write() will update _PyRuntime.preconfig later */
+        if (!runtime->pre_initialized) {
+            err = _Py_PreInitializeFromCoreConfig(config, args);
+            if (_Py_INIT_FAILED(err)) {
+                return err;
+            }
+        }
+    }
     return _PyArgv_AsWstrList(args, &config->argv);
 }
 
 
+/* Set config.argv: decode argv using Py_DecodeLocale(). Pre-initialize Python
+   if needed to ensure that encodings are properly configured. */
 _PyInitError
 _PyCoreConfig_SetArgv(_PyCoreConfig *config, int argc, char **argv)
 {
@@ -2138,7 +2165,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
 {
     _PyInitError err;
 
-    err = _Py_PreInitializeFromCoreConfig(config);
+    err = _Py_PreInitializeFromCoreConfig(config, NULL);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
