@@ -43,31 +43,24 @@ something_else  = sentinel.SomethingElse
 
 
 class Foo(object):
-    def __init__(self, a):
-        pass
-    def f(self, a):
-        pass
-    def g(self):
-        pass
+    def __init__(self, a): pass
+    def f(self, a): pass
+    def g(self): pass
     foo = 'bar'
 
     @staticmethod
-    def static_method():
-        return 24
+    def static_method(): pass
 
     @classmethod
-    def class_method(cls):
-        return 42
+    def class_method(cls): pass
 
     class Bar(object):
-        def a(self):
-            pass
+        def a(self): pass
 
 foo_name = '%s.Foo' % __name__
 
 
-def function(a, b=Foo):
-    pass
+def function(a, b=Foo): pass
 
 
 class Container(object):
@@ -370,31 +363,19 @@ class PatchTest(unittest.TestCase):
 
 
     def test_patch_wont_create_by_default(self):
-        try:
+        with self.assertRaises(AttributeError):
             @patch('%s.frooble' % builtin_string, sentinel.Frooble)
-            def test():
-                self.assertEqual(frooble, sentinel.Frooble)
+            def test(): pass
 
             test()
-        except AttributeError:
-            pass
-        else:
-            self.fail('Patching non existent attributes should fail')
-
         self.assertRaises(NameError, lambda: frooble)
 
 
     def test_patchobject_wont_create_by_default(self):
-        try:
+        with self.assertRaises(AttributeError):
             @patch.object(SomeClass, 'ord', sentinel.Frooble)
-            def test():
-                self.fail('Patching non existent attributes should fail')
-
+            def test(): pass
             test()
-        except AttributeError:
-            pass
-        else:
-            self.fail('Patching non existent attributes should fail')
         self.assertFalse(hasattr(SomeClass, 'ord'))
 
 
@@ -642,8 +623,7 @@ class PatchTest(unittest.TestCase):
         @patch('%s.SomeClass' % __name__, object(), autospec=True)
         @patch.object(SomeClass, object())
         @patch.dict(foo)
-        def some_name():
-            pass
+        def some_name(): pass
 
         self.assertEqual(some_name.__name__, 'some_name')
 
@@ -654,12 +634,9 @@ class PatchTest(unittest.TestCase):
         @patch.dict(foo, {'a': 'b'})
         def test():
             raise NameError('Konrad')
-        try:
+
+        with self.assertRaises(NameError):
             test()
-        except NameError:
-            pass
-        else:
-            self.fail('NameError not raised by test')
 
         self.assertEqual(foo, {})
 
@@ -888,17 +865,13 @@ class PatchTest(unittest.TestCase):
 
     def test_autospec(self):
         class Boo(object):
-            def __init__(self, a):
-                pass
-            def f(self, a):
-                pass
-            def g(self):
-                pass
+            def __init__(self, a): pass
+            def f(self, a): pass
+            def g(self): pass
             foo = 'bar'
 
             class Bar(object):
-                def a(self):
-                    pass
+                def a(self): pass
 
         def _test(mock):
             mock(1)
@@ -1445,20 +1418,17 @@ class PatchTest(unittest.TestCase):
         @patch.object(Foo, 'g', 1)
         @patch.object(Foo, 'missing', 1)
         @patch.object(Foo, 'f', 1)
-        def thing1():
-            pass
+        def thing1(): pass
 
         @patch.object(Foo, 'missing', 1)
         @patch.object(Foo, 'g', 1)
         @patch.object(Foo, 'f', 1)
-        def thing2():
-            pass
+        def thing2(): pass
 
         @patch.object(Foo, 'g', 1)
         @patch.object(Foo, 'f', 1)
         @patch.object(Foo, 'missing', 1)
-        def thing3():
-            pass
+        def thing3(): pass
 
         for func in thing1, thing2, thing3:
             self.assertRaises(AttributeError, func)
@@ -1477,20 +1447,17 @@ class PatchTest(unittest.TestCase):
         @patch.object(Foo, 'g', 1)
         @patch.object(Foo, 'foo', new_callable=crasher)
         @patch.object(Foo, 'f', 1)
-        def thing1():
-            pass
+        def thing1(): pass
 
         @patch.object(Foo, 'foo', new_callable=crasher)
         @patch.object(Foo, 'g', 1)
         @patch.object(Foo, 'f', 1)
-        def thing2():
-            pass
+        def thing2(): pass
 
         @patch.object(Foo, 'g', 1)
         @patch.object(Foo, 'f', 1)
         @patch.object(Foo, 'foo', new_callable=crasher)
-        def thing3():
-            pass
+        def thing3(): pass
 
         for func in thing1, thing2, thing3:
             self.assertRaises(NameError, func)
@@ -1516,8 +1483,7 @@ class PatchTest(unittest.TestCase):
             patcher.additional_patchers = additionals
 
             @patcher
-            def func():
-                pass
+            def func(): pass
 
             self.assertRaises(AttributeError, func)
             self.assertEqual(Foo.f, original_f)
@@ -1545,8 +1511,7 @@ class PatchTest(unittest.TestCase):
             patcher.additional_patchers = additionals
 
             @patcher
-            def func():
-                pass
+            def func(): pass
 
             self.assertRaises(NameError, func)
             self.assertEqual(Foo.f, original_f)
