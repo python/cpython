@@ -33,15 +33,15 @@ class TestFormats(unittest.TestCase):
             filename = findfile(filename, subdir="sndhdrdata")
 
             what = sndhdr.what(filename)
-            self.assertEqual(what, None)
+            self.assertIsNone(what)
 
             whathdr = sndhdr.whathdr(filename)
-            self.assertEqual(whathdr, None)
+            self.assertIsNone(whathdr)
 
             for tf in sndhdr.tests:
                 with open(filename, 'rb') as f:
                     h = f.read(512)
-                    self.assertEqual(tf(h, f), None)
+                    self.assertIsNone(tf(h, f))
 
     def test_pickleable(self):
         filename = findfile('sndhdr.aifc', subdir="sndhdrdata")
