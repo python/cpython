@@ -144,8 +144,6 @@ def _set_signature(mock, original, instance=False):
     # creates a function with signature (*args, **kwargs) that delegates to a
     # mock. It still does signature checking by calling a lambda with the same
     # signature as the original.
-    if not _callable(original):
-        return
 
     skipfirst = isinstance(original, type)
     result = _get_signature_object(original, instance, skipfirst)
