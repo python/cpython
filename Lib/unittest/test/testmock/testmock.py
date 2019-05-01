@@ -80,6 +80,21 @@ class MockTest(unittest.TestCase):
                           "return value in constructor not honoured")
 
 
+    def test_change_return_value_via_delegate(self):
+        def f(): pass
+        mock = create_autospec(f)
+        mock.mock.return_value = 1
+        self.assertEqual(mock(), 1)
+
+
+    def test_change_side_effect_via_delegate(self):
+        def f(): pass
+        mock = create_autospec(f)
+        mock.mock.side_effect = TypeError()
+        with self.assertRaises(TypeError):
+            mock()
+
+
     def test_repr(self):
         mock = Mock(name='foo')
         self.assertIn('foo', repr(mock))
@@ -1102,6 +1117,11 @@ class MockTest(unittest.TestCase):
         m.foo = m
         repr(m.foo())
         self.assertRegex(repr(m.foo()), r"<Mock name='mock\(\)' id='\d+'>")
+
+
+    def test_mock_calls_contains(self):
+        m = Mock()
+        self.assertFalse([call()] in m.mock_calls)
 
 
     def test_subclassing(self):

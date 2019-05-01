@@ -2288,8 +2288,7 @@ def _must_skip(spec, entry, is_type):
         else:
             return False
 
-    # shouldn't get here unless function is a dynamically provided attribute
-    # XXXX untested behaviour
+    # function is a dynamically provided attribute
     return is_type
 
 

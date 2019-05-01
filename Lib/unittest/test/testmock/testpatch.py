@@ -465,6 +465,9 @@ class PatchTest(unittest.TestCase):
             attribute = sentinel.Original
 
         class Foo(object):
+
+            test_class_attr = 'whatever'
+
             def test_method(other_self, mock_something):
                 self.assertEqual(PTModule.something, mock_something,
                                  "unpatched")
@@ -1819,6 +1822,37 @@ class PatchTest(unittest.TestCase):
         with patch.object(foo, '__kwdefaults__', dict([('x', 1, )])):
             self.assertEqual(foo(), 1)
         self.assertEqual(foo(), 0)
+
+    def test_dotted_but_module_not_loaded(self):
+        # This exercises the AttributeError branch of _dot_lookup.
+
+        # make sure it's there
+        import unittest.test.testmock.support
+        # now make sure it's not:
+        with patch.dict('sys.modules'):
+            del sys.modules['unittest.test.testmock.support']
+            del sys.modules['unittest.test.testmock']
+            del sys.modules['unittest.test']
+            del sys.modules['unittest']
+
+            # now make sure we can patch based on a dotted path:
+            @patch('unittest.test.testmock.support.X')
+            def test(mock):
+                pass
+            test()
+
+
+    def test_invalid_target(self):
+        with self.assertRaises(TypeError):
+            patch('')
+
+
+    def test_cant_set_kwargs_when_passing_a_mock(self):
+        @patch('unittest.test.testmock.support.X', new=object(), x=1)
+        def test(): pass
+        with self.assertRaises(TypeError):
+            test()
+
 
 if __name__ == '__main__':
     unittest.main()

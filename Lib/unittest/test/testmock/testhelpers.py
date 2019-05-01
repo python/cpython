@@ -457,6 +457,51 @@ class SpecSignatureTest(unittest.TestCase):
             self._check_someclass_mock(mock)
 
 
+    def test_spec_has_descriptor_returning_function(self):
+
+        class CrazyDescriptor(object):
+
+            def __get__(self, obj, type_):
+                if obj is None:
+                    return lambda x: None
+
+        class MyClass(object):
+
+            some_attr = CrazyDescriptor()
+
+        mock = create_autospec(MyClass)
+        mock.some_attr(1)
+        with self.assertRaises(TypeError):
+            mock.some_attr()
+        with self.assertRaises(TypeError):
+            mock.some_attr(1, 2)
+
+
+    def test_spec_has_function_not_in_bases(self):
+
+        class CrazyClass(object):
+
+            def __dir__(self):
+                return super(CrazyClass, self).__dir__()+['crazy']
+
+            def __getattr__(self, item):
+                if item == 'crazy':
+                    return lambda x: x
+                raise AttributeError(item)
+
+        inst = CrazyClass()
+        with self.assertRaises(AttributeError):
+            inst.other
+        self.assertEqual(inst.crazy(42), 42)
+
+        mock = create_autospec(inst)
+        mock.crazy(42)
+        with self.assertRaises(TypeError):
+            mock.crazy()
+        with self.assertRaises(TypeError):
+            mock.crazy(1, 2)
+
+
     def test_builtin_functions_types(self):
         # we could replace builtin functions / methods with a function
         # with *args / **kwargs signature. Using the builtin method type
@@ -893,6 +938,42 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertEqual(mock.mock_calls, [call(1, 2, c=3), call(1, c=3)])
         self.assertRaises(TypeError, mock, 1)
         self.assertRaises(TypeError, mock, 1, 2, 3, c=4)
+
+
+    def test_spec_function_no_name(self):
+        func = lambda: 'nope'
+        mock = create_autospec(func)
+        self.assertEqual(mock.__name__, 'funcopy')
+
+
+    def test_spec_function_assert_has_calls(self):
+        def f(a): pass
+        mock = create_autospec(f)
+        mock(1)
+        mock.assert_has_calls([call(1)])
+        with self.assertRaises(AssertionError):
+            mock.assert_has_calls([call(2)])
+
+
+    def test_spec_function_assert_any_call(self):
+        def f(a): pass
+        mock = create_autospec(f)
+        mock(1)
+        mock.assert_any_call(1)
+        with self.assertRaises(AssertionError):
+            mock.assert_any_call(2)
+
+
+    def test_spec_function_reset_mock(self):
+        def f(a): pass
+        rv = Mock()
+        mock = create_autospec(f, return_value=rv)
+        mock(1)(2)
+        self.assertEqual(mock.mock_calls, [call(1)])
+        self.assertEqual(rv.mock_calls, [call(2)])
+        mock.reset_mock()
+        self.assertEqual(mock.mock_calls, [])
+        self.assertEqual(rv.mock_calls, [])
 
 
 class TestCallList(unittest.TestCase):
