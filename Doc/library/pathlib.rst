@@ -844,7 +844,7 @@ call fails (for example because the path doesn't exist).
    other errors (such as permission errors) are propagated.
 
 
-.. method:: Path.iterdir(recursive=False)
+.. method:: Path.iterdir(*, recursive=False)
 
    When the path points to a directory, yield path objects of the directory
    contents::
