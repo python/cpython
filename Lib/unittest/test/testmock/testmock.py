@@ -1097,6 +1097,13 @@ class MockTest(unittest.TestCase):
         self.assertEqual(repr(m.mock_calls[2]), 'call.foo().bar().baz.bob()')
 
 
+    def test_mock_call_repr_loop(self):
+        m = Mock()
+        m.foo = m
+        repr(m.foo())
+        self.assertRegex(repr(m.foo()), r"<Mock name='mock\(\)' id='\d+'>")
+
+
     def test_subclassing(self):
         class Subclass(Mock):
             pass

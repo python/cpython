@@ -607,7 +607,7 @@ class NonCallableMock(Base):
         dot = '.'
         if _name_list == ['()']:
             dot = ''
-        seen = set()
+
         while _parent is not None:
             last = _parent
 
@@ -617,11 +617,6 @@ class NonCallableMock(Base):
                 dot = ''
 
             _parent = _parent._mock_new_parent
-
-            # use ids here so as not to call __hash__ on the mocks
-            if id(_parent) in seen:
-                break
-            seen.add(id(_parent))
 
         _name_list = list(reversed(_name_list))
         _first = last._mock_name or 'mock'
@@ -975,8 +970,6 @@ class CallableMixin(Base):
         self.call_args = _call
         self.call_args_list.append(_call)
 
-        seen = set()
-
         # initial stuff for method_calls:
         do_method_calls = self._mock_parent is not None
         method_call_name = self._mock_name
@@ -1011,13 +1004,6 @@ class CallableMixin(Base):
 
             # follow the parental chain:
             _new_parent = _new_parent._mock_new_parent
-
-            # check we're not in an infinite loop:
-            # ( use ids here so as not to call __hash__ on the mocks)
-            _new_parent_id = id(_new_parent)
-            if _new_parent_id in seen:
-                break
-            seen.add(_new_parent_id)
 
         effect = self.side_effect
         if effect is not None:
