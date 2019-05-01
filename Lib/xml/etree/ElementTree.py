@@ -1374,12 +1374,30 @@ class TreeBuilder:
     *element_factory* is an optional element factory which is called
     to create new Element instances, as necessary.
 
+    *comment_factory* is a factory to create comments to be used instead of
+    the standard factory.  If *insert_comments* is false (the default),
+    comments will not be inserted into the tree.
+
+    *pi_factory* is a factory to create processing instructions to be used
+    instead of the standard factory.  If *insert_pis* is false (the default),
+    processing instructions will not be inserted into the tree.
     """
-    def __init__(self, element_factory=None):
+    def __init__(self, element_factory=None, *,
+                 comment_factory=None, pi_factory=None,
+                 insert_comments=False, insert_pis=False):
         self._data = [] # data collector
         self._elem = [] # element stack
         self._last = None # last element
+        self._root = None # root element
         self._tail = None # true if we're after an end tag
+        if comment_factory is None:
+            comment_factory = Comment
+        self._comment_factory = comment_factory
+        self.insert_comments = insert_comments
+        if pi_factory is None:
+            pi_factory = ProcessingInstruction
+        self._pi_factory = pi_factory
+        self.insert_pis = insert_pis
         if element_factory is None:
             element_factory = Element
         self._factory = element_factory
@@ -1387,8 +1405,8 @@ class TreeBuilder:
     def close(self):
         """Flush builder buffers and return toplevel document Element."""
         assert len(self._elem) == 0, "missing end tags"
-        assert self._last is not None, "missing toplevel element"
-        return self._last
+        assert self._root is not None, "missing toplevel element"
+        return self._root
 
     def _flush(self):
         if self._data:
@@ -1417,6 +1435,8 @@ class TreeBuilder:
         self._last = elem = self._factory(tag, attrs)
         if self._elem:
             self._elem[-1].append(elem)
+        elif self._root is None:
+            self._root = elem
         self._elem.append(elem)
         self._tail = 0
         return elem
@@ -1434,6 +1454,33 @@ class TreeBuilder:
                    self._last.tag, tag)
         self._tail = 1
         return self._last
+
+    def comment(self, text):
+        """Create a comment using the comment_factory.
+
+        *text* is the text of the comment.
+        """
+        return self._handle_single(
+            self._comment_factory, self.insert_comments, text)
+
+    def pi(self, target, text=None):
+        """Create a processing instruction using the pi_factory.
+
+        *target* is the target name of the processing instruction.
+        *text* is the data of the processing instruction, or ''.
+        """
+        return self._handle_single(
+            self._pi_factory, self.insert_pis, target, text)
+
+    def _handle_single(self, factory, insert, *args):
+        elem = factory(*args)
+        if insert:
+            self._flush()
+            self._last = elem
+            if self._elem:
+                self._elem[-1].append(elem)
+            self._tail = 1
+        return elem
 
 
 # also see ElementTree and TreeBuilder
@@ -1519,6 +1566,15 @@ class XMLParser:
                 def handler(prefix, event=event_name, append=append):
                     append((event, None))
                 parser.EndNamespaceDeclHandler = handler
+            elif event_name == 'comment':
+                def handler(text, event=event_name, append=append, self=self):
+                    append((event, self.target.comment(text)))
+                parser.CommentHandler = handler
+            elif event_name == 'pi':
+                def handler(pi_target, data, event=event_name, append=append,
+                            self=self):
+                    append((event, self.target.pi(pi_target, data)))
+                parser.ProcessingInstructionHandler = handler
             else:
                 raise ValueError("unknown event %r" % event_name)
 
@@ -1640,7 +1696,10 @@ try:
     # (see tests)
     _Element_Py = Element
 
-    # Element, SubElement, ParseError, TreeBuilder, XMLParser
+    # Element, SubElement, ParseError, TreeBuilder, XMLParser, _set_factories
     from _elementtree import *
+    from _elementtree import _set_factories
 except ImportError:
     pass
+else:
+    _set_factories(Comment, ProcessingInstruction)

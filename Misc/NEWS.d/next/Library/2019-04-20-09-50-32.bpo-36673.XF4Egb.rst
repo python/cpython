@@ -1,0 +1,3 @@
+The TreeBuilder and XMLPullParser in xml.etree.ElementTree gained support
+for parsing comments and processing instructions.
+Patch by Stefan Behnel.
