@@ -1071,17 +1071,16 @@ TreeBuilder Objects
 
    .. method:: comment(text)
 
-      Adds a comment with the given *text*.  If *comment_factory* is
-      :const:`None`, this will just return the text.
+      Creates a comment with the given *text*.  If ``insert_comments`` is true,
+      this will also add it to the tree.
 
       .. versionadded:: 3.8
 
 
    .. method:: pi(target, text)
 
-      Adds a comment with the given *target* name and *text*.  If
-      *pi_factory* is :const:`None`, this will return a ``(target, text)``
-      tuple.
+      Creates a comment with the given *target* name and *text*.  If
+      ``insert_pis`` is true, this will also add it to the tree.
 
       .. versionadded:: 3.8
 
