@@ -184,21 +184,6 @@ class MockTest(unittest.TestCase):
         mock.side_effect = ValueError('Bazinga!')
         self.assertRaisesRegex(ValueError, 'Bazinga!', mock)
 
-    @unittest.skipUnless('java' in sys.platform,
-                          'This test only applies to Jython')
-    def test_java_exception_side_effect(self):
-        import java
-        mock = Mock(side_effect=java.lang.RuntimeException("Boom!"))
-
-        # can't use assertRaises with java exceptions
-        try:
-            mock(1, 2, fish=3)
-        except java.lang.RuntimeException:
-            pass
-        else:
-            self.fail('java exception not raised')
-        mock.assert_called_with(1,2, fish=3)
-
 
     def test_reset_mock(self):
         parent = Mock()
