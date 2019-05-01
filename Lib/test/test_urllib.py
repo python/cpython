@@ -343,11 +343,12 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
                 # calls urllib.parse.quote() on the URL which makes all of the
                 # above attempts at injection within the url _path_ safe.
                 escaped_char_repr = repr(char).replace('\\', r'\\')
+                InvalidURL = http.client.InvalidURL
                 with self.assertRaisesRegex(
-                    ValueError, f"contain control.*{escaped_char_repr}"):
+                    InvalidURL, f"contain control.*{escaped_char_repr}"):
                     urllib.request.urlopen(f"http:{schemeless_url}")
                 with self.assertRaisesRegex(
-                    ValueError, f"contain control.*{escaped_char_repr}"):
+                    InvalidURL, f"contain control.*{escaped_char_repr}"):
                     urllib.request.urlopen(f"https:{schemeless_url}")
                 # This code path quotes the URL so there is no injection.
                 resp = urlopen(f"http:{schemeless_url}")
@@ -367,10 +368,11 @@ class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin, FakeFTPMixin):
             # urlopen uses FancyURLOpener which goes via a codepath that
             # calls urllib.parse.quote() on the URL which makes all of the
             # above attempts at injection within the url _path_ safe.
+            InvalidURL = http.client.InvalidURL
             with self.assertRaisesRegex(
-                ValueError, r"contain control.*\\r.*(found at least . .)"):
+                InvalidURL, r"contain control.*\\r.*(found at least . .)"):
                 urllib.request.urlopen(f"http:{schemeless_url}")
-            with self.assertRaisesRegex(ValueError, r"contain control.*\\n"):
+            with self.assertRaisesRegex(InvalidURL, r"contain control.*\\n"):
                 urllib.request.urlopen(f"https:{schemeless_url}")
             # This code path quotes the URL so there is no injection.
             resp = urlopen(f"http:{schemeless_url}")
