@@ -475,7 +475,7 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     (((LEN) == -2) \
-     ? _Py_INIT_USER_ERR("cannot decode " NAME) \
+     ? _Py_INIT_ERR("cannot decode " NAME) \
      : _Py_INIT_NO_MEMORY())
 
 /* Free memory allocated in config, but don't clear all attributes */
@@ -1018,8 +1018,8 @@ config_init_hash_seed(_PyCoreConfig *config)
             || seed > 4294967295UL
             || (errno == ERANGE && seed == ULONG_MAX))
         {
-            return _Py_INIT_USER_ERR("PYTHONHASHSEED must be \"random\" "
-                                     "or an integer in range [0; 4294967295]");
+            return _Py_INIT_ERR("PYTHONHASHSEED must be \"random\" "
+                                "or an integer in range [0; 4294967295]");
         }
         /* Use a specific hash */
         config->use_hash_seed = 1;
@@ -1129,8 +1129,7 @@ config_init_tracemalloc(_PyCoreConfig *config)
             valid = 0;
         }
         if (!valid) {
-            return _Py_INIT_USER_ERR("PYTHONTRACEMALLOC: invalid number "
-                                     "of frames");
+            return _Py_INIT_ERR("PYTHONTRACEMALLOC: invalid number of frames");
         }
         config->tracemalloc = nframe;
     }
@@ -1146,8 +1145,8 @@ config_init_tracemalloc(_PyCoreConfig *config)
                 valid = 0;
             }
             if (!valid) {
-                return _Py_INIT_USER_ERR("-X tracemalloc=NFRAME: "
-                                         "invalid number of frames");
+                return _Py_INIT_ERR("-X tracemalloc=NFRAME: "
+                                    "invalid number of frames");
             }
         }
         else {
@@ -1267,8 +1266,8 @@ config_get_locale_encoding(char **locale_encoding)
 #else
     const char *encoding = nl_langinfo(CODESET);
     if (!encoding || encoding[0] == '\0') {
-        return _Py_INIT_USER_ERR("failed to get the locale encoding: "
-                                 "nl_langinfo(CODESET) failed");
+        return _Py_INIT_ERR("failed to get the locale encoding: "
+                            "nl_langinfo(CODESET) failed");
     }
 #endif
     *locale_encoding = _PyMem_RawStrdup(encoding);

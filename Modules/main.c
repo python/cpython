@@ -570,7 +570,7 @@ exit_sigint(void)
 static void _Py_NO_RETURN
 pymain_exit_error(_PyInitError err)
 {
-    if (_Py_INIT_HAS_EXITCODE(err)) {
+    if (_Py_INIT_IS_EXIT(err)) {
         /* If it's an error rather than a regular exit, leave Python runtime
            alive: _Py_ExitInitError() uses the current exception and use
            sys.stdout in this case. */
