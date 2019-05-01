@@ -870,6 +870,9 @@ call fails (for example because the path doesn't exist).
       PosixPath('foo/bar/c.txt')
       PosixPath('foo/bar/spam/d.rst')
 
+   .. versionchanged:: 3.8
+      The *recursive* parameter was added.
+
 .. method:: Path.lchmod(mode)
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
