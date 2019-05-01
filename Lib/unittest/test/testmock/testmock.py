@@ -1878,11 +1878,12 @@ class MockTest(unittest.TestCase):
         with patch.dict('sys.modules'):
             del sys.modules['unittest.mock']
 
-            def trace(frame, event, arg):
+            # This trace will stop coverage being measured ;-)
+            def trace(frame, event, arg):  # pragma: no cover
                 return trace
 
+            self.addCleanup(sys.settrace, sys.gettrace())
             sys.settrace(trace)
-            self.addCleanup(sys.settrace, None)
 
             from unittest.mock import (
                 Mock, MagicMock, NonCallableMock, NonCallableMagicMock
