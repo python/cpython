@@ -57,14 +57,7 @@ pymain_init(const _PyArgv *args)
        environment variables (PYTHONUTF8 and PYTHONCOERCECLOCALE)  */
     preconfig.coerce_c_locale = -1;
     preconfig.utf8_mode = -1;
-    if (args->use_bytes_argv) {
-        err = _Py_PreInitializeFromArgs(&preconfig,
-                                        args->argc, args->bytes_argv);
-    }
-    else {
-        err = _Py_PreInitializeFromWideArgs(&preconfig,
-                                            args->argc, args->wchar_argv);
-    }
+    err = _Py_PreInitializeFromPyArgv(&preconfig, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }

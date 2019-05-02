@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pystate.h"   /* _PyRuntimeState */
+#include "pycore_coreconfig.h"   /* _PyArgv */
+#include "pycore_pystate.h"      /* _PyRuntimeState */
 
 /* True if the main interpreter thread exited due to an unhandled
  * KeyboardInterrupt exception, suggesting the user pressed ^C. */
@@ -90,8 +91,12 @@ extern void _PyGILState_Fini(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(_PyRuntimeState *runtime);
 
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPyArgv(
+    const _PyPreConfig *src_config,
+    const _PyArgv *args);
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromCoreConfig(
-    const _PyCoreConfig *coreconfig);
+    const _PyCoreConfig *coreconfig,
+    const _PyArgv *args);
 
 #ifdef __cplusplus
 }

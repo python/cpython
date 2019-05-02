@@ -683,8 +683,8 @@ _Py_InitializeCore_impl(_PyRuntimeState *runtime,
 }
 
 
-static _PyInitError
-preinit(const _PyPreConfig *src_config, const _PyArgv *args)
+_PyInitError
+_Py_PreInitializeFromPyArgv(const _PyPreConfig *src_config, const _PyArgv *args)
 {
     _PyInitError err;
 
@@ -726,11 +726,12 @@ done:
     return err;
 }
 
+
 _PyInitError
 _Py_PreInitializeFromArgs(const _PyPreConfig *src_config, int argc, char **argv)
 {
     _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
-    return preinit(src_config, &args);
+    return _Py_PreInitializeFromPyArgv(src_config, &args);
 }
 
 
@@ -738,24 +739,26 @@ _PyInitError
 _Py_PreInitializeFromWideArgs(const _PyPreConfig *src_config, int argc, wchar_t **argv)
 {
     _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
-    return preinit(src_config, &args);
+    return _Py_PreInitializeFromPyArgv(src_config, &args);
 }
 
 
 _PyInitError
 _Py_PreInitialize(const _PyPreConfig *src_config)
 {
-    return preinit(src_config, NULL);
+    return _Py_PreInitializeFromPyArgv(src_config, NULL);
 }
 
 
 _PyInitError
-_Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig)
+_Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig,
+                                const _PyArgv *args)
 {
-    assert(coreconfig != NULL);
     _PyPreConfig config = _PyPreConfig_INIT;
-    _PyCoreConfig_GetCoreConfig(&config, coreconfig);
-    return _Py_PreInitialize(&config);
+    if (coreconfig != NULL) {
+        _PyCoreConfig_GetCoreConfig(&config, coreconfig);
+    }
+    return _Py_PreInitializeFromPyArgv(&config, args);
     /* No need to clear config:
        _PyCoreConfig_GetCoreConfig() doesn't allocate memory */
 }
@@ -823,12 +826,7 @@ _Py_InitializeCore(_PyRuntimeState *runtime,
 {
     _PyInitError err;
 
-    if (src_config) {
-        err = _Py_PreInitializeFromCoreConfig(src_config);
-    }
-    else {
-        err = _Py_PreInitialize(NULL);
-    }
+    err = _Py_PreInitializeFromCoreConfig(src_config, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
