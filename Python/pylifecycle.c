@@ -59,10 +59,9 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
 static _PyInitError add_main_module(PyInterpreterState *interp);
-static _PyInitError initfsencoding(PyInterpreterState *interp);
-static _PyInitError initsite(void);
+static _PyInitError init_import_size(void);
 static _PyInitError init_sys_streams(PyInterpreterState *interp);
-static _PyInitError initsigs(void);
+static _PyInitError init_signals(void);
 static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
@@ -144,42 +143,8 @@ Py_IsInitialized(void)
 
 */
 
-static char*
-get_codec_name(const char *encoding)
-{
-    const char *name_utf8;
-    char *name_str;
-    PyObject *codec, *name = NULL;
-
-    codec = _PyCodec_Lookup(encoding);
-    if (!codec)
-        goto error;
-
-    name = _PyObject_GetAttrId(codec, &PyId_name);
-    Py_CLEAR(codec);
-    if (!name)
-        goto error;
-
-    name_utf8 = PyUnicode_AsUTF8(name);
-    if (name_utf8 == NULL)
-        goto error;
-    name_str = _PyMem_RawStrdup(name_utf8);
-    Py_DECREF(name);
-    if (name_str == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    return name_str;
-
-error:
-    Py_XDECREF(codec);
-    Py_XDECREF(name);
-    return NULL;
-}
-
-
 static _PyInitError
-initimport(PyInterpreterState *interp, PyObject *sysmod)
+init_importlib(PyInterpreterState *interp, PyObject *sysmod)
 {
     PyObject *importlib;
     PyObject *impmod;
@@ -229,7 +194,7 @@ initimport(PyInterpreterState *interp, PyObject *sysmod)
 }
 
 static _PyInitError
-initexternalimport(PyInterpreterState *interp)
+init_importlib_external(PyInterpreterState *interp)
 {
     PyObject *value;
     value = PyObject_CallMethod(interp->importlib,
@@ -661,7 +626,7 @@ pycore_init_import_warnings(PyInterpreterState *interp, PyObject *sysmod)
 
     /* This call sets up builtin and frozen import support */
     if (interp->core_config._install_importlib) {
-        err = initimport(interp, sysmod);
+        err = init_importlib(interp, sysmod);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -940,7 +905,7 @@ _Py_InitializeMainInterpreter(_PyRuntimeState *runtime,
         return _Py_INIT_ERR("can't finish initializing sys");
     }
 
-    _PyInitError err = initexternalimport(interp);
+    _PyInitError err = init_importlib_external(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -951,13 +916,13 @@ _Py_InitializeMainInterpreter(_PyRuntimeState *runtime,
         return err;
     }
 
-    err = initfsencoding(interp);
+    err = _PyUnicode_InitEncodings(interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
 
     if (core_config->install_signal_handlers) {
-        err = initsigs(); /* Signal handling stuff, including initintr() */
+        err = init_signals();
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -992,7 +957,7 @@ _Py_InitializeMainInterpreter(_PyRuntimeState *runtime,
     runtime->initialized = 1;
 
     if (core_config->site_import) {
-        err = initsite(); /* Module site */
+        err = init_import_size(); /* Module site */
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1497,17 +1462,17 @@ new_interpreter(PyThreadState **tstate_p)
             return err;
         }
 
-        err = initimport(interp, sysmod);
+        err = init_importlib(interp, sysmod);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
 
-        err = initexternalimport(interp);
+        err = init_importlib_external(interp);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
 
-        err = initfsencoding(interp);
+        err = _PyUnicode_InitEncodings(interp);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1523,7 +1488,7 @@ new_interpreter(PyThreadState **tstate_p)
         }
 
         if (core_config->site_import) {
-            err = initsite();
+            err = init_import_size();
             if (_Py_INIT_FAILED(err)) {
                 return err;
             }
@@ -1649,42 +1614,10 @@ add_main_module(PyInterpreterState *interp)
     return _Py_INIT_OK();
 }
 
-static _PyInitError
-initfsencoding(PyInterpreterState *interp)
-{
-    _PyCoreConfig *config = &interp->core_config;
-
-    char *encoding = get_codec_name(config->filesystem_encoding);
-    if (encoding == NULL) {
-        /* Such error can only occurs in critical situations: no more
-           memory, import a module of the standard library failed, etc. */
-        return _Py_INIT_ERR("failed to get the Python codec "
-                            "of the filesystem encoding");
-    }
-
-    /* Update the filesystem encoding to the normalized Python codec name.
-       For example, replace "ANSI_X3.4-1968" (locale encoding) with "ascii"
-       (Python codec name). */
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
-
-    /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-       global configuration variables. */
-    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
-                                  config->filesystem_errors) < 0) {
-        return _Py_INIT_NO_MEMORY();
-    }
-
-    /* PyUnicode can now use the Python codec rather than C implementation
-       for the filesystem encoding */
-    interp->fscodec_initialized = 1;
-    return _Py_INIT_OK();
-}
-
 /* Import the site module (not into __main__ though) */
 
 static _PyInitError
-initsite(void)
+init_import_size(void)
 {
     PyObject *m;
     m = PyImport_ImportModule("site");
@@ -1879,14 +1812,6 @@ init_sys_streams(PyInterpreterState *interp)
         return _Py_INIT_ERR("<stdin> is a directory, cannot continue");
     }
 #endif
-
-    char *codec_name = get_codec_name(config->stdio_encoding);
-    if (codec_name == NULL) {
-        return _Py_INIT_ERR("failed to get the Python codec name "
-                            "of the stdio encoding");
-    }
-    PyMem_RawFree(config->stdio_encoding);
-    config->stdio_encoding = codec_name;
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
        in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -2287,7 +2212,7 @@ Py_Exit(int sts)
 }
 
 static _PyInitError
-initsigs(void)
+init_signals(void)
 {
 #ifdef SIGPIPE
     PyOS_setsig(SIGPIPE, SIG_IGN);
