@@ -4999,7 +4999,7 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
 /* Parse the f-string at *str, ending at end.  We know *str starts an
    expression (so it must be a '{'). Returns the FormattedValue node, which
    includes the expression, conversion character, format_spec expression, and
-   optionally the text of the expression (if !x is used).
+   optionally the text of the expression (if !d is used).
 
    Note that I don't do a perfect job here: I don't make sure that a
    closing brace doesn't match an opening paren, for example. It
@@ -5191,7 +5191,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             return -1;
         }
 
-        /* If !x, then save the source to the expression. */
+        /* If !d, then save the source to the expression. */
         if (conversion == 'd') {
             expr_text = PyUnicode_FromStringAndSize(expr_start,
                                                     expr_end-expr_start);

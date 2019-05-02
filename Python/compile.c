@@ -211,8 +211,8 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__, *__annotations__;
-static PyObject *equal_str;
+static PyObject *__doc__, *__annotations__, *equal_str;
+
 #define CAPSULE_NAME "compile.c compiler unit"
 
 PyObject *
