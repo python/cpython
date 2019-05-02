@@ -591,12 +591,10 @@ Overlapped_clear(OverlappedObject *self)
         // The result tuple of (message, (address, port)) is only
         // allocated _after_ a message has been received.
         if(self->read_from.result) {
-            // We've received a message, free the result tuple which will
-            // also free the message buffer.
+            // We've received a message, free the result tuple.
             Py_CLEAR(self->read_from.result);
-            self->read_from.buffer = NULL;
-        } else if(self->read_from.buffer) {
-            // We haven't received a message, only free the buffer.
+        }
+        if(self->read_from.buffer) {
             Py_CLEAR(self->read_from.buffer);
         }
         break;
