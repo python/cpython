@@ -1,7 +1,6 @@
 """Tests for the lll script in the Tools/script directory."""
 
 import os
-import sys
 import tempfile
 from test import support
 from test.test_tools import skip_if_missing, import_tool
@@ -14,11 +13,6 @@ class lllTests(unittest.TestCase):
 
     def setUp(self):
         self.lll = import_tool('lll')
-        oldargv = sys.argv
-
-        def fixup():
-            sys.argv = oldargv
-        self.addCleanup(fixup)
 
     def test_lll_multiple_dirs(self):
         with tempfile.TemporaryDirectory() as dir1, \
@@ -29,13 +23,12 @@ class lllTests(unittest.TestCase):
                 open(fn, 'w').close()
                 os.symlink(fn, os.path.join(dir, 'symlink'))
 
-            sys.argv = ['lll', dir1, dir2]
             with support.captured_stdout() as output:
-                self.lll.main()
+                self.lll.main([dir1, dir2])
             self.assertEqual(output.getvalue(),
                 f'{dir1}:\n'
                 f'symlink -> {fn1}\n'
-                '\n'
+                f'\n'
                 f'{dir2}:\n'
                 f'symlink -> {fn2}\n'
             )
