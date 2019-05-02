@@ -85,7 +85,7 @@ _Py_device_encoding(int fd)
     Py_RETURN_NONE;
 }
 
-#if !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS)
+#if !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS)
 
 #define USE_FORCE_ASCII
 
@@ -309,7 +309,7 @@ _Py_ResetForceASCII(void)
 {
     /* nothing to do */
 }
-#endif   /* !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS) */
+#endif   /* !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS) */
 
 
 #if !defined(HAVE_MBRTOWC) || defined(USE_FORCE_ASCII)
@@ -536,7 +536,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
                    int current_locale, _Py_error_handler errors)
 {
     if (current_locale) {
-#if defined(__ANDROID__) || defined(__VXWORKS__)
+#ifdef _Py_FORCE_UTF8_LOCALE
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                                 errors);
 #else
@@ -544,7 +544,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
 #endif
     }
 
-#if defined(__APPLE__) || defined(__ANDROID__) || defined(__VXWORKS__)
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             errors);
 #else
@@ -569,7 +569,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
 #endif
 
     return decode_current_locale(arg, wstr, wlen, reason, errors);
-#endif   /* __APPLE__ or __ANDROID__ or __VXWORKS__ */
+#endif   /* !_Py_FORCE_UTF8_FS_ENCODING */
 }
 
 
@@ -727,7 +727,7 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
                  int raw_malloc, int current_locale, _Py_error_handler errors)
 {
     if (current_locale) {
-#ifdef __ANDROID__
+#ifdef _Py_FORCE_UTF8_LOCALE
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                                 raw_malloc, errors);
 #else
@@ -736,7 +736,7 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
 #endif
     }
 
-#if defined(__APPLE__) || defined(__ANDROID__)
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                             raw_malloc, errors);
 #else
@@ -762,7 +762,7 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
 
     return encode_current_locale(text, str, error_pos, reason,
                                  raw_malloc, errors);
-#endif   /* __APPLE__ or __ANDROID__ */
+#endif   /* _Py_FORCE_UTF8_FS_ENCODING */
 }
 
 static char*
