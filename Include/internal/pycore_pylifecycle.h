@@ -16,10 +16,11 @@ PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
 
 PyAPI_FUNC(int) _Py_UnixMain(int argc, char **argv);
 
-PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
+extern int _Py_SetFileSystemEncoding(
     const char *encoding,
     const char *errors);
-PyAPI_FUNC(void) _Py_ClearFileSystemEncoding(void);
+extern void _Py_ClearFileSystemEncoding(void);
+extern _PyInitError _PyUnicode_InitEncodings(PyInterpreterState *interp);
 
 PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
 
