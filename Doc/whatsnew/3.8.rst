@@ -424,8 +424,10 @@ and manipulating normal distributions of a random variable.
 ::
 
     >>> temperature_feb = NormalDist.from_samples([4, 12, -3, 2, 7, 14])
-    >>> temperature_feb
-    NormalDist(mu=6.0, sigma=6.356099432828281)
+    >>> temperature_feb.mean
+    6.0
+    >>> temperature_feb.stdev
+    6.356099432828281
 
     >>> temperature_feb.cdf(3)            # Chance of being under 3 degrees
     0.3184678262814532
@@ -433,8 +435,8 @@ and manipulating normal distributions of a random variable.
     >>> temperature_feb.pdf(7) / temperature_feb.pdf(10)
     1.2039930378537762
 
-    >>> el_nino = NormalDist(4, 2.5)
-    >>> temperature_feb += el_nino        # Add in a climate effect
+    >>> el_niño = NormalDist(4, 2.5)
+    >>> temperature_feb += el_niño        # Add in a climate effect
     >>> temperature_feb
     NormalDist(mu=10.0, sigma=6.830080526611674)
 
