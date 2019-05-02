@@ -5034,7 +5034,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* Can only nest one level deep. */
     if (recurse_lvl >= 2) {
         ast_error(c, n, "f-string: expressions nested too deeply");
-        return -1;
+        goto error;
     }
 
     /* The first char must be a left brace, or we wouldn't have gotten
@@ -5062,7 +5062,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             ast_error(c, n,
                       "f-string expression part "
                       "cannot include a backslash");
-            return -1;
+            goto error;
         }
         if (quote_char) {
             /* We're inside a string. See if we're at the end. */
@@ -5107,7 +5107,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         } else if (ch == '[' || ch == '{' || ch == '(') {
             if (nested_depth >= MAXLEVEL) {
                 ast_error(c, n, "f-string: too many nested parenthesis");
-                return -1;
+                goto error;
             }
             parenstack[nested_depth] = ch;
             nested_depth++;
@@ -5115,7 +5115,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             /* Error: can't include a comment character, inside parens
                or not. */
             ast_error(c, n, "f-string expression part cannot include '#'");
-            return -1;
+            goto error;
         } else if (nested_depth == 0 &&
                    (ch == '!' || ch == ':' || ch == '}')) {
             /* First, test for the special case of "!=". Since '=' is
@@ -5130,7 +5130,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         } else if (ch == ']' || ch == '}' || ch == ')') {
             if (!nested_depth) {
                 ast_error(c, n, "f-string: unmatched '%c'", ch);
-                return -1;
+                goto error;
             }
             nested_depth--;
             int opening = parenstack[nested_depth];
@@ -5142,7 +5142,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                           "f-string: closing parenthesis '%c' "
                           "does not match opening parenthesis '%c'",
                           ch, opening);
-                return -1;
+                goto error;
             }
         } else {
             /* Just consume this char and loop around. */
@@ -5155,12 +5155,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        let's just do that.*/
     if (quote_char) {
         ast_error(c, n, "f-string: unterminated string");
-        return -1;
+        goto error;
     }
     if (nested_depth) {
         int opening = parenstack[nested_depth - 1];
         ast_error(c, n, "f-string: unmatched '%c'", opening);
-        return -1;
+        goto error;
     }
 
     if (*str >= end)
@@ -5171,7 +5171,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        conversion or format_spec. */
     simple_expression = fstring_compile_expr(expr_start, expr_end, c, n);
     if (!simple_expression)
-        return -1;
+        goto error;
 
     /* Check for a conversion char, if present. */
     if (**str == '!') {
@@ -5188,13 +5188,15 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             ast_error(c, n,
                       "f-string: invalid conversion character: "
                       "expected 's', 'r', 'a', or 'd'");
-            return -1;
+            goto error;
         }
 
         /* If !d, then save the source to the expression. */
         if (conversion == 'd') {
             expr_text = PyUnicode_FromStringAndSize(expr_start,
                                                     expr_end-expr_start);
+            if (!expr_text)
+                goto error;
         }
     }
 
@@ -5209,7 +5211,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         /* Parse the format spec. */
         format_spec = fstring_parse(str, end, raw, recurse_lvl+1, c, n);
         if (!format_spec)
-            return -1;
+            goto error;
     }
 
     if (*str >= end || **str != '}')
@@ -5220,6 +5222,13 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     assert(**str == '}');
     *str += 1;
 
+    /* Can't have !d and a format spec. */
+    if (conversion == 'd' && format_spec != NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "cannot specify a format spec with !d");
+        goto error;
+    }
+
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, conversion,
@@ -5227,13 +5236,18 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                                  n->n_col_offset, n->n_end_lineno,
                                  n->n_end_col_offset, c->c_arena);
     if (!*expression)
-        return -1;
+        goto error;
 
     return 0;
 
 unexpected_end_of_string:
     ast_error(c, n, "f-string: expecting '}'");
+    /* Falls through to error. */
+
+error:
+    Py_XDECREF(expr_text);
     return -1;
+
 }
 
 /* Return -1 on error.
