@@ -67,6 +67,7 @@ from xml.parsers.expat import ParserCreate
 
 PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
 globals().update(PlistFormat.__members__)
+global FMT_XML, FMT_BINARY  # explicitly declare globals to aid humans and linters
 
 
 #
