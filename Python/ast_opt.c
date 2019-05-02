@@ -277,8 +277,8 @@ parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
     if (pos == start) {
         return NULL;
     }
-
     PyObject *str = PyUnicode_Substring(fmt, start, pos);
+    /* str = str.replace('%%', '%') */
     if (str && has_percents) {
         _Py_static_string(PyId_double_percent, "%%");
         _Py_static_string(PyId_percent, "%");
