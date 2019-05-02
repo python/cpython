@@ -14,6 +14,7 @@ class lllTests(unittest.TestCase):
     def setUp(self):
         self.lll = import_tool('lll')
 
+    @support.skip_unless_symlink
     def test_lll_multiple_dirs(self):
         with tempfile.TemporaryDirectory() as dir1, \
              tempfile.TemporaryDirectory() as dir2:
