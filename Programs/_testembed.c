@@ -488,8 +488,8 @@ static int test_init_from_config(void)
        Force it to 0 through the config. */
     config.legacy_windows_stdio = 0;
 #endif
-    config.stdio_encoding = "iso8859-1";
-    config.stdio_errors = "replace";
+    config.stdio_encoding = L"iso8859-1";
+    config.stdio_errors = L"replace";
 
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;

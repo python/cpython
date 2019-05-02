@@ -106,12 +106,9 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
-    char **config_str,
-    const char *str);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideString(
     wchar_t **config_str,
     const wchar_t *str);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideStringFromString(
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
     wchar_t **config_str,
     const char *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
