@@ -114,7 +114,7 @@ class _PaddedFile:
 
 
 class BadGzipFile(OSError):
-    """Exception raised if the processed gzip file is not valid."""
+    """Exception raised in some cases for invalid gzip files."""
 
 
 class GzipFile(_compression.BaseStream):
