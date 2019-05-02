@@ -3969,16 +3969,19 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     if (e->v.FormattedValue.conversion == 'd') {
         /* Special handling here to generate basically:
            format(<text of the expr> + '=' + repr(value), format_spec) */
-        assert(e->v.FormattedValue.expr_source != NULL);
+        assert(e->v.FormattedValue.expr_text != NULL);
 
         /* The text of the expression. */
-        ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_source);
+        ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_text);
         /* The equal sign. */
         ADDOP_LOAD_CONST(c, equal_str);
         /* Evaluate the expression to be formatted. */
         VISIT(c, expr, e->v.FormattedValue.value);
-        /* Call repr on it. */
-        /* 3 for the text, the "=", and the value. */
+        /* Call repr on it, by using FORMAT_VALUE with FVC_REPR. */
+        ADDOP_I(c, FORMAT_VALUE, FVC_REPR);
+
+        /* Now combine the 3 strings on top of the stack: the text of the
+           expression, the "=", and the repr'd value. */
         ADDOP_I(c, BUILD_STRING, 3);
     } else {
         /* Just evaluate the expression to be formatted. */

@@ -5017,7 +5017,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
     int conversion = -1; /* The conversion char. -1 if not specified. */
-    PyObject *expr_source = NULL; /* The text of the expression. */
+    PyObject *expr_text = NULL; /* The text of the expression, used for !d. */
 
     /* 0 if we're not in a string, else the quote char we're trying to
        match (single or double quote). */
@@ -5193,8 +5193,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
         /* If !x, then save the source to the expression. */
         if (conversion == 'd') {
-            expr_source = PyUnicode_FromStringAndSize(expr_start,
-                                                      expr_end-expr_start);
+            expr_text = PyUnicode_FromStringAndSize(expr_start,
+                                                    expr_end-expr_start);
         }
     }
 
@@ -5223,7 +5223,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, expr_source, LINENO(n),
+                                 format_spec, expr_text, LINENO(n),
                                  n->n_col_offset, n->n_end_lineno,
                                  n->n_end_col_offset, c->c_arena);
     if (!*expression)

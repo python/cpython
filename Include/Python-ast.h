@@ -330,7 +330,7 @@ struct _expr {
             expr_ty value;
             int conversion;
             expr_ty format_spec;
-            string expr_source;
+            string expr_text;
         } FormattedValue;
 
         struct {
@@ -640,7 +640,7 @@ expr_ty _Py_Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int
                  PyArena *arena);
 #define FormattedValue(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_FormattedValue(a0, a1, a2, a3, a4, a5, a6, a7, a8)
 expr_ty _Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec,
-                           string expr_source, int lineno, int col_offset, int
+                           string expr_text, int lineno, int col_offset, int
                            end_lineno, int end_col_offset, PyArena *arena);
 #define JoinedStr(a0, a1, a2, a3, a4, a5) _Py_JoinedStr(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_JoinedStr(asdl_seq * values, int lineno, int col_offset, int
