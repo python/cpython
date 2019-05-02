@@ -1313,7 +1313,7 @@ config_get_locale_encoding(char **locale_encoding)
 #ifdef MS_WINDOWS
     char encoding[20];
     PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
-#elif defined(__ANDROID__) || defined(__VXWORKS__)
+#elif defined(_Py_FORCE_UTF8_LOCALE)
     const char *encoding = "UTF-8";
 #else
     const char *encoding = nl_langinfo(CODESET);
@@ -1450,66 +1450,40 @@ config_init_fs_encoding(_PyCoreConfig *config, const _PyPreConfig *preconfig)
 {
     _PyInitError err;
 
-#ifdef MS_WINDOWS
-    if (preconfig->legacy_windows_fs_encoding) {
-        /* Legacy Windows filesystem encoding: mbcs/replace */
-        if (config->filesystem_encoding == NULL) {
-            err = _PyCoreConfig_SetString(&config->filesystem_encoding,
-                                          "mbcs");
-            if (_Py_INIT_FAILED(err)) {
-                return err;
-            }
-        }
-        if (config->filesystem_errors == NULL) {
-            err = _PyCoreConfig_SetString(&config->filesystem_errors,
-                                          "replace");
-            if (_Py_INIT_FAILED(err)) {
-                return err;
-            }
-        }
-    }
-
-    /* Windows defaults to utf-8/surrogatepass (PEP 529).
-
-       Note: UTF-8 Mode takes the same code path and the Legacy Windows FS
-             encoding has the priortiy over UTF-8 Mode. */
     if (config->filesystem_encoding == NULL) {
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
         err = _PyCoreConfig_SetString(&config->filesystem_encoding,
                                       "utf-8");
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
-
-    if (config->filesystem_errors == NULL) {
-        err = _PyCoreConfig_SetString(&config->filesystem_errors,
-                                      "surrogatepass");
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
 #else
-    if (config->filesystem_encoding == NULL) {
+
+#ifdef MS_WINDOWS
+        if (preconfig->legacy_windows_fs_encoding) {
+            /* Legacy Windows filesystem encoding: mbcs/replace */
+            err = _PyCoreConfig_SetString(&config->filesystem_encoding,
+                                          "mbcs");
+        }
+        else
+#endif
         if (preconfig->utf8_mode) {
-            /* UTF-8 Mode use: utf-8/surrogateescape */
             err = _PyCoreConfig_SetString(&config->filesystem_encoding,
                                           "utf-8");
-            /* errors defaults to surrogateescape above */
         }
+#ifndef MS_WINDOWS
         else if (_Py_GetForceASCII()) {
             err = _PyCoreConfig_SetString(&config->filesystem_encoding,
                                           "ascii");
         }
+#endif
         else {
-            /* macOS and Android use UTF-8,
-               other platforms use the locale encoding. */
-#if defined(__APPLE__) || defined(__ANDROID__)
+#ifdef MS_WINDOWS
+            /* Windows defaults to utf-8/surrogatepass (PEP 529). */
             err = _PyCoreConfig_SetString(&config->filesystem_encoding,
                                           "utf-8");
 #else
             err = config_get_locale_encoding(&config->filesystem_encoding);
 #endif
         }
+#endif   /* !_Py_FORCE_UTF8_FS_ENCODING */
 
         if (_Py_INIT_FAILED(err)) {
             return err;
@@ -1517,14 +1491,22 @@ config_init_fs_encoding(_PyCoreConfig *config, const _PyPreConfig *preconfig)
     }
 
     if (config->filesystem_errors == NULL) {
-        /* by default, use the "surrogateescape" error handler */
-        err = _PyCoreConfig_SetString(&config->filesystem_errors,
-                                      "surrogateescape");
+        const char *errors;
+#ifdef MS_WINDOWS
+        if (preconfig->legacy_windows_fs_encoding) {
+            errors = "replace";
+        }
+        else {
+            errors = "surrogatepass";
+        }
+#else
+        errors = "surrogateescape";
+#endif
+        err = _PyCoreConfig_SetString(&config->filesystem_errors, errors);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
     }
-#endif
     return _Py_INIT_OK();
 }
 

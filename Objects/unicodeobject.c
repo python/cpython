@@ -3506,7 +3506,7 @@ PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-#if defined(__APPLE__)
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
     return _PyUnicode_AsUTF8String(unicode, config->filesystem_errors);
 #else
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
@@ -3730,7 +3730,7 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-#if defined(__APPLE__)
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
     return PyUnicode_DecodeUTF8Stateful(s, size, config->filesystem_errors, NULL);
 #else
     /* Bootstrap check: if the filesystem codec is implemented in Python, we
