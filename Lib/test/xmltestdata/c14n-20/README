@@ -1,0 +1,14 @@
+C14N 2.0 test files
+===================
+
+This directory contains files from the draft note document listing
+test cases for the W3C C14N 2.0 specification:
+https://www.w3.org/TR/xml-c14n2-testcases/
+
+Direct source:
+https://www.w3.org/TR/xml-c14n2-testcases/files/
+
+Copied and distributed under these terms:
+
+Copyright © 2013 W3C® (MIT, ERCIM, Keio, Beihang),
+http://www.w3.org/Consortium/Legal/2015/doc-license
