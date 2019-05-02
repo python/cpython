@@ -130,7 +130,7 @@ _get_tcl_lib_path()
             return NULL;
         }
         if (stat_return_value == -1) {
-            /* install location doesn't exist, reset errno and see if
+            /* Install location doesn't exist, reset errno and see if
                we're a repository build */
             errno = 0;
 #ifdef Py_TCLTK_DIR
@@ -687,7 +687,7 @@ Tkapp_New(const char *screenName, const char *className,
     }
 #endif
 
-    /* some initial arguments need to be in argv */
+    /* Some initial arguments need to be in argv */
     if (sync || use) {
         char *args;
         Py_ssize_t len = 0;
@@ -695,7 +695,7 @@ Tkapp_New(const char *screenName, const char *className,
         if (sync)
             len += sizeof "-sync";
         if (use)
-            len += strlen(use) + sizeof "-use ";  /* never overflows */
+            len += strlen(use) + sizeof "-use ";  /* Never overflows */
 
         args = (char*)PyMem_Malloc(len);
         if (!args) {
@@ -867,19 +867,19 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
 {
     int result;
 
-    /* neither argument should be NULL, unless something's gone wrong */
+    /* Neither argument should be NULL, unless something's gone wrong */
     if (self == NULL || other == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
-    /* both arguments should be instances of PyTclObject */
+    /* Both arguments should be instances of PyTclObject */
     if (!PyTclObject_Check(self) || !PyTclObject_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
     if (self == other)
-        /* fast path when self and other are identical */
+        /* Fast path when self and other are identical */
         result = 0;
     else
         result = strcmp(Tcl_GetString(((PyTclObject *)self)->value),
