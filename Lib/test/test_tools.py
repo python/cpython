@@ -14,7 +14,6 @@ import subprocess
 import sysconfig
 import tempfile
 import textwrap
-from test import symlink_support
 from test import test_support
 from test.script_helper import assert_python_ok, temp_dir
 
@@ -450,7 +449,7 @@ class LllTests(unittest.TestCase):
 
     script = os.path.join(scriptsdir, 'lll.py')
 
-    @symlink_support.skip_unless_symlink
+    @unittest.skipUnless(hasattr(os, 'symlink'), 'Requires symlink support')
     def test_lll_multiple_dirs(self):
         dir1 = tempfile.mkdtemp()
         dir2 = tempfile.mkdtemp()
