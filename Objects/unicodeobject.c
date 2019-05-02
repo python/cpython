@@ -42,6 +42,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "pycore_fileutils.h"
 #include "pycore_object.h"
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "ucnhash.h"
 #include "bytes_methods.h"
@@ -15571,6 +15572,102 @@ PyUnicode_AsUnicodeCopy(PyObject *unicode)
     }
     memcpy(copy, u, size);
     return copy;
+}
+
+
+static char*
+get_codec_name(const char *encoding)
+{
+    PyObject *codec, *name_obj = NULL;
+
+    codec = _PyCodec_Lookup(encoding);
+    if (!codec)
+        goto error;
+
+    name_obj = PyObject_GetAttrString(codec, "name");
+    Py_CLEAR(codec);
+    if (!name_obj) {
+        goto error;
+    }
+
+    const char *name_utf8 = PyUnicode_AsUTF8(name_obj);
+    if (name_utf8 == NULL) {
+        goto error;
+    }
+
+    char *name = _PyMem_RawStrdup(name_utf8);
+    Py_DECREF(name_obj);
+    if (name == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    return name;
+
+error:
+    Py_XDECREF(codec);
+    Py_XDECREF(name_obj);
+    return NULL;
+}
+
+
+static _PyInitError
+init_stdio_encoding(PyInterpreterState *interp)
+{
+    _PyCoreConfig *config = &interp->core_config;
+
+    char *codec_name = get_codec_name(config->stdio_encoding);
+    if (codec_name == NULL) {
+        return _Py_INIT_ERR("failed to get the Python codec name "
+                            "of the stdio encoding");
+    }
+    PyMem_RawFree(config->stdio_encoding);
+    config->stdio_encoding = codec_name;
+    return _Py_INIT_OK();
+}
+
+
+static _PyInitError
+init_fs_encoding(PyInterpreterState *interp)
+{
+    _PyCoreConfig *config = &interp->core_config;
+
+    char *encoding = get_codec_name(config->filesystem_encoding);
+    if (encoding == NULL) {
+        /* Such error can only occurs in critical situations: no more
+           memory, import a module of the standard library failed, etc. */
+        return _Py_INIT_ERR("failed to get the Python codec "
+                            "of the filesystem encoding");
+    }
+
+    /* Update the filesystem encoding to the normalized Python codec name.
+       For example, replace "ANSI_X3.4-1968" (locale encoding) with "ascii"
+       (Python codec name). */
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+
+    /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
+       global configuration variables. */
+    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
+                                  config->filesystem_errors) < 0) {
+        return _Py_INIT_NO_MEMORY();
+    }
+
+    /* PyUnicode can now use the Python codec rather than C implementation
+       for the filesystem encoding */
+    interp->fscodec_initialized = 1;
+    return _Py_INIT_OK();
+}
+
+
+_PyInitError
+_PyUnicode_InitEncodings(PyInterpreterState *interp)
+{
+    _PyInitError err = init_fs_encoding(interp);
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
+    return init_stdio_encoding(interp);
 }
 
 
