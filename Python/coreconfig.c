@@ -523,7 +523,7 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
 
 /* Copy str into *config_str (duplicate the string) */
 _PyInitError
-_PyCoreConfig_SetWideString(wchar_t **config_str, const wchar_t *str)
+_PyCoreConfig_SetString(wchar_t **config_str, const wchar_t *str)
 {
     wchar_t *str2;
     if (str != NULL) {
@@ -543,8 +543,8 @@ _PyCoreConfig_SetWideString(wchar_t **config_str, const wchar_t *str)
 
 /* Decode str using Py_DecodeLocale() and set the result into *config_str */
 static _PyInitError
-_PyCoreConfig_SetWideStringFromStringErr(wchar_t **config_str, const char *str,
-                                         const char *decode_err_msg)
+_PyCoreConfig_DecodeLocaleErr(wchar_t **config_str, const char *str,
+                              const char *decode_err_msg)
 {
     wchar_t *str2;
     if (str != NULL) {
@@ -568,17 +568,15 @@ _PyCoreConfig_SetWideStringFromStringErr(wchar_t **config_str, const char *str,
 }
 
 
-_PyInitError
-_PyCoreConfig_SetWideStringFromString(wchar_t **config_str, const char *str)
-{
-    return _PyCoreConfig_SetWideStringFromStringErr(
-                config_str, str, "cannot decode string");
-}
-
-
 #define CONFIG_DECODE_LOCALE(config_str, str, NAME) \
-    _PyCoreConfig_SetWideStringFromStringErr(config_str, str, \
-                                             "cannot decode " NAME)
+    _PyCoreConfig_DecodeLocaleErr(config_str, str, "cannot decode " NAME)
+
+
+_PyInitError
+_PyCoreConfig_DecodeLocale(wchar_t **config_str, const char *str)
+{
+    return CONFIG_DECODE_LOCALE(config_str, str, "string");
+}
 
 
 _PyInitError
@@ -590,7 +588,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 #define COPY_WSTR_ATTR(ATTR) \
     do { \
-        err = _PyCoreConfig_SetWideString(&config->ATTR, config2->ATTR); \
+        err = _PyCoreConfig_SetString(&config->ATTR, config2->ATTR); \
         if (_Py_INIT_FAILED(err)) { \
             return err; \
         } \
@@ -809,7 +807,7 @@ _PyCoreConfig_GetEnvDup(const _PyCoreConfig *config,
         return _Py_INIT_OK();
     }
 
-    return _PyCoreConfig_SetWideString(dest, var);
+    return _PyCoreConfig_SetString(dest, var);
 #else
     const char *var = getenv(name);
     if (!var || var[0] == '\0') {
@@ -817,7 +815,7 @@ _PyCoreConfig_GetEnvDup(const _PyCoreConfig *config,
         return _Py_INIT_OK();
     }
 
-    return _PyCoreConfig_SetWideStringFromStringErr(dest, var, decode_err_msg);
+    return _PyCoreConfig_DecodeLocaleErr(dest, var, decode_err_msg);
 #endif
 }
 
@@ -960,8 +958,7 @@ config_init_program_name(_PyCoreConfig *config)
 
     /* Use argv[0] by default, if available */
     if (config->program != NULL) {
-        err = _PyCoreConfig_SetWideString(&config->program_name,
-                                          config->program);
+        err = _PyCoreConfig_SetString(&config->program_name, config->program);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -974,7 +971,7 @@ config_init_program_name(_PyCoreConfig *config)
 #else
     const wchar_t *default_program_name = L"python3";
 #endif
-    err = _PyCoreConfig_SetWideString(&config->program_name, default_program_name);
+    err = _PyCoreConfig_SetString(&config->program_name, default_program_name);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -989,8 +986,8 @@ config_init_executable(_PyCoreConfig *config)
     /* If Py_SetProgramFullPath() was called, use its value */
     const wchar_t *program_full_path = _Py_path_config.program_full_path;
     if (program_full_path != NULL) {
-        _PyInitError err = _PyCoreConfig_SetWideString(&config->executable,
-                                                       program_full_path);
+        _PyInitError err = _PyCoreConfig_SetString(&config->executable,
+                                                   program_full_path);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1015,7 +1012,7 @@ config_init_home(_PyCoreConfig *config)
     /* If Py_SetPythonHome() was called, use its value */
     wchar_t *home = _Py_path_config.home;
     if (home) {
-        _PyInitError err = _PyCoreConfig_SetWideString(&config->home, home);
+        _PyInitError err = _PyCoreConfig_SetString(&config->home, home);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1277,9 +1274,9 @@ config_get_locale_encoding(wchar_t **locale_encoding)
 #ifdef MS_WINDOWS
     char encoding[20];
     PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
-    return _PyCoreConfig_SetWideStringFromString(locale_encoding, encoding);
+    return _PyCoreConfig_DecodeLocale(locale_encoding, encoding);
 #elif defined(_Py_FORCE_UTF8_LOCALE)
-    return _PyCoreConfig_SetWideString(locale_encoding, "utf-8");
+    return _PyCoreConfig_SetString(locale_encoding, L"utf-8");
 #else
     const char *encoding = nl_langinfo(CODESET);
     if (!encoding || encoding[0] == '\0') {
@@ -1377,15 +1374,14 @@ config_init_stdio_encoding(_PyCoreConfig *config,
     /* UTF-8 Mode uses UTF-8/surrogateescape */
     if (preconfig->utf8_mode) {
         if (config->stdio_encoding == NULL) {
-            err = _PyCoreConfig_SetWideString(&config->stdio_encoding,
-                                              L"utf-8");
+            err = _PyCoreConfig_SetString(&config->stdio_encoding, L"utf-8");
             if (_Py_INIT_FAILED(err)) {
                 return err;
             }
         }
         if (config->stdio_errors == NULL) {
-            err = _PyCoreConfig_SetWideString(&config->stdio_errors,
-                                              L"surrogateescape");
+            err = _PyCoreConfig_SetString(&config->stdio_errors,
+                                          L"surrogateescape");
             if (_Py_INIT_FAILED(err)) {
                 return err;
             }
@@ -1403,7 +1399,7 @@ config_init_stdio_encoding(_PyCoreConfig *config,
         const wchar_t *errors = config_get_stdio_errors(config);
         assert(errors != NULL);
 
-        err = _PyCoreConfig_SetWideString(&config->stdio_errors, errors);
+        err = _PyCoreConfig_SetString(&config->stdio_errors, errors);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1420,33 +1416,32 @@ config_init_fs_encoding(_PyCoreConfig *config, const _PyPreConfig *preconfig)
 
     if (config->filesystem_encoding == NULL) {
 #ifdef _Py_FORCE_UTF8_FS_ENCODING
-        err = _PyCoreConfig_SetWideString(&config->filesystem_encoding,
-                                          L"utf-8");
+        err = _PyCoreConfig_SetString(&config->filesystem_encoding, L"utf-8");
 #else
 
 #ifdef MS_WINDOWS
         if (preconfig->legacy_windows_fs_encoding) {
             /* Legacy Windows filesystem encoding: mbcs/replace */
-            err = _PyCoreConfig_SetWideString(&config->filesystem_encoding,
-                                              L"mbcs");
+            err = _PyCoreConfig_SetString(&config->filesystem_encoding,
+                                          L"mbcs");
         }
         else
 #endif
         if (preconfig->utf8_mode) {
-            err = _PyCoreConfig_SetWideString(&config->filesystem_encoding,
-                                              L"utf-8");
+            err = _PyCoreConfig_SetString(&config->filesystem_encoding,
+                                          L"utf-8");
         }
 #ifndef MS_WINDOWS
         else if (_Py_GetForceASCII()) {
-            err = _PyCoreConfig_SetWideString(&config->filesystem_encoding,
-                                              L"ascii");
+            err = _PyCoreConfig_SetString(&config->filesystem_encoding,
+                                          L"ascii");
         }
 #endif
         else {
 #ifdef MS_WINDOWS
             /* Windows defaults to utf-8/surrogatepass (PEP 529). */
-            err = _PyCoreConfig_SetWideString(&config->filesystem_encoding,
-                                              L"utf-8");
+            err = _PyCoreConfig_SetString(&config->filesystem_encoding,
+                                          L"utf-8");
 #else
             err = config_get_locale_encoding(&config->filesystem_encoding);
 #endif
@@ -1470,7 +1465,7 @@ config_init_fs_encoding(_PyCoreConfig *config, const _PyPreConfig *preconfig)
 #else
         errors = L"surrogateescape";
 #endif
-        err = _PyCoreConfig_SetWideString(&config->filesystem_errors, errors);
+        err = _PyCoreConfig_SetString(&config->filesystem_errors, errors);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1713,8 +1708,8 @@ config_parse_cmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline,
                 || wcscmp(_PyOS_optarg, L"never") == 0
                 || wcscmp(_PyOS_optarg, L"default") == 0)
             {
-                err = _PyCoreConfig_SetWideString(&config->check_hash_pycs_mode,
-                                                  _PyOS_optarg);
+                err = _PyCoreConfig_SetString(&config->check_hash_pycs_mode,
+                                              _PyOS_optarg);
                 if (_Py_INIT_FAILED(err)) {
                     return err;
                 }
@@ -2087,7 +2082,7 @@ config_read_cmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
     }
 
     if (config->check_hash_pycs_mode == NULL) {
-        err = _PyCoreConfig_SetWideString(&config->check_hash_pycs_mode, L"default");
+        err = _PyCoreConfig_SetString(&config->check_hash_pycs_mode, L"default");
         if (_Py_INIT_FAILED(err)) {
             goto done;
         }
