@@ -988,7 +988,7 @@ init_python(const _PyCoreConfig *config, const _PyArgv *args)
     }
     config = &interp->core_config;
 
-    if (config->_init_main) {
+    if (!config->_frozen) {
         err = _Py_InitializeMainInterpreter(runtime, interp);
         if (_Py_INIT_FAILED(err)) {
             return err;
