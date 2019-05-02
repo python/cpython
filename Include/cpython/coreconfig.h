@@ -65,7 +65,12 @@ typedef struct {
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
+#define _Py_CONFIG_VERSION 1
+
 typedef struct {
+    int _config_version;  /* Internal configuration version,
+                             used for ABI compatibility */
+
     /* If greater than 0, enable isolated mode: sys.path contains
        neither the script's directory nor the user's site-packages directory.
 
@@ -132,6 +137,7 @@ typedef struct {
 #define _PyPreConfig_INIT \
     (_PyPreConfig){ \
         _PyPreConfig_WINDOWS_INIT \
+        ._config_version = _Py_CONFIG_VERSION, \
         .isolated = -1, \
         .use_environment = -1, \
         .dev_mode = -1, \
@@ -141,9 +147,12 @@ typedef struct {
 /* --- _PyCoreConfig ---------------------------------------------- */
 
 typedef struct {
-    int isolated;
-    int use_environment;
-    int dev_mode;
+    int _config_version;  /* Internal configuration version,
+                             used for ABI compatibility */
+
+    int isolated;         /* Isolated mode? see _PyPreConfig.isolated */
+    int use_environment;  /* Use environment variables? see _PyPreConfig.use_environment */
+    int dev_mode;         /* Development mode? See _PyPreConfig.dev_mode */
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -397,6 +406,7 @@ typedef struct {
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         _PyCoreConfig_WINDOWS_INIT \
+        ._config_version = _Py_CONFIG_VERSION, \
         .isolated = -1, \
         .use_environment = -1, \
         .dev_mode = -1, \
