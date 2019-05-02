@@ -1,4 +1,4 @@
 Add a ``!x`` conversion specifier to f-strings. This is similar to
 ``!s`` and ``!r``. It produces the text of the expression, followed by
-an equal sign, followed by the value of the expression. So
+an equal sign, followed by the repr of the value of the expression. So
 ``f'{3*9+15!d}'`` would be equal to the string ``'3*9+15=42'``.
