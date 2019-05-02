@@ -258,6 +258,9 @@ as a function that returns a decorator.  So both of these are now supported::
     def f(x):
         ...
 
+(Contributed by Raymond Hettinger in :issue:`36772`.)
+
+
 datetime
 --------
 
