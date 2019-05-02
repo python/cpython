@@ -2305,7 +2305,7 @@ PyInit__imp(void)
     if (d == NULL)
         goto failure;
     _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
-    PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
+    PyObject *pyc_mode = PyUnicode_FromWideChar(config->check_hash_pycs_mode, -1);
     if (pyc_mode == NULL) {
         goto failure;
     }

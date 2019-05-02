@@ -495,7 +495,7 @@ static int test_init_from_config(void)
     Py_NoUserSiteDirectory = 0;
     config.user_site_directory = 0;
 
-    config._check_hash_pycs_mode = "always";
+    config.check_hash_pycs_mode = L"always";
 
     Py_FrozenFlag = 0;
     config._frozen = 1;

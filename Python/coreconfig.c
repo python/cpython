@@ -516,6 +516,7 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
     CLEAR(config->run_command);
     CLEAR(config->run_module);
     CLEAR(config->run_filename);
+    CLEAR(config->check_hash_pycs_mode);
 #undef CLEAR
 }
 
@@ -686,7 +687,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_WSTR_ATTR(run_command);
     COPY_WSTR_ATTR(run_module);
     COPY_WSTR_ATTR(run_filename);
-    COPY_ATTR(_check_hash_pycs_mode);
+    COPY_WSTR_ATTR(check_hash_pycs_mode);
     COPY_ATTR(_frozen);
     COPY_ATTR(_init_main);
 
@@ -792,7 +793,7 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_WSTR(run_module);
     SET_ITEM_WSTR(run_filename);
     SET_ITEM_INT(_install_importlib);
-    SET_ITEM_STR(_check_hash_pycs_mode);
+    SET_ITEM_WSTR(check_hash_pycs_mode);
     SET_ITEM_INT(_frozen);
     SET_ITEM_INT(_init_main);
 
@@ -1711,6 +1712,7 @@ static _PyInitError
 config_parse_cmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline,
                      _PyWstrList *warnoptions)
 {
+    _PyInitError err;
     const _PyWstrList *argv = &precmdline->argv;
     int print_version = 0;
 
@@ -1757,12 +1759,15 @@ config_parse_cmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline,
         case 0:
             // Handle long option.
             assert(longindex == 0); // Only one long option now.
-            if (!wcscmp(_PyOS_optarg, L"always")) {
-                config->_check_hash_pycs_mode = "always";
-            } else if (!wcscmp(_PyOS_optarg, L"never")) {
-                config->_check_hash_pycs_mode = "never";
-            } else if (!wcscmp(_PyOS_optarg, L"default")) {
-                config->_check_hash_pycs_mode = "default";
+            if (wcscmp(_PyOS_optarg, L"always") == 0
+                || wcscmp(_PyOS_optarg, L"never") == 0
+                || wcscmp(_PyOS_optarg, L"default") == 0)
+            {
+                err = _PyCoreConfig_SetWideString(&config->check_hash_pycs_mode,
+                                                  _PyOS_optarg);
+                if (_Py_INIT_FAILED(err)) {
+                    return err;
+                }
             } else {
                 fprintf(stderr, "--check-hash-based-pycs must be one of "
                         "'default', 'always', or 'never'\n");
@@ -2131,6 +2136,13 @@ config_read_cmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
         goto done;
     }
 
+    if (config->check_hash_pycs_mode == NULL) {
+        err = _PyCoreConfig_SetWideString(&config->check_hash_pycs_mode, L"default");
+        if (_Py_INIT_FAILED(err)) {
+            goto done;
+        }
+    }
+
     err = _Py_INIT_OK();
 
 done:
@@ -2254,7 +2266,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
 #ifdef MS_WINDOWS
     assert(config->legacy_windows_stdio >= 0);
 #endif
-    assert(config->_check_hash_pycs_mode != NULL);
+    assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->_frozen >= 0);
 
