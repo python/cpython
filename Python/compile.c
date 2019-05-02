@@ -3966,7 +3966,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
             return 0;
     }
 
-    if (e->v.FormattedValue.conversion == 'x') {
+    if (e->v.FormattedValue.conversion == 'd') {
         /* Special handling here to generate basically:
            format(<text of the expr> + '=' + repr(value), format_spec) */
         assert(e->v.FormattedValue.expr_source != NULL);
@@ -3989,7 +3989,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
-    case 'x': oparg = FVC_NONE;  break; /* Already handled above. */
+    case 'd': oparg = FVC_NONE;  break; /* Already handled above. */
     case -1:  oparg = FVC_NONE;  break;
     default:
         PyErr_SetString(PyExc_SystemError,

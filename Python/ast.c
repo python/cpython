@@ -5184,15 +5184,15 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
         /* Validate the conversion. */
         if (!(conversion == 's' || conversion == 'r'
-              || conversion == 'a' || conversion == 'x')) {
+              || conversion == 'a' || conversion == 'd')) {
             ast_error(c, n,
                       "f-string: invalid conversion character: "
-                      "expected 's', 'r', 'a', or 'x'");
+                      "expected 's', 'r', 'a', or 'd'");
             return -1;
         }
 
         /* If !x, then save the source to the expression. */
-        if (conversion == 'x') {
+        if (conversion == 'd') {
             expr_source = PyUnicode_FromStringAndSize(expr_start,
                                                       expr_end-expr_start);
         }
