@@ -1057,6 +1057,10 @@ non-important content
         x = 9
         self.assertEqual(f'{3*x+15!d}', '3*x+15=42')
 
+        # Don't allow any format spec.
+        with self.assertRaisesRegex(SyntaxError, 'cannot specify a format spec with !d'):
+            eval("f'{0!d:0}'")
+
 
 if __name__ == '__main__':
     unittest.main()
