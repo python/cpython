@@ -15742,21 +15742,29 @@ init_fs_codec(PyInterpreterState *interp)
         return -1;
     }
 
-    /* PyUnicode can now use the Python codec rather than C implementation
-       for the filesystem encoding */
+    char *encoding, *errors;
     if (encode_wstr_utf8(config->filesystem_encoding,
-                         &interp->fs_codec.encoding,
+                         &encoding,
                          "filesystem_encoding") < 0) {
         return -1;
     }
 
     if (encode_wstr_utf8(config->filesystem_errors,
-                         &interp->fs_codec.errors,
+                         &errors,
                          "filesystem_errors") < 0) {
-        PyMem_RawFree(interp->fs_codec.encoding);
-        interp->fs_codec.encoding = NULL;
+        PyMem_RawFree(encoding);
         return -1;
     }
+
+    PyMem_RawFree(interp->fs_codec.encoding);
+    interp->fs_codec.encoding = encoding;
+    PyMem_RawFree(interp->fs_codec.errors);
+    interp->fs_codec.errors = errors;
+    interp->fs_codec.error_handler = error_handler;
+
+    /* At this point, PyUnicode_EncodeFSDefault() and
+       PyUnicode_DecodeFSDefault() can now use the Python codec rather than
+       the C implementation of the filesystem encoding. */
 
     /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
        global configuration variables. */
