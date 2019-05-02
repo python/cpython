@@ -819,4 +819,14 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #  error "Py_TRACE_REFS ABI is not compatible with release and debug ABI"
 #endif
 
+#if defined(__ANDROID__) || defined(__VXWORKS__)
+   /* Ignore the locale encoding: force UTF-8 */
+#  define _Py_FORCE_UTF8_LOCALE
+#endif
+
+#if defined(_Py_FORCE_UTF8_LOCALE) || defined(__APPLE__)
+   /* Use UTF-8 as filesystem encoding */
+#  define _Py_FORCE_UTF8_FS_ENCODING
+#endif
+
 #endif /* Py_PYPORT_H */
