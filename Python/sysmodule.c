@@ -424,7 +424,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-    return PyUnicode_FromString(config->filesystem_encoding);
+    return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
 /*[clinic input]
@@ -439,7 +439,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-    return PyUnicode_FromString(config->filesystem_errors);
+    return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
 /*[clinic input]
@@ -1211,30 +1211,9 @@ static PyObject *
 sys__enablelegacywindowsfsencoding_impl(PyObject *module)
 /*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    _PyCoreConfig *config = &interp->core_config;
-
-    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
-    char *encoding = _PyMem_RawStrdup("mbcs");
-    char *errors = _PyMem_RawStrdup("replace");
-    if (encoding == NULL || errors == NULL) {
-        PyMem_Free(encoding);
-        PyMem_Free(errors);
-        PyErr_NoMemory();
+    if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
         return NULL;
     }
-
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
-    PyMem_RawFree(config->filesystem_errors);
-    config->filesystem_errors = errors;
-
-    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
-                                  config->filesystem_errors) < 0) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     Py_RETURN_NONE;
 }
 

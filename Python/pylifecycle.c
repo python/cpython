@@ -1668,7 +1668,7 @@ is_valid_fd(int fd)
 static PyObject*
 create_stdio(const _PyCoreConfig *config, PyObject* io,
     int fd, int write_mode, const char* name,
-    const char* encoding, const char* errors)
+    const wchar_t* encoding, const wchar_t* errors)
 {
     PyObject *buf = NULL, *stream = NULL, *text = NULL, *raw = NULL, *res;
     const char* mode;
@@ -1718,7 +1718,7 @@ create_stdio(const _PyCoreConfig *config, PyObject* io,
 #ifdef MS_WINDOWS
     /* Windows console IO is always UTF-8 encoded */
     if (PyWindowsConsoleIO_Check(raw))
-        encoding = "utf-8";
+        encoding = L"utf-8";
 #endif
 
     text = PyUnicode_FromString(name);
@@ -1754,10 +1754,25 @@ create_stdio(const _PyCoreConfig *config, PyObject* io,
     newline = "\n";
 #endif
 
-    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OsssOO",
-                                    buf, encoding, errors,
+    PyObject *encoding_str = PyUnicode_FromWideChar(encoding, -1);
+    if (encoding_str == NULL) {
+        Py_CLEAR(buf);
+        goto error;
+    }
+
+    PyObject *errors_str = PyUnicode_FromWideChar(errors, -1);
+    if (errors_str == NULL) {
+        Py_CLEAR(buf);
+        Py_CLEAR(encoding_str);
+        goto error;
+    }
+
+    stream = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "OOOsOO",
+                                    buf, encoding_str, errors_str,
                                     newline, line_buffering, write_through);
     Py_CLEAR(buf);
+    Py_CLEAR(encoding_str);
+    Py_CLEAR(errors_str);
     if (stream == NULL)
         goto error;
 
@@ -1874,7 +1889,7 @@ init_sys_streams(PyInterpreterState *interp)
     fd = fileno(stderr);
     std = create_stdio(config, iomod, fd, 1, "<stderr>",
                        config->stdio_encoding,
-                       "backslashreplace");
+                       L"backslashreplace");
     if (std == NULL)
         goto error;
 

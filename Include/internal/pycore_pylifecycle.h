@@ -21,6 +21,9 @@ extern int _Py_SetFileSystemEncoding(
     const char *errors);
 extern void _Py_ClearFileSystemEncoding(void);
 extern _PyInitError _PyUnicode_InitEncodings(PyInterpreterState *interp);
+#ifdef MS_WINDOWS
+extern int _PyUnicode_EnableLegacyWindowsFSEncoding(void);
+#endif
 
 PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
 
