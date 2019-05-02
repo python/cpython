@@ -1,0 +1,2 @@
+Don't return deleted attributes when calling dir on a
+:class:`unittest.mock.Mock`.

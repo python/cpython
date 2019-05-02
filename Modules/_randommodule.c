@@ -138,7 +138,7 @@ genrand_int32(RandomObject *self)
  * The original code credited Isaku Wada for this algorithm, 2002/01/09.
  */
 static PyObject *
-random_random(RandomObject *self)
+random_random(RandomObject *self, PyObject *Py_UNUSED(ignored))
 {
     uint32_t a=genrand_int32(self)>>5, b=genrand_int32(self)>>6;
     return PyFloat_FromDouble((a*67108864.0+b)*(1.0/9007199254740992.0));
@@ -292,7 +292,6 @@ random_seed(RandomObject *self, PyObject *args)
                               PY_LITTLE_ENDIAN,
                               0); /* unsigned */
     if (res == -1) {
-        PyMem_Free(key);
         goto Done;
     }
 
@@ -319,7 +318,7 @@ Done:
 }
 
 static PyObject *
-random_getstate(RandomObject *self)
+random_getstate(RandomObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *state;
     PyObject *element;

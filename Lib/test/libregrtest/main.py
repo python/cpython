@@ -1,5 +1,6 @@
 import datetime
 import faulthandler
+import json
 import locale
 import os
 import platform
@@ -8,21 +9,17 @@ import re
 import sys
 import sysconfig
 import tempfile
-import textwrap
 import time
 import unittest
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR,
+    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
     PROGRESS_MIN_TIME, format_test_result)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
-try:
-    import gc
-except ImportError:
-    gc = None
 
 
 # When tests are run from the Python build directory, it is best practice
@@ -39,16 +36,6 @@ if sysconfig.is_python_build():
 else:
     TEMPDIR = tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
-
-
-def format_duration(seconds):
-    if seconds < 1.0:
-        return '%.0f ms' % (seconds * 1e3)
-    if seconds < 60.0:
-        return '%.0f sec' % seconds
-
-    minutes, seconds = divmod(seconds, 60.0)
-    return '%.0f min %.0f sec' % (minutes, seconds)
 
 
 class Regrtest:
@@ -88,6 +75,9 @@ class Regrtest:
         self.skipped = []
         self.resource_denieds = []
         self.environment_changed = []
+        self.run_no_tests = []
+        self.rerun = []
+        self.first_result = None
         self.interrupted = False
 
         # used by --slow
@@ -95,9 +85,6 @@ class Regrtest:
 
         # used by --coverage, trace.Trace instance
         self.tracer = None
-
-        # used by --findleaks, store for gc.garbage
-        self.found_garbage = []
 
         # used to display the progress bar "[ 3/100]"
         self.start_time = time.monotonic()
@@ -108,25 +95,56 @@ class Regrtest:
         self.next_single_test = None
         self.next_single_filename = None
 
-    def accumulate_result(self, test, result):
-        ok, test_time = result
-        if ok not in (CHILD_ERROR, INTERRUPTED):
-            self.test_times.append((test_time, test))
+        # used by --junit-xml
+        self.testsuite_xml = None
+
+        self.win_load_tracker = None
+
+    def get_executed(self):
+        return (set(self.good) | set(self.bad) | set(self.skipped)
+                | set(self.resource_denieds) | set(self.environment_changed)
+                | set(self.run_no_tests))
+
+    def accumulate_result(self, result, rerun=False):
+        test_name = result.test_name
+        ok = result.result
+
+        if ok not in (CHILD_ERROR, INTERRUPTED) and not rerun:
+            self.test_times.append((result.test_time, test_name))
+
         if ok == PASSED:
-            self.good.append(test)
+            self.good.append(test_name)
         elif ok in (FAILED, CHILD_ERROR):
-            self.bad.append(test)
+            if not rerun:
+                self.bad.append(test_name)
         elif ok == ENV_CHANGED:
-            self.environment_changed.append(test)
+            self.environment_changed.append(test_name)
         elif ok == SKIPPED:
-            self.skipped.append(test)
+            self.skipped.append(test_name)
         elif ok == RESOURCE_DENIED:
-            self.skipped.append(test)
-            self.resource_denieds.append(test)
-        elif ok != INTERRUPTED:
+            self.skipped.append(test_name)
+            self.resource_denieds.append(test_name)
+        elif ok == TEST_DID_NOT_RUN:
+            self.run_no_tests.append(test_name)
+        elif ok == INTERRUPTED:
+            self.interrupted = True
+        else:
             raise ValueError("invalid test result: %r" % ok)
 
-    def display_progress(self, test_index, test):
+        if rerun and ok not in {FAILED, CHILD_ERROR, INTERRUPTED}:
+            self.bad.remove(test_name)
+
+        xml_data = result.xml_data
+        if xml_data:
+            import xml.etree.ElementTree as ET
+            for e in xml_data:
+                try:
+                    self.testsuite_xml.append(ET.fromstring(e))
+                except ET.ParseError:
+                    print(xml_data, file=sys.__stderr__)
+                    raise
+
+    def display_progress(self, test_index, text):
         if self.ns.quiet:
             return
 
@@ -135,12 +153,12 @@ class Regrtest:
         fails = len(self.bad) + len(self.environment_changed)
         if fails and not self.ns.pgo:
             line = f"{line}/{fails}"
-        line = f"[{line}] {test}"
+        line = f"[{line}] {text}"
 
         # add the system load prefix: "load avg: 1.80 "
-        if hasattr(os, 'getloadavg'):
-            load_avg_1min = os.getloadavg()[0]
-            line = f"load avg: {load_avg_1min:.2f} {line}"
+        load_avg = self.getloadavg()
+        if load_avg is not None:
+            line = f"load avg: {load_avg:.2f} {line}"
 
         # add the timestamp prefix:  "0:01:05 "
         test_time = time.monotonic() - self.start_time
@@ -156,21 +174,8 @@ class Regrtest:
                   "faulthandler.dump_traceback_later", file=sys.stderr)
             ns.timeout = None
 
-        if ns.threshold is not None and gc is None:
-            print('No GC available, ignore --threshold.', file=sys.stderr)
-            ns.threshold = None
-
-        if ns.findleaks:
-            if gc is not None:
-                # Uncomment the line below to report garbage that is not
-                # freeable by reference counting alone.  By default only
-                # garbage that is not collectable by the GC is reported.
-                pass
-                #gc.set_debug(gc.DEBUG_SAVEALL)
-            else:
-                print('No GC available, disabling --findleaks',
-                      file=sys.stderr)
-                ns.findleaks = False
+        if ns.xmlpath:
+            support.junit_xml_list = self.testsuite_xml = []
 
         # Strip .py extensions.
         removepy(ns.args)
@@ -264,13 +269,13 @@ class Regrtest:
         support.verbose = False
         support.set_match_tests(self.ns.match_tests)
 
-        for test in self.selected:
-            abstest = get_abs_module(self.ns, test)
+        for test_name in self.selected:
+            abstest = get_abs_module(self.ns, test_name)
             try:
                 suite = unittest.defaultTestLoader.loadTestsFromName(abstest)
                 self._list_cases(suite)
             except unittest.SkipTest:
-                self.skipped.append(test)
+                self.skipped.append(test_name)
 
         if self.skipped:
             print(file=sys.stderr)
@@ -281,43 +286,47 @@ class Regrtest:
         self.ns.verbose = True
         self.ns.failfast = False
         self.ns.verbose3 = False
-        self.ns.match_tests = None
 
+        self.first_result = self.get_tests_result()
+
+        print()
         print("Re-running failed tests in verbose mode")
-        for test in self.bad[:]:
-            print("Re-running test %r in verbose mode" % test, flush=True)
-            try:
-                self.ns.verbose = True
-                ok = runtest(self.ns, test)
-            except KeyboardInterrupt:
-                self.interrupted = True
-                # print a newline separate from the ^C
-                print()
+        self.rerun = self.bad[:]
+        for test_name in self.rerun:
+            print(f"Re-running {test_name} in verbose mode", flush=True)
+            self.ns.verbose = True
+            result = runtest(self.ns, test_name)
+
+            self.accumulate_result(result, rerun=True)
+
+            if result.result == INTERRUPTED:
                 break
-            else:
-                if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
-                    self.bad.remove(test)
-        else:
-            if self.bad:
-                print(count(len(self.bad), 'test'), "failed again:")
-                printlist(self.bad)
+
+        if self.bad:
+            print(count(len(self.bad), 'test'), "failed again:")
+            printlist(self.bad)
+
+        self.display_result()
 
     def display_result(self):
-        if self.interrupted:
-            # print a newline after ^C
-            print()
-            print("Test suite interrupted by signal SIGINT.")
-            executed = set(self.good) | set(self.bad) | set(self.skipped)
-            omitted = set(self.selected) - executed
-            print(count(len(omitted), "test"), "omitted:")
-            printlist(omitted)
-
-        # If running the test suite for PGO then no one cares about
-        # results.
+        # If running the test suite for PGO then no one cares about results.
         if self.ns.pgo:
             return
 
+        print()
+        print("== Tests result: %s ==" % self.get_tests_result())
+
+        if self.interrupted:
+            print("Test suite interrupted by signal SIGINT.")
+
+        omitted = set(self.selected) - self.get_executed()
+        if omitted:
+            print()
+            print(count(len(omitted), "test"), "omitted:")
+            printlist(omitted)
+
         if self.good and not self.ns.quiet:
+            print()
             if (not self.bad
                 and not self.skipped
                 and not self.interrupted
@@ -329,8 +338,8 @@ class Regrtest:
             self.test_times.sort(reverse=True)
             print()
             print("10 slowest tests:")
-            for time, test in self.test_times[:10]:
-                print("- %s: %s" % (test, format_duration(time)))
+            for test_time, test in self.test_times[:10]:
+                print("- %s: %s" % (test, format_duration(test_time)))
 
         if self.bad:
             print()
@@ -348,6 +357,16 @@ class Regrtest:
             print(count(len(self.skipped), "test"), "skipped:")
             printlist(self.skipped)
 
+        if self.rerun:
+            print()
+            print("%s:" % count(len(self.rerun), "re-run test"))
+            printlist(self.rerun)
+
+        if self.run_no_tests:
+            print()
+            print(count(len(self.run_no_tests), "test"), "run no tests:")
+            printlist(self.run_no_tests)
+
     def run_tests_sequential(self):
         if self.ns.trace:
             import trace
@@ -358,10 +377,10 @@ class Regrtest:
         print("Run tests sequentially")
 
         previous_test = None
-        for test_index, test in enumerate(self.tests, 1):
+        for test_index, test_name in enumerate(self.tests, 1):
             start_time = time.monotonic()
 
-            text = test
+            text = test_name
             if previous_test:
                 text = '%s -- %s' % (text, previous_test)
             self.display_progress(test_index, text)
@@ -369,38 +388,25 @@ class Regrtest:
             if self.tracer:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                cmd = ('result = runtest(self.ns, test); '
-                       'self.accumulate_result(test, result)')
+                cmd = ('result = runtest(self.ns, test_name); '
+                       'self.accumulate_result(result)')
                 ns = dict(locals())
                 self.tracer.runctx(cmd, globals=globals(), locals=ns)
                 result = ns['result']
             else:
-                try:
-                    result = runtest(self.ns, test)
-                except KeyboardInterrupt:
-                    self.interrupted = True
-                    self.accumulate_result(test, (INTERRUPTED, None))
-                    break
-                else:
-                    self.accumulate_result(test, result)
+                result = runtest(self.ns, test_name)
+                self.accumulate_result(result)
 
-            previous_test = format_test_result(test, result[0])
+            if result.result == INTERRUPTED:
+                break
+
+            previous_test = format_test_result(result)
             test_time = time.monotonic() - start_time
             if test_time >= PROGRESS_MIN_TIME:
                 previous_test = "%s in %s" % (previous_test, format_duration(test_time))
             elif result[0] == PASSED:
                 # be quiet: say nothing if the test passed shortly
                 previous_test = None
-
-            if self.ns.findleaks:
-                gc.collect()
-                if gc.garbage:
-                    print("Warning: test created", len(gc.garbage), end=' ')
-                    print("uncollectable object(s).")
-                    # move the uncollectable objects somewhere so we don't see
-                    # them again
-                    self.found_garbage.extend(gc.garbage)
-                    del gc.garbage[:]
 
             # Unload the newly imported modules (best effort finalization)
             for module in sys.modules.keys():
@@ -412,8 +418,8 @@ class Regrtest:
 
     def _test_forever(self, tests):
         while True:
-            for test in tests:
-                yield test
+            for test_name in tests:
+                yield test_name
                 if self.bad:
                     return
                 if self.ns.fail_env_changed and self.environment_changed:
@@ -432,12 +438,40 @@ class Regrtest:
               % (locale.getpreferredencoding(False),
                  sys.getfilesystemencoding()))
 
+    def get_tests_result(self):
+        result = []
+        if self.bad:
+            result.append("FAILURE")
+        elif self.ns.fail_env_changed and self.environment_changed:
+            result.append("ENV CHANGED")
+        elif not any((self.good, self.bad, self.skipped, self.interrupted,
+            self.environment_changed)):
+            result.append("NO TEST RUN")
+
+        if self.interrupted:
+            result.append("INTERRUPTED")
+
+        if not result:
+            result.append("SUCCESS")
+
+        result = ', '.join(result)
+        if self.first_result:
+            result = '%s then %s' % (self.first_result, result)
+        return result
+
     def run_tests(self):
         # For a partial run, we do not need to clutter the output.
         if (self.ns.header
             or not(self.ns.pgo or self.ns.quiet or self.ns.single
                    or self.tests or self.ns.args)):
             self.display_header()
+
+        if self.ns.huntrleaks:
+            warmup, repetitions, _ = self.ns.huntrleaks
+            if warmup < 3:
+                msg = ("WARNING: Running tests with --huntrleaks/-R and less than "
+                        "3 warmup repetitions can give false positives!")
+                print(msg, file=sys.stdout, flush=True)
 
         if self.ns.randomize:
             print("Using random seed", self.ns.random_seed)
@@ -458,6 +492,10 @@ class Regrtest:
             self.run_tests_sequential()
 
     def finalize(self):
+        if self.win_load_tracker is not None:
+            self.win_load_tracker.close()
+            self.win_load_tracker = None
+
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -473,28 +511,47 @@ class Regrtest:
         print()
         duration = time.monotonic() - self.start_time
         print("Total duration: %s" % format_duration(duration))
-
-        if self.bad:
-            result = "FAILURE"
-        elif self.interrupted:
-            result = "INTERRUPTED"
-        elif self.ns.fail_env_changed and self.environment_changed:
-            result = "ENV CHANGED"
-        else:
-            result = "SUCCESS"
-        print("Tests result: %s" % result)
+        print("Tests result: %s" % self.get_tests_result())
 
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
 
+    def save_xml_result(self):
+        if not self.ns.xmlpath and not self.testsuite_xml:
+            return
+
+        import xml.etree.ElementTree as ET
+        root = ET.Element("testsuites")
+
+        # Manually count the totals for the overall summary
+        totals = {'tests': 0, 'errors': 0, 'failures': 0}
+        for suite in self.testsuite_xml:
+            root.append(suite)
+            for k in totals:
+                try:
+                    totals[k] += int(suite.get(k, 0))
+                except ValueError:
+                    pass
+
+        for k, v in totals.items():
+            root.set(k, str(v))
+
+        xmlpath = os.path.join(support.SAVEDCWD, self.ns.xmlpath)
+        with open(xmlpath, 'wb') as f:
+            for s in ET.tostringlist(root):
+                f.write(s)
+
     def main(self, tests=None, **kwargs):
         global TEMPDIR
+        self.ns = self.parse_args(kwargs)
 
-        if sysconfig.is_python_build():
-            try:
-                os.mkdir(TEMPDIR)
-            except FileExistsError:
-                pass
+        if self.ns.tempdir:
+            TEMPDIR = self.ns.tempdir
+        elif self.ns.worker_args:
+            ns_dict, _ = json.loads(self.ns.worker_args)
+            TEMPDIR = ns_dict.get("tempdir") or TEMPDIR
+
+        os.makedirs(TEMPDIR, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
@@ -509,12 +566,28 @@ class Regrtest:
         with support.temp_cwd(test_cwd, quiet=True):
             self._main(tests, kwargs)
 
-    def _main(self, tests, kwargs):
-        self.ns = self.parse_args(kwargs)
+    def getloadavg(self):
+        if self.win_load_tracker is not None:
+            return self.win_load_tracker.getloadavg()
 
-        if self.ns.slaveargs is not None:
-            from test.libregrtest.runtest_mp import run_tests_slave
-            run_tests_slave(self.ns.slaveargs)
+        if hasattr(os, 'getloadavg'):
+            return os.getloadavg()[0]
+
+        return None
+
+    def _main(self, tests, kwargs):
+        if self.ns.huntrleaks:
+            warmup, repetitions, _ = self.ns.huntrleaks
+            if warmup < 1 or repetitions < 1:
+                msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                       "number of warmups and repetitions must be at least 1 "
+                       "each (1:1).")
+                print(msg, file=sys.stderr, flush=True)
+                sys.exit(2)
+
+        if self.ns.worker_args is not None:
+            from test.libregrtest.runtest_mp import run_tests_worker
+            run_tests_worker(self.ns.worker_args)
 
         if self.ns.wait:
             input("Press any key to continue...")
@@ -533,6 +606,18 @@ class Regrtest:
             self.list_cases()
             sys.exit(0)
 
+        # If we're on windows and this is the parent runner (not a worker),
+        # track the load average.
+        if sys.platform == 'win32' and (self.ns.worker_args is None):
+            from test.libregrtest.win_utils import WindowsLoadTracker
+
+            try:
+                self.win_load_tracker = WindowsLoadTracker()
+            except FileNotFoundError as error:
+                # Windows IoT Core and Windows Nano Server do not provide
+                # typeperf.exe for x64, x86 or ARM
+                print(f'Failed to create WindowsLoadTracker: {error}')
+
         self.run_tests()
         self.display_result()
 
@@ -540,6 +625,9 @@ class Regrtest:
             self.rerun_failed_tests()
 
         self.finalize()
+
+        self.save_xml_result()
+
         if self.bad:
             sys.exit(2)
         if self.interrupted:
@@ -547,37 +635,6 @@ class Regrtest:
         if self.ns.fail_env_changed and self.environment_changed:
             sys.exit(3)
         sys.exit(0)
-
-
-def removepy(names):
-    if not names:
-        return
-    for idx, name in enumerate(names):
-        basename, ext = os.path.splitext(name)
-        if ext == '.py':
-            names[idx] = basename
-
-
-def count(n, word):
-    if n == 1:
-        return "%d %s" % (n, word)
-    else:
-        return "%d %ss" % (n, word)
-
-
-def printlist(x, width=70, indent=4, file=None):
-    """Print the elements of iterable x to stdout.
-
-    Optional arg width (default 70) is the maximum line length.
-    Optional arg indent (default 4) is the number of blanks with which to
-    begin each line.
-    """
-
-    blanks = ' ' * indent
-    # Print the sorted list: 'x' may be a '--random' list or a set()
-    print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
-                        initial_indent=blanks, subsequent_indent=blanks),
-          file=file)
 
 
 def main(tests=None, **kwargs):

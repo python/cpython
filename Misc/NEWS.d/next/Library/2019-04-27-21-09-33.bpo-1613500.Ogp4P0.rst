@@ -1,0 +1,3 @@
+:class:`fileinput.FileInput` now uses the input file mode to correctly set
+the output file mode (previously it was hardcoded to ``'w'``)  when
+``inplace=True`` is passed to its constructor.

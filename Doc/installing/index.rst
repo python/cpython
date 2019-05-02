@@ -44,11 +44,11 @@ Key terms
   ``venv``. It allows virtual environments to be used on versions of
   Python prior to 3.4, which either don't provide ``venv`` at all, or
   aren't able to automatically install ``pip`` into created environments.
-* The `Python Packaging Index <https://pypi.python.org/pypi>`__ is a public
+* The `Python Packaging Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users.
 * the `Python Packaging Authority
-  <https://www.pypa.io/>`__ are the group of
+  <https://www.pypa.io/>`__ is the group of
   developers and documentation authors responsible for the maintenance and
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation,
@@ -61,11 +61,6 @@ Key terms
   standard library, but its name lives on in other ways (such as the name
   of the mailing list used to coordinate Python packaging standards
   development).
-
-.. deprecated:: 3.6
-   ``pyvenv`` was the recommended tool for creating virtual environments for
-   Python 3.3 and 3.4, and is `deprecated in Python 3.6
-   <https://docs.python.org/dev/whatsnew/3.6.html#deprecated-features>`_.
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.

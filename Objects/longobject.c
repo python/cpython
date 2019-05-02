@@ -42,7 +42,7 @@ PyObject *_PyLong_One = NULL;
 */
 static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 #ifdef COUNT_ALLOCS
-Py_ssize_t quick_int_allocs, quick_neg_int_allocs;
+Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
 #endif
 
 static PyObject *
@@ -54,9 +54,9 @@ get_small_int(sdigit ival)
     Py_INCREF(v);
 #ifdef COUNT_ALLOCS
     if (ival >= 0)
-        quick_int_allocs++;
+        _Py_quick_int_allocs++;
     else
-        quick_neg_int_allocs++;
+        _Py_quick_neg_int_allocs++;
 #endif
     return v;
 }
@@ -140,7 +140,7 @@ long_normalize(PyLongObject *v)
    nb_int slot is not available or the result of the call to nb_int
    returns something not of type int.
 */
-PyLongObject *
+PyObject *
 _PyLong_FromNbInt(PyObject *integral)
 {
     PyNumberMethods *nb;
@@ -149,7 +149,7 @@ _PyLong_FromNbInt(PyObject *integral)
     /* Fast path for the case that we already have an int. */
     if (PyLong_CheckExact(integral)) {
         Py_INCREF(integral);
-        return (PyLongObject *)integral;
+        return integral;
     }
 
     nb = Py_TYPE(integral)->tp_as_number;
@@ -164,7 +164,7 @@ _PyLong_FromNbInt(PyObject *integral)
        of exact type int. */
     result = nb->nb_int(integral);
     if (!result || PyLong_CheckExact(result))
-        return (PyLongObject *)result;
+        return result;
     if (!PyLong_Check(result)) {
         PyErr_Format(PyExc_TypeError,
                      "__int__ returned non-int (type %.200s)",
@@ -181,7 +181,74 @@ _PyLong_FromNbInt(PyObject *integral)
         Py_DECREF(result);
         return NULL;
     }
-    return (PyLongObject *)result;
+    return result;
+}
+
+/* Convert the given object to a PyLongObject using the nb_index or
+   nb_int slots, if available (the latter is deprecated).
+   Raise TypeError if either nb_index and nb_int slots are not
+   available or the result of the call to nb_index or nb_int
+   returns something not of type int.
+   Should be replaced with PyNumber_Index after the end of the
+   deprecation period.
+*/
+PyObject *
+_PyLong_FromNbIndexOrNbInt(PyObject *integral)
+{
+    PyNumberMethods *nb;
+    PyObject *result;
+
+    /* Fast path for the case that we already have an int. */
+    if (PyLong_CheckExact(integral)) {
+        Py_INCREF(integral);
+        return integral;
+    }
+
+    nb = Py_TYPE(integral)->tp_as_number;
+    if (nb == NULL || (nb->nb_index == NULL && nb->nb_int == NULL)) {
+        PyErr_Format(PyExc_TypeError,
+                     "an integer is required (got type %.200s)",
+                     Py_TYPE(integral)->tp_name);
+        return NULL;
+    }
+
+    if (nb->nb_index) {
+    /* Convert using the nb_index slot, which should return something
+       of exact type int. */
+        result = nb->nb_index(integral);
+        if (!result || PyLong_CheckExact(result))
+            return result;
+        if (!PyLong_Check(result)) {
+            PyErr_Format(PyExc_TypeError,
+                         "__index__ returned non-int (type %.200s)",
+                         result->ob_type->tp_name);
+            Py_DECREF(result);
+            return NULL;
+        }
+        /* Issue #17576: warn if 'result' not of exact type int. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "__index__ returned non-int (type %.200s).  "
+                "The ability to return an instance of a strict subclass of int "
+                "is deprecated, and may be removed in a future version of Python.",
+                result->ob_type->tp_name))
+        {
+            Py_DECREF(result);
+            return NULL;
+        }
+        return result;
+    }
+
+    result = _PyLong_FromNbInt(integral);
+    if (result && PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "an integer is required (got type %.200s).  "
+            "Implicit conversion to integers using __int__ is deprecated, "
+            "and may be removed in a future version of Python.",
+            Py_TYPE(integral)->tp_name))
+    {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
 }
 
 
@@ -420,7 +487,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = _PyLong_FromNbInt(vv);
+        v = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -700,7 +767,7 @@ PyLong_AsUnsignedLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongMask(op);
     }
 
-    lo = _PyLong_FromNbInt(op);
+    lo = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(op);
     if (lo == NULL)
         return (unsigned long)-1;
 
@@ -1229,7 +1296,7 @@ PyLong_AsLongLong(PyObject *vv)
         v = (PyLongObject *)vv;
     }
     else {
-        v = _PyLong_FromNbInt(vv);
+        v = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -1344,7 +1411,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongLongMask(op);
     }
 
-    lo = _PyLong_FromNbInt(op);
+    lo = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(op);
     if (lo == NULL)
         return (unsigned long long)-1;
 
@@ -1384,7 +1451,7 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = _PyLong_FromNbInt(vv);
+        v = (PyLongObject *)_PyLong_FromNbIndexOrNbInt(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -1438,6 +1505,102 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     }
     return res;
 }
+
+int
+_PyLong_UnsignedShort_Converter(PyObject *obj, void *ptr)
+{
+    unsigned long uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsUnsignedLong(obj);
+    if (uval == (unsigned long)-1 && PyErr_Occurred())
+        return 0;
+    if (uval > USHRT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large for C unsigned short");
+        return 0;
+    }
+
+    *(unsigned short *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned short);
+    return 1;
+}
+
+int
+_PyLong_UnsignedInt_Converter(PyObject *obj, void *ptr)
+{
+    unsigned long uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsUnsignedLong(obj);
+    if (uval == (unsigned long)-1 && PyErr_Occurred())
+        return 0;
+    if (uval > UINT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large for C unsigned int");
+        return 0;
+    }
+
+    *(unsigned int *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned int);
+    return 1;
+}
+
+int
+_PyLong_UnsignedLong_Converter(PyObject *obj, void *ptr)
+{
+    unsigned long uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsUnsignedLong(obj);
+    if (uval == (unsigned long)-1 && PyErr_Occurred())
+        return 0;
+
+    *(unsigned long *)ptr = uval;
+    return 1;
+}
+
+int
+_PyLong_UnsignedLongLong_Converter(PyObject *obj, void *ptr)
+{
+    unsigned long long uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsUnsignedLongLong(obj);
+    if (uval == (unsigned long long)-1 && PyErr_Occurred())
+        return 0;
+
+    *(unsigned long long *)ptr = uval;
+    return 1;
+}
+
+int
+_PyLong_Size_t_Converter(PyObject *obj, void *ptr)
+{
+    size_t uval;
+
+    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+        PyErr_SetString(PyExc_ValueError, "value must be positive");
+        return 0;
+    }
+    uval = PyLong_AsSize_t(obj);
+    if (uval == (size_t)-1 && PyErr_Occurred())
+        return 0;
+
+    *(size_t *)ptr = uval;
+    return 1;
+}
+
 
 #define CHECK_BINOP(v,w)                                \
     do {                                                \
@@ -4007,8 +4170,8 @@ long_divmod(PyObject *a, PyObject *b)
     }
     z = PyTuple_New(2);
     if (z != NULL) {
-        PyTuple_SetItem(z, 0, (PyObject *) div);
-        PyTuple_SetItem(z, 1, (PyObject *) mod);
+        PyTuple_SET_ITEM(z, 0, (PyObject *) div);
+        PyTuple_SET_ITEM(z, 1, (PyObject *) mod);
     }
     else {
         Py_DECREF(div);
@@ -4474,8 +4637,7 @@ long_bitwise(PyLongObject *a,
         size_z = negb ? size_b : size_a;
         break;
     default:
-        PyErr_BadArgument();
-        return NULL;
+        Py_UNREACHABLE();
     }
 
     /* We allow an extra digit if z is negative, to make sure that
@@ -4502,8 +4664,7 @@ long_bitwise(PyLongObject *a,
             z->ob_digit[i] = a->ob_digit[i] ^ b->ob_digit[i];
         break;
     default:
-        PyErr_BadArgument();
-        return NULL;
+        Py_UNREACHABLE();
     }
 
     /* Copy any remaining digits of a, inverting if necessary. */
@@ -4880,12 +5041,14 @@ int___getnewargs___impl(PyObject *self)
 }
 
 static PyObject *
-long_get0(PyLongObject *v, void *context) {
+long_get0(PyObject *Py_UNUSED(self), void *Py_UNUSED(context))
+{
     return PyLong_FromLong(0L);
 }
 
 static PyObject *
-long_get1(PyLongObject *v, void *context) {
+long_get1(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
+{
     return PyLong_FromLong(1L);
 }
 
@@ -5163,6 +5326,36 @@ long_is_finite(PyObject *v)
 #endif
 
 /*[clinic input]
+int.as_integer_ratio
+
+Return integer ratio.
+
+Return a pair of integers, whose ratio is exactly equal to the original int
+and with a positive denominator.
+
+>>> (10).as_integer_ratio()
+(10, 1)
+>>> (-10).as_integer_ratio()
+(-10, 1)
+>>> (0).as_integer_ratio()
+(0, 1)
+[clinic start generated code]*/
+
+static PyObject *
+int_as_integer_ratio_impl(PyObject *self)
+/*[clinic end generated code: output=e60803ae1cc8621a input=55ce3058e15de393]*/
+{
+    PyObject *ratio_tuple;
+    PyObject *numerator = long_long(self);
+    if (numerator == NULL) {
+        return NULL;
+    }
+    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_One);
+    Py_DECREF(numerator);
+    return ratio_tuple;
+}
+
+/*[clinic input]
 int.to_bytes
 
     length: Py_ssize_t
@@ -5270,7 +5463,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
         little_endian, is_signed);
     Py_DECREF(bytes);
 
-    if (type != &PyLong_Type) {
+    if (long_obj != NULL && type != &PyLong_Type) {
         Py_SETREF(long_obj, PyObject_CallFunctionObjArgs((PyObject *)type,
                                                          long_obj, NULL));
     }
@@ -5278,8 +5471,14 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     return long_obj;
 }
 
+static PyObject *
+long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return long_long(self);
+}
+
 static PyMethodDef long_methods[] = {
-    {"conjugate",       (PyCFunction)long_long, METH_NOARGS,
+    {"conjugate",       long_long_meth, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
     INT_BIT_LENGTH_METHODDEF
 #if 0
@@ -5288,11 +5487,12 @@ static PyMethodDef long_methods[] = {
 #endif
     INT_TO_BYTES_METHODDEF
     INT_FROM_BYTES_METHODDEF
-    {"__trunc__",       (PyCFunction)long_long, METH_NOARGS,
+    INT_AS_INTEGER_RATIO_METHODDEF
+    {"__trunc__",       long_long_meth, METH_NOARGS,
      "Truncating an Integral returns itself."},
-    {"__floor__",       (PyCFunction)long_long, METH_NOARGS,
+    {"__floor__",       long_long_meth, METH_NOARGS,
      "Flooring an Integral returns itself."},
-    {"__ceil__",        (PyCFunction)long_long, METH_NOARGS,
+    {"__ceil__",        long_long_meth, METH_NOARGS,
      "Ceiling of an Integral returns itself."},
     {"__round__",       (PyCFunction)long_round, METH_VARARGS,
      "Rounding an Integral returns itself.\n"
@@ -5305,19 +5505,19 @@ static PyMethodDef long_methods[] = {
 
 static PyGetSetDef long_getset[] = {
     {"real",
-     (getter)long_long, (setter)NULL,
+     (getter)long_long_meth, (setter)NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
-     (getter)long_get0, (setter)NULL,
+     long_get0, (setter)NULL,
      "the imaginary part of a complex number",
      NULL},
     {"numerator",
-     (getter)long_long, (setter)NULL,
+     (getter)long_long_meth, (setter)NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
     {"denominator",
-     (getter)long_get1, (setter)NULL,
+     long_get1, (setter)NULL,
      "the denominator of a rational number in lowest terms",
      NULL},
     {NULL}  /* Sentinel */
@@ -5347,7 +5547,7 @@ static PyNumberMethods long_as_number = {
     long_divmod,                /*nb_divmod*/
     long_pow,                   /*nb_power*/
     (unaryfunc)long_neg,        /*nb_negative*/
-    (unaryfunc)long_long,       /*tp_positive*/
+    long_long,                  /*tp_positive*/
     (unaryfunc)long_abs,        /*tp_absolute*/
     (inquiry)long_bool,         /*tp_bool*/
     (unaryfunc)long_invert,     /*nb_invert*/
@@ -5500,8 +5700,9 @@ _PyLong_Init(void)
 
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0)
+        if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
             return 0;
+        }
     }
 
     return 1;

@@ -147,6 +147,12 @@ class TestBasicOps(unittest.TestCase):
             list(accumulate(s, chr))                                # unary-operation
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, accumulate(range(10)))           # test pickling
+            self.pickletest(proto, accumulate(range(10), initial=7))
+        self.assertEqual(list(accumulate([10, 5, 1], initial=None)), [10, 15, 16])
+        self.assertEqual(list(accumulate([10, 5, 1], initial=100)), [100, 110, 115, 116])
+        self.assertEqual(list(accumulate([], initial=100)), [100])
+        with self.assertRaises(TypeError):
+            list(accumulate([10, 20], 100))
 
     def test_chain(self):
 
@@ -2198,6 +2204,11 @@ Samuele
 ...     "Return first n items of the iterable as a list"
 ...     return list(islice(iterable, n))
 
+>>> def prepend(value, iterator):
+...     "Prepend a single value in front of an iterator"
+...     # prepend(1, [2, 3, 4]) -> 1 2 3 4
+...     return chain([value], iterator)
+
 >>> def enumerate(iterable, start=0):
 ...     return zip(count(start), iterable)
 
@@ -2349,6 +2360,9 @@ perform as purported.
 
 >>> take(10, count())
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+>>> list(prepend(1, [2, 3, 4]))
+[1, 2, 3, 4]
 
 >>> list(enumerate('abc'))
 [(0, 'a'), (1, 'b'), (2, 'c')]

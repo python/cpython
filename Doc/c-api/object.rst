@@ -33,12 +33,21 @@ Object Protocol
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
    always succeeds.
 
+   Note that exceptions which occur while calling :meth:`__getattr__` and
+   :meth:`__getattribute__` methods will get suppressed.
+   To get error reporting use :c:func:`PyObject_GetAttr()` instead.
+
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
    always succeeds.
+
+   Note that exceptions which occur while calling :meth:`__getattr__` and
+   :meth:`__getattribute__` methods and creating a temporary string object
+   will get suppressed.
+   To get error reporting use :c:func:`PyObject_GetAttrString()` instead.
 
 
 .. c:function:: PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name)
@@ -379,8 +388,8 @@ Object Protocol
    parameters must be non-*NULL*.
 
 
-.. c:function:: Py_ssize_t PyObject_Length(PyObject *o)
-               Py_ssize_t PyObject_Size(PyObject *o)
+.. c:function:: Py_ssize_t PyObject_Size(PyObject *o)
+               Py_ssize_t PyObject_Length(PyObject *o)
 
    .. index:: builtin: len
 
@@ -414,8 +423,8 @@ Object Protocol
 
 .. c:function:: int PyObject_DelItem(PyObject *o, PyObject *key)
 
-   Delete the mapping for *key* from *o*.  Returns ``-1`` on failure. This is the
-   equivalent of the Python statement ``del o[key]``.
+   Remove the mapping for the object *key* from the object *o*.  Return ``-1``
+   on failure.  This is equivalent to the Python statement ``del o[key]``.
 
 
 .. c:function:: PyObject* PyObject_Dir(PyObject *o)

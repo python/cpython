@@ -1,4 +1,6 @@
 import unittest
+from test.support import bigmemtest, _2G
+import sys
 from ctypes import *
 
 from ctypes.test import need_symbol
@@ -161,8 +163,6 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(Y()._length_, 187)
 
     def test_bad_subclass(self):
-        import sys
-
         with self.assertRaises(AttributeError):
             class T(Array):
                 pass
@@ -172,14 +172,41 @@ class ArrayTestCase(unittest.TestCase):
         with self.assertRaises(AttributeError):
             class T(Array):
                 _length_ = 13
+
+    def test_bad_length(self):
+        with self.assertRaises(ValueError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = - sys.maxsize * 2
+        with self.assertRaises(ValueError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = -1
+        with self.assertRaises(TypeError):
+            class T(Array):
+                _type_ = c_int
+                _length_ = 1.87
         with self.assertRaises(OverflowError):
             class T(Array):
                 _type_ = c_int
                 _length_ = sys.maxsize * 2
-        with self.assertRaises(AttributeError):
-            class T(Array):
-                _type_ = c_int
-                _length_ = 1.87
+
+    def test_zero_length(self):
+        # _length_ can be zero.
+        class T(Array):
+            _type_ = c_int
+            _length_ = 0
+
+    def test_bpo36504_signed_int_overflow(self):
+        # The overflow check in PyCArrayType_new() could cause signed integer
+        # overflow.
+        with self.assertRaises(OverflowError):
+            c_char * sys.maxsize * 2
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=_2G, memuse=1, dry_run=False)
+    def test_large_array(self, size):
+        c_char * size
 
 if __name__ == '__main__':
     unittest.main()
