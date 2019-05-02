@@ -15653,34 +15653,29 @@ PyUnicode_AsUnicodeCopy(PyObject *unicode)
 }
 
 
-static _PyInitError
-encode_wstr_utf8(wchar_t *wstr, char **str, const char *err_msg)
+static int
+encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
 {
     int res;
     res = _Py_EncodeUTF8Ex(wstr, str, NULL, NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
-        return _Py_INIT_ERR(err_msg);
+        PyErr_Format(PyExc_RuntimeWarning, "cannot decode %s", name);
+        return -1;
     }
     if (res < 0) {
-        return _Py_INIT_NO_MEMORY();
+        PyErr_NoMemory();
+        return -1;
     }
-    return _Py_INIT_OK();
+    return 0;
 }
 
 
-#define ENCODE_WSTR_UTF8(WSTR, STR, NAME) \
-    encode_wstr_utf8((WSTR), (STR), "cannot encode" NAME)
-
-
-static _PyInitError
-config_get_codec_name(wchar_t **config_encoding,
-                      const char *err_msg)
+static int
+config_get_codec_name(wchar_t **config_encoding)
 {
     char *encoding;
-    _PyInitError err = ENCODE_WSTR_UTF8(*config_encoding, &encoding,
-                                        "stdio_encoding");
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (encode_wstr_utf8(*config_encoding, &encoding, "stdio_encoding") < 0) {
+        return -1;
     }
 
     PyObject *name_obj = NULL;
@@ -15702,14 +15697,23 @@ config_get_codec_name(wchar_t **config_encoding,
         goto error;
     }
 
-    err = _PyCoreConfig_SetWideString(config_encoding, wname);
+    wchar_t *raw_wname = _PyMem_RawWcsdup(wname);
+    if (raw_wname == NULL) {
+        PyMem_Free(wname);
+        PyErr_NoMemory();
+        goto error;
+    }
+
+    PyMem_RawFree(*config_encoding);
+    *config_encoding = raw_wname;
+
     PyMem_Free(wname);
-    return err;
+    return 0;
 
 error:
     Py_XDECREF(codec);
     Py_XDECREF(name_obj);
-    return _Py_INIT_ERR(err_msg);
+    return -1;
 }
 
 
@@ -15718,9 +15722,50 @@ init_stdio_encoding(PyInterpreterState *interp)
 {
     /* Update the stdio encoding to the normalized Python codec name. */
     _PyCoreConfig *config = &interp->core_config;
-    return config_get_codec_name(&config->stdio_encoding,
-                                 "failed to get the Python codec name "
-                                 "of the stdio encoding");
+    if (config_get_codec_name(&config->stdio_encoding) < 0) {
+        return _Py_INIT_ERR("failed to get the Python codec name "
+                            "of the stdio encoding");
+    }
+    return _Py_INIT_OK();
+}
+
+
+static int
+init_fs_codec(PyInterpreterState *interp)
+{
+    _PyCoreConfig *config = &interp->core_config;
+
+    _Py_error_handler error_handler;
+    error_handler = get_error_handler_wide(config->filesystem_errors);
+    if (error_handler == _Py_ERROR_UNKNOWN) {
+        PyErr_SetString(PyExc_RuntimeError, "unknow filesystem error handler");
+        return -1;
+    }
+
+    /* PyUnicode can now use the Python codec rather than C implementation
+       for the filesystem encoding */
+    if (encode_wstr_utf8(config->filesystem_encoding,
+                         &interp->fs_codec.encoding,
+                         "filesystem_encoding") < 0) {
+        return -1;
+    }
+
+    if (encode_wstr_utf8(config->filesystem_errors,
+                         &interp->fs_codec.errors,
+                         "filesystem_errors") < 0) {
+        PyMem_RawFree(interp->fs_codec.encoding);
+        interp->fs_codec.encoding = NULL;
+        return -1;
+    }
+
+    /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
+       global configuration variables. */
+    if (_Py_SetFileSystemEncoding(interp->fs_codec.encoding,
+                                  interp->fs_codec.errors) < 0) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -15731,46 +15776,14 @@ init_fs_encoding(PyInterpreterState *interp)
        For example, replace "ANSI_X3.4-1968" (locale encoding) with "ascii"
        (Python codec name). */
     _PyCoreConfig *config = &interp->core_config;
-    _PyInitError err;
-    err = config_get_codec_name(&config->filesystem_encoding,
-                                "failed to get the Python codec "
-                                "of the filesystem encoding");
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (config_get_codec_name(&config->filesystem_encoding) < 0) {
+        return _Py_INIT_ERR("failed to get the Python codec "
+                            "of the filesystem encoding");
     }
 
-    _Py_error_handler error_handler;
-    error_handler = get_error_handler_wide(config->filesystem_errors);
-    if (error_handler == _Py_ERROR_UNKNOWN) {
-        return _Py_INIT_ERR("unknow filesystem error handler");
+    if (init_fs_codec(interp) < 0) {
+        return _Py_INIT_ERR("cannot initialize filesystem codec");
     }
-
-    /* PyUnicode can now use the Python codec rather than C implementation
-       for the filesystem encoding */
-    err = ENCODE_WSTR_UTF8(config->filesystem_encoding,
-                           &interp->fs_codec.encoding,
-                           "filesystem_encoding");
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    err = ENCODE_WSTR_UTF8(config->filesystem_errors,
-                           &interp->fs_codec.errors,
-                           "filesystem_errors");
-    if (_Py_INIT_FAILED(err)) {
-        PyMem_RawFree(interp->fs_codec.encoding);
-        interp->fs_codec.encoding = NULL;
-        return err;
-    }
-
-    /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-       global configuration variables. */
-    if (_Py_SetFileSystemEncoding(interp->fs_codec.encoding,
-                                  interp->fs_codec.errors) < 0) {
-        return _Py_INIT_NO_MEMORY();
-    }
-
-
     return _Py_INIT_OK();
 }
 
@@ -15785,6 +15798,33 @@ _PyUnicode_InitEncodings(PyInterpreterState *interp)
 
     return init_stdio_encoding(interp);
 }
+
+
+#ifdef MS_WINDOWS
+int
+_PyUnicode_EnableLegacyWindowsFSEncoding(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    _PyCoreConfig *config = &interp->core_config;
+
+    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
+    wchar_t *encoding = _PyMem_RawWcsdup(L"mbcs");
+    wchar_t *errors = _PyMem_RawWcsdup(L"replace");
+    if (encoding == NULL || errors == NULL) {
+        PyMem_RawFree(encoding);
+        PyMem_RawFree(errors);
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+    PyMem_RawFree(config->filesystem_errors);
+    config->filesystem_errors = errors;
+
+    return init_fs_codec(interp);
+}
+#endif
 
 
 void
