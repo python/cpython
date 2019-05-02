@@ -604,7 +604,7 @@ Scheduling From Other Threads
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
-   Unlike other asyncio functions this functions requires the *loop*
+   Unlike other asyncio functions this function requires the *loop*
    argument to be passed explicitly.
 
    .. versionadded:: 3.5.1

@@ -2,6 +2,7 @@ import unittest
 from test import support
 import os
 import sys
+import sysconfig
 import subprocess
 
 
@@ -35,8 +36,8 @@ class TestSymbolGeneration(unittest.TestCase):
             lines2 = fp.readlines()
         self.assertEqual(lines1, lines2)
 
-    @unittest.skipIf(not os.path.exists(GRAMMAR_FILE),
-                     'test only works from source build directory')
+    @unittest.skipUnless(sysconfig.is_python_build(),
+                         'test only works from source build directory')
     def test_real_grammar_and_symbol_file(self):
         output = support.TESTFN
         self.addCleanup(support.unlink, output)

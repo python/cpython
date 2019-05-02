@@ -134,10 +134,13 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         modulepath = PyUnicode_FromString("builtins");
         attrname = envar;
     }
-    else {
+    else if (last_dot != envar) {
         /* Split on the last dot; */
         modulepath = PyUnicode_FromStringAndSize(envar, last_dot - envar);
         attrname = last_dot + 1;
+    }
+    else {
+        goto warn;
     }
     if (modulepath == NULL) {
         PyMem_RawFree(envar);
@@ -156,21 +159,29 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     Py_DECREF(fromlist);
 
     if (module == NULL) {
-        goto error;
+        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+            goto warn;
+        }
+        PyMem_RawFree(envar);
+        return NULL;
     }
 
     PyObject *hook = PyObject_GetAttrString(module, attrname);
     Py_DECREF(module);
 
     if (hook == NULL) {
-        goto error;
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            goto warn;
+        }
+        PyMem_RawFree(envar);
+        return NULL;
     }
     PyMem_RawFree(envar);
     PyObject *retval = _PyObject_FastCallKeywords(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 
-  error:
+  warn:
     /* If any of the imports went wrong, then warn and ignore. */
     PyErr_Clear();
     int status = PyErr_WarnFormat(
@@ -263,7 +274,9 @@ sys_displayhook(PyObject *self, PyObject *o)
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
     if (builtins == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        }
         return NULL;
     }
     Py_DECREF(builtins);
@@ -2604,7 +2617,10 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (updatepath) {
         /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
            If argv[0] is a symlink, use the real path. */
-        PyObject *argv0 = _PyPathConfig_ComputeArgv0(argc, argv);
+        PyObject *argv0 = NULL;
+        if (!_PyPathConfig_ComputeArgv0(argc, argv, &argv0)) {
+            return;
+        }
         if (argv0 == NULL) {
             Py_FatalError("can't compute path0 from argv");
         }

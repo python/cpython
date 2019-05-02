@@ -143,6 +143,7 @@ PyObject *
 PyObject_GetItem(PyObject *o, PyObject *key)
 {
     PyMappingMethods *m;
+    PySequenceMethods *ms;
 
     if (o == NULL || key == NULL) {
         return null_error();
@@ -155,7 +156,8 @@ PyObject_GetItem(PyObject *o, PyObject *key)
         return item;
     }
 
-    if (o->ob_type->tp_as_sequence) {
+    ms = o->ob_type->tp_as_sequence;
+    if (ms && ms->sq_item) {
         if (PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
@@ -163,9 +165,10 @@ PyObject_GetItem(PyObject *o, PyObject *key)
                 return NULL;
             return PySequence_GetItem(o, key_value);
         }
-        else if (o->ob_type->tp_as_sequence->sq_item)
+        else {
             return type_error("sequence index must "
                               "be integer, not '%.200s'", key);
+        }
     }
 
     if (PyType_Check(o)) {

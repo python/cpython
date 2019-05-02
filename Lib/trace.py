@@ -452,7 +452,19 @@ class Trace:
                 sys.settrace(None)
                 threading.settrace(None)
 
-    def runfunc(self, func, *args, **kw):
+    def runfunc(*args, **kw):
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor 'runfunc' of 'Trace' object "
+                            "needs an argument")
+        elif 'func' in kw:
+            func = kw.pop('func')
+            self, *args = args
+        else:
+            raise TypeError('runfunc expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         result = None
         if not self.donothing:
             sys.settrace(self.globaltrace)

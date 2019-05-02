@@ -1516,8 +1516,18 @@ class ReTests(unittest.TestCase):
         self.assertRaises(re.error, re.compile, r'(?au)\w')
 
     def test_locale_flag(self):
-        import locale
-        _, enc = locale.getlocale(locale.LC_CTYPE)
+        # On Windows, Python 3.7 doesn't call setlocale(LC_CTYPE, "") at
+        # startup and so the LC_CTYPE locale uses Latin1 encoding by default,
+        # whereas getpreferredencoding() returns the ANSI code page. Set
+        # temporarily the LC_CTYPE locale to the user preferred encoding to
+        # ensure that it uses the ANSI code page.
+        oldloc = locale.setlocale(locale.LC_CTYPE, None)
+        locale.setlocale(locale.LC_CTYPE, "")
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldloc)
+
+        # Get the current locale encoding
+        enc = locale.getpreferredencoding(False)
+
         # Search non-ASCII letter
         for i in range(128, 256):
             try:
@@ -2030,6 +2040,40 @@ ELSE
         s[:] = b'xyz'
         self.assertEqual(m.group(), b'xyz')
         self.assertEqual(m2.group(), b'')
+
+    def test_bug_34294(self):
+        # Issue 34294: wrong capturing groups
+
+        # exists since Python 2
+        s = "a\tx"
+        p = r"\b(?=(\t)|(x))x"
+        self.assertEqual(re.search(p, s).groups(), (None, 'x'))
+
+        # introduced in Python 3.7.0
+        s = "ab"
+        p = r"(?=(.)(.)?)"
+        self.assertEqual(re.findall(p, s),
+                         [('a', 'b'), ('b', '')])
+        self.assertEqual([m.groups() for m in re.finditer(p, s)],
+                         [('a', 'b'), ('b', None)])
+
+        # test-cases provided by issue34294, introduced in Python 3.7.0
+        p = r"(?=<(?P<tag>\w+)/?>(?:(?P<text>.+?)</(?P=tag)>)?)"
+        s = "<test><foo2/></test>"
+        self.assertEqual(re.findall(p, s),
+                         [('test', '<foo2/>'), ('foo2', '')])
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': '<foo2/>'},
+                          {'tag': 'foo2', 'text': None}])
+        s = "<test>Hello</test><foo/>"
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': 'Hello'},
+                          {'tag': 'foo', 'text': None}])
+        s = "<test>Hello</test><foo/><foo/>"
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': 'Hello'},
+                          {'tag': 'foo', 'text': None},
+                          {'tag': 'foo', 'text': None}])
 
 
 class PatternReprTests(unittest.TestCase):

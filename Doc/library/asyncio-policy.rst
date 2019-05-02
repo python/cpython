@@ -81,7 +81,7 @@ The abstract event loop policy base class is defined as follows:
 
    .. method:: set_child_watcher(watcher)
 
-      Get the current child process watcher to *watcher*.
+      Set the current child process watcher to *watcher*.
 
       This function is Unix specific.
 

@@ -564,14 +564,11 @@ static PyMethodDef slice_methods[] = {
 static PyObject *
 slice_richcompare(PyObject *v, PyObject *w, int op)
 {
-    PyObject *t1;
-    PyObject *t2;
-    PyObject *res;
-
     if (!PySlice_Check(v) || !PySlice_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
     if (v == w) {
+        PyObject *res;
         /* XXX Do we really need this shortcut?
            There's a unit test for it, but is that fair? */
         switch (op) {
@@ -588,34 +585,27 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
         return res;
     }
 
-    t1 = PyTuple_New(3);
-    if (t1 == NULL)
+
+    PyObject *t1 = PyTuple_Pack(3,
+                                ((PySliceObject *)v)->start,
+                                ((PySliceObject *)v)->stop,
+                                ((PySliceObject *)v)->step);
+    if (t1 == NULL) {
         return NULL;
-    t2 = PyTuple_New(3);
+    }
+
+    PyObject *t2 = PyTuple_Pack(3,
+                                ((PySliceObject *)w)->start,
+                                ((PySliceObject *)w)->stop,
+                                ((PySliceObject *)w)->step);
     if (t2 == NULL) {
         Py_DECREF(t1);
         return NULL;
     }
 
-    PyTuple_SET_ITEM(t1, 0, ((PySliceObject *)v)->start);
-    PyTuple_SET_ITEM(t1, 1, ((PySliceObject *)v)->stop);
-    PyTuple_SET_ITEM(t1, 2, ((PySliceObject *)v)->step);
-    PyTuple_SET_ITEM(t2, 0, ((PySliceObject *)w)->start);
-    PyTuple_SET_ITEM(t2, 1, ((PySliceObject *)w)->stop);
-    PyTuple_SET_ITEM(t2, 2, ((PySliceObject *)w)->step);
-
-    res = PyObject_RichCompare(t1, t2, op);
-
-    PyTuple_SET_ITEM(t1, 0, NULL);
-    PyTuple_SET_ITEM(t1, 1, NULL);
-    PyTuple_SET_ITEM(t1, 2, NULL);
-    PyTuple_SET_ITEM(t2, 0, NULL);
-    PyTuple_SET_ITEM(t2, 1, NULL);
-    PyTuple_SET_ITEM(t2, 2, NULL);
-
+    PyObject *res = PyObject_RichCompare(t1, t2, op);
     Py_DECREF(t1);
     Py_DECREF(t2);
-
     return res;
 }
 

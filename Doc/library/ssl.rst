@@ -1328,11 +1328,11 @@ SSL sockets also have the following additional methods and attributes:
    If any precondition isn't met (e.g. not TLS 1.3, PHA not enabled), an
    :exc:`SSLError` is raised.
 
-   .. versionadded:: 3.7.1
-
    .. note::
       Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
       support, the method raises :exc:`NotImplementedError`.
+
+   .. versionadded:: 3.7.1
 
 .. method:: SSLSocket.version()
 
@@ -1922,6 +1922,8 @@ to speed up repeated connections from the same clients.
      This attribute is not available unless the ssl module is compiled
      with OpenSSL 1.1.0g or newer.
 
+   .. versionadded:: 3.7
+
 .. attribute:: SSLContext.minimum_version
 
    Like :attr:`SSLContext.maximum_version` except it is the lowest
@@ -1931,6 +1933,8 @@ to speed up repeated connections from the same clients.
 
      This attribute is not available unless the ssl module is compiled
      with OpenSSL 1.1.0g or newer.
+
+   .. versionadded:: 3.7
 
 .. attribute:: SSLContext.options
 
@@ -1965,11 +1969,11 @@ to speed up repeated connections from the same clients.
    :meth:`SSLSocket.verify_client_post_handshake` is called and some I/O is
    performed.
 
-   .. versionadded:: 3.7.1
-
    .. note::
       Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
       support, the property value is None and can't be modified
+
+   .. versionadded:: 3.7.1
 
 .. attribute:: SSLContext.protocol
 
@@ -1982,10 +1986,10 @@ to speed up repeated connections from the same clients.
    subject common name in the absence of a subject alternative name
    extension (default: true).
 
-   .. versionadded:: 3.7
-
    .. note::
       Only writeable with OpenSSL 1.1.0 or higher.
+
+   .. versionadded:: 3.7
 
 .. attribute:: SSLContext.verify_flags
 

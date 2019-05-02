@@ -999,6 +999,12 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(OverflowError,
                           PyBytes_FromFormat, b'%c', c_int(256))
 
+        # Issue #33817: empty strings
+        self.assertEqual(PyBytes_FromFormat(b''),
+                         b'')
+        self.assertEqual(PyBytes_FromFormat(b'%s', b''),
+                         b'')
+
     def test_bytes_blocking(self):
         class IterationBlocked(list):
             __bytes__ = None

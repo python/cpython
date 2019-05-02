@@ -768,8 +768,13 @@ class SysModuleTest(unittest.TestCase):
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
-            alloc_name = _testcapi.pymem_getallocatorsname()
-            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+            try:
+                alloc_name = _testcapi.pymem_getallocatorsname()
+            except RuntimeError as exc:
+                # "cannot get allocators name" (ex: tracemalloc is used)
+                with_pymalloc = True
+            else:
+                with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
 
         # Some sanity checks
         a = sys.getallocatedblocks()

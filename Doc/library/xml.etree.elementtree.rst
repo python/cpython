@@ -490,10 +490,12 @@ Functions
    *elem* is an element tree or an individual element.
 
 
-.. function:: fromstring(text)
+.. function:: fromstring(text, parser=None)
 
    Parses an XML section from a string constant.  Same as :func:`XML`.  *text*
-   is a string containing XML data.  Returns an :class:`Element` instance.
+   is a string containing XML data.  *parser* is an optional parser instance.
+   If not given, the standard :class:`XMLParser` parser is used.
+   Returns an :class:`Element` instance.
 
 
 .. function:: fromstringlist(sequence, parser=None)

@@ -325,8 +325,8 @@ Annotated assignment statements
    single: statement; assignment, annotated
    single: : (colon); annotated variable
 
-Annotation assignment is the combination, in a single statement,
-of a variable or attribute annotation and an optional assignment statement:
+:term:`Annotation <variable annotation>` assignment is the combination, in a single
+statement, of a variable or attribute annotation and an optional assignment statement:
 
 .. productionlist::
    annotated_assignment_stmt: `augtarget` ":" `expression` ["=" `expression`]
@@ -829,7 +829,8 @@ exists. Two dots means up one package level. Three dots is up two levels, etc.
 So if you execute ``from . import mod`` from a module in the ``pkg`` package
 then you will end up importing ``pkg.mod``. If you execute ``from ..subpkg2
 import mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
-The specification for relative imports is contained within :pep:`328`.
+The specification for relative imports is contained in
+the :ref:`relativeimports` section.
 
 :func:`importlib.import_module` is provided to support applications that
 determine dynamically the modules to be loaded.

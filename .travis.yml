@@ -1,6 +1,5 @@
 language: c
-dist: trusty
-sudo: false
+dist: xenial
 group: beta
 
 # To cache doc-building dependencies and C compiler output.
@@ -21,6 +20,8 @@ env:
     # Set rpath with env var instead of -Wl,-rpath linker flag
     # OpenSSL ignores LDFLAGS when linking bin/openssl
     - LD_RUN_PATH="${OPENSSL_DIR}/lib"
+    # python3.x in PATH may be pyenv shims, not real python.
+    - PYTHON_FOR_REGEN=python3
 
 branches:
   only:
@@ -82,6 +83,7 @@ matrix:
 
 before_install:
   - set -e
+  - pyenv global 3.7.1  # If this fails, try pyenv versions
   - |
       # Check short-circuit conditions
       if [ "${TESTING}" != "docs" ]

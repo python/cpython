@@ -520,7 +520,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
             */
             PyErr_Format(Error,
                          "Invalid base64-encoded string: "
-                         "number of data characters (%d) cannot be 1 more "
+                         "number of data characters (%zd) cannot be 1 more "
                          "than a multiple of 4",
                          (bin_data - bin_data_start) / 3 * 4 + 1);
         } else {

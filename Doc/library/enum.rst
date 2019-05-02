@@ -394,7 +394,7 @@ A new :class:`Enum` class must have one base Enum class, up to one concrete
 data type, and as many :class:`object`-based mixin classes as needed.  The
 order of these base classes is::
 
-    def EnumName([mix-in, ...,] [data-type,] base-enum):
+    class EnumName([mix-in, ...,] [data-type,] base-enum):
         pass
 
 Also, subclassing an enumeration is allowed only if the enumeration does not define

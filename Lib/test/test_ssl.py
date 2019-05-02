@@ -34,6 +34,19 @@ IS_OPENSSL_1_1_0 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
 IS_OPENSSL_1_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 1)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
+PROTOCOL_TO_TLS_VERSION = {}
+for proto, ver in (
+    ("PROTOCOL_SSLv23", "SSLv3"),
+    ("PROTOCOL_TLSv1", "TLSv1"),
+    ("PROTOCOL_TLSv1_1", "TLSv1_1"),
+):
+    try:
+        proto = getattr(ssl, proto)
+        ver = getattr(ssl.TLSVersion, ver)
+    except AttributeError:
+        continue
+    PROTOCOL_TO_TLS_VERSION[proto] = ver
+
 def data_file(*name):
     return os.path.join(os.path.dirname(__file__), *name)
 
@@ -116,6 +129,7 @@ NONEXISTINGCERT = data_file("XXXnonexisting.pem")
 BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
+TALOS_INVALID_CRLDP = data_file("talos-2019-0758.pem")
 
 DHFILE = data_file("ffdh3072.pem")
 BYTES_DHFILE = os.fsencode(DHFILE)
@@ -364,6 +378,27 @@ class BasicSocketTests(unittest.TestCase):
                          ('http://SVRIntl-G3-aia.verisign.com/SVRIntlG3.cer',))
         self.assertEqual(p['crlDistributionPoints'],
                          ('http://SVRIntl-G3-crl.verisign.com/SVRIntlG3.crl',))
+
+    def test_parse_cert_CVE_2019_5010(self):
+        p = ssl._ssl._test_decode_cert(TALOS_INVALID_CRLDP)
+        if support.verbose:
+            sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+        self.assertEqual(
+            p,
+            {
+                'issuer': (
+                    (('countryName', 'UK'),), (('commonName', 'cody-ca'),)),
+                'notAfter': 'Jun 14 18:00:58 2028 GMT',
+                'notBefore': 'Jun 18 18:00:58 2018 GMT',
+                'serialNumber': '02',
+                'subject': ((('countryName', 'UK'),),
+                            (('commonName',
+                              'codenomicon-vm-2.test.lal.cisco.com'),)),
+                'subjectAltName': (
+                    ('DNS', 'codenomicon-vm-2.test.lal.cisco.com'),),
+                'version': 3
+            }
+        )
 
     def test_parse_cert_CVE_2013_4238(self):
         p = ssl._ssl._test_decode_cert(NULLBYTECERT)
@@ -1086,8 +1121,15 @@ class ContextTests(unittest.TestCase):
                          "required OpenSSL 1.1.0g")
     def test_min_max_version(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        self.assertEqual(
-            ctx.minimum_version, ssl.TLSVersion.MINIMUM_SUPPORTED
+        # OpenSSL default is MINIMUM_SUPPORTED, however some vendors like
+        # Fedora override the setting to TLS 1.0.
+        self.assertIn(
+            ctx.minimum_version,
+            {ssl.TLSVersion.MINIMUM_SUPPORTED,
+             # Fedora 29 uses TLS 1.0 by default
+             ssl.TLSVersion.TLSv1,
+             # RHEL 8 uses TLS 1.2 by default
+             ssl.TLSVersion.TLSv1_2}
         )
         self.assertEqual(
             ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
@@ -2604,6 +2646,17 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
     client_context.options |= client_options
     server_context = ssl.SSLContext(server_protocol)
     server_context.options |= server_options
+
+    min_version = PROTOCOL_TO_TLS_VERSION.get(client_protocol, None)
+    if (min_version is not None
+    # SSLContext.minimum_version is only available on recent OpenSSL
+    # (setter added in OpenSSL 1.1.0, getter added in OpenSSL 1.1.1)
+    and hasattr(server_context, 'minimum_version')
+    and server_protocol == ssl.PROTOCOL_TLS
+    and server_context.minimum_version > min_version):
+        # If OpenSSL configuration is strict and requires more recent TLS
+        # version, we have to change the minimum to test old TLS versions.
+        server_context.minimum_version = min_version
 
     # NOTE: we must enable "ALL" ciphers on the client, otherwise an
     # SSLv23 client will send an SSLv3 hello (rather than SSLv2)

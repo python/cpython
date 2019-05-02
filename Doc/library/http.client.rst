@@ -497,6 +497,7 @@ Here is an example session that uses the ``GET`` method::
    b'<!doctype html>\n<!--[if"...
    ...
    >>> # Example of an invalid request
+   >>> conn = http.client.HTTPSConnection("docs.python.org")
    >>> conn.request("GET", "/parrot.spam")
    >>> r2 = conn.getresponse()
    >>> print(r2.status, r2.reason)

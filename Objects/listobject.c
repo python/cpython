@@ -2232,7 +2232,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         int ints_are_bounded = 1;
 
         /* Prove that assumption by checking every key. */
-        int i;
         for (i=0; i < saved_ob_size; i++) {
 
             if (keys_are_in_tuples &&
@@ -2251,19 +2250,28 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
 
             if (key->ob_type != key_type) {
                 keys_are_all_same_type = 0;
-                break;
+                /* If keys are in tuple we must loop over the whole list to make
+                   sure all items are tuples */
+                if (!keys_are_in_tuples) {
+                    break;
+                }
             }
 
-            if (key_type == &PyLong_Type) {
-                if (ints_are_bounded && Py_ABS(Py_SIZE(key)) > 1)
+            if (keys_are_all_same_type) {
+                if (key_type == &PyLong_Type &&
+                    ints_are_bounded &&
+                    Py_ABS(Py_SIZE(key)) > 1) {
+
                     ints_are_bounded = 0;
+                }
+                else if (key_type == &PyUnicode_Type &&
+                         strings_are_latin &&
+                         PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND) {
+
+                        strings_are_latin = 0;
+                    }
+                }
             }
-            else if (key_type == &PyUnicode_Type){
-                if (strings_are_latin &&
-                    PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
-                strings_are_latin = 0;
-            }
-        }
 
         /* Choose the best compare, given what we now know about the keys. */
         if (keys_are_all_same_type) {
@@ -2280,6 +2288,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             else if ((ms.key_richcompare = key_type->tp_richcompare) != NULL) {
                 ms.key_compare = unsafe_object_compare;
             }
+            else {
+                ms.key_compare = safe_object_compare;
+            }
         }
         else {
             ms.key_compare = safe_object_compare;
@@ -2288,10 +2299,12 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         if (keys_are_in_tuples) {
             /* Make sure we're not dealing with tuples of tuples
              * (remember: here, key_type refers list [key[0] for key in keys]) */
-            if (key_type == &PyTuple_Type)
+            if (key_type == &PyTuple_Type) {
                 ms.tuple_elem_compare = safe_object_compare;
-            else
+            }
+            else {
                 ms.tuple_elem_compare = ms.key_compare;
+            }
 
             ms.key_compare = unsafe_tuple_compare;
         }

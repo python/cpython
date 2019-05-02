@@ -183,7 +183,9 @@ class HelperFunctionsTests(unittest.TestCase):
         finally:
             pth_file.cleanup()
 
-    def test_getuserbase(self):
+    # This tests _getuserbase, hence the double underline
+    # to distinguish from a test for getuserbase
+    def test__getuserbase(self):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
     def test_get_path(self):

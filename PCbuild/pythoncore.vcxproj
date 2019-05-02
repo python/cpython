@@ -229,7 +229,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_abc.c" />
-    <ClCompile Include="..\Modules\_asynciomodule.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
     <ClCompile Include="..\Modules\_blake2\blake2module.c" />
     <ClCompile Include="..\Modules\_blake2\blake2b_impl.c" />

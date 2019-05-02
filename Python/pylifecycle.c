@@ -1672,26 +1672,34 @@ initsite(void)
 static int
 is_valid_fd(int fd)
 {
-#ifdef __APPLE__
-    /* bpo-30225: On macOS Tiger, when stdout is redirected to a pipe
-       and the other side of the pipe is closed, dup(1) succeed, whereas
-       fstat(1, &st) fails with EBADF. Prefer fstat() over dup() to detect
-       such error. */
+/* dup() is faster than fstat(): fstat() can require input/output operations,
+   whereas dup() doesn't. There is a low risk of EMFILE/ENFILE at Python
+   startup. Problem: dup() doesn't check if the file descriptor is valid on
+   some platforms.
+
+   bpo-30225: On macOS Tiger, when stdout is redirected to a pipe and the other
+   side of the pipe is closed, dup(1) succeed, whereas fstat(1, &st) fails with
+   EBADF. FreeBSD has similar issue (bpo-32849).
+
+   Only use dup() on platforms where dup() is enough to detect invalid FD in
+   corner cases: on Linux and Windows (bpo-32849). */
+#if defined(__linux__) || defined(MS_WINDOWS)
+    if (fd < 0) {
+        return 0;
+    }
+    int fd2;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    fd2 = dup(fd);
+    if (fd2 >= 0) {
+        close(fd2);
+    }
+    _Py_END_SUPPRESS_IPH
+
+    return (fd2 >= 0);
+#else
     struct stat st;
     return (fstat(fd, &st) == 0);
-#else
-    int fd2;
-    if (fd < 0)
-        return 0;
-    _Py_BEGIN_SUPPRESS_IPH
-    /* Prefer dup() over fstat(). fstat() can require input/output whereas
-       dup() doesn't, there is a low risk of EMFILE/ENFILE at Python
-       startup. */
-    fd2 = dup(fd);
-    if (fd2 >= 0)
-        close(fd2);
-    _Py_END_SUPPRESS_IPH
-    return fd2 >= 0;
 #endif
 }
 
@@ -2239,8 +2247,10 @@ wait_for_thread_shutdown(void)
     PyObject *result;
     PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
     if (threading == NULL) {
-        /* threading not imported */
-        PyErr_Clear();
+        if (PyErr_Occurred()) {
+            PyErr_WriteUnraisable(NULL);
+        }
+        /* else: threading not imported */
         return;
     }
     result = _PyObject_CallMethodId(threading, &PyId__shutdown, NULL);

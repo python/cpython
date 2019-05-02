@@ -1601,6 +1601,7 @@ class TestBreakpoint(unittest.TestCase):
     def test_envar_unimportable(self):
         for envar in (
                 '.', '..', '.foo', 'foo.', '.int', 'int.',
+                '.foo.bar', '..foo.bar', '/./',
                 'nosuchbuiltin',
                 'nosuchmodule.nosuchcallable',
                 ):
