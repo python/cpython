@@ -348,7 +348,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_install_importlib': 1,
         'check_hash_pycs_mode': 'default',
         '_frozen': 0,
-        '_init_main': 1,
     }
     if MS_WINDOWS:
         DEFAULT_PRE_CONFIG.update({
@@ -443,7 +442,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             raise Exception(f"failed to get the default config: "
                             f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
         stdout = proc.stdout.decode('utf-8')
-        config = json.loads(stdout)
+        try:
+            config = json.loads(stdout)
+        except json.JSONDecodeError:
+            self.fail(f"fail to decode stdout: {stdout!r}")
 
         for key, value in expected.items():
             if value is self.GET_DEFAULT_CONFIG:
@@ -496,7 +498,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         out, err = self.run_embedded_interpreter(testname, env=env)
         # Ignore err
-        config = json.loads(out)
+        try:
+            config = json.loads(out)
+        except json.JSONDecodeError:
+            self.fail(f"fail to decode stdout: {out!r}")
 
         expected_preconfig = dict(self.DEFAULT_PRE_CONFIG, **expected_preconfig)
         expected_config = self.get_expected_config(expected_config, env)
@@ -533,7 +538,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'filesystem_encoding': 'utf-8',
             'filesystem_errors': self.UTF8_MODE_ERRORS,
             'user_site_directory': 0,
-            '_frozen': 1,
         }
         self.check_config("init_global_config", config, preconfig)
 
@@ -578,7 +582,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'faulthandler': 1,
 
             'check_hash_pycs_mode': 'always',
-            '_frozen': 1,
         }
         self.check_config("init_from_config", config, preconfig)
 

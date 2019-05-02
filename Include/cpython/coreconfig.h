@@ -391,9 +391,6 @@ typedef struct {
        If set to -1 (default), inherit Py_FrozenFlag value. */
     int _frozen;
 
-    /* If non-zero, use "main" Python initialization */
-    int _init_main;
-
 } _PyCoreConfig;
 
 #ifdef MS_WINDOWS
@@ -428,8 +425,7 @@ typedef struct {
         .buffered_stdio = -1, \
         ._install_importlib = 1, \
         .check_hash_pycs_mode = NULL, \
-        ._frozen = -1, \
-        ._init_main = 1}
+        ._frozen = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 #ifdef __cplusplus
