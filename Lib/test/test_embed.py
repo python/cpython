@@ -346,7 +346,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'run_filename': None,
 
         '_install_importlib': 1,
-        '_check_hash_pycs_mode': 'default',
+        'check_hash_pycs_mode': 'default',
         '_frozen': 0,
         '_init_main': 1,
     }
@@ -577,7 +577,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
             'faulthandler': 1,
 
-            '_check_hash_pycs_mode': 'always',
+            'check_hash_pycs_mode': 'always',
             '_frozen': 1,
         }
         self.check_config("init_from_config", config, preconfig)

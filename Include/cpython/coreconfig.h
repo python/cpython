@@ -363,7 +363,7 @@ typedef struct {
        Needed by freeze_importlib. */
     int _install_importlib;
 
-    /* Value of the --check-hash-based-pycs configure option. Valid values:
+    /* Value of the --check-hash-based-pycs command line option:
 
        - "default" means the 'check_source' flag in hash-based pycs
          determines invalidation
@@ -372,11 +372,10 @@ typedef struct {
        - "never" causes the interpreter to always assume hash-based pycs are
          valid
 
-       Set by the --check-hash-based-pycs command line option.
        The default value is "default".
 
        See PEP 552 "Deterministic pycs" for more details. */
-    const char *_check_hash_pycs_mode;
+    wchar_t *check_hash_pycs_mode;
 
     /* If greater than 0, suppress _PyPathConfig_Calculate() warnings.
 
@@ -418,7 +417,7 @@ typedef struct {
         .user_site_directory = -1, \
         .buffered_stdio = -1, \
         ._install_importlib = 1, \
-        ._check_hash_pycs_mode = "default", \
+        .check_hash_pycs_mode = NULL, \
         ._frozen = -1, \
         ._init_main = 1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
