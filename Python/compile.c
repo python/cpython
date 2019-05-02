@@ -212,7 +212,7 @@ static int compiler_async_comprehension_generator(
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__, *__annotations__;
-
+static PyObject *equal_str;
 #define CAPSULE_NAME "compile.c compiler unit"
 
 PyObject *
@@ -3946,26 +3946,50 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     /* Our oparg encodes 2 pieces of information: the conversion
        character, and whether or not a format_spec was provided.
 
-       Convert the conversion char to 2 bits:
-       None: 000  0x0  FVC_NONE
-       !s  : 001  0x1  FVC_STR
-       !r  : 010  0x2  FVC_REPR
-       !a  : 011  0x3  FVC_ASCII
+       Convert the conversion char to 3 bits:
+       None: 0000  0x0  FVC_NONE
+       !s  : 0001  0x1  FVC_STR
+       !r  : 0010  0x2  FVC_REPR
+       !a  : 0011  0x3  FVC_ASCII
+       !x  : 0100  0x4  FVC_DEBUG
 
        next bit is whether or not we have a format spec:
-       yes : 100  0x4
-       no  : 000  0x0
+       yes : 1000  0x8
+       no  : 0000  0x0
     */
 
     int oparg;
 
-    /* Evaluate the expression to be formatted. */
-    VISIT(c, expr, e->v.FormattedValue.value);
+    if (!equal_str) {
+        equal_str = PyUnicode_InternFromString("=");
+        if (!equal_str)
+            return 0;
+    }
+
+    if (e->v.FormattedValue.conversion == 'x') {
+        /* Special handling here to generate basically:
+           format(<text of the expr> + '=' + repr(value), format_spec) */
+        assert(e->v.FormattedValue.expr_source != NULL);
+
+        /* The text of the expression. */
+        ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_source);
+        /* The equal sign. */
+        ADDOP_LOAD_CONST(c, equal_str);
+        /* Evaluate the expression to be formatted. */
+        VISIT(c, expr, e->v.FormattedValue.value);
+        /* Call repr on it. */
+        /* 3 for the text, the "=", and the value. */
+        ADDOP_I(c, BUILD_STRING, 3);
+    } else {
+        /* Just evaluate the expression to be formatted. */
+        VISIT(c, expr, e->v.FormattedValue.value);
+    }
 
     switch (e->v.FormattedValue.conversion) {
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
+    case 'x': oparg = FVC_NONE;  break; /* Already handled above. */
     case -1:  oparg = FVC_NONE;  break;
     default:
         PyErr_SetString(PyExc_SystemError,

@@ -4997,9 +4997,9 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
               struct compiling *c, const node *n);
 
 /* Parse the f-string at *str, ending at end.  We know *str starts an
-   expression (so it must be a '{'). Returns the FormattedValue node,
-   which includes the expression, conversion character, and
-   format_spec expression.
+   expression (so it must be a '{'). Returns the FormattedValue node, which
+   includes the expression, conversion character, format_spec expression, and
+   optionally the text of the expression (if !x is used).
 
    Note that I don't do a perfect job here: I don't make sure that a
    closing brace doesn't match an opening paren, for example. It
@@ -5017,6 +5017,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
     int conversion = -1; /* The conversion char. -1 if not specified. */
+    PyObject *expr_source = NULL; /* The text of the expression. */
 
     /* 0 if we're not in a string, else the quote char we're trying to
        match (single or double quote). */
@@ -5183,11 +5184,17 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
         /* Validate the conversion. */
         if (!(conversion == 's' || conversion == 'r'
-              || conversion == 'a')) {
+              || conversion == 'a' || conversion == 'x')) {
             ast_error(c, n,
                       "f-string: invalid conversion character: "
-                      "expected 's', 'r', or 'a'");
+                      "expected 's', 'r', 'a', or 'x'");
             return -1;
+        }
+
+        /* If !x, then save the source to the expression. */
+        if (conversion == 'x') {
+            expr_source = PyUnicode_FromStringAndSize(expr_start,
+                                                      expr_end-expr_start);
         }
     }
 
@@ -5216,9 +5223,9 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, LINENO(n), n->n_col_offset,
-                                 n->n_end_lineno, n->n_end_col_offset,
-                                 c->c_arena);
+                                 format_spec, expr_source, LINENO(n),
+                                 n->n_col_offset, n->n_end_lineno,
+                                 n->n_end_col_offset, c->c_arena);
     if (!*expression)
         return -1;
 
