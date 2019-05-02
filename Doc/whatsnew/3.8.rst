@@ -227,8 +227,8 @@ collections
 -----------
 
 The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
-a :class:`dict` instead of a :class:`collections.OrderedDict`.  This works because
-regular dicts have guaranteed ordering in since Python 3.7.  If the extra
+a :class:`dict` instead of a :class:`collections.OrderedDict`. This works because
+regular dicts have guaranteed ordering since Python 3.7. If the extra
 features of :class:`OrderedDict` are required, the suggested remediation is
 to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
 (Contributed by Raymond Hettinger in :issue:`35864`.)
