@@ -445,6 +445,33 @@ class FixcidTests(unittest.TestCase):
         return output.getvalue()
 
 
+class LllTests(unittest.TestCase):
+
+    script = os.path.join(scriptsdir, 'lll.py')
+
+    @unittest.skipUnless(hasattr(os, 'symlink'), 'Requires symlink support')
+    def test_lll_multiple_dirs(self):
+        dir1 = tempfile.mkdtemp()
+        dir2 = tempfile.mkdtemp()
+        self.addCleanup(test_support.rmtree, dir1)
+        self.addCleanup(test_support.rmtree, dir2)
+        fn1 = os.path.join(dir1, 'foo1')
+        fn2 = os.path.join(dir2, 'foo2')
+        for fn, dir in (fn1, dir1), (fn2, dir2):
+            open(fn, 'w').close()
+            os.symlink(fn, os.path.join(dir, 'symlink'))
+
+        rc, out, err = assert_python_ok(self.script, dir1, dir2)
+        self.assertEqual(out,
+            '{dir1}:\n'
+            'symlink -> {fn1}\n'
+            '\n'
+            '{dir2}:\n'
+            'symlink -> {fn2}\n'
+            .format(dir1=dir1, fn1=fn1, dir2=dir2, fn2=fn2)
+        )
+
+
 def test_main():
     test_support.run_unittest(*[obj for obj in globals().values()
                                     if isinstance(obj, type)])
