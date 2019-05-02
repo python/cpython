@@ -207,8 +207,8 @@ typedef struct {
 
        See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
        */
-    char *filesystem_encoding;
-    char *filesystem_errors;
+    wchar_t *filesystem_encoding;
+    wchar_t *filesystem_errors;
 
     wchar_t *pycache_prefix;  /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
     wchar_t *program_name;    /* Program name, see also Py_GetProgramName() */
@@ -334,13 +334,13 @@ typedef struct {
        Value set from PYTHONIOENCODING environment variable and
        Py_SetStandardStreamEncoding() function.
        See also 'stdio_errors' attribute. */
-    char *stdio_encoding;
+    wchar_t *stdio_encoding;
 
     /* Error handler of sys.stdin and sys.stdout.
        Value set from PYTHONIOENCODING environment variable and
        Py_SetStandardStreamEncoding() function.
        See also 'stdio_encoding' attribute. */
-    char *stdio_errors;
+    wchar_t *stdio_errors;
 
 #ifdef MS_WINDOWS
     /* If greater than zero, use io.FileIO instead of WindowsConsoleIO for sys
