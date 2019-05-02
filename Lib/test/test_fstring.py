@@ -1049,6 +1049,14 @@ non-important content
         self.assertEqual(eval('f"\\\n"'), '')
         self.assertEqual(eval('f"\\\r"'), '')
 
+    def test_debug_conversion(self):
+        x = 'A string'
+        self.assertEqual(f'{x!d}', 'x=' + repr(x))
+        self.assertEqual(f'{x !d}', 'x =' + repr(x))
+
+        x = 9
+        self.assertEqual(f'{3*x+15!d}', '3*x+15=42')
+
 
 if __name__ == '__main__':
     unittest.main()
