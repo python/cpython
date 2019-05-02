@@ -56,7 +56,14 @@ struct _is {
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
     int codecs_initialized;
-    int fscodec_initialized;
+
+    /* fs_codec.encoding is initialized to NULL.
+       Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
+    struct {
+        char *encoding;   /* Filesystem encoding (encoded to UTF-8) */
+        char *errors;     /* Filesystem errors (encoded to UTF-8) */
+        _Py_error_handler error_handler;
+    } fs_codec;
 
     _PyCoreConfig core_config;
 #ifdef HAVE_DLOPEN
