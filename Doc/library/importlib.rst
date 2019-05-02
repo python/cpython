@@ -424,8 +424,8 @@ ABC hierarchy::
 
         - :attr:`__file__`
             The location of the module's source code.
-            It is not set for built-in modules and frozen modules
-            and ``None`` for namespace packages.
+            It is ``None`` for namespace packages and not set for built-in
+            modules and frozen modules.
 
         - :attr:`__cached__`
             The location of the module's compiled code.
