@@ -6640,7 +6640,15 @@ static PyObject *
 posix_getgrouplist(PyObject *self, PyObject *args)
 {
 #ifdef NGROUPS_MAX
-#define MAX_GROUPS NGROUPS_MAX
+    /*
+     * NGROUPS_MAX is defined by POSIX.1 as the maximum
+     * number of supplimental groups a users can belong to.
+     * We have to increment it by one because
+     * getgrouplist() returns both the supplemental groups
+     * and the primary group, i.e. all of the groups the
+     * user belongs to.
+     */
+#define MAX_GROUPS (NGROUPS_MAX + 1)
 #else
     /* defined to be 16 on Solaris7, so this should be a small number */
 #define MAX_GROUPS 64
