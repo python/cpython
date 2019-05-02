@@ -2192,7 +2192,7 @@ class TestQuantiles(unittest.TestCase):
     def test_specific_cases_inclusive(self):
         # Match results computed by hand and cross-checked
         # against the PERCENTILE.INC function in MS Excel
-        # and against the quaatile() function in SciPy.
+        # and against the quantile() function in SciPy.
         quantiles = statistics.quantiles
         data = [100, 200, 400, 800]
         random.shuffle(data)
