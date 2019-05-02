@@ -302,7 +302,7 @@ PyThread_get_thread_ident(void)
     return (unsigned long) threadid;
 }
 
-void
+void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
     dprintf(("PyThread_exit_thread called\n"));
