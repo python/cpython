@@ -3958,6 +3958,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     */
 
     int oparg;
+    int use_format_spec=1;
 
     if (!equal_str) {
         equal_str = PyUnicode_InternFromString("=");
@@ -3966,8 +3967,12 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     }
 
     if (e->v.FormattedValue.conversion == 'd') {
-        /* Special handling here to generate basically:
-           format(<text of the expr> + '=' + repr(value), format_spec) */
+        /* If there is a format spec, then generate:
+           <text of the expr> + '=' + format(value, format_spec)
+           If there's no format spec, then generate:
+           <text of the expr> + '=' + repr(value)
+        */
+
         assert(e->v.FormattedValue.expr_text != NULL);
 
         /* The text of the expression. */
@@ -3976,11 +3981,22 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
         ADDOP_LOAD_CONST(c, equal_str);
         /* Evaluate the expression to be formatted. */
         VISIT(c, expr, e->v.FormattedValue.value);
-        /* Call repr on it, by using FORMAT_VALUE with FVC_REPR. */
-        ADDOP_I(c, FORMAT_VALUE, FVC_REPR);
+
+        /* Now format the expression value. */
+        if (e->v.FormattedValue.format_spec) {
+            /* Call format on it, using FORMAT_VALUE with the format_spec. */
+            VISIT(c, expr, e->v.FormattedValue.format_spec);
+            ADDOP_I(c, FORMAT_VALUE, FVS_HAVE_SPEC);
+            /* We've already used the format spec, don't use it again
+               below. */
+            use_format_spec = 0;
+        } else {
+            /* Call repr on it, by using FORMAT_VALUE with FVC_REPR. */
+            ADDOP_I(c, FORMAT_VALUE, FVC_REPR);
+        }
 
         /* Now combine the 3 strings on top of the stack: the text of the
-           expression, the "=", and the repr'd value. */
+           expression, the "=", and the formatted value, which is a string. */
         ADDOP_I(c, BUILD_STRING, 3);
     } else {
         /* Just evaluate the expression to be formatted. */
@@ -3998,7 +4014,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
                         "Unrecognized conversion character");
         return 0;
     }
-    if (e->v.FormattedValue.format_spec) {
+    if (e->v.FormattedValue.format_spec && use_format_spec) {
         /* Evaluate the format spec, and update our opcode arg. */
         VISIT(c, expr, e->v.FormattedValue.format_spec);
         oparg |= FVS_HAVE_SPEC;

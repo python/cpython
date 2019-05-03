@@ -5222,13 +5222,6 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     assert(**str == '}');
     *str += 1;
 
-    /* Can't have !d and a format spec. */
-    if (conversion == 'd' && format_spec != NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "cannot specify a format spec with !d");
-        goto error;
-    }
-
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, conversion,

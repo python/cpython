@@ -1057,9 +1057,22 @@ non-important content
         x = 9
         self.assertEqual(f'{3*x+15!d}', '3*x+15=42')
 
-        # Don't allow any format spec.
-        with self.assertRaisesRegex(SyntaxError, 'cannot specify a format spec with !d'):
-            eval("f'{0!d:0}'")
+    def test_debug_conversion_calls_format(self):
+        # Test that !d calls format on the expression's value, if a
+        # format spec is also provided.
+
+        class C:
+            def __repr__(self):
+                return 'my repr'
+
+            def __format__(self, spec):
+                return f'F{spec}'
+
+        # __format__ is called if a format spec is provided.
+        self.assertEqual(f'{C()!d:abc}', 'C()=Fabc')
+
+        # But __repr__ is called if one isn't.
+        self.assertEqual(f'{C()!d}', 'C()=my repr')
 
 
 if __name__ == '__main__':
