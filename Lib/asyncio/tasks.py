@@ -495,10 +495,11 @@ async def _wait(fs, timeout, return_when, loop):
     finally:
         if timeout_handle is not None:
             timeout_handle.cancel()
+        for f in fs:
+            f.remove_done_callback(_on_completion)
 
     done, pending = set(), set()
     for f in fs:
-        f.remove_done_callback(_on_completion)
         if f.done():
             done.add(f)
         else:
