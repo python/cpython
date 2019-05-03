@@ -1137,16 +1137,21 @@ class ElementTreeTest(unittest.TestCase):
     def test_xpath_tokenizer(self):
         # Test the XPath tokenizer.
         from xml.etree import ElementPath
-        def check(p, expected):
+        def check(p, expected, namespaces=None):
             self.assertEqual([op or tag
-                              for op, tag in ElementPath.xpath_tokenizer(p)],
+                              for op, tag in ElementPath.xpath_tokenizer(p, namespaces)],
                              expected)
 
         # tests from the xml specification
         check("*", ['*'])
+        check("{ns}*", ['{ns}*'])
+        check("{}*", ['{}*'])
+        check("{*}tag", ['{*}tag'])
+        check("{*}*", ['{*}*'])
         check("text()", ['text', '()'])
         check("@name", ['@', 'name'])
         check("@*", ['@', '*'])
+        check("@{ns}attr", ['@', '{ns}attr'])
         check("para[1]", ['para', '[', '1', ']'])
         check("para[last()]", ['para', '[', 'last', '()', ']'])
         check("*/para", ['*', '/', 'para'])
@@ -1158,6 +1163,7 @@ class ElementTreeTest(unittest.TestCase):
         check("//olist/item", ['//', 'olist', '/', 'item'])
         check(".", ['.'])
         check(".//para", ['.', '//', 'para'])
+        check(".//{*}tag", ['.', '//', '{*}tag'])
         check("..", ['..'])
         check("../@lang", ['..', '/', '@', 'lang'])
         check("chapter[title]", ['chapter', '[', 'title', ']'])
@@ -1168,6 +1174,8 @@ class ElementTreeTest(unittest.TestCase):
         check("{http://spam}egg", ['{http://spam}egg'])
         check("./spam.egg", ['.', '/', 'spam.egg'])
         check(".//{http://spam}egg", ['.', '//', '{http://spam}egg'])
+        check("./xsd:type", ['.', '/', '{http://www.w3.org/2001/XMLSchema}type'],
+              {'xsd': 'http://www.w3.org/2001/XMLSchema'})
 
     def test_processinginstruction(self):
         # Test ProcessingInstruction directly
@@ -2668,6 +2676,50 @@ class ElementFindTest(unittest.TestCase):
         nsmap = {'xx': 'X', '': 'Y'}
         self.assertEqual(len(root.findall(".//xx:b", namespaces=nsmap)), 2)
         self.assertEqual(len(root.findall(".//b", namespaces=nsmap)), 1)
+
+    def test_findall_wildcard(self):
+        root = ET.XML('''
+            <a xmlns:x="X" xmlns:y="Y">
+                <x:b><c/></x:b>
+                <b/>
+                <c><x:b/><b/></c><y:b/>
+            </a>''')
+        root.append(ET.Comment('test'))
+
+        self.assertEqual(summarize_list(root.findall("{*}b")),
+                         ['{X}b', 'b', '{Y}b'])
+        self.assertEqual(summarize_list(root.findall("{*}c")),
+                         ['c'])
+        self.assertEqual(summarize_list(root.findall("{X}*")),
+                         ['{X}b'])
+        self.assertEqual(summarize_list(root.findall("{Y}*")),
+                         ['{Y}b'])
+        self.assertEqual(summarize_list(root.findall("{}*")),
+                         ['b', 'c'])
+        self.assertEqual(summarize_list(root.findall("{}b")),  # only for consistency
+                         ['b'])
+        self.assertEqual(summarize_list(root.findall("{}b")),
+                         summarize_list(root.findall("b")))
+        self.assertEqual(summarize_list(root.findall("{*}*")),
+                         ['{X}b', 'b', 'c', '{Y}b'])
+        # This is an unfortunate difference, but that's how find('*') works.
+        self.assertEqual(summarize_list(root.findall("{*}*") + [root[-1]]),
+                         summarize_list(root.findall("*")))
+
+        self.assertEqual(summarize_list(root.findall(".//{*}b")),
+                         ['{X}b', 'b', '{X}b', 'b', '{Y}b'])
+        self.assertEqual(summarize_list(root.findall(".//{*}c")),
+                         ['c', 'c'])
+        self.assertEqual(summarize_list(root.findall(".//{X}*")),
+                         ['{X}b', '{X}b'])
+        self.assertEqual(summarize_list(root.findall(".//{Y}*")),
+                         ['{Y}b'])
+        self.assertEqual(summarize_list(root.findall(".//{}*")),
+                         ['c', 'b', 'c', 'b'])
+        self.assertEqual(summarize_list(root.findall(".//{}b")),  # only for consistency
+                         ['b', 'b'])
+        self.assertEqual(summarize_list(root.findall(".//{}b")),
+                         summarize_list(root.findall(".//b")))
 
     def test_bad_find(self):
         e = ET.XML(SAMPLE_XML)

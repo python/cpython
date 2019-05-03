@@ -1149,6 +1149,13 @@ checkpath(PyObject* tag)
         const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
         void *data = PyUnicode_DATA(tag);
         unsigned int kind = PyUnicode_KIND(tag);
+        if (len >= 3 && PyUnicode_READ(kind, data, 0) == '{' && (
+                PyUnicode_READ(kind, data, 1) == '}' || (
+                PyUnicode_READ(kind, data, 1) == '*' &&
+                PyUnicode_READ(kind, data, 2) == '}'))) {
+            /* wildcard: '{}tag' or '{*}tag' */
+            return 1;
+        }
         for (i = 0; i < len; i++) {
             Py_UCS4 ch = PyUnicode_READ(kind, data, i);
             if (ch == '{')
@@ -1162,7 +1169,13 @@ checkpath(PyObject* tag)
     }
     if (PyBytes_Check(tag)) {
         char *p = PyBytes_AS_STRING(tag);
-        for (i = 0; i < PyBytes_GET_SIZE(tag); i++) {
+        const Py_ssize_t len = PyBytes_GET_SIZE(tag);
+        if (len >= 3 && p[0] == '{' && (
+                p[1] == '}' || p[1] == '*' && p[2] == '}')) {
+            /* wildcard: '{}tag' or '{*}tag' */
+            return 1;
+        }
+        for (i = 0; i < len; i++) {
             if (p[i] == '{')
                 check = 0;
             else if (p[i] == '}')
