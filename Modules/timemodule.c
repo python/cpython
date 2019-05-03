@@ -1619,9 +1619,28 @@ init_timezone(PyObject *m)
     And I'm lazy and hate C so nyer.
      */
 #ifdef HAVE_DECL_TZNAME
+#ifdef MS_WINDOWS
+#	include <locale.h>
+	// https://bugs.python.org/issue36778
+	// workaround bug in UCRT
+	// strptime fails if the current locale is a Unicode locale
+	int cp = GetACP();
+	char* save_locale = NULL;
+	if (cp == CP_UTF8 || cp == CP_UTF7)
+	{
+		save_locale = setlocale(LC_CTYPE, NULL);
+		setlocale(LC_CTYPE, "C");
+	}
+#endif
     PyObject *otz0, *otz1;
     tzset();
     PyModule_AddIntConstant(m, "timezone", _Py_timezone);
+#ifdef MS_WINDOWS
+	if (cp == CP_UTF8 || cp == CP_UTF7)
+	{
+		setlocale(LC_CTYPE, save_locale);
+	}
+#endif
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);
 #else
