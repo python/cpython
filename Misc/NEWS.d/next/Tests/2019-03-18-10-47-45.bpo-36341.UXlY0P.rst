@@ -1,0 +1,2 @@
+Fix tests that may fail with PermissionError upon calling bind() on AF_UNIX
+sockets.

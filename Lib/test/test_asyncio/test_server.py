@@ -73,7 +73,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
     def new_loop(self):
         return asyncio.SelectorEventLoop()
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'no Unix sockets')
+    @support.skip_unless_bind_unix_socket
     def test_start_unix_server_1(self):
         HELLO_MSG = b'1' * 1024 * 5 + b'\n'
         started = threading.Event()
