@@ -23,6 +23,9 @@ import tempfile
 from unittest import mock
 from copy import copy
 
+if sys.platform == 'win32':
+    import locale
+
 # These tests are not particularly useful if Python was invoked with -S.
 # If you add tests that are useful under -S, this skip should be moved
 # to the class level.
@@ -534,11 +537,20 @@ class StartupImportTests(unittest.TestCase):
         if sys.platform != 'darwin':
             # http://bugs.python.org/issue19209
             self.assertNotIn('copyreg', modules, stderr)
-        # http://bugs.python.org/issue19218>
-        collection_mods = {'_collections', 'collections', 'functools',
-                           'heapq', 'itertools', 'keyword', 'operator',
-                           'reprlib', 'types', 'weakref'
-                          }.difference(sys.builtin_module_names)
+        if sys.platform == 'win32' and  locale.getpreferredencoding() == 'cp65001':
+            # if the default ansi codepage on Windows is 65001 (UTF-8)
+            # cp65001.py is loaded but not in the set of frozen modules
+            collection_mods = {'_collections', 'itertools', 'types',
+                            'weakref'
+                            }.difference(sys.builtin_module_names)
+        else:
+            # http://bugs.python.org/issue19218>
+            # if the default ansi codepage on Windows is 1252 (Western European)
+            # cp1252.py is loaded from frozen.c
+            collection_mods = {'_collections', 'collections', 'functools',
+                            'heapq', 'itertools', 'keyword', 'operator',
+                            'reprlib', 'types', 'weakref'
+                            }.difference(sys.builtin_module_names)
         self.assertFalse(modules.intersection(collection_mods), stderr)
 
     def test_startup_interactivehook(self):
