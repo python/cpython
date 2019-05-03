@@ -1796,8 +1796,13 @@ class GeneralModuleTests(unittest.TestCase):
             self.addCleanup(shutil.rmtree, tmpdir)
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.addCleanup(s.close)
-            s.bind(os.path.join(tmpdir, 'socket'))
-            self._test_socket_fileno(s, socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                s.bind(os.path.join(tmpdir, 'socket'))
+            except PermissionError:
+                pass
+            else:
+                self._test_socket_fileno(s, socket.AF_UNIX,
+                                         socket.SOCK_STREAM)
 
     def test_socket_fileno_rejects_float(self):
         with self.assertRaisesRegex(TypeError, "integer argument expected"):
