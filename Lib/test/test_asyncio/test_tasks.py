@@ -236,6 +236,15 @@ class BaseTaskTests:
         with self.assertRaises(TypeError):
             asyncio.ensure_future('ok')
 
+    def test_ensure_future_error_msg(self):
+        loop = asyncio.new_event_loop()
+        f = self.new_future(self.loop)
+        with self.assertRaisesRegex(ValueError, 'The future belongs to a '
+                                    'different loop than the one specified as '
+                                    'the loop argument'):
+            asyncio.ensure_future(f, loop=loop)
+        loop.close()
+
     def test_get_stack(self):
         T = None
 
