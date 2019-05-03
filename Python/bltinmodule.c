@@ -2357,7 +2357,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
        Assumes all inputs are the same type.  If the assumption fails, default
        to the more general routine.
     */
-    if (PyLong_CheckExact(result)) {
+    if (PyLong_CheckExact(result) || PyBool_Check(result)) {
         int overflow;
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
@@ -2373,7 +2373,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     return NULL;
                 return PyLong_FromLong(i_result);
             }
-            if (PyLong_CheckExact(item)) {
+            if (PyLong_CheckExact(item) || PyBool_Check(item)) {
                 long b = PyLong_AsLongAndOverflow(item, &overflow);
                 long x = i_result + b;
                 if (overflow == 0 && ((x^i_result) >= 0 || (x^b) >= 0)) {
@@ -2419,7 +2419,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(item);
                 continue;
             }
-            if (PyLong_CheckExact(item)) {
+            if (PyLong_Check(item)) {
                 long value;
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);
