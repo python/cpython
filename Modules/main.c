@@ -57,14 +57,7 @@ pymain_init(const _PyArgv *args)
        environment variables (PYTHONUTF8 and PYTHONCOERCECLOCALE)  */
     preconfig.coerce_c_locale = -1;
     preconfig.utf8_mode = -1;
-    if (args->use_bytes_argv) {
-        err = _Py_PreInitializeFromArgs(&preconfig,
-                                        args->argc, args->bytes_argv);
-    }
-    else {
-        err = _Py_PreInitializeFromWideArgs(&preconfig,
-                                            args->argc, args->wchar_argv);
-    }
+    err = _Py_PreInitializeFromPyArgv(&preconfig, args);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
@@ -570,7 +563,7 @@ exit_sigint(void)
 static void _Py_NO_RETURN
 pymain_exit_error(_PyInitError err)
 {
-    if (_Py_INIT_HAS_EXITCODE(err)) {
+    if (_Py_INIT_IS_EXIT(err)) {
         /* If it's an error rather than a regular exit, leave Python runtime
            alive: _Py_ExitInitError() uses the current exception and use
            sys.stdout in this case. */

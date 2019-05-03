@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pystate.h"   /* _PyRuntimeState */
+#include "pycore_coreconfig.h"   /* _PyArgv */
+#include "pycore_pystate.h"      /* _PyRuntimeState */
 
 /* True if the main interpreter thread exited due to an unhandled
  * KeyboardInterrupt exception, suggesting the user pressed ^C. */
@@ -16,10 +17,14 @@ PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
 
 PyAPI_FUNC(int) _Py_UnixMain(int argc, char **argv);
 
-PyAPI_FUNC(int) _Py_SetFileSystemEncoding(
+extern int _Py_SetFileSystemEncoding(
     const char *encoding,
     const char *errors);
-PyAPI_FUNC(void) _Py_ClearFileSystemEncoding(void);
+extern void _Py_ClearFileSystemEncoding(void);
+extern _PyInitError _PyUnicode_InitEncodings(PyInterpreterState *interp);
+#ifdef MS_WINDOWS
+extern int _PyUnicode_EnableLegacyWindowsFSEncoding(void);
+#endif
 
 PyAPI_FUNC(void) _Py_ClearStandardStreamEncoding(void);
 
@@ -86,8 +91,12 @@ extern void _PyGILState_Fini(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(_PyRuntimeState *runtime);
 
+PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPyArgv(
+    const _PyPreConfig *src_config,
+    const _PyArgv *args);
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromCoreConfig(
-    const _PyCoreConfig *coreconfig);
+    const _PyCoreConfig *coreconfig,
+    const _PyArgv *args);
 
 #ifdef __cplusplus
 }
