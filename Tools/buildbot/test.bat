@@ -25,10 +25,10 @@ exit /b 0
 
 :Arm32Ssh
 set dashU=-unetwork,decimal,subprocess,urlfetch,tzdata
-set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args%
 if "%SSH_SERVER%"=="" goto :Arm32SshHelp
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
-if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=c:\python\)
+if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=C:\python\)
+set TEMP_ARGS=--temp %REMOTE_PYTHON_DIR%temp
 ssh %SSH_SERVER% "if EXIST %REMOTE_PYTHON_DIR% (rd %REMOTE_PYTHON_DIR% /s/q)"
 ssh %SSH_SERVER% "md %REMOTE_PYTHON_DIR%PCBuild\arm32"
 for /f "USEBACKQ" %%i in (`dir PCbuild\*.bat /b`) do @scp PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
@@ -38,6 +38,8 @@ for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.pyd /b`) do @scp PCBuild\arm32\%%
 for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.dll /b`) do @scp PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
 scp -r "%PYTHON_SOURCE%Include" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Include"
 scp -r "%PYTHON_SOURCE%Lib" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Lib"
+
+set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args% %TEMP_ARGS%
 ssh %SSH_SERVER% "%REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
 exit /b 0
 
