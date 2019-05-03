@@ -1605,7 +1605,7 @@ using the :meth:`loop.add_signal_handler` method::
     import os
     import signal
 
-    def ask_exit(signame):
+    def ask_exit(signame, loop):
         print("got signal %s: exit" % signame)
         loop.stop()
 
@@ -1615,7 +1615,7 @@ using the :meth:`loop.add_signal_handler` method::
         for signame in {'SIGINT', 'SIGTERM'}:
             loop.add_signal_handler(
                 getattr(signal, signame),
-                functools.partial(ask_exit, signame))
+                functools.partial(ask_exit, signame, loop))
 
         await asyncio.sleep(3600)
 
