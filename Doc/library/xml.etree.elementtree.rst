@@ -399,6 +399,12 @@ module.  We'll be using the ``countrydata`` XML document from the
    # All 'neighbor' nodes that are the second child of their parent
    root.findall(".//neighbor[2]")
 
+For XML with namespaces, use the usual qualified ``{namespace}tag`` notation::
+
+   # All dublin-core "title" tags in the document
+   root.findall(".//{http://purl.org/dc/elements/1.1/}title")
+
+
 Supported XPath syntax
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -411,9 +417,16 @@ Supported XPath syntax
 |                       | For example, ``spam`` selects all child elements     |
 |                       | named ``spam``, and ``spam/egg`` selects all         |
 |                       | grandchildren named ``egg`` in all children named    |
-|                       | ``spam``.                                            |
+|                       | ``spam``.  ``{namespace}*`` selects all tags in the  |
+|                       | given namespace, ``{*}spam`` selects tags named      |
+|                       | ``spam`` in any (or no) namespace, and ``{}*``       |
+|                       | only selects tags that are not in a namespace.       |
+|                       |                                                      |
+|                       | .. versionchanged:: 3.8                              |
+|                       |    Support for star-wildcards was added.             |
 +-----------------------+------------------------------------------------------+
-| ``*``                 | Selects all child elements.  For example, ``*/egg``  |
+| ``*``                 | Selects all child elements, including comments and   |
+|                       | processing instructions.  For example, ``*/egg``     |
 |                       | selects all grandchildren named ``egg``.             |
 +-----------------------+------------------------------------------------------+
 | ``.``                 | Selects the current node.  This is mostly useful     |

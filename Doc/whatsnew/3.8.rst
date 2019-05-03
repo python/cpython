@@ -532,6 +532,11 @@ xml
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
 
+* The ``.find*()`` methods in the :mod:`xml.etree.ElementTree` module
+  support wildcard searches like ``{*}tag`` which ignores the namespace
+  and ``{namespace}*`` which returns all tags in the given namespace.
+  (Contributed by Stefan Behnel in :issue:`28238`.)
+
 * The :mod:`xml.etree.ElementTree` module provides a new function
   :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
   (Contributed by Stefan Behnel in :issue:`13611`.)
