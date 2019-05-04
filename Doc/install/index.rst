@@ -37,7 +37,7 @@
 Introduction
 ============
 
-In Python 2.0, the `distutils` API was first added to the standard library.
+In Python 2.0, the ``distutils`` API was first added to the standard library.
 This provided Linux distro maintainers with a standard way of converting
 Python projects into Linux distro packages, and system administrators with a
 standard way of installing them directly onto target systems.
