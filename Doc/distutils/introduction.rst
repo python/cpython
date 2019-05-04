@@ -4,11 +4,7 @@
 An Introduction to Distutils
 ****************************
 
-.. note::
-
-   This document is being retained solely until the ``setuptools`` documentation
-   at https://setuptools.readthedocs.io/en/latest/setuptools.html
-   independently covers all of the relevant information currently included here.
+.. include:: ./_setuptools_disclaimer.rst
 
 This document covers using the Distutils to distribute your Python modules,
 concentrating on the role of developer/distributor: if you're looking for

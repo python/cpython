@@ -4,11 +4,7 @@
 Creating a Source Distribution
 ******************************
 
-.. note::
-
-   This document is being retained solely until the ``setuptools`` documentation
-   at https://setuptools.readthedocs.io/en/latest/setuptools.html
-   independently covers all of the relevant information currently included here.
+.. include:: ./_setuptools_disclaimer.rst
 
 As shown in section :ref:`distutils-simple-example`, you use the :command:`sdist` command
 to create a source distribution.  In the simplest case, ::
