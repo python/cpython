@@ -4565,7 +4565,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     assert(s->kind == AsyncWith_kind);
     if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
-        return compiler_error(c, "'async with' outside async function");
+        if (!(c->c_flags->cf_flags & 0x2000)) {
+            return compiler_error(c, "'async with' outside async function");
+        }
     }
 
     block = compiler_new_block(c);
@@ -4773,12 +4775,19 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         ADDOP(c, YIELD_FROM);
         break;
     case Await_kind:
-        if (c->u->u_ste->ste_type != FunctionBlock)
-            return compiler_error(c, "'await' outside function");
+        if (c->u->u_ste->ste_type != FunctionBlock) {
+            if (!(c->c_flags->cf_flags & 0x2000)) {
+                return compiler_error(c, "'await' outside function");
+            }
 
-        if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-                c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION)
-            return compiler_error(c, "'await' outside async function");
+            c->u->u_ste->ste_coroutine = 1;
+        }
+
+        if (!(c->c_flags->cf_flags & 0x2000)) {
+            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
+                    c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION)
+                return compiler_error(c, "'await' outside async function");
+        }
 
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
@@ -5711,6 +5720,10 @@ compute_code_flags(struct compiler *c)
 
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
+
+    if ((c->c_flags->cf_flags & 0x2000) && c->u->u_ste->ste_coroutine) {
+        flags |= CO_COROUTINE;
+    }
 
     return flags;
 }
