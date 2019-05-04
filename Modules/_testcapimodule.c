@@ -2347,18 +2347,15 @@ get_date_fromdate(PyObject *self, PyObject *args)
     int year = 0, month = 0, day = 0;
     int macro = 0;
 
-    if (!PyArg_ParseTuple(args, "iii|p", &year, &month, &day, &macro))
-    {
+    if (!PyArg_ParseTuple(args, "iii|p", &year, &month, &day, &macro)) {
         return NULL;
     }
 
     // Pass along to the API function
-    if (macro)
-    {
+    if (macro) {
         rv = PyDate_FromDate(year, month, day);
     }
-    else
-    {
+    else {
         rv = PyDateTimeAPI->Date_FromDate(year, month, day, PyDateTimeAPI->DateType);
     }
 
@@ -5081,7 +5078,6 @@ static PyMethodDef TestMethods[] = {
 #endif
     {NULL, NULL} /* sentinel */
 };
-
 
 #define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
 
