@@ -492,7 +492,10 @@ class TupleComp:
 
 def func_strip_path(func_name):
     filename, line, name = func_name
-    return os.path.basename(filename), line, name
+    path, base_name = os.path.split(filename)
+    if base_name.startswith('__'):
+        base_name = os.path.join(os.path.basename(path), base_name)
+    return base_name, line, name
 
 def func_get_function_name(func):
     return func[2]
@@ -509,7 +512,7 @@ def func_std_string(func_name): # match what old profile produced
         return "%s:%d(%s)" % func_name
 
 #**************************************************************************
-# The following functions combine statists for pairs functions.
+# The following functions combine statistics for pairs functions.
 # The bulk of the processing involves correctly handling "call" lists,
 # such as callers and callees.
 #**************************************************************************

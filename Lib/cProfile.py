@@ -12,7 +12,7 @@ import profile as _pyprofile
 # ____________________________________________________________
 # Simple interface
 
-def run(statement, filename=None, sort=-1):
+def run(statement, filename=None, sort=-1, numresults=None):
     return _pyprofile._Utils(Profile).run(statement, filename, sort,
             numresults)
 

@@ -88,7 +88,7 @@ def run(statement, filename=None, sort=-1, numresults=None):
     standard name string (file/line/function-name) that is presented in
     each line.
     """
-    return _Utils(Profile).run(statement, filename, sort)
+    return _Utils(Profile).run(statement, filename, sort, numresults)
 
 def runctx(statement, globals, locals, filename=None, sort=-1,
         numresults=None):
