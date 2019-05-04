@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+# There are tests here with unicode string literals and
+# identifiers. There's a code in ast.c that was added because of a
+# failure with a non-ascii-only expression.  So, I have tests for
+# that.  There are workarounds that would let me run tests for that
+# code without unicode identifiers and strings, but just using them
+# directly seems like the easiest and therefore safest thing to do.
+# Unicode identifiers in tests is allowed by PEP 3131.
+
 import ast
 import types
 import decimal
@@ -1062,6 +1071,8 @@ non-important content
         tenπ = 31.4
         self.assertEqual(f'{tenπ!d:.2f}', 'tenπ=31.40')
 
+        # Also test with non-identifiers.
+        self.assertEqual(f'{"Σ"!d}', '"Σ"=\'Σ\'')
 
     def test_debug_conversion_calls_format(self):
         # Test that !d calls format on the expression's value, if a
