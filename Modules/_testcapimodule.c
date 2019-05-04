@@ -195,11 +195,11 @@ test_dict_inner(int count)
     for (i = 0; i < count; i++) {
         v = PyLong_FromLong(i);
         if (v == NULL) {
-            return -1;
+            goto error;
         }
         if (PyDict_SetItem(dict, v, v) < 0) {
             Py_DECREF(v);
-            return -1;
+            goto error;
         }
         Py_DECREF(v);
     }
@@ -210,11 +210,12 @@ test_dict_inner(int count)
 
         i = PyLong_AS_LONG(v) + 1;
         o = PyLong_FromLong(i);
-        if (o == NULL)
-            return -1;
+        if (o == NULL) {
+            goto error;
+        }
         if (PyDict_SetItem(dict, k, o) < 0) {
             Py_DECREF(o);
-            return -1;
+            goto error;
         }
         Py_DECREF(o);
     }
@@ -229,6 +230,9 @@ test_dict_inner(int count)
     } else {
         return 0;
     }
+error:
+    Py_DECREF(dict);
+    return -1;
 }
 
 static PyObject*
@@ -851,8 +855,7 @@ test_long_as_double(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 /* Test the L code for PyArg_ParseTuple.  This should deliver a long long
-   for both long and int arguments.  The test may leak a little memory if
-   it fails.
+   for both long and int arguments.
 */
 static PyObject *
 test_L_code(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -865,36 +868,44 @@ test_L_code(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
 
     num = PyLong_FromLong(42);
-    if (num == NULL)
-        return NULL;
+    if (num == NULL) {
+        goto error;
+    }
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = -1;
     if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        return NULL;
+        goto error;
     }
-    if (value != 42)
-        return raiseTestError("test_L_code",
+    if (value != 42) {
+        raiseTestError("test_L_code",
             "L code returned wrong value for long 42");
+        goto error;
+    }
 
-    Py_DECREF(num);
     num = PyLong_FromLong(42);
-    if (num == NULL)
-        return NULL;
+    if (num == NULL) {
+        goto error;
+    }
 
-    PyTuple_SET_ITEM(tuple, 0, num);
+    PyTuple_SetItem(tuple, 0, num);
 
     value = -1;
     if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        return NULL;
+        goto error;
     }
-    if (value != 42)
-        return raiseTestError("test_L_code",
+    if (value != 42) {
+        raiseTestError("test_L_code",
             "L code returned wrong value for int 42");
+        goto error;
+    }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
+error:
+    Py_DECREF(tuple);
+    return NULL;
 }
 
 static PyObject *
@@ -1193,47 +1204,61 @@ test_k_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     /* a number larger than ULONG_MAX even on 64-bit platforms */
     num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
-    if (num == NULL)
-        return NULL;
+    if (num == NULL) {
+        goto error;
+    }
 
     value = PyLong_AsUnsignedLongMask(num);
-    if (value != ULONG_MAX)
-        return raiseTestError("test_k_code",
+    if (value != ULONG_MAX) {
+        raiseTestError("test_k_code",
             "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+        Py_DECREF(num);
+        goto error;
+    }
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = 0;
     if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
-        return NULL;
+        goto error;
     }
-    if (value != ULONG_MAX)
-        return raiseTestError("test_k_code",
+    if (value != ULONG_MAX) {
+        raiseTestError("test_k_code",
             "k code returned wrong value for long 0xFFF...FFF");
+        goto error;
+    }
 
-    Py_DECREF(num);
     num = PyLong_FromString("-FFFFFFFF000000000000000042", NULL, 16);
-    if (num == NULL)
-        return NULL;
+    if (num == NULL) {
+        goto error;
+    }
 
     value = PyLong_AsUnsignedLongMask(num);
-    if (value != (unsigned long)-0x42)
-        return raiseTestError("test_k_code",
-                              "PyLong_AsUnsignedLongMask() returned wrong "
-                              "value for long -0xFFF..000042");
+    if (value != (unsigned long)-0x42) {
+        raiseTestError("test_k_code",
+                       "PyLong_AsUnsignedLongMask() returned wrong "
+                       "value for long -0xFFF..000042");
+        Py_DECREF(num);
+        goto error;
+    }
 
-    PyTuple_SET_ITEM(tuple, 0, num);
+    PyTuple_SetItem(tuple, 0, num);
 
     value = 0;
     if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
-        return NULL;
+        goto error;
     }
-    if (value != (unsigned long)-0x42)
-        return raiseTestError("test_k_code",
+    if (value != (unsigned long)-0x42) {
+        raiseTestError("test_k_code",
             "k code returned wrong value for long -0xFFF..000042");
+        goto error;
+    }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
+error:
+    Py_DECREF(tuple);
+    return NULL;
 }
 
 static PyObject *
@@ -1547,13 +1572,15 @@ test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     char *value;
 
     tuple = PyTuple_New(1);
-    if (tuple == NULL)
-    return NULL;
+    if (tuple == NULL) {
+        return NULL;
+    }
 
     obj = PyUnicode_Decode("t\xeate", strlen("t\xeate"),
                            "latin-1", NULL);
-    if (obj == NULL)
-    return NULL;
+    if (obj == NULL) {
+        goto error;
+    }
 
     PyTuple_SET_ITEM(tuple, 0, obj);
 
@@ -1561,15 +1588,18 @@ test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
      * "argument must be string without null bytes, not str"
      */
     if (!PyArg_ParseTuple(tuple, "s:test_s_code1", &value)) {
-        return NULL;
+        goto error;
     }
 
     if (!PyArg_ParseTuple(tuple, "z:test_s_code2", &value)) {
-        return NULL;
+        goto error;
     }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
+error:
+    Py_DECREF(tuple);
+    return NULL;
 }
 
 static PyObject *
@@ -1662,29 +1692,38 @@ test_u_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     obj = PyUnicode_Decode("test", strlen("test"),
                            "ascii", NULL);
-    if (obj == NULL)
-        return NULL;
+    if (obj == NULL) {
+        goto error;
+    }
 
     PyTuple_SET_ITEM(tuple, 0, obj);
 
     value = 0;
     if (!PyArg_ParseTuple(tuple, "u:test_u_code", &value)) {
-        return NULL;
+        goto error;
     }
-    if (value != PyUnicode_AS_UNICODE(obj))
+    if (value != PyUnicode_AS_UNICODE(obj)) {
+        Py_DECREF(tuple);
         return raiseTestError("test_u_code",
             "u code returned wrong value for u'test'");
+    }
     value = 0;
     if (!PyArg_ParseTuple(tuple, "u#:test_u_code", &value, &len)) {
-        return NULL;
+        goto error;
     }
     if (value != PyUnicode_AS_UNICODE(obj) ||
         len != PyUnicode_GET_SIZE(obj))
+    {
+        Py_DECREF(tuple);
         return raiseTestError("test_u_code",
             "u# code returned wrong values for u'test'");
+    }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
+error:
+    Py_DECREF(tuple);
+    return NULL;
 }
 
 /* Test Z and Z# codes for PyArg_ParseTuple */
@@ -1700,6 +1739,9 @@ test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
 
     obj = PyUnicode_FromString("test");
+    if (obj == NULL) {
+        goto error;
+    }
     PyTuple_SET_ITEM(tuple, 0, obj);
     Py_INCREF(Py_None);
     PyTuple_SET_ITEM(tuple, 1, Py_None);
@@ -1707,17 +1749,24 @@ test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     /* swap values on purpose */
     value1 = NULL;
     value2 = PyUnicode_AS_UNICODE(obj);
+    if (value2 == NULL) {
+        goto error;
+    }
 
     /* Test Z for both values */
     if (!PyArg_ParseTuple(tuple, "ZZ:test_Z_code", &value1, &value2)) {
-        return NULL;
+        goto error;
     }
-    if (value1 != PyUnicode_AS_UNICODE(obj))
-        return raiseTestError("test_Z_code",
+    if (value1 != PyUnicode_AS_UNICODE(obj)) {
+        raiseTestError("test_Z_code",
             "Z code returned wrong value for 'test'");
-    if (value2 != NULL)
-        return raiseTestError("test_Z_code",
+        goto error;
+    }
+    if (value2 != NULL) {
+        raiseTestError("test_Z_code",
             "Z code returned wrong value for None");
+        goto error;
+    }
 
     value1 = NULL;
     value2 = PyUnicode_AS_UNICODE(obj);
@@ -1728,19 +1777,26 @@ test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (!PyArg_ParseTuple(tuple, "Z#Z#:test_Z_code", &value1, &len1,
                           &value2, &len2))
     {
-        return NULL;
+        goto error;
     }
     if (value1 != PyUnicode_AS_UNICODE(obj) ||
         len1 != PyUnicode_GET_SIZE(obj))
-        return raiseTestError("test_Z_code",
+    {
+        raiseTestError("test_Z_code",
             "Z# code returned wrong values for 'test'");
-    if (value2 != NULL ||
-        len2 != 0)
-        return raiseTestError("test_Z_code",
+        goto error;
+    }
+    if (value2 != NULL || len2 != 0) {
+        raiseTestError("test_Z_code",
             "Z# code returned wrong values for None'");
+        goto error;
+    }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
+error:
+    Py_DECREF(tuple);
+    return NULL;
 }
 
 static PyObject *
@@ -2143,10 +2199,20 @@ static PyObject *
 test_null_strings(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Str(NULL);
+    if (o1 == NULL || o2 == NULL) {
+        goto error;
+    }
     PyObject *tuple = PyTuple_Pack(2, o1, o2);
+    if (tuple == NULL) {
+        goto error;
+    }
+    Py_DECREF(o1);
+    Py_DECREF(o2);
+    return tuple;
+error:
     Py_XDECREF(o1);
     Py_XDECREF(o2);
-    return tuple;
+    return NULL;
 }
 
 static PyObject *
@@ -2285,27 +2351,48 @@ static PyObject *
 make_timezones_capi(PyObject *self, PyObject *args) {
     PyObject *offset = PyDelta_FromDSU(0, -18000, 0);
     PyObject *name = PyUnicode_FromString("EST");
+    if (offset == NULL || name == NULL) {
+        Py_XDECREF(offset);
+        Py_XDECREF(name);
+        return NULL;
+    }
 
     PyObject *est_zone_capi = PyDateTimeAPI->TimeZone_FromTimeZone(offset, name);
     PyObject *est_zone_macro = PyTimeZone_FromOffsetAndName(offset, name);
     PyObject *est_zone_macro_noname = PyTimeZone_FromOffset(offset);
-
-    Py_DecRef(offset);
-    Py_DecRef(name);
-
+    Py_DECREF(offset);
+    Py_DECREF(name);
+    if (est_zone_capi == NULL || est_zone_macro == NULL ||
+        est_zone_macro_noname == NULL)
+    {
+        goto error;
+    }
     PyObject *rv = PyTuple_New(3);
+    if (rv == NULL) {
+        goto error;
+    }
 
     PyTuple_SET_ITEM(rv, 0, est_zone_capi);
     PyTuple_SET_ITEM(rv, 1, est_zone_macro);
     PyTuple_SET_ITEM(rv, 2, est_zone_macro_noname);
 
     return rv;
+error:
+    Py_XDECREF(est_zone_capi);
+    Py_XDECREF(est_zone_macro);
+    Py_XDECREF(est_zone_macro_noname);
+    return NULL;
 }
 
 static PyObject *
 get_timezones_offset_zero(PyObject *self, PyObject *args) {
     PyObject *offset = PyDelta_FromDSU(0, 0, 0);
     PyObject *name = PyUnicode_FromString("");
+    if (offset == NULL || name == NULL) {
+        Py_XDECREF(offset);
+        Py_XDECREF(name);
+        return NULL;
+    }
 
     // These two should return the UTC singleton
     PyObject *utc_singleton_0 = PyTimeZone_FromOffset(offset);
@@ -2313,16 +2400,28 @@ get_timezones_offset_zero(PyObject *self, PyObject *args) {
 
     // This one will return +00:00 zone, but not the UTC singleton
     PyObject *non_utc_zone = PyTimeZone_FromOffsetAndName(offset, name);
-
-    Py_DecRef(offset);
-    Py_DecRef(name);
+    Py_DECREF(offset);
+    Py_DECREF(name);
+    if (utc_singleton_0 == NULL || utc_singleton_1 == NULL ||
+        non_utc_zone == NULL)
+    {
+        goto error;
+    }
 
     PyObject *rv = PyTuple_New(3);
+    if (rv == NULL) {
+        goto error;
+    }
     PyTuple_SET_ITEM(rv, 0, utc_singleton_0);
     PyTuple_SET_ITEM(rv, 1, utc_singleton_1);
     PyTuple_SET_ITEM(rv, 2, non_utc_zone);
 
     return rv;
+error:
+    Py_XDECREF(utc_singleton_0);
+    Py_XDECREF(utc_singleton_1);
+    Py_XDECREF(non_utc_zone);
+    return NULL;
 }
 
 static PyObject *
@@ -3400,7 +3499,9 @@ test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
     descr.n_in_sequence = 1;
 
     PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
-    assert(structseq_type != NULL);
+    if (structseq_type == NULL) {
+        return NULL;
+    }
     assert(PyType_Check(structseq_type));
     assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
     Py_DECREF(structseq_type);
@@ -5055,8 +5156,6 @@ static PyMethodDef TestMethods[] = {
 #endif
     {NULL, NULL} /* sentinel */
 };
-
-#define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
 
 typedef struct {
     char bool_member;
