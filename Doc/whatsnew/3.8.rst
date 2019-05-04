@@ -237,6 +237,11 @@ asyncio
 
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 
+Added :meth:`~asyncio.streams.StreamWriter.start_tls` method to
+:class:`~asyncio.streams.StreamWriter` for upgrading an existing stream-based
+connection to TLS.
+(Contributed by Ian Good in :issue:`34975`.)
+
 
 collections
 -----------
