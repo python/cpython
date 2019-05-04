@@ -369,6 +369,10 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
+to a path.
+(Contributed by Joannah Nanjekye in :issue:`26978`)
+
 
 socket
 ------
