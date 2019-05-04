@@ -271,7 +271,7 @@ if has_c_implementation:
         check_sizeof = support.check_sizeof
 
         def test_pickler(self):
-            basesize = support.calcobjsize('6P2n3i2n3i2P')
+            basesize = support.calcobjsize('7P2n3i2n3i2P')
             p = _pickle.Pickler(io.BytesIO())
             self.assertEqual(object.__sizeof__(p), basesize)
             MT_size = struct.calcsize('3nP0n')
