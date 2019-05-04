@@ -1,0 +1,1 @@
+Created a test C API wrapper for PyDate_FromDate and added a test for PyDate_FromDate.
