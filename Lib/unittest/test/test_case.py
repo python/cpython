@@ -13,6 +13,7 @@ from copy import deepcopy
 from test import support
 
 import unittest
+from unittest.util import safe_repr
 
 from unittest.test.support import (
     TestEquality, TestHashing, LoggingResult, LegacyLoggingResult,
@@ -1837,6 +1838,25 @@ test case
             testcase = TestCase(method_name)
             testcase.run()
             self.assertEqual(MyException.ninstance, 0)
+
+
+    def test_safe_repr_max_length(self):
+        '''Issue #27432 added max_length param to safe_repr()'''
+        long_str = ("Hello  from Julia at PyCon. We're at a Mentored Sprint "
+        "with Gregory working on the issue #27432") * 10
+        truncated_result =  safe_repr(long_str, short=True)
+        self.assertIn('truncated', truncated_result)
+        self.assertNotIn(repr(long_str), truncated_result)
+
+        short_str = "I'm going to  stay the same"
+        truncated_result =  safe_repr(short_str, short=True)
+        self.assertNotIn('truncated', truncated_result)
+        self.assertEqual(repr(short_str), truncated_result)
+
+        medium_str = "PyCon is fun, we got lots of swag"
+        truncated_result =  safe_repr(medium_str, short=True, max_length=10)
+        self.assertIn('truncated', truncated_result)
+        self.assertNotIn(repr(medium_str), truncated_result)
 
 
 if __name__ == "__main__":

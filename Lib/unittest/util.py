@@ -42,14 +42,18 @@ def _common_shorten_repr(*args):
     return tuple(prefix + _shorten(s[prefixlen:], _MIN_DIFF_LEN, _MIN_END_LEN)
                  for s in args)
 
-def safe_repr(obj, short=False):
+def safe_repr(obj, short=False, *, max_length=None):
+    if not max_length:
+        max_length = _MAX_LENGTH
+    else:
+        short = True
     try:
         result = repr(obj)
     except Exception:
         result = object.__repr__(obj)
-    if not short or len(result) < _MAX_LENGTH:
+    if not short or len(result) < max_length:
         return result
-    return result[:_MAX_LENGTH] + ' [truncated]...'
+    return result[:max_length] + ' [truncated]...'
 
 def strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__qualname__)
