@@ -1,0 +1,1 @@
+Better cProfile CLI defaults. Add option -n to restrict to top n lines (defaults to 20 for CLI); set default of -s to sort by time (instead of unsorted).
