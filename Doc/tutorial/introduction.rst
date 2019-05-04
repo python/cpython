@@ -383,7 +383,7 @@ items of different types, but usually the items all have the same type. ::
    >>> squares
    [1, 4, 9, 16, 25]
 
-Like strings (and all other built-in :term:`sequence` type), lists can be
+Like strings (and all other built-in :term:`sequence` types), lists can be
 indexed and sliced::
 
    >>> squares[0]  # indexing returns the item
