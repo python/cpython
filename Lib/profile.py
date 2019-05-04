@@ -47,29 +47,29 @@ class _Utils:
     def __init__(self, profiler):
         self.profiler = profiler
 
-    def run(self, statement, filename, sort):
+    def run(self, statement, filename, sort, numresults):
         prof = self.profiler()
         try:
             prof.run(statement)
         except SystemExit:
             pass
         finally:
-            self._show(prof, filename, sort)
+            self._show(prof, filename, sort, numresults)
 
-    def runctx(self, statement, globals, locals, filename, sort):
+    def runctx(self, statement, globals, locals, filename, sort, numresults):
         prof = self.profiler()
         try:
             prof.runctx(statement, globals, locals)
         except SystemExit:
             pass
         finally:
-            self._show(prof, filename, sort)
+            self._show(prof, filename, sort, numresults)
 
-    def _show(self, prof, filename, sort):
+    def _show(self, prof, filename, sort, numresults):
         if filename is not None:
             prof.dump_stats(filename)
         else:
-            prof.print_stats(sort)
+            prof.print_stats(sort, numresults)
 
 
 #**************************************************************************
@@ -77,7 +77,7 @@ class _Utils:
 # Note that an instance of Profile() is *not* needed to call them.
 #**************************************************************************
 
-def run(statement, filename=None, sort=-1):
+def run(statement, filename=None, sort=-1, numresults=None):
     """Run statement under profiler optionally saving results in filename
 
     This function takes a single argument that can be passed to the
@@ -90,13 +90,15 @@ def run(statement, filename=None, sort=-1):
     """
     return _Utils(Profile).run(statement, filename, sort)
 
-def runctx(statement, globals, locals, filename=None, sort=-1):
+def runctx(statement, globals, locals, filename=None, sort=-1,
+        numresults=None):
     """Run statement under profiler, supplying your own globals and locals,
     optionally saving results in filename.
 
     statement and filename have the same semantics as profile.run
     """
-    return _Utils(Profile).runctx(statement, globals, locals, filename, sort)
+    return _Utils(Profile).runctx(statement, globals, locals, filename, sort,
+            numresults)
 
 
 class Profile:
@@ -383,10 +385,10 @@ class Profile:
         self.t = get_time() - t
 
 
-    def print_stats(self, sort=-1):
+    def print_stats(self, sort=-1, numresults=None):
         import pstats
-        pstats.Stats(self).strip_dirs().sort_stats(sort). \
-                  print_stats()
+        pstats.Stats(self).strip_dirs().sort_stats(sort).print_stats(
+                numresults)
 
     def dump_stats(self, file):
         with open(file, 'wb') as f:
@@ -566,18 +568,21 @@ class Profile:
 
 def main():
     import os
+    import pstats
     from optparse import OptionParser
 
-    usage = "profile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
+    usage = "profile.py [-o output_file_path] [-s sort] [-n limit] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
     parser.allow_interspersed_args = False
     parser.add_option('-o', '--outfile', dest="outfile",
         help="Save stats to <outfile>", default=None)
     parser.add_option('-m', dest="module", action="store_true",
         help="Profile a library module.", default=False)
+    parser.add_option('-n', '--numresults', dest="numresults", type="int",
+            help="Number of results to show", default=20)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class",
-        default=-1)
+        default='time', choices=sorted(pstats.Stats.sort_arg_dict_default))
 
     if not sys.argv[1:]:
         parser.print_usage()
@@ -605,7 +610,8 @@ def main():
                 '__package__': None,
                 '__cached__': None,
             }
-        runctx(code, globs, None, options.outfile, options.sort)
+        runctx(code, globs, None, options.outfile, options.sort,
+                options.numresults)
     else:
         parser.print_usage()
     return parser

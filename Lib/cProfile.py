@@ -13,11 +13,13 @@ import profile as _pyprofile
 # Simple interface
 
 def run(statement, filename=None, sort=-1):
-    return _pyprofile._Utils(Profile).run(statement, filename, sort)
+    return _pyprofile._Utils(Profile).run(statement, filename, sort,
+            numresults)
 
-def runctx(statement, globals, locals, filename=None, sort=-1):
+def runctx(statement, globals, locals, filename=None, sort=-1,
+        numresults=None):
     return _pyprofile._Utils(Profile).runctx(statement, globals, locals,
-                                             filename, sort)
+                                             filename, sort, numresults)
 
 run.__doc__ = _pyprofile.run.__doc__
 runctx.__doc__ = _pyprofile.runctx.__doc__
@@ -37,9 +39,10 @@ class Profile(_lsprof.Profiler):
     # Most of the functionality is in the base class.
     # This subclass only adds convenient and backward-compatible methods.
 
-    def print_stats(self, sort=-1):
+    def print_stats(self, sort=-1, numresults=None):
         import pstats
-        pstats.Stats(self).strip_dirs().sort_stats(sort).print_stats()
+        pstats.Stats(self).strip_dirs().sort_stats(sort).print_stats(
+                numresults)
 
     def dump_stats(self, file):
         import marshal
@@ -155,8 +158,10 @@ def main():
         help="Save stats to <outfile>", default=None)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class",
-        default=-1,
+        default='time',
         choices=sorted(pstats.Stats.sort_arg_dict_default))
+    parser.add_option('-n', '--numresults', dest="numresults", type="int",
+        help="Number of results to show", default=20)
     parser.add_option('-m', dest="module", action="store_true",
         help="Profile a library module", default=False)
 
@@ -185,7 +190,8 @@ def main():
                 '__package__': None,
                 '__cached__': None,
             }
-        runctx(code, globs, None, options.outfile, options.sort)
+        runctx(code, globs, None, options.outfile, options.sort,
+                options.numresults)
     else:
         parser.print_usage()
     return parser
