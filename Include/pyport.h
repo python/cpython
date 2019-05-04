@@ -829,4 +829,18 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #  define _Py_FORCE_UTF8_FS_ENCODING
 #endif
 
+/* Mark a function which cannot return. Example:
+
+   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void); */
+#if defined(__clang__) || \
+    (defined(__GNUC__) && \
+     ((__GNUC__ >= 3) || \
+      (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))
+#  define _Py_NO_RETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+#  define _Py_NO_RETURN __declspec(noreturn)
+#else
+#  define _Py_NO_RETURN
+#endif
+
 #endif /* Py_PYPORT_H */

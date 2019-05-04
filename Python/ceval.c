@@ -211,7 +211,6 @@ exit_thread_if_finalizing(PyThreadState *tstate)
     if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
         drop_gil(tstate);
         PyThread_exit_thread();
-        Py_UNREACHABLE();
     }
 }
 
