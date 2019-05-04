@@ -211,7 +211,7 @@ static int compiler_async_comprehension_generator(
                                       expr_ty elt, expr_ty val, int type);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
-static PyObject *__doc__, *__annotations__, *equal_str;
+static PyObject *__doc__, *__annotations__;
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -3958,63 +3958,64 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     */
 
     int oparg;
-    int use_format_spec=1;
-
-    if (!equal_str) {
-        equal_str = PyUnicode_InternFromString("=");
-        if (!equal_str)
-            return 0;
-    }
 
     if (e->v.FormattedValue.conversion == 'd') {
+        /* Note that expr_text already has a trailing equal sign, so we don't
+           need to add it here. */
         /* If there is a format spec, then generate:
-           <text of the expr> + '=' + format(value, format_spec)
+           expr_text + format(value, format_spec)
            If there's no format spec, then generate:
-           <text of the expr> + '=' + repr(value)
+           expr_text + repr(value)
         */
+        /* This can't be an assert, because although ast.c will never generate
+           an incorrect FormattedValue node, it's possible to create such a
+           node programatically.  So, make this a runtime check. */
+        if (e->v.FormattedValue.expr_text == NULL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "!d conversion without expr_text set");
+            return 0;
+        }
 
-        assert(e->v.FormattedValue.expr_text != NULL);
-
-        /* The text of the expression. */
+        /* Push the text of the expression (with an equal sign at the end. */
         ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_text);
-        /* The equal sign. */
-        ADDOP_LOAD_CONST(c, equal_str);
+
         /* Evaluate the expression to be formatted. */
         VISIT(c, expr, e->v.FormattedValue.value);
 
-        /* Now format the expression value. */
+        /* Now format the expression value (which forces it to be a
+         * string). */
         if (e->v.FormattedValue.format_spec) {
             /* Call format on it, using FORMAT_VALUE with the format_spec. */
             VISIT(c, expr, e->v.FormattedValue.format_spec);
             ADDOP_I(c, FORMAT_VALUE, FVS_HAVE_SPEC);
-            /* We've already used the format spec, don't use it again
-               below. */
-            use_format_spec = 0;
         } else {
             /* Call repr on it, by using FORMAT_VALUE with FVC_REPR. */
             ADDOP_I(c, FORMAT_VALUE, FVC_REPR);
         }
 
-        /* Now combine the 3 strings on top of the stack: the text of the
-           expression, the "=", and the formatted value, which is a string. */
-        ADDOP_I(c, BUILD_STRING, 3);
-    } else {
-        /* Just evaluate the expression to be formatted. */
-        VISIT(c, expr, e->v.FormattedValue.value);
+        /* Now combine the 2 strings on top of the stack: the text of the
+           expression (which already ends with an '=') and the formatted
+           value, which is a string. */
+        ADDOP_I(c, BUILD_STRING, 2);
+        return 1;
     }
+
+    /* Now we handle all conversions (including none), except 'd'. */
+
+    /* The expression to be formatted. */
+    VISIT(c, expr, e->v.FormattedValue.value);
 
     switch (e->v.FormattedValue.conversion) {
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
-    case 'd': oparg = FVC_NONE;  break; /* Already handled above. */
     case -1:  oparg = FVC_NONE;  break;
     default:
         PyErr_SetString(PyExc_SystemError,
                         "Unrecognized conversion character");
         return 0;
     }
-    if (e->v.FormattedValue.format_spec && use_format_spec) {
+    if (e->v.FormattedValue.format_spec) {
         /* Evaluate the format spec, and update our opcode arg. */
         VISIT(c, expr, e->v.FormattedValue.format_spec);
         oparg |= FVS_HAVE_SPEC;

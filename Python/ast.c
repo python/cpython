@@ -5193,10 +5193,24 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
         /* If !d, then save the source to the expression. */
         if (conversion == 'd') {
-            expr_text = PyUnicode_FromStringAndSize(expr_start,
-                                                    expr_end-expr_start);
+            /* Add one for the = we're going to append. This is the length of
+               the input in bytes, UTF-8 encoded. */
+            Py_ssize_t len = expr_end-expr_start+1;
+
+            /* This can't read off the end, because there must be at least one
+               more char, the ! character. */
+            expr_text = PyUnicode_FromStringAndSize(expr_start, len);
             if (!expr_text)
                 goto error;
+
+            /* Get the length in chars now (no longer bytes, so this might
+               change if the exppression had any encoded unicode chars in
+               it). */
+            len = PyUnicode_GET_LENGTH(expr_text);
+            assert(PyUnicode_ReadChar(expr_text, len-1) == '!');
+
+            /* Change the last char to an '='. */
+            PyUnicode_WriteChar(expr_text, len-1, '=');
         }
     }
 

@@ -1057,6 +1057,12 @@ non-important content
         x = 9
         self.assertEqual(f'{3*x+15!d}', '3*x+15=42')
 
+        # There is code in ast.c that deals with non-ascii expression values.  So,
+        # use a unicode identifier to trigger that.
+        tenπ = 31.4
+        self.assertEqual(f'{tenπ!d:.2f}', 'tenπ=31.40')
+
+
     def test_debug_conversion_calls_format(self):
         # Test that !d calls format on the expression's value, if a
         # format spec is also provided.
