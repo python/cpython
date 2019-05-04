@@ -89,7 +89,7 @@ matrix:
             - lcov
             - xvfb
       before_script:
-        - ./configure
+        - ./configure --enable-optimizations
         - make coverage -s -j4
         # Need a venv that can parse covered code.
         - ./python -m venv venv
