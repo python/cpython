@@ -411,7 +411,7 @@ class _NormalAccessor(_Accessor):
 
     unlink = os.unlink
 
-    link = os.link
+    link_to = os.link
 
     rmdir = os.rmdir
 
@@ -1305,14 +1305,13 @@ class Path(PurePath):
             self._raise_closed()
         return self._accessor.lstat(self)
 
-    def link(self, target):
+    def link_to(self, target):
         """
         Create a hard link pointing to a path named target.
-        If the path is a directory, use mkdir() instead.
         """
         if self._closed:
             self._raise_closed()
-        self._accessor.link(self, target)
+        self._accessor.link_to(self, target)
 
     def rename(self, target):
         """

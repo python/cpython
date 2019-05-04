@@ -1054,10 +1054,11 @@ call fails (for example because the path doesn't exist).
    use :func:`Path.rmdir` instead.
 
 
-.. method:: Path.link(target)
+.. method:: Path.link_to(target)
 
-   Create a hard link pointing to a path named *target*. If the path is a directory,
-   use :func:`Path.mkdir` instead.
+   Create a hard link pointing to a path named *target*.
+
+   .. versionchanged:: 3.8
 
 
 .. method:: Path.write_bytes(data)
