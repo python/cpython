@@ -1081,7 +1081,7 @@ non-important content
         pi = 'π'
         self.assertEqual(f'alpha α {pi!d} ω omega', "alpha α pi='π' ω omega")
 
-        # Check multi-lines.
+        # Check multi-line expressions.
         self.assertEqual(f'''{
 3
 !d}''', '\n3\n=3')
