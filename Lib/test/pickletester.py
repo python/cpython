@@ -73,23 +73,6 @@ class UnseekableIO(io.BytesIO):
         raise io.UnsupportedOperation
 
 
-class TrivialReadableIO:
-    """
-    A readable file object that doesn't support readinto().
-    """
-    def __init__(self, *args, **kwargs):
-        self._bio = io.BytesIO(*args, **kwargs)
-
-    def read(self, n):
-        return self._bio.read(n)
-
-    def readline(self, n=None):
-        return self._bio.readline(n)
-
-    def getvalue(self):
-        return self._bio.getvalue()
-
-
 # We can't very well test the extension registry without putting known stuff
 # in it, but we have to be careful to restore its original state.  Code
 # should do this:
@@ -3398,22 +3381,6 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
                 f.seek(0)
                 unpickler = self.unpickler_class(f)
                 self.assertEqual(unpickler.load(), data)
-
-    def test_unpickling_trivial_io(self):
-        # Check unpickling with an io class that doesn't have readinto()
-        sizes = [1, 16, 1000, 2**10]
-        data = [(b"x" * size, bytearray(b"x") * size) for size in sizes]
-        for proto in protocols:
-            with self.subTest(proto=proto):
-                bio = io.BytesIO()
-                pickler = self.pickler_class(bio, protocol=proto)
-                pickler.dump(data)
-                N = 5
-                f = TrivialReadableIO(bio.getvalue() * N)
-                unpickler = self.unpickler_class(f)
-                for i in range(N):
-                    self.assertEqual(unpickler.load(), data)
-                self.assertRaises(EOFError, unpickler.load)
 
 
 # Tests for dispatch_table attribute

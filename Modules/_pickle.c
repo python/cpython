@@ -1356,8 +1356,6 @@ _Unpickler_ReadInto(UnpicklerObject *self, char *buf, Py_ssize_t n)
 {
     assert(n != READ_WHOLE_LINE);
 
-    /* XXX add tests from ogrisel's use case */
-
     /* Read from available buffer data, if any */
     Py_ssize_t in_buffer = self->input_len - self->next_read_idx;
     if (in_buffer > 0) {
@@ -1373,30 +1371,21 @@ _Unpickler_ReadInto(UnpicklerObject *self, char *buf, Py_ssize_t n)
     }
 
     /* Read from file */
+    if (!self->readinto)
+        return bad_readline();
     if (_Unpickler_SkipConsumed(self) < 0)
         return -1;
 
-    Py_ssize_t read_size;
-
-    if (self->readinto == NULL) {
-        /* Call read() and memcpy */
-        /* XXX do we want this fallback? pickle.py doesn't have it */
-        char *s;
-        read_size = _Unpickler_ReadImpl(self, &s, n);
-        if (read_size < 0) {
-            return -1;
-        }
-        assert(read_size == n);
-        memcpy(buf, s, n);
-        return n;
-    }
-
     /* Call readinto() into user buffer */
     PyObject *buf_obj = PyMemoryView_FromMemory(buf, n, PyBUF_WRITE);
-    if (buf_obj == NULL)
+    if (buf_obj == NULL) {
         return -1;
+    }
     PyObject *read_size_obj = _Pickle_FastCall(self->readinto, buf_obj);
-    read_size = PyLong_AsSsize_t(read_size_obj);
+    if (read_size_obj == NULL) {
+        return -1;
+    }
+    Py_ssize_t read_size = PyLong_AsSsize_t(read_size_obj);
     Py_DECREF(read_size_obj);
 
     if (read_size < 0) {
@@ -1614,19 +1603,17 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
     _Py_IDENTIFIER(readinto);
     _Py_IDENTIFIER(readline);
 
-    /* Both 'peek' and 'readline' are optional, for compatibility */
     if (_PyObject_LookupAttrId(file, &PyId_peek, &self->peek) < 0) {
         return -1;
     }
-    if (_PyObject_LookupAttrId(file, &PyId_readinto, &self->readinto) < 0) {
-        return -1;
-    }
     (void)_PyObject_LookupAttrId(file, &PyId_read, &self->read);
+    (void)_PyObject_LookupAttrId(file, &PyId_readinto, &self->readinto);
     (void)_PyObject_LookupAttrId(file, &PyId_readline, &self->readline);
-    if (self->readline == NULL || self->read == NULL) {
+    if (!self->readline || !self->readinto || !self->read) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError,
-                            "file must have 'read' and 'readline' attributes");
+                            "file must have 'read', 'readinto' and "
+                            "'readline' attributes");
         }
         Py_CLEAR(self->read);
         Py_CLEAR(self->readinto);
