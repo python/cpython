@@ -1,1 +1,2 @@
-`pathlib.path.link()` is now implemented.
+`pathlib.path.link_to()` is now implemented. It creates a hard link pointing
+to a path.
