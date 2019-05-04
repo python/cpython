@@ -4,6 +4,12 @@
 Extending Distutils
 *******************
 
+.. note::
+
+   This document is being retained solely until the ``setuptools`` documentation
+   at https://setuptools.readthedocs.io/en/latest/setuptools.html
+   independently covers all of the relevant information currently included here.
+
 Distutils can be extended in various ways.  Most extensions take the form of new
 commands or replacements for existing commands.  New commands may be written to
 support new types of platform-specific packaging, for example, while

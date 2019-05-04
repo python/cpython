@@ -4,6 +4,21 @@
 API Reference
 *************
 
+.. seealso::
+
+   `New and changed setup.py arguments in setuptools <setuptools-setup-py>`_
+      The ``setuptools`` project adds new capabilities to the ``setup`` function
+      and other APIs, makes the API consistent across different Python versions,
+      and is hence recommended over using ``distutils`` directly.
+
+.. _setuptools-setup-py: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
+
+.. note::
+
+   This document is being retained solely until the ``setuptools`` documentation
+   at https://setuptools.readthedocs.io/en/latest/setuptools.html
+   independently covers all of the relevant information currently included here.
+
 
 :mod:`distutils.core` --- Core Distutils functionality
 ======================================================

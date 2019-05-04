@@ -4,6 +4,12 @@
 Writing the Setup Script
 ************************
 
+.. note::
+
+   This document is being retained solely until the ``setuptools`` documentation
+   at https://setuptools.readthedocs.io/en/latest/setuptools.html
+   independently covers all of the relevant information currently included here.
+
 The setup script is the centre of all activity in building, distributing, and
 installing modules using the Distutils.  The main purpose of the setup script is
 to describe your module distribution to the Distutils, so that the various

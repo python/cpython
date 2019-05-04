@@ -4,6 +4,12 @@
 Creating Built Distributions
 ****************************
 
+.. note::
+
+   This document is being retained solely until the ``setuptools`` documentation
+   at https://setuptools.readthedocs.io/en/latest/setuptools.html
+   independently covers all of the relevant information currently included here.
+
 A "built distribution" is what you're probably used to thinking of either as a
 "binary package" or an "installer" (depending on your background).  It's not
 necessarily binary, though, because it might contain only Python source code
