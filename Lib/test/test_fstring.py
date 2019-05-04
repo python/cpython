@@ -1074,6 +1074,13 @@ non-important content
         # Also test with non-identifiers.
         self.assertEqual(f'{"Σ"!d}', '"Σ"=\'Σ\'')
 
+        # Make sure nested still works.
+        self.assertEqual(f'{f"{3.1415!d:.1f}":*^20}', '*****3.1415=3.1*****')
+
+        # Make sure text before and after !d works correctly.
+        pi = 'π'
+        self.assertEqual(f'alpha α {pi!d} ω omega', "alpha α pi='π' ω omega")
+
     def test_debug_conversion_calls_format(self):
         # Test that !d calls format on the expression's value, if a
         # format spec is also provided.
