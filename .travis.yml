@@ -82,6 +82,16 @@ matrix:
     - os: linux
       language: c
       compiler: gcc
+      env:
+        - TESTING=cpython
+        - OPTIONAL=true
+      addons:
+        apt:
+          packages:
+            - xvfb
+    - os: linux
+      language: c
+      compiler: clang
       env: OPTIONAL=true
       addons:
         apt:
