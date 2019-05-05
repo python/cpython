@@ -3959,48 +3959,10 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
 
     int oparg;
 
-    if (e->v.FormattedValue.conversion == 'd') {
-        /* Note that expr_text already has a trailing equal sign, so we don't
-           need to add it here. */
-        /* If there is a format spec, then generate:
-           expr_text + format(value, format_spec)
-           If there's no format spec, then generate:
-           expr_text + repr(value)
-        */
-        /* This can't be an assert, because although ast.c will never generate
-           an incorrect FormattedValue node, it's possible to create such a
-           node programatically.  So, make this a runtime check. */
-        if (e->v.FormattedValue.expr_text == NULL) {
-            PyErr_SetString(PyExc_ValueError,
-                            "!d conversion without expr_text set");
-            return 0;
-        }
-
+    if (e->v.FormattedValue.expr_text) {
         /* Push the text of the expression (with an equal sign at the end. */
         ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_text);
-
-        /* Evaluate the expression to be formatted. */
-        VISIT(c, expr, e->v.FormattedValue.value);
-
-        /* Now format the expression value (which forces it to be a
-         * string). */
-        if (e->v.FormattedValue.format_spec) {
-            /* Call format on it, using FORMAT_VALUE with the format_spec. */
-            VISIT(c, expr, e->v.FormattedValue.format_spec);
-            ADDOP_I(c, FORMAT_VALUE, FVS_HAVE_SPEC);
-        } else {
-            /* Call repr on it, by using FORMAT_VALUE with FVC_REPR. */
-            ADDOP_I(c, FORMAT_VALUE, FVC_REPR);
-        }
-
-        /* Now combine the 2 strings on top of the stack: the text of the
-           expression (which already ends with an '=') and the formatted
-           value, which is a string. */
-        ADDOP_I(c, BUILD_STRING, 2);
-        return 1;
     }
-
-    /* Now we handle all conversions (including none), except 'd'. */
 
     /* The expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
@@ -4009,7 +3971,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
-    case -1:  oparg = FVC_NONE;  break;
+    case 'f': oparg = FVC_NONE;  break;
     default:
         PyErr_SetString(PyExc_SystemError,
                         "Unrecognized conversion character");
@@ -4023,6 +3985,12 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
 
     /* And push our opcode and oparg */
     ADDOP_I(c, FORMAT_VALUE, oparg);
+
+    /* If we have expr_text, join the 2 strings on the stack. */
+    if (e->v.FormattedValue.expr_text) {
+        ADDOP_I(c, BUILD_STRING, 2);
+    }
+
     return 1;
 }
 

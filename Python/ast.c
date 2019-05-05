@@ -4854,7 +4854,8 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
 
     assert(expr_end >= expr_start);
     assert(*(expr_start-1) == '{');
-    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
+    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':' ||
+           *expr_end == '=');
 
     /* If the substring is all whitespace, it's an error.  We need to catch this
        here, and not when we call PyParser_SimpleParseStringFlagsFilename,
@@ -5016,8 +5017,11 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     const char *expr_end;
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
-    int conversion = -1; /* The conversion char. -1 if not specified. */
+    int conversion = 'f'; /* The conversion char.  'f', the default, is no
+                             conversion, use format(). */
+    int equal_conversion = 0; /* Are we using the = conversion? */
     PyObject *expr_text = NULL; /* The text of the expression, used for !d. */
+    const char *expr_text_end;
 
     /* 0 if we're not in a string, else the quote char we're trying to
        match (single or double quote). */
@@ -5117,14 +5121,24 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             ast_error(c, n, "f-string expression part cannot include '#'");
             goto error;
         } else if (nested_depth == 0 &&
-                   (ch == '!' || ch == ':' || ch == '}')) {
+                   (ch == '!' || ch == ':' || ch == '}' || ch == '=')) {
             /* First, test for the special case of "!=". Since '=' is
                not an allowed conversion character, nothing is lost in
                this test. */
             if (ch == '!' && *str+1 < end && *(*str+1) == '=') {
-                /* This isn't a conversion character, just continue. */
+                /* This is !=, not a conversion character.  Skip the next char
+                   and continue. */
+                *str += 1;
                 continue;
             }
+            /* Also, test for '=='. */
+            if (ch == '=' && *str+1 < end && *(*str+1) == '=') {
+                /* This is ==, not an = connversion.  Skip the next char and
+                   continue. */
+                *str += 1;
+                continue;
+            }
+
             /* Normal way out of this loop. */
             break;
         } else if (ch == ']' || ch == '}' || ch == ')') {
@@ -5173,6 +5187,20 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     if (!simple_expression)
         goto error;
 
+    /* Check for = conversion. */
+    if (**str == '=') {
+        *str += 1;
+        equal_conversion = 1;
+        conversion = 'r';  /* Default for = is to use repr. */
+
+        /* Skip over whitespace.  No need to test for end of string here,
+           since we know there's at least a } somewhere ahead. */
+        while (**str == ' ') {
+            *str += 1;
+        }
+        expr_text_end = *str;
+    }
+
     /* Check for a conversion char, if present. */
     if (**str == '!') {
         *str += 1;
@@ -5184,34 +5212,19 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
         /* Validate the conversion. */
         if (!(conversion == 's' || conversion == 'r'
-              || conversion == 'a' || conversion == 'd')) {
+              || conversion == 'a' || conversion == 'f')) {
             ast_error(c, n,
                       "f-string: invalid conversion character: "
-                      "expected 's', 'r', 'a', or 'd'");
+                      "expected 's', 'r', 'a', or 'f'");
             goto error;
         }
 
-        /* If !d, then save the source to the expression. */
-        if (conversion == 'd') {
-            /* Add one for the = we're going to append. This is the length of
-               the input in bytes, UTF-8 encoded. */
-            Py_ssize_t len = expr_end-expr_start+1;
-
-            /* This can't read off the end, because there must be at least one
-               more char, the ! character. */
-            expr_text = PyUnicode_FromStringAndSize(expr_start, len);
-            if (!expr_text)
-                goto error;
-
-            /* Get the length in chars now (no longer bytes, so this might
-               change if the exppression had any encoded unicode chars in
-               it). */
-            len = PyUnicode_GET_LENGTH(expr_text);
-            assert(PyUnicode_ReadChar(expr_text, len-1) == '!');
-
-            /* Change the last char to an '='. */
-            PyUnicode_WriteChar(expr_text, len-1, '=');
-        }
+    }
+    if (equal_conversion) {
+        Py_ssize_t len = expr_text_end-expr_start;
+        expr_text = PyUnicode_FromStringAndSize(expr_start, len);
+        if (!expr_text)
+            goto error;
     }
 
     /* Check for the format spec, if present. */

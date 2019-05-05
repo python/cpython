@@ -887,6 +887,12 @@ non-important content
         self.assertEqual(f'{3!=4!s}', 'True')
         self.assertEqual(f'{3!=4!s:.3}', 'Tru')
 
+    def test_equal_equal(self):
+        # Because an expression ending in = has special meaning,
+        # there's a special test for ==. Make sure it works.
+
+        self.assertEqual(f'{0==1}', 'False')
+
     def test_conversions(self):
         self.assertEqual(f'{3.14:10.10}', '      3.14')
         self.assertEqual(f'{3.14!s:10.10}', '3.14      ')
@@ -1060,48 +1066,31 @@ non-important content
 
     def test_debug_conversion(self):
         x = 'A string'
-        self.assertEqual(f'{x!d}', 'x=' + repr(x))
-        self.assertEqual(f'{x !d}', 'x =' + repr(x))
+        self.assertEqual(f'{x=}', 'x=' + repr(x))
+        self.assertEqual(f'{x =}', 'x =' + repr(x))
 
         x = 9
-        self.assertEqual(f'{3*x+15!d}', '3*x+15=42')
+        self.assertEqual(f'{3*x+15=}', '3*x+15=42')
 
         # There is code in ast.c that deals with non-ascii expression values.  So,
         # use a unicode identifier to trigger that.
         tenπ = 31.4
-        self.assertEqual(f'{tenπ!d:.2f}', 'tenπ=31.40')
+        self.assertEqual(f'{tenπ=!f:.2f}', 'tenπ=31.40')
 
         # Also test with non-identifiers.
-        self.assertEqual(f'{"Σ"!d}', '"Σ"=\'Σ\'')
+        self.assertEqual(f'{"Σ"=}', '"Σ"=\'Σ\'')
 
         # Make sure nested still works.
-        self.assertEqual(f'{f"{3.1415!d:.1f}":*^20}', '*****3.1415=3.1*****')
+        self.assertEqual(f'{f"{3.1415=!f:.1f}":*^20}', '*****3.1415=3.1*****')
 
         # Make sure text before and after !d works correctly.
         pi = 'π'
-        self.assertEqual(f'alpha α {pi!d} ω omega', "alpha α pi='π' ω omega")
+        self.assertEqual(f'alpha α {pi=} ω omega', "alpha α pi='π' ω omega")
 
         # Check multi-line expressions.
         self.assertEqual(f'''{
 3
-!d}''', '\n3\n=3')
-
-    def test_debug_conversion_calls_format(self):
-        # Test that !d calls format on the expression's value, if a
-        # format spec is also provided.
-
-        class C:
-            def __repr__(self):
-                return 'my repr'
-
-            def __format__(self, spec):
-                return f'F{spec}'
-
-        # __format__ is called if a format spec is provided.
-        self.assertEqual(f'{C()!d:abc}', 'C()=Fabc')
-
-        # But __repr__ is called if one isn't.
-        self.assertEqual(f'{C()!d}', 'C()=my repr')
+=}''', '\n3\n=3')
 
 
 if __name__ == '__main__':
