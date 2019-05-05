@@ -128,7 +128,6 @@ matrix:
         # Skip tests that re-run the entire test suite.
         - xvfb-run make buildbottest EXTRATESTOPTS="-j4 -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures" || true
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
-        - coverage combine
         - make coverage-lcov
         - bash <(curl -s https://codecov.io/bash) -c -F c
 
