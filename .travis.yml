@@ -107,7 +107,7 @@ matrix:
         - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib --branch -p Lib/test/regrtest.py" EXTRATESTOPTS="-j4 -uall,-cpu" || true
       after_script:
         - coverage combine
-        - bash <(curl -s https://codecov.io/bash) -c -F python
+        - bash <(curl -s https://codecov.io/bash)
     - os: linux
       language: c
       compiler: gcc
@@ -124,7 +124,7 @@ matrix:
         - xvfb-run make -j coverage-report
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         - make pythoninfo
-        - bash <(curl -s https://codecov.io/bash) -c -F c
+        - bash <(curl -s https://codecov.io/bash)
 
 
 before_install:
