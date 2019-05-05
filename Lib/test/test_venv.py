@@ -155,7 +155,7 @@ class BasicTest(BaseTest):
                 )
 
             fake_context = builder.ensure_directories(fake_env_dir)
-            with patch("venv.subprocess.check_call", pip_cmd_checker):
+            with patch('venv.subprocess.check_call', pip_cmd_checker):
                 builder.upgrade_dependencies(fake_context)
 
     @requireVenvCreate

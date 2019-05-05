@@ -370,7 +370,7 @@ class EnvBuilder:
                     shutil.copymode(srcfile, dstfile)
 
     def upgrade_dependencies(self, context):
-        logging.debug(
+        logger.debug(
             'Upgrading {} packages in {}'.format(CORE_VENV_DEPS, context.bin_path)
         )
         if sys.platform == 'win32':
