@@ -104,7 +104,7 @@ matrix:
         - pip install coverage
         - make pythoninfo
       script:
-        - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib -p -m test" EXTRATESTOPTS="-x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures"
+        - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib -p -m test" EXTRATESTOPTS="-j4 -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures"
       after_script:
         - make coverage-lcov
         - bash <(curl -s https://codecov.io/bash)
