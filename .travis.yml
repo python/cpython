@@ -95,6 +95,7 @@ matrix:
         apt:
           packages:
             - xvfb
+            - lcov
       before_script:
         - ./configure
         - make -j4
@@ -103,7 +104,7 @@ matrix:
         - source ./venv/bin/activate
         - pip install coverage
       script:
-        - xvfb-run coverage run --pylib -m test -j 1 -u all -W --slowest --fail-env-changed --timeout=1200
+        - xvfb-run coverage run --pylib -p -m test -j 1 -u all -W --slowest --fail-env-changed --timeout=1200
       after_script:
         - make coverage-lcov
         - bash <(curl -s https://codecov.io/bash)
