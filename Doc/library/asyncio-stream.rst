@@ -22,13 +22,13 @@ streams::
             '127.0.0.1', 8888)
 
         print(f'Send: {message!r}')
-        await writer.awrite(message.encode())
+        await writer.write(message.encode())
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
 
         print('Close the connection')
-        await writer.aclose()
+        await writer.close()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -226,23 +226,48 @@ StreamWriter
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
-   .. coroutinemethod:: awrite(data)
+   .. method:: write(data)
 
       Write *data* to the stream.
 
-      The method respects flow control, execution is paused if the write
-      buffer reaches the high watermark.
+      If the method is called using ``await stream.write(data)`` syntax it
+      respects flow control, execution is paused if the write buffer reaches the high
+      watermark *(recommended API)*.
 
-      .. versionadded:: 3.8
+      If the method is called using *sync* ``stream.write(data)`` form it *is not* a
+      subject to flow control. Such call should
+      be followed by :meth:`drain`.
 
-   .. coroutinemethod:: aclose()
+      .. versionchanged:: 3.8
+         Support ``await stream.write(...)`` syntax.
+
+   .. method:: writelines(data)
+
+      Write a list (or any iterable) of bytes to the stream.
+
+      If the method is called using ``await stream.writelines(lines)`` syntax it
+      respects flow control, execution is paused if the write buffer reaches the high
+      watermark *(recommended API)*.
+
+      If the method is called using *sync* ``stream.writelines(lines)`` form it *is not*
+      subject to flow control. Such calls should be followed by :meth:`drain`.
+
+      .. versionchanged:: 3.8
+         Support ``await stream.writelines()`` syntax.
+
+   .. method:: close()
 
       Close the stream.
 
-      Wait until all closing actions are complete, e.g. SSL shutdown for
-      secure sockets.
+      If the method is called using ``await stream.close()`` syntax it waits until all
+      closing actions are complete, e.g. SSL shutdown for secure sockets *(recommended
+      API)*.
 
-      .. versionadded:: 3.8
+      If the method is called using *sync* ``stream.close()`` form it *does not* wait
+      for actual socket closing. The call should be followed by :meth:`wait_closed`.
+
+      .. versionchanged:: 3.8
+         Support ``await stream.close()`` syntax.
 
    .. method:: can_write_eof()
 
@@ -263,21 +288,6 @@ StreamWriter
       Access optional transport information; see
       :meth:`BaseTransport.get_extra_info` for details.
 
-   .. method:: write(data)
-
-      Write *data* to the stream.
-
-      This method is not subject to flow control.  Calls to ``write()`` should
-      be followed by :meth:`drain`.  The :meth:`awrite` method is a
-      recommended alternative the applies flow control automatically.
-
-   .. method:: writelines(data)
-
-      Write a list (or any iterable) of bytes to the stream.
-
-      This method is not subject to flow control. Calls to ``writelines()``
-      should be followed by :meth:`drain`.
-
    .. coroutinemethod:: drain()
 
       Wait until it is appropriate to resume writing to the stream.
@@ -292,10 +302,6 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
-
-   .. method:: close()
-
-      Close the stream.
 
    .. method:: is_closing()
 

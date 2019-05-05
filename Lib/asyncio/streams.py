@@ -333,6 +333,16 @@ class StreamWriter:
 
     def write(self, data):
         self._transport.write(data)
+        return self._fast_drain()
+
+    def writelines(self, data):
+        self._transport.writelines(data)
+        return self._fast_drain()
+
+    def _fast_drain(self):
+        # The helper tries to use fast-path to return already existing complete future
+        # object if underlying transport is not paused and actual waiting for writing
+        # resume is not needed
         if self._reader is not None:
             # this branch will be simplified after merging reader with writer
             exc = self._reader.exception()
@@ -348,9 +358,6 @@ class StreamWriter:
             if not self._protocol._paused:
                 return self._complete_fut
         return self._loop.create_task(self.drain())
-
-    def writelines(self, data):
-        self._transport.writelines(data)
 
     def write_eof(self):
         return self._transport.write_eof()
@@ -390,7 +397,7 @@ class StreamWriter:
             #     write(...); await drain()
             # in a loop would never call connection_lost(), so it
             # would not see an error when the socket is closed.
-            await self._protocol._closed
+            await sleep(0, loop=self._loop)
         await self._protocol._drain_helper()
 
 
