@@ -80,7 +80,7 @@ class EnvBuilder:
             self.system_site_packages = True
             self.create_configuration(context)
         if self.upgrade_deps:
-            self.upgrade_dependencies(context, env_dir)
+            self.upgrade_dependencies(context)
 
     def clear_directory(self, path):
         for fn in os.listdir(path):
@@ -369,14 +369,14 @@ class EnvBuilder:
                         f.write(data)
                     shutil.copymode(srcfile, dstfile)
 
-    def upgrade_dependencies(self, context, env_dir):
+    def upgrade_dependencies(self, context):
         logging.debug(
-            'Upgrading {} packages in {}'.format(CORE_VENV_DEPS, env_dir)
+            'Upgrading {} packages in {}'.format(CORE_VENV_DEPS, context.bin_path)
         )
         if sys.platform == 'win32':
-            pip_exe = os.path.join(context.bin_dir, 'pip.exe')
+            pip_exe = os.path.join(context.bin_path, 'pip.exe')
         else:
-            pip_exe = os.path.join(context.bin_dir, 'pip')
+            pip_exe = os.path.join(context.bin_path, 'pip')
         cmd = [pip_exe, 'install', '-U']
         cmd.extend(CORE_VENV_DEPS)
         subprocess.check_call(cmd)
