@@ -104,9 +104,8 @@ matrix:
         - pip install coverage
         - make pythoninfo
       script:
-        - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib -p Tools/scripts/run_tests.py" EXTRATESTOPTS="-j4 -uall,-cpu" || true
+        - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib Tools/scripts/run_tests.py" EXTRATESTOPTS="-j4 -uall,-cpu" || true
       after_script:
-        - coverage combine
         - bash <(curl -s https://codecov.io/bash) -c -F python
     - os: linux
       language: c
