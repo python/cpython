@@ -929,29 +929,26 @@ class BaseEventLoop(events.AbstractEventLoop):
                     flags=flags, loop=self)
                 if not laddr_infos:
                     raise OSError('getaddrinfo() returned empty list')
+            else:
+                laddr_infos = [(None, None, None, None, None)]
 
             exceptions = []
-            for family, type, proto, cname, address in infos:
+            for addrinfo, laddrinfo in itertools.product(infos, laddr_infos):
+                family, type, proto, cname, address = addrinfo
+                laddr = laddrinfo[4]
                 try:
                     sock = socket.socket(family=family, type=type, proto=proto)
                     sock.setblocking(False)
-                    if local_addr is not None:
-                        for _, _, _, _, laddr in laddr_infos:
-                            try:
-                                sock.bind(laddr)
-                                break
-                            except OSError as exc:
-                                msg = (
-                                    f'error while attempting to bind on '
-                                    f'address {laddr!r}: '
-                                    f'{exc.strerror.lower()}'
-                                )
-                                exc = OSError(exc.errno, msg)
-                                exceptions.append(exc)
-                        else:
-                            sock.close()
-                            sock = None
-                            continue
+                    if laddr is not None:
+                        try:
+                            sock.bind(laddr)
+                        except OSError as exc:
+                            msg = (
+                                f'error while attempting to bind on '
+                                f'address {laddr!r}: '
+                                f'{exc.strerror.lower()}'
+                            )
+                            raise OSError(exc.errno, msg)
                     if self._debug:
                         logger.debug("connect %r to %r", sock, address)
                     await self.sock_connect(sock, address)
