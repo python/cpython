@@ -366,13 +366,11 @@ class StreamWriter:
             if exc is not None:
                 raise exc
         if self._transport.is_closing():
-            # Yield to the event loop so connection_lost() may be
-            # called.  Without this, _drain_helper() would return
-            # immediately, and code that calls
-            #     write(...); await drain()
-            # in a loop would never call connection_lost(), so it
-            # would not see an error when the socket is closed.
-            await sleep(0, loop=self._loop)
+            # Wait for protocol.connection_lost() call
+            # Raise connection closing error if any,
+            # ConnectionResetError otherwise
+            await self._protocol._closed
+            raise ConnectionResetError('Connection lost')
         await self._protocol._drain_helper()
 
     async def aclose(self):
