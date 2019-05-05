@@ -1131,15 +1131,17 @@ Py_FinalizeEx(void)
         return status;
     }
 
-    // Wrap up existing "threading"-module-created, non-daemon threads.
-    wait_for_thread_shutdown();
-
-    // Make any remaining pending calls.
-    _Py_FinishPendingCalls();
-
     /* Get current thread state and interpreter pointer */
     PyThreadState *tstate = _PyThreadState_GET();
     PyInterpreterState *interp = tstate->interp;
+
+    // Wrap up existing "threading"-module-created, non-daemon threads.
+    wait_for_thread_shutdown();
+    interp->finalizing = 1;
+
+
+    // Make any remaining pending calls.
+    _Py_FinishPendingCalls();
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
@@ -1546,10 +1548,10 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("Py_EndInterpreter: thread is not current");
     if (tstate->frame != NULL)
         Py_FatalError("Py_EndInterpreter: thread still has a frame");
-    interp->finalizing = 1;
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
+    interp->finalizing = 1;
 
     call_py_exitfuncs(interp);
 

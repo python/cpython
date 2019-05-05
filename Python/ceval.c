@@ -207,8 +207,11 @@ _PyEval_FiniThreads(void)
 static inline void
 exit_thread_if_finalizing(PyThreadState *tstate)
 {
+    /* Get interpreter pointer */
+    PyInterpreterState *interp = tstate->interp;
+
     /* _Py_Finalizing is protected by the GIL */
-    if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
+    if (interp->finalizing && !_Py_CURRENTLY_FINALIZING(tstate)) {
         drop_gil(tstate);
         PyThread_exit_thread();
     }
