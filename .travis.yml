@@ -104,7 +104,7 @@ matrix:
         - pip install coverage
         - make pythoninfo
       script:
-        - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib -p Lib/test/regrtest.py" EXTRATESTOPTS="-j4 -uall,-cpu" || true
+        - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib --branch -p Lib/test/regrtest.py" EXTRATESTOPTS="-j4 -uall,-cpu" || true
       after_script:
         - coverage combine
         - bash <(curl -s https://codecov.io/bash) -c -F python
@@ -119,16 +119,11 @@ matrix:
             - xvfb
       before_script:
         - ./configure
-        - make coverage -j4
-        - ./python -m venv venv
-        - source ./venv/bin/activate
-        - pip install coverage
-        - make pythoninfo
       script:
         # Skip tests that re-run the entire test suite.
-        - xvfb-run make buildbottest EXTRATESTOPTS="-j4 -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures" || true
+        - xvfb-run make -j coverage-report
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
-        - make coverage-lcov
+        - make pythoninfo
         - bash <(curl -s https://codecov.io/bash) -c -F c
 
 
