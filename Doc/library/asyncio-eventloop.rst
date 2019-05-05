@@ -397,9 +397,27 @@ Opening network connections
      If given, these should all be integers from the corresponding
      :mod:`socket` module constants.
 
+   * *happy_eyeballs_delay*, if given, enables Happy Eyeballs for this
+     connection. It should
+     be a floating-point number representing the amount of time in seconds
+     to wait for a connection attempt to complete, before starting the next
+     attempt in parallel. This is the "Connection Attempt Delay" as defined
+     in :rfc:`8305`. A sensible default value recommended by the RFC is ``0.25``
+     (250 milliseconds).
+
+   * *interleave* controls address reordering when a host name resolves to
+     multiple IP addresses.
+     If ``0`` or unspecified, no reordering is done, and addresses are
+     tried in the order returned by :meth:`getaddrinfo`. If a positive integer
+     is specified, the addresses are interleaved by address family, and the
+     given integer is interpreted as "First Address Family Count" as defined
+     in :rfc:`8305`. The default is ``0`` if *happy_eyeballs_delay* is not
+     specified, and ``1`` if it is.
+
    * *sock*, if given, should be an existing, already connected
      :class:`socket.socket` object to be used by the transport.
-     If *sock* is given, none of *host*, *port*, *family*, *proto*, *flags*
+     If *sock* is given, none of *host*, *port*, *family*, *proto*, *flags*,
+     *happy_eyeballs_delay*, *interleave*
      and *local_addr* should be specified.
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
@@ -409,6 +427,10 @@ Opening network connections
    * *ssl_handshake_timeout* is (for a TLS connection) the time in seconds
      to wait for the TLS handshake to complete before aborting the connection.
      ``60.0`` seconds if ``None`` (default).
+
+   .. versionadded:: 3.8
+
+      The *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionadded:: 3.7
 
