@@ -1,0 +1,1 @@
+Replace strcasecmp with system function stricmp
