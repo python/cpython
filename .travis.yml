@@ -82,9 +82,7 @@ matrix:
     - os: linux
       language: c
       compiler: gcc
-      env:
-        - TESTING=cpython
-        - OPTIONAL=true
+      env: OPTIONAL=true
       addons:
         apt:
           packages:
@@ -99,7 +97,7 @@ matrix:
             - lcov
             - xvfb
       before_script:
-        - ./configure --enable-optimizations
+        - ./configure
         - make coverage -s -j4
         # Need a venv that can parse covered code.
         - ./python -m venv venv
