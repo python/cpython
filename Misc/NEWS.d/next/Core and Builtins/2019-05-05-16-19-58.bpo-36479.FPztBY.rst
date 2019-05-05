@@ -1,0 +1,1 @@
+Exit threads when interpreter is finalizing rather than runtime.
