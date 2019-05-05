@@ -107,9 +107,8 @@ matrix:
         - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib -p -m test" EXTRATESTOPTS="-j4 -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures" || true
       after_script:
         - coverage combine
-        - bash <(curl -s https://codecov.io/bash) -c -F python
         - make coverage-lcov
-        - bash <(curl -s https://codecov.io/bash) -c -F c
+        - bash <(curl -s https://codecov.io/bash)
     - os: linux
       language: c
       compiler: clang
