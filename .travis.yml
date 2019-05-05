@@ -98,13 +98,13 @@ matrix:
             - lcov
       before_script:
         - ./configure
-        - make -j4
-        - make pythoninfo
+        - make coverage -j4
         - ./python -m venv venv
         - source ./venv/bin/activate
         - pip install coverage
+        - make pythoninfo
       script:
-        - xvfb-run coverage run --pylib -p -m test -j 1 -u all -W --slowest --fail-env-changed --timeout=1200
+        - xvfb-run make buildbottest TESTRUNNER="coverage run --pylib -p -m test"
       after_script:
         - make coverage-lcov
         - bash <(curl -s https://codecov.io/bash)
