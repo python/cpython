@@ -973,7 +973,7 @@ os.close(fd)
                 asyncio.open_connection(*httpd.address,
                                         loop=self.loop))
 
-            f = wr.awrite(b'GET / HTTP/1.0\r\n\r\n')
+            f = wr.write(b'GET / HTTP/1.0\r\n\r\n')
             self.loop.run_until_complete(f)
             f = rd.readline()
             data = self.loop.run_until_complete(f)
@@ -981,7 +981,7 @@ os.close(fd)
             f = rd.read()
             data = self.loop.run_until_complete(f)
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
-            f = wr.aclose()
+            f = wr.close()
             self.loop.run_until_complete(f)
 
         self.assertEqual(messages, [])
@@ -996,7 +996,7 @@ os.close(fd)
                 asyncio.open_connection(*httpd.address,
                                         loop=self.loop))
 
-            f = wr.aclose()
+            f = wr.close()
             self.loop.run_until_complete(f)
             assert rd.at_eof()
             f = rd.read()

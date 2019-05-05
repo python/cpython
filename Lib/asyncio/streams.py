@@ -318,6 +318,8 @@ class StreamWriter:
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
         self._loop = loop
+        self._complete_fut = self._loop.create_future()
+        self._complete_fut.set_result(None)
 
     def __repr__(self):
         info = [self.__class__.__name__, f'transport={self._transport!r}']
@@ -331,6 +333,21 @@ class StreamWriter:
 
     def write(self, data):
         self._transport.write(data)
+        if self._reader is not None:
+            # this branch will be simplified after merging reader with writer
+            exc = self._reader.exception()
+            if exc is not None:
+                fut = self._loop.create_future()
+                fut.set_exception(exc)
+                return fut
+        if not self._transport.is_closing():
+            if self._protocol._connection_lost:
+                fut = self._loop.create_future()
+                fut.set_exception(ConnectionResetError('Connection lost'))
+                return fut
+            if not self._protocol._paused:
+                return self._complete_fut
+        return self._loop.create_task(self.drain())
 
     def writelines(self, data):
         self._transport.writelines(data)
@@ -343,6 +360,7 @@ class StreamWriter:
 
     def close(self):
         self._transport.close()
+        return self._protocol._closed
 
     def is_closing(self):
         return self._transport.is_closing()
@@ -372,16 +390,8 @@ class StreamWriter:
             #     write(...); await drain()
             # in a loop would never call connection_lost(), so it
             # would not see an error when the socket is closed.
-            await sleep(0, loop=self._loop)
+            await self._protocol._closed
         await self._protocol._drain_helper()
-
-    async def aclose(self):
-        self.close()
-        await self.wait_closed()
-
-    async def awrite(self, data):
-        self.write(data)
-        await self.drain()
 
 
 class StreamReader:
