@@ -855,7 +855,7 @@ test_long_as_double(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 /* Test the L code for PyArg_ParseTuple.  This should deliver a long long
-   for both long and int arguments.
+   for int arguments.
 */
 static PyObject *
 test_L_code(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -883,24 +883,6 @@ test_L_code(PyObject *self, PyObject *Py_UNUSED(ignored))
             "L code returned wrong value for long 42");
         goto error;
     }
-
-    num = PyLong_FromLong(42);
-    if (num == NULL) {
-        goto error;
-    }
-
-    PyTuple_SetItem(tuple, 0, num);
-
-    value = -1;
-    if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        goto error;
-    }
-    if (value != 42) {
-        raiseTestError("test_L_code",
-            "L code returned wrong value for int 42");
-        goto error;
-    }
-
     Py_DECREF(tuple);
     Py_RETURN_NONE;
 error:
@@ -2193,26 +2175,12 @@ test_long_numbits(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-/* Example passing NULLs to PyObject_Str(NULL). */
+/* Example passing NULL to PyObject_Str(). */
 
 static PyObject *
 test_null_strings(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Str(NULL);
-    if (o1 == NULL || o2 == NULL) {
-        goto error;
-    }
-    PyObject *tuple = PyTuple_Pack(2, o1, o2);
-    if (tuple == NULL) {
-        goto error;
-    }
-    Py_DECREF(o1);
-    Py_DECREF(o2);
-    return tuple;
-error:
-    Py_XDECREF(o1);
-    Py_XDECREF(o2);
-    return NULL;
+    return PyObject_Str(NULL);
 }
 
 static PyObject *
