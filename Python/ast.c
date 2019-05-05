@@ -5000,7 +5000,7 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
 /* Parse the f-string at *str, ending at end.  We know *str starts an
    expression (so it must be a '{'). Returns the FormattedValue node, which
    includes the expression, conversion character, format_spec expression, and
-   optionally the text of the expression (if !d is used).
+   optionally the text of the expression (if = is used).
 
    Note that I don't do a perfect job here: I don't make sure that a
    closing brace doesn't match an opening paren, for example. It
@@ -5020,7 +5020,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     int conversion = 'f'; /* The conversion char.  'f', the default, is no
                              conversion, use format(). */
     int equal_conversion = 0; /* Are we using the = conversion? */
-    PyObject *expr_text = NULL; /* The text of the expression, used for !d. */
+    PyObject *expr_text = NULL; /* The text of the expression, used for =. */
     const char *expr_text_end;
 
     /* 0 if we're not in a string, else the quote char we're trying to
