@@ -18,6 +18,8 @@ import types
 import unittest
 import warnings
 from contextlib import ExitStack
+from inspect import CO_COROUTINE
+from textwrap import dedent
 from operator import neg
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink)
@@ -357,6 +359,33 @@ class BuiltinTest(unittest.TestCase):
                 exec(code, ns)
                 rv = ns['f']()
                 self.assertEqual(rv, tuple(expected))
+
+    def test_compile_top_level_await(self):
+        for mode in ('single', 'exec'):
+            for num,code_sample in enumerate(['''await sleep(0)''',
+                                '''async for i in range(10):
+                                       print(i)''',
+                                '''async with asyncio.Lock() as l:
+                                       pass''']):
+                source = dedent(code_sample)
+                with self.assertRaises(SyntaxError,
+                                  msg='source={!r} mode={!r})'.format(source, mode)):
+                    compile(source, '?' , mode)
+                co = compile(source, '?', mode, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE)
+
+    def test_compile_async_generator(self):
+        co = compile(dedent("""async def ticker():
+                for i in range(10):
+                    yield i
+                    await asyncio.sleep(0)"""), '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        glob = {}
+        exec(co, glob)
+
+        from types import AsyncGeneratorType
+
+        self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
+
 
     def test_delattr(self):
         sys.spam = 1
