@@ -44,6 +44,14 @@ matrix:
           packages:
             - xvfb
     - os: linux
+      language: c
+      compiler: gcc
+      env: TESTING=cpython
+      addons:
+        apt:
+          packages:
+            - xvfb
+    - os: linux
       language: python
       # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
       python: 3.6
@@ -87,6 +95,18 @@ matrix:
         apt:
           packages:
             - xvfb
+      before_script:
+        - ./configure
+        - make -j4
+        - make pythoninfo
+        - ./python -m venv venv
+        - source ./venv/bin/activate
+        - pip install coverage
+      script:
+        - xvfb-run coverage run --pylib -m test -j 1 -u all -W --slowest --fail-env-changed --timeout=1200
+      after_script:
+        - make coverage-lcov
+        - bash <(curl -s https://codecov.io/bash)
     - os: linux
       language: c
       compiler: clang
