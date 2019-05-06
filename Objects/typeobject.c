@@ -2895,6 +2895,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     nmembers = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
+            nmembers = 0;
             for (memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
             }
