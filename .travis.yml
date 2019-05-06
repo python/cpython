@@ -35,9 +35,6 @@ matrix:
     - os: linux
       language: c
       compiler: clang
-      # gcc also works, but to keep the # of concurrent builds down, we use one C
-      # compiler here and the other to run the coverage build. Clang is preferred
-      # in this instance for its better error messages.
       env: TESTING=cpython
       addons:
         apt:
@@ -121,7 +118,6 @@ matrix:
       before_script:
         - ./configure
       script:
-        # Skip tests that re-run the entire test suite.
         - xvfb-run make -j4 coverage-report
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         - make pythoninfo
