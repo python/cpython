@@ -2170,7 +2170,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         fprintf(stderr, "<object: freed type %p>\n", (void *)Py_TYPE(obj));
     }
     else {
-        /* Diplay the traceback where the object has been allocated.
+        /* Display the traceback where the object has been allocated.
            Do it before dumping repr(obj), since repr() is more likely
            to crash than dumping the traceback. */
         void *ptr;
