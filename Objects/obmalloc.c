@@ -2354,7 +2354,7 @@ _PyObject_DebugDumpAddress(const void *p)
     }
 
     tail = q + nbytes;
-    fprintf(stderr, "    The %d pad bytes at tail=%p are ", SST, tail);
+    fprintf(stderr, "    The %d pad bytes at tail=%p are ", SST, (void *)tail);
     ok = 1;
     for (i = 0; i < SST; ++i) {
         if (tail[i] != FORBIDDENBYTE) {
