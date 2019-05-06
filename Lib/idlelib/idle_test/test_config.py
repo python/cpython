@@ -521,7 +521,7 @@ class IdleConfTest(unittest.TestCase):
     def test_get_keyset(self):
         conf = self.mock_config()
 
-        # Conflic with key set, should be disable to ''
+        # Conflict with key set, should be disable to ''
         conf.defaultCfg['extensions'].add_section('Foobar')
         conf.defaultCfg['extensions'].add_section('Foobar_cfgBindings')
         conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
