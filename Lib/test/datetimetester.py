@@ -3344,7 +3344,7 @@ class TZInfoBase:
                     self.assertEqual(got, expected)
 
         # However, if they're different members, uctoffset is not ignored.
-        # Note that a time can't actually have an operand-depedent offset,
+        # Note that a time can't actually have an operand-dependent offset,
         # though (and time.utcoffset() passes None to tzinfo.utcoffset()),
         # so skip this test for time.
         if cls is not time:
