@@ -1250,7 +1250,7 @@ _channel_finish_closing(struct _channel *chan) {
     // Do the things that would have been done in _channels_close().
     ref->chan = NULL;
     _channel_free(chan);
-};
+}
 
 /* "high"-level channel-related functions */
 
