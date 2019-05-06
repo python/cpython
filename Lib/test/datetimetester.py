@@ -6019,15 +6019,17 @@ class CapiTest(unittest.TestCase):
                     self.assertFalse(is_tzinfo(arg, exact))
 
     def test_date_from_date(self):
-        year = 1993
-        month = 8
-        day = 26
+        exp_date = date(1993, 8, 26)
 
         for macro in [0, 1]:
             with self.subTest(macro=macro):
-                d = _testcapi.get_date_fromdate(year, month, day, macro)
-
-                self.assertEqual(d, date(1993, 8, 26))
+                c_api_date = _testcapi.get_date_fromdate(
+                    exp_date.year, 
+                    exp_date.month,
+                    exp_date.day,
+                    macro)
+                
+                self.assertEqual(c_api_date, exp_date)
 
     def test_date_from_timestamp(self):
         ts = datetime(1995, 4, 12).timestamp()
