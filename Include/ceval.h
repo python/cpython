@@ -229,7 +229,8 @@ PyAPI_FUNC(void) _PyEval_SignalAsyncExc(void);
 #define FVC_NONE      0x0
 #define FVC_STR       0x1
 #define FVC_REPR      0x2
-#define FVC_FORMAT    0x3
+#define FVC_ASCII     0x3
+#define FVC_FORMAT    0x4
 #define FVS_MASK      0x8
 #define FVS_HAVE_SPEC 0x8
 
