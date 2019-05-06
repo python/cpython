@@ -1068,6 +1068,7 @@ non-important content
         x = 'A string'
         self.assertEqual(f'{x=}', 'x=' + repr(x))
         self.assertEqual(f'{x =}', 'x =' + repr(x))
+        self.assertEqual(f'{x=!s}', 'x=' + str(x))
 
         x = 9
         self.assertEqual(f'{3*x+15=}', '3*x+15=42')
@@ -1091,6 +1092,7 @@ non-important content
         self.assertEqual(f'''{
 3
 =}''', '\n3\n=3')
+
 
 
 if __name__ == '__main__':
