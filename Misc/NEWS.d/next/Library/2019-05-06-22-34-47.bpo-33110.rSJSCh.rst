@@ -1,0 +1,1 @@
+Adds error handling to concurrent.futures add_done_callback, so that callbacks triggered on futures added to already completed futures are handled in the same manner as callbacks attached to running futures are, when the future subsequently finishes.
