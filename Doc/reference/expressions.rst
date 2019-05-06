@@ -1594,8 +1594,8 @@ The operator :keyword:`not in` is defined to have the inverse truth value of
 Identity comparisons
 --------------------
 
-The operators :keyword:`is` and :keyword:`is not` test for object identity: ``x
-is y`` is true if and only if *x* and *y* are the same object.  Object identity
+The operators :keyword:`is` and :keyword:`is not` test for object's identity: ``x
+is y`` is true if and only if *x* and *y* are the same object.  Object's identity
 is determined using the :meth:`id` function.  ``x is not y`` yields the inverse
 truth value. [#]_
 
