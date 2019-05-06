@@ -1,3 +1,0 @@
-When using mulitprocessing mode (-jN), regrtest now better reports errors if
-a worker process fails, and it exits immediately on a worker thread failure
-or when interrupted.

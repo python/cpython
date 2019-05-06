@@ -1,1 +1,0 @@
-Add missing matrix multiplication operator support to weakref.proxy.

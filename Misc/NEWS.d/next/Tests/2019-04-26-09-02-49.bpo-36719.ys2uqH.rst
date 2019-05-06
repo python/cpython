@@ -1,4 +1,0 @@
-regrtest now always detects uncollectable objects. Previously, the check was
-only enabled by ``--findleaks``. The check now also works with
-``-jN/--multiprocess N``. ``--findleaks`` becomes a deprecated alias to
-``--fail-env-changed``.

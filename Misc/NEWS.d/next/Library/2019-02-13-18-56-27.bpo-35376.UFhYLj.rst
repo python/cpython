@@ -1,2 +1,0 @@
-:mod:`modulefinder` correctly handles modules that have the same name as a bad package.
-Patch by Brandt Bucher.

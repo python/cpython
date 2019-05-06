@@ -1,1 +1,0 @@
-Don't build the ``_crypt`` extension on VxWorks.

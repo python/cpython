@@ -1,1 +1,0 @@
-Fixes mishandling of pre-normalization characters in urlsplit().

@@ -1,4 +1,0 @@
-Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
-:meth:`datetime.datetime.fromisocalendar`, which construct date objects from
-ISO year, week number and weekday; these are the inverse of each class's
-``isocalendar`` method. Patch by Paul Ganssle.

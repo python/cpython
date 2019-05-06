@@ -1,5 +1,0 @@
-Fixed an accidental change to the datetime C API where the arguments to the
-:c:func:`PyDate_FromTimestamp` function were incorrectly interpreted as a
-single timestamp rather than an arguments tuple, which causes existing code to
-start raising :exc:`TypeError`. The backwards-incompatible change was only
-present in alpha releases of Python 3.8. Patch by Paul Ganssle.

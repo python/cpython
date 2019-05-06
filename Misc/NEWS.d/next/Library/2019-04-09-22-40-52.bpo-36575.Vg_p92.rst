@@ -1,4 +1,0 @@
-The ``_lsprof`` module now uses internal timer same to ``time.perf_counter()`` by default.
-``gettimeofday(2)`` was used on Unix.  New timer has better resolution on most Unix
-platforms and timings are no longer impacted by system clock updates since ``perf_counter()``
-is monotonic. Patch by Inada Naoki.
