@@ -281,7 +281,7 @@ always available.
    ``(type, value, traceback)``.  Their meaning is: *type* gets the type of the
    exception being handled (a subclass of :exc:`BaseException`); *value* gets
    the exception instance (an instance of the exception type); *traceback* gets
-   a traceback object (see the Reference Manual) which encapsulates the call
+   a traceback object (see :ref:`Reference Manual <traceback-objects>`) which encapsulates the call
    stack at the point where the exception originally occurred.
 
 
