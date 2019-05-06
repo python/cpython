@@ -134,7 +134,9 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     }
 
     PyObject *exc_type, *exc_value, *exc_tb;
-    PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+    if (ts) {
+        PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+    }
 
     /* Initialize event args now */
     if (argFormat && argFormat[0]) {
@@ -192,12 +194,14 @@ exit:
     Py_XDECREF(eventName);
     Py_XDECREF(eventArgs);
 
-    if (!res) {
-        PyErr_Restore(exc_type, exc_value, exc_tb);
-    } else {
-        Py_XDECREF(exc_type);
-        Py_XDECREF(exc_value);
-        Py_XDECREF(exc_tb);
+    if (ts) {
+        if (!res) {
+            PyErr_Restore(exc_type, exc_value, exc_tb);
+        } else {
+            Py_XDECREF(exc_type);
+            Py_XDECREF(exc_value);
+            Py_XDECREF(exc_tb);
+        }
     }
 
     return res;
