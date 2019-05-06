@@ -149,25 +149,25 @@ def _read_long(file):
     try:
         return struct.unpack('>l', file.read(4))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_ulong(file):
     try:
         return struct.unpack('>L', file.read(4))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_short(file):
     try:
         return struct.unpack('>h', file.read(2))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_ushort(file):
     try:
         return struct.unpack('>H', file.read(2))[0]
     except struct.error:
-        raise EOFError
+        raise EOFError from None
 
 def _read_string(file):
     length = ord(file.read(1))
@@ -322,6 +322,7 @@ class Aifc_read:
         else:
             raise Error('not an AIFF or AIFF-C file')
         self._comm_chunk_read = 0
+        self._ssnd_chunk = None
         while 1:
             self._ssnd_seek_needed = 1
             try:
@@ -466,6 +467,10 @@ class Aifc_read:
         self._nframes = _read_long(chunk)
         self._sampwidth = (_read_short(chunk) + 7) // 8
         self._framerate = int(_read_float(chunk))
+        if self._sampwidth <= 0:
+            raise Error('bad sample width')
+        if self._nchannels <= 0:
+            raise Error('bad # of channels')
         self._framesize = self._nchannels * self._sampwidth
         if self._aifc:
             #DEBUG: SGI's soundeditor produces a bad size :-(
@@ -915,7 +920,10 @@ def open(f, mode=None):
     else:
         raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
 
-openfp = open # B/W compatibility
+def openfp(f, mode=None):
+    warnings.warn("aifc.openfp is deprecated since Python 3.7. "
+                  "Use aifc.open instead.", DeprecationWarning, stacklevel=2)
+    return open(f, mode=mode)
 
 if __name__ == '__main__':
     import sys

@@ -1,4 +1,5 @@
 import ensurepip
+import sys
 
 if __name__ == "__main__":
-    ensurepip._main()
+    sys.exit(ensurepip._main())

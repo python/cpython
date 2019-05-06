@@ -3,6 +3,7 @@ from test import support
 
 import contextlib
 import socket
+import urllib.parse
 import urllib.request
 import os
 import email.message
@@ -10,6 +11,7 @@ import time
 
 
 support.requires('network')
+
 
 class URLTimeoutTest(unittest.TestCase):
     # XXX this test doesn't seem to test anything useful.
@@ -23,13 +25,14 @@ class URLTimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
-        with support.transient_internet("www.example.com"):
-            f = urllib.request.urlopen("http://www.example.com/")
-            x = f.read()
+        domain = urllib.parse.urlparse(support.TEST_HTTP_URL).netloc
+        with support.transient_internet(domain):
+            f = urllib.request.urlopen(support.TEST_HTTP_URL)
+            f.read()
 
 
 class urlopenNetworkTests(unittest.TestCase):
-    """Tests urllib.reqest.urlopen using the network.
+    """Tests urllib.request.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
     good job overall of some of the basic interface features.  There are no
@@ -188,6 +191,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_reporthook(self):
         records = []
+
         def recording_reporthook(blocks, block_size, total_size):
             records.append((blocks, block_size, total_size))
 

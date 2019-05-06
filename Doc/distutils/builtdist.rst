@@ -21,7 +21,7 @@ specialty---writing code and creating source distributions---while an
 intermediary species called *packagers* springs up to turn source distributions
 into built distributions for as many platforms as there are packagers.
 
-Of course, the module developer could be his own packager; or the packager could
+Of course, the module developer could be their own packager; or the packager could
 be a volunteer "out there" somewhere who has access to a platform which the
 original developer does not; or it could be software periodically grabbing new
 source distributions and turning them into built distributions for as many
@@ -63,9 +63,9 @@ distribution to generate: for example, ::
 
    python setup.py bdist --format=zip
 
-would, when run on a Unix system, create :file:`Distutils-1.0.{plat}.zip`\
----again, this archive would be unpacked from the root directory to install the
-Distutils.
+would, when run on a Unix system, create
+:file:`Distutils-1.0.{plat}.zip`\ ---again, this archive would be unpacked
+from the root directory to install the Distutils.
 
 The available formats for built distributions are:
 
@@ -351,8 +351,8 @@ installed, you can use a 32bit version of Windows to create 64bit extensions
 and vice-versa.
 
 To build for an alternate platform, specify the :option:`!--plat-name` option
-to the build command.  Valid values are currently 'win32', 'win-amd64' and
-'win-ia64'.  For example, on a 32bit version of Windows, you could execute::
+to the build command.  Valid values are currently 'win32', and  'win-amd64'.
+For example, on a 32bit version of Windows, you could execute::
 
    python setup.py build --plat-name=win-amd64
 
@@ -368,7 +368,7 @@ Python itself for the platform you are targeting - it is not possible from a
 binary installation of Python (as the .lib etc file for other platforms are
 not included.)  In practice, this means the user of a 32 bit operating
 system will need to use Visual Studio 2008 to open the
-:file:`PCBuild/PCbuild.sln` solution in the Python source tree and build the
+:file:`PCbuild/PCbuild.sln` solution in the Python source tree and build the
 "x64" configuration of the 'pythoncore' project before cross-compiling
 extensions is possible.
 

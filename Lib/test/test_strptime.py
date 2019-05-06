@@ -5,6 +5,7 @@ import time
 import locale
 import re
 import os
+import sys
 from test import support
 from datetime import date as datetime_date
 
@@ -304,7 +305,7 @@ class StrptimeTests(unittest.TestCase):
         # Test microseconds
         import datetime
         d = datetime.datetime(2012, 12, 20, 12, 34, 56, 78987)
-        tup, frac = _strptime._strptime(str(d), format="%Y-%m-%d %H:%M:%S.%f")
+        tup, frac, _ = _strptime._strptime(str(d), format="%Y-%m-%d %H:%M:%S.%f")
         self.assertEqual(frac, d.microsecond)
 
     def test_weekday(self):
@@ -315,6 +316,54 @@ class StrptimeTests(unittest.TestCase):
     def test_julian(self):
         # Test julian directives
         self.helper('j', 7)
+
+    def test_offset(self):
+        one_hour = 60 * 60
+        half_hour = 30 * 60
+        half_minute = 30
+        (*_, offset), _, offset_fraction = _strptime._strptime("+0130", "%z")
+        self.assertEqual(offset, one_hour + half_hour)
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-0100", "%z")
+        self.assertEqual(offset, -one_hour)
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-013030", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-013030.000001", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        self.assertEqual(offset_fraction, -1)
+        (*_, offset), _, offset_fraction = _strptime._strptime("+01:00", "%z")
+        self.assertEqual(offset, one_hour)
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour))
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        self.assertEqual(offset_fraction, 0)
+        (*_, offset), _, offset_fraction = _strptime._strptime("-01:30:30.000001", "%z")
+        self.assertEqual(offset, -(one_hour + half_hour + half_minute))
+        self.assertEqual(offset_fraction, -1)
+        (*_, offset), _, offset_fraction = _strptime._strptime("+01:30:30.001", "%z")
+        self.assertEqual(offset, one_hour + half_hour + half_minute)
+        self.assertEqual(offset_fraction, 1000)
+        (*_, offset), _, offset_fraction = _strptime._strptime("Z", "%z")
+        self.assertEqual(offset, 0)
+        self.assertEqual(offset_fraction, 0)
+
+    def test_bad_offset(self):
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30.", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-0130:30", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30.1234567", "%z")
+        with self.assertRaises(ValueError):
+            _strptime._strptime("-01:30:30:123456", "%z")
+        with self.assertRaises(ValueError) as err:
+            _strptime._strptime("-01:3030", "%z")
+        self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
     def test_timezone(self):
         # Test timezone directives.
@@ -457,7 +506,7 @@ class CalculationTests(unittest.TestCase):
         self.assertTrue(result.tm_year == self.time_tuple.tm_year and
                          result.tm_mon == self.time_tuple.tm_mon and
                          result.tm_mday == self.time_tuple.tm_mday,
-                        "Calculation of Gregorian date failed;"
+                        "Calculation of Gregorian date failed; "
                          "%s-%s-%s != %s-%s-%s" %
                          (result.tm_year, result.tm_mon, result.tm_mday,
                           self.time_tuple.tm_year, self.time_tuple.tm_mon,
@@ -469,7 +518,7 @@ class CalculationTests(unittest.TestCase):
         result = _strptime._strptime_time(time.strftime(format_string, self.time_tuple),
                                     format_string)
         self.assertTrue(result.tm_wday == self.time_tuple.tm_wday,
-                        "Calculation of day of the week failed;"
+                        "Calculation of day of the week failed; "
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 
     if support.is_android:
@@ -482,6 +531,8 @@ class CalculationTests(unittest.TestCase):
         _ymd_excluded = ()
         _formats_excluded = ()
 
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     'bpo-29972: broken test on AIX')
     def test_week_of_year_and_day_of_week_calculation(self):
         # Should be able to infer date if given year, week of year (%U or %W)
         # and day of the week
@@ -641,7 +692,7 @@ class CacheTests(unittest.TestCase):
         finally:
             locale.setlocale(locale.LC_TIME, locale_info)
 
-    @support.run_with_tz('STD-1DST')
+    @support.run_with_tz('STD-1DST,M4.1.0,M10.1.0')
     def test_TimeRE_recreation_timezone(self):
         # The TimeRE instance should be recreated upon changing the timezone.
         oldtzname = time.tzname

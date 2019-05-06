@@ -48,22 +48,26 @@ except NameError:
 def group(*choices): return '(' + '|'.join(choices) + ')'
 def any(*choices): return group(*choices) + '*'
 def maybe(*choices): return group(*choices) + '?'
+def _combinations(*l):
+    return set(
+        x + y for x in l for y in l + ("",) if x.casefold() != y.casefold()
+    )
 
 Whitespace = r'[ \f\t]*'
 Comment = r'#[^\r\n]*'
 Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
-Name = r'[a-zA-Z_]\w*'
+Name = r'\w+'
 
-Binnumber = r'0[bB][01]*'
-Hexnumber = r'0[xX][\da-fA-F]*[lL]?'
-Octnumber = r'0[oO]?[0-7]*[lL]?'
-Decnumber = r'[1-9]\d*[lL]?'
+Binnumber = r'0[bB]_?[01]+(?:_[01]+)*'
+Hexnumber = r'0[xX]_?[\da-fA-F]+(?:_[\da-fA-F]+)*[lL]?'
+Octnumber = r'0[oO]?_?[0-7]+(?:_[0-7]+)*[lL]?'
+Decnumber = group(r'[1-9]\d*(?:_\d+)*[lL]?', '0[lL]?')
 Intnumber = group(Binnumber, Hexnumber, Octnumber, Decnumber)
-Exponent = r'[eE][-+]?\d+'
-Pointfloat = group(r'\d+\.\d*', r'\.\d+') + maybe(Exponent)
-Expfloat = r'\d+' + Exponent
+Exponent = r'[eE][-+]?\d+(?:_\d+)*'
+Pointfloat = group(r'\d+(?:_\d+)*\.(?:\d+(?:_\d+)*)?', r'\.\d+(?:_\d+)*') + maybe(Exponent)
+Expfloat = r'\d+(?:_\d+)*' + Exponent
 Floatnumber = group(Pointfloat, Expfloat)
-Imagnumber = group(r'\d+[jJ]', Floatnumber + r'[jJ]')
+Imagnumber = group(r'\d+(?:_\d+)*[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
 # Tail end of ' string.
@@ -74,10 +78,11 @@ Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
 Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
 # Tail end of """ string.
 Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
-Triple = group("[ubUB]?[rR]?'''", '[ubUB]?[rR]?"""')
+_litprefix = r"(?:[uUrRbBfF]|[rR][fFbB]|[fFbBuU][rR])?"
+Triple = group(_litprefix + "'''", _litprefix + '"""')
 # Single-line ' or " string.
-String = group(r"[uU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
-               r'[uU]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
+String = group(_litprefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
+               _litprefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
 # Because of leftmost-then-longest match semantics, be sure to put the
 # longest operators first (e.g., if = came before ==, == would get
@@ -95,55 +100,38 @@ PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
 # First (or only) line of ' or " string.
-ContStr = group(r"[uUbB]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
+ContStr = group(_litprefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
                 group("'", r'\\\r?\n'),
-                r'[uUbB]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
+                _litprefix + r'"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
                 group('"', r'\\\r?\n'))
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
-tokenprog, pseudoprog, single3prog, double3prog = list(map(
-    re.compile, (Token, PseudoToken, Single3, Double3)))
+tokenprog, pseudoprog, single3prog, double3prog = map(
+    re.compile, (Token, PseudoToken, Single3, Double3))
+
+_strprefixes = (
+    _combinations('r', 'R', 'f', 'F') |
+    _combinations('r', 'R', 'b', 'B') |
+    {'u', 'U', 'ur', 'uR', 'Ur', 'UR'}
+)
+
 endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "'''": single3prog, '"""': double3prog,
-            "r'''": single3prog, 'r"""': double3prog,
-            "u'''": single3prog, 'u"""': double3prog,
-            "b'''": single3prog, 'b"""': double3prog,
-            "ur'''": single3prog, 'ur"""': double3prog,
-            "br'''": single3prog, 'br"""': double3prog,
-            "R'''": single3prog, 'R"""': double3prog,
-            "U'''": single3prog, 'U"""': double3prog,
-            "B'''": single3prog, 'B"""': double3prog,
-            "uR'''": single3prog, 'uR"""': double3prog,
-            "Ur'''": single3prog, 'Ur"""': double3prog,
-            "UR'''": single3prog, 'UR"""': double3prog,
-            "bR'''": single3prog, 'bR"""': double3prog,
-            "Br'''": single3prog, 'Br"""': double3prog,
-            "BR'''": single3prog, 'BR"""': double3prog,
-            'r': None, 'R': None,
-            'u': None, 'U': None,
-            'b': None, 'B': None}
+            **{f"{prefix}'''": single3prog for prefix in _strprefixes},
+            **{f'{prefix}"""': double3prog for prefix in _strprefixes},
+            **{prefix: None for prefix in _strprefixes}}
 
-triple_quoted = {}
-for t in ("'''", '"""',
-          "r'''", 'r"""', "R'''", 'R"""',
-          "u'''", 'u"""', "U'''", 'U"""',
-          "b'''", 'b"""', "B'''", 'B"""',
-          "ur'''", 'ur"""', "Ur'''", 'Ur"""',
-          "uR'''", 'uR"""', "UR'''", 'UR"""',
-          "br'''", 'br"""', "Br'''", 'Br"""',
-          "bR'''", 'bR"""', "BR'''", 'BR"""',):
-    triple_quoted[t] = t
-single_quoted = {}
-for t in ("'", '"',
-          "r'", 'r"', "R'", 'R"',
-          "u'", 'u"', "U'", 'U"',
-          "b'", 'b"', "B'", 'B"',
-          "ur'", 'ur"', "Ur'", 'Ur"',
-          "uR'", 'uR"', "UR'", 'UR"',
-          "br'", 'br"', "Br'", 'Br"',
-          "bR'", 'bR"', "BR'", 'BR"', ):
-    single_quoted[t] = t
+triple_quoted = (
+    {"'''", '"""'} |
+    {f"{prefix}'''" for prefix in _strprefixes} |
+    {f'{prefix}"""' for prefix in _strprefixes}
+)
+single_quoted = (
+    {"'", '"'} |
+    {f"{prefix}'" for prefix in _strprefixes} |
+    {f'{prefix}"' for prefix in _strprefixes}
+)
 
 tabsize = 8
 
@@ -361,7 +349,6 @@ def generate_tokens(readline):
     logical line; continuation lines are included.
     """
     lnum = parenlev = continued = 0
-    namechars, numchars = string.ascii_letters + '_', '0123456789'
     contstr, needcont = '', 0
     contline = None
     indents = [0]
@@ -463,7 +450,7 @@ def generate_tokens(readline):
                 spos, epos, pos = (lnum, start), (lnum, end), end
                 token, initial = line[start:end], line[start]
 
-                if initial in numchars or \
+                if initial in string.digits or \
                    (initial == '.' and token != '.'):      # ordinary number
                     yield (NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
@@ -513,7 +500,7 @@ def generate_tokens(readline):
                             yield stashed
                             stashed = None
                         yield (STRING, token, spos, epos, line)
-                elif initial in namechars:                 # ordinary name
+                elif initial.isidentifier():               # ordinary name
                     if token in ('async', 'await'):
                         if async_def:
                             yield (ASYNC if token == 'async' else AWAIT,

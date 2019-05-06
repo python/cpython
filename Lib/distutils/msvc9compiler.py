@@ -55,7 +55,6 @@ else:
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'amd64',
-    'win-ia64' : 'ia64',
 }
 
 class Reg:
@@ -255,7 +254,7 @@ def query_vcvarsall(version, arch="x86"):
     """Launch vcvarsall.bat and read the settings from its environment
     """
     vcvarsall = find_vcvarsall(version)
-    interesting = set(("include", "lib", "libpath", "path"))
+    interesting = {"include", "lib", "libpath", "path"}
     result = {}
 
     if vcvarsall is None:
@@ -344,7 +343,7 @@ class MSVCCompiler(CCompiler) :
         if plat_name is None:
             plat_name = get_platform()
         # sanity check for platforms to prevent obscure errors later.
-        ok_plats = 'win32', 'win-amd64', 'win-ia64'
+        ok_plats = 'win32', 'win-amd64'
         if plat_name not in ok_plats:
             raise DistutilsPlatformError("--plat-name must be one of %s" %
                                          (ok_plats,))
@@ -362,7 +361,6 @@ class MSVCCompiler(CCompiler) :
             # to cross compile, you use 'x86_amd64'.
             # On AMD64, 'vcvars32.bat amd64' is a native build env; to cross
             # compile use 'x86' (ie, it runs the x86 compiler directly)
-            # No idea how itanium handles this, if at all.
             if plat_name == get_platform() or plat_name == 'win32':
                 # native build or cross-compile to win32
                 plat_spec = PLAT_TO_VCVARS[plat_name]

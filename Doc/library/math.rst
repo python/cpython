@@ -42,14 +42,17 @@ Number-theoretic and representation functions
    *y*.  On platforms that support signed zeros, ``copysign(1.0, -0.0)``
    returns *-1.0*.
 
+
 .. function:: fabs(x)
 
    Return the absolute value of *x*.
+
 
 .. function:: factorial(x)
 
    Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
+
 
 .. function:: floor(x)
 
@@ -175,11 +178,44 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
+.. function:: prod(iterable, *, start=1)
+
+   Calculate the product of all the elements in the input *iterable*.
+   The default *start* value for the product is ``1``.
+
+   When the iterable is empty, return the start value.  This function is
+   intended specifically for use with numeric values and may reject
+   non-numeric types.
+
+   .. versionadded:: 3.8
+
+
+.. function:: remainder(x, y)
+
+   Return the IEEE 754-style remainder of *x* with respect to *y*.  For
+   finite *x* and finite nonzero *y*, this is the difference ``x - n*y``,
+   where ``n`` is the closest integer to the exact value of the quotient ``x /
+   y``.  If ``x / y`` is exactly halfway between two consecutive integers, the
+   nearest *even* integer is used for ``n``.  The remainder ``r = remainder(x,
+   y)`` thus always satisfies ``abs(r) <= 0.5 * abs(y)``.
+
+   Special cases follow IEEE 754: in particular, ``remainder(x, math.inf)`` is
+   *x* for any finite *x*, and ``remainder(x, 0)`` and
+   ``remainder(math.inf, x)`` raise :exc:`ValueError` for any non-NaN *x*.
+   If the result of the remainder operation is zero, that zero will have
+   the same sign as *x*.
+
+   On platforms using IEEE 754 binary floating-point, the result of this
+   operation is always exactly representable: no rounding error is introduced.
+
+   .. versionadded:: 3.7
+
+
 .. function:: trunc(x)
 
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
-   ``x.__trunc__()``.
+   :meth:`x.__trunc__() <object.__trunc__>`.
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
@@ -199,12 +235,15 @@ Power and logarithmic functions
 
 .. function:: exp(x)
 
-   Return ``e**x``.
+   Return *e* raised to the power *x*, where *e* = 2.718281... is the base
+   of natural logarithms.  This is usually more accurate than ``math.e ** x``
+   or ``pow(math.e, x)``.
 
 
 .. function:: expm1(x)
 
-   Return ``e**x - 1``.  For small floats *x*, the subtraction in ``exp(x) - 1``
+   Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural
+   logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
    can result in a `significant loss of precision
    <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
    function provides a way to compute this quantity to full precision::
@@ -269,9 +308,9 @@ Power and logarithmic functions
 
    Return the square root of *x*.
 
+
 Trigonometric functions
 -----------------------
-
 
 .. function:: acos(x)
 
@@ -303,10 +342,31 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
-.. function:: hypot(x, y)
+.. function:: dist(p, q)
 
-   Return the Euclidean norm, ``sqrt(x*x + y*y)``. This is the length of the vector
-   from the origin to point ``(x, y)``.
+   Return the Euclidean distance between two points *p* and *q*, each
+   given as a tuple of coordinates.  The two tuples must be the same size.
+
+   Roughly equivalent to::
+
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+
+   .. versionadded:: 3.8
+
+
+.. function:: hypot(*coordinates)
+
+   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
+   This is the length of the vector from the origin to the point
+   given by the coordinates.
+
+   For a two dimensional point ``(x, y)``, this is equivalent to computing
+   the hypotenuse of a right triangle using the Pythagorean theorem,
+   ``sqrt(x*x + y*y)``.
+
+   .. versionchanged:: 3.8
+      Added support for n-dimensional points. Formerly, only the two
+      dimensional case was supported.
 
 
 .. function:: sin(x)
@@ -318,9 +378,9 @@ Trigonometric functions
 
    Return the tangent of *x* radians.
 
+
 Angular conversion
 ------------------
-
 
 .. function:: degrees(x)
 
@@ -330,6 +390,7 @@ Angular conversion
 .. function:: radians(x)
 
    Convert angle *x* from degrees to radians.
+
 
 Hyperbolic functions
 --------------------
@@ -419,22 +480,24 @@ Constants
 
 .. data:: pi
 
-   The mathematical constant π = 3.141592..., to available precision.
+   The mathematical constant *π* = 3.141592..., to available precision.
 
 
 .. data:: e
 
-   The mathematical constant e = 2.718281..., to available precision.
+   The mathematical constant *e* = 2.718281..., to available precision.
+
 
 .. data:: tau
 
-   The mathematical constant τ = 6.283185..., to available precision.
-   Tau is a circle constant equal to 2π, the ratio of a circle's circumference to
+   The mathematical constant *τ* = 6.283185..., to available precision.
+   Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
    Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
-   `Tau day <http://tauday.com/>`_ by eating twice as much pie!
+   `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
+
 
 .. data:: inf
 

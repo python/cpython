@@ -242,7 +242,7 @@ Here are the classes:
 
    Unless the *_charset* argument is explicitly set to ``None``, the
    MIMEText object created will have both a :mailheader:`Content-Type` header
-   with a ``charset`` parameter, and a :mailheader:`Content-Transfer-Endcoding`
+   with a ``charset`` parameter, and a :mailheader:`Content-Transfer-Encoding`
    header.  This means that a subsequent ``set_payload`` call will not result
    in an encoded payload, even if a charset is passed in the ``set_payload``
    command.  You can "reset" this behavior by deleting the

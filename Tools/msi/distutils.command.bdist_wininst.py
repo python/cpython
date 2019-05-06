@@ -9,6 +9,9 @@ from distutils.errors import DistutilsPlatformError
 class bdist_wininst(Command):
     description = "create an executable installer for MS Windows"
 
+    # Marker for tests that we have the unsupported bdist_wininst
+    _unsupported = True
+
     def initialize_options(self):
         pass
 

@@ -1,66 +1,93 @@
-:mod:`asyncio` --- Asynchronous I/O, event loop, coroutines and tasks
-=====================================================================
+:mod:`asyncio` --- Asynchronous I/O
+===================================
 
 .. module:: asyncio
-   :synopsis: Asynchronous I/O, event loop, coroutines and tasks.
-
-.. versionadded:: 3.4
-
-**Source code:** :source:`Lib/asyncio/`
+   :synopsis: Asynchronous I/O.
 
 --------------
 
-This module provides infrastructure for writing single-threaded concurrent
-code using coroutines, multiplexing I/O access over sockets and other
-resources, running network clients and servers, and other related primitives.
-Here is a more detailed list of the package contents:
+.. sidebar:: Hello World!
 
-* a pluggable :ref:`event loop <asyncio-event-loop>` with various system-specific
-  implementations;
+   ::
 
-* :ref:`transport <asyncio-transport>` and :ref:`protocol <asyncio-protocol>` abstractions
-  (similar to those in `Twisted <https://twistedmatrix.com/trac/>`_);
+       import asyncio
 
-* concrete support for TCP, UDP, SSL, subprocess pipes, delayed calls, and
-  others (some may be system-dependent);
+       async def main():
+           print('Hello ...')
+           await asyncio.sleep(1)
+           print('... World!')
 
-* a :class:`Future` class that mimics the one in the :mod:`concurrent.futures`
-  module, but adapted for use with the event loop;
+       # Python 3.7+
+       asyncio.run(main())
 
-* coroutines and tasks based on ``yield from`` (:PEP:`380`), to help write
-  concurrent code in a sequential fashion;
+asyncio is a library to write **concurrent** code using
+the **async/await** syntax.
 
-* cancellation support for :class:`Future`\s and coroutines;
+asyncio is used as a foundation for multiple Python asynchronous
+frameworks that provide high-performance network and web-servers,
+database connection libraries, distributed task queues, etc.
 
-* :ref:`synchronization primitives <asyncio-sync>` for use between coroutines in
-  a single thread, mimicking those in the :mod:`threading` module;
+asyncio is often a perfect fit for IO-bound and high-level
+**structured** network code.
 
-* an interface for passing work off to a threadpool, for times when
-  you absolutely, positively have to use a library that makes blocking
-  I/O calls.
+asyncio provides a set of **high-level** APIs to:
 
-Asynchronous programming is more complex than classical "sequential"
-programming: see the :ref:`Develop with asyncio <asyncio-dev>` page which lists
-common traps and explains how to avoid them. :ref:`Enable the debug mode
-<asyncio-debug-mode>` during development to detect common issues.
+* :ref:`run Python coroutines <coroutine>` concurrently and
+  have full control over their execution;
 
-Table of contents:
+* perform :ref:`network IO and IPC <asyncio-streams>`;
+
+* control :ref:`subprocesses <asyncio-subprocess>`;
+
+* distribute tasks via :ref:`queues <asyncio-queues>`;
+
+* :ref:`synchronize <asyncio-sync>` concurrent code;
+
+Additionally, there are **low-level** APIs for
+*library and framework developers* to:
+
+* create and manage :ref:`event loops <asyncio-event-loop>`, which
+  provide asynchronous APIs for :meth:`networking <loop.create_server>`,
+  running :meth:`subprocesses <loop.subprocess_exec>`,
+  handling :meth:`OS signals <loop.add_signal_handler>`, etc;
+
+* implement efficient protocols using
+  :ref:`transports <asyncio-transports-protocols>`;
+
+* :ref:`bridge <asyncio-futures>` callback-based libraries and code
+  with async/await syntax.
+
+
+.. We use the "rubric" directive here to avoid creating
+   the "Reference" subsection in the TOC.
+
+.. rubric:: Reference
 
 .. toctree::
-   :maxdepth: 3
+   :caption: High-level APIs
+   :maxdepth: 1
+
+   asyncio-task.rst
+   asyncio-stream.rst
+   asyncio-sync.rst
+   asyncio-subprocess.rst
+   asyncio-queue.rst
+   asyncio-exceptions.rst
+
+.. toctree::
+   :caption: Low-level APIs
+   :maxdepth: 1
 
    asyncio-eventloop.rst
-   asyncio-eventloops.rst
-   asyncio-task.rst
+   asyncio-future.rst
    asyncio-protocol.rst
-   asyncio-stream.rst
-   asyncio-subprocess.rst
-   asyncio-sync.rst
-   asyncio-queue.rst
+   asyncio-policy.rst
+   asyncio-platforms.rst
+
+.. toctree::
+   :caption: Guides and Tutorials
+   :maxdepth: 1
+
+   asyncio-api-index.rst
+   asyncio-llapi-index.rst
    asyncio-dev.rst
-
-.. seealso::
-
-   The :mod:`asyncio` module was designed in :PEP:`3156`. For a
-   motivational primer on transports and protocols, see :PEP:`3153`.
-

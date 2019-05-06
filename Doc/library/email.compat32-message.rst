@@ -5,7 +5,7 @@
 
 .. module:: email.message
    :synopsis: The base class representing email messages in a fashion
-              backward compatible with python3.2
+              backward compatible with Python 3.2
 
 
 The :class:`Message` class is very similar to the
@@ -67,7 +67,7 @@ Here are the methods of the :class:`Message` class:
 
       Return the entire message flattened as a string.  When optional *unixfrom*
       is true, the envelope header is included in the returned string.
-      *unixfrom* defaults to ``False``.  For backward compabitility reasons,
+      *unixfrom* defaults to ``False``.  For backward compatibility reasons,
       *maxheaderlen* defaults to ``0``, so if you want a different value you
       must override it explicitly (the value specified for *max_line_length* in
       the policy will be ignored by this method).  The *policy* argument may be
@@ -149,10 +149,10 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: is_multipart()
 
-      Return ``True`` if the message's payload is a list of sub-\
-      :class:`Message` objects, otherwise return ``False``.  When
+      Return ``True`` if the message's payload is a list of
+      sub-\ :class:`Message` objects, otherwise return ``False``.  When
       :meth:`is_multipart` returns ``False``, the payload should be a string
-      object (which might be a CTE encoded binary payload.  (Note that
+      object (which might be a CTE encoded binary payload).  (Note that
       :meth:`is_multipart` returning ``True`` does not necessarily mean that
       "msg.get_content_maintype() == 'multipart'" will return the ``True``.
       For example, ``is_multipart`` will return ``True`` when the
@@ -660,10 +660,14 @@ Here are the methods of the :class:`Message` class:
 
       .. testsetup::
 
-         >>> from email import message_from_binary_file
-         >>> with open('Lib/test/test_email/data/msg_16.txt', 'rb') as f:
-         ...     msg = message_from_binary_file(f)
-         >>> from email.iterators import _structure
+         import email
+         from email import message_from_binary_file
+         from os.path import join, dirname
+         lib_dir = dirname(dirname(email.__file__))
+         file_path = join(lib_dir, 'test/test_email/data/msg_16.txt')
+         with open(file_path, 'rb') as f:
+             msg = message_from_binary_file(f)
+         from email.iterators import _structure
 
       .. doctest::
 
@@ -686,7 +690,7 @@ Here are the methods of the :class:`Message` class:
       .. doctest::
 
          >>> for part in msg.walk():
-         ...     print(part.get_content_maintype() == 'multipart'),
+         ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())
          True True
          False False
@@ -698,11 +702,11 @@ Here are the methods of the :class:`Message` class:
          >>> _structure(msg)
          multipart/report
              text/plain
-         message/delivery-status
-             text/plain
-             text/plain
-         message/rfc822
-             text/plain
+             message/delivery-status
+                 text/plain
+                 text/plain
+             message/rfc822
+                 text/plain
 
       Here the ``message`` parts are not ``multiparts``, but they do contain
       subparts. ``is_multipart()`` returns ``True`` and ``walk`` descends

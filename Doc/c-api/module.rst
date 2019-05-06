@@ -50,7 +50,7 @@ Module Objects
 
 .. c:function:: PyObject* PyModule_New(const char *name)
 
-   Similar to :c:func:`PyImport_NewObject`, but the name is a UTF-8 encoded
+   Similar to :c:func:`PyModule_NewObject`, but the name is a UTF-8 encoded
    string instead of a Unicode object.
 
 
@@ -80,7 +80,7 @@ Module Objects
    .. versionadded:: 3.3
 
 
-.. c:function:: char* PyModule_GetName(PyObject *module)
+.. c:function:: const char* PyModule_GetName(PyObject *module)
 
    Similar to :c:func:`PyModule_GetNameObject` but return the name encoded to
    ``'utf-8'``.
@@ -112,7 +112,7 @@ Module Objects
    .. versionadded:: 3.2
 
 
-.. c:function:: char* PyModule_GetFilename(PyObject *module)
+.. c:function:: const char* PyModule_GetFilename(PyObject *module)
 
    Similar to :c:func:`PyModule_GetFilenameObject` but return the filename
    encoded to 'utf-8'.
@@ -146,11 +146,11 @@ or request "multi-phase initialization" by returning the definition struct itsel
 
       Always initialize this member to :const:`PyModuleDef_HEAD_INIT`.
 
-   .. c:member:: char* m_name
+   .. c:member:: const char *m_name
 
       Name for the new module.
 
-   .. c:member:: char* m_doc
+   .. c:member:: const char *m_doc
 
       Docstring for the module; usually a docstring variable created with
       :c:func:`PyDoc_STRVAR` is used.
@@ -196,17 +196,23 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: traverseproc m_traverse
 
       A traversal function to call during GC traversal of the module object, or
-      *NULL* if not needed.
+      *NULL* if not needed. This function may be called before module state
+      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
+      and before the :c:member:`Py_mod_exec` function is executed.
 
    .. c:member:: inquiry m_clear
 
       A clear function to call during GC clearing of the module object, or
-      *NULL* if not needed.
+      *NULL* if not needed. This function may be called before module state
+      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
+      and before the :c:member:`Py_mod_exec` function is executed.
 
    .. c:member:: freefunc m_free
 
       A function to call during deallocation of the module object, or *NULL* if
-      not needed.
+      not needed. This function may be called before module state
+      is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
+      and before the :c:member:`Py_mod_exec` function is executed.
 
 Single-phase initialization
 ...........................

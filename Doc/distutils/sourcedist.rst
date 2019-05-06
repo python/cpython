@@ -95,8 +95,9 @@ source distribution:
   distributions, but in the future there will be a standard for testing Python
   module distributions)
 
-* :file:`README.txt` (or :file:`README`), :file:`setup.py` (or whatever  you
-  called your setup script), and :file:`setup.cfg`
+* Any of the standard README files (:file:`README`, :file:`README.txt`,
+  or :file:`README.rst`), :file:`setup.py` (or whatever you called your setup
+  script), and :file:`setup.cfg`.
 
 * all files that matches the ``package_data`` metadata.
   See :ref:`distutils-installing-package-data`.
@@ -129,6 +130,9 @@ described above does not apply in this case.
 .. versionchanged:: 3.2.2
    :command:`sdist` will read a :file:`MANIFEST` file if no :file:`MANIFEST.in`
    exists, like it used to do.
+
+.. versionchanged:: 3.7
+   :file:`README.rst` is now included in the list of distutils standard READMEs.
 
 
 The manifest template has one command per line, where each command specifies a

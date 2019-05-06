@@ -14,7 +14,7 @@ BaseException
       +-- BufferError
       +-- EOFError
       +-- ImportError
-           +-- ModuleNotFoundError
+      |    +-- ModuleNotFoundError
       +-- LookupError
       |    +-- IndexError
       |    +-- KeyError
@@ -42,6 +42,7 @@ BaseException
       |    +-- NotImplementedError
       |    +-- RecursionError
       +-- SyntaxError
+      |    +-- TargetScopeError
       |    +-- IndentationError
       |         +-- TabError
       +-- SystemError

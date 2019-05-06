@@ -1,11 +1,10 @@
 import queue
 import sched
+import threading
 import time
 import unittest
-try:
-    import threading
-except ImportError:
-    threading = None
+from test import support
+
 
 TIMEOUT = 10
 
@@ -58,7 +57,6 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_enter_concurrent(self):
         q = queue.Queue()
         fun = q.put
@@ -84,8 +82,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(q.get(timeout=TIMEOUT), 5)
         self.assertTrue(q.empty())
         timer.advance(1000)
-        t.join(timeout=TIMEOUT)
-        self.assertFalse(t.is_alive())
+        support.join_thread(t, timeout=TIMEOUT)
         self.assertTrue(q.empty())
         self.assertEqual(timer.time(), 5)
 
@@ -113,7 +110,6 @@ class TestCase(unittest.TestCase):
         scheduler.run()
         self.assertEqual(l, [0.02, 0.03, 0.04])
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_cancel_concurrent(self):
         q = queue.Queue()
         fun = q.put
@@ -141,8 +137,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(q.get(timeout=TIMEOUT), 4)
         self.assertTrue(q.empty())
         timer.advance(1000)
-        t.join(timeout=TIMEOUT)
-        self.assertFalse(t.is_alive())
+        support.join_thread(t, timeout=TIMEOUT)
         self.assertTrue(q.empty())
         self.assertEqual(timer.time(), 4)
 

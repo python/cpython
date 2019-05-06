@@ -47,7 +47,7 @@ rectangular coordinates to polar coordinates and back.
 
    Return the phase of *x* (also known as the *argument* of *x*), as a
    float.  ``phase(x)`` is equivalent to ``math.atan2(x.imag,
-   x.real)``.  The result lies in the range [-π, π], and the branch
+   x.real)``.  The result lies in the range [-\ *π*, *π*], and the branch
    cut for this operation lies along the negative real axis,
    continuous from above.  On systems with support for signed zeros
    (which includes most systems in current use), this means that the
@@ -86,7 +86,8 @@ Power and logarithmic functions
 
 .. function:: exp(x)
 
-   Return the exponential value ``e**x``.
+   Return *e* raised to the power *x*, where *e* is the base of natural
+   logarithms.
 
 
 .. function:: log(x[, base])
@@ -243,7 +244,6 @@ Classification functions
 Constants
 ---------
 
-
 .. data:: pi
 
    The mathematical constant *π*, as a float.
@@ -253,17 +253,20 @@ Constants
 
    The mathematical constant *e*, as a float.
 
+
 .. data:: tau
 
    The mathematical constant *τ*, as a float.
 
    .. versionadded:: 3.6
 
+
 .. data:: inf
 
    Floating-point positive infinity. Equivalent to ``float('inf')``.
 
    .. versionadded:: 3.6
+
 
 .. data:: infj
 
@@ -272,12 +275,14 @@ Constants
 
    .. versionadded:: 3.6
 
+
 .. data:: nan
 
    A floating-point "not a number" (NaN) value.  Equivalent to
    ``float('nan')``.
 
    .. versionadded:: 3.6
+
 
 .. data:: nanj
 

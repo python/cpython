@@ -335,13 +335,15 @@ binascii.b2a_uu
 
     data: Py_buffer
     /
+    *
+    backtick: bool(accept={int}) = False
 
 Uuencode line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
-/*[clinic end generated code: output=0070670e52e4aa6b input=00fdf458ce8b465b]*/
+binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
+/*[clinic end generated code: output=b1b99de62d9bbeb8 input=b26bc8d32b6ed2f6]*/
 {
     unsigned char *ascii_data;
     const unsigned char *bin_data;
@@ -367,7 +369,10 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
         return NULL;
 
     /* Store the length */
-    *ascii_data++ = ' ' + (bin_len & 077);
+    if (backtick && !bin_len)
+        *ascii_data++ = '`';
+    else
+        *ascii_data++ = ' ' + (unsigned char)bin_len;
 
     for( ; bin_len > 0 || leftbits != 0 ; bin_len--, bin_data++ ) {
         /* Shift the data (or padding) into our buffer */
@@ -381,7 +386,10 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
         while ( leftbits >= 6 ) {
             this_ch = (leftchar >> (leftbits-6)) & 0x3f;
             leftbits -= 6;
-            *ascii_data++ = this_ch + ' ';
+            if (backtick && !this_ch)
+                *ascii_data++ = '`';
+            else
+                *ascii_data++ = this_ch + ' ';
         }
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */
@@ -430,6 +438,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
 {
     const unsigned char *ascii_data;
     unsigned char *bin_data;
+    unsigned char *bin_data_start;
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
@@ -453,6 +462,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
     if (bin_data == NULL)
         return NULL;
+    bin_data_start = bin_data;
 
     for( ; ascii_len > 0; ascii_len--, ascii_data++) {
         this_ch = *ascii_data;
@@ -502,7 +512,20 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     }
 
     if (leftbits != 0) {
-        PyErr_SetString(Error, "Incorrect padding");
+        if (leftbits == 6) {
+            /*
+            ** There is exactly one extra valid, non-padding, base64 character.
+            ** This is an invalid length, as there is no possible input that
+            ** could encoded into such a base64 string.
+            */
+            PyErr_Format(Error,
+                         "Invalid base64-encoded string: "
+                         "number of data characters (%zd) cannot be 1 more "
+                         "than a multiple of 4",
+                         (bin_data - bin_data_start) / 3 * 4 + 1);
+        } else {
+            PyErr_SetString(Error, "Incorrect padding");
+        }
         _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
@@ -515,6 +538,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
 binascii.b2a_base64
 
     data: Py_buffer
+    /
     *
     newline: bool(accept={int}) = True
 
@@ -523,7 +547,7 @@ Base64-code line of data.
 
 static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
-/*[clinic end generated code: output=4ad62c8e8485d3b3 input=144fd7267a34d51c]*/
+/*[clinic end generated code: output=4ad62c8e8485d3b3 input=6083dac5777fa45d]*/
 {
     unsigned char *ascii_data;
     const unsigned char *bin_data;
@@ -1121,21 +1145,6 @@ binascii_hexlify_impl(PyObject *module, Py_buffer *data)
     return _Py_strhex_bytes((const char *)data->buf, data->len);
 }
 
-static int
-to_int(int c)
-{
-    if (Py_ISDIGIT(c))
-        return c - '0';
-    else {
-        if (Py_ISUPPER(c))
-            c = Py_TOLOWER(c);
-        if (c >= 'a' && c <= 'f')
-            return c - 'a' + 10;
-    }
-    return -1;
-}
-
-
 /*[clinic input]
 binascii.a2b_hex
 
@@ -1178,9 +1187,9 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
     retbuf = PyBytes_AS_STRING(retval);
 
     for (i=j=0; i < arglen; i += 2) {
-        int top = to_int(Py_CHARMASK(argbuf[i]));
-        int bot = to_int(Py_CHARMASK(argbuf[i+1]));
-        if (top == -1 || bot == -1) {
+        unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
+        unsigned int bot = _PyLong_DigitValue[Py_CHARMASK(argbuf[i+1])];
+        if (top >= 16 || bot >= 16) {
             PyErr_SetString(Error,
                             "Non-hexadecimal digit found");
             goto finally;
@@ -1208,19 +1217,6 @@ binascii_unhexlify_impl(PyObject *module, Py_buffer *hexstr)
 {
     return binascii_a2b_hex_impl(module, hexstr);
 }
-
-static const int table_hex[128] = {
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-   0, 1, 2, 3,  4, 5, 6, 7,  8, 9,-1,-1, -1,-1,-1,-1,
-  -1,10,11,12, 13,14,15,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,10,11,12, 13,14,15,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1
-};
-
-#define hexval(c) table_hex[(unsigned int)(c)]
 
 #define MAXLINESIZE 76
 
@@ -1284,9 +1280,9 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
                       (ascii_data[in+1] >= 'a' && ascii_data[in+1] <= 'f') ||
                       (ascii_data[in+1] >= '0' && ascii_data[in+1] <= '9'))) {
                 /* hexval */
-                ch = hexval(ascii_data[in]) << 4;
+                ch = _PyLong_DigitValue[ascii_data[in]] << 4;
                 in++;
-                ch |= hexval(ascii_data[in]);
+                ch |= _PyLong_DigitValue[ascii_data[in]];
                 in++;
                 odata[out++] = ch;
             }

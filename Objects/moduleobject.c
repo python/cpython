@@ -2,6 +2,7 @@
 /* Module object implementation */
 
 #include "Python.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 static Py_ssize_t max_module_number;
@@ -20,10 +21,21 @@ static PyMemberDef module_members[] = {
     {0}
 };
 
+
+/* Helper for sanity check for traverse not handling m_state == NULL
+ * Issue #32374 */
+#ifdef Py_DEBUG
+static int
+bad_traverse_test(PyObject *self, void *arg) {
+    assert(self != NULL);
+    return 0;
+}
+#endif
+
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
-    sizeof(struct PyModuleDef),                 /* tp_size */
+    sizeof(struct PyModuleDef),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
 
@@ -161,11 +173,17 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
+    if (!_PyImport_IsInitialized(_PyInterpreterState_Get()))
+        Py_FatalError("Python import machinery not initialized");
+    return _PyModule_CreateInitialized(module, module_api_version);
+}
+
+PyObject *
+_PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
+{
     const char* name;
     PyModuleObject *m;
-    PyInterpreterState *interp = PyThreadState_Get()->interp;
-    if (interp->modules == NULL)
-        Py_FatalError("Python import machinery not initialized");
+
     if (!PyModuleDef_Init(module))
         return NULL;
     name = module->m_name;
@@ -338,6 +356,16 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
+    /* Sanity check for traverse not handling m_state == NULL
+     * This doesn't catch all possible cases, but in many cases it should
+     * make many cases of invalid code crash or raise Valgrind issues
+     * sooner than they would otherwise.
+     * Issue #32374 */
+#ifdef Py_DEBUG
+    if (def->m_traverse != NULL) {
+        def->m_traverse(m, bad_traverse_test, NULL);
+    }
+#endif
     Py_DECREF(nameobj);
     return m;
 
@@ -575,8 +603,9 @@ _PyModule_ClearDict(PyObject *d)
                     else
                         PyErr_Clear();
                 }
-                if (PyDict_SetItem(d, key, Py_None) != 0)
-                    PyErr_Clear();
+                if (PyDict_SetItem(d, key, Py_None) != 0) {
+                    PyErr_WriteUnraisable(NULL);
+                }
             }
         }
     }
@@ -595,8 +624,9 @@ _PyModule_ClearDict(PyObject *d)
                     else
                         PyErr_Clear();
                 }
-                if (PyDict_SetItem(d, key, Py_None) != 0)
-                    PyErr_Clear();
+                if (PyDict_SetItem(d, key, Py_None) != 0) {
+                    PyErr_WriteUnraisable(NULL);
+                }
             }
         }
     }
@@ -607,24 +637,37 @@ _PyModule_ClearDict(PyObject *d)
 
 }
 
+/*[clinic input]
+class module "PyModuleObject *" "&PyModule_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3e35d4f708ecb6af]*/
+
+#include "clinic/moduleobject.c.h"
+
 /* Methods */
 
+/*[clinic input]
+module.__init__
+    name: unicode
+    doc: object = None
+
+Create a module object.
+
+The name must be a string; the optional doc argument can have any type.
+[clinic start generated code]*/
+
 static int
-module_init(PyModuleObject *m, PyObject *args, PyObject *kwds)
+module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
+/*[clinic end generated code: output=e7e721c26ce7aad7 input=57f9e177401e5e1e]*/
 {
-    static char *kwlist[] = {"name", "doc", NULL};
-    PyObject *dict, *name = Py_None, *doc = Py_None;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "U|O:module.__init__",
-                                     kwlist, &name, &doc))
-        return -1;
-    dict = m->md_dict;
+    PyObject *dict = self->md_dict;
     if (dict == NULL) {
         dict = PyDict_New();
         if (dict == NULL)
             return -1;
-        m->md_dict = dict;
+        self->md_dict = dict;
     }
-    if (module_init_dict(m, dict, name, doc) < 0)
+    if (module_init_dict(self, dict, name, doc) < 0)
         return -1;
     return 0;
 }
@@ -650,30 +693,70 @@ module_dealloc(PyModuleObject *m)
 static PyObject *
 module_repr(PyModuleObject *m)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyInterpreterState *interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
 
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
+}
+
+/* Check if the "_initializing" attribute of the module spec is set to true.
+   Clear the exception and return 0 if spec is NULL.
+ */
+int
+_PyModuleSpec_IsInitializing(PyObject *spec)
+{
+    if (spec != NULL) {
+        _Py_IDENTIFIER(_initializing);
+        PyObject *value = _PyObject_GetAttrId(spec, &PyId__initializing);
+        if (value != NULL) {
+            int initializing = PyObject_IsTrue(value);
+            Py_DECREF(value);
+            if (initializing >= 0) {
+                return initializing;
+            }
+        }
+    }
+    PyErr_Clear();
+    return 0;
 }
 
 static PyObject*
 module_getattro(PyModuleObject *m, PyObject *name)
 {
-    PyObject *attr, *mod_name;
+    PyObject *attr, *mod_name, *getattr;
     attr = PyObject_GenericGetAttr((PyObject *)m, name);
-    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError))
+    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return attr;
+    }
     PyErr_Clear();
     if (m->md_dict) {
+        _Py_IDENTIFIER(__getattr__);
+        getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
+        if (getattr) {
+            PyObject* stack[1] = {name};
+            return _PyObject_FastCall(getattr, stack, 1);
+        }
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
-        if (mod_name) {
-            PyErr_Format(PyExc_AttributeError,
-                        "module '%U' has no attribute '%U'", mod_name, name);
+        if (mod_name && PyUnicode_Check(mod_name)) {
+            _Py_IDENTIFIER(__spec__);
+            Py_INCREF(mod_name);
+            PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            Py_XINCREF(spec);
+            if (_PyModuleSpec_IsInitializing(spec)) {
+                PyErr_Format(PyExc_AttributeError,
+                             "partially initialized "
+                             "module '%U' has no attribute '%U' "
+                             "(most likely due to a circular import)",
+                             mod_name, name);
+            }
+            else {
+                PyErr_Format(PyExc_AttributeError,
+                             "module '%U' has no attribute '%U'",
+                             mod_name, name);
+            }
+            Py_XDECREF(spec);
+            Py_DECREF(mod_name);
             return NULL;
-        }
-        else if (PyErr_Occurred()) {
-            PyErr_Clear();
         }
     }
     PyErr_Format(PyExc_AttributeError,
@@ -709,12 +792,20 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__dir__);
     PyObject *result = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
-        if (PyDict_Check(dict))
-            result = PyDict_Keys(dict);
+        if (PyDict_Check(dict)) {
+            PyObject *dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
+            if (dirfunc) {
+                result = _PyObject_CallNoArg(dirfunc);
+            }
+            else if (!PyErr_Occurred()) {
+                result = PyDict_Keys(dict);
+            }
+        }
         else {
             const char *name = PyModule_GetName(self);
             if (name)
@@ -734,16 +825,10 @@ static PyMethodDef module_methods[] = {
     {0}
 };
 
-PyDoc_STRVAR(module_doc,
-"module(name[, doc])\n\
-\n\
-Create a module object.\n\
-The name must be a string; the optional doc argument can have any type.");
-
 PyTypeObject PyModule_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "module",                                   /* tp_name */
-    sizeof(PyModuleObject),                     /* tp_size */
+    sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
     0,                                          /* tp_print */
@@ -762,7 +847,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
-    module_doc,                                 /* tp_doc */
+    module___init____doc__,                     /* tp_doc */
     (traverseproc)module_traverse,              /* tp_traverse */
     (inquiry)module_clear,                      /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -777,7 +862,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     offsetof(PyModuleObject, md_dict),          /* tp_dictoffset */
-    (initproc)module_init,                      /* tp_init */
+    module___init__,                            /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */

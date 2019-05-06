@@ -412,6 +412,9 @@ Filter
 
       Address space of a memory block (``int`` or ``None``).
 
+      tracemalloc uses the domain ``0`` to trace memory allocations made by
+      Python. C extensions can use other domains to trace other resources.
+
    .. attribute:: inclusive
 
       If *inclusive* is ``True`` (include), only match memory blocks allocated
@@ -622,6 +625,16 @@ Trace
    The :attr:`Snapshot.traces` attribute is a sequence of :class:`Trace`
    instances.
 
+   .. versionchanged:: 3.6
+      Added the :attr:`domain` attribute.
+
+   .. attribute:: domain
+
+      Address space of a memory block (``int``). Read-only property.
+
+      tracemalloc uses the domain ``0`` to trace memory allocations made by
+      Python. C extensions can use other domains to trace other resources.
+
    .. attribute:: size
 
       Size of the memory block in bytes (``int``).
@@ -637,8 +650,8 @@ Traceback
 
 .. class:: Traceback
 
-   Sequence of :class:`Frame` instances sorted from the most recent frame to
-   the oldest frame.
+   Sequence of :class:`Frame` instances sorted from the oldest frame to the
+   most recent frame.
 
    A traceback contains at least ``1`` frame. If the ``tracemalloc`` module
    failed to get a frame, the filename ``"<unknown>"`` at line number ``0`` is
@@ -650,11 +663,17 @@ Traceback
    The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
    instance.
 
-   .. method:: format(limit=None)
+   .. versionchanged:: 3.7
+      Frames are now sorted from the oldest to the most recent, instead of most recent to oldest.
 
-      Format the traceback as a list of lines with newlines.  Use the
-      :mod:`linecache` module to retrieve lines from the source code.  If
-      *limit* is set, only format the *limit* most recent frames.
+   .. method:: format(limit=None, most_recent_first=False)
+
+      Format the traceback as a list of lines with newlines. Use the
+      :mod:`linecache` module to retrieve lines from the source code.
+      If *limit* is set, format the *limit* most recent frames if *limit*
+      is positive. Otherwise, format the ``abs(limit)`` oldest frames.
+      If *most_recent_first* is ``True``, the order of the formatted frames
+      is reversed, returning the most recent frame first instead of last.
 
       Similar to the :func:`traceback.format_tb` function, except that
       :meth:`.format` does not include newlines.

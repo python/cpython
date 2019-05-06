@@ -70,6 +70,255 @@ f'{a * x()}'"""
         # Make sure x was called.
         self.assertTrue(x.called)
 
+    def test_ast_line_numbers(self):
+        expr = """
+a = 10
+f'{a * x()}'"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `a = 10`
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 1)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.FormattedValue)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        # check the binop location
+        binop = t.body[1].value.values[0].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
+        self.assertEqual(binop.right.col_offset, 7)
+
+    def test_ast_line_numbers_multiple_formattedvalues(self):
+        expr = """
+f'no formatted values'
+f'eggs {a * x()} spam {b + y()}'"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `f'no formatted value'`
+        self.assertEqual(type(t.body[0]), ast.Expr)
+        self.assertEqual(type(t.body[0].value), ast.JoinedStr)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 4)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[0].value), str)
+        self.assertEqual(type(t.body[1].value.values[1]), ast.FormattedValue)
+        self.assertEqual(type(t.body[1].value.values[2]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[2].value), str)
+        self.assertEqual(type(t.body[1].value.values[3]), ast.FormattedValue)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        self.assertEqual(t.body[1].value.values[1].lineno, 3)
+        self.assertEqual(t.body[1].value.values[2].lineno, 3)
+        self.assertEqual(t.body[1].value.values[3].lineno, 3)
+        # check the first binop location
+        binop1 = t.body[1].value.values[1].value
+        self.assertEqual(type(binop1), ast.BinOp)
+        self.assertEqual(type(binop1.left), ast.Name)
+        self.assertEqual(type(binop1.op), ast.Mult)
+        self.assertEqual(type(binop1.right), ast.Call)
+        self.assertEqual(binop1.lineno, 3)
+        self.assertEqual(binop1.left.lineno, 3)
+        self.assertEqual(binop1.right.lineno, 3)
+        self.assertEqual(binop1.col_offset, 8)
+        self.assertEqual(binop1.left.col_offset, 8)
+        self.assertEqual(binop1.right.col_offset, 12)
+        # check the second binop location
+        binop2 = t.body[1].value.values[3].value
+        self.assertEqual(type(binop2), ast.BinOp)
+        self.assertEqual(type(binop2.left), ast.Name)
+        self.assertEqual(type(binop2.op), ast.Add)
+        self.assertEqual(type(binop2.right), ast.Call)
+        self.assertEqual(binop2.lineno, 3)
+        self.assertEqual(binop2.left.lineno, 3)
+        self.assertEqual(binop2.right.lineno, 3)
+        self.assertEqual(binop2.col_offset, 23)
+        self.assertEqual(binop2.left.col_offset, 23)
+        self.assertEqual(binop2.right.col_offset, 27)
+
+    def test_ast_line_numbers_nested(self):
+        expr = """
+a = 10
+f'{a * f"-{x()}-"}'"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `a = 10`
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 1)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.FormattedValue)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        # check the binop location
+        binop = t.body[1].value.values[0].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.JoinedStr)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
+        self.assertEqual(binop.right.col_offset, 7)
+        # check the nested call location
+        self.assertEqual(len(binop.right.values), 3)
+        self.assertEqual(type(binop.right.values[0]), ast.Constant)
+        self.assertEqual(type(binop.right.values[0].value), str)
+        self.assertEqual(type(binop.right.values[1]), ast.FormattedValue)
+        self.assertEqual(type(binop.right.values[2]), ast.Constant)
+        self.assertEqual(type(binop.right.values[2].value), str)
+        self.assertEqual(binop.right.values[0].lineno, 3)
+        self.assertEqual(binop.right.values[1].lineno, 3)
+        self.assertEqual(binop.right.values[2].lineno, 3)
+        call = binop.right.values[1].value
+        self.assertEqual(type(call), ast.Call)
+        self.assertEqual(call.lineno, 3)
+        self.assertEqual(call.col_offset, 11)
+
+    def test_ast_line_numbers_duplicate_expression(self):
+        """Duplicate expression
+
+        NOTE: this is currently broken, always sets location of the first
+        expression.
+        """
+        expr = """
+a = 10
+f'{a * x()} {a * x()} {a * x()}'
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `a = 10`
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 5)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.FormattedValue)
+        self.assertEqual(type(t.body[1].value.values[1]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[1].value), str)
+        self.assertEqual(type(t.body[1].value.values[2]), ast.FormattedValue)
+        self.assertEqual(type(t.body[1].value.values[3]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[3].value), str)
+        self.assertEqual(type(t.body[1].value.values[4]), ast.FormattedValue)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        self.assertEqual(t.body[1].value.values[1].lineno, 3)
+        self.assertEqual(t.body[1].value.values[2].lineno, 3)
+        self.assertEqual(t.body[1].value.values[3].lineno, 3)
+        self.assertEqual(t.body[1].value.values[4].lineno, 3)
+        # check the first binop location
+        binop = t.body[1].value.values[0].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
+        self.assertEqual(binop.right.col_offset, 7)
+        # check the second binop location
+        binop = t.body[1].value.values[2].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 3)  # FIXME: this is wrong
+        self.assertEqual(binop.left.col_offset, 3)  # FIXME: this is wrong
+        self.assertEqual(binop.right.col_offset, 7)  # FIXME: this is wrong
+        # check the third binop location
+        binop = t.body[1].value.values[4].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 3)  # FIXME: this is wrong
+        self.assertEqual(binop.left.col_offset, 3)  # FIXME: this is wrong
+        self.assertEqual(binop.right.col_offset, 7)  # FIXME: this is wrong
+
+    def test_ast_line_numbers_multiline_fstring(self):
+        # See bpo-30465 for details.
+        expr = """
+a = 10
+f'''
+  {a
+     *
+       x()}
+non-important content
+'''
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `a = 10`
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 3)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[0].value), str)
+        self.assertEqual(type(t.body[1].value.values[1]), ast.FormattedValue)
+        self.assertEqual(type(t.body[1].value.values[2]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[2].value), str)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        self.assertEqual(t.body[1].value.values[1].lineno, 3)
+        self.assertEqual(t.body[1].value.values[2].lineno, 3)
+        self.assertEqual(t.body[1].col_offset, 0)
+        self.assertEqual(t.body[1].value.col_offset, 0)
+        self.assertEqual(t.body[1].value.values[0].col_offset, 0)
+        self.assertEqual(t.body[1].value.values[1].col_offset, 0)
+        self.assertEqual(t.body[1].value.values[2].col_offset, 0)
+        # NOTE: the following lineno information and col_offset is correct for
+        # expressions within FormattedValues.
+        binop = t.body[1].value.values[1].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 4)
+        self.assertEqual(binop.left.lineno, 4)
+        self.assertEqual(binop.right.lineno, 6)
+        self.assertEqual(binop.col_offset, 4)
+        self.assertEqual(binop.left.col_offset, 4)
+        self.assertEqual(binop.right.col_offset, 7)
+
     def test_docstring(self):
         def f():
             f'''Not a docstring'''
@@ -113,9 +362,27 @@ f'{a * x()}'"""
                              ])
 
     def test_mismatched_parens(self):
-        self.assertAllRaise(SyntaxError, 'f-string: mismatched',
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\('",
                             ["f'{((}'",
                              ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\)' "
+                            r"does not match opening parenthesis '\['",
+                            ["f'{a[4)}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\]' "
+                            r"does not match opening parenthesis '\('",
+                            ["f'{a(4]}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\['",
+                            ["f'{a[4}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"f-string: closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\('",
+                            ["f'{a(4}'",
+                            ])
+        self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
 
     def test_double_braces(self):
         self.assertEqual(f'{{', '{')
@@ -193,7 +460,9 @@ f'{a * x()}'"""
                             ["f'{1#}'",   # error because the expression becomes "(1#)"
                              "f'{3(#)}'",
                              "f'{#}'",
-                             "f'{)#}'",   # When wrapped in parens, this becomes
+                             ])
+        self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
+                            ["f'{)#}'",   # When wrapped in parens, this becomes
                                           #  '()#)'.  Make sure that doesn't compile.
                              ])
 
@@ -280,6 +549,10 @@ f'{a * x()}'"""
                              "f'{10:{ }}'",
                              "f' { } '",
 
+                             # The Python parser ignores also the following
+                             # whitespace characters in additional to a space.
+                             "f'''{\t\f\r\n}'''",
+
                              # Catch the empty expression before the
                              #  invalid conversion.
                              "f'{!x}'",
@@ -300,6 +573,12 @@ f'{a * x()}'"""
                              "f'{:x'",
                              ])
 
+        # Different error message is raised for other whitespace characters.
+        self.assertAllRaise(SyntaxError, 'invalid character in identifier',
+                            ["f'''{\xa0}'''",
+                             "\xa0",
+                             ])
+
     def test_parens_in_expressions(self):
         self.assertEqual(f'{3,}', '(3,)')
 
@@ -312,7 +591,7 @@ f'{a * x()}'"""
                              "f'{,}'",  # this is (,), which is an error
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
                             ["f'{3)+(4}'",
                              ])
 
@@ -360,6 +639,20 @@ f'{a * x()}'"""
         self.assertEqual(f'2\x20', '2 ')
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
+
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
+            value = eval(r"f'\{6*7}'")
+        self.assertEqual(value, '\\42')
+        self.assertEqual(f'\\{6*7}', '\\42')
+        self.assertEqual(fr'\{6*7}', '\\42')
+
+        AMPERSAND = 'spam'
+        # Get the right unicode character (&), or pick up local variable
+        # depending on the number of backslashes.
+        self.assertEqual(f'\N{AMPERSAND}', '&')
+        self.assertEqual(f'\\N{AMPERSAND}', '\\Nspam')
+        self.assertEqual(fr'\N{AMPERSAND}', '\\Nspam')
+        self.assertEqual(f'\\\N{AMPERSAND}', '\\&')
 
     def test_misformed_unicode_character_name(self):
         # These test are needed because unicode names are parsed
@@ -724,12 +1017,6 @@ f'{a * x()}'"""
         self.assertEqual('{d[a]}'.format(d=d), 'string')
         self.assertEqual('{d[0]}'.format(d=d), 'integer')
 
-    def test_invalid_expressions(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
-                            [r"f'{a[4)}'",
-                             r"f'{a(4]}'",
-                            ])
-
     def test_errors(self):
         # see issue 26287
         self.assertAllRaise(TypeError, 'unsupported',
@@ -755,6 +1042,13 @@ f'{a * x()}'"""
 
         self.assertEqual(f'{d["foo"]}', 'bar')
         self.assertEqual(f"{d['foo']}", 'bar')
+
+    def test_backslash_char(self):
+        # Check eval of a backslash followed by a control char.
+        # See bpo-30682: this used to raise an assert in pydebug mode.
+        self.assertEqual(eval('f"\\\n"'), '')
+        self.assertEqual(eval('f"\\\r"'), '')
+
 
 if __name__ == '__main__':
     unittest.main()

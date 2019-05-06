@@ -2,110 +2,104 @@
 
 from test import support
 
-# If this fails, the test will be skipped.
-thread = support.import_module('_thread')
-
 import asynchat
 import asyncore
 import errno
 import socket
 import sys
+import _thread as thread
+import threading
 import time
 import unittest
 import unittest.mock
-try:
-    import threading
-except ImportError:
-    threading = None
 
 HOST = support.HOST
 SERVER_QUIT = b'QUIT\n'
 TIMEOUT = 3.0
 
-if threading:
-    class echo_server(threading.Thread):
-        # parameter to determine the number of bytes passed back to the
-        # client each send
-        chunk_size = 1
 
-        def __init__(self, event):
-            threading.Thread.__init__(self)
-            self.event = event
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.port = support.bind_port(self.sock)
-            # This will be set if the client wants us to wait before echoing
-            # data back.
-            self.start_resend_event = None
+class echo_server(threading.Thread):
+    # parameter to determine the number of bytes passed back to the
+    # client each send
+    chunk_size = 1
 
-        def run(self):
-            self.sock.listen()
-            self.event.set()
-            conn, client = self.sock.accept()
-            self.buffer = b""
-            # collect data until quit message is seen
-            while SERVER_QUIT not in self.buffer:
-                data = conn.recv(1)
-                if not data:
-                    break
-                self.buffer = self.buffer + data
+    def __init__(self, event):
+        threading.Thread.__init__(self)
+        self.event = event
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.port = support.bind_port(self.sock)
+        # This will be set if the client wants us to wait before echoing
+        # data back.
+        self.start_resend_event = None
 
-            # remove the SERVER_QUIT message
-            self.buffer = self.buffer.replace(SERVER_QUIT, b'')
+    def run(self):
+        self.sock.listen()
+        self.event.set()
+        conn, client = self.sock.accept()
+        self.buffer = b""
+        # collect data until quit message is seen
+        while SERVER_QUIT not in self.buffer:
+            data = conn.recv(1)
+            if not data:
+                break
+            self.buffer = self.buffer + data
 
-            if self.start_resend_event:
-                self.start_resend_event.wait()
+        # remove the SERVER_QUIT message
+        self.buffer = self.buffer.replace(SERVER_QUIT, b'')
 
-            # re-send entire set of collected data
-            try:
-                # this may fail on some tests, such as test_close_when_done,
-                # since the client closes the channel when it's done sending
-                while self.buffer:
-                    n = conn.send(self.buffer[:self.chunk_size])
-                    time.sleep(0.001)
-                    self.buffer = self.buffer[n:]
-            except:
+        if self.start_resend_event:
+            self.start_resend_event.wait()
+
+        # re-send entire set of collected data
+        try:
+            # this may fail on some tests, such as test_close_when_done,
+            # since the client closes the channel when it's done sending
+            while self.buffer:
+                n = conn.send(self.buffer[:self.chunk_size])
+                time.sleep(0.001)
+                self.buffer = self.buffer[n:]
+        except:
+            pass
+
+        conn.close()
+        self.sock.close()
+
+class echo_client(asynchat.async_chat):
+
+    def __init__(self, terminator, server_port):
+        asynchat.async_chat.__init__(self)
+        self.contents = []
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connect((HOST, server_port))
+        self.set_terminator(terminator)
+        self.buffer = b""
+
+        def handle_connect(self):
+            pass
+
+        if sys.platform == 'darwin':
+            # select.poll returns a select.POLLHUP at the end of the tests
+            # on darwin, so just ignore it
+            def handle_expt(self):
                 pass
 
-            conn.close()
-            self.sock.close()
+    def collect_incoming_data(self, data):
+        self.buffer += data
 
-    class echo_client(asynchat.async_chat):
+    def found_terminator(self):
+        self.contents.append(self.buffer)
+        self.buffer = b""
 
-        def __init__(self, terminator, server_port):
-            asynchat.async_chat.__init__(self)
-            self.contents = []
-            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.connect((HOST, server_port))
-            self.set_terminator(terminator)
-            self.buffer = b""
-
-            def handle_connect(self):
-                pass
-
-            if sys.platform == 'darwin':
-                # select.poll returns a select.POLLHUP at the end of the tests
-                # on darwin, so just ignore it
-                def handle_expt(self):
-                    pass
-
-        def collect_incoming_data(self, data):
-            self.buffer += data
-
-        def found_terminator(self):
-            self.contents.append(self.buffer)
-            self.buffer = b""
-
-    def start_echo_server():
-        event = threading.Event()
-        s = echo_server(event)
-        s.start()
-        event.wait()
-        event.clear()
-        time.sleep(0.01)   # Give server time to start accepting.
-        return s, event
+def start_echo_server():
+    event = threading.Event()
+    s = echo_server(event)
+    s.start()
+    event.wait()
+    event.clear()
+    time.sleep(0.01)   # Give server time to start accepting.
+    return s, event
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class TestAsynchat(unittest.TestCase):
     usepoll = False
 
@@ -129,9 +123,7 @@ class TestAsynchat(unittest.TestCase):
         c.push(b"I'm not dead yet!" + term)
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [b"hello world", b"I'm not dead yet!"])
 
@@ -162,9 +154,7 @@ class TestAsynchat(unittest.TestCase):
         c.push(data)
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [data[:termlen]])
 
@@ -184,9 +174,7 @@ class TestAsynchat(unittest.TestCase):
         c.push(data)
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [])
         self.assertEqual(c.buffer, data)
@@ -198,9 +186,7 @@ class TestAsynchat(unittest.TestCase):
         p = asynchat.simple_producer(data+SERVER_QUIT, buffer_size=8)
         c.push_with_producer(p)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [b"hello world", b"I'm not dead yet!"])
 
@@ -210,9 +196,7 @@ class TestAsynchat(unittest.TestCase):
         data = b"hello world\nI'm not dead yet!\n"
         c.push_with_producer(data+SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [b"hello world", b"I'm not dead yet!"])
 
@@ -223,9 +207,7 @@ class TestAsynchat(unittest.TestCase):
         c.push(b"hello world\n\nI'm not dead yet!\n")
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents,
                          [b"hello world", b"", b"I'm not dead yet!"])
@@ -244,9 +226,7 @@ class TestAsynchat(unittest.TestCase):
         # where the server echoes all of its data before we can check that it
         # got any down below.
         s.start_resend_event.set()
-        s.join(timeout=TIMEOUT)
-        if s.is_alive():
-            self.fail("join() timed out")
+        support.join_thread(s, timeout=TIMEOUT)
 
         self.assertEqual(c.contents, [])
         # the server might have been able to send a byte or two back, but this
@@ -267,7 +247,7 @@ class TestAsynchat(unittest.TestCase):
         self.assertRaises(TypeError, c.push, 'unicode')
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
-        s.join(timeout=TIMEOUT)
+        support.join_thread(s, timeout=TIMEOUT)
         self.assertEqual(c.contents, [b'bytes', b'bytes', b'bytes'])
 
 

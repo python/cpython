@@ -29,7 +29,7 @@ def py_make_scanner(context):
         try:
             nextchar = string[idx]
         except IndexError:
-            raise StopIteration(idx)
+            raise StopIteration(idx) from None
 
         if nextchar == '"':
             return parse_string(string, idx + 1, strict)
@@ -68,6 +68,6 @@ def py_make_scanner(context):
         finally:
             memo.clear()
 
-    return _scan_once
+    return scan_once
 
 make_scanner = c_make_scanner or py_make_scanner

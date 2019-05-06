@@ -24,6 +24,8 @@
 import unittest
 import sqlite3 as sqlite
 
+from test.support import TESTFN, unlink
+
 class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotString(self):
         con = sqlite.connect(":memory:")
@@ -175,9 +177,7 @@ class ProgressTests(unittest.TestCase):
         Test that returning a non-zero value stops the operation in progress.
         """
         con = sqlite.connect(":memory:")
-        progress_calls = []
         def progress():
-            progress_calls.append(None)
             return 1
         con.set_progress_handler(progress, 1)
         curs = con.cursor()
@@ -248,6 +248,24 @@ class TraceCallbackTests(unittest.TestCase):
                         "Unicode data %s garbled in trace callback: %s"
                         % (ascii(unicode_value), ', '.join(map(ascii, traced_statements))))
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 3, 9), "sqlite3_prepare_v2 is not available")
+    def CheckTraceCallbackContent(self):
+        # set_trace_callback() shouldn't produce duplicate content (bpo-26187)
+        traced_statements = []
+        def trace(statement):
+            traced_statements.append(statement)
+
+        queries = ["create table foo(x)",
+                   "insert into foo(x) values(1)"]
+        self.addCleanup(unlink, TESTFN)
+        con1 = sqlite.connect(TESTFN, isolation_level=None)
+        con2 = sqlite.connect(TESTFN)
+        con1.set_trace_callback(trace)
+        cur = con1.cursor()
+        cur.execute(queries[0])
+        con2.execute("create table bar(x)")
+        cur.execute(queries[1])
+        self.assertEqual(traced_statements, queries)
 
 
 def suite():

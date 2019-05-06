@@ -29,12 +29,12 @@ def escape(m):
         try:
             i = int(hexes, 16)
         except ValueError:
-            raise ValueError("invalid hex string escape ('\\%s')" % tail)
+            raise ValueError("invalid hex string escape ('\\%s')" % tail) from None
     else:
         try:
             i = int(tail, 8)
         except ValueError:
-            raise ValueError("invalid octal string escape ('\\%s')" % tail)
+            raise ValueError("invalid octal string escape ('\\%s')" % tail) from None
     return chr(i)
 
 def evalString(s):

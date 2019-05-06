@@ -8,7 +8,6 @@
           IconSourceFile="..\..\..\PC\icons\setup.ico"
           Manufacturer="!(loc.Manufacturer)"
           AboutUrl="http://www.python.org/"
-          DisableModify="button"
           Compressed="no"
           dep:ProviderKey="CPython-$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)">
     <BootstrapperApplication Id="PythonBA" SourceFile="$(var.BootstrapApp)">

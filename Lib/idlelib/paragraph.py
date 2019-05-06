@@ -1,4 +1,4 @@
-"""Extension to format a paragraph or selection to a max width.
+"""Format a paragraph, comment block, or selection to a max width.
 
 Does basic, standard text formatting, and also understands Python
 comment blocks. Thus, for editing Python source code, this
@@ -21,14 +21,13 @@ from idlelib.config import idleConf
 
 class FormatParagraph:
 
-    menudefs = [
-        ('format', [   # /s/edit/format   dscherer@cmu.edu
-            ('Format Paragraph', '<<format-paragraph>>'),
-         ])
-    ]
-
     def __init__(self, editwin):
         self.editwin = editwin
+
+    @classmethod
+    def reload(cls):
+        cls.max_width = idleConf.GetOption('extensions', 'FormatParagraph',
+                                           'max-width', type='int', default=72)
 
     def close(self):
         self.editwin = None
@@ -45,11 +44,7 @@ class FormatParagraph:
 
         The length limit parameter is for testing with a known value.
         """
-        if limit is None:
-            # The default length limit is that defined by pep8
-            limit = idleConf.GetOption(
-                'extensions', 'FormatParagraph', 'max-width',
-                type='int', default=72)
+        limit = self.max_width if limit is None else limit
         text = self.editwin.text
         first, last = self.editwin.get_selection_indices()
         if first and last:
@@ -74,6 +69,9 @@ class FormatParagraph:
             text.mark_set("insert", last)
         text.see("insert")
         return "break"
+
+
+FormatParagraph.reload()
 
 def find_paragraph(text, mark):
     """Returns the start/stop indices enclosing the paragraph that mark is in.
@@ -160,7 +158,7 @@ def reformat_comment(data, limit, comment_header):
     newdata = reformat_paragraph(data, format_width)
     # re-split and re-insert the comment header.
     newdata = newdata.split("\n")
-    # If the block ends in a \n, we dont want the comment prefix
+    # If the block ends in a \n, we don't want the comment prefix
     # inserted after it. (Im not sure it makes sense to reformat a
     # comment block that is not made of complete lines, but whatever!)
     # Can't think of a clean solution, so we hack away
@@ -192,6 +190,5 @@ def get_comment_header(line):
 
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_paragraph',
-            verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_paragraph', verbosity=2, exit=False)

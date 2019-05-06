@@ -118,7 +118,11 @@ def check(file):
     if verbose:
         print("checking", file, "...", end=' ')
     with open(file, 'rb') as f:
-        encoding, _ = tokenize.detect_encoding(f.readline)
+        try:
+            encoding, _ = tokenize.detect_encoding(f.readline)
+        except SyntaxError as se:
+            errprint("%s: SyntaxError: %s" % (file, str(se)))
+            return
     try:
         with open(file, encoding=encoding) as f:
             r = Reindenter(f)

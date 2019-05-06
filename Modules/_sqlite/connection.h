@@ -23,6 +23,7 @@
 
 #ifndef PYSQLITE_CONNECTION_H
 #define PYSQLITE_CONNECTION_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pythread.h"
 #include "structmember.h"
@@ -61,7 +62,7 @@ typedef struct
     int initialized;
 
     /* thread identification of the thread the connection was created in */
-    long thread_ident;
+    unsigned long thread_ident;
 
     pysqlite_Cache* statement_cache;
 

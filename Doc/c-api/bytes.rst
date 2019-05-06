@@ -72,34 +72,34 @@ called with a non-bytes parameter.
    | :attr:`%c`        | int           | A single byte,                 |
    |                   |               | represented as a C int.        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%d`        | int           | Exactly equivalent to          |
-   |                   |               | ``printf("%d")``.              |
+   | :attr:`%d`        | int           | Equivalent to                  |
+   |                   |               | ``printf("%d")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%u`        | unsigned int  | Exactly equivalent to          |
-   |                   |               | ``printf("%u")``.              |
+   | :attr:`%u`        | unsigned int  | Equivalent to                  |
+   |                   |               | ``printf("%u")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%ld`       | long          | Exactly equivalent to          |
-   |                   |               | ``printf("%ld")``.             |
+   | :attr:`%ld`       | long          | Equivalent to                  |
+   |                   |               | ``printf("%ld")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%lu`       | unsigned long | Exactly equivalent to          |
-   |                   |               | ``printf("%lu")``.             |
+   | :attr:`%lu`       | unsigned long | Equivalent to                  |
+   |                   |               | ``printf("%lu")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%zd`       | Py_ssize_t    | Exactly equivalent to          |
-   |                   |               | ``printf("%zd")``.             |
+   | :attr:`%zd`       | Py_ssize_t    | Equivalent to                  |
+   |                   |               | ``printf("%zd")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%zu`       | size_t        | Exactly equivalent to          |
-   |                   |               | ``printf("%zu")``.             |
+   | :attr:`%zu`       | size_t        | Equivalent to                  |
+   |                   |               | ``printf("%zu")``. [1]_        |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%i`        | int           | Exactly equivalent to          |
-   |                   |               | ``printf("%i")``.              |
+   | :attr:`%i`        | int           | Equivalent to                  |
+   |                   |               | ``printf("%i")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%x`        | int           | Exactly equivalent to          |
-   |                   |               | ``printf("%x")``.              |
+   | :attr:`%x`        | int           | Equivalent to                  |
+   |                   |               | ``printf("%x")``. [1]_         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%s`        | char\*        | A null-terminated C character  |
+   | :attr:`%s`        | const char\*  | A null-terminated C character  |
    |                   |               | array.                         |
    +-------------------+---------------+--------------------------------+
-   | :attr:`%p`        | void\*        | The hex representation of a C  |
+   | :attr:`%p`        | const void\*  | The hex representation of a C  |
    |                   |               | pointer. Mostly equivalent to  |
    |                   |               | ``printf("%p")`` except that   |
    |                   |               | it is guaranteed to start with |
@@ -110,6 +110,9 @@ called with a non-bytes parameter.
 
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result object, and any extra arguments discarded.
+
+   .. [1] For integer specifiers (d, u, ld, lu, zd, zu, i, x): the 0-conversion
+      flag has effect even when a precision is given.
 
 
 .. c:function:: PyObject* PyBytes_FromFormatV(const char *format, va_list vargs)

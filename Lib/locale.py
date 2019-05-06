@@ -14,7 +14,7 @@ import sys
 import encodings
 import encodings.aliases
 import re
-import collections
+import _collections_abc
 from builtins import str as _builtin_str
 import functools
 
@@ -180,19 +180,6 @@ def _strip_padding(s, amount):
 _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
                          r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
 
-def format(percent, value, grouping=False, monetary=False, *additional):
-    """Returns the locale-aware substitution of a %? specifier
-    (percent).
-
-    additional is for format strings which contain one or more
-    '*' modifiers."""
-    # this is only for one-percent-specifier strings and this should be checked
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
-
 def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
         formatted = percent % ((value,) + additional)
@@ -217,20 +204,23 @@ def _format(percent, value, grouping=False, monetary=False, *additional):
             formatted = _strip_padding(formatted, seps)
     return formatted
 
-def format_string(f, val, grouping=False):
+def format_string(f, val, grouping=False, monetary=False):
     """Formats a string in the same way that the % formatting would use,
     but takes the current locale into account.
-    Grouping is applied if the third parameter is true."""
+
+    Grouping is applied if the third parameter is true.
+    Conversion uses monetary thousands separator and grouping strings if
+    forth parameter monetary is true."""
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
-    if isinstance(val, collections.Mapping):
+    if isinstance(val, _collections_abc.Mapping):
         new_val = []
         for perc in percents:
             if perc.group()[-1]=='%':
                 new_val.append('%')
             else:
-                new_val.append(format(perc.group(), val, grouping))
+                new_val.append(_format(perc.group(), val, grouping, monetary))
     else:
         if not isinstance(val, tuple):
             val = (val,)
@@ -244,12 +234,27 @@ def format_string(f, val, grouping=False):
                 new_val.append(_format(perc.group(),
                                       val[i],
                                       grouping,
-                                      False,
+                                      monetary,
                                       *val[i+1:i+1+starcount]))
                 i += (1 + starcount)
     val = tuple(new_val)
 
     return new_f % val
+
+def format(percent, value, grouping=False, monetary=False, *additional):
+    """Deprecated, use format_string instead."""
+    import warnings
+    warnings.warn(
+        "This method will be removed in a future version of Python. "
+        "Use 'locale.format_string()' instead.",
+        DeprecationWarning, stacklevel=2
+    )
+
+    match = _percent_re.match(percent)
+    if not match or len(match.group())!= len(percent):
+        raise ValueError(("format() must be given exactly one %%char "
+                         "format specifier, %s not valid") % repr(percent))
+    return _format(percent, value, grouping, monetary, *additional)
 
 def currency(val, symbol=True, grouping=False, international=False):
     """Formats val according to the currency settings
@@ -262,7 +267,7 @@ def currency(val, symbol=True, grouping=False, international=False):
         raise ValueError("Currency formatting is not possible using "
                          "the 'C' locale.")
 
-    s = format('%%.%if' % digits, abs(val), grouping, monetary=True)
+    s = _format('%%.%if' % digits, abs(val), grouping, monetary=True)
     # '<' and '>' are markers if the sign must be inserted between symbol and value
     s = '<' + s + '>'
 
@@ -298,7 +303,7 @@ def currency(val, symbol=True, grouping=False, international=False):
 
 def str(val):
     """Convert float to string, taking the locale into account."""
-    return format("%.12g", val)
+    return _format("%.12g", val)
 
 def delocalize(string):
     "Parses a string as a normalized number according to the locale settings."
@@ -327,7 +332,7 @@ def atoi(string):
 def _test():
     setlocale(LC_ALL, "")
     #do grouping
-    s1 = format("%d", 123456789,1)
+    s1 = format_string("%d", 123456789,1)
     print(s1, "is", atoi(s1))
     #standard formatting
     s1 = str(3.14)
@@ -507,7 +512,8 @@ def _build_localename(localetuple):
         else:
             return language + '.' + encoding
     except (TypeError, ValueError):
-        raise TypeError('Locale must be None, a string, or an iterable of two strings -- language code, encoding.')
+        raise TypeError('Locale must be None, a string, or an iterable of '
+                        'two strings -- language code, encoding.') from None
 
 def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
 
@@ -611,6 +617,8 @@ if sys.platform.startswith("win"):
     # On Win32, this will return the ANSI code page
     def getpreferredencoding(do_setlocale = True):
         """Return the charset that the user is likely using."""
+        if sys.flags.utf8_mode:
+            return 'UTF-8'
         import _bootlocale
         return _bootlocale.getpreferredencoding(False)
 else:
@@ -628,6 +636,8 @@ else:
             def getpreferredencoding(do_setlocale = True):
                 """Return the charset that the user is likely using,
                 by looking at environment variables."""
+                if sys.flags.utf8_mode:
+                    return 'UTF-8'
                 res = getdefaultlocale()[1]
                 if res is None:
                     # LANG not set, default conservatively to ASCII
@@ -637,6 +647,8 @@ else:
         def getpreferredencoding(do_setlocale = True):
             """Return the charset that the user is likely using,
             according to the system configuration."""
+            if sys.flags.utf8_mode:
+                return 'UTF-8'
             import _bootlocale
             if do_setlocale:
                 oldloc = setlocale(LC_CTYPE)
@@ -835,46 +847,15 @@ for k, v in sorted(locale_encoding_alias.items()):
 # SS 2014-10-01:
 # Updated alias mapping with glibc 2.19 supported locales.
 #
-# BP 2017-03-02
-# Updated alias mapping with glibc 2.24 supported locales. Prefer glibc locale
-# aliases to X11 ones.
+# SS 2018-05-05:
+# Updated alias mapping with glibc 2.27 supported locales.
 #
-#    updated 'az_az' -> 'az_AZ.ISO8859-9E' to 'az_AZ.UTF-8'
-#    updated 'ca_ad' -> 'ca_AD.ISO8859-1' to 'ca_AD.ISO8859-15'
-#    updated 'ca_fr' -> 'ca_FR.ISO8859-1' to 'ca_FR.ISO8859-15'
-#    updated 'ca_it' -> 'ca_IT.ISO8859-1' to 'ca_IT.ISO8859-15'
-#    updated 'cy_gb' -> 'cy_GB.ISO8859-1' to 'cy_GB.ISO8859-14'
-#    updated 'en_in' -> 'en_IN.ISO8859-1' to 'en_IN.UTF-8'
-#    updated 'eo' -> 'eo_XX.ISO8859-3' to 'eo.UTF-8'
-#    updated 'et_ee' -> 'et_EE.ISO8859-15' to 'et_EE.ISO8859-1'
-#    updated 'fi_fi' -> 'fi_FI.ISO8859-15' to 'fi_FI.ISO8859-1'
-#    updated 'gd_gb' -> 'gd_GB.ISO8859-1' to 'gd_GB.ISO8859-15'
-#    updated 'hi_in' -> 'hi_IN.ISCII-DEV' to 'hi_IN.UTF-8'
-#    updated 'iu_ca' -> 'iu_CA.NUNACOM-8' to 'iu_CA.UTF-8'
-#    updated 'ka_ge' -> 'ka_GE.GEORGIAN-ACADEMY' to 'ka_GE.GEORGIAN_PS'
-#    updated 'lo_la' -> 'lo_LA.MULELAO-1' to 'lo_LA.UTF-8'
-#    updated 'mi_nz' -> 'mi_NZ.ISO8859-1' to 'mi_NZ.ISO8859-13'
-#    updated 'nr_za' -> 'nr_ZA.ISO8859-1' to 'nr_ZA.UTF-8'
-#    updated 'nso_za' -> 'nso_ZA.ISO8859-15' to 'nso_ZA.UTF-8'
-#    updated 'ru_ru' -> 'ru_RU.UTF-8' to 'ru_RU.ISO8859-5'
+# These are the differences compared to the old mapping (Python 3.6.5
+# and older):
+#
+#    updated 'ca_es@valencia' -> 'ca_ES.ISO8859-15@valencia' to 'ca_ES.UTF-8@valencia'
+#    updated 'kk_kz' -> 'kk_KZ.RK1048' to 'kk_KZ.ptcp154'
 #    updated 'russian' -> 'ru_RU.ISO8859-5' to 'ru_RU.KOI8-R'
-#    updated 'rw_rw' -> 'rw_RW.ISO8859-1' to 'rw_RW.UTF-8'
-#    updated 'sq_al' -> 'sq_AL.ISO8859-2' to 'sq_AL.ISO8859-1'
-#    updated 'ss_za' -> 'ss_ZA.ISO8859-1' to 'ss_ZA.UTF-8'
-#    updated 'ta_in' -> 'ta_IN.TSCII-0' to 'ta_IN.UTF-8'
-#    updated 'tg_tj' -> 'tg_TJ.KOI8-C' to 'tg_TJ.KOI8-T'
-#    updated 'th_th' -> 'th_TH.ISO8859-11' to 'th_TH.TIS_620'
-#    updated 'tn_za' -> 'tn_ZA.ISO8859-15' to 'tn_ZA.UTF-8'
-#    updated 'ts_za' -> 'ts_ZA.ISO8859-1' to 'ts_ZA.UTF-8'
-#    updated 'tt_ru' -> 'tt_RU.TATAR-CYR' to 'tt_RU.UTF-8'
-#    updated 'ur_pk' -> 'ur_PK.CP1256' to 'ur_PK.UTF-8'
-#    updated 'uz_uz' -> 'uz_UZ.UTF-8' to 'uz_UZ.ISO8859-1'
-#    updated 'uz_uz@cyrillic' -> 'uz_UZ.UTF-8' to 'uz_UZ.UTF-8@cyrillic'
-#    updated 'vi_vn' -> 'vi_VN.TCVN' to 'vi_VN.UTF-8'
-#    updated 'zh_cn' -> 'zh_CN.gb2312' to 'zh_CN.GB2312'
-#    updated 'zh_tw' -> 'zh_TW.big5' to 'zh_TW.BIG5'
-#    updated 'zh_tw.euctw' -> 'zh_TW.eucTW' to 'zh_TW.EUC_TW'
-#
 
 locale_alias = {
     'a3':                                   'az_AZ.KOI8-C',
@@ -885,6 +866,7 @@ locale_alias = {
     'aa_et':                                'aa_ET.UTF-8',
     'af':                                   'af_ZA.ISO8859-1',
     'af_za':                                'af_ZA.ISO8859-1',
+    'agr_pe':                               'agr_PE.UTF-8',
     'ak_gh':                                'ak_GH.UTF-8',
     'am':                                   'am_ET.UTF-8',
     'am_et':                                'am_ET.UTF-8',
@@ -918,8 +900,9 @@ locale_alias = {
     'ast_es':                               'ast_ES.ISO8859-15',
     'ayc_pe':                               'ayc_PE.UTF-8',
     'az':                                   'az_AZ.ISO8859-9E',
-    'az_az':                                'az_AZ.UTF-8',
+    'az_az':                                'az_AZ.ISO8859-9E',
     'az_az.iso88599e':                      'az_AZ.ISO8859-9E',
+    'az_ir':                                'az_IR.UTF-8',
     'be':                                   'be_BY.CP1251',
     'be@latin':                             'be_BY.UTF-8@latin',
     'be_bg.utf8':                           'bg_BG.UTF-8',
@@ -932,13 +915,14 @@ locale_alias = {
     'bg_bg':                                'bg_BG.CP1251',
     'bhb_in.utf8':                          'bhb_IN.UTF-8',
     'bho_in':                               'bho_IN.UTF-8',
+    'bho_np':                               'bho_NP.UTF-8',
+    'bi_vu':                                'bi_VU.UTF-8',
     'bn_bd':                                'bn_BD.UTF-8',
     'bn_in':                                'bn_IN.UTF-8',
     'bo_cn':                                'bo_CN.UTF-8',
     'bo_in':                                'bo_IN.UTF-8',
     'bokmal':                               'nb_NO.ISO8859-1',
     'bokm\xe5l':                            'nb_NO.ISO8859-1',
-    'bokm\xef\xbf\xbd':                     'nb_NO.ISO8859-1',
     'br':                                   'br_FR.ISO8859-1',
     'br_fr':                                'br_FR.ISO8859-1',
     'brx_in':                               'brx_IN.UTF-8',
@@ -955,11 +939,11 @@ locale_alias = {
     'c_c':                                  'C',
     'c_c.c':                                'C',
     'ca':                                   'ca_ES.ISO8859-1',
-    'ca_ad':                                'ca_AD.ISO8859-15',
+    'ca_ad':                                'ca_AD.ISO8859-1',
     'ca_es':                                'ca_ES.ISO8859-1',
-    'ca_es@valencia':                       'ca_ES.ISO8859-15@valencia',
-    'ca_fr':                                'ca_FR.ISO8859-15',
-    'ca_it':                                'ca_IT.ISO8859-15',
+    'ca_es@valencia':                       'ca_ES.UTF-8@valencia',
+    'ca_fr':                                'ca_FR.ISO8859-1',
+    'ca_it':                                'ca_IT.ISO8859-1',
     'catalan':                              'ca_ES.ISO8859-1',
     'ce_ru':                                'ce_RU.UTF-8',
     'cextend':                              'en_US.ISO8859-1',
@@ -976,7 +960,7 @@ locale_alias = {
     'csb_pl':                               'csb_PL.UTF-8',
     'cv_ru':                                'cv_RU.UTF-8',
     'cy':                                   'cy_GB.ISO8859-1',
-    'cy_gb':                                'cy_GB.ISO8859-14',
+    'cy_gb':                                'cy_GB.ISO8859-1',
     'cz':                                   'cs_CZ.ISO8859-2',
     'cz_cz':                                'cs_CZ.ISO8859-2',
     'czech':                                'cs_CZ.ISO8859-2',
@@ -1017,10 +1001,11 @@ locale_alias = {
     'en_hk':                                'en_HK.ISO8859-1',
     'en_ie':                                'en_IE.ISO8859-1',
     'en_il':                                'en_IL.UTF-8',
-    'en_in':                                'en_IN.UTF-8',
+    'en_in':                                'en_IN.ISO8859-1',
     'en_ng':                                'en_NG.UTF-8',
     'en_nz':                                'en_NZ.ISO8859-1',
     'en_ph':                                'en_PH.ISO8859-1',
+    'en_sc.utf8':                           'en_SC.UTF-8',
     'en_sg':                                'en_SG.ISO8859-1',
     'en_uk':                                'en_GB.ISO8859-1',
     'en_us':                                'en_US.ISO8859-1',
@@ -1028,6 +1013,7 @@ locale_alias = {
     'en_za':                                'en_ZA.ISO8859-1',
     'en_zm':                                'en_ZM.UTF-8',
     'en_zw':                                'en_ZW.ISO8859-1',
+    'en_zw.utf8':                           'en_ZS.UTF-8',
     'eng_gb':                               'en_GB.ISO8859-1',
     'english':                              'en_EN.ISO8859-1',
     'english.iso88591':                     'en_US.ISO8859-1',
@@ -1035,7 +1021,8 @@ locale_alias = {
     'english_united-states':                'en_US.ISO8859-1',
     'english_united-states.437':            'C',
     'english_us':                           'en_US.ISO8859-1',
-    'eo':                                   'eo.UTF-8',
+    'eo':                                   'eo_XX.ISO8859-3',
+    'eo.utf8':                              'eo.UTF-8',
     'eo_eo':                                'eo_EO.ISO8859-3',
     'eo_us.utf8':                           'eo_US.UTF-8',
     'eo_xx':                                'eo_XX.ISO8859-3',
@@ -1063,7 +1050,7 @@ locale_alias = {
     'es_ve':                                'es_VE.ISO8859-1',
     'estonian':                             'et_EE.ISO8859-1',
     'et':                                   'et_EE.ISO8859-15',
-    'et_ee':                                'et_EE.ISO8859-1',
+    'et_ee':                                'et_EE.ISO8859-15',
     'eu':                                   'eu_ES.ISO8859-1',
     'eu_es':                                'eu_ES.ISO8859-1',
     'eu_fr':                                'eu_FR.ISO8859-1',
@@ -1072,7 +1059,7 @@ locale_alias = {
     'fa_ir.isiri3342':                      'fa_IR.ISIRI-3342',
     'ff_sn':                                'ff_SN.UTF-8',
     'fi':                                   'fi_FI.ISO8859-15',
-    'fi_fi':                                'fi_FI.ISO8859-1',
+    'fi_fi':                                'fi_FI.ISO8859-15',
     'fil_ph':                               'fil_PH.UTF-8',
     'finnish':                              'fi_FI.ISO8859-1',
     'fo':                                   'fo_FO.ISO8859-1',
@@ -1084,7 +1071,6 @@ locale_alias = {
     'fr_fr':                                'fr_FR.ISO8859-1',
     'fr_lu':                                'fr_LU.ISO8859-1',
     'fran\xe7ais':                          'fr_FR.ISO8859-1',
-    'fran\xef\xbf\xbdis':                   'fr_FR.ISO8859-1',
     'fre_fr':                               'fr_FR.ISO8859-1',
     'french':                               'fr_FR.ISO8859-1',
     'french.iso88591':                      'fr_CH.ISO8859-1',
@@ -1097,7 +1083,7 @@ locale_alias = {
     'galego':                               'gl_ES.ISO8859-1',
     'galician':                             'gl_ES.ISO8859-1',
     'gd':                                   'gd_GB.ISO8859-1',
-    'gd_gb':                                'gd_GB.ISO8859-15',
+    'gd_gb':                                'gd_GB.ISO8859-1',
     'ger_de':                               'de_DE.ISO8859-1',
     'german':                               'de_DE.ISO8859-1',
     'german.iso88591':                      'de_CH.ISO8859-1',
@@ -1116,8 +1102,9 @@ locale_alias = {
     'he_il':                                'he_IL.ISO8859-8',
     'hebrew':                               'he_IL.ISO8859-8',
     'hi':                                   'hi_IN.ISCII-DEV',
-    'hi_in':                                'hi_IN.UTF-8',
+    'hi_in':                                'hi_IN.ISCII-DEV',
     'hi_in.isciidev':                       'hi_IN.ISCII-DEV',
+    'hif_fj':                               'hif_FJ.UTF-8',
     'hne':                                  'hne_IN.UTF-8',
     'hne_in':                               'hne_IN.UTF-8',
     'hr':                                   'hr_HR.ISO8859-2',
@@ -1152,7 +1139,7 @@ locale_alias = {
     'it_it':                                'it_IT.ISO8859-1',
     'italian':                              'it_IT.ISO8859-1',
     'iu':                                   'iu_CA.NUNACOM-8',
-    'iu_ca':                                'iu_CA.UTF-8',
+    'iu_ca':                                'iu_CA.NUNACOM-8',
     'iu_ca.nunacom8':                       'iu_CA.NUNACOM-8',
     'iw':                                   'he_IL.ISO8859-8',
     'iw_il':                                'he_IL.ISO8859-8',
@@ -1168,11 +1155,12 @@ locale_alias = {
     'japanese.euc':                         'ja_JP.eucJP',
     'jp_jp':                                'ja_JP.eucJP',
     'ka':                                   'ka_GE.GEORGIAN-ACADEMY',
-    'ka_ge':                                'ka_GE.GEORGIAN_PS',
+    'ka_ge':                                'ka_GE.GEORGIAN-ACADEMY',
     'ka_ge.georgianacademy':                'ka_GE.GEORGIAN-ACADEMY',
     'ka_ge.georgianps':                     'ka_GE.GEORGIAN-PS',
     'ka_ge.georgianrs':                     'ka_GE.GEORGIAN-ACADEMY',
-    'kk_kz':                                'kk_KZ.RK1048',
+    'kab_dz':                               'kab_DZ.UTF-8',
+    'kk_kz':                                'kk_KZ.ptcp154',
     'kl':                                   'kl_GL.ISO8859-1',
     'kl_gl':                                'kl_GL.ISO8859-1',
     'km_kh':                                'km_KH.UTF-8',
@@ -1200,7 +1188,7 @@ locale_alias = {
     'lithuanian':                           'lt_LT.ISO8859-13',
     'ln_cd':                                'ln_CD.UTF-8',
     'lo':                                   'lo_LA.MULELAO-1',
-    'lo_la':                                'lo_LA.UTF-8',
+    'lo_la':                                'lo_LA.MULELAO-1',
     'lo_la.cp1133':                         'lo_LA.IBM-CP1133',
     'lo_la.ibmcp1133':                      'lo_LA.IBM-CP1133',
     'lo_la.mulelao1':                       'lo_LA.MULELAO-1',
@@ -1212,10 +1200,14 @@ locale_alias = {
     'mag_in':                               'mag_IN.UTF-8',
     'mai':                                  'mai_IN.UTF-8',
     'mai_in':                               'mai_IN.UTF-8',
+    'mai_np':                               'mai_NP.UTF-8',
+    'mfe_mu':                               'mfe_MU.UTF-8',
     'mg_mg':                                'mg_MG.ISO8859-15',
     'mhr_ru':                               'mhr_RU.UTF-8',
     'mi':                                   'mi_NZ.ISO8859-1',
-    'mi_nz':                                'mi_NZ.ISO8859-13',
+    'mi_nz':                                'mi_NZ.ISO8859-1',
+    'miq_ni':                               'miq_NI.UTF-8',
+    'mjw_in':                               'mjw_IN.UTF-8',
     'mk':                                   'mk_MK.ISO8859-5',
     'mk_mk':                                'mk_MK.ISO8859-5',
     'ml':                                   'ml_IN.UTF-8',
@@ -1251,9 +1243,9 @@ locale_alias = {
     'no_no.iso88591@nynorsk':               'no_NO.ISO8859-1',
     'norwegian':                            'no_NO.ISO8859-1',
     'nr':                                   'nr_ZA.ISO8859-1',
-    'nr_za':                                'nr_ZA.UTF-8',
+    'nr_za':                                'nr_ZA.ISO8859-1',
     'nso':                                  'nso_ZA.ISO8859-15',
-    'nso_za':                               'nso_ZA.UTF-8',
+    'nso_za':                               'nso_ZA.ISO8859-15',
     'ny':                                   'ny_NO.ISO8859-1',
     'ny_no':                                'ny_NO.ISO8859-1',
     'nynorsk':                              'nn_NO.ISO8859-1',
@@ -1294,12 +1286,12 @@ locale_alias = {
     'ro_ro':                                'ro_RO.ISO8859-2',
     'romanian':                             'ro_RO.ISO8859-2',
     'ru':                                   'ru_RU.UTF-8',
-    'ru_ru':                                'ru_RU.ISO8859-5',
+    'ru_ru':                                'ru_RU.UTF-8',
     'ru_ua':                                'ru_UA.KOI8-U',
     'rumanian':                             'ro_RO.ISO8859-2',
     'russian':                              'ru_RU.KOI8-R',
     'rw':                                   'rw_RW.ISO8859-1',
-    'rw_rw':                                'rw_RW.UTF-8',
+    'rw_rw':                                'rw_RW.ISO8859-1',
     'sa_in':                                'sa_IN.UTF-8',
     'sat_in':                               'sat_IN.UTF-8',
     'sc_it':                                'sc_IT.UTF-8',
@@ -1316,6 +1308,7 @@ locale_alias = {
     'sh_hr.iso88592':                       'hr_HR.ISO8859-2',
     'sh_sp':                                'sr_CS.ISO8859-2',
     'sh_yu':                                'sr_RS.UTF-8@latin',
+    'shn_mm':                               'shn_MM.UTF-8',
     'shs_ca':                               'shs_CA.UTF-8',
     'si':                                   'si_LK.UTF-8',
     'si_lk':                                'si_LK.UTF-8',
@@ -1329,6 +1322,7 @@ locale_alias = {
     'slovak':                               'sk_SK.ISO8859-2',
     'slovene':                              'sl_SI.ISO8859-2',
     'slovenian':                            'sl_SI.ISO8859-2',
+    'sm_ws':                                'sm_WS.UTF-8',
     'so_dj':                                'so_DJ.ISO8859-1',
     'so_et':                                'so_ET.UTF-8',
     'so_ke':                                'so_KE.ISO8859-1',
@@ -1338,7 +1332,7 @@ locale_alias = {
     'spanish':                              'es_ES.ISO8859-1',
     'spanish_spain':                        'es_ES.ISO8859-1',
     'sq':                                   'sq_AL.ISO8859-2',
-    'sq_al':                                'sq_AL.ISO8859-1',
+    'sq_al':                                'sq_AL.ISO8859-2',
     'sq_mk':                                'sq_MK.UTF-8',
     'sr':                                   'sr_RS.UTF-8',
     'sr@cyrillic':                          'sr_RS.UTF-8',
@@ -1360,7 +1354,7 @@ locale_alias = {
     'sr_yu.utf8@cyrillic':                  'sr_RS.UTF-8',
     'sr_yu@cyrillic':                       'sr_RS.UTF-8',
     'ss':                                   'ss_ZA.ISO8859-1',
-    'ss_za':                                'ss_ZA.UTF-8',
+    'ss_za':                                'ss_ZA.ISO8859-1',
     'st':                                   'st_ZA.ISO8859-1',
     'st_za':                                'st_ZA.ISO8859-1',
     'sv':                                   'sv_SE.ISO8859-1',
@@ -1371,7 +1365,7 @@ locale_alias = {
     'swedish':                              'sv_SE.ISO8859-1',
     'szl_pl':                               'szl_PL.UTF-8',
     'ta':                                   'ta_IN.TSCII-0',
-    'ta_in':                                'ta_IN.UTF-8',
+    'ta_in':                                'ta_IN.TSCII-0',
     'ta_in.tscii':                          'ta_IN.TSCII-0',
     'ta_in.tscii0':                         'ta_IN.TSCII-0',
     'ta_lk':                                'ta_LK.UTF-8',
@@ -1379,9 +1373,9 @@ locale_alias = {
     'te':                                   'te_IN.UTF-8',
     'te_in':                                'te_IN.UTF-8',
     'tg':                                   'tg_TJ.KOI8-C',
-    'tg_tj':                                'tg_TJ.KOI8-T',
+    'tg_tj':                                'tg_TJ.KOI8-C',
     'th':                                   'th_TH.ISO8859-11',
-    'th_th':                                'th_TH.TIS_620',
+    'th_th':                                'th_TH.ISO8859-11',
     'th_th.tactis':                         'th_TH.TIS620',
     'th_th.tis620':                         'th_TH.TIS620',
     'thai':                                 'th_TH.ISO8859-11',
@@ -1393,34 +1387,36 @@ locale_alias = {
     'tl':                                   'tl_PH.ISO8859-1',
     'tl_ph':                                'tl_PH.ISO8859-1',
     'tn':                                   'tn_ZA.ISO8859-15',
-    'tn_za':                                'tn_ZA.UTF-8',
+    'tn_za':                                'tn_ZA.ISO8859-15',
+    'to_to':                                'to_TO.UTF-8',
+    'tpi_pg':                               'tpi_PG.UTF-8',
     'tr':                                   'tr_TR.ISO8859-9',
     'tr_cy':                                'tr_CY.ISO8859-9',
     'tr_tr':                                'tr_TR.ISO8859-9',
     'ts':                                   'ts_ZA.ISO8859-1',
-    'ts_za':                                'ts_ZA.UTF-8',
+    'ts_za':                                'ts_ZA.ISO8859-1',
     'tt':                                   'tt_RU.TATAR-CYR',
-    'tt_ru':                                'tt_RU.UTF-8',
+    'tt_ru':                                'tt_RU.TATAR-CYR',
     'tt_ru.tatarcyr':                       'tt_RU.TATAR-CYR',
+    'tt_ru@iqtelif':                        'tt_RU.UTF-8@iqtelif',
     'turkish':                              'tr_TR.ISO8859-9',
     'ug_cn':                                'ug_CN.UTF-8',
     'uk':                                   'uk_UA.KOI8-U',
     'uk_ua':                                'uk_UA.KOI8-U',
-    'univ':                                 'en_US.UTF-8',
-    'universal':                            'en_US.UTF-8',
+    'univ':                                 'en_US.utf',
+    'universal':                            'en_US.utf',
     'universal.utf8@ucs4':                  'en_US.UTF-8',
     'unm_us':                               'unm_US.UTF-8',
     'ur':                                   'ur_PK.CP1256',
     'ur_in':                                'ur_IN.UTF-8',
-    'ur_pk':                                'ur_PK.UTF-8',
+    'ur_pk':                                'ur_PK.CP1256',
     'uz':                                   'uz_UZ.UTF-8',
-    'uz_uz':                                'uz_UZ.ISO8859-1',
-    'uz_uz.utf8@cyrillic':                  'uz_UZ.UTF-8',
-    'uz_uz@cyrillic':                       'uz_UZ.UTF-8@cyrillic',
+    'uz_uz':                                'uz_UZ.UTF-8',
+    'uz_uz@cyrillic':                       'uz_UZ.UTF-8',
     've':                                   've_ZA.UTF-8',
     've_za':                                've_ZA.UTF-8',
     'vi':                                   'vi_VN.TCVN',
-    'vi_vn':                                'vi_VN.UTF-8',
+    'vi_vn':                                'vi_VN.TCVN',
     'vi_vn.tcvn':                           'vi_VN.TCVN',
     'vi_vn.tcvn5712':                       'vi_VN.TCVN',
     'vi_vn.viscii':                         'vi_VN.VISCII',
@@ -1436,19 +1432,18 @@ locale_alias = {
     'yi_us':                                'yi_US.CP1255',
     'yo_ng':                                'yo_NG.UTF-8',
     'yue_hk':                               'yue_HK.UTF-8',
+    'yuw_pg':                               'yuw_PG.UTF-8',
     'zh':                                   'zh_CN.eucCN',
-    'zh_cn':                                'zh_CN.GB2312',
+    'zh_cn':                                'zh_CN.gb2312',
     'zh_cn.big5':                           'zh_TW.big5',
     'zh_cn.euc':                            'zh_CN.eucCN',
-    'zh_cn.gb18030':                        'zh_CN.GB18030',
-    'zh_cn.gbk':                            'zh_CN.GBK',
     'zh_hk':                                'zh_HK.big5hkscs',
     'zh_hk.big5hk':                         'zh_HK.big5hkscs',
     'zh_sg':                                'zh_SG.GB2312',
     'zh_sg.gbk':                            'zh_SG.GBK',
-    'zh_tw':                                'zh_TW.BIG5',
+    'zh_tw':                                'zh_TW.big5',
     'zh_tw.euc':                            'zh_TW.eucTW',
-    'zh_tw.euctw':                          'zh_TW.EUC_TW',
+    'zh_tw.euctw':                          'zh_TW.eucTW',
     'zu':                                   'zu_ZA.ISO8859-1',
     'zu_za':                                'zu_ZA.ISO8859-1',
 }

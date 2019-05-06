@@ -26,10 +26,10 @@
             <LicenseFiles Include="$(PySourcePath)LICENSE;
                                    crtlicense.txt;
                                    $(bz2Dir)LICENSE;
-                                   $(opensslDir)LICENSE;
-                                   $(tclDir)license.terms;
-                                   $(tkDir)license.terms;
-                                   $(tixDir)license.terms" />
+                                   $(opensslOutDir)LICENSE;
+                                   $(tcltkDir)tcllicense.terms;
+                                   $(tcltkDir)tklicense.terms;
+                                   $(tcltkDir)tixlicense.terms" />
             <_LicenseFiles Include="@(LicenseFiles)">
                 <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
             </_LicenseFiles>
@@ -39,6 +39,28 @@
                           Overwrite="true"
                           Lines="@(_LicenseFiles->'%(Content)')" />
     </Target>
-        
+    
+    <Target Name="_CopyMiscNews" AfterTargets="PrepareForBuild" Condition="Exists('$(PySourcePath)Misc\NEWS')">
+        <Copy SourceFiles="$(PySourcePath)Misc\NEWS" DestinationFiles="$(BuildPath)NEWS.txt" />
+    </Target>
+    
+    <Target Name="_MergeMiscNewsWithBlurb" AfterTargets="PrepareForBuild" Condition="$(Blurb) != '' and !Exists('$(PySourcePath)Misc\NEWS')">
+        <Exec Command="$(Blurb) merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
+    </Target>
+    
+    <Target Name="_MergeMiscNewsWithPython" AfterTargets="PrepareForBuild" Condition="$(Blurb) == '' and !Exists('$(PySourcePath)Misc\NEWS')">
+        <ItemGroup>
+            <HostPython Include="$(ExternalsDir)python*\tools\python.exe" />
+            <HostPython Include="@(HostPython)" Condition="Exists(%(FullPath))" />
+            <HostPython Include="py" Condition="@(HostPython) == ''" />
+        </ItemGroup>
+        <PropertyGroup>
+            <HostPython>@(HostPython)</HostPython>
+            <HostPython Condition="$(HostPython.Contains(';'))">$(HostPython.Remove($(HostPython.IndexOf(';'))))</HostPython>
+        </PropertyGroup>
+        <Exec Command="&quot;$(HostPython)&quot; -m pip install -U blurb" WorkingDirectory="$(PCbuild)" />
+        <Exec Command="&quot;$(HostPython)&quot; -m blurb merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
+    </Target>
+    
     <Import Project="..\msi.targets" />
 </Project>

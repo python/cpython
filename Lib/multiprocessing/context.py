@@ -5,7 +5,7 @@ import threading
 from . import process
 from . import reduction
 
-__all__ = []            # things are copied from here to __init__.py
+__all__ = ()
 
 #
 # Exceptions
@@ -24,7 +24,7 @@ class AuthenticationError(ProcessError):
     pass
 
 #
-# Base type for contexts
+# Base type for contexts. Bound methods of an instance of this type are included in __all__ of __init__.py
 #
 
 class BaseContext(object):
@@ -189,7 +189,7 @@ class BaseContext(object):
         try:
             ctx = _concrete_contexts[method]
         except KeyError:
-            raise ValueError('cannot find context for %r' % method)
+            raise ValueError('cannot find context for %r' % method) from None
         ctx._check_available()
         return ctx
 
@@ -260,8 +260,6 @@ class DefaultContext(BaseContext):
                 return ['fork', 'spawn', 'forkserver']
             else:
                 return ['fork', 'spawn']
-
-DefaultContext.__all__ = list(x for x in dir(DefaultContext) if x[0] != '_')
 
 #
 # Context types for fixed start method

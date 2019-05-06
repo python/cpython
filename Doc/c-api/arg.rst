@@ -138,7 +138,7 @@ which disallows mutable objects such as :class:`bytearray`.
    attempting any conversion.  Raises :exc:`TypeError` if the object is not
    a :class:`bytearray` object. The C variable may also be declared as :c:type:`PyObject\*`.
 
-``u`` (:class:`str`) [Py_UNICODE \*]
+``u`` (:class:`str`) [const Py_UNICODE \*]
    Convert a Python Unicode object to a C pointer to a NUL-terminated buffer of
    Unicode characters.  You must pass the address of a :c:type:`Py_UNICODE`
    pointer variable, which will be filled with the pointer to an existing
@@ -151,18 +151,34 @@ which disallows mutable objects such as :class:`bytearray`.
       Previously, :exc:`TypeError` was raised when embedded null code points
       were encountered in the Python string.
 
-``u#`` (:class:`str`) [Py_UNICODE \*, int]
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsWideCharString`.
+
+``u#`` (:class:`str`) [const Py_UNICODE \*, int]
    This variant on ``u`` stores into two C variables, the first one a pointer to a
    Unicode data buffer, the second one its length.  This variant allows
    null code points.
 
-``Z`` (:class:`str` or ``None``) [Py_UNICODE \*]
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsWideCharString`.
+
+``Z`` (:class:`str` or ``None``) [const Py_UNICODE \*]
    Like ``u``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to *NULL*.
 
-``Z#`` (:class:`str` or ``None``) [Py_UNICODE \*, int]
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsWideCharString`.
+
+``Z#`` (:class:`str` or ``None``) [const Py_UNICODE \*, int]
    Like ``u#``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to *NULL*.
+
+   .. deprecated-removed:: 3.3 4.0
+      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
+      :c:func:`PyUnicode_AsWideCharString`.
 
 ``U`` (:class:`str`) [PyObject \*]
    Requires that the Python object is a Unicode object, without attempting
@@ -529,42 +545,43 @@ Building values
    not within format units such as ``s#``).  This can be used to make long format
    strings a tad more readable.
 
-   ``s`` (:class:`str` or ``None``) [char \*]
+   ``s`` (:class:`str` or ``None``) [const char \*]
       Convert a null-terminated C string to a Python :class:`str` object using ``'utf-8'``
       encoding. If the C string pointer is *NULL*, ``None`` is used.
 
-   ``s#`` (:class:`str` or ``None``) [char \*, int]
+   ``s#`` (:class:`str` or ``None``) [const char \*, int]
       Convert a C string and its length to a Python :class:`str` object using ``'utf-8'``
       encoding. If the C string pointer is *NULL*, the length is ignored and
       ``None`` is returned.
 
-   ``y`` (:class:`bytes`) [char \*]
+   ``y`` (:class:`bytes`) [const char \*]
       This converts a C string to a Python :class:`bytes` object.  If the C
       string pointer is *NULL*, ``None`` is returned.
 
-   ``y#`` (:class:`bytes`) [char \*, int]
+   ``y#`` (:class:`bytes`) [const char \*, int]
       This converts a C string and its lengths to a Python object.  If the C
       string pointer is *NULL*, ``None`` is returned.
 
-   ``z`` (:class:`str` or ``None``) [char \*]
+   ``z`` (:class:`str` or ``None``) [const char \*]
       Same as ``s``.
 
-   ``z#`` (:class:`str` or ``None``) [char \*, int]
+   ``z#`` (:class:`str` or ``None``) [const char \*, int]
       Same as ``s#``.
 
-   ``u`` (:class:`str`) [Py_UNICODE \*]
-      Convert a null-terminated buffer of Unicode (UCS-2 or UCS-4) data to a Python
-      Unicode object.  If the Unicode buffer pointer is *NULL*, ``None`` is returned.
+   ``u`` (:class:`str`) [const wchar_t \*]
+      Convert a null-terminated :c:type:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
+      data to a Python Unicode object.  If the Unicode buffer pointer is *NULL*,
+      ``None`` is returned.
 
-   ``u#`` (:class:`str`) [Py_UNICODE \*, int]
-      Convert a Unicode (UCS-2 or UCS-4) data buffer and its length to a Python
+   ``u#`` (:class:`str`) [const wchar_t \*, int]
+      Convert a Unicode (UTF-16 or UCS-4) data buffer and its length to a Python
       Unicode object.   If the Unicode buffer pointer is *NULL*, the length is ignored
       and ``None`` is returned.
 
-   ``U`` (:class:`str` or ``None``) [char \*]
+   ``U`` (:class:`str` or ``None``) [const char \*]
       Same as ``s``.
 
-   ``U#`` (:class:`str` or ``None``) [char \*, int]
+   ``U#`` (:class:`str` or ``None``) [const char \*, int]
       Same as ``s#``.
 
    ``i`` (:class:`int`) [int]

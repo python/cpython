@@ -184,6 +184,27 @@ class FinderTests:
             # Do not want FileNotFoundError raised.
             self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
 
+    def test_invalidate_caches_finders(self):
+        # Finders with an invalidate_caches() method have it called.
+        class FakeFinder:
+            def __init__(self):
+                self.called = False
+
+            def invalidate_caches(self):
+                self.called = True
+
+        cache = {'leave_alone': object(), 'finder_to_invalidate': FakeFinder()}
+        with util.import_state(path_importer_cache=cache):
+            self.machinery.PathFinder.invalidate_caches()
+        self.assertTrue(cache['finder_to_invalidate'].called)
+
+    def test_invalidate_caches_clear_out_None(self):
+        # Clear out None in sys.path_importer_cache() when invalidating caches.
+        cache = {'clear_out': None}
+        with util.import_state(path_importer_cache=cache):
+            self.machinery.PathFinder.invalidate_caches()
+        self.assertEqual(len(cache), 0)
+
 
 class FindModuleTests(FinderTests):
     def find(self, *args, **kwargs):

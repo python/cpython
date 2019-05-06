@@ -288,9 +288,12 @@ class POP3:
             if sock is not None:
                 try:
                     sock.shutdown(socket.SHUT_RDWR)
-                except OSError as e:
-                    # The server might already have closed the connection
-                    if e.errno != errno.ENOTCONN:
+                except OSError as exc:
+                    # The server might already have closed the connection.
+                    # On Windows, this may result in WSAEINVAL (error 10022):
+                    # An invalid operation was attempted.
+                    if (exc.errno != errno.ENOTCONN
+                       and getattr(exc, 'winerror', 0) != 10022):
                         raise
                 finally:
                     sock.close()
@@ -305,7 +308,7 @@ class POP3:
         return self._shortcmd('RPOP %s' % user)
 
 
-    timestamp = re.compile(br'\+OK.*(<[^>]+>)')
+    timestamp = re.compile(br'\+OK.[^<]*(<.*>)')
 
     def apop(self, user, password):
         """Authorisation
@@ -433,7 +436,7 @@ if HAVE_SSL:
                                  "exclusive")
             if keyfile is not None or certfile is not None:
                 import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a"
+                warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile

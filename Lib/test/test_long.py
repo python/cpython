@@ -373,6 +373,10 @@ class LongTest(unittest.TestCase):
         for base in invalid_bases:
             self.assertRaises(ValueError, int, '42', base)
 
+        # Invalid unicode string
+        # See bpo-34087
+        self.assertRaises(ValueError, int, '\u3053\u3093\u306b\u3061\u306f')
+
 
     def test_conversion(self):
 
@@ -695,6 +699,9 @@ class LongTest(unittest.TestCase):
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, '_,d')
         self.assertRaisesRegex(ValueError, 'Cannot specify both', format, 3, ',_d')
 
+        self.assertRaisesRegex(ValueError, "Cannot specify ',' with 's'", format, 3, ',s')
+        self.assertRaisesRegex(ValueError, "Cannot specify '_' with 's'", format, 3, '_s')
+
         # ensure that only int and float type specifiers work
         for format_spec in ([chr(x) for x in range(ord('a'), ord('z')+1)] +
                             [chr(x) for x in range(ord('A'), ord('Z')+1)]):
@@ -906,11 +913,24 @@ class LongTest(unittest.TestCase):
             self.check_truediv(-x, y)
             self.check_truediv(-x, -y)
 
+    def test_negative_shift_count(self):
+        with self.assertRaises(ValueError):
+            42 << -3
+        with self.assertRaises(ValueError):
+            42 << -(1 << 1000)
+        with self.assertRaises(ValueError):
+            42 >> -3
+        with self.assertRaises(ValueError):
+            42 >> -(1 << 1000)
+
     def test_lshift_of_zero(self):
         self.assertEqual(0 << 0, 0)
         self.assertEqual(0 << 10, 0)
         with self.assertRaises(ValueError):
             0 << -1
+        self.assertEqual(0 << (1 << 1000), 0)
+        with self.assertRaises(ValueError):
+            0 << -(1 << 1000)
 
     @support.cpython_only
     def test_huge_lshift_of_zero(self):
@@ -918,8 +938,23 @@ class LongTest(unittest.TestCase):
         # Other implementations may have a different boundary for overflow,
         # or not raise at all.
         self.assertEqual(0 << sys.maxsize, 0)
-        with self.assertRaises(OverflowError):
-            0 << (sys.maxsize + 1)
+        self.assertEqual(0 << (sys.maxsize + 1), 0)
+
+    @support.cpython_only
+    @support.bigmemtest(sys.maxsize + 1000, memuse=2/15 * 2, dry_run=False)
+    def test_huge_lshift(self, size):
+        self.assertEqual(1 << (sys.maxsize + 1000), 1 << 1000 << sys.maxsize)
+
+    def test_huge_rshift(self):
+        self.assertEqual(42 >> (1 << 1000), 0)
+        self.assertEqual((-42) >> (1 << 1000), -1)
+
+    @support.cpython_only
+    @support.bigmemtest(sys.maxsize + 500, memuse=2/15, dry_run=False)
+    def test_huge_rshift_of_huge(self, size):
+        huge = ((1 << 500) + 11) << sys.maxsize
+        self.assertEqual(huge >> (sys.maxsize + 1), (1 << 499) + 5)
+        self.assertEqual(huge >> (sys.maxsize + 1000), 0)
 
     def test_small_ints(self):
         for i in range(-5, 257):
@@ -1316,6 +1351,16 @@ class LongTest(unittest.TestCase):
             for shift in (0, 2):
                 self.assertEqual(type(value << shift), int)
                 self.assertEqual(type(value >> shift), int)
+
+    def test_as_integer_ratio(self):
+        class myint(int):
+            pass
+        tests = [10, 0, -10, 1, sys.maxsize + 1, True, False, myint(42)]
+        for value in tests:
+            numerator, denominator = value.as_integer_ratio()
+            self.assertEqual((numerator, denominator), (int(value), 1))
+            self.assertEqual(type(numerator), int)
+            self.assertEqual(type(denominator), int)
 
 
 if __name__ == "__main__":

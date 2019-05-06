@@ -64,7 +64,7 @@ multiprocessing_closesocket(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
 
     if (ret)
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, WSAGetLastError());
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
     Py_RETURN_NONE;
 }
 
@@ -88,7 +88,7 @@ multiprocessing_recv(PyObject *self, PyObject *args)
 
     if (nread < 0) {
         Py_DECREF(buf);
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, WSAGetLastError());
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
     }
     _PyBytes_Resize(&buf, nread);
     return buf;
@@ -112,7 +112,7 @@ multiprocessing_send(PyObject *self, PyObject *args)
 
     PyBuffer_Release(&buf);
     if (ret < 0)
-        return PyErr_SetExcFromWindowsErr(PyExc_IOError, WSAGetLastError());
+        return PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
     return PyLong_FromLong(ret);
 }
 

@@ -1,6 +1,9 @@
 /* Iterator objects */
 
 #include "Python.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 
 typedef struct {
     PyObject_HEAD
@@ -76,7 +79,7 @@ iter_iternext(PyObject *iterator)
 }
 
 static PyObject *
-iter_len(seqiterobject *it)
+iter_len(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t seqsize, len;
 
@@ -99,13 +102,14 @@ iter_len(seqiterobject *it)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-iter_reduce(seqiterobject *it)
+iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL)
-        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -238,13 +242,14 @@ calliter_iternext(calliterobject *it)
 }
 
 static PyObject *
-calliter_reduce(calliterobject *it)
+calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_callable, it->it_sentinel);
     else
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
 }
 
 static PyMethodDef calliter_methods[] = {

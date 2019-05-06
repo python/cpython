@@ -84,6 +84,42 @@ class _Outcome(object):
 def _id(obj):
     return obj
 
+
+_module_cleanups = []
+def addModuleCleanup(*args, **kwargs):
+    """Same as addCleanup, except the cleanup items are called even if
+    setUpModule fails (unlike tearDownModule)."""
+    if args:
+        function, *args = args
+    elif 'function' in kwargs:
+        function = kwargs.pop('function')
+        import warnings
+        warnings.warn("Passing 'function' as keyword argument is deprecated",
+                      DeprecationWarning, stacklevel=2)
+    else:
+        raise TypeError('addModuleCleanup expected at least 1 positional '
+                        'argument, got %d' % (len(args)-1))
+    args = tuple(args)
+
+    _module_cleanups.append((function, args, kwargs))
+
+
+def doModuleCleanups():
+    """Execute all module cleanup functions. Normally called for you after
+    tearDownModule."""
+    exceptions = []
+    while _module_cleanups:
+        function, args, kwargs = _module_cleanups.pop()
+        try:
+            function(*args, **kwargs)
+        except Exception as exc:
+            exceptions.append(exc)
+    if exceptions:
+        # Swallows all but first exception. If a multi-exception handler
+        # gets written we should use that here instead.
+        raise exceptions[0]
+
+
 def skip(reason):
     """
     Unconditionally skip a test.
@@ -153,28 +189,27 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
         If args is not empty, call a callable passing positional and keyword
         arguments.
         """
-        if not _is_subtype(self.expected, self._base_type):
-            raise TypeError('%s() arg 1 must be %s' %
-                            (name, self._base_type_str))
-        if args and args[0] is None:
-            warnings.warn("callable is None",
-                          DeprecationWarning, 3)
-            args = ()
-        if not args:
-            self.msg = kwargs.pop('msg', None)
-            if kwargs:
-                warnings.warn('%r is an invalid keyword argument for '
-                              'this function' % next(iter(kwargs)),
-                              DeprecationWarning, 3)
-            return self
-
-        callable_obj, *args = args
         try:
-            self.obj_name = callable_obj.__name__
-        except AttributeError:
-            self.obj_name = str(callable_obj)
-        with self:
-            callable_obj(*args, **kwargs)
+            if not _is_subtype(self.expected, self._base_type):
+                raise TypeError('%s() arg 1 must be %s' %
+                                (name, self._base_type_str))
+            if not args:
+                self.msg = kwargs.pop('msg', None)
+                if kwargs:
+                    raise TypeError('%r is an invalid keyword argument for '
+                                    'this function' % (next(iter(kwargs)),))
+                return self
+
+            callable_obj, *args = args
+            try:
+                self.obj_name = callable_obj.__name__
+            except AttributeError:
+                self.obj_name = str(callable_obj)
+            with self:
+                callable_obj(*args, **kwargs)
+        finally:
+            # bpo-23890: manually break a reference cycle
+            self = None
 
 
 class _AssertRaisesContext(_AssertRaisesBaseContext):
@@ -334,6 +369,16 @@ class _AssertLogsContext(_BaseTestCaseContext):
                 .format(logging.getLevelName(self.level), self.logger.name))
 
 
+class _OrderedChainMap(collections.ChainMap):
+    def __iter__(self):
+        seen = set()
+        for mapping in self.maps:
+            for k in mapping:
+                if k not in seen:
+                    seen.add(k)
+                    yield k
+
+
 class TestCase(object):
     """A class whose instances are single test cases.
 
@@ -380,6 +425,8 @@ class TestCase(object):
     # Attribute used by TestSuite for classSetUp
 
     _classSetupFailed = False
+
+    _class_cleanups = []
 
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
@@ -428,13 +475,45 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(self, function, *args, **kwargs):
+    def addCleanup(*args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
+        if len(args) >= 2:
+            self, function, *args = args
+        elif not args:
+            raise TypeError("descriptor 'addCleanup' of 'TestCase' object "
+                            "needs an argument")
+        elif 'function' in kwargs:
+            function = kwargs.pop('function')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'function' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('addCleanup expected at least 1 positional '
+                            'argument, got %d' % (len(args)-1))
+        args = tuple(args)
+
         self._cleanups.append((function, args, kwargs))
+
+    @classmethod
+    def addClassCleanup(*args, **kwargs):
+        """Same as addCleanup, except the cleanup items are called even if
+        setUpClass fails (unlike tearDownClass)."""
+        if len(args) >= 2:
+            cls, function, *args = args
+        elif not args:
+            raise TypeError("descriptor 'addClassCleanup' of 'TestCase' object "
+                            "needs an argument")
+        else:
+            raise TypeError('addClassCleanup expected at least 1 positional '
+                            'argument, got %d' % (len(args)-1))
+        args = tuple(args)
+
+        cls._class_cleanups.append((function, args, kwargs))
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -505,12 +584,12 @@ class TestCase(object):
         case as failed but resumes execution at the end of the enclosed
         block, allowing further test code to be executed.
         """
-        if not self._outcome.result_supports_subtests:
+        if self._outcome is None or not self._outcome.result_supports_subtests:
             yield
             return
         parent = self._subtest
         if parent is None:
-            params_map = collections.ChainMap(params)
+            params_map = _OrderedChainMap(params)
         else:
             params_map = parent.params.new_child(params)
         self._subtest = _SubTest(self, msg, params_map)
@@ -642,8 +721,20 @@ class TestCase(object):
                 function(*args, **kwargs)
 
         # return this for backwards compatibility
-        # even though we no longer us it internally
+        # even though we no longer use it internally
         return outcome.success
+
+    @classmethod
+    def doClassCleanups(cls):
+        """Execute all class cleanup functions. Normally called for you after
+        tearDownClass."""
+        cls.tearDown_exceptions = []
+        while cls._class_cleanups:
+            function, args, kwargs = cls._class_cleanups.pop()
+            try:
+                function(*args, **kwargs)
+            except Exception as exc:
+                cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
@@ -725,7 +816,11 @@ class TestCase(object):
                self.assertEqual(the_exception.error_code, 3)
         """
         context = _AssertRaisesContext(expected_exception, self)
-        return context.handle('assertRaises', args, kwargs)
+        try:
+            return context.handle('assertRaises', args, kwargs)
+        finally:
+            # bpo-23890: manually break a reference cycle
+            context = None
 
     def assertWarns(self, expected_warning, *args, **kwargs):
         """Fail unless a warning of class warnClass is triggered
@@ -834,7 +929,8 @@ class TestCase(object):
         """Fail if the two objects are unequal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is more than the given delta.
+           difference between the two objects is more than the given
+           delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -848,23 +944,28 @@ class TestCase(object):
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
 
+        diff = abs(first - second)
         if delta is not None:
-            if abs(first - second) <= delta:
+            if diff <= delta:
                 return
 
-            standardMsg = '%s != %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
+            standardMsg = '%s != %s within %s delta (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(delta),
+                safe_repr(diff))
         else:
             if places is None:
                 places = 7
 
-            if round(abs(second-first), places) == 0:
+            if round(diff, places) == 0:
                 return
 
-            standardMsg = '%s != %s within %r places' % (safe_repr(first),
-                                                          safe_repr(second),
-                                                          places)
+            standardMsg = '%s != %s within %r places (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                places,
+                safe_repr(diff))
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
 
@@ -873,7 +974,7 @@ class TestCase(object):
         """Fail if the two objects are equal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero, or by comparing that the
-           between the two objects is less than the given delta.
+           difference between the two objects is less than the given delta.
 
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most significant digit).
@@ -882,16 +983,19 @@ class TestCase(object):
         """
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
+        diff = abs(first - second)
         if delta is not None:
-            if not (first == second) and abs(first - second) > delta:
+            if not (first == second) and diff > delta:
                 return
-            standardMsg = '%s == %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
+            standardMsg = '%s == %s within %s delta (%s difference)' % (
+                safe_repr(first),
+                safe_repr(second),
+                safe_repr(delta),
+                safe_repr(diff))
         else:
             if places is None:
                 places = 7
-            if not (first == second) and round(abs(second-first), places) != 0:
+            if not (first == second) and round(diff, places) != 0:
                 return
             standardMsg = '%s == %s within %r places' % (safe_repr(first),
                                                          safe_repr(second),
@@ -899,7 +1003,6 @@ class TestCase(object):
 
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
-
 
     def assertSequenceEqual(self, seq1, seq2, msg=None, seq_type=None):
         """An equality assertion for ordered sequences (like lists and tuples).
@@ -1141,9 +1244,8 @@ class TestCase(object):
 
 
     def assertCountEqual(self, first, second, msg=None):
-        """An unordered sequence comparison asserting that the same elements,
-        regardless of order.  If the same element occurs more than once,
-        it verifies that the elements occur the same number of times.
+        """Asserts that two iterables have the same elements, the same number of
+        times, without regard to order.
 
             self.assertEqual(Counter(list(first)),
                              Counter(list(second)))
@@ -1248,7 +1350,7 @@ class TestCase(object):
 
         Args:
             expected_exception: Exception class expected to be raised.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1267,7 +1369,7 @@ class TestCase(object):
 
         Args:
             expected_warning: Warning class expected to be triggered.
-            expected_regex: Regex (re pattern object or string) expected
+            expected_regex: Regex (re.Pattern object or string) expected
                     to be found in error message.
             args: Function to be called and extra positional args.
             kwargs: Extra kwargs.
@@ -1403,7 +1505,7 @@ class _SubTest(TestCase):
         if self.params:
             params_desc = ', '.join(
                 "{}={!r}".format(k, v)
-                for (k, v) in sorted(self.params.items()))
+                for (k, v) in self.params.items())
             parts.append("({})".format(params_desc))
         return " ".join(parts) or '(<subtest>)'
 

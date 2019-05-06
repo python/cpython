@@ -189,6 +189,8 @@ class FileInput:
                  mode="r", openhook=None):
         if isinstance(files, str):
             files = (files,)
+        elif isinstance(files, os.PathLike):
+            files = (os.fspath(files), )
         else:
             if files is None:
                 files = sys.argv[1:]
@@ -220,6 +222,7 @@ class FileInput:
             warnings.warn("'U' mode is deprecated",
                           DeprecationWarning, 2)
         self._mode = mode
+        self._write_mode = mode.replace('r', 'w') if 'U' not in mode else 'w'
         if openhook:
             if inplace:
                 raise ValueError("FileInput cannot use an opening hook in inplace mode")
@@ -257,6 +260,13 @@ class FileInput:
             # repeat with next file
 
     def __getitem__(self, i):
+        import warnings
+        warnings.warn(
+            "Support for indexing FileInput objects is deprecated. "
+            "Use iterator protocol instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         if i != self.lineno():
             raise RuntimeError("accessing lines out of order")
         try:
@@ -328,7 +338,7 @@ class FileInput:
         else:
             if self._inplace:
                 self._backupfilename = (
-                    self._filename + (self._backup or ".bak"))
+                    os.fspath(self._filename) + (self._backup or ".bak"))
                 try:
                     os.unlink(self._backupfilename)
                 except OSError:
@@ -339,17 +349,16 @@ class FileInput:
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, "w")
+                    self._output = open(self._filename, self._write_mode)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, "w")
+                    self._output = os.fdopen(fd, self._write_mode)
                     try:
-                        if hasattr(os, 'chmod'):
-                            os.chmod(self._filename, perm)
+                        os.chmod(self._filename, perm)
                     except OSError:
                         pass
                 self._savestdout = sys.stdout

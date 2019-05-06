@@ -138,7 +138,7 @@ genrand_int32(RandomObject *self)
  * The original code credited Isaku Wada for this algorithm, 2002/01/09.
  */
 static PyObject *
-random_random(RandomObject *self)
+random_random(RandomObject *self, PyObject *Py_UNUSED(ignored))
 {
     uint32_t a=genrand_int32(self)>>5, b=genrand_int32(self)>>6;
     return PyFloat_FromDouble((a*67108864.0+b)*(1.0/9007199254740992.0));
@@ -259,8 +259,11 @@ random_seed(RandomObject *self, PyObject *args)
      * So: if the arg is a PyLong, use its absolute value.
      * Otherwise use its hash value, cast to unsigned.
      */
-    if (PyLong_Check(arg))
-        n = PyNumber_Absolute(arg);
+    if (PyLong_Check(arg)) {
+        /* Calling int.__abs__() prevents calling arg.__abs__(), which might
+           return an invalid value. See issue #31478. */
+        n = PyLong_Type.tp_as_number->nb_absolute(arg);
+    }
     else {
         Py_hash_t hash = PyObject_Hash(arg);
         if (hash == -1)
@@ -289,7 +292,6 @@ random_seed(RandomObject *self, PyObject *args)
                               PY_LITTLE_ENDIAN,
                               0); /* unsigned */
     if (res == -1) {
-        PyMem_Free(key);
         goto Done;
     }
 
@@ -316,7 +318,7 @@ Done:
 }
 
 static PyObject *
-random_getstate(RandomObject *self)
+random_getstate(RandomObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *state;
     PyObject *element;
@@ -348,6 +350,7 @@ random_setstate(RandomObject *self, PyObject *state)
     int i;
     unsigned long element;
     long index;
+    uint32_t new_state[N];
 
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError,
@@ -364,7 +367,7 @@ random_setstate(RandomObject *self, PyObject *state)
         element = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(state, i));
         if (element == (unsigned long)-1 && PyErr_Occurred())
             return NULL;
-        self->state[i] = (uint32_t)element;
+        new_state[i] = (uint32_t)element;
     }
 
     index = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
@@ -375,6 +378,8 @@ random_setstate(RandomObject *self, PyObject *state)
         return NULL;
     }
     self->index = (int)index;
+    for (i = 0; i < N; i++)
+        self->state[i] = new_state[i];
 
     Py_RETURN_NONE;
 }
@@ -432,7 +437,7 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     RandomObject *self;
     PyObject *tmp;
 
-    if (type == &Random_Type && !_PyArg_NoKeywords("Random()", kwds))
+    if (type == &Random_Type && !_PyArg_NoKeywords("Random", kwds))
         return NULL;
 
     self = (RandomObject *)type->tp_alloc(type, 0);

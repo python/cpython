@@ -66,7 +66,7 @@ data payloads.
 Message Lifecycle
 -----------------
 
-The general lifecyle of a message is:
+The general lifecycle of a message is:
 
     Creation
         A `Message` object can be created by a Parser, or it can be

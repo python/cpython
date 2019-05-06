@@ -78,7 +78,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    |                    | be built                       | :class:`distutils.core.Extension`                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *classifiers*      | A list of categories for the   | a list of strings; valid classifiers are listed on `PyPI    |
-   |                    | package                        | <https://pypi.python.org/pypi?:action=list_classifiers>`_.  |
+   |                    | package                        | <https://pypi.org/classifiers>`_.                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *distclass*        | the :class:`Distribution`      | a subclass of                                               |
    |                    | class to use                   | :class:`distutils.core.Distribution`                        |
@@ -183,8 +183,9 @@ the full reference.
    | *sources*              | list of source filenames,      | a list of strings         |
    |                        | relative to the distribution   |                           |
    |                        | root (where the setup script   |                           |
-   |                        | lives), in Unix form (slash-   |                           |
-   |                        | separated) for portability.    |                           |
+   |                        | lives), in Unix form           |                           |
+   |                        | (slash-separated) for          |                           |
+   |                        | portability.                   |                           |
    |                        | Source files may be C, C++,    |                           |
    |                        | SWIG (.i), platform-specific   |                           |
    |                        | resource files, or whatever    |                           |
@@ -276,6 +277,11 @@ the full reference.
    |                        | simply skip the extension.     |                           |
    +------------------------+--------------------------------+---------------------------+
 
+   .. versionchanged:: 3.8
+
+      On Unix, C extensions are no longer linked to libpython except on
+      Android.
+
 
 .. class:: Distribution
 
@@ -285,6 +291,10 @@ the full reference.
    See the :func:`setup` function for a list of keyword arguments accepted  by the
    Distribution constructor. :func:`setup` creates a Distribution instance.
 
+   .. versionchanged:: 3.7
+      :class:`~distutils.core.Distribution` now warns if ``classifiers``,
+      ``keywords`` and ``platforms`` fields are not specified as a list or
+      a string.
 
 .. class:: Command
 
@@ -814,13 +824,13 @@ This module provides the :class:`UnixCCompiler` class, a subclass of
 .. module:: distutils.msvccompiler
    :synopsis: Microsoft Compiler
 
+.. XXX: This is *waaaaay* out of date!
 
 This module provides :class:`MSVCCompiler`, an implementation of the abstract
 :class:`CCompiler` class for Microsoft Visual Studio. Typically, extension
 modules need to be compiled with the same compiler that was used to compile
 Python. For Python 2.3 and earlier, the compiler was Visual Studio 6. For Python
-2.4 and 2.5, the compiler is Visual Studio .NET 2003. The AMD64 and Itanium
-binaries are created using the Platform SDK.
+2.4 and 2.5, the compiler is Visual Studio .NET 2003.
 
 :class:`MSVCCompiler` will normally choose the right compiler, linker etc. on
 its own. To override this choice, the environment variables *DISTUTILS_USE_SDK*
@@ -936,7 +946,7 @@ timestamp dependency analysis.
 .. function:: newer_group(sources, target[, missing='error'])
 
    Return true if *target* is out-of-date with respect to any file listed in
-   *sources*  In other words, if *target* exists and is newer than every file in
+   *sources*.  In other words, if *target* exists and is newer than every file in
    *sources*, return false; otherwise return true. *missing* controls what we do
    when a source file is missing; the default (``'error'``) is to blow up with an
    :exc:`OSError` from  inside :func:`os.stat`; if it is ``'ignore'``, we silently
@@ -1086,19 +1096,16 @@ other utility module.
 
    Return a string that identifies the current platform.  This is used mainly to
    distinguish platform-specific build directories and platform-specific built
-   distributions.  Typically includes the OS name and version and the architecture
-   (as supplied by 'os.uname()'), although the exact information included depends
-   on the OS; eg. for IRIX the architecture isn't particularly important (IRIX only
-   runs on SGI hardware), but for Linux the kernel version isn't particularly
-   important.
+   distributions.  Typically includes the OS name and version and the
+   architecture (as supplied by 'os.uname()'), although the exact information
+   included depends on the OS; e.g., on Linux, the kernel version isn't
+   particularly important.
 
    Examples of returned values:
 
    * ``linux-i586``
    * ``linux-alpha``
    * ``solaris-2.6-sun4u``
-   * ``irix-5.3``
-   * ``irix64-6.2``
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
 
@@ -1392,11 +1399,11 @@ This module provides the :class:`FileList` class, used for poking about the
 filesystem and building lists of files.
 
 
-:mod:`distutils.log` --- Simple PEP 282-style logging
-=====================================================
+:mod:`distutils.log` --- Simple :pep:`282`-style logging
+========================================================
 
 .. module:: distutils.log
-   :synopsis: A simple logging mechanism, 282-style
+   :synopsis: A simple logging mechanism, :pep:`282`-style
 
 
 :mod:`distutils.spawn` --- Spawn a sub-process
@@ -1565,8 +1572,8 @@ lines, and joining lines with backslashes.
    +------------------+--------------------------------+---------+
    | option name      | description                    | default |
    +==================+================================+=========+
-   | *strip_comments* | strip from ``'#'`` to end-of-  | true    |
-   |                  | line, as well as any           |         |
+   | *strip_comments* | strip from ``'#'`` to          | true    |
+   |                  | end-of-line, as well as any    |         |
    |                  | whitespace leading up to the   |         |
    |                  | ``'#'``\ ---unless it is       |         |
    |                  | escaped by a backslash         |         |

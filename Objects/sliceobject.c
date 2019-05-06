@@ -14,6 +14,9 @@ this type and there is exactly one in existence.
 */
 
 #include "Python.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 static PyObject *
@@ -34,13 +37,13 @@ ellipsis_repr(PyObject *op)
 }
 
 static PyObject *
-ellipsis_reduce(PyObject *op)
+ellipsis_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString("Ellipsis");
 }
 
 static PyMethodDef ellipsis_methods[] = {
-    {"__reduce__", (PyCFunction)ellipsis_reduce, METH_NOARGS, NULL},
+    {"__reduce__", ellipsis_reduce, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
@@ -197,6 +200,8 @@ PySlice_Unpack(PyObject *_r,
     PySliceObject *r = (PySliceObject*)_r;
     /* this is harder to get right than you might think */
 
+    Py_BUILD_ASSERT(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX);
+
     if (r->step == Py_None) {
         *step = 1;
     }
@@ -217,14 +222,14 @@ PySlice_Unpack(PyObject *_r,
     }
 
     if (r->start == Py_None) {
-        *start = *step < 0 ? PY_SSIZE_T_MAX-1 : 0;;
+        *start = *step < 0 ? PY_SSIZE_T_MAX : 0;
     }
     else {
         if (!_PyEval_SliceIndex(r->start, start)) return -1;
     }
 
     if (r->stop == Py_None) {
-        *stop = *step < 0 ? -PY_SSIZE_T_MAX : PY_SSIZE_T_MAX;
+        *stop = *step < 0 ? PY_SSIZE_T_MIN : PY_SSIZE_T_MAX;
     }
     else {
         if (!_PyEval_SliceIndex(r->stop, stop)) return -1;
@@ -258,7 +263,7 @@ PySlice_AdjustIndices(Py_ssize_t length,
             *stop = (step < 0) ? -1 : 0;
         }
     }
-    else  if (*stop >= length) {
+    else if (*stop >= length) {
         *stop = (step < 0) ? length - 1 : length;
     }
 
@@ -295,7 +300,7 @@ slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     start = stop = step = NULL;
 
-    if (!_PyArg_NoKeywords("slice()", kw))
+    if (!_PyArg_NoKeywords("slice", kw))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "slice", 1, 3, &start, &stop, &step))
@@ -374,9 +379,8 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = PyLong_FromLong(1L);
-        if (step == NULL)
-            goto error;
+        step = _PyLong_One;
+        Py_INCREF(step);
         step_is_negative = 0;
     }
     else {
@@ -404,10 +408,8 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = PyLong_FromLong(0L);
-        if (lower == NULL)
-            goto error;
-
+        lower = _PyLong_Zero;
+        Py_INCREF(lower);
         upper = length;
         Py_INCREF(upper);
     }
@@ -545,7 +547,7 @@ S. Out of bounds indices are clipped in a manner consistent with the\n\
 handling of normal slices.");
 
 static PyObject *
-slice_reduce(PySliceObject* self)
+slice_reduce(PySliceObject* self, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("O(OOO)", Py_TYPE(self), self->start, self->stop, self->step);
 }
@@ -563,14 +565,11 @@ static PyMethodDef slice_methods[] = {
 static PyObject *
 slice_richcompare(PyObject *v, PyObject *w, int op)
 {
-    PyObject *t1;
-    PyObject *t2;
-    PyObject *res;
-
     if (!PySlice_Check(v) || !PySlice_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
     if (v == w) {
+        PyObject *res;
         /* XXX Do we really need this shortcut?
            There's a unit test for it, but is that fair? */
         switch (op) {
@@ -587,34 +586,27 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
         return res;
     }
 
-    t1 = PyTuple_New(3);
-    if (t1 == NULL)
+
+    PyObject *t1 = PyTuple_Pack(3,
+                                ((PySliceObject *)v)->start,
+                                ((PySliceObject *)v)->stop,
+                                ((PySliceObject *)v)->step);
+    if (t1 == NULL) {
         return NULL;
-    t2 = PyTuple_New(3);
+    }
+
+    PyObject *t2 = PyTuple_Pack(3,
+                                ((PySliceObject *)w)->start,
+                                ((PySliceObject *)w)->stop,
+                                ((PySliceObject *)w)->step);
     if (t2 == NULL) {
         Py_DECREF(t1);
         return NULL;
     }
 
-    PyTuple_SET_ITEM(t1, 0, ((PySliceObject *)v)->start);
-    PyTuple_SET_ITEM(t1, 1, ((PySliceObject *)v)->stop);
-    PyTuple_SET_ITEM(t1, 2, ((PySliceObject *)v)->step);
-    PyTuple_SET_ITEM(t2, 0, ((PySliceObject *)w)->start);
-    PyTuple_SET_ITEM(t2, 1, ((PySliceObject *)w)->stop);
-    PyTuple_SET_ITEM(t2, 2, ((PySliceObject *)w)->step);
-
-    res = PyObject_RichCompare(t1, t2, op);
-
-    PyTuple_SET_ITEM(t1, 0, NULL);
-    PyTuple_SET_ITEM(t1, 1, NULL);
-    PyTuple_SET_ITEM(t1, 2, NULL);
-    PyTuple_SET_ITEM(t2, 0, NULL);
-    PyTuple_SET_ITEM(t2, 1, NULL);
-    PyTuple_SET_ITEM(t2, 2, NULL);
-
+    PyObject *res = PyObject_RichCompare(t1, t2, op);
     Py_DECREF(t1);
     Py_DECREF(t2);
-
     return res;
 }
 

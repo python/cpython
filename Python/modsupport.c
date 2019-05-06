@@ -12,6 +12,31 @@ static PyObject **va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_
 /* Package context -- the full module name for package imports */
 const char *_Py_PackageContext = NULL;
 
+
+int
+_Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
+{
+    Py_ssize_t limit;
+    if (obj == Py_None) {
+        return 1;
+    }
+    else if (PyIndex_Check(obj)) {
+        limit = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
+        if (limit == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or None, not '%.200s'",
+                     Py_TYPE(obj)->tp_name);
+        return 0;
+    }
+    *((Py_ssize_t *)result) = limit;
+    return 1;
+}
+
+
 /* Helper for mkvalue() to scan the length of a format */
 
 static Py_ssize_t
@@ -317,8 +342,13 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
                 ++*p_format;
                 if (flags & FLAG_SIZE_T)
                     n = va_arg(*p_va, Py_ssize_t);
-                else
+                else {
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                                "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
+                        return NULL;
+                    }
                     n = va_arg(*p_va, int);
+                }
             }
             else
                 n = -1;
@@ -365,8 +395,13 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
                 ++*p_format;
                 if (flags & FLAG_SIZE_T)
                     n = va_arg(*p_va, Py_ssize_t);
-                else
+                else {
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                                "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
+                        return NULL;
+                    }
                     n = va_arg(*p_va, int);
+                }
             }
             else
                 n = -1;
@@ -398,8 +433,13 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
                 ++*p_format;
                 if (flags & FLAG_SIZE_T)
                     n = va_arg(*p_va, Py_ssize_t);
-                else
+                else {
+                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                                "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
+                        return NULL;
+                    }
                     n = va_arg(*p_va, int);
+                }
             }
             else
                 n = -1;

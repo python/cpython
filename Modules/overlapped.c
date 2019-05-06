@@ -37,9 +37,9 @@
 
 #define T_HANDLE T_POINTER
 
-enum {TYPE_NONE, TYPE_NOT_STARTED, TYPE_READ, TYPE_WRITE, TYPE_ACCEPT,
-      TYPE_CONNECT, TYPE_DISCONNECT, TYPE_CONNECT_NAMED_PIPE,
-      TYPE_WAIT_NAMED_PIPE_AND_CONNECT};
+enum {TYPE_NONE, TYPE_NOT_STARTED, TYPE_READ, TYPE_READINTO, TYPE_WRITE,
+      TYPE_ACCEPT, TYPE_CONNECT, TYPE_DISCONNECT, TYPE_CONNECT_NAMED_PIPE,
+      TYPE_WAIT_NAMED_PIPE_AND_CONNECT, TYPE_TRANSMIT_FILE};
 
 typedef struct {
     PyObject_HEAD
@@ -51,10 +51,10 @@ typedef struct {
     /* Type of operation */
     DWORD type;
     union {
-        /* Buffer used for reading: TYPE_READ and TYPE_ACCEPT */
-        PyObject *read_buffer;
-        /* Buffer used for writing: TYPE_WRITE */
-        Py_buffer write_buffer;
+        /* Buffer allocated by us: TYPE_READ and TYPE_ACCEPT */
+        PyObject *allocated_buffer;
+        /* Buffer passed by the user: TYPE_WRITE and TYPE_READINTO */
+        Py_buffer user_buffer;
     };
 } OverlappedObject;
 
@@ -89,6 +89,7 @@ SetFromWindowsErr(DWORD err)
 static LPFN_ACCEPTEX Py_AcceptEx = NULL;
 static LPFN_CONNECTEX Py_ConnectEx = NULL;
 static LPFN_DISCONNECTEX Py_DisconnectEx = NULL;
+static LPFN_TRANSMITFILE Py_TransmitFile = NULL;
 static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
 
 #define GET_WSA_POINTER(s, x)                                           \
@@ -102,6 +103,7 @@ initialize_function_pointers(void)
     GUID GuidAcceptEx = WSAID_ACCEPTEX;
     GUID GuidConnectEx = WSAID_CONNECTEX;
     GUID GuidDisconnectEx = WSAID_DISCONNECTEX;
+    GUID GuidTransmitFile = WSAID_TRANSMITFILE;
     HINSTANCE hKernel32;
     SOCKET s;
     DWORD dwBytes;
@@ -114,7 +116,8 @@ initialize_function_pointers(void)
 
     if (!GET_WSA_POINTER(s, AcceptEx) ||
         !GET_WSA_POINTER(s, ConnectEx) ||
-        !GET_WSA_POINTER(s, DisconnectEx))
+        !GET_WSA_POINTER(s, DisconnectEx) ||
+        !GET_WSA_POINTER(s, TransmitFile))
     {
         closesocket(s);
         SetFromWindowsErr(WSAGetLastError());
@@ -124,8 +127,10 @@ initialize_function_pointers(void)
     closesocket(s);
 
     /* On WinXP we will have Py_CancelIoEx == NULL */
+    Py_BEGIN_ALLOW_THREADS
     hKernel32 = GetModuleHandle("KERNEL32");
     *(FARPROC *)&Py_CancelIoEx = GetProcAddress(hKernel32, "CancelIoEx");
+    Py_END_ALLOW_THREADS
     return 0;
 }
 
@@ -550,12 +555,34 @@ Overlapped_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->handle = NULL;
     self->error = 0;
     self->type = TYPE_NONE;
-    self->read_buffer = NULL;
+    self->allocated_buffer = NULL;
     memset(&self->overlapped, 0, sizeof(OVERLAPPED));
-    memset(&self->write_buffer, 0, sizeof(Py_buffer));
+    memset(&self->user_buffer, 0, sizeof(Py_buffer));
     if (event)
         self->overlapped.hEvent = event;
     return (PyObject *)self;
+}
+
+
+/* Note (bpo-32710): OverlappedType.tp_clear is not defined to not release
+   buffers while overlapped are still running, to prevent a crash. */
+static int
+Overlapped_clear(OverlappedObject *self)
+{
+    switch (self->type) {
+    case TYPE_READ:
+    case TYPE_ACCEPT:
+        Py_CLEAR(self->allocated_buffer);
+        break;
+    case TYPE_WRITE:
+    case TYPE_READINTO:
+        if (self->user_buffer.obj) {
+            PyBuffer_Release(&self->user_buffer);
+        }
+        break;
+    }
+    self->type = TYPE_NOT_STARTED;
+    return 0;
 }
 
 static void
@@ -591,19 +618,11 @@ Overlapped_dealloc(OverlappedObject *self)
         }
     }
 
-    if (self->overlapped.hEvent != NULL)
+    if (self->overlapped.hEvent != NULL) {
         CloseHandle(self->overlapped.hEvent);
-
-    switch (self->type) {
-    case TYPE_READ:
-    case TYPE_ACCEPT:
-        Py_CLEAR(self->read_buffer);
-        break;
-    case TYPE_WRITE:
-        if (self->write_buffer.obj)
-            PyBuffer_Release(&self->write_buffer);
-        break;
     }
+
+    Overlapped_clear(self);
     PyObject_Del(self);
     SetLastError(olderr);
 }
@@ -614,7 +633,7 @@ PyDoc_STRVAR(
     "Cancel overlapped operation");
 
 static PyObject *
-Overlapped_cancel(OverlappedObject *self)
+Overlapped_cancel(OverlappedObject *self, PyObject *Py_UNUSED(ignored))
 {
     BOOL ret = TRUE;
 
@@ -676,7 +695,7 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
         case ERROR_MORE_DATA:
             break;
         case ERROR_BROKEN_PIPE:
-            if ((self->type == TYPE_READ || self->type == TYPE_ACCEPT) && self->read_buffer != NULL)
+            if (self->type == TYPE_READ || self->type == TYPE_READINTO)
                 break;
             /* fall through */
         default:
@@ -685,14 +704,42 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
 
     switch (self->type) {
         case TYPE_READ:
-            assert(PyBytes_CheckExact(self->read_buffer));
-            if (transferred != PyBytes_GET_SIZE(self->read_buffer) &&
-                _PyBytes_Resize(&self->read_buffer, transferred))
+            assert(PyBytes_CheckExact(self->allocated_buffer));
+            if (transferred != PyBytes_GET_SIZE(self->allocated_buffer) &&
+                _PyBytes_Resize(&self->allocated_buffer, transferred))
                 return NULL;
-            Py_INCREF(self->read_buffer);
-            return self->read_buffer;
+            Py_INCREF(self->allocated_buffer);
+            return self->allocated_buffer;
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
+    }
+}
+
+static PyObject *
+do_ReadFile(OverlappedObject *self, HANDLE handle,
+            char *bufstart, DWORD buflen)
+{
+    DWORD nread;
+    int ret;
+    DWORD err;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = ReadFile(handle, bufstart, buflen, &nread,
+                   &self->overlapped);
+    Py_END_ALLOW_THREADS
+
+    self->error = err = ret ? ERROR_SUCCESS : GetLastError();
+    switch (err) {
+        case ERROR_BROKEN_PIPE:
+            mark_as_completed(&self->overlapped);
+            return SetFromWindowsErr(err);
+        case ERROR_SUCCESS:
+        case ERROR_MORE_DATA:
+        case ERROR_IO_PENDING:
+            Py_RETURN_NONE;
+        default:
+            Overlapped_clear(self);
+            return SetFromWindowsErr(err);
     }
 }
 
@@ -706,10 +753,7 @@ Overlapped_ReadFile(OverlappedObject *self, PyObject *args)
 {
     HANDLE handle;
     DWORD size;
-    DWORD nread;
     PyObject *buf;
-    BOOL ret;
-    DWORD err;
 
     if (!PyArg_ParseTuple(args, F_HANDLE F_DWORD, &handle, &size))
         return NULL;
@@ -728,14 +772,66 @@ Overlapped_ReadFile(OverlappedObject *self, PyObject *args)
 
     self->type = TYPE_READ;
     self->handle = handle;
-    self->read_buffer = buf;
+    self->allocated_buffer = buf;
+
+    return do_ReadFile(self, handle, PyBytes_AS_STRING(buf), size);
+}
+
+PyDoc_STRVAR(
+    Overlapped_ReadFileInto_doc,
+    "ReadFileInto(handle, buf) -> Overlapped[bytes_transferred]\n\n"
+    "Start overlapped receive");
+
+static PyObject *
+Overlapped_ReadFileInto(OverlappedObject *self, PyObject *args)
+{
+    HANDLE handle;
+    PyObject *bufobj;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE "O", &handle, &bufobj))
+        return NULL;
+
+    if (self->type != TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation already attempted");
+        return NULL;
+    }
+
+    if (!PyArg_Parse(bufobj, "y*", &self->user_buffer))
+        return NULL;
+
+#if SIZEOF_SIZE_T > SIZEOF_LONG
+    if (self->user_buffer.len > (Py_ssize_t)ULONG_MAX) {
+        PyBuffer_Release(&self->user_buffer);
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
+        return NULL;
+    }
+#endif
+
+    self->type = TYPE_READINTO;
+    self->handle = handle;
+
+    return do_ReadFile(self, handle, self->user_buffer.buf,
+                       (DWORD)self->user_buffer.len);
+}
+
+static PyObject *
+do_WSARecv(OverlappedObject *self, HANDLE handle,
+           char *bufstart, DWORD buflen, DWORD flags)
+{
+    DWORD nread;
+    WSABUF wsabuf;
+    int ret;
+    DWORD err;
+
+    wsabuf.buf = bufstart;
+    wsabuf.len = buflen;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = ReadFile(handle, PyBytes_AS_STRING(buf), size, &nread,
-                   &self->overlapped);
+    ret = WSARecv((SOCKET)handle, &wsabuf, 1, &nread, &flags,
+                  &self->overlapped, NULL);
     Py_END_ALLOW_THREADS
 
-    self->error = err = ret ? ERROR_SUCCESS : GetLastError();
+    self->error = err = (ret < 0 ? WSAGetLastError() : ERROR_SUCCESS);
     switch (err) {
         case ERROR_BROKEN_PIPE:
             mark_as_completed(&self->overlapped);
@@ -745,7 +841,7 @@ Overlapped_ReadFile(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -761,11 +857,7 @@ Overlapped_WSARecv(OverlappedObject *self, PyObject *args)
     HANDLE handle;
     DWORD size;
     DWORD flags = 0;
-    DWORD nread;
     PyObject *buf;
-    WSABUF wsabuf;
-    int ret;
-    DWORD err;
 
     if (!PyArg_ParseTuple(args, F_HANDLE F_DWORD "|" F_DWORD,
                           &handle, &size, &flags))
@@ -785,28 +877,48 @@ Overlapped_WSARecv(OverlappedObject *self, PyObject *args)
 
     self->type = TYPE_READ;
     self->handle = handle;
-    self->read_buffer = buf;
-    wsabuf.len = size;
-    wsabuf.buf = PyBytes_AS_STRING(buf);
+    self->allocated_buffer = buf;
 
-    Py_BEGIN_ALLOW_THREADS
-    ret = WSARecv((SOCKET)handle, &wsabuf, 1, &nread, &flags,
-                  &self->overlapped, NULL);
-    Py_END_ALLOW_THREADS
+    return do_WSARecv(self, handle, PyBytes_AS_STRING(buf), size, flags);
+}
 
-    self->error = err = (ret < 0 ? WSAGetLastError() : ERROR_SUCCESS);
-    switch (err) {
-        case ERROR_BROKEN_PIPE:
-            mark_as_completed(&self->overlapped);
-            return SetFromWindowsErr(err);
-        case ERROR_SUCCESS:
-        case ERROR_MORE_DATA:
-        case ERROR_IO_PENDING:
-            Py_RETURN_NONE;
-        default:
-            self->type = TYPE_NOT_STARTED;
-            return SetFromWindowsErr(err);
+PyDoc_STRVAR(
+    Overlapped_WSARecvInto_doc,
+    "WSARecvInto(handle, buf, flags) -> Overlapped[bytes_transferred]\n\n"
+    "Start overlapped receive");
+
+static PyObject *
+Overlapped_WSARecvInto(OverlappedObject *self, PyObject *args)
+{
+    HANDLE handle;
+    PyObject *bufobj;
+    DWORD flags;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE "O" F_DWORD,
+                          &handle, &bufobj, &flags))
+        return NULL;
+
+    if (self->type != TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation already attempted");
+        return NULL;
     }
+
+    if (!PyArg_Parse(bufobj, "y*", &self->user_buffer))
+        return NULL;
+
+#if SIZEOF_SIZE_T > SIZEOF_LONG
+    if (self->user_buffer.len > (Py_ssize_t)ULONG_MAX) {
+        PyBuffer_Release(&self->user_buffer);
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
+        return NULL;
+    }
+#endif
+
+    self->type = TYPE_READINTO;
+    self->handle = handle;
+
+    return do_WSARecv(self, handle, self->user_buffer.buf,
+                      (DWORD)self->user_buffer.len, flags);
 }
 
 PyDoc_STRVAR(
@@ -831,13 +943,13 @@ Overlapped_WriteFile(OverlappedObject *self, PyObject *args)
         return NULL;
     }
 
-    if (!PyArg_Parse(bufobj, "y*", &self->write_buffer))
+    if (!PyArg_Parse(bufobj, "y*", &self->user_buffer))
         return NULL;
 
 #if SIZEOF_SIZE_T > SIZEOF_LONG
-    if (self->write_buffer.len > (Py_ssize_t)ULONG_MAX) {
-        PyBuffer_Release(&self->write_buffer);
-        PyErr_SetString(PyExc_ValueError, "buffer to large");
+    if (self->user_buffer.len > (Py_ssize_t)ULONG_MAX) {
+        PyBuffer_Release(&self->user_buffer);
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
         return NULL;
     }
 #endif
@@ -846,8 +958,8 @@ Overlapped_WriteFile(OverlappedObject *self, PyObject *args)
     self->handle = handle;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = WriteFile(handle, self->write_buffer.buf,
-                    (DWORD)self->write_buffer.len,
+    ret = WriteFile(handle, self->user_buffer.buf,
+                    (DWORD)self->user_buffer.len,
                     &written, &self->overlapped);
     Py_END_ALLOW_THREADS
 
@@ -857,7 +969,7 @@ Overlapped_WriteFile(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -887,21 +999,21 @@ Overlapped_WSASend(OverlappedObject *self, PyObject *args)
         return NULL;
     }
 
-    if (!PyArg_Parse(bufobj, "y*", &self->write_buffer))
+    if (!PyArg_Parse(bufobj, "y*", &self->user_buffer))
         return NULL;
 
 #if SIZEOF_SIZE_T > SIZEOF_LONG
-    if (self->write_buffer.len > (Py_ssize_t)ULONG_MAX) {
-        PyBuffer_Release(&self->write_buffer);
-        PyErr_SetString(PyExc_ValueError, "buffer to large");
+    if (self->user_buffer.len > (Py_ssize_t)ULONG_MAX) {
+        PyBuffer_Release(&self->user_buffer);
+        PyErr_SetString(PyExc_ValueError, "buffer too large");
         return NULL;
     }
 #endif
 
     self->type = TYPE_WRITE;
     self->handle = handle;
-    wsabuf.len = (DWORD)self->write_buffer.len;
-    wsabuf.buf = self->write_buffer.buf;
+    wsabuf.len = (DWORD)self->user_buffer.len;
+    wsabuf.buf = self->user_buffer.buf;
 
     Py_BEGIN_ALLOW_THREADS
     ret = WSASend((SOCKET)handle, &wsabuf, 1, &written, flags,
@@ -914,7 +1026,7 @@ Overlapped_WSASend(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -951,7 +1063,7 @@ Overlapped_AcceptEx(OverlappedObject *self, PyObject *args)
 
     self->type = TYPE_ACCEPT;
     self->handle = (HANDLE)ListenSocket;
-    self->read_buffer = buf;
+    self->allocated_buffer = buf;
 
     Py_BEGIN_ALLOW_THREADS
     ret = Py_AcceptEx(ListenSocket, AcceptSocket, PyBytes_AS_STRING(buf),
@@ -964,7 +1076,7 @@ Overlapped_AcceptEx(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -990,7 +1102,9 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
         ((SOCKADDR_IN*)Address)->sin_port = htons(Port);
         return Length;
     }
-    else if (PyArg_ParseTuple(obj, "uHkk", &Host, &Port, &FlowInfo, &ScopeId))
+    else if (PyArg_ParseTuple(obj,
+                              "uHkk;ConnectEx(): illegal address_as_bytes "
+                              "argument", &Host, &Port, &FlowInfo, &ScopeId))
     {
         PyErr_Clear();
         Address->sa_family = AF_INET6;
@@ -1024,8 +1138,11 @@ Overlapped_ConnectEx(OverlappedObject *self, PyObject *args)
     BOOL ret;
     DWORD err;
 
-    if (!PyArg_ParseTuple(args, F_HANDLE "O", &ConnectSocket, &AddressObj))
+    if (!PyArg_ParseTuple(args, F_HANDLE "O!:ConnectEx",
+                          &ConnectSocket, &PyTuple_Type, &AddressObj))
+    {
         return NULL;
+    }
 
     if (self->type != TYPE_NONE) {
         PyErr_SetString(PyExc_ValueError, "operation already attempted");
@@ -1051,7 +1168,7 @@ Overlapped_ConnectEx(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1090,7 +1207,62 @@ Overlapped_DisconnectEx(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_NONE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
+            return SetFromWindowsErr(err);
+    }
+}
+
+PyDoc_STRVAR(
+    Overlapped_TransmitFile_doc,
+    "TransmitFile(socket, file, offset, offset_high, "
+    "count_to_write, count_per_send, flags) "
+    "-> Overlapped[None]\n\n"
+    "Transmit file data over a connected socket.");
+
+static PyObject *
+Overlapped_TransmitFile(OverlappedObject *self, PyObject *args)
+{
+    SOCKET Socket;
+    HANDLE File;
+    DWORD offset;
+    DWORD offset_high;
+    DWORD count_to_write;
+    DWORD count_per_send;
+    DWORD flags;
+    BOOL ret;
+    DWORD err;
+
+    if (!PyArg_ParseTuple(args,
+                          F_HANDLE F_HANDLE F_DWORD F_DWORD
+                          F_DWORD F_DWORD F_DWORD,
+                          &Socket, &File, &offset, &offset_high,
+                          &count_to_write, &count_per_send,
+                          &flags))
+        return NULL;
+
+    if (self->type != TYPE_NONE) {
+        PyErr_SetString(PyExc_ValueError, "operation already attempted");
+        return NULL;
+    }
+
+    self->type = TYPE_TRANSMIT_FILE;
+    self->handle = (HANDLE)Socket;
+    self->overlapped.Offset = offset;
+    self->overlapped.OffsetHigh = offset_high;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = Py_TransmitFile(Socket, File, count_to_write, count_per_send,
+                          &self->overlapped,
+                          NULL, flags);
+    Py_END_ALLOW_THREADS
+
+    self->error = err = ret ? ERROR_SUCCESS : WSAGetLastError();
+    switch (err) {
+        case ERROR_SUCCESS:
+        case ERROR_IO_PENDING:
+            Py_RETURN_NONE;
+        default:
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1131,7 +1303,7 @@ Overlapped_ConnectNamedPipe(OverlappedObject *self, PyObject *args)
         case ERROR_IO_PENDING:
             Py_RETURN_FALSE;
         default:
-            self->type = TYPE_NOT_STARTED;
+            Overlapped_clear(self);
             return SetFromWindowsErr(err);
     }
 }
@@ -1181,6 +1353,25 @@ Overlapped_getpending(OverlappedObject *self)
                            self->type != TYPE_NOT_STARTED);
 }
 
+static int
+Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
+{
+    switch (self->type) {
+    case TYPE_READ:
+    case TYPE_ACCEPT:
+        Py_VISIT(self->allocated_buffer);
+        break;
+    case TYPE_WRITE:
+    case TYPE_READINTO:
+        if (self->user_buffer.obj) {
+            Py_VISIT(&self->user_buffer.obj);
+        }
+        break;
+    }
+    return 0;
+}
+
+
 static PyMethodDef Overlapped_methods[] = {
     {"getresult", (PyCFunction) Overlapped_getresult,
      METH_VARARGS, Overlapped_getresult_doc},
@@ -1188,8 +1379,12 @@ static PyMethodDef Overlapped_methods[] = {
      METH_NOARGS, Overlapped_cancel_doc},
     {"ReadFile", (PyCFunction) Overlapped_ReadFile,
      METH_VARARGS, Overlapped_ReadFile_doc},
+    {"ReadFileInto", (PyCFunction) Overlapped_ReadFileInto,
+     METH_VARARGS, Overlapped_ReadFileInto_doc},
     {"WSARecv", (PyCFunction) Overlapped_WSARecv,
      METH_VARARGS, Overlapped_WSARecv_doc},
+    {"WSARecvInto", (PyCFunction) Overlapped_WSARecvInto,
+     METH_VARARGS, Overlapped_WSARecvInto_doc},
     {"WriteFile", (PyCFunction) Overlapped_WriteFile,
      METH_VARARGS, Overlapped_WriteFile_doc},
     {"WSASend", (PyCFunction) Overlapped_WSASend,
@@ -1200,6 +1395,8 @@ static PyMethodDef Overlapped_methods[] = {
      METH_VARARGS, Overlapped_ConnectEx_doc},
     {"DisconnectEx", (PyCFunction) Overlapped_DisconnectEx,
      METH_VARARGS, Overlapped_DisconnectEx_doc},
+    {"TransmitFile", (PyCFunction) Overlapped_TransmitFile,
+     METH_VARARGS, Overlapped_TransmitFile_doc},
     {"ConnectNamedPipe", (PyCFunction) Overlapped_ConnectNamedPipe,
      METH_VARARGS, Overlapped_ConnectNamedPipe_doc},
     {NULL}
@@ -1245,7 +1442,7 @@ PyTypeObject OverlappedType = {
     /* tp_as_buffer      */ 0,
     /* tp_flags          */ Py_TPFLAGS_DEFAULT,
     /* tp_doc            */ "OVERLAPPED structure wrapper",
-    /* tp_traverse       */ 0,
+    /* tp_traverse       */ (traverseproc)Overlapped_traverse,
     /* tp_clear          */ 0,
     /* tp_richcompare    */ 0,
     /* tp_weaklistoffset */ 0,
@@ -1333,6 +1530,7 @@ PyInit__overlapped(void)
 
     WINAPI_CONSTANT(F_DWORD,  ERROR_IO_PENDING);
     WINAPI_CONSTANT(F_DWORD,  ERROR_NETNAME_DELETED);
+    WINAPI_CONSTANT(F_DWORD,  ERROR_OPERATION_ABORTED);
     WINAPI_CONSTANT(F_DWORD,  ERROR_SEM_TIMEOUT);
     WINAPI_CONSTANT(F_DWORD,  ERROR_PIPE_BUSY);
     WINAPI_CONSTANT(F_DWORD,  INFINITE);

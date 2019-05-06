@@ -61,15 +61,22 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
 #define JOIN_SET(p, flag) ((void*) ((uintptr_t) (JOIN_OBJ(p)) | (flag)))
 #define JOIN_OBJ(p) ((PyObject*) ((uintptr_t) (p) & ~(uintptr_t)1))
 
+/* Py_SETREF for a PyObject* that uses a join flag. */
+Py_LOCAL_INLINE(void)
+_set_joined_ptr(PyObject **p, PyObject *new_joined_ptr)
+{
+    PyObject *tmp = JOIN_OBJ(*p);
+    *p = new_joined_ptr;
+    Py_DECREF(tmp);
+}
+
 /* Py_CLEAR for a PyObject* that uses a join flag. Pass the pointer by
  * reference since this function sets it to NULL.
 */
 static void _clear_joined_ptr(PyObject **p)
 {
     if (*p) {
-        PyObject *tmp = JOIN_OBJ(*p);
-        *p = NULL;
-        Py_DECREF(tmp);
+        _set_joined_ptr(p, NULL);
     }
 }
 
@@ -85,6 +92,8 @@ typedef struct {
     PyObject *parseerror_obj;
     PyObject *deepcopy_obj;
     PyObject *elementpath_obj;
+    PyObject *comment_factory;
+    PyObject *pi_factory;
 } elementtreestate;
 
 static struct PyModuleDef elementtreemodule;
@@ -107,6 +116,8 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->parseerror_obj);
     Py_CLEAR(st->deepcopy_obj);
     Py_CLEAR(st->elementpath_obj);
+    Py_CLEAR(st->comment_factory);
+    Py_CLEAR(st->pi_factory);
     return 0;
 }
 
@@ -117,6 +128,8 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->parseerror_obj);
     Py_VISIT(st->deepcopy_obj);
     Py_VISIT(st->elementpath_obj);
+    Py_VISIT(st->comment_factory);
+    Py_VISIT(st->pi_factory);
     return 0;
 }
 
@@ -131,7 +144,7 @@ elementtree_free(void *m)
 LOCAL(PyObject*)
 list_join(PyObject* list)
 {
-    /* join list elements (destroying the list in the process) */
+    /* join list elements */
     PyObject* joiner;
     PyObject* result;
 
@@ -140,8 +153,6 @@ list_join(PyObject* list)
         return NULL;
     result = PyUnicode_Join(joiner, list);
     Py_DECREF(joiner);
-    if (result)
-        Py_DECREF(list);
     return result;
 }
 
@@ -199,6 +210,8 @@ typedef struct {
 
 
 #define Element_CheckExact(op) (Py_TYPE(op) == &Element_Type)
+#define Element_Check(op) PyObject_TypeCheck(op, &Element_Type)
+
 
 /* -------------------------------------------------------------------- */
 /* Element constructors and destructor */
@@ -226,10 +239,28 @@ create_extra(ElementObject* self, PyObject* attrib)
 }
 
 LOCAL(void)
-dealloc_extra(ElementObject* self)
+dealloc_extra(ElementObjectExtra *extra)
+{
+    Py_ssize_t i;
+
+    if (!extra)
+        return;
+
+    Py_DECREF(extra->attrib);
+
+    for (i = 0; i < extra->length; i++)
+        Py_DECREF(extra->children[i]);
+
+    if (extra->children != extra->_children)
+        PyObject_Free(extra->children);
+
+    PyObject_Free(extra);
+}
+
+LOCAL(void)
+clear_extra(ElementObject* self)
 {
     ElementObjectExtra *myextra;
-    Py_ssize_t i;
 
     if (!self->extra)
         return;
@@ -239,15 +270,7 @@ dealloc_extra(ElementObject* self)
     myextra = self->extra;
     self->extra = NULL;
 
-    Py_DECREF(myextra->attrib);
-
-    for (i = 0; i < myextra->length; i++)
-        Py_DECREF(myextra->children[i]);
-
-    if (myextra->children != myextra->_children)
-        PyObject_Free(myextra->children);
-
-    PyObject_Free(myextra);
+    dealloc_extra(myextra);
 }
 
 /* Convenience internal function to create new Element objects with the given
@@ -319,7 +342,10 @@ static PyObject*
 get_attrib_from_keywords(PyObject *kwds)
 {
     PyObject *attrib_str = PyUnicode_FromString("attrib");
-    PyObject *attrib = PyDict_GetItem(kwds, attrib_str);
+    if (attrib_str == NULL) {
+        return NULL;
+    }
+    PyObject *attrib = PyDict_GetItemWithError(kwds, attrib_str);
 
     if (attrib) {
         /* If attrib was found in kwds, copy its value and remove it from
@@ -332,17 +358,21 @@ get_attrib_from_keywords(PyObject *kwds)
             return NULL;
         }
         attrib = PyDict_Copy(attrib);
-        PyDict_DelItem(kwds, attrib_str);
-    } else {
+        if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
+            Py_DECREF(attrib);
+            attrib = NULL;
+        }
+    }
+    else if (!PyErr_Occurred()) {
         attrib = PyDict_New();
     }
 
     Py_DECREF(attrib_str);
 
-    /* attrib can be NULL if PyDict_New failed */
-    if (attrib)
-        if (PyDict_Update(attrib, kwds) < 0)
-            return NULL;
+    if (attrib != NULL && PyDict_Update(attrib, kwds) < 0) {
+        Py_DECREF(attrib);
+        return NULL;
+    }
     return attrib;
 }
 
@@ -358,7 +388,6 @@ static int
 element_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *tag;
-    PyObject *tmp;
     PyObject *attrib = NULL;
     ElementObject *self_elem;
 
@@ -399,15 +428,11 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(tag);
     Py_XSETREF(self_elem->tag, tag);
 
-    tmp = self_elem->text;
     Py_INCREF(Py_None);
-    self_elem->text = Py_None;
-    Py_DECREF(JOIN_OBJ(tmp));
+    _set_joined_ptr(&self_elem->text, Py_None);
 
-    tmp = self_elem->tail;
     Py_INCREF(Py_None);
-    self_elem->tail = Py_None;
-    Py_DECREF(JOIN_OBJ(tmp));
+    _set_joined_ptr(&self_elem->tail, Py_None);
 
     return 0;
 }
@@ -418,6 +443,7 @@ element_resize(ElementObject* self, Py_ssize_t extra)
     Py_ssize_t size;
     PyObject* *children;
 
+    assert(extra >= 0);
     /* make sure self->children can hold the given number of extra
        elements.  set an exception and return -1 if allocation failed */
 
@@ -467,10 +493,23 @@ element_resize(ElementObject* self, Py_ssize_t extra)
     return -1;
 }
 
+LOCAL(void)
+raise_type_error(PyObject *element)
+{
+    PyErr_Format(PyExc_TypeError,
+                 "expected an Element, not \"%.200s\"",
+                 Py_TYPE(element)->tp_name);
+}
+
 LOCAL(int)
 element_add_subelement(ElementObject* self, PyObject* element)
 {
     /* add a child element to a parent */
+
+    if (!Element_Check(element)) {
+        raise_type_error(element);
+        return -1;
+    }
 
     if (element_resize(self, 1) < 0)
         return -1;
@@ -508,15 +547,17 @@ element_get_text(ElementObject* self)
 {
     /* return borrowed reference to text attribute */
 
-    PyObject* res = self->text;
+    PyObject *res = self->text;
 
     if (JOIN_GET(res)) {
         res = JOIN_OBJ(res);
         if (PyList_CheckExact(res)) {
-            res = list_join(res);
-            if (!res)
+            PyObject *tmp = list_join(res);
+            if (!tmp)
                 return NULL;
-            self->text = res;
+            self->text = tmp;
+            Py_DECREF(res);
+            res = tmp;
         }
     }
 
@@ -528,15 +569,17 @@ element_get_tail(ElementObject* self)
 {
     /* return borrowed reference to text attribute */
 
-    PyObject* res = self->tail;
+    PyObject *res = self->tail;
 
     if (JOIN_GET(res)) {
         res = JOIN_OBJ(res);
         if (PyList_CheckExact(res)) {
-            res = list_join(res);
-            if (!res)
+            PyObject *tmp = list_join(res);
+            if (!tmp)
                 return NULL;
-            self->tail = res;
+            self->tail = tmp;
+            Py_DECREF(res);
+            res = tmp;
         }
     }
 
@@ -562,10 +605,9 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
         attrib = PyDict_Copy(attrib);
         if (!attrib)
             return NULL;
-        if (kwds) {
-            if (PyDict_Update(attrib, kwds) < 0) {
-                return NULL;
-            }
+        if (kwds != NULL && PyDict_Update(attrib, kwds) < 0) {
+            Py_DECREF(attrib);
+            return NULL;
         }
     } else if (kwds) {
         /* have keyword args */
@@ -618,13 +660,14 @@ element_gc_clear(ElementObject *self)
     /* After dropping all references from extra, it's no longer valid anyway,
      * so fully deallocate it.
     */
-    dealloc_extra(self);
+    clear_extra(self);
     return 0;
 }
 
 static void
 element_dealloc(ElementObject* self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_SAFE_BEGIN(self)
 
@@ -669,15 +712,13 @@ static PyObject *
 _elementtree_Element_clear_impl(ElementObject *self)
 /*[clinic end generated code: output=8bcd7a51f94cfff6 input=3c719ff94bf45dd6]*/
 {
-    dealloc_extra(self);
+    clear_extra(self);
 
     Py_INCREF(Py_None);
-    Py_DECREF(JOIN_OBJ(self->text));
-    self->text = Py_None;
+    _set_joined_ptr(&self->text, Py_None);
 
     Py_INCREF(Py_None);
-    Py_DECREF(JOIN_OBJ(self->tail));
-    self->tail = Py_None;
+    _set_joined_ptr(&self->tail, Py_None);
 
     Py_RETURN_NONE;
 }
@@ -699,14 +740,13 @@ _elementtree_Element___copy___impl(ElementObject *self)
     if (!element)
         return NULL;
 
-    Py_DECREF(JOIN_OBJ(element->text));
-    element->text = self->text;
-    Py_INCREF(JOIN_OBJ(element->text));
+    Py_INCREF(JOIN_OBJ(self->text));
+    _set_joined_ptr(&element->text, self->text);
 
-    Py_DECREF(JOIN_OBJ(element->tail));
-    element->tail = self->tail;
-    Py_INCREF(JOIN_OBJ(element->tail));
+    Py_INCREF(JOIN_OBJ(self->tail));
+    _set_joined_ptr(&element->tail, self->tail);
 
+    assert(!element->extra || !element->extra->length);
     if (self->extra) {
         if (element_resize(element, self->extra->length) < 0) {
             Py_DECREF(element);
@@ -718,6 +758,7 @@ _elementtree_Element___copy___impl(ElementObject *self)
             element->extra->children[i] = self->extra->children[i];
         }
 
+        assert(!element->extra->length);
         element->extra->length = self->extra->length;
     }
 
@@ -730,14 +771,14 @@ LOCAL(PyObject *) deepcopy(PyObject *, PyObject *);
 /*[clinic input]
 _elementtree.Element.__deepcopy__
 
-    memo: object
+    memo: object(subclass_of="&PyDict_Type")
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
-/*[clinic end generated code: output=d1f19851d17bf239 input=df24c2b602430b77]*/
+_elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
+/*[clinic end generated code: output=eefc3df50465b642 input=a2d40348c0aade10]*/
 {
     Py_ssize_t i;
     ElementObject* element;
@@ -773,28 +814,32 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
     text = deepcopy(JOIN_OBJ(self->text), memo);
     if (!text)
         goto error;
-    Py_DECREF(element->text);
-    element->text = JOIN_SET(text, JOIN_GET(self->text));
+    _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
     tail = deepcopy(JOIN_OBJ(self->tail), memo);
     if (!tail)
         goto error;
-    Py_DECREF(element->tail);
-    element->tail = JOIN_SET(tail, JOIN_GET(self->tail));
+    _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
 
+    assert(!element->extra || !element->extra->length);
     if (self->extra) {
         if (element_resize(element, self->extra->length) < 0)
             goto error;
 
         for (i = 0; i < self->extra->length; i++) {
             PyObject* child = deepcopy(self->extra->children[i], memo);
-            if (!child) {
+            if (!child || !Element_Check(child)) {
+                if (child) {
+                    raise_type_error(child);
+                    Py_DECREF(child);
+                }
                 element->extra->length = i;
                 goto error;
             }
             element->extra->children[i] = child;
         }
 
+        assert(!element->extra->length);
         element->extra->length = self->extra->length;
     }
 
@@ -846,7 +891,8 @@ deepcopy(PyObject *object, PyObject *memo)
             /* Fall through to general case */
         }
         else if (Element_CheckExact(object)) {
-            return _elementtree_Element___deepcopy__((ElementObject *)object, memo);
+            return _elementtree_Element___deepcopy___impl(
+                (ElementObject *)object, memo);
         }
     }
 
@@ -955,6 +1001,7 @@ element_setstate_from_attributes(ElementObject *self,
                                  PyObject *children)
 {
     Py_ssize_t i, nchildren;
+    ElementObjectExtra *oldextra = NULL;
 
     if (!tag) {
         PyErr_SetString(PyExc_TypeError, "tag may not be NULL");
@@ -964,17 +1011,18 @@ element_setstate_from_attributes(ElementObject *self,
     Py_INCREF(tag);
     Py_XSETREF(self->tag, tag);
 
-    _clear_joined_ptr(&self->text);
-    self->text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
-    Py_INCREF(JOIN_OBJ(self->text));
+    text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
+    Py_INCREF(JOIN_OBJ(text));
+    _set_joined_ptr(&self->text, text);
 
-    _clear_joined_ptr(&self->tail);
-    self->tail = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
-    Py_INCREF(JOIN_OBJ(self->tail));
+    tail = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
+    Py_INCREF(JOIN_OBJ(tail));
+    _set_joined_ptr(&self->tail, tail);
 
     /* Handle ATTRIB and CHILDREN. */
-    if (!children && !attrib)
+    if (!children && !attrib) {
         Py_RETURN_NONE;
+    }
 
     /* Compute 'nchildren'. */
     if (children) {
@@ -982,32 +1030,55 @@ element_setstate_from_attributes(ElementObject *self,
             PyErr_SetString(PyExc_TypeError, "'_children' is not a list");
             return NULL;
         }
-        nchildren = PyList_Size(children);
+        nchildren = PyList_GET_SIZE(children);
+
+        /* (Re-)allocate 'extra'.
+           Avoid DECREFs calling into this code again (cycles, etc.)
+         */
+        oldextra = self->extra;
+        self->extra = NULL;
+        if (element_resize(self, nchildren)) {
+            assert(!self->extra || !self->extra->length);
+            clear_extra(self);
+            self->extra = oldextra;
+            return NULL;
+        }
+        assert(self->extra);
+        assert(self->extra->allocated >= nchildren);
+        if (oldextra) {
+            assert(self->extra->attrib == Py_None);
+            self->extra->attrib = oldextra->attrib;
+            oldextra->attrib = Py_None;
+        }
+
+        /* Copy children */
+        for (i = 0; i < nchildren; i++) {
+            PyObject *child = PyList_GET_ITEM(children, i);
+            if (!Element_Check(child)) {
+                raise_type_error(child);
+                self->extra->length = i;
+                dealloc_extra(oldextra);
+                return NULL;
+            }
+            Py_INCREF(child);
+            self->extra->children[i] = child;
+        }
+
+        assert(!self->extra->length);
+        self->extra->length = nchildren;
     }
     else {
-        nchildren = 0;
+        if (element_resize(self, 0)) {
+            return NULL;
+        }
     }
-
-    /* Allocate 'extra'. */
-    if (element_resize(self, nchildren)) {
-        return NULL;
-    }
-    assert(self->extra && self->extra->allocated >= nchildren);
-
-    /* Copy children */
-    for (i = 0; i < nchildren; i++) {
-        self->extra->children[i] = PyList_GET_ITEM(children, i);
-        Py_INCREF(self->extra->children[i]);
-    }
-
-    self->extra->length = nchildren;
-    self->extra->allocated = nchildren;
 
     /* Stash attrib. */
     if (attrib) {
         Py_INCREF(attrib);
         Py_XSETREF(self->extra->attrib, attrib);
     }
+    dealloc_extra(oldextra);
 
     Py_RETURN_NONE;
 }
@@ -1078,6 +1149,13 @@ checkpath(PyObject* tag)
         const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
         void *data = PyUnicode_DATA(tag);
         unsigned int kind = PyUnicode_KIND(tag);
+        if (len >= 3 && PyUnicode_READ(kind, data, 0) == '{' && (
+                PyUnicode_READ(kind, data, 1) == '}' || (
+                PyUnicode_READ(kind, data, 1) == '*' &&
+                PyUnicode_READ(kind, data, 2) == '}'))) {
+            /* wildcard: '{}tag' or '{*}tag' */
+            return 1;
+        }
         for (i = 0; i < len; i++) {
             Py_UCS4 ch = PyUnicode_READ(kind, data, i);
             if (ch == '{')
@@ -1091,7 +1169,13 @@ checkpath(PyObject* tag)
     }
     if (PyBytes_Check(tag)) {
         char *p = PyBytes_AS_STRING(tag);
-        for (i = 0; i < PyBytes_GET_SIZE(tag); i++) {
+        const Py_ssize_t len = PyBytes_GET_SIZE(tag);
+        if (len >= 3 && p[0] == '{' && (
+                p[1] == '}' || (p[1] == '*' && p[2] == '}'))) {
+            /* wildcard: '{}tag' or '{*}tag' */
+            return 1;
+        }
+        for (i = 0; i < len; i++) {
             if (p[i] == '{')
                 check = 0;
             else if (p[i] == '}')
@@ -1132,16 +1216,6 @@ _elementtree_Element_extend(ElementObject *self, PyObject *elements)
     for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
         PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
         Py_INCREF(element);
-        if (!PyObject_TypeCheck(element, (PyTypeObject *)&Element_Type)) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "expected an Element, not \"%.200s\"",
-                Py_TYPE(element)->tp_name);
-            Py_DECREF(seq);
-            Py_DECREF(element);
-            return NULL;
-        }
-
         if (element_add_subelement(self, element) < 0) {
             Py_DECREF(seq);
             Py_DECREF(element);
@@ -1184,8 +1258,7 @@ _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         int rc;
-        if (!Element_CheckExact(item))
-            continue;
+        assert(Element_Check(item));
         Py_INCREF(item);
         rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc > 0)
@@ -1229,14 +1302,13 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
     }
 
     for (i = 0; i < self->extra->length; i++) {
-        ElementObject* item = (ElementObject*) self->extra->children[i];
+        PyObject *item = self->extra->children[i];
         int rc;
-        if (!Element_CheckExact(item))
-            continue;
+        assert(Element_Check(item));
         Py_INCREF(item);
-        rc = PyObject_RichCompareBool(item->tag, path, Py_EQ);
+        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc > 0) {
-            PyObject* text = element_get_text(item);
+            PyObject* text = element_get_text((ElementObject*)item);
             if (text == Py_None) {
                 Py_DECREF(item);
                 return PyUnicode_New(0, 0);
@@ -1269,13 +1341,12 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
 {
     Py_ssize_t i;
     PyObject* out;
-    PyObject* tag = path;
     elementtreestate *st = ET_STATE_GLOBAL;
 
-    if (checkpath(tag) || namespaces != Py_None) {
+    if (checkpath(path) || namespaces != Py_None) {
         _Py_IDENTIFIER(findall);
         return _PyObject_CallMethodIdObjArgs(
-            st->elementpath_obj, &PyId_findall, self, tag, namespaces, NULL
+            st->elementpath_obj, &PyId_findall, self, path, namespaces, NULL
             );
     }
 
@@ -1289,10 +1360,9 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
         int rc;
-        if (!Element_CheckExact(item))
-            continue;
+        assert(Element_Check(item));
         Py_INCREF(item);
-        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, tag, Py_EQ);
+        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
         if (rc != 0 && (rc < 0 || PyList_Append(out, item) < 0)) {
             Py_DECREF(item);
             Py_DECREF(out);
@@ -1343,9 +1413,13 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
     if (!self->extra || self->extra->attrib == Py_None)
         value = default_value;
     else {
-        value = PyDict_GetItem(self->extra->attrib, key);
-        if (!value)
+        value = PyDict_GetItemWithError(self->extra->attrib, key);
+        if (!value) {
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
             value = default_value;
+        }
     }
 
     Py_INCREF(value);
@@ -1364,7 +1438,12 @@ _elementtree_Element_getchildren_impl(ElementObject *self)
     Py_ssize_t i;
     PyObject* list;
 
-    /* FIXME: report as deprecated? */
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "This method will be removed in future versions.  "
+                     "Use 'list(elem)' or iteration over elem instead.",
+                     1) < 0) {
+        return NULL;
+    }
 
     if (!self->extra)
         return PyList_New(0);
@@ -1410,6 +1489,27 @@ _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
     }
 
     return create_elementiter(self, tag, 0);
+}
+
+
+/*[clinic input]
+_elementtree.Element.getiterator
+
+    tag: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag)
+/*[clinic end generated code: output=cb69ff4a3742dfa1 input=500da1a03f7b9e28]*/
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "This method will be removed in future versions.  "
+                     "Use 'tree.iter()' or 'list(tree.iter())' instead.",
+                     1) < 0) {
+        return NULL;
+    }
+    return _elementtree_Element_iter_impl(self, tag);
 }
 
 
@@ -1676,6 +1776,10 @@ element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
     old = self->extra->children[index];
 
     if (item) {
+        if (!Element_Check(item)) {
+            raise_type_error(item);
+            return -1;
+        }
         Py_INCREF(item);
         self->extra->children[index] = item;
     } else {
@@ -1711,11 +1815,11 @@ element_subscr(PyObject* self_, PyObject* item)
         if (!self->extra)
             return PyList_New(0);
 
-        if (PySlice_GetIndicesEx(item,
-                self->extra->length,
-                &start, &stop, &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
 
         if (slicelen <= 0)
             return PyList_New(0);
@@ -1767,11 +1871,11 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 return -1;
         }
 
-        if (PySlice_GetIndicesEx(item,
-                self->extra->length,
-                &start, &stop, &step, &slicelen) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
 
         if (value == NULL) {
             /* Delete slice */
@@ -1796,7 +1900,6 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
              * scheduled for removal.
             */
             if (!(recycle = PyList_New(slicelen))) {
-                PyErr_NoMemory();
                 return -1;
             }
 
@@ -1836,7 +1939,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
             self->extra->length -= slicelen;
 
             /* Discard the recycle list with all the deleted sub-elements */
-            Py_XDECREF(recycle);
+            Py_DECREF(recycle);
             return 0;
         }
 
@@ -1849,7 +1952,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                 );
             return -1;
         }
-        newlen = PySequence_Size(seq);
+        newlen = PySequence_Fast_GET_SIZE(seq);
 
         if (step !=  1 && newlen != slicelen)
         {
@@ -1865,6 +1968,15 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         /* Resize before creating the recycle bin, to prevent refleaks. */
         if (newlen > slicelen) {
             if (element_resize(self, newlen - slicelen) < 0) {
+                Py_DECREF(seq);
+                return -1;
+            }
+        }
+
+        for (i = 0; i < newlen; i++) {
+            PyObject *element = PySequence_Fast_GET_ITEM(seq, i);
+            if (!Element_Check(element)) {
+                raise_type_error(element);
                 Py_DECREF(seq);
                 return -1;
             }
@@ -1978,8 +2090,7 @@ element_text_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    Py_DECREF(JOIN_OBJ(self->text));
-    self->text = value;
+    _set_joined_ptr(&self->text, value);
     return 0;
 }
 
@@ -1988,8 +2099,7 @@ element_tail_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    Py_DECREF(JOIN_OBJ(self->tail));
-    self->tail = value;
+    _set_joined_ptr(&self->tail, value);
     return 0;
 }
 
@@ -2047,6 +2157,8 @@ elementiter_dealloc(ElementIterObject *it)
 {
     Py_ssize_t i = it->parent_stack_used;
     it->parent_stack_used = 0;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(it);
     while (i--)
         Py_XDECREF(it->parent_stack[i].parent);
     PyMem_Free(it->parent_stack);
@@ -2054,7 +2166,6 @@ elementiter_dealloc(ElementIterObject *it)
     Py_XDECREF(it->sought_tag);
     Py_XDECREF(it->root_element);
 
-    PyObject_GC_UnTrack(it);
     PyObject_GC_Del(it);
 }
 
@@ -2148,6 +2259,7 @@ elementiter_next(ElementIterObject *it)
                 continue;
             }
 
+            assert(Element_Check(extra->children[child_index]));
             elem = (ElementObject *)extra->children[child_index];
             item->child_index++;
             Py_INCREF(elem);
@@ -2292,6 +2404,8 @@ typedef struct {
     Py_ssize_t index; /* current stack size (0 means empty) */
 
     PyObject *element_factory;
+    PyObject *comment_factory;
+    PyObject *pi_factory;
 
     /* element tracing */
     PyObject *events_append; /* the append method of the list of events, or NULL */
@@ -2299,6 +2413,11 @@ typedef struct {
     PyObject *end_event_obj;
     PyObject *start_ns_event_obj;
     PyObject *end_ns_event_obj;
+    PyObject *comment_event_obj;
+    PyObject *pi_event_obj;
+
+    char insert_comments;
+    char insert_pis;
 } TreeBuilderObject;
 
 #define TreeBuilder_CheckExact(op) (Py_TYPE(op) == &TreeBuilder_Type)
@@ -2320,6 +2439,8 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
         t->data = NULL;
         t->element_factory = NULL;
+        t->comment_factory = NULL;
+        t->pi_factory = NULL;
         t->stack = PyList_New(20);
         if (!t->stack) {
             Py_DECREF(t->this);
@@ -2332,6 +2453,8 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         t->events_append = NULL;
         t->start_event_obj = t->end_event_obj = NULL;
         t->start_ns_event_obj = t->end_ns_event_obj = NULL;
+        t->comment_event_obj = t->pi_event_obj = NULL;
+        t->insert_comments = t->insert_pis = 0;
     }
     return (PyObject *)t;
 }
@@ -2340,17 +2463,53 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 _elementtree.TreeBuilder.__init__
 
     element_factory: object = NULL
+    *
+    comment_factory: object = NULL
+    pi_factory: object = NULL
+    insert_comments: bool = False
+    insert_pis: bool = False
 
 [clinic start generated code]*/
 
 static int
 _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
-                                       PyObject *element_factory)
-/*[clinic end generated code: output=91cfa7558970ee96 input=1b424eeefc35249c]*/
+                                       PyObject *element_factory,
+                                       PyObject *comment_factory,
+                                       PyObject *pi_factory,
+                                       int insert_comments, int insert_pis)
+/*[clinic end generated code: output=8571d4dcadfdf952 input=1f967b5c245e0a71]*/
 {
-    if (element_factory) {
+    if (element_factory && element_factory != Py_None) {
         Py_INCREF(element_factory);
         Py_XSETREF(self->element_factory, element_factory);
+    } else {
+        Py_CLEAR(self->element_factory);
+    }
+
+    if (!comment_factory || comment_factory == Py_None) {
+        elementtreestate *st = ET_STATE_GLOBAL;
+        comment_factory = st->comment_factory;
+    }
+    if (comment_factory) {
+        Py_INCREF(comment_factory);
+        Py_XSETREF(self->comment_factory, comment_factory);
+        self->insert_comments = insert_comments;
+    } else {
+        Py_CLEAR(self->comment_factory);
+        self->insert_comments = 0;
+    }
+
+    if (!pi_factory || pi_factory == Py_None) {
+        elementtreestate *st = ET_STATE_GLOBAL;
+        pi_factory = st->pi_factory;
+    }
+    if (pi_factory) {
+        Py_INCREF(pi_factory);
+        Py_XSETREF(self->pi_factory, pi_factory);
+        self->insert_pis = insert_pis;
+    } else {
+        Py_CLEAR(self->pi_factory);
+        self->insert_pis = 0;
     }
 
     return 0;
@@ -2359,11 +2518,20 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 static int
 treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(self->pi_event_obj);
+    Py_VISIT(self->comment_event_obj);
+    Py_VISIT(self->end_ns_event_obj);
+    Py_VISIT(self->start_ns_event_obj);
+    Py_VISIT(self->end_event_obj);
+    Py_VISIT(self->start_event_obj);
+    Py_VISIT(self->events_append);
     Py_VISIT(self->root);
     Py_VISIT(self->this);
     Py_VISIT(self->last);
     Py_VISIT(self->data);
     Py_VISIT(self->stack);
+    Py_VISIT(self->pi_factory);
+    Py_VISIT(self->comment_factory);
     Py_VISIT(self->element_factory);
     return 0;
 }
@@ -2371,6 +2539,8 @@ treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
 static int
 treebuilder_gc_clear(TreeBuilderObject *self)
 {
+    Py_CLEAR(self->pi_event_obj);
+    Py_CLEAR(self->comment_event_obj);
     Py_CLEAR(self->end_ns_event_obj);
     Py_CLEAR(self->start_ns_event_obj);
     Py_CLEAR(self->end_event_obj);
@@ -2380,6 +2550,8 @@ treebuilder_gc_clear(TreeBuilderObject *self)
     Py_CLEAR(self->data);
     Py_CLEAR(self->last);
     Py_CLEAR(self->this);
+    Py_CLEAR(self->pi_factory);
+    Py_CLEAR(self->comment_factory);
     Py_CLEAR(self->element_factory);
     Py_CLEAR(self->root);
     return 0;
@@ -2396,41 +2568,103 @@ treebuilder_dealloc(TreeBuilderObject *self)
 /* -------------------------------------------------------------------- */
 /* helpers for handling of arbitrary element-like objects */
 
+/*[clinic input]
+_elementtree._set_factories
+
+    comment_factory: object
+    pi_factory: object
+    /
+
+Change the factories used to create comments and processing instructions.
+
+For internal use only.
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
+                                 PyObject *pi_factory)
+/*[clinic end generated code: output=813b408adee26535 input=99d17627aea7fb3b]*/
+{
+    elementtreestate *st = ET_STATE_GLOBAL;
+    PyObject *old;
+
+    if (!PyCallable_Check(comment_factory) && comment_factory != Py_None) {
+        PyErr_Format(PyExc_TypeError, "Comment factory must be callable, not %.100s",
+                     Py_TYPE(comment_factory)->tp_name);
+        return NULL;
+    }
+    if (!PyCallable_Check(pi_factory) && pi_factory != Py_None) {
+        PyErr_Format(PyExc_TypeError, "PI factory must be callable, not %.100s",
+                     Py_TYPE(pi_factory)->tp_name);
+        return NULL;
+    }
+
+    old = PyTuple_Pack(2,
+        st->comment_factory ? st->comment_factory : Py_None,
+        st->pi_factory ? st->pi_factory : Py_None);
+
+    if (comment_factory == Py_None) {
+        Py_CLEAR(st->comment_factory);
+    } else {
+        Py_INCREF(comment_factory);
+        Py_XSETREF(st->comment_factory, comment_factory);
+    }
+    if (pi_factory == Py_None) {
+        Py_CLEAR(st->pi_factory);
+    } else {
+        Py_INCREF(pi_factory);
+        Py_XSETREF(st->pi_factory, pi_factory);
+    }
+
+    return old;
+}
+
 static int
-treebuilder_set_element_text_or_tail(PyObject *element, PyObject *data,
+treebuilder_set_element_text_or_tail(PyObject *element, PyObject **data,
                                      PyObject **dest, _Py_Identifier *name)
 {
     if (Element_CheckExact(element)) {
-        Py_DECREF(JOIN_OBJ(*dest));
-        *dest = JOIN_SET(data, PyList_CheckExact(data));
+        PyObject *tmp = JOIN_OBJ(*dest);
+        *dest = JOIN_SET(*data, PyList_CheckExact(*data));
+        *data = NULL;
+        Py_DECREF(tmp);
         return 0;
     }
     else {
-        PyObject *joined = list_join(data);
+        PyObject *joined = list_join(*data);
         int r;
         if (joined == NULL)
             return -1;
         r = _PyObject_SetAttrId(element, name, joined);
         Py_DECREF(joined);
-        return r;
+        if (r < 0)
+            return -1;
+        Py_CLEAR(*data);
+        return 0;
     }
 }
 
-/* These two functions steal a reference to data */
-static int
-treebuilder_set_element_text(PyObject *element, PyObject *data)
+LOCAL(int)
+treebuilder_flush_data(TreeBuilderObject* self)
 {
-    _Py_IDENTIFIER(text);
-    return treebuilder_set_element_text_or_tail(
-        element, data, &((ElementObject *) element)->text, &PyId_text);
-}
+    PyObject *element = self->last;
 
-static int
-treebuilder_set_element_tail(PyObject *element, PyObject *data)
-{
-    _Py_IDENTIFIER(tail);
-    return treebuilder_set_element_text_or_tail(
-        element, data, &((ElementObject *) element)->tail, &PyId_tail);
+    if (!self->data) {
+        return 0;
+    }
+
+    if (self->this == element) {
+        _Py_IDENTIFIER(text);
+        return treebuilder_set_element_text_or_tail(
+                element, &self->data,
+                &((ElementObject *) element)->text, &PyId_text);
+    }
+    else {
+        _Py_IDENTIFIER(tail);
+        return treebuilder_set_element_text_or_tail(
+                element, &self->data,
+                &((ElementObject *) element)->tail, &PyId_tail);
+    }
 }
 
 static int
@@ -2460,7 +2694,7 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
         PyObject *event = PyTuple_Pack(2, action, node);
         if (event == NULL)
             return -1;
-        res = PyObject_CallFunctionObjArgs(self->events_append, event, NULL);
+        res = _PyObject_FastCall(self->events_append, &event, 1);
         Py_DECREF(event);
         if (res == NULL)
             return -1;
@@ -2480,19 +2714,11 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     PyObject* this;
     elementtreestate *st = ET_STATE_GLOBAL;
 
-    if (self->data) {
-        if (self->this == self->last) {
-            if (treebuilder_set_element_text(self->last, self->data))
-                return NULL;
-        }
-        else {
-            if (treebuilder_set_element_tail(self->last, self->data))
-                return NULL;
-        }
-        self->data = NULL;
+    if (treebuilder_flush_data(self) < 0) {
+        return NULL;
     }
 
-    if (!self->element_factory || self->element_factory == Py_None) {
+    if (!self->element_factory) {
         node = create_new_element(tag, attrib);
     } else if (attrib == Py_None) {
         attrib = PyDict_New();
@@ -2594,15 +2820,8 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 {
     PyObject* item;
 
-    if (self->data) {
-        if (self->this == self->last) {
-            if (treebuilder_set_element_text(self->last, self->data))
-                return NULL;
-        } else {
-            if (treebuilder_set_element_tail(self->last, self->data))
-                return NULL;
-        }
-        self->data = NULL;
+    if (treebuilder_flush_data(self) < 0) {
+        return NULL;
     }
 
     if (self->index == 0) {
@@ -2625,6 +2844,117 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 
     Py_INCREF(self->last);
     return (PyObject*) self->last;
+}
+
+LOCAL(PyObject*)
+treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
+{
+    PyObject* comment = NULL;
+    PyObject* this;
+
+    if (treebuilder_flush_data(self) < 0) {
+        return NULL;
+    }
+
+    if (self->comment_factory) {
+        comment = _PyObject_FastCall(self->comment_factory, &text, 1);
+        if (!comment)
+            return NULL;
+
+        this = self->this;
+        if (self->insert_comments && this != Py_None) {
+            if (treebuilder_add_subelement(this, comment) < 0)
+                goto error;
+        }
+    } else {
+        Py_INCREF(text);
+        comment = text;
+    }
+
+    if (self->events_append && self->comment_event_obj) {
+        if (treebuilder_append_event(self, self->comment_event_obj, comment) < 0)
+            goto error;
+    }
+
+    return comment;
+
+  error:
+    Py_DECREF(comment);
+    return NULL;
+}
+
+LOCAL(PyObject*)
+treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
+{
+    PyObject* pi = NULL;
+    PyObject* this;
+    PyObject* stack[2] = {target, text};
+
+    if (treebuilder_flush_data(self) < 0) {
+        return NULL;
+    }
+
+    if (self->pi_factory) {
+        pi = _PyObject_FastCall(self->pi_factory, stack, 2);
+        if (!pi) {
+            return NULL;
+        }
+
+        this = self->this;
+        if (self->insert_pis && this != Py_None) {
+            if (treebuilder_add_subelement(this, pi) < 0)
+                goto error;
+        }
+    } else {
+        pi = PyTuple_Pack(2, target, text);
+        if (!pi) {
+            return NULL;
+        }
+    }
+
+    if (self->events_append && self->pi_event_obj) {
+        if (treebuilder_append_event(self, self->pi_event_obj, pi) < 0)
+            goto error;
+    }
+
+    return pi;
+
+  error:
+    Py_DECREF(pi);
+    return NULL;
+}
+
+LOCAL(PyObject*)
+treebuilder_handle_start_ns(TreeBuilderObject* self, PyObject* prefix, PyObject* uri)
+{
+    PyObject* parcel;
+
+    if (self->events_append && self->start_ns_event_obj) {
+        parcel = PyTuple_Pack(2, prefix, uri);
+        if (!parcel) {
+            return NULL;
+        }
+
+        if (treebuilder_append_event(self, self->start_ns_event_obj, parcel) < 0) {
+            Py_DECREF(parcel);
+            return NULL;
+        }
+        Py_DECREF(parcel);
+    }
+
+    Py_RETURN_NONE;
+}
+
+LOCAL(PyObject*)
+treebuilder_handle_end_ns(TreeBuilderObject* self, PyObject* prefix)
+{
+    if (self->events_append && self->end_ns_event_obj) {
+        if (treebuilder_append_event(self, self->end_ns_event_obj, prefix) < 0) {
+            return NULL;
+        }
+    }
+
+    Py_RETURN_NONE;
 }
 
 /* -------------------------------------------------------------------- */
@@ -2658,6 +2988,38 @@ _elementtree_TreeBuilder_end(TreeBuilderObject *self, PyObject *tag)
 /*[clinic end generated code: output=9a98727cc691cd9d input=22dc3674236f5745]*/
 {
     return treebuilder_handle_end(self, tag);
+}
+
+/*[clinic input]
+_elementtree.TreeBuilder.comment
+
+    text: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_TreeBuilder_comment(TreeBuilderObject *self, PyObject *text)
+/*[clinic end generated code: output=22835be41deeaa27 input=47e7ebc48ed01dfa]*/
+{
+    return treebuilder_handle_comment(self, text);
+}
+
+/*[clinic input]
+_elementtree.TreeBuilder.pi
+
+    target: object
+    text: object = None
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_elementtree_TreeBuilder_pi_impl(TreeBuilderObject *self, PyObject *target,
+                                 PyObject *text)
+/*[clinic end generated code: output=21eb95ec9d04d1d9 input=349342bd79c35570]*/
+{
+    return treebuilder_handle_pi(self, target, text);
 }
 
 LOCAL(PyObject*)
@@ -2730,6 +3092,8 @@ typedef struct {
 
     PyObject *names;
 
+    PyObject *handle_start_ns;
+    PyObject *handle_end_ns;
     PyObject *handle_start;
     PyObject *handle_data;
     PyObject *handle_end;
@@ -2741,12 +3105,6 @@ typedef struct {
     PyObject *handle_close;
 
 } XMLParserObject;
-
-static PyObject*
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames);
-static PyObject *
-_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
-                                    PyObject *pubid, PyObject *system);
 
 /* helpers */
 
@@ -2765,11 +3123,12 @@ makeuniversal(XMLParserObject* self, const char* string)
     if (!key)
         return NULL;
 
-    value = PyDict_GetItem(self->names, key);
+    value = PyDict_GetItemWithError(self->names, key);
 
     if (value) {
         Py_INCREF(value);
-    } else {
+    }
+    else if (!PyErr_Occurred()) {
         /* new name.  convert to universal name, and decode as
            necessary */
 
@@ -2836,7 +3195,7 @@ expat_set_error(enum XML_Error error_code, Py_ssize_t line, Py_ssize_t column,
     if (errmsg == NULL)
         return;
 
-    error = PyObject_CallFunctionObjArgs(st->parseerror_obj, errmsg, NULL);
+    error = _PyObject_FastCall(st->parseerror_obj, &errmsg, 1);
     Py_DECREF(errmsg);
     if (!error)
         return;
@@ -2891,7 +3250,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
     if (!key)
         return;
 
-    value = PyDict_GetItem(self->entity, key);
+    value = PyDict_GetItemWithError(self->entity, key);
 
     if (value) {
         if (TreeBuilder_CheckExact(self->target))
@@ -2899,7 +3258,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
                 (TreeBuilderObject*) self->target, value
                 );
         else if (self->handle_data)
-            res = PyObject_CallFunctionObjArgs(self->handle_data, value, NULL);
+            res = _PyObject_FastCall(self->handle_data, &value, 1);
         else
             res = NULL;
         Py_XDECREF(res);
@@ -3010,7 +3369,7 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
         /* shortcut */
         res = treebuilder_handle_data((TreeBuilderObject*) self->target, data);
     else if (self->handle_data)
-        res = PyObject_CallFunctionObjArgs(self->handle_data, data, NULL);
+        res = _PyObject_FastCall(self->handle_data, &data, 1);
     else
         res = NULL;
 
@@ -3037,7 +3396,7 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
     else if (self->handle_end) {
         tag = makeuniversal(self, tag_in);
         if (tag) {
-            res = PyObject_CallFunctionObjArgs(self->handle_end, tag, NULL);
+            res = _PyObject_FastCall(self->handle_end, &tag, 1);
             Py_DECREF(tag);
         }
     }
@@ -3046,62 +3405,119 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
 }
 
 static void
-expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
-                       const XML_Char *uri)
+expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
+                       const XML_Char *uri_in)
 {
-    TreeBuilderObject *target = (TreeBuilderObject*) self->target;
-    PyObject *parcel;
+    PyObject* res = NULL;
+    PyObject* uri;
+    PyObject* prefix;
+    PyObject* stack[2];
 
     if (PyErr_Occurred())
         return;
 
-    if (!target->events_append || !target->start_ns_event_obj)
-        return;
+    if (!uri_in)
+        uri_in = "";
+    if (!prefix_in)
+        prefix_in = "";
 
-    if (!uri)
-        uri = "";
-    if (!prefix)
-        prefix = "";
+    if (TreeBuilder_CheckExact(self->target)) {
+        /* shortcut - TreeBuilder does not actually implement .start_ns() */
+        TreeBuilderObject *target = (TreeBuilderObject*) self->target;
 
-    parcel = Py_BuildValue("ss", prefix, uri);
-    if (!parcel)
-        return;
-    treebuilder_append_event(target, target->start_ns_event_obj, parcel);
-    Py_DECREF(parcel);
+        if (target->events_append && target->start_ns_event_obj) {
+            prefix = PyUnicode_DecodeUTF8(prefix_in, strlen(prefix_in), "strict");
+            if (!prefix)
+                return;
+            uri = PyUnicode_DecodeUTF8(uri_in, strlen(uri_in), "strict");
+            if (!uri) {
+                Py_DECREF(prefix);
+                return;
+            }
+
+            res = treebuilder_handle_start_ns(target, prefix, uri);
+            Py_DECREF(uri);
+            Py_DECREF(prefix);
+        }
+    } else if (self->handle_start_ns) {
+        prefix = PyUnicode_DecodeUTF8(prefix_in, strlen(prefix_in), "strict");
+        if (!prefix)
+            return;
+        uri = PyUnicode_DecodeUTF8(uri_in, strlen(uri_in), "strict");
+        if (!uri) {
+            Py_DECREF(prefix);
+            return;
+        }
+
+        stack[0] = prefix;
+        stack[1] = uri;
+        res = _PyObject_FastCall(self->handle_start_ns, stack, 2);
+        Py_DECREF(uri);
+        Py_DECREF(prefix);
+    }
+
+    Py_XDECREF(res);
 }
 
 static void
 expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
 {
-    TreeBuilderObject *target = (TreeBuilderObject*) self->target;
+    PyObject *res = NULL;
+    PyObject* prefix;
 
     if (PyErr_Occurred())
         return;
 
-    if (!target->events_append)
-        return;
+    if (!prefix_in)
+        prefix_in = "";
 
-    treebuilder_append_event(target, target->end_ns_event_obj, Py_None);
+    if (TreeBuilder_CheckExact(self->target)) {
+        /* shortcut - TreeBuilder does not actually implement .end_ns() */
+        TreeBuilderObject *target = (TreeBuilderObject*) self->target;
+
+        if (target->events_append && target->end_ns_event_obj) {
+            res = treebuilder_handle_end_ns(target, Py_None);
+        }
+    } else if (self->handle_end_ns) {
+        prefix = PyUnicode_DecodeUTF8(prefix_in, strlen(prefix_in), "strict");
+        if (!prefix)
+            return;
+
+        res = _PyObject_FastCall(self->handle_end_ns, &prefix, 1);
+        Py_DECREF(prefix);
+    }
+
+    Py_XDECREF(res);
 }
 
 static void
 expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
 {
-    PyObject* comment;
-    PyObject* res;
+    PyObject* comment = NULL;
+    PyObject* res = NULL;
 
     if (PyErr_Occurred())
         return;
 
-    if (self->handle_comment) {
+    if (TreeBuilder_CheckExact(self->target)) {
+        /* shortcut */
+        TreeBuilderObject *target = (TreeBuilderObject*) self->target;
+
         comment = PyUnicode_DecodeUTF8(comment_in, strlen(comment_in), "strict");
-        if (comment) {
-            res = PyObject_CallFunctionObjArgs(self->handle_comment,
-                                               comment, NULL);
-            Py_XDECREF(res);
-            Py_DECREF(comment);
-        }
+        if (!comment)
+            return; /* parser will look for errors */
+
+        res = treebuilder_handle_comment(target,  comment);
+    } else if (self->handle_comment) {
+        comment = PyUnicode_DecodeUTF8(comment_in, strlen(comment_in), "strict");
+        if (!comment)
+            return;
+
+        res = _PyObject_FastCall(self->handle_comment, &comment, 1);
     }
+
+    Py_XDECREF(res);
+    Py_DECREF(comment);
 }
 
 static void
@@ -3111,10 +3527,9 @@ expat_start_doctype_handler(XMLParserObject *self,
                             const XML_Char *pubid,
                             int has_internal_subset)
 {
-    PyObject *self_pyobj = (PyObject *)self;
+    _Py_IDENTIFIER(doctype);
     PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
-    PyObject *parser_doctype = NULL;
-    PyObject *res = NULL;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3151,33 +3566,16 @@ expat_start_doctype_handler(XMLParserObject *self,
         res = PyObject_CallFunctionObjArgs(self->handle_doctype,
                                            doctype_name_obj, pubid_obj,
                                            sysid_obj, NULL);
-        Py_CLEAR(res);
+        Py_XDECREF(res);
     }
-    else {
-        /* Now see if the parser itself has a doctype method. If yes and it's
-         * a custom method, call it but warn about deprecation. If it's only
-         * the vanilla XMLParser method, do nothing.
-         */
-        parser_doctype = PyObject_GetAttrString(self_pyobj, "doctype");
-        if (parser_doctype &&
-            !(PyCFunction_Check(parser_doctype) &&
-              PyCFunction_GET_SELF(parser_doctype) == self_pyobj &&
-              PyCFunction_GET_FUNCTION(parser_doctype) ==
-                    (PyCFunction) _elementtree_XMLParser_doctype)) {
-            res = _elementtree_XMLParser_doctype_impl(self, doctype_name_obj,
-                                                      pubid_obj, sysid_obj);
-            if (!res)
-                goto clear;
-            Py_DECREF(res);
-            res = PyObject_CallFunctionObjArgs(parser_doctype,
-                                               doctype_name_obj, pubid_obj,
-                                               sysid_obj, NULL);
-            Py_CLEAR(res);
-        }
+    else if (_PyObject_LookupAttrId((PyObject *)self, &PyId_doctype, &res) > 0) {
+        (void)PyErr_WarnEx(PyExc_RuntimeWarning,
+                "The doctype() method of XMLParser is ignored.  "
+                "Define doctype() method on the TreeBuilder target.",
+                1);
+        Py_DECREF(res);
     }
 
-clear:
-    Py_XDECREF(parser_doctype);
     Py_DECREF(doctype_name_obj);
     Py_DECREF(pubid_obj);
     Py_DECREF(sysid_obj);
@@ -3187,27 +3585,51 @@ static void
 expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
                  const XML_Char* data_in)
 {
-    PyObject* target;
+    PyObject* pi_target = NULL;
     PyObject* data;
     PyObject* res;
+    PyObject* stack[2];
 
     if (PyErr_Occurred())
         return;
 
-    if (self->handle_pi) {
-        target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
-        data = PyUnicode_DecodeUTF8(data_in, strlen(data_in), "strict");
-        if (target && data) {
-            res = PyObject_CallFunctionObjArgs(self->handle_pi,
-                                               target, data, NULL);
+    if (TreeBuilder_CheckExact(self->target)) {
+        /* shortcut */
+        TreeBuilderObject *target = (TreeBuilderObject*) self->target;
+
+        if (target->events_append && target->pi_event_obj) {
+            pi_target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
+            if (!pi_target)
+                goto error;
+            data = PyUnicode_DecodeUTF8(data_in, strlen(data_in), "strict");
+            if (!data)
+                goto error;
+            res = treebuilder_handle_pi(target, pi_target, data);
             Py_XDECREF(res);
             Py_DECREF(data);
-            Py_DECREF(target);
-        } else {
-            Py_XDECREF(data);
-            Py_XDECREF(target);
+            Py_DECREF(pi_target);
         }
+    } else if (self->handle_pi) {
+        pi_target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
+        if (!pi_target)
+            goto error;
+        data = PyUnicode_DecodeUTF8(data_in, strlen(data_in), "strict");
+        if (!data)
+            goto error;
+
+        stack[0] = pi_target;
+        stack[1] = data;
+        res = _PyObject_FastCall(self->handle_pi, stack, 2);
+        Py_XDECREF(res);
+        Py_DECREF(data);
+        Py_DECREF(pi_target);
     }
+
+    return;
+
+  error:
+    Py_XDECREF(pi_target);
+    return;
 }
 
 /* -------------------------------------------------------------------- */
@@ -3219,6 +3641,7 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self) {
         self->parser = NULL;
         self->target = self->entity = self->names = NULL;
+        self->handle_start_ns = self->handle_end_ns = NULL;
         self->handle_start = self->handle_data = self->handle_end = NULL;
         self->handle_comment = self->handle_pi = self->handle_close = NULL;
         self->handle_doctype = NULL;
@@ -3226,19 +3649,31 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+static int
+ignore_attribute_error(PyObject *value)
+{
+    if (value == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+    }
+    return 0;
+}
+
 /*[clinic input]
 _elementtree.XMLParser.__init__
 
-    html: object = NULL
+    *
     target: object = NULL
     encoding: str(accept={str, NoneType}) = NULL
 
 [clinic start generated code]*/
 
 static int
-_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
-                                     PyObject *target, const char *encoding)
-/*[clinic end generated code: output=d6a16c63dda54441 input=155bc5695baafffd]*/
+_elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
+                                     const char *encoding)
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=96288fcba916cfce]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)
@@ -3257,6 +3692,11 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
         PyErr_NoMemory();
         return -1;
     }
+    /* expat < 2.1.0 has no XML_SetHashSalt() */
+    if (EXPAT(SetHashSalt) != NULL) {
+        EXPAT(SetHashSalt)(self->parser,
+                           (unsigned long)_Py_HashSecret.expat.hashsalt);
+    }
 
     if (target) {
         Py_INCREF(target);
@@ -3265,24 +3705,56 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
         if (!target) {
             Py_CLEAR(self->entity);
             Py_CLEAR(self->names);
-            EXPAT(ParserFree)(self->parser);
             return -1;
         }
     }
     self->target = target;
 
+    self->handle_start_ns = PyObject_GetAttrString(target, "start_ns");
+    if (ignore_attribute_error(self->handle_start_ns)) {
+        return -1;
+    }
+    self->handle_end_ns = PyObject_GetAttrString(target, "end_ns");
+    if (ignore_attribute_error(self->handle_end_ns)) {
+        return -1;
+    }
     self->handle_start = PyObject_GetAttrString(target, "start");
+    if (ignore_attribute_error(self->handle_start)) {
+        return -1;
+    }
     self->handle_data = PyObject_GetAttrString(target, "data");
+    if (ignore_attribute_error(self->handle_data)) {
+        return -1;
+    }
     self->handle_end = PyObject_GetAttrString(target, "end");
+    if (ignore_attribute_error(self->handle_end)) {
+        return -1;
+    }
     self->handle_comment = PyObject_GetAttrString(target, "comment");
+    if (ignore_attribute_error(self->handle_comment)) {
+        return -1;
+    }
     self->handle_pi = PyObject_GetAttrString(target, "pi");
+    if (ignore_attribute_error(self->handle_pi)) {
+        return -1;
+    }
     self->handle_close = PyObject_GetAttrString(target, "close");
+    if (ignore_attribute_error(self->handle_close)) {
+        return -1;
+    }
     self->handle_doctype = PyObject_GetAttrString(target, "doctype");
-
-    PyErr_Clear();
+    if (ignore_attribute_error(self->handle_doctype)) {
+        return -1;
+    }
 
     /* configure parser */
     EXPAT(SetUserData)(self->parser, self);
+    if (self->handle_start_ns || self->handle_end_ns)
+        EXPAT(SetNamespaceDeclHandler)(
+            self->parser,
+            (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
+            (XML_EndNamespaceDeclHandler) expat_end_ns_handler
+            );
     EXPAT(SetElementHandler)(
         self->parser,
         (XML_StartElementHandler) expat_start_handler,
@@ -3327,6 +3799,9 @@ xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
     Py_VISIT(self->handle_end);
     Py_VISIT(self->handle_data);
     Py_VISIT(self->handle_start);
+    Py_VISIT(self->handle_start_ns);
+    Py_VISIT(self->handle_end_ns);
+    Py_VISIT(self->handle_doctype);
 
     Py_VISIT(self->target);
     Py_VISIT(self->entity);
@@ -3338,7 +3813,11 @@ xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
 static int
 xmlparser_gc_clear(XMLParserObject *self)
 {
-    EXPAT(ParserFree)(self->parser);
+    if (self->parser != NULL) {
+        XML_Parser parser = self->parser;
+        self->parser = NULL;
+        EXPAT(ParserFree)(parser);
+    }
 
     Py_CLEAR(self->handle_close);
     Py_CLEAR(self->handle_pi);
@@ -3346,6 +3825,8 @@ xmlparser_gc_clear(XMLParserObject *self)
     Py_CLEAR(self->handle_end);
     Py_CLEAR(self->handle_data);
     Py_CLEAR(self->handle_start);
+    Py_CLEAR(self->handle_start_ns);
+    Py_CLEAR(self->handle_end_ns);
     Py_CLEAR(self->handle_doctype);
 
     Py_CLEAR(self->target);
@@ -3545,30 +4026,6 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
 }
 
 /*[clinic input]
-_elementtree.XMLParser.doctype
-
-    name: object
-    pubid: object
-    system: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
-                                    PyObject *pubid, PyObject *system)
-/*[clinic end generated code: output=10fb50c2afded88d input=84050276cca045e1]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "This method of XMLParser is deprecated.  Define"
-                     " doctype() method on the TreeBuilder target.",
-                     1) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
 _elementtree.XMLParser._setevents
 
     events_queue: object
@@ -3609,6 +4066,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     Py_CLEAR(target->end_event_obj);
     Py_CLEAR(target->start_ns_event_obj);
     Py_CLEAR(target->end_ns_event_obj);
+    Py_CLEAR(target->comment_event_obj);
+    Py_CLEAR(target->pi_event_obj);
 
     if (events_to_report == Py_None) {
         /* default is "end" only */
@@ -3621,7 +4080,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
         return NULL;
     }
 
-    for (i = 0; i < PySequence_Size(events_seq); ++i) {
+    for (i = 0; i < PySequence_Fast_GET_SIZE(events_seq); ++i) {
         PyObject *event_name_obj = PySequence_Fast_GET_ITEM(events_seq, i);
         const char *event_name = NULL;
         if (PyUnicode_Check(event_name_obj)) {
@@ -3654,6 +4113,18 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
+        } else if (strcmp(event_name, "comment") == 0) {
+            Py_XSETREF(target->comment_event_obj, event_name_obj);
+            EXPAT(SetCommentHandler)(
+                self->parser,
+                (XML_CommentHandler) expat_comment_handler
+                );
+        } else if (strcmp(event_name, "pi") == 0) {
+            Py_XSETREF(target->pi_event_obj, event_name_obj);
+            EXPAT(SetProcessingInstructionHandler)(
+                self->parser,
+                (XML_ProcessingInstructionHandler) expat_pi_handler
+                );
         } else {
             Py_DECREF(event_name_obj);
             Py_DECREF(events_seq);
@@ -3666,29 +4137,24 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     Py_RETURN_NONE;
 }
 
-static PyObject*
-xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
-{
-    if (PyUnicode_Check(nameobj)) {
-        PyObject* res;
-        if (_PyUnicode_EqualToASCIIString(nameobj, "entity"))
-            res = self->entity;
-        else if (_PyUnicode_EqualToASCIIString(nameobj, "target"))
-            res = self->target;
-        else if (_PyUnicode_EqualToASCIIString(nameobj, "version")) {
-            return PyUnicode_FromFormat(
-                "Expat %d.%d.%d", XML_MAJOR_VERSION,
-                XML_MINOR_VERSION, XML_MICRO_VERSION);
-        }
-        else
-            goto generic;
+static PyMemberDef xmlparser_members[] = {
+    {"entity", T_OBJECT, offsetof(XMLParserObject, entity), READONLY, NULL},
+    {"target", T_OBJECT, offsetof(XMLParserObject, target), READONLY, NULL},
+    {NULL}
+};
 
-        Py_INCREF(res);
-        return res;
-    }
-  generic:
-    return PyObject_GenericGetAttr((PyObject*) self, nameobj);
+static PyObject*
+xmlparser_version_getter(XMLParserObject *self, void *closure)
+{
+    return PyUnicode_FromFormat(
+        "Expat %d.%d.%d", XML_MAJOR_VERSION,
+        XML_MINOR_VERSION, XML_MICRO_VERSION);
 }
+
+static PyGetSetDef xmlparser_getsetlist[] = {
+    {"version", (getter)xmlparser_version_getter, NULL, NULL},
+    {NULL},
+};
 
 #include "clinic/_elementtree.c.h"
 
@@ -3712,7 +4178,7 @@ static PyMethodDef element_methods[] = {
     _ELEMENTTREE_ELEMENT_ITERTEXT_METHODDEF
     _ELEMENTTREE_ELEMENT_ITERFIND_METHODDEF
 
-    {"getiterator", (PyCFunction)_elementtree_Element_iter, METH_FASTCALL, _elementtree_Element_iter__doc__},
+    _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF
     _ELEMENTTREE_ELEMENT_GETCHILDREN_METHODDEF
 
     _ELEMENTTREE_ELEMENT_ITEMS_METHODDEF
@@ -3801,6 +4267,8 @@ static PyMethodDef treebuilder_methods[] = {
     _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF
     _ELEMENTTREE_TREEBUILDER_START_METHODDEF
     _ELEMENTTREE_TREEBUILDER_END_METHODDEF
+    _ELEMENTTREE_TREEBUILDER_COMMENT_METHODDEF
+    _ELEMENTTREE_TREEBUILDER_PI_METHODDEF
     _ELEMENTTREE_TREEBUILDER_CLOSE_METHODDEF
     {NULL, NULL}
 };
@@ -3852,7 +4320,6 @@ static PyMethodDef xmlparser_methods[] = {
     _ELEMENTTREE_XMLPARSER_CLOSE_METHODDEF
     _ELEMENTTREE_XMLPARSER__PARSE_WHOLE_METHODDEF
     _ELEMENTTREE_XMLPARSER__SETEVENTS_METHODDEF
-    _ELEMENTTREE_XMLPARSER_DOCTYPE_METHODDEF
     {NULL, NULL}
 };
 
@@ -3872,7 +4339,7 @@ static PyTypeObject XMLParser_Type = {
     0,                                              /* tp_hash */
     0,                                              /* tp_call */
     0,                                              /* tp_str */
-    (getattrofunc)xmlparser_getattro,               /* tp_getattro */
+    0,                                              /* tp_getattro */
     0,                                              /* tp_setattro */
     0,                                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -3885,8 +4352,8 @@ static PyTypeObject XMLParser_Type = {
     0,                                              /* tp_iter */
     0,                                              /* tp_iternext */
     xmlparser_methods,                              /* tp_methods */
-    0,                                              /* tp_members */
-    0,                                              /* tp_getset */
+    xmlparser_members,                              /* tp_members */
+    xmlparser_getsetlist,                           /* tp_getset */
     0,                                              /* tp_base */
     0,                                              /* tp_dict */
     0,                                              /* tp_descr_get */
@@ -3902,7 +4369,8 @@ static PyTypeObject XMLParser_Type = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", (PyCFunction) subelement, METH_VARARGS | METH_KEYWORDS},
+    {"SubElement", (PyCFunction)(void(*)(void)) subelement, METH_VARARGS | METH_KEYWORDS},
+    _ELEMENTTREE__SET_FACTORIES_METHODDEF
     {NULL, NULL}
 };
 
@@ -3951,6 +4419,11 @@ PyInit__elementtree(void)
     st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
+    if (st->deepcopy_obj == NULL) {
+        return NULL;
+    }
+
+    assert(!PyErr_Occurred());
     if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
         return NULL;
 

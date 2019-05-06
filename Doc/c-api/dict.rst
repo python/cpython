@@ -72,7 +72,7 @@ Dictionary Objects
    .. index:: single: PyUnicode_FromString()
 
    Insert *value* into the dictionary *p* using *key* as a key. *key* should
-   be a :c:type:`char\*`.  The key object is created using
+   be a :c:type:`const char\*`.  The key object is created using
    ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
    failure.
 
@@ -95,6 +95,10 @@ Dictionary Objects
    Return the object from dictionary *p* which has a key *key*.  Return *NULL*
    if the key *key* is not present, but *without* setting an exception.
 
+   Note that exceptions which occur while calling :meth:`__hash__` and
+   :meth:`__eq__` methods will get suppressed.
+   To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
+
 
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
 
@@ -107,10 +111,15 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_GetItemString(PyObject *p, const char *key)
 
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
-   :c:type:`char\*`, rather than a :c:type:`PyObject\*`.
+   :c:type:`const char\*`, rather than a :c:type:`PyObject\*`.
+
+   Note that exceptions which occur while calling :meth:`__hash__` and
+   :meth:`__eq__` methods and creating a temporary string object
+   will get suppressed.
+   To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
 
 
-.. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *default)
+.. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)
 
    This is the same as the Python-level :meth:`dict.setdefault`.  If present, it
    returns the value corresponding to *key* from the dictionary *p*.  If the key

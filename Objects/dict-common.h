@@ -12,8 +12,7 @@ typedef struct {
  * -1 when no entry found, -3 when compare raises error.
  */
 typedef Py_ssize_t (*dict_lookup_func)
-(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr,
- Py_ssize_t *hashpos);
+    (PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
@@ -59,15 +58,8 @@ struct _dictkeysobject {
        - 4 bytes if dk_size <= 0xffffffff (int32_t*)
        - 8 bytes otherwise (int64_t*)
 
-       Dynamically sized, 8 is minimum. */
-    union {
-        int8_t as_1[8];
-        int16_t as_2[4];
-        int32_t as_4[2];
-#if SIZEOF_VOID_P > 4
-        int64_t as_8[1];
-#endif
-    } dk_indices;
+       Dynamically sized, SIZEOF_VOID_P is minimum. */
+    char dk_indices[];  /* char is required to avoid strict aliasing. */
 
     /* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
        see the DK_ENTRIES() macro */

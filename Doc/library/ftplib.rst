@@ -295,7 +295,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    If optional *rest* is given, a ``REST`` command is sent to the server, passing
    *rest* as an argument.  *rest* is usually a byte offset into the requested file,
    telling the server to restart sending the file's bytes at the requested offset,
-   skipping over the initial bytes.  Note however that RFC 959 requires only that
+   skipping over the initial bytes.  Note however that :rfc:`959` requires only that
    *rest* be a string containing characters in the printable range from ASCII code
    33 to ASCII code 126.  The :meth:`transfercmd` method, therefore, converts
    *rest* to a string, but no check is performed on the string's contents.  If the

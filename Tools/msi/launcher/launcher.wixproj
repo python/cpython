@@ -20,16 +20,16 @@
     </ItemGroup>
     
     <Target Name="_EnsurePyEx86" Condition="!Exists('$(BuildPath32)py.exe')" BeforeTargets="PrepareForBuild">
-        <MSBuild Projects="$(PySourcePath)PCBuild\pylauncher.vcxproj" Properties="Platform=Win32" />
+        <MSBuild Projects="$(PySourcePath)PCbuild\pylauncher.vcxproj" Properties="Platform=Win32" />
     </Target>
     <Target Name="_EnsurePywEx86" Condition="!Exists('$(BuildPath32)pyw.exe')" BeforeTargets="PrepareForBuild">
-        <MSBuild Projects="$(PySourcePath)PCBuild\pywlauncher.vcxproj" Properties="Platform=Win32" />
+        <MSBuild Projects="$(PySourcePath)PCbuild\pywlauncher.vcxproj" Properties="Platform=Win32" />
     </Target>
     <Target Name="_EnsurePyShellExt86" Condition="!Exists('$(BuildPath32)pyshellext.dll')" BeforeTargets="PrepareForBuild">
-        <MSBuild Projects="$(PySourcePath)PCBuild\pyshellext.vcxproj" Properties="Platform=Win32" />
+        <MSBuild Projects="$(PySourcePath)PCbuild\pyshellext.vcxproj" Properties="Platform=Win32" />
     </Target>
     <Target Name="_EnsurePyShellExt64" Condition="!Exists('$(BuildPath64)pyshellext.dll')" BeforeTargets="PrepareForBuild">
-        <MSBuild Projects="$(PySourcePath)PCBuild\pyshellext.vcxproj" Properties="Platform=x64" />
+        <MSBuild Projects="$(PySourcePath)PCbuild\pyshellext.vcxproj" Properties="Platform=x64" />
     </Target>
     
     <Import Project="..\msi.targets" />
