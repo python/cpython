@@ -218,6 +218,7 @@ PyAPI_FUNC(PyObject *) PyType_GenericAlloc(struct _typeobject *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyType_GenericNew(struct _typeobject *,
                                                PyObject *, PyObject *);
 PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
+PyAPI_FUNC(void) PyType_InvalidateCache(PyObject *, PyObject *);
 PyAPI_FUNC(void) PyType_Modified(struct _typeobject *);
 
 /* Generic operations on objects */

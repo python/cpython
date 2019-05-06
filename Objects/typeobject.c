@@ -229,6 +229,23 @@ PyType_ClearCache(void)
 }
 
 void
+PyType_InvalidateCache(PyObject *type, PyObject *name)
+{
+    unsigned int h;
+    PyTypeObject *t;
+
+    t = (PyTypeObject *)type;
+    if (MCACHE_CACHEABLE_NAME(name) &&
+        PyType_HasFeature(t, Py_TPFLAGS_VALID_VERSION_TAG)) {
+        h = MCACHE_HASH_METHOD(t, name);
+        method_cache[h].version = 0;
+        if (method_cache[h].name != Py_None)
+            Py_XSETREF(method_cache[h].name, Py_None);
+        method_cache[h].value = NULL;
+    }
+}
+
+void
 _PyType_Fini(void)
 {
     PyType_ClearCache();
