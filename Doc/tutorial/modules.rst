@@ -523,7 +523,7 @@ Although certain modules are designed to export only names that follow certain
 patterns when you use ``import *``, it is still considered bad practice in
 production code.
 
-Remember, there is nothing wrong with using ``from Package import
+Remember, there is nothing wrong with using ``from package import
 specific_submodule``!  In fact, this is the recommended notation unless the
 importing module needs to use submodules with the same name from different
 packages.

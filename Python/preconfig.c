@@ -7,14 +7,17 @@
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
     (((LEN) == -2) \
-     ? _Py_INIT_USER_ERR("cannot decode " NAME) \
+     ? _Py_INIT_ERR("cannot decode " NAME) \
      : _Py_INIT_NO_MEMORY())
 
 
 /* --- File system encoding/errors -------------------------------- */
 
 /* The filesystem encoding is chosen by config_init_fs_encoding(),
-   see also initfsencoding(). */
+   see also initfsencoding().
+
+   Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
+   are encoded to UTF-8. */
 const char *Py_FileSystemDefaultEncoding = NULL;
 int Py_HasFileSystemDefaultEncoding = 0;
 const char *Py_FileSystemDefaultEncodeErrors = NULL;
@@ -526,7 +529,7 @@ preconfig_init_utf8_mode(_PyPreConfig *config, const _PyPreCmdline *cmdline)
                 config->utf8_mode = 0;
             }
             else {
-                return _Py_INIT_USER_ERR("invalid -X utf8 option value");
+                return _Py_INIT_ERR("invalid -X utf8 option value");
             }
         }
         else {
@@ -544,8 +547,8 @@ preconfig_init_utf8_mode(_PyPreConfig *config, const _PyPreCmdline *cmdline)
             config->utf8_mode = 0;
         }
         else {
-            return _Py_INIT_USER_ERR("invalid PYTHONUTF8 environment "
-                                     "variable value");
+            return _Py_INIT_ERR("invalid PYTHONUTF8 environment "
+                                "variable value");
         }
         return _Py_INIT_OK();
     }
@@ -831,7 +834,7 @@ _PyPreConfig_SetAllocator(_PyPreConfig *config)
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (_PyMem_SetupAllocators(config->allocator) < 0) {
-        return _Py_INIT_USER_ERR("Unknown PYTHONMALLOC allocator");
+        return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
     }
 
     /* Copy the pre-configuration with the new allocator */

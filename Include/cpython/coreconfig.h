@@ -8,10 +8,18 @@ extern "C" {
 /* --- _PyInitError ----------------------------------------------- */
 
 typedef struct {
-    const char *prefix;
-    const char *msg;
-    int user_err;
+    enum {
+        _Py_INIT_ERR_TYPE_OK=0,
+        _Py_INIT_ERR_TYPE_ERROR=1,
+        _Py_INIT_ERR_TYPE_EXIT=2
+    } _type;
+    const char *_func;
+    const char *err_msg;
+#ifdef MS_WINDOWS
+    unsigned int exitcode;
+#else
     int exitcode;
+#endif
 } _PyInitError;
 
 /* Almost all errors causing Python initialization to fail */
@@ -23,20 +31,25 @@ typedef struct {
 #endif
 
 #define _Py_INIT_OK() \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = -1}
-#define _Py_INIT_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 0, .exitcode = -1}
-/* Error that can be fixed by the user like invalid input parameter.
-   Don't abort() the process on such error. */
-#define _Py_INIT_USER_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1, .exitcode = -1}
-#define _Py_INIT_NO_MEMORY() _Py_INIT_USER_ERR("memory allocation failed")
+    (_PyInitError){._type = _Py_INIT_ERR_TYPE_OK,}
+    /* other fields are set to 0 */
+#define _Py_INIT_ERR(ERR_MSG) \
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_ERROR, \
+        ._func = _Py_INIT_GET_FUNC(), \
+        .err_msg = (ERR_MSG)}
+        /* other fields are set to 0 */
+#define _Py_INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
 #define _Py_INIT_EXIT(EXITCODE) \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = (EXITCODE)}
-#define _Py_INIT_HAS_EXITCODE(err) \
-    (err.exitcode != -1)
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_EXIT, \
+        .exitcode = (EXITCODE)}
+#define _Py_INIT_IS_ERROR(err) \
+    (err._type == _Py_INIT_ERR_TYPE_ERROR)
+#define _Py_INIT_IS_EXIT(err) \
+    (err._type == _Py_INIT_ERR_TYPE_EXIT)
 #define _Py_INIT_FAILED(err) \
-    (err.msg != NULL || _Py_INIT_HAS_EXITCODE(err))
+    (err._type != _Py_INIT_ERR_TYPE_OK)
 
 /* --- _PyWstrList ------------------------------------------------ */
 
@@ -52,7 +65,12 @@ typedef struct {
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
+#define _Py_CONFIG_VERSION 1
+
 typedef struct {
+    int _config_version;  /* Internal configuration version,
+                             used for ABI compatibility */
+
     /* If greater than 0, enable isolated mode: sys.path contains
        neither the script's directory nor the user's site-packages directory.
 
@@ -119,6 +137,7 @@ typedef struct {
 #define _PyPreConfig_INIT \
     (_PyPreConfig){ \
         _PyPreConfig_WINDOWS_INIT \
+        ._config_version = _Py_CONFIG_VERSION, \
         .isolated = -1, \
         .use_environment = -1, \
         .dev_mode = -1, \
@@ -128,9 +147,12 @@ typedef struct {
 /* --- _PyCoreConfig ---------------------------------------------- */
 
 typedef struct {
-    int isolated;
-    int use_environment;
-    int dev_mode;
+    int _config_version;  /* Internal configuration version,
+                             used for ABI compatibility */
+
+    int isolated;         /* Isolated mode? see _PyPreConfig.isolated */
+    int use_environment;  /* Use environment variables? see _PyPreConfig.use_environment */
+    int dev_mode;         /* Development mode? See _PyPreConfig.dev_mode */
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -185,8 +207,8 @@ typedef struct {
 
        See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
        */
-    char *filesystem_encoding;
-    char *filesystem_errors;
+    wchar_t *filesystem_encoding;
+    wchar_t *filesystem_errors;
 
     wchar_t *pycache_prefix;  /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
     wchar_t *program_name;    /* Program name, see also Py_GetProgramName() */
@@ -312,13 +334,13 @@ typedef struct {
        Value set from PYTHONIOENCODING environment variable and
        Py_SetStandardStreamEncoding() function.
        See also 'stdio_errors' attribute. */
-    char *stdio_encoding;
+    wchar_t *stdio_encoding;
 
     /* Error handler of sys.stdin and sys.stdout.
        Value set from PYTHONIOENCODING environment variable and
        Py_SetStandardStreamEncoding() function.
        See also 'stdio_encoding' attribute. */
-    char *stdio_errors;
+    wchar_t *stdio_errors;
 
 #ifdef MS_WINDOWS
     /* If greater than zero, use io.FileIO instead of WindowsConsoleIO for sys
@@ -350,7 +372,7 @@ typedef struct {
        Needed by freeze_importlib. */
     int _install_importlib;
 
-    /* Value of the --check-hash-based-pycs configure option. Valid values:
+    /* Value of the --check-hash-based-pycs command line option:
 
        - "default" means the 'check_source' flag in hash-based pycs
          determines invalidation
@@ -359,19 +381,15 @@ typedef struct {
        - "never" causes the interpreter to always assume hash-based pycs are
          valid
 
-       Set by the --check-hash-based-pycs command line option.
        The default value is "default".
 
        See PEP 552 "Deterministic pycs" for more details. */
-    const char *_check_hash_pycs_mode;
+    wchar_t *check_hash_pycs_mode;
 
     /* If greater than 0, suppress _PyPathConfig_Calculate() warnings.
 
        If set to -1 (default), inherit Py_FrozenFlag value. */
     int _frozen;
-
-    /* If non-zero, use "main" Python initialization */
-    int _init_main;
 
 } _PyCoreConfig;
 
@@ -385,6 +403,7 @@ typedef struct {
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         _PyCoreConfig_WINDOWS_INIT \
+        ._config_version = _Py_CONFIG_VERSION, \
         .isolated = -1, \
         .use_environment = -1, \
         .dev_mode = -1, \
@@ -405,9 +424,8 @@ typedef struct {
         .user_site_directory = -1, \
         .buffered_stdio = -1, \
         ._install_importlib = 1, \
-        ._check_hash_pycs_mode = "default", \
-        ._frozen = -1, \
-        ._init_main = 1}
+        .check_hash_pycs_mode = NULL, \
+        ._frozen = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 #ifdef __cplusplus

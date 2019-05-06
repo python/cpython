@@ -4,17 +4,17 @@ Command line tool to bisect failing CPython tests.
 
 Find the test_os test method which alters the environment:
 
-    ./python -m test.bisect --fail-env-changed test_os
+    ./python -m test.bisect_cmd --fail-env-changed test_os
 
 Find a reference leak in "test_os", write the list of failing tests into the
 "bisect" file:
 
-    ./python -m test.bisect -o bisect -R 3:3 test_os
+    ./python -m test.bisect_cmd -o bisect -R 3:3 test_os
 
 Load an existing list of tests from a file using -i option:
 
     ./python -m test --list-cases -m FileTests test_os > tests
-    ./python -m test.bisect -i tests test_os
+    ./python -m test.bisect_cmd -i tests test_os
 """
 
 import argparse
