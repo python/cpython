@@ -5195,7 +5195,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
         /* Skip over whitespace.  No need to test for end of string here,
            since we know there's at least a } somewhere ahead. */
-        while (**str == ' ') {
+        while (isspace(**str)) {
             *str += 1;
         }
         expr_text_end = *str;

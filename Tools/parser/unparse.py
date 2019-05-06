@@ -368,7 +368,7 @@ class Unparser:
         write(expr)
         if t.conversion != -1:
             conversion = chr(t.conversion)
-            assert conversion in "sra"
+            assert conversion in "sraf"
             write(f"!{conversion}")
         if t.format_spec:
             write(":")
