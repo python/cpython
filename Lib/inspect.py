@@ -1341,6 +1341,9 @@ def getcallargs(*func_and_positional, **named):
     A dict is returned, with keys the function argument names (including the
     names of the * and ** arguments, if any), and values the respective bound
     values from 'positional' and 'named'."""
+    warnings.warn("`getcallargs` is deprecated since Python 3.5. Use"
+                  " `Signature.bind` and `Signature.bind_partial` instead.",
+                  DeprecationWarning, stacklevel=2)
     func = func_and_positional[0]
     positional = func_and_positional[1:]
     spec = getfullargspec(func)
