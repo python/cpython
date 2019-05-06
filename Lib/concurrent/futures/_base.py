@@ -581,6 +581,8 @@ class Executor(object):
                 before being passed to a child process. This argument is only
                 used by ProcessPoolExecutor; it is ignored by
                 ThreadPoolExecutor.
+            prefetch: The number of chunks to queue beyond the number of
+                workers on the executor. If None, a reasonable default is used.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may

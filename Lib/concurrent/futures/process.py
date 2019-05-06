@@ -643,6 +643,8 @@ class ProcessPoolExecutor(_base.Executor):
             chunksize: If greater than one, the iterables will be chopped into
                 chunks of size chunksize and submitted to the process pool.
                 If set to one, the items in the list will be sent one at a time.
+            prefetch: The number of chunks to queue beyond the number of
+                workers on the executor. If None, a reasonable default is used.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
