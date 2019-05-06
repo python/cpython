@@ -531,6 +531,26 @@ class UTF32Test(ReadTest, unittest.TestCase):
         self.assertEqual('\U00010000' * 1024,
                          codecs.utf_32_decode(encoded_be)[0])
 
+    def test_bug36819(self):
+        class State():
+            num = []
+
+            def __init__(self):
+                self.num.append(None)
+
+            def check(self):
+                return len(self.num)
+
+        def err(exc):
+            state = State()
+            # The interpreter should segfault after a handful of attempts.
+            # 50 was chosen to try to ensure a segfault without a fix,
+            # but not OOM a machine with one.
+            return ("a", exc.end if state.check() == 50 else exc.start)
+
+        codecs.register_error("err", err)
+        codecs.utf_32_encode("\udc80", "err")
+
 
 class UTF32LETest(ReadTest, unittest.TestCase):
     encoding = "utf-32-le"
@@ -709,6 +729,26 @@ class UTF16Test(ReadTest, unittest.TestCase):
             reader = codecs.open(support.TESTFN, 'U', encoding=self.encoding)
         with reader:
             self.assertEqual(reader.read(), s1)
+
+    def test_bug36819(self):
+        class State():
+            num = []
+
+            def __init__(self):
+                self.num.append(None)
+
+            def check(self):
+                return len(self.num)
+
+        def err(exc):
+            state = State()
+            # The interpreter should segfault after a handful of attempts.
+            # 50 was chosen to try to ensure a segfault without a fix,
+            # but not OOM a machine with one.
+            return ("a", exc.end if state.check() == 50 else exc.start)
+
+        codecs.register_error("err", err)
+        codecs.utf_16_encode("\udc80", "err")
 
 class UTF16LETest(ReadTest, unittest.TestCase):
     encoding = "utf-16-le"
