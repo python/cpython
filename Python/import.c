@@ -535,7 +535,7 @@ PyImport_Cleanup(void)
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
        machinery. */
-    _PyGC_DumpShutdownStats();
+    _PyGC_DumpShutdownStats(&_PyRuntime);
 
     /* Now, if there are any modules left alive, clear their globals to
        minimize potential leaks.  All C extension modules actually end
@@ -2305,7 +2305,7 @@ PyInit__imp(void)
     if (d == NULL)
         goto failure;
     _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
-    PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
+    PyObject *pyc_mode = PyUnicode_FromWideChar(config->check_hash_pycs_mode, -1);
     if (pyc_mode == NULL) {
         goto failure;
     }

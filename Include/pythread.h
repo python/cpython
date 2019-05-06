@@ -23,7 +23,7 @@ typedef enum PyLockStatus {
 
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
-PyAPI_FUNC(void) PyThread_exit_thread(void);
+PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
 PyAPI_FUNC(PyThread_type_lock) PyThread_allocate_lock(void);
