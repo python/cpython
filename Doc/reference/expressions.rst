@@ -523,7 +523,7 @@ is already executing raises a :exc:`ValueError` exception.
 .. method:: generator.__next__()
 
    Starts the execution of a generator function or resumes it at the last
-   executed yield expression.  When a generator function is resumed with a
+   executed yield expression.  When a generator function is resumed with an
    :meth:`~generator.__next__` method, the current yield expression always
    evaluates to :const:`None`.  The execution then continues to the next yield
    expression, where the generator is suspended again, and the value of the
@@ -608,7 +608,7 @@ Asynchronous generator functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The presence of a yield expression in a function or method defined using
-:keyword:`async def` further defines the function as a
+:keyword:`async def` further defines the function as an
 :term:`asynchronous generator` function.
 
 When an asynchronous generator function is called, it returns an
@@ -673,13 +673,13 @@ which are used to control the execution of a generator function.
 
    Returns an awaitable which when run starts to execute the asynchronous
    generator or resumes it at the last executed yield expression.  When an
-   asynchronous generator function is resumed with a :meth:`~agen.__anext__`
+   asynchronous generator function is resumed with an :meth:`~agen.__anext__`
    method, the current yield expression always evaluates to :const:`None` in
    the returned awaitable, which when run will continue to the next yield
    expression. The value of the :token:`expression_list` of the yield
    expression is the value of the :exc:`StopIteration` exception raised by
    the completing coroutine.  If the asynchronous generator exits without
-   yielding another value, the awaitable instead raises an
+   yielding another value, the awaitable instead raises a
    :exc:`StopAsyncIteration` exception, signalling that the asynchronous
    iteration has completed.
 
@@ -707,7 +707,7 @@ which are used to control the execution of a generator function.
    where the asynchronous generator was paused, and returns the next value
    yielded by the generator function as the value of the raised
    :exc:`StopIteration` exception.  If the asynchronous generator exits
-   without yielding another value, an :exc:`StopAsyncIteration` exception is
+   without yielding another value, a :exc:`StopAsyncIteration` exception is
    raised by the awaitable.
    If the generator function does not catch the passed-in exception, or
    raises a different exception, then when the awaitable is run that exception
