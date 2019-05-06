@@ -1078,10 +1078,10 @@ non-important content
         tenπ = 31.4
         self.assertEqual(f'{tenπ=!f:.2f}', 'tenπ=31.40')
 
-        # Also test with non-identifiers.
+        # Also test with Unicode in non-identifiers.
         self.assertEqual(f'{"Σ"=}', '"Σ"=\'Σ\'')
 
-        # Make sure nested still works.
+        # Make sure nested fstrings still work.
         self.assertEqual(f'{f"{3.1415=!f:.1f}":*^20}', '*****3.1415=3.1*****')
 
         # Make sure text before and after !d works correctly.
