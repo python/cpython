@@ -1579,7 +1579,7 @@ if :keyword:`in` raised that exception).
    pair: membership; test
    object: sequence
 
-The operator :keyword:`not in` is defined to have the inverse true value of
+The operator :keyword:`not in` is defined to have the inverse truth value of
 :keyword:`in`.
 
 .. index::
