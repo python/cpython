@@ -804,6 +804,38 @@ static int test_audit(void)
     return result;
 }
 
+static volatile int _audit_subinterpreter_interpreter_count = 0;
+
+static int _audit_subinterpreter_hook(const char *event, PyObject *args, void *userdata)
+{
+    printf("%s\n", event);
+    if (strcmp(event, "cpython.PyInterpreterState_New") == 0) {
+        _audit_subinterpreter_interpreter_count += 1;
+    }
+    return 0;
+}
+
+static int test_audit_subinterpreter(void)
+{
+    PyThreadState *ts;
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
+    _testembed_Py_Initialize();
+
+    ts = Py_NewInterpreter();
+    ts = Py_NewInterpreter();
+    ts = Py_NewInterpreter();
+
+    Py_Finalize();
+
+    switch (_audit_subinterpreter_interpreter_count) {
+        case 4: return 0;
+        case 0: return -1;
+        default: return _audit_subinterpreter_interpreter_count;
+    }
+}
+
 static int test_run_main(void)
 {
     _PyCoreConfig config = _PyCoreConfig_INIT;
@@ -864,6 +896,7 @@ static struct TestCase TestCases[] = {
     { "run_main", test_run_main },
     { "open_code_hook", test_open_code_hook },
     { "audit", test_audit },
+    { "audit_subinterpreter", test_audit_subinterpreter },
     { NULL, NULL }
 };
 

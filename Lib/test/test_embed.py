@@ -673,6 +673,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_audit(self):
         self.run_embedded_interpreter("audit")
 
+    def test_audit_subinterpreter(self):
+        self.run_embedded_interpreter("audit_subinterpreter")
+
 
 if __name__ == "__main__":
     unittest.main()
