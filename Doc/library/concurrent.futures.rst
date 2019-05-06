@@ -63,7 +63,7 @@ Executor Objects
        using a large value for *chunksize* can significantly improve
        performance compared to the default size of 1.  With
        :class:`ThreadPoolExecutor`, *chunksize* has no effect.
-       
+
        By default, a reasonable number of tasks are
        queued beyond the number of workers, an explicit *prefetch* count may be
        provided to specify how many extra tasks should be queued.
