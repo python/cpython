@@ -89,6 +89,13 @@ class BaseTestCase(unittest.TestCase):
         n = operator.index(bad_int)
         self.assertEqual(n, 0)
 
+    def test_int_defaults_to_index(self):
+        class Test:
+            def __index__(self):
+                return 4
+
+        self.assertEqual(int(Test()), 4)
+
 
 class SeqTestCase:
     # This test case isn't run directly. It just defines common tests
