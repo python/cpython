@@ -242,6 +242,8 @@ There is also a module-level convenience function:
     .. versionadded:: 3.3
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
+    .. versionchanged:: 3.6
+       Added the ``prompt`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
