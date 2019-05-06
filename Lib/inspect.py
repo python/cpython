@@ -2121,7 +2121,7 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
     return _signature_fromstr(cls, func, s, skip_bound_arg)
 
 
-def _signature_from_function(cls, func):
+def _signature_from_function(cls, func, skip_bound_arg=True):
     """Private helper: constructs Signature for the given python function."""
 
     is_duck_function = False
@@ -2132,6 +2132,10 @@ def _signature_from_function(cls, func):
             # If it's not a pure Python function, and not a duck type
             # of pure function:
             raise TypeError('{!r} is not a Python function'.format(func))
+
+    s = getattr(func, "__text_signature__", None)
+    if s:
+        return _signature_fromstr(cls, func, s, skip_bound_arg)
 
     Parameter = cls._parameter_cls
 
@@ -2301,7 +2305,8 @@ def _signature_from_callable(obj, *,
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython functions, for instance), then:
-        return _signature_from_function(sigcls, obj)
+        return _signature_from_function(sigcls, obj,
+                                        skip_bound_arg=skip_bound_arg)
 
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
