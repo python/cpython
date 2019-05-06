@@ -1038,7 +1038,8 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 
     PyUnicode_InternInPlace(&name);
     if (tp->tp_setattro != NULL) {
-        PyType_InvalidateCache(v, name);
+        if (PyType_CheckExact(v))
+            PyType_InvalidateCache(v, name);
         err = (*tp->tp_setattro)(v, name, value);
         Py_DECREF(name);
         return err;
