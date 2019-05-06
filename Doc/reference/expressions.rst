@@ -479,8 +479,8 @@ will raise :exc:`AttributeError` or :exc:`TypeError`, while
 When the underlying iterator is complete, the :attr:`~StopIteration.value`
 attribute of the raised :exc:`StopIteration` instance becomes the value of
 the yield expression. It can be either set explicitly when raising
-:exc:`StopIteration`, or automatically when the sub-iterator is a generator
-(by returning a value from the sub-generator).
+:exc:`StopIteration`, or automatically when the subiterator is a generator
+(by returning a value from the subgenerator).
 
    .. versionchanged:: 3.3
       Added ``yield from <expr>`` to delegate control flow to a subiterator.
@@ -499,7 +499,7 @@ on the right hand side of an assignment statement.
 
    :pep:`380` - Syntax for Delegating to a Subgenerator
       The proposal to introduce the :token:`yield_from` syntax, making delegation
-      to sub-generators easy.
+      to subgenerators easy.
 
    :pep:`525` - Asynchronous Generators
       The proposal that expanded on :pep:`492` by adding generator capabilities to
