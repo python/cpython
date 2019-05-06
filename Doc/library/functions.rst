@@ -505,6 +505,9 @@ are always available.  They are listed here in alphabetical order.
       Pass an explicit *locals* dictionary if you need to see effects of the
       code on *locals* after function :func:`exec` returns.
 
+   .. note::
+
+      If only *globals* is provided, it must be a dictionary, and not a subclass of dictionary.
 
 .. function:: filter(function, iterable)
 
