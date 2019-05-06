@@ -1,4 +1,7 @@
-Add a ``!d`` conversion specifier to f-strings. This is similar to
-``!s`` and ``!r``. It produces the text of the expression, followed by
+Add a ``=`` conversion feature to f-strings. This can precede ``!s``,
+``!r``, or ``!a``. It produces the text of the expression, followed by
 an equal sign, followed by the repr of the value of the expression. So
-``f'{3*9+15!d}'`` would be equal to the string ``'3*9+15=42'``.
+``f'{3*9+15=}'`` would be equal to the string ``'3*9+15=42'``.  If
+``=`` is specified, the default conversion is set to ``!r``.  Added a
+``!f`` conversion to switch back to the previous format behavior, if
+needed.
