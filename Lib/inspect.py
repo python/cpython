@@ -1110,9 +1110,10 @@ def getfullargspec(func):
       - the "self" parameter is always reported, even for bound methods
       - wrapper chains defined by __wrapped__ *not* unwrapped automatically
     """
-
     warnings.warn("Use inspect.signature() instead of inspect.getfullargspec()",
                   DeprecationWarning, stacklevel=2)
+
+def _getfullargspec(func):
     try:
         # Re: `skip_bound_arg=False`
         #
@@ -1236,13 +1237,10 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
     Deprecated since Python 3.5: use the `signature` function and `Signature`
     objects.
     """
-
-    from warnings import warn
-
-    warn("`formatargspec` is deprecated since Python 3.5. Use `signature` and "
-         "the `Signature` object directly",
-         DeprecationWarning,
-         stacklevel=2)
+    warnings.warn("`formatargspec` is deprecated since Python 3.5."
+                  "Use `signature` and the `Signature` object directly",
+                  DeprecationWarning,
+                  stacklevel=2)
 
     def formatargandannotation(arg):
         result = formatarg(arg)
@@ -1346,7 +1344,7 @@ def getcallargs(*func_and_positional, **named):
                   DeprecationWarning, stacklevel=2)
     func = func_and_positional[0]
     positional = func_and_positional[1:]
-    spec = getfullargspec(func)
+    spec = _getfullargspec(func)
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = spec
     f_name = func.__name__
     arg2value = {}
