@@ -1,0 +1,2 @@
+Invalidating method cache of PyType even when the tp_setattro does not use
+PyType one, to avoid a segfault.
