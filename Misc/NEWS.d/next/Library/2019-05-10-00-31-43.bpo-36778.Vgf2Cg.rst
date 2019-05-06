@@ -1,0 +1,2 @@
+encodings.cp65001 (code page 65001, CP_UTF8) implementation now avoids
+functools.partial() to reduce the number of imports at startup.
