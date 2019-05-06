@@ -680,11 +680,12 @@ with a closing curly bracket ``'}'``.
 
 Expressions in formatted string literals are treated like regular
 Python expressions surrounded by parentheses, with a few exceptions.
-An empty expression is not allowed, and a :keyword:`lambda` expression
-must be surrounded by explicit parentheses.  Replacement expressions
-can contain line breaks (e.g. in triple-quoted strings), but they
-cannot contain comments.  Each expression is evaluated in the context
-where the formatted string literal appears, in order from left to right.
+An empty expression is not allowed, and both :keyword:`lambda`  and
+assignment expressions ``:=`` must be surrounded by explicit parentheses.
+Replacement expressions can contain line breaks (e.g. in triple-quoted
+strings), but they cannot contain comments.  Each expression is evaluated
+in the context where the formatted string literal appears, in order from
+left to right.
 
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
