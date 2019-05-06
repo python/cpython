@@ -2347,25 +2347,12 @@ MethodWrapperTypes = (
 
 file_spec = None
 
-def _iterate_read_data(read_data):
-    # Helper for mock_open:
-    # Retrieve lines from read_data via a generator so that separate calls to
-    # readline, read, and readlines are properly interleaved
-    sep = b'\n' if isinstance(read_data, bytes) else '\n'
-    data_as_list = [l + sep for l in read_data.split(sep)]
 
-    if data_as_list[-1] == sep:
-        # If the last line ended in a newline, the list comprehension will have an
-        # extra entry that's just a newline.  Remove this.
-        data_as_list = data_as_list[:-1]
+def _to_stream(read_data):
+    if isinstance(read_data, bytes):
+        return io.BytesIO(read_data)
     else:
-        # If there wasn't an extra newline by itself, then the file being
-        # emulated doesn't have a newline to end the last line  remove the
-        # newline that our naive format() added
-        data_as_list[-1] = data_as_list[-1][:-1]
-
-    for line in data_as_list:
-        yield line
+        return io.StringIO(read_data)
 
 
 def mock_open(mock=None, read_data=''):
@@ -2380,11 +2367,7 @@ def mock_open(mock=None, read_data=''):
     `read_data` is a string for the `read`, `readline` and `readlines` of the
     file handle to return.  This is an empty string by default.
     """
-    if isinstance(read_data, bytes):
-        _read_data = io.BytesIO(read_data)
-    else:
-        _read_data = io.StringIO(read_data)
-
+    _read_data = _to_stream(read_data)
     _state = [_read_data, None]
 
     def _readlines_side_effect(*args, **kwargs):
@@ -2432,10 +2415,7 @@ def mock_open(mock=None, read_data=''):
     handle.__iter__.side_effect = _iter_side_effect
 
     def reset_data(*args, **kwargs):
-        if isinstance(read_data, bytes):
-            _state[0] = io.BytesIO(read_data)
-        else:
-            _state[0] = io.StringIO(read_data)
+        _state[0] = _to_stream(read_data)
         if handle.readline.side_effect == _state[1]:
             # Only reset the side effect if the user hasn't overridden it.
             _state[1] = _readline_side_effect()
