@@ -476,6 +476,7 @@ class Trace:
             if not self.donothing:
                 sys.settrace(None)
         return result
+    runfunc.__text_signature__ = '($self, func, /, *args, **kw)'
 
     def file_module_function_of(self, frame):
         code = frame.f_code
