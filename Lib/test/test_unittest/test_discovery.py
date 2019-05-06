@@ -42,105 +42,69 @@ class TestDiscovery(unittest.TestCase):
             loader._get_name_from_path('/bar/baz.py')
 
     def test_find_tests(self):
-        loader = unittest.TestLoader()
-
-        original_listdir = os.listdir
-        def restore_listdir():
-            os.listdir = original_listdir
-        original_isfile = os.path.isfile
-        def restore_isfile():
-            os.path.isfile = original_isfile
-        original_isdir = os.path.isdir
-        def restore_isdir():
-            os.path.isdir = original_isdir
-
-        path_lists = [['test2.py', 'test1.py', 'not_a_test.py', 'test_dir',
-                       'test.foo', 'test-not-a-module.py', 'another_dir'],
-                      ['test4.py', 'test3.py', ]]
-        os.listdir = lambda path: path_lists.pop(0)
-        self.addCleanup(restore_listdir)
-
-        def isdir(path):
-            return path.endswith('dir')
-        os.path.isdir = isdir
-        self.addCleanup(restore_isdir)
-
-        def isfile(path):
-            # another_dir is not a package and so shouldn't be recursed into
-            return not path.endswith('dir') and not 'another_dir' in path
-        os.path.isfile = isfile
-        self.addCleanup(restore_isfile)
-
-        loader._get_module_from_name = lambda path: path + ' module'
-        orig_load_tests = loader.loadTestsFromModule
-        def loadTestsFromModule(module, pattern=None):
-            # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
-            return base + [module + ' tests']
-        loader.loadTestsFromModule = loadTestsFromModule
-        loader.suiteClass = lambda thing: thing
-
-        top_level = os.path.abspath('/foo')
-        loader._top_level_dir = top_level
-        suite = list(loader._find_tests(top_level, 'test*.py'))
-
-        # The test suites found should be sorted alphabetically for reliable
-        # execution order.
-        expected = [[name + ' module tests'] for name in
-                    ('test1', 'test2', 'test_dir')]
-        expected.extend([[('test_dir.%s' % name) + ' module tests'] for name in
-                    ('test3', 'test4')])
-        self.assertEqual(suite, expected)
-
-    def test_find_tests_with_unicode(self):
-        loader = unittest.TestLoader()
-
-        original_listdir = os.listdir
-        def restore_listdir():
-            os.listdir = original_listdir
-        original_isfile = os.path.isfile
-        def restore_isfile():
-            os.path.isfile = original_isfile
-        original_isdir = os.path.isdir
-        def restore_isdir():
-            os.path.isdir = original_isdir
-
-        path_lists = [['測試2.py', '測試1.py', '不是測試.py', '測試_資料夾',
-                       '測試.付歐歐', '測試-不是-一個-模組.py', '另外的_資料夾'],
+        path_lists = [[
+                       # Valid module and package names
+                       'test2.py', 'test1.py', 'not_a_test.py', 'test_dir',
+                       '測試2.py', '測試1.py', '不是測試.py', '測試_資料夾',
+                       # Invalid names
+                       'test.foo', 'test-not-a-module.py', 'not-a-package_dir',
+                       'another_dir',
+                       '測試.付歐歐', '測試-不是-一個-模組.py',
+                       '測試-不是-一個-模組_資料夾', '另外的_資料夾'],
+                       # Valid names; test case tests that these work from inside
+                       # of a package directory
+                      ['test4.py', 'test3.py'],
                       ['測試4.py', '測試3.py', ]]
-        os.listdir = lambda path: path_lists.pop(0)
-        self.addCleanup(restore_listdir)
 
-        def isdir(path):
-            return path.endswith('資料夾')
-        os.path.isdir = isdir
-        self.addCleanup(restore_isdir)
+        loader = unittest.TestLoader()
+
+        original_listdir = os.listdir
+        original_isdir = os.path.isdir
+        original_isfile = os.path.isfile
+
+        os.listdir = lambda path: path_lists.pop(0)
+        os.path.isdir = lambda path: path.endswith(('dir', '資料夾'))
 
         def isfile(path):
-            # another_dir is not a package and so shouldn't be recursed into
-            return not path.endswith('資料夾') and not '另外的_資料夾' in path
+            # Mocking isfile to pretend that path names that end in dir or
+            # 資料夾 are directories rather than files.
+            # Additionally, another_dir and 另外的_資料夾 are supposed to be
+            # directories that are not python packages.  We simulate that by
+            # returning False here when unittest asks us if __init__.py is
+            # present in those directories.
+            return (not (path.endswith(('dir', '資料夾')))
+                    and 'another_dir' not in path
+                    and '另外的_資料夾' not in path)
         os.path.isfile = isfile
-        self.addCleanup(restore_isfile)
+
+        self.addCleanup(setattr, os, 'listdir', original_listdir)
+        self.addCleanup(setattr, os.path, 'isdir', original_isdir)
+        self.addCleanup(setattr, os.path, 'isfile', original_isfile)
 
         loader._get_module_from_name = lambda path: path + ' module'
         orig_load_tests = loader.loadTestsFromModule
+
         def loadTestsFromModule(module, pattern=None):
             # This is where load_tests is called.
             base = orig_load_tests(module, pattern=pattern)
             return base + [module + ' tests']
+
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
 
         top_level = os.path.abspath('/foo')
         loader._top_level_dir = top_level
-        suite = list(loader._find_tests(top_level, '測試*.py'))
+        suite = list(loader._find_tests(top_level, '[t測]*.py'))
 
         # The test suites found should be sorted alphabetically for reliable
         # execution order.
-        expected = [[name + ' module tests'] for name in
-                    ('測試1', '測試2', '測試_資料夾')]
-        expected.extend([[('測試_資料夾.%s' % name) + ' module tests'] for name in
+        expected = [['%s module tests' % name] for name in
+                    ('test1', 'test2', 'test_dir', '測試1', '測試2', '測試_資料夾')]
+        expected.extend([['test_dir.%s module tests' % name] for name in
+                    ('test3', 'test4')])
+        expected.extend([['測試_資料夾.%s module tests' % name] for name in
                     ('測試3', '測試4')])
+        expected.sort()
         self.assertEqual(suite, expected)
 
     def test_find_tests_socket(self):
