@@ -3947,34 +3947,44 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
        character, and whether or not a format_spec was provided.
 
        Convert the conversion char to 2 bit:
-       !f  : 000  0x0  FVC_NONE     The default if nothing specified.
-       !s  : 001  0x1  FVC_STR
-       !r  : 010  0x2  FVC_REPR
-       !a  : 011  0x3  FVC_ASCII
+           : 0000  0x0  FVC_NONE     The default if nothing specified.
+       !s  : 0001  0x1  FVC_STR
+       !r  : 0010  0x2  FVC_REPR
+       !a  : 0011  0x3  FVC_ASCII
+       !a  : 0100  0x4  FVC_ASCII
 
        next bit is whether or not we have a format spec:
-       yes : 100  0x4
-       no  : 000  0x0
+       yes : 1000  0x8
+       no  : 0000  0x0
     */
 
+    int conversion = e->v.FormattedValue.conversion;
     int oparg;
 
     if (e->v.FormattedValue.expr_text) {
         /* Push the text of the expression (with an equal sign at the end. */
         ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_text);
+        if (conversion == -1) {
+            /* Unspecified, we default to !r if = specified. */
+            conversion = 'r';
+        }
+    } else {
+        if (conversion == -1) {
+            conversion = 'f';
+        }
     }
 
     /* The expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
 
-    switch (e->v.FormattedValue.conversion) {
+    switch (conversion) {
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
     case 'f': oparg = FVC_NONE;  break;
     default:
-        PyErr_SetString(PyExc_SystemError,
-                        "Unrecognized conversion character");
+        PyErr_Format(PyExc_SystemError,
+                     "Unrecognized conversion character %d", conversion);
         return 0;
     }
     if (e->v.FormattedValue.format_spec) {

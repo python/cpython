@@ -3440,7 +3440,6 @@ main_loop:
             case FVC_STR:   conv_fn = PyObject_Str;   break;
             case FVC_REPR:  conv_fn = PyObject_Repr;  break;
             case FVC_ASCII: conv_fn = PyObject_ASCII; break;
-
             default:
                 PyErr_Format(PyExc_SystemError,
                              "unexpected conversion flag %d",

@@ -5017,8 +5017,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     const char *expr_end;
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
-    int conversion = 'f'; /* The conversion char.  'f', the default, is no
-                             conversion, use format(). */
+    int conversion = -1; /* The conversion char.  Default is not specified. */
     int equal_conversion = 0; /* Are we using the = conversion? */
     PyObject *expr_text = NULL; /* The text of the expression, used for =. */
     const char *expr_text_end;
@@ -5191,7 +5190,6 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     if (**str == '=') {
         *str += 1;
         equal_conversion = 1;
-        conversion = 'r';  /* Default for = is to use repr. */
 
         /* Skip over whitespace.  No need to test for end of string here,
            since we know there's at least a } somewhere ahead. */
