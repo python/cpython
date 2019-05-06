@@ -5390,7 +5390,7 @@ static PyTypeObject PyDecContext_Type =
     0,                                         /* tp_as_mapping */
     (hashfunc) 0,                              /* tp_hash */
     0,                                         /* tp_call */
-    (reprfunc) context_repr,                   /* tp_str */
+    0,                                         /* tp_str */
     (getattrofunc) context_getattr,            /* tp_getattro */
     (setattrofunc) context_setattr,            /* tp_setattro */
     (PyBufferProcs *) 0,                       /* tp_as_buffer */

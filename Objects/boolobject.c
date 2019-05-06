@@ -147,7 +147,7 @@ PyTypeObject PyBool_Type = {
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
-    bool_repr,                                  /* tp_str */
+    0,                                          /* tp_str */
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */

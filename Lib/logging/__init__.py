@@ -364,11 +364,9 @@ class LogRecord(object):
         else:
             self.process = None
 
-    def __str__(self):
+    def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
-
-    __repr__ = __str__
 
     def getMessage(self):
         """
