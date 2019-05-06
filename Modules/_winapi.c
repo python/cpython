@@ -1611,8 +1611,8 @@ _winapi_TerminateProcess_impl(PyObject *module, HANDLE handle,
 {
     BOOL result;
 
-    if (PySys_Audit("_winapi.TerminateProcess", "NI",
-                    HANDLE_TO_PYNUM(handle), exit_code) < 0) {
+    if (PySys_Audit("_winapi.TerminateProcess", "nI",
+                    (Py_ssize_t)handle, exit_code) < 0) {
         return NULL;
     }
 

@@ -116,7 +116,9 @@ PySys_Audit(const char *event, const char *argFormat, ...)
 {
     PyObject *eventName = NULL;
     PyObject *eventArgs = NULL;
-    int res = 0;
+    PyObject *hooks = NULL;
+    PyObject *hook = NULL;
+    int res = -1;
 
     /* N format is inappropriate, because you do not know
        whether the reference is consumed by the call.
@@ -125,54 +127,68 @@ PySys_Audit(const char *event, const char *argFormat, ...)
 
     /* Early exit when no hooks are registered */
     _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
-    if (!e) {
-        return res;
+    PyThreadState *ts = _PyThreadState_GET();
+    PyInterpreterState *is = ts ? ts->interp : NULL;
+    if (!e && (!is || !is->audit_hooks)) {
+        return 0;
     }
 
     PyObject *exc_type, *exc_value, *exc_tb;
     PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
 
-    for (; e; e = e->next) {
-        if (e->hookCallable && !e->hookCFunction && !eventName) {
-            eventName = PyUnicode_FromString(event);
-            if (!eventName) {
-                res = -1;
-                goto exit;
-            }
+    /* Initialize event args now */
+    if (argFormat && argFormat[0]) {
+        va_list args;
+        va_start(args, argFormat);
+        eventArgs = Py_VaBuildValue(argFormat, args);
+        if (eventArgs && !PyTuple_Check(eventArgs)) {
+            eventArgs = PyTuple_Pack(1, eventArgs);
         }
-        if ((e->hookCallable || e->hookCFunction) && !eventArgs) {
-            if (argFormat && argFormat[0]) {
-                va_list args;
-                va_start(args, argFormat);
-                eventArgs = Py_VaBuildValue(argFormat, args);
-                if (eventArgs && !PyTuple_Check(eventArgs)) {
-                    eventArgs = PyTuple_Pack(1, eventArgs);
-                }
-            } else {
-                eventArgs = PyTuple_New(0);
-            }
-            if (!eventArgs) {
-                res = -1;
-                goto exit;
-            }
-        }
+    } else {
+        eventArgs = PyTuple_New(0);
+    }
+    if (!eventArgs) {
+        goto exit;
+    }
 
-        if (e->hookCFunction) {
-            res = e->hookCFunction(event, eventArgs, e->userData);
-            if (res < 0)
-                goto exit;
-        } else if (e->hookCallable) {
-            PyObject *ores = PyObject_CallFunctionObjArgs(
-                e->hookCallable, eventName, eventArgs, NULL);
-            if (!ores) {
-                res = -1;
-                goto exit;
-            }
-            Py_DECREF(ores);
+    /* Call global hooks */
+    for (; e; e = e->next) {
+        if (e->hookCFunction(event, eventArgs, e->userData) < 0) {
+            goto exit;
         }
     }
 
+    /* Call interpreter hooks */
+    if (is && is->audit_hooks) {
+        eventName = PyUnicode_FromString(event);
+        if (!eventName) {
+            goto exit;
+        }
+
+        hooks = PyObject_GetIter(is->audit_hooks);
+        if (!hooks) {
+            goto exit;
+        }
+
+        while ((hook = PyIter_Next(hooks)) != NULL) {
+            PyObject *ores = PyObject_CallFunctionObjArgs(
+                hook, eventName, eventArgs, NULL);
+            if (!ores) {
+                goto exit;
+            }
+            Py_DECREF(ores);
+            Py_CLEAR(hook);
+        }
+        if (PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+
+    res = 0;
+
 exit:
+    Py_XDECREF(hook);
+    Py_XDECREF(hooks);
     Py_XDECREF(eventName);
     Py_XDECREF(eventArgs);
 
@@ -194,8 +210,9 @@ void _PySys_ClearAuditHooks(void) {
     if (!ts || !_Py_CURRENTLY_FINALIZING(ts))
         return;
 
-    if (Py_VerboseFlag)
+    if (Py_VerboseFlag) {
         PySys_WriteStderr("# clear sys.audit hooks\n");
+    }
 
     /* Hooks can abort later hooks for this event, but cannot
        abort the clear operation itself. */
@@ -206,15 +223,13 @@ void _PySys_ClearAuditHooks(void) {
     _PyRuntime.audit_hook_head = NULL;
     while (e) {
         n = e->next;
-        if (!e->hookCFunction)
-            Py_XDECREF(e->hookCallable);
         free(e);
         e = n;
     }
 }
 
-static int
-addaudithook_helper(_Py_AuditHookFunction hookCFunction, PyObject *hookCallable, void *userData)
+int
+PySys_AddAuditHook(void *hook, void *userData)
 {
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     /* Cannot invoke hooks until we are initialized */
@@ -246,22 +261,10 @@ addaudithook_helper(_Py_AuditHookFunction hookCFunction, PyObject *hookCallable,
     }
 
     e->next = NULL;
-    e->hookCFunction = hookCFunction;
-    if (hookCFunction)
-        e->userData = userData;
-    else {
-        e->hookCallable = hookCallable;
-        Py_XINCREF(hookCallable);
-    }
+    e->hookCFunction = (_Py_AuditHookFunction)hook;
+    e->userData = userData;
 
     return 0;
-}
-
-
-int
-PySys_AddAuditHook(void *hook, void *userData)
-{
-    return addaudithook_helper((_Py_AuditHookFunction)hook, NULL, userData);
 }
 
 /*[clinic input]
@@ -276,9 +279,29 @@ static PyObject *
 sys_addaudithook_impl(PyObject *module, PyObject *hook)
 /*[clinic end generated code: output=4f9c17aaeb02f44e input=0f3e191217a45e34]*/
 {
-    if (addaudithook_helper(NULL, hook, NULL) < 0) {
+    /* Invoke existing audit hooks to allow them an opportunity to abort. */
+    if (PySys_Audit("sys.addaudithook", NULL) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_Exception)) {
+            /* We do not report errors derived from Exception */
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
         return NULL;
     }
+
+    PyInterpreterState *is = _PyInterpreterState_Get();
+
+    if (is->audit_hooks == NULL) {
+        is->audit_hooks = PyList_New(0);
+        if (is->audit_hooks == NULL) {
+            return NULL;
+        }
+    }
+
+    if (PyList_Append(is->audit_hooks, hook) < 0) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -321,15 +344,17 @@ sys_audit(PyObject *self, PyObject *args)
         return NULL;
     }
     for (int i = 0; i < argc - 1; ++i) {
-        PyTuple_SET_ITEM(auditArgs, i, PyTuple_GET_ITEM(args, i + 1));
-        Py_INCREF(PyTuple_GET_ITEM(auditArgs, i));
+        PyObject *o = PyTuple_GET_ITEM(args, i + 1);
+        Py_INCREF(o);
+        PyTuple_SET_ITEM(auditArgs, i, o);
     }
 
     int res = PySys_Audit(event, "O", auditArgs);
     Py_DECREF(auditArgs);
 
-    if (res < 0)
+    if (res < 0) {
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }

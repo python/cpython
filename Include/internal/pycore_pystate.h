@@ -17,7 +17,6 @@ extern "C" {
 #include "pycore_pymem.h"
 #include "pycore_warnings.h"
 
-
 /* interpreter state */
 
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
@@ -90,6 +89,8 @@ struct _is {
     PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
+
+    PyObject *audit_hooks;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
@@ -113,17 +114,14 @@ struct _xidregitem {
     struct _xidregitem *next;
 };
 
-/* audit hook state */
+/* runtime audit hook state */
 
 typedef int(*_Py_AuditHookFunction)(const char *, PyObject *, void *);
 
 typedef struct _Py_AuditHookEntry {
     struct _Py_AuditHookEntry *next;
     _Py_AuditHookFunction hookCFunction;
-    union {
-        PyObject *hookCallable;
-        void *userData;
-    };
+    void *userData;
 } _Py_AuditHookEntry;
 
 /* GIL state */

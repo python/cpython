@@ -193,6 +193,10 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
+    if (PySys_Audit("cpython.PyInterpreterState_New", NULL) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = PyMem_RawMalloc(sizeof(PyInterpreterState));
     if (interp == NULL) {
         return NULL;
@@ -239,6 +243,8 @@ PyInterpreterState_New(void)
 
     interp->tstate_next_unique_id = 0;
 
+    interp->audit_hooks = NULL;
+
     return interp;
 }
 
@@ -246,11 +252,17 @@ PyInterpreterState_New(void)
 static void
 _PyInterpreterState_Clear(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
+    PySys_Audit("cpython.PyInterpreterState_Clear", NULL);
+    PyErr_Clear();
+
     HEAD_LOCK(runtime);
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
         PyThreadState_Clear(p);
     }
     HEAD_UNLOCK(runtime);
+
+    Py_CLEAR(interp->audit_hooks);
+
     _PyCoreConfig_Clear(&interp->core_config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);

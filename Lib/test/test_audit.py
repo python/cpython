@@ -61,9 +61,9 @@ class TestFinalizeHook:
 
         if event == 'sys._clearaudithooks':
             raise RuntimeError('Should be ignored')
+        elif event == 'cpython.PyInterpreterState_Clear':
+            raise RuntimeError('Should be ignored')
 
-    def __del__(self):
-        print('Finalized', id(self), file=sys.stderr, flush=True)
 
 def run_finalize_test():
     '''Called by test_finalize_hooks in a subprocess.'''
@@ -106,7 +106,6 @@ class AuditTest(unittest.TestCase):
         self.assertSequenceEqual([
             ('Created', ' ', firstId),
             ('sys._clearaudithooks', ' ', firstId),
-            ('Finalized', ' ', firstId),
         ], events)
 
     def test_pickle(self):
@@ -127,7 +126,6 @@ class AuditTest(unittest.TestCase):
             # pickles with no globals are okay
             pickle.loads(payload_2)
 
-    @unittest.skip("monkeypatching events are disabled")
     def test_monkeypatch(self):
         class A: pass
         class B: pass
@@ -153,8 +151,6 @@ class AuditTest(unittest.TestCase):
             (C, '__name__'),
             (C, '__bases__'),
             (C, '__bases__'),
-            (C, '__init__'),
-            (C, 'new_attr'),
             (a, '__class__'),
         ], actual);
 
