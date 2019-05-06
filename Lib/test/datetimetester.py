@@ -6024,11 +6024,11 @@ class CapiTest(unittest.TestCase):
         for macro in [0, 1]:
             with self.subTest(macro=macro):
                 c_api_date = _testcapi.get_date_fromdate(
-                    exp_date.year, 
+                    exp_date.year,
                     exp_date.month,
                     exp_date.day,
                     macro)
-                
+
                 self.assertEqual(c_api_date, exp_date)
 
     def test_date_from_timestamp(self):
