@@ -97,7 +97,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         """
         warnings.warn("Task.current_task() is deprecated, "
                       "use asyncio.current_task() instead",
-                      PendingDeprecationWarning,
+                      DeprecationWarning,
                       stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
@@ -111,7 +111,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         """
         warnings.warn("Task.all_tasks() is deprecated, "
                       "use asyncio.all_tasks() instead",
-                      PendingDeprecationWarning,
+                      DeprecationWarning,
                       stacklevel=2)
         return _all_tasks_compat(loop)
 
@@ -495,10 +495,11 @@ async def _wait(fs, timeout, return_when, loop):
     finally:
         if timeout_handle is not None:
             timeout_handle.cancel()
+        for f in fs:
+            f.remove_done_callback(_on_completion)
 
     done, pending = set(), set()
     for f in fs:
-        f.remove_done_callback(_on_completion)
         if f.done():
             done.add(f)
         else:
@@ -627,7 +628,8 @@ def ensure_future(coro_or_future, *, loop=None):
         return task
     elif futures.isfuture(coro_or_future):
         if loop is not None and loop is not futures._get_loop(coro_or_future):
-            raise ValueError('loop argument must agree with Future')
+            raise ValueError('The future belongs to a different loop than '
+                             'the one specified as the loop argument')
         return coro_or_future
     elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)

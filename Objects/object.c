@@ -2,9 +2,11 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_context.h"
 #include "frameobject.h"
+#include "interpreteridobject.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,6 +19,28 @@ _Py_IDENTIFIER(Py_Repr);
 _Py_IDENTIFIER(__bytes__);
 _Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(__isabstractmethod__);
+
+
+int
+_PyObject_CheckConsistency(PyObject *op, int check_content)
+{
+    _PyObject_ASSERT(op, op != NULL);
+    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
+    _PyObject_ASSERT(op, Py_REFCNT(op) >= 1);
+
+    PyTypeObject *type = op->ob_type;
+    _PyObject_ASSERT(op, type != NULL);
+    _PyType_CheckConsistency(type);
+
+    if (PyUnicode_Check(op)) {
+        _PyUnicode_CheckConsistency(op, check_content);
+    }
+    else if (PyDict_Check(op)) {
+        _PyDict_CheckConsistency(op, check_content);
+    }
+    return 1;
+}
+
 
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
@@ -229,6 +253,9 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
         return PyErr_NoMemory();
     /* Any changes should be reflected in PyObject_INIT (objimpl.h) */
     Py_TYPE(op) = tp;
+    if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
+        Py_INCREF(tp);
+    }
     _Py_NewReference(op);
     return op;
 }
@@ -239,9 +266,8 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
     if (op == NULL)
         return (PyVarObject *) PyErr_NoMemory();
     /* Any changes should be reflected in PyObject_INIT_VAR */
-    op->ob_size = size;
-    Py_TYPE(op) = tp;
-    _Py_NewReference((PyObject *)op);
+    Py_SIZE(op) = size;
+    PyObject_Init((PyObject *)op, tp);
     return op;
 }
 
@@ -412,28 +438,26 @@ _Py_BreakPoint(void)
 }
 
 
-/* Heuristic checking if the object memory has been deallocated.
-   Rely on the debug hooks on Python memory allocators which fills the memory
-   with DEADBYTE (0xDB) when memory is deallocated.
+/* Heuristic checking if the object memory is uninitialized or deallocated.
+   Rely on the debug hooks on Python memory allocators:
+   see _PyMem_IsPtrFreed().
 
    The function can be used to prevent segmentation fault on dereferencing
-   pointers like 0xdbdbdbdbdbdbdbdb. Such pointer is very unlikely to be mapped
-   in memory. */
+   pointers like 0xDDDDDDDDDDDDDDDD. */
 int
 _PyObject_IsFreed(PyObject *op)
 {
-    uintptr_t ptr = (uintptr_t)op;
-    if (_PyMem_IsFreed(&ptr, sizeof(ptr))) {
+    if (_PyMem_IsPtrFreed(op) || _PyMem_IsPtrFreed(op->ob_type)) {
         return 1;
     }
-    int freed = _PyMem_IsFreed(&op->ob_type, sizeof(op->ob_type));
-    /* ignore op->ob_ref: the value can have be modified
+    /* ignore op->ob_ref: its value can have be modified
        by Py_INCREF() and Py_DECREF(). */
 #ifdef Py_TRACE_REFS
-    freed &= _PyMem_IsFreed(&op->_ob_next, sizeof(op->_ob_next));
-    freed &= _PyMem_IsFreed(&op->_ob_prev, sizeof(op->_ob_prev));
+    if (_PyMem_IsPtrFreed(op->_ob_next) || _PyMem_IsPtrFreed(op->_ob_prev)) {
+        return 1;
+    }
 #endif
-    return freed;
+    return 0;
 }
 
 
@@ -450,7 +474,7 @@ _PyObject_Dump(PyObject* op)
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<freed object>\n");
+        fprintf(stderr, "<Freed object>\n");
         return;
     }
 
@@ -1020,8 +1044,10 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     }
     if (tp->tp_setattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
-        if (name_str == NULL)
+        if (name_str == NULL) {
+            Py_DECREF(name);
             return -1;
+        }
         err = (*tp->tp_setattr)(v, (char *)name_str, value);
         Py_DECREF(name);
         return err;
@@ -1806,6 +1832,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PySeqIter_Type, "sequence iterator");
     INIT_TYPE(&PyCoro_Type, "coroutine");
     INIT_TYPE(&_PyCoroWrapper_Type, "coroutine wrapper");
+    INIT_TYPE(&_PyInterpreterID_Type, "interpreter ID");
     return _Py_INIT_OK();
 
 #undef INIT_TYPE
@@ -2134,7 +2161,13 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
     else if (_PyObject_IsFreed(obj)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<Freed object>\n");
+        fprintf(stderr, "<object: freed>\n");
+    }
+    else if (Py_TYPE(obj) == NULL) {
+        fprintf(stderr, "<object: ob_type=NULL>\n");
+    }
+    else if (_PyObject_IsFreed((PyObject *)Py_TYPE(obj))) {
+        fprintf(stderr, "<object: freed type %p>\n", Py_TYPE(obj));
     }
     else {
         /* Diplay the traceback where the object has been allocated.

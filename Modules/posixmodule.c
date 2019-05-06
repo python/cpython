@@ -284,10 +284,7 @@ extern char        *ctermid_r(char *);
 #include <windows.h>
 #include <shellapi.h>   /* for ShellExecute() */
 #include <lmcons.h>     /* for UNLEN */
-#ifdef SE_CREATE_SYMBOLIC_LINK_NAME /* Available starting with Vista */
 #define HAVE_SYMLINK
-static int win32_can_symlink = 0;
-#endif
 #endif /* _MSC_VER */
 
 #ifndef MAXPATHLEN
@@ -424,12 +421,13 @@ PyOS_AfterFork_Parent(void)
 void
 PyOS_AfterFork_Child(void)
 {
-    _PyGILState_Reinit();
-    _PyInterpreterState_DeleteExceptMain();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    _PyGILState_Reinit(runtime);
+    _PyInterpreterState_DeleteExceptMain(runtime);
     PyEval_ReInitThreads();
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
-    _PyRuntimeState_ReInitThreads();
+    _PyRuntimeState_ReInitThreads(runtime);
 
     run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
@@ -1261,7 +1259,8 @@ _Py_Sigset_Converter(PyObject *obj, void *addr)
     long signum;
     int overflow;
 
-    if (sigemptyset(mask)) {
+    // The extra parens suppress the unreachable-code warning with clang on MacOS
+    if (sigemptyset(mask) < (0)) {
         /* Probably only if mask == NULL. */
         PyErr_SetFromErrno(PyExc_OSError);
         return 0;
@@ -1442,17 +1441,23 @@ win32_error(const char* function, const char* filename)
 }
 
 static PyObject *
-win32_error_object(const char* function, PyObject* filename)
+win32_error_object_err(const char* function, PyObject* filename, DWORD err)
 {
     /* XXX - see win32_error for comments on 'function' */
-    errno = GetLastError();
     if (filename)
         return PyErr_SetExcFromWindowsErrWithFilenameObject(
                     PyExc_OSError,
-                    errno,
+                    err,
                     filename);
     else
-        return PyErr_SetFromWindowsErr(errno);
+        return PyErr_SetFromWindowsErr(err);
+}
+
+static PyObject *
+win32_error_object(const char* function, PyObject* filename)
+{
+    errno = GetLastError();
+    return win32_error_object_err(function, filename, errno);
 }
 
 #endif /* MS_WINDOWS */
@@ -7749,26 +7754,6 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 
 #if defined(MS_WINDOWS)
 
-/* Grab CreateSymbolicLinkW dynamically from kernel32 */
-static BOOLEAN (CALLBACK *Py_CreateSymbolicLinkW)(LPCWSTR, LPCWSTR, DWORD) = NULL;
-
-static int
-check_CreateSymbolicLink(void)
-{
-    HINSTANCE hKernel32;
-    /* only recheck */
-    if (Py_CreateSymbolicLinkW)
-        return 1;
-
-    Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"KERNEL32");
-    *(FARPROC*)&Py_CreateSymbolicLinkW = GetProcAddress(hKernel32,
-                                                        "CreateSymbolicLinkW");
-    Py_END_ALLOW_THREADS
-
-    return Py_CreateSymbolicLinkW != NULL;
-}
-
 /* Remove the last portion of the path - return 0 on success */
 static int
 _dirnameW(WCHAR *path)
@@ -7872,32 +7857,56 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 {
 #ifdef MS_WINDOWS
     DWORD result;
+    DWORD flags = 0;
+
+    /* Assumed true, set to false if detected to not be available. */
+    static int windows_has_symlink_unprivileged_flag = TRUE;
 #else
     int result;
 #endif
 
 #ifdef MS_WINDOWS
-    if (!check_CreateSymbolicLink()) {
-        PyErr_SetString(PyExc_NotImplementedError,
-            "CreateSymbolicLink functions not found");
-        return NULL;
-        }
-    if (!win32_can_symlink) {
-        PyErr_SetString(PyExc_OSError, "symbolic link privilege not held");
-        return NULL;
-        }
-#endif
 
-#ifdef MS_WINDOWS
+    if (windows_has_symlink_unprivileged_flag) {
+        /* Allow non-admin symlinks if system allows it. */
+        flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
-    /* if src is a directory, ensure target_is_directory==1 */
-    target_is_directory |= _check_dirW(src->wide, dst->wide);
-    result = Py_CreateSymbolicLinkW(dst->wide, src->wide,
-                                    target_is_directory);
+    /* if src is a directory, ensure flags==1 (target_is_directory bit) */
+    if (target_is_directory || _check_dirW(src->wide, dst->wide)) {
+        flags |= SYMBOLIC_LINK_FLAG_DIRECTORY;
+    }
+
+    result = CreateSymbolicLinkW(dst->wide, src->wide, flags);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
+
+    if (windows_has_symlink_unprivileged_flag && !result &&
+        ERROR_INVALID_PARAMETER == GetLastError()) {
+
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        /* This error might be caused by
+        SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE not being supported.
+        Try again, and update windows_has_symlink_unprivileged_flag if we
+        are successful this time.
+
+        NOTE: There is a risk of a race condition here if there are other
+        conditions than the flag causing ERROR_INVALID_PARAMETER, and
+        another process (or thread) changes that condition in between our
+        calls to CreateSymbolicLink.
+        */
+        flags &= ~(SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE);
+        result = CreateSymbolicLinkW(dst->wide, src->wide, flags);
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+
+        if (result || ERROR_INVALID_PARAMETER != GetLastError()) {
+            windows_has_symlink_unprivileged_flag = FALSE;
+        }
+    }
 
     if (!result)
         return path_error2(src, dst);
@@ -13161,6 +13170,113 @@ error:
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
 
+#ifdef MS_WINDOWS
+/* bpo-36085: Helper functions for managing DLL search directories
+ * on win32
+ */
+
+typedef DLL_DIRECTORY_COOKIE (WINAPI *PAddDllDirectory)(PCWSTR newDirectory);
+typedef BOOL (WINAPI *PRemoveDllDirectory)(DLL_DIRECTORY_COOKIE cookie);
+
+/*[clinic input]
+os._add_dll_directory
+
+    path: path_t
+
+Add a path to the DLL search path.
+
+This search path is used when resolving dependencies for imported
+extension modules (the module itself is resolved through sys.path),
+and also by ctypes.
+
+Returns an opaque value that may be passed to os.remove_dll_directory
+to remove this directory from the search path.
+[clinic start generated code]*/
+
+static PyObject *
+os__add_dll_directory_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=80b025daebb5d683 input=1de3e6c13a5808c8]*/
+{
+    HMODULE hKernel32;
+    PAddDllDirectory AddDllDirectory;
+    DLL_DIRECTORY_COOKIE cookie = 0;
+    DWORD err = 0;
+
+    /* For Windows 7, we have to load this. As this will be a fairly
+       infrequent operation, just do it each time. Kernel32 is always
+       loaded. */
+    Py_BEGIN_ALLOW_THREADS
+    if (!(hKernel32 = GetModuleHandleW(L"kernel32")) ||
+        !(AddDllDirectory = (PAddDllDirectory)GetProcAddress(
+            hKernel32, "AddDllDirectory")) ||
+        !(cookie = (*AddDllDirectory)(path->wide))) {
+        err = GetLastError();
+    }
+    Py_END_ALLOW_THREADS
+
+    if (err) {
+        return win32_error_object_err("add_dll_directory",
+                                      path->object, err);
+    }
+
+    return PyCapsule_New(cookie, "DLL directory cookie", NULL);
+}
+
+/*[clinic input]
+os._remove_dll_directory
+
+    cookie: object
+
+Removes a path from the DLL search path.
+
+The parameter is an opaque value that was returned from
+os.add_dll_directory. You can only remove directories that you added
+yourself.
+[clinic start generated code]*/
+
+static PyObject *
+os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
+/*[clinic end generated code: output=594350433ae535bc input=c1d16a7e7d9dc5dc]*/
+{
+    HMODULE hKernel32;
+    PRemoveDllDirectory RemoveDllDirectory;
+    DLL_DIRECTORY_COOKIE cookieValue;
+    DWORD err = 0;
+
+    if (!PyCapsule_IsValid(cookie, "DLL directory cookie")) {
+        PyErr_SetString(PyExc_TypeError,
+            "Provided cookie was not returned from os.add_dll_directory");
+        return NULL;
+    }
+
+    cookieValue = (DLL_DIRECTORY_COOKIE)PyCapsule_GetPointer(
+        cookie, "DLL directory cookie");
+
+    /* For Windows 7, we have to load this. As this will be a fairly
+       infrequent operation, just do it each time. Kernel32 is always
+       loaded. */
+    Py_BEGIN_ALLOW_THREADS
+    if (!(hKernel32 = GetModuleHandleW(L"kernel32")) ||
+        !(RemoveDllDirectory = (PRemoveDllDirectory)GetProcAddress(
+            hKernel32, "RemoveDllDirectory")) ||
+        !(*RemoveDllDirectory)(cookieValue)) {
+        err = GetLastError();
+    }
+    Py_END_ALLOW_THREADS
+
+    if (err) {
+        return win32_error_object_err("remove_dll_directory",
+                                      NULL, err);
+    }
+
+    if (PyCapsule_SetName(cookie, NULL)) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+#endif
 
 static PyMethodDef posix_methods[] = {
 
@@ -13349,37 +13465,12 @@ static PyMethodDef posix_methods[] = {
     OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
+#ifdef MS_WINDOWS
+    OS__ADD_DLL_DIRECTORY_METHODDEF
+    OS__REMOVE_DLL_DIRECTORY_METHODDEF
+#endif
     {NULL,              NULL}            /* Sentinel */
 };
-
-
-#if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
-static int
-enable_symlink()
-{
-    HANDLE tok;
-    TOKEN_PRIVILEGES tok_priv;
-    LUID luid;
-
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &tok))
-        return 0;
-
-    if (!LookupPrivilegeValue(NULL, SE_CREATE_SYMBOLIC_LINK_NAME, &luid))
-        return 0;
-
-    tok_priv.PrivilegeCount = 1;
-    tok_priv.Privileges[0].Luid = luid;
-    tok_priv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-    if (!AdjustTokenPrivileges(tok, FALSE, &tok_priv,
-                               sizeof(TOKEN_PRIVILEGES),
-                               (PTOKEN_PRIVILEGES) NULL, (PDWORD) NULL))
-        return 0;
-
-    /* ERROR_NOT_ALL_ASSIGNED returned when the privilege can't be assigned. */
-    return GetLastError() == ERROR_NOT_ALL_ASSIGNED ? 0 : 1;
-}
-#endif /* defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 
 static int
 all_ins(PyObject *m)
@@ -13826,6 +13917,14 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
 #endif
 
+#ifdef MS_WINDOWS
+    if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_DEFAULT_DIRS", LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)) return -1;
+    if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_APPLICATION_DIR", LOAD_LIBRARY_SEARCH_APPLICATION_DIR)) return -1;
+    if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_SYSTEM32", LOAD_LIBRARY_SEARCH_SYSTEM32)) return -1;
+    if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_USER_DIRS", LOAD_LIBRARY_SEARCH_USER_DIRS)) return -1;
+    if (PyModule_AddIntConstant(m, "_LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR", LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR)) return -1;
+#endif
+
     return 0;
 }
 
@@ -13979,10 +14078,6 @@ INITFUNC(void)
     PyObject *m, *v;
     PyObject *list;
     const char * const *trace;
-
-#if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
-    win32_can_symlink = enable_symlink();
-#endif
 
     m = PyModule_Create(&posixmodule);
     if (m == NULL)

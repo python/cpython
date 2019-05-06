@@ -1795,6 +1795,82 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             with self.assertRaises(TypeError):
                 self.theclass.fromisoformat(bad_type)
 
+    def test_fromisocalendar(self):
+        # For each test case, assert that fromisocalendar is the
+        # inverse of the isocalendar function
+        dates = [
+            (2016, 4, 3),
+            (2005, 1, 2),       # (2004, 53, 7)
+            (2008, 12, 30),     # (2009, 1, 2)
+            (2010, 1, 2),       # (2009, 53, 6)
+            (2009, 12, 31),     # (2009, 53, 4)
+            (1900, 1, 1),       # Unusual non-leap year (year % 100 == 0)
+            (1900, 12, 31),
+            (2000, 1, 1),       # Unusual leap year (year % 400 == 0)
+            (2000, 12, 31),
+            (2004, 1, 1),       # Leap year
+            (2004, 12, 31),
+            (1, 1, 1),
+            (9999, 12, 31),
+            (MINYEAR, 1, 1),
+            (MAXYEAR, 12, 31),
+        ]
+
+        for datecomps in dates:
+            with self.subTest(datecomps=datecomps):
+                dobj = self.theclass(*datecomps)
+                isocal = dobj.isocalendar()
+
+                d_roundtrip = self.theclass.fromisocalendar(*isocal)
+
+                self.assertEqual(dobj, d_roundtrip)
+
+    def test_fromisocalendar_value_errors(self):
+        isocals = [
+            (2019, 0, 1),
+            (2019, -1, 1),
+            (2019, 54, 1),
+            (2019, 1, 0),
+            (2019, 1, -1),
+            (2019, 1, 8),
+            (2019, 53, 1),
+            (10000, 1, 1),
+            (0, 1, 1),
+            (9999999, 1, 1),
+            (2<<32, 1, 1),
+            (2019, 2<<32, 1),
+            (2019, 1, 2<<32),
+        ]
+
+        for isocal in isocals:
+            with self.subTest(isocal=isocal):
+                with self.assertRaises(ValueError):
+                    self.theclass.fromisocalendar(*isocal)
+
+    def test_fromisocalendar_type_errors(self):
+        err_txformers = [
+            str,
+            float,
+            lambda x: None,
+        ]
+
+        # Take a valid base tuple and transform it to contain one argument
+        # with the wrong type. Repeat this for each argument, e.g.
+        # [("2019", 1, 1), (2019, "1", 1), (2019, 1, "1"), ...]
+        isocals = []
+        base = (2019, 1, 1)
+        for i in range(3):
+            for txformer in err_txformers:
+                err_val = list(base)
+                err_val[i] = txformer(err_val[i])
+                isocals.append(tuple(err_val))
+
+        for isocal in isocals:
+            with self.subTest(isocal=isocal):
+                with self.assertRaises(TypeError):
+                    self.theclass.fromisocalendar(*isocal)
+
+
 #############################################################################
 # datetime tests
 
@@ -5941,6 +6017,41 @@ class CapiTest(unittest.TestCase):
             for exact in (True, False):
                 with self.subTest(arg=arg, exact=exact):
                     self.assertFalse(is_tzinfo(arg, exact))
+
+    def test_date_from_timestamp(self):
+        ts = datetime(1995, 4, 12).timestamp()
+
+        for macro in [0, 1]:
+            with self.subTest(macro=macro):
+                d = _testcapi.get_date_fromtimestamp(int(ts), macro)
+
+                self.assertEqual(d, date(1995, 4, 12))
+
+    def test_datetime_from_timestamp(self):
+        ts0 = datetime(1995, 4, 12).timestamp()
+        ts1 = datetime(1995, 4, 12, 12, 30).timestamp()
+
+        cases = [
+            ((1995, 4, 12), None, False),
+            ((1995, 4, 12), None, True),
+            ((1995, 4, 12), timezone(timedelta(hours=1)), True),
+            ((1995, 4, 12, 14, 30), None, False),
+            ((1995, 4, 12, 14, 30), None, True),
+            ((1995, 4, 12, 14, 30), timezone(timedelta(hours=1)), True),
+        ]
+
+        from_timestamp = _testcapi.get_datetime_fromtimestamp
+        for case in cases:
+            for macro in [0, 1]:
+                with self.subTest(case=case, macro=macro):
+                    dtup, tzinfo, usetz = case
+                    dt_orig = datetime(*dtup, tzinfo=tzinfo)
+                    ts = int(dt_orig.timestamp())
+
+                    dt_rt = from_timestamp(ts, tzinfo, usetz, macro)
+
+                    self.assertEqual(dt_orig, dt_rt)
+
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())
