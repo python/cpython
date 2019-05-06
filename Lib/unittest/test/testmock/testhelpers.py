@@ -12,12 +12,9 @@ from datetime import datetime
 from functools import partial
 
 class SomeClass(object):
-    def one(self, a, b):
-        pass
-    def two(self):
-        pass
-    def three(self, a=None):
-        pass
+    def one(self, a, b): pass
+    def two(self): pass
+    def three(self, a=None): pass
 
 
 
@@ -48,12 +45,9 @@ class AnyTest(unittest.TestCase):
 
     def test_any_mock_calls_comparison_order(self):
         mock = Mock()
-        d = datetime.now()
         class Foo(object):
-            def __eq__(self, other):
-                return False
-            def __ne__(self, other):
-                return True
+            def __eq__(self, other): pass
+            def __ne__(self, other): pass
 
         for d in datetime.now(), Foo():
             mock.reset_mock()
@@ -378,8 +372,7 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_create_autospec_return_value(self):
-        def f():
-            pass
+        def f(): pass
         mock = create_autospec(f, return_value='foo')
         self.assertEqual(mock(), 'foo')
 
@@ -399,31 +392,12 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_mocking_unbound_methods(self):
         class Foo(object):
-            def foo(self, foo):
-                pass
+            def foo(self, foo): pass
         p = patch.object(Foo, 'foo')
         mock_foo = p.start()
         Foo().foo(1)
 
         mock_foo.assert_called_with(1)
-
-
-    def test_create_autospec_unbound_methods(self):
-        # see mock issue 128
-        # this is expected to fail until the issue is fixed
-        return
-        class Foo(object):
-            def foo(self):
-                pass
-
-        klass = create_autospec(Foo)
-        instance = klass()
-        self.assertRaises(TypeError, instance.foo, 1)
-
-        # Note: no type checking on the "self" parameter
-        klass.foo(1)
-        klass.foo.assert_called_with(1)
-        self.assertRaises(TypeError, klass.foo)
 
 
     def test_create_autospec_keyword_arguments(self):
@@ -434,8 +408,7 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_create_autospec_keyword_only_arguments(self):
-        def foo(a, *, b=None):
-            pass
+        def foo(a, *, b=None): pass
 
         m = create_autospec(foo)
         m(1)
@@ -448,8 +421,7 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_function_as_instance_attribute(self):
         obj = SomeClass()
-        def f(a):
-            pass
+        def f(a): pass
         obj.f = f
 
         mock = create_autospec(obj)
@@ -485,13 +457,57 @@ class SpecSignatureTest(unittest.TestCase):
             self._check_someclass_mock(mock)
 
 
+    def test_spec_has_descriptor_returning_function(self):
+
+        class CrazyDescriptor(object):
+
+            def __get__(self, obj, type_):
+                if obj is None:
+                    return lambda x: None
+
+        class MyClass(object):
+
+            some_attr = CrazyDescriptor()
+
+        mock = create_autospec(MyClass)
+        mock.some_attr(1)
+        with self.assertRaises(TypeError):
+            mock.some_attr()
+        with self.assertRaises(TypeError):
+            mock.some_attr(1, 2)
+
+
+    def test_spec_has_function_not_in_bases(self):
+
+        class CrazyClass(object):
+
+            def __dir__(self):
+                return super(CrazyClass, self).__dir__()+['crazy']
+
+            def __getattr__(self, item):
+                if item == 'crazy':
+                    return lambda x: x
+                raise AttributeError(item)
+
+        inst = CrazyClass()
+        with self.assertRaises(AttributeError):
+            inst.other
+        self.assertEqual(inst.crazy(42), 42)
+
+        mock = create_autospec(inst)
+        mock.crazy(42)
+        with self.assertRaises(TypeError):
+            mock.crazy()
+        with self.assertRaises(TypeError):
+            mock.crazy(1, 2)
+
+
     def test_builtin_functions_types(self):
         # we could replace builtin functions / methods with a function
         # with *args / **kwargs signature. Using the builtin method type
         # as a spec seems to work fairly well though.
         class BuiltinSubclass(list):
-            def bar(self, arg):
-                pass
+            def bar(self, arg): pass
             sorted = sorted
             attr = {}
 
@@ -565,17 +581,13 @@ class SpecSignatureTest(unittest.TestCase):
     def test_descriptors(self):
         class Foo(object):
             @classmethod
-            def f(cls, a, b):
-                pass
+            def f(cls, a, b): pass
             @staticmethod
-            def g(a, b):
-                pass
+            def g(a, b): pass
 
-        class Bar(Foo):
-            pass
+        class Bar(Foo): pass
 
-        class Baz(SomeClass, Bar):
-            pass
+        class Baz(SomeClass, Bar): pass
 
         for spec in (Foo, Foo(), Bar, Bar(), Baz, Baz()):
             mock = create_autospec(spec)
@@ -588,8 +600,7 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_recursive(self):
         class A(object):
-            def a(self):
-                pass
+            def a(self): pass
             foo = 'foo bar baz'
             bar = foo
 
@@ -611,11 +622,9 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_spec_inheritance_for_classes(self):
         class Foo(object):
-            def a(self, x):
-                pass
+            def a(self, x): pass
             class Bar(object):
-                def f(self, y):
-                    pass
+                def f(self, y): pass
 
         class_mock = create_autospec(Foo)
 
@@ -695,8 +704,7 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_function(self):
-        def f(a, b):
-            pass
+        def f(a, b): pass
 
         mock = create_autospec(f)
         self.assertRaises(TypeError, mock)
@@ -726,9 +734,10 @@ class SpecSignatureTest(unittest.TestCase):
             def existing(a, b):
                 return a + b
 
+        self.assertEqual(RaiserClass.existing(1, 2), 3)
         s = create_autospec(RaiserClass)
         self.assertRaises(TypeError, lambda x: s.existing(1, 2, 3))
-        s.existing(1, 2)
+        self.assertEqual(s.existing(1, 2), s.existing.return_value)
         self.assertRaises(AttributeError, lambda: s.nonexisting)
 
         # check we can fetch the raiser attribute and it has no spec
@@ -738,8 +747,7 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_signature_class(self):
         class Foo(object):
-            def __init__(self, a, b=3):
-                pass
+            def __init__(self, a, b=3): pass
 
         mock = create_autospec(Foo)
 
@@ -765,10 +773,8 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_signature_callable(self):
         class Callable(object):
-            def __init__(self, x, y):
-                pass
-            def __call__(self, a):
-                pass
+            def __init__(self, x, y): pass
+            def __call__(self, a): pass
 
         mock = create_autospec(Callable)
         mock(1, 2)
@@ -824,8 +830,7 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_autospec_functions_with_self_in_odd_place(self):
         class Foo(object):
-            def f(a, self):
-                pass
+            def f(a, self): pass
 
         a = create_autospec(Foo)
         a.f(10)
@@ -842,12 +847,9 @@ class SpecSignatureTest(unittest.TestCase):
                 self.value = value
 
             def __get__(self, obj, cls=None):
-                if obj is None:
-                    return self
-                return self.value
+                return self
 
-            def __set__(self, obj, value):
-                pass
+            def __set__(self, obj, value): pass
 
         class MyProperty(property):
             pass
@@ -856,12 +858,10 @@ class SpecSignatureTest(unittest.TestCase):
             __slots__ = ['slot']
 
             @property
-            def prop(self):
-                return 3
+            def prop(self): pass
 
             @MyProperty
-            def subprop(self):
-                return 4
+            def subprop(self): pass
 
             desc = Descriptor(42)
 
@@ -913,14 +913,13 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_spec_inspect_signature(self):
 
-        def myfunc(x, y):
-            pass
+        def myfunc(x, y): pass
 
         mock = create_autospec(myfunc)
         mock(1, 2)
         mock(x=1, y=2)
 
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(myfunc))
+        self.assertEqual(inspect.signature(mock), inspect.signature(myfunc))
         self.assertEqual(mock.mock_calls, [call(1, 2), call(x=1, y=2)])
         self.assertRaises(TypeError, mock, 1)
 
@@ -930,14 +929,51 @@ class SpecSignatureTest(unittest.TestCase):
         def foo(a: int, b: int=10, *, c:int) -> int:
             return a + b + c
 
+        self.assertEqual(foo(1, 2 , c=3), 6)
         mock = create_autospec(foo)
         mock(1, 2, c=3)
         mock(1, c=3)
 
-        self.assertEqual(inspect.getfullargspec(mock), inspect.getfullargspec(foo))
+        self.assertEqual(inspect.signature(mock), inspect.signature(foo))
         self.assertEqual(mock.mock_calls, [call(1, 2, c=3), call(1, c=3)])
         self.assertRaises(TypeError, mock, 1)
         self.assertRaises(TypeError, mock, 1, 2, 3, c=4)
+
+
+    def test_spec_function_no_name(self):
+        func = lambda: 'nope'
+        mock = create_autospec(func)
+        self.assertEqual(mock.__name__, 'funcopy')
+
+
+    def test_spec_function_assert_has_calls(self):
+        def f(a): pass
+        mock = create_autospec(f)
+        mock(1)
+        mock.assert_has_calls([call(1)])
+        with self.assertRaises(AssertionError):
+            mock.assert_has_calls([call(2)])
+
+
+    def test_spec_function_assert_any_call(self):
+        def f(a): pass
+        mock = create_autospec(f)
+        mock(1)
+        mock.assert_any_call(1)
+        with self.assertRaises(AssertionError):
+            mock.assert_any_call(2)
+
+
+    def test_spec_function_reset_mock(self):
+        def f(a): pass
+        rv = Mock()
+        mock = create_autospec(f, return_value=rv)
+        mock(1)(2)
+        self.assertEqual(mock.mock_calls, [call(1)])
+        self.assertEqual(rv.mock_calls, [call(2)])
+        mock.reset_mock()
+        self.assertEqual(mock.mock_calls, [])
+        self.assertEqual(rv.mock_calls, [])
 
 
 class TestCallList(unittest.TestCase):
@@ -1019,16 +1055,14 @@ class TestCallablePredicate(unittest.TestCase):
 
     def test_call_magic_method(self):
         class Callable:
-            def __call__(self):
-                pass
+            def __call__(self): pass
         instance = Callable()
         self.assertTrue(_callable(instance))
 
     def test_staticmethod(self):
         class WithStaticMethod:
             @staticmethod
-            def staticfunc():
-                pass
+            def staticfunc(): pass
         self.assertTrue(_callable(WithStaticMethod.staticfunc))
 
     def test_non_callable_staticmethod(self):
@@ -1039,8 +1073,7 @@ class TestCallablePredicate(unittest.TestCase):
     def test_classmethod(self):
         class WithClassMethod:
             @classmethod
-            def classfunc(cls):
-                pass
+            def classfunc(cls): pass
         self.assertTrue(_callable(WithClassMethod.classfunc))
 
     def test_non_callable_classmethod(self):

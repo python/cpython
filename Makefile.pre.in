@@ -41,6 +41,7 @@ AR=		@AR@
 READELF=	@READELF@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
+LIBPYTHON=	@LIBPYTHON@
 GITVERSION=	@GITVERSION@
 GITTAG=		@GITTAG@
 GITBRANCH=	@GITBRANCH@
@@ -1295,7 +1296,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		tkinter/test/test_ttk site-packages test \
 		test/audiodata \
 		test/capath test/data \
-		test/cjkencodings test/decimaltestdata test/xmltestdata \
+		test/cjkencodings test/decimaltestdata \
+		test/xmltestdata test/xmltestdata/c14n-20 \
 		test/dtracedata \
 		test/eintrdata \
 		test/imghdrdata \
@@ -1651,14 +1653,6 @@ frameworkaltinstallunixtools:
 # It is not part of a normal frameworkinstall
 frameworkinstallextras:
 	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"
-
-# This installs a few of the useful scripts in Tools/scripts
-scriptsinstall:
-	SRCDIR=$(srcdir) $(RUNSHARED) \
-	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/setup.py install \
-	--prefix=$(prefix) \
-	--install-scripts=$(BINDIR) \
-	--root=$(DESTDIR)/
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status

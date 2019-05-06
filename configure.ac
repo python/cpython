@@ -2701,12 +2701,6 @@ then
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
-
-		# Issue #18075: the default maximum stack size (8MBytes) is too
-		# small for the default recursion limit. Increase the stack size
-		# to ensure that tests don't crash
-		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
-
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -4647,6 +4641,14 @@ esac
 AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
+
+# On Android the shared libraries must be linked with libpython.
+AC_SUBST(LIBPYTHON)
+if test -z "$ANDROID_API_LEVEL"; then
+  LIBPYTHON=''
+else
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+fi
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)

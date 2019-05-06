@@ -233,6 +233,18 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("def f(*args, a, b = 5): pass")
         self.check_suite("def f(*args, a, b = 5, **kwds): pass")
 
+        # positional-only arguments
+        self.check_suite("def f(a, /): pass")
+        self.check_suite("def f(a, /,): pass")
+        self.check_suite("def f(a, b, /): pass")
+        self.check_suite("def f(a, b, /, c): pass")
+        self.check_suite("def f(a, b, /, c = 6): pass")
+        self.check_suite("def f(a, b, /, c, *, d): pass")
+        self.check_suite("def f(a, b, /, c = 1, *, d): pass")
+        self.check_suite("def f(a, b, /, c, *, d = 1): pass")
+        self.check_suite("def f(a, b=1, /, c=2, *, d = 3): pass")
+        self.check_suite("def f(a=0, b=1, /, c=2, *, d = 3): pass")
+
         # function annotations
         self.check_suite("def f(a: int): pass")
         self.check_suite("def f(a: int = 5): pass")

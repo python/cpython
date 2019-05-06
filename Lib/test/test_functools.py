@@ -581,6 +581,13 @@ class TestPartialMethod(unittest.TestCase):
         for func in [self.A.static, self.A.cls, self.A.over_partial, self.A.nested, self.A.both]:
             self.assertFalse(getattr(func, '__isabstractmethod__', False))
 
+    def test_positional_only(self):
+        def f(a, b, /):
+            return a + b
+
+        p = functools.partial(f, 1)
+        self.assertEqual(p(2), f(1, 2))
+
 
 class TestUpdateWrapper(unittest.TestCase):
 

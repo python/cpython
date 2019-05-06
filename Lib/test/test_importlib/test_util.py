@@ -862,7 +862,7 @@ class MagicNumberTests(unittest.TestCase):
         in advance. Such exceptional releases will then require an
         adjustment to this test case.
         """
-        EXPECTED_MAGIC_NUMBER = 3400
+        EXPECTED_MAGIC_NUMBER = 3410
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (
