@@ -369,6 +369,10 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
+to a path.
+(Contributed by Joannah Nanjekye in :issue:`26978`)
+
 
 socket
 ------
@@ -531,6 +535,11 @@ xml
   :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
+
+* The ``.find*()`` methods in the :mod:`xml.etree.ElementTree` module
+  support wildcard searches like ``{*}tag`` which ignores the namespace
+  and ``{namespace}*`` which returns all tags in the given namespace.
+  (Contributed by Stefan Behnel in :issue:`28238`.)
 
 * The :mod:`xml.etree.ElementTree` module provides a new function
   :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.

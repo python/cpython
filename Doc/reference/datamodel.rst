@@ -1311,9 +1311,9 @@ Basic customization
    Called by the :func:`format` built-in function,
    and by extension, evaluation of :ref:`formatted string literals
    <f-strings>` and the :meth:`str.format` method, to produce a "formatted"
-   string representation of an object. The ``format_spec`` argument is
+   string representation of an object. The *format_spec* argument is
    a string that contains a description of the formatting options desired.
-   The interpretation of the ``format_spec`` argument is up to the type
+   The interpretation of the *format_spec* argument is up to the type
    implementing :meth:`__format__`, however most classes will either
    delegate formatting to one of the built-in types, or use a similar
    formatting option syntax.
@@ -2680,13 +2680,13 @@ Asynchronous context managers can be used in an :keyword:`async with` statement.
 
 .. method:: object.__aenter__(self)
 
-   This method is semantically similar to the :meth:`__enter__`, with only
-   difference that it must return an *awaitable*.
+   Semantically similar to :meth:`__enter__`, the only
+   difference being that it must return an *awaitable*.
 
 .. method:: object.__aexit__(self, exc_type, exc_value, traceback)
 
-   This method is semantically similar to the :meth:`__exit__`, with only
-   difference that it must return an *awaitable*.
+   Semantically similar to :meth:`__exit__`, the only
+   difference being that it must return an *awaitable*.
 
 An example of an asynchronous context manager class::
 
