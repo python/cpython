@@ -3946,16 +3946,15 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     /* Our oparg encodes 2 pieces of information: the conversion
        character, and whether or not a format_spec was provided.
 
-       Convert the conversion char to 2 bit:
-           : 0000  0x0  FVC_NONE     The default if nothing specified.
-       !s  : 0001  0x1  FVC_STR
-       !r  : 0010  0x2  FVC_REPR
-       !a  : 0011  0x3  FVC_ASCII
-       !a  : 0100  0x4  FVC_ASCII
+       Convert the conversion char to 3 bits:
+       !f  : 000  0x0  FVC_NONE   The default if nothing specified.
+       !s  : 001  0x1  FVC_STR
+       !r  : 010  0x2  FVC_REPR
+       !a  : 011  0x3  FVC_ASCII
 
        next bit is whether or not we have a format spec:
-       yes : 1000  0x8
-       no  : 0000  0x0
+       yes : 100  0x4
+       no  : 000  0x0
     */
 
     int conversion = e->v.FormattedValue.conversion;
