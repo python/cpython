@@ -6067,6 +6067,16 @@ class CapiTest(unittest.TestCase):
 
                 self.assertEqual(c_api_time, exp_time)
 
+    def test_time_from_timeandfold(self):
+        for fold in [0, 1]:
+            exp_time = time(22, 12, 55, 99999, fold=fold)
+
+            for macro in [0, 1]:
+                with self.subTest(macro=macro):
+                    c_api_time = _testcapi.get_time_fromtimeandfold(exp_time.hour, exp_time.minute, exp_time.second, exp_time.microsecond, exp_time.fold, macro)
+
+                    self.assertEqual(c_api_time, exp_time)
+
     def test_date_from_timestamp(self):
         ts = datetime(1995, 4, 12).timestamp()
 
