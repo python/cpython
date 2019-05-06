@@ -1,0 +1,3 @@
+Fix utf-16 and utf-32 encoders to properly re-size their output buffers
+and prevent writing to un-allocated memory when dispatching to a general
+error handler. Patch by Andrei Talaba.
