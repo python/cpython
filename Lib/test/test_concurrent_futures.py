@@ -756,7 +756,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
 class ProcessPoolExecutorTest(ExecutorTest):
 
-    @unittest .skipUnless(sys.platform=='win32', 'Windows-only process limit')
+    @unittest.skipUnless(sys.platform=='win32', 'Windows-only process limit')
     def test_max_workers_too_large(self):
         with self.assertRaisesRegex(ValueError,
                                     "max_workers must be <= 61"):
