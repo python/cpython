@@ -144,7 +144,7 @@ the single expression that makes up the expression list.
 .. index:: pair: empty; tuple
 
 An empty pair of parentheses yields an empty tuple object.  Since tuples are
-immutable, the rules for literals apply (i.e., two occurrences of the empty
+immutable, the same rules as for literals apply (i.e., two occurrences of the empty
 tuple may or may not yield the same object).
 
 .. index::
