@@ -2407,6 +2407,28 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+get_time_fromtime(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int hour = 0, minute = 0, second = 0, microsecond = 0;
+    int macro = 0;
+
+    if (!PyArg_ParseTuple(args, "iiii|p", &hour, &minute, &second, &microsecond, &macro)) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyTime_FromTime(hour, minute, second, microsecond);
+    }
+    else {
+        rv = PyDateTimeAPI->Time_FromTime(hour, minute, second, microsecond, Py_None, PyDateTimeAPI->TimeType);
+    }
+
+    return rv;
+}
+
+static PyObject *
 get_date_fromtimestamp(PyObject* self, PyObject *args)
 {
     PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
@@ -4904,6 +4926,7 @@ static PyMethodDef TestMethods[] = {
     {"get_date_fromdate",        get_date_fromdate,              METH_VARARGS},
     {"get_datetime_fromdateandtime", get_datetime_fromdateandtime, METH_VARARGS},
     {"get_datetime_fromdateandtimeandfold", get_datetime_fromdateandtimeandfold, METH_VARARGS},
+    {"get_time_fromtime",        get_time_fromtime,              METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
