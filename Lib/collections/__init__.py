@@ -1018,6 +1018,8 @@ class UserDict(_collections_abc.MutableMapping):
             self.update(dict)
         if kwargs:
             self.update(kwargs)
+    __init__.__text_signature__ = '($self, dict=None, /, **kwargs)'
+
     def __len__(self): return len(self.data)
     def __getitem__(self, key):
         if key in self.data:

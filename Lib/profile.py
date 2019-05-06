@@ -447,6 +447,7 @@ class Profile:
             return func(*args, **kw)
         finally:
             sys.setprofile(None)
+    runcall.__text_signature__ = '($self, func, /, *args, **kw)'
 
 
     #******************************************************************

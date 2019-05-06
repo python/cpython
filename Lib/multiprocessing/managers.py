@@ -419,6 +419,7 @@ class Server(object):
 
         self.incref(c, ident)
         return ident, tuple(exposed)
+    create.__text_signature__ = '($self, c, typeid, /, *args, **kwds)'
 
     def get_methods(self, c, token):
         '''
@@ -1309,6 +1310,7 @@ if HAS_SHMEM:
             if hasattr(self.registry[typeid][-1], "_shared_memory_proxy"):
                 kwargs['shared_memory_context'] = self.shared_memory_context
             return Server.create(*args, **kwargs)
+        create.__text_signature__ = '($self, c, typeid, /, *args, **kwargs)'
 
         def shutdown(self, c):
             "Call unlink() on all tracked shared memory, terminate the Server."
