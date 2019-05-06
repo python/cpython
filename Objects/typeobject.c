@@ -71,6 +71,8 @@ _Py_IDENTIFIER(__new__);
 _Py_IDENTIFIER(__set_name__);
 _Py_IDENTIFIER(__setitem__);
 _Py_IDENTIFIER(builtins);
+_Py_IDENTIFIER(__index__);
+_Py_IDENTIFIER(__int__);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -5393,8 +5395,9 @@ PyType_Ready(PyTypeObject *type)
         }
     }
 
-    /* Hack for tp_hash and __hash__.
-       If after all that, tp_hash is still NULL, and __hash__ is not in
+    /* Set default methods */
+
+    /* If after all that, tp_hash is still NULL, and __hash__ is not in
        tp_dict, set tp_hash to PyObject_HashNotImplemented and
        tp_dict['__hash__'] equal to None.
        This signals that __hash__ is not inherited.
@@ -5407,6 +5410,21 @@ PyType_Ready(PyTypeObject *type)
                 goto error;
             }
             type->tp_hash = PyObject_HashNotImplemented;
+        }
+    }
+
+    /* If __index__ is defined but not __int__, make it default to __index__.
+       Don't touch __float__ and __complex__ as there could be some loss of
+       precision.
+    */
+    PyObject* index = _PyDict_GetItemIdWithError(type->tp_dict, &PyId___index__);
+    if (PyErr_Occurred()) {
+        goto error;
+    }
+    if (index != NULL && _PyDict_GetItemIdWithError(type->tp_dict, &PyId___int__) == NULL) {
+        if (PyErr_Occurred() ||
+            _PyDict_SetItemId(type->tp_dict, &PyId___int__, index) < 0) {
+            goto error;
         }
     }
 

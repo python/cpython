@@ -2389,10 +2389,8 @@ left undefined.
 
    .. note::
 
-      In order to have a coherent integer type class, when :meth:`__index__` is
-      defined :meth:`__int__` should also be defined, and both should return
-      the same value.
-
+      If :meth:`__index__` is defined and not :meth:`__int__`, :meth:`__int__`
+      automatically defaults to :meth:`__index__`.
 
 .. method:: object.__round__(self, [,ndigits])
             object.__trunc__(self)

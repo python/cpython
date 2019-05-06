@@ -1,0 +1,2 @@
+:meth:`__int__` defaults to :meth:`__index__` when only the latter is
+defined. Patch contributed by Rémi Lapeyre.
