@@ -2363,6 +2363,28 @@ get_date_fromdate(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+get_datetime_fromdateandtime(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0, microsecond = 0; 
+    int macro = 0;
+
+    if (!PyArg_ParseTuple(args, "iiiiiii|p", &year, &month, &day, &hour, &minute, &second, &microsecond, &macro)) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, microsecond);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromDateAndTime(year, month, day, hour, minute, second, microsecond, Py_None, PyDateTimeAPI->DateTimeType);
+    }
+
+    return rv;
+}
+
+static PyObject *
 get_date_fromtimestamp(PyObject* self, PyObject *args)
 {
     PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
@@ -4858,6 +4880,7 @@ static PyMethodDef TestMethods[] = {
     {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
     {"get_timezone_utc_capi",    get_timezone_utc_capi,          METH_VARARGS},
     {"get_date_fromdate",        get_date_fromdate,              METH_VARARGS},
+    {"get_datetime_fromdateandtime", get_datetime_fromdateandtime, METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
