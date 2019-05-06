@@ -4332,7 +4332,7 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 self.assertEqual(s.recv(1024), b'FALSE\n')
                 s.write(b'PHA')
                 self.assertEqual(s.recv(1024), b'OK\n')
-                # optional doens't fail when client does not have a cert
+                # optional doesn't fail when client does not have a cert
                 s.write(b'HASCERT')
                 self.assertEqual(s.recv(1024), b'FALSE\n')
 
