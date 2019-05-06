@@ -6037,13 +6037,13 @@ class CapiTest(unittest.TestCase):
         for macro in [0, 1]:
             with self.subTest(macro=macro):
                 c_api_date = _testcapi.get_datetime_fromdateandtime(
-                    exp_date.year, 
-                    exp_date.month, 
-                    exp_date.day, 
-                    exp_date.hour, 
-                    exp_date.minute, 
-                    exp_date.second, 
-                    exp_date.microsecond, 
+                    exp_date.year,
+                    exp_date.month,
+                    exp_date.day,
+                    exp_date.hour,
+                    exp_date.minute,
+                    exp_date.second,
+                    exp_date.microsecond,
                     macro)
 
                 self.assertEqual(c_api_date, exp_date)
