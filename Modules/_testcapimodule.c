@@ -2451,6 +2451,28 @@ get_time_fromtimeandfold(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+get_delta_fromdsu(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int days = 0, seconds = 0, microseconds = 0; 
+    int macro = 0;
+
+    if (!PyArg_ParseTuple(args, "iii|p", &days, &seconds, &microseconds, &macro)) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDelta_FromDSU(days, seconds, microseconds);
+    }
+    else {
+        rv = PyDateTimeAPI->Delta_FromDelta(days, seconds, microseconds, 1, PyDateTimeAPI->DeltaType);
+    }
+
+    return rv;
+}
+
+static PyObject *
 get_date_fromtimestamp(PyObject* self, PyObject *args)
 {
     PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
@@ -4950,6 +4972,7 @@ static PyMethodDef TestMethods[] = {
     {"get_datetime_fromdateandtimeandfold", get_datetime_fromdateandtimeandfold, METH_VARARGS},
     {"get_time_fromtime",        get_time_fromtime,              METH_VARARGS},
     {"get_time_fromtimeandfold", get_time_fromtimeandfold,       METH_VARARGS},
+    {"get_delta_fromdsu",        get_delta_fromdsu,              METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
