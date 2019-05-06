@@ -2222,7 +2222,7 @@ class AbstractPickleTests(unittest.TestCase):
 
         frame_size = self.FRAME_SIZE_TARGET
         num_frames = 20
-        # Large byte objects (dict values) intermitted with small objects
+        # Large byte objects (dict values) intermittent with small objects
         # (dict keys)
         obj = {i: bytes([i]) * frame_size for i in range(num_frames)}
 

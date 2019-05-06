@@ -509,7 +509,7 @@ def func_std_string(func_name): # match what old profile produced
         return "%s:%d(%s)" % func_name
 
 #**************************************************************************
-# The following functions combine statists for pairs functions.
+# The following functions combine statistics for pairs functions.
 # The bulk of the processing involves correctly handling "call" lists,
 # such as callers and callees.
 #**************************************************************************

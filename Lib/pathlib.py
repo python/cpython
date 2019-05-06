@@ -34,7 +34,7 @@ __all__ = [
 # Internals
 #
 
-# EBADF - guard agains macOS `stat` throwing EBADF
+# EBADF - guard against macOS `stat` throwing EBADF
 _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF)
 
 _IGNORED_WINERRORS = (
