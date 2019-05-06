@@ -1,0 +1,1 @@
+Fix a doctest detective documentation bug.
