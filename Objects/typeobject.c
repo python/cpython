@@ -239,8 +239,10 @@ PyType_InvalidateCache(PyObject *type, PyObject *name)
         PyType_HasFeature(t, Py_TPFLAGS_VALID_VERSION_TAG)) {
         h = MCACHE_HASH_METHOD(t, name);
         method_cache[h].version = 0;
-        if (method_cache[h].name != Py_None)
+        if (method_cache[h].name != Py_None) {
+            Py_INCREF(Py_None);
             Py_XSETREF(method_cache[h].name, Py_None);
+        }
         method_cache[h].value = NULL;
     }
 }
