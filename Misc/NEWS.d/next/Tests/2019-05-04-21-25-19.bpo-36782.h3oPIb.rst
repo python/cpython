@@ -1,2 +1,1 @@
-Created a test C API wrapper for PyDate_FromDate and added a test for PyDate_FromDate. 
-Patch by Edison Abahurire.
+Created a test for the C API function :c:func:`PyDate_FromDate`. Patch by Edison Abahurire.
