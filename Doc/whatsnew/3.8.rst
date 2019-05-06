@@ -1026,6 +1026,8 @@ Changes in the C API
   :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
+  (Contributed by Antoine Pitrou in :issue:`32388`.)
+
 
 CPython bytecode changes
 ------------------------

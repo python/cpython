@@ -329,8 +329,7 @@ given type object has a specified feature.
 /* NOTE: The following flags reuse lower bits (removed as part of the
  * Python 3.0 transition). */
 
-/* The following flags are kept for compatibility, but all types are
- * supposed to support the given functionality.  Starting with 3.8,
+/* The following flag is kept for compatibility.  Starting with 3.8,
  * binary compatibility of C extensions accross feature releases of
  * Python is not supported anymore, except when using the stable ABI.
  */
