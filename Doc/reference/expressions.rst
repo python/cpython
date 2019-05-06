@@ -523,7 +523,7 @@ is already executing raises a :exc:`ValueError` exception.
 .. method:: generator.__next__()
 
    Starts the execution of a generator function or resumes it at the last
-   executed yield expression.  When a generator function is resumed with an
+   executed yield expression.  When a generator function is resumed with a
    :meth:`~generator.__next__` method, the current yield expression always
    evaluates to :const:`None`.  The execution then continues to the next yield
    expression, where the generator is suspended again, and the value of the
@@ -1594,8 +1594,8 @@ The operator :keyword:`not in` is defined to have the inverse truth value of
 Identity comparisons
 --------------------
 
-The operators :keyword:`is` and :keyword:`is not` test for object's identity: ``x
-is y`` is true if and only if *x* and *y* are the same object.  Object's identity
+The operators :keyword:`is` and :keyword:`is not` test for an object's identity: ``x
+is y`` is true if and only if *x* and *y* are the same object.  An Object's identity
 is determined using the :meth:`id` function.  ``x is not y`` yields the inverse
 truth value. [#]_
 
