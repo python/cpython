@@ -240,8 +240,10 @@ There is also a module-level convenience function:
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
 
     .. versionadded:: 3.3
+
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
+
     .. versionchanged:: 3.6
        Added the ``prompt`` parameter
 
