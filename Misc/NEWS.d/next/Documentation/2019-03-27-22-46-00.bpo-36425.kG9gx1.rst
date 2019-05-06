@@ -1,2 +1,0 @@
-New documentation translation: `Simplified Chinese
-<https://docs.python.org/zh-cn/>`_.
