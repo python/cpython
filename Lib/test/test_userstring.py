@@ -39,6 +39,10 @@ class UserStringTest(
         # we don't fix the arguments, because UserString can't cope with it
         getattr(object, methodname)(*args)
 
+    def test_encode(self):
+        data = UserString("hello")
+        self.assertEqual(data.encode(), b'hello')
+
 
 if __name__ == "__main__":
     unittest.main()
