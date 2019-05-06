@@ -6077,6 +6077,15 @@ class CapiTest(unittest.TestCase):
 
                     self.assertEqual(c_api_time, exp_time)
 
+    def test_delta_from_dsu(self):
+        exp_delta = timedelta(26, 55, 99999)
+
+        for macro in [0, 1]:
+            with self.subTest(macro=macro):
+                c_api_delta = _testcapi.get_delta_fromdsu(exp_delta.days, exp_delta.seconds, exp_delta.microseconds, macro)
+
+                self.assertEqual(c_api_delta, exp_delta)
+
     def test_date_from_timestamp(self):
         ts = datetime(1995, 4, 12).timestamp()
 
