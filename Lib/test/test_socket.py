@@ -15,7 +15,7 @@ import os
 import platform
 import array
 import contextlib
-from weakref import proxy
+import weakref
 import signal
 import math
 import pickle
@@ -850,7 +850,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_weakref(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            p = proxy(s)
+            p = weakref.proxy(s)
             self.assertEqual(p.fileno(), s.fileno())
         s = None
         try:
@@ -1881,6 +1881,25 @@ class GeneralModuleTests(unittest.TestCase):
                 socket.SOCK_STREAM,
                 fileno=support.make_bad_fd())
         self.assertIn(cm.exception.errno, (errno.EBADF, WSAENOTSOCK))
+
+    def testCreateConnectionDoesntCreateCycles(self):
+        # `socket.create_connection` saves the exception in a
+        # variable to then re-raise, which caused a cycle
+        # and kept objects in upper frames alive unnecesarily.
+        port = support.find_unused_port()
+        class A: pass
+        obj_wr = None
+
+        def x():
+            nonlocal obj_wr
+            obj = A()
+            obj_wr = weakref.ref(obj)
+            try:
+                socket.create_connection((HOST, port))
+            except OSError:
+                pass
+        x()
+        assert obj_wr() is None
 
     def test_socket_fileno_requires_socket_fd(self):
         with tempfile.NamedTemporaryFile() as afile:
