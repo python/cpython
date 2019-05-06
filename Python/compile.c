@@ -3962,16 +3962,16 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     int oparg;
 
     if (e->v.FormattedValue.expr_text) {
-        /* Push the text of the expression (with an equal sign at the end. */
+        /* Push the text of the expression (which already has the '=' in
+           it. */
         ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_text);
-        if (conversion == -1) {
-            /* Unspecified, we default to !r if = specified. */
-            conversion = 'r';
-        }
+
+        /* If unspecified conversion, default to !r since we know we're using
+               '='. */
+        conversion = conversion == -1 ? 'r' : conversion;
     } else {
-        if (conversion == -1) {
-            conversion = 'f';
-        }
+        /* Unspecified conversion, default to !f. */
+        conversion = conversion == -1 ? 'f' : conversion;
     }
 
     /* The expression to be formatted. */
