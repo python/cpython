@@ -1,0 +1,3 @@
+Removed ``__str__`` implementations from builtin types :class:`bool`,
+:class:`int`, :class:`float`, :class:`complex` and few classes from the
+standard library. They now inherit ``__str__()`` from :class:`object`.

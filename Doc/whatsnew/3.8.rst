@@ -811,6 +811,13 @@ Changes in Python behavior
   raised when getting the attribute from the type dictionary are no longer
   ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
 
+* Removed ``__str__`` implementations from builtin types :class:`bool`,
+  :class:`int`, :class:`float`, :class:`complex` and few classes from
+  the standard library.  They now inherit ``__str__()`` from :class:`object`.
+  As result, defining the ``__repr__()`` method in the subclass of these
+  classes will affect they string representation.
+  (Contributed by Serhiy Storchaka in :issue:`36793`.)
+
 * On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
   older Python versions include the version number, it is recommended to

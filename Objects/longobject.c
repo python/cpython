@@ -5592,7 +5592,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)long_hash,                        /* tp_hash */
     0,                                          /* tp_call */
-    long_to_decimal_string,                     /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
