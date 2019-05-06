@@ -202,6 +202,9 @@ PyInterpreterState_New(void)
     }
 
     memset(interp, 0, sizeof(*interp));
+
+    interp->runtime = &_PyRuntime;
+
     interp->id_refcount = -1;
     interp->check_interval = 100;
 

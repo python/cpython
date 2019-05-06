@@ -19,6 +19,9 @@ extern "C" {
 #include "pycore_pymem.h"
 #include "pycore_warnings.h"
 
+// forward
+struct pyruntimestate;
+
 
 /* ceval state */
 
@@ -68,6 +71,7 @@ struct _is {
 
     struct _is *next;
     struct _ts *tstate_head;
+    struct pyruntimestate *runtime;
 
     int64_t id;
     int64_t id_refcount;
