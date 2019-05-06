@@ -7,6 +7,7 @@ from test.support import is_jython
 
 from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
 import io
+import weakref
 
 if is_jython:
     import sys
@@ -293,6 +294,22 @@ class CodeopTests(unittest.TestCase):
                          compile("a = 1\n", "abc", 'single').co_filename)
         self.assertNotEqual(compile_command("a = 1\n", "abc").co_filename,
                             compile("a = 1\n", "def", 'single').co_filename)
+
+    def test_invalid_doesnt_keep_user_object_alive(self):
+        '''succeed iff str is the start of an invalid piece of code'''
+        class A: pass
+        obj_wr = None
+
+        def x():
+            nonlocal obj_wr
+            obj = A()
+            obj_wr = weakref.ref(obj)
+            try:
+                compile_command("invalid syntax =")
+            except SyntaxError:
+                pass
+        x()
+        assert obj_wr() is None
 
 
 if __name__ == "__main__":
