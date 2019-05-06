@@ -6058,6 +6058,15 @@ class CapiTest(unittest.TestCase):
 
                     self.assertEqual(c_api_date, exp_date)
 
+    def test_time_from_time(self):
+        exp_time = time(22, 12, 55, 99999)
+
+        for macro in [0, 1]:
+            with self.subTest(macro=macro):
+                c_api_time = _testcapi.get_time_fromtime(exp_time.hour, exp_time.minute, exp_time.second, exp_time.microsecond, macro)
+
+                self.assertEqual(c_api_time, exp_time)
+
     def test_date_from_timestamp(self):
         ts = datetime(1995, 4, 12).timestamp()
 
