@@ -601,8 +601,9 @@ class Executor(object):
             raise ValueError("prefetch count may not be negative")
 
         argsiter = zip(*iterables)
+        initialargs = itertools.islice(argsiter, self._max_workers + prefetch)
 
-        fs = collections.deque(self.submit(fn, *args) for args in itertools.islice(argsiter, self._max_workers + prefetch))
+        fs = collections.deque(self.submit(fn, *args) for args in initialargs)
 
         # Yield must be hidden in closure so that the futures are submitted
         # before the first iterator value is required.
@@ -611,9 +612,9 @@ class Executor(object):
             try:
                 while fs:
                     if timeout is None:
-                        res = fs[0].result()
+                        res = [fs[0].result()]
                     else:
-                        res = fs[0].result(end_time - time.monotonic())
+                        res = [fs[0].result(end_time - time.monotonic())]
 
                     # Got a result, future needn't be cancelled
                     del fs[0]
@@ -628,7 +629,7 @@ class Executor(object):
                         else:
                             fs.append(self.submit(fn, *args))
 
-                    yield res
+                    yield res.pop()
             finally:
                 for future in fs:
                     future.cancel()
