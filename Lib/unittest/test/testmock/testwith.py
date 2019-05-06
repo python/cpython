@@ -287,6 +287,11 @@ class TestMockOpen(unittest.TestCase):
         some_data = 'foo\nbar\nbaz'
         mock = mock_open(read_data=some_data)
         self.assertEqual(mock().read(10), some_data[:10])
+        self.assertEqual(mock().read(10), some_data[:10])
+
+        f = mock()
+        self.assertEqual(f.read(10), some_data[:10])
+        self.assertEqual(f.read(10), some_data[10:])
 
 
     def test_interleaved_reads(self):
