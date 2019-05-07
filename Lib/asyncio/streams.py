@@ -362,6 +362,8 @@ class StreamWriter:
                 fut.set_exception(ConnectionResetError('Connection lost'))
                 return fut
             if not self._protocol._paused:
+                # fast path, the stream is not paused
+                # no need to wait for resume signal
                 return self._complete_fut
         return self._loop.create_task(self.drain())
 
