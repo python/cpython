@@ -287,32 +287,43 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 
        Unset HAVE_VERSION_TAG and VALID_VERSION_TAG if the type
        has a custom MRO that includes a type which is not officially
-       super type.
+       super type, or if the type implements its own mro() method.
 
        Called from mro_internal, which will subsequently be called on
        each subclass when their mro is recursively updated.
      */
     Py_ssize_t i, n;
     int clear = 0;
+    int custom = (Py_TYPE(type) != &PyType_Type);
 
     if (!PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
         return;
 
-    n = PyTuple_GET_SIZE(bases);
-    for (i = 0; i < n; i++) {
-        PyObject *b = PyTuple_GET_ITEM(bases, i);
-        PyTypeObject *cls;
-
-        assert(PyType_Check(b));
-        cls = (PyTypeObject *)b;
-
-        if (!PyType_HasFeature(cls, Py_TPFLAGS_HAVE_VERSION_TAG) ||
-            !PyType_IsSubtype(type, cls)) {
+    if (custom) {
+        PyObject *mro_meth = lookup_method((PyObject *)type, &PyId_mro,
+                                           &unbound);
+        PyObject *type_mro_meth = lookup_method(&PyType_Type, &PyId_mro,
+                                           &unbound);
+        if (mro_meth == NULL || type_mro_meth == NULL ||
+            mro_meth != type_mro_meth)
             clear = 1;
-            break;
+    }
+    if (!clear) {
+        n = PyTuple_GET_SIZE(bases);
+        for (i = 0; i < n; i++) {
+            PyObject *b = PyTuple_GET_ITEM(bases, i);
+            PyTypeObject *cls;
+
+            assert(PyType_Check(b));
+            cls = (PyTypeObject *)b;
+
+            if (!PyType_HasFeature(cls, Py_TPFLAGS_HAVE_VERSION_TAG) ||
+                !PyType_IsSubtype(type, cls)) {
+                clear = 1;
+                break;
+            }
         }
     }
-
     if (clear)
         type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
                             Py_TPFLAGS_VALID_VERSION_TAG);
@@ -1925,8 +1936,6 @@ mro_invoke(PyTypeObject *type)
                                            &unbound);
         if (mro_meth == NULL)
             return NULL;
-        type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
-                            Py_TPFLAGS_VALID_VERSION_TAG);
         mro_result = call_unbound_noarg(unbound, mro_meth, (PyObject *)type);
         Py_DECREF(mro_meth);
     }
