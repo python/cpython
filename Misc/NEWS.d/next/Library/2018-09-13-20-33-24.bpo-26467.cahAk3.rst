@@ -1,2 +1,3 @@
-Added CoroutineMock to support using unittest to mock asyncio coroutines.
+
+Addedi AsyncMock to support using unittest to mock asyncio coroutines.
 Patch by Lisa Roach.

@@ -4,7 +4,6 @@ import unittest
 
 from unittest.mock import call, AsyncMock, patch, MagicMock
 
-# TODO: lisa move 3.7 specific syntax to its own file
 class AsyncClass:
     def __init__(self):
         pass
@@ -30,14 +29,9 @@ normal_foo_name = f'{__name__}.NormalClass'
 
 class AsyncPatchDecoratorTest(unittest.TestCase):
     def test_is_coroutine_function_patch(self):
-        # @patch.object(AsyncClass, 'normal_method')
-        # def test_normal_method(mock_method):
-        #     import types
-        #     self.assertTrue(isinstance(mock_method, types.MethodType))
         @patch.object(AsyncClass, 'async_method')
         def test_async(mock_method):
             self.assertTrue(asyncio.iscoroutinefunction(mock_method))
-        # test_normal_method()
         test_async()
 
     def test_is_async_patch(self):
