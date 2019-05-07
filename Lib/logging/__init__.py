@@ -1111,6 +1111,8 @@ class StreamHandler(Handler):
     def __repr__(self):
         level = getLevelName(self.level)
         name = getattr(self.stream, 'name', '')
+        #  bpo-36015: name can be an int
+        name = str(name)
         if name:
             name += ' '
         return '<%s %s(%s)>' % (self.__class__.__name__, name, level)
