@@ -1,2 +1,0 @@
-Fix ``setup.py check --restructuredtext`` for
-files containing ``include`` directives.
