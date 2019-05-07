@@ -13,7 +13,7 @@ __all__ = (
     'ANY',
     'call',
     'create_autospec',
-    'CoroutineMock',
+    'AsyncMock',
     'FILTER_DIR',
     'NonCallableMock',
     'NonCallableMagicMock',
@@ -50,9 +50,9 @@ FILTER_DIR = True
 # Without this, the __class__ properties wouldn't be set correctly
 _safe_super = super
 
-def _is_coroutine_obj(obj):
+def _is_async_obj(obj):
     if getattr(obj, '__code__', None):
-        return asyncio.iscoroutinefunction(obj) or asyncio.iscoroutine(obj)
+        return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
     else:
         return False
 
@@ -366,8 +366,6 @@ class Base(object):
         pass
 
 
-_is_coroutine = asyncio.coroutines._is_coroutine
-
 class NonCallableMock(Base):
     """A non-callable version of `Mock`"""
 
@@ -376,15 +374,15 @@ class NonCallableMock(Base):
         # so we can create magic methods on the
         # class without stomping on other mocks
         bases = (cls,)
-        if cls != CoroutineMock:
-            # Check if spec is a coroutine object or function
+        if cls != AsyncMock:
+            # Check if spec is an async object or function
             sig = inspect.signature(NonCallableMock.__init__)
             bound_args = sig.bind_partial(cls, *args, **kw).arguments
             spec_arg = fnmatch.filter(bound_args.keys(), 'spec*')
             if spec_arg:
                 # what if spec_set is different than spec?
-                if _is_coroutine_obj(bound_args[spec_arg[0]]):
-                    bases = (CoroutineMockMixin, cls,)
+                if _is_async_obj(bound_args[spec_arg[0]]):
+                    bases = (AsyncMockMixin, cls,)
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
         instance = object.__new__(new)
         return instance
@@ -459,11 +457,11 @@ class NonCallableMock(Base):
                        _eat_self=False):
         _spec_class = None
         _spec_signature = None
-        _spec_coroutines = []
+        _spec_asyncs = []
 
         for attr in dir(spec):
             if asyncio.iscoroutinefunction(getattr(spec, attr, None)):
-                _spec_coroutines.append(attr)
+                _spec_asyncs.append(attr)
 
         if spec is not None and not _is_list(spec):
             if isinstance(spec, type):
@@ -481,7 +479,7 @@ class NonCallableMock(Base):
         __dict__['_spec_set'] = spec_set
         __dict__['_spec_signature'] = _spec_signature
         __dict__['_mock_methods'] = spec
-        __dict__['_spec_coroutines'] = _spec_coroutines
+        __dict__['_spec_asyncs'] = _spec_asyncs
 
     def __get_return_value(self):
         ret = self._mock_return_value
@@ -916,13 +914,13 @@ class NonCallableMock(Base):
         For non-callable mocks the callable variant will be used (rather than
         any custom subclass)."""
         _new_name = kw.get("_new_name")
-        if _new_name in self.__dict__['_spec_coroutines']:
-            return CoroutineMock(**kw)
+        if _new_name in self.__dict__['_spec_asyncs']:
+            return AsyncMock(**kw)
 
         _type = type(self)
-        if issubclass(_type, MagicMock) and _new_name in async_magic_coroutines:
-            klass = CoroutineMock
-        if issubclass(_type, CoroutineMockMixin):
+        if issubclass(_type, MagicMock) and _new_name in _async_method_magics:
+            klass = AsyncMock
+        if issubclass(_type, AsyncMockMixin):
             klass = MagicMock
         if not issubclass(_type, CallableMixin):
             if issubclass(_type, NonCallableMagicMock):
@@ -954,99 +952,6 @@ def _try_iter(obj):
         # XXXX backwards compatibility
         # but this will blow up on first call - so maybe we should fail early?
         return obj
-
-
-class _AwaitEvent:
-    def __init__(self, mock):
-        self._mock = mock
-        self._condition = None
-
-    @asyncio.coroutine
-    def wait(self, skip=0):
-        """
-        Wait for await.
-
-        :param skip: How many awaits will be skipped.
-                     As a result, the mock should be awaited at least
-                     ``skip + 1`` times.
-        """
-        def predicate(mock):
-            return mock.await_count > skip
-
-        return (yield from self.wait_for(predicate))
-
-    @asyncio.coroutine
-    def wait_next(self, skip=0):
-        """
-        Wait for the next await.
-
-        Unlike :meth:`wait` that counts any await, mock has to be awaited once
-        more, disregarding to the current
-        :attr:`asynctest.CoroutineMock.await_count`.
-
-        :param skip: How many awaits will be skipped.
-                     As a result, the mock should be awaited at least
-                     ``skip + 1`` more times.
-        """
-        await_count = self._mock.await_count
-
-        def predicate(mock):
-            return mock.await_count > await_count + skip
-
-        return (yield from self.wait_for(predicate))
-
-    @asyncio.coroutine
-    def wait_for(self, predicate):
-        """
-        Wait for a given predicate to become True.
-
-        :param predicate: A callable that receives mock which result
-                          will be interpreted as a boolean value.
-                          The final predicate value is the return value.
-        """
-        condition = self._get_condition()
-
-        try:
-            yield from condition.acquire()
-
-            def _predicate():
-                return predicate(self._mock)
-
-            return (yield from condition.wait_for(_predicate))
-        finally:
-            condition.release()
-
-    @asyncio.coroutine
-    def _notify(self):
-        condition = self._get_condition()
-
-        try:
-            yield from condition.acquire()
-            condition.notify_all()
-        finally:
-            condition.release()
-
-    def _get_condition(self):
-        """
-        Creation of condition is delayed, to minimize the change of using the
-        wrong loop.
-
-        A user may create a mock with _AwaitEvent before selecting the
-        execution loop.  Requiring a user to delay creation is error-prone and
-        inflexible. Instead, condition is created when user actually starts to
-        use the mock.
-        """
-        # No synchronization is needed:
-        #   - asyncio is thread unsafe
-        #   - there are no awaits here, method will be executed without
-        #   switching asyncio context.
-        if self._condition is None:
-            self._condition = asyncio.Condition()
-
-        return self._condition
-
-    def __bool__(self):
-        return self._mock.await_count != 0
 
 
 class CallableMixin(Base):
@@ -1199,10 +1104,6 @@ class Mock(CallableMixin, NonCallableMock):
     Mocks can also be called with arbitrary keyword arguments. These will be
     used to set attributes on the mock after it is created.
     """
-
-
-def _raise(exception):
-    raise exception
 
 
 def _dot_lookup(thing, comp, import_path):
@@ -1402,8 +1303,8 @@ class _patch(object):
                 if isinstance(original, type):
                     # If we're patching out a class and there is a spec
                     inherit = True
-            if spec is None and _is_coroutine_obj(original):
-                Klass = CoroutineMock
+            if spec is None and _is_async_obj(original):
+                Klass = AsyncMock
             else:
                 Klass = MagicMock
             _kwargs = {}
@@ -1417,8 +1318,8 @@ class _patch(object):
                     not_callable = '__call__' not in this_spec
                 else:
                     not_callable = not callable(this_spec)
-                if _is_coroutine_obj(this_spec):
-                    Klass = CoroutineMock
+                if _is_async_obj(this_spec):
+                    Klass = AsyncMock
                 elif not_callable:
                     Klass = NonCallableMagicMock
 
@@ -1876,13 +1777,10 @@ _magics = {
     ' '.join([magic_methods, numerics, inplace, right]).split()
 }
 
-async_magic_coroutines = ("__aenter__", "__aexit__", "__anext__")
-_async_magics = async_magic_coroutines + ("__aiter__", )
-
-async_magic_coroutines = set(async_magic_coroutines)
-_async_magics = set(_async_magics)
-
-
+# Magic methods used for async `with` statements
+_async_method_magics = {"__aenter__", "__aexit__", "__anext__"}
+# `__aiter__` is a plain function but used with async calls
+_async_magics = _async_method_magics | {"__aiter__"}
 
 _all_magics = _magics | _non_defaults
 
@@ -1914,22 +1812,6 @@ _return_values = {
     '__index__': 1,
 }
 
-class AsyncIterator:
-    """
-    Wraps an iterator in an asynchronous iterator.
-    """
-    def __init__(self, iterator):
-        self.iterator = iterator
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        try:
-            return next(self.iterator)
-        except StopIteration:
-            pass
-        raise StopAsyncIteration
 
 def _get_eq(self):
     def __eq__(other):
@@ -1960,19 +1842,12 @@ def _get_iter(self):
         return iter(ret_val)
     return __iter__
 
-def _get_async_iter(mock):
+def _get_async_iter(self):
     def __aiter__():
-        return_value = mock.__aiter__._mock_return_value
-        if return_value is DEFAULT:
-            iterator = iter([])
-        else:
-            iterator = iter(return_value)
-
-        return AsyncIterator(iterator)
-
-    if asyncio.iscoroutinefunction(mock.__aiter__):
-        return asyncio.coroutine(__aiter__)
-
+        ret_val = self.__aiter__._mock_return_value
+        if ret_val is DEFAULT:
+            return AsyncIterator([])
+        return AsyncIterator(ret_val)
     return __aiter__
 
 _side_effect_methods = {
@@ -2094,7 +1969,7 @@ class MagicProxy(object):
         return self.create_mock()
 
 
-class AsyncMagicMixin(object):
+class AsyncMagicMixin:
     def __init__(self, *args, **kw):
         self._mock_set_async_magics()  # make magic work for kwargs in init
         _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
@@ -2120,7 +1995,7 @@ class AsyncMagicMixin(object):
             setattr(_type, entry, MagicProxy(entry, self))
 
 
-class CoroutineMockMixin(Base):
+class AsyncMockMixin(Base):
     awaited = _delegating_property('awaited')
     await_count = _delegating_property('await_count')
     await_args = _delegating_property('await_args')
@@ -2128,48 +2003,46 @@ class CoroutineMockMixin(Base):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # asyncio.iscoroutinefunction() checks this property to say if an
-        # object is a coroutine
+        # asyncio.iscoroutinefunction() checks _is_coroutine property to say if an
+        # object is a coroutine. Without this check it looks to see if it is a
+        # function/method, which in this case it is not (since it is an
+        # AsyncMock).
         # It is set through __dict__ because when spec_set is True, this
         # attribute is likely undefined.
-        self.__dict__['_is_coroutine'] = _is_coroutine
+        self.__dict__['_is_coroutine'] = asyncio.coroutines._is_coroutine
         self.__dict__['_mock_awaited'] = _AwaitEvent(self)
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
         code_mock = NonCallableMock(spec_set=CodeType)
-        code_mock.co_flags = 129
+        code_mock.co_flags = inspect.CO_COROUTINE
         self.__dict__['__code__'] = code_mock
 
-
-    def _mock_call(_mock_self, *args, **kwargs):
+    async def _mock_call(_mock_self, *args, **kwargs):
+        self = _mock_self
         try:
             result = super()._mock_call(*args, **kwargs)
-            _call = _mock_self.call_args
-
-            @asyncio.coroutine
-            def proxy():
-                try:
-                    if asyncio.iscoroutine(result):
-                        return (yield from result)
-                    else:
-                        return result
-                finally:
-                    _mock_self.await_count += 1
-                    _mock_self.await_args = _call
-                    _mock_self.await_args_list.append(_call)
-                    yield from _mock_self.awaited._notify()
-
-            return proxy()
-        except StopIteration as e:
-            side_effect = _mock_self.side_effect
+        except (BaseException, StopIteration) as e:
+            side_effect = self.side_effect
             if side_effect is not None and not callable(side_effect):
                 raise
+            return _raise(e)
 
-            return asyncio.coroutine(_raise)(e)
-        except BaseException as e:
-            return asyncio.coroutine(_raise)(e)
+        _call = self.call_args
+
+        async def proxy():
+            try:
+                if inspect.isawaitable(result):
+                    return await result
+                else:
+                    return result
+            finally:
+                self.await_count += 1
+                self.await_args = _call
+                self.await_args_list.append(_call)
+                await self.awaited._notify()
+
+        return await proxy()
 
     def assert_awaited(_mock_self):
         """
@@ -2287,49 +2160,49 @@ class CoroutineMockMixin(Base):
         See :func:`.Mock.reset_mock()`
         """
         super().reset_mock(*args, **kwargs)
-        self.awaited = _AwaitEvent(self)
         self.await_count = 0
         self.await_args = None
         self.await_args_list = _CallList()
 
 
-class CoroutineMock(CoroutineMockMixin, AsyncMagicMixin, Mock):
+class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     """
     Enhance :class:`Mock` with features allowing to mock
-    a coroutine function.
+    a async function.
 
-    The :class:`CoroutineMock` object will behave so the object is
-    recognized as coroutine function, and the result of a call as a coroutine:
+    The :class:`AsyncMock` object will behave so the object is
+    recognized as async function, and the result of a call as a async:
 
-    >>> mock = CoroutineMock()
+    >>> mock = AsyncMock()
     >>> asyncio.iscoroutinefunction(mock)
     True
-    >>> asyncio.iscoroutine(mock())
+    >>> inspect.isawaitable(mock())
     True
 
 
-    The result of ``mock()`` is a coroutine which will have the outcome of
-    ``side_effect`` or ``return_value``:
+    The result of ``mock()`` is an async function which will have the outcome
+    of ``side_effect`` or ``return_value``:
 
-    - if ``side_effect`` is a function, the coroutine will return the result
-      of that function,
-    - if ``side_effect`` is an exception, the coroutine will raise the
+    - if ``side_effect`` is a function, the async function will return the
+      result of that function,
+    - if ``side_effect`` is an exception, the async function will raise the
       exception,
-    - if ``side_effect`` is an iterable, the coroutine will return the next
-      value of the iterable, however, if the sequence of result is exhausted,
-      ``StopIteration`` is raised immediately,
-    - if ``side_effect`` is not defined, the coroutine will return the value
-      defined by ``return_value``, hence, by default, the coroutine returns
-      a new :class:`CoroutineMock` object.
+    - if ``side_effect`` is an iterable, the async function will return the
+      next value of the iterable, however, if the sequence of result is
+      exhausted, ``StopIteration`` is raised immediately,
+    - if ``side_effect`` is not defined, the async function will return the
+      value defined by ``return_value``, hence, by default, the async function
+      returns a new :class:`AsyncMock` object.
 
-    If the outcome of ``side_effect`` or ``return_value`` is a coroutine, the
-    mock coroutine obtained when the mock object is called will be this
-    coroutine itself (and not a coroutine returning a coroutine).
+    If the outcome of ``side_effect`` or ``return_value`` is an async function, the
+    mock async function obtained when the mock object is called will be this
+    async function itself (and not an async function returning an async
+    function).
 
     The test author can also specify a wrapped object with ``wraps``. In this
     case, the :class:`Mock` object behavior is the same as with an
     :class:`.Mock` object: the wrapped object may have methods
-    defined as coroutine functions.
+    defined as async function functions.
     """
 
 
@@ -2564,9 +2437,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
     is_type = isinstance(spec, type)
     if getattr(spec, '__code__', None):
-        is_coroutine_func = asyncio.iscoroutinefunction(spec)
+        is_async_func = asyncio.iscoroutinefunction(spec)
     else:
-        is_coroutine_func = False
+        is_async_func = False
     _kwargs = {'spec': spec}
     if spec_set:
         _kwargs = {'spec_set': spec}
@@ -2583,11 +2456,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # descriptors don't have a spec
         # because we don't know what type they return
         _kwargs = {}
-    elif is_coroutine_func:
+    elif is_async_func:
         if instance:
             raise RuntimeError("Instance can not be True when create_autospec "
-                               "is mocking a coroutine function")
-        Klass = CoroutineMock
+                               "is mocking an async function")
+        Klass = AsyncMock
     elif not _callable(spec):
         Klass = NonCallableMagicMock
     elif is_type and instance and not _instance_callable(spec):
@@ -2604,17 +2477,12 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                  name=_name, **_kwargs)
 
     if isinstance(spec, FunctionTypes):
+        wrapped_mock = mock
         # should only happen at the top level because we don't
         # recurse for functions
         mock = _set_signature(mock, spec)
-        if is_coroutine_func:
-            # Can't wrap the mock with asyncio.coroutine because it doesn't
-            # detect a CoroWrapper as an awaitable in debug mode.
-            # It is safe to do so because the mock object wrapped by
-            # _set_signature returns the result of the CoroutineMock itself,
-            # which is a Coroutine (as defined in CoroutineMock._mock_call)
+        if is_async_func:
             mock._is_coroutine = _is_coroutine
-            mock.awaited = _AwaitEvent(mock)
             mock.await_count = 0
             mock.await_args = None
             mock.await_args_list = _CallList()
@@ -2673,7 +2541,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
             skipfirst = _must_skip(spec, entry, is_type)
             kwargs['_eat_self'] = skipfirst
             if asyncio.iscoroutinefunction(original):
-                child_klass = CoroutineMock
+                child_klass = AsyncMock
             else:
                 child_klass = MagicMock
             new = child_klass(parent=parent, name=entry, _new_name=entry,
@@ -2883,3 +2751,61 @@ def seal(mock):
             continue
         if m._mock_new_parent is mock:
             seal(m)
+
+
+async def _raise(exception):
+    raise exception
+
+
+class AsyncIterator:
+    """
+    Wraps an iterator in an asynchronous iterator.
+    """
+    def __init__(self, iterator):
+        self.iterator = iterator
+        code_mock = NonCallableMock(spec_set=CodeType)
+        code_mock.co_flags = inspect.CO_ITERATOR_COROUTINE
+        self.__dict__['__code__'] = code_mock
+
+    def __aiter__(self):
+        return self
+
+    # cannot use async before 3.7
+    async def __anext__(self):
+        try:
+            return next(self.iterator)
+        except StopIteration:
+            pass
+        raise StopAsyncIteration
+
+
+class _AwaitEvent:
+    def __init__(self, mock):
+        self._mock = mock
+        self._condition = None
+
+    async def _notify(self):
+        condition = self._get_condition()
+        try:
+            await condition.acquire()
+            condition.notify_all()
+        finally:
+            condition.release()
+
+    def _get_condition(self):
+        """
+        Creation of condition is delayed, to minimize the chance of using the
+        wrong loop.
+        A user may create a mock with _AwaitEvent before selecting the
+        execution loop.  Requiring a user to delay creation is error-prone and
+        inflexible. Instead, condition is created when user actually starts to
+        use the mock.
+        """
+        # No synchronization is needed:
+        #   - asyncio is thread unsafe
+        #   - there are no awaits here, method will be executed without
+        #   switching asyncio context.
+        if self._condition is None:
+            self._condition = asyncio.Condition()
+
+        return self._condition

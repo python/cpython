@@ -8,7 +8,7 @@ from unittest import mock
 from unittest.mock import (
     call, DEFAULT, patch, sentinel,
     MagicMock, Mock, NonCallableMock,
-    NonCallableMagicMock, CoroutineMock, _CallList,
+    NonCallableMagicMock, AsyncMock, _CallList,
     create_autospec
 )
 
@@ -1378,7 +1378,7 @@ class MockTest(unittest.TestCase):
 
     def test_adding_child_mock(self):
         for Klass in (NonCallableMock, Mock, MagicMock, NonCallableMagicMock,
-                      CoroutineMock):
+                      AsyncMock):
             mock = Klass()
 
             mock.foo = Mock()
