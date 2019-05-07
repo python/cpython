@@ -1094,7 +1094,7 @@ non-important content
 =}''', '\n3\n=3')
 
         # Since = is handled specially, make sure all existing uses of
-        # it stil work.
+        # it still work.
 
         self.assertEqual(f'{0==1}', 'False')
         self.assertEqual(f'{0!=1}', 'True')
