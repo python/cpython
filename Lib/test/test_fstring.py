@@ -1074,6 +1074,7 @@ non-important content
 
         x = 2.71828
         self.assertEqual(f'{x=:.2f}', 'x=' + format(x, '.2f'))
+        self.assertEqual(f'{x=:}', 'x=' + format(x, ''))
         self.assertEqual(f'{x=!r:^20}', 'x=' + format(repr(x), '^20'))
         self.assertEqual(f'{x=!s:^20}', 'x=' + format(str(x), '^20'))
         self.assertEqual(f'{x=!a:^20}', 'x=' + format(ascii(x), '^20'))
@@ -1131,6 +1132,20 @@ non-important content
         self.assertEqual(x, '3=')
         self.assertEqual(f'{f(a=4)}', '3=')
         self.assertEqual(x, 4)
+
+        # Make sure __format__ is being called.
+        class C:
+            def __format__(self, s):
+                return f'FORMAT-{s}'
+            def __repr__(self):
+                return 'REPR'
+
+        self.assertEqual(f'{C()=}', 'C()=REPR')
+        self.assertEqual(f'{C()=!r}', 'C()=REPR')
+        self.assertEqual(f'{C()=:}', 'C()=FORMAT-')
+        self.assertEqual(f'{C()=: }', 'C()=FORMAT- ')
+        self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
+        self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
 
 
 
