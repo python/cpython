@@ -1085,7 +1085,11 @@ class UserList(_collections_abc.MutableSequence):
         return other.data if isinstance(other, UserList) else other
     def __contains__(self, item): return item in self.data
     def __len__(self): return len(self.data)
-    def __getitem__(self, i): return self.data[i]
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            return self.__class__(self.data[i])
+        else:
+            return self.data[i]
     def __setitem__(self, i, item): self.data[i] = item
     def __delitem__(self, i): del self.data[i]
     def __add__(self, other):

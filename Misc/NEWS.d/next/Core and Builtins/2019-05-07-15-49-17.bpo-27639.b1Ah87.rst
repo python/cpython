@@ -1,0 +1,2 @@
+Correct return type for UserList slicing operations. Patch by Michael Blahay,
+Erick Cervantes, and vaultah
