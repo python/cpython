@@ -1111,6 +1111,18 @@ non-important content
         # spec of '=10'.
         self.assertEqual(f'{x:=10}', '        20')
 
+        def f(a):
+             nonlocal x
+             oldx = x
+             x = a
+             return oldx
+        x = 0
+        self.assertEqual(f'{f(a=3)}', '0')
+        self.assertEqual(x, 3)
+        self.assertEqual(f'{f(a="4")}', '3')
+        self.assertEqual(x, '4')
+
+
 
 if __name__ == '__main__':
     unittest.main()
