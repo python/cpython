@@ -51,7 +51,7 @@ from concurrent.futures import _base
 import queue
 from queue import Full
 import multiprocessing as mp
-from multiprocessing.connection import wait
+import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
 import weakref
@@ -352,7 +352,7 @@ def _queue_management_worker(executor_reference,
         # submitted, from the executor being shutdown/gc-ed, or from the
         # shutdown of the python interpreter.
         worker_sentinels = [p.sentinel for p in processes.values()]
-        ready = wait(readers + worker_sentinels)
+        ready = mp.connection.wait(readers + worker_sentinels)
 
         cause = None
         is_broken = True
