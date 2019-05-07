@@ -1,0 +1,13 @@
+Termios magic constants for the following baud rates:
+  - B500000
+  - B576000
+  - B921600
+  - B1000000
+  - B1152000
+  - B1500000
+  - B2000000
+  - B2500000
+  - B3000000
+  - B3500000
+  - B4000000
+Patch by Andrey Smirnov
