@@ -702,6 +702,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     struct _ceval_runtime_state * const ceval = &runtime->ceval;
     _Py_atomic_int * const eval_breaker = &ceval->eval_breaker;
     PyCodeObject *co;
+    Py_buffer code_view = {};
 
     /* when tracing we set things up so that
 
@@ -1027,11 +1028,20 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     consts = co->co_consts;
     fastlocals = f->f_localsplus;
     freevars = f->f_localsplus + co->co_nlocals;
-    assert(PyBytes_Check(co->co_code));
-    assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
-    assert(PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0);
-    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), sizeof(_Py_CODEUNIT)));
-    first_instr = (_Py_CODEUNIT *) PyBytes_AS_STRING(co->co_code);
+    if (PyBytes_Check(co->co_code)) {
+        assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
+        assert(PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0);
+        assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), sizeof(_Py_CODEUNIT)));
+        first_instr = (_Py_CODEUNIT *) PyBytes_AS_STRING(co->co_code);
+    } else if (!PyObject_GetBuffer(co->co_code, &code_view, PyBUF_SIMPLE)) {
+        assert(code_view.len <= INT_MAX);
+        assert(code_view.len % sizeof(_Py_CODEUNIT) == 0);
+        assert(_Py_IS_ALIGNED(code_view.buf, sizeof(_Py_CODEUNIT)));
+        first_instr = (_Py_CODEUNIT *) code_view.buf;
+    } else {
+        goto exit_eval_frame;
+    }
+
     /*
        f->f_lasti refers to the index of the last instruction,
        unless it's -1 in which case next_instr should be first_instr.
@@ -3657,6 +3667,8 @@ exit_yielding:
 exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
+    if (code_view.obj != NULL)
+        PyBuffer_Release(&code_view);
     Py_LeaveRecursiveCall();
     f->f_executing = 0;
     tstate->frame = f->f_back;

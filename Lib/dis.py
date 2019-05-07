@@ -77,13 +77,18 @@ def dis(x=None, *, file=None, depth=None):
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
         _disassemble_recursive(x, file=file, depth=depth)
-    elif isinstance(x, (bytes, bytearray)): # Raw bytecode
+    elif isinstance(x, (bytes, bytearray, memoryview)): # Raw bytecode
         _disassemble_bytes(x, file=file)
     elif isinstance(x, str):    # Source code
         _disassemble_str(x, file=file, depth=depth)
     else:
-        raise TypeError("don't know how to disassemble %s objects" %
-                        type(x).__name__)
+        try:
+            x = memoryview(x)
+        except TypeError:
+            raise TypeError("don't know how to disassemble %s objects" %
+                            type(x).__name__)
+        _disassemble_bytes(x, file=file)
+
 
 def distb(tb=None, *, file=None):
     """Disassemble a traceback (default: last traceback)."""

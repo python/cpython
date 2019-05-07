@@ -453,6 +453,23 @@ class DisTests(unittest.TestCase):
     def test_dis(self):
         self.do_disassembly_test(_f, dis_f)
 
+    def test_dis_memoryview(self):
+        self.do_disassembly_test(memoryview(_f.__code__.co_code), dis_f_co_code)
+
+    def test_dis_mmap(self):
+        try:
+            import mmap
+        except ImportError:
+            return
+        from tempfile import NamedTemporaryFile
+        with NamedTemporaryFile('wb', suffix='.code') as f:
+            f.write(_f.__code__.co_code)
+            f.flush()
+            map = mmap.mmap(f.fileno(),
+                            length=0, access=mmap.ACCESS_READ)
+
+            self.do_disassembly_test(map, dis_f_co_code)
+
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
 

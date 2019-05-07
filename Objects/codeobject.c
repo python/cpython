@@ -94,6 +94,21 @@ intern_string_constants(PyObject *tuple)
     return modified;
 }
 
+static int
+code_check_buffer(PyObject *code) {
+    Py_buffer codebuffer = {};
+    if (!PyBytes_Check(code)) {
+        if (PyObject_GetBuffer(code, &codebuffer, PyBUF_SIMPLE))
+            return 0;
+
+        int contiguous = PyBuffer_IsContiguous(&codebuffer, 'C');
+
+        PyBuffer_Release(&codebuffer);
+
+        return contiguous;
+    }
+    return 1;
+}
 
 PyCodeObject *
 PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
@@ -109,7 +124,7 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
 
     /* Check argument types */
     if (argcount < 0 || posonlyargcount < 0 || kwonlyargcount < 0 ||
-        nlocals < 0 || code == NULL || !PyBytes_Check(code) ||
+        nlocals < 0 || code == NULL || !code_check_buffer(code) ||
         consts == NULL || !PyTuple_Check(consts) ||
         names == NULL || !PyTuple_Check(names) ||
         varnames == NULL || !PyTuple_Check(varnames) ||
@@ -367,7 +382,8 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     int firstlineno;
     PyObject *lnotab;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiSO!O!O!UUiS|O!O!:code",
+
+    if (!PyArg_ParseTuple(args, "iiiiiiOO!O!O!UUiS|O!O!:code",
                           &argcount, &posonlyargcount, &kwonlyargcount,
                               &nlocals, &stacksize, &flags,
                           &code,
@@ -383,6 +399,13 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PySys_Audit("code.__new__", "OOOiiiii",
                     code, filename, name, argcount, kwonlyargcount,
                     nlocals, stacksize, flags) < 0) {
+        goto cleanup;
+    }
+
+    if (!code_check_buffer(code)) {
+        PyErr_SetString(
+            PyExc_ValueError,
+            "code: code must be bytes or contigious buffer");
         goto cleanup;
     }
 

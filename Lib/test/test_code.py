@@ -125,6 +125,7 @@ consts: ('None',)
 
 """
 
+import array
 import inspect
 import sys
 import threading
@@ -170,6 +171,28 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(co.co_filename, "filename")
         self.assertEqual(co.co_name, "funcname")
         self.assertEqual(co.co_firstlineno, 15)
+
+    @cpython_only
+    def test_buffer_code(self):
+        '''validates that code objects can be constructed with something
+implementing the buffer protocol and that they can successfully be evaluated'''
+        def f():
+            x = 0
+            for i in range(10):
+                x += i
+            return x
+
+        code = f.__code__
+        ct = type(f.__code__)
+        c = ct(code.co_argcount, code.co_posonlyargcount,
+               code.co_kwonlyargcount, code.co_nlocals, code.co_stacksize,
+               code.co_flags, array.array('B', code.co_code),
+               code.co_consts, code.co_names, code.co_varnames,
+               code.co_filename, code.co_name, code.co_firstlineno,
+               code.co_lnotab, code.co_freevars, code.co_cellvars)
+        nf = type(f)(c, f.__globals__, 'nf', f.__defaults__, f.__closure__)
+        self.assertEqual(f(), nf())
+        self.assertEqual(type(nf.__code__.co_code), array.array)
 
     @cpython_only
     def test_closure_injection(self):

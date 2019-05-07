@@ -335,7 +335,16 @@ _PyGen_yf(PyGenObject *gen)
 
     if (f && f->f_stacktop) {
         PyObject *bytecode = f->f_code->co_code;
-        unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
+        unsigned char *code;
+        Py_buffer view = {};
+
+        if (PyBytes_Check(bytecode)) {
+            code = (unsigned char *)PyBytes_AS_STRING(bytecode);
+        } else if (!PyObject_GetBuffer(f->f_code->co_code, &view, PyBUF_SIMPLE)) {
+            code = (unsigned char *)view.buf;
+        } else {
+            return NULL;
+        }
 
         if (f->f_lasti < 0) {
             /* Return immediately if the frame didn't start yet. YIELD_FROM
@@ -345,7 +354,11 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[f->f_lasti + sizeof(_Py_CODEUNIT)] != YIELD_FROM)
+        char opcode = code[f->f_lasti + sizeof(_Py_CODEUNIT)];
+        if (view.obj != NULL)
+            PyBuffer_Release(&view);
+
+        if (opcode != YIELD_FROM)
             return NULL;
         yf = f->f_stacktop[-1];
         Py_INCREF(yf);

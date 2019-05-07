@@ -199,7 +199,15 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
 
     /* We're now ready to look at the bytecode. */
-    PyBytes_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
+    Py_buffer view = {};
+    if (PyBytes_Check(f->f_code->co_code)) {
+        PyBytes_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
+    } else if (!PyObject_GetBuffer(f->f_code->co_code, &view, PyBUF_SIMPLE)) {
+        code = (unsigned char *)view.buf;
+        code_len = view.len;
+    } else {
+        return -1;
+    }
 
     /* The trace function is called with a 'return' trace event after the
      * execution of a yield statement. */
@@ -207,7 +215,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     if (code[f->f_lasti] == YIELD_VALUE || code[f->f_lasti] == YIELD_FROM) {
         PyErr_SetString(PyExc_ValueError,
                 "can't jump from a yield statement");
-        return -1;
+        goto error;
     }
 
     /* You can't jump onto a line with an 'except' statement on it -
@@ -223,7 +231,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     if (code[new_lasti] == DUP_TOP || code[new_lasti] == POP_TOP) {
         PyErr_SetString(PyExc_ValueError,
             "can't jump to 'except' line as there's no exception");
-        return -1;
+        goto error;
     }
 
     /* You can't jump into or out of a 'finally' block because the 'try'
@@ -257,7 +265,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             if (!first_in && second_in) {
                 PyErr_SetString(PyExc_ValueError,
                                 "can't jump into the middle of a block");
-                return -1;
+                goto error;
             }
             if (first_in && !second_in) {
                 if (op != FOR_ITER && code[target_addr] != END_ASYNC_FOR) {
@@ -288,7 +296,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                              second_in ? "into" : "out of",
                              (op == DUP_TOP || op == POP_TOP) ?
                                 "an 'except'" : "a 'finally'");
-                return -1;
+                goto error;
             }
             break;
         }
@@ -316,10 +324,17 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         delta--;
     }
 
+    if (view.obj != NULL)
+        PyBuffer_Release(&view);
+
     /* Finally set the new f_lineno and f_lasti and return OK. */
     f->f_lineno = new_lineno;
     f->f_lasti = new_lasti;
     return 0;
+error:
+    if (view.obj != NULL)
+        PyBuffer_Release(&view);
+    return -1;
 }
 
 static PyObject *
@@ -1001,4 +1016,3 @@ _PyFrame_DebugMallocStats(FILE *out)
                            "free PyFrameObject",
                            numfree, sizeof(PyFrameObject));
 }
-
