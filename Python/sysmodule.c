@@ -23,6 +23,7 @@ Data members:
 #include "pycore_pathconfig.h"
 #include "pycore_pystate.h"
 #include "pythread.h"
+#include "pydtrace.h"
 
 #include "osdefs.h"
 #include <locale.h>
@@ -119,6 +120,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     PyObject *hooks = NULL;
     PyObject *hook = NULL;
     int res = -1;
+    int dtrace = PyDTrace_AUDIT_ENABLED();
 
     /* N format is inappropriate, because you do not know
        whether the reference is consumed by the call.
@@ -129,7 +131,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
     PyThreadState *ts = _PyThreadState_GET();
     PyInterpreterState *is = ts ? ts->interp : NULL;
-    if (!e && (!is || !is->audit_hooks)) {
+    if (!e && (!is || !is->audit_hooks) && !dtrace) {
         return 0;
     }
 
@@ -158,6 +160,11 @@ PySys_Audit(const char *event, const char *argFormat, ...)
         if (e->hookCFunction(event, eventArgs, e->userData) < 0) {
             goto exit;
         }
+    }
+
+    /* Dtrace USDT point */
+    if (dtrace) {
+        PyDTrace_AUDIT(event, (void *)eventArgs);
     }
 
     /* Call interpreter hooks */
