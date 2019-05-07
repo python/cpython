@@ -47,7 +47,6 @@ class StrSubclass(str):
     pass
 
 class StrTest(string_tests.CommonTest,
-        string_tests.MixinStrUnicodeUserStringTest,
         string_tests.MixinStrUnicodeTest,
         unittest.TestCase):
 
@@ -411,7 +410,7 @@ class StrTest(string_tests.CommonTest,
                                 left + delim * 2 + right, 'rsplit', delim *2)
 
     def test_partition(self):
-        string_tests.MixinStrUnicodeUserStringTest.test_partition(self)
+        string_tests.CommonTest.test_partition(self)
         # test mixed kinds
         self.checkequal(('ABCDEFGH', '', ''), 'ABCDEFGH', 'partition', '\u4200')
         for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
@@ -428,7 +427,7 @@ class StrTest(string_tests.CommonTest,
                                 left + delim * 2 + right, 'partition', delim * 2)
 
     def test_rpartition(self):
-        string_tests.MixinStrUnicodeUserStringTest.test_rpartition(self)
+        string_tests.CommonTest.test_rpartition(self)
         # test mixed kinds
         self.checkequal(('', '', 'ABCDEFGH'), 'ABCDEFGH', 'rpartition', '\u4200')
         for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
@@ -445,7 +444,7 @@ class StrTest(string_tests.CommonTest,
                                 left + delim * 2 + right, 'rpartition', delim * 2)
 
     def test_join(self):
-        string_tests.MixinStrUnicodeUserStringTest.test_join(self)
+        string_tests.CommonTest.test_join(self)
 
         class MyWrapper:
             def __init__(self, sval): self.sval = sval
@@ -1336,7 +1335,7 @@ class StrTest(string_tests.CommonTest,
         self.assertEqual('{f:{}}{}{g}'.format(2, 4, f=1, g='g'), ' 14g')
 
     def test_formatting(self):
-        string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
+        string_tests.CommonTest.test_formatting(self)
         # Testing Unicode formatting strings...
         self.assertEqual("%s, %s" % ("abc", "abc"), 'abc, abc')
         self.assertEqual("%s, %s, %i, %f, %5.2f" % ("abc", "abc", 1, 2, 3), 'abc, abc, 1, 2.000000,  3.00')

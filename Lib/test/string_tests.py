@@ -992,11 +992,6 @@ class CommonTest(BaseTest):
         self.checkequal('\u019b\u1d00\u1d86\u0221\u1fb7',
                         '\u019b\u1d00\u1d86\u0221\u1fb7', 'capitalize')
 
-
-class MixinStrUnicodeUserStringTest:
-    # additional tests that only work for
-    # stringlike objects, i.e. str, UserString
-
     def test_startswith(self):
         self.checkequal(True, 'hello', 'startswith', 'he')
         self.checkequal(True, 'hello', 'startswith', 'hello')

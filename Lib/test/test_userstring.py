@@ -8,7 +8,6 @@ from collections import UserString
 
 class UserStringTest(
     string_tests.CommonTest,
-    string_tests.MixinStrUnicodeUserStringTest,
     unittest.TestCase
     ):
 
