@@ -1229,7 +1229,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if local_addr:
                         sock.bind(local_address)
                     if remote_addr:
-                        await self.sock_connect(sock, remote_address)
+                        if not allow_broadcast:
+                            await self.sock_connect(sock, remote_address)
                         r_addr = remote_address
                 except OSError as exc:
                     if sock is not None:
