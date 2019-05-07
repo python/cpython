@@ -30,7 +30,6 @@ import inspect
 import pprint
 import sys
 import builtins
-import fnmatch
 from types import ModuleType, CodeType
 from functools import wraps, partial
 
@@ -366,6 +365,7 @@ class Base(object):
         pass
 
 
+
 class NonCallableMock(Base):
     """A non-callable version of `Mock`"""
 
@@ -378,7 +378,10 @@ class NonCallableMock(Base):
             # Check if spec is an async object or function
             sig = inspect.signature(NonCallableMock.__init__)
             bound_args = sig.bind_partial(cls, *args, **kw).arguments
-            spec_arg = fnmatch.filter(bound_args.keys(), 'spec*')
+            spec_arg = [
+                arg for arg in bound_args.keys()
+                if arg.startswith('spec')
+            ]
             if spec_arg:
                 # what if spec_set is different than spec?
                 if _is_async_obj(bound_args[spec_arg[0]]):
@@ -386,6 +389,7 @@ class NonCallableMock(Base):
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
         instance = object.__new__(new)
         return instance
+
 
     def __init__(
             self, spec=None, wraps=None, name=None, spec_set=None,
@@ -430,6 +434,7 @@ class NonCallableMock(Base):
             spec, wraps, name, spec_set, parent,
             _spec_state
         )
+
 
     def attach_mock(self, mock, attribute):
         """
