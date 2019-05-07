@@ -46,16 +46,10 @@ def normcase(s):
 
     Makes all characters lowercase and all slashes into backslashes."""
     s = os.fspath(s)
-    try:
-        if isinstance(s, bytes):
-            return s.replace(b'/', b'\\').lower()
-        else:
-            return s.replace('/', '\\').lower()
-    except (TypeError, AttributeError):
-        if not isinstance(s, (bytes, str)):
-            raise TypeError("normcase() argument must be str or bytes, "
-                            "not %r" % s.__class__.__name__) from None
-        raise
+    if isinstance(s, bytes):
+        return s.replace(b'/', b'\\').lower()
+    else:
+        return s.replace('/', '\\').lower()
 
 
 # Return whether a path is absolute.
@@ -229,7 +223,7 @@ def islink(path):
     """
     try:
         st = os.lstat(path)
-    except (OSError, AttributeError):
+    except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
 
@@ -239,7 +233,7 @@ def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
         st = os.lstat(path)
-    except OSError:
+    except (OSError, ValueError):
         return False
     return True
 
@@ -299,9 +293,7 @@ def expanduser(path):
     while i < n and path[i] not in _get_bothseps(path):
         i += 1
 
-    if 'HOME' in os.environ:
-        userhome = os.environ['HOME']
-    elif 'USERPROFILE' in os.environ:
+    if 'USERPROFILE' in os.environ:
         userhome = os.environ['USERPROFILE']
     elif not 'HOMEPATH' in os.environ:
         return path
@@ -523,8 +515,8 @@ else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
         try:
-            return _getfullpathname(path)
-        except OSError:
+            return normpath(_getfullpathname(path))
+        except (OSError, ValueError):
             return _abspath_fallback(path)
 
 # realpath is a no-op on systems without islink support

@@ -84,6 +84,43 @@ class _Outcome(object):
 def _id(obj):
     return obj
 
+
+_module_cleanups = []
+def addModuleCleanup(*args, **kwargs):
+    """Same as addCleanup, except the cleanup items are called even if
+    setUpModule fails (unlike tearDownModule)."""
+    if args:
+        function, *args = args
+    elif 'function' in kwargs:
+        function = kwargs.pop('function')
+        import warnings
+        warnings.warn("Passing 'function' as keyword argument is deprecated",
+                      DeprecationWarning, stacklevel=2)
+    else:
+        raise TypeError('addModuleCleanup expected at least 1 positional '
+                        'argument, got %d' % (len(args)-1))
+    args = tuple(args)
+
+    _module_cleanups.append((function, args, kwargs))
+addModuleCleanup.__text_signature__ = '(function, /, *args, **kwargs)'
+
+
+def doModuleCleanups():
+    """Execute all module cleanup functions. Normally called for you after
+    tearDownModule."""
+    exceptions = []
+    while _module_cleanups:
+        function, args, kwargs = _module_cleanups.pop()
+        try:
+            function(*args, **kwargs)
+        except Exception as exc:
+            exceptions.append(exc)
+    if exceptions:
+        # Swallows all but first exception. If a multi-exception handler
+        # gets written we should use that here instead.
+        raise exceptions[0]
+
+
 def skip(reason):
     """
     Unconditionally skip a test.
@@ -390,6 +427,8 @@ class TestCase(object):
 
     _classSetupFailed = False
 
+    _class_cleanups = []
+
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
            method when executed. Raises a ValueError if the instance does
@@ -437,13 +476,47 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(self, function, *args, **kwargs):
+    def addCleanup(*args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
+        if len(args) >= 2:
+            self, function, *args = args
+        elif not args:
+            raise TypeError("descriptor 'addCleanup' of 'TestCase' object "
+                            "needs an argument")
+        elif 'function' in kwargs:
+            function = kwargs.pop('function')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'function' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('addCleanup expected at least 1 positional '
+                            'argument, got %d' % (len(args)-1))
+        args = tuple(args)
+
         self._cleanups.append((function, args, kwargs))
+    addCleanup.__text_signature__ = '($self, function, /, *args, **kwargs)'
+
+    def addClassCleanup(*args, **kwargs):
+        """Same as addCleanup, except the cleanup items are called even if
+        setUpClass fails (unlike tearDownClass)."""
+        if len(args) >= 2:
+            cls, function, *args = args
+        elif not args:
+            raise TypeError("descriptor 'addClassCleanup' of 'TestCase' object "
+                            "needs an argument")
+        else:
+            raise TypeError('addClassCleanup expected at least 1 positional '
+                            'argument, got %d' % (len(args)-1))
+        args = tuple(args)
+
+        cls._class_cleanups.append((function, args, kwargs))
+    addClassCleanup.__text_signature__ = '($cls, function, /, *args, **kwargs)'
+    addClassCleanup = classmethod(addClassCleanup)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -514,7 +587,7 @@ class TestCase(object):
         case as failed but resumes execution at the end of the enclosed
         block, allowing further test code to be executed.
         """
-        if not self._outcome.result_supports_subtests:
+        if self._outcome is None or not self._outcome.result_supports_subtests:
             yield
             return
         parent = self._subtest
@@ -651,8 +724,20 @@ class TestCase(object):
                 function(*args, **kwargs)
 
         # return this for backwards compatibility
-        # even though we no longer us it internally
+        # even though we no longer use it internally
         return outcome.success
+
+    @classmethod
+    def doClassCleanups(cls):
+        """Execute all class cleanup functions. Normally called for you after
+        tearDownClass."""
+        cls.tearDown_exceptions = []
+        while cls._class_cleanups:
+            function, args, kwargs = cls._class_cleanups.pop()
+            try:
+                function(*args, **kwargs)
+            except Exception as exc:
+                cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
@@ -1162,9 +1247,8 @@ class TestCase(object):
 
 
     def assertCountEqual(self, first, second, msg=None):
-        """An unordered sequence comparison asserting that the same elements,
-        regardless of order.  If the same element occurs more than once,
-        it verifies that the elements occur the same number of times.
+        """Asserts that two iterables have the same elements, the same number of
+        times, without regard to order.
 
             self.assertEqual(Counter(list(first)),
                              Counter(list(second)))

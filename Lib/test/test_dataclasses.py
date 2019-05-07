@@ -697,7 +697,7 @@ class TestCase(unittest.TestCase):
             y: int
         self.assertNotEqual(Point(1, 3), C(1, 3))
 
-    def test_not_tuple(self):
+    def test_not_other_dataclass(self):
         # Test that some of the problems with namedtuple don't happen
         #  here.
         @dataclass
@@ -1403,7 +1403,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(asdict(gd), {'id': 0, 'users': {'first': {'name': 'Alice', 'id': 1},
                                                          'second': {'name': 'Bob', 'id': 2}}})
 
-    def test_helper_asdict_builtin_containers(self):
+    def test_helper_asdict_builtin_object_containers(self):
         @dataclass
         class Child:
             d: object
@@ -1428,6 +1428,70 @@ class TestCase(unittest.TestCase):
         d = asdict(c, dict_factory=OrderedDict)
         self.assertEqual(d, OrderedDict([('x', 42), ('y', 2)]))
         self.assertIs(type(d), OrderedDict)
+
+    def test_helper_asdict_namedtuple(self):
+        T = namedtuple('T', 'a b c')
+        @dataclass
+        class C:
+            x: str
+            y: T
+        c = C('outer', T(1, C('inner', T(11, 12, 13)), 2))
+
+        d = asdict(c)
+        self.assertEqual(d, {'x': 'outer',
+                             'y': T(1,
+                                    {'x': 'inner',
+                                     'y': T(11, 12, 13)},
+                                    2),
+                             }
+                         )
+
+        # Now with a dict_factory.  OrderedDict is convenient, but
+        # since it compares to dicts, we also need to have separate
+        # assertIs tests.
+        d = asdict(c, dict_factory=OrderedDict)
+        self.assertEqual(d, {'x': 'outer',
+                             'y': T(1,
+                                    {'x': 'inner',
+                                     'y': T(11, 12, 13)},
+                                    2),
+                             }
+                         )
+
+        # Make sure that the returned dicts are actually OrderedDicts.
+        self.assertIs(type(d), OrderedDict)
+        self.assertIs(type(d['y'][1]), OrderedDict)
+
+    def test_helper_asdict_namedtuple_key(self):
+        # Ensure that a field that contains a dict which has a
+        # namedtuple as a key works with asdict().
+
+        @dataclass
+        class C:
+            f: dict
+        T = namedtuple('T', 'a')
+
+        c = C({T('an a'): 0})
+
+        self.assertEqual(asdict(c), {'f': {T(a='an a'): 0}})
+
+    def test_helper_asdict_namedtuple_derived(self):
+        class T(namedtuple('Tbase', 'a')):
+            def my_a(self):
+                return self.a
+
+        @dataclass
+        class C:
+            f: T
+
+        t = T(6)
+        c = C(t)
+
+        d = asdict(c)
+        self.assertEqual(d, {'f': T(a=6)})
+        # Make sure that t has been copied, not used directly.
+        self.assertIsNot(d['f'], t)
+        self.assertEqual(d['f'].my_a(), 6)
 
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
@@ -1512,7 +1576,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(astuple(gt), (0, (('Alice', 1), ('Bob', 2))))
         self.assertEqual(astuple(gd), (0, {'first': ('Alice', 1), 'second': ('Bob', 2)}))
 
-    def test_helper_astuple_builtin_containers(self):
+    def test_helper_astuple_builtin_object_containers(self):
         @dataclass
         class Child:
             d: object
@@ -1540,6 +1604,21 @@ class TestCase(unittest.TestCase):
         t = astuple(c, tuple_factory=nt)
         self.assertEqual(t, NT(42, 2))
         self.assertIs(type(t), NT)
+
+    def test_helper_astuple_namedtuple(self):
+        T = namedtuple('T', 'a b c')
+        @dataclass
+        class C:
+            x: str
+            y: T
+        c = C('outer', T(1, C('inner', T(11, 12, 13)), 2))
+
+        t = astuple(c)
+        self.assertEqual(t, ('outer', T(1, ('inner', (11, 12, 13)), 2)))
+
+        # Now, using a tuple_factory.  list is convenient here.
+        t = astuple(c, tuple_factory=list)
+        self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
 
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},
@@ -1658,23 +1737,33 @@ class TestCase(unittest.TestCase):
                 i: int = field(metadata=0)
 
         # Make sure an empty dict works.
+        d = {}
         @dataclass
         class C:
-            i: int = field(metadata={})
+            i: int = field(metadata=d)
         self.assertFalse(fields(C)[0].metadata)
         self.assertEqual(len(fields(C)[0].metadata), 0)
+        # Update should work (see bpo-35960).
+        d['foo'] = 1
+        self.assertEqual(len(fields(C)[0].metadata), 1)
+        self.assertEqual(fields(C)[0].metadata['foo'], 1)
         with self.assertRaisesRegex(TypeError,
                                     'does not support item assignment'):
             fields(C)[0].metadata['test'] = 3
 
         # Make sure a non-empty dict works.
+        d = {'test': 10, 'bar': '42', 3: 'three'}
         @dataclass
         class C:
-            i: int = field(metadata={'test': 10, 'bar': '42', 3: 'three'})
+            i: int = field(metadata=d)
         self.assertEqual(len(fields(C)[0].metadata), 3)
         self.assertEqual(fields(C)[0].metadata['test'], 10)
         self.assertEqual(fields(C)[0].metadata['bar'], '42')
         self.assertEqual(fields(C)[0].metadata[3], 'three')
+        # Update should work.
+        d['foo'] = 1
+        self.assertEqual(len(fields(C)[0].metadata), 4)
+        self.assertEqual(fields(C)[0].metadata['foo'], 1)
         with self.assertRaises(KeyError):
             # Non-existent key.
             fields(C)[0].metadata['baz']
@@ -3090,6 +3179,80 @@ class TestReplace(unittest.TestCase):
             replace(c, x=3)
         c = replace(c, x=3, y=5)
         self.assertEqual(c.x, 15)
+
+    def test_recursive_repr(self):
+        @dataclass
+        class C:
+            f: "C"
+
+        c = C(None)
+        c.f = c
+        self.assertEqual(repr(c), "TestReplace.test_recursive_repr.<locals>.C(f=...)")
+
+    def test_recursive_repr_two_attrs(self):
+        @dataclass
+        class C:
+            f: "C"
+            g: "C"
+
+        c = C(None, None)
+        c.f = c
+        c.g = c
+        self.assertEqual(repr(c), "TestReplace.test_recursive_repr_two_attrs"
+                                  ".<locals>.C(f=..., g=...)")
+
+    def test_recursive_repr_indirection(self):
+        @dataclass
+        class C:
+            f: "D"
+
+        @dataclass
+        class D:
+            f: "C"
+
+        c = C(None)
+        d = D(None)
+        c.f = d
+        d.f = c
+        self.assertEqual(repr(c), "TestReplace.test_recursive_repr_indirection"
+                                  ".<locals>.C(f=TestReplace.test_recursive_repr_indirection"
+                                  ".<locals>.D(f=...))")
+
+    def test_recursive_repr_indirection_two(self):
+        @dataclass
+        class C:
+            f: "D"
+
+        @dataclass
+        class D:
+            f: "E"
+
+        @dataclass
+        class E:
+            f: "C"
+
+        c = C(None)
+        d = D(None)
+        e = E(None)
+        c.f = d
+        d.f = e
+        e.f = c
+        self.assertEqual(repr(c), "TestReplace.test_recursive_repr_indirection_two"
+                                  ".<locals>.C(f=TestReplace.test_recursive_repr_indirection_two"
+                                  ".<locals>.D(f=TestReplace.test_recursive_repr_indirection_two"
+                                  ".<locals>.E(f=...)))")
+
+    def test_recursive_repr_misc_attrs(self):
+        @dataclass
+        class C:
+            f: "C"
+            g: int
+
+        c = C(None, 1)
+        c.f = c
+        self.assertEqual(repr(c), "TestReplace.test_recursive_repr_misc_attrs"
+                                  ".<locals>.C(f=..., g=1)")
+
     ## def test_initvar(self):
     ##     @dataclass
     ##     class C:

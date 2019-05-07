@@ -14,7 +14,7 @@ from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
-from tkinter.ttk import (Button, Checkbutton, Entry, Frame, Label, LabelFrame,
+from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
                          OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
@@ -30,10 +30,12 @@ from idlelib.autocomplete import AutoComplete
 from idlelib.codecontext import CodeContext
 from idlelib.parenmatch import ParenMatch
 from idlelib.paragraph import FormatParagraph
+from idlelib.squeezer import Squeezer
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.
-reloadables = (AutoComplete, CodeContext, ParenMatch, FormatParagraph)
+reloadables = (AutoComplete, CodeContext, ParenMatch, FormatParagraph,
+               Squeezer)
 
 
 class ConfigDialog(Toplevel):
@@ -1250,7 +1252,7 @@ class HighPage(Frame):
             colors = idleConf.GetHighlight(theme, element)
             if element == 'cursor':  # Cursor sample needs special painting.
                 colors['background'] = idleConf.GetHighlight(
-                        theme, 'normal', fgBg='bg')
+                        theme, 'normal')['background']
             # Handle any unsaved changes to this theme.
             if theme in changes['highlight']:
                 theme_dict = changes['highlight'][theme]
@@ -1748,9 +1750,9 @@ class KeysPage(Frame):
             self.customlist.SetMenu(item_list, item_list[0])
         # Revert to default key set.
         self.keyset_source.set(idleConf.defaultCfg['main']
-                                .Get('Keys', 'default'))
+                               .Get('Keys', 'default'))
         self.builtin_name.set(idleConf.defaultCfg['main'].Get('Keys', 'name')
-                             or idleConf.default_keys())
+                              or idleConf.default_keys())
         # User can't back out of these changes, they must be applied now.
         changes.save_all()
         self.cd.save_all_changed_extensions()
@@ -1817,6 +1819,10 @@ class GenPage(Frame):
                 frame_context: Frame
                     context_title: Label
                     (*)context_int: Entry - context_lines
+            frame_shell: LabelFrame
+                frame_auto_squeeze_min_lines: Frame
+                    auto_squeeze_min_lines_title: Label
+                    (*)auto_squeeze_min_lines_int: Entry - auto_squeeze_min_lines
             frame_help: LabelFrame
                 frame_helplist: Frame
                     frame_helplist_buttons: Frame
@@ -1842,6 +1848,9 @@ class GenPage(Frame):
         self.paren_bell = tracers.add(
                 BooleanVar(self), ('extensions', 'ParenMatch', 'bell'))
 
+        self.auto_squeeze_min_lines = tracers.add(
+                StringVar(self), ('main', 'PyShell', 'auto-squeeze-min-lines'))
+
         self.autosave = tracers.add(
                 IntVar(self), ('main', 'General', 'autosave'))
         self.format_width = tracers.add(
@@ -1855,8 +1864,10 @@ class GenPage(Frame):
                                   text=' Window Preferences')
         frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                   text=' Editor Preferences')
+        frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                 text=' Shell Preferences')
         frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
-                               text=' Additional Help Sources ')
+                                text=' Additional Help Sources ')
         # Frame_window.
         frame_run = Frame(frame_window, borderwidth=0)
         startup_title = Label(frame_run, text='At Startup')
@@ -1918,6 +1929,13 @@ class GenPage(Frame):
         self.context_int = Entry(
                 frame_context, textvariable=self.context_lines, width=3)
 
+        # Frame_shell.
+        frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
+        auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
+                                             text='Auto-Squeeze Min. Lines:')
+        self.auto_squeeze_min_lines_int = Entry(
+            frame_auto_squeeze_min_lines, width=4,
+            textvariable=self.auto_squeeze_min_lines)
 
         # frame_help.
         frame_helplist = Frame(frame_help)
@@ -1943,6 +1961,7 @@ class GenPage(Frame):
         # Body.
         frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        frame_shell.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
         frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
@@ -1983,6 +2002,11 @@ class GenPage(Frame):
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.context_int.pack(side=TOP, padx=5, pady=5)
 
+        # frame_auto_squeeze_min_lines
+        frame_auto_squeeze_min_lines.pack(side=TOP, padx=5, pady=0, fill=X)
+        auto_squeeze_min_lines_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.auto_squeeze_min_lines_int.pack(side=TOP, padx=5, pady=5)
+
         # frame_help.
         frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
@@ -2017,6 +2041,10 @@ class GenPage(Frame):
                 'extensions', 'FormatParagraph', 'max-width', type='int'))
         self.context_lines.set(idleConf.GetOption(
                 'extensions', 'CodeContext', 'maxlines', type='int'))
+
+        # Set variables for shell windows.
+        self.auto_squeeze_min_lines.set(idleConf.GetOption(
+                'main', 'PyShell', 'auto-squeeze-min-lines', type='int'))
 
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
@@ -2197,7 +2225,7 @@ key set, with a different name.
      'General': '''
 General:
 
-AutoComplete: Popupwait is milleseconds to wait after key char, without
+AutoComplete: Popupwait is milliseconds to wait after key char, without
 cursor movement, before popping up completion box.  Key char is '.' after
 identifier or a '/' (or '\\' on Windows) within a string.
 
@@ -2211,6 +2239,9 @@ long to highlight if cursor is not moved (0 means forever).
 
 CodeContext: Maxlines is the maximum number of code context lines to
 display when Code Context is turned on for an editor window.
+
+Shell Preferences: Auto-Squeeze Min. Lines is the minimum number of lines
+of output to automatically "squeeze".
 '''
 }
 

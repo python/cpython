@@ -568,8 +568,8 @@ class Barrier:
     """Implements a Barrier.
 
     Useful for synchronizing a fixed number of threads at known synchronization
-    points.  Threads block on 'wait()' and are simultaneously once they have all
-    made that call.
+    points.  Threads block on 'wait()' and are simultaneously awoken once they
+    have all made that call.
 
     """
 
@@ -578,7 +578,7 @@ class Barrier:
 
         'action' is a callable which, when supplied, will be called by one of
         the threads after they have all entered the barrier and just prior to
-        releasing them all. If a 'timeout' is provided, it is uses as the
+        releasing them all. If a 'timeout' is provided, it is used as the
         default for all subsequent 'wait()' calls.
 
         """
@@ -1007,7 +1007,7 @@ class Thread:
         When the timeout argument is present and not None, it should be a
         floating point number specifying a timeout for the operation in seconds
         (or fractions thereof). As join() always returns None, you must call
-        isAlive() after join() to decide whether a timeout happened -- if the
+        is_alive() after join() to decide whether a timeout happened -- if the
         thread is still alive, the join() call timed out.
 
         When the timeout argument is not present or None, the operation will
@@ -1091,7 +1091,15 @@ class Thread:
         self._wait_for_tstate_lock(False)
         return not self._is_stopped
 
-    isAlive = is_alive
+    def isAlive(self):
+        """Return whether the thread is alive.
+
+        This method is deprecated, use is_alive() instead.
+        """
+        import warnings
+        warnings.warn('isAlive() is deprecated, use is_alive() instead',
+                      DeprecationWarning, stacklevel=2)
+        return self.is_alive()
 
     @property
     def daemon(self):

@@ -43,14 +43,20 @@ def _make_relax_case():
     return _relax_case
 
 
-def _w_long(x):
+def _pack_uint32(x):
     """Convert a 32-bit integer to little-endian."""
     return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
 
 
-def _r_long(int_bytes):
+def _unpack_uint32(data):
     """Convert 4 bytes in little-endian to an integer."""
-    return int.from_bytes(int_bytes, 'little')
+    assert len(data) == 4
+    return int.from_bytes(data, 'little')
+
+def _unpack_uint16(data):
+    """Convert 2 bytes in little-endian to an integer."""
+    assert len(data) == 2
+    return int.from_bytes(data, 'little')
 
 
 def _path_join(*path_parts):
@@ -259,6 +265,7 @@ _code_type = type(_write_atomic.__code__)
 #                         this might affected the first line number #32911)
 #     Python 3.8a1  3400 (move frame block handling to compiler #17611)
 #     Python 3.8a1  3401 (add END_ASYNC_FOR #33041)
+#     Python 3.8a1  3410 (PEP570 Python Positional-Only Parameters #36540)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -267,7 +274,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3401).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3410).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -503,7 +510,7 @@ def _classify_pyc(data, name, exc_details):
         message = f'reached EOF while reading pyc header of {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise EOFError(message)
-    flags = _r_long(data[4:8])
+    flags = _unpack_uint32(data[4:8])
     # Only the first two flags are defined.
     if flags & ~0b11:
         message = f'invalid flags {flags!r} in {name!r}'
@@ -530,12 +537,12 @@ def _validate_timestamp_pyc(data, source_mtime, source_size, name,
     An ImportError is raised if the bytecode is stale.
 
     """
-    if _r_long(data[8:12]) != (source_mtime & 0xFFFFFFFF):
+    if _unpack_uint32(data[8:12]) != (source_mtime & 0xFFFFFFFF):
         message = f'bytecode is stale for {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
     if (source_size is not None and
-        _r_long(data[12:16]) != (source_size & 0xFFFFFFFF)):
+        _unpack_uint32(data[12:16]) != (source_size & 0xFFFFFFFF)):
         raise ImportError(f'bytecode is stale for {name!r}', **exc_details)
 
 
@@ -579,9 +586,9 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
 def _code_to_timestamp_pyc(code, mtime=0, source_size=0):
     "Produce the data for a timestamp-based pyc."
     data = bytearray(MAGIC_NUMBER)
-    data.extend(_w_long(0))
-    data.extend(_w_long(mtime))
-    data.extend(_w_long(source_size))
+    data.extend(_pack_uint32(0))
+    data.extend(_pack_uint32(mtime))
+    data.extend(_pack_uint32(source_size))
     data.extend(marshal.dumps(code))
     return data
 
@@ -590,7 +597,7 @@ def _code_to_hash_pyc(code, source_hash, checked=True):
     "Produce the data for a hash-based pyc."
     data = bytearray(MAGIC_NUMBER)
     flags = 0b1 | checked << 1
-    data.extend(_w_long(flags))
+    data.extend(_pack_uint32(flags))
     assert len(source_hash) == 8
     data.extend(source_hash)
     data.extend(marshal.dumps(code))
@@ -779,15 +786,16 @@ class SourceLoader(_LoaderBasics):
 
     def path_mtime(self, path):
         """Optional method that returns the modification time (an int) for the
-        specified path, where path is a str.
+        specified path (a str).
 
         Raises OSError when the path cannot be handled.
         """
         raise OSError
 
     def path_stats(self, path):
-        """Optional method returning a metadata dict for the specified path
-        to by the path (str).
+        """Optional method returning a metadata dict for the specified
+        path (a str).
+
         Possible keys:
         - 'mtime' (mandatory) is the numeric timestamp of last source
           code modification;
@@ -913,7 +921,6 @@ class SourceLoader(_LoaderBasics):
                                               len(source_bytes))
             try:
                 self._cache_bytecode(source_path, bytecode_path, data)
-                _bootstrap._verbose_message('wrote {!r}', bytecode_path)
             except NotImplementedError:
                 pass
         return code_object
@@ -1156,6 +1163,9 @@ class _NamespacePath:
 
     def __iter__(self):
         return iter(self._recalculate())
+
+    def __getitem__(self, index):
+        return self._recalculate()[index]
 
     def __setitem__(self, index, path):
         self._path[index] = path

@@ -1175,7 +1175,7 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"enable",
-     (PyCFunction)faulthandler_py_enable, METH_VARARGS|METH_KEYWORDS,
+     (PyCFunction)(void(*)(void))faulthandler_py_enable, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("enable(file=sys.stderr, all_threads=True): "
                "enable the fault handler")},
     {"disable", faulthandler_disable_py, METH_NOARGS,
@@ -1183,13 +1183,13 @@ static PyMethodDef module_methods[] = {
     {"is_enabled", faulthandler_is_enabled, METH_NOARGS,
      PyDoc_STR("is_enabled()->bool: check if the handler is enabled")},
     {"dump_traceback",
-     (PyCFunction)faulthandler_dump_traceback_py, METH_VARARGS|METH_KEYWORDS,
+     (PyCFunction)(void(*)(void))faulthandler_dump_traceback_py, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback(file=sys.stderr, all_threads=True): "
                "dump the traceback of the current thread, or of all threads "
                "if all_threads is True, into file")},
 #ifdef FAULTHANDLER_LATER
     {"dump_traceback_later",
-     (PyCFunction)faulthandler_dump_traceback_later, METH_VARARGS|METH_KEYWORDS,
+     (PyCFunction)(void(*)(void))faulthandler_dump_traceback_later, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback_later(timeout, repeat=False, file=sys.stderrn, exit=False):\n"
                "dump the traceback of all threads in timeout seconds,\n"
                "or each timeout seconds if repeat is True. If exit is True, "
@@ -1202,13 +1202,13 @@ static PyMethodDef module_methods[] = {
 
 #ifdef FAULTHANDLER_USER
     {"register",
-     (PyCFunction)faulthandler_register_py, METH_VARARGS|METH_KEYWORDS,
+     (PyCFunction)(void(*)(void))faulthandler_register_py, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("register(signum, file=sys.stderr, all_threads=True, chain=False): "
                "register a handler for the signal 'signum': dump the "
                "traceback of the current thread, or of all threads if "
                "all_threads is True, into file")},
     {"unregister",
-     faulthandler_unregister_py, METH_VARARGS|METH_KEYWORDS,
+     (PyCFunction)(void(*)(void))faulthandler_unregister_py, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("unregister(signum): unregister the handler of the signal "
                 "'signum' registered by register()")},
 #endif
@@ -1371,6 +1371,7 @@ void _PyFaulthandler_Fini(void)
     if (stack.ss_sp != NULL) {
         /* Fetch the current alt stack */
         stack_t current_stack;
+        memset(&current_stack, 0, sizeof(current_stack));
         if (sigaltstack(NULL, &current_stack) == 0) {
             if (current_stack.ss_sp == stack.ss_sp) {
                 /* The current alt stack is the one that we installed.

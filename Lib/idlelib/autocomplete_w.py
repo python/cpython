@@ -4,7 +4,7 @@ An auto-completion window for IDLE, used by the autocomplete extension
 import platform
 
 from tkinter import *
-from tkinter.ttk import Scrollbar
+from tkinter.ttk import Frame, Scrollbar
 
 from idlelib.autocomplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
 from idlelib.multicall import MC_SHIFT
@@ -189,7 +189,7 @@ class AutoCompleteWindow:
             pass
         self.scrollbar = scrollbar = Scrollbar(acw, orient=VERTICAL)
         self.listbox = listbox = Listbox(acw, yscrollcommand=scrollbar.set,
-                                         exportselection=False, bg="white")
+                                         exportselection=False)
         for item in self.completions:
             listbox.insert(END, item)
         self.origselforeground = listbox.cget("selectforeground")

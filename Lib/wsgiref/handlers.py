@@ -136,6 +136,10 @@ class BaseHandler:
             self.setup_environ()
             self.result = application(self.environ, self.start_response)
             self.finish_response()
+        except (ConnectionAbortedError, BrokenPipeError, ConnectionResetError):
+            # We expect the client to close the connection abruptly from time
+            # to time.
+            return
         except:
             try:
                 self.handle_error()
@@ -233,7 +237,8 @@ class BaseHandler:
             for name, val in headers:
                 name = self._convert_string_type(name, "Header name")
                 val = self._convert_string_type(val, "Header value")
-                assert not is_hop_by_hop(name),"Hop-by-hop headers not allowed"
+                assert not is_hop_by_hop(name),\
+                       f"Hop-by-hop header, '{name}: {val}', not allowed"
 
         return self.write
 

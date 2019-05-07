@@ -132,7 +132,7 @@ get_dialect_from_registry(PyObject * name_obj)
 {
     PyObject *dialect_obj;
 
-    dialect_obj = PyDict_GetItem(_csvstate_global->dialects, name_obj);
+    dialect_obj = PyDict_GetItemWithError(_csvstate_global->dialects, name_obj);
     if (dialect_obj == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
@@ -160,31 +160,31 @@ get_nullchar_as_None(Py_UCS4 c)
 }
 
 static PyObject *
-Dialect_get_lineterminator(DialectObj *self)
+Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_string(self->lineterminator);
 }
 
 static PyObject *
-Dialect_get_delimiter(DialectObj *self)
+Dialect_get_delimiter(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->delimiter);
 }
 
 static PyObject *
-Dialect_get_escapechar(DialectObj *self)
+Dialect_get_escapechar(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->escapechar);
 }
 
 static PyObject *
-Dialect_get_quotechar(DialectObj *self)
+Dialect_get_quotechar(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->quotechar);
 }
 
 static PyObject *
-Dialect_get_quoting(DialectObj *self)
+Dialect_get_quoting(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(self->quoting);
 }
@@ -1434,8 +1434,12 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 static PyObject *
 csv_unregister_dialect(PyObject *module, PyObject *name_obj)
 {
-    if (PyDict_DelItem(_csvstate_global->dialects, name_obj) < 0)
-        return PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
+    if (PyDict_DelItem(_csvstate_global->dialects, name_obj) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
+        }
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1583,13 +1587,13 @@ PyDoc_STRVAR(csv_field_size_limit_doc,
 "the old limit is returned");
 
 static struct PyMethodDef csv_methods[] = {
-    { "reader", (PyCFunction)csv_reader,
+    { "reader", (PyCFunction)(void(*)(void))csv_reader,
         METH_VARARGS | METH_KEYWORDS, csv_reader_doc},
-    { "writer", (PyCFunction)csv_writer,
+    { "writer", (PyCFunction)(void(*)(void))csv_writer,
         METH_VARARGS | METH_KEYWORDS, csv_writer_doc},
     { "list_dialects", (PyCFunction)csv_list_dialects,
         METH_NOARGS, csv_list_dialects_doc},
-    { "register_dialect", (PyCFunction)csv_register_dialect,
+    { "register_dialect", (PyCFunction)(void(*)(void))csv_register_dialect,
         METH_VARARGS | METH_KEYWORDS, csv_register_dialect_doc},
     { "unregister_dialect", (PyCFunction)csv_unregister_dialect,
         METH_O, csv_unregister_dialect_doc},

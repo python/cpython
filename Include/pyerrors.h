@@ -4,82 +4,10 @@
 extern "C" {
 #endif
 
-/* Error objects */
-
-#ifndef Py_LIMITED_API
-/* PyException_HEAD defines the initial segment of every exception class. */
-#define PyException_HEAD PyObject_HEAD PyObject *dict;\
-             PyObject *args; PyObject *traceback;\
-             PyObject *context; PyObject *cause;\
-             char suppress_context;
-
-typedef struct {
-    PyException_HEAD
-} PyBaseExceptionObject;
-
-typedef struct {
-    PyException_HEAD
-    PyObject *msg;
-    PyObject *filename;
-    PyObject *lineno;
-    PyObject *offset;
-    PyObject *text;
-    PyObject *print_file_and_line;
-} PySyntaxErrorObject;
-
-typedef struct {
-    PyException_HEAD
-    PyObject *msg;
-    PyObject *name;
-    PyObject *path;
-} PyImportErrorObject;
-
-typedef struct {
-    PyException_HEAD
-    PyObject *encoding;
-    PyObject *object;
-    Py_ssize_t start;
-    Py_ssize_t end;
-    PyObject *reason;
-} PyUnicodeErrorObject;
-
-typedef struct {
-    PyException_HEAD
-    PyObject *code;
-} PySystemExitObject;
-
-typedef struct {
-    PyException_HEAD
-    PyObject *myerrno;
-    PyObject *strerror;
-    PyObject *filename;
-    PyObject *filename2;
-#ifdef MS_WINDOWS
-    PyObject *winerror;
-#endif
-    Py_ssize_t written;   /* only for BlockingIOError, -1 otherwise */
-} PyOSErrorObject;
-
-typedef struct {
-    PyException_HEAD
-    PyObject *value;
-} PyStopIterationObject;
-
-/* Compatibility typedefs */
-typedef PyOSErrorObject PyEnvironmentErrorObject;
-#ifdef MS_WINDOWS
-typedef PyOSErrorObject PyWindowsErrorObject;
-#endif
-#endif /* !Py_LIMITED_API */
-
 /* Error handling definitions */
 
 PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
 PyAPI_FUNC(void) PyErr_SetObject(PyObject *, PyObject *);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
-_PyErr_StackItem *_PyErr_GetTopmostException(PyThreadState *tstate);
-#endif
 PyAPI_FUNC(void) PyErr_SetString(
     PyObject *exception,
     const char *string   /* decoded from utf-8 */
@@ -91,17 +19,6 @@ PyAPI_FUNC(void) PyErr_Restore(PyObject *, PyObject *, PyObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(void) PyErr_GetExcInfo(PyObject **, PyObject **, PyObject **);
 PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
-#endif
-
-#if defined(__clang__) || \
-    (defined(__GNUC_MAJOR__) && \
-     ((__GNUC_MAJOR__ >= 3) || \
-      (__GNUC_MAJOR__ == 2) && (__GNUC_MINOR__ >= 5)))
-#  define _Py_NO_RETURN __attribute__((__noreturn__))
-#elif defined(_MSC_VER)
-#  define _Py_NO_RETURN __declspec(noreturn)
-#else
-#  define _Py_NO_RETURN
 #endif
 
 /* Defined in Python/pylifecycle.c */
@@ -129,9 +46,6 @@ PyAPI_FUNC(void) PyException_SetCause(PyObject *, PyObject *);
 /* Context manipulation (PEP 3134) */
 PyAPI_FUNC(PyObject *) PyException_GetContext(PyObject *);
 PyAPI_FUNC(void) PyException_SetContext(PyObject *, PyObject *);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
-#endif
 
 /* */
 
@@ -143,9 +57,6 @@ PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
     PyType_FastSubclass((x)->ob_type, Py_TPFLAGS_BASE_EXC_SUBCLASS)
 
 PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
-#ifndef Py_LIMITED_API
-#define PyExceptionClass_Name(x)  (((PyTypeObject*)(x))->tp_name)
-#endif
 
 #define PyExceptionInstance_Class(x) ((PyObject*)((x)->ob_type))
 
@@ -186,6 +97,7 @@ PyAPI_DATA(PyObject *) PyExc_NotImplementedError;
 PyAPI_DATA(PyObject *) PyExc_SyntaxError;
 PyAPI_DATA(PyObject *) PyExc_IndentationError;
 PyAPI_DATA(PyObject *) PyExc_TabError;
+PyAPI_DATA(PyObject *) PyExc_TargetScopeError;
 PyAPI_DATA(PyObject *) PyExc_ReferenceError;
 PyAPI_DATA(PyObject *) PyExc_SystemError;
 PyAPI_DATA(PyObject *) PyExc_SystemExit;
@@ -253,10 +165,6 @@ PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilename(
     PyObject *exc,
     const char *filename   /* decoded from the filesystem encoding */
     );
-#if defined(MS_WINDOWS) && !defined(Py_LIMITED_API)
-PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilename(
-    PyObject *, const Py_UNICODE *) Py_DEPRECATED(3.3);
-#endif /* MS_WINDOWS */
 
 PyAPI_FUNC(PyObject *) PyErr_Format(
     PyObject *exception,
@@ -270,27 +178,11 @@ PyAPI_FUNC(PyObject *) PyErr_FormatV(
     va_list vargs);
 #endif
 
-#ifndef Py_LIMITED_API
-/* Like PyErr_Format(), but saves current exception as __context__ and
-   __cause__.
- */
-PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
-    PyObject *exception,
-    const char *format,   /* ASCII-encoded string  */
-    ...
-    );
-#endif
-
 #ifdef MS_WINDOWS
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithFilename(
     int ierr,
     const char *filename        /* decoded from the filesystem encoding */
     );
-#ifndef Py_LIMITED_API
-/* XXX redeclare to use WSTRING */
-PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErrWithUnicodeFilename(
-    int, const Py_UNICODE *) Py_DEPRECATED(3.3);
-#endif
 PyAPI_FUNC(PyObject *) PyErr_SetFromWindowsErr(int);
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilenameObject(
     PyObject *,int, PyObject *);
@@ -303,10 +195,6 @@ PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithFilename(
     int ierr,
     const char *filename        /* decoded from the filesystem encoding */
     );
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErrWithUnicodeFilename(
-    PyObject *,int, const Py_UNICODE *) Py_DEPRECATED(3.3);
-#endif
 PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErr(PyObject *, int);
 #endif /* MS_WINDOWS */
 
@@ -333,36 +221,10 @@ PyAPI_FUNC(PyObject *) PyErr_NewExceptionWithDoc(
     const char *name, const char *doc, PyObject *base, PyObject *dict);
 PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 
-/* In exceptions.c */
-#ifndef Py_LIMITED_API
-/* Helper that attempts to replace the current exception with one of the
- * same type but with a prefix added to the exception text. The resulting
- * exception description looks like:
- *
- *     prefix (exc_type: original_exc_str)
- *
- * Only some exceptions can be safely replaced. If the function determines
- * it isn't safe to perform the replacement, it will leave the original
- * unmodified exception in place.
- *
- * Returns a borrowed reference to the new exception (if any), NULL if the
- * existing exception was left in place.
- */
-PyAPI_FUNC(PyObject *) _PyErr_TrySetFromCause(
-    const char *prefix_format,   /* ASCII-encoded string  */
-    ...
-    );
-#endif
-
 
 /* In signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
-
-/* In signalmodule.c */
-#ifndef Py_LIMITED_API
-int PySignal_SetWakeupFd(int fd);
-#endif
 
 /* Support for adding program text to SyntaxErrors */
 PyAPI_FUNC(void) PyErr_SyntaxLocation(
@@ -372,20 +234,9 @@ PyAPI_FUNC(void) PyErr_SyntaxLocationEx(
     const char *filename,       /* decoded from the filesystem encoding */
     int lineno,
     int col_offset);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) PyErr_SyntaxLocationObject(
-    PyObject *filename,
-    int lineno,
-    int col_offset);
-#endif
 PyAPI_FUNC(PyObject *) PyErr_ProgramText(
     const char *filename,       /* decoded from the filesystem encoding */
     int lineno);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
-    PyObject *filename,
-    int lineno);
-#endif
 
 /* The following functions are used to create and modify unicode
    exceptions from C */
@@ -399,35 +250,6 @@ PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_Create(
     Py_ssize_t end,
     const char *reason          /* UTF-8 encoded string */
     );
-
-/* create a UnicodeEncodeError object */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
-    const char *encoding,       /* UTF-8 encoded string */
-    const Py_UNICODE *object,
-    Py_ssize_t length,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    ) Py_DEPRECATED(3.3);
-#endif
-
-/* create a UnicodeTranslateError object */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
-    const Py_UNICODE *object,
-    Py_ssize_t length,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    ) Py_DEPRECATED(3.3);
-PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
-    PyObject *object,
-    Py_ssize_t start,
-    Py_ssize_t end,
-    const char *reason          /* UTF-8 encoded string */
-    );
-#endif
 
 /* get the encoding attribute */
 PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetEncoding(PyObject *);
@@ -501,6 +323,12 @@ PyAPI_FUNC(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...)
                         Py_GCC_ATTRIBUTE((format(printf, 3, 4)));
 PyAPI_FUNC(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
                         Py_GCC_ATTRIBUTE((format(printf, 3, 0)));
+
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_ERRORS_H
+#  include  "cpython/pyerrors.h"
+#  undef Py_CPYTHON_ERRORS_H
+#endif
 
 #ifdef __cplusplus
 }
