@@ -1092,7 +1092,6 @@ class FutureTests(BaseTestCase):
             f.set_result(5)
             f.add_done_callback(raising_fn)
 
-            # Verify the callback exception was caught
             self.assertIn('exception calling callback for', stderr.getvalue())
             self.assertIn('doh!', stderr.getvalue())
 
