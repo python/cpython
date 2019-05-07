@@ -533,9 +533,10 @@ class StartupImportTests(unittest.TestCase):
 
         # http://bugs.python.org/issue9548
         self.assertNotIn('locale', modules, stderr)
-        if sys.platform != 'darwin':
-            # http://bugs.python.org/issue19209
-            self.assertNotIn('copyreg', modules, stderr)
+
+        # http://bugs.python.org/issue19209
+        self.assertNotIn('copyreg', modules, stderr)
+
         if sys.platform == 'win32' and  locale.getpreferredencoding() == 'cp65001':
             # https://bugs.python.org/issue36778
             # If the default ansi codepage on Windows is 65001 (CP_UTF8)
