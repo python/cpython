@@ -961,7 +961,7 @@ class BaseTest:
         self.checkraises(TypeError, 'abc', 'splitlines', 42, 42)
 
 
-class CommonTest(BaseTest):
+class StringLikeTest(BaseTest):
     # This testcase contains tests that can be used in all
     # stringlike classes. Currently this is str and UserString.
 

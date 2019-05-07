@@ -7,7 +7,7 @@ from test import string_tests
 from collections import UserString
 
 class UserStringTest(
-    string_tests.CommonTest,
+    string_tests.StringLikeTest,
     unittest.TestCase
     ):
 
