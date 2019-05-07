@@ -54,9 +54,6 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
             return NULL;
         }
     }
-    if (_PyInterpreterState_IDInitref(interp) != 0) {
-        return NULL;
-    };
     interpid *self = PyObject_New(interpid, cls);
     if (self == NULL) {
         return NULL;
@@ -64,6 +61,9 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
     self->id = id;
 
     if (interp != NULL) {
+        if (_PyInterpreterState_IDInitref(interp) != 0) {
+            return NULL;
+        }
         _PyInterpreterState_IDIncref(interp);
     }
     return self;
