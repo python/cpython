@@ -5138,6 +5138,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                     *str += 1;
                     continue;
                 }
+                /* Don't get out of the loop for these, if they're single
+                   chars (not part of 2-char tokens). If by themselves, they
+                   don't end an expression (unlike say '!'). */
+                if (ch == '>' || ch == '<') {
+                    continue;
+                }
             }
 
             /* Normal way out of this loop. */
