@@ -20,6 +20,7 @@ import warnings
 from contextlib import ExitStack
 from inspect import CO_COROUTINE
 from textwrap import dedent
+from types import AsyncGeneratorType
 from operator import neg
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink)
@@ -371,8 +372,10 @@ class BuiltinTest(unittest.TestCase):
                 with self.assertRaises(SyntaxError,
                                   msg='source={!r} mode={!r})'.format(source, mode)):
                     compile(source, '?' , mode)
+
                 co = compile(source, '?', mode, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
-                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE, msg='source={!r} mode={!r})'.format(source, mode))
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                 msg='source={!r} mode={!r})'.format(source, mode))
 
     def test_compile_async_generator(self):
         co = compile(dedent("""async def ticker():
@@ -381,9 +384,6 @@ class BuiltinTest(unittest.TestCase):
                     await asyncio.sleep(0)"""), '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
         glob = {}
         exec(co, glob)
-
-        from types import AsyncGeneratorType
-
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
 
