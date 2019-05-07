@@ -3054,7 +3054,7 @@ sock_bind(PySocketSockObject *s, PyObject *addro)
         return NULL;
     }
 
-    if (PySys_Audit("socket.bind", "(O)", addro) < 0) {
+    if (PySys_Audit("socket.bind", "OO", s, addro) < 0) {
         return NULL;
     }
 
@@ -3224,7 +3224,7 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
         return NULL;
     }
 
-    if (PySys_Audit("socket.connect", "(O)", addro) < 0) {
+    if (PySys_Audit("socket.connect", "OO", s, addro) < 0) {
         return NULL;
     }
 
@@ -3255,7 +3255,7 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
         return NULL;
     }
 
-    if (PySys_Audit("socket.connect", "(O)", addro) < 0) {
+    if (PySys_Audit("socket.connect", "OO", s, addro) < 0) {
         return NULL;
     }
 
@@ -4261,7 +4261,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
         return NULL;
     }
 
-    if (PySys_Audit("socket.sendto", "(O)", addro) < 0) {
+    if (PySys_Audit("socket.sendto", "OO", s, addro) < 0) {
         return NULL;
     }
 
@@ -4396,7 +4396,7 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
         {
             goto finally;
         }
-        if (PySys_Audit("socket.sendmsg", "(O)", addr_arg) < 0) {
+        if (PySys_Audit("socket.sendmsg", "OO", s, addr_arg) < 0) {
             return NULL;
         }
         msg.msg_name = &addrbuf;
