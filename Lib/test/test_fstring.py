@@ -1093,6 +1093,20 @@ non-important content
 3
 =}''', '\n3\n=3')
 
+        # Since = is handled specially, make sure all existing uses of
+        # it stil work.
+
+        self.assertEqual(f'{0==1}', 'False')
+        self.assertEqual(f'{0!=1}', 'True')
+        self.assertEqual(f'{0<=1}', 'True')
+        self.assertEqual(f'{0>=1}', 'False')
+        self.assertEqual(f'{(x:="5")}', '5')
+        self.assertEqual(x, '5')
+        self.assertEqual(f'{(x:=5)}', '5')
+        self.assertEqual(x, 5)
+        self.assertEqual(f'{"="}', '=')
+        x = 20
+        self.assertEqual(f'{x:=10}', '        20')
 
 
 if __name__ == '__main__':

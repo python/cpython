@@ -5121,22 +5121,23 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             ast_error(c, n, "f-string expression part cannot include '#'");
             goto error;
         } else if (nested_depth == 0 &&
-                   (ch == '!' || ch == ':' || ch == '}' || ch == '=')) {
-            /* First, test for the special case of "!=". Since '=' is
-               not an allowed conversion character, nothing is lost in
-               this test. */
-            if (ch == '!' && *str+1 < end && *(*str+1) == '=') {
-                /* This is !=, not a conversion character.  Skip the next char
-                   and continue. */
-                *str += 1;
-                continue;
-            }
-            /* Also, test for '=='. */
-            if (ch == '=' && *str+1 < end && *(*str+1) == '=') {
-                /* This is ==, not an = connversion.  Skip the next char and
-                   continue. */
-                *str += 1;
-                continue;
+                   (ch == '!' || ch == ':' || ch == '}' ||
+                    ch == '=' || ch == '>' || ch == '<')) {
+            /* See if there's a next character. */
+            if (*str+1 < end) {
+                char next = *(*str+1);
+
+                /* First, test for the special case of "!=". Since '=' is not
+                   an allowed conversion character, nothing is lost in this
+                   test. */
+                if ((ch == '!' && next == '=') ||   /* != */
+                    (ch == '=' && next == '=') ||   /* == */
+                    (ch == '<' && next == '=') ||   /* <= */
+                    (ch == '>' && next == '=')      /* >= */
+                    ) {
+                    *str += 1;
+                    continue;
+                }
             }
 
             /* Normal way out of this loop. */
@@ -5192,8 +5193,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         *str += 1;
         equal_conversion = 1;
 
-        /* Skip over whitespace.  No need to test for end of string here,
-           since we know there's at least a } somewhere ahead. */
+        /* Skip over ASCII whitespace.  No need to test for end of string
+           here, since we know there's at least a } somewhere ahead. */
         while (Py_ISSPACE(**str)) {
             *str += 1;
         }
