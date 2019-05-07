@@ -21,6 +21,7 @@ class UserListTest(list_tests.CommonTest):
         l = [0, 1, 2, 3, 4]
         u = UserList(l)
         self.assertIsInstance(u[:], u.__class__)
+        self.assertEqual(u[:],u)
 
     def test_add_specials(self):
         u = UserList("spam")
