@@ -21,7 +21,7 @@ specialty---writing code and creating source distributions---while an
 intermediary species called *packagers* springs up to turn source distributions
 into built distributions for as many platforms as there are packagers.
 
-Of course, the module developer could be his own packager; or the packager could
+Of course, the module developer could be their own packager; or the packager could
 be a volunteer "out there" somewhere who has access to a platform which the
 original developer does not; or it could be software periodically grabbing new
 source distributions and turning them into built distributions for as many
@@ -63,9 +63,9 @@ distribution to generate: for example, ::
 
    python setup.py bdist --format=zip
 
-would, when run on a Unix system, create :file:`Distutils-1.0.{plat}.zip`\
----again, this archive would be unpacked from the root directory to install the
-Distutils.
+would, when run on a Unix system, create
+:file:`Distutils-1.0.{plat}.zip`\ ---again, this archive would be unpacked
+from the root directory to install the Distutils.
 
 The available formats for built distributions are:
 

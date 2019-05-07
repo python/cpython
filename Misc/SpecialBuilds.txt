@@ -1,5 +1,5 @@
 This file describes some special Python build types enabled via compile-time
-preprocessor defines.
+preprocessor directives.
 
 IMPORTANT: if you want to build a debug-enabled Python, it is recommended that
 you use ``./configure --with-pydebug``, rather than the options listed here.
@@ -30,6 +30,8 @@ name "_" holds a reference to the last result displayed!
 Py_REF_DEBUG also checks after every decref to verify that the refcount hasn't
 gone negative, and causes an immediate fatal error if it has.
 
+Py_DEBUG implies Py_REF_DEBUG.
+
 Special gimmicks:
 
 sys.gettotalrefcount()
@@ -38,6 +40,8 @@ sys.gettotalrefcount()
 
 Py_TRACE_REFS
 -------------
+
+Build option: ``./configure --with-trace-refs``.
 
 Turn on heavy reference debugging.  This is major surgery.  Every PyObject grows
 two more pointers, to maintain a doubly-linked list of all live heap-allocated
@@ -48,8 +52,6 @@ has been created.
 
 Note that because the fundamental PyObject layout changes, Python modules
 compiled with Py_TRACE_REFS are incompatible with modules compiled without it.
-
-Py_TRACE_REFS implies Py_REF_DEBUG.
 
 Special gimmicks:
 
@@ -138,7 +140,8 @@ look at the object, you're likely to see that it's entirely filled with 0xDB
 (meaning freed memory is getting used) or 0xCB (meaning uninitialized memory is
 getting used).
 
-Note that PYMALLOC_DEBUG requires WITH_PYMALLOC.
+Note that PYMALLOC_DEBUG requires WITH_PYMALLOC. Py_DEBUG implies
+PYMALLOC_DEBUG (if WITH_PYMALLOC is enabled).
 
 Special gimmicks:
 
@@ -156,7 +159,7 @@ Py_DEBUG
 
 This is what is generally meant by "a debug build" of Python.
 
-Py_DEBUG implies LLTRACE, Py_REF_DEBUG, Py_TRACE_REFS, and PYMALLOC_DEBUG (if
+Py_DEBUG implies LLTRACE, Py_REF_DEBUG, and PYMALLOC_DEBUG (if
 WITH_PYMALLOC is enabled).  In addition, C assert()s are enabled (via the C way:
 by not defining NDEBUG), and some routines do additional sanity checks inside
 "#ifdef Py_DEBUG" blocks.
@@ -218,8 +221,10 @@ Compile in support for Low Level TRACE-ing of the main interpreter loop.
 
 When this preprocessor symbol is defined, before PyEval_EvalFrame executes a
 frame's code it checks the frame's global namespace for a variable
-"__lltrace__".  If such a variable is found, mounds of information about what
+"__ltrace__".  If such a variable is found, mounds of information about what
 the interpreter is doing are sprayed to stdout, such as every opcode and opcode
 argument and values pushed onto and popped off the value stack.
 
 Not useful very often, but very useful when needed.
+
+Py_DEBUG implies LLTRACE.

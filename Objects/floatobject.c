@@ -1923,7 +1923,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)float_hash,                       /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)float_repr,                       /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
@@ -1999,8 +1999,9 @@ _PyFloat_Init(void)
 
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0)
+        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
             return 0;
+        }
     }
     return 1;
 }

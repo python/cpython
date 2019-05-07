@@ -230,6 +230,19 @@ class HashLibTestCase(unittest.TestCase):
                 self.assertIsInstance(h.digest(), bytes)
                 self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
+    def test_digest_length_overflow(self):
+        # See issue #34922
+        large_sizes = (2**29, 2**32-10, 2**32+10, 2**61, 2**64-10, 2**64+10)
+        for cons in self.hash_constructors:
+            h = cons()
+            if h.name not in self.shakes:
+                continue
+            for digest in h.digest, h.hexdigest:
+                self.assertRaises(ValueError, digest, -10)
+                for length in large_sizes:
+                    with self.assertRaises((ValueError, OverflowError)):
+                        digest(length)
+
     def test_name_attribute(self):
         for cons in self.hash_constructors:
             h = cons()
@@ -560,16 +573,20 @@ class HashLibTestCase(unittest.TestCase):
 
         constructor(leaf_size=0)
         constructor(leaf_size=(1<<32)-1)
-        self.assertRaises(OverflowError, constructor, leaf_size=-1)
+        self.assertRaises(ValueError, constructor, leaf_size=-1)
         self.assertRaises(OverflowError, constructor, leaf_size=1<<32)
 
         constructor(node_offset=0)
         constructor(node_offset=max_offset)
-        self.assertRaises(OverflowError, constructor, node_offset=-1)
+        self.assertRaises(ValueError, constructor, node_offset=-1)
         self.assertRaises(OverflowError, constructor, node_offset=max_offset+1)
 
+        self.assertRaises(TypeError, constructor, data=b'')
+        self.assertRaises(TypeError, constructor, string=b'')
+        self.assertRaises(TypeError, constructor, '')
+
         constructor(
-            string=b'',
+            b'',
             key=b'',
             salt=b'',
             person=b'',

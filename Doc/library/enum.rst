@@ -4,10 +4,10 @@
 .. module:: enum
    :synopsis: Implementation of an enumeration class.
 
-.. :moduleauthor:: Ethan Furman <ethan@stoneleaf.us>
-.. :sectionauthor:: Barry Warsaw <barry@python.org>,
-.. :sectionauthor:: Eli Bendersky <eliben@gmail.com>,
-.. :sectionauthor:: Ethan Furman <ethan@stoneleaf.us>
+.. moduleauthor:: Ethan Furman <ethan@stoneleaf.us>
+.. sectionauthor:: Barry Warsaw <barry@python.org>
+.. sectionauthor:: Eli Bendersky <eliben@gmail.com>
+.. sectionauthor:: Ethan Furman <ethan@stoneleaf.us>
 
 .. versionadded:: 3.4
 
@@ -281,7 +281,7 @@ Iterating over the members of an enum does not provide the aliases::
     >>> list(Shape)
     [<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
 
-The special attribute ``__members__`` is an ordered dictionary mapping names
+The special attribute ``__members__`` is a read-only ordered mapping of names
 to members.  It includes all names defined in the enumeration, including the
 aliases::
 
@@ -387,10 +387,17 @@ whatever value(s) were given to the enum member will be passed into those
 methods.  See `Planet`_ for an example.
 
 
-Restricted subclassing of enumerations
---------------------------------------
+Restricted Enum subclassing
+---------------------------
 
-Subclassing an enumeration is allowed only if the enumeration does not define
+A new :class:`Enum` class must have one base Enum class, up to one concrete
+data type, and as many :class:`object`-based mixin classes as needed.  The
+order of these base classes is::
+
+    class EnumName([mix-in, ...,] [data-type,] base-enum):
+        pass
+
+Also, subclassing an enumeration is allowed only if the enumeration does not define
 any members.  So this is forbidden::
 
     >>> class MoreColor(Color):
@@ -736,6 +743,37 @@ Some rules:
    type's :meth:`__format__`.  If the :class:`Enum` class's :func:`str` or
    :func:`repr` is desired, use the `!s` or `!r` format codes.
 
+When to use :meth:`__new__` vs. :meth:`__init__`
+------------------------------------------------
+
+:meth:`__new__` must be used whenever you want to customize the actual value of
+the :class:`Enum` member.  Any other modifications may go in either
+:meth:`__new__` or :meth:`__init__`, with :meth:`__init__` being preferred.
+
+For example, if you want to pass several items to the constructor, but only
+want one of them to be the value::
+
+    >>> class Coordinate(bytes, Enum):
+    ...     """
+    ...     Coordinate with binary codes that can be indexed by the int code.
+    ...     """
+    ...     def __new__(cls, value, label, unit):
+    ...         obj = bytes.__new__(cls, [value])
+    ...         obj._value_ = value
+    ...         obj.label = label
+    ...         obj.unit = unit
+    ...         return obj
+    ...     PX = (0, 'P.X', 'km')
+    ...     PY = (1, 'P.Y', 'km')
+    ...     VX = (2, 'V.X', 'km/s')
+    ...     VY = (3, 'V.Y', 'km/s')
+    ...
+
+    >>> print(Coordinate['PY'])
+    Coordinate.PY
+
+    >>> print(Coordinate(3))
+    Coordinate.VY
 
 Interesting examples
 --------------------
@@ -976,7 +1014,7 @@ Enum Classes
 The :class:`EnumMeta` metaclass is responsible for providing the
 :meth:`__contains__`, :meth:`__dir__`, :meth:`__iter__` and other methods that
 allow one to do things with an :class:`Enum` class that fail on a typical
-class, such as `list(Color)` or `some_var in Color`.  :class:`EnumMeta` is
+class, such as `list(Color)` or `some_enum_var in Color`.  :class:`EnumMeta` is
 responsible for ensuring that various other methods on the final :class:`Enum`
 class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
 :meth:`__str__` and :meth:`__repr__`).
@@ -998,7 +1036,7 @@ Finer Points
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
-:attr:`__members__` is an :class:`OrderedDict` of ``member_name``:``member``
+:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
 :meth:`__new__`, if specified, must create and return the enum members; it is

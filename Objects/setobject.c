@@ -32,7 +32,8 @@
 */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
 
 /* Object used as dummy key to fill deleted entries */
@@ -302,7 +303,6 @@ actually be smaller than the old one.
 static int
 set_table_resize(PySetObject *so, Py_ssize_t minused)
 {
-    Py_ssize_t newsize;
     setentry *oldtable, *newtable, *entry;
     Py_ssize_t oldmask = so->mask;
     size_t newmask;
@@ -313,13 +313,9 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 
     /* Find the smallest table size > minused. */
     /* XXX speed-up with intrinsics */
-    for (newsize = PySet_MINSIZE;
-         newsize <= minused && newsize > 0;
-         newsize <<= 1)
-        ;
-    if (newsize <= 0) {
-        PyErr_NoMemory();
-        return -1;
+    size_t newsize = PySet_MINSIZE;
+    while (newsize <= (size_t)minused) {
+        newsize <<= 1; // The largest possible value is PY_SSIZE_T_MAX + 1.
     }
 
     /* Get space for a new table. */
@@ -706,26 +702,24 @@ static PyObject *
 set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     /* Make sure the search finger is in bounds */
-    Py_ssize_t i = so->finger & so->mask;
-    setentry *entry;
+    setentry *entry = so->table + (so->finger & so->mask);
+    setentry *limit = so->table + so->mask;
     PyObject *key;
 
-    assert (PyAnySet_Check(so));
     if (so->used == 0) {
         PyErr_SetString(PyExc_KeyError, "pop from an empty set");
         return NULL;
     }
-
-    while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
-        i++;
-        if (i > so->mask)
-            i = 0;
+    while (entry->key == NULL || entry->key==dummy) {
+        entry++;
+        if (entry > limit)
+            entry = so->table;
     }
     key = entry->key;
     entry->key = dummy;
     entry->hash = -1;
     so->used--;
-    so->finger = i + 1;         /* next place to start */
+    so->finger = entry - so->table + 1;   /* next place to start */
     return key;
 }
 
@@ -848,39 +842,18 @@ static PyObject *setiter_iternext(setiterobject *si);
 static PyObject *
 setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *list;
-    setiterobject tmp;
-
-    list = PyList_New(0);
-    if (!list)
-        return NULL;
-
+    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
-    tmp = *si;
+    setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
 
     /* iterate the temporary into a list */
-    for(;;) {
-        PyObject *element = setiter_iternext(&tmp);
-        if (element) {
-            if (PyList_Append(list, element)) {
-                Py_DECREF(element);
-                Py_DECREF(list);
-                Py_XDECREF(tmp.si_set);
-                return NULL;
-            }
-            Py_DECREF(element);
-        } else
-            break;
-    }
+    PyObject *list = PySequence_List((PyObject*)&tmp);
     Py_XDECREF(tmp.si_set);
-    /* check for error */
-    if (tmp.si_set != NULL) {
-        /* we have an error */
-        Py_DECREF(list);
+    if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");

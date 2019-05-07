@@ -224,7 +224,7 @@ class HyperParser:
         given index, which is empty if there is no real one.
         """
         if not self.is_in_code():
-            raise ValueError("get_expression should only be called"
+            raise ValueError("get_expression should only be called "
                              "if index is inside a code.")
 
         rawtext = self.rawtext
@@ -308,5 +308,5 @@ class HyperParser:
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_hyperparser', verbosity=2)
+    from unittest import main
+    main('idlelib.idle_test.test_hyperparser', verbosity=2)
