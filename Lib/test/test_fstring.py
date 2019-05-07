@@ -1105,7 +1105,10 @@ non-important content
         self.assertEqual(f'{(x:=5)}', '5')
         self.assertEqual(x, 5)
         self.assertEqual(f'{"="}', '=')
+
         x = 20
+        # This isn't an assignment expression, it's 'x', with a format
+        # spec of '=10'.
         self.assertEqual(f'{x:=10}', '        20')
 
 
