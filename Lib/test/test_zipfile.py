@@ -2396,6 +2396,9 @@ class CommandLineTest(unittest.TestCase):
 
 
 consume = tuple
+"""
+Poor man's technique to consume a (smallish) iterable.
+"""
 
 
 def add_dirs(zipfile):

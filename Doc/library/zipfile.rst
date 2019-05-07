@@ -476,6 +476,10 @@ Path Objects
    :class:`ZipFile` instance or ``file`` suitable for passing to
    the :class:`ZipFile` constructor).
 
+   ``at`` specifies the location of this Path within the zipfile,
+   e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
+   indicating the root.
+
 Path objects expose the following features of :module:`pathlib.Path`
 objects:
 
@@ -498,15 +502,15 @@ objects:
 
 .. method:: Path.is_dir()
 
-   Return True if the current context references a directory.
+   Return ``True`` if the current context references a directory.
 
 .. method:: Path.is_file()
 
-   Return True if the current context references a file.
+   Return ``True`` if the current context references a file.
 
 .. method:: Path.exists()
 
-   Return True if the current context references a file or
+   Return ``True`` if the current context references a file or
    directory in the zip file.
 
 .. method:: Path.read_text(*, **)
