@@ -2435,15 +2435,6 @@ def build_abcde_files():
     return zf
 
 
-@contextlib.contextmanager
-def tempdir():
-    tmpdir = tempfile.mkdtemp()
-    try:
-        yield pathlib.Path(tmpdir)
-    finally:
-        shutil.rmtree(tmpdir)
-
-
 class TestPath(unittest.TestCase):
     def setUp(self):
         self.fixtures = contextlib.ExitStack()
@@ -2456,7 +2447,7 @@ class TestPath(unittest.TestCase):
             yield add_dirs(build_abcde_files())
 
     def zipfile_ondisk(self):
-        tmpdir = self.fixtures.enter_context(tempdir())
+        tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
         for zipfile_abcde in self.zipfile_abcde():
             buffer = zipfile_abcde.fp
             zipfile_abcde.close()
