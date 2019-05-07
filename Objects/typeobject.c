@@ -78,6 +78,9 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
 clear_slotdefs(void);
 
+static PyObject *
+lookup_method(PyObject *self, _Py_Identifier *attrid, int *unbound);
+
 /*
  * finds the beginning of the docstring's introspection signature.
  * if present, returns a pointer pointing to the first '('.
@@ -300,9 +303,11 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
         return;
 
     if (custom) {
+        _Py_IDENTIFIER(mro);
+        int unbound;
         PyObject *mro_meth = lookup_method((PyObject *)type, &PyId_mro,
                                            &unbound);
-        PyObject *type_mro_meth = lookup_method(&PyType_Type, &PyId_mro,
+        PyObject *type_mro_meth = lookup_method((PyObject *)&PyType_Type, &PyId_mro,
                                            &unbound);
         if (mro_meth == NULL || type_mro_meth == NULL ||
             mro_meth != type_mro_meth)
