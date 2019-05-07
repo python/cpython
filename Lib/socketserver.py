@@ -230,6 +230,9 @@ class BaseServer:
 
                 while not self.__shutdown_request:
                     ready = selector.select(poll_interval)
+                    # bpo-35017: shutdown() called during select(), exit immediately.
+                    if self.__shutdown_request:
+                        break
                     if ready:
                         self._handle_request_noblock()
 
@@ -591,7 +594,7 @@ if hasattr(os, "fork"):
         def service_actions(self):
             """Collect the zombie child processes regularly in the ForkingMixIn.
 
-            service_actions is called in the BaseServer's serve_forver loop.
+            service_actions is called in the BaseServer's serve_forever loop.
             """
             self.collect_children()
 

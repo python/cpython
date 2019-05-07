@@ -23,6 +23,9 @@ from . import util
 
 __all__ = ['ensure_running', 'register', 'unregister']
 
+_HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
+_IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
+
 
 class SemaphoreTracker(object):
 
@@ -41,14 +44,23 @@ class SemaphoreTracker(object):
         This can be run from any process.  Usually a child process will use
         the semaphore created by its parent.'''
         with self._lock:
-            if self._pid is not None:
+            if self._fd is not None:
                 # semaphore tracker was launched before, is it still running?
-                pid, status = os.waitpid(self._pid, os.WNOHANG)
-                if not pid:
+                if self._check_alive():
                     # => still alive
                     return
                 # => dead, launch it again
                 os.close(self._fd)
+
+                # Clean-up to avoid dangling processes.
+                try:
+                    # _pid can be None if this process is a child from another
+                    # python process, which has started the semaphore_tracker.
+                    if self._pid is not None:
+                        os.waitpid(self._pid, 0)
+                except ChildProcessError:
+                    # The semaphore_tracker has already been terminated.
+                    pass
                 self._fd = None
                 self._pid = None
 
@@ -68,7 +80,19 @@ class SemaphoreTracker(object):
                 exe = spawn.get_executable()
                 args = [exe] + util._args_from_interpreter_flags()
                 args += ['-c', cmd % r]
-                pid = util.spawnv_passfds(exe, args, fds_to_pass)
+                # bpo-33613: Register a signal mask that will block the signals.
+                # This signal mask will be inherited by the child that is going
+                # to be spawned and will protect the child from a race condition
+                # that can make the child die before it registers signal handlers
+                # for SIGINT and SIGTERM. The mask is unregistered after spawning
+                # the child.
+                try:
+                    if _HAVE_SIGMASK:
+                        signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
+                    pid = util.spawnv_passfds(exe, args, fds_to_pass)
+                finally:
+                    if _HAVE_SIGMASK:
+                        signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
             except:
                 os.close(w)
                 raise
@@ -77,6 +101,17 @@ class SemaphoreTracker(object):
                 self._pid = pid
             finally:
                 os.close(r)
+
+    def _check_alive(self):
+        '''Check that the pipe has not been closed by sending a probe.'''
+        try:
+            # We cannot use send here as it calls ensure_running, creating
+            # a cycle.
+            os.write(self._fd, b'PROBE:0\n')
+        except OSError:
+            return False
+        else:
+            return True
 
     def register(self, name):
         '''Register name of semaphore with semaphore tracker.'''
@@ -104,12 +139,13 @@ register = _semaphore_tracker.register
 unregister = _semaphore_tracker.unregister
 getfd = _semaphore_tracker.getfd
 
-
 def main(fd):
     '''Run semaphore tracker.'''
     # protect the process from ^C and "killall python" etc
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    if _HAVE_SIGMASK:
+        signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
 
     for f in (sys.stdin, sys.stdout):
         try:
@@ -128,6 +164,8 @@ def main(fd):
                         cache.add(name)
                     elif cmd == b'UNREGISTER':
                         cache.remove(name)
+                    elif cmd == b'PROBE':
+                        pass
                     else:
                         raise RuntimeError('unrecognized command %r' % cmd)
                 except Exception:

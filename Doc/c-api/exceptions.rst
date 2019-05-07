@@ -53,8 +53,12 @@ Printing and clearing
 .. c:function:: void PyErr_PrintEx(int set_sys_last_vars)
 
    Print a standard traceback to ``sys.stderr`` and clear the error indicator.
-   Call this function only when the error indicator is set.  (Otherwise it will
-   cause a fatal error!)
+   **Unless** the error is a ``SystemExit``, in that case no traceback is
+   printed and the Python process will exit with the error code specified by
+   the ``SystemExit`` instance.
+
+   Call this function **only** when the error indicator is set.  Otherwise it
+   will cause a fatal error!
 
    If *set_sys_last_vars* is nonzero, the variables :data:`sys.last_type`,
    :data:`sys.last_value` and :data:`sys.last_traceback` will be set to the
@@ -186,34 +190,42 @@ NULL pointer for use in a ``return`` statement.
    then it constructs a tuple object whose first item is the *ierr* value and whose
    second item is the corresponding error message (gotten from
    :c:func:`FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
-   object)``. This function always returns *NULL*. Availability: Windows.
+   object)``. This function always returns *NULL*.
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErr(PyObject *type, int ierr)
 
    Similar to :c:func:`PyErr_SetFromWindowsErr`, with an additional parameter
-   specifying the exception type to be raised. Availability: Windows.
+   specifying the exception type to be raised.
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilename(int ierr, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, but the
    filename is given as a C string.  *filename* is decoded from the filesystem
-   encoding (:func:`os.fsdecode`).  Availability: Windows.
+   encoding (:func:`os.fsdecode`).
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObject(PyObject *type, int ierr, PyObject *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, with an
    additional parameter specifying the exception type to be raised.
-   Availability: Windows.
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObjects(PyObject *type, int ierr, PyObject *filename, PyObject *filename2)
 
    Similar to :c:func:`PyErr_SetExcFromWindowsErrWithFilenameObject`,
    but accepts a second filename object.
-   Availability: Windows.
+
+   .. availability:: Windows.
 
    .. versionadded:: 3.4
 
@@ -221,7 +233,9 @@ NULL pointer for use in a ``return`` statement.
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilename(PyObject *type, int ierr, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromWindowsErrWithFilename`, with an additional
-   parameter specifying the exception type to be raised. Availability: Windows.
+   parameter specifying the exception type to be raised.
+
+   .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
@@ -790,6 +804,7 @@ the variables:
    single: PyExc_SystemError
    single: PyExc_SystemExit
    single: PyExc_TabError
+   single: PyExc_TargetScopeError
    single: PyExc_TimeoutError
    single: PyExc_TypeError
    single: PyExc_UnboundLocalError
@@ -890,6 +905,8 @@ the variables:
 | :c:data:`PyExc_SystemExit`              | :exc:`SystemExit`               |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TabError`                | :exc:`TabError`                 |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_TargetScopeError`        | :exc:`TargetScopeError`         |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TimeoutError`            | :exc:`TimeoutError`             |          |
 +-----------------------------------------+---------------------------------+----------+

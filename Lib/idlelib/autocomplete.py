@@ -3,6 +3,7 @@
 Either on demand or after a user-selected delay after a key character,
 pop up a list of candidates.
 """
+import __main__
 import os
 import string
 import sys
@@ -14,7 +15,6 @@ COMPLETE_ATTRIBUTES, COMPLETE_FILES = range(1, 2+1)
 from idlelib import autocomplete_w
 from idlelib.config import idleConf
 from idlelib.hyperparser import HyperParser
-import __main__
 
 # This string includes all chars that may be in an identifier.
 # TODO Update this here and elsewhere.
@@ -104,9 +104,14 @@ class AutoComplete:
     def open_completions(self, evalfuncs, complete, userWantsWin, mode=None):
         """Find the completions and create the AutoCompleteWindow.
         Return True if successful (no syntax error or so found).
-        if complete is True, then if there's nothing to complete and no
+        If complete is True, then if there's nothing to complete and no
         start of completion, won't open completions and return False.
         If mode is given, will open a completion list only in this mode.
+
+        Action  Function                Eval   Complete WantWin Mode
+        ^space  force_open_completions  True,  False,   True    no
+        . or /  try_open_completions    False, False,   False   yes
+        tab     autocomplete            False, True,    True    no
         """
         # Cancel another delayed call, if it exists.
         if self._delayed_completion_id is not None:
@@ -117,11 +122,11 @@ class AutoComplete:
         curline = self.text.get("insert linestart", "insert")
         i = j = len(curline)
         if hp.is_in_string() and (not mode or mode==COMPLETE_FILES):
-            # Find the beginning of the string
-            # fetch_completions will look at the file system to determine whether the
-            # string value constitutes an actual file name
-            # XXX could consider raw strings here and unescape the string value if it's
-            # not raw.
+            # Find the beginning of the string.
+            # fetch_completions will look at the file system to determine
+            # whether the string value constitutes an actual file name
+            # XXX could consider raw strings here and unescape the string
+            # value if it's not raw.
             self._remove_autocomplete_window()
             mode = COMPLETE_FILES
             # Find last separator or string start
@@ -182,8 +187,8 @@ class AutoComplete:
         else:
             if mode == COMPLETE_ATTRIBUTES:
                 if what == "":
-                    namespace = __main__.__dict__.copy()
-                    namespace.update(__main__.__builtins__.__dict__)
+                    namespace = {**__main__.__builtins__.__dict__,
+                                 **__main__.__dict__}
                     bigl = eval("dir()", namespace)
                     bigl.sort()
                     if "__all__" in bigl:
@@ -218,14 +223,11 @@ class AutoComplete:
             return smalll, bigl
 
     def get_entity(self, name):
-        """Lookup name in a namespace spanning sys.modules and __main.dict__"""
-        namespace = sys.modules.copy()
-        namespace.update(__main__.__dict__)
-        return eval(name, namespace)
+        "Lookup name in a namespace spanning sys.modules and __main.dict__."
+        return eval(name, {**sys.modules, **__main__.__dict__})
 
 
 AutoComplete.reload()
-
 
 if __name__ == '__main__':
     from unittest import main

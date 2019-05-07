@@ -1,16 +1,12 @@
-"""Test idlelib.codecontext.
+"Test codecontext, coverage 100%"
 
-Coverage: 100%
-"""
-
-import re
-
+from idlelib import codecontext
 import unittest
-from unittest import mock
 from test.support import requires
 from tkinter import Tk, Frame, Text, TclError
 
-import idlelib.codecontext as codecontext
+from unittest import mock
+import re
 from idlelib import config
 
 
@@ -44,6 +40,10 @@ class DummyEditwin:
         self.top = root
         self.text_frame = frame
         self.text = text
+        self.label = ''
+
+    def update_menu_label(self, **kwargs):
+        self.label = kwargs['label']
 
 
 class CodeContextTest(unittest.TestCase):
@@ -131,10 +131,12 @@ class CodeContextTest(unittest.TestCase):
         eq(cc.context['fg'], cc.colors['foreground'])
         eq(cc.context['bg'], cc.colors['background'])
         eq(cc.context.get('1.0', 'end-1c'), '')
+        eq(cc.editwin.label, 'Hide Code Context')
 
         # Toggle off.
         eq(toggle(), 'break')
         self.assertIsNone(cc.context)
+        eq(cc.editwin.label, 'Show Code Context')
 
     def test_get_context(self):
         eq = self.assertEqual

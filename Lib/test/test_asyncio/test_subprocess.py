@@ -126,7 +126,7 @@ class SubprocessMixin:
             return (exitcode, data)
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0, loop=self.loop)
+        task = asyncio.wait_for(task, 60.0)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -144,7 +144,7 @@ class SubprocessMixin:
             return proc.returncode, stdout
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0, loop=self.loop)
+        task = asyncio.wait_for(task, 60.0)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -233,7 +233,7 @@ class SubprocessMixin:
         proc, large_data = self.prepare_broken_pipe_test()
 
         async def write_stdin(proc, data):
-            await asyncio.sleep(0.5, loop=self.loop)
+            await asyncio.sleep(0.5)
             proc.stdin.write(data)
             await proc.stdin.drain()
 
@@ -504,11 +504,23 @@ class SubprocessMixin:
             while True:
                 data = await process.stdout.read(65536)
                 if data:
-                    await asyncio.sleep(0.3, loop=self.loop)
+                    await asyncio.sleep(0.3)
                 else:
                     break
 
         self.loop.run_until_complete(execute())
+
+    def test_subprocess_protocol_create_warning(self):
+        with self.assertWarns(DeprecationWarning):
+            subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop)
+
+    def test_process_create_warning(self):
+        proto = subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop,
+                                                    _asyncio_internal=True)
+        transp = mock.Mock()
+
+        with self.assertWarns(DeprecationWarning):
+            subprocess.Process(transp, proto, loop=self.loop)
 
 
 if sys.platform != 'win32':

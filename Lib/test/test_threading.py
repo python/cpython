@@ -415,7 +415,8 @@ class ThreadTests(BaseTestCase):
         t.setDaemon(True)
         t.getName()
         t.setName("name")
-        t.isAlive()
+        with self.assertWarnsRegex(DeprecationWarning, 'use is_alive()'):
+            t.isAlive()
         e = threading.Event()
         e.isSet()
         threading.activeCount()
@@ -546,6 +547,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
 
+    @requires_type_collecting
     def test_main_thread_during_shutdown(self):
         # bpo-31516: current_thread() should still point to the main thread
         # at shutdown
@@ -786,13 +788,11 @@ class ThreadJoinOnShutdown(BaseTestCase):
             def random_io():
                 '''Loop for a while sleeping random tiny amounts and doing some I/O.'''
                 while True:
-                    in_f = open(os.__file__, 'rb')
-                    stuff = in_f.read(200)
-                    null_f = open(os.devnull, 'wb')
-                    null_f.write(stuff)
-                    time.sleep(random.random() / 1995)
-                    null_f.close()
-                    in_f.close()
+                    with open(os.__file__, 'rb') as in_f:
+                        stuff = in_f.read(200)
+                        with open(os.devnull, 'wb') as null_f:
+                            null_f.write(stuff)
+                            time.sleep(random.random() / 1995)
                     thread_has_run.add(threading.current_thread())
 
             def main():

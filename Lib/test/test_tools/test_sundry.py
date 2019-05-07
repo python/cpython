@@ -25,15 +25,25 @@ class TestSundryScripts(unittest.TestCase):
     # scripts that use windows-only modules
     windows_only = ['win_add2path']
     # blacklisted for other reasons
-    other = ['analyze_dxp']
+    other = ['analyze_dxp', '2to3']
 
     skiplist = blacklist + whitelist + windows_only + other
 
     def test_sundry(self):
-        for fn in os.listdir(scriptsdir):
-            name = fn[:-3]
-            if fn.endswith('.py') and name not in self.skiplist:
+        old_modules = support.modules_setup()
+        try:
+            for fn in os.listdir(scriptsdir):
+                if not fn.endswith('.py'):
+                    continue
+
+                name = fn[:-3]
+                if name in self.skiplist:
+                    continue
+
                 import_tool(name)
+        finally:
+            # Unload all modules loaded in this test
+            support.modules_cleanup(*old_modules)
 
     @unittest.skipIf(sys.platform != "win32", "Windows-only test")
     def test_sundry_windows(self):

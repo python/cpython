@@ -66,6 +66,14 @@ Before building the installer, download extra build dependencies using
 Tools\msi\get_externals.bat. (Note that this is in addition to the
 similarly named file in PCbuild.)
 
+One of the dependencies used in builds is WiX, a toolset that lets developers
+create installers for Windows Installer, the Windows installation engine. WiX
+has a dependency on the Microsoft .NET Framework Version 3.5 (which may not be
+configured on recent versions of Windows, such as Windows 10). If you are
+building on a recent Windows version, use the Control Panel (Programs | Programs
+and Features | Turn Windows Features on or off) and ensure that the entry
+".NET Framework 3.5 (includes .NET 2.0 and 3.0)" is enabled.
+
 For testing, the installer should be built with the Tools/msi/build.bat
 script:
 
