@@ -668,10 +668,28 @@ class HandlerTest(BaseTest):
     # register_at_fork mechanism is also present and used.
     @unittest.skipIf(not hasattr(os, 'fork'), 'Test requires os.fork().')
     def test_post_fork_child_no_deadlock(self):
-        """Ensure forked child logging locks are not held; bpo-6721."""
-        refed_h = logging.Handler()
+        """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
+        class _OurHandler(logging.Handler):
+            def __init__(self):
+                super().__init__()
+                self.sub_handler = logging.StreamHandler(
+                    stream=open('/dev/null', 'wt'))
+
+            def emit(self, record):
+                self.sub_handler.acquire()
+                try:
+                    self.sub_handler.emit(record)
+                finally:
+                    self.sub_handler.release()
+
+        self.assertEqual(len(logging._handlers), 0)
+        refed_h = _OurHandler()
         refed_h.name = 'because we need at least one for this test'
         self.assertGreater(len(logging._handlers), 0)
+        self.assertGreater(len(logging._at_fork_reinit_lock_weakset), 1)
+        test_logger = logging.getLogger('test_post_fork_child_no_deadlock')
+        test_logger.addHandler(refed_h)
+        test_logger.setLevel(logging.DEBUG)
 
         locks_held__ready_to_fork = threading.Event()
         fork_happened__release_locks_and_end_thread = threading.Event()
@@ -709,19 +727,24 @@ class HandlerTest(BaseTest):
         locks_held__ready_to_fork.wait()
         pid = os.fork()
         if pid == 0:  # Child.
-            logging.error(r'Child process did not deadlock. \o/')
-            os._exit(0)
+            try:
+                test_logger.info(r'Child process did not deadlock. \o/')
+            finally:
+                os._exit(0)
         else:  # Parent.
+            test_logger.info(r'Parent process returned from fork. \o/')
             fork_happened__release_locks_and_end_thread.set()
             lock_holder_thread.join()
             start_time = time.monotonic()
             while True:
+                test_logger.debug('Waiting for child process.')
                 waited_pid, status = os.waitpid(pid, os.WNOHANG)
                 if waited_pid == pid:
                     break  # child process exited.
                 if time.monotonic() - start_time > 7:
                     break  # so long? implies child deadlock.
                 time.sleep(0.05)
+            test_logger.debug('Done waiting.')
             if waited_pid != pid:
                 os.kill(pid, signal.SIGKILL)
                 waited_pid, status = os.waitpid(pid, 0)
