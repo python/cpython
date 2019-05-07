@@ -671,9 +671,6 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
         case 's':
             conversion = "!s";
             break;
-        case 'f':
-            conversion = "!f";
-            break;
         default:
             PyErr_SetString(PyExc_SystemError,
                             "unknown f-value conversion kind");
