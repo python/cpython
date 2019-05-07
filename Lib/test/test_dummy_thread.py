@@ -117,6 +117,7 @@ class RLockTests(unittest.TestCase):
         self.assertIn("locked", repr(self.rlock))
         self.rlock.release()
         self.assertIn("unlocked", repr(self.rlock))
+        self.assertRaises(RuntimeError, self.rlock.release)
 
 
 class MiscTests(unittest.TestCase):
