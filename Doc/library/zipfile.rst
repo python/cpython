@@ -480,7 +480,7 @@ Path Objects
    e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
    indicating the root.
 
-Path objects expose the following features of :module:`pathlib.Path`
+Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 
 .. attribute:: Path.name
