@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_fileutils.h"
 #include "osdefs.h"
 #include <locale.h>
 
@@ -84,7 +85,7 @@ _Py_device_encoding(int fd)
     Py_RETURN_NONE;
 }
 
-#if !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS)
+#if !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS)
 
 #define USE_FORCE_ASCII
 
@@ -230,6 +231,13 @@ _Py_GetForceASCII(void)
 }
 
 
+void
+_Py_ResetForceASCII(void)
+{
+    force_ascii = -1;
+}
+
+
 static int
 encode_ascii(const wchar_t *text, char **str,
              size_t *error_pos, const char **reason,
@@ -295,7 +303,13 @@ _Py_GetForceASCII(void)
 {
     return 0;
 }
-#endif   /* !defined(__APPLE__) && !defined(__ANDROID__) && !defined(MS_WINDOWS) */
+
+void
+_Py_ResetForceASCII(void)
+{
+    /* nothing to do */
+}
+#endif   /* !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS) */
 
 
 #if !defined(HAVE_MBRTOWC) || defined(USE_FORCE_ASCII)
@@ -522,7 +536,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
                    int current_locale, _Py_error_handler errors)
 {
     if (current_locale) {
-#ifdef __ANDROID__
+#ifdef _Py_FORCE_UTF8_LOCALE
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                                 errors);
 #else
@@ -530,7 +544,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
 #endif
     }
 
-#if defined(__APPLE__) || defined(__ANDROID__)
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             errors);
 #else
@@ -555,7 +569,7 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
 #endif
 
     return decode_current_locale(arg, wstr, wlen, reason, errors);
-#endif   /* __APPLE__ or __ANDROID__ */
+#endif   /* !_Py_FORCE_UTF8_FS_ENCODING */
 }
 
 
@@ -713,7 +727,7 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
                  int raw_malloc, int current_locale, _Py_error_handler errors)
 {
     if (current_locale) {
-#ifdef __ANDROID__
+#ifdef _Py_FORCE_UTF8_LOCALE
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                                 raw_malloc, errors);
 #else
@@ -722,7 +736,7 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
 #endif
     }
 
-#if defined(__APPLE__) || defined(__ANDROID__)
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                             raw_malloc, errors);
 #else
@@ -748,7 +762,7 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
 
     return encode_current_locale(text, str, error_pos, reason,
                                  raw_malloc, errors);
-#endif   /* __APPLE__ or __ANDROID__ */
+#endif   /* _Py_FORCE_UTF8_FS_ENCODING */
 }
 
 static char*
@@ -1471,18 +1485,9 @@ _Py_read(int fd, void *buf, size_t count)
      * handler raised an exception. */
     assert(!PyErr_Occurred());
 
-#ifdef MS_WINDOWS
-    if (count > INT_MAX) {
-        /* On Windows, the count parameter of read() is an int */
-        count = INT_MAX;
+    if (count > _PY_READ_MAX) {
+        count = _PY_READ_MAX;
     }
-#else
-    if (count > PY_SSIZE_T_MAX) {
-        /* if count is greater than PY_SSIZE_T_MAX,
-         * read() result is undefined */
-        count = PY_SSIZE_T_MAX;
-    }
-#endif
 
     _Py_BEGIN_SUPPRESS_IPH
     do {
@@ -1533,15 +1538,10 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
            depending on heap usage). */
         count = 32767;
     }
-    else if (count > INT_MAX)
-        count = INT_MAX;
-#else
-    if (count > PY_SSIZE_T_MAX) {
-        /* write() should truncate count to PY_SSIZE_T_MAX, but it's safer
-         * to do it ourself to have a portable behaviour. */
-        count = PY_SSIZE_T_MAX;
-    }
 #endif
+    if (count > _PY_WRITE_MAX) {
+        count = _PY_WRITE_MAX;
+    }
 
     if (gil_held) {
         do {
@@ -1629,10 +1629,12 @@ _Py_write_noraise(int fd, const void *buf, size_t count)
 #ifdef HAVE_READLINK
 
 /* Read value of symbolic link. Encode the path to the locale encoding, decode
-   the result from the locale encoding. Return -1 on error. */
+   the result from the locale encoding.
 
+   Return -1 on encoding error, on readlink() error, if the internal buffer is
+   too short, on decoding error, or if 'buf' is too short. */
 int
-_Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
+_Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t buflen)
 {
     char *cpath;
     char cbuf[MAXPATHLEN];
@@ -1659,12 +1661,13 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
         errno = EINVAL;
         return -1;
     }
-    if (bufsiz <= r1) {
+    /* wbuf must have space to store the trailing NUL character */
+    if (buflen <= r1) {
         PyMem_RawFree(wbuf);
         errno = EINVAL;
         return -1;
     }
-    wcsncpy(buf, wbuf, bufsiz);
+    wcsncpy(buf, wbuf, buflen);
     PyMem_RawFree(wbuf);
     return (int)r1;
 }
@@ -1674,11 +1677,12 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 
 /* Return the canonicalized absolute pathname. Encode path to the locale
    encoding, decode the result from the locale encoding.
-   Return NULL on error. */
 
+   Return NULL on encoding error, realpath() error, decoding error
+   or if 'resolved_path' is too short. */
 wchar_t*
 _Py_wrealpath(const wchar_t *path,
-              wchar_t *resolved_path, size_t resolved_path_size)
+              wchar_t *resolved_path, size_t resolved_path_len)
 {
     char *cpath;
     char cresolved_path[MAXPATHLEN];
@@ -1700,27 +1704,29 @@ _Py_wrealpath(const wchar_t *path,
         errno = EINVAL;
         return NULL;
     }
-    if (resolved_path_size <= r) {
+    /* wresolved_path must have space to store the trailing NUL character */
+    if (resolved_path_len <= r) {
         PyMem_RawFree(wresolved_path);
         errno = EINVAL;
         return NULL;
     }
-    wcsncpy(resolved_path, wresolved_path, resolved_path_size);
+    wcsncpy(resolved_path, wresolved_path, resolved_path_len);
     PyMem_RawFree(wresolved_path);
     return resolved_path;
 }
 #endif
 
-/* Get the current directory. size is the buffer size in wide characters
+/* Get the current directory. buflen is the buffer size in wide characters
    including the null character. Decode the path from the locale encoding.
-   Return NULL on error. */
 
+   Return NULL on getcwd() error, on decoding error, or if 'buf' is
+   too short. */
 wchar_t*
-_Py_wgetcwd(wchar_t *buf, size_t size)
+_Py_wgetcwd(wchar_t *buf, size_t buflen)
 {
 #ifdef MS_WINDOWS
-    int isize = (int)Py_MIN(size, INT_MAX);
-    return _wgetcwd(buf, isize);
+    int ibuflen = (int)Py_MIN(buflen, INT_MAX);
+    return _wgetcwd(buf, ibuflen);
 #else
     char fname[MAXPATHLEN];
     wchar_t *wname;
@@ -1731,11 +1737,12 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
     wname = Py_DecodeLocale(fname, &len);
     if (wname == NULL)
         return NULL;
-    if (size <= len) {
+    /* wname must have space to store the trailing NUL character */
+    if (buflen <= len) {
         PyMem_RawFree(wname);
         return NULL;
     }
-    wcsncpy(buf, wname, size);
+    wcsncpy(buf, wname, buflen);
     PyMem_RawFree(wname);
     return buf;
 #endif
@@ -1881,22 +1888,17 @@ error:
 
 
 int
-_Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
-                         const char **grouping)
+_Py_GetLocaleconvNumeric(struct lconv *lc,
+                         PyObject **decimal_point, PyObject **thousands_sep)
 {
-    int res = -1;
-
-    struct lconv *lc = localeconv();
+    assert(decimal_point != NULL);
+    assert(thousands_sep != NULL);
 
     int change_locale = 0;
-    if (decimal_point != NULL &&
-        (strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127))
-    {
+    if ((strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127)) {
         change_locale = 1;
     }
-    if (thousands_sep != NULL &&
-        (strlen(lc->thousands_sep) > 1 || ((unsigned char)lc->thousands_sep[0]) > 127))
-    {
+    if ((strlen(lc->thousands_sep) > 1 || ((unsigned char)lc->thousands_sep[0]) > 127)) {
         change_locale = 1;
     }
 
@@ -1905,7 +1907,8 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
     if (change_locale) {
         oldloc = setlocale(LC_CTYPE, NULL);
         if (!oldloc) {
-            PyErr_SetString(PyExc_RuntimeWarning, "faild to get LC_CTYPE locale");
+            PyErr_SetString(PyExc_RuntimeWarning,
+                            "failed to get LC_CTYPE locale");
             return -1;
         }
 
@@ -1921,7 +1924,7 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
         }
 
         if (loc != NULL) {
-            /* Only set the locale temporarilty the LC_CTYPE locale
+            /* Only set the locale temporarily the LC_CTYPE locale
                if LC_NUMERIC locale is different than LC_CTYPE locale and
                decimal_point and/or thousands_sep are non-ASCII or longer than
                1 byte */
@@ -1929,26 +1932,21 @@ _Py_GetLocaleconvNumeric(PyObject **decimal_point, PyObject **thousands_sep,
         }
     }
 
-    if (decimal_point != NULL) {
-        *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
-        if (*decimal_point == NULL) {
-            goto error;
-        }
-    }
-    if (thousands_sep != NULL) {
-        *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
-        if (*thousands_sep == NULL) {
-            goto error;
-        }
+    int res = -1;
+
+    *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
+    if (*decimal_point == NULL) {
+        goto done;
     }
 
-    if (grouping != NULL) {
-        *grouping = lc->grouping;
+    *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
+    if (*thousands_sep == NULL) {
+        goto done;
     }
 
     res = 0;
 
-error:
+done:
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }

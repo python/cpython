@@ -25,6 +25,20 @@ events until either processing is finished or an error condition occurs.
    maliciously constructed data.  If you need to parse untrusted or
    unauthenticated data see :ref:`xml-vulnerabilities`.
 
+.. versionchanged:: 3.7.1
+
+   The SAX parser no longer processes general external entities by default to
+   increase security by default. To enable processing of external entities,
+   pass a custom parser instance in::
+
+      from xml.dom.pulldom import parse
+      from xml.sax import make_parser
+      from xml.sax.handler import feature_external_ges
+
+      parser = make_parser()
+      parser.setFeature(feature_external_ges, True)
+      parse(filename, parser=parser)
+
 
 Example::
 

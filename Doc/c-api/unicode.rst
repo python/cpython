@@ -519,9 +519,6 @@ APIs:
    | :attr:`%R`        | PyObject\*          | The result of calling          |
    |                   |                     | :c:func:`PyObject_Repr`.       |
    +-------------------+---------------------+--------------------------------+
-   | :attr:`%T`        | PyObject\*          | Object type name, equivalent   |
-   |                   |                     | to ``Py_TYPE(op)->tp_name``.   |
-   +-------------------+---------------------+--------------------------------+
 
    An unrecognized format character causes all the rest of the format string to be
    copied as-is to the result string, and any extra arguments discarded.
@@ -545,9 +542,6 @@ APIs:
    .. versionchanged:: 3.4
       Support width and precision formatter for ``"%s"``, ``"%A"``, ``"%U"``,
       ``"%V"``, ``"%S"``, ``"%R"`` added.
-
-   .. versionchanged:: 3.7
-      Support for ``"%T"`` (object type name) added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
@@ -766,8 +760,8 @@ system.
                                                         Py_ssize_t len, \
                                                         const char *errors)
 
-   Decode a string from UTF-8 on Android, or from the current locale encoding
-   on other platforms. The supported
+   Decode a string from UTF-8 on Android and VxWorks, or from the current
+   locale encoding on other platforms. The supported
    error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The decoder uses ``"strict"`` error handler if
    *errors* is ``NULL``.  *str* must end with a null character but
@@ -802,8 +796,8 @@ system.
 
 .. c:function:: PyObject* PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
-   Encode a Unicode object to UTF-8 on Android, or to the current locale
-   encoding on other platforms. The
+   Encode a Unicode object to UTF-8 on Android and VxWorks, or to the current
+   locale encoding on other platforms. The
    supported error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The encoder uses ``"strict"`` error handler if
    *errors* is ``NULL``. Return a :class:`bytes` object. *unicode* cannot
@@ -941,7 +935,7 @@ wchar_t Support
    Return *NULL* on failure.
 
 
-.. c:function:: Py_ssize_t PyUnicode_AsWideChar(PyUnicodeObject *unicode, wchar_t *w, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUnicode_AsWideChar(PyObject *unicode, wchar_t *w, Py_ssize_t size)
 
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
@@ -1352,7 +1346,7 @@ These are the "Raw Unicode Escape" codec APIs:
 
 
 .. c:function:: PyObject* PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s, \
-                              Py_ssize_t size, const char *errors)
+                              Py_ssize_t size)
 
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Raw-Unicode-Escape
    and return a bytes object.  Return *NULL* if an exception was raised by the codec.
@@ -1521,8 +1515,8 @@ the user settings on the machine running the codec.
    Return *NULL* if an exception was raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_DecodeMBCSStateful(const char *s, int size, \
-                              const char *errors, int *consumed)
+.. c:function:: PyObject* PyUnicode_DecodeMBCSStateful(const char *s, Py_ssize_t size, \
+                              const char *errors, Py_ssize_t *consumed)
 
    If *consumed* is *NULL*, behave like :c:func:`PyUnicode_DecodeMBCS`. If
    *consumed* is not *NULL*, :c:func:`PyUnicode_DecodeMBCSStateful` will not decode

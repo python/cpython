@@ -39,7 +39,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   capture_output=False, shell=False, cwd=None, timeout=None, \
-                  check=False, encoding=None, errors=None, text=None, env=None)
+                  check=False, encoding=None, errors=None, text=None, env=None, \
+                  universal_newlines=None)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -54,7 +55,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
    ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be used as well.
+   not be supplied at the same time as *capture_output*.
 
    The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
    expires, the child process will be killed and waited for.  The
@@ -334,7 +335,7 @@ functions.
 
 .. class:: Popen(args, bufsize=-1, executable=None, stdin=None, stdout=None, \
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
-                 cwd=None, env=None, universal_newlines=False, \
+                 cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), *, \
                  encoding=None, errors=None, text=None)
@@ -566,14 +567,19 @@ functions.
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
 
+   .. versionchanged:: 3.8
+      Popen can use :func:`os.posix_spawn` in some cases for better
+      performance. On Windows Subsystem for Linux and QEMU User Emulation,
+      Popen constructor using :func:`os.posix_spawn` no longer raise an
+      exception on errors like missing program, but the child process fails
+      with a non-zero :attr:`~Popen.returncode`.
+
 
 Exceptions
 ^^^^^^^^^^
 
 Exceptions raised in the child process, before the new program has started to
-execute, will be re-raised in the parent.  Additionally, the exception object
-will have one extra attribute called :attr:`child_traceback`, which is a string
-containing traceback information from the child's point of view.
+execute, will be re-raised in the parent.
 
 The most common exception raised is :exc:`OSError`.  This occurs, for example,
 when trying to execute a non-existent file.  Applications should prepare for
@@ -960,7 +966,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: CREATE_NO_WINDOW
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will not create a window
+   will not create a window.
 
    .. versionadded:: 3.7
 
@@ -1003,14 +1009,14 @@ calls these functions.
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
 
-   This is equivalent to::
+   Code needing to capture stdout or stderr should use :func:`run` instead:
 
        run(...).returncode
 
-   (except that the *input* and *check* parameters are not supported)
+   To suppress stdout or stderr, supply a value of :data:`DEVNULL`.
 
-   The arguments shown above are merely the most
-   common ones. The full function signature is largely the
+   The arguments shown above are merely some common ones.
+   The full function signature is the
    same as that of the :class:`Popen` constructor - this function passes all
    supplied arguments other than *timeout* directly through to that interface.
 
@@ -1031,14 +1037,14 @@ calls these functions.
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
 
-   This is equivalent to::
+   Code needing to capture stdout or stderr should use :func:`run` instead:
 
        run(..., check=True)
 
-   (except that the *input* parameter is not supported)
+   To suppress stdout or stderr, supply a value of :data:`DEVNULL`.
 
-   The arguments shown above are merely the most
-   common ones. The full function signature is largely the
+   The arguments shown above are merely some common ones.
+   The full function signature is the
    same as that of the :class:`Popen` constructor - this function passes all
    supplied arguments other than *timeout* directly through to that interface.
 
@@ -1055,7 +1061,7 @@ calls these functions.
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
                            cwd=None, encoding=None, errors=None, \
-                           universal_newlines=False, timeout=None)
+                           universal_newlines=None, timeout=None, text=None)
 
    Run command with arguments and return its output.
 
@@ -1068,7 +1074,7 @@ calls these functions.
 
        run(..., check=True, stdout=PIPE).stdout
 
-   The arguments shown above are merely the most common ones.
+   The arguments shown above are merely some common ones.
    The full function signature is largely the same as that of :func:`run` -
    most arguments are passed directly through to that interface.
    However, explicitly passing ``input=None`` to inherit the parent's
@@ -1078,8 +1084,9 @@ calls these functions.
    encoding of the output data may depend on the command being invoked, so the
    decoding to text will often need to be handled at the application level.
 
-   This behaviour may be overridden by setting *universal_newlines* to
-   ``True`` as described above in :ref:`frequently-used-arguments`.
+   This behaviour may be overridden by setting *text*, *encoding*, *errors*,
+   or *universal_newlines* to ``True`` as described in
+   :ref:`frequently-used-arguments` and :func:`run`.
 
    To also capture standard error in the result, use
    ``stderr=subprocess.STDOUT``::
@@ -1100,6 +1107,10 @@ calls these functions.
 
    .. versionchanged:: 3.6
       *encoding* and *errors* were added.  See :func:`run` for details.
+
+   .. versionadded:: 3.7
+      *text* was added as a more readable alias for *universal_newlines*.
+
 
 .. _subprocess-replacements:
 
@@ -1292,7 +1303,7 @@ Replacing functions from the :mod:`popen2` module
 
 * :class:`Popen` raises an exception if the execution fails.
 
-* the *capturestderr* argument is replaced with the *stderr* argument.
+* The *capturestderr* argument is replaced with the *stderr* argument.
 
 * ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
 
@@ -1330,26 +1341,27 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   Availability: POSIX & Windows
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
 
       The function now returns (exitcode, output) instead of (status, output)
-      as it did in Python 3.3.3 and earlier.  See :func:`WEXITSTATUS`.
+      as it did in Python 3.3.3 and earlier.  exitcode has the same value as
+      :attr:`~Popen.returncode`.
 
 
 .. function:: getoutput(cmd)
 
    Return output (stdout and stderr) of executing *cmd* in a shell.
 
-   Like :func:`getstatusoutput`, except the exit status is ignored and the return
+   Like :func:`getstatusoutput`, except the exit code is ignored and the return
    value is a string containing the command's output.  Example::
 
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   Availability: POSIX & Windows
+   .. availability:: POSIX & Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added

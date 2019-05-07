@@ -1,8 +1,9 @@
 #include "Python.h"
 
+#include "pycore_hamt.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
-#include "internal/pystate.h"
-#include "internal/hamt.h"
 
 /*
 This file provides an implemention of an immutable mapping using the
@@ -372,10 +373,11 @@ hamt_node_collision_count(PyHamtNode_Collision *node);
 
 #ifdef Py_DEBUG
 static void
-_hamt_node_array_validate(void *o)
+_hamt_node_array_validate(void *obj_raw)
 {
-    assert(IS_ARRAY_NODE(o));
-    PyHamtNode_Array *node = (PyHamtNode_Array*)(o);
+    PyObject *obj = _PyObject_CAST(obj_raw);
+    assert(IS_ARRAY_NODE(obj));
+    PyHamtNode_Array *node = (PyHamtNode_Array*)obj;
     Py_ssize_t i = 0, count = 0;
     for (; i < HAMT_ARRAY_NODE_SIZE; i++) {
         if (node->a_array[i] != NULL) {
@@ -2003,7 +2005,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (_hamt_dump_format(writer, "%d::\n", i)) {
+        if (_hamt_dump_format(writer, "%zd::\n", i)) {
             goto error;
         }
 

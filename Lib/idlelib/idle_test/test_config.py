@@ -4,7 +4,6 @@
 Much of IdleConf is also exercised by ConfigDialog and test_configdialog.
 """
 from idlelib import config
-import copy
 import sys
 import os
 import tempfile
@@ -356,11 +355,11 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.GetSectionList('default', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
         self.assertCountEqual(
             conf.GetSectionList('user', 'main'),
-            ['General', 'EditorWindow', 'Indent', 'Theme',
+            ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
 
         with self.assertRaises(config.InvalidConfigSet):
@@ -374,10 +373,6 @@ class IdleConfTest(unittest.TestCase):
         eq = self.assertEqual
         eq(conf.GetHighlight('IDLE Classic', 'normal'), {'foreground': '#000000',
                                                          'background': '#ffffff'})
-        eq(conf.GetHighlight('IDLE Classic', 'normal', 'fg'), '#000000')
-        eq(conf.GetHighlight('IDLE Classic', 'normal', 'bg'), '#ffffff')
-        with self.assertRaises(config.InvalidFgBg):
-            conf.GetHighlight('IDLE Classic', 'normal', 'fb')
 
         # Test cursor (this background should be normal-background)
         eq(conf.GetHighlight('IDLE Classic', 'cursor'), {'foreground': 'black',
@@ -452,7 +447,7 @@ class IdleConfTest(unittest.TestCase):
 
         self.assertCountEqual(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
-            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch','ZzDummy'])
+            ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy'])
 
     def test_get_extn_name_for_event(self):
         userextn.read_string('''
@@ -526,7 +521,7 @@ class IdleConfTest(unittest.TestCase):
     def test_get_keyset(self):
         conf = self.mock_config()
 
-        # Conflic with key set, should be disable to ''
+        # Conflict with key set, should be disable to ''
         conf.defaultCfg['extensions'].add_section('Foobar')
         conf.defaultCfg['extensions'].add_section('Foobar_cfgBindings')
         conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')

@@ -56,8 +56,7 @@ The constants defined in this module are:
 .. data:: punctuation
 
    String of ASCII characters which are considered punctuation characters
-   in the ``C`` locale.
-
+   in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
 .. data:: printable
 
@@ -192,6 +191,13 @@ subclasses can define their own format string syntax).  The syntax is
 related to that of :ref:`formatted string literals <f-strings>`, but
 there are differences.
 
+.. index::
+   single: {} (curly brackets); in string formatting
+   single: . (dot); in string formatting
+   single: [] (square brackets); in string formatting
+   single: ! (exclamation); in string formatting
+   single: : (colon); in string formatting
+
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is
 copied unchanged to the output.  If you need to include a brace character in the
@@ -323,6 +329,12 @@ affect the :func:`format` function.
 
 The meaning of the various alignment options is as follows:
 
+   .. index::
+      single: < (less); in string formatting
+      single: > (greater); in string formatting
+      single: = (equals); in string formatting
+      single: ^ (caret); in string formatting
+
    +---------+----------------------------------------------------------+
    | Option  | Meaning                                                  |
    +=========+==========================================================+
@@ -349,6 +361,11 @@ meaning in this case.
 The *sign* option is only valid for number types, and can be one of the
 following:
 
+   .. index::
+      single: + (plus); in string formatting
+      single: - (minus); in string formatting
+      single: space; in string formatting
+
    +---------+----------------------------------------------------------+
    | Option  | Meaning                                                  |
    +=========+==========================================================+
@@ -363,6 +380,8 @@ following:
    +---------+----------------------------------------------------------+
 
 
+.. index:: single: # (hash); in string formatting
+
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
 types.  This option is only valid for integer, float, complex and
@@ -375,12 +394,16 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
+.. index:: single: , (comma); in string formatting
+
 The ``','`` option signals the use of a comma for a thousands separator.
 For a locale aware separator, use the ``'n'`` integer presentation type
 instead.
 
 .. versionchanged:: 3.1
    Added the ``','`` option (see also :pep:`378`).
+
+.. index:: single: _ (underscore); in string formatting
 
 The ``'_'`` option signals the use of an underscore for a thousands
 separator for floating point presentation types and for integer
@@ -434,11 +457,11 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'o'`` | Octal format. Outputs the number in base 8.              |
    +---------+----------------------------------------------------------+
-   | ``'x'`` | Hex format. Outputs the number in base 16, using lower-  |
-   |         | case letters for the digits above 9.                     |
+   | ``'x'`` | Hex format. Outputs the number in base 16, using         |
+   |         | lower-case letters for the digits above 9.               |
    +---------+----------------------------------------------------------+
-   | ``'X'`` | Hex format. Outputs the number in base 16, using upper-  |
-   |         | case letters for the digits above 9.                     |
+   | ``'X'`` | Hex format. Outputs the number in base 16, using         |
+   |         | upper-case letters for the digits above 9.               |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
@@ -527,7 +550,7 @@ addition of the ``{}`` and with ``:`` used instead of ``%``.
 For example, ``'%03.2f'`` can be translated to ``'{:03.2f}'``.
 
 The new format syntax also supports new and different options, shown in the
-follow examples.
+following examples.
 
 Accessing arguments by position::
 
@@ -668,6 +691,8 @@ formatting facilities in Python.  As an example of a library built on template
 strings for i18n, see the
 `flufl.i18n <http://flufli18n.readthedocs.io/en/latest/>`_ package.
 
+.. index:: single: $ (dollar); in template strings
+
 Template strings support ``$``-based substitutions, using the following rules:
 
 * ``$$`` is an escape; it is replaced with a single ``$``.
@@ -713,7 +738,7 @@ these rules.  The methods of :class:`Template` are:
       simply return ``$`` instead of raising :exc:`ValueError`.
 
       While other exceptions may still occur, this method is called "safe"
-      because substitutions always tries to return a usable string instead of
+      because it always tries to return a usable string instead of
       raising an exception.  In another sense, :meth:`safe_substitute` may be
       anything other than safe, since it will silently ignore malformed
       templates containing dangling delimiters, unmatched braces, or

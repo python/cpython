@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pymem.h"
 
 #include <stdbool.h>
 
@@ -29,19 +30,36 @@ static void _PyMem_DebugCheckAddress(char api_id, const void *p);
 static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 
 #if defined(__has_feature)  /* Clang */
- #if __has_feature(address_sanitizer)  /* is ASAN enabled? */
-  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS \
+#  if __has_feature(address_sanitizer) /* is ASAN enabled? */
+#    define _Py_NO_ADDRESS_SAFETY_ANALYSIS \
         __attribute__((no_address_safety_analysis))
- #else
-  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
- #endif
-#else
- #if defined(__SANITIZE_ADDRESS__)  /* GCC 4.8.x, is ASAN enabled? */
-  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS \
+#  endif
+#  if __has_feature(thread_sanitizer)  /* is TSAN enabled? */
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+#  endif
+#  if __has_feature(memory_sanitizer)  /* is MSAN enabled? */
+#    define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
+#  endif
+#elif defined(__GNUC__)
+#  if defined(__SANITIZE_ADDRESS__)    /* GCC 4.8+, is ASAN enabled? */
+#    define _Py_NO_ADDRESS_SAFETY_ANALYSIS \
         __attribute__((no_address_safety_analysis))
- #else
-  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
- #endif
+#  endif
+   // TSAN is supported since GCC 4.8, but __SANITIZE_THREAD__ macro
+   // is provided only since GCC 7.
+#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+#  endif
+#endif
+
+#ifndef _Py_NO_ADDRESS_SAFETY_ANALYSIS
+#  define _Py_NO_ADDRESS_SAFETY_ANALYSIS
+#endif
+#ifndef _Py_NO_SANITIZE_THREAD
+#  define _Py_NO_SANITIZE_THREAD
+#endif
+#ifndef _Py_NO_SANITIZE_MEMORY
+#  define _Py_NO_SANITIZE_MEMORY
 #endif
 
 #ifdef WITH_PYMALLOC
@@ -61,6 +79,12 @@ static void* _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize);
 static void _PyObject_Free(void *ctx, void *p);
 static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #endif
+
+
+/* bpo-35053: Declare tracemalloc configuration here rather than
+   Modules/_tracemalloc.c because _tracemalloc can be compiled as dynamic
+   library, whereas _Py_NewReference() requires it. */
+struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT;
 
 
 static void *
@@ -1294,7 +1318,9 @@ obmalloc controls.  Since this test is needed at every entry point, it's
 extremely desirable that it be this fast.
 */
 
-static bool ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+static bool _Py_NO_ADDRESS_SAFETY_ANALYSIS
+            _Py_NO_SANITIZE_THREAD
+            _Py_NO_SANITIZE_MEMORY
 address_in_range(void *p, poolp pool)
 {
     // Since address_in_range may be reading from memory which was not allocated
@@ -1888,15 +1914,22 @@ _Py_GetAllocatedBlocks(void)
 
 /* Special bytes broadcast into debug memory blocks at appropriate times.
  * Strings of these are unlikely to be valid addresses, floats, ints or
- * 7-bit ASCII.
+ * 7-bit ASCII. If modified, _PyMem_IsPtrFreed() should be updated as well.
+ *
+ * Byte patterns 0xCB, 0xBB and 0xFB have been replaced with 0xCD, 0xDD and
+ * 0xFD to use the same values than Windows CRT debug malloc() and free().
  */
 #undef CLEANBYTE
 #undef DEADBYTE
 #undef FORBIDDENBYTE
-#define CLEANBYTE      0xCB    /* clean (newly allocated) memory */
-#define DEADBYTE       0xDB    /* dead (newly freed) memory */
-#define FORBIDDENBYTE  0xFB    /* untouchable bytes at each end of a block */
+#define CLEANBYTE      0xCD    /* clean (newly allocated) memory */
+#define DEADBYTE       0xDD    /* dead (newly freed) memory */
+#define FORBIDDENBYTE  0xFD    /* untouchable bytes at each end of a block */
 
+/* Uncomment this define to add the "serialno" field */
+/* #define PYMEM_DEBUG_SERIALNO */
+
+#ifdef PYMEM_DEBUG_SERIALNO
 static size_t serialno = 0;     /* incremented on each debug {m,re}alloc */
 
 /* serialno is always incremented via calling this routine.  The point is
@@ -1907,8 +1940,15 @@ bumpserialno(void)
 {
     ++serialno;
 }
+#endif
 
 #define SST SIZEOF_SIZE_T
+
+#ifdef PYMEM_DEBUG_SERIALNO
+#  define PYMEM_DEBUG_EXTRA_BYTES 4 * SST
+#else
+#  define PYMEM_DEBUG_EXTRA_BYTES 3 * SST
+#endif
 
 /* Read sizeof(size_t) bytes at p as a big-endian size_t. */
 static size_t
@@ -1938,7 +1978,7 @@ write_size_t(void *p, size_t n)
     }
 }
 
-/* Let S = sizeof(size_t).  The debug malloc asks for 4*S extra bytes and
+/* Let S = sizeof(size_t).  The debug malloc asks for 4 * S extra bytes and
    fills them with useful stuff, here calling the underlying malloc's result p:
 
 p[0: S]
@@ -1962,6 +2002,9 @@ p[2*S+n+S: 2*S+n+2*S]
     If "bad memory" is detected later, the serial number gives an
     excellent way to set a breakpoint on the next run, to capture the
     instant at which this block was passed out.
+
+If PYMEM_DEBUG_SERIALNO is not defined (default), the debug malloc only asks
+for 3 * S extra bytes, and omits the last serialno field.
 */
 
 static void *
@@ -1971,21 +2014,24 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     uint8_t *p;           /* base address of malloc'ed pad block */
     uint8_t *data;        /* p + 2*SST == pointer to data bytes */
     uint8_t *tail;        /* data + nbytes == pointer to tail pad bytes */
-    size_t total;         /* 2 * SST + nbytes + 2 * SST */
+    size_t total;         /* nbytes + PYMEM_DEBUG_EXTRA_BYTES */
 
-    if (nbytes > (size_t)PY_SSIZE_T_MAX - 4 * SST) {
+    if (nbytes > (size_t)PY_SSIZE_T_MAX - PYMEM_DEBUG_EXTRA_BYTES) {
         /* integer overflow: can't represent total as a Py_ssize_t */
         return NULL;
     }
-    total = nbytes + 4 * SST;
+    total = nbytes + PYMEM_DEBUG_EXTRA_BYTES;
 
     /* Layout: [SSSS IFFF CCCC...CCCC FFFF NNNN]
-     *          ^--- p    ^--- data   ^--- tail
+                ^--- p    ^--- data   ^--- tail
        S: nbytes stored as size_t
        I: API identifier (1 byte)
        F: Forbidden bytes (size_t - 1 bytes before, size_t bytes after)
        C: Clean bytes used later to store actual data
-       N: Serial number stored as size_t */
+       N: Serial number stored as size_t
+
+       If PYMEM_DEBUG_SERIALNO is not defined (default), the last NNNN field
+       is omitted. */
 
     if (use_calloc) {
         p = (uint8_t *)api->alloc.calloc(api->alloc.ctx, 1, total);
@@ -1998,7 +2044,9 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     }
     data = p + 2*SST;
 
+#ifdef PYMEM_DEBUG_SERIALNO
     bumpserialno();
+#endif
 
     /* at p, write size (SST bytes), id (1 byte), pad (SST-1 bytes) */
     write_size_t(p, nbytes);
@@ -2012,7 +2060,9 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     /* at tail, write pad (SST bytes) and serialno (SST bytes) */
     tail = data + nbytes;
     memset(tail, FORBIDDENBYTE, SST);
+#ifdef PYMEM_DEBUG_SERIALNO
     write_size_t(tail + SST, serialno);
+#endif
 
     return data;
 }
@@ -2052,7 +2102,7 @@ _PyMem_DebugRawFree(void *ctx, void *p)
 
     _PyMem_DebugCheckAddress(api->api_id, p);
     nbytes = read_size_t(q);
-    nbytes += 4 * SST;
+    nbytes += PYMEM_DEBUG_EXTRA_BYTES;
     memset(q, DEADBYTE, nbytes);
     api->alloc.free(api->alloc.ctx, q);
 }
@@ -2072,7 +2122,6 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     uint8_t *tail;        /* data + nbytes == pointer to tail pad bytes */
     size_t total;         /* 2 * SST + nbytes + 2 * SST */
     size_t original_nbytes;
-    size_t block_serialno;
 #define ERASED_SIZE 64
     uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
 
@@ -2081,47 +2130,57 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     data = (uint8_t *)p;
     head = data - 2*SST;
     original_nbytes = read_size_t(head);
-    if (nbytes > (size_t)PY_SSIZE_T_MAX - 4*SST) {
+    if (nbytes > (size_t)PY_SSIZE_T_MAX - PYMEM_DEBUG_EXTRA_BYTES) {
         /* integer overflow: can't represent total as a Py_ssize_t */
         return NULL;
     }
-    total = nbytes + 4*SST;
+    total = nbytes + PYMEM_DEBUG_EXTRA_BYTES;
 
     tail = data + original_nbytes;
-    block_serialno = read_size_t(tail + SST);
+#ifdef PYMEM_DEBUG_SERIALNO
+    size_t block_serialno = read_size_t(tail + SST);
+#endif
     /* Mark the header, the trailer, ERASED_SIZE bytes at the begin and
        ERASED_SIZE bytes at the end as dead and save the copy of erased bytes.
      */
     if (original_nbytes <= sizeof(save)) {
         memcpy(save, data, original_nbytes);
-        memset(data - 2*SST, DEADBYTE, original_nbytes + 4*SST);
+        memset(data - 2 * SST, DEADBYTE,
+               original_nbytes + PYMEM_DEBUG_EXTRA_BYTES);
     }
     else {
         memcpy(save, data, ERASED_SIZE);
-        memset(head, DEADBYTE, ERASED_SIZE + 2*SST);
+        memset(head, DEADBYTE, ERASED_SIZE + 2 * SST);
         memcpy(&save[ERASED_SIZE], tail - ERASED_SIZE, ERASED_SIZE);
-        memset(tail - ERASED_SIZE, DEADBYTE, ERASED_SIZE + 2*SST);
+        memset(tail - ERASED_SIZE, DEADBYTE,
+               ERASED_SIZE + PYMEM_DEBUG_EXTRA_BYTES - 2 * SST);
     }
 
     /* Resize and add decorations. */
     r = (uint8_t *)api->alloc.realloc(api->alloc.ctx, head, total);
     if (r == NULL) {
+        /* if realloc() failed: rewrite header and footer which have
+           just been erased */
         nbytes = original_nbytes;
     }
     else {
         head = r;
+#ifdef PYMEM_DEBUG_SERIALNO
         bumpserialno();
         block_serialno = serialno;
+#endif
     }
+    data = head + 2*SST;
 
     write_size_t(head, nbytes);
     head[SST] = (uint8_t)api->api_id;
     memset(head + SST + 1, FORBIDDENBYTE, SST-1);
-    data = head + 2*SST;
 
     tail = data + nbytes;
     memset(tail, FORBIDDENBYTE, SST);
+#ifdef PYMEM_DEBUG_SERIALNO
     write_size_t(tail + SST, block_serialno);
+#endif
 
     /* Restore saved bytes. */
     if (original_nbytes <= sizeof(save)) {
@@ -2141,7 +2200,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     }
 
     if (nbytes > original_nbytes) {
-        /* growing:  mark new extra memory clean */
+        /* growing: mark new extra memory clean */
         memset(data + original_nbytes, CLEANBYTE, nbytes - original_nbytes);
     }
 
@@ -2249,7 +2308,7 @@ _PyObject_DebugDumpAddress(const void *p)
 {
     const uint8_t *q = (const uint8_t *)p;
     const uint8_t *tail;
-    size_t nbytes, serial;
+    size_t nbytes;
     int i;
     int ok;
     char id;
@@ -2295,7 +2354,7 @@ _PyObject_DebugDumpAddress(const void *p)
     }
 
     tail = q + nbytes;
-    fprintf(stderr, "    The %d pad bytes at tail=%p are ", SST, tail);
+    fprintf(stderr, "    The %d pad bytes at tail=%p are ", SST, (void *)tail);
     ok = 1;
     for (i = 0; i < SST; ++i) {
         if (tail[i] != FORBIDDENBYTE) {
@@ -2318,9 +2377,11 @@ _PyObject_DebugDumpAddress(const void *p)
         }
     }
 
-    serial = read_size_t(tail + SST);
+#ifdef PYMEM_DEBUG_SERIALNO
+    size_t serial = read_size_t(tail + SST);
     fprintf(stderr, "    The block was made by call #%" PY_FORMAT_SIZE_T
                     "u to debug malloc/realloc.\n", serial);
+#endif
 
     if (nbytes > 0) {
         i = 0;
@@ -2546,8 +2607,11 @@ _PyObject_DebugMallocStats(FILE *out)
         quantization += p * ((POOL_SIZE - POOL_OVERHEAD) % size);
     }
     fputc('\n', out);
-    if (_PyMem_DebugEnabled())
+#ifdef PYMEM_DEBUG_SERIALNO
+    if (_PyMem_DebugEnabled()) {
         (void)printone(out, "# times object malloc called", serialno);
+    }
+#endif
     (void)printone(out, "# arenas allocated total", ntimes_arena_allocated);
     (void)printone(out, "# arenas reclaimed", ntimes_arena_allocated - narenas);
     (void)printone(out, "# arenas highwater mark", narenas_highwater);

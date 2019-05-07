@@ -15,6 +15,13 @@ CodeType = type(_f.__code__)
 MappingProxyType = type(type.__dict__)
 SimpleNamespace = type(sys.implementation)
 
+def _cell_factory():
+    a = 1
+    def f():
+        nonlocal a
+    return f.__closure__[0]
+CellType = type(_cell_factory())
+
 def _g():
     yield 1
 GeneratorType = type(_g())
@@ -55,7 +62,7 @@ except TypeError:
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C, _c,                           # Not for export
+del sys, _f, _g, _C, _c, _ag  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
@@ -256,7 +263,7 @@ def coroutine(func):
             # TODO: Implement this in C.
             co = func.__code__
             func.__code__ = CodeType(
-                co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
+                co.co_argcount, co.co_posonlyargcount, co.co_kwonlyargcount, co.co_nlocals,
                 co.co_stacksize,
                 co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
                 co.co_code,

@@ -356,6 +356,10 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
+.. data:: TEST_HTTP_URL
+
+   Define the URL of a dedicated HTTP server for the network tests.
+
 
 
 The :mod:`test.support` module defines the following functions:
@@ -392,7 +396,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: make_legacy_pyc(source)
 
-   Move a PEP 3147/488 pyc file to its legacy pyc location and return the file
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
    system path to the legacy pyc file.  The *source* value is the file system
    path to the source file.  It does not need to exist, however the PEP
    3147/488 pyc file must exist.
@@ -936,9 +940,24 @@ The :mod:`test.support` module defines the following functions:
 
    Test for syntax errors in *statement* by attempting to compile *statement*.
    *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
-   text of the error raised by :exc:`SyntaxError`.  If *lineno* is not None,
-   compares to the line of the :exc:`SyntaxError`.  If *offset* is not None,
-   compares to the offset of the :exc:`SyntaxError`.
+   regular expression which should match the string representation of the
+   raised :exc:`SyntaxError`.  If *lineno* is not ``None``, compares to
+   the line of the exception.  If *offset* is not ``None``, compares to
+   the offset of the exception.
+
+
+.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
+
+   Test for syntax warning in *statement* by attempting to compile *statement*.
+   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
+   will be converted to a :exc:`SyntaxError` when turned into error.
+   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
+   regular expression which should match the string representation of the
+   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
+   is not ``None``, compares to the line of the warning and exception.
+   If *offset* is not ``None``, compares to the offset of the exception.
+
+   .. versionadded:: 3.8
 
 
 .. function:: open_urlresource(url, *args, **kw)
@@ -1076,7 +1095,7 @@ The :mod:`test.support` module defines the following functions:
    Either this method or :func:`bind_port` should be used for any tests
    where a server socket needs to be bound to a particular port for the
    duration of the test.
-   Which one to use depends on whether the calling code is creating a python
+   Which one to use depends on whether the calling code is creating a Python
    socket, or if an unused port needs to be provided in a constructor
    or passed to an external program (i.e. the ``-accept`` argument to
    openssl's s_server mode).  Always prefer :func:`bind_port` over

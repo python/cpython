@@ -21,12 +21,16 @@
 #include <dirent.h>
 #endif
 
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
 #if defined(__ANDROID__) && __ANDROID_API__ < 21 && !defined(SYS_getdents64)
 # include <sys/linux-syscalls.h>
 # define SYS_getdents64  __NR_getdents64
 #endif
 
-#if defined(sun)
+#if defined(__sun) && defined(__SVR4)
 /* readdir64 is used to work around Solaris 9 bug 6395699. */
 # define readdir readdir64
 # define dirent dirent64
@@ -287,6 +291,9 @@ _close_open_fds_safe(int start_fd, PyObject* py_fds_to_keep)
                                 sizeof(buffer))) > 0) {
             struct linux_dirent64 *entry;
             int offset;
+#ifdef _Py_MEMORY_SANITIZER
+            __msan_unpoison(buffer, bytes);
+#endif
             for (offset = 0; offset < bytes; offset += entry->d_reclen) {
                 int fd;
                 entry = (struct linux_dirent64 *)(buffer + offset);
@@ -564,6 +571,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
     Py_ssize_t arg_num;
     int need_after_fork = 0;
+    int saved_errno = 0;
 
     if (!PyArg_ParseTuple(
             args, "OOpO!OOiiiiiiiiiiO:fork_exec",
@@ -574,6 +582,11 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid, &preexec_fn))
         return NULL;
+
+    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
+        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
 
     if (close_fds && errpipe_write < 3) {  /* precondition */
         PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
@@ -700,14 +713,14 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
     }
-    Py_XDECREF(cwd_obj2);
-
+    /* Parent (original) process */
     if (pid == -1) {
-        /* Capture the errno exception before errno can be clobbered. */
-        PyErr_SetFromErrno(PyExc_OSError);
+        /* Capture errno for the exception. */
+        saved_errno = errno;
     }
 
-    /* Parent process */
+    Py_XDECREF(cwd_obj2);
+
     if (need_after_fork)
         PyOS_AfterFork_Parent();
     if (envp)
@@ -723,8 +736,13 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
 
-    if (pid == -1)
-        return NULL;  /* fork() failed.  Exception set earlier. */
+    if (pid == -1) {
+        errno = saved_errno;
+        /* We can't call this above as PyOS_AfterFork_Parent() calls back
+         * into Python code which would see the unreturned error. */
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;  /* fork() failed. */
+    }
 
     return PyLong_FromPid(pid);
 

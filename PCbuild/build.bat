@@ -41,7 +41,7 @@ echo.
 echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
 echo.     Set the configuration (default: Release)
-echo.  -p x64 ^| Win32
+echo.  -p x64 ^| Win32 ^| ARM
 echo.     Set the platform (default: Win32)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
@@ -148,4 +148,5 @@ goto :eof
 
 :Version
 rem Display the current build version information
-%MSBUILD% "%dir%python.props" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%dir%find_msbuild.bat" %MSBUILD%
+if not ERRORLEVEL 1 %MSBUILD% "%dir%pythoncore.vcxproj" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9

@@ -198,6 +198,11 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         raise ValueError("binary mode doesn't take an errors argument")
     if binary and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")
+    if binary and buffering == 1:
+        import warnings
+        warnings.warn("line buffering (buffering=1) isn't supported in binary "
+                      "mode, the default buffer size will be used",
+                      RuntimeWarning, 2)
     raw = FileIO(file,
                  (creating and "x" or "") +
                  (reading and "r" or "") +
@@ -287,16 +292,15 @@ class IOBase(metaclass=abc.ABCMeta):
     derived classes can override selectively; the default implementations
     represent a file that cannot be read, written or seeked.
 
-    Even though IOBase does not declare read, readinto, or write because
+    Even though IOBase does not declare read or write because
     their signatures will vary, implementations and clients should
     consider those methods part of the interface. Also, implementations
     may raise UnsupportedOperation when operations they do not support are
     called.
 
     The basic type used for binary data read from or written to a file is
-    bytes. Other bytes-like objects are accepted as method arguments too. In
-    some cases (such as readinto), a writable object is required. Text I/O
-    classes work with str data.
+    bytes. Other bytes-like objects are accepted as method arguments too.
+    Text I/O classes work with str data.
 
     Note that calling any method (even inquiries) on a closed stream is
     undefined. Implementations may raise OSError in this case.
@@ -547,6 +551,11 @@ class IOBase(metaclass=abc.ABCMeta):
         return lines
 
     def writelines(self, lines):
+        """Write a list of lines to the stream.
+
+        Line separators are not added, so it is usual for each of the lines
+        provided to have a line separator at the end.
+        """
         self._checkClosed()
         for line in lines:
             self.write(line)
@@ -809,8 +818,7 @@ class _BufferedIOMixin(BufferedIOBase):
         return self.raw.mode
 
     def __getstate__(self):
-        raise TypeError("can not serialize a '{0}' object"
-                        .format(self.__class__.__name__))
+        raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
 
     def __repr__(self):
         modname = self.__class__.__module__
@@ -1549,7 +1557,7 @@ class FileIO(RawIOBase):
             self.close()
 
     def __getstate__(self):
-        raise TypeError("cannot serialize '%s' object", self.__class__.__name__)
+        raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
 
     def __repr__(self):
         class_name = '%s.%s' % (self.__class__.__module__,
@@ -1759,8 +1767,7 @@ class TextIOBase(IOBase):
     """Base class for text I/O.
 
     This class provides a character and line based interface to stream
-    I/O. There is no readinto method because Python's character strings
-    are immutable. There is no public constructor.
+    I/O. There is no public constructor.
     """
 
     def read(self, size=-1):
@@ -2283,7 +2290,7 @@ class TextIOWrapper(TextIOBase):
             # current pos.
             # Rationale: calling decoder.decode() has a large overhead
             # regardless of chunk size; we want the number of such calls to
-            # be O(1) in most situations (common decoders, non-crazy input).
+            # be O(1) in most situations (common decoders, sensible input).
             # Actually, it will be exactly 1 for fixed-size codecs (all
             # 8-bit codecs, also UTF-16 and UTF-32).
             skip_bytes = int(self._b2cratio * chars_to_skip)
@@ -2382,18 +2389,18 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("tell on closed file")
         if not self._seekable:
             raise UnsupportedOperation("underlying stream is not seekable")
-        if whence == 1: # seek relative to current position
+        if whence == SEEK_CUR:
             if cookie != 0:
                 raise UnsupportedOperation("can't do nonzero cur-relative seeks")
             # Seeking to the current position should attempt to
             # sync the underlying buffer with the current position.
             whence = 0
             cookie = self.tell()
-        if whence == 2: # seek relative to end of file
+        elif whence == SEEK_END:
             if cookie != 0:
                 raise UnsupportedOperation("can't do nonzero end-relative seeks")
             self.flush()
-            position = self.buffer.seek(0, 2)
+            position = self.buffer.seek(0, whence)
             self._set_decoded_chars('')
             self._snapshot = None
             if self._decoder:
