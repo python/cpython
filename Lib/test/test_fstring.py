@@ -1123,10 +1123,10 @@ non-important content
         # Test named function parameters, to make sure '=' parsing works
         # there.
         def f(a):
-             nonlocal x
-             oldx = x
-             x = a
-             return oldx
+            nonlocal x
+            oldx = x
+            x = a
+            return oldx
         x = 0
         self.assertEqual(f'{f(a="3=")}', '0')
         self.assertEqual(x, '3=')
