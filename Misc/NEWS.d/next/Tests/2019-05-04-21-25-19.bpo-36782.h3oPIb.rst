@@ -1,1 +1,9 @@
-Created a test for the C API function :c:func:`PyDate_FromDate`. Patch by Edison Abahurire.
+Created tests for these C API functions 
+- :c:func:`PyDate_FromDate`. 
+- :c:func:`PyDateTime_FromDateAndTime`. 
+- :c:func:`PyDateTime_FromDateAndTimeAndFold`. 
+- :c:func:`PyTime_FromTime`. 
+- :c:func:`PyTime_FromTimeAndFold`. 
+- :c:func:`PyDelta_FromDSU`. 
+
+Patch by Edison Abahurire.
