@@ -25,7 +25,7 @@ class BaseTest:
     # and various string implementations
 
     # The type to be tested
-    # Change in subclasses to change the behaviour of fixtesttype()
+    # Change in subclasses to change the behaviour of fixtype()
     type2test = None
 
     # Whether the "contained items" of the container are integers in
@@ -34,7 +34,7 @@ class BaseTest:
     contains_bytes = False
 
     # All tests pass their arguments to the testing methods
-    # as str objects. fixtesttype() can be used to propagate
+    # as str objects. fixtype() can be used to propagate
     # these arguments to the appropriate type
     def fixtype(self, obj):
         if isinstance(obj, str):
