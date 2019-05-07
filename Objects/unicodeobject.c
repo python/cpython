@@ -15922,6 +15922,15 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 }
 #endif
 
+void
+_PyUnicode_FiniEncodings(PyThreadState *tstate) {
+    PyInterpreterState *interp = tstate->interp;
+
+    PyMem_RawFree(interp->fs_codec.encoding);
+    interp->fs_codec.encoding = NULL;
+    PyMem_RawFree(interp->fs_codec.errors);
+    interp->fs_codec.errors = NULL;
+}
 
 void
 _PyUnicode_Fini(void)
@@ -15947,13 +15956,9 @@ _PyUnicode_Fini(void)
     _PyUnicode_ClearStaticStrings();
     (void)PyUnicode_ClearFreeList();
 
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    PyMem_RawFree(interp->fs_codec.encoding);
-    interp->fs_codec.encoding = NULL;
-    PyMem_RawFree(interp->fs_codec.errors);
-    interp->fs_codec.errors = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyUnicode_FiniEncodings(tstate);
 }
-
 
 /* A _string module, to export formatter_parser and formatter_field_name_split
    to the string.Formatter class implemented in Python. */

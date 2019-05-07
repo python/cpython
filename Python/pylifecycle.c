@@ -1597,6 +1597,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     }
 
     _PyImport_Cleanup(tstate);
+    _PyUnicode_FiniEncodings(tstate);
     PyInterpreterState_Clear(interp);
     PyThreadState_Swap(NULL);
     PyInterpreterState_Delete(interp);
