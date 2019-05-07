@@ -120,11 +120,11 @@ def stderr_to_parser_error(parse_args, *args, **kwargs):
                 if attr is sys.stdout:
                     setattr(result, key, old_stdout)
                 elif attr is sys.stdout.buffer:
-                    setattr(result, key, old_stdout.buffer)
+                    setattr(result, key, getattr(old_stdout, 'buffer', BIN_STDOUT_SENTINEL))
                 elif attr is sys.stderr:
                     setattr(result, key, old_stderr)
                 elif attr is sys.stderr.buffer:
-                    setattr(result, key, old_stderr.buffer)
+                    setattr(result, key, getattr(old_stderr, 'buffer', BIN_STDERR_SENTINEL))
             return result
         except SystemExit:
             code = sys.exc_info()[1].code
@@ -1482,12 +1482,30 @@ class TestFileTypeRepr(TestCase):
         self.assertEqual("FileType('r', 1, errors='replace')", repr(type))
 
 
+BIN_STDOUT_SENTINEL = object()
+BIN_STDERR_SENTINEL = object()
+
+
 class StdStreamComparer:
     def __init__(self, attr):
+        # We try to use the actual stdXXX.buffer attribute as our
+        # marker, but but under some test environments,
+        # sys.stdout/err are replaced by io.StringIO which won't have .buffer,
+        # so we use a sentinel simply to show that the tests do the right thing
+        # for any buffer supporting object
         self.getattr = operator.attrgetter(attr)
+        if attr == 'stdout.buffer':
+            self.backupattr = BIN_STDOUT_SENTINEL
+        elif attr == 'stderr.buffer':
+            self.backupattr = BIN_STDERR_SENTINEL
+        else:
+            self.backupattr = object() # Not equal to anything
 
     def __eq__(self, other):
-        return other == self.getattr(sys)
+        try:
+            return other == self.getattr(sys)
+        except AttributeError:
+            return other == self.backupattr
 
 
 eq_stdin = StdStreamComparer('stdin')
