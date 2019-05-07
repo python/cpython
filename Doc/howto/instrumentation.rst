@@ -369,13 +369,13 @@ available:
 .. c:function:: python.function.entry(str filename, str funcname, int lineno, frameptr)
 
    This probe point indicates that execution of a Python function has begun.
-   It is only triggered for pure-python (bytecode) functions.
+   It is only triggered for pure-Python (bytecode) functions.
 
 .. c:function:: python.function.return(str filename, str funcname, int lineno, frameptr)
 
    This probe point is the converse of :c:func:`python.function.return`, and
    indicates that execution of a Python function has ended (either via
-   ``return``, or via an exception).  It is only triggered for pure-python
+   ``return``, or via an exception).  It is only triggered for pure-Python
    (bytecode) functions.
 
 

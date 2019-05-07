@@ -102,16 +102,19 @@ namespace_repr(PyObject *ns)
         if (PyUnicode_Check(key) && PyUnicode_GET_LENGTH(key) > 0) {
             PyObject *value, *item;
 
-            value = PyDict_GetItem(d, key);
-            assert(value != NULL);
-
-            item = PyUnicode_FromFormat("%S=%R", key, value);
-            if (item == NULL) {
-                loop_error = 1;
+            value = PyDict_GetItemWithError(d, key);
+            if (value != NULL) {
+                item = PyUnicode_FromFormat("%U=%R", key, value);
+                if (item == NULL) {
+                    loop_error = 1;
+                }
+                else {
+                    loop_error = PyList_Append(pairs, item);
+                    Py_DECREF(item);
+                }
             }
-            else {
-                loop_error = PyList_Append(pairs, item);
-                Py_DECREF(item);
+            else if (PyErr_Occurred()) {
+                loop_error = 1;
             }
         }
 
@@ -201,7 +204,7 @@ SimpleNamespace(**kwargs)");
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "types.SimpleNamespace",                    /* tp_name */
-    sizeof(_PyNamespaceObject),                 /* tp_size */
+    sizeof(_PyNamespaceObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)namespace_dealloc,              /* tp_dealloc */
     0,                                          /* tp_print */

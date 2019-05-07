@@ -24,23 +24,19 @@
  *  Py_[X]DECREF() and Py_[X]INCREF() macros.  The lint annotations
  *  look like "NOTE(...)".
  *
- *  To debug parser errors like
- *      "parser.ParserError: Expected node type 12, got 333."
- *  decode symbol numbers using the automatically-generated files
- *  Lib/symbol.h and Include/token.h.
  */
 
 #include "Python.h"                     /* general Python API             */
 #include "Python-ast.h"                 /* mod_ty */
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "ast.h"
 #include "graminit.h"                   /* symbols defined in the grammar */
 #include "node.h"                       /* internal parser structure      */
 #include "errcode.h"                    /* error codes for PyNode_*()     */
 #include "token.h"                      /* token definitions              */
+                                        /* ISTERMINAL() / ISNONTERMINAL() */
 #include "grammar.h"
 #include "parsetok.h"
-                                        /* ISTERMINAL() / ISNONTERMINAL() */
-#undef Yield
-#include "ast.h"
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
@@ -206,15 +202,15 @@ static PyObject* parser_st2tuple(PyST_Object *, PyObject *, PyObject *);
 #define PUBLIC_METHOD_TYPE (METH_VARARGS|METH_KEYWORDS)
 
 static PyMethodDef parser_methods[] = {
-    {"compile",         (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
+    {"compile",         (PyCFunction)(void(*)(void))parser_compilest,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compile this ST object into a code object.")},
-    {"isexpr",          (PyCFunction)parser_isexpr,     PUBLIC_METHOD_TYPE,
+    {"isexpr",          (PyCFunction)(void(*)(void))parser_isexpr,     PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if this ST object was created from an expression.")},
-    {"issuite",         (PyCFunction)parser_issuite,    PUBLIC_METHOD_TYPE,
+    {"issuite",         (PyCFunction)(void(*)(void))parser_issuite,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if this ST object was created from a suite.")},
-    {"tolist",          (PyCFunction)parser_st2list,    PUBLIC_METHOD_TYPE,
+    {"tolist",          (PyCFunction)(void(*)(void))parser_st2list,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of this ST.")},
-    {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
+    {"totuple",         (PyCFunction)(void(*)(void))parser_st2tuple,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of this ST.")},
     {"__sizeof__",      (PyCFunction)parser_sizeof,     METH_NOARGS,
         PyDoc_STR("Returns size in memory, in bytes.")},
@@ -341,6 +337,7 @@ parser_newstobject(node *st, int type)
         o->st_node = st;
         o->st_type = type;
         o->st_flags.cf_flags = 0;
+        o->st_flags.cf_feature_version = PY_MINOR_VERSION;
     }
     else {
         PyNode_Free(st);
@@ -584,8 +581,10 @@ parser_do_parse(PyObject *args, PyObject *kw, const char *argspec, int type)
 
         if (n) {
             res = parser_newstobject(n, type);
-            if (res)
+            if (res) {
                 ((PyST_Object *)res)->st_flags.cf_flags = flags & PyCF_MASK;
+                ((PyST_Object *)res)->st_flags.cf_feature_version = PY_MINOR_VERSION;
+            }
         }
         else {
             PyParser_SetError(&err);
@@ -645,7 +644,6 @@ validate_node(node *tree)
 {
     int type = TYPE(tree);
     int nch = NCH(tree);
-    dfa *nt_dfa;
     state *dfa_state;
     int pos, arc;
 
@@ -655,18 +653,36 @@ validate_node(node *tree)
         PyErr_Format(parser_error, "Unrecognized node type %d.", TYPE(tree));
         return 0;
     }
-    nt_dfa = &_PyParser_Grammar.g_dfa[type];
+    const dfa *nt_dfa = &_PyParser_Grammar.g_dfa[type];
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */
-    dfa_state = &nt_dfa->d_state[nt_dfa->d_initial];
+    dfa_state = nt_dfa->d_state;
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
+        if ((ch_type >= NT_OFFSET + _PyParser_Grammar.g_ndfas)
+            || (ISTERMINAL(ch_type) && (ch_type >= N_TOKENS))
+            || (ch_type < 0)
+           ) {
+            PyErr_Format(parser_error, "Unrecognized node type %d.", ch_type);
+            return 0;
+        }
+        if (ch_type == suite && TYPE(tree) == funcdef) {
+            /* This is the opposite hack of what we do in parser.c
+               (search for func_body_suite), except we don't ever
+               support type comments here. */
+            ch_type = func_body_suite;
+        }
         for (arc = 0; arc < dfa_state->s_narcs; ++arc) {
             short a_label = dfa_state->s_arc[arc].a_lbl;
             assert(a_label < _PyParser_Grammar.g_ll.ll_nlabels);
-            if (_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type) {
+
+            const char *label_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+            if ((_PyParser_Grammar.g_ll.ll_label[a_label].lb_type == ch_type)
+                && ((ch->n_str == NULL) || (label_str == NULL)
+                     || (strcmp(ch->n_str, label_str) == 0))
+               ) {
                 /* The child is acceptable; if non-terminal, validate it recursively. */
                 if (ISNONTERMINAL(ch_type) && !validate_node(ch))
                     return 0;
@@ -679,17 +695,26 @@ validate_node(node *tree)
         /* What would this state have accepted? */
         {
             short a_label = dfa_state->s_arc->a_lbl;
-            int next_type;
             if (!a_label) /* Wouldn't accept any more children */
                 goto illegal_num_children;
 
-            next_type = _PyParser_Grammar.g_ll.ll_label[a_label].lb_type;
-            if (ISNONTERMINAL(next_type))
-                PyErr_Format(parser_error, "Expected node type %d, got %d.",
-                             next_type, ch_type);
-            else
+            int next_type = _PyParser_Grammar.g_ll.ll_label[a_label].lb_type;
+            const char *expected_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
+
+            if (ISNONTERMINAL(next_type)) {
+                PyErr_Format(parser_error, "Expected %s, got %s.",
+                             _PyParser_Grammar.g_dfa[next_type - NT_OFFSET].d_name,
+                             ISTERMINAL(ch_type) ? _PyParser_TokenNames[ch_type] :
+                             _PyParser_Grammar.g_dfa[ch_type - NT_OFFSET].d_name);
+            }
+            else if (expected_str != NULL) {
+                PyErr_Format(parser_error, "Illegal terminal: expected '%s'.",
+                             expected_str);
+            }
+            else {
                 PyErr_Format(parser_error, "Illegal terminal: expected %s.",
                              _PyParser_TokenNames[next_type]);
+            }
             return 0;
         }
 
@@ -920,7 +945,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             Py_DECREF(elem);
             return NULL;
         }
-        err = PyNode_AddChild(root, type, strn, *line_num, 0);
+        err = PyNode_AddChild(root, type, strn, *line_num, 0, *line_num, 0);
         if (err == E_NOMEM) {
             Py_DECREF(elem);
             PyObject_FREE(strn);
@@ -1087,23 +1112,23 @@ parser__pickler(PyObject *self, PyObject *args)
  *  inheritance.
  */
 static PyMethodDef parser_functions[] =  {
-    {"compilest",      (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
+    {"compilest",      (PyCFunction)(void(*)(void))parser_compilest,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Compiles an ST object into a code object.")},
-    {"expr",            (PyCFunction)parser_expr,      PUBLIC_METHOD_TYPE,
+    {"expr",            (PyCFunction)(void(*)(void))parser_expr,      PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from an expression.")},
-    {"isexpr",          (PyCFunction)parser_isexpr,    PUBLIC_METHOD_TYPE,
+    {"isexpr",          (PyCFunction)(void(*)(void))parser_isexpr,    PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if an ST object was created from an expression.")},
-    {"issuite",         (PyCFunction)parser_issuite,   PUBLIC_METHOD_TYPE,
+    {"issuite",         (PyCFunction)(void(*)(void))parser_issuite,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Determines if an ST object was created from a suite.")},
-    {"suite",           (PyCFunction)parser_suite,     PUBLIC_METHOD_TYPE,
+    {"suite",           (PyCFunction)(void(*)(void))parser_suite,     PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a suite.")},
-    {"sequence2st",     (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
+    {"sequence2st",     (PyCFunction)(void(*)(void))parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
-    {"st2tuple",        (PyCFunction)parser_st2tuple,  PUBLIC_METHOD_TYPE,
+    {"st2tuple",        (PyCFunction)(void(*)(void))parser_st2tuple,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a tuple-tree representation of an ST.")},
-    {"st2list",         (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
+    {"st2list",         (PyCFunction)(void(*)(void))parser_st2list,   PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates a list-tree representation of an ST.")},
-    {"tuple2st",        (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
+    {"tuple2st",        (PyCFunction)(void(*)(void))parser_tuple2st,  PUBLIC_METHOD_TYPE,
         PyDoc_STR("Creates an ST object from a tree representation.")},
 
     /* private stuff: support pickle module */

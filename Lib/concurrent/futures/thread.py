@@ -142,7 +142,22 @@ class ThreadPoolExecutor(_base.Executor):
         self._initializer = initializer
         self._initargs = initargs
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(*args, **kwargs):
+        if len(args) >= 2:
+            self, fn, *args = args
+        elif not args:
+            raise TypeError("descriptor 'submit' of 'ThreadPoolExecutor' object "
+                            "needs an argument")
+        elif 'fn' in kwargs:
+            fn = kwargs.pop('fn')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'fn' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('submit expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenThreadPool(self._broken)
@@ -150,7 +165,7 @@ class ThreadPoolExecutor(_base.Executor):
             if self._shutdown:
                 raise RuntimeError('cannot schedule new futures after shutdown')
             if _shutdown:
-                raise RuntimeError('cannot schedule new futures after'
+                raise RuntimeError('cannot schedule new futures after '
                                    'interpreter shutdown')
 
             f = _base.Future()
@@ -159,6 +174,7 @@ class ThreadPoolExecutor(_base.Executor):
             self._work_queue.put(w)
             self._adjust_thread_count()
             return f
+    submit.__text_signature__ = _base.Executor.submit.__text_signature__
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):

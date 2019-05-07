@@ -393,7 +393,19 @@ class ShareableTypeTests(unittest.TestCase):
                             for i in range(-1, 258))
 
     def test_int(self):
-        self._assert_values(range(-1, 258))
+        self._assert_values(itertools.chain(range(-1, 258),
+                                            [sys.maxsize, -sys.maxsize - 1]))
+
+    def test_non_shareable_int(self):
+        ints = [
+            sys.maxsize + 1,
+            -sys.maxsize - 2,
+            2**1000,
+        ]
+        for i in ints:
+            with self.subTest(i):
+                with self.assertRaises(OverflowError):
+                    interpreters.channel_send(self.cid, i)
 
 
 ##################################
@@ -824,23 +836,12 @@ class RunStringTests(TestBase):
 
             expected = 'spam spam spam spam spam'
             script = dedent(f"""
-                # (inspired by Lib/test/test_fork.py)
                 import os
-                pid = os.fork()
-                if pid == 0:  # child
+                try:
+                    os.fork()
+                except RuntimeError:
                     with open('{file.name}', 'w') as out:
                         out.write('{expected}')
-                    # Kill the unittest runner in the child process.
-                    os._exit(1)
-                else:
-                    SHORT_SLEEP = 0.1
-                    import time
-                    for _ in range(10):
-                        spid, status = os.waitpid(pid, os.WNOHANG)
-                        if spid == pid:
-                            break
-                        time.sleep(SHORT_SLEEP)
-                    assert(spid == pid)
                 """)
             interpreters.run_string(self.id, script)
 
