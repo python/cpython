@@ -1,1 +1,1 @@
-Created tests for C API functions. Patch by Edison Abahurire.
+Created tests for several C API functions in the datetime module, specifically::
