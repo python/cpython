@@ -44,7 +44,7 @@ modules.
 
 .. versionadded:: 3.7
    Descriptors for nested definitions.  They are accessed through the
-   new children attibute.  Each has a new parent attribute.
+   new children attribute.  Each has a new parent attribute.
 
 The descriptors returned by these functions are instances of
 Function and Class classes.  Users are not expected to create instances

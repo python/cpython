@@ -126,7 +126,7 @@ module documentation.  This section lists the differences between the API and
 
    You can avoid calling this method explicitly by using the :keyword:`with`
    statement. The following code will automatically unlink *dom* when the
-   :keyword:`with` block is exited::
+   :keyword:`!with` block is exited::
 
       with xml.dom.minidom.parse(datasource) as dom:
           ... # Work with dom.
@@ -163,7 +163,7 @@ module documentation.  This section lists the differences between the API and
       The :meth:`toxml` method now preserves the attribute order specified
       by the user.
 
-.. method:: Node.toprettyxml(indent="", newl="", encoding="")
+.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None)
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string
@@ -238,21 +238,7 @@ The following interfaces have no implementation in :mod:`xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`DocumentType`
-
-* :class:`DOMImplementation`
-
-* :class:`CharacterData`
-
-* :class:`CDATASection`
-
-* :class:`Notation`
-
-* :class:`Entity`
-
 * :class:`EntityReference`
-
-* :class:`DocumentFragment`
 
 Most of these reflect information in the XML document that is not of general
 utility to most DOM users.

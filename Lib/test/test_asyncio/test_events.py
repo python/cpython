@@ -475,6 +475,7 @@ class EventLoopTestsMixin:
         self.loop.add_signal_handler(signal.SIGALRM, my_handler)
 
         signal.setitimer(signal.ITIMER_REAL, 0.01, 0)  # Send SIGALRM once.
+        self.loop.call_later(60, self.loop.stop)
         self.loop.run_forever()
         self.assertEqual(caught, 1)
 
@@ -487,11 +488,12 @@ class EventLoopTestsMixin:
             nonlocal caught
             caught += 1
             self.assertEqual(args, some_args)
+            self.loop.stop()
 
         self.loop.add_signal_handler(signal.SIGALRM, my_handler, *some_args)
 
         signal.setitimer(signal.ITIMER_REAL, 0.1, 0)  # Send SIGALRM once.
-        self.loop.call_later(0.5, self.loop.stop)
+        self.loop.call_later(60, self.loop.stop)
         self.loop.run_forever()
         self.assertEqual(caught, 1)
 
@@ -665,9 +667,7 @@ class EventLoopTestsMixin:
                 super().data_received(data)
                 self.transport.write(expected_response)
 
-        lsock = socket.socket()
-        lsock.bind(('127.0.0.1', 0))
-        lsock.listen(1)
+        lsock = socket.create_server(('127.0.0.1', 0), backlog=1)
         addr = lsock.getsockname()
 
         message = b'test data'
@@ -1116,9 +1116,7 @@ class EventLoopTestsMixin:
                 super().connection_made(transport)
                 proto.set_result(self)
 
-        sock_ob = socket.socket(type=socket.SOCK_STREAM)
-        sock_ob.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock_ob.bind(('0.0.0.0', 0))
+        sock_ob = socket.create_server(('0.0.0.0', 0))
 
         f = self.loop.create_server(TestMyProto, sock=sock_ob)
         server = self.loop.run_until_complete(f)
@@ -1134,9 +1132,7 @@ class EventLoopTestsMixin:
         server.close()
 
     def test_create_server_addr_in_use(self):
-        sock_ob = socket.socket(type=socket.SOCK_STREAM)
-        sock_ob.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock_ob.bind(('0.0.0.0', 0))
+        sock_ob = socket.create_server(('0.0.0.0', 0))
 
         f = self.loop.create_server(MyProto, sock=sock_ob)
         server = self.loop.run_until_complete(f)
@@ -2484,30 +2480,6 @@ class AbstractEventLoopTests(unittest.TestCase):
         loop = asyncio.new_event_loop()
         loop.run_until_complete(inner())
         loop.close()
-
-
-class ProtocolsAbsTests(unittest.TestCase):
-
-    def test_empty(self):
-        f = mock.Mock()
-        p = asyncio.Protocol()
-        self.assertIsNone(p.connection_made(f))
-        self.assertIsNone(p.connection_lost(f))
-        self.assertIsNone(p.data_received(f))
-        self.assertIsNone(p.eof_received())
-
-        dp = asyncio.DatagramProtocol()
-        self.assertIsNone(dp.connection_made(f))
-        self.assertIsNone(dp.connection_lost(f))
-        self.assertIsNone(dp.error_received(f))
-        self.assertIsNone(dp.datagram_received(f, f))
-
-        sp = asyncio.SubprocessProtocol()
-        self.assertIsNone(sp.connection_made(f))
-        self.assertIsNone(sp.connection_lost(f))
-        self.assertIsNone(sp.pipe_data_received(1, f))
-        self.assertIsNone(sp.pipe_connection_lost(1, f))
-        self.assertIsNone(sp.process_exited())
 
 
 class PolicyTests(unittest.TestCase):

@@ -1,4 +1,0 @@
-Add :func:`~unittest.addModuleCleanup()` and
-:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
-cleanups for :func:`~unittest.setUpModule()` and
-:meth:`~unittest.TestCase.setUpClass()`. Patch by Lisa Roach.

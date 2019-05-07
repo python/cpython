@@ -530,6 +530,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         PyCodeObject *co = (PyCodeObject *)v;
         W_TYPE(TYPE_CODE, p);
         w_long(co->co_argcount, p);
+        w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_nlocals, p);
         w_long(co->co_stacksize, p);
@@ -670,11 +671,12 @@ r_string(Py_ssize_t n, RFILE *p)
         p->buf_size = n;
     }
     else if (p->buf_size < n) {
-        p->buf = PyMem_REALLOC(p->buf, n);
-        if (p->buf == NULL) {
+        char *tmp = PyMem_REALLOC(p->buf, n);
+        if (tmp == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
+        p->buf = tmp;
         p->buf_size = n;
     }
 
@@ -1321,6 +1323,7 @@ r_object(RFILE *p)
     case TYPE_CODE:
         {
             int argcount;
+            int posonlyargcount;
             int kwonlyargcount;
             int nlocals;
             int stacksize;
@@ -1346,6 +1349,10 @@ r_object(RFILE *p)
             argcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
+            posonlyargcount = (int)r_long(p);
+            if (PyErr_Occurred()) {
+                goto code_error;
+            }
             kwonlyargcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
@@ -1390,7 +1397,7 @@ r_object(RFILE *p)
                 goto code_error;
 
             v = (PyObject *) PyCode_New(
-                            argcount, kwonlyargcount,
+                            argcount, posonlyargcount, kwonlyargcount,
                             nlocals, stacksize, flags,
                             code, consts, names, varnames,
                             freevars, cellvars, filename, name,

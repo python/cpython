@@ -104,8 +104,9 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
     if (PyMUTEX_LOCK(&mutex->cs))
         return FALSE;
     mutex->locked = 0;
-    result = PyCOND_SIGNAL(&mutex->cv);
-    result &= PyMUTEX_UNLOCK(&mutex->cs);
+    /* condvar APIs return 0 on success. We need to return TRUE on success. */
+    result = !PyCOND_SIGNAL(&mutex->cv);
+    PyMUTEX_UNLOCK(&mutex->cs);
     return result;
 }
 
@@ -226,7 +227,7 @@ PyThread_get_thread_ident(void)
     return GetCurrentThreadId();
 }
 
-void
+void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
     dprintf(("%lu: PyThread_exit_thread called\n", PyThread_get_thread_ident()));

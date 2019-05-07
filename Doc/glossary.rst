@@ -336,7 +336,7 @@ Glossary
       names, attribute access, operators or function calls which all return a
       value.  In contrast to many other languages, not all language constructs
       are expressions.  There are also :term:`statement`\s which cannot be used
-      as expressions, such as :keyword:`if`.  Assignments are also statements,
+      as expressions, such as :keyword:`while`.  Assignments are also statements,
       not expressions.
 
    extension module
@@ -448,8 +448,8 @@ Glossary
 
    generator expression
       An expression that returns an iterator.  It looks like a normal expression
-      followed by a :keyword:`for` expression defining a loop variable, range,
-      and an optional :keyword:`if` expression.  The combined expression
+      followed by a :keyword:`!for` clause defining a loop variable, range,
+      and an optional :keyword:`!if` clause.  The combined expression
       generates values for an enclosing function::
 
          >>> sum(i*i for i in range(10))         # sum of squares 0, 1, 4, ... 81
@@ -662,6 +662,11 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   magic method
+      .. index:: pair: magic; method
+
+      An informal synonym for :term:`special method`.
 
    mapping
       A container object that supports arbitrary key lookups and implements the
@@ -1004,6 +1009,8 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    special method
+      .. index:: pair: special; method
+
       A method that is called implicitly by Python to execute a certain
       operation on a type, such as addition.  Such methods have names starting
       and ending with double underscores.  Special methods are documented in

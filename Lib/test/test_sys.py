@@ -767,8 +767,13 @@ class SysModuleTest(unittest.TestCase):
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
-            alloc_name = _testcapi.pymem_getallocatorsname()
-            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+            try:
+                alloc_name = _testcapi.pymem_getallocatorsname()
+            except RuntimeError as exc:
+                # "cannot get allocators name" (ex: tracemalloc is used)
+                with_pymalloc = True
+            else:
+                with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
 
         # Some sanity checks
         a = sys.getallocatedblocks()
@@ -982,8 +987,10 @@ class SizeofTest(unittest.TestCase):
         check(int.__add__, size('3P2P'))
         # method-wrapper (descriptor object)
         check({}.__iter__, size('2P'))
+        # empty dict
+        check({}, size('nQ2P'))
         # dict
-        check({}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        check({"a": 1}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
         check(longdict, size('nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview

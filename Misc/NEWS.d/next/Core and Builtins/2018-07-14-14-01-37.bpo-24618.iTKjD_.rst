@@ -1,2 +1,0 @@
-Fixed reading invalid memory when create the code object with too small
-varnames tuple or too large argument counts.

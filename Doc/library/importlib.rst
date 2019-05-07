@@ -1,5 +1,5 @@
-:mod:`importlib` --- The implementation of :keyword:`import`
-============================================================
+:mod:`!importlib` --- The implementation of :keyword:`!import`
+==============================================================
 
 .. module:: importlib
    :synopsis: The implementation of the import machinery.
@@ -19,7 +19,7 @@ Introduction
 The purpose of the :mod:`importlib` package is two-fold. One is to provide the
 implementation of the :keyword:`import` statement (and thus, by extension, the
 :func:`__import__` function) in Python source code. This provides an
-implementation of :keyword:`import` which is portable to any Python
+implementation of :keyword:`!import` which is portable to any Python
 interpreter. This also provides an implementation which is easier to
 comprehend than one implemented in a programming language other than Python.
 
@@ -197,7 +197,7 @@ Functions
    If a module imports objects from another module using :keyword:`from` ...
    :keyword:`import` ..., calling :func:`reload` for the other module does not
    redefine the objects imported from it --- one way around this is to
-   re-execute the :keyword:`from` statement, another is to use :keyword:`import`
+   re-execute the :keyword:`!from` statement, another is to use :keyword:`!import`
    and qualified names (*module.name*) instead.
 
    If a module instantiates instances of a class, reloading the module that
@@ -1737,7 +1737,8 @@ Python 3.6 and newer for other parts of the code).
           if spec is not None:
               break
       else:
-          raise ImportError(f'No module named {absolute_name!r}')
+          msg = f'No module named {absolute_name!r}'
+          raise ModuleNotFoundError(msg, name=absolute_name)
       module = importlib.util.module_from_spec(spec)
       spec.loader.exec_module(module)
       sys.modules[absolute_name] = module

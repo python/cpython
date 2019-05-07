@@ -228,7 +228,7 @@ PyComplex_FromCComplex(Py_complex cval)
     op = (PyComplexObject *) PyObject_MALLOC(sizeof(PyComplexObject));
     if (op == NULL)
         return PyErr_NoMemory();
-    (void)PyObject_INIT((PyObject *)op, &PyComplex_Type);
+    (void)PyObject_INIT(op, &PyComplex_Type);
     op->cval = cval;
     return (PyObject *) op;
 }
@@ -1129,7 +1129,7 @@ PyTypeObject PyComplex_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)complex_hash,                     /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)complex_repr,                     /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */

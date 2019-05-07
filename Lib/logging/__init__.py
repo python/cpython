@@ -364,11 +364,9 @@ class LogRecord(object):
         else:
             self.process = None
 
-    def __str__(self):
+    def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
-
-    __repr__ = __str__
 
     def getMessage(self):
         """
@@ -1032,6 +1030,8 @@ class Handler(Filterer):
                     sys.stderr.write('Message: %r\n'
                                      'Arguments: %s\n' % (record.msg,
                                                           record.args))
+                except RecursionError:  # See issue 36272
+                    raise
                 except Exception:
                     sys.stderr.write('Unable to print the message and arguments'
                                      ' - possible formatting error.\nUse the'
@@ -1094,6 +1094,8 @@ class StreamHandler(Handler):
             # issue 35046: merged two stream.writes into one.
             stream.write(msg + self.terminator)
             self.flush()
+        except RecursionError:  # See issue 36272
+            raise
         except Exception:
             self.handleError(record)
 

@@ -1,2 +1,0 @@
-Prevent filename duplication in :mod:`subprocess` exception messages.  Patch
-by Zackery Spytz.

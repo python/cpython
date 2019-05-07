@@ -24,7 +24,7 @@
 :begin_search
 @set PYTHON=
 
-@set _Py_EXTERNALS_DIR=%EXTERNAL_DIR%
+@set _Py_EXTERNALS_DIR=%EXTERNALS_DIR%
 @if "%_Py_EXTERNALS_DIR%"=="" (set _Py_EXTERNALS_DIR=%~dp0\..\externals)
 
 @rem If we have Python in externals, use that one

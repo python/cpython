@@ -5,6 +5,11 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
+/* The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
+   define, but we only want to test the public C API, not the internal
+   C API. */
+#undef Py_BUILD_CORE_MODULE
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -947,7 +952,7 @@ test_buildvalue_N_error(const char *fmt)
 }
 
 static PyObject *
-test_buildvalue_N(PyObject *self, PyObject *noargs)
+test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *arg, *res;
 
@@ -2335,6 +2340,71 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
     }
 }
 
+static PyObject *
+get_date_fromtimestamp(PyObject* self, PyObject *args)
+{
+    PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
+    int macro = 0;
+
+    if (!PyArg_ParseTuple(args, "O|p", &ts, &macro)) {
+        return NULL;
+    }
+
+    // Construct the argument tuple
+    if ((tsargs = PyTuple_Pack(1, ts)) == NULL) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDate_FromTimestamp(tsargs);
+    }
+    else {
+        rv = PyDateTimeAPI->Date_FromTimestamp(
+                (PyObject *)PyDateTimeAPI->DateType, tsargs
+        );
+    }
+
+    Py_DECREF(tsargs);
+    return rv;
+}
+
+static PyObject *
+get_datetime_fromtimestamp(PyObject* self, PyObject *args)
+{
+    int macro = 0;
+    int usetz = 0;
+    PyObject *tsargs = NULL, *ts = NULL, *tzinfo = Py_None, *rv = NULL;
+    if (!PyArg_ParseTuple(args, "OO|pp", &ts, &tzinfo, &usetz, &macro)) {
+        return NULL;
+    }
+
+    // Construct the argument tuple
+    if (usetz) {
+        tsargs = PyTuple_Pack(2, ts, tzinfo);
+    }
+    else {
+        tsargs = PyTuple_Pack(1, ts);
+    }
+
+    if (tsargs == NULL) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDateTime_FromTimestamp(tsargs);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromTimestamp(
+                (PyObject *)PyDateTimeAPI->DateTimeType, tsargs, NULL
+        );
+    }
+
+    Py_DECREF(tsargs);
+    return rv;
+}
+
 
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
@@ -2457,7 +2527,7 @@ pending_threadfunc(PyObject *self, PyObject *arg)
 
 /* Some tests of PyUnicode_FromFormat().  This needs more tests. */
 static PyObject *
-test_string_from_format(PyObject *self, PyObject *args)
+test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result;
     char *msg;
@@ -2597,7 +2667,7 @@ typedef struct {
 } known_capsule;
 
 static PyObject *
-test_capsule(PyObject *self, PyObject *args)
+test_capsule(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *object;
     const char *error = NULL;
@@ -2968,7 +3038,7 @@ make_memoryview_from_NULL_pointer(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-test_from_contiguous(PyObject* self, PyObject *noargs)
+test_from_contiguous(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     int data[9] = {-1,-1,-1,-1,-1,-1,-1,-1,-1};
     int init[5] = {0, 1, 2, 3, 4};
@@ -3021,7 +3091,7 @@ test_from_contiguous(PyObject* self, PyObject *noargs)
 extern PyTypeObject _PyBytesIOBuffer_Type;
 
 static PyObject *
-test_pep3118_obsolete_write_locks(PyObject* self, PyObject *noargs)
+test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
 {
     PyTypeObject *type = &_PyBytesIOBuffer_Type;
     PyObject *b;
@@ -3859,25 +3929,6 @@ exit:
     return res;
 }
 
-static PyObject*
-test_raise_signal(PyObject* self, PyObject *args)
-{
-    int signum, err;
-
-    if (!PyArg_ParseTuple(args, "i:raise_signal", &signum)) {
-        return NULL;
-    }
-
-    err = raise(signum);
-    if (err)
-        return PyErr_SetFromErrno(PyExc_OSError);
-
-    if (PyErr_CheckSignals() < 0)
-        return NULL;
-
-    Py_RETURN_NONE;
-}
-
 /* marshal */
 
 static PyObject*
@@ -4203,6 +4254,10 @@ pymem_buffer_overflow(PyObject *self, PyObject *args)
     /* Deliberate buffer overflow to check that PyMem_Free() detects
        the overflow when debug hooks are installed. */
     buffer = PyMem_Malloc(16);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     buffer[16] = 'x';
     PyMem_Free(buffer);
 
@@ -4248,6 +4303,59 @@ test_pymem_getallocatorsname(PyObject *self, PyObject *args)
         return NULL;
     }
     return PyUnicode_FromString(name);
+}
+
+
+static PyObject*
+pyobject_is_freed(PyObject *self, PyObject *op)
+{
+    int res = _PyObject_IsFreed(op);
+    return PyBool_FromLong(res);
+}
+
+
+static PyObject*
+pyobject_uninitialized(PyObject *self, PyObject *args)
+{
+    PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_REFCNT(op) = 1;
+    /* object fields like ob_type are uninitialized! */
+    return op;
+}
+
+
+static PyObject*
+pyobject_forbidden_bytes(PyObject *self, PyObject *args)
+{
+    /* Allocate an incomplete PyObject structure: truncate 'ob_type' field */
+    PyObject *op = (PyObject *)PyObject_Malloc(offsetof(PyObject, ob_type));
+    if (op == NULL) {
+        return NULL;
+    }
+    /* Initialize reference count to avoid early crash in ceval or GC */
+    Py_REFCNT(op) = 1;
+    /* ob_type field is after the memory block: part of "forbidden bytes"
+       when using debug hooks on memory allocatrs! */
+    return op;
+}
+
+
+static PyObject*
+pyobject_freed(PyObject *self, PyObject *args)
+{
+    PyObject *op = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    if (op == NULL) {
+        return NULL;
+    }
+    Py_TYPE(op)->tp_dealloc(op);
+    /* Reset reference count to avoid early crash in ceval or GC */
+    Py_REFCNT(op) = 1;
+    /* object memory is freed! */
+    return op;
 }
 
 
@@ -4586,18 +4694,18 @@ new_hamt(PyObject *self, PyObject *args)
 static PyObject*
 bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
-    if (nargs != 3) {
-        PyErr_SetString(PyExc_TypeError, "bad_get requires exactly 3 arguments");
+    PyObject *self, *obj, *cls;
+    if (!_PyArg_UnpackStack(args, nargs, "bad_get", 3, 3, &self, &obj, &cls)) {
         return NULL;
     }
 
-    PyObject *res = PyObject_CallObject(args[2], NULL);
+    PyObject *res = PyObject_CallObject(cls, NULL);
     if (res == NULL) {
         return NULL;
     }
     Py_DECREF(res);
 
-    return PyObject_Repr(args[0]);
+    return PyObject_Repr(self);
 }
 
 
@@ -4693,31 +4801,6 @@ decode_locale_ex(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *
-get_global_config(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    return _Py_GetGlobalVariablesAsDict();
-}
-
-
-static PyObject *
-get_core_config(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyCoreConfig *config = &interp->core_config;
-    return _PyCoreConfig_AsDict(config);
-}
-
-
-static PyObject *
-get_main_config(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    const _PyMainInterpreterConfig *config = &interp->config;
-    return _PyMainInterpreterConfig_AsDict(config);
-}
-
-
 #ifdef Py_REF_DEBUG
 static PyObject *
 negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
@@ -4751,7 +4834,9 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
-    {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
+    {"get_timezone_utc_capi",    get_timezone_utc_capi,          METH_VARARGS},
+    {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
+    {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -4787,14 +4872,14 @@ static PyMethodDef TestMethods[] = {
     {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
     {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
     {"get_args", get_args, METH_VARARGS},
-    {"get_kwargs", (PyCFunction)get_kwargs, METH_VARARGS|METH_KEYWORDS},
+    {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs, METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
-    {"getargs_keywords", (PyCFunction)getargs_keywords,
+    {"getargs_keywords", (PyCFunction)(void(*)(void))getargs_keywords,
       METH_VARARGS|METH_KEYWORDS},
-    {"getargs_keyword_only", (PyCFunction)getargs_keyword_only,
+    {"getargs_keyword_only", (PyCFunction)(void(*)(void))getargs_keyword_only,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_positional_only_and_keywords",
-      (PyCFunction)getargs_positional_only_and_keywords,
+      (PyCFunction)(void(*)(void))getargs_positional_only_and_keywords,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_b",               getargs_b,                       METH_VARARGS},
     {"getargs_B",               getargs_B,                       METH_VARARGS},
@@ -4863,7 +4948,7 @@ static PyMethodDef TestMethods[] = {
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},
     {"argparsing",              argparsing,                      METH_VARARGS},
     {"code_newempty",           code_newempty,                   METH_VARARGS},
-    {"make_exception_with_doc", (PyCFunction)make_exception_with_doc,
+    {"make_exception_with_doc", (PyCFunction)(void(*)(void))make_exception_with_doc,
      METH_VARARGS | METH_KEYWORDS},
     {"make_memoryview_from_NULL_pointer", make_memoryview_from_NULL_pointer,
      METH_NOARGS},
@@ -4908,8 +4993,6 @@ static PyMethodDef TestMethods[] = {
     {"docstring_with_signature_with_defaults",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_signature_with_defaults},
-    {"raise_signal",
-     (PyCFunction)test_raise_signal, METH_VARARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
     {"pymarshal_write_long_to_file",
@@ -4942,6 +5025,10 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
+    {"pyobject_is_freed", (PyCFunction)(void(*)(void))pyobject_is_freed, METH_O},
+    {"pyobject_uninitialized", pyobject_uninitialized, METH_NOARGS},
+    {"pyobject_forbidden_bytes", pyobject_forbidden_bytes, METH_NOARGS},
+    {"pyobject_freed", pyobject_freed, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
@@ -4960,12 +5047,9 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
-    {"bad_get", bad_get, METH_FASTCALL},
+    {"bad_get", (PyCFunction)(void(*)(void))bad_get, METH_FASTCALL},
     {"EncodeLocaleEx", encode_locale_ex, METH_VARARGS},
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
-    {"get_global_config", get_global_config, METH_NOARGS},
-    {"get_core_config", get_core_config, METH_NOARGS},
-    {"get_main_config", get_main_config, METH_NOARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
@@ -5388,7 +5472,7 @@ generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
 }
 
 static PyMethodDef generic_alias_methods[] = {
-    {"__mro_entries__", (PyCFunction) generic_alias_mro_entries, METH_O, NULL},
+    {"__mro_entries__", (PyCFunction)(void(*)(void))generic_alias_mro_entries, METH_O, NULL},
     {NULL}  /* sentinel */
 };
 
