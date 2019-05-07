@@ -2355,7 +2355,6 @@ get_date_fromdate(PyObject *self, PyObject *args)
     if (macro) {
         rv = PyDate_FromDate(year, month, day);
     }
-
     else {
         rv = PyDateTimeAPI->Date_FromDate(
             year, month, day,
@@ -2373,14 +2372,10 @@ get_datetime_fromdateandtime(PyObject *self, PyObject *args)
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int macro = 0;
 
-    if (!PyArg_ParseTuple(
-        args,
-        "iiiiiii|p",
-        &year, &month, &day,
-        &hour, &minute, &second, &microsecond,
-        &macro))
-    {
-
+    if (!PyArg_ParseTuple(args, "iiiiiii|p",
+                          &year, &month, &day,
+                          &hour, &minute, &second, &microsecond,
+                          &macro)) {
         return NULL;
     }
 
@@ -2390,7 +2385,6 @@ get_datetime_fromdateandtime(PyObject *self, PyObject *args)
             year, month, day,
             hour, minute, second, microsecond);
     }
-
     else {
         rv = PyDateTimeAPI->DateTime_FromDateAndTime(
             year, month, day,
@@ -2398,6 +2392,7 @@ get_datetime_fromdateandtime(PyObject *self, PyObject *args)
             Py_None,
             PyDateTimeAPI->DateTimeType);
     }
+
     return rv;
 }
 
@@ -2409,13 +2404,10 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
     int hour = 0, minute = 0, second = 0, microsecond = 0, fold = 0;
     int macro = 0;
 
-    if (!PyArg_ParseTuple(
-        args, "iiiiiiii|p",
-        &year, &month, &day,
-        &hour, &minute, &second, &microsecond,
-        &fold,
-        &macro)) {
-
+    if (!PyArg_ParseTuple(args, "iiiiiiii|p",
+                          &year, &month, &day,
+                          &hour, &minute, &second, &microsecond,
+                          &fold, &macro)) {
         return NULL;
     }
 
@@ -2426,7 +2418,6 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
             hour, minute, second, microsecond,
             fold);
     }
-
     else {
         rv = PyDateTimeAPI->DateTime_FromDateAndTimeAndFold(
             year, month, day,
@@ -2436,8 +2427,8 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
             PyDateTimeAPI->DateTimeType);
     }
 
-        return rv;
-    }
+    return rv;
+}
 
 static PyObject *
 get_time_fromtime(PyObject *self, PyObject *args)
@@ -2446,12 +2437,9 @@ get_time_fromtime(PyObject *self, PyObject *args)
     int hour = 0, minute = 0, second = 0, microsecond = 0;
     int macro = 0;
 
-    if (!PyArg_ParseTuple(
-        args,
-        "iiii|p",
-        &hour, &minute, &second, &microsecond,
-        &macro)) {
-
+    if (!PyArg_ParseTuple(args, "iiii|p",
+                          &hour, &minute, &second, &microsecond,
+                          &macro)) {
         return NULL;
     }
 
@@ -2476,12 +2464,9 @@ get_time_fromtimeandfold(PyObject *self, PyObject *args)
     int hour = 0, minute = 0, second = 0, microsecond = 0, fold = 0;
     int macro = 0;
 
-    if (!PyArg_ParseTuple(
-        args,
-        "iiiii|p",
-        &hour, &minute, &second, &microsecond, &fold,
-        &macro)) {
-
+    if (!PyArg_ParseTuple(args, "iiiii|p",
+                          &hour, &minute, &second, &microsecond,
+                          &fold, &macro)) {
         return NULL;
     }
 
@@ -2507,12 +2492,9 @@ get_delta_fromdsu(PyObject *self, PyObject *args)
     int days = 0, seconds = 0, microseconds = 0;
     int macro = 0;
 
-    if (!PyArg_ParseTuple(
-        args,
-        "iii|p",
-        &days, &seconds, &microseconds,
-        &macro)) {
-
+    if (!PyArg_ParseTuple(args, "iii|p",
+                          &days, &seconds, &microseconds,
+                          &macro)) {
         return NULL;
     }
 
