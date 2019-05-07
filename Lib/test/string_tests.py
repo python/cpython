@@ -6,17 +6,12 @@ import unittest, string, sys, struct
 from test import support
 from collections import UserList
 
+
 class Sequence:
     def __init__(self, seq='wxyz'): self.seq = seq
     def __len__(self): return len(self.seq)
     def __getitem__(self, i): return self.seq[i]
 
-class BadSeq1(Sequence):
-    def __init__(self): self.seq = [7, 'hello', 123]
-
-class BadSeq2(Sequence):
-    def __init__(self): self.seq = ['a', 'b', 'c']
-    def __len__(self): return 8
 
 class BaseTest:
     # These tests are for buffers of values (bytes) and not
@@ -1168,8 +1163,11 @@ class StringLikeTest(BaseTest):
             self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
                  ('a' * i,) * i)
 
-        self.checkraises(TypeError, ' ', 'join', BadSeq1())
-        self.checkequal('a b c', ' ', 'join', BadSeq2())
+        class LiesAboutLengthSeq(Sequence):
+            def __init__(self): self.seq = ['a', 'b', 'c']
+            def __len__(self): return 8
+
+        self.checkequal('a b c', ' ', 'join', LiesAboutLengthSeq())
 
         self.checkraises(TypeError, ' ', 'join')
         self.checkraises(TypeError, ' ', 'join', None)
