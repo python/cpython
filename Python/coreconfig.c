@@ -619,6 +619,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(import_time);
     COPY_ATTR(show_ref_count);
     COPY_ATTR(show_alloc_count);
+    COPY_ATTR(abort_unraisable);
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
 
@@ -721,6 +722,7 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(show_ref_count);
     SET_ITEM_INT(show_alloc_count);
+    SET_ITEM_INT(abort_unraisable);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
     SET_ITEM_WSTR(filesystem_encoding);
@@ -1506,6 +1508,9 @@ config_read(_PyCoreConfig *config, _PyPreCmdline *cmdline)
     }
     if (config_get_xoption(config, L"showalloccount")) {
         config->show_alloc_count = 1;
+    }
+    if (config_get_xoption(config, L"abortunraisable")) {
+        config->abort_unraisable = 1;
     }
 
     err = config_read_complex_options(config);

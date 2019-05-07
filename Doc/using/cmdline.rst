@@ -446,6 +446,9 @@ Miscellaneous options
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
+   * ``-X abortunraisable`` causes the :c:func:`PyErr_WriteUnraisable`
+     function to abort the current process.  This is useful for debugging
+     purposes.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -466,8 +469,9 @@ Miscellaneous options
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
    .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
-      ``close()`` exceptions in :class:`io.IOBase` destructor.
+      The ``-X pycache_prefix`` and ``-X abortunraisable`` options. The
+      ``-X dev`` option now logs ``close()`` exceptions in the
+      :class:`io.IOBase` destructor.
 
 
 Options you shouldn't use

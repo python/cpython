@@ -1028,6 +1028,10 @@ done:
     Py_XDECREF(t);
     Py_XDECREF(v);
     Py_XDECREF(tb);
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    if (interp->core_config.abort_unraisable) {
+        Py_FatalError("Unraisable exception");
+    }
     PyErr_Clear(); /* Just in case */
 }
 

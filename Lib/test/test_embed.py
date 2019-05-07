@@ -303,6 +303,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'import_time': 0,
         'show_ref_count': 0,
         'show_alloc_count': 0,
+        'abort_unraisable': 0,
         'dump_refs': 0,
         'malloc_stats': 0,
 
@@ -554,6 +555,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'import_time': 1,
             'show_ref_count': 1,
             'show_alloc_count': 1,
+            'abort_unraisable': 1,
             'malloc_stats': 1,
 
             'stdio_encoding': 'iso8859-1',

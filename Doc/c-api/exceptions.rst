@@ -81,6 +81,10 @@ Printing and clearing
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
 
+   .. versionchanged:: 3.8
+      The :option:`-X` ``abortunraisable`` command-line option causes this
+      function to abort the current process.
+
 
 Raising exceptions
 ==================

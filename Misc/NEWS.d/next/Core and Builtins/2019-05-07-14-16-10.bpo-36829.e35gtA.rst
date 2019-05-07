@@ -1,0 +1,2 @@
+Add a -X command-line option to abort the current process if
+:c:func:`PyErr_WriteUnraisable` is called.

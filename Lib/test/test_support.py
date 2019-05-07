@@ -495,6 +495,7 @@ class TestSupport(unittest.TestCase):
             ['-X', 'importtime'],
             ['-X', 'showalloccount'],
             ['-X', 'showrefcount'],
+            ['-X', 'abortunraisable'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
         ):

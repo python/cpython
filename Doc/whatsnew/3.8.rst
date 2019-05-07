@@ -206,6 +206,9 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
+* The new :option:`-X` ``abortunraisable`` option causes the
+  :c:func:`PyErr_WriteUnraisable` C API function to abort the current process.
+  (Contributed by Zackery Spytz in :issue:`36829`.)
 
 New Modules
 ===========
