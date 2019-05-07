@@ -228,43 +228,65 @@ StreamWriter
 
    .. method:: write(data)
 
-      Write *data* to the stream.
+      The method attempts to write the *data* to the underlying socket immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
 
-      If the method is called using ``await stream.write(data)`` syntax it
-      respects flow control, execution is paused if the write buffer reaches the high
-      watermark *(recommended API)*.
+      Starting with Python 3.8, it is possible to directly await on the `write()`
+      method::
 
-      If the method is called using *sync* ``stream.write(data)`` form it *is not* a
-      subject to flow control. Such call should
-      be followed by :meth:`drain`.
+         await stream.write(data)
+
+      The ``await`` pauses the current coroutine until the data is written to the
+      socket.
+
+      Below is an equivalent code that works with Python <= 3.7::
+
+         stream.write(data)
+         await stream.drain()
 
       .. versionchanged:: 3.8
          Support ``await stream.write(...)`` syntax.
 
    .. method:: writelines(data)
 
-      Write a list (or any iterable) of bytes to the stream.
+      The method writes a list (or any iterable) of bytes to the underlying socket
+      immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
 
-      If the method is called using ``await stream.writelines(lines)`` syntax it
-      respects flow control, execution is paused if the write buffer reaches the high
-      watermark *(recommended API)*.
+      Starting with Python 3.8, it is possible to directly await on the `write()`
+      method::
 
-      If the method is called using *sync* ``stream.writelines(lines)`` form it *is not*
-      subject to flow control. Such calls should be followed by :meth:`drain`.
+         await stream.writelines(lines)
+
+      The ``await`` pauses the current coroutine until the data is written to the
+      socket.
+
+      Below is an equivalent code that works with Python <= 3.7::
+
+         stream.writelines(lines)
+         await stream.drain()
 
       .. versionchanged:: 3.8
          Support ``await stream.writelines()`` syntax.
 
    .. method:: close()
 
-      Close the stream.
+      The method closes the stream and the underlying socket.
 
-      If the method is called using ``await stream.close()`` syntax it waits until all
-      closing actions are complete, e.g. SSL shutdown for secure sockets *(recommended
-      API)*.
+      Starting with Python 3.8, it is possible to directly await on the `close()`
+      method::
 
-      If the method is called using *sync* ``stream.close()`` form it *does not* wait
-      for actual socket closing. The call should be followed by :meth:`wait_closed`.
+         await stream.close()
+
+      The ``await`` pauses the current coroutine until the stream and the underlying
+      socket are closed (and SSL shutdown is performed for a secure connection).
+
+      Below is an equivalent code that works with Python <= 3.7::
+
+         stream.close()
+         await stream.wait_closed()
 
       .. versionchanged:: 3.8
          Support ``await stream.close()`` syntax.
