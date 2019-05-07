@@ -472,7 +472,7 @@ Path Objects
 
 .. class:: Path(root, at='')
 
-   Construct a Path object from a root zipfile (which may be a
+   Construct a Path object from a ``root`` zipfile (which may be a
    :class:`ZipFile` instance or ``file`` suitable for passing to
    the :class:`ZipFile` constructor).
 
