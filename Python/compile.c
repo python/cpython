@@ -3964,13 +3964,6 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
         /* Push the text of the expression (which already has the '=' in
            it. */
         ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_text);
-
-        /* If unspecified conversion, default to !r since we know we're using
-               '='. */
-        conversion = conversion == -1 ? 'r' : conversion;
-    } else {
-        /* Unspecified conversion, default to !f. */
-        conversion = conversion == -1 ? 'f' : conversion;
     }
 
     /* The expression to be formatted. */
@@ -3980,7 +3973,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
-    case 'f': oparg = FVC_NONE;  break;
+    case -1:  oparg = FVC_NONE;  break;
     default:
         PyErr_Format(PyExc_SystemError,
                      "Unrecognized conversion character %d", conversion);

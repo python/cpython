@@ -5018,7 +5018,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
     int conversion = -1; /* The conversion char.  Use default if not
-                            specified: !f, or !r if using =. */
+                            specified, or !r if using = and no format
+                            spec. */
     int equal_conversion = 0; /* Are we using the = conversion? */
     PyObject *expr_text = NULL; /* The text of the expression, used for =. */
     const char *expr_text_end;
@@ -5127,9 +5128,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             if (*str+1 < end) {
                 char next = *(*str+1);
 
-                /* First, test for the special case of "!=". Since '=' is not
-                   an allowed conversion character, nothing is lost in this
-                   test. */
+                /* For "!=". since '=' is not an allowed conversion character,
+                   nothing is lost in this test. */
                 if ((ch == '!' && next == '=') ||   /* != */
                     (ch == '=' && next == '=') ||   /* == */
                     (ch == '<' && next == '=') ||   /* <= */
@@ -5217,11 +5217,10 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         *str += 1;
 
         /* Validate the conversion. */
-        if (!(conversion == 's' || conversion == 'r'
-              || conversion == 'a' || conversion == 'f')) {
+        if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
             ast_error(c, n,
                       "f-string: invalid conversion character: "
-                      "expected 's', 'r', 'a', or 'f'");
+                      "expected 's', 'r', or 'a'");
             goto error;
         }
 
@@ -5254,6 +5253,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     assert(*str < end);
     assert(**str == '}');
     *str += 1;
+
+    /* If we're in = mode, and have no format spec and no explict conversion,
+       set the conversion to 'r'. */
+    if (equal_conversion && format_spec == NULL && conversion == -1) {
+        conversion = 'r';
+    }
 
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */

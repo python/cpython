@@ -1069,6 +1069,14 @@ non-important content
         self.assertEqual(f'{x=}', 'x=' + repr(x))
         self.assertEqual(f'{x =}', 'x =' + repr(x))
         self.assertEqual(f'{x=!s}', 'x=' + str(x))
+        self.assertEqual(f'{x=!r}', 'x=' + repr(x))
+        self.assertEqual(f'{x=!a}', 'x=' + ascii(x))
+
+        x = 2.71828
+        self.assertEqual(f'{x=:.2f}', 'x=' + format(x, '.2f'))
+        self.assertEqual(f'{x=!r:^20}', 'x=' + format(repr(x), '^20'))
+        self.assertEqual(f'{x=!s:^20}', 'x=' + format(str(x), '^20'))
+        self.assertEqual(f'{x=!a:^20}', 'x=' + format(ascii(x), '^20'))
 
         x = 9
         self.assertEqual(f'{3*x+15=}', '3*x+15=42')
@@ -1076,13 +1084,13 @@ non-important content
         # There is code in ast.c that deals with non-ascii expression values.  So,
         # use a unicode identifier to trigger that.
         tenπ = 31.4
-        self.assertEqual(f'{tenπ=!f:.2f}', 'tenπ=31.40')
+        self.assertEqual(f'{tenπ=:.2f}', 'tenπ=31.40')
 
         # Also test with Unicode in non-identifiers.
         self.assertEqual(f'{"Σ"=}', '"Σ"=\'Σ\'')
 
         # Make sure nested fstrings still work.
-        self.assertEqual(f'{f"{3.1415=!f:.1f}":*^20}', '*****3.1415=3.1*****')
+        self.assertEqual(f'{f"{3.1415=:.1f}":*^20}', '*****3.1415=3.1*****')
 
         # Make sure text before and after !d works correctly.
         pi = 'π'
