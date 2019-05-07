@@ -127,7 +127,7 @@ main(int argc, char *argv[])
         size_t i, end = Py_MIN(n + 16, data_size);
         fprintf(outfile, "    ");
         for (i = n; i < end; i++) {
-            fprintf(outfile, "%d,", (unsigned int) data[i]);
+            fprintf(outfile, "%u,", (unsigned int) data[i]);
         }
         fprintf(outfile, "\n");
     }

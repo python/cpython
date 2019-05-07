@@ -1,0 +1,2 @@
+Added C API Documentation for Time_FromTimeAndFold and PyDateTime_FromDateAndTimeAndFold as per PEP 495.
+Patch by Edison Abahurire.
