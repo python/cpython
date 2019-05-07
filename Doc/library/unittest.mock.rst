@@ -1356,8 +1356,8 @@ ends.
     >>> with patch.dict(foo, {'newkey': 'newvalue'}) as patched_foo:
     ...     assert foo == {'newkey': 'newvalue'}
     ...     assert patched_foo == {'newkey': 'newvalue'}
+    ...     # You can add, update or delete keys of foo (or patched_foo, it's the same dict)
     ...     patched_foo['spam'] = 'eggs'
-    ...     assert patched_foo['spam'] == 'eggs'
     ...
     >>> assert foo == {}
     >>> assert patched_foo == {}
