@@ -108,7 +108,7 @@ Macros to create objects:
 
 .. c:function:: PyObject* PyTime_FromTimeAndFold(int hour, int minute, int second, int usecond, int fold)
 
-   Return a :class:`datetime.time` object with the specified hour, minute, second, 
+   Return a :class:`datetime.time` object with the specified hour, minute, second,
    microsecond and fold.
 
    .. versionadded:: 3.6
