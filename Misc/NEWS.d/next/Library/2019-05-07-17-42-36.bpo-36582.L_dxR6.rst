@@ -1,0 +1,1 @@
+Fix ``UserString.encode()`` to correctly return ``bytes`` rather than a ``UserString`` instance.
