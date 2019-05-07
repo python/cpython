@@ -642,6 +642,12 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
+    def _callSetUp(self):
+        self.setUp()
+
+    def _callTearDown(self):
+        self.tearDown()
+
     def run(self, result=None):
         orig_result = result
         if result is None:
@@ -673,14 +679,14 @@ class TestCase(object):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                self.setUp()
+                self._callSetUp()
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
                     testMethod()
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.tearDown()
+                    self._callTearDown()
 
             self.doCleanups()
             for test, reason in outcome.skipped:
@@ -711,6 +717,9 @@ class TestCase(object):
             # clear the outcome, no more needed
             self._outcome = None
 
+    def _callCleanup(self, function, *args, **kwargs):
+        function(*args, **kwargs)
+
     def doCleanups(self):
         """Execute all cleanup functions. Normally called for you after
         tearDown."""
@@ -718,7 +727,7 @@ class TestCase(object):
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop()
             with outcome.testPartExecutor(self):
-                function(*args, **kwargs)
+                self._callCleanup(function, *args, **kwargs)
 
         # return this for backwards compatibility
         # even though we no longer use it internally
