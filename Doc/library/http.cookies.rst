@@ -56,8 +56,8 @@ in Cookie name (as :attr:`~Morsel.key`).
 
    This class derives from :class:`BaseCookie` and overrides :meth:`value_decode`
    and :meth:`value_encode`. SimpleCookie supports strings as cookie values.
-   When setting the value, SimpleCookie calls the builtin `str()` to convert the
-   value to a string. Values received from HTTP are kept as strings.
+   When setting the value, SimpleCookie calls the builtin :func:`str()` to convert
+   the value to a string. Values received from HTTP are kept as strings.
 
 .. seealso::
 
