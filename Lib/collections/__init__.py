@@ -1208,6 +1208,7 @@ class UserString(_collections_abc.Sequence):
             sub = sub.data
         return self.data.count(sub, start, end)
     def encode(self, encoding='utf-8', errors='strict'):
+        encoding, errors = (encoding or 'utf-8'), (errors or 'strict')
         return self.data.encode(encoding, errors)
     def endswith(self, suffix, start=0, end=_sys.maxsize):
         return self.data.endswith(suffix, start, end)
