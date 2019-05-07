@@ -921,50 +921,47 @@ static PyMethodDef oss_mixer_methods[] = {
     { NULL,             NULL}
 };
 
+static PyMemberDef oss_members[] = {
+    {"name", T_STRING, offsetof(oss_audio_t, devicename), READONLY, NULL},
+    {NULL}
+};
+
 static PyObject *
-oss_getattro(oss_audio_t *self, PyObject *nameobj)
+oss_closed_getter(oss_audio_t *self, void *closure)
 {
-    const char *name = "";
-    PyObject * rval = NULL;
-
-    if (PyUnicode_Check(nameobj)) {
-        name = PyUnicode_AsUTF8(nameobj);
-        if (name == NULL)
-            return NULL;
-    }
-
-    if (strcmp(name, "closed") == 0) {
-        rval = (self->fd == -1) ? Py_True : Py_False;
-        Py_INCREF(rval);
-    }
-    else if (strcmp(name, "name") == 0) {
-        rval = PyUnicode_FromString(self->devicename);
-    }
-    else if (strcmp(name, "mode") == 0) {
-        /* No need for a "default" in this switch: from newossobject(),
-           self->mode can only be one of these three values. */
-        switch(self->mode) {
-            case O_RDONLY:
-                rval = PyUnicode_FromString("r");
-                break;
-            case O_RDWR:
-                rval = PyUnicode_FromString("rw");
-                break;
-            case O_WRONLY:
-                rval = PyUnicode_FromString("w");
-                break;
-        }
-    }
-    else {
-        rval = PyObject_GenericGetAttr((PyObject *)self, nameobj);
-    }
-    return rval;
+    return PyBool_FromLong(self->fd == -1);
 }
+
+static PyObject *
+oss_mode_getter(oss_audio_t *self, void *closure)
+{
+    switch(self->mode) {
+        case O_RDONLY:
+            return PyUnicode_FromString("r");
+            break;
+        case O_RDWR:
+            return PyUnicode_FromString("rw");
+            break;
+        case O_WRONLY:
+            return PyUnicode_FromString("w");
+            break;
+        default:
+            /* From newossobject(), self->mode can only be one
+               of these three values. */
+            Py_UNREACHABLE();
+    }
+}
+
+static PyGetSetDef oss_getsetlist[] = {
+    {"closed", (getter)oss_closed_getter, (setter)NULL, NULL},
+    {"mode", (getter)oss_mode_getter, (setter)NULL, NULL},
+    {NULL},
+};
 
 static PyTypeObject OSSAudioType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ossaudiodev.oss_audio_device", /*tp_name*/
-    sizeof(oss_audio_t),        /*tp_size*/
+    sizeof(oss_audio_t),        /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)oss_dealloc,    /*tp_dealloc*/
@@ -979,7 +976,7 @@ static PyTypeObject OSSAudioType = {
     0,                          /*tp_hash*/
     0,                          /*tp_call*/
     0,                          /*tp_str*/
-    (getattrofunc)oss_getattro, /*tp_getattro*/
+    0,                          /*tp_getattro*/
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,         /*tp_flags*/
@@ -991,12 +988,14 @@ static PyTypeObject OSSAudioType = {
     0,                          /*tp_iter*/
     0,                          /*tp_iternext*/
     oss_methods,                /*tp_methods*/
+    oss_members,                /*tp_members*/
+    oss_getsetlist,             /*tp_getset*/
 };
 
 static PyTypeObject OSSMixerType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ossaudiodev.oss_mixer_device", /*tp_name*/
-    sizeof(oss_mixer_t),            /*tp_size*/
+    sizeof(oss_mixer_t),            /*tp_basicsize*/
     0,                              /*tp_itemsize*/
     /* methods */
     (destructor)oss_mixer_dealloc,  /*tp_dealloc*/

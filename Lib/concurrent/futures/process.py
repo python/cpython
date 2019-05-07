@@ -3,7 +3,7 @@
 
 """Implements ProcessPoolExecutor.
 
-The follow diagram and text describe the data-flow through the system:
+The following diagram and text describe the data-flow through the system:
 
 |======================= In-process =====================|== Out-of-process ==|
 
@@ -51,7 +51,7 @@ from concurrent.futures import _base
 import queue
 from queue import Full
 import multiprocessing as mp
-from multiprocessing.connection import wait
+import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
 import weakref
@@ -235,6 +235,7 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
             _sendback_result(result_queue, call_item.work_id, exception=exc)
         else:
             _sendback_result(result_queue, call_item.work_id, result=r)
+            del r
 
         # Liberate the resource as soon as possible, to avoid holding onto
         # open files or shared memory that is not needed anymore
@@ -351,7 +352,7 @@ def _queue_management_worker(executor_reference,
         # submitted, from the executor being shutdown/gc-ed, or from the
         # shutdown of the python interpreter.
         worker_sentinels = [p.sentinel for p in processes.values()]
-        ready = wait(readers + worker_sentinels)
+        ready = mp.connection.wait(readers + worker_sentinels)
 
         cause = None
         is_broken = True
@@ -423,6 +424,10 @@ def _queue_management_worker(executor_reference,
         #   - The executor that owns this worker has been shutdown.
         if shutting_down():
             try:
+                # Flag the executor as shutting down as early as possible if it
+                # is not gc-ed yet.
+                if executor is not None:
+                    executor._shutdown_thread = True
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.
                 if not pending_work_items:
@@ -589,12 +594,30 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(*args, **kwargs):
+        if len(args) >= 2:
+            self, fn, *args = args
+        elif not args:
+            raise TypeError("descriptor 'submit' of 'ProcessPoolExecutor' object "
+                            "needs an argument")
+        elif 'fn' in kwargs:
+            fn = kwargs.pop('fn')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'fn' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('submit expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)
             if self._shutdown_thread:
                 raise RuntimeError('cannot schedule new futures after shutdown')
+            if _global_shutdown:
+                raise RuntimeError('cannot schedule new futures after '
+                                   'interpreter shutdown')
 
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
@@ -607,6 +630,7 @@ class ProcessPoolExecutor(_base.Executor):
 
             self._start_queue_management_thread()
             return f
+    submit.__text_signature__ = _base.Executor.submit.__text_signature__
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):

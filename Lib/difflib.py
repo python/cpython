@@ -1634,14 +1634,18 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 lines_to_write -= 1
             # Now yield the context lines after the change
             lines_to_write = context-1
-            while(lines_to_write):
-                from_line, to_line, found_diff = next(line_pair_iterator)
-                # If another change within the context, extend the context
-                if found_diff:
-                    lines_to_write = context-1
-                else:
-                    lines_to_write -= 1
-                yield from_line, to_line, found_diff
+            try:
+                while(lines_to_write):
+                    from_line, to_line, found_diff = next(line_pair_iterator)
+                    # If another change within the context, extend the context
+                    if found_diff:
+                        lines_to_write = context-1
+                    else:
+                        lines_to_write -= 1
+                    yield from_line, to_line, found_diff
+            except StopIteration:
+                # Catch exception from next() and return normally
+                return
 
 
 _file_template = """

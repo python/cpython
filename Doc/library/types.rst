@@ -8,7 +8,7 @@
 
 --------------
 
-This module defines utility function to assist in dynamic creation of
+This module defines utility functions to assist in dynamic creation of
 new types.
 
 It also defines names for some object types that are used by the standard
@@ -59,7 +59,7 @@ Dynamic Type Creation
 
       The default value for the ``namespace`` element of the returned
       tuple has changed.  Now an insertion-order-preserving mapping is
-      used when the metaclass does not have a ``__prepare__`` method,
+      used when the metaclass does not have a ``__prepare__`` method.
 
 .. seealso::
 
@@ -68,6 +68,23 @@ Dynamic Type Creation
 
    :pep:`3115` - Metaclasses in Python 3000
       Introduced the ``__prepare__`` namespace hook
+
+.. function:: resolve_bases(bases)
+
+   Resolve MRO entries dynamically as specified by :pep:`560`.
+
+   This function looks for items in *bases* that are not instances of
+   :class:`type`, and returns a tuple where each such object that has
+   an ``__mro_entries__`` method is replaced with an unpacked result of
+   calling this method.  If a *bases* item is an instance of :class:`type`,
+   or it doesn't have an ``__mro_entries__`` method, then it is included in
+   the return tuple unchanged.
+
+   .. versionadded:: 3.7
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
 
 
 Standard Interpreter Types
@@ -117,6 +134,14 @@ Standard names are defined for the following types:
    .. index:: builtin: compile
 
    The type for code objects such as returned by :func:`compile`.
+
+
+.. data:: CellType
+
+   The type for cell objects: such objects are used as containers for
+   a function's free variables.
+
+   .. versionadded:: 3.8
 
 
 .. data:: MethodType

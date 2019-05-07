@@ -9,6 +9,10 @@ from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class BaseStartServer(func_tests.FunctionalTestCaseMixin):
 
     def new_loop(self):
@@ -69,7 +73,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
     def new_loop(self):
         return asyncio.SelectorEventLoop()
 
-    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'no Unix sockets')
+    @support.skip_unless_bind_unix_socket
     def test_start_unix_server_1(self):
         HELLO_MSG = b'1' * 1024 * 5 + b'\n'
         started = threading.Event()

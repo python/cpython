@@ -695,7 +695,7 @@ complex_float(PyObject *v)
 }
 
 static PyObject *
-complex_conjugate(PyObject *self)
+complex_conjugate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_complex c;
     c = ((PyComplexObject *)self)->cval;
@@ -709,7 +709,7 @@ PyDoc_STRVAR(complex_conjugate_doc,
 "Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
 
 static PyObject *
-complex_getnewargs(PyComplexObject *v)
+complex_getnewargs(PyComplexObject *v, PyObject *Py_UNUSED(ignored))
 {
     Py_complex c = v->cval;
     return Py_BuildValue("(dd)", c.real, c.imag);
@@ -1129,7 +1129,7 @@ PyTypeObject PyComplex_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)complex_hash,                     /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)complex_repr,                     /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */

@@ -71,8 +71,6 @@ class Unparser:
     ########################################################
 
     def _Module(self, tree):
-        if tree.docstring is not None:
-            self.fill(repr(tree.docstring))
         for stmt in tree.body:
             self.dispatch(stmt)
 
@@ -80,6 +78,13 @@ class Unparser:
     def _Expr(self, tree):
         self.fill()
         self.dispatch(tree.value)
+
+    def _NamedExpr(self, tree):
+        self.write("(")
+        self.dispatch(tree.target)
+        self.write(" := ")
+        self.dispatch(tree.value)
+        self.write(")")
 
     def _Import(self, t):
         self.fill("import ")
@@ -237,8 +242,6 @@ class Unparser:
         self.write(")")
 
         self.enter()
-        if t.docstring is not None:
-            self.fill(repr(t.docstring))
         self.dispatch(t.body)
         self.leave()
 
@@ -261,8 +264,6 @@ class Unparser:
             self.write(" -> ")
             self.dispatch(t.returns)
         self.enter()
-        if t.docstring is not None:
-            self.fill(repr(t.docstring))
         self.dispatch(t.body)
         self.leave()
 
@@ -335,12 +336,6 @@ class Unparser:
         self.leave()
 
     # expr
-    def _Bytes(self, t):
-        self.write(repr(t.s))
-
-    def _Str(self, tree):
-        self.write(repr(tree.s))
-
     def _JoinedStr(self, t):
         self.write("f")
         string = io.StringIO()
@@ -357,10 +352,6 @@ class Unparser:
         for value in t.values:
             meth = getattr(self, "_fstring_" + type(value).__name__)
             meth(value, write)
-
-    def _fstring_Str(self, t, write):
-        value = t.s.replace("{", "{{").replace("}", "}}")
-        write(value)
 
     def _fstring_Constant(self, t, write):
         assert isinstance(t.value, str)
@@ -390,6 +381,7 @@ class Unparser:
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
+            # Substitute overflowing decimal literal for AST infinities.
             self.write(repr(value).replace("inf", INFSTR))
         else:
             self.write(repr(value))
@@ -404,15 +396,10 @@ class Unparser:
             else:
                 interleave(lambda: self.write(", "), self._write_constant, value)
             self.write(")")
+        elif value is ...:
+            self.write("...")
         else:
             self._write_constant(t.value)
-
-    def _NameConstant(self, t):
-        self.write(repr(t.value))
-
-    def _Num(self, t):
-        # Substitute overflowing decimal literal for AST infinities.
-        self.write(repr(t.n).replace("inf", INFSTR))
 
     def _List(self, t):
         self.write("[")
@@ -545,8 +532,7 @@ class Unparser:
         # Special case: 3.__abs__() is a syntax error, so if t.value
         # is an integer literal then we need to either parenthesize
         # it or add an extra space to get 3 .__abs__().
-        if ((isinstance(t.value, ast.Num) and isinstance(t.value.n, int))
-           or (isinstance(t.value, ast.Constant) and isinstance(t.value.value, int))):
+        if isinstance(t.value, ast.Constant) and isinstance(t.value.value, int):
             self.write(" ")
         self.write(".")
         self.write(t.attr)
@@ -606,14 +592,18 @@ class Unparser:
     def _arguments(self, t):
         first = True
         # normal arguments
-        defaults = [None] * (len(t.args) - len(t.defaults)) + t.defaults
-        for a, d in zip(t.args, defaults):
+        all_args = t.posonlyargs + t.args
+        defaults = [None] * (len(all_args) - len(t.defaults)) + t.defaults
+        for index, elements in enumerate(zip(all_args, defaults), 1):
+            a, d = elements
             if first:first = False
             else: self.write(", ")
             self.dispatch(a)
             if d:
                 self.write("=")
                 self.dispatch(d)
+            if index == len(t.posonlyargs):
+                self.write(", /")
 
         # varargs, or bare '*' if no varargs but keyword-only arguments present
         if t.vararg or t.kwonlyargs:

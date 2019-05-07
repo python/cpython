@@ -104,11 +104,11 @@ def abs_paths():
             continue   # don't mess with a PEP 302-supplied __file__
         try:
             m.__file__ = os.path.abspath(m.__file__)
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, TypeError):
             pass
         try:
             m.__cached__ = os.path.abspath(m.__cached__)
-        except (AttributeError, OSError):
+        except (AttributeError, OSError, TypeError):
             pass
 
 
@@ -439,7 +439,16 @@ def enablerlcompleter():
                 readline.read_history_file(history)
             except OSError:
                 pass
-            atexit.register(readline.write_history_file, history)
+
+            def write_history():
+                try:
+                    readline.write_history_file(history)
+                except (FileNotFoundError, PermissionError):
+                    # home directory does not exist or is not writable
+                    # https://bugs.python.org/issue19891
+                    pass
+
+            atexit.register(write_history)
 
     sys.__interactivehook__ = register_readline
 
@@ -448,7 +457,14 @@ def venv(known_paths):
 
     env = os.environ
     if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
-        executable = os.environ['__PYVENV_LAUNCHER__']
+        executable = sys._base_executable = os.environ['__PYVENV_LAUNCHER__']
+    elif sys.platform == 'win32' and '__PYVENV_LAUNCHER__' in env:
+        executable = sys.executable
+        import _winapi
+        sys._base_executable = _winapi.GetModuleFileName(0)
+        # bpo-35873: Clear the environment variable to avoid it being
+        # inherited by child processes.
+        del os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
     exe_dir, _ = os.path.split(os.path.abspath(executable))

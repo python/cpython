@@ -119,32 +119,32 @@ from _ssl import (
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
 
-_IntEnum._convert(
+_IntEnum._convert_(
     '_SSLMethod', __name__,
     lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
     source=_ssl)
 
-_IntFlag._convert(
+_IntFlag._convert_(
     'Options', __name__,
     lambda name: name.startswith('OP_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'AlertDescription', __name__,
     lambda name: name.startswith('ALERT_DESCRIPTION_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'SSLErrorNumber', __name__,
     lambda name: name.startswith('SSL_ERROR_'),
     source=_ssl)
 
-_IntFlag._convert(
+_IntFlag._convert_(
     'VerifyFlags', __name__,
     lambda name: name.startswith('VERIFY_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'VerifyMode', __name__,
     lambda name: name.startswith('CERT_'),
     source=_ssl)
@@ -640,7 +640,7 @@ class SSLObject:
 
     When compared to ``SSLSocket``, this object lacks the following features:
 
-     * Any form of network IO incluging methods such as ``recv`` and ``send``.
+     * Any form of network IO, including methods such as ``recv`` and ``send``.
      * The ``do_handshake_on_connect`` and ``suppress_ragged_eofs`` machinery.
     """
     def __init__(self, *args, **kwargs):
@@ -777,6 +777,9 @@ class SSLObject:
         current SSL channel. """
         return self._sslobj.version()
 
+    def verify_client_post_handshake(self):
+        return self._sslobj.verify_client_post_handshake()
+
 
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
@@ -881,8 +884,8 @@ class SSLSocket(socket):
             return self._sslobj.session_reused
 
     def dup(self):
-        raise NotImplemented("Can't dup() %s instances" %
-                             self.__class__.__name__)
+        raise NotImplementedError("Can't dup() %s instances" %
+                                  self.__class__.__name__)
 
     def _checkClosed(self, msg=None):
         # raise an exception here if you wish to check for spurious closes
@@ -1094,6 +1097,12 @@ class SSLSocket(socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
+    def verify_client_post_handshake(self):
+        if self._sslobj:
+            return self._sslobj.verify_client_post_handshake()
+        else:
+            raise ValueError("No SSL wrapper around " + str(self))
+
     def _real_close(self):
         self._sslobj = None
         super()._real_close()
@@ -1106,11 +1115,6 @@ class SSLSocket(socket):
             if timeout == 0.0 and block:
                 self.settimeout(None)
             self._sslobj.do_handshake()
-            if self.context.check_hostname:
-                if not self.server_hostname:
-                    raise ValueError("check_hostname needs server_hostname "
-                                     "argument")
-                match_hostname(self.getpeercert(), self.server_hostname)
         finally:
             self.settimeout(timeout)
 

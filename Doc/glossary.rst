@@ -13,9 +13,14 @@ Glossary
       examples which can be executed interactively in the interpreter.
 
    ``...``
-      The default Python prompt of the interactive shell when entering code for
-      an indented code block or within a pair of matching left and right
-      delimiters (parentheses, square brackets or curly braces).
+      Can refer to:
+
+      * The default Python prompt of the interactive shell when entering code for
+        an indented code block, when within a pair of matching left and right
+        delimiters (parentheses, square brackets, curly braces or triple quotes),
+        or after specifying a decorator.
+
+      * The :const:`Ellipsis` built-in constant.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -38,6 +43,20 @@ Glossary
       :mod:`numbers` module), streams (in the :mod:`io` module), import finders
       and loaders (in the :mod:`importlib.abc` module).  You can create your own
       ABCs with the :mod:`abc` module.
+
+   annotation
+      A label associated with a variable, a class
+      attribute or a function parameter or return value,
+      used by convention as a :term:`type hint`.
+
+      Annotations of local variables cannot be accessed at runtime, but
+      annotations of global variables, class attributes, and functions
+      are stored in the :attr:`__annotations__`
+      special attribute of modules, classes, and functions,
+      respectively.
+
+      See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
+      and :pep:`526`, which describe this functionality.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -80,7 +99,7 @@ Glossary
       that it contains :keyword:`yield` expressions for producing a series of
       values usable in an :keyword:`async for` loop.
 
-      Usually refers to a asynchronous generator function, but may refer to an
+      Usually refers to an asynchronous generator function, but may refer to an
       *asynchronous generator iterator* in some contexts.  In cases where the
       intended meaning isn't clear, using the full terms avoids ambiguity.
 
@@ -93,14 +112,14 @@ Glossary
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`__anext__` method returns an awaitable object which will execute
-      that the body of the asynchronous generator function until the
-      next :keyword:`yield` expression.
+      the body of the asynchronous generator function until the next
+      :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
       resumes with another awaitable returned by :meth:`__anext__`, it
-      picks-up where it left-off.  See :pep:`492` and :pep:`525`.
+      picks up where it left off.  See :pep:`492` and :pep:`525`.
 
    asynchronous iterable
       An object, that can be used in an :keyword:`async for` statement.
@@ -108,10 +127,10 @@ Glossary
       :meth:`__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements :meth:`__aiter__` and :meth:`__anext__`
+      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
       methods.  ``__anext__`` must return an :term:`awaitable` object.
-      :keyword:`async for` resolves awaitable returned from asynchronous
-      iterator's :meth:`__anext__` method until it raises
+      :keyword:`async for` resolves the awaitables returned by an asynchronous
+      iterator's :meth:`__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
@@ -136,8 +155,8 @@ Glossary
       :data:`sys.stdout.buffer`, and instances of :class:`io.BytesIO` and
       :class:`gzip.GzipFile`.
 
-      .. seealso::
-         A :term:`text file` reads and writes :class:`str` objects.
+      See also :term:`text file` for a file object able to read and write
+      :class:`str` objects.
 
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
@@ -175,13 +194,17 @@ Glossary
       normally contain method definitions which operate on instances of the
       class.
 
+   class variable
+      A variable defined in a class and intended to be modified only at
+      class level (i.e., not in an instance of the class).
+
    coercion
       The implicit conversion of an instance of one type to another during an
       operation which involves two arguments of the same type.  For example,
       ``int(3.15)`` converts the floating point number to the integer ``3``, but
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Without coercion, all arguments of even
+      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
       programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 
@@ -313,7 +336,7 @@ Glossary
       names, attribute access, operators or function calls which all return a
       value.  In contrast to many other languages, not all language constructs
       are expressions.  There are also :term:`statement`\s which cannot be used
-      as expressions, such as :keyword:`if`.  Assignments are also statements,
+      as expressions, such as :keyword:`while`.  Assignments are also statements,
       not expressions.
 
    extension module
@@ -367,16 +390,20 @@ Glossary
       and the :ref:`function` section.
 
    function annotation
-      An arbitrary metadata value associated with a function parameter or return
-      value. Its syntax is explained in section :ref:`function`.  Annotations
-      may be accessed via the :attr:`__annotations__` special attribute of a
-      function object.
+      An :term:`annotation` of a function parameter or return value.
 
-      See also the :term:`variable annotation` glossary entry.
+      Function annotations are usually used for
+      :term:`type hints <type hint>`: for example, this function is expected to take two
+      :class:`int` arguments and is also expected to have an :class:`int`
+      return value::
 
-      Annotations are meant to provide a standard way for programmers to
-      document types of functions they design.  See :pep:`484`, which
-      describes this functionality.
+         def sum_two_numbers(a: int, b: int) -> int:
+            return a + b
+
+      Function annotation syntax is explained in section :ref:`function`.
+
+      See :term:`variable annotation` and :pep:`484`,
+      which describe this functionality.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -413,16 +440,16 @@ Glossary
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
-      try-statements).  When the *generator iterator* resumes, it picks-up where
-      it left-off (in contrast to functions which start fresh on every
+      try-statements).  When the *generator iterator* resumes, it picks up where
+      it left off (in contrast to functions which start fresh on every
       invocation).
 
       .. index:: single: generator expression
 
    generator expression
       An expression that returns an iterator.  It looks like a normal expression
-      followed by a :keyword:`for` expression defining a loop variable, range,
-      and an optional :keyword:`if` expression.  The combined expression
+      followed by a :keyword:`!for` clause defining a loop variable, range,
+      and an optional :keyword:`!if` clause.  The combined expression
       generates values for an enclosing function::
 
          >>> sum(i*i for i in range(10))         # sum of squares 0, 1, 4, ... 81
@@ -463,7 +490,7 @@ Glossary
 
 
    hash-based pyc
-      A bytecode cache file that uses the the hash rather than the last-modified
+      A bytecode cache file that uses the hash rather than the last-modified
       time of the corresponding source file to determine its validity. See
       :ref:`pyc-invalidation`.
 
@@ -603,7 +630,7 @@ Glossary
    lambda
       An anonymous inline function consisting of a single :term:`expression`
       which is evaluated when the function is called.  The syntax to create
-      a lambda function is ``lambda [arguments]: expression``
+      a lambda function is ``lambda [parameters]: expression``
 
    LBYL
       Look before you leap.  This coding style explicitly tests for
@@ -620,7 +647,7 @@ Glossary
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
-      elements are O(1).
+      elements is O(1).
 
    list comprehension
       A compact way to process all or part of the elements in a sequence and
@@ -635,6 +662,11 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   magic method
+      .. index:: pair: magic; method
+
+      An informal synonym for :term:`special method`.
 
    mapping
       A container object that supports arbitrary key lookups and implements the
@@ -837,6 +869,21 @@ Glossary
       :class:`str` or :class:`bytes` result instead, respectively. Introduced
       by :pep:`519`.
 
+   PEP
+      Python Enhancement Proposal. A PEP is a design document
+      providing information to the Python community, or describing a new
+      feature for Python or its processes or environment. PEPs should
+      provide a concise technical specification and a rationale for proposed
+      features.
+
+      PEPs are intended to be the primary mechanisms for proposing major new
+      features, for collecting community input on an issue, and for documenting
+      the design decisions that have gone into Python. The PEP author is
+      responsible for building consensus within the community and documenting
+      dissenting opinions.
+
+      See :pep:`1`.
+
    portion
       A set of files in a single directory (possibly stored in a zip file)
       that contribute to a namespace package, as defined in :pep:`420`.
@@ -962,6 +1009,8 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    special method
+      .. index:: pair: special; method
+
       A method that is called implicitly by Python to execute a certain
       operation on a type, such as addition.  Such methods have names starting
       and ending with double underscores.  Special methods are documented in
@@ -974,7 +1023,7 @@ Glossary
 
    struct sequence
       A tuple with named elements. Struct sequences expose an interface similar
-      to :term:`named tuple` in that elements can either be accessed either by
+      to :term:`named tuple` in that elements can be accessed either by
       index or as an attribute. However, they do not have any of the named tuple
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
@@ -991,8 +1040,8 @@ Glossary
       :data:`sys.stdin`, :data:`sys.stdout`, and instances of
       :class:`io.StringIO`.
 
-      .. seealso::
-         A :term:`binary file` reads and write :class:`bytes` objects.
+      See also :term:`binary file` for a file object able to read and write
+      :term:`bytes-like objects <bytes-like object>`.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
@@ -1009,6 +1058,43 @@ Glossary
       :attr:`~instance.__class__` attribute or can be retrieved with
       ``type(obj)``.
 
+   type alias
+      A synonym for a type, created by assigning the type to an identifier.
+
+      Type aliases are useful for simplifying :term:`type hints <type hint>`.
+      For example::
+
+         from typing import List, Tuple
+
+         def remove_gray_shades(
+                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+             pass
+
+      could be made more readable like this::
+
+         from typing import List, Tuple
+
+         Color = Tuple[int, int, int]
+
+         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+             pass
+
+      See :mod:`typing` and :pep:`484`, which describe this functionality.
+
+   type hint
+      An :term:`annotation` that specifies the expected type for a variable, a class
+      attribute, or a function parameter or return value.
+
+      Type hints are optional and are not enforced by Python but
+      they are useful to static type analysis tools, and aid IDEs with code
+      completion and refactoring.
+
+      Type hints of global variables, class attributes, and functions,
+      but not local variables, can be accessed using
+      :func:`typing.get_type_hints`.
+
+      See :mod:`typing` and :pep:`484`, which describe this functionality.
+
    universal newlines
       A manner of interpreting text streams in which all of the following are
       recognized as ending a line: the Unix end-of-line convention ``'\n'``,
@@ -1017,17 +1103,23 @@ Glossary
       :func:`bytes.splitlines` for an additional use.
 
    variable annotation
-      A type metadata value associated with a module global variable or
-      a class attribute. Its syntax is explained in section :ref:`annassign`.
-      Annotations are stored in the :attr:`__annotations__` special
-      attribute of a class or module object and can be accessed using
-      :func:`typing.get_type_hints`.
+      An :term:`annotation` of a variable or a class attribute.
 
-      See also the :term:`function annotation` glossary entry.
+      When annotating a variable or a class attribute, assignment is optional::
 
-      Annotations are meant to provide a standard way for programmers to
-      document types of functions they design.  See :pep:`484` and :pep:`526`
-      which describe this functionality.
+         class C:
+             field: 'annotation'
+
+      Variable annotations are usually used for
+      :term:`type hints <type hint>`: for example this variable is expected to take
+      :class:`int` values::
+
+         count: int = 0
+
+      Variable annotation syntax is explained in section :ref:`annassign`.
+
+      See :term:`function annotation`, :pep:`484`
+      and :pep:`526`, which describe this functionality.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

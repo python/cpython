@@ -12,9 +12,6 @@
 This document aims to give an overview of Windows-specific behaviour you should
 know about when using Python on Microsoft Windows.
 
-Installing Python
-=================
-
 Unlike most Unix systems and services, Windows does not include a system
 supported installation of Python. To make Python available, the CPython team
 has compiled Windows installers (MSI packages) with every `release
@@ -24,15 +21,37 @@ core interpreter and library being used by a single user. The installer is also
 able to install for all users of a single machine, and a separate ZIP file is
 available for application-local distributions.
 
-Supported Versions
-------------------
-
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
 Python |version| supports Windows Vista and newer. If you require Windows XP
 support then please install Python 3.4.
 
-Installation Steps
+There are a number of different installers available for Windows, each with
+certain benefits and downsides.
+
+:ref:`windows-full` contains all components and is the best option for
+developers using Python for any kind of project.
+
+:ref:`windows-store` is a simple installation of Python that is suitable for
+running scripts and packages, and using IDLE or other development environments.
+It requires Windows 10, but can be safely installed without corrupting other
+programs. It also provides many convenient commands for launching Python and
+its tools.
+
+:ref:`windows-nuget` are lightweight installations intended for continuous
+integration systems. It can be used to build Python packages or run scripts,
+but is not updateable and has no user interface tools.
+
+:ref:`windows-embeddable` is a minimal package of Python suitable for
+embedding into a larger application.
+
+
+.. _windows-full:
+
+The full installer
+==================
+
+Installation steps
 ------------------
 
 Four Python |version| installers are available for download - two each for the
@@ -135,7 +154,9 @@ of available options is shown below.
 | DefaultJustForMeTargetDir | The default install directory for    | :file:`%LocalAppData%\\\ |
 |                           | just-for-me installs                 | Programs\\PythonXY` or   |
 |                           |                                      | :file:`%LocalAppData%\\\ |
-|                           |                                      | Programs\\PythonXY-32`   |
+|                           |                                      | Programs\\PythonXY-32` or|
+|                           |                                      | :file:`%LocalAppData%\\\ |
+|                           |                                      | Programs\\PythonXY-64`   |
 +---------------------------+--------------------------------------+--------------------------+
 | DefaultCustomTargetDir    | The default custom install directory | (empty)                  |
 |                           | displayed in the UI                  |                          |
@@ -147,7 +168,7 @@ of available options is shown below.
 |                           | ``.pyc``.                            |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | PrependPath               | Add install and Scripts directories  | 0                        |
-|                           | tho :envvar:`PATH` and ``.PY`` to    |                          |
+|                           | to :envvar:`PATH` and ``.PY`` to     |                          |
 |                           | :envvar:`PATHEXT`                    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Shortcuts                 | Create shortcuts for the interpreter,| 1                        |
@@ -210,7 +231,9 @@ The options listed above can also be provided in a file named ``unattend.xml``
 alongside the executable. This file specifies a list of options and values.
 When a value is provided as an attribute, it will be converted to a number if
 possible. Values provided as element text are always left as strings. This
-example file sets the same options and the previous example::
+example file sets the same options as the previous example:
+
+.. code-block:: xml
 
     <Options>
         <Option Name="InstallAllUsers" Value="no" />
@@ -262,39 +285,199 @@ settings and replace any that have been removed or modified.
 "Uninstall" will remove Python entirely, with the exception of the
 :ref:`launcher`, which has its own entry in Programs and Features.
 
-Other Platforms
----------------
 
-With ongoing development of Python, some platforms that used to be supported
-earlier are no longer supported (due to the lack of users or developers).
-Check :pep:`11` for details on all unsupported platforms.
+.. _windows-store:
 
-* `Windows CE <http://pythonce.sourceforge.net/>`_ is still supported.
-* The `Cygwin <https://cygwin.com/>`_ installer offers to install the Python
-  interpreter as well (cf. `Cygwin package source
-  <ftp://ftp.uni-erlangen.de/pub/pc/gnuwin32/cygwin/mirrors/cygnus/
-  release/python>`_, `Maintainer releases
-  <http://www.tishler.net/jason/software/python/>`_)
+The Microsoft Store package
+===========================
 
-See `Python for Windows <https://www.python.org/downloads/windows/>`_
-for detailed information about platforms with pre-compiled installers.
+.. versionadded:: 3.7.2
 
-.. seealso::
+.. note::
+   The Microsoft Store package is currently considered unstable while its
+   interactions with other tools and other copies of Python are evaluated.
+   While Python itself is stable, this installation method may change its
+   behavior and capabilities during Python 3.7 releases.
 
-   `Python on XP <http://dooling.com/index.php/2006/03/14/python-on-xp-7-minutes-to-hello-world/>`_
-      "7 Minutes to "Hello World!""
-      by Richard Dooling, 2006
+The Microsoft Store package is an easily installable Python interpreter that
+is intended mainly for interactive use, for example, by students.
 
-   `Installing on Windows <http://www.diveintopython.net/installing_python/windows.html>`_
-      in "`Dive into Python: Python from novice to pro
-      <http://www.diveintopython.net/>`_"
-      by Mark Pilgrim, 2004,
-      ISBN 1-59059-356-1
+To install the package, ensure you have the latest Windows 10 updates and
+search the Microsoft Store app for "Python |version|". Ensure that the app
+you select is published by the Python Software Foundation, and install it.
 
-   `For Windows users <https://python.swaroopch.com/installation.html#installation-on-windows>`_
-      in "Installing Python"
-      in "`A Byte of Python <https://python.swaroopch.com/>`_"
-      by Swaroop C H, 2003
+.. warning::
+   Python will always be available for free on the Microsoft Store. If you
+   are asked to pay for it, you have not selected the correct package.
+
+After installation, Python may be launched by finding it in Start.
+Alternatively, it will be available from any Command Prompt or PowerShell
+session by typing ``python``. Further, pip and IDLE may be used by typing
+``pip`` or ``idle``. IDLE can also be found in Start.
+
+All three commands are also available with version number suffixes, for
+example, as ``python3.exe`` and ``python3.x.exe`` as well as
+``python.exe`` (where ``3.x`` is the specific version you want to launch,
+such as |version|).
+
+Virtual environments can be created with ``python -m venv`` and activated
+and used as normal.
+
+If you have installed another version of Python and added it to your
+``PATH`` variable, it will be available as ``python.exe`` rather than the
+one from the Microsoft Store. To access the new installation, use
+``python3.exe`` or ``python3.x.exe``.
+
+To remove Python, open Settings and use Apps and Features, or else find
+Python in Start and right-click to select Uninstall. Uninstalling will
+remove all packages you installed directly into this Python installation, but
+will not remove any virtual environments
+
+Known Issues
+------------
+
+Currently, the ``py.exe`` launcher cannot be used to start Python when it
+has been installed from the Microsoft Store.
+
+Because of restrictions on Microsoft Store apps, Python scripts may not have
+full write access to shared locations such as ``TEMP`` and the registry.
+Instead, it will write to a private copy. If your scripts must modify the
+shared locations, you will need to install the full installer.
+
+
+.. _windows-nuget:
+
+The nuget.org packages
+======================
+
+.. versionadded:: 3.5.2
+
+The nuget.org package is a reduced size Python environment intended for use on
+continuous integration and build systems that do not have a system-wide
+install of Python. While nuget is "the package manager for .NET", it also works
+perfectly fine for packages containing build-time tools.
+
+Visit `nuget.org <https://www.nuget.org/>`_ for the most up-to-date information
+on using nuget. What follows is a summary that is sufficient for Python
+developers.
+
+The ``nuget.exe`` command line tool may be downloaded directly from
+``https://aka.ms/nugetclidl``, for example, using curl or PowerShell. With the
+tool, the latest version of Python for 64-bit or 32-bit machines is installed
+using::
+
+   nuget.exe install python -ExcludeVersion -OutputDirectory .
+   nuget.exe install pythonx86 -ExcludeVersion -OutputDirectory .
+
+To select a particular version, add a ``-Version 3.x.y``. The output directory
+may be changed from ``.``, and the package will be installed into a
+subdirectory. By default, the subdirectory is named the same as the package,
+and without the ``-ExcludeVersion`` option this name will include the specific
+version installed. Inside the subdirectory is a ``tools`` directory that
+contains the Python installation::
+
+   # Without -ExcludeVersion
+   > .\python.3.5.2\tools\python.exe -V
+   Python 3.5.2
+
+   # With -ExcludeVersion
+   > .\python\tools\python.exe -V
+   Python 3.5.2
+
+In general, nuget packages are not upgradeable, and newer versions should be
+installed side-by-side and referenced using the full path. Alternatively,
+delete the package directory manually and install it again. Many CI systems
+will do this automatically if they do not preserve files between builds.
+
+Alongside the ``tools`` directory is a ``build\native`` directory. This
+contains a MSBuild properties file ``python.props`` that can be used in a
+C++ project to reference the Python install. Including the settings will
+automatically use the headers and import libraries in your build.
+
+The package information pages on nuget.org are
+`www.nuget.org/packages/python <https://www.nuget.org/packages/python>`_
+for the 64-bit version and `www.nuget.org/packages/pythonx86
+<https://www.nuget.org/packages/pythonx86>`_ for the 32-bit version.
+
+
+.. _windows-embeddable:
+
+The embeddable package
+======================
+
+.. versionadded:: 3.5
+
+The embedded distribution is a ZIP file containing a minimal Python environment.
+It is intended for acting as part of another application, rather than being
+directly accessed by end-users.
+
+When extracted, the embedded distribution is (almost) fully isolated from the
+user's system, including environment variables, system registry settings, and
+installed packages. The standard library is included as pre-compiled and
+optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python37.dll``,
+``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
+dependants, such as Idle), pip and the Python documentation are not included.
+
+.. note::
+
+    The embedded distribution does not include the `Microsoft C Runtime
+    <https://www.microsoft.com/en-us/download/details.aspx?id=48145>`_ and it is
+    the responsibility of the application installer to provide this. The
+    runtime may have already been installed on a user's system previously or
+    automatically via Windows Update, and can be detected by finding
+    ``ucrtbase.dll`` in the system directory.
+
+Third-party packages should be installed by the application installer alongside
+the embedded distribution. Using pip to manage dependencies as for a regular
+Python installation is not supported with this distribution, though with some
+care it may be possible to include and use pip for automatic updates. In
+general, third-party packages should be treated as part of the application
+("vendoring") so that the developer can ensure compatibility with newer
+versions before providing updates to users.
+
+The two recommended use cases for this distribution are described below.
+
+Python Application
+------------------
+
+An application written in Python does not necessarily require users to be aware
+of that fact. The embedded distribution may be used in this case to include a
+private version of Python in an install package. Depending on how transparent it
+should be (or conversely, how professional it should appear), there are two
+options.
+
+Using a specialized executable as a launcher requires some coding, but provides
+the most transparent experience for users. With a customized launcher, there are
+no obvious indications that the program is running on Python: icons can be
+customized, company and version information can be specified, and file
+associations behave properly. In most cases, a custom launcher should simply be
+able to call ``Py_Main`` with a hard-coded command line.
+
+The simpler approach is to provide a batch file or generated shortcut that
+directly calls the ``python.exe`` or ``pythonw.exe`` with the required
+command-line arguments. In this case, the application will appear to be Python
+and not its actual name, and users may have trouble distinguishing it from other
+running Python processes or file associations.
+
+With the latter approach, packages should be installed as directories alongside
+the Python executable to ensure they are available on the path. With the
+specialized launcher, packages can be located in other locations as there is an
+opportunity to specify the search path before launching the application.
+
+Embedding Python
+----------------
+
+Applications written in native code often require some form of scripting
+language, and the embedded Python distribution can be used for this purpose. In
+general, the majority of the application is in native code, and some part will
+either invoke ``python.exe`` or directly use ``python3.dll``. For either case,
+extracting the embedded distribution to a subdirectory of the application
+installation is sufficient to provide a loadable Python interpreter.
+
+As with the application use, packages can be installed to any location as there
+is an opportunity to specify search paths before initializing the interpreter.
+Otherwise, there is no fundamental differences between using the embedded
+distribution and a regular installation.
 
 
 Alternative bundles
@@ -343,7 +526,9 @@ Windows allows environment variables to be configured permanently at both the
 User level and the System level, or temporarily in a command prompt.
 
 To temporarily set environment variables, open Command Prompt and use the
-:command:`set` command::
+:command:`set` command:
+
+.. code-block:: doscon
 
     C:\>set PATH=C:\Program Files\Python 3.6;%PATH%
     C:\>set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
@@ -377,7 +562,7 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://support.microsoft.com/en-us/help/100843/environment-variables-in-windows-nt
+    https://www.microsoft.com/en-us/wdsi/help/folder-variables
       Environment variables in Windows NT
 
     https://technet.microsoft.com/en-us/library/cc754250.aspx
@@ -436,6 +621,8 @@ Unlike the :envvar:`PATH` variable, the launcher will correctly select the most
 appropriate version of Python. It will prefer per-user installations over
 system-wide ones, and orders by language version rather than using the most
 recently installed version.
+
+The launcher was originally specified in :pep:`397`.
 
 Getting started
 ---------------
@@ -503,7 +690,7 @@ From a script
 Let's create a test Python script - create a file called ``hello.py`` with the
 following contents
 
-::
+.. code-block:: python
 
     #! python
     import sys
@@ -518,7 +705,7 @@ From the directory in which hello.py lives, execute the command:
 You should notice the version number of your latest Python 2.x installation
 is printed.  Now try changing the first line to be:
 
-::
+.. code-block:: python
 
     #! python3
 
@@ -566,7 +753,7 @@ which interpreter to use.  The supported virtual commands are:
 
 For example, if the first line of your script starts with
 
-::
+.. code-block:: sh
 
   #! /usr/bin/python
 
@@ -577,9 +764,16 @@ on Windows which you hope will be useful on Unix, you should use one of the
 shebang lines starting with ``/usr``.
 
 Any of the above virtual commands can be suffixed with an explicit version
-(either just the major version, or the major and minor version) - for example
-``/usr/bin/python2.7`` - which will cause that specific version to be located
-and used.
+(either just the major version, or the major and minor version).
+Furthermore the 32-bit version can be requested by adding "-32" after the
+minor version. I.e. ``/usr/bin/python2.7-32`` will request usage of the
+32-bit python 2.7.
+
+.. versionadded:: 3.7
+
+   Beginning with python launcher 3.7 it is possible to request 64-bit version
+   by the "-64" suffix. Furthermore it is possible to specify a major and
+   architecture without minor (i.e. ``/usr/bin/python3-64``).
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
@@ -592,7 +786,7 @@ Arguments in shebang lines
 The shebang lines can also specify additional options to be passed to the
 Python interpreter.  For example, if you have a shebang line:
 
-::
+.. code-block:: sh
 
   #! /usr/bin/python -v
 
@@ -606,14 +800,14 @@ Customization via INI files
 
 Two .ini files will be searched by the launcher - ``py.ini`` in the current
 user's "application data" directory (i.e. the directory returned by calling the
-Windows function SHGetFolderPath with CSIDL_LOCAL_APPDATA) and ``py.ini`` in the
+Windows function ``SHGetFolderPath`` with ``CSIDL_LOCAL_APPDATA``) and ``py.ini`` in the
 same directory as the launcher. The same .ini files are used for both the
 'console' version of the launcher (i.e. py.exe) and for the 'windows' version
-(i.e. pyw.exe)
+(i.e. pyw.exe).
 
 Customization specified in the "application directory" will have precedence over
 the one next to the executable, so a user, who may not have write access to the
-.ini file next to the launcher, can override commands in that global .ini file)
+.ini file next to the launcher, can override commands in that global .ini file.
 
 Customizing default Python versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -621,17 +815,18 @@ Customizing default Python versions
 In some cases, a version qualifier can be included in a command to dictate
 which version of Python will be used by the command. A version qualifier
 starts with a major version number and can optionally be followed by a period
-('.') and a minor version specifier. If the minor qualifier is specified, it
-may optionally be followed by "-32" to indicate the 32-bit implementation of
-that version be used.
+('.') and a minor version specifier. Furthermore it is possible to specifiy
+if a 32 or 64 bit implementation shall be requested by adding "-32" or "-64".
 
 For example, a shebang line of ``#!python`` has no version qualifier, while
 ``#!python3`` has a version qualifier which specifies only a major version.
 
-If no version qualifiers are found in a command, the environment variable
-``PY_PYTHON`` can be set to specify the default version qualifier - the default
-value is "2". Note this value could specify just a major version (e.g. "2") or
-a major.minor qualifier (e.g. "2.6"), or even major.minor-32.
+If no version qualifiers are found in a command, the environment
+variable :envvar:`PY_PYTHON` can be set to specify the default version
+qualifier. If it is not set, the default is "3". The variable can
+specify any value that may be passed on the command line, such as "3",
+"3.7", "3.7-32" or "3.7-64". (Note that the "-64" option is only
+available with the launcher included with Python 3.7 or newer.)
 
 If no minor version qualifiers are found, the environment variable
 ``PY_PYTHON{major}`` (where ``{major}`` is the current major version qualifier
@@ -649,8 +844,8 @@ of the specified version if available. This is so the behavior of the launcher
 can be predicted knowing only what versions are installed on the PC and
 without regard to the order in which they were installed (i.e., without knowing
 whether a 32 or 64-bit version of Python and corresponding launcher was
-installed last). As noted above, an optional "-32" suffix can be used on a
-version specifier to change this behaviour.
+installed last). As noted above, an optional "-32" or "-64" suffix can be
+used on a version specifier to change this behaviour.
 
 Examples:
 
@@ -683,7 +878,7 @@ For example:
 
 * Setting ``PY_PYTHON=3.1`` is equivalent to the INI file containing:
 
-::
+.. code-block:: ini
 
   [defaults]
   python=3.1
@@ -691,7 +886,7 @@ For example:
 * Setting ``PY_PYTHON=3`` and ``PY_PYTHON3=3.1`` is equivalent to the INI file
   containing:
 
-::
+.. code-block:: ini
 
   [defaults]
   python=3
@@ -812,7 +1007,7 @@ following advice will prevent conflicts with other installations:
 These will ensure that the files in a system-wide installation will not take
 precedence over the copy of the standard library bundled with your application.
 Otherwise, your users may experience problems using your application. Note that
-the first suggestion is the best, as the other may still be susceptible to
+the first suggestion is the best, as the others may still be susceptible to
 non-standard paths in the registry and user site-packages.
 
 .. versionchanged::
@@ -844,7 +1039,7 @@ The Windows-specific standard modules are documented in
 PyWin32
 -------
 
-The `PyWin32 <https://pypi.python.org/pypi/pywin32>`_ module by Mark Hammond
+The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
@@ -918,95 +1113,19 @@ For extension modules, consult :ref:`building-on-windows`.
       by Trent Apted et al, 2007
 
 
-Embedded Distribution
-=====================
-
-.. versionadded:: 3.5
-
-The embedded distribution is a ZIP file containing a minimal Python environment.
-It is intended for acting as part of another application, rather than being
-directly accessed by end-users.
-
-When extracted, the embedded distribution is (almost) fully isolated from the
-user's system, including environment variables, system registry settings, and
-installed packages. The standard library is included as pre-compiled and
-optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python37.dll``,
-``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
-dependants, such as Idle), pip and the Python documentation are not included.
-
-.. note::
-
-    The embedded distribution does not include the `Microsoft C Runtime
-    <https://www.microsoft.com/en-us/download/details.aspx?id=48145>`_ and it is
-    the responsibility of the application installer to provide this. The
-    runtime may have already been installed on a user's system previously or
-    automatically via Windows Update, and can be detected by finding
-    ``ucrtbase.dll`` in the system directory.
-
-Third-party packages should be installed by the application installer alongside
-the embedded distribution. Using pip to manage dependencies as for a regular
-Python installation is not supported with this distribution, though with some
-care it may be possible to include and use pip for automatic updates. In
-general, third-party packages should be treated as part of the application
-("vendoring") so that the developer can ensure compatibility with newer
-versions before providing updates to users.
-
-The two recommended use cases for this distribution are described below.
-
-Python Application
-------------------
-
-An application written in Python does not necessarily require users to be aware
-of that fact. The embedded distribution may be used in this case to include a
-private version of Python in an install package. Depending on how transparent it
-should be (or conversely, how professional it should appear), there are two
-options.
-
-Using a specialized executable as a launcher requires some coding, but provides
-the most transparent experience for users. With a customized launcher, there are
-no obvious indications that the program is running on Python: icons can be
-customized, company and version information can be specified, and file
-associations behave properly. In most cases, a custom launcher should simply be
-able to call ``Py_Main`` with a hard-coded command line.
-
-The simpler approach is to provide a batch file or generated shortcut that
-directly calls the ``python.exe`` or ``pythonw.exe`` with the required
-command-line arguments. In this case, the application will appear to be Python
-and not its actual name, and users may have trouble distinguishing it from other
-running Python processes or file associations.
-
-With the latter approach, packages should be installed as directories alongside
-the Python executable to ensure they are available on the path. With the
-specialized launcher, packages can be located in other locations as there is an
-opportunity to specify the search path before launching the application.
-
-Embedding Python
-----------------
-
-Applications written in native code often require some form of scripting
-language, and the embedded Python distribution can be used for this purpose. In
-general, the majority of the application is in native code, and some part will
-either invoke ``python.exe`` or directly use ``python3.dll``. For either case,
-extracting the embedded distribution to a subdirectory of the application
-installation is sufficient to provide a loadable Python interpreter.
-
-As with the application use, packages can be installed to any location as there
-is an opportunity to specify search paths before initializing the interpreter.
-Otherwise, there is no fundamental differences between using the embedded
-distribution and a regular installation.
-
-Other resources
+Other Platforms
 ===============
 
-.. seealso::
+With ongoing development of Python, some platforms that used to be supported
+earlier are no longer supported (due to the lack of users or developers).
+Check :pep:`11` for details on all unsupported platforms.
 
-   `Python Programming On Win32 <http://shop.oreilly.com/product/9781565926219.do>`_
-      "Help for Windows Programmers"
-      by Mark Hammond and Andy Robinson, O'Reilly Media, 2000,
-      ISBN 1-56592-621-8
+* `Windows CE <http://pythonce.sourceforge.net/>`_ is still supported.
+* The `Cygwin <https://cygwin.com/>`_ installer offers to install the Python
+  interpreter as well (cf. `Cygwin package source
+  <ftp://ftp.uni-erlangen.de/pub/pc/gnuwin32/cygwin/mirrors/cygnus/
+  release/python>`_, `Maintainer releases
+  <http://www.tishler.net/jason/software/python/>`_)
 
-   `A Python for Windows Tutorial <http://www.imladris.com/Scripts/PythonForWindows.html>`_
-      by Amanda Birmingham, 2004
-
-   :pep:`397` - Python launcher for Windows
-      The proposal for the launcher to be included in the Python distribution.
+See `Python for Windows <https://www.python.org/downloads/windows/>`_
+for detailed information about platforms with pre-compiled installers.

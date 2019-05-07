@@ -181,34 +181,34 @@ class TestAsyncAwait(GrammarTest):
             async def foo(): await x
         """)
 
-        self.validate("await x")
-        self.validate("""def foo():
-                        await x""")
+        self.invalid_syntax("await x")
+        self.invalid_syntax("""def foo():
+                                   await x""")
 
-        self.validate("""def foo():
+        self.invalid_syntax("""def foo():
             def foo(): pass
             async def foo(): pass
             await x
         """)
 
     def test_async_var(self):
-        self.invalid_syntax("""async = 1""")
-        self.invalid_syntax("""await = 1""")
-        self.invalid_syntax("""def async(): pass""")
+        self.validate("""async = 1""")
+        self.validate("""await = 1""")
+        self.validate("""def async(): pass""")
 
     def test_async_with(self):
         self.validate("""async def foo():
                              async for a in b: pass""")
 
-        self.validate("""def foo():
-                             async for a in b: pass""")
+        self.invalid_syntax("""def foo():
+                                   async for a in b: pass""")
 
     def test_async_for(self):
         self.validate("""async def foo():
                              async with a: pass""")
 
-        self.validate("""def foo():
-                             async with a: pass""")
+        self.invalid_syntax("""def foo():
+                                   async with a: pass""")
 
 
 class TestRaiseChanges(GrammarTest):
@@ -529,6 +529,16 @@ class TestSetLiteral(GrammarTest):
         self.validate("""x = {2, 3, 4,}""")
 
 
+# Adapted from Python 3's Lib/test/test_unicode_identifiers.py and
+# Lib/test/test_tokenize.py:TokenizeTest.test_non_ascii_identifiers
+class TestIdentfier(GrammarTest):
+    def test_non_ascii_identifiers(self):
+        self.validate("Örter = 'places'\ngrün = 'green'")
+        self.validate("蟒 = a蟒 = 锦蛇 = 1")
+        self.validate("µ = aµ = µµ = 1")
+        self.validate("𝔘𝔫𝔦𝔠𝔬𝔡𝔢 = a_𝔘𝔫𝔦𝔠𝔬𝔡𝔢 = 1")
+
+
 class TestNumericLiterals(GrammarTest):
     def test_new_octal_notation(self):
         self.validate("""0o7777777777777""")
@@ -612,11 +622,16 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
-class TestGeneratorExpressions(GrammarTest):
-
-    def test_trailing_comma_after_generator_expression_argument_works(self):
-        # BPO issue 27494
-        self.validate("set(x for x in [],)")
+class TestPickleableException(unittest.TestCase):
+    def test_ParseError(self):
+        err = ParseError('msg', 2, None, (1, 'context'))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            err2 = pickle.loads(pickle.dumps(err, protocol=proto))
+            self.assertEqual(err.args, err2.args)
+            self.assertEqual(err.msg, err2.msg)
+            self.assertEqual(err.type, err2.type)
+            self.assertEqual(err.value, err2.value)
+            self.assertEqual(err.context, err2.context)
 
 
 def diff_texts(a, b, filename):
