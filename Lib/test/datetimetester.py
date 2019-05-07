@@ -6120,9 +6120,6 @@ class CapiTest(unittest.TestCase):
                 self.assertEqual(d, date(1995, 4, 12))
 
     def test_datetime_from_timestamp(self):
-        ts0 = datetime(1995, 4, 12).timestamp()
-        ts1 = datetime(1995, 4, 12, 12, 30).timestamp()
-
         cases = [
             ((1995, 4, 12), None, False),
             ((1995, 4, 12), None, True),
