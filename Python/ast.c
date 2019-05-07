@@ -5017,7 +5017,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     const char *expr_end;
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
-    int conversion = -1; /* The conversion char.  Default is not specified. */
+    int conversion = -1; /* The conversion char.  Use default if not
+                            specified: !f, or !r if using =. */
     int equal_conversion = 0; /* Are we using the = conversion? */
     PyObject *expr_text = NULL; /* The text of the expression, used for =. */
     const char *expr_text_end;
