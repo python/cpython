@@ -13,7 +13,6 @@ class Sequence:
 
 class BadSeq1(Sequence):
     def __init__(self): self.seq = [7, 'hello', 123]
-    def __str__(self): return '{0} {1} {2}'.format(*self.seq)
 
 class BadSeq2(Sequence):
     def __init__(self): self.seq = ['a', 'b', 'c']
@@ -1169,7 +1168,7 @@ class StringLikeTest(BaseTest):
             self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
                  ('a' * i,) * i)
 
-        #self.checkequal(str(BadSeq1()), ' ', 'join', BadSeq1())
+        self.checkraises(TypeError, ' ', 'join', BadSeq1())
         self.checkequal('a b c', ' ', 'join', BadSeq2())
 
         self.checkraises(TypeError, ' ', 'join')
