@@ -69,9 +69,6 @@ The command, if run with ``-h``, will show the available options::
 .. versionchanged:: 3.8
    Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
 
-.. versionchanged:: 3.6
-   Add ability to change the activated venv's prompt via ``--prompt``
-
 .. versionchanged:: 3.4
    Installs pip by default, added the ``--without-pip``  and ``--copies``
    options

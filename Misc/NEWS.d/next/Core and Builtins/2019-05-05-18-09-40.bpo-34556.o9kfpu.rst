@@ -1,1 +1,1 @@
-Add --upgrade-deps to venv module
+Add ``--upgrade-deps`` to venv module. Patch by Cooper Ry Lees

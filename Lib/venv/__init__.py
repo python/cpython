@@ -256,7 +256,7 @@ class EnvBuilder:
 
             if sysconfig.is_python_build(True):
                 # copy init.tcl
-                for root, _dirs, files in os.walk(context.python_dir):
+                for root, dirs, files in os.walk(context.python_dir):
                     if 'init.tcl' in files:
                         tcldir = os.path.basename(root)
                         tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
@@ -335,11 +335,11 @@ class EnvBuilder:
         binpath = context.bin_path
         plen = len(path)
         for root, dirs, files in os.walk(path):
-            if root == path:  # at top-level, remove irrelevant dirs
+            if root == path: # at top-level, remove irrelevant dirs
                 for d in dirs[:]:
                     if d not in ('common', os.name):
                         dirs.remove(d)
-                continue  # ignore files in top level
+                continue # ignore files in top level
             for f in files:
                 if (os.name == 'nt' and f.startswith('python')
                         and f.endswith(('.exe', '.pdb'))):
@@ -383,13 +383,12 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None):
+           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
-                         prompt=prompt)
+                         prompt=prompt, upgrade_deps=upgrade_deps)
     builder.create(env_dir)
-
 
 def main(args=None):
     compatible = True
@@ -468,7 +467,6 @@ def main(args=None):
                              upgrade_deps=options.upgrade_deps)
         for d in options.dirs:
             builder.create(d)
-
 
 if __name__ == '__main__':
     rc = 1

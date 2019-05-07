@@ -123,7 +123,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
       (defaults to ``None`` which means directory name of the environment would
       be used).
 
-    * ``upgrade_deps`` - Update the base venv modules to the latest on PyPI
+    * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
 
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter

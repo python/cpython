@@ -32,20 +32,16 @@ requireVenvCreate = unittest.skipUnless(
     or sys.prefix == sys.base_prefix,
     'cannot run venv.create from within a venv on this platform')
 
-
 def check_output(cmd, encoding=None):
-    p = subprocess.Popen(
-        cmd,
+    p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        encoding=encoding
-    )
+        encoding=encoding)
     out, err = p.communicate()
     if p.returncode:
         raise subprocess.CalledProcessError(
             p.returncode, cmd, out, err)
     return out, err
-
 
 class BaseTest(unittest.TestCase):
     """Base class for venv tests."""
@@ -80,7 +76,6 @@ class BaseTest(unittest.TestCase):
         with open(self.get_env_file(*args), 'r') as f:
             result = f.read()
         return result
-
 
 class BasicTest(BaseTest):
     """Test venv module functionality."""
@@ -163,7 +158,7 @@ class BasicTest(BaseTest):
         """
         Test that the prefix values are as expected.
         """
-        # check our prefixes
+        #check our prefixes
         self.assertEqual(sys.base_prefix, sys.prefix)
         self.assertEqual(sys.base_exec_prefix, sys.exec_prefix)
 
@@ -176,8 +171,7 @@ class BasicTest(BaseTest):
             ('prefix', self.env_dir),
             ('prefix', self.env_dir),
             ('base_prefix', sys.prefix),
-            ('base_exec_prefix', sys.exec_prefix)
-        ):
+            ('base_exec_prefix', sys.exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
             self.assertEqual(out.strip(), expected.encode())
@@ -237,7 +231,7 @@ class BasicTest(BaseTest):
                 rmtree(fn)
 
     def test_unoverwritable_fails(self):
-        # create a file clashing with directories in the env dir
+        #create a file clashing with directories in the env dir
         for paths in self.ENV_SUBDIRS[:3]:
             fn = os.path.join(self.env_dir, *paths)
             with open(fn, 'wb') as f:
@@ -332,6 +326,7 @@ class BasicTest(BaseTest):
         builder = venv.EnvBuilder(clear=True)
         builder.create(env_dir)
         activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        envpy = os.path.join(env_dir, self.bindir, self.exe)
         out, err = check_output(
             [activate, '&', self.exe, '-c', 'print(0)'],
             encoding='oem',
@@ -492,7 +487,6 @@ class EnsurePipTest(BaseTest):
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)
-
 
 if __name__ == "__main__":
     unittest.main()
