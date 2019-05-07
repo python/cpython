@@ -483,18 +483,16 @@ Path Objects
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 
+Path objects are traversable using the ``/`` operator.
+
 .. attribute:: Path.name
 
    The final path component.
 
-.. operator:: Path.__truediv__
-
-   Exposes the slash operator to reference children.
-
 .. method:: Path.open(*, **)
 
-   Invoke :method:`ZipFile.open` on the current path. Accepts
-   the same arguments as :method:`ZipFile.open`.
+   Invoke :meth:`ZipFile.open` on the current path. Accepts
+   the same arguments as :meth:`ZipFile.open`.
 
 .. method:: Path.listdir()
 
