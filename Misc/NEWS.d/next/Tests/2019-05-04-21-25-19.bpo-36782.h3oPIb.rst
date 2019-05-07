@@ -1,1 +1,1 @@
-Created tests for several C API functions in the datetime module, specifically::
+Add tests for several C API functions in the :mod:datetime module. Patch by Edison Abahurire.
