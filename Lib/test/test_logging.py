@@ -760,6 +760,10 @@ class TestStreamHandler(logging.StreamHandler):
     def handleError(self, record):
         self.error_record = record
 
+class StreamWithIntName(object):
+    level = logging.NOTSET
+    name = 2
+
 class StreamHandlerTest(BaseTest):
     def test_error_handling(self):
         h = TestStreamHandler(BadStream())
@@ -796,6 +800,10 @@ class StreamHandlerTest(BaseTest):
         # test that setting to existing value returns None
         actual = h.setStream(old)
         self.assertIsNone(actual)
+
+    def test_can_represent_stream_with_int_name(self):
+        h = logging.StreamHandler(StreamWithIntName())
+        self.assertEqual(repr(h), '<StreamHandler 2 (NOTSET)>')
 
 # -- The following section could be moved into a server_helper.py module
 # -- if it proves to be of wider utility than just test_logging
