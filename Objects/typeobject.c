@@ -1925,6 +1925,8 @@ mro_invoke(PyTypeObject *type)
                                            &unbound);
         if (mro_meth == NULL)
             return NULL;
+        type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
+                            Py_TPFLAGS_VALID_VERSION_TAG);
         mro_result = call_unbound_noarg(unbound, mro_meth, (PyObject *)type);
         Py_DECREF(mro_meth);
     }
