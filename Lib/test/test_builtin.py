@@ -372,7 +372,7 @@ class BuiltinTest(unittest.TestCase):
                                   msg='source={!r} mode={!r})'.format(source, mode)):
                     compile(source, '?' , mode)
                 co = compile(source, '?', mode, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
-                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE)
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE, msg='source={!r} mode={!r})'.format(source, mode))
 
     def test_compile_async_generator(self):
         co = compile(dedent("""async def ticker():

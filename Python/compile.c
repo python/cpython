@@ -4567,9 +4567,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
-    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
-        c->u->u_ste->ste_coroutine = 1;
-    } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
+    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
+        !(c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT)){
         return compiler_error(c, "'async with' outside async function");
     }
 
@@ -4778,9 +4777,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         ADDOP(c, YIELD_FROM);
         break;
     case Await_kind:
-        if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
-            c->u->u_ste->ste_coroutine = 1;
-        } else {
+        if (! (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT)){
             if (c->u->u_ste->ste_type != FunctionBlock){
                 return compiler_error(c, "'await' outside function");
             }
