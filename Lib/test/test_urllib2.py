@@ -1,5 +1,5 @@
 import unittest
-from test import test_support
+from test import support
 from test import test_urllib
 
 import os
@@ -14,6 +14,9 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+from test.test_urllib import FakeHTTPMixin
+
 
 # XXX
 # Request
@@ -683,7 +686,7 @@ class HandlerTests(unittest.TestCase):
         h = urllib2.FileHandler()
         o = h.parent = MockOpener()
 
-        TESTFN = test_support.TESTFN
+        TESTFN = support.TESTFN
         urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = "hello, world\n"
         urls = [
@@ -1154,7 +1157,7 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
         msg = "Basic Auth Realm was unquoted"
-        with test_support.check_warnings((msg, UserWarning)):
+        with support.check_warnings((msg, UserWarning)):
             self._test_basic_auth(opener, auth_handler, "Authorization",
                                   realm, http_handler, password_manager,
                                   "http://acme.example.com/protected",
@@ -1262,7 +1265,7 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(len(http_handler.requests), 1)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
 
-class MiscTests(unittest.TestCase):
+class MiscTests(unittest.TestCase, FakeHTTPMixin):
 
     def test_build_opener(self):
         class MyHTTPHandler(urllib2.HTTPHandler): pass
@@ -1316,6 +1319,52 @@ class MiscTests(unittest.TestCase):
             str(exc.exception),
             "Unsupported digest authentication algorithm 'invalid'"
         )
+
+    @unittest.skipUnless(ssl, "ssl module required")
+    def test_url_with_control_char_rejected(self):
+        for char_no in range(0, 0x21) + range(0x7f, 0x100):
+            char = chr(char_no)
+            schemeless_url = "//localhost:7777/test%s/" % char
+            self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello.")
+            try:
+                # We explicitly test urllib.request.urlopen() instead of the top
+                # level 'def urlopen()' function defined in this... (quite ugly)
+                # test suite.  They use different url opening codepaths.  Plain
+                # urlopen uses FancyURLOpener which goes via a codepath that
+                # calls urllib.parse.quote() on the URL which makes all of the
+                # above attempts at injection within the url _path_ safe.
+                escaped_char_repr = repr(char).replace('\\', r'\\')
+                InvalidURL = httplib.InvalidURL
+                with self.assertRaisesRegexp(
+                    InvalidURL, "contain control.*" + escaped_char_repr):
+                    urllib2.urlopen("http:" + schemeless_url)
+                with self.assertRaisesRegexp(
+                    InvalidURL, "contain control.*" + escaped_char_repr):
+                    urllib2.urlopen("https:" + schemeless_url)
+            finally:
+                self.unfakehttp()
+
+    @unittest.skipUnless(ssl, "ssl module required")
+    def test_url_with_newline_header_injection_rejected(self):
+        self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello.")
+        host = "localhost:7777?a=1 HTTP/1.1\r\nX-injected: header\r\nTEST: 123"
+        schemeless_url = "//" + host + ":8080/test/?test=a"
+        try:
+            # We explicitly test urllib.request.urlopen() instead of the top
+            # level 'def urlopen()' function defined in this... (quite ugly)
+            # test suite.  They use different url opening codepaths.  Plain
+            # urlopen uses FancyURLOpener which goes via a codepath that
+            # calls urllib.parse.quote() on the URL which makes all of the
+            # above attempts at injection within the url _path_ safe.
+            InvalidURL = httplib.InvalidURL
+            with self.assertRaisesRegexp(
+                InvalidURL, r"contain control.*\\r.*(found at least . .)"):
+                urllib2.urlopen("http:" + schemeless_url)
+            with self.assertRaisesRegexp(InvalidURL, r"contain control.*\\n"):
+                urllib2.urlopen("https:" + schemeless_url)
+        finally:
+            self.unfakehttp()
+
 
 
 class RequestTests(unittest.TestCase):
@@ -1412,14 +1461,14 @@ class RequestTests(unittest.TestCase):
 
 def test_main(verbose=None):
     from test import test_urllib2
-    test_support.run_doctest(test_urllib2, verbose)
-    test_support.run_doctest(urllib2, verbose)
+    support.run_doctest(test_urllib2, verbose)
+    support.run_doctest(urllib2, verbose)
     tests = (TrivialTests,
              OpenerDirectorTests,
              HandlerTests,
              MiscTests,
              RequestTests)
-    test_support.run_unittest(*tests)
+    support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main(verbose=True)
