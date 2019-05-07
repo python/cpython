@@ -2395,10 +2395,8 @@ class CommandLineTest(unittest.TestCase):
                                 self.assertEqual(f.read(), zf.read(zi))
 
 
+# Poor man's technique to consume a (smallish) iterable.
 consume = tuple
-"""
-Poor man's technique to consume a (smallish) iterable.
-"""
 
 
 def add_dirs(zipfile):
