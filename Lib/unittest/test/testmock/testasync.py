@@ -170,7 +170,7 @@ class AsyncSpecTest(unittest.TestCase):
         @patch.object(AsyncClass, 'async_method', spec=NormalClass.a)
         def test_async_attribute(mock_method):
             self.assertTrue(isinstance(mock_method, MagicMock))
-            self.assertFalse(inspect.iscoroutine(mock_method)) # TODO: lisa?
+            self.assertFalse(inspect.iscoroutine(mock_method))
             self.assertFalse(inspect.isawaitable(mock_method))
 
         test_async_attribute()
@@ -212,7 +212,6 @@ class AsyncSpecSetTest(unittest.TestCase):
 
 
 class AsyncArguments(unittest.TestCase):
-    # I want to add more tests here with more complicated use-cases.
     def setUp(self):
         self.old_policy = asyncio.events._event_loop_policy
 

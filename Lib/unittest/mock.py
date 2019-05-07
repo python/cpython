@@ -26,7 +26,6 @@ __all__ = (
 __version__ = '1.0'
 
 import asyncio
-import io
 import inspect
 import pprint
 import sys
