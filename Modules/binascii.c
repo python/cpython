@@ -1600,22 +1600,30 @@ PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
 static int
 binascii_exec(PyObject *m) {
-    PyObject *d;
+    int result;
     binascii_state *state = PyModule_GetState(m);
     if (state == NULL) {
         return -1;
     }
 
-    /* Create the module and add the functions */
-    d = PyModule_GetDict(m);
-
     state->Error = PyErr_NewException("binascii.Error", PyExc_ValueError, NULL);
-    PyDict_SetItemString(d, "Error", state->Error);
-    state->Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
-    PyDict_SetItemString(d, "Incomplete", state->Incomplete);
-    if (PyErr_Occurred()) {
+    if (state->Error == NULL) {
         return -1;
     }
+    result = PyModule_AddObject(m, "Error", state->Error);
+    if (result == -1) {
+        return -1;
+    }
+
+    state->Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
+    if (state->Incomplete == NULL) {
+        return -1;
+    }
+    result = PyModule_AddObject(m, "Incomplete", state->Incomplete);
+    if (result == -1) {
+        return -1;
+    }
+
     return 0;
 }
 
