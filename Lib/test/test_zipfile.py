@@ -1,15 +1,15 @@
 import contextlib
+import importlib.util
 import io
 import os
-import importlib.util
 import pathlib
 import posixpath
-import time
-import struct
-import zipfile
-import unittest
-import tempfile
 import shutil
+import struct
+import tempfile
+import time
+import unittest
+import zipfile
 
 
 from tempfile import TemporaryFile

@@ -3,18 +3,18 @@ Read and write ZIP files.
 
 XXX references to utf-8 need further investigation.
 """
+import binascii
+import functools
+import importlib.util
 import io
 import os
-import importlib.util
-import sys
-import time
-import stat
-import shutil
-import struct
-import binascii
-import threading
 import posixpath
-import functools
+import shutil
+import stat
+import struct
+import sys
+import threading
+import time
 
 try:
     import zlib # We may need its compression method
