@@ -46,7 +46,7 @@ def duplicate_string(text):
 class StrSubclass(str):
     pass
 
-class UnicodeTest(string_tests.CommonTest,
+class StrTest(string_tests.CommonTest,
         string_tests.MixinStrUnicodeUserStringTest,
         string_tests.MixinStrUnicodeTest,
         unittest.TestCase):
