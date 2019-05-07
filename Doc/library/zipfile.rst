@@ -52,6 +52,15 @@ The module defines the following items:
    :ref:`zipfile-objects` for constructor details.
 
 
+.. class:: Path
+   :noindex:
+
+   A pathlib-compatible wrapper for zip files. See section
+   :ref:`path-objects` for details.
+
+   .. versionadded:: 3.8
+
+
 .. class:: PyZipFile
    :noindex:
 
@@ -454,6 +463,62 @@ The following data attributes are also available:
    :class:`ZipFile` instance created with mode ``'w'``, ``'x'`` or ``'a'``,
    it should be no longer than 65535 bytes.  Comments longer than this will be
    truncated.
+
+
+.. _path-objects:
+
+Path Objects
+------------
+
+.. class:: Path(root, at='')
+
+   Construct a Path object from a root zipfile (which may be a
+   :class:`ZipFile` instance or ``file`` suitable for passing to
+   the :class:`ZipFile` constructor).
+
+Path objects expose the following features of :module:`pathlib.Path`
+objects:
+
+.. attribute:: Path.name
+
+   The final path component.
+
+.. operator:: Path.__truediv__
+
+   Exposes the slash operator to reference children.
+
+.. method:: Path.open(*, **)
+
+   Invoke :method:`ZipFile.open` on the current path. Accepts
+   the same arguments as :method:`ZipFile.open`.
+
+.. method:: Path.listdir()
+
+   Enumerate the children of the current directory.
+
+.. method:: Path.is_dir()
+
+   Return True if the current context references a directory.
+
+.. method:: Path.is_file()
+
+   Return True if the current context references a file.
+
+.. method:: Path.exists()
+
+   Return True if the current context references a file or
+   directory in the zip file.
+
+.. method:: Path.read_text(*, **)
+
+   Read the current file as unicode text. Positional and
+   keyword arguments are passed through to
+   :class:`io.TextIOWrapper` (except ``buffer``, which is
+   implied by the context).
+
+.. method:: Path.read_bytes()
+
+   Read the current file as bytes.
 
 
 .. _pyzipfile-objects:
