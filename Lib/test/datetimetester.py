@@ -6066,6 +6066,7 @@ class CapiTest(unittest.TestCase):
                         macro)
 
                     self.assertEqual(c_api_date, exp_date)
+                    self.assertEqual(c_api_date.fold, exp_date.fold)
 
     def test_time_from_time(self):
         exp_time = time(22, 12, 55, 99999)
@@ -6096,6 +6097,7 @@ class CapiTest(unittest.TestCase):
                         macro)
 
                     self.assertEqual(c_api_time, exp_time)
+                    self.assertEqual(c_api_time.fold, exp_time.fold)
 
     def test_delta_from_dsu(self):
         exp_delta = timedelta(26, 55, 99999)
