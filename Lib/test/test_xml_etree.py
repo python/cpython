@@ -2740,11 +2740,6 @@ class ElementFindTest(unittest.TestCase):
             it = ET.ElementTree(e).findall('//tag')
         self.assertEqual(summarize_list(it), ['tag'] * 3)
 
-    def test_find_attribute_with_empty_ns(self):
-        NS = "http://effbot.org/ns"
-        element = ET.fromstring(f"""<body xmlns="{NS}"><section id="1"/></body>""")
-        self.assertIsNotNone(element.find("t:section[@id='1']", {"":NS, "t":NS}))
-
 
 class ElementIterTest(unittest.TestCase):
     def _ilist(self, elem, tag=None):

@@ -18,6 +18,7 @@ import sys
 import types
 import warnings
 
+
 def source_hash(source_bytes):
     "Return the hash of *source_bytes* as used in hash-based pyc files."
     return _imp.source_hash(_RAW_MAGIC_NUMBER, source_bytes)
