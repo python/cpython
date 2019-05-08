@@ -2137,7 +2137,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         PyMem_FREE(s);
 
         if (result != NULL) {
-            if (PySys_Audit("builtins.input.result", "O", result) < 0) {
+            if (PySys_Audit("builtins.input/result", "O", result) < 0) {
                 return NULL;
             }
         }

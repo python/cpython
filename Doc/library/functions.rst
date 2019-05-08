@@ -269,9 +269,11 @@ are always available.  They are listed here in alphabetical order.
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
 
-   Raises an :func:`auditing event <sys.audit>` ``compile`` with arguments
-   ``source`` and ``filename``. This event may also be raised by implicit
-   compilation.
+   .. audit-event:: compile "source filename"
+
+      Raises an :func:`auditing event <sys.audit>` ``compile`` with arguments
+      ``source`` and ``filename``. This event may also be raised by implicit
+      compilation.
 
    .. note::
 
@@ -467,8 +469,10 @@ are always available.  They are listed here in alphabetical order.
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
-   Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
-   the argument. Code compilation events may also be raised.
+   .. audit-event:: exec code_object
+
+      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
+      the argument. Code compilation events may also be raised.
 
 .. index:: builtin: exec
 
@@ -499,8 +503,10 @@ are always available.  They are listed here in alphabetical order.
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
-   Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
-   the argument. Code compilation events may also be raised.
+   .. audit-event:: exec code_object
+
+      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
+      the argument. Code compilation events may also be raised.
 
    .. note::
 
@@ -747,9 +753,14 @@ are always available.  They are listed here in alphabetical order.
    If the :mod:`readline` module was loaded, then :func:`input` will use it
    to provide elaborate line editing and history features.
 
-   Raises an :func:`auditing event <sys.audit>` ``builtins.input`` with
-   argument ``prompt`` before reading input, and event ``builtins.input.result``
-   with the result after successfully reading input.
+   .. audit-event:: builtins.input prompt
+
+      Raises an :func:`auditing event <sys.audit>` ``builtins.input`` with
+      argument ``prompt`` before reading input
+
+   .. audit-event:: builtins.input/result result
+      Raises an auditing event ``builtins.input/result`` with the result after
+      successfully reading input.
 
 
 .. class:: int([x])
@@ -1180,9 +1191,10 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   This function raises an :func:`auditing event <sys.audit>` ``open`` with
-   arguments ``file``, ``mode`` and ``flags``. The ``mode`` and ``flags``
-   arguments may have been modified or inferred from the original call.
+   .. audit-event:: open "file mode flags"
+
+   The ``mode`` and ``flags`` arguments may have been modified or inferred from
+   the original call.
 
    .. versionchanged::
       3.3

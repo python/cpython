@@ -53,6 +53,8 @@ always available.
       ``[os.fsencode(arg) for arg in sys.argv]``.
 
 
+.. _auditing:
+
 .. function:: audit(event, *args)
 
    .. index:: single: auditing
@@ -150,8 +152,7 @@ always available.
 
    This function should be used for internal and specialized purposes only.
 
-   Raises an :func:`auditing event <sys.audit>` ``sys._current_frames`` with no
-   arguments.
+   .. audit-event:: sys._current_frames
 
 
 .. function:: breakpointhook()
@@ -653,8 +654,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   Raises an :func:`auditing event <sys.audit>` ``sys._getframe`` with no
-   arguments.
+   .. audit-event:: sys._getframe
 
    .. impl-detail::
 
@@ -1185,7 +1185,7 @@ always available.
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
 
-   Raises an :func:`auditing event <sys.audit>` ``sys.setprofile`` with no arguments.
+   .. audit-event:: sys.setprofile
 
    The events have the following meaning:
 
@@ -1307,7 +1307,7 @@ always available.
 
    For more information on code and frame objects, refer to :ref:`types`.
 
-   Raises an :func:`auditing event <sys.audit>` ``sys.settrace`` with no arguments.
+   .. audit-event:: sys.settrace
 
    .. impl-detail::
 
@@ -1329,11 +1329,12 @@ always available.
    first time. The *finalizer* will be called when an asynchronous generator
    is about to be garbage collected.
 
-   Raises two :func:`auditing events <sys.audit>`
-   ``sys.set_asyncgen_hooks_firstiter`` and
-   ``sys.set_asyncgen_hooks_finalizer``, both with no arguments. (Two events
-   are raised because the underlying API consists of two calls, each of which
-   must raise its own event.)
+   .. audit-event:: sys.set_asyncgen_hooks_firstiter
+
+   .. audit-event:: sys.set_asyncgen_hooks_finalizer
+
+   Two auditing events are raised because the underlying API consists of two
+   calls, each of which must raise its own event.
 
    .. versionadded:: 3.6
       See :pep:`525` for more details, and for a reference example of a
@@ -1397,9 +1398,6 @@ always available.
         foo()
 
    See also :func:`get_coroutine_wrapper`.
-
-   Raises an :func:`auditing event <sys.audit>` ``sys.set_coroutine_wrapper``
-   with no arguments.
 
    .. versionadded:: 3.5
       See :pep:`492` for more details.

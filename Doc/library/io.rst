@@ -120,9 +120,11 @@ High-level Module Interface
 
    This is an alias for the builtin :func:`open` function.
 
-   This function raises an :func:`auditing event <sys.audit>` ``open`` with
-   arguments ``path``, ``mode`` and ``flags``. The ``mode`` and ``flags``
-   arguments may have been modified or inferred from the original call.
+   .. audit-event:: open "path mode flags"
+
+      This function raises an :func:`auditing event <sys.audit>` ``open`` with
+      arguments ``path``, ``mode`` and ``flags``. The ``mode`` and ``flags``
+      arguments may have been modified or inferred from the original call.
 
 
 .. function:: open_code(path)

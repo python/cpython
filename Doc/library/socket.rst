@@ -526,9 +526,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
-   Creating a socket raises an :func:`auditing event <sys.audit>`
-   ``socket.__new__`` with arguments ``self``, ``family``, ``type``,
-   ``protocol``.
+   .. audit-event:: socket.__new__ "self family type protocol"
 
    .. versionchanged:: 3.3
       The AF_CAN family was added.
@@ -722,8 +720,7 @@ The :mod:`socket` module also offers various network-related services:
    :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
    method.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.getaddrinfo`` with
-   arguments ``host``, ``port``, ``family``, ``type``, ``protocol``.
+   .. audit-event:: socket.getaddrinfo "host port family type protocol"
 
    The following example fetches address information for a hypothetical TCP
    connection to ``example.org`` on port 80 (results may differ on your
@@ -760,8 +757,7 @@ The :mod:`socket` module also offers various network-related services:
    interface. :func:`gethostbyname` does not support IPv6 name resolution, and
    :func:`getaddrinfo` should be used instead for IPv4/v6 dual stack support.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.gethostbyname`` with
-   argument ``hostname``.
+   .. audit-event:: socket.gethostbyname hostname
 
 
 .. function:: gethostbyname_ex(hostname)
@@ -775,8 +771,7 @@ The :mod:`socket` module also offers various network-related services:
    resolution, and :func:`getaddrinfo` should be used instead for IPv4/v6 dual
    stack support.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.gethostbyname`` with
-   argument ``hostname``.
+   .. audit-event:: socket.gethostbyname hostname
 
 
 .. function:: gethostname()
@@ -784,8 +779,7 @@ The :mod:`socket` module also offers various network-related services:
    Return a string containing the hostname of the machine where  the Python
    interpreter is currently executing.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.gethostname`` with no
-   arguments.
+   .. audit-event:: socket.gethostname
 
    Note: :func:`gethostname` doesn't always return the fully qualified domain
    name; use :func:`getfqdn` for that.
@@ -801,8 +795,7 @@ The :mod:`socket` module also offers various network-related services:
    domain name, use the function :func:`getfqdn`. :func:`gethostbyaddr` supports
    both IPv4 and IPv6.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.gethostbyaddr`` with
-   argument ``ip_address``.
+   .. audit-event:: socket.gethostbyaddr ip_address
 
 
 .. function:: getnameinfo(sockaddr, flags)
@@ -817,8 +810,7 @@ The :mod:`socket` module also offers various network-related services:
 
    For more information about *flags* you can consult :manpage:`getnameinfo(3)`.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.getnameinfo`` with
-   argument ``sockaddr``.
+   .. audit-event:: socket.getnameinfo sockaddr
 
 .. function:: getprotobyname(protocolname)
 
@@ -835,8 +827,7 @@ The :mod:`socket` module also offers various network-related services:
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.getservbyname`` with
-   arguments ``servicename``, ``protocolname``.
+   .. audit-event:: socket.getservbyname "servicename protocolname"
 
 
 .. function:: getservbyport(port[, protocolname])
@@ -845,8 +836,7 @@ The :mod:`socket` module also offers various network-related services:
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.getservbyport`` with
-   arguments ``port``, ``protocolname``.
+   .. audit-event:: socket.getservbyport "port protocolname"
 
 
 .. function:: ntohl(x)
@@ -1031,8 +1021,7 @@ The :mod:`socket` module also offers various network-related services:
    Set the machine's hostname to *name*.  This will raise an
    :exc:`OSError` if you don't have enough rights.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.sethostname`` with
-   argument ``name``.
+   .. audit-event:: socket.sethostname name
 
    .. availability:: Unix.
 
@@ -1109,8 +1098,7 @@ to sockets.
    Bind the socket to *address*.  The socket must not already be bound. (The format
    of *address* depends on the address family --- see above.)
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.bind`` with arguments
-   ``self`` and ``address`` as provided in the call.
+   .. audit-event:: socket.bind "self address"
 
 .. method:: socket.close()
 
@@ -1148,8 +1136,7 @@ to sockets.
    :exc:`InterruptedError` exception if the connection is interrupted by a
    signal (or the exception raised by the signal handler).
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.connect`` with arguments
-   ``self`` and ``address`` as provided in the call.
+   .. audit-event:: socket.connect "self address"
 
    .. versionchanged:: 3.5
       The method now waits until the connection completes instead of raising an
@@ -1167,8 +1154,7 @@ to sockets.
    :c:data:`errno` variable.  This is useful to support, for example, asynchronous
    connects.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.connect`` with arguments
-   ``self`` and ``address`` as provided in the call.
+   .. audit-event:: socket.connect "self address"
 
 .. method:: socket.detach()
 
@@ -1510,8 +1496,7 @@ to sockets.
    bytes sent. (The format of *address* depends on the address family --- see
    above.)
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.sendto`` with arguments
-   ``self`` and ``address`` as provided in the call.
+   .. audit-event:: socket.sendto "self address"
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
@@ -1552,8 +1537,7 @@ to sockets.
 
    .. availability:: most Unix platforms, possibly others.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.sendmsg`` with
-   arguments ``self`` and ``address``.
+   .. audit-event:: socket.sendmsg "self address"
 
    .. versionadded:: 3.3
 

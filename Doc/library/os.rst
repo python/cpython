@@ -828,8 +828,7 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
-   This function raises an :func:`auditing event <sys.audit>`
-   ``os.truncate`` with arguments ``fd`` and ``length``.
+   .. audit-event:: os.truncate "fd length"
 
    .. availability:: Unix, Windows.
 
@@ -916,8 +915,7 @@ as internal buffering of data.
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>` with the *dir_fd* parameter.
 
-   This function raises an :func:`auditing event <sys.audit>` ``open`` with
-   arguments ``path``, ``None`` and ``flags``.
+   .. audit-event:: open "path mode flags"
 
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
@@ -2763,8 +2761,7 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
-   This function raises an :func:`auditing event <sys.audit>`
-   ``os.truncate`` with arguments ``path`` and ``length``.
+   .. audit-event:: os.truncate "path length"
 
    .. availability:: Unix, Windows.
 
@@ -3722,8 +3719,7 @@ written in Python, such as a mail server's external command delivery program.
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 
-   This function raises an :func:`auditing event <sys.audit>` ``os.system``
-   with argument ``command``.
+   .. audit-event:: os.system command
 
    .. availability:: Unix, Windows.
 

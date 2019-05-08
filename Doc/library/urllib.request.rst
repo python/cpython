@@ -95,9 +95,11 @@ The :mod:`urllib.request` module defines the following functions:
    parameter to ``urllib.urlopen``, can be obtained by using
    :class:`ProxyHandler` objects.
 
-   The default opener raises an :func:`auditing event <sys.audit>`
-   ``urllib.request`` with arguments ``fullurl``, ``data``, ``headers``,
-   ``method`` taken from the request object.
+   .. audit-event:: urllib.request "fullurl data headers method"
+
+      The default opener raises an :func:`auditing event <sys.audit>`
+      ``urllib.request`` with arguments ``fullurl``, ``data``, ``headers``,
+      ``method`` taken from the request object.
 
    .. versionchanged:: 3.2
       *cafile* and *capath* were added.

@@ -83,8 +83,7 @@ The module defines the following type:
    to add initial items to the array.  Otherwise, the iterable initializer is
    passed to the :meth:`extend` method.
 
-   Initializing an array raises an :func:`auditing event <sys.audit>`
-   ``array.__new__`` with arguments ``typecode``, ``initializer``.
+   .. audit-event:: array.__new__ "typecode initializer"
 
 .. data:: typecodes
 

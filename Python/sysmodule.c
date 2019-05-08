@@ -1705,7 +1705,7 @@ sys__getframe_impl(PyObject *module, int depth)
 {
     PyFrameObject *f = _PyThreadState_GET()->frame;
 
-    if (PySys_Audit("sys._getframe", NULL) < 0) {
+    if (PySys_Audit("sys._getframe", "O", f) < 0) {
         return NULL;
     }
 
