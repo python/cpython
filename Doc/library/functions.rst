@@ -759,6 +759,7 @@ are always available.  They are listed here in alphabetical order.
       argument ``prompt`` before reading input
 
    .. audit-event:: builtins.input/result result
+
       Raises an auditing event ``builtins.input/result`` with the result after
       successfully reading input.
 

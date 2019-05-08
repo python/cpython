@@ -54,7 +54,7 @@ class TestFinalizeHook:
 
     def __call__(self, event, args):
         # Avoid recursion when we call id() below
-        if event == 'id':
+        if event == 'builtins.id':
             return
 
         print(event, id(self), file=sys.stderr, flush=True)
