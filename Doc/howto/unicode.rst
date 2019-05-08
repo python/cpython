@@ -135,10 +135,8 @@ used than UTF-8.)  UTF-8 uses the following rules:
 UTF-8 has several convenient properties:
 
 1. It can handle any Unicode code point.
-2. A Unicode string is turned into a sequence of bytes containing no embedded zero
-   bytes.  This avoids byte-ordering issues, and means UTF-8 strings can be
-   processed by C functions such as ``strcpy()`` and sent through protocols that
-   can't handle zero bytes.
+2. The UTF-8 encoding will only contain embedded zero bytes where they
+   represent the null character ``U+0000``.
 3. A string of ASCII text is also valid UTF-8 text.
 4. UTF-8 is fairly compact; the majority of commonly used characters can be
    represented with one or two bytes.
