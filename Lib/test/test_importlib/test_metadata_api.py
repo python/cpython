@@ -91,11 +91,11 @@ class APITests(
         self._test_files(importlib.metadata.files('egginfo-pkg'))
 
     def test_version_egg_info_file(self):
-        version = importlib_metadata.version('egginfo-file')
+        version = importlib.metadata.version('egginfo-file')
         self.assertEqual(version, '0.1')
 
     def test_requires_egg_info_file(self):
-        requirements = importlib_metadata.requires('egginfo-file')
+        requirements = importlib.metadata.requires('egginfo-file')
         self.assertIsNone(requirements)
 
     def test_requires(self):
