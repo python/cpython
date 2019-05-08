@@ -2052,8 +2052,9 @@ _PyTrash_deposit_object(PyObject *op)
     _PyObject_ASSERT(op, PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, op->ob_refcnt == 0);
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), _PyRuntime.gc.trash_delete_later);
-    _PyRuntime.gc.trash_delete_later = op;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    _PyGCHead_SET_PREV(_Py_AS_GC(op), interp->gc.trash_delete_later);
+    interp->gc.trash_delete_later = op;
 }
 
 /* The equivalent API, using per-thread state recursion info */
@@ -2074,11 +2075,12 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    while (_PyRuntime.gc.trash_delete_later) {
-        PyObject *op = _PyRuntime.gc.trash_delete_later;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    while (interp->gc.trash_delete_later) {
+        PyObject *op = interp->gc.trash_delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        _PyRuntime.gc.trash_delete_later =
+        interp->gc.trash_delete_later =
             (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
 
         /* Call the deallocator directly.  This used to try to
@@ -2088,9 +2090,9 @@ _PyTrash_destroy_chain(void)
          * up distorting allocation statistics.
          */
         _PyObject_ASSERT(op, op->ob_refcnt == 0);
-        ++_PyRuntime.gc.trash_delete_nesting;
+        ++interp->gc.trash_delete_nesting;
         (*dealloc)(op);
-        --_PyRuntime.gc.trash_delete_nesting;
+        --interp->gc.trash_delete_nesting;
     }
 }
 

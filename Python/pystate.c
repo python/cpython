@@ -47,7 +47,6 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 {
     memset(runtime, 0, sizeof(*runtime));
 
-    _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
     runtime->preconfig = _PyPreConfig_INIT;
 

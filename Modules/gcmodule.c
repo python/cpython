@@ -1257,7 +1257,8 @@ static PyObject *
 gc_enable_impl(PyObject *module)
 /*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
-    _PyRuntime.gc.enabled = 1;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    interp->gc.enabled = 1;
     Py_RETURN_NONE;
 }
 
@@ -1271,7 +1272,8 @@ static PyObject *
 gc_disable_impl(PyObject *module)
 /*[clinic end generated code: output=97d1030f7aa9d279 input=8c2e5a14e800d83b]*/
 {
-    _PyRuntime.gc.enabled = 0;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    interp->gc.enabled = 0;
     Py_RETURN_NONE;
 }
 
@@ -1285,7 +1287,8 @@ static int
 gc_isenabled_impl(PyObject *module)
 /*[clinic end generated code: output=1874298331c49130 input=30005e0422373b31]*/
 {
-    return _PyRuntime.gc.enabled;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    return interp->gc.enabled;
 }
 
 /*[clinic input]
@@ -1312,7 +1315,8 @@ gc_collect_impl(PyObject *module, int generation)
         return -1;
     }
 
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     Py_ssize_t n;
     if (state->collecting) {
         /* already collecting, don't do anything */
@@ -1348,7 +1352,8 @@ static PyObject *
 gc_set_debug_impl(PyObject *module, int flags)
 /*[clinic end generated code: output=7c8366575486b228 input=5e5ce15e84fbed15]*/
 {
-    _PyRuntime.gc.debug = flags;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    interp->gc.debug = flags;
 
     Py_RETURN_NONE;
 }
@@ -1363,7 +1368,8 @@ static int
 gc_get_debug_impl(PyObject *module)
 /*[clinic end generated code: output=91242f3506cd1e50 input=91a101e1c3b98366]*/
 {
-    return _PyRuntime.gc.debug;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    return interp->gc.debug;
 }
 
 PyDoc_STRVAR(gc_set_thresh__doc__,
@@ -1375,7 +1381,8 @@ PyDoc_STRVAR(gc_set_thresh__doc__,
 static PyObject *
 gc_set_threshold(PyObject *self, PyObject *args)
 {
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     if (!PyArg_ParseTuple(args, "i|ii:set_threshold",
                           &state->generations[0].threshold,
                           &state->generations[1].threshold,
@@ -1398,7 +1405,8 @@ static PyObject *
 gc_get_threshold_impl(PyObject *module)
 /*[clinic end generated code: output=7902bc9f41ecbbd8 input=286d79918034d6e6]*/
 {
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     return Py_BuildValue("(iii)",
                          state->generations[0].threshold,
                          state->generations[1].threshold,
@@ -1415,7 +1423,8 @@ static PyObject *
 gc_get_count_impl(PyObject *module)
 /*[clinic end generated code: output=354012e67b16398f input=a392794a08251751]*/
 {
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     return Py_BuildValue("(iii)",
                          state->generations[0].count,
                          state->generations[1].count,
@@ -1462,7 +1471,8 @@ gc_get_referrers(PyObject *self, PyObject *args)
     PyObject *result = PyList_New(0);
     if (!result) return NULL;
 
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     for (i = 0; i < NUM_GENERATIONS; i++) {
         if (!(gc_referrers_for(args, GEN_HEAD(state, i), result))) {
             Py_DECREF(result);
@@ -1526,7 +1536,8 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
 {
     int i;
     PyObject* result;
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
 
     result = PyList_New(0);
     if (result == NULL) {
@@ -1584,7 +1595,8 @@ gc_get_stats_impl(PyObject *module)
 
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     for (i = 0; i < NUM_GENERATIONS; i++) {
         stats[i] = state->generation_stats[i];
     }
@@ -1656,7 +1668,8 @@ static PyObject *
 gc_freeze_impl(PyObject *module)
 /*[clinic end generated code: output=502159d9cdc4c139 input=b602b16ac5febbe5]*/
 {
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     for (int i = 0; i < NUM_GENERATIONS; ++i) {
         gc_list_merge(GEN_HEAD(state, i), &state->permanent_generation.head);
         state->generations[i].count = 0;
@@ -1676,7 +1689,8 @@ static PyObject *
 gc_unfreeze_impl(PyObject *module)
 /*[clinic end generated code: output=1c15f2043b25e169 input=2dd52b170f4cef6c]*/
 {
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     gc_list_merge(&state->permanent_generation.head, GEN_HEAD(state, NUM_GENERATIONS-1));
     Py_RETURN_NONE;
 }
@@ -1691,7 +1705,8 @@ static Py_ssize_t
 gc_get_freeze_count_impl(PyObject *module)
 /*[clinic end generated code: output=61cbd9f43aa032e1 input=45ffbc65cfe2a6ed]*/
 {
-    return gc_list_size(&_PyRuntime.gc.permanent_generation.head);
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    return gc_list_size(&interp->gc.permanent_generation.head);
 }
 
 
@@ -1762,7 +1777,8 @@ PyInit_gc(void)
         return NULL;
     }
 
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     if (state->garbage == NULL) {
         state->garbage = PyList_New(0);
         if (state->garbage == NULL)
@@ -1795,7 +1811,8 @@ PyInit_gc(void)
 Py_ssize_t
 PyGC_Collect(void)
 {
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     if (!state->enabled) {
         return 0;
     }
@@ -1828,7 +1845,8 @@ _PyGC_CollectNoFail(void)
 {
     assert(!PyErr_Occurred());
 
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     Py_ssize_t n;
 
     /* Ideally, this function is only called on interpreter shutdown,
@@ -1849,9 +1867,9 @@ _PyGC_CollectNoFail(void)
 }
 
 void
-_PyGC_DumpShutdownStats(_PyRuntimeState *runtime)
+_PyGC_DumpShutdownStats(PyInterpreterState *interp)
 {
-    struct _gc_runtime_state *state = &runtime->gc;
+    struct _gc_runtime_state *state = &interp->gc;
     if (!(state->debug & DEBUG_SAVEALL)
         && state->garbage != NULL && PyList_GET_SIZE(state->garbage) > 0) {
         const char *message;
@@ -1886,9 +1904,9 @@ _PyGC_DumpShutdownStats(_PyRuntimeState *runtime)
 }
 
 void
-_PyGC_Fini(_PyRuntimeState *runtime)
+_PyGC_Fini(PyInterpreterState *interp)
 {
-    struct _gc_runtime_state *state = &runtime->gc;
+    struct _gc_runtime_state *state = &interp->gc;
     Py_CLEAR(state->garbage);
     Py_CLEAR(state->callbacks);
 }
@@ -1930,7 +1948,8 @@ PyObject_GC_UnTrack(void *op_raw)
 static PyObject *
 _PyObject_GC_Alloc(int use_calloc, size_t basicsize)
 {
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     PyObject *op;
     PyGC_Head *g;
     size_t size;
@@ -2023,7 +2042,8 @@ PyObject_GC_Del(void *op)
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
     }
-    struct _gc_runtime_state *state = &_PyRuntime.gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    struct _gc_runtime_state *state = &interp->gc;
     if (state->generations[0].count > 0) {
         state->generations[0].count--;
     }

@@ -73,7 +73,7 @@ extern void PyAsyncGen_Fini(void);
 extern void _PyExc_Fini(void);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
-extern void _PyGC_Fini(_PyRuntimeState *runtime);
+extern void _PyGC_Fini(PyInterpreterState *interp);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(void);
@@ -89,7 +89,7 @@ extern void _PyGILState_Init(
     PyThreadState *tstate);
 extern void _PyGILState_Fini(_PyRuntimeState *runtime);
 
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyGC_DumpShutdownStats(PyInterpreterState *interp);
 
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPyArgv(
     const _PyPreConfig *src_config,

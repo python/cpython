@@ -511,6 +511,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     *interp_p = interp;
 
+    _PyGC_Initialize(&interp->gc);
+
     _PyInitError err = _PyCoreConfig_Copy(&interp->core_config, core_config);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -1287,7 +1289,7 @@ Py_FinalizeEx(void)
     PyFloat_Fini();
     PyDict_Fini();
     PySlice_Fini();
-    _PyGC_Fini(runtime);
+    _PyGC_Fini(interp);
     _PyWarnings_Fini(interp);
     _Py_HashRandomization_Fini();
     _PyArg_Fini();
@@ -1379,6 +1381,8 @@ new_interpreter(PyThreadState **tstate_p)
         *tstate_p = NULL;
         return _Py_INIT_OK();
     }
+
+    _PyGC_Initialize(&interp->gc);
 
     PyThreadState *tstate = PyThreadState_New(interp);
     if (tstate == NULL) {
@@ -1558,6 +1562,9 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     PyImport_Cleanup();
     PyInterpreterState_Clear(interp);
+
+    _PyGC_Fini(interp);
+
     PyThreadState_Swap(NULL);
     PyInterpreterState_Delete(interp);
 }
