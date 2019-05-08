@@ -252,12 +252,13 @@ always available.
 .. data:: __breakpointhook__
           __displayhook__
           __excepthook__
+          __unraisablehook__
 
    These objects contain the original values of ``breakpointhook``,
-   ``displayhook``, and ``excepthook`` at the start of the program.  They are
-   saved so that ``breakpointhook``, ``displayhook`` and ``excepthook`` can be
-   restored in case they happen to get replaced with broken or alternative
-   objects.
+   ``displayhook``, ``excepthook``, and ``unraisablehook`` at the start of the
+   program.  They are saved so that ``breakpointhook``, ``displayhook`` and
+   ``excepthook``, ``unraisablehook`` can be restored in case they happen to
+   get replaced with broken or alternative objects.
 
    .. versionadded:: 3.7
       __breakpointhook__
@@ -1486,6 +1487,26 @@ always available.
    The default is ``1000``.  When set to ``0`` or less, all traceback information
    is suppressed and only the exception type and value are printed.
 
+
+.. function:: unraisablehook(unraisable, /)
+
+   Handle an unraisable exception.
+
+   Called when an exception has occurred but there is no way for Python to
+   handle it. For example, when a destructor raises an exception or during
+   garbage collection (:func:`gc.collect`).
+
+   The *unraisable* argument has the following attributes:
+
+   * *exc_type*: Exception type.
+   * *exc_value*: Exception value.
+   * *exc_tb*: Exception traceback, can be ``None``.
+   * *obj*: Object causing the exception, can be ``None``.
+
+   :func:`sys.unraisablehook` can be overridden to control how unraisable
+   exceptions are handled.
+
+   .. versionadded:: 3.8
 
 .. data:: version
 

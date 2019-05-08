@@ -574,6 +574,12 @@ pycore_init_types(void)
     if (!_PyContext_Init()) {
         return _Py_INIT_ERR("can't init context");
     }
+
+    err = _PyErr_Init();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
     return _Py_INIT_OK();
 }
 
@@ -1431,6 +1437,12 @@ new_interpreter(PyThreadState **tstate_p)
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
+
+    err = _PyErr_Init();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+
 
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
