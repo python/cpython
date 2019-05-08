@@ -1,0 +1,1 @@
+Save the live exception during import.c's ``remove_module()``.
