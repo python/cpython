@@ -79,7 +79,7 @@ static void
 clear_slotdefs(void);
 
 static PyObject *
-lookup_method(PyObject *self, _Py_Identifier *attrid, int *unbound);
+lookup_maybe_method(PyObject *self, _Py_Identifier *attrid, int *unbound);
 
 /*
  * finds the beginning of the docstring's introspection signature.
@@ -305,13 +305,19 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     if (custom) {
         _Py_IDENTIFIER(mro);
         int unbound;
-        PyObject *mro_meth = lookup_method((PyObject *)type, &PyId_mro,
-                                           &unbound);
-        PyObject *type_mro_meth = lookup_method((PyObject *)&PyType_Type, &PyId_mro,
-                                           &unbound);
+        PyObject *mro_meth = lookup_maybe_method(
+            (PyObject *)type, &PyId_mro, &unbound);
+        PyObject *type_mro_meth = lookup_maybe_method(
+            (PyObject *)&PyType_Type, &PyId_mro, &unbound);
         if (mro_meth == NULL || type_mro_meth == NULL ||
             mro_meth != type_mro_meth)
+        {
             clear = 1;
+        }
+        if (mro_meth != NULL)
+            Py_DECREF(mro_meth);
+        if (type_mro_meth != NULL)
+            Py_DECREF(type_mro_meth);
     }
     if (!clear) {
         n = PyTuple_GET_SIZE(bases);
