@@ -95,7 +95,8 @@ static const char usage_6[] =
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
 "   debugger. It can be set to the callable of your debugger of choice.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
-"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n";
+"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
+"PYTHONHISTORY: the location of a .python_history file.\n";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"

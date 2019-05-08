@@ -918,6 +918,13 @@ conflict.
    .. versionadded:: 3.7
       See :pep:`540` for more details.
 
+.. envvar:: PYTHONHISTORY
+
+   This environment variable can be used to set the location of a
+   ``.python_history`` file (it is ``~/.python_history`` by default).
+
+   .. versionadded:: 3.8
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

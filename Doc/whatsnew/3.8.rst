@@ -206,6 +206,9 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
+* The new :envvar:`PYTHONHISTORY` environment variable can be used to change
+  the location of a ``.python_history`` file.
+  (Contributed by Levi Sabah and Zackery Spytz in :issue:`29779`.)
 
 New Modules
 ===========

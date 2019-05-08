@@ -311,6 +311,11 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
 
+    def test_gethistoryfile(self):
+        with EnvironmentVarGuard() as environ:
+            environ['PYTHONHISTORY'] = 'xoxo'
+            self.assertEqual(site.gethistoryfile(), "xoxo")
+
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
