@@ -279,7 +279,7 @@ Module functions and constants
       The numeric error code from the `SQLite API
       <http://www.sqlite.org/c3ref/c_abort.html>`_.
 
-      .. versionadded:: 3.7
+      .. versionadded:: 3.8
 
    .. attribute:: sqlite_errorname
 
@@ -287,7 +287,7 @@ Module functions and constants
       from the `SQLite API
       <http://www.sqlite.org/c3ref/c_abort.html>`_.
 
-      .. versionadded:: 3.7
+      .. versionadded:: 3.8
 
 
 .. _sqlite3-connection-objects:
