@@ -1,0 +1,2 @@
+enable custom reduction callback registration for functions and classes in
+_pickle.c, using the new Pickler's attribute ``reducer_override``
