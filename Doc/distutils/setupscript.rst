@@ -523,7 +523,7 @@ following way::
 
     setup(...,
           data_files=[('bitmaps', ['bm/b1.gif', 'bm/b2.gif']),
-                      ('config', ['cfg/data.cfg']),
+                      ('config', ['cfg/data.cfg'])],
          )
 
 Each (*directory*, *files*) pair in the sequence specifies the installation
