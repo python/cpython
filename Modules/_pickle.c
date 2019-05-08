@@ -3662,6 +3662,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     PyObject *state = NULL;
     PyObject *listitems = Py_None;
     PyObject *dictitems = Py_None;
+    PyObject *state_setter = Py_None;
     PickleState *st = _Pickle_GetGlobalState();
     Py_ssize_t size;
     int use_newobj = 0, use_newobj_ex = 0;
@@ -3672,14 +3673,15 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     const char newobj_ex_op = NEWOBJ_EX;
 
     size = PyTuple_Size(args);
-    if (size < 2 || size > 5) {
+    if (size < 2 || size > 6) {
         PyErr_SetString(st->PicklingError, "tuple returned by "
-                        "__reduce__ must contain 2 through 5 elements");
+                        "__reduce__ must contain 2 through 6 elements");
         return -1;
     }
 
-    if (!PyArg_UnpackTuple(args, "save_reduce", 2, 5,
-                           &callable, &argtup, &state, &listitems, &dictitems))
+    if (!PyArg_UnpackTuple(args, "save_reduce", 2, 6,
+                           &callable, &argtup, &state, &listitems, &dictitems,
+                           &state_setter))
         return -1;
 
     if (!PyCallable_Check(callable)) {
@@ -3711,6 +3713,15 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         PyErr_Format(st->PicklingError, "fifth element of the tuple "
                      "returned by __reduce__ must be an iterator, not %s",
                      Py_TYPE(dictitems)->tp_name);
+        return -1;
+    }
+
+    if (state_setter == Py_None)
+        state_setter = NULL;
+    else if (!PyCallable_Check(state_setter)) {
+        PyErr_Format(st->PicklingError, "sixth element of the tuple "
+                     "returned by __reduce__ must be a function, not %s",
+                     Py_TYPE(state_setter)->tp_name);
         return -1;
     }
 
@@ -3933,11 +3944,32 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
         return -1;
 
     if (state) {
-        if (save(self, state, 0) < 0 ||
-            _Pickler_Write(self, &build_op, 1) < 0)
-            return -1;
-    }
+        if (state_setter == NULL) {
+            if (save(self, state, 0) < 0 ||
+                _Pickler_Write(self, &build_op, 1) < 0)
+                return -1;
+        }
+        else {
 
+            /* If a state_setter is specified, call it instead of load_build to
+             * update obj's with its previous state.
+             * The first 4 save/write instructions push state_setter and its
+             * tuple of expected arguments (obj, state) onto the stack. The
+             * REDUCE opcode triggers the state_setter(obj, state) function
+             * call. Finally, because state-updating routines only do in-place
+             * modification, the whole operation has to be stack-transparent.
+             * Thus, we finally pop the call's output from the stack.*/
+
+            const char tupletwo_op = TUPLE2;
+            const char pop_op = POP;
+            if (save(self, state_setter, 0) < 0 ||
+                save(self, obj, 0) < 0 || save(self, state, 0) < 0 ||
+                _Pickler_Write(self, &tupletwo_op, 1) < 0 ||
+                _Pickler_Write(self, &reduce_op, 1) < 0 ||
+                _Pickler_Write(self, &pop_op, 1) < 0)
+                return -1;
+        }
+    }
     return 0;
 }
 

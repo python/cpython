@@ -537,9 +537,9 @@ class _Pickler:
 
         # Assert that it returned an appropriately sized tuple
         l = len(rv)
-        if not (2 <= l <= 5):
+        if not (2 <= l <= 6):
             raise PicklingError("Tuple returned by %s must have "
-                                "two to five elements" % reduce)
+                                "two to six elements" % reduce)
 
         # Save the reduce() output and finally memoize the object
         self.save_reduce(obj=obj, *rv)
@@ -561,7 +561,7 @@ class _Pickler:
                     "persistent IDs in protocol 0 must be ASCII strings")
 
     def save_reduce(self, func, args, state=None, listitems=None,
-                    dictitems=None, obj=None):
+                    dictitems=None, state_setter=None, obj=None):
         # This API is called by some subclasses
 
         if not isinstance(args, tuple):
@@ -655,8 +655,25 @@ class _Pickler:
             self._batch_setitems(dictitems)
 
         if state is not None:
-            save(state)
-            write(BUILD)
+            if state_setter is None:
+                save(state)
+                write(BUILD)
+            else:
+                # If a state_setter is specified, call it instead of load_build
+                # to update obj's with its previous state.
+                # First, push state_setter and its tuple of expected arguments
+                # (obj, state) onto the stack.
+                save(state_setter)
+                save(obj)  # simple BINGET opcode as obj is already memoized.
+                save(state)
+                write(TUPLE2)
+                # Trigger a state_setter(obj, state) function call.
+                write(REDUCE)
+                # The purpose of state_setter is to carry-out an
+                # inplace modification of obj. We do not care about what the
+                # method might return, so its output is eventually removed from
+                # the stack.
+                write(POP)
 
     # Methods below this point are dispatched through the dispatch table
 
