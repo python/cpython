@@ -2992,7 +2992,13 @@ class AAA(object):
         return str, (REDUCE_A,)
 
 class BBB(object):
-    pass
+    def __init__(self):
+        # Add an instance attribute to enable state-saving routines at pickling
+        # time.
+        self.a = "some attribute"
+
+    def __setstate__(self, state):
+        self.a = "BBB.__setstate__"
 
 
 def setstate_bbb(obj, state):
@@ -3004,7 +3010,7 @@ def setstate_bbb(obj, state):
     it as the analogous of list_setitems or dict_setitems but for foreign
     classes/functions.
     """
-    obj.a = 'foo'
+    obj.a = "custom state_setter"
 
 
 class AbstractDispatchTableTests(unittest.TestCase):
@@ -3099,6 +3105,11 @@ class AbstractDispatchTableTests(unittest.TestCase):
         # state_setter is to tweak objects reduction behavior.
         # In particular, state_setter is useful when the default __setstate__
         # behavior is not flexible enough.
+
+        # No custom reducer for b has been registered for now, so
+        # BBB.__setstate__ should be used at unpickling time
+        self.assertEqual(default_load_dump(b).a, "BBB.__setstate__")
+
         def reduce_bbb(obj):
             return BBB, (), obj.__dict__, None, None, setstate_bbb
 
@@ -3106,7 +3117,9 @@ class AbstractDispatchTableTests(unittest.TestCase):
 
         b = BBB()
 
-        self.assertEqual(custom_load_dump(b).a, 'foo')
+        # The custom reducer reduce_bbb includes a state setter, that should
+        # have priority over BBB.__setstate__
+        self.assertEqual(custom_load_dump(b).a, "custom state_setter")
 
 
 if __name__ == "__main__":
