@@ -1,1 +1,0 @@
-Add new references for C API Documentationadditions of Time_FromTimeAndFold and PyDateTime_FromDateAndTimeAndFold. Patch by Edison Abahurire.
