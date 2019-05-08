@@ -1,0 +1,1 @@
+Improve libcurses detection on HP-UX

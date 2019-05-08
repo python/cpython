@@ -856,7 +856,7 @@ class PyBuildExt(build_ext):
                     for ln in fp:
                         if 'curses' in ln:
                             readline_termcap_library = re.sub(
-                                r'.*lib(n?cursesw?)\.so.*', r'\1', ln
+                                r'.*lib([nx]?cursesw?)\.so.*', r'\1', ln
                             ).rstrip()
                             break
                         # termcap interface split out from ncurses
@@ -948,7 +948,7 @@ class PyBuildExt(build_ext):
                                include_dirs=curses_includes,
                                define_macros=curses_defines,
                                libraries=curses_libs))
-        elif curses_library == 'curses' and not MACOS:
+        elif curses_library in ['curses', 'xcurses'] and not MACOS:
                 # OSX has an old Berkeley curses, not good enough for
                 # the _curses module.
             if (self.compiler.find_library_file(self.lib_dirs, 'terminfo')):
