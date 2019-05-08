@@ -1093,7 +1093,8 @@ non-important content
         # Make sure nested fstrings still work.
         self.assertEqual(f'{f"{3.1415=:.1f}":*^20}', '*****3.1415=3.1*****')
 
-        # Make sure text before and after !d works correctly.
+        # Make sure text before and after an expression with = works
+        # correctly.
         pi = 'π'
         self.assertEqual(f'alpha α {pi=} ω omega', "alpha α pi='π' ω omega")
 
@@ -1117,7 +1118,7 @@ non-important content
 
         x = 20
         # This isn't an assignment expression, it's 'x', with a format
-        # spec of '=10'.
+        # spec of '=10'.  See test_walrus: you need to use parens.
         self.assertEqual(f'{x:=10}', '        20')
 
         # Test named function parameters, to make sure '=' parsing works
@@ -1147,6 +1148,15 @@ non-important content
         self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
 
+    def test_walrus(self):
+        x = 20
+        # This isn't an assignment expression, it's 'x', with a format
+        # spec of '=10'.  See test_walrus: you need to use parens.
+        self.assertEqual(f'{x:=10}', '        20')
+
+        # This is an assignment expression, which requires parens.
+        self.assertEqual(f'{(x:=10)}', '10')
+        self.assertEqual(x, 10)
 
 
 if __name__ == '__main__':

@@ -656,7 +656,7 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
     Py_DECREF(temp_fv_str);
 
     if (e->v.FormattedValue.expr_text) {
-        /* Use the = debug conversion. */
+        /* Use the = for debug text expansion. */
         APPEND_STR("=");
     }
 

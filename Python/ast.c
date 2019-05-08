@@ -5020,7 +5020,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     int conversion = -1; /* The conversion char.  Use default if not
                             specified, or !r if using = and no format
                             spec. */
-    int equal_conversion = 0; /* Are we using the = conversion? */
+    int equal_conversion = 0; /* Are we using the = feature? */
     PyObject *expr_text = NULL; /* The text of the expression, used for =. */
     const char *expr_text_end;
 
@@ -5194,7 +5194,8 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     if (!simple_expression)
         goto error;
 
-    /* Check for = conversion. */
+    /* Check for =, which puts the text value of the expression in
+       expr_text. */
     if (**str == '=') {
         *str += 1;
         equal_conversion = 1;
