@@ -2992,7 +2992,26 @@ class AAA(object):
         return str, (REDUCE_A,)
 
 class BBB(object):
-    pass
+    def __init__(self):
+        # Add an instance attribute to enable state-saving routines at pickling
+        # time.
+        self.a = "some attribute"
+
+    def __setstate__(self, state):
+        self.a = "BBB.__setstate__"
+
+
+def setstate_bbb(obj, state):
+    """Custom state setter for BBB objects
+
+    Such callable may be created by other persons than the ones who created the
+    BBB class. If passed as the state_setter item of a custom reducer, this
+    allows for custom state setting behavior of BBB objects. One can think of
+    it as the analogous of list_setitems or dict_setitems but for foreign
+    classes/functions.
+    """
+    obj.a = "custom state_setter"
+
 
 class AbstractDispatchTableTests(unittest.TestCase):
 
@@ -3080,6 +3099,25 @@ class AbstractDispatchTableTests(unittest.TestCase):
         self.assertIsInstance(custom_load_dump(b), BBB)
         self.assertEqual(default_load_dump(a), REDUCE_A)
         self.assertIsInstance(default_load_dump(b), BBB)
+
+        # End-to-end testing of save_reduce with the state_setter keyword
+        # argument. This is a dispatch_table test as the primary goal of
+        # state_setter is to tweak objects reduction behavior.
+        # In particular, state_setter is useful when the default __setstate__
+        # behavior is not flexible enough.
+
+        # No custom reducer for b has been registered for now, so
+        # BBB.__setstate__ should be used at unpickling time
+        self.assertEqual(default_load_dump(b).a, "BBB.__setstate__")
+
+        def reduce_bbb(obj):
+            return BBB, (), obj.__dict__, None, None, setstate_bbb
+
+        dispatch_table[BBB] = reduce_bbb
+
+        # The custom reducer reduce_bbb includes a state setter, that should
+        # have priority over BBB.__setstate__
+        self.assertEqual(custom_load_dump(b).a, "custom state_setter")
 
 
 if __name__ == "__main__":
