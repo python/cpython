@@ -148,6 +148,20 @@ extensions compiled in release mode and for C extensions compiled with the
 stable ABI.
 (Contributed by Victor Stinner in :issue:`36722`.)
 
+f-strings now support =  for quick and easy debugging
+-----------------------------------------------------
+
+Add ``=`` specifier to f-strings. ``f'{expr=}'`` expands
+to the text of the expression, an equal sign, then the repr of the
+evaluated expression.  So::
+
+  x = 3
+  print(f'{x*9 + 15=}')
+
+Would print ``x*9 + 15=42``.
+
+(Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
+
 
 Other Language Changes
 ======================

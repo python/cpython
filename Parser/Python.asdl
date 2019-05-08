@@ -76,7 +76,7 @@ module Python
          -- x < 4 < 3 and (x < 4) < 3
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
-         | FormattedValue(expr value, int? conversion, expr? format_spec)
+         | FormattedValue(expr value, int? conversion, expr? format_spec, string? expr_text)
          | JoinedStr(expr* values)
          | Constant(constant value, string? kind)
 

@@ -314,10 +314,12 @@ static char *Call_fields[]={
 static PyTypeObject *FormattedValue_type;
 _Py_IDENTIFIER(conversion);
 _Py_IDENTIFIER(format_spec);
+_Py_IDENTIFIER(expr_text);
 static char *FormattedValue_fields[]={
     "value",
     "conversion",
     "format_spec",
+    "expr_text",
 };
 static PyTypeObject *JoinedStr_type;
 static char *JoinedStr_fields[]={
@@ -950,7 +952,7 @@ static int init_types(void)
     Call_type = make_type("Call", expr_type, Call_fields, 3);
     if (!Call_type) return 0;
     FormattedValue_type = make_type("FormattedValue", expr_type,
-                                    FormattedValue_fields, 3);
+                                    FormattedValue_fields, 4);
     if (!FormattedValue_type) return 0;
     JoinedStr_type = make_type("JoinedStr", expr_type, JoinedStr_fields, 1);
     if (!JoinedStr_type) return 0;
@@ -2249,9 +2251,9 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int lineno, int
 }
 
 expr_ty
-FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
-               int col_offset, int end_lineno, int end_col_offset, PyArena
-               *arena)
+FormattedValue(expr_ty value, int conversion, expr_ty format_spec, string
+               expr_text, int lineno, int col_offset, int end_lineno, int
+               end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2266,6 +2268,7 @@ FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
     p->v.FormattedValue.value = value;
     p->v.FormattedValue.conversion = conversion;
     p->v.FormattedValue.format_spec = format_spec;
+    p->v.FormattedValue.expr_text = expr_text;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -3494,6 +3497,11 @@ ast2obj_expr(void* _o)
         value = ast2obj_expr(o->v.FormattedValue.format_spec);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_format_spec, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.FormattedValue.expr_text);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_expr_text, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -7148,6 +7156,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty value;
         int conversion;
         expr_ty format_spec;
+        string expr_text;
 
         if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
             return 1;
@@ -7188,8 +7197,22 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = FormattedValue(value, conversion, format_spec, lineno,
-                              col_offset, end_lineno, end_col_offset, arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_expr_text, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            expr_text = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &expr_text, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = FormattedValue(value, conversion, format_spec, expr_text,
+                              lineno, col_offset, end_lineno, end_col_offset,
+                              arena);
         if (*out == NULL) goto failed;
         return 0;
     }
