@@ -5020,7 +5020,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     int conversion = -1; /* The conversion char.  Use default if not
                             specified, or !r if using = and no format
                             spec. */
-    int equal_conversion = 0; /* Are we using the = feature? */
+    int equal_flag = 0; /* Are we using the = feature? */
     PyObject *expr_text = NULL; /* The text of the expression, used for =. */
     const char *expr_text_end;
 
@@ -5198,10 +5198,11 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        expr_text. */
     if (**str == '=') {
         *str += 1;
-        equal_conversion = 1;
+        equal_flag = 1;
 
         /* Skip over ASCII whitespace.  No need to test for end of string
-           here, since we know there's at least a } somewhere ahead. */
+           here, since we know there's at least a trailing quote somewhere
+           ahead. */
         while (Py_ISSPACE(**str)) {
             *str += 1;
         }
@@ -5226,7 +5227,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         }
 
     }
-    if (equal_conversion) {
+    if (equal_flag) {
         Py_ssize_t len = expr_text_end-expr_start;
         expr_text = PyUnicode_FromStringAndSize(expr_start, len);
         if (!expr_text)
@@ -5257,7 +5258,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
     /* If we're in = mode, and have no format spec and no explict conversion,
        set the conversion to 'r'. */
-    if (equal_conversion && format_spec == NULL && conversion == -1) {
+    if (equal_flag && format_spec == NULL && conversion == -1) {
         conversion = 'r';
     }
 

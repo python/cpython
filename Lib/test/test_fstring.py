@@ -1151,7 +1151,7 @@ non-important content
     def test_walrus(self):
         x = 20
         # This isn't an assignment expression, it's 'x', with a format
-        # spec of '=10'.  See test_walrus: you need to use parens.
+        # spec of '=10'.
         self.assertEqual(f'{x:=10}', '        20')
 
         # This is an assignment expression, which requires parens.

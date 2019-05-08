@@ -3947,7 +3947,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
        character, and whether or not a format_spec was provided.
 
        Convert the conversion char to 3 bits:
-       !f  : 000  0x0  FVC_NONE   The default if nothing specified.
+           : 000  0x0  FVC_NONE   The default if nothing specified.
        !s  : 001  0x1  FVC_STR
        !r  : 010  0x2  FVC_REPR
        !a  : 011  0x3  FVC_ASCII
