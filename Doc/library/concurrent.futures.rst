@@ -216,6 +216,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    given, it will default to the number of processors on the machine.
    If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
    will be raised.
+   On Windows, *max_workers* must be equal or lower than ``61``. If it is not
+   then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
+   the default chosen will be at most ``61``, even if more processors are
+   available.
    *mp_context* can be a multiprocessing context or None. It will be used to
    launch the workers. If *mp_context* is ``None`` or not given, the default
    multiprocessing context is used.
