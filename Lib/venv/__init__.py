@@ -371,7 +371,7 @@ class EnvBuilder:
 
     def upgrade_dependencies(self, context):
         logger.debug(
-            'Upgrading {} packages in {}'.format(CORE_VENV_DEPS, context.bin_path)
+            f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
         if sys.platform == 'win32':
             pip_exe = os.path.join(context.bin_path, 'pip.exe')
