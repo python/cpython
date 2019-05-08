@@ -22,6 +22,13 @@ By default, package metadata can live on the file system or in wheels on
 ``sys.path``.  Through an extension mechanism, the metadata can live almost
 anywhere.
 
+.. note::  Although this package supports loading metadata from wheels
+   on ``sys.path``, that support is provisional and does not serve to
+   contravene the `PEP 427 directive
+   <https://www.python.org/dev/peps/pep-0427/#is-it-possible-to-import-python-code-directly-from-a-wheel-file>`_,
+   which states that relying on this format is discouraged, and use is
+   at your own risk.
+
 
 Overview
 ========
@@ -54,40 +61,6 @@ You can get the :ref:`metadata for a distribution <metadata>`::
 You can also get a :ref:`distribution's version number <version>`, list its
 :ref:`constituent files <files>`_, and get a list of the distribution's
 :ref:`requirements`_.
-
-
-Distributions
-=============
-
-.. CAUTION:: The ``Distribution`` class described here may or may not end up
-             in the final stable public API.  Consider this class `provisional
-             <https://www.python.org/dev/peps/pep-0411/>`_ until the 1.0
-             release.
-
-While the above API is the most common and convenient usage, you can get all
-of that information from the ``Distribution`` class.  A ``Distribution`` is an
-abstract object that represents the metadata for a Python package.  You can
-get the ``Distribution`` instance::
-
-    >>> from importlib_metadata import distribution
-    >>> dist = distribution('wheel')
-
-Thus, an alternative way to get the version number is through the
-``Distribution`` instance::
-
-    >>> dist.version
-    '0.32.3'
-
-There are all kinds of additional metadata available on the ``Distribution``
-instance::
-
-    >>> d.metadata['Requires-Python']
-    '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
-    >>> d.metadata['License']
-    'MIT'
-
-The full set of available metadata is not described here.  See `PEP 566
-<https://www.python.org/dev/peps/pep-0566/>`_ for additional details.
 
 
 Functional API
@@ -197,6 +170,34 @@ function.  Note that this returns an iterator::
     >>> list(requires('wheel'))
     ["pytest (>=3.0.0) ; extra == 'test'"]
 
+
+Distributions
+=============
+
+While the above API is the most common and convenient usage, you can get all
+of that information from the ``Distribution`` class.  A ``Distribution`` is an
+abstract object that represents the metadata for a Python package.  You can
+get the ``Distribution`` instance::
+
+    >>> from importlib_metadata import distribution
+    >>> dist = distribution('wheel')
+
+Thus, an alternative way to get the version number is through the
+``Distribution`` instance::
+
+    >>> dist.version
+    '0.32.3'
+
+There are all kinds of additional metadata available on the ``Distribution``
+instance::
+
+    >>> d.metadata['Requires-Python']
+    '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+    >>> d.metadata['License']
+    'MIT'
+
+The full set of available metadata is not described here.  See `PEP 566
+<https://www.python.org/dev/peps/pep-0566/>`_ for additional details.
 
 
 Extending the search algorithm

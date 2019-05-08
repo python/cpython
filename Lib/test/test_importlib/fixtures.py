@@ -127,6 +127,27 @@ class EggInfoPkg(SiteDir):
         build_files(EggInfoPkg.files, prefix=self.site_dir)
 
 
+class EggInfoFile(SiteDir):
+    files = {
+        "egginfo_file.egg-info": """
+            Metadata-Version: 1.0
+            Name: egginfo_file
+            Version: 0.1
+            Summary: An example package
+            Home-page: www.example.com
+            Author: Eric Haffa-Vee
+            Author-email: eric@example.coms
+            License: UNKNOWN
+            Description: UNKNOWN
+            Platform: UNKNOWN
+            """,
+        }
+
+    def setUp(self):
+        super(EggInfoFile, self).setUp()
+        build_files(EggInfoFile.files, prefix=self.site_dir)
+
+
 class LocalPackage:
     def setUp(self):
         self.fixtures = ExitStack()
@@ -136,15 +157,15 @@ class LocalPackage:
 
 
 def build_files(file_defs, prefix=pathlib.Path()):
-    """
-    Build a set of files/directories, as described by the
-    file_defs dictionary.
-    Each key/value pair in the dictionary is interpreted as
-    a filename/contents
-    pair. If the contents value is a dictionary, a directory
-    is created, and the
-    dictionary interpreted as the files within it, recursively.
+    """Build a set of files/directories, as described by the
+
+    file_defs dictionary.  Each key/value pair in the dictionary is
+    interpreted as a filename/contents pair.  If the contents value is a
+    dictionary, a directory is created, and the dictionary interpreted
+    as the files within it, recursively.
+
     For example:
+
     {"README.txt": "A README file",
      "foo": {
         "__init__.py": "",

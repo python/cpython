@@ -8,7 +8,12 @@ from collections.abc import Iterator
 from . import fixtures
 
 
-class APITests(fixtures.EggInfoPkg, fixtures.DistInfoPkg, unittest.TestCase):
+class APITests(
+        fixtures.EggInfoPkg,
+        fixtures.DistInfoPkg,
+        fixtures.EggInfoFile,
+        unittest.TestCase):
+
     version_pattern = r'\d+\.\d+(\.\d)?'
 
     def test_retrieves_version_of_self(self):
@@ -84,6 +89,14 @@ class APITests(fixtures.EggInfoPkg, fixtures.DistInfoPkg, unittest.TestCase):
 
     def test_files_egg_info(self):
         self._test_files(importlib.metadata.files('egginfo-pkg'))
+
+    def test_version_egg_info_file(self):
+        version = importlib_metadata.version('egginfo-file')
+        self.assertEqual(version, '0.1')
+
+    def test_requires_egg_info_file(self):
+        requirements = importlib_metadata.requires('egginfo-file')
+        self.assertIsNone(requirements)
 
     def test_requires(self):
         deps = importlib.metadata.requires('egginfo-pkg')
