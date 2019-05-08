@@ -296,48 +296,46 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
        each subclass when their mro is recursively updated.
      */
     Py_ssize_t i, n;
-    int clear = 0;
     int custom = (Py_TYPE(type) != &PyType_Type);
+    int unbound;
+    PyObject *mro_meth = NULL;
+    PyObject *type_mro_meth = NULL;
 
     if (!PyType_HasFeature(type, Py_TPFLAGS_HAVE_VERSION_TAG))
         return;
 
     if (custom) {
         _Py_IDENTIFIER(mro);
-        int unbound;
-        PyObject *mro_meth = lookup_maybe_method(
+        mro_meth = lookup_maybe_method(
             (PyObject *)type, &PyId_mro, &unbound);
-        PyObject *type_mro_meth = lookup_maybe_method(
+        if (mro_meth == NULL)
+            goto clear;
+        type_mro_meth = lookup_maybe_method(
             (PyObject *)&PyType_Type, &PyId_mro, &unbound);
-        if (mro_meth == NULL || type_mro_meth == NULL ||
-            mro_meth != type_mro_meth)
-        {
-            clear = 1;
-        }
-        if (mro_meth != NULL)
-            Py_DECREF(mro_meth);
-        if (type_mro_meth != NULL)
-            Py_DECREF(type_mro_meth);
+        if (type_mro_meth == NULL)
+            goto clear;
+        if (mro_meth != type_mro_meth)
+            goto clear;
     }
-    if (!clear) {
-        n = PyTuple_GET_SIZE(bases);
-        for (i = 0; i < n; i++) {
-            PyObject *b = PyTuple_GET_ITEM(bases, i);
-            PyTypeObject *cls;
+    n = PyTuple_GET_SIZE(bases);
+    for (i = 0; i < n; i++) {
+        PyObject *b = PyTuple_GET_ITEM(bases, i);
+        PyTypeObject *cls;
 
-            assert(PyType_Check(b));
-            cls = (PyTypeObject *)b;
+        assert(PyType_Check(b));
+        cls = (PyTypeObject *)b;
 
-            if (!PyType_HasFeature(cls, Py_TPFLAGS_HAVE_VERSION_TAG) ||
-                !PyType_IsSubtype(type, cls)) {
-                clear = 1;
-                break;
-            }
+        if (!PyType_HasFeature(cls, Py_TPFLAGS_HAVE_VERSION_TAG) ||
+            !PyType_IsSubtype(type, cls)) {
+            goto clear;
         }
     }
-    if (clear)
-        type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
-                            Py_TPFLAGS_VALID_VERSION_TAG);
+    return;
+ clear:
+    Py_XDECREF(mro_meth);
+    Py_XDECREF(type_mro_meth);
+    type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
+                        Py_TPFLAGS_VALID_VERSION_TAG);
 }
 
 static int
