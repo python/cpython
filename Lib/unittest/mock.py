@@ -364,7 +364,7 @@ class NonCallableMock(Base):
         # so we can create magic methods on the
         # class without stomping on other mocks
         bases = (cls,)
-        if cls != AsyncMock:
+        if not issubclass(cls, AsyncMock):
             # Check if spec is an async object or function
             sig = inspect.signature(NonCallableMock.__init__)
             bound_args = sig.bind_partial(cls, *args, **kw).arguments
