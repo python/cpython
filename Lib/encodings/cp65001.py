@@ -3,15 +3,17 @@ Code page 65001: Windows UTF-8 (CP_UTF8).
 """
 
 import codecs
-import functools
 
 if not hasattr(codecs, 'code_page_encode'):
     raise LookupError("cp65001 encoding is only available on Windows")
 
 ### Codec APIs
 
-encode = functools.partial(codecs.code_page_encode, 65001)
-_decode = functools.partial(codecs.code_page_decode, 65001)
+def encode(input, errors='strict'):
+    return codecs.code_page_encode(65001, input, errors)
+
+def _decode(input, errors='strict'):
+    return codecs.code_page_decode(65001, input, errors)
 
 def decode(input, errors='strict'):
     return codecs.code_page_decode(65001, input, errors, True)
@@ -21,13 +23,16 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
         return encode(input, self.errors)[0]
 
 class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
-    _buffer_decode = _decode
+    def _buffer_decode(self, input, errors, final=False):
+        return _decode(input, self.errors)
 
 class StreamWriter(codecs.StreamWriter):
-    encode = encode
+    def encode(self, input, errors='strict'):
+        return encode(input, self.errors)
 
 class StreamReader(codecs.StreamReader):
-    decode = _decode
+    def decode(self, input, errors='strict'):
+        return _decode(input, errors)
 
 ### encodings module API
 
