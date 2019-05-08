@@ -219,6 +219,7 @@ PyObject* pysqlite_blob_write(pysqlite_Blob *self, PyObject *data)
 
     if (rc == 0) {
         self->offset += (int)data_buffer.len;
+        PyBuffer_Release(&data_buffer);
         Py_RETURN_NONE;
     } else {
         PyBuffer_Release(&data_buffer);
