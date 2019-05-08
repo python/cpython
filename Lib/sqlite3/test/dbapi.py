@@ -85,7 +85,7 @@ class ModuleTests(unittest.TestCase):
 
     def CheckErrorCodeOnException(self):
         with self.assertRaises(sqlite.Error) as cm:
-           db = sqlite.connect('/no/such/file/exists')
+            db = sqlite.connect('/no/such/file/exists')
         e = cm.exception
         self.assertEqual(e.sqlite_errorcode, sqlite.SQLITE_CANTOPEN)
         self.assertEqual(e.sqlite_errorname, "SQLITE_CANTOPEN")
