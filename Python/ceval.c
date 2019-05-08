@@ -3435,13 +3435,15 @@ main_loop:
 
             /* See if any conversion is specified. */
             switch (which_conversion) {
+            case FVC_NONE:  conv_fn = NULL;           break;
             case FVC_STR:   conv_fn = PyObject_Str;   break;
             case FVC_REPR:  conv_fn = PyObject_Repr;  break;
             case FVC_ASCII: conv_fn = PyObject_ASCII; break;
-
-            /* Must be 0 (meaning no conversion), since only four
-               values are allowed by (oparg & FVC_MASK). */
-            default:        conv_fn = NULL;           break;
+            default:
+                PyErr_Format(PyExc_SystemError,
+                             "unexpected conversion flag %d",
+                             which_conversion);
+                goto error;
             }
 
             /* If there's a conversion function, call it and replace
