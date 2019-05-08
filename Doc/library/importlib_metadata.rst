@@ -59,8 +59,8 @@ You can get the :ref:`metadata for a distribution <metadata>`::
     ['Metadata-Version', 'Name', 'Version', 'Summary', 'Home-page', 'Author', 'Author-email', 'Maintainer', 'Maintainer-email', 'License', 'Project-URL', 'Project-URL', 'Project-URL', 'Keywords', 'Platform', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Requires-Python', 'Provides-Extra', 'Requires-Dist', 'Requires-Dist']
 
 You can also get a :ref:`distribution's version number <version>`, list its
-:ref:`constituent files <files>`_, and get a list of the distribution's
-:ref:`requirements`_.
+:ref:`constituent files <files>`, and get a list of the distribution's
+:ref:`requirements`.
 
 
 Functional API
@@ -69,7 +69,7 @@ Functional API
 This package provides the following functionality via its public API.
 
 
-.. _entry-points::
+.. _entry-points:
 
 Entry points
 ------------
@@ -97,7 +97,7 @@ group.  Read `the setuptools docs
 for more information on entrypoints, their definition, and usage.
 
 
-.. _metadata::
+.. _metadata:
 
 Distribution metadata
 ---------------------
@@ -114,7 +114,7 @@ their values are returned unparsed from the distribution metadata::
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
 
 
-.. _version::
+.. _version:
 
 Distribution versions
 ---------------------
@@ -126,7 +126,7 @@ number, as a string::
     '0.32.3'
 
 
-.. _files::
+.. _files:
 
 Distribution files
 ------------------
@@ -159,7 +159,7 @@ Once you have the file, you can also read its contents::
         return s
 
 
-.. _requirements::
+.. _requirements:
 
 Distribution requirements
 -------------------------
