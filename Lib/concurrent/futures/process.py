@@ -489,7 +489,7 @@ class BrokenProcessPool(_base.BrokenExecutor):
 
 class ProcessPoolExecutor(_base.Executor):
     def __init__(self, max_workers=None, mp_context=None,
-                 initializer=None, initargs=()):
+                 initializer=None, initargs=(), daemon=True):
         """Initializes a new ProcessPoolExecutor instance.
 
         Args:
@@ -519,6 +519,8 @@ class ProcessPoolExecutor(_base.Executor):
             raise TypeError("initializer must be a callable")
         self._initializer = initializer
         self._initargs = initargs
+
+        self._daemon = daemon
 
         # Management thread
         self._queue_management_thread = None
@@ -578,7 +580,7 @@ class ProcessPoolExecutor(_base.Executor):
                       self._result_queue,
                       self._queue_management_thread_wakeup),
                 name="QueueManagerThread")
-            self._queue_management_thread.daemon = True
+            self._queue_management_thread.daemon = self._daemon
             self._queue_management_thread.start()
             _threads_wakeups[self._queue_management_thread] = \
                 self._queue_management_thread_wakeup
