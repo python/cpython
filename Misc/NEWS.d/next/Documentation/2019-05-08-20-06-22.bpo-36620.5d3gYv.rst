@@ -1,1 +1,1 @@
-Update itertools documentation with optional args registration.
+skip news
