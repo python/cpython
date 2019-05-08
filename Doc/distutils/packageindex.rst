@@ -8,8 +8,10 @@
 The Python Package Index (PyPI)
 *******************************
 
-The `Python Package Index (PyPI)`_ stores :ref:`meta-data <meta-data>`
-describing distributions packaged with distutils, as well as package data like
-distribution files if a package author wishes.
+The `Python Package Index (PyPI)`_ stores metadata describing distributions
+packaged with distutils and other publishing tools, as well the distribution
+archives themselves.
 
 Detailed instructions on using PyPI at :ref:`distributing-index`.
+
+.. _Python Package Index (PyPI): https://pypi.org
