@@ -2351,7 +2351,6 @@ get_date_fromdate(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Pass along to the API function
     if (macro) {
         rv = PyDate_FromDate(year, month, day);
     }
@@ -2360,7 +2359,6 @@ get_date_fromdate(PyObject *self, PyObject *args)
             year, month, day,
             PyDateTimeAPI->DateType);
     }
-
     return rv;
 }
 
@@ -2379,7 +2377,6 @@ get_datetime_fromdateandtime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Pass along to the API function
     if (macro) {
         rv = PyDateTime_FromDateAndTime(
             year, month, day,
@@ -2392,7 +2389,6 @@ get_datetime_fromdateandtime(PyObject *self, PyObject *args)
             Py_None,
             PyDateTimeAPI->DateTimeType);
     }
-
     return rv;
 }
 
@@ -2411,7 +2407,6 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Pass along to the API function
     if (macro) {
         rv = PyDateTime_FromDateAndTimeAndFold(
             year, month, day,
@@ -2426,7 +2421,6 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
             fold,
             PyDateTimeAPI->DateTimeType);
     }
-
     return rv;
 }
 
@@ -2443,7 +2437,6 @@ get_time_fromtime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Pass along to the API function
     if (macro) {
         rv = PyTime_FromTime(hour, minute, second, microsecond);
     }
@@ -2453,7 +2446,6 @@ get_time_fromtime(PyObject *self, PyObject *args)
             Py_None,
             PyDateTimeAPI->TimeType);
     }
-
     return rv;
 }
 
@@ -2470,7 +2462,6 @@ get_time_fromtimeandfold(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Pass along to the API function
     if (macro) {
         rv = PyTime_FromTimeAndFold(hour, minute, second, microsecond, fold);
     }
@@ -2481,7 +2472,6 @@ get_time_fromtimeandfold(PyObject *self, PyObject *args)
             fold,
             PyDateTimeAPI->TimeType);
     }
-
     return rv;
 }
 
@@ -2498,7 +2488,6 @@ get_delta_fromdsu(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Pass along to the API function
     if (macro) {
         rv = PyDelta_FromDSU(days, seconds, microseconds);
     }

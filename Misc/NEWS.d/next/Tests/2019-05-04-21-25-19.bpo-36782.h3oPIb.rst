@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 Add tests for several C API functions in the `:mod:datetime module`. Patch by Edison Abahurire.
+=======
+Add tests for several C API functions in the :mod:datetime module. Patch by Edison Abahurire
+>>>>>>> 603953155916e63630db482f513a26a14d4a2e75
