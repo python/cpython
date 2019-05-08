@@ -598,7 +598,7 @@ or both.
    module; the pickle module searches the module namespace to determine the
    object's module.  This behaviour is typically useful for singletons.
 
-   When a tuple is returned, it must be between two and five items long.
+   When a tuple is returned, it must be between two and six items long.
    Optional items can either be omitted, or ``None`` can be provided as their
    value.  The semantics of each item are in order:
 
@@ -628,6 +628,15 @@ or both.
      pairs.  These items will be stored to the object using ``obj[key] =
      value``.  This is primarily used for dictionary subclasses, but may be used
      by other classes as long as they implement :meth:`__setitem__`.
+
+   * Optionally, a callable with a ``(obj, state)`` signature. This
+     callable allows the user to programatically control the state-updating
+     behavior of a specific object, instead of using ``obj``'s static
+     :meth:`__setstate__` method. If not ``None``, this callable will have
+     priority over ``obj``'s :meth:`__setstate__`.
+
+     .. versionadded:: 3.8
+        The optional sixth tuple item, ``(obj, state)``, was added.
 
 
 .. method:: object.__reduce_ex__(protocol)
