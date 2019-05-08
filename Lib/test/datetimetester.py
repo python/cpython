@@ -6024,10 +6024,10 @@ class CapiTest(unittest.TestCase):
         for macro in [0, 1]:
             with self.subTest(macro=macro):
                 c_api_date = _testcapi.get_date_fromdate(
+                    macro,
                     exp_date.year,
                     exp_date.month,
-                    exp_date.day,
-                    macro)
+                    exp_date.day)
 
                 self.assertEqual(c_api_date, exp_date)
 
@@ -6037,14 +6037,14 @@ class CapiTest(unittest.TestCase):
         for macro in [0, 1]:
             with self.subTest(macro=macro):
                 c_api_date = _testcapi.get_datetime_fromdateandtime(
+                    macro,
                     exp_date.year,
                     exp_date.month,
                     exp_date.day,
                     exp_date.hour,
                     exp_date.minute,
                     exp_date.second,
-                    exp_date.microsecond,
-                    macro)
+                    exp_date.microsecond)
 
                 self.assertEqual(c_api_date, exp_date)
 
@@ -6055,6 +6055,7 @@ class CapiTest(unittest.TestCase):
             for macro in [0, 1]:
                 with self.subTest(macro=macro, fold=fold):
                     c_api_date = _testcapi.get_datetime_fromdateandtimeandfold(
+                        macro,
                         exp_date.year,
                         exp_date.month,
                         exp_date.day,
@@ -6062,8 +6063,7 @@ class CapiTest(unittest.TestCase):
                         exp_date.minute,
                         exp_date.second,
                         exp_date.microsecond,
-                        exp_date.fold,
-                        macro)
+                        exp_date.fold)
 
                     self.assertEqual(c_api_date, exp_date)
                     self.assertEqual(c_api_date.fold, exp_date.fold)
@@ -6074,11 +6074,11 @@ class CapiTest(unittest.TestCase):
         for macro in [0, 1]:
             with self.subTest(macro=macro):
                 c_api_time = _testcapi.get_time_fromtime(
+                    macro,
                     exp_time.hour,
                     exp_time.minute,
                     exp_time.second,
-                    exp_time.microsecond,
-                    macro)
+                    exp_time.microsecond)
 
                 self.assertEqual(c_api_time, exp_time)
 
@@ -6089,12 +6089,12 @@ class CapiTest(unittest.TestCase):
             for macro in [0, 1]:
                 with self.subTest(macro=macro, fold=fold):
                     c_api_time = _testcapi.get_time_fromtimeandfold(
+                        macro,
                         exp_time.hour,
                         exp_time.minute,
                         exp_time.second,
                         exp_time.microsecond,
-                        exp_time.fold,
-                        macro)
+                        exp_time.fold)
 
                     self.assertEqual(c_api_time, exp_time)
                     self.assertEqual(c_api_time.fold, exp_time.fold)
@@ -6105,10 +6105,10 @@ class CapiTest(unittest.TestCase):
         for macro in [0, 1]:
             with self.subTest(macro=macro):
                 c_api_delta = _testcapi.get_delta_fromdsu(
+                    macro,
                     exp_delta.days,
                     exp_delta.seconds,
-                    exp_delta.microseconds,
-                    macro)
+                    exp_delta.microseconds)
 
                 self.assertEqual(c_api_delta, exp_delta)
 
