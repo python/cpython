@@ -685,6 +685,12 @@ class GNUTranslationParsingTest(GettextBaseTest):
             t = gettext.GNUTranslations(fp)
 
     def test_ignore_comments_in_headers_issue36239(self):
+        """Checks that comments like:
+
+            #-#-#-#-#  messages.po (EdX Studio)  #-#-#-#-#
+
+        are ignored.
+        """
         with open(MOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_ISSUE_17898))
         with open(MOFILE, 'rb') as fp:
