@@ -1717,6 +1717,29 @@ notimplemented_dealloc(PyObject* ignore)
     Py_FatalError("deallocating NotImplemented");
 }
 
+static int
+notimplemented_bool(PyObject *v)
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "NotImplemented should not be used in a boolean context",
+                     1) < 0)
+        return -1;
+    return 1;
+}
+
+static PyNumberMethods notimplemented_as_number = {
+    0,                              /* nb_add */
+    0,                              /* nb_subtract */
+    0,                              /* nb_multiply */
+    0,                              /* nb_remainder */
+    0,                              /* nb_divmod */
+    0,                              /* nb_power */
+    0,                              /* nb_negative */
+    0,                              /* nb_positive */
+    0,                              /* nb_absolute */
+    (inquiry)notimplemented_bool,   /* nb_bool */
+};
+
 PyTypeObject _PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
@@ -1727,8 +1750,8 @@ PyTypeObject _PyNotImplemented_Type = {
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
     0,                  /*tp_as_async*/
-    NotImplemented_repr, /*tp_repr*/
-    0,                  /*tp_as_number*/
+    NotImplemented_repr,        /*tp_repr*/
+    &notimplemented_as_number,  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
     0,                  /*tp_hash */
