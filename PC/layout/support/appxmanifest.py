@@ -71,7 +71,6 @@ IDLE_VE_DATA = dict(
 )
 
 APPXMANIFEST_NS = {
-    "": "http://schemas.microsoft.com/appx/manifest/foundation/windows10",
     "m": "http://schemas.microsoft.com/appx/manifest/foundation/windows10",
     "uap": "http://schemas.microsoft.com/appx/manifest/uap/windows10",
     "rescap": "http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities",
@@ -330,7 +329,7 @@ def add_application(
     suffix = "_d.exe" if ns.debug else ".exe"
     app = ET.SubElement(
         node,
-        ET.QName(APPXMANIFEST_NS[""], "Application"),
+        ET.QName(APPXMANIFEST_NS["m"], "Application"),
         {
             "Id": appid,
             "Executable": executable + suffix,

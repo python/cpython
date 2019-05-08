@@ -4401,6 +4401,10 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
         }
         msg.msg_name = &addrbuf;
         msg.msg_namelen = addrlen;
+    } else {
+        if (PySys_Audit("socket.sendmsg", "OO", s, Py_None) < 0) {
+            return NULL;
+        }
     }
 
     /* Fill in an iovec for each message part, and save the Py_buffer
@@ -5055,8 +5059,8 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
     if (fdobj != NULL && fdobj != Py_None)
 #endif
     {
-        if (PySys_Audit("socket.__new__", "iii",
-                        family, type, proto) < 0) {
+        if (PySys_Audit("socket.__new__", "Oiii",
+                        s, family, type, proto) < 0) {
             return -1;
         }
     }

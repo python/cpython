@@ -747,6 +747,10 @@ are always available.  They are listed here in alphabetical order.
    If the :mod:`readline` module was loaded, then :func:`input` will use it
    to provide elaborate line editing and history features.
 
+   Raises an :func:`auditing event <sys.audit>` ``builtins.input`` with
+   argument ``prompt`` before reading input, and event ``builtins.input.result``
+   with the result after successfully reading input.
+
 
 .. class:: int([x])
            int(x, base=10)

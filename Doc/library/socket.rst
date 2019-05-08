@@ -527,7 +527,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
    Creating a socket raises an :func:`auditing event <sys.audit>`
-   ``socket.__new__`` with arguments ``family``, ``type``, ``protocol``.
+   ``socket.__new__`` with arguments ``self``, ``family``, ``type``,
+   ``protocol``.
 
    .. versionchanged:: 3.3
       The AF_CAN family was added.
@@ -1108,8 +1109,8 @@ to sockets.
    Bind the socket to *address*.  The socket must not already be bound. (The format
    of *address* depends on the address family --- see above.)
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.bind`` with argument
-   ``address`` as provided in the call.
+   Raises an :func:`auditing event <sys.audit>` ``socket.bind`` with arguments
+   ``self`` and ``address`` as provided in the call.
 
 .. method:: socket.close()
 
@@ -1147,8 +1148,8 @@ to sockets.
    :exc:`InterruptedError` exception if the connection is interrupted by a
    signal (or the exception raised by the signal handler).
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.connect`` with argument
-   ``address`` as provided in the call.
+   Raises an :func:`auditing event <sys.audit>` ``socket.connect`` with arguments
+   ``self`` and ``address`` as provided in the call.
 
    .. versionchanged:: 3.5
       The method now waits until the connection completes instead of raising an
@@ -1166,8 +1167,8 @@ to sockets.
    :c:data:`errno` variable.  This is useful to support, for example, asynchronous
    connects.
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.connect`` with argument
-   ``address`` as provided in the call.
+   Raises an :func:`auditing event <sys.audit>` ``socket.connect`` with arguments
+   ``self`` and ``address`` as provided in the call.
 
 .. method:: socket.detach()
 
@@ -1509,8 +1510,8 @@ to sockets.
    bytes sent. (The format of *address* depends on the address family --- see
    above.)
 
-   Raises an :func:`auditing event <sys.audit>` ``socket.sendto`` with argument
-   ``address`` as provided in the call.
+   Raises an :func:`auditing event <sys.audit>` ``socket.sendto`` with arguments
+   ``self`` and ``address`` as provided in the call.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
@@ -1552,7 +1553,7 @@ to sockets.
    .. availability:: most Unix platforms, possibly others.
 
    Raises an :func:`auditing event <sys.audit>` ``socket.sendmsg`` with
-   argument ``address`` if, and only if, it was provided in the call.
+   arguments ``self`` and ``address``.
 
    .. versionadded:: 3.3
 
