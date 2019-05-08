@@ -28,6 +28,14 @@ normal_foo_name = f'{__name__}.NormalClass'
 
 
 class AsyncPatchDecoratorTest(unittest.TestCase):
+    def setUp(self):
+        # Prevents altering the execution environment
+        self.old_policy = asyncio.events._event_loop_policy
+
+    def tearDown(self):
+        # Restore the original event loop policy.
+        asyncio.events._event_loop_policy = self.old_policy
+
     def test_is_coroutine_function_patch(self):
         @patch.object(AsyncClass, 'async_method')
         def test_async(mock_method):
@@ -37,11 +45,15 @@ class AsyncPatchDecoratorTest(unittest.TestCase):
     def test_is_async_patch(self):
         @patch.object(AsyncClass, 'async_method')
         def test_async(mock_method):
-            self.assertTrue(inspect.isawaitable(mock_method()))
+            m = mock_method()
+            self.assertTrue(inspect.isawaitable(m))
+            asyncio.run(m)
 
         @patch(f'{async_foo_name}.async_method')
         def test_no_parent_attribute(mock_method):
-            self.assertTrue(inspect.isawaitable(mock_method()))
+            m = mock_method()
+            self.assertTrue(inspect.isawaitable(m))
+            asyncio.run(m)
 
         test_async()
         test_no_parent_attribute()
@@ -55,6 +67,13 @@ class AsyncPatchDecoratorTest(unittest.TestCase):
 
 
 class AsyncPatchCMTest(unittest.TestCase):
+    def setUp(self):
+        self.old_policy = asyncio.events._event_loop_policy
+
+    def tearDown(self):
+        # Restore the original event loop policy.
+        asyncio.events._event_loop_policy = self.old_policy
+
     def test_is_async_function_cm(self):
         def test_async():
             with patch.object(AsyncClass, 'async_method') as mock_method:
@@ -65,7 +84,9 @@ class AsyncPatchCMTest(unittest.TestCase):
     def test_is_async_cm(self):
         def test_async():
             with patch.object(AsyncClass, 'async_method') as mock_method:
-                self.assertTrue(inspect.isawaitable(mock_method()))
+                m = mock_method()
+                self.assertTrue(inspect.isawaitable(m))
+                asyncio.run(m)
 
         test_async()
 
@@ -78,6 +99,13 @@ class AsyncPatchCMTest(unittest.TestCase):
 
 
 class AsyncMockTest(unittest.TestCase):
+    def setUp(self):
+        self.old_policy = asyncio.events._event_loop_policy
+
+    def tearDown(self):
+        # Restore the original event loop policy.
+        asyncio.events._event_loop_policy = self.old_policy
+
     def test_iscoroutinefunction_default(self):
         mock = AsyncMock()
         self.assertTrue(asyncio.iscoroutinefunction(mock))
@@ -90,7 +118,9 @@ class AsyncMockTest(unittest.TestCase):
 
     def test_isawaitable(self):
         mock = AsyncMock()
-        self.assertTrue(inspect.isawaitable(mock()))
+        m = mock()
+        self.assertTrue(inspect.isawaitable(m))
+        asyncio.run(m)
         self.assertIn('assert_awaited', dir(mock))
 
     def test_iscoroutinefunction_normal_function(self):
@@ -120,35 +150,53 @@ class AsyncAutospecTest(unittest.TestCase):
 
 
 class AsyncSpecTest(unittest.TestCase):
+    def setUp(self):
+        self.old_policy = asyncio.events._event_loop_policy
+
+    def tearDown(self):
+        # Restore the original event loop policy.
+        asyncio.events._event_loop_policy = self.old_policy
     def test_spec_as_async_positional_magicmock(self):
         mock = MagicMock(async_func)
         self.assertIsInstance(mock, MagicMock)
-        self.assertTrue(inspect.isawaitable(mock()))
+        m = mock()
+        self.assertTrue(inspect.isawaitable(m))
+        asyncio.run(m)
 
     def test_spec_as_async_kw_magicmock(self):
         mock = MagicMock(spec=async_func)
         self.assertIsInstance(mock, MagicMock)
-        self.assertTrue(inspect.isawaitable(mock()))
+        m = mock()
+        self.assertTrue(inspect.isawaitable(m))
+        asyncio.run(m)
 
     def test_spec_as_async_kw_AsyncMock(self):
         mock = AsyncMock(spec=async_func)
         self.assertIsInstance(mock, AsyncMock)
-        self.assertTrue(inspect.isawaitable(mock()))
+        m = mock()
+        self.assertTrue(inspect.isawaitable(m))
+        asyncio.run(m)
 
     def test_spec_as_async_positional_AsyncMock(self):
         mock = AsyncMock(async_func)
         self.assertIsInstance(mock, AsyncMock)
-        self.assertTrue(inspect.isawaitable(mock()))
+        m = mock()
+        self.assertTrue(inspect.isawaitable(m))
+        asyncio.run(m)
 
     def test_spec_as_normal_kw_AsyncMock(self):
         mock = AsyncMock(spec=normal_func)
         self.assertIsInstance(mock, AsyncMock)
-        self.assertTrue(inspect.isawaitable(mock()))
+        m = mock()
+        self.assertTrue(inspect.isawaitable(m))
+        asyncio.run(m)
 
     def test_spec_as_normal_positional_AsyncMock(self):
         mock = AsyncMock(normal_func)
         self.assertIsInstance(mock, AsyncMock)
-        self.assertTrue(inspect.isawaitable(mock()))
+        m = mock()
+        self.assertTrue(inspect.isawaitable(m))
+        asyncio.run(m)
 
     def test_spec_async_mock(self):
         @patch.object(AsyncClass, 'async_method', spec=True)

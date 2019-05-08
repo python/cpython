@@ -26,6 +26,7 @@ __all__ = (
 __version__ = '1.0'
 
 import asyncio
+import io
 import inspect
 import pprint
 import sys
@@ -2024,7 +2025,7 @@ class AsyncMockMixin(Base):
             side_effect = self.side_effect
             if side_effect is not None and not callable(side_effect):
                 raise
-            return _raise(e)
+            return await _raise(e)
 
         _call = self.call_args
 
