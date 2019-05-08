@@ -17,6 +17,7 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
+#include "pycore_coreconfig.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
@@ -283,7 +284,9 @@ sys_displayhook(PyObject *module, PyObject *o)
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
     if (builtins == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
+        }
         return NULL;
     }
     Py_DECREF(builtins);
@@ -421,7 +424,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-    return PyUnicode_FromString(config->filesystem_encoding);
+    return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
 /*[clinic input]
@@ -436,7 +439,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-    return PyUnicode_FromString(config->filesystem_errors);
+    return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
 /*[clinic input]
@@ -1208,30 +1211,9 @@ static PyObject *
 sys__enablelegacywindowsfsencoding_impl(PyObject *module)
 /*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    _PyCoreConfig *config = &interp->core_config;
-
-    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
-    char *encoding = _PyMem_RawStrdup("mbcs");
-    char *errors = _PyMem_RawStrdup("replace");
-    if (encoding == NULL || errors == NULL) {
-        PyMem_Free(encoding);
-        PyMem_Free(errors);
-        PyErr_NoMemory();
+    if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
         return NULL;
     }
-
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
-    PyMem_RawFree(config->filesystem_errors);
-    config->filesystem_errors = errors;
-
-    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
-                                  config->filesystem_errors) < 0) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     Py_RETURN_NONE;
 }
 
@@ -1768,7 +1750,7 @@ _alloc_preinit_entry(const wchar_t *value)
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return node;
-};
+}
 
 static int
 _append_preinit_entry(_Py_PreInitEntry *optionlist, const wchar_t *value)
@@ -1790,7 +1772,7 @@ _append_preinit_entry(_Py_PreInitEntry *optionlist, const wchar_t *value)
         last_entry->next = new_entry;
     }
     return 0;
-};
+}
 
 static void
 _clear_preinit_entries(_Py_PreInitEntry *optionlist)
@@ -1807,7 +1789,7 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
         current = next;
     }
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-};
+}
 
 static void
 _clear_all_preinit_options(void)
@@ -1838,7 +1820,7 @@ _PySys_ReadPreInitOptions(void)
 
     _clear_all_preinit_options();
     return 0;
-};
+}
 
 static PyObject *
 get_warnoptions(void)
@@ -2152,11 +2134,12 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static PyObject*
-make_flags(void)
+make_flags(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     int pos = 0;
     PyObject *seq;
-    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    const _PyPreConfig *preconfig = &runtime->preconfig;
+    const _PyCoreConfig *config = &interp->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2172,16 +2155,16 @@ make_flags(void)
     SetFlag(!config->write_bytecode);
     SetFlag(!config->user_site_directory);
     SetFlag(!config->site_import);
-    SetFlag(!config->preconfig.use_environment);
+    SetFlag(!config->use_environment);
     SetFlag(config->verbose);
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
     SetFlag(config->bytes_warning);
     SetFlag(config->quiet);
     SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
-    SetFlag(config->preconfig.isolated);
-    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->preconfig.dev_mode));
-    SetFlag(config->preconfig.utf8_mode);
+    SetFlag(config->isolated);
+    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
+    SetFlag(preconfig->utf8_mode);
 #undef SetFlag
 
     if (PyErr_Occurred()) {
@@ -2371,7 +2354,8 @@ static struct PyModuleDef sysmodule = {
     } while (0)
 
 static _PyInitError
-_PySys_InitCore(PyObject *sysdict)
+_PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
+                PyObject *sysdict)
 {
     PyObject *version_info;
     int res;
@@ -2461,8 +2445,8 @@ _PySys_InitCore(PyObject *sysdict)
             goto type_init_failed;
         }
     }
-    /* Set flags to their default values */
-    SET_SYS_FROM_STRING("flags", make_flags());
+    /* Set flags to their default values (updated by _PySys_InitMain()) */
+    SET_SYS_FROM_STRING("flags", make_flags(runtime, interp));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2527,26 +2511,71 @@ err_occurred:
         }                                                  \
     } while (0)
 
+
+static int
+sys_add_xoption(PyObject *opts, const wchar_t *s)
+{
+    PyObject *name, *value;
+
+    const wchar_t *name_end = wcschr(s, L'=');
+    if (!name_end) {
+        name = PyUnicode_FromWideChar(s, -1);
+        value = Py_True;
+        Py_INCREF(value);
+    }
+    else {
+        name = PyUnicode_FromWideChar(s, name_end - s);
+        value = PyUnicode_FromWideChar(name_end + 1, -1);
+    }
+    if (name == NULL || value == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItem(opts, name, value) < 0) {
+        goto error;
+    }
+    Py_DECREF(name);
+    Py_DECREF(value);
+    return 0;
+
+error:
+    Py_XDECREF(name);
+    Py_XDECREF(value);
+    return -1;
+}
+
+
+static PyObject*
+sys_create_xoptions_dict(const _PyCoreConfig *config)
+{
+    Py_ssize_t nxoption = config->xoptions.length;
+    wchar_t * const * xoptions = config->xoptions.items;
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i=0; i < nxoption; i++) {
+        const wchar_t *option = xoptions[i];
+        if (sys_add_xoption(dict, option) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+
+    return dict;
+}
+
+
 int
-_PySys_InitMain(PyInterpreterState *interp)
+_PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     PyObject *sysdict = interp->sysdict;
-    const _PyCoreConfig *core_config = &interp->core_config;
-    const _PyMainInterpreterConfig *config = &interp->config;
+    const _PyCoreConfig *config = &interp->core_config;
     int res;
 
-    /* _PyMainInterpreterConfig_Read() must set all these variables */
-    assert(config->module_search_path != NULL);
-    assert(config->executable != NULL);
-    assert(config->prefix != NULL);
-    assert(config->base_prefix != NULL);
-    assert(config->exec_prefix != NULL);
-    assert(config->base_exec_prefix != NULL);
-
-#define COPY_LIST(KEY, ATTR) \
+#define COPY_LIST(KEY, VALUE) \
     do { \
-        assert(PyList_Check(ATTR)); \
-        PyObject *list = PyList_GetSlice(ATTR, 0, PyList_GET_SIZE(ATTR)); \
+        PyObject *list = _PyWstrList_AsList(&(VALUE)); \
         if (list == NULL) { \
             return -1; \
         } \
@@ -2554,39 +2583,45 @@ _PySys_InitMain(PyInterpreterState *interp)
         Py_DECREF(list); \
     } while (0)
 
-    COPY_LIST("path", config->module_search_path);
+#define SET_SYS_FROM_WSTR(KEY, VALUE) \
+    do { \
+        PyObject *str = PyUnicode_FromWideChar(VALUE, -1); \
+        if (str == NULL) { \
+            return -1; \
+        } \
+        SET_SYS_FROM_STRING_BORROW(KEY, str); \
+        Py_DECREF(str); \
+    } while (0)
 
-    SET_SYS_FROM_STRING_BORROW("executable", config->executable);
-    SET_SYS_FROM_STRING_BORROW("prefix", config->prefix);
-    SET_SYS_FROM_STRING_BORROW("base_prefix", config->base_prefix);
-    SET_SYS_FROM_STRING_BORROW("exec_prefix", config->exec_prefix);
-    SET_SYS_FROM_STRING_BORROW("base_exec_prefix", config->base_exec_prefix);
+    COPY_LIST("path", config->module_search_paths);
+
+    SET_SYS_FROM_WSTR("executable", config->executable);
+    SET_SYS_FROM_WSTR("prefix", config->prefix);
+    SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
+    SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
+    SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
 
     if (config->pycache_prefix != NULL) {
-        SET_SYS_FROM_STRING_BORROW("pycache_prefix", config->pycache_prefix);
+        SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
     } else {
         PyDict_SetItemString(sysdict, "pycache_prefix", Py_None);
     }
 
-    if (config->argv != NULL) {
-        SET_SYS_FROM_STRING_BORROW("argv", config->argv);
+    COPY_LIST("argv", config->argv);
+    COPY_LIST("warnoptions", config->warnoptions);
+
+    PyObject *xoptions = sys_create_xoptions_dict(config);
+    if (xoptions == NULL) {
+        return -1;
     }
-    if (config->warnoptions != NULL) {
-        COPY_LIST("warnoptions", config->warnoptions);
-    }
-    if (config->xoptions != NULL) {
-        PyObject *dict = PyDict_Copy(config->xoptions);
-        if (dict == NULL) {
-            return -1;
-        }
-        SET_SYS_FROM_STRING_BORROW("_xoptions", dict);
-        Py_DECREF(dict);
-    }
+    SET_SYS_FROM_STRING_BORROW("_xoptions", xoptions);
+    Py_DECREF(xoptions);
 
 #undef COPY_LIST
+#undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, interp));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -2599,7 +2634,7 @@ _PySys_InitMain(PyInterpreterState *interp)
     }
 
     SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
-                         PyBool_FromLong(!core_config->write_bytecode));
+                         PyBool_FromLong(!config->write_bytecode));
 
     if (get_warnoptions() == NULL)
         return -1;
@@ -2653,7 +2688,8 @@ error:
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
 _PyInitError
-_PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
+_PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
+              PyObject **sysmod_p)
 {
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
@@ -2682,7 +2718,7 @@ _PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
         return err;
     }
 
-    err = _PySys_InitCore(sysdict);
+    err = _PySys_InitCore(runtime, interp, sysdict);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }

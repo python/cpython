@@ -1597,12 +1597,31 @@ order (MRO) for bases """
         self.assertEqual(x2, SubSpam)
         self.assertEqual(a2, a1)
         self.assertEqual(d2, d1)
-        with self.assertRaises(TypeError):
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm()
-        with self.assertRaises(TypeError):
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'classmeth' of 'xxsubtype.spamlist' "
+            "object needs an argument")
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm(spam.spamlist())
-        with self.assertRaises(TypeError):
+        self.assertEqual(
+            str(cm.exception),
+            "descriptor 'classmeth' requires a type "
+            "but received a 'xxsubtype.spamlist' instance")
+
+        with self.assertRaises(TypeError) as cm:
             spam_cm(list)
+        expected_errmsg = (
+            "descriptor 'classmeth' requires a subtype of 'xxsubtype.spamlist' "
+            "but received 'list'")
+        self.assertEqual(str(cm.exception), expected_errmsg)
+
+        with self.assertRaises(TypeError) as cm:
+            spam_cm.__get__(None, list)
+        self.assertEqual(str(cm.exception), expected_errmsg)
 
     def test_staticmethods(self):
         # Testing static methods...
@@ -1936,6 +1955,29 @@ order (MRO) for bases """
             foo = C.foo
         self.assertEqual(E().foo.__func__, C.foo) # i.e., unbound
         self.assertTrue(repr(C.foo.__get__(C(1))).startswith("<bound method "))
+
+    @support.impl_detail("testing error message from implementation")
+    def test_methods_in_c(self):
+        # This test checks error messages in builtin method descriptor.
+        # It is allowed that other Python implementations use
+        # different error messages.
+        set_add = set.add
+
+        expected_errmsg = "descriptor 'add' of 'set' object needs an argument"
+
+        with self.assertRaises(TypeError) as cm:
+            set_add()
+        self.assertEqual(cm.exception.args[0], expected_errmsg)
+
+        expected_errmsg = "descriptor 'add' for 'set' objects doesn't apply to a 'int' object"
+
+        with self.assertRaises(TypeError) as cm:
+            set_add(0)
+        self.assertEqual(cm.exception.args[0], expected_errmsg)
+
+        with self.assertRaises(TypeError) as cm:
+            set_add.__get__(0)
+        self.assertEqual(cm.exception.args[0], expected_errmsg)
 
     def test_special_method_lookup(self):
         # The lookup of special methods bypasses __getattr__ and

@@ -30,6 +30,10 @@
 #define CHECKEXC 1      /* Double-check exception checking */
 #endif
 
+#if !defined(Py_BUILD_CORE)
+#  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
+#endif
+
 /* Private API for the LOAD_METHOD opcode. */
 extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 
@@ -72,6 +76,7 @@ static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyTypeObject *, int);
+static inline void exit_thread_if_finalizing(PyThreadState *);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -199,6 +204,16 @@ _PyEval_FiniThreads(void)
     }
 }
 
+static inline void
+exit_thread_if_finalizing(PyThreadState *tstate)
+{
+    /* _Py_Finalizing is protected by the GIL */
+    if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
+        drop_gil(tstate);
+        PyThread_exit_thread();
+    }
+}
+
 void
 PyEval_AcquireLock(void)
 {
@@ -206,6 +221,7 @@ PyEval_AcquireLock(void)
     if (tstate == NULL)
         Py_FatalError("PyEval_AcquireLock: current thread state is NULL");
     take_gil(tstate);
+    exit_thread_if_finalizing(tstate);
 }
 
 void
@@ -226,6 +242,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
     /* Check someone has called PyEval_InitThreads() to create the lock */
     assert(gil_created());
     take_gil(tstate);
+    exit_thread_if_finalizing(tstate);
     if (PyThreadState_Swap(tstate) != NULL)
         Py_FatalError(
             "PyEval_AcquireThread: non-NULL old thread state");
@@ -294,12 +311,7 @@ PyEval_RestoreThread(PyThreadState *tstate)
 
     int err = errno;
     take_gil(tstate);
-    /* _Py_Finalizing is protected by the GIL */
-    if (_Py_IsFinalizing() && !_Py_CURRENTLY_FINALIZING(tstate)) {
-        drop_gil(tstate);
-        PyThread_exit_thread();
-        Py_UNREACHABLE();
-    }
+    exit_thread_if_finalizing(tstate);
     errno = err;
 
     PyThreadState_Swap(tstate);
@@ -1079,12 +1091,7 @@ main_loop:
                 take_gil(tstate);
 
                 /* Check if we should make a quick exit. */
-                if (_Py_IsFinalizing() &&
-                    !_Py_CURRENTLY_FINALIZING(tstate))
-                {
-                    drop_gil(tstate);
-                    PyThread_exit_thread();
-                }
+                exit_thread_if_finalizing(tstate);
 
                 if (PyThreadState_Swap(tstate) != NULL)
                     Py_FatalError("ceval: orphan tstate");
@@ -3203,7 +3210,7 @@ main_loop:
         }
 
         case TARGET(LOAD_METHOD): {
-            /* Designed to work in tamdem with CALL_METHOD. */
+            /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
             PyObject *meth = NULL;
@@ -3686,10 +3693,10 @@ missing_arguments(PyCodeObject *co, Py_ssize_t missing, Py_ssize_t defcount,
         return;
     if (positional) {
         start = 0;
-        end = co->co_argcount - defcount;
+        end = co->co_posonlyargcount + co->co_argcount - defcount;
     }
     else {
-        start = co->co_argcount;
+        start = co->co_posonlyargcount + co->co_argcount;
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
@@ -3716,23 +3723,25 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
     Py_ssize_t kwonly_given = 0;
     Py_ssize_t i;
     PyObject *sig, *kwonly_sig;
+    Py_ssize_t co_posonlyargcount = co->co_posonlyargcount;
     Py_ssize_t co_argcount = co->co_argcount;
+    Py_ssize_t total_positional = co_argcount + co_posonlyargcount;
 
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
-    for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
+    for (i = total_positional; i < total_positional + co->co_kwonlyargcount; i++) {
         if (GETLOCAL(i) != NULL) {
             kwonly_given++;
         }
     }
     if (defcount) {
-        Py_ssize_t atleast = co_argcount - defcount;
+        Py_ssize_t atleast = total_positional - defcount;
         plural = 1;
-        sig = PyUnicode_FromFormat("from %zd to %zd", atleast, co_argcount);
+        sig = PyUnicode_FromFormat("from %zd to %zd", atleast, total_positional);
     }
     else {
-        plural = (co_argcount != 1);
-        sig = PyUnicode_FromFormat("%zd", co_argcount);
+        plural = (total_positional != 1);
+        sig = PyUnicode_FromFormat("%zd", total_positional);
     }
     if (sig == NULL)
         return;
@@ -3764,6 +3773,67 @@ too_many_positional(PyCodeObject *co, Py_ssize_t given, Py_ssize_t defcount,
     Py_DECREF(kwonly_sig);
 }
 
+static int
+positional_only_passed_as_keyword(PyCodeObject *co, Py_ssize_t kwcount,
+                                  PyObject* const* kwnames)
+{
+    int posonly_conflicts = 0;
+    PyObject* posonly_names = PyList_New(0);
+
+    for(int k=0; k < co->co_posonlyargcount; k++){
+        PyObject* posonly_name = PyTuple_GET_ITEM(co->co_varnames, k);
+
+        for (int k2=0; k2<kwcount; k2++){
+            /* Compare the pointers first and fallback to PyObject_RichCompareBool*/
+            PyObject* kwname = kwnames[k2];
+            if (kwname == posonly_name){
+                if(PyList_Append(posonly_names, kwname) != 0) {
+                    goto fail;
+                }
+                posonly_conflicts++;
+                continue;
+            }
+
+            int cmp = PyObject_RichCompareBool(posonly_name, kwname, Py_EQ);
+
+            if ( cmp > 0) {
+                if(PyList_Append(posonly_names, kwname) != 0) {
+                    goto fail;
+                }
+                posonly_conflicts++;
+            } else if (cmp < 0) {
+                goto fail;
+            }
+
+        }
+    }
+    if (posonly_conflicts) {
+        PyObject* comma = PyUnicode_FromString(", ");
+        if (comma == NULL) {
+            goto fail;
+        }
+        PyObject* error_names = PyUnicode_Join(comma, posonly_names);
+        Py_DECREF(comma);
+        if (error_names == NULL) {
+            goto fail;
+        }
+        PyErr_Format(PyExc_TypeError,
+            "%U() got some positional-only arguments passed"
+            " as keyword arguments: '%U'",
+            co->co_name, error_names);
+        Py_DECREF(error_names);
+        goto fail;
+    }
+
+    Py_DECREF(posonly_names);
+    return 0;
+
+fail:
+    Py_XDECREF(posonly_names);
+    return 1;
+
+}
+
 /* This is gonna seem *real weird*, but if you put some other code between
    PyEval_EvalFrame() and _PyEval_EvalFrameDefault() you will need to adjust
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
@@ -3783,8 +3853,8 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     PyObject **fastlocals, **freevars;
     PyThreadState *tstate;
     PyObject *x, *u;
-    const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-    Py_ssize_t i, n;
+    const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount + co->co_posonlyargcount;
+    Py_ssize_t i, j, n;
     PyObject *kwdict;
 
     if (globals == NULL) {
@@ -3818,14 +3888,28 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         kwdict = NULL;
     }
 
-    /* Copy positional arguments into local variables */
-    if (argcount > co->co_argcount) {
-        n = co->co_argcount;
+    /* Copy positional only arguments into local variables */
+    if (argcount > co->co_argcount + co->co_posonlyargcount) {
+        n = co->co_posonlyargcount;
     }
     else {
         n = argcount;
     }
-    for (i = 0; i < n; i++) {
+    for (j = 0; j < n; j++) {
+        x = args[j];
+        Py_INCREF(x);
+        SETLOCAL(j, x);
+    }
+
+
+    /* Copy positional arguments into local variables */
+    if (argcount > co->co_argcount + co->co_posonlyargcount) {
+        n += co->co_argcount;
+    }
+    else {
+        n = argcount;
+    }
+    for (i = j; i < n; i++) {
         x = args[i];
         Py_INCREF(x);
         SETLOCAL(i, x);
@@ -3858,7 +3942,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         /* Speed hack: do raw pointer compares. As names are
            normally interned this should almost always hit. */
         co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
-        for (j = 0; j < total_args; j++) {
+        for (j = co->co_posonlyargcount; j < total_args; j++) {
             PyObject *name = co_varnames[j];
             if (name == keyword) {
                 goto kw_found;
@@ -3866,7 +3950,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         }
 
         /* Slow fallback, just in case */
-        for (j = 0; j < total_args; j++) {
+        for (j = co->co_posonlyargcount; j < total_args; j++) {
             PyObject *name = co_varnames[j];
             int cmp = PyObject_RichCompareBool( keyword, name, Py_EQ);
             if (cmp > 0) {
@@ -3879,6 +3963,11 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
 
         assert(j >= total_args);
         if (kwdict == NULL) {
+
+            if (co->co_posonlyargcount && positional_only_passed_as_keyword(co, kwcount, kwnames)) {
+                goto fail;
+            }
+
             PyErr_Format(PyExc_TypeError,
                          "%U() got an unexpected keyword argument '%S'",
                          co->co_name, keyword);
@@ -3902,14 +3991,14 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     }
 
     /* Check the number of positional arguments */
-    if (argcount > co->co_argcount && !(co->co_flags & CO_VARARGS)) {
+    if ((argcount > co->co_argcount + co->co_posonlyargcount) && !(co->co_flags & CO_VARARGS)) {
         too_many_positional(co, argcount, defcount, fastlocals);
         goto fail;
     }
 
     /* Add missing positional arguments (copy default values from defs) */
-    if (argcount < co->co_argcount) {
-        Py_ssize_t m = co->co_argcount - defcount;
+    if (argcount < co->co_posonlyargcount + co->co_argcount) {
+        Py_ssize_t m = co->co_posonlyargcount + co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
             if (GETLOCAL(i) == NULL) {
@@ -3936,7 +4025,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     /* Add missing keyword arguments (copy default values from kwdefs) */
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
-        for (i = co->co_argcount; i < total_args; i++) {
+        for (i = co->co_posonlyargcount + co->co_argcount; i < total_args; i++) {
             PyObject *name;
             if (GETLOCAL(i) != NULL)
                 continue;
@@ -4948,7 +5037,7 @@ import_from(PyObject *v, PyObject *name)
     }
     x = PyImport_GetModule(fullmodname);
     Py_DECREF(fullmodname);
-    if (x == NULL) {
+    if (x == NULL && !PyErr_Occurred()) {
         goto error;
     }
     Py_DECREF(pkgname);
@@ -4971,7 +5060,7 @@ import_from(PyObject *v, PyObject *name)
             "cannot import name %R from %R (unknown location)",
             name, pkgname_or_unknown
         );
-        /* NULL check for errmsg done by PyErr_SetImportError. */
+        /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
         PyErr_SetImportError(errmsg, pkgname, NULL);
     }
     else {
@@ -4979,7 +5068,7 @@ import_from(PyObject *v, PyObject *name)
             "cannot import name %R from %R (%S)",
             name, pkgname_or_unknown, pkgpath
         );
-        /* NULL check for errmsg done by PyErr_SetImportError. */
+        /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
         PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
 

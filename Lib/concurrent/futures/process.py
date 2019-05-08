@@ -3,7 +3,7 @@
 
 """Implements ProcessPoolExecutor.
 
-The follow diagram and text describe the data-flow through the system:
+The following diagram and text describe the data-flow through the system:
 
 |======================= In-process =====================|== Out-of-process ==|
 
@@ -51,7 +51,7 @@ from concurrent.futures import _base
 import queue
 from queue import Full
 import multiprocessing as mp
-from multiprocessing.connection import wait
+import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
 import weakref
@@ -352,7 +352,7 @@ def _queue_management_worker(executor_reference,
         # submitted, from the executor being shutdown/gc-ed, or from the
         # shutdown of the python interpreter.
         worker_sentinels = [p.sentinel for p in processes.values()]
-        ready = wait(readers + worker_sentinels)
+        ready = mp.connection.wait(readers + worker_sentinels)
 
         cause = None
         is_broken = True
@@ -594,7 +594,22 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(*args, **kwargs):
+        if len(args) >= 2:
+            self, fn, *args = args
+        elif not args:
+            raise TypeError("descriptor 'submit' of 'ProcessPoolExecutor' object "
+                            "needs an argument")
+        elif 'fn' in kwargs:
+            fn = kwargs.pop('fn')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'fn' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('submit expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)
@@ -615,6 +630,7 @@ class ProcessPoolExecutor(_base.Executor):
 
             self._start_queue_management_thread()
             return f
+    submit.__text_signature__ = _base.Executor.submit.__text_signature__
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):

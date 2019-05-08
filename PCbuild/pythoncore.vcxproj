@@ -86,7 +86,7 @@
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -117,6 +117,7 @@
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
+    <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
@@ -175,7 +176,6 @@
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\parsetok.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
-    <ClInclude Include="..\Include\pgenheaders.h" />
     <ClInclude Include="..\Include\pyhash.h" />
     <ClInclude Include="..\Include\py_curses.h" />
     <ClInclude Include="..\Include\pyarena.h" />

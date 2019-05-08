@@ -8,33 +8,10 @@ extern "C" {
 
 #include "cpython/coreconfig.h"
 
-/* Placeholders while working on the new configuration API
- *
- * See PEP 432 for final anticipated contents
- */
-typedef struct {
-    int install_signal_handlers;   /* Install signal handlers? -1 means unset */
-    PyObject *argv;                /* sys.argv list, can be NULL */
-    PyObject *executable;          /* sys.executable str */
-    PyObject *prefix;              /* sys.prefix str */
-    PyObject *base_prefix;         /* sys.base_prefix str, can be NULL */
-    PyObject *exec_prefix;         /* sys.exec_prefix str */
-    PyObject *base_exec_prefix;    /* sys.base_exec_prefix str, can be NULL */
-    PyObject *warnoptions;         /* sys.warnoptions list, can be NULL */
-    PyObject *xoptions;            /* sys._xoptions dict, can be NULL */
-    PyObject *module_search_path;  /* sys.path list */
-    PyObject *pycache_prefix;      /* sys.pycache_prefix str, can be NULL */
-} _PyMainInterpreterConfig;
-
-#define _PyMainInterpreterConfig_INIT \
-    (_PyMainInterpreterConfig){.install_signal_handlers = -1}
-/* Note: _PyMainInterpreterConfig_INIT sets other fields to 0/NULL */
-
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
 PyAPI_FUNC(_PyCoreConfig *) _PyInterpreterState_GetCoreConfig(PyInterpreterState *);
-PyAPI_FUNC(_PyMainInterpreterConfig *) _PyInterpreterState_GetMainConfig(PyInterpreterState *);
 
 PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
 
@@ -178,9 +155,6 @@ PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 PyAPI_FUNC(void) _PyState_ClearModules(void);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
-PyAPI_FUNC(void) _PyThreadState_Init(PyThreadState *);
-PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyGILState_Reinit(void);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */

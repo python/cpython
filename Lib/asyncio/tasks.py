@@ -495,10 +495,11 @@ async def _wait(fs, timeout, return_when, loop):
     finally:
         if timeout_handle is not None:
             timeout_handle.cancel()
+        for f in fs:
+            f.remove_done_callback(_on_completion)
 
     done, pending = set(), set()
     for f in fs:
-        f.remove_done_callback(_on_completion)
         if f.done():
             done.add(f)
         else:
@@ -627,7 +628,8 @@ def ensure_future(coro_or_future, *, loop=None):
         return task
     elif futures.isfuture(coro_or_future):
         if loop is not None and loop is not futures._get_loop(coro_or_future):
-            raise ValueError('loop argument must agree with Future')
+            raise ValueError('The future belongs to a different loop than '
+                             'the one specified as the loop argument')
         return coro_or_future
     elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
@@ -816,7 +818,7 @@ def shield(arg, *, loop=None):
     loop = futures._get_loop(inner)
     outer = loop.create_future()
 
-    def _done_callback(inner):
+    def _inner_done_callback(inner):
         if outer.cancelled():
             if not inner.cancelled():
                 # Mark inner's result as retrieved.
@@ -832,7 +834,13 @@ def shield(arg, *, loop=None):
             else:
                 outer.set_result(inner.result())
 
-    inner.add_done_callback(_done_callback)
+
+    def _outer_done_callback(outer):
+        if not inner.done():
+            inner.remove_done_callback(_inner_done_callback)
+
+    inner.add_done_callback(_inner_done_callback)
+    outer.add_done_callback(_outer_done_callback)
     return outer
 
 

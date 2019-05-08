@@ -28,16 +28,13 @@ class Iter(object):
 
 
 class Something(object):
-    def meth(self, a, b, c, d=None):
-        pass
+    def meth(self, a, b, c, d=None): pass
 
     @classmethod
-    def cmeth(cls, a, b, c, d=None):
-        pass
+    def cmeth(cls, a, b, c, d=None): pass
 
     @staticmethod
-    def smeth(a, b, c, d=None):
-        pass
+    def smeth(a, b, c, d=None): pass
 
 
 class MockTest(unittest.TestCase):
@@ -81,6 +78,21 @@ class MockTest(unittest.TestCase):
         mock = Mock(return_value=None)
         self.assertIsNone(mock.return_value,
                           "return value in constructor not honoured")
+
+
+    def test_change_return_value_via_delegate(self):
+        def f(): pass
+        mock = create_autospec(f)
+        mock.mock.return_value = 1
+        self.assertEqual(mock(), 1)
+
+
+    def test_change_side_effect_via_delegate(self):
+        def f(): pass
+        mock = create_autospec(f)
+        mock.mock.side_effect = TypeError()
+        with self.assertRaises(TypeError):
+            mock()
 
 
     def test_repr(self):
@@ -161,8 +173,7 @@ class MockTest(unittest.TestCase):
         results = [1, 2, 3]
         def effect():
             return results.pop()
-        def f():
-            pass
+        def f(): pass
 
         mock = create_autospec(f)
         mock.side_effect = [1, 2, 3]
@@ -177,27 +188,11 @@ class MockTest(unittest.TestCase):
 
     def test_autospec_side_effect_exception(self):
         # Test for issue 23661
-        def f():
-            pass
+        def f(): pass
 
         mock = create_autospec(f)
         mock.side_effect = ValueError('Bazinga!')
         self.assertRaisesRegex(ValueError, 'Bazinga!', mock)
-
-    @unittest.skipUnless('java' in sys.platform,
-                          'This test only applies to Jython')
-    def test_java_exception_side_effect(self):
-        import java
-        mock = Mock(side_effect=java.lang.RuntimeException("Boom!"))
-
-        # can't use assertRaises with java exceptions
-        try:
-            mock(1, 2, fish=3)
-        except java.lang.RuntimeException:
-            pass
-        else:
-            self.fail('java exception not raised')
-        mock.assert_called_with(1,2, fish=3)
 
 
     def test_reset_mock(self):
@@ -355,8 +350,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_assert_called_with_function_spec(self):
-        def f(a, b, c, d=None):
-            pass
+        def f(a, b, c, d=None): pass
 
         mock = Mock(spec=f)
 
@@ -424,8 +418,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_assert_called_once_with_function_spec(self):
-        def f(a, b, c, d=None):
-            pass
+        def f(a, b, c, d=None): pass
 
         mock = Mock(spec=f)
 
@@ -529,8 +522,7 @@ class MockTest(unittest.TestCase):
         class Something(object):
             x = 3
             __something__ = None
-            def y(self):
-                pass
+            def y(self): pass
 
         def test_attributes(mock):
             # should work
@@ -616,8 +608,7 @@ class MockTest(unittest.TestCase):
 
     def test_customize_wrapped_object_with_side_effect_iterable(self):
         class Real(object):
-            def method(self):
-                raise NotImplementedError()
+            def method(self): pass
 
         real = Real()
         mock = Mock(wraps=real)
@@ -630,8 +621,7 @@ class MockTest(unittest.TestCase):
 
     def test_customize_wrapped_object_with_side_effect_exception(self):
         class Real(object):
-            def method(self):
-                raise NotImplementedError()
+            def method(self): pass
 
         real = Real()
         mock = Mock(wraps=real)
@@ -642,9 +632,7 @@ class MockTest(unittest.TestCase):
 
     def test_customize_wrapped_object_with_side_effect_function(self):
         class Real(object):
-            def method(self):
-                raise NotImplementedError()
-
+            def method(self): pass
         def side_effect():
             return sentinel.VALUE
 
@@ -657,8 +645,7 @@ class MockTest(unittest.TestCase):
 
     def test_customize_wrapped_object_with_return_value(self):
         class Real(object):
-            def method(self):
-                raise NotImplementedError()
+            def method(self): pass
 
         real = Real()
         mock = Mock(wraps=real)
@@ -670,8 +657,7 @@ class MockTest(unittest.TestCase):
     def test_customize_wrapped_object_with_return_value_and_side_effect(self):
         # side_effect should always take precedence over return_value.
         class Real(object):
-            def method(self):
-                raise NotImplementedError()
+            def method(self): pass
 
         real = Real()
         mock = Mock(wraps=real)
@@ -686,8 +672,7 @@ class MockTest(unittest.TestCase):
     def test_customize_wrapped_object_with_return_value_and_side_effect2(self):
         # side_effect can return DEFAULT to default to return_value
         class Real(object):
-            def method(self):
-                raise NotImplementedError()
+            def method(self): pass
 
         real = Real()
         mock = Mock(wraps=real)
@@ -699,8 +684,7 @@ class MockTest(unittest.TestCase):
 
     def test_customize_wrapped_object_with_return_value_and_side_effect_default(self):
         class Real(object):
-            def method(self):
-                raise NotImplementedError()
+            def method(self): pass
 
         real = Real()
         mock = Mock(wraps=real)
@@ -761,6 +745,26 @@ class MockTest(unittest.TestCase):
 
     def test_spec_class(self):
         class X(object):
+            pass
+
+        mock = Mock(spec=X)
+        self.assertIsInstance(mock, X)
+
+        mock = Mock(spec=X())
+        self.assertIsInstance(mock, X)
+
+        self.assertIs(mock.__class__, X)
+        self.assertEqual(Mock().__class__.__name__, 'Mock')
+
+        mock = Mock(spec_set=X)
+        self.assertIsInstance(mock, X)
+
+        mock = Mock(spec_set=X())
+        self.assertIsInstance(mock, X)
+
+
+    def test_spec_class_no_object_base(self):
+        class X:
             pass
 
         mock = Mock(spec=X)
@@ -885,6 +889,15 @@ class MockTest(unittest.TestCase):
             patcher.stop()
 
 
+    def test_dir_does_not_include_deleted_attributes(self):
+        mock = Mock()
+        mock.child.return_value = 1
+
+        self.assertIn('child', dir(mock))
+        del mock.child
+        self.assertNotIn('child', dir(mock))
+
+
     def test_configure_mock(self):
         mock = Mock(foo='bar')
         self.assertEqual(mock.foo, 'bar')
@@ -908,15 +921,9 @@ class MockTest(unittest.TestCase):
 
     def assertRaisesWithMsg(self, exception, message, func, *args, **kwargs):
         # needed because assertRaisesRegex doesn't work easily with newlines
-        try:
+        with self.assertRaises(exception) as context:
             func(*args, **kwargs)
-        except:
-            instance = sys.exc_info()[1]
-            self.assertIsInstance(instance, exception)
-        else:
-            self.fail('Exception %r not raised' % (exception,))
-
-        msg = str(instance)
+        msg = str(context.exception)
         self.assertEqual(msg, message)
 
 
@@ -1103,6 +1110,18 @@ class MockTest(unittest.TestCase):
         self.assertEqual(repr(m.mock_calls[0]), 'call.foo()')
         self.assertEqual(repr(m.mock_calls[1]), 'call.foo().bar()')
         self.assertEqual(repr(m.mock_calls[2]), 'call.foo().bar().baz.bob()')
+
+
+    def test_mock_call_repr_loop(self):
+        m = Mock()
+        m.foo = m
+        repr(m.foo())
+        self.assertRegex(repr(m.foo()), r"<Mock name='mock\(\)' id='\d+'>")
+
+
+    def test_mock_calls_contains(self):
+        m = Mock()
+        self.assertFalse([call()] in m.mock_calls)
 
 
     def test_subclassing(self):
@@ -1318,8 +1337,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_assert_has_calls_with_function_spec(self):
-        def f(a, b, c, d=None):
-            pass
+        def f(a, b, c, d=None): pass
 
         mock = Mock(spec=f)
 
@@ -1377,8 +1395,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_assert_any_call_with_function_spec(self):
-        def f(a, b, c, d=None):
-            pass
+        def f(a, b, c, d=None): pass
 
         mock = Mock(spec=f)
 
@@ -1397,8 +1414,7 @@ class MockTest(unittest.TestCase):
 
 
     def test_mock_calls_create_autospec(self):
-        def f(a, b):
-            pass
+        def f(a, b): pass
         obj = Iter()
         obj.f = f
 
@@ -1418,6 +1434,21 @@ class MockTest(unittest.TestCase):
     def test_create_autospec_with_name(self):
         m = mock.create_autospec(object(), name='sweet_func')
         self.assertIn('sweet_func', repr(m))
+
+    #Issue23078
+    def test_create_autospec_classmethod_and_staticmethod(self):
+        class TestClass:
+            @classmethod
+            def class_method(cls): pass
+
+            @staticmethod
+            def static_method(): pass
+        for method in ('class_method', 'static_method'):
+            with self.subTest(method=method):
+                mock_method = mock.create_autospec(getattr(TestClass, method))
+                mock_method()
+                mock_method.assert_called_once_with()
+                self.assertRaises(TypeError, mock_method, 'extra_arg')
 
     #Issue21238
     def test_mock_unsafe(self):
@@ -1837,8 +1868,7 @@ class MockTest(unittest.TestCase):
 
     def test_parent_propagation_with_create_autospec(self):
 
-        def foo(a, b):
-            pass
+        def foo(a, b): pass
 
         mock = Mock()
         mock.child = create_autospec(foo)
@@ -1846,6 +1876,45 @@ class MockTest(unittest.TestCase):
 
         self.assertRaises(TypeError, mock.child, 1)
         self.assertEqual(mock.mock_calls, [call.child(1, 2)])
+
+    def test_isinstance_under_settrace(self):
+        # bpo-36593 : __class__ is not set for a class that has __class__
+        # property defined when it's used with sys.settrace(trace) set.
+        # Delete the module to force reimport with tracing function set
+        # restore the old reference later since there are other tests that are
+        # dependent on unittest.mock.patch. In testpatch.PatchTest
+        # test_patch_dict_test_prefix and test_patch_test_prefix not restoring
+        # causes the objects patched to go out of sync
+
+        old_patch = unittest.mock.patch
+
+        # Directly using __setattr__ on unittest.mock causes current imported
+        # reference to be updated. Use a lambda so that during cleanup the
+        # re-imported new reference is updated.
+        self.addCleanup(lambda patch: setattr(unittest.mock, 'patch', patch),
+                        old_patch)
+
+        with patch.dict('sys.modules'):
+            del sys.modules['unittest.mock']
+
+            # This trace will stop coverage being measured ;-)
+            def trace(frame, event, arg):  # pragma: no cover
+                return trace
+
+            self.addCleanup(sys.settrace, sys.gettrace())
+            sys.settrace(trace)
+
+            from unittest.mock import (
+                Mock, MagicMock, NonCallableMock, NonCallableMagicMock
+            )
+
+            mocks = [
+                Mock, MagicMock, NonCallableMock, NonCallableMagicMock
+            ]
+
+            for mock in mocks:
+                obj = mock(spec=Something)
+                self.assertIsInstance(obj, Something)
 
 
 if __name__ == '__main__':

@@ -951,6 +951,24 @@ The module defines the following classes, functions and decorators:
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
 
+.. decorator:: type_check_only
+
+   Decorator to mark a class or function to be unavailable at runtime.
+
+   This decorator is itself not available at runtime. It is mainly
+   intended to mark classes that are defined in type stub files if
+   an implementation returns an instance of a private class::
+
+      @type_check_only
+      class Response:  # private or not available at runtime
+          code: int
+          def get_header(self, name: str) -> str: ...
+
+      def fetch_response() -> Response: ...
+
+   Note that returning instances of private classes is not recommended.
+   It is usually preferable to make such classes public.
+
 .. data:: Any
 
    Special type indicating an unconstrained type.

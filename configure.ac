@@ -404,6 +404,7 @@ then
     MACHDEP="$ac_md_system$ac_md_release"
 
     case $MACHDEP in
+	aix*) MACHDEP="aix";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -1227,8 +1228,21 @@ else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
 
-# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
-# the ABI. This allows enabling assertions without changing the ABI.
+# Check for --with-trace-refs
+# --with-trace-refs
+AC_MSG_CHECKING(for --with-trace-refs)
+AC_ARG_WITH(trace-refs,
+  AS_HELP_STRING([--with-trace-refs],[enable tracing references for debugging purpose]),,
+  with_trace_refs=no)
+AC_MSG_RESULT($with_trace_refs)
+
+if test "$with_trace_refs" = "yes"
+then
+  AC_DEFINE(Py_TRACE_REFS, 1, [Define if you want to enable tracing references for debugging purpose])
+fi
+
+# Check for --with-assertions.
+# This allows enabling assertions without Py_DEBUG.
 assertions='false'
 AC_MSG_CHECKING(for --with-assertions)
 AC_ARG_WITH(assertions,
@@ -1463,6 +1477,19 @@ esac
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
+case $CC in
+    *clang*)
+        cc_is_clang=1
+        ;;
+    *)
+        if $CC --version 2>&1 | grep -q clang
+        then
+            cc_is_clang=1
+        else
+            cc_is_clang=
+        fi
+esac
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 AC_SUBST(OPT)
@@ -1475,19 +1502,6 @@ then
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
         fi
-
-        case $CC in
-            *clang*)
-                cc_is_clang=1
-                ;;
-            *)
-                if $CC --version 2>&1 | grep -q clang
-                then
-                    cc_is_clang=1
-                else
-                    cc_is_clang=
-                fi
-        esac
 
         if test -n "${cc_is_clang}"
         then
@@ -1527,6 +1541,26 @@ then
 	OPT="-O"
 	;;
     esac
+fi
+
+if test -n "${cc_is_clang}"
+then
+    # bpo-36618: Add -fmax-type-align=8 to CFLAGS when clang compiler is
+    # detected. The pymalloc memory allocator aligns memory on 8 bytes. On
+    # x86-64, clang expects alignment on 16 bytes by default and so uses MOVAPS
+    # instruction which can lead to segmentation fault. Instruct clang that
+    # Python is limited to alignemnt on 8 bytes to use MOVUPS instruction
+    # instead: slower but don't trigger a SIGSEGV if the memory is not aligned
+    # on 16 bytes.
+    #
+    # Sadly, the flag must be added to CFLAGS and not just CFLAGS_NODIST,
+    # since third party C extensions can have the same issue.
+    #
+    # Check if -fmax-type-align flag is supported (it's not supported by old
+    # clang versions):
+    if "$CC" -v --help 2>/dev/null |grep -- -fmax-type-align > /dev/null; then
+        CFLAGS="$CFLAGS -fmax-type-align=8"
+    fi
 fi
 
 AC_SUBST(BASECFLAGS)
@@ -2667,12 +2701,6 @@ then
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
-
-		# Issue #18075: the default maximum stack size (8MBytes) is too
-		# small for the default recursion limit. Increase the stack size
-		# to ensure that tests don't crash
-		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
-
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -2706,7 +2734,7 @@ then
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
 	VxWorks*)
-		LINKFORSHARED='--export-dynamic';;		
+		LINKFORSHARED='--export-dynamic';;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -3379,7 +3407,6 @@ if test "$with_pymalloc" != "no"
 then
     AC_DEFINE(WITH_PYMALLOC, 1,
      [Define if you want to compile in Python-specific mallocs])
-    ABIFLAGS="${ABIFLAGS}m"
 fi
 AC_MSG_RESULT($with_pymalloc)
 
@@ -4580,18 +4607,28 @@ AC_C_BIGENDIAN
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
 # * --with-pydebug (adds a 'd')
-# * --with-pymalloc (adds a 'm')
-# * --with-wide-unicode (adds a 'u')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
 # would get a shared library ABI version tag of 'cpython-32dmu' and shared
 # libraries would be named 'foo.cpython-32dmu.so'.
+#
+# In Python 3.2 and older, --with-wide-unicode added a 'u' flag.
+# In Python 3.7 and older, --with-pymalloc added a 'm' flag.
 AC_SUBST(SOABI)
 AC_MSG_CHECKING(ABIFLAGS)
 AC_MSG_RESULT($ABIFLAGS)
 AC_MSG_CHECKING(SOABI)
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 AC_MSG_RESULT($SOABI)
+
+# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
+if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
+  # Similar to SOABI but remove "d" flag from ABIFLAGS
+  AC_SUBST(ALT_SOABI)
+  ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
+  AC_DEFINE_UNQUOTED(ALT_SOABI, "${ALT_SOABI}",
+            [Alternative SOABI used in debug build to load C extensions built in release mode])
+fi
 
 AC_SUBST(EXT_SUFFIX)
 case $ac_sys_system in
@@ -4604,6 +4641,14 @@ esac
 AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
+
+# On Android the shared libraries must be linked with libpython.
+AC_SUBST(LIBPYTHON)
+if test -z "$ANDROID_API_LEVEL"; then
+  LIBPYTHON=''
+else
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+fi
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)
@@ -5245,7 +5290,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Objects Python Modules Programs"
+SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

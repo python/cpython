@@ -233,6 +233,18 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("def f(*args, a, b = 5): pass")
         self.check_suite("def f(*args, a, b = 5, **kwds): pass")
 
+        # positional-only arguments
+        self.check_suite("def f(a, /): pass")
+        self.check_suite("def f(a, /,): pass")
+        self.check_suite("def f(a, b, /): pass")
+        self.check_suite("def f(a, b, /, c): pass")
+        self.check_suite("def f(a, b, /, c = 6): pass")
+        self.check_suite("def f(a, b, /, c, *, d): pass")
+        self.check_suite("def f(a, b, /, c = 1, *, d): pass")
+        self.check_suite("def f(a, b, /, c, *, d = 1): pass")
+        self.check_suite("def f(a, b=1, /, c=2, *, d = 3): pass")
+        self.check_suite("def f(a=0, b=1, /, c=2, *, d = 3): pass")
+
         # function annotations
         self.check_suite("def f(a: int): pass")
         self.check_suite("def f(a: int = 5): pass")
@@ -748,6 +760,22 @@ class IllegalSyntaxTestCase(unittest.TestCase):
               '\udcff')
         with self.assertRaises(UnicodeEncodeError):
             parser.sequence2st(tree)
+
+    def test_invalid_node_id(self):
+        tree = (257, (269, (-7, '')))
+        self.check_bad_tree(tree, "negative node id")
+        tree = (257, (269, (99, '')))
+        self.check_bad_tree(tree, "invalid token id")
+        tree = (257, (269, (9999, (0, ''))))
+        self.check_bad_tree(tree, "invalid symbol id")
+
+    def test_ParserError_message(self):
+        try:
+            parser.sequence2st((257,(269,(257,(0,'')))))
+        except parser.ParserError as why:
+            self.assertIn("compound_stmt", str(why))  # Expected
+            self.assertIn("file_input", str(why))     # Got
+
 
 
 class CompileTestCase(unittest.TestCase):

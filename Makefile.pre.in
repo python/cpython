@@ -41,6 +41,7 @@ AR=		@AR@
 READELF=	@READELF@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
+LIBPYTHON=	@LIBPYTHON@
 GITVERSION=	@GITVERSION@
 GITTAG=		@GITTAG@
 GITBRANCH=	@GITBRANCH@
@@ -104,6 +105,8 @@ PY_LDFLAGS_NODIST=$(CONFIGURE_LDFLAGS_NODIST) $(LDFLAGS_NODIST)
 NO_AS_NEEDED=	@NO_AS_NEEDED@
 SGI_ABI=	@SGI_ABI@
 CCSHARED=	@CCSHARED@
+# LINKFORSHARED are the flags passed to the $(CC) command that links
+# the python executable -- this is only needed for a few systems
 LINKFORSHARED=	@LINKFORSHARED@
 ARFLAGS=	@ARFLAGS@
 # Extra C flags added for building the interpreter object files.
@@ -724,7 +727,7 @@ regen-importlib: Programs/_freeze_importlib
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots regen-grammar \
-	regen-token regen-symbol regen-ast regen-importlib clinic
+	regen-token regen-keyword regen-symbol regen-ast regen-importlib clinic
 
 ############################################################################
 # Special rules for object files
@@ -789,7 +792,7 @@ regen-grammar: regen-token
 	# Regenerate Include/graminit.h and Python/graminit.c
 	# from Grammar/Grammar using pgen
 	@$(MKDIR_P) Include
-	$(PYTHON_FOR_REGEN) -m Parser.pgen $(srcdir)/Grammar/Grammar \
+	PYTHONPATH=$(srcdir) $(PYTHON_FOR_REGEN) -m Parser.pgen $(srcdir)/Grammar/Grammar \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Include/graminit.h.new \
 		$(srcdir)/Python/graminit.c.new
@@ -842,6 +845,15 @@ regen-token:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_token.py py \
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Lib/token.py
+
+.PHONY: regen-keyword
+regen-keyword:
+	# Regenerate Lib/keyword.py from Grammar/Grammar and Grammar/Tokens
+	# using Parser/pgen
+	PYTHONPATH=$(srcdir) $(PYTHON_FOR_REGEN) -m Parser.pgen.keywordgen $(srcdir)/Grammar/Grammar \
+		$(srcdir)/Grammar/Tokens \
+		$(srcdir)/Lib/keyword.py.new
+	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
 
 .PHONY: regen-symbol
 regen-symbol: $(srcdir)/Include/graminit.h
@@ -997,7 +1009,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
-		$(srcdir)/Include/pgenheaders.h \
 		$(srcdir)/Include/pyarena.h \
 		$(srcdir)/Include/pycapsule.h \
 		$(srcdir)/Include/pyctype.h \
@@ -1046,6 +1057,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
+		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
 		$(srcdir)/Include/cpython/unicodeobject.h \
@@ -1284,7 +1296,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		tkinter/test/test_ttk site-packages test \
 		test/audiodata \
 		test/capath test/data \
-		test/cjkencodings test/decimaltestdata test/xmltestdata \
+		test/cjkencodings test/decimaltestdata \
+		test/xmltestdata test/xmltestdata/c14n-20 \
 		test/dtracedata \
 		test/eintrdata \
 		test/imghdrdata \
@@ -1449,6 +1462,8 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/PatternGrammar.txt
 
+# bpo-21536: Misc/python-config.sh is generated in the build directory
+# from $(srcdir)Misc/python-config.sh.in.
 python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 	@ # Substitution happens here, as the completely-expanded BINDIR
 	@ # is not available in configure
@@ -1638,14 +1653,6 @@ frameworkaltinstallunixtools:
 # It is not part of a normal frameworkinstall
 frameworkinstallextras:
 	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"
-
-# This installs a few of the useful scripts in Tools/scripts
-scriptsinstall:
-	SRCDIR=$(srcdir) $(RUNSHARED) \
-	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/setup.py install \
-	--prefix=$(prefix) \
-	--install-scripts=$(BINDIR) \
-	--root=$(DESTDIR)/
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status

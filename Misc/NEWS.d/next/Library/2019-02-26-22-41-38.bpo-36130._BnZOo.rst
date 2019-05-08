@@ -1,2 +1,0 @@
-Fix ``pdb`` with ``skip=...`` when stepping into a frame without a
-``__name__`` global.  Patch by Anthony Sottile.

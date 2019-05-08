@@ -1,8 +1,11 @@
+/* JSON accelerator C extensor: _json module.
+ *
+ * It is built as a built-in module (Py_BUILD_CORE_BUILTIN define) on Windows
+ * and as an extension module (Py_BUILD_CORE_MODULE define) on other
+ * platforms. */
 
-/* Core extension modules are built-in on some platforms (e.g. Windows). */
-#ifdef Py_BUILD_CORE
-#define Py_BUILD_CORE_BUILTIN
-#undef Py_BUILD_CORE
+#if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
+#  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
 #endif
 
 #include "Python.h"
@@ -1479,7 +1482,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyLong_Check(obj)) {
-        PyObject *encoded = PyLong_Type.tp_str(obj);
+        PyObject *encoded = PyLong_Type.tp_repr(obj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
@@ -1643,7 +1646,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                 goto bail;
         }
         else if (PyLong_Check(key)) {
-            kstr = PyLong_Type.tp_str(key);
+            kstr = PyLong_Type.tp_repr(key);
             if (kstr == NULL) {
                 goto bail;
             }

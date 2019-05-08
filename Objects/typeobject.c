@@ -131,8 +131,7 @@ skip_signature(const char *doc)
     return NULL;
 }
 
-#ifndef NDEBUG
-static int
+int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
 #define ASSERT(expr) _PyObject_ASSERT((PyObject *)type, (expr))
@@ -142,14 +141,16 @@ _PyType_CheckConsistency(PyTypeObject *type)
         return 1;
     }
 
-    ASSERT(!(type->tp_flags & Py_TPFLAGS_READYING));
-    ASSERT(type->tp_mro != NULL && PyTuple_Check(type->tp_mro));
-    ASSERT(type->tp_dict != NULL);
-    return 1;
+    ASSERT(!_PyObject_IsFreed((PyObject *)type));
+    ASSERT(Py_REFCNT(type) >= 1);
+    ASSERT(PyType_Check(type));
 
+    ASSERT(!(type->tp_flags & Py_TPFLAGS_READYING));
+    ASSERT(type->tp_dict != NULL);
+
+    return 1;
 #undef ASSERT
 }
-#endif
 
 static const char *
 _PyType_DocWithoutSignature(const char *name, const char *internal_doc)
@@ -986,9 +987,6 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
         return PyErr_NoMemory();
 
     memset(obj, '\0', size);
-
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-        Py_INCREF(type);
 
     if (type->tp_itemsize == 0)
         (void)PyObject_INIT(obj, type);
@@ -2897,6 +2895,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     nmembers = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
+            nmembers = 0;
             for (memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
             }

@@ -27,6 +27,26 @@ def coding_checker(self, coder):
         self.assertEqual(coder(input), (expect, len(input)))
     return check
 
+# On small versions of Windows like Windows IoT or Windows Nano Server not all codepages are present
+def is_code_page_present(cp):
+    from ctypes import POINTER, WINFUNCTYPE, windll, WinError, Structure, WinDLL
+    from ctypes.wintypes import BOOL, UINT, BYTE, WCHAR, UINT, DWORD
+
+    MAX_LEADBYTES = 12  # 5 ranges, 2 bytes ea., 0 term.
+    MAX_DEFAULTCHAR = 2 # single or double byte
+    MAX_PATH = 260
+    class CPINFOEXW(ctypes.Structure):
+        _fields_ = [("MaxCharSize", UINT),
+                    ("DefaultChar", BYTE*MAX_DEFAULTCHAR),
+                    ("LeadByte", BYTE*MAX_LEADBYTES),
+                    ("UnicodeDefaultChar", WCHAR),
+                    ("CodePage", UINT),
+                    ("CodePageName", WCHAR*MAX_PATH)]
+
+    prototype = WINFUNCTYPE(BOOL, UINT, DWORD, POINTER(CPINFOEXW))
+    GetCPInfoEx = prototype(("GetCPInfoExW", WinDLL("kernel32")))
+    info = CPINFOEXW()
+    return GetCPInfoEx(cp, 0, info)
 
 class Queue(object):
     """
@@ -405,6 +425,15 @@ class ReadTest(MixInCheckStateHandling):
                                        for b in self.ill_formed_sequence)
             self.assertEqual(test_sequence.decode(self.encoding, "backslashreplace"),
                              before + backslashreplace + after)
+
+    def test_incremental_surrogatepass(self):
+        # Test incremental decoder for surrogatepass handler:
+        # see issue #24214
+        data = '\uD901'.encode(self.encoding, 'surrogatepass')
+        for i in range(1, len(data)):
+            dec = codecs.getincrementaldecoder(self.encoding)('surrogatepass')
+            self.assertEqual(dec.decode(data[:i]), '')
+            self.assertEqual(dec.decode(data[i:], True), '\uD901')
 
 
 class UTF32Test(ReadTest, unittest.TestCase):
@@ -3069,9 +3098,19 @@ class CodePageTest(unittest.TestCase):
     def test_code_page_decode_flags(self):
         # Issue #36312: For some code pages (e.g. UTF-7) flags for
         # MultiByteToWideChar() must be set to 0.
+        if support.verbose:
+            sys.stdout.write('\n')
         for cp in (50220, 50221, 50222, 50225, 50227, 50229,
                    *range(57002, 57011+1), 65000):
-            self.assertEqual(codecs.code_page_decode(cp, b'abc'), ('abc', 3))
+            # On small versions of Windows like Windows IoT
+            # not all codepages are present.
+            # A missing codepage causes an OSError exception
+            # so check for the codepage before decoding
+            if is_code_page_present(cp):
+                self.assertEqual(codecs.code_page_decode(cp, b'abc'), ('abc', 3), f'cp{cp}')
+            else:
+                if support.verbose:
+                    print(f"  skipping cp={cp}")
         self.assertEqual(codecs.code_page_decode(42, b'abc'),
                          ('\uf061\uf062\uf063', 3))
 

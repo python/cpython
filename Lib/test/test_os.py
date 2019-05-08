@@ -28,6 +28,7 @@ import unittest
 import uuid
 import warnings
 from test import support
+from platform import win32_is_iot
 
 try:
     import resource
@@ -2337,19 +2338,10 @@ class Win32JunctionTests(unittest.TestCase):
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32NtTests(unittest.TestCase):
-    def setUp(self):
-        from test import support
-        self.nt = support.import_module('nt')
-        pass
-
-    def tearDown(self):
-        pass
-
     def test_getfinalpathname_handles(self):
-        try:
-            import ctypes, ctypes.wintypes
-        except ImportError:
-            raise unittest.SkipTest('ctypes module is required for this test')
+        nt = support.import_module('nt')
+        ctypes = support.import_module('ctypes')
+        import ctypes.wintypes
 
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
         kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
@@ -2368,21 +2360,23 @@ class Win32NtTests(unittest.TestCase):
         before_count = handle_count.value
 
         # The first two test the error path, __file__ tests the success path
-        filenames = [ r'\\?\C:',
-                      r'\\?\NUL',
-                      r'\\?\CONIN',
-                      __file__ ]
+        filenames = [
+            r'\\?\C:',
+            r'\\?\NUL',
+            r'\\?\CONIN',
+            __file__,
+        ]
 
-        for i in range(10):
+        for _ in range(10):
             for name in filenames:
                 try:
-                    tmp = self.nt._getfinalpathname(name)
-                except:
+                    nt._getfinalpathname(name)
+                except Exception:
                     # Failure is expected
                     pass
                 try:
-                    tmp = os.stat(name)
-                except:
+                    os.stat(name)
+                except Exception:
                     pass
 
         ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
@@ -2446,7 +2440,7 @@ class DeviceEncodingTests(unittest.TestCase):
         # Return None when an fd doesn't actually exist.
         self.assertIsNone(os.device_encoding(123456))
 
-    @unittest.skipUnless(os.isatty(0) and (sys.platform.startswith('win') or
+    @unittest.skipUnless(os.isatty(0) and not win32_is_iot() and (sys.platform.startswith('win') or
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires a tty and either Windows or nl_langinfo(CODESET)')
     def test_device_encoding(self):
