@@ -1345,29 +1345,35 @@ _PyWarnings_Init(void)
 
     WarningsState *st = _Warnings_GetState();
     if (st == NULL) {
-        // XXX decref m?
-        return NULL;
+        goto error;
     }
     if (_Warnings_InitState(st) < 0) {
-        return NULL;
+        goto error;
     }
 
     Py_INCREF(st->filters);
     if (PyModule_AddObject(m, "filters", st->filters) < 0) {
-        return NULL;
+        goto error;
     }
 
     Py_INCREF(st->once_registry);
     if (PyModule_AddObject(m, "_onceregistry", st->once_registry) < 0) {
-        return NULL;
+        goto error;
     }
 
     Py_INCREF(st->default_action);
     if (PyModule_AddObject(m, "_defaultaction", st->default_action) < 0) {
-        return NULL;
+        goto error;
     }
 
     return m;
+
+error:
+    if (st != NULL) {
+        _Warnings_ClearState(st);
+    }
+    Py_DECREF(m);
+    return NULL;
 }
 
 // We need this to ensure that warnings still work until late in finalization.
