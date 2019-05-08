@@ -664,7 +664,7 @@ class _Pickler:
                 # First, push state_setter and its tuple of expected arguments
                 # (obj, state) onto the stack.
                 save(state_setter)
-                save(obj)
+                save(obj)  # simple BINGET opcode as obj is already memoized.
                 save(state)
                 write(TUPLE2)
                 # Trigger a state_setter(obj, state) function call.
