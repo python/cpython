@@ -1,0 +1,2 @@
+Stops skipped tests from running with TestCase.debug(), following the
+functionality of TestCase.run().
