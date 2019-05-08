@@ -1,10 +1,10 @@
 .. _using:
 
 ==========================
- Using importlib_metadata
+ Using importlib.metadata
 ==========================
 
-``importlib_metadata`` is a library that provides for access to installed
+``importlib.metadata`` is a library that provides for access to installed
 package metadata.  Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
 API`_ and `metadata API`_ of ``pkg_resources``.  Along with
@@ -37,15 +37,18 @@ Let's say you wanted to get the version string for a package you've installed
 using ``pip``.  We start by creating a virtual environment and installing
 something into it::
 
+.. highlight:: none
+
     $ python3 -m venv example
     $ source example/bin/activate
-    (example) $ pip install importlib_metadata
     (example) $ pip install wheel
 
 You can get the version string for ``wheel`` by running the following::
 
+.. highlight:: none
+
     (example) $ python
-    >>> from importlib_metadata import version
+    >>> from importlib.metadata import version
     >>> version('wheel')
     '0.32.3'
 
@@ -143,7 +146,7 @@ files installed by this distribution.  Each file object returned is a
     >>> util.size
     859
     >>> util.dist
-    <importlib_metadata._hooks.PathDistribution object at 0x101e0cef0>
+    <importlib.metadata._hooks.PathDistribution object at 0x101e0cef0>
     >>> util.hash
     <FileHash mode: sha256 value: bYkw5oMccfazVCoYQwKkkemoVyMAFoR34mmKBx8R1NI>
 
@@ -179,7 +182,7 @@ of that information from the ``Distribution`` class.  A ``Distribution`` is an
 abstract object that represents the metadata for a Python package.  You can
 get the ``Distribution`` instance::
 
-    >>> from importlib_metadata import distribution
+    >>> from importlib.metadata import distribution
     >>> dist = distribution('wheel')
 
 Thus, an alternative way to get the version number is through the
@@ -206,16 +209,16 @@ Extending the search algorithm
 Because package metadata is not available through ``sys.path`` searches, or
 package loaders directly, the metadata for a package is found through import
 system `finders`_.  To find a distribution package's metadata,
-``importlib_metadata`` queries the list of `meta path finders`_ on
+``importlib.metadata`` queries the list of `meta path finders`_ on
 `sys.meta_path`_.
 
-By default ``importlib_metadata`` installs a finder for distribution packages
+By default ``importlib.metadata`` installs a finder for distribution packages
 found on the file system.  This finder doesn't actually find any *packages*,
 but it can find the packages' metadata.
 
 The abstract class :py:class:`importlib.abc.MetaPathFinder` defines the
 interface expected of finders by Python's import system.
-``importlib_metadata`` extends this protocol by looking for an optional
+``importlib.metadata`` extends this protocol by looking for an optional
 ``find_distributions`` callable on the finders from
 ``sys.meta_path``.  If the finder has this method, it must return
 an iterator over instances of the ``Distribution`` abstract class. This
