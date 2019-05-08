@@ -3115,8 +3115,6 @@ class AbstractDispatchTableTests(unittest.TestCase):
 
         dispatch_table[BBB] = reduce_bbb
 
-        b = BBB()
-
         # The custom reducer reduce_bbb includes a state setter, that should
         # have priority over BBB.__setstate__
         self.assertEqual(custom_load_dump(b).a, "custom state_setter")
