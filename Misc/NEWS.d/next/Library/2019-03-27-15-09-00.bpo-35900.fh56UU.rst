@@ -1,2 +1,3 @@
-Allow the user to specify custom functions to set the state of an object in
-save_reduce via the new state_setter keyword argument.
+Allow reduction methods to return a 6-item tuple where the 6th item specifies a
+custom state-setting method that's called instead of the regular
+``__setstate__`` method.

@@ -598,7 +598,7 @@ or both.
    module; the pickle module searches the module namespace to determine the
    object's module.  This behaviour is typically useful for singletons.
 
-   When a tuple is returned, it must be between two and five items long.
+   When a tuple is returned, it must be between two and six items long.
    Optional items can either be omitted, or ``None`` can be provided as their
    value.  The semantics of each item are in order:
 
@@ -636,7 +636,7 @@ or both.
      priority over ``obj``'s :meth:`__setstate__`.
 
      .. versionadded:: 3.8
-        The ``state_setter`` option was added.
+        The optional sixth tuple item, ``(obj, state)``, was added.
 
 
 .. method:: object.__reduce_ex__(protocol)
