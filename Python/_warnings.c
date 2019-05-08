@@ -1320,49 +1320,6 @@ create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
 #endif
 
 
-static int
-warnings_traverse(PyObject *m, visitproc visit, void *arg)
-{
-    // During runtime finalization we need to keep the state around a little longer.
-    if (_PyRuntime.finalizing) {
-        return 0;
-    }
-    WarningsState *st = _Warnings_GetState();
-    if (st == NULL) {
-        return -1;
-    }
-    Py_VISIT(st->filters);
-    Py_VISIT(st->once_registry);
-    return 0;
-}
-
-static int
-warnings_clear(PyObject *m)
-{
-    // During runtime finalization we need to keep the state around a little longer.
-    if (_PyRuntime.finalizing) {
-        return 0;
-    }
-    WarningsState *st = _Warnings_GetState();
-    if (st == NULL) {
-        return -1;
-    }
-    _Warnings_ClearState(st);
-    return 0;
-}
-
-static void
-warnings_free(PyObject *m)
-{
-    // During runtime finalization we need to keep the state around a little longer.
-    if (_PyRuntime.finalizing) {
-        return;
-    }
-    WarningsState *st = _Warnings_GetState();
-    assert(st != NULL);
-    _Warnings_ClearState(st);
-}
-
 static struct PyModuleDef warningsmodule = {
         PyModuleDef_HEAD_INIT,
         MODULE_NAME,            /* m_name */
@@ -1370,9 +1327,9 @@ static struct PyModuleDef warningsmodule = {
         0,                      /* m_size */
         warnings_functions,     /* m_methods */
         NULL,                   /* m_reload */
-        warnings_traverse,      /* m_traverse */
-        warnings_clear,         /* m_clear */
-        (freefunc)warnings_free /* m_free */
+        NULL,                   /* m_traverse */
+        NULL,                   /* m_clear */
+        NULL                    /* m_free */
 };
 
 
@@ -1415,8 +1372,7 @@ _PyWarnings_Init(void)
 
 // We need this to ensure that warnings still work until late in finalization.
 void
-_PyWarnings_Fini(_PyRuntimeState *runtime)
+_PyWarnings_Fini(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = runtime->finalizing->interp;
     _Warnings_ClearState(&interp->warnings);
 }
