@@ -356,6 +356,18 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
       .. versionadded:: 3.3
 
+   .. method:: reducer_override(self, obj)
+
+      Special reducer that can be defined in :class:`Pickler` subclasses. This
+      method has priority over any reducer in the :attr:`dispatch_table`.  It
+      should conform to the same interface as a :meth:`__reduce__` method, and
+      can optionally return ``NotImplemented`` to fallback on
+      :attr:`dispatch_table`-registered reducers to pickle ``obj``.
+
+      For a detailed example, see :ref:`reducer_override`.
+
+      .. versionadded:: 3.8
+
    .. attribute:: fast
 
       Deprecated. Enable fast mode if set to a true value.  The fast mode
@@ -365,19 +377,6 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       recurse infinitely.
 
       Use :func:`pickletools.optimize` if you need more compact pickles.
-
-   .. method:: reducer_override(self, obj)
-
-      Special reducer that can be defined in :class:`Pickler` subclasses. This
-      method has priority over any reducer in the :attr:`dispatch_table`.  It
-      should conform to the same interface as a :meth:`__reduce__` method, and
-      can optionally return ``NotImplemented`` to fallback on
-      :attr:`dispatch_table`-registered reducers to pickle ``obj``.
-
-      For a detailed example on how to use :meth:`~Pickler.reducer_override`,
-      see: :ref:`reducer_override`.
-
-      .. versionadded:: 3.8
 
 
 .. class:: Unpickler(file, \*, fix_imports=True, encoding="ASCII", errors="strict")
@@ -738,71 +737,6 @@ share the same dispatch table.  The equivalent code using the
    f = io.BytesIO()
    p = pickle.Pickler(f)
 
-.. _reducer_override:
-
-Subclassing the ``Pickler`` class
----------------------------------
-
-For most use-cases, it is recommended to simply use the
-:attr:`~Pickler.dispatch_table` of a :class:`Pickler` instance to customize its
-behavior, as explained above.
-
-However, using the :attr:`~Pickler.dispatch_table` may not be flexible enough.
-In particular we may want to customize the pickling logic based on another
-criterion than the object's type, or we may want to customize the pickling of
-functions and classes.
-
-For those cases, it is possible to subclass from the :class:`Pickler` class and
-implement a :meth:`~Pickler.reducer_override` method. This method can return an
-arbitrary reduction tuple (see :meth:`__reduce__`). It can alternatively return
-``NotImplemented`` to fallback to the traditional behavior.
-
-If both the :attr:`~Pickler.dispatch_table` and
-:meth:`~Pickler.reducer_override` are defined, then the
-:meth:`~Pickler.reducer_override` method takes priority.
-
-.. Note::
-   For performance reasons, the C implementation of pickle does not allow to
-   override the pickling of the following objects: ``None``, ``True``,
-   ``False``, and instances of :class:`int`, :class:`float`, :class:`bytes`,
-   :class:`str`, :class:`dict`, :class:`set`, :class:`frozenset`, :class:`list`
-   and :class:`tuple`.
-
-
-Here is a simple example::
-
-   import io
-   import pickle
-
-
-   class MyClass:
-       my_attribute = 1
-
-
-   class MyPickler(pickle.Pickler):
-       def reducer_override(self, obj):
-           """Custom reducer for MyClass."""
-           if getattr(obj, "__name__", None) == "MyClass":
-               return type, (obj.__name__, obj.__bases__,
-                             {'my_attribute': obj.my_attribute})
-           else:
-               # For any other object, fallback to the usual pickling routines
-               # (builtin or dispatch_table)
-               return NotImplemented
-
-
-   f = io.BytesIO()
-   p = MyPickler(f)
-   p.dump(MyClass)
-
-   del MyClass
-
-   my_depickled_class = pickle.loads(f.getvalue())
-
-   assert my_depickled_class.__name__ == "MyClass"
-   assert my_depickled_class.my_attribute == 1
-
-
 .. _pickle-state:
 
 Handling Stateful Objects
@@ -868,6 +802,65 @@ A sample usage might be something like this::
    >>> new_reader = pickle.loads(pickle.dumps(reader))
    >>> new_reader.readline()
    '3: Goodbye!'
+
+.. _reducer_override:
+
+Custom Reduction for Types, Functions, and Other Objects
+--------------------------------------------------------
+
+.. versionadded:: 3.8
+
+Sometimes, :attr:`~Pickler.dispatch_table` may not be flexible enough.
+In particular we may want to customize pickling based on another criterion
+than the object's type, or we may want to customize the pickling of
+functions and classes.
+
+For those cases, it is possible to subclass from the :class:`Pickler` class and
+implement a :meth:`~Pickler.reducer_override` method. This method can return an
+arbitrary reduction tuple (see :meth:`__reduce__`). It can alternatively return
+``NotImplemented`` to fallback to the traditional behavior.
+
+If both the :attr:`~Pickler.dispatch_table` and
+:meth:`~Pickler.reducer_override` are defined, then
+:meth:`~Pickler.reducer_override` method takes priority.
+
+.. Note::
+   For performance reasons, :meth:`~Pickler.reducer_override` may not be
+   called for the following objects: ``None``, ``True``, ``False``, and
+   exact instances of :class:`int`, :class:`float`, :class:`bytes`,
+   :class:`str`, :class:`dict`, :class:`set`, :class:`frozenset`, :class:`list`
+   and :class:`tuple`.
+
+Here is a simple example where we allow pickling and reconstructing
+a given class::
+
+   import io
+   import pickle
+
+   class MyClass:
+       my_attribute = 1
+
+   class MyPickler(pickle.Pickler):
+       def reducer_override(self, obj):
+           """Custom reducer for MyClass."""
+           if getattr(obj, "__name__", None) == "MyClass":
+               return type, (obj.__name__, obj.__bases__,
+                             {'my_attribute': obj.my_attribute})
+           else:
+               # For any other object, fallback to usual reduction
+               return NotImplemented
+
+   f = io.BytesIO()
+   p = MyPickler(f)
+   p.dump(MyClass)
+
+   del MyClass
+
+   unpickled_class = pickle.loads(f.getvalue())
+
+   assert isinstance(unpickled_class, type)
+   assert unpickled_class.__name__ == "MyClass"
+   assert unpickled_class.my_attribute == 1
 
 
 .. _pickle-restrict:

@@ -616,7 +616,7 @@ typedef struct PicklerObject {
     PyObject *pers_func_self;   /* borrowed reference to self if pers_func
                                    is an unbound method, NULL otherwise */
     PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
-    PyObject *_reducer_override;/* hook for invoking user-defined callbacks
+    PyObject *reducer_override; /* hook for invoking user-defined callbacks
                                    instead of save_global when pickling
                                    functions and classes*/
 
@@ -1113,7 +1113,7 @@ _Pickler_New(void)
     self->fast_memo = NULL;
     self->max_output_len = WRITE_BUF_SIZE;
     self->output_len = 0;
-    self->_reducer_override = NULL;
+    self->reducer_override = NULL;
 
     self->memo = PyMemoTable_New();
     self->output_buffer = PyBytes_FromStringAndSize(NULL,
@@ -4062,111 +4062,116 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         status = save_tuple(self, obj);
         goto done;
     }
-    /*  The switch-on-type statement ends here because the next three
-     *  conditions are not exclusive anymore. If reducer_override returns
-     *  NotImplemented, then we must fallback to save_type or save_global
-     *  */
-    reduce_value = Py_NotImplemented;
-    Py_INCREF(reduce_value);
-    if (self->_reducer_override != NULL) {
-        reduce_value = PyObject_CallFunctionObjArgs(self->_reducer_override,
+
+    /* Now, check reducer_override.  If it returns NotImplemented,
+     * fallback to save_type or save_global, and then perhaps to the
+     * regular reduction mechanism.
+     */
+    if (self->reducer_override != NULL) {
+        reduce_value = PyObject_CallFunctionObjArgs(self->reducer_override,
                                                     obj, NULL);
+        if (reduce_value == NULL) {
+            goto error;
+        }
+        if (reduce_value != Py_NotImplemented) {
+            goto reduce;
+        }
+        Py_DECREF(reduce_value);
+        reduce_value = NULL;
     }
 
-    if (reduce_value == Py_NotImplemented) {
-        if (type == &PyType_Type) {
-            status = save_type(self, obj);
-            goto done;
-        }
-        else if (type == &PyFunction_Type) {
-            status = save_global(self, obj, NULL);
-            goto done;
-        }
+    if (type == &PyType_Type) {
+        status = save_type(self, obj);
+        goto done;
+    }
+    else if (type == &PyFunction_Type) {
+        status = save_global(self, obj, NULL);
+        goto done;
+    }
 
-        /* XXX: This part needs some unit tests. */
+    /* XXX: This part needs some unit tests. */
 
-        /* Get a reduction callable, and call it.  This may come from
-         * self.dispatch_table, copyreg.dispatch_table, the object's
-         * __reduce_ex__ method, or the object's __reduce__ method.
-         */
-        if (self->dispatch_table == NULL) {
-            PickleState *st = _Pickle_GetGlobalState();
-            reduce_func = PyDict_GetItemWithError(st->dispatch_table,
-                                                  (PyObject *)type);
-            if (reduce_func == NULL) {
-                if (PyErr_Occurred()) {
-                    goto error;
-                }
-            } else {
-                /* PyDict_GetItemWithError() returns a borrowed reference.
-                   Increase the reference count to be consistent with
-                   PyObject_GetItem and _PyObject_GetAttrId used below. */
-                Py_INCREF(reduce_func);
-            }
-        } else {
-            reduce_func = PyObject_GetItem(self->dispatch_table,
-                                           (PyObject *)type);
-            if (reduce_func == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_KeyError))
-                    PyErr_Clear();
-                else
-                    goto error;
-            }
-        }
-        if (reduce_func != NULL) {
-            Py_INCREF(obj);
-            reduce_value = _Pickle_FastCall(reduce_func, obj);
-        }
-        else if (PyType_IsSubtype(type, &PyType_Type)) {
-            status = save_global(self, obj, NULL);
-            goto done;
-        }
-        else {
-            _Py_IDENTIFIER(__reduce__);
-            _Py_IDENTIFIER(__reduce_ex__);
-
-
-            /* XXX: If the __reduce__ method is defined, __reduce_ex__ is
-               automatically defined as __reduce__. While this is convenient,
-               this make it impossible to know which method was actually
-               called. Of course, this is not a big deal. But still, it would
-               be nice to let the user know which method was called when
-               something go wrong. Incidentally, this means if __reduce_ex__ is
-               not defined, we don't actually have to check for a __reduce__
-               method. */
-
-            /* Check for a __reduce_ex__ method. */
-            if (_PyObject_LookupAttrId(obj, &PyId___reduce_ex__,
-                                       &reduce_func) < 0) {
+    /* Get a reduction callable, and call it.  This may come from
+     * self.dispatch_table, copyreg.dispatch_table, the object's
+     * __reduce_ex__ method, or the object's __reduce__ method.
+     */
+    if (self->dispatch_table == NULL) {
+        PickleState *st = _Pickle_GetGlobalState();
+        reduce_func = PyDict_GetItemWithError(st->dispatch_table,
+                                              (PyObject *)type);
+        if (reduce_func == NULL) {
+            if (PyErr_Occurred()) {
                 goto error;
             }
+        } else {
+            /* PyDict_GetItemWithError() returns a borrowed reference.
+               Increase the reference count to be consistent with
+               PyObject_GetItem and _PyObject_GetAttrId used below. */
+            Py_INCREF(reduce_func);
+        }
+    } else {
+        reduce_func = PyObject_GetItem(self->dispatch_table,
+                                       (PyObject *)type);
+        if (reduce_func == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_KeyError))
+                PyErr_Clear();
+            else
+                goto error;
+        }
+    }
+    if (reduce_func != NULL) {
+        Py_INCREF(obj);
+        reduce_value = _Pickle_FastCall(reduce_func, obj);
+    }
+    else if (PyType_IsSubtype(type, &PyType_Type)) {
+        status = save_global(self, obj, NULL);
+        goto done;
+    }
+    else {
+        _Py_IDENTIFIER(__reduce__);
+        _Py_IDENTIFIER(__reduce_ex__);
+
+
+        /* XXX: If the __reduce__ method is defined, __reduce_ex__ is
+           automatically defined as __reduce__. While this is convenient, this
+           make it impossible to know which method was actually called. Of
+           course, this is not a big deal. But still, it would be nice to let
+           the user know which method was called when something go
+           wrong. Incidentally, this means if __reduce_ex__ is not defined, we
+           don't actually have to check for a __reduce__ method. */
+
+        /* Check for a __reduce_ex__ method. */
+        if (_PyObject_LookupAttrId(obj, &PyId___reduce_ex__, &reduce_func) < 0) {
+            goto error;
+        }
+        if (reduce_func != NULL) {
+            PyObject *proto;
+            proto = PyLong_FromLong(self->proto);
+            if (proto != NULL) {
+                reduce_value = _Pickle_FastCall(reduce_func, proto);
+            }
+        }
+        else {
+            PickleState *st = _Pickle_GetGlobalState();
+
+            /* Check for a __reduce__ method. */
+            reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
             if (reduce_func != NULL) {
-                PyObject *proto;
-                proto = PyLong_FromLong(self->proto);
-                if (proto != NULL) {
-                    reduce_value = _Pickle_FastCall(reduce_func, proto);
-                }
+                reduce_value = _PyObject_CallNoArg(reduce_func);
             }
             else {
-                PickleState *st = _Pickle_GetGlobalState();
-
-                /* Check for a __reduce__ method. */
-                reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
-                if (reduce_func != NULL) {
-                    reduce_value = _PyObject_CallNoArg(reduce_func);
-                }
-                else {
-                    PyErr_Format(st->PicklingError,
-                                 "can't pickle '%.200s' object: %R",
-                                 type->tp_name, obj);
-                    goto error;
-                }
+                PyErr_Format(st->PicklingError,
+                             "can't pickle '%.200s' object: %R",
+                             type->tp_name, obj);
+                goto error;
             }
         }
     }
+
     if (reduce_value == NULL)
         goto error;
 
+  reduce:
     if (PyUnicode_Check(reduce_value)) {
         status = save_global(self, obj, reduce_value);
         goto done;
@@ -4205,12 +4210,14 @@ dump(PicklerObject *self, PyObject *obj)
                                &tmp) < 0) {
         return -1;
     }
-    /*  The private _reducer_override attribute of the pickler acts as a cache
-     *  of a potential reducer_override method. This cache is updated at each
-     *  Pickler.dump call*/
+    /* Cache the reducer_override method, if it exists. */
     if (tmp != NULL) {
-        Py_XSETREF(self->_reducer_override, tmp);
+        Py_XSETREF(self->reducer_override, tmp);
     }
+    else {
+        Py_CLEAR(self->reducer_override);
+    }
+
     if (self->proto >= 2) {
         char header[2];
 
@@ -4334,6 +4341,7 @@ Pickler_dealloc(PicklerObject *self)
     Py_XDECREF(self->pers_func);
     Py_XDECREF(self->dispatch_table);
     Py_XDECREF(self->fast_memo);
+    Py_XDECREF(self->reducer_override);
 
     PyMemoTable_Del(self->memo);
 
@@ -4347,6 +4355,7 @@ Pickler_traverse(PicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->pers_func);
     Py_VISIT(self->dispatch_table);
     Py_VISIT(self->fast_memo);
+    Py_VISIT(self->reducer_override);
     return 0;
 }
 
@@ -4358,6 +4367,7 @@ Pickler_clear(PicklerObject *self)
     Py_CLEAR(self->pers_func);
     Py_CLEAR(self->dispatch_table);
     Py_CLEAR(self->fast_memo);
+    Py_CLEAR(self->reducer_override);
 
     if (self->memo != NULL) {
         PyMemoTable *memo = self->memo;
