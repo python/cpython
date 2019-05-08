@@ -1723,21 +1723,14 @@ notimplemented_bool(PyObject *v)
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "NotImplemented should not be used in a boolean context",
                      1) < 0)
+    {
         return -1;
+    }
     return 1;
 }
 
 static PyNumberMethods notimplemented_as_number = {
-    0,                              /* nb_add */
-    0,                              /* nb_subtract */
-    0,                              /* nb_multiply */
-    0,                              /* nb_remainder */
-    0,                              /* nb_divmod */
-    0,                              /* nb_power */
-    0,                              /* nb_negative */
-    0,                              /* nb_positive */
-    0,                              /* nb_absolute */
-    (inquiry)notimplemented_bool,   /* nb_bool */
+    .nb_bool = notimplemented_bool,
 };
 
 PyTypeObject _PyNotImplemented_Type = {
