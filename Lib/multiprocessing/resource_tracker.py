@@ -207,6 +207,6 @@ def main(fd):
                     try:
                         _CLEANUP_FUNCS[rtype](name)
                     except Exception as e:
-                        warnings.warn('resource_tracker: %s: %r' % (name, e))
+                        warnings.warn('resource_tracker: %r: %s' % (name, e))
                 finally:
                     pass
