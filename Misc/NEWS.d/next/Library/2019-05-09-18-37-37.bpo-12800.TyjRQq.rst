@@ -1,0 +1,1 @@
+Extracting a symlink from a tarball using the tarfile module in stream mode ('r|') fails with an exception when a file or symlink of the same name already exists. The fix is to remove the existing file or symlink before extraction.
