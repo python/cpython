@@ -1,0 +1,2 @@
+Allow FileInput to take 'rt' mode, which is supported by all its current
+delegates

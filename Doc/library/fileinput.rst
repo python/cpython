@@ -27,8 +27,8 @@ replaced by ``sys.stdin`` and the optional arguments *mode* and *openhook*
 are ignored.  To specify an alternative list of filenames, pass it as the
 first argument to :func:`.input`.  A single file name is also allowed.
 
-All files are opened in text mode by default, but you can override this by
-specifying the *mode* parameter in the call to :func:`.input` or
+All files are opened in their default read mode by default, but you can override
+this by specifying the *mode* parameter in the call to :func:`.input` or
 :class:`FileInput`.  If an I/O error occurs during opening or reading a file,
 :exc:`OSError` is raised.
 

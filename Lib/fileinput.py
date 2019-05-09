@@ -28,10 +28,10 @@ numbers are zero; nextfile() has no effect.  After all lines have been
 read, filename() and the line number functions return the values
 pertaining to the last line read; nextfile() has no effect.
 
-All files are opened in text mode by default, you can override this by
-setting the mode parameter to input() or FileInput.__init__().
-If an I/O error occurs during opening or reading a file, the OSError
-exception is raised.
+All files are opened in their default read mode by default.
+You can override this by setting the mode parameter to input() or
+FileInput.__init__(). If an I/O error occurs during opening or reading
+a file, the OSError exception is raised.
 
 If sys.stdin is used more than once, the second and further use will
 return no lines, except perhaps for interactive use, or if it has been
@@ -184,6 +184,9 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
+    allowed_modes = ('r', 'rt', 'rU', 'U', 'rb')
+    allowed_modes_text = "'r', 'rt', 'rU', 'U', or 'rb'"
+
     def __init__(self, files=None, inplace=False, backup="", *,
                  mode="r", openhook=None):
         if isinstance(files, str):
@@ -209,9 +212,8 @@ class FileInput:
         self._isstdin = False
         self._backupfilename = None
         # restrict mode argument to reading modes
-        if mode not in ('r', 'rU', 'U', 'rb'):
-            raise ValueError("FileInput opening mode must be one of "
-                             "'r', 'rU', 'U' and 'rb'")
+        if mode not in FileInput.allowed_modes:
+            raise ValueError("FileInput opening mode must be one of " + FileInput.allowed_modes_text)
         if 'U' in mode:
             import warnings
             warnings.warn("'U' mode is deprecated",
