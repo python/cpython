@@ -1755,7 +1755,7 @@ main_loop:
         case TARGET(RETURN_VALUE): {
             retval = POP();
             assert(f->f_iblock == 0);
-            goto return_or_yield;
+            goto exit_returning;
         }
 
         case TARGET(GET_AITER): {
@@ -1924,7 +1924,7 @@ main_loop:
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
-            goto return_or_yield;
+            goto exit_yielding;
         }
 
         case TARGET(YIELD_VALUE): {
@@ -1941,7 +1941,7 @@ main_loop:
             }
 
             f->f_stacktop = stack_pointer;
-            goto return_or_yield;
+            goto exit_yielding;
         }
 
         case TARGET(POP_EXCEPT): {
@@ -3581,16 +3581,18 @@ exception_unwind:
         break;
     } /* main loop */
 
+    assert(retval == NULL);
+    assert(PyErr_Occurred());
+
+exit_returning:
+
     /* Pop remaining stack entries. */
     while (!EMPTY()) {
         PyObject *o = POP();
         Py_XDECREF(o);
     }
 
-    assert(retval == NULL);
-    assert(PyErr_Occurred());
-
-return_or_yield:
+exit_yielding:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
