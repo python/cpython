@@ -366,10 +366,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     PyModule_AddObject(module, "Connection", (PyObject*) &pysqlite_ConnectionType);
     Py_INCREF(&pysqlite_CursorType);
     PyModule_AddObject(module, "Cursor", (PyObject*) &pysqlite_CursorType);
-    Py_INCREF(&pysqlite_CacheType);
-    PyModule_AddObject(module, "Statement", (PyObject*)&pysqlite_StatementType);
-    Py_INCREF(&pysqlite_StatementType);
-    PyModule_AddObject(module, "Cache", (PyObject*) &pysqlite_CacheType);
     Py_INCREF(&pysqlite_PrepareProtocolType);
     PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
     Py_INCREF(&pysqlite_RowType);
