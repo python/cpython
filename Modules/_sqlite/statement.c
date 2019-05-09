@@ -73,7 +73,11 @@ static int pysqlite_statement_is_dml(sqlite3_stmt *statement, const char *sql)
 
             is_dml = (PyOS_strnicmp(p, "begin", 5) &&
                       PyOS_strnicmp(p, "create", 6) &&
-                      PyOS_strnicmp(p, "drop", 4));
+                      PyOS_strnicmp(p, "drop", 4) &&
+                      PyOS_strnicmp(p, "alter", 5) &&
+                      PyOS_strnicmp(p, "analyze", 7) &&
+                      PyOS_strnicmp(p, "reindex", 7) &&
+                      PyOS_strnicmp(p, "vacuum", 6));
             break;
         }
     }

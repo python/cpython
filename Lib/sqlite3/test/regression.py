@@ -510,6 +510,11 @@ class DMLStatementDetectionTestCase(unittest.TestCase):
         conn.execute('ROLLBACK')
         self.assertFalse(conn.in_transaction)
 
+    def test_dml_detection_vacuum(self):
+        conn = sqlite.connect(':memory:')
+        conn.execute('vacuum')
+        self.assertFalse(conn.in_transaction)
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
