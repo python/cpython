@@ -1,0 +1,1 @@
+Use `sqlite3_stmt_readonly` internally to determine if a SQL statement is data-modifying.
