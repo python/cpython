@@ -101,8 +101,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "venvwlauncher", "venvwlaunc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythonw_uwp", "pythonw_uwp.vcxproj", "{AB603547-1E2A-45B3-9E09-B04596006393}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "regen", "regen.vcxproj", "{21CF2108-2CC9-4005-A6ED-B7965ADE3854}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -1082,29 +1080,6 @@ Global
 		{AB603547-1E2A-45B3-9E09-B04596006393}.Release|Win32.Build.0 = Release|Win32
 		{AB603547-1E2A-45B3-9E09-B04596006393}.Release|x64.ActiveCfg = Release|x64
 		{AB603547-1E2A-45B3-9E09-B04596006393}.Release|x64.Build.0 = Release|x64
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Debug|ARM.ActiveCfg = Debug|ARM
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Debug|ARM.Build.0 = Debug|ARM
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Debug|Win32.ActiveCfg = Debug|Win32
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Debug|x64.ActiveCfg = Debug|x64
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Debug|x64.Build.0 = Debug|x64
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGInstrument|ARM.ActiveCfg = PGInstrument|ARM
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGInstrument|ARM.Build.0 = PGInstrument|ARM
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGInstrument|Win32.ActiveCfg = PGInstrument|Win32
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGInstrument|Win32.Build.0 = PGInstrument|Win32
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGInstrument|x64.ActiveCfg = PGInstrument|x64
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGInstrument|x64.Build.0 = PGInstrument|x64
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGUpdate|ARM.ActiveCfg = PGUpdate|ARM
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGUpdate|ARM.Build.0 = PGUpdate|ARM
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGUpdate|Win32.ActiveCfg = PGUpdate|Win32
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGUpdate|Win32.Build.0 = PGUpdate|Win32
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGUpdate|x64.ActiveCfg = PGUpdate|x64
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.PGUpdate|x64.Build.0 = PGUpdate|x64
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Release|ARM.ActiveCfg = Release|ARM
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Release|ARM.Build.0 = Release|ARM
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Release|Win32.ActiveCfg = Release|Win32
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Release|Win32.Build.0 = Release|Win32
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Release|x64.ActiveCfg = Release|x64
-		{21CF2108-2CC9-4005-A6ED-B7965ADE3854}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
