@@ -41,7 +41,6 @@ import multiprocessing.pool
 import multiprocessing.queues
 
 from multiprocessing import util
-from multiprocessing import resource_tracker
 
 try:
     from multiprocessing import reduction
@@ -89,8 +88,11 @@ def join_process(process):
     support.join_thread(process, timeout=TIMEOUT)
 
 
-def _resource_unlink(name, rtype):
-    resource_tracker._CLEANUP_FUNCS[rtype](name)
+if os.name == "posix":
+    from multiprocessing import resource_tracker
+
+    def _resource_unlink(name, rtype):
+        resource_tracker._CLEANUP_FUNCS[rtype](name)
 
 
 #
