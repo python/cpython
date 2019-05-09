@@ -478,6 +478,8 @@ class DMLStatementDetectionTestCase(unittest.TestCase):
         curs = conn.execute('select key, val from kv order by key')
         self.assertEqual(curs.fetchall(), [('k1', 111), ('k2', 112)])
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 7, 11),
+                     'needs sqlite 3.7.11 or newer')
     def test_dml_detection_sql_comment(self):
         conn = sqlite.connect(':memory:')
         conn.execute('create table kv ("key" text, "val" integer)')
