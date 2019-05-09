@@ -45,6 +45,32 @@ _Warnings_ClearState(WarningsState *st)
     Py_CLEAR(st->default_action);
 }
 
+#ifndef Py_DEBUG
+static PyObject *
+create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
+{
+    PyObject *modname_obj = NULL;
+    PyObject *action_str = _PyUnicode_FromId(id);
+    if (action_str == NULL) {
+        return NULL;
+    }
+
+    /* Default to "no module name" for initial filter set */
+    if (modname != NULL) {
+        modname_obj = PyUnicode_InternFromString(modname);
+        if (modname_obj == NULL) {
+            return NULL;
+        }
+    } else {
+        modname_obj = Py_None;
+    }
+
+    /* This assumes the line number is zero for now. */
+    return PyTuple_Pack(5, action_str, Py_None,
+                        category, modname_obj, _PyLong_Zero);
+}
+#endif
+
 static PyObject *
 init_filters(void)
 {
@@ -1291,33 +1317,6 @@ static PyMethodDef warnings_functions[] = {
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */
 };
-
-
-#ifndef Py_DEBUG
-static PyObject *
-create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
-{
-    PyObject *modname_obj = NULL;
-    PyObject *action_str = _PyUnicode_FromId(id);
-    if (action_str == NULL) {
-        return NULL;
-    }
-
-    /* Default to "no module name" for initial filter set */
-    if (modname != NULL) {
-        modname_obj = PyUnicode_InternFromString(modname);
-        if (modname_obj == NULL) {
-            return NULL;
-        }
-    } else {
-        modname_obj = Py_None;
-    }
-
-    /* This assumes the line number is zero for now. */
-    return PyTuple_Pack(5, action_str, Py_None,
-                        category, modname_obj, _PyLong_Zero);
-}
-#endif
 
 
 static struct PyModuleDef warningsmodule = {
