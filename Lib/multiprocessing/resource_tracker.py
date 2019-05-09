@@ -22,6 +22,7 @@ import sys
 import threading
 import warnings
 import _multiprocessing
+import _posixshmem
 
 from . import spawn
 from . import util
@@ -33,7 +34,8 @@ _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
 _CLEANUP_FUNCS = {
     'folder': shutil.rmtree,
-    'semaphore': _multiprocessing.sem_unlink
+    'semaphore': _multiprocessing.sem_unlink,
+    'shared_memory': _posixshmem.shm_unlink
 }
 
 

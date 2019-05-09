@@ -15,6 +15,8 @@ import errno
 import struct
 import secrets
 
+from . import util
+
 if os.name == "nt":
     import _winapi
     _USE_POSIX = False
@@ -112,6 +114,11 @@ class SharedMemory:
             except OSError:
                 self.unlink()
                 raise
+
+            from .resource_tracker import register
+            register(self._name, "shared_memory")
+            util.Finalize(self, SharedMemory._cleanup,  (self._name,),
+                          exitpriority=0)
 
         else:
 
@@ -232,6 +239,12 @@ class SharedMemory:
         to the shared memory block."""
         if _USE_POSIX and self._name:
             _posixshmem.shm_unlink(self._name)
+
+    @staticmethod
+    def _cleanup(name):
+        from .resource_tracker import unregister
+        _posixshmem.shm_unlink(name)
+        unregister(name, "shared_memory")
 
 
 _encoding = "utf8"
