@@ -28,6 +28,10 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
+#if SQLITE_VERSION_NUMBER >= 3007011
+#define HAVE_SQLITE3_STMT_READONLY
+#endif
+
 /* prototypes */
 static int pysqlite_check_remaining_sql(const char* tail);
 
@@ -48,13 +52,59 @@ typedef enum {
     TYPE_UNKNOWN
 } parameter_type;
 
+int pysqlite_statement_is_dml(sqlite3_stmt *st, const char *sql)
+{
+    const char* p;
+    int is_dml = 0;
+
+#ifdef HAVE_SQLITE3_STMT_READONLY
+    is_dml = ! sqlite3_stmt_readonly(st);
+    if (is_dml) {
+        /* Retain backwards-compatibility, as sqlite3_stmt_readonly will return
+         * false for BEGIN [IMMEDIATE|EXCLUSIVE] or DDL statements.
+         */
+        for (p = sql; *p != 0; p++) {
+            switch (*p) {
+                case ' ':
+                case '\r':
+                case '\n':
+                case '\t':
+                    continue;
+            }
+
+            is_dml = (PyOS_strnicmp(p, "begin", 5) &&
+                      PyOS_strnicmp(p, "create", 6) &&
+                      PyOS_strnicmp(p, "drop", 4));
+            break;
+        }
+    }
+#else
+    /* Original implementation. */
+    for (p = sql; *p != 0; p++) {
+        switch (*p) {
+            case ' ':
+            case '\r':
+            case '\n':
+            case '\t':
+                continue;
+        }
+
+        is_dml = (PyOS_strnicmp(p, "insert", 6) == 0)
+              || (PyOS_strnicmp(p, "update", 6) == 0)
+              || (PyOS_strnicmp(p, "delete", 6) == 0)
+              || (PyOS_strnicmp(p, "replace", 7) == 0);
+        break;
+    }
+#endif
+    return is_dml;
+}
+
 int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql)
 {
     const char* tail;
     int rc;
     const char* sql_cstr;
     Py_ssize_t sql_cstr_len;
-    const char* p;
 
     self->st = NULL;
     self->in_use = 0;
@@ -73,25 +123,6 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     Py_INCREF(sql);
     self->sql = sql;
 
-    /* Determine if the statement is a DML statement.
-       SELECT is the only exception. See #9924. */
-    self->is_dml = 0;
-    for (p = sql_cstr; *p != 0; p++) {
-        switch (*p) {
-            case ' ':
-            case '\r':
-            case '\n':
-            case '\t':
-                continue;
-        }
-
-        self->is_dml = (PyOS_strnicmp(p, "insert", 6) == 0)
-                    || (PyOS_strnicmp(p, "update", 6) == 0)
-                    || (PyOS_strnicmp(p, "delete", 6) == 0)
-                    || (PyOS_strnicmp(p, "replace", 7) == 0);
-        break;
-    }
-
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_prepare_v2(connection->db,
                             sql_cstr,
@@ -101,6 +132,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     Py_END_ALLOW_THREADS
 
     self->db = connection->db;
+    self->is_dml = pysqlite_statement_is_dml(self->st, sql_cstr);
 
     if (rc == SQLITE_OK && pysqlite_check_remaining_sql(tail)) {
         (void)sqlite3_finalize(self->st);
