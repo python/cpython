@@ -96,14 +96,13 @@ from the environment by default).
 .. section: Core and Builtins
 
 Fixed several issues in printing tracebacks (PyTraceBack_Print()).
-
-* Setting sys.tracebacklimit to 0 or less now suppresses printing tracebacks.
-* Setting sys.tracebacklimit to None now causes using the default limit.
-* Setting sys.tracebacklimit to an integer larger than LONG_MAX now means using
-  the limit LONG_MAX rather than the default limit.
-* Fixed integer overflows in the case of more than 2**31 traceback items on
-  Windows.
-* Fixed output errors handling.
+Setting sys.tracebacklimit to 0 or less now suppresses printing tracebacks.
+Setting sys.tracebacklimit to None now causes using the default limit.
+Setting sys.tracebacklimit to an integer larger than LONG_MAX now means using
+the limit LONG_MAX rather than the default limit.
+Fixed integer overflows in the case of more than 2**31 traceback items on
+Windows.
+Fixed output errors handling.
 
 ..
 
@@ -388,7 +387,6 @@ argument to ``Traceback.format()``. (Patch by Jesse Bakker.)
 Fix wrong usage of :func:`collections.namedtuple` in the
 :meth:`RobotFileParser.parse() <urllib.robotparser.RobotFileParser.parse>`
 method.
-
 Initial patch by Robin Wellner.
 
 ..
@@ -409,7 +407,6 @@ couldn't open or create an MSI file.  Initial patch by William Tisäter.
 .. section: Library
 
 ``setup()`` now warns about invalid types for some fields.
-
 The ``distutils.dist.Distribution`` class now warns when ``classifiers``,
 ``keywords`` and ``platforms`` fields are not specified as a list or a
 string.
@@ -510,11 +507,10 @@ Added support of splitting on a pattern that could match an empty string.
 .. section: Library
 
 Fixed issues with binary plists:
-
-* Fixed saving bytearrays.
-* Identical objects will be saved only once.
-* Equal references will be load as identical objects.
-* Added support for saving and loading recursive data structures.
+Fixed saving bytearrays.
+Identical objects will be saved only once.
+Equal references will be load as identical objects.
+Added support for saving and loading recursive data structures.
 
 ..
 
@@ -697,10 +693,8 @@ Sharafutdinov.
 .. section: Library
 
 Fixed determining the MAC address in the uuid module:
-
-* Using ifconfig on NetBSD and OpenBSD.
-* Using arp on Linux, FreeBSD, NetBSD and OpenBSD.
-
+Using ifconfig on NetBSD and OpenBSD.
+Using arp on Linux, FreeBSD, NetBSD and OpenBSD.
 Based on patch by Takayuki Shimizukawa.
 
 ..
@@ -820,7 +814,6 @@ windows
 .. section: Library
 
 Remove year (1-9999) limits on the Calendar.weekday() function.
-
 Patch by Mark Gollahon.
 
 ..
@@ -1413,7 +1406,6 @@ Finish removing support for AtheOS.
 
 Return ``None`` when ``View.Fetch()`` returns ``ERROR_NO_MORE_ITEMS``
 instead of raising ``MSIError``.
-
 Initial patch by Anthony Tuininga.
 
 ..
@@ -1517,7 +1509,6 @@ persist while IDLE remains open
 .. section: IDLE
 
 Test_code_module now passes if run after test_idle, which sets ps1.
-
 The code module uses sys.ps1 if present or sets it to '>>> ' if not.
 Test_code_module now properly tests both behaviors.  Ditto for ps2.
 
@@ -1543,7 +1534,6 @@ selects a font that defines a limited subset of the unicode Basic
 Multilingual Plane, tcl/tk will use other fonts that define a character. The
 expanded example give users of non-Latin characters a better idea of what
 they might see in IDLE's shell and editors.
-
 To make room for the expanded sample, frames on the Font tab are
 re-arranged.  The Font/Tabs help explains a bit about the additions.
 
@@ -1566,10 +1556,8 @@ and Subversion are no longer used to develop CPython.
 .. section: Tools/Demos
 
 Make redemo work with Python 3.6 and newer versions.
-
 Also, remove the ``LOCALE`` option since it doesn't work with string
 patterns in Python 3.
-
 Patch by Christoph Sarnowski.
 
 ..
