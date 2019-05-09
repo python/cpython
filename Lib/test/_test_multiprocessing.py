@@ -41,6 +41,7 @@ import multiprocessing.pool
 import multiprocessing.queues
 
 from multiprocessing import util
+from multiprocessing import resource_tracker
 
 try:
     from multiprocessing import reduction
@@ -86,6 +87,10 @@ def join_process(process):
     # Since multiprocessing.Process has the same API than threading.Thread
     # (join() and is_alive(), the support function can be reused
     support.join_thread(process, timeout=TIMEOUT)
+
+
+def _resource_unlink(name, rtype):
+    resource_tracker._CLEANUP_FUNCS[rtype](name)
 
 
 #
@@ -4811,36 +4816,66 @@ class TestResourceTracker(unittest.TestCase):
         #
         import subprocess
         cmd = '''if 1:
-            import multiprocessing as mp, time, os
+            import time, os, tempfile
+            import multiprocessing as mp
+            from multiprocessing import resource_tracker
+
             mp.set_start_method("spawn")
-            lock1 = mp.Lock()
-            lock2 = mp.Lock()
-            os.write(%d, lock1._semlock.name.encode("ascii") + b"\\n")
-            os.write(%d, lock2._semlock.name.encode("ascii") + b"\\n")
+            rand = tempfile._RandomNameSequence()
+
+
+            def create_and_register_resource(rtype):
+                if rtype == "folder":
+                    folder_name = tempfile.mkdtemp()
+                    # tempfile.mkdtemp() does not register the created folder
+                    # automatically.
+                    resource_tracker.register(folder_name, rtype)
+                    return None, folder_name
+                elif rtype == "semaphore":
+                    # create a Lock using the low-level _multiprocessing to
+                    # separate resource creation from tracking registration.
+                    lock = mp.Lock()
+                    return lock, lock._semlock.name
+                else:
+                    raise ValueError(
+                        "Resource type {{}} not understood".format(rtype))
+
+
+            resource1, rname1 = create_and_register_resource("{rtype}")
+            resource2, rname2 = create_and_register_resource("{rtype}")
+
+            os.write({w}, rname1.encode("ascii") + b"\\n")
+            os.write({w}, rname2.encode("ascii") + b"\\n")
+
             time.sleep(10)
         '''
-        r, w = os.pipe()
-        p = subprocess.Popen([sys.executable,
-                             '-E', '-c', cmd % (w, w)],
-                             pass_fds=[w],
-                             stderr=subprocess.PIPE)
-        os.close(w)
-        with open(r, 'rb', closefd=True) as f:
-            name1 = f.readline().rstrip().decode('ascii')
-            name2 = f.readline().rstrip().decode('ascii')
-        _multiprocessing.sem_unlink(name1)
-        p.terminate()
-        p.wait()
-        time.sleep(2.0)
-        with self.assertRaises(OSError) as ctx:
-            _multiprocessing.sem_unlink(name2)
-        # docs say it should be ENOENT, but OSX seems to give EINVAL
-        self.assertIn(ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
-        err = p.stderr.read().decode('utf-8')
-        p.stderr.close()
-        expected = 'resource_tracker: There appear to be 2 leaked semaphores'
-        self.assertRegex(err, expected)
-        self.assertRegex(err, r'resource_tracker: %r: \[Errno' % name1)
+        for rtype in resource_tracker._CLEANUP_FUNCS:
+            with self.subTest(rtype=rtype):
+                r, w = os.pipe()
+                p = subprocess.Popen([sys.executable,
+                                     '-E', '-c', cmd.format(w=w, rtype=rtype)],
+                                     pass_fds=[w],
+                                     stderr=subprocess.PIPE)
+                os.close(w)
+                with open(r, 'rb', closefd=True) as f:
+                    name1 = f.readline().rstrip().decode('ascii')
+                    name2 = f.readline().rstrip().decode('ascii')
+                _resource_unlink(name1, rtype)
+                p.terminate()
+                p.wait()
+                time.sleep(2.0)
+                with self.assertRaises(OSError) as ctx:
+                    _resource_unlink(name2, rtype)
+                # docs say it should be ENOENT, but OSX seems to give EINVAL
+                self.assertIn(
+                    ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
+                err = p.stderr.read().decode('utf-8')
+                p.stderr.close()
+                expected = (
+                    'resource_tracker: There appear to be 2 leaked {}s'.format(
+                            rtype))
+                self.assertRegex(err, expected)
+                self.assertRegex(err, r'resource_tracker: %r: \[Errno' % name1)
 
     def check_resource_tracker_death(self, signum, should_die):
         # bpo-31310: if the semaphore tracker process has died, it should
