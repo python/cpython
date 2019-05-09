@@ -510,9 +510,8 @@ Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 unicodedata
 -----------
 
-* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.0.0
-  <http://blog.unicode.org/2019/03/announcing-unicode-standard-version-120.html>`_
-  release.
+* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.1.0
+  <http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 * New function :func:`~unicodedata.is_normalized` can be used to verify a string
   is in a specific normal form. (Contributed by Max Belanger and David Euresti in
