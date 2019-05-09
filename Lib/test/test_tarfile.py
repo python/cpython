@@ -2580,6 +2580,70 @@ class Bz2PartialReadTest(Bz2Test, unittest.TestCase):
         self._test_partial_input("r:bz2")
 
 
+class SymlinkOverwriteTest(unittest.TestCase):
+    # The testcase checks for correct overwriting of an
+    # existing symlink (issue #12800)
+
+    @support.skip_unless_symlink
+    def test_overwrite_symlink(self):
+        tmpdir = support.temp_cwd('overwrite_symlink')
+        source = 'source'
+        link = 'link'
+        try:
+            with open(source, 'wb'):
+                pass
+            os.symlink(source, link)
+            with tarfile.open(tmpname, 'w') as tar:
+                tar.add(source, arcname=os.path.basename(source))
+                tar.add(link, arcname=os.path.basename(link))
+
+            with open(tmpname, 'rb') as fileobj:
+                with tarfile.open(fileobj=fileobj, mode='r|') as tar:
+                    tar.extractall(path=support.SAVEDCWD)
+        finally:
+            try:
+                os.unlink(link)
+            except:
+                pass
+
+            try:
+                os.unlink(source)
+            except:
+                pass
+
+    @support.skip_unless_symlink
+    def test_overwrite_file_with_symlink(self):
+        tmpdir = support.temp_cwd('overwrite_file_with_symlink')
+        source = 'source'
+        link = 'link'
+        try:
+            with open(source, 'wb'):
+                pass
+            os.symlink(source, link)
+            with tarfile.open(tmpname, 'w') as tar:
+                tar.add(source, arcname=os.path.basename(source))
+                tar.add(link, arcname=os.path.basename(link))
+
+            os.unlink(link)
+
+            with open(link, 'wb'):
+                pass
+
+            with open(tmpname, 'rb') as fileobj:
+                with tarfile.open(fileobj=fileobj, mode='r|') as tar:
+                    tar.extractall(path=support.SAVEDCWD)
+        finally:
+            try:
+                os.unlink(link)
+            except:
+                pass
+
+            try:
+                os.unlink(source)
+            except:
+                pass
+
+
 def root_is_uid_gid_0():
     try:
         import pwd, grp
