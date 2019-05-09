@@ -16,6 +16,7 @@
 # resources.
 
 import os
+import shutil
 import signal
 import sys
 import threading
@@ -29,6 +30,11 @@ __all__ = ['ensure_running', 'register', 'unregister']
 
 _HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
 _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
+
+_CLEANUP_FUNCS = {
+    'folder': shutil.rmtree,
+    'semaphore': _multiprocessing.sem_unlink
+}
 
 
 class ResourceTracker(object):
@@ -111,23 +117,23 @@ class ResourceTracker(object):
         try:
             # We cannot use send here as it calls ensure_running, creating
             # a cycle.
-            os.write(self._fd, b'PROBE:0\n')
+            os.write(self._fd, b'PROBE:0:folder\n')
         except OSError:
             return False
         else:
             return True
 
-    def register(self, name):
+    def register(self, name, rtype):
         '''Register name of resource with resource tracker.'''
-        self._send('REGISTER', name)
+        self._send('REGISTER', name, rtype)
 
-    def unregister(self, name):
+    def unregister(self, name, rtype):
         '''Unregister name of resource with resource tracker.'''
-        self._send('UNREGISTER', name)
+        self._send('UNREGISTER', name, rtype)
 
-    def _send(self, cmd, name):
+    def _send(self, cmd, name, rtype):
         self.ensure_running()
-        msg = '{0}:{1}\n'.format(cmd, name).encode('ascii')
+        msg = '{0}:{1}:{2}\n'.format(cmd, name, rtype).encode('ascii')
         if len(name) > 512:
             # posix guarantees that writes to a pipe of less than PIPE_BUF
             # bytes are atomic, and that PIPE_BUF >= 512
@@ -157,18 +163,24 @@ def main(fd):
         except Exception:
             pass
 
-    cache = set()
+    cache = {rtype: set() for rtype in _CLEANUP_FUNCS.keys()}
     try:
         # keep track of registered/unregistered resources
         with open(fd, 'rb') as f:
             for line in f:
                 try:
-                    cmd, name = line.strip().split(b':')
-                    if cmd == b'REGISTER':
-                        cache.add(name)
-                    elif cmd == b'UNREGISTER':
-                        cache.remove(name)
-                    elif cmd == b'PROBE':
+                    cmd, name, rtype = line.strip().decode('ascii').split(':')
+                    cleanup_func = _CLEANUP_FUNCS.get(rtype, None)
+                    if cleanup_func is None:
+                        raise ValueError('Cannot register for automatic '
+                                         'cleanup: unknown resource type {}'
+                                         .format(name, rtype))
+
+                    if cmd == 'REGISTER':
+                        cache[rtype].add(name)
+                    elif cmd == 'UNREGISTER':
+                        cache[rtype].remove(name)
+                    elif cmd == 'PROBE':
                         pass
                     else:
                         raise RuntimeError('unrecognized command %r' % cmd)
@@ -179,22 +191,22 @@ def main(fd):
                         pass
     finally:
         # all processes have terminated; cleanup any remaining resources
-        if cache:
-            try:
-                warnings.warn('resource_tracker: There appear to be %d '
-                              'leaked resources to clean up at shutdown' %
-                              len(cache))
-            except Exception:
-                pass
-        for name in cache:
-            # For some reason the process which created and registered this
-            # resource has failed to unregister it. Presumably it has died.
-            # We therefore unlink it.
-            try:
-                name = name.decode('ascii')
+        for rtype, rtype_cache in cache.items():
+            if rtype_cache:
                 try:
-                    _multiprocessing.sem_unlink(name)
-                except Exception as e:
-                    warnings.warn('resource_tracker: %r: %s' % (name, e))
-            finally:
-                pass
+                    warnings.warn('resource_tracker: There appear to be %d '
+                                  'leaked %ss to clean up at shutdown' %
+                                  (len(rtype_cache), rtype))
+                except Exception:
+                    pass
+            for name in rtype_cache:
+                # For some reason the process which created and registered this
+                # resource has failed to unregister it. Presumably it has
+                # died.  We therefore unlink it.
+                try:
+                    try:
+                        _CLEANUP_FUNCS[rtype](name)
+                    except Exception as e:
+                        warnings.warn('resource_tracker: %s: %r' % (name, e))
+                finally:
+                    pass
