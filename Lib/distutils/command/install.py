@@ -445,9 +445,7 @@ class install(Command):
             self.select_scheme("unix_home")
         else:
             if self.prefix is None:
-                prefix = (get_config_vars().get('prefix') if
-                          cross_compiling else sys.prefix)
-                self.prefix = os.path.normpath(prefix)
+                self.prefix = os.path.normpath(sys.prefix)
 
             self.install_base = self.install_platbase = self.prefix
             try:

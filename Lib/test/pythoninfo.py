@@ -286,9 +286,7 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
-        "_PYTHON_HOST_PLATFORM",
-        "_PYTHON_PROJECT_BASE",
-        "_PYTHON_SYSCONFIGDATA_NAME",
+        "PYTHON_PROJECT_BASE",
         "__PYVENV_LAUNCHER__",
     ))
     for name, value in os.environ.items():

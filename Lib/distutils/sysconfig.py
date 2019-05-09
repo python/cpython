@@ -13,11 +13,10 @@ import _imp
 import os
 import re
 import sys
+import pathlib
 
-from sysconfig import (cross_compiling, get_cross_build_var,
-                       get_build_time_vars)
+from sysconfig import cross_compiling, get_project_base, get_build_time_vars
 from .errors import DistutilsPlatformError
-from .util import get_platform, get_host_platform
 
 # These are needed in a couple of spots, so just compute them once.
 PREFIX = os.path.normpath(sys.prefix)
@@ -25,13 +24,32 @@ EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 BASE_PREFIX = os.path.normpath(sys.base_prefix)
 BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 
+def fix_cross_build_paths(project_base):
+    build_time_vars = get_build_time_vars()
+    pbase = pathlib.Path(project_base)
+    prefix = build_time_vars['prefix']
+    pfx = pathlib.Path(prefix)
+    try:
+        # A staged install that is the result of 'make install'
+        # with DESTDIR set.
+        destdir = pbase.parents[len(pfx.parts) - 2]
+        staged_install = (destdir.joinpath(pfx.relative_to('/')) == pbase)
+    except (ValueError, IndexError):
+        staged_install = False
+
+    exec_prefix = build_time_vars['exec_prefix']
+    if staged_install:
+        prefix = project_base
+        epfx = pathlib.Path(exec_prefix)
+        exec_prefix = str(destdir.joinpath(epfx.relative_to('/')))
+    return prefix, exec_prefix
+
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCbuild/win32 or project/PCbuild/amd64.
 # set for cross builds
 if cross_compiling:
-    project_base = get_cross_build_var('project_base')
-    PREFIX = get_cross_build_var('prefix')
-    EXEC_PREFIX = get_cross_build_var('exec-prefix')
+    project_base = get_project_base()
+    PREFIX, EXEC_PREFIX = fix_cross_build_paths(project_base)
     BASE_PREFIX = PREFIX
     BASE_EXEC_PREFIX = EXEC_PREFIX
 else:
@@ -52,7 +70,7 @@ def _is_python_source_dir(d):
             return True
     return False
 
-_sys_home = getattr(sys, '_home', None)
+_sys_home = getattr(sys, '_home', None) if not cross_compiling else None
 
 if os.name == 'nt':
     def _fix_pcbuild(d):
@@ -75,14 +93,16 @@ python_build = _python_build()
 # to the include and lib directories only makes sense for an installation, not
 # an in-source build.
 build_flags = ''
-try:
-    if not python_build:
-        build_flags = (get_cross_build_var('abiflags') if cross_compiling else
-                       sys.abiflags)
-except AttributeError:
-    # It's not a configure-based build, so the sys module doesn't have
-    # this attribute, which is fine.
-    pass
+if not python_build:
+    if cross_compiling:
+        build_flags = get_build_time_vars()['ABIFLAGS']
+    else:
+        try:
+            build_flags = sys.abiflags
+        except AttributeError:
+            # It's not a configure-based build, so the sys module doesn't have
+            # this attribute, which is fine.
+            pass
 
 def get_python_version():
     """Return a string containing the major and minor Python version,
@@ -263,7 +283,7 @@ def get_makefile_filename():
         return os.path.join(_sys_home or project_base, "Makefile")
     lib_dir = get_python_lib(plat_specific=0, standard_lib=1)
     config_file = 'config-{}{}'.format(get_python_version(), build_flags)
-    multiarch = (get_cross_build_var('multiarch') if cross_compiling else
+    multiarch = (get_config_var('MULTIARCH') if cross_compiling else
                  getattr(sys.implementation, '_multiarch', ''))
     if multiarch:
         config_file += '-%s' % multiarch
@@ -488,6 +508,8 @@ def get_config_vars(*args):
         # Distutils.
         _config_vars['prefix'] = PREFIX
         _config_vars['exec_prefix'] = EXEC_PREFIX
+        if cross_compiling:
+            _config_vars['LIBDIR'] = os.path.join(EXEC_PREFIX, 'lib')
 
         # For backward compatibility, see issue19555
         SO = _config_vars.get('EXT_SUFFIX')
@@ -530,9 +552,6 @@ def get_config_vars(*args):
         if sys.platform == 'darwin':
             import _osx_support
             _osx_support.customize_config_vars(_config_vars)
-
-        if cross_compiling:
-            _config_vars['LIBDIR'] = get_cross_build_var('libdir')
 
     if args:
         vals = []

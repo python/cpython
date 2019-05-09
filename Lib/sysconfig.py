@@ -114,66 +114,64 @@ if (os.name == 'nt' and
     _PROJECT_BASE.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
     _PROJECT_BASE = _safe_realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
 
+cross_compiling = False
+# set for cross builds
+if "PYTHON_PROJECT_BASE" in os.environ:
+    cross_compiling = True
+    _PROJECT_BASE = _safe_realpath(os.environ["PYTHON_PROJECT_BASE"])
+
+    # Not used when cross compiling.
+    _PREFIX = None
+    _BASE_PREFIX = None
+    _EXEC_PREFIX = None
+    _BASE_EXEC_PREFIX = None
+
+def get_project_base():
+    return _PROJECT_BASE
+
 def _is_python_source_dir(d):
     for fn in ("Setup", "Setup.local"):
         if os.path.isfile(os.path.join(d, "Modules", fn)):
             return True
     return False
 
-_cross_build_vars = None
-def get_cross_build_var(name):
-    """Return the value of the 'name' variable."""
+_PYTHON_CONFIG = None
+def _get_python_config(name):
+    """Return the value of a python configuration variable."""
 
-    global _cross_build_vars
+    assert cross_compiling
+    global _PYTHON_CONFIG
+    if _PYTHON_CONFIG is None:
+        # The import would fail when building a native interpreter since,
+        # at the time generate-posix-vars is run, the _posixsubprocess
+        # module has not been built yet. This does not happen when
+        # generate-posix-vars is run during cross-compilation as the
+        # native interpreter being used is a full-fledged interpreter.
+        import subprocess
 
-    if _cross_build_vars is None:
-        _cross_build_vars = {}
-        if 'CROSS_BUILD_PYTHON_DIR' in os.environ:
-            # The import would fail when building a native interpreter since,
-            # at the time generate-posix-vars is run, the _posixsubprocess
-            # module has not been built yet. This does not happen when
-            # generate-posix-vars is run during cross-compilation as the
-            # native interpreter being used is a full-fledged interpreter.
-            import subprocess
+        if _is_python_source_dir(_PROJECT_BASE):
+            python_config = os.path.join(_PROJECT_BASE, 'python-config')
+        else:
+            python_config = os.path.join(_PROJECT_BASE, 'bin',
+                                         'python3-config')
 
-            pyconf_dir = _safe_realpath(os.environ['CROSS_BUILD_PYTHON_DIR'])
-            if _is_python_source_dir(pyconf_dir):
-                python_build = True
-                python_config = os.path.join(pyconf_dir, 'python-config')
-            else:
-                python_build = False
-                python_config = os.path.join(pyconf_dir, 'bin',
-                                             'python3-config')
+        vars_ = ['version', 'abiflags', 'machdep', 'multiarch']
+        args = ['/bin/sh', python_config]
+        args.extend('--' + v for v in vars_)
+        output = subprocess.check_output(args, universal_newlines=True)
+        _PYTHON_CONFIG = dict(zip(vars_, output.split('\n')))
+        assert len(_PYTHON_CONFIG) == len(vars_)
 
-            vars_ = ['host_platform', 'version', 'abiflags', 'machdep',
-                     'multiarch', 'prefix', 'exec-prefix', 'libdir']
-            args = ['sh', python_config]
-            args.extend('--' + v for v in vars_)
-            output = subprocess.check_output(args, universal_newlines=True)
-            _cross_build_vars = dict(zip(vars_, output.split('\n')))
-            assert len(_cross_build_vars) == len(vars_)
-            d = _cross_build_vars
-            d['project_base'] = (pyconf_dir if
-                                 python_build else d['prefix'])
+        # The specification of the sysconfigdata file name may differ
+        # across versions, so forbid Python versions mismatch.
+        sys_version = '%d.%d' % sys.version_info[:2]
+        if _PYTHON_CONFIG['version'] != sys_version:
+            raise RuntimeError('the running python version (%s) does '
+            'not match the cross-compiled version (%s)' %
+            (sys_version, _PYTHON_CONFIG['version']))
+    return _PYTHON_CONFIG.get(name)
 
-            # The specification of the sysconfigdata file name may differ
-            # across versions, forbid Python versions mismatch.
-            sys_version = '%d.%d' % sys.version_info[:2]
-            if d['version'] != sys_version:
-                raise RuntimeError('the running python version (%s) does '
-                'not match the cross-compiled version (%s)' %
-                (sys_version, d['version']))
-
-    return _cross_build_vars.get(name)
-
-cross_compiling = False
-# set for cross builds
-_cross_build_project_base = get_cross_build_var('project_base')
-if _cross_build_project_base is not None:
-    _PROJECT_BASE = _cross_build_project_base
-    cross_compiling = True
-
-_sys_home = getattr(sys, '_home', None)
+_sys_home = getattr(sys, '_home', None) if not cross_compiling else None
 
 if os.name == 'nt':
     def _fix_pcbuild(d):
@@ -383,6 +381,8 @@ def get_makefile_filename():
     """Return the path of the Makefile."""
     if _PYTHON_BUILD:
         return os.path.join(_sys_home or _PROJECT_BASE, "Makefile")
+
+    assert not cross_compiling
     if hasattr(sys, 'abiflags'):
         config_dir_name = 'config-%s%s' % (_PY_VERSION_SHORT, sys.abiflags)
     else:
@@ -394,9 +394,9 @@ def get_makefile_filename():
 
 def _get_sysconfigdata_name():
     if cross_compiling:
-        abiflags = get_cross_build_var('abiflags')
-        platform = get_cross_build_var('machdep')
-        multiarch = get_cross_build_var('multiarch')
+        abiflags = _get_python_config('abiflags')
+        platform = _get_python_config('machdep')
+        multiarch = _get_python_config('multiarch')
     else:
         abiflags = sys.abiflags
         platform = sys.platform
@@ -447,15 +447,17 @@ def _generate_posix_vars():
     # _sysconfigdata module manually and populate it with the build vars.
     # This is more than sufficient for ensuring the subsequent call to
     # get_platform() succeeds.
+    # The same situation exists when cross compiling.
     name = _get_sysconfigdata_name()
-    if 'darwin' in sys.platform:
+    if 'darwin' in sys.platform or cross_compiling:
         import types
         module = types.ModuleType(name)
         module.build_time_vars = vars
         sys.modules[name] = module
 
     pybuilddir = 'build/lib.%s-%s' % (get_platform(), _PY_VERSION_SHORT)
-    if hasattr(sys, "gettotalrefcount"):
+    if (cross_compiling and 'd' in vars['ABIFLAGS'] or
+            (not cross_compiling and hasattr(sys, "gettotalrefcount"))):
         pybuilddir += '-pydebug'
     os.makedirs(pybuilddir, exist_ok=True)
     destfile = os.path.join(pybuilddir, name + '.py')
@@ -470,27 +472,35 @@ def _generate_posix_vars():
     with open('pybuilddir.txt', 'w', encoding='utf8') as f:
         f.write(pybuilddir)
 
+def _get_module_attr(module, attribute):
+    _temp = __import__(module, globals(), locals(), [attribute], 0)
+    return getattr(_temp, attribute)
+
+_BUILD_TIME_VARS = None
 def get_build_time_vars():
-    # _sysconfigdata is generated at build time, see _generate_posix_vars()
-    name = _get_sysconfigdata_name()
-    if cross_compiling:
-        if _is_python_source_dir(_PROJECT_BASE):
-            bdir = os.path.join(_PROJECT_BASE, 'pybuilddir.txt')
-            with open(bdir, encoding='ascii') as f:
-                libdir = f.read().strip()
-            libdir = os.path.join(_PROJECT_BASE, libdir)
+    global _BUILD_TIME_VARS
+    if _BUILD_TIME_VARS is None:
+        # _sysconfigdata is generated at build time, see _generate_posix_vars()
+        sysconfigdata = _get_sysconfigdata_name()
+        if cross_compiling:
+            if _is_python_source_dir(_PROJECT_BASE):
+                bdir = os.path.join(_PROJECT_BASE, 'pybuilddir.txt')
+                with open(bdir, encoding='ascii') as f:
+                    libdir = f.read().strip()
+                libdir = os.path.join(_PROJECT_BASE, libdir)
+            else:
+                libdir = os.path.join(_PROJECT_BASE,
+                           'lib', 'python%s' % _get_python_config('version'))
+            sys.path.insert(0, libdir)
+            try:
+                _BUILD_TIME_VARS =  _get_module_attr(sysconfigdata,
+                                                     'build_time_vars')
+            finally:
+                sys.path.pop(0)
         else:
-            libdir = os.path.join(get_cross_build_var('prefix'),
-                       'lib', 'python%s' % get_cross_build_var('version'))
-        sysconf = os.path.join(libdir, name + '.py')
-        with open(sysconf) as f:
-            code = f.read()
-        locals_ = {}
-        exec(code, globals(), locals_)
-        return locals_['build_time_vars']
-    else:
-        _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
-        return _temp.build_time_vars
+            _BUILD_TIME_VARS =  _get_module_attr(sysconfigdata,
+                                                 'build_time_vars')
+    return _BUILD_TIME_VARS
 
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
@@ -697,6 +707,9 @@ def get_platform():
     For other non-POSIX platforms, currently just returns 'sys.platform'.
 
     """
+    if cross_compiling:
+        return get_config_var('PYTHON_HOST_PLATFORM')
+
     if os.name == 'nt':
         if 'amd64' in sys.version.lower():
             return 'win-amd64'

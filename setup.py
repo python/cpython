@@ -10,7 +10,7 @@ import sys
 import sysconfig
 from glob import glob
 
-from sysconfig import CROSS_COMPILING
+from sysconfig import cross_compiling as CROSS_COMPILING
 from distutils import log
 from distutils.command.build_ext import build_ext
 from distutils.command.build_scripts import build_scripts
@@ -30,7 +30,8 @@ DISABLED_MODULE_LIST = []
 
 def get_platform():
     if CROSS_COMPILING:
-        return sysconfig.get_cross_build_var('host_platform')
+        return sysconfig.get_config_var('PYTHON_HOST_PLATFORM')
+
     # Get value of sys.platform
     if sys.platform.startswith('osf1'):
         return 'osf1'

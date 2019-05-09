@@ -575,6 +575,8 @@ platform: $(BUILDPYTHON) pybuilddir.txt
 # problems by creating a dummy pybuilddir.txt just to allow interpreter
 # initialization to succeed.  It will be overwritten by generate-posix-vars
 # or removed in case of failure.
+# python-config is a prerequisite as it is used when generating the posix
+# variables if cross-compiling.
 pybuilddir.txt: python-config $(BUILDPYTHON)
 	@echo "none" > ./pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars ;\
@@ -1455,7 +1457,7 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	done
 	sysconf_name=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP); \
 		if test -n "$(MULTIARCH)"; then \
-			sysconf_name=$$sysconf_name_$(MULTIARCH); \
+			sysconf_name=$${sysconf_name}_$(MULTIARCH); \
 		fi; \
 		$(INSTALL_DATA) `cat pybuilddir.txt`/$$sysconf_name.py \
 			$(DESTDIR)$(LIBDEST)
@@ -1615,7 +1617,7 @@ sharedinstall: sharedmods
 		--root=$(DESTDIR)/
 	-sysconf_name=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP); \
 		if test -n "$(MULTIARCH)"; then \
-			sysconf_name=$$sysconf_name_$(MULTIARCH); \
+			sysconf_name=$${sysconf_name}_$(MULTIARCH); \
 		fi; \
 		rm $(DESTDIR)$(DESTSHARED)/$$sysconf_name.py
 	-rm -r $(DESTDIR)$(DESTSHARED)/__pycache__

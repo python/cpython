@@ -237,7 +237,11 @@ class build_ext(Command):
                 self.library_dirs.append(sysconfig.get_config_var('LIBDIR'))
             else:
                 # building python standard extensions
-                self.library_dirs.append('.')
+                if 'PYTHON_PROJECT_BASE' in os.environ:
+                    self.library_dirs.append(os.path.realpath(
+                                os.environ['PYTHON_PROJECT_BASE']))
+                else:
+                    self.library_dirs.append('.')
 
         # The argument parsing will result in self.define being a string, but
         # it has to be a list of 2-tuples.  All the preprocessor symbols
@@ -732,7 +736,7 @@ class build_ext(Command):
                     link_libpython = True
                 elif sys.platform == 'cygwin':
                     link_libpython = True
-                elif '_PYTHON_HOST_PLATFORM' in os.environ:
+                elif 'PYTHON_PROJECT_BASE' in os.environ:
                     # We are cross-compiling for one of the relevant platforms
                     if get_config_var('ANDROID_API_LEVEL') != 0:
                         link_libpython = True

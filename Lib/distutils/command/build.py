@@ -6,6 +6,7 @@ import sys, os
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError
 from distutils.util import get_platform
+from distutils.sysconfig import cross_compiling, get_config_var
 
 
 def show_compilers():
@@ -86,7 +87,8 @@ class build(Command):
         # Make it so Python 2.x and Python 2.x with --with-pydebug don't
         # share the same build directories. Doing so confuses the build
         # process for C modules
-        if hasattr(sys, 'gettotalrefcount'):
+        if (cross_compiling and 'd' in get_config_var('ABIFLAGS') or
+                (not cross_compiling and hasattr(sys, "gettotalrefcount"))):
             plat_specifier += '-pydebug'
 
         # 'build_purelib' and 'build_platlib' just default to 'lib' and
