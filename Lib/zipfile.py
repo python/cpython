@@ -2218,11 +2218,13 @@ class Path:
     def __repr__(self):
         return self.__repr.format(self=self)
 
-    def __truediv__(self, add):
+    def joinpath(self, add):
         next = posixpath.join(self.at, add)
         next_dir = posixpath.join(self.at, add, "")
         names = self._names()
         return self._next(next_dir if next not in names and next_dir in names else next)
+
+    __truediv__ = joinpath
 
     @staticmethod
     def _add_implied_dirs(names):
@@ -2231,6 +2233,13 @@ class Path:
             for name in map(posixpath.dirname, names)
             if name and name + "/" not in names
         ]
+
+    @property
+    def parent(self):
+        parent_at = posixpath.dirname(self.at)
+        if parent_at:
+            parent_at += '/'
+        return self._next(parent_at)
 
     def _names(self):
         return self._add_implied_dirs(self.root.namelist())
