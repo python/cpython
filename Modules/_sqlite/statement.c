@@ -58,7 +58,7 @@ int pysqlite_statement_is_dml(sqlite3_stmt *st, const char *sql)
     int is_dml = 0;
 
 #ifdef HAVE_SQLITE3_STMT_READONLY
-    is_dml = ! sqlite3_stmt_readonly(st);
+    is_dml = !sqlite3_stmt_readonly(st);
     if (is_dml) {
         /* Retain backwards-compatibility, as sqlite3_stmt_readonly will return
          * false for BEGIN [IMMEDIATE|EXCLUSIVE] or DDL statements.
@@ -79,7 +79,10 @@ int pysqlite_statement_is_dml(sqlite3_stmt *st, const char *sql)
         }
     }
 #else
-    /* Original implementation. */
+    /* Determine if the statement is a DML statement. SELECT is the only
+     * exception. This is a fallback for older versions of SQLite which do not
+     * support the sqlite3_stmt_readonly() API.
+     */
     for (p = sql; *p != 0; p++) {
         switch (*p) {
             case ' ':
