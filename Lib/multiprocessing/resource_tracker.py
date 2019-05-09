@@ -1,3 +1,6 @@
+###############################################################################
+# Server process to keep track of unlinked resources (like shared memory
+# segments, semaphores etc.) and clean them.
 #
 # On Unix we run a server process which keeps track of unlinked
 # resources. The server ignores SIGINT and SIGTERM and reads from a
@@ -5,11 +8,12 @@
 # end of the pipe, so we get EOF when all other processes have exited.
 # Then the server process unlinks any remaining resource names.
 #
-# This is important because the system only supports a limited number
-# of named resources, and they will not be automatically removed till
-# the next reboot.  Without this resource tracker process, "killall
-# python" would probably leave unlinked resources.
-#
+# This is important because there may be system limits for such resources: for
+# instance, the system only supports a limited number of named semaphores, and
+# shared-memory segments live in the RAM. If a python process leaks such a
+# resoucre, this resource will not be removed till the next reboot.  Without
+# this resource tracker process, "killall python" would probably leave unlinked
+# resources.
 
 import os
 import signal
