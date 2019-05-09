@@ -104,6 +104,10 @@ class ThreadTests(BaseTestCase):
             self.assertRegex(repr(t), r'^<TestThread\(.*, initial\)>$')
             t.start()
 
+        tids = set(t.tid for t in threads) | {threading.get_tid()}
+        self.assertNotIn(None, tids)
+        self.assertEqual(len(tids), NUMTASKS + 1)
+
         if verbose:
             print('waiting for all tasks to complete')
         for t in threads:
