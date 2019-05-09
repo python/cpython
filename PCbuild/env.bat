@@ -10,6 +10,7 @@ rem 'v110', 'v120' or 'v140') to the build script.
 echo Build environments: x86, amd64, x86_amd64
 echo.
 set VSTOOLS=%VS140COMNTOOLS%
+if "%VSTOOLS%"=="" set VSTOOLS=%VS160COMNTOOLS%
 if "%VSTOOLS%"=="" set VSTOOLS=%VS120COMNTOOLS%
 if "%VSTOOLS%"=="" set VSTOOLS=%VS110COMNTOOLS%
 if "%VSTOOLS%"=="" set VSTOOLS=%VS100COMNTOOLS%
