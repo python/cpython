@@ -2995,6 +2995,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             size_t len = strlen(old_doc)+1;
             char *tp_doc = PyObject_MALLOC(len);
             if (tp_doc == NULL) {
+                type->tp_doc = NULL;
                 PyErr_NoMemory();
                 goto fail;
             }
