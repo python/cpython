@@ -212,7 +212,13 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
 static Py_ssize_t
 range_length(rangeobject *r)
 {
-    return PyLong_AsSsize_t(r->length);
+    Py_ssize_t size = PyLong_AsSsize_t(r->length);
+    if (size < 0 && PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_OverflowError)) {
+        PyErr_Clear();
+        PyErr_Format(PyExc_ValueError, "Range object too large to calculate length (Overflow Error)");
+        return -1;
+    }
+    return size;
 }
 
 static PyObject *
