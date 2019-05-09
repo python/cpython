@@ -15,8 +15,6 @@ import errno
 import struct
 import secrets
 
-from . import util
-
 if os.name == "nt":
     import _winapi
     _USE_POSIX = False
