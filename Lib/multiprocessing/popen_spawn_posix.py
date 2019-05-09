@@ -36,8 +36,8 @@ class Popen(popen_fork.Popen):
         return fd
 
     def _launch(self, process_obj):
-        from . import semaphore_tracker
-        tracker_fd = semaphore_tracker.getfd()
+        from . import resource_tracker
+        tracker_fd = resource_tracker.getfd()
         self._fds.append(tracker_fd)
         prep_data = spawn.get_preparation_data(process_obj._name)
         fp = io.BytesIO()

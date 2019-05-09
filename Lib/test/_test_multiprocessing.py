@@ -4803,9 +4803,9 @@ class TestStartMethod(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32",
                  "test semantics don't make sense on Windows")
-class TestSemaphoreTracker(unittest.TestCase):
+class TestResourceTracker(unittest.TestCase):
 
-    def test_semaphore_tracker(self):
+    def test_resource_tracker(self):
         #
         # Check that killing process does not leak named semaphores
         #
@@ -4838,22 +4838,22 @@ class TestSemaphoreTracker(unittest.TestCase):
         self.assertIn(ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
         err = p.stderr.read().decode('utf-8')
         p.stderr.close()
-        expected = 'semaphore_tracker: There appear to be 2 leaked semaphores'
+        expected = 'resource_tracker: There appear to be 2 leaked semaphores'
         self.assertRegex(err, expected)
-        self.assertRegex(err, r'semaphore_tracker: %r: \[Errno' % name1)
+        self.assertRegex(err, r'resource_tracker: %r: \[Errno' % name1)
 
-    def check_semaphore_tracker_death(self, signum, should_die):
+    def check_resource_tracker_death(self, signum, should_die):
         # bpo-31310: if the semaphore tracker process has died, it should
         # be restarted implicitly.
-        from multiprocessing.semaphore_tracker import _semaphore_tracker
-        pid = _semaphore_tracker._pid
+        from multiprocessing.resource_tracker import _resource_tracker
+        pid = _resource_tracker._pid
         if pid is not None:
             os.kill(pid, signal.SIGKILL)
             os.waitpid(pid, 0)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            _semaphore_tracker.ensure_running()
-        pid = _semaphore_tracker._pid
+            _resource_tracker.ensure_running()
+        pid = _resource_tracker._pid
 
         os.kill(pid, signum)
         time.sleep(1.0)  # give it time to die
@@ -4874,50 +4874,50 @@ class TestSemaphoreTracker(unittest.TestCase):
                 self.assertEqual(len(all_warn), 1)
                 the_warn = all_warn[0]
                 self.assertTrue(issubclass(the_warn.category, UserWarning))
-                self.assertTrue("semaphore_tracker: process died"
+                self.assertTrue("resource_tracker: process died"
                                 in str(the_warn.message))
             else:
                 self.assertEqual(len(all_warn), 0)
 
-    def test_semaphore_tracker_sigint(self):
+    def test_resource_tracker_sigint(self):
         # Catchable signal (ignored by semaphore tracker)
-        self.check_semaphore_tracker_death(signal.SIGINT, False)
+        self.check_resource_tracker_death(signal.SIGINT, False)
 
-    def test_semaphore_tracker_sigterm(self):
+    def test_resource_tracker_sigterm(self):
         # Catchable signal (ignored by semaphore tracker)
-        self.check_semaphore_tracker_death(signal.SIGTERM, False)
+        self.check_resource_tracker_death(signal.SIGTERM, False)
 
-    def test_semaphore_tracker_sigkill(self):
+    def test_resource_tracker_sigkill(self):
         # Uncatchable signal.
-        self.check_semaphore_tracker_death(signal.SIGKILL, True)
+        self.check_resource_tracker_death(signal.SIGKILL, True)
 
     @staticmethod
-    def _is_semaphore_tracker_reused(conn, pid):
-        from multiprocessing.semaphore_tracker import _semaphore_tracker
-        _semaphore_tracker.ensure_running()
+    def _is_resource_tracker_reused(conn, pid):
+        from multiprocessing.resource_tracker import _resource_tracker
+        _resource_tracker.ensure_running()
         # The pid should be None in the child process, expect for the fork
         # context. It should not be a new value.
-        reused = _semaphore_tracker._pid in (None, pid)
-        reused &= _semaphore_tracker._check_alive()
+        reused = _resource_tracker._pid in (None, pid)
+        reused &= _resource_tracker._check_alive()
         conn.send(reused)
 
-    def test_semaphore_tracker_reused(self):
-        from multiprocessing.semaphore_tracker import _semaphore_tracker
-        _semaphore_tracker.ensure_running()
-        pid = _semaphore_tracker._pid
+    def test_resource_tracker_reused(self):
+        from multiprocessing.resource_tracker import _resource_tracker
+        _resource_tracker.ensure_running()
+        pid = _resource_tracker._pid
 
         r, w = multiprocessing.Pipe(duplex=False)
-        p = multiprocessing.Process(target=self._is_semaphore_tracker_reused,
+        p = multiprocessing.Process(target=self._is_resource_tracker_reused,
                                     args=(w, pid))
         p.start()
-        is_semaphore_tracker_reused = r.recv()
+        is_resource_tracker_reused = r.recv()
 
         # Clean up
         p.join()
         w.close()
         r.close()
 
-        self.assertTrue(is_semaphore_tracker_reused)
+        self.assertTrue(is_resource_tracker_reused)
 
 
 class TestSimpleQueue(unittest.TestCase):

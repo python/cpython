@@ -1,14 +1,14 @@
 #
 # On Unix we run a server process which keeps track of unlinked
-# semaphores. The server ignores SIGINT and SIGTERM and reads from a
+# resources. The server ignores SIGINT and SIGTERM and reads from a
 # pipe.  Every other process of the program has a copy of the writable
 # end of the pipe, so we get EOF when all other processes have exited.
-# Then the server process unlinks any remaining semaphore names.
+# Then the server process unlinks any remaining resource names.
 #
 # This is important because the system only supports a limited number
-# of named semaphores, and they will not be automatically removed till
-# the next reboot.  Without this semaphore tracker process, "killall
-# python" would probably leave unlinked semaphores.
+# of named resources, and they will not be automatically removed till
+# the next reboot.  Without this resource tracker process, "killall
+# python" would probably leave unlinked resources.
 #
 
 import os
@@ -27,7 +27,7 @@ _HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
 _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
 
-class SemaphoreTracker(object):
+class ResourceTracker(object):
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -39,13 +39,13 @@ class SemaphoreTracker(object):
         return self._fd
 
     def ensure_running(self):
-        '''Make sure that semaphore tracker process is running.
+        '''Make sure that resource tracker process is running.
 
         This can be run from any process.  Usually a child process will use
-        the semaphore created by its parent.'''
+        the resource created by its parent.'''
         with self._lock:
             if self._fd is not None:
-                # semaphore tracker was launched before, is it still running?
+                # resource tracker was launched before, is it still running?
                 if self._check_alive():
                     # => still alive
                     return
@@ -55,24 +55,24 @@ class SemaphoreTracker(object):
                 # Clean-up to avoid dangling processes.
                 try:
                     # _pid can be None if this process is a child from another
-                    # python process, which has started the semaphore_tracker.
+                    # python process, which has started the resource_tracker.
                     if self._pid is not None:
                         os.waitpid(self._pid, 0)
                 except ChildProcessError:
-                    # The semaphore_tracker has already been terminated.
+                    # The resource_tracker has already been terminated.
                     pass
                 self._fd = None
                 self._pid = None
 
-                warnings.warn('semaphore_tracker: process died unexpectedly, '
-                              'relaunching.  Some semaphores might leak.')
+                warnings.warn('resource_tracker: process died unexpectedly, '
+                              'relaunching.  Some resources might leak.')
 
             fds_to_pass = []
             try:
                 fds_to_pass.append(sys.stderr.fileno())
             except Exception:
                 pass
-            cmd = 'from multiprocessing.semaphore_tracker import main;main(%d)'
+            cmd = 'from multiprocessing.resource_tracker import main;main(%d)'
             r, w = os.pipe()
             try:
                 fds_to_pass.append(r)
@@ -114,11 +114,11 @@ class SemaphoreTracker(object):
             return True
 
     def register(self, name):
-        '''Register name of semaphore with semaphore tracker.'''
+        '''Register name of resource with resource tracker.'''
         self._send('REGISTER', name)
 
     def unregister(self, name):
-        '''Unregister name of semaphore with semaphore tracker.'''
+        '''Unregister name of resource with resource tracker.'''
         self._send('UNREGISTER', name)
 
     def _send(self, cmd, name):
@@ -133,14 +133,14 @@ class SemaphoreTracker(object):
             nbytes, len(msg))
 
 
-_semaphore_tracker = SemaphoreTracker()
-ensure_running = _semaphore_tracker.ensure_running
-register = _semaphore_tracker.register
-unregister = _semaphore_tracker.unregister
-getfd = _semaphore_tracker.getfd
+_resource_tracker = ResourceTracker()
+ensure_running = _resource_tracker.ensure_running
+register = _resource_tracker.register
+unregister = _resource_tracker.unregister
+getfd = _resource_tracker.getfd
 
 def main(fd):
-    '''Run semaphore tracker.'''
+    '''Run resource tracker.'''
     # protect the process from ^C and "killall python" etc
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
@@ -155,7 +155,7 @@ def main(fd):
 
     cache = set()
     try:
-        # keep track of registered/unregistered semaphores
+        # keep track of registered/unregistered resources
         with open(fd, 'rb') as f:
             for line in f:
                 try:
@@ -174,23 +174,23 @@ def main(fd):
                     except:
                         pass
     finally:
-        # all processes have terminated; cleanup any remaining semaphores
+        # all processes have terminated; cleanup any remaining resources
         if cache:
             try:
-                warnings.warn('semaphore_tracker: There appear to be %d '
-                              'leaked semaphores to clean up at shutdown' %
+                warnings.warn('resource_tracker: There appear to be %d '
+                              'leaked resources to clean up at shutdown' %
                               len(cache))
             except Exception:
                 pass
         for name in cache:
             # For some reason the process which created and registered this
-            # semaphore has failed to unregister it. Presumably it has died.
+            # resource has failed to unregister it. Presumably it has died.
             # We therefore unlink it.
             try:
                 name = name.decode('ascii')
                 try:
                     _multiprocessing.sem_unlink(name)
                 except Exception as e:
-                    warnings.warn('semaphore_tracker: %r: %s' % (name, e))
+                    warnings.warn('resource_tracker: %r: %s' % (name, e))
             finally:
                 pass
