@@ -13,7 +13,7 @@ from test import support
 
 from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
-    format_test_result, TestResult)
+    format_test_result, TestResult, is_failed)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration
 
@@ -22,8 +22,12 @@ from test.libregrtest.utils import format_duration
 PROGRESS_UPDATE = 30.0   # seconds
 
 
-def must_stop(result):
-    return result.result in (INTERRUPTED, CHILD_ERROR)
+def must_stop(result, ns):
+    if result.result == INTERRUPTED:
+        return True
+    if ns.failfast and is_failed(result, ns):
+        return True
+    return False
 
 
 def run_test_in_subprocess(testname, ns):
@@ -66,16 +70,22 @@ class MultiprocessIterator:
 
     """A thread-safe iterator over tests for multiprocess mode."""
 
-    def __init__(self, tests):
+    def __init__(self, tests_iter):
         self.lock = threading.Lock()
-        self.tests = tests
+        self.tests_iter = tests_iter
 
     def __iter__(self):
         return self
 
     def __next__(self):
         with self.lock:
-            return next(self.tests)
+            if self.tests_iter is None:
+                raise StopIteration
+            return next(self.tests_iter)
+
+    def stop(self):
+        with self.lock:
+            self.tests_iter = None
 
 
 MultiprocessResult = collections.namedtuple('MultiprocessResult',
@@ -92,23 +102,24 @@ class MultiprocessThread(threading.Thread):
         self._popen = None
 
     def kill(self):
-        if not self.is_alive():
+        popen = self._popen
+        if popen is None:
             return
-        if self._popen is not None:
-            self._popen.kill()
+        print("Kill regrtest worker process %s" % popen.pid)
+        popen.kill()
 
     def _runtest(self, test_name):
         try:
             self.start_time = time.monotonic()
             self.current_test_name = test_name
 
-            popen = run_test_in_subprocess(test_name, self.ns)
-            self._popen = popen
+            self._popen = run_test_in_subprocess(test_name, self.ns)
+            popen = self._popen
             with popen:
                 try:
                     stdout, stderr = popen.communicate()
                 except:
-                    popen.kill()
+                    self.kill()
                     popen.wait()
                     raise
 
@@ -153,7 +164,7 @@ class MultiprocessThread(threading.Thread):
                 mp_result = self._runtest(test_name)
                 self.output.put((False, mp_result))
 
-                if must_stop(mp_result.result):
+                if must_stop(mp_result.result, self.ns):
                     break
             except BaseException:
                 self.output.put((True, traceback.format_exc()))
@@ -255,7 +266,7 @@ class MultiprocessRunner:
         if mp_result.stderr and not self.ns.pgo:
             print(mp_result.stderr, file=sys.stderr, flush=True)
 
-        if must_stop(mp_result.result):
+        if must_stop(mp_result.result, self.ns):
             return True
 
         return False
@@ -280,6 +291,8 @@ class MultiprocessRunner:
             if self.test_timeout is not None:
                 faulthandler.cancel_dump_traceback_later()
 
+        # a test failed (and --failfast is set) or all tests completed
+        self.pending.stop()
         self.wait_workers()
 
 
