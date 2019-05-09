@@ -897,7 +897,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
     tag = elem.tag
     text = elem.text
     if tag is Comment:
-        write("<!--%s-->" % text)
+        write("<!--%s-->" % _escape_cdata(text))
     elif tag is ProcessingInstruction:
         write("<?%s?>" % text)
     else:

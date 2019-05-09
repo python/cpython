@@ -1962,6 +1962,12 @@ class BugsTest(unittest.TestCase):
         ET.register_namespace('test10777', 'http://myuri/')
         ET.register_namespace('test10777', 'http://myuri/')
 
+    def test_issue33303_escape_comment_text(self):
+        elem = ET.Comment()
+        elem.text = 'hi --> bye'
+        s = ET.tostring(elem)
+        self.assertEqual(s, b'<!--hi --&gt; bye-->')
+
     def test_lost_text(self):
         # Issue #25902: Borrowed text can disappear
         class Text:
