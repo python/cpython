@@ -1,0 +1,1 @@
+Added support for discovering Visual Studio 2019 in PCBuild/env.bat
