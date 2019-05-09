@@ -446,9 +446,8 @@ class UnhashableCallbacksTestCase(unittest.TestCase):
 
 class DMLStatementDetectionTestCase(unittest.TestCase):
     """
-    https://bugs.python.org/issue36859
-
-    Use sqlite3_stmt_readonly to determine if the statement is DML or not.
+    Test behavior of sqlite3_stmt_readonly() in determining if a statement is
+    DML or not.
     """
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3),
                      'needs sqlite 3.8.3 or newer')
@@ -495,6 +494,17 @@ class DMLStatementDetectionTestCase(unittest.TestCase):
         curs = conn.execute('select key, val from kv order by key')
         self.assertEqual(curs.fetchall(), [('k1', 11), ('k2', 12)])
         conn.rollback()
+
+    def test_dml_detection_begin_exclusive(self):
+        # sqlite3_stmt_readonly() reports BEGIN EXCLUSIVE as being a
+        # non-read-only statement. To retain compatibility with the
+        # transactional behavior, we add a special exclusion for these
+        # statements.
+        conn = sqlite.connect(':memory:')
+        conn.execute('begin exclusive')
+        self.assertTrue(conn.in_transaction)
+        conn.execute('rollback')
+        self.assertFalse(conn.in_transaction)
 
 
 def suite():
