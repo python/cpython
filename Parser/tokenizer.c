@@ -1518,10 +1518,13 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                             return syntaxerror(tok, "invalid decimal literal");
                         }
                     }
-                    if (c != '0') {
+                    if (isdigit(c)) {
+                        c = tok_nextc(tok);
+                        nonzero = 1;
+                    }
+                    else {
                         break;
                     }
-                    c = tok_nextc(tok);
                 }
                 if (isdigit(c)) {
                     nonzero = 1;
