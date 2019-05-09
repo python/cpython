@@ -796,6 +796,10 @@ The following features and APIs have been removed from Python 3.8:
 * "unicode_internal" codec is removed.
   (Contributed by Inada Naoki in :issue:`36297`.)
 
+* The ``Cache`` and ``Statement`` objects of the :mod:`sqlite3` module are not
+  exposed to the user.
+  (Contributed by Aviv Palivoda in :issue:`30262`.)
+
 
 Porting to Python 3.8
 =====================
