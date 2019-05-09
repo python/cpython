@@ -1133,15 +1133,15 @@ Py_FinalizeEx(void)
         return status;
     }
 
+    /* Get current thread state and interpreter pointer */
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
+
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown();
 
     // Make any remaining pending calls.
     _Py_FinishPendingCalls();
-
-    /* Get current thread state and interpreter pointer */
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyInterpreterState *interp = tstate->interp;
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
@@ -2194,6 +2194,9 @@ wait_for_thread_shutdown(void)
         Py_DECREF(result);
     }
     Py_DECREF(threading);
+
+    // All threading module threads are marked as "done" later
+    // in PyThreadState_Clear().
 }
 
 #define NEXITFUNCS 32
