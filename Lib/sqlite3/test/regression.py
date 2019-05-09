@@ -449,51 +449,55 @@ class DMLStatementDetectionTestCase(unittest.TestCase):
     Test behavior of sqlite3_stmt_readonly() in determining if a statement is
     DML or not.
     """
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3),
-                     'needs sqlite 3.8.3 or newer')
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), 'needs sqlite 3.8.3 or newer')
     def test_dml_detection_cte(self):
         conn = sqlite.connect(':memory:')
-        conn.execute('create table kv ("key" text, "val" integer)')
+        conn.execute('CREATE TABLE kv ("key" TEXT, "val" INTEGER)')
         self.assertFalse(conn.in_transaction)
-        conn.execute('insert into kv (key, val) values (?, ?), (?, ?)',
+        conn.execute('INSERT INTO kv (key, val) VALUES (?, ?), (?, ?)',
                      ('k1', 1, 'k2', 2))
         self.assertTrue(conn.in_transaction)
-
         conn.commit()
         self.assertFalse(conn.in_transaction)
 
-        rc = conn.execute('update kv set val=val + ?', (10,))
+        rc = conn.execute('UPDATE kv SET val=val + ?', (10,))
         self.assertEqual(rc.rowcount, 2)
         self.assertTrue(conn.in_transaction)
         conn.commit()
         self.assertFalse(conn.in_transaction)
 
-        rc = conn.execute('with c(k, v) as (select key, val + ? from kv) '
-                          'update kv set val=(select v from c where k=kv.key)',
-                          (100,))
+        rc = conn.execute(
+            'WITH c(k, v) AS (SELECT key, val + ? FROM kv) '
+            'UPDATE kv SET val=(SELECT v FROM c WHERE k=kv.key)',
+            (100,)
+        )
         self.assertEqual(rc.rowcount, 2)
         self.assertTrue(conn.in_transaction)
 
-        curs = conn.execute('select key, val from kv order by key')
+        curs = conn.execute('SELECT key, val FROM kv ORDER BY key')
         self.assertEqual(curs.fetchall(), [('k1', 111), ('k2', 112)])
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 7, 11),
-                     'needs sqlite 3.7.11 or newer')
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 7, 11), 'needs sqlite 3.7.11 or newer')
     def test_dml_detection_sql_comment(self):
         conn = sqlite.connect(':memory:')
-        conn.execute('create table kv ("key" text, "val" integer)')
-        conn.execute('insert into kv (key, val) values (?, ?), (?, ?)',
+        conn.execute('CREATE TABLE kv ("key" TEXT, "val" INTEGER)')
+        self.assertFalse(conn.in_transaction)
+        conn.execute('INSERT INTO kv (key, val) VALUES (?, ?), (?, ?)',
                      ('k1', 1, 'k2', 2))
         conn.commit()
-
         self.assertFalse(conn.in_transaction)
-        rc = conn.execute('-- a comment\nupdate kv set val=val + ?', (10,))
+
+        rc = conn.execute('-- a comment\nUPDATE kv SET val=val + ?', (10,))
         self.assertEqual(rc.rowcount, 2)
         self.assertTrue(conn.in_transaction)
 
-        curs = conn.execute('select key, val from kv order by key')
+        curs = conn.execute('SELECT key, val FROM kv ORDER BY key')
         self.assertEqual(curs.fetchall(), [('k1', 11), ('k2', 12)])
         conn.rollback()
+        self.assertFalse(conn.in_transaction)
+        # Fetch again after rollback.
+        curs = conn.execute('SELECT key, val FROM kv ORDER BY key')
+        self.assertEqual(curs.fetchall(), [('k1', 1), ('k2', 2)])
 
     def test_dml_detection_begin_exclusive(self):
         # sqlite3_stmt_readonly() reports BEGIN EXCLUSIVE as being a
@@ -501,9 +505,9 @@ class DMLStatementDetectionTestCase(unittest.TestCase):
         # transactional behavior, we add a special exclusion for these
         # statements.
         conn = sqlite.connect(':memory:')
-        conn.execute('begin exclusive')
+        conn.execute('BEGIN EXCLUSIVE')
         self.assertTrue(conn.in_transaction)
-        conn.execute('rollback')
+        conn.execute('ROLLBACK')
         self.assertFalse(conn.in_transaction)
 
 

@@ -52,17 +52,16 @@ typedef enum {
     TYPE_UNKNOWN
 } parameter_type;
 
-int pysqlite_statement_is_dml(sqlite3_stmt *st, const char *sql)
+static int pysqlite_statement_is_dml(sqlite3_stmt *statement, const char *sql)
 {
     const char* p;
     int is_dml = 0;
 
 #ifdef HAVE_SQLITE3_STMT_READONLY
-    is_dml = !sqlite3_stmt_readonly(st);
+    is_dml = !sqlite3_stmt_readonly(statement);
     if (is_dml) {
         /* Retain backwards-compatibility, as sqlite3_stmt_readonly will return
-         * false for BEGIN [IMMEDIATE|EXCLUSIVE] or DDL statements.
-         */
+         * false for BEGIN [IMMEDIATE|EXCLUSIVE] or DDL statements. */
         for (p = sql; *p != 0; p++) {
             switch (*p) {
                 case ' ':
@@ -81,8 +80,7 @@ int pysqlite_statement_is_dml(sqlite3_stmt *st, const char *sql)
 #else
     /* Determine if the statement is a DML statement. SELECT is the only
      * exception. This is a fallback for older versions of SQLite which do not
-     * support the sqlite3_stmt_readonly() API.
-     */
+     * support the sqlite3_stmt_readonly() API. */
     for (p = sql; *p != 0; p++) {
         switch (*p) {
             case ' ':
