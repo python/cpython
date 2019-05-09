@@ -4835,8 +4835,6 @@ class TestResourceTracker(unittest.TestCase):
                     resource_tracker.register(folder_name, rtype)
                     return None, folder_name
                 elif rtype == "semaphore":
-                    # create a Lock using the low-level _multiprocessing to
-                    # separate resource creation from tracking registration.
                     lock = mp.Lock()
                     return lock, lock._semlock.name
                 elif rtype == "shared_memory":
