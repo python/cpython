@@ -9,6 +9,7 @@
 >>> dump(f.__code__)
 name: f
 argcount: 1
+posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
 varnames: ('x', 'g')
@@ -21,6 +22,7 @@ consts: ('None', '<code object g>', "'f.<locals>.g'")
 >>> dump(f(4).__code__)
 name: g
 argcount: 1
+posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
 varnames: ('y',)
@@ -40,6 +42,7 @@ consts: ('None',)
 >>> dump(h.__code__)
 name: h
 argcount: 2
+posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
 varnames: ('x', 'y', 'a', 'b', 'c')
@@ -57,6 +60,7 @@ consts: ('None',)
 >>> dump(attrs.__code__)
 name: attrs
 argcount: 1
+posonlyargcount: 0
 kwonlyargcount: 0
 names: ('print', 'attr1', 'attr2', 'attr3')
 varnames: ('obj',)
@@ -75,6 +79,7 @@ consts: ('None',)
 >>> dump(optimize_away.__code__)
 name: optimize_away
 argcount: 0
+posonlyargcount: 0
 kwonlyargcount: 0
 names: ()
 varnames: ()
@@ -91,9 +96,27 @@ consts: ("'doc string'", 'None')
 >>> dump(keywordonly_args.__code__)
 name: keywordonly_args
 argcount: 2
+posonlyargcount: 0
 kwonlyargcount: 1
 names: ()
 varnames: ('a', 'b', 'k1')
+cellvars: ()
+freevars: ()
+nlocals: 3
+flags: 67
+consts: ('None',)
+
+>>> def posonly_args(a,b,/,c):
+...     return a,b,c
+...
+
+>>> dump(posonly_args.__code__)
+name: posonly_args
+argcount: 1
+posonlyargcount: 2
+kwonlyargcount: 0
+names: ()
+varnames: ('a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 3
@@ -126,7 +149,8 @@ def consts(t):
 
 def dump(co):
     """Print out a text representation of a code object."""
-    for attr in ["name", "argcount", "kwonlyargcount", "names", "varnames",
+    for attr in ["name", "argcount", "posonlyargcount",
+                 "kwonlyargcount", "names", "varnames",
                  "cellvars", "freevars", "nlocals", "flags"]:
         print("%s: %s" % (attr, getattr(co, "co_" + attr)))
     print("consts:", tuple(consts(co.co_consts)))
@@ -157,7 +181,7 @@ class CodeTest(unittest.TestCase):
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
             return CodeType(
-                c.co_argcount, c.co_kwonlyargcount, c.co_nlocals,
+                c.co_argcount, c.co_posonlyargcount, c.co_kwonlyargcount, c.co_nlocals,
                 c.co_stacksize, c.co_flags, c.co_code, c.co_consts, c.co_names,
                 c.co_varnames, c.co_filename, c.co_name, c.co_firstlineno,
                 c.co_lnotab, c.co_freevars + ('__class__',), c.co_cellvars)

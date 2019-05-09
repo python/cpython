@@ -40,7 +40,7 @@ def color_config(text):
     # Not automatic because ColorDelegator does not know 'text'.
     theme = idleConf.CurrentTheme()
     normal_colors = idleConf.GetHighlight(theme, 'normal')
-    cursor_color = idleConf.GetHighlight(theme, 'cursor', fgBg='fg')
+    cursor_color = idleConf.GetHighlight(theme, 'cursor')['foreground']
     select_colors = idleConf.GetHighlight(theme, 'hilite')
     text.config(
         foreground=normal_colors['foreground'],
@@ -55,25 +55,32 @@ def color_config(text):
 class ColorDelegator(Delegator):
     """Delegator for syntax highlighting (text coloring).
 
-    Class variables:
-        after_id: Identifier for scheduled after event.
+    Instance variables:
+        delegate: Delegator below this one in the stack, meaning the
+                one this one delegates to.
+
+        Used to track state:
+        after_id: Identifier for scheduled after event, which is a
+                timer for colorizing the text.
         allow_colorizing: Boolean toggle for applying colorizing.
         colorizing: Boolean flag when colorizing is in process.
         stop_colorizing: Boolean flag to end an active colorizing
                 process.
-        close_when_done: Widget to destroy after colorizing process
-                completes (doesn't seem to be used by IDLE).
-
-    Instance variables:
-        delegate: Delegator below this one in the stack, meaning the
-                one this one delegates to.
     """
 
     def __init__(self):
         Delegator.__init__(self)
+        self.init_state()
         self.prog = prog
         self.idprog = idprog
         self.LoadTagDefs()
+
+    def init_state(self):
+        "Initialize variables that track colorizing state."
+        self.after_id = None
+        self.allow_colorizing = True
+        self.stop_colorizing = False
+        self.colorizing = False
 
     def setdelegate(self, delegate):
         """Set the delegate for this instance.
@@ -134,11 +141,6 @@ class ColorDelegator(Delegator):
         self.delegate.delete(index1, index2)
         self.notify_range(index1)
 
-    after_id = None
-    allow_colorizing = True
-    stop_colorizing = False
-    colorizing = False
-
     def notify_range(self, index1, index2=None):
         "Mark text changes for processing and restart colorizing, if active."
         self.tag_add("TODO", index1, index2)
@@ -153,9 +155,7 @@ class ColorDelegator(Delegator):
             self.after_id = self.after(1, self.recolorize)
         return
 
-    close_when_done = None  # Window to be closed when done colorizing.
-
-    def close(self, close_when_done=None):
+    def close(self):
         if self.after_id:
             after_id = self.after_id
             self.after_id = None
@@ -163,11 +163,6 @@ class ColorDelegator(Delegator):
             self.after_cancel(after_id)
         self.allow_colorizing = False
         self.stop_colorizing = True
-        if close_when_done:
-            if not self.colorizing:
-                close_when_done.destroy()
-            else:
-                self.close_when_done = close_when_done
 
     def toggle_colorize_event(self, event=None):
         """Toggle colorizing on and off.
@@ -201,9 +196,7 @@ class ColorDelegator(Delegator):
         process is not already running.
 
         After colorizing is complete, some cleanup is done to
-        make sure that all the text has been colorized and to close
-        the window if the close event had been called while the
-        process was running.
+        make sure that all the text has been colorized.
         """
         self.after_id = None
         if not self.delegate:
@@ -228,10 +221,6 @@ class ColorDelegator(Delegator):
         if self.allow_colorizing and self.tag_nextrange("TODO", "1.0"):
             if DEBUG: print("reschedule colorizing")
             self.after_id = self.after(1, self.recolorize)
-        if self.close_when_done:
-            top = self.close_when_done
-            self.close_when_done = None
-            top.destroy()
 
     def recolorize_main(self):
         "Evaluate text and apply colorizing tags."

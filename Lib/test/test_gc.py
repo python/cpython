@@ -766,6 +766,62 @@ class GCTests(unittest.TestCase):
         gc.unfreeze()
         self.assertEqual(gc.get_freeze_count(), 0)
 
+    def test_get_objects(self):
+        gc.collect()
+        l = []
+        l.append(l)
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=0)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertTrue(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=1)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=2)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        del l
+        gc.collect()
+
+    def test_get_objects_arguments(self):
+        gc.collect()
+        self.assertEqual(len(gc.get_objects()),
+                         len(gc.get_objects(generation=None)))
+
+        self.assertRaises(ValueError, gc.get_objects, 1000)
+        self.assertRaises(ValueError, gc.get_objects, -1000)
+        self.assertRaises(TypeError, gc.get_objects, "1")
+        self.assertRaises(TypeError, gc.get_objects, 1.234)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):

@@ -18,9 +18,7 @@ Py_FrozenMain(int argc, char **argv)
 {
     _PyInitError err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
-        fprintf(stderr, "Fatal Python error: %s\n", err.msg);
-        fflush(stderr);
-        exit(1);
+        _Py_ExitInitError(err);
     }
 
     const char *p;
@@ -86,7 +84,7 @@ Py_FrozenMain(int argc, char **argv)
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
        memory: program_name is a constant string. */
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
 
 #ifdef MS_WINDOWS

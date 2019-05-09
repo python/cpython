@@ -976,7 +976,7 @@ call fails (for example because the path doesn't exist).
    is raised.
 
    .. versionadded:: 3.6
-      The *strict* argument.
+      The *strict* argument (pre-3.6 behavior is strict).
 
 .. method:: Path.rglob(pattern)
 
@@ -1052,6 +1052,13 @@ call fails (for example because the path doesn't exist).
 
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
+
+
+.. method:: Path.link_to(target)
+
+   Create a hard link pointing to a path named *target*.
+
+   .. versionchanged:: 3.8
 
 
 .. method:: Path.write_bytes(data)

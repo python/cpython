@@ -1,1 +1,0 @@
-Bump minimum sphinx version to 1.8.  Patch by Anthony Sottile.

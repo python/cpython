@@ -222,6 +222,7 @@ class FileInput:
             warnings.warn("'U' mode is deprecated",
                           DeprecationWarning, 2)
         self._mode = mode
+        self._write_mode = mode.replace('r', 'w') if 'U' not in mode else 'w'
         if openhook:
             if inplace:
                 raise ValueError("FileInput cannot use an opening hook in inplace mode")
@@ -348,17 +349,16 @@ class FileInput:
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, "w")
+                    self._output = open(self._filename, self._write_mode)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, "w")
+                    self._output = os.fdopen(fd, self._write_mode)
                     try:
-                        if hasattr(os, 'chmod'):
-                            os.chmod(self._filename, perm)
+                        os.chmod(self._filename, perm)
                     except OSError:
                         pass
                 self._savestdout = sys.stdout

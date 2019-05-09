@@ -100,6 +100,21 @@ The class can be used to simulate nested scopes and is useful in templating.
         :func:`super` function.  A reference to ``d.parents`` is equivalent to:
         ``ChainMap(*d.maps[1:])``.
 
+    Note, the iteration order of a :class:`ChainMap()` is determined by
+    scanning the mappings last to first::
+
+        >>> baseline = {'music': 'bach', 'art': 'rembrandt'}
+        >>> adjustments = {'art': 'van gogh', 'opera': 'carmen'}
+        >>> list(ChainMap(adjustments, baseline))
+        ['music', 'art', 'opera']
+
+    This gives the same ordering as a series of :meth:`dict.update` calls
+    starting with the last mapping::
+
+        >>> combined = baseline.copy()
+        >>> combined.update(adjustments)
+        >>> list(combined)
+        ['music', 'art', 'opera']
 
 .. seealso::
 
@@ -253,6 +268,11 @@ For example::
 
     .. versionadded:: 3.1
 
+    .. versionchanged:: 3.7 As a :class:`dict` subclass, :class:`Counter`
+       Inherited the capability to remember insertion order.  Math operations
+       on *Counter* objects also preserve order.  Results are ordered
+       according to when an element is first encountered in the left operand
+       and then by the order encountered in the right operand.
 
     Counter objects support three methods beyond those available for all
     dictionaries:
@@ -260,8 +280,8 @@ For example::
     .. method:: elements()
 
         Return an iterator over elements repeating each as many times as its
-        count.  Elements are returned in arbitrary order.  If an element's count
-        is less than one, :meth:`elements` will ignore it.
+        count.  Elements are returned in the order first encountered. If an
+        element's count is less than one, :meth:`elements` will ignore it.
 
             >>> c = Counter(a=4, b=2, c=0, d=-2)
             >>> sorted(c.elements())
@@ -272,10 +292,10 @@ For example::
         Return a list of the *n* most common elements and their counts from the
         most common to the least.  If *n* is omitted or ``None``,
         :meth:`most_common` returns *all* elements in the counter.
-        Elements with equal counts are ordered arbitrarily:
+        Elements with equal counts are ordered in the order first encountered:
 
-            >>> Counter('abracadabra').most_common(3)  # doctest: +SKIP
-            [('a', 5), ('r', 2), ('b', 2)]
+            >>> Counter('abracadabra').most_common(3)
+            [('a', 5), ('b', 2), ('r', 2)]
 
     .. method:: subtract([iterable-or-mapping])
 
@@ -833,7 +853,7 @@ they add the ability to access fields by name instead of position index.
        Added the *module* parameter.
 
     .. versionchanged:: 3.7
-       Remove the *verbose* parameter and the :attr:`_source` attribute.
+       Removed the *verbose* parameter and the :attr:`_source` attribute.
 
     .. versionchanged:: 3.7
        Added the *defaults* parameter and the :attr:`_field_defaults`
@@ -933,14 +953,14 @@ field names, the method and attribute names start with an underscore.
         >>> Pixel(11, 22, 128, 255, 0)
         Pixel(x=11, y=22, red=128, green=255, blue=0)
 
-.. attribute:: somenamedtuple._fields_defaults
+.. attribute:: somenamedtuple._field_defaults
 
    Dictionary mapping field names to default values.
 
    .. doctest::
 
         >>> Account = namedtuple('Account', ['type', 'balance'], defaults=[0])
-        >>> Account._fields_defaults
+        >>> Account._field_defaults
         {'balance': 0}
         >>> Account('premium')
         Account(type='premium', balance=0)
@@ -1008,17 +1028,20 @@ customize a prototype instance:
 
 .. seealso::
 
-    * `Recipe for named tuple abstract base class with a metaclass mix-in
-      <https://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
-      by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
-      named tuples, it also supports an alternate :term:`metaclass`-based
-      constructor that is convenient for use cases where named tuples are being
-      subclassed.
+    * See :class:`typing.NamedTuple` for a way to add type hints for named
+      tuples.  It also provides an elegant notation using the :keyword:`class`
+      keyword::
+
+          class Component(NamedTuple):
+              part_number: int
+              weight: float
+              description: Optional[str] = None
 
     * See :meth:`types.SimpleNamespace` for a mutable namespace based on an
       underlying dictionary instead of a tuple.
 
-    * See :meth:`typing.NamedTuple` for a way to add type hints for named tuples.
+    * The :mod:`dataclasses` module provides a decorator and functions for
+      automatically adding generated special methods to user-defined classes.
 
 
 :class:`OrderedDict` objects

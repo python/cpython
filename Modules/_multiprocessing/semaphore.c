@@ -141,7 +141,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
     default:
         PyErr_Format(PyExc_RuntimeError, "WaitForSingleObject() or "
                      "WaitForMultipleObjects() gave unrecognized "
-                     "value %d", res);
+                     "value %u", res);
         return NULL;
     }
 }

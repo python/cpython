@@ -49,7 +49,7 @@ if os.name == 'posix':
 elif _WINDOWS:
     import nt
 
-COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 16 * 1024
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
@@ -187,9 +187,11 @@ def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
             else:
                 fdst_write(mv)
 
-def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+def copyfileobj(fsrc, fdst, length=0):
     """copy data from file-like object fsrc to file-like object fdst"""
     # Localize variable access to minimize overhead.
+    if not length:
+        length = COPY_BUFSIZE
     fsrc_read = fsrc.read
     fdst_write = fdst.write
     while True:
@@ -288,10 +290,8 @@ def copymode(src, dst, *, follow_symlinks=True):
             stat_func, chmod_func = os.lstat, os.lchmod
         else:
             return
-    elif hasattr(os, 'chmod'):
-        stat_func, chmod_func = _stat, os.chmod
     else:
-        return
+        stat_func, chmod_func = _stat, os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
@@ -472,7 +472,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                          dirs_exist_ok=dirs_exist_ok)
             else:
                 # Will raise a SpecialFileError for unsupported file types
-                copy_function(srcentry, dstname)
+                copy_function(srcobj, dstname)
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except Error as err:
@@ -1309,9 +1309,20 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     use_bytes = isinstance(cmd, bytes)
 
     if path is None:
-        path = os.environ.get("PATH", os.defpath)
+        path = os.environ.get("PATH", None)
+        if path is None:
+            try:
+                path = os.confstr("CS_PATH")
+            except (AttributeError, ValueError):
+                # os.confstr() or CS_PATH is not available
+                path = os.defpath
+        # bpo-35755: Don't use os.defpath if the PATH environment variable is
+        # set to an empty string
+
+    # PATH='' doesn't match, whereas PATH=':' looks in the current directory
     if not path:
         return None
+
     if use_bytes:
         path = os.fsencode(path)
         path = path.split(os.fsencode(os.pathsep))

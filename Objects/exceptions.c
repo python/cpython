@@ -975,7 +975,7 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (myerrno && PyLong_Check(myerrno) &&
             errnomap && (PyObject *) type == PyExc_OSError) {
             PyObject *newtype;
-            newtype = PyDict_GetItem(errnomap, myerrno);
+            newtype = PyDict_GetItemWithError(errnomap, myerrno);
             if (newtype) {
                 assert(PyType_Check(newtype));
                 type = (PyTypeObject *) newtype;
@@ -1765,9 +1765,9 @@ PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
 
 
 int
-PyUnicodeTranslateError_GetEnd(PyObject *exc, Py_ssize_t *start)
+PyUnicodeTranslateError_GetEnd(PyObject *exc, Py_ssize_t *end)
 {
-    return PyUnicodeEncodeError_GetEnd(exc, start);
+    return PyUnicodeEncodeError_GetEnd(exc, end);
 }
 
 

@@ -714,20 +714,20 @@ class build_ext(Command):
                 # don't extend ext.libraries, it may be shared with other
                 # extensions, it is a reference to the original list
                 return ext.libraries + [pythonlib]
-            else:
-                return ext.libraries
-        elif sys.platform == 'darwin':
-            # Don't use the default code below
-            return ext.libraries
-        elif sys.platform[:3] == 'aix':
-            # Don't use the default code below
-            return ext.libraries
+        # On Android only the main executable and LD_PRELOADs are considered
+        # to be RTLD_GLOBAL, all the dependencies of the main executable
+        # remain RTLD_LOCAL and so the shared libraries must be linked with
+        # libpython when python is built with a shared python library (issue
+        # bpo-21536).
         else:
-            from distutils import sysconfig
-            if sysconfig.get_config_var('Py_ENABLE_SHARED'):
-                pythonlib = 'python{}.{}{}'.format(
-                    sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff,
-                    sysconfig.get_config_var('ABIFLAGS'))
-                return ext.libraries + [pythonlib]
-            else:
-                return ext.libraries
+            from distutils.sysconfig import get_config_var
+            if get_config_var('Py_ENABLE_SHARED'):
+                # Either a native build on an Android device or the
+                # cross-compilation of Python.
+                if (hasattr(sys, 'getandroidapilevel') or
+                        ('_PYTHON_HOST_PLATFORM' in os.environ and
+                         get_config_var('ANDROID_API_LEVEL') != 0)):
+                    ldversion = get_config_var('LDVERSION')
+                    return ext.libraries + ['python' + ldversion]
+
+        return ext.libraries

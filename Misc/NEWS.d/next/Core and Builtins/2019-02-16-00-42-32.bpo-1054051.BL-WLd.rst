@@ -1,1 +1,0 @@
-When the main interpreter exits due to an uncaught KeyboardInterrupt, the process now exits in the appropriate manner for its parent process to detect that a SIGINT or ^C terminated the process.  This allows shells and batch scripts to understand that the user has asked them to stop.

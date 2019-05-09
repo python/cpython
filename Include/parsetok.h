@@ -12,10 +12,7 @@ extern "C" {
 
 typedef struct {
     int error;
-#ifndef PGEN
-    /* The filename is useless for pgen, see comment in tok_state structure */
     PyObject *filename;
-#endif
     int lineno;
     int offset;
     char *text;                 /* UTF-8-encoded string */
@@ -38,6 +35,7 @@ typedef struct {
 #define PyPARSE_IGNORE_COOKIE 0x0010
 #define PyPARSE_BARRY_AS_BDFL 0x0020
 #define PyPARSE_TYPE_COMMENTS 0x0040
+#define PyPARSE_ASYNC_HACKS   0x0080
 
 PyAPI_FUNC(node *) PyParser_ParseString(const char *, grammar *, int,
                                               perrdetail *);

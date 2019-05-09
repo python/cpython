@@ -373,10 +373,6 @@ class IdleConfTest(unittest.TestCase):
         eq = self.assertEqual
         eq(conf.GetHighlight('IDLE Classic', 'normal'), {'foreground': '#000000',
                                                          'background': '#ffffff'})
-        eq(conf.GetHighlight('IDLE Classic', 'normal', 'fg'), '#000000')
-        eq(conf.GetHighlight('IDLE Classic', 'normal', 'bg'), '#ffffff')
-        with self.assertRaises(config.InvalidFgBg):
-            conf.GetHighlight('IDLE Classic', 'normal', 'fb')
 
         # Test cursor (this background should be normal-background)
         eq(conf.GetHighlight('IDLE Classic', 'cursor'), {'foreground': 'black',
@@ -525,7 +521,7 @@ class IdleConfTest(unittest.TestCase):
     def test_get_keyset(self):
         conf = self.mock_config()
 
-        # Conflic with key set, should be disable to ''
+        # Conflict with key set, should be disable to ''
         conf.defaultCfg['extensions'].add_section('Foobar')
         conf.defaultCfg['extensions'].add_section('Foobar_cfgBindings')
         conf.defaultCfg['extensions'].set('Foobar', 'enable', 'True')
