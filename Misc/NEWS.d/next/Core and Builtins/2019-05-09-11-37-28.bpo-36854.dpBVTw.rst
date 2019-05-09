@@ -1,0 +1,8 @@
+Move GC runtime state from _PyRuntimeState to PyInterpreterState.  As part
+of this, Python threads (created by the threading module) are marked as
+"deleted" earlier in finalization.  That marker is how joining threads get
+unblocked.  It was happening in `PyThreadState_Delete()` but now it will
+happen in `PyThreadState_Clear()`.  This is necessary to ensure that the
+callback gets called *before* much interpreter/runtime finalization happens.
+(This change could impact daemon threads, but we already can't guarantee
+behavior for those once finalization starts.)
