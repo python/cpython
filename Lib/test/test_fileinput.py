@@ -329,6 +329,16 @@ class FileInputTests(BaseTests, unittest.TestCase):
             self.assertEqual(fi.readline(), b'')
             self.assertEqual(fi.readline(), b'')
 
+    def test_inplace_binary_write_mode(self):
+        temp_file = self.writeTmp(b'Initial text.', mode='wb')
+        with FileInput(temp_file, mode='rb', inplace=True) as fobj:
+            line = fobj.readline()
+            self.assertEqual(line, b'Initial text.')
+            # print() cannot be used with files opened in binary mode.
+            sys.stdout.write(b'New line.')
+        with open(temp_file, 'rb') as f:
+            self.assertEqual(f.read(), b'New line.')
+
     def test_context_manager(self):
         t1 = self.writeTmp("A\nB\nC")
         t2 = self.writeTmp("D\nE\nF")
@@ -428,7 +438,6 @@ class FileInputTests(BaseTests, unittest.TestCase):
         self.assertTrue(os_fstat_replacement.invoked,
                         "os.fstat() was not invoked")
 
-    @unittest.skipIf(not hasattr(os, "chmod"), "os.chmod does not exist")
     def test_readline_os_chmod_raises_OSError(self):
         """Tests invoking FileInput.readline() when os.chmod() raises OSError.
            This exception should be silently discarded."""

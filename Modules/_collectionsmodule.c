@@ -2388,7 +2388,7 @@ tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
             return self;
         }
         PyErr_Format(PyExc_TypeError,
-                     "descriptor for index '%d' for tuple subclasses "
+                     "descriptor for index '%zd' for tuple subclasses "
                      "doesn't apply to '%s' object",
                      index,
                      obj->ob_type->tp_name);
@@ -2441,7 +2441,7 @@ tuplegetter_dealloc(_tuplegetterobject *self)
 }
 
 static PyObject*
-tuplegetter_reduce(_tuplegetterobject *self)
+tuplegetter_reduce(_tuplegetterobject *self, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
 }
@@ -2453,7 +2453,7 @@ static PyMemberDef tuplegetter_members[] = {
 };
 
 static PyMethodDef tuplegetter_methods[] = {
-    {"__reduce__", (PyCFunction) tuplegetter_reduce, METH_NOARGS, NULL},
+    {"__reduce__", (PyCFunction)tuplegetter_reduce, METH_NOARGS, NULL},
     {NULL},
 };
 

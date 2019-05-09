@@ -356,8 +356,8 @@ Shell and Output windows also have the following.
 Go to file/line
    Same as in Debug menu.
 
-The Shell window also has an output squeezing facility explained in the
-the *Python Shell window* subsection below.
+The Shell window also has an output squeezing facility explained in the *Python
+Shell window* subsection below.
 
 Squeeze
    If the cursor is over an output line, squeeze all the output between
@@ -716,21 +716,17 @@ In contrast, some system text windows only keep the last n lines of output.
 A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
 with 300 the default.
 
-A Tk Text widget, and hence IDLE's Shell, displays characters (codepoints)
-in the the BMP (Basic Multilingual Plane) subset of Unicode.
-Which characters are displayed with a proper glyph and which with a
-replacement box depends on the operating system and installed fonts.
-Tab characters cause the following text to begin after
-the next tab stop. (They occur every 8 'characters').
-Newline characters cause following text to appear on a new line.
-Other control characters are ignored or displayed as a space, box, or
-something else, depending on the operating system and font.
-(Moving the text cursor through such output with arrow keys may exhibit
-some surprising spacing behavior.)
+A Tk Text widget, and hence IDLE's Shell, displays characters (codepoints) in
+the BMP (Basic Multilingual Plane) subset of Unicode.  Which characters are
+displayed with a proper glyph and which with a replacement box depends on the
+operating system and installed fonts.  Tab characters cause the following text
+to begin after the next tab stop. (They occur every 8 'characters').  Newline
+characters cause following text to appear on a new line.  Other control
+characters are ignored or displayed as a space, box, or something else,
+depending on the operating system and font.  (Moving the text cursor through
+such output with arrow keys may exhibit some surprising spacing behavior.) ::
 
-.. code-block:: none
-
-   >>> s = 'a\tb\a<\x02><\r>\bc\nd'
+   >>> s = 'a\tb\a<\x02><\r>\bc\nd'  # Enter 22 chars.
    >>> len(s)
    14
    >>> s  # Display repr(s)
@@ -851,6 +847,13 @@ changed via Configure IDLE on the Option menu.
 Non-default user settings are saved in a .idlerc directory in the user's
 home directory.  Problems caused by bad user configuration files are solved
 by editing or deleting one or more of the files in .idlerc.
+
+On the Font tab, see the text sample for the effect of font face and size
+on multiple characters in multiple languages.  Edit the sample to add
+other characters of personal interest.  Use the sample to select
+monospaced fonts.  If particular characters have problems in Shell or an
+editor, add them to the top of the sample and try changing first size
+and then font.
 
 On the Highlights and Keys tab, select a built-in or custom color theme
 and key set.  To use a newer built-in color theme or key set with older

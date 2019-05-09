@@ -262,7 +262,6 @@ class TestShutil(unittest.TestCase):
         self.assertIn(errors[1][2][1].filename, possible_args)
 
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod()')
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
@@ -337,7 +336,6 @@ class TestShutil(unittest.TestCase):
         finally:
             os.lstat = orig_lstat
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     @support.skip_unless_symlink
     def test_copymode_follow_symlinks(self):
         tmp_dir = self.mkdtemp()
@@ -861,6 +859,24 @@ class TestShutil(unittest.TestCase):
         with self.assertRaises(shutil.Error):
             shutil.copytree(src_dir, dst_dir)
 
+    def test_copytree_custom_copy_function(self):
+        # See: https://bugs.python.org/issue35648
+        def custom_cpfun(a, b):
+            flag.append(None)
+            self.assertIsInstance(a, str)
+            self.assertIsInstance(b, str)
+            self.assertEqual(a, os.path.join(src, 'foo'))
+            self.assertEqual(b, os.path.join(dst, 'foo'))
+
+        flag = []
+        src = tempfile.mkdtemp()
+        dst = tempfile.mktemp()
+        self.addCleanup(shutil.rmtree, src)
+        with open(os.path.join(src, 'foo'), 'w') as f:
+            f.close()
+        shutil.copytree(src, dst, copy_function=custom_cpfun)
+        self.assertEqual(len(flag), 1)
+
     @unittest.skipIf(os.name == 'nt', 'temporarily disabled on Windows')
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_dont_copy_file_onto_link_to_itself(self):
@@ -1022,14 +1038,12 @@ class TestShutil(unittest.TestCase):
         file2 = os.path.join(tmpdir2, fname)
         return (file1, file2)
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     def test_copy(self):
         # Ensure that the copied file exists and has the same mode bits.
         file1, file2 = self._copy_file(shutil.copy)
         self.assertTrue(os.path.exists(file2))
         self.assertEqual(os.stat(file1).st_mode, os.stat(file2).st_mode)
 
-    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod')
     @unittest.skipUnless(hasattr(os, 'utime'), 'requires os.utime')
     def test_copy2(self):
         # Ensure that the copied file exists and has the same mode and
@@ -1605,6 +1619,57 @@ class TestWhich(unittest.TestCase):
             rv = shutil.which(self.file)
             self.assertEqual(rv, self.temp_file.name)
 
+    def test_environ_path_empty(self):
+        # PATH='': no match
+        with support.EnvironmentVarGuard() as env:
+            env['PATH'] = ''
+            with unittest.mock.patch('os.confstr', return_value=self.dir, \
+                                     create=True), \
+                 support.swap_attr(os, 'defpath', self.dir), \
+                 support.change_cwd(self.dir):
+                rv = shutil.which(self.file)
+                self.assertIsNone(rv)
+
+    def test_environ_path_cwd(self):
+        expected_cwd = os.path.basename(self.temp_file.name)
+        if sys.platform == "win32":
+            curdir = os.curdir
+            if isinstance(expected_cwd, bytes):
+                curdir = os.fsencode(curdir)
+            expected_cwd = os.path.join(curdir, expected_cwd)
+
+        # PATH=':': explicitly looks in the current directory
+        with support.EnvironmentVarGuard() as env:
+            env['PATH'] = os.pathsep
+            with unittest.mock.patch('os.confstr', return_value=self.dir, \
+                                     create=True), \
+                 support.swap_attr(os, 'defpath', self.dir):
+                rv = shutil.which(self.file)
+                self.assertIsNone(rv)
+
+                # look in current directory
+                with support.change_cwd(self.dir):
+                    rv = shutil.which(self.file)
+                    self.assertEqual(rv, expected_cwd)
+
+    def test_environ_path_missing(self):
+        with support.EnvironmentVarGuard() as env:
+            env.pop('PATH', None)
+
+            # without confstr
+            with unittest.mock.patch('os.confstr', side_effect=ValueError, \
+                                     create=True), \
+                 support.swap_attr(os, 'defpath', self.dir):
+                rv = shutil.which(self.file)
+            self.assertEqual(rv, self.temp_file.name)
+
+            # with confstr
+            with unittest.mock.patch('os.confstr', return_value=self.dir, \
+                                     create=True), \
+                 support.swap_attr(os, 'defpath', ''):
+                rv = shutil.which(self.file)
+            self.assertEqual(rv, self.temp_file.name)
+
     def test_empty_path(self):
         base_dir = os.path.dirname(self.dir)
         with support.change_cwd(path=self.dir), \
@@ -1618,6 +1683,23 @@ class TestWhich(unittest.TestCase):
             env.pop('PATH', None)
             rv = shutil.which(self.file)
             self.assertIsNone(rv)
+
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_pathext(self):
+        ext = ".xyz"
+        temp_filexyz = tempfile.NamedTemporaryFile(dir=self.temp_dir,
+                                                   prefix="Tmp2", suffix=ext)
+        os.chmod(temp_filexyz.name, stat.S_IXUSR)
+        self.addCleanup(temp_filexyz.close)
+
+        # strip path and extension
+        program = os.path.basename(temp_filexyz.name)
+        program = os.path.splitext(program)[0]
+
+        with support.EnvironmentVarGuard() as env:
+            env['PATHEXT'] = ext
+            rv = shutil.which(program, path=self.temp_dir)
+            self.assertEqual(rv, temp_filexyz.name)
 
 
 class TestWhichBytes(TestWhich):

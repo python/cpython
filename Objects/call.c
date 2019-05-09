@@ -114,7 +114,7 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, Py_ssize_t nar
             return NULL;
         }
 
-        argstuple = _PyStack_AsTuple(args, nargs);
+        argstuple = _PyTuple_FromArray(args, nargs);
         if (argstuple == NULL) {
             return NULL;
         }
@@ -176,7 +176,7 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject *const *stack, Py_ssize_
             return NULL;
         }
 
-        argstuple = _PyStack_AsTuple(stack, nargs);
+        argstuple = _PyTuple_FromArray(stack, nargs);
         if (argstuple == NULL) {
             return NULL;
         }
@@ -320,11 +320,11 @@ _PyFunction_FastCallDict(PyObject *func, PyObject *const *args, Py_ssize_t nargs
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         /* Fast paths */
-        if (argdefs == NULL && co->co_argcount == nargs) {
+        if (argdefs == NULL && co->co_argcount + co->co_posonlyargcount == nargs) {
             return function_code_fastcall(co, args, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
+                 && co->co_argcount + co->co_posonlyargcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             args = _PyTuple_ITEMS(argdefs);
@@ -406,11 +406,11 @@ _PyFunction_FastCallKeywords(PyObject *func, PyObject *const *stack,
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
-        if (argdefs == NULL && co->co_argcount == nargs) {
+        if (argdefs == NULL && co->co_argcount + co->co_posonlyargcount== nargs) {
             return function_code_fastcall(co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
+                 && co->co_argcount + co->co_posonlyargcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = _PyTuple_ITEMS(argdefs);
@@ -508,7 +508,7 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
     case METH_VARARGS | METH_KEYWORDS:
     {
         /* Slow-path: create a temporary tuple for positional arguments */
-        PyObject *argstuple = _PyStack_AsTuple(args, nargs);
+        PyObject *argstuple = _PyTuple_FromArray(args, nargs);
         if (argstuple == NULL) {
             goto exit;
         }
@@ -670,7 +670,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
            and a temporary dict for keyword arguments */
         PyObject *argtuple;
 
-        argtuple = _PyStack_AsTuple(args, nargs);
+        argtuple = _PyTuple_FromArray(args, nargs);
         if (argtuple == NULL) {
             goto exit;
         }
@@ -1270,53 +1270,6 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 
 /* --- PyStack functions ------------------------------------------ */
-
-/* Issue #29234: Inlining _PyStack_AsTuple() into callers increases their
-   stack consumption, Disable inlining to optimize the stack consumption. */
-_Py_NO_INLINE PyObject *
-_PyStack_AsTuple(PyObject *const *stack, Py_ssize_t nargs)
-{
-    PyObject *args;
-    Py_ssize_t i;
-
-    args = PyTuple_New(nargs);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    for (i=0; i < nargs; i++) {
-        PyObject *item = stack[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(args, i, item);
-    }
-    return args;
-}
-
-
-PyObject*
-_PyStack_AsTupleSlice(PyObject *const *stack, Py_ssize_t nargs,
-                      Py_ssize_t start, Py_ssize_t end)
-{
-    PyObject *args;
-    Py_ssize_t i;
-
-    assert(0 <= start);
-    assert(end <= nargs);
-    assert(start <= end);
-
-    args = PyTuple_New(end - start);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    for (i=start; i < end; i++) {
-        PyObject *item = stack[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(args, i - start, item);
-    }
-    return args;
-}
-
 
 PyObject *
 _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
