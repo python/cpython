@@ -151,7 +151,7 @@ class Availability(Directive):
         return [pnode]
 
 
-# Support for documenting audit event 
+# Support for documenting audit event
 
 class AuditEvent(Directive):
 
