@@ -179,6 +179,11 @@ class TransactionalDDL(unittest.TestCase):
         result = self.con.execute("select * from test").fetchall()
         self.assertEqual(result, [])
 
+        self.con.execute("alter table test rename to test2")
+        self.con.rollback()
+        result = self.con.execute("select * from test2").fetchall()
+        self.assertEqual(result, [])
+
     def CheckImmediateTransactionalDDL(self):
         # You can achieve transactional DDL by issuing a BEGIN
         # statement manually.
@@ -200,11 +205,85 @@ class TransactionalDDL(unittest.TestCase):
     def tearDown(self):
         self.con.close()
 
+
+class DMLStatementDetectionTestCase(unittest.TestCase):
+    """
+    Test behavior of sqlite3_stmt_readonly() in determining if a statement is
+    DML or not.
+    """
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), 'needs sqlite 3.8.3 or newer')
+    def test_dml_detection_cte(self):
+        conn = sqlite.connect(':memory:')
+        conn.execute('CREATE TABLE kv ("key" TEXT, "val" INTEGER)')
+        self.assertFalse(conn.in_transaction)
+        conn.execute('INSERT INTO kv (key, val) VALUES (?, ?), (?, ?)',
+                     ('k1', 1, 'k2', 2))
+        self.assertTrue(conn.in_transaction)
+        conn.commit()
+        self.assertFalse(conn.in_transaction)
+
+        rc = conn.execute('UPDATE kv SET val=val + ?', (10,))
+        self.assertEqual(rc.rowcount, 2)
+        self.assertTrue(conn.in_transaction)
+        conn.commit()
+        self.assertFalse(conn.in_transaction)
+
+        rc = conn.execute(
+            'WITH c(k, v) AS (SELECT key, val + ? FROM kv) '
+            'UPDATE kv SET val=(SELECT v FROM c WHERE k=kv.key)',
+            (100,)
+        )
+        self.assertEqual(rc.rowcount, 2)
+        self.assertTrue(conn.in_transaction)
+
+        curs = conn.execute('SELECT key, val FROM kv ORDER BY key')
+        self.assertEqual(curs.fetchall(), [('k1', 111), ('k2', 112)])
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 7, 11), 'needs sqlite 3.7.11 or newer')
+    def test_dml_detection_sql_comment(self):
+        conn = sqlite.connect(':memory:')
+        conn.execute('CREATE TABLE kv ("key" TEXT, "val" INTEGER)')
+        self.assertFalse(conn.in_transaction)
+        conn.execute('INSERT INTO kv (key, val) VALUES (?, ?), (?, ?)',
+                     ('k1', 1, 'k2', 2))
+        conn.commit()
+        self.assertFalse(conn.in_transaction)
+
+        rc = conn.execute('-- a comment\nUPDATE kv SET val=val + ?', (10,))
+        self.assertEqual(rc.rowcount, 2)
+        self.assertTrue(conn.in_transaction)
+
+        curs = conn.execute('SELECT key, val FROM kv ORDER BY key')
+        self.assertEqual(curs.fetchall(), [('k1', 11), ('k2', 12)])
+        conn.rollback()
+        self.assertFalse(conn.in_transaction)
+        # Fetch again after rollback.
+        curs = conn.execute('SELECT key, val FROM kv ORDER BY key')
+        self.assertEqual(curs.fetchall(), [('k1', 1), ('k2', 2)])
+
+    def test_dml_detection_begin_exclusive(self):
+        # sqlite3_stmt_readonly() reports BEGIN EXCLUSIVE as being a
+        # non-read-only statement. To retain compatibility with the
+        # transactional behavior, we add a special exclusion for these
+        # statements.
+        conn = sqlite.connect(':memory:')
+        conn.execute('BEGIN EXCLUSIVE')
+        self.assertTrue(conn.in_transaction)
+        conn.execute('ROLLBACK')
+        self.assertFalse(conn.in_transaction)
+
+    def test_dml_detection_vacuum(self):
+        conn = sqlite.connect(':memory:')
+        conn.execute('vacuum')
+        self.assertFalse(conn.in_transaction)
+
+
 def suite():
     default_suite = unittest.makeSuite(TransactionTests, "Check")
     special_command_suite = unittest.makeSuite(SpecialCommandTests, "Check")
     ddl_suite = unittest.makeSuite(TransactionalDDL, "Check")
-    return unittest.TestSuite((default_suite, special_command_suite, ddl_suite))
+    dml_suite = unittest.makeSuite(DMLStatementDetectionTestCase)
+    return unittest.TestSuite((default_suite, special_command_suite, ddl_suite, dml_suite))
 
 def test():
     runner = unittest.TextTestRunner()
