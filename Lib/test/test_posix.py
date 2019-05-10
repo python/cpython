@@ -1843,16 +1843,16 @@ class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(support.rmtree, temp_dir)
 
-        self.program = 'posix_spawnp_test_program.exe'
-        program_fullpath = os.path.join(temp_dir, self.program)
+        program = 'posix_spawnp_test_program.exe'
+        program_fullpath = os.path.join(temp_dir, program)
         os.symlink(sys.executable, program_fullpath)
 
         try:
-            self.path = os.pathsep.join((temp_dir, os.environ['PATH']))
+            path = os.pathsep.join((temp_dir, os.environ['PATH']))
         except KeyError:
-            self.path = temp_dir   # PATH is not set
+            path = temp_dir   # PATH is not set
 
-        spawn_args = (self.program, '-I', '-S', '-c', 'pass')
+        spawn_args = (program, '-I', '-S', '-c', 'pass')
         code = textwrap.dedent("""
             import os
             args = %a
@@ -1868,7 +1868,7 @@ class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
         # environment variable: posix_spawnp() uses the current environment
         # to locate the program, not its environment argument.
         args = ('-c', code)
-        assert_python_ok(*args, PATH=self.path)
+        assert_python_ok(*args, PATH=path)
 
 
 def test_main():
