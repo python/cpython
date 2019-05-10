@@ -14,6 +14,8 @@
 
 #if defined(__linux__)
 #include <sys/syscall.h>
+#elif defined(__FreeBSD__)
+#include <pthread_np.h>
 #endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
@@ -317,6 +319,9 @@ PyThread_get_thread_id(void)
 #elif defined(__linux__)
     volatile pid_t tid;
     tid = syscall(__NR_gettid);
+#elif defined(__FreeBSD__)
+    volatile pid_t tid;
+    tid = pthread_getthreadid_np();
 #else
     volatile unsigned long tid;
     tid = NULL;
