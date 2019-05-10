@@ -5,6 +5,8 @@
 
 #include "Python.h"
 #include "pycore_atomic.h"
+#include "pycore_ceval.h"
+#include "pycore_pystate.h"
 
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
@@ -256,7 +258,8 @@ trip_signal(int sig_num)
     _Py_atomic_store(&is_tripped, 1);
 
     /* Notify ceval.c */
-    _PyEval_SignalReceived();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    _PyEval_SignalReceived(&runtime->ceval);
 
     /* And then write to the wakeup fd *after* setting all the globals and
        doing the _PyEval_SignalReceived. We used to write to the wakeup fd
@@ -296,8 +299,9 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    Py_AddPendingCall(report_wakeup_send_error,
-                                      (void *)(intptr_t) last_error);
+                    _PyEval_AddPendingCall(&runtime->ceval,
+                                           report_wakeup_send_error,
+                                           (void *)(intptr_t) last_error);
                 }
             }
         }
@@ -314,8 +318,9 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    Py_AddPendingCall(report_wakeup_write_error,
-                                      (void *)(intptr_t)errno);
+                    _PyEval_AddPendingCall(&runtime->ceval,
+                                           report_wakeup_write_error,
+                                           (void *)(intptr_t)errno);
                 }
             }
         }
@@ -420,7 +425,7 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
     err = raise(signalnum);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
-    
+
     if (err) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
@@ -1076,18 +1081,18 @@ fill_siginfo(siginfo_t *si)
 
     PyStructSequence_SET_ITEM(result, 0, PyLong_FromLong((long)(si->si_signo)));
     PyStructSequence_SET_ITEM(result, 1, PyLong_FromLong((long)(si->si_code)));
-#ifdef __VXWORKS__   
+#ifdef __VXWORKS__
     PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong(0L));
     PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong(0L));
     PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong(0L));
     PyStructSequence_SET_ITEM(result, 5, PyLong_FromLong(0L));
-#else   
+#else
     PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si->si_errno)));
     PyStructSequence_SET_ITEM(result, 3, PyLong_FromPid(si->si_pid));
     PyStructSequence_SET_ITEM(result, 4, _PyLong_FromUid(si->si_uid));
     PyStructSequence_SET_ITEM(result, 5,
                                 PyLong_FromLong((long)(si->si_status)));
-#endif   
+#endif
 #ifdef HAVE_SIGINFO_T_SI_BAND
     PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(si->si_band));
 #else
