@@ -271,7 +271,7 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        env.note_versionchange('deprecated', version[0], node, self.lineno)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 
