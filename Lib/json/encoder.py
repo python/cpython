@@ -143,6 +143,9 @@ class JSONEncoder(object):
         that can't otherwise be serialized.  It should return a JSON encodable
         version of the object or raise a ``TypeError``.
 
+        If specified, encode_float is a function that will be called when encoding
+        float into string. It should return a string.
+
         """
 
         self.skipkeys = skipkeys

@@ -157,6 +157,9 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
 
+    If specified, ``encode_float`` is a function that will be called when encoding
+    float into string. It should return a string.
+
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
     ``.default()`` method to serialize additional types), specify it with
     the ``cls`` kwarg; otherwise ``JSONEncoder`` is used.
@@ -219,6 +222,9 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
+
+    If specified, ``encode_float`` is a function that will be called when encoding
+    float into string. It should return a string.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
     ``.default()`` method to serialize additional types), specify it with
