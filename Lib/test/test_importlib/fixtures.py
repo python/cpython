@@ -24,11 +24,9 @@ __metaclass__ = type
 @contextlib.contextmanager
 def tempdir():
     tmpdir = tempfile.mkdtemp()
-    sys.path[:0] = [tmpdir]
     try:
         yield pathlib.Path(tmpdir)
     finally:
-        sys.path.remove(tmpdir)
         shutil.rmtree(tmpdir)
 
 
@@ -55,7 +53,10 @@ class SiteDir:
     def site_dir():
         with tempdir() as tmp:
             sys.path[:0] = [str(tmp)]
-            yield tmp
+            try:
+                yield tmp
+            finally:
+                sys.path.remove(str(tmp))
 
     def setUp(self):
         self.fixtures = ExitStack()
@@ -193,4 +194,3 @@ def build_files(file_defs, prefix=pathlib.Path()):
 def DALS(str):
     "Dedent and left-strip"
     return textwrap.dedent(str).lstrip()
-
