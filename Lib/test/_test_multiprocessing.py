@@ -3879,7 +3879,7 @@ class _TestSharedMemory(BaseTestCase):
         deserialized_sl.shm.close()
         sl.shm.close()
 
-    def test_posix_shared_memory_cleaned_after_process_termination(self):
+    def test_shared_memory_cleaned_after_process_termination(self):
         import subprocess
         from multiprocessing import shared_memory
         cmd = '''if 1:
