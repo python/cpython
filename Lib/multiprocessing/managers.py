@@ -17,6 +17,7 @@ __all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
 
 import sys
 import threading
+import signal
 import array
 import queue
 import time
@@ -596,6 +597,9 @@ class BaseManager(object):
         '''
         Create a server, report its address and run it
         '''
+        # bpo-36368: protect server process from KeyboardInterrupt signals
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         if initializer is not None:
             initializer(*initargs)
 
