@@ -3923,7 +3923,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
             return 0;
         }
-        else if (memo_put(self, obj, 1) < 0)
+        else if (memo_put(self, obj, !listitems && !dictitems && !state) < 0)
             return -1;
     }
 

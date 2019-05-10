@@ -1321,6 +1321,16 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIsInstance(x[0], list)
             self.assertEqual(len(x[0]), 1)
             self.assertIs(x[0][0], x)
+        r = [t]
+        del t
+        for proto in protocols:
+            s = self.dumps(r, proto)
+            x = self.loads(s)[0]
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], list)
+            self.assertEqual(len(x[0]), 1)
+            self.assertIs(x[0][0], x)
 
     def test_recursive_dict(self):
         d = {}
@@ -1332,10 +1342,31 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(list(x.keys()), [1])
             self.assertIs(x[1], x)
 
+    def test_recursive_tuple_and_dict(self):
+        t = ({},)
+        t[0][1] = t
+        for proto in protocols:
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], dict)
+            self.assertEqual(len(x[0]), 1)
+            self.assertIs(x[0][1], x)
+        r = [t]
+        del t
+        for proto in protocols:
+            s = self.dumps(r, proto)
+            x = self.loads(s)[0]
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], dict)
+            self.assertEqual(len(x[0]), 1)
+            self.assertIs(x[0][1], x)
+
     def test_recursive_dict_key(self):
         d = {}
-        k = K(d)
-        d[k] = 1
+        d[K(d)] = 1
         for proto in protocols:
             s = self.dumps(d, proto)
             x = self.loads(s)
@@ -1344,10 +1375,33 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIsInstance(list(x.keys())[0], K)
             self.assertIs(list(x.keys())[0].value, x)
 
+    def test_recursive_tuple_and_dict_key(self):
+        t = ({},)
+        t[0][K(t)] = 1
+        for proto in protocols:
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], dict)
+            self.assertEqual(len(x[0]), 1)
+            self.assertIsInstance(list(x[0].keys())[0], K)
+            self.assertIs(list(x[0].keys())[0].value, x)
+        r = [t]
+        del t
+        for proto in protocols:
+            s = self.dumps(r, proto)
+            x = self.loads(s)[0]
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], dict)
+            self.assertEqual(len(x[0]), 1)
+            self.assertIsInstance(list(x[0].keys())[0], K)
+            self.assertIs(list(x[0].keys())[0].value, x)
+
     def test_recursive_set(self):
         y = set()
-        k = K(y)
-        y.add(k)
+        y.add(K(y))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(y, proto)
             x = self.loads(s)
@@ -1378,8 +1432,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_recursive_dict_subclass_key(self):
         d = MyDict()
-        k = K(d)
-        d[k] = 1
+        d[K(d)] = 1
         for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(d, proto)
             x = self.loads(s)
@@ -1417,10 +1470,21 @@ class AbstractPickleTests(unittest.TestCase):
         h = H()
         y = factory([h])
         h.attr = y
+        del h
+        t = type(y)
         for proto in protocols:
             s = self.dumps(y, proto)
             x = self.loads(s)
-            self.assertIsInstance(x, type(y))
+            self.assertIsInstance(x, t)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(list(x)[0], H)
+            self.assertIs(list(x)[0].attr, x)
+        r = [y]
+        del y
+        for proto in protocols:
+            s = self.dumps(r, proto)
+            x = self.loads(s)[0]
+            self.assertIsInstance(x, t)
             self.assertEqual(len(x), 1)
             self.assertIsInstance(list(x)[0], H)
             self.assertIs(list(x)[0].attr, x)
@@ -1454,6 +1518,99 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_recursive_frozenset_subclass_and_inst(self):
         self.check_recursive_collection_and_inst(MyFrozenSet)
+
+    def test_recursive_list_like(self):
+        y = REX_six()
+        y.append(y)
+        for proto in protocols:
+            s = self.dumps(y, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, REX_six)
+            self.assertEqual(len(x.items), 1)
+            self.assertIs(x.items[0], x)
+
+    def test_recursive_tuple_and_list_like(self):
+        t = (REX_six(),)
+        t[0].append(t)
+        for proto in protocols:
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], REX_six)
+            self.assertEqual(len(x[0].items), 1)
+            self.assertIs(x[0].items[0], x)
+        r = [t]
+        del t
+        for proto in protocols:
+            s = self.dumps(r, proto)
+            x = self.loads(s)[0]
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], REX_six)
+            self.assertEqual(len(x[0].items), 1)
+            self.assertIs(x[0].items[0], x)
+
+    def test_recursive_dict_like(self):
+        y = REX_seven()
+        y[1] = y
+        for proto in protocols:
+            s = self.dumps(y, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, REX_seven)
+            self.assertEqual(len(x.table), 1)
+            self.assertIs(x.table[1], x)
+
+    def test_recursive_tuple_and_dict_like(self):
+        t = (REX_seven(),)
+        t[0][1] = t
+        for proto in protocols:
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], REX_seven)
+            self.assertEqual(len(x[0].table), 1)
+            self.assertIs(x[0].table[1], x)
+        r = [t]
+        del t
+        for proto in protocols:
+            s = self.dumps(r, proto)
+            x = self.loads(s)[0]
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], REX_seven)
+            self.assertEqual(len(x[0].table), 1)
+            self.assertIs(x[0].table[1], x)
+
+    def test_recursive_inst_state(self):
+        y = REX_state()
+        y.state = y
+        for proto in protocols:
+            s = self.dumps(y, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, REX_state)
+            self.assertIs(x.state, x)
+
+    def test_recursive_tuple_and_inst_state(self):
+        t = (REX_state(),)
+        t[0].state = t
+        for proto in protocols:
+            s = self.dumps(t, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], REX_state)
+            self.assertIs(x[0].state, x)
+        r = [t]
+        del t
+        for proto in protocols:
+            s = self.dumps(r, proto)
+            x = self.loads(s)[0]
+            self.assertIsInstance(x, tuple)
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], REX_state)
+            self.assertIs(x[0].state, x)
 
     def test_unicode(self):
         endcases = ['', '<\\u>', '<\\\u1234>', '<\n>',
@@ -2646,6 +2803,19 @@ class REX_seven(object):
         self.table[key] = value
     def __reduce__(self):
         return type(self), (), None, None, iter(self.table.items())
+
+class REX_state(object):
+    """This class is used to check the 3th argument (state) of
+    the reduce protocol.
+    """
+    def __init__(self, state=None):
+        self.state = state
+    def __eq__(self, other):
+        return type(self) is type(other) and self.state == other.state
+    def __setstate__(self, state):
+        self.state = state
+    def __reduce__(self):
+        return type(self), (), self.state
 
 
 # Test classes for newobj
