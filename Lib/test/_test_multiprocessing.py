@@ -3734,6 +3734,30 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
+    @unittest.skipIf(os.name != "posix", "not feasible in non-posix platforms")
+    def test_shared_memory_SharedMemoryServer_ignores_sigint(self):
+        # bpo-36368: protect SharedMemoryManager server process from
+        # KeyboardInterrupt signals.
+        smm = multiprocessing.managers.SharedMemoryManager()
+        smm.start()
+
+        # make sure the manager works properly at the beginning
+        sl = smm.ShareableList(range(10))
+
+        # the manager's server should ignore KeyboardInterrupt signals, and
+        # maintain its connection with the current process, and success when
+        # asked to deliver memory segments.
+        os.kill(smm._process.pid, signal.SIGINT)
+
+        sl2 = smm.ShareableList(range(10))
+
+        # test that the custom signal handler registered in the Manager does
+        # not affect signal handling in the parent process.
+        with self.assertRaises(KeyboardInterrupt):
+            os.kill(os.getpid(), signal.SIGINT)
+
+        smm.shutdown()
+
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
         with self.assertRaises(ValueError):
