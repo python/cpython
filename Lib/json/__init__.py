@@ -115,11 +115,12 @@ _default_encoder = JSONEncoder(
     indent=None,
     separators=None,
     default=None,
+    encode_float=None
 )
 
 def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
-        default=None, sort_keys=False, **kw):
+        default=None, sort_keys=False, encode_float=None, **kw):
     """Serialize ``obj`` as a JSON formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
 
@@ -165,7 +166,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     if (not skipkeys and ensure_ascii and
         check_circular and allow_nan and
         cls is None and indent is None and separators is None and
-        default is None and not sort_keys and not kw):
+        default is None and not sort_keys and not encode_float and not kw):
         iterable = _default_encoder.iterencode(obj)
     else:
         if cls is None:
@@ -173,7 +174,8 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         iterable = cls(skipkeys=skipkeys, ensure_ascii=ensure_ascii,
             check_circular=check_circular, allow_nan=allow_nan, indent=indent,
             separators=separators,
-            default=default, sort_keys=sort_keys, **kw).iterencode(obj)
+            default=default, sort_keys=sort_keys, encode_float=encode_float,
+            **kw).iterencode(obj)
     # could accelerate with writelines in some versions of Python, at
     # a debuggability cost
     for chunk in iterable:
@@ -182,7 +184,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
 def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
-        default=None, sort_keys=False, **kw):
+        default=None, sort_keys=False, encode_float=None, **kw):
     """Serialize ``obj`` to a JSON formatted ``str``.
 
     If ``skipkeys`` is true then ``dict`` keys that are not basic types
@@ -227,7 +229,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     if (not skipkeys and ensure_ascii and
         check_circular and allow_nan and
         cls is None and indent is None and separators is None and
-        default is None and not sort_keys and not kw):
+        default is None and not sort_keys and not encode_float and not kw):
         return _default_encoder.encode(obj)
     if cls is None:
         cls = JSONEncoder
@@ -235,7 +237,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         skipkeys=skipkeys, ensure_ascii=ensure_ascii,
         check_circular=check_circular, allow_nan=allow_nan, indent=indent,
         separators=separators, default=default, sort_keys=sort_keys,
-        **kw).encode(obj)
+        encode_float=encode_float, **kw).encode(obj)
 
 
 _default_decoder = JSONDecoder(object_hook=None, object_pairs_hook=None)
