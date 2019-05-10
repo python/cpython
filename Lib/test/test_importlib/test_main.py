@@ -7,7 +7,7 @@ import importlib
 
 from . import fixtures
 from importlib.metadata import (
-    Distribution, PackageNotFoundError, _hooks, api, distributions,
+    Distribution, PackageNotFoundError, api, distributions,
     entry_points, metadata, version)
 
 
@@ -25,7 +25,6 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
 
     def test_new_style_classes(self):
         self.assertIsInstance(Distribution, type)
-        self.assertIsInstance(_hooks.MetadataPathFinder, type)
 
 
 class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
