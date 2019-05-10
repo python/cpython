@@ -3879,6 +3879,118 @@ class _TestSharedMemory(BaseTestCase):
         deserialized_sl.shm.close()
         sl.shm.close()
 
+    @unittest.skipUnless(os.name == 'posix', 'posix shared memory')
+    def test_posix_shared_memory_cleaned_after_process_termination(self):
+        import subprocess
+        cmd = '''if 1:
+            import os, time, sys
+            from multiprocessing import shared_memory
+
+            sm = shared_memory.SharedMemory(create=True, size=10)
+            sm._buf[0] = 1
+            os.write({w}, sm._name.encode("ascii") + b"\\n")
+            time.sleep(100)
+        '''
+        cmd2 = '''if 1:
+            from multiprocessing import shared_memory
+            import os, time, sys
+
+            sm = shared_memory.SharedMemory("{smm_name}", create=False)
+            os.write({w}, str(sm._buf[0]).encode("ascii") + b"\\n")
+            time.sleep(100)
+        '''
+        r, w = os.pipe()
+        p = subprocess.Popen([sys.executable, '-E', '-c', cmd.format(w=w)],
+                             pass_fds=[w],
+                             stderr=subprocess.PIPE)
+
+        f = open(r, 'rb')
+        name = f.readline().rstrip().decode('ascii')
+
+        p2 = subprocess.Popen([sys.executable, '-E', '-c',
+                               cmd2.format(smm_name=name, w=w)],
+                              pass_fds=[w], stderr=subprocess.PIPE)
+
+        first_elem = int(f.readline().rstrip().decode('ascii'))
+        f.close()
+        os.close(w)
+        self.assertEqual(first_elem, 1)
+
+        p.terminate()
+        p2.terminate()
+        p.wait()
+        p2.wait()
+        time.sleep(1.0)
+
+        import _posixshmem
+        with self.assertRaises(OSError) as ctx:
+            _posixshmem.shm_unlink(name)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows shared memory')
+    def test_windows_shared_memory_cleaned_after_process_termination(self):
+        import subprocess
+        cmd = '''if 1:
+            import os, time, sys
+            import msvcrt, _winapi
+            from multiprocessing import shared_memory, reduction
+
+
+            source_process = _winapi.OpenProcess(
+                _winapi.PROCESS_DUP_HANDLE, False, {parent_pid})
+            w = msvcrt.open_osfhandle(reduction.duplicate(
+                    {w}, source_process=source_process), 0)
+
+            sm = shared_memory.SharedMemory(create=True, size=10)
+            sm._buf[0] = 1
+            os.write(w, sm._name.encode("ascii") + b"\\n")
+            time.sleep(100)
+        '''
+        cmd2 = '''if 1:
+            import msvcrt, _winapi
+            import os, time, sys
+            from multiprocessing import shared_memory, reduction
+
+
+            source_process = _winapi.OpenProcess(
+                _winapi.PROCESS_DUP_HANDLE, False, {parent_pid})
+            w = msvcrt.open_osfhandle(reduction.duplicate(
+                    {w}, source_process=source_process), 0)
+
+            sm = shared_memory.SharedMemory("{smm_name}", create=False)
+            os.write(w, str(sm._buf[0]).encode("ascii") + b"\\n")
+            time.sleep(100)
+        '''
+        r, w = os.pipe()
+        import msvcrt
+        p = subprocess.Popen([sys.executable, '-E', '-c',
+                              cmd.format(w=msvcrt.get_osfhandle(w),
+                                         parent_pid=os.getpid())],
+                             stderr=subprocess.PIPE)
+
+        f = open(r, 'rb')
+        name = f.readline().rstrip().decode('ascii')
+
+        p2 = subprocess.Popen([sys.executable, '-E', '-c',
+                               cmd2.format(smm_name=name,
+                                           w=msvcrt.get_osfhandle(w),
+                                           parent_pid=os.getpid())],
+                              stderr=subprocess.PIPE)
+
+        first_elem = int(f.readline().rstrip().decode('ascii'))
+        f.close()
+        os.close(w)
+        self.assertEqual(first_elem, 1)
+
+        p.terminate()
+        p2.terminate()
+        p.wait()
+        p2.wait()
+        time.sleep(1.0)
+        with self.assertRaises(FileNotFoundError):
+            from multiprocessing import shared_memory
+            smm = shared_memory.SharedMemory(name, create=False)
+
+
 #
 #
 #
