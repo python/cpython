@@ -558,6 +558,13 @@ xml
   :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
   (Contributed by Stefan Behnel in :issue:`13611`.)
 
+* The target object of :class:`xml.etree.ElementTree.XMLParser` can
+  receive namespace declaration events through the new callback methods
+  ``start_ns()`` and ``end_ns()``.  Additionally, the
+  :class:`xml.etree.ElementTree.TreeBuilder` target can be configured
+  to process events about comments and processing instructions to include
+  them in the generated tree.
+  (Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
 
 Optimizations
 =============
