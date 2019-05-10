@@ -231,49 +231,38 @@ def _releaseLock():
 # Prevent a held logging lock from blocking a child from logging.
 
 if not hasattr(os, 'register_at_fork'):  # Windows and friends.
-    def _register_at_fork_acquire_release(instance):
+    def _register_at_fork_reinit_lock(instance):
         pass  # no-op when os.register_at_fork does not exist.
-else:  # The os.register_at_fork API exists
-    os.register_at_fork(before=_acquireLock,
-                        after_in_child=_releaseLock,
-                        after_in_parent=_releaseLock)
+else:
+    # A collection of instances with a createLock method (logging.Handler)
+    # to be called in the child after forking.  The weakref avoids us keeping
+    # discarded Handler instances alive.  A set is used to avoid accumulating
+    # duplicate registrations as createLock() is responsible for registering
+    # a new Handler instance with this set in the first place.
+    _at_fork_reinit_lock_weakset = weakref.WeakSet()
 
-    # A collection of instances with acquire and release methods (logging.Handler)
-    # to be called before and after fork.  The weakref avoids us keeping discarded
-    # Handler instances alive forever in case an odd program creates and destroys
-    # many over its lifetime.
-    _at_fork_acquire_release_weakset = weakref.WeakSet()
+    def _register_at_fork_reinit_lock(instance):
+        _acquireLock()
+        try:
+            _at_fork_reinit_lock_weakset.add(instance)
+        finally:
+            _releaseLock()
 
-
-    def _register_at_fork_acquire_release(instance):
-        # We put the instance itself in a single WeakSet as we MUST have only
-        # one atomic weak ref. used by both before and after atfork calls to
-        # guarantee matched pairs of acquire and release calls.
-        _at_fork_acquire_release_weakset.add(instance)
-
-
-    def _at_fork_weak_calls(method_name):
-        for instance in _at_fork_acquire_release_weakset:
-            method = getattr(instance, method_name)
+    def _after_at_fork_child_reinit_locks():
+        # _acquireLock() was called in the parent before forking.
+        for handler in _at_fork_reinit_lock_weakset:
             try:
-                method()
+                handler.createLock()
             except Exception as err:
                 # Similar to what PyErr_WriteUnraisable does.
                 print("Ignoring exception from logging atfork", instance,
-                      method_name, "method:", err, file=sys.stderr)
+                      "._reinit_lock() method:", err, file=sys.stderr)
+        _releaseLock()  # Acquired by os.register_at_fork(before=.
 
 
-    def _before_at_fork_weak_calls():
-        _at_fork_weak_calls('acquire')
-
-
-    def _after_at_fork_weak_calls():
-        _at_fork_weak_calls('release')
-
-
-    os.register_at_fork(before=_before_at_fork_weak_calls,
-                        after_in_child=_after_at_fork_weak_calls,
-                        after_in_parent=_after_at_fork_weak_calls)
+    os.register_at_fork(before=_acquireLock,
+                        after_in_child=_after_at_fork_child_reinit_locks,
+                        after_in_parent=_releaseLock)
 
 
 #---------------------------------------------------------------------------
@@ -364,11 +353,9 @@ class LogRecord(object):
         else:
             self.process = None
 
-    def __str__(self):
+    def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
-
-    __repr__ = __str__
 
     def getMessage(self):
         """
@@ -902,7 +889,7 @@ class Handler(Filterer):
         Acquire a thread lock for serializing access to the underlying I/O.
         """
         self.lock = threading.RLock()
-        _register_at_fork_acquire_release(self)
+        _register_at_fork_reinit_lock(self)
 
     def acquire(self):
         """
@@ -1124,6 +1111,8 @@ class StreamHandler(Handler):
     def __repr__(self):
         level = getLevelName(self.level)
         name = getattr(self.stream, 'name', '')
+        #  bpo-36015: name can be an int
+        name = str(name)
         if name:
             name += ' '
         return '<%s %s(%s)>' % (self.__class__.__name__, name, level)

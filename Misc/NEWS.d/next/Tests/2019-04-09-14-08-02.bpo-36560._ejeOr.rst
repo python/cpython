@@ -1,4 +1,0 @@
-Fix reference leak hunting in regrtest: compute also deltas (of reference
-count, allocated memory blocks, file descriptor count) during warmup, to
-ensure that everything is initialized before starting to hunt reference
-leaks.
