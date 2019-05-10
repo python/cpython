@@ -228,7 +228,7 @@ PyDoc_STRVAR(_curses_panel_panel_set_userptr__doc__,
 "set_userptr($self, obj, /)\n"
 "--\n"
 "\n"
-"Set the panel’s user pointer to obj.");
+"Set the panel\'s user pointer to obj.");
 
 #define _CURSES_PANEL_PANEL_SET_USERPTR_METHODDEF    \
     {"set_userptr", (PyCFunction)_curses_panel_panel_set_userptr, METH_O, _curses_panel_panel_set_userptr__doc__},
@@ -322,7 +322,7 @@ PyDoc_STRVAR(_curses_panel_update_panels__doc__,
 "\n"
 "Updates the virtual screen after changes in the panel stack.\n"
 "\n"
-"This does not call curses.doupdate(), so you’ll have to do this yourself.");
+"This does not call curses.doupdate(), so you\'ll have to do this yourself.");
 
 #define _CURSES_PANEL_UPDATE_PANELS_METHODDEF    \
     {"update_panels", (PyCFunction)_curses_panel_update_panels, METH_NOARGS, _curses_panel_update_panels__doc__},
@@ -335,4 +335,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=ac1f56e6c3d4cc57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3cc16062281b7e07 input=a9049054013a1b77]*/

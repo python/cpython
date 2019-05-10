@@ -1,3 +1,0 @@
-Fix test_ssl for strict OpenSSL configuration like RHEL8 strict crypto policy.
-Use older TLS version for minimum TLS version of the server SSL context if
-needed, to test TLS version older than default minimum TLS version.

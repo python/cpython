@@ -102,9 +102,9 @@ namespace_repr(PyObject *ns)
         if (PyUnicode_Check(key) && PyUnicode_GET_LENGTH(key) > 0) {
             PyObject *value, *item;
 
-            value = PyDict_GetItem(d, key);
+            value = PyDict_GetItemWithError(d, key);
             if (value != NULL) {
-                item = PyUnicode_FromFormat("%S=%R", key, value);
+                item = PyUnicode_FromFormat("%U=%R", key, value);
                 if (item == NULL) {
                     loop_error = 1;
                 }
@@ -112,6 +112,9 @@ namespace_repr(PyObject *ns)
                     loop_error = PyList_Append(pairs, item);
                     Py_DECREF(item);
                 }
+            }
+            else if (PyErr_Occurred()) {
+                loop_error = 1;
             }
         }
 

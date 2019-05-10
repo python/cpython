@@ -1,3 +1,0 @@
-Clarify the errors reported when ``object.__new__`` and ``object.__init__``
-receive more than one argument.
-Contributed by Sanyam Khurana.

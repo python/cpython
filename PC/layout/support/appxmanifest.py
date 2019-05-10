@@ -159,21 +159,20 @@ REGISTRY = {
             "SysVersion": VER_DOT,
             "Version": "{}.{}.{}".format(VER_MAJOR, VER_MINOR, VER_MICRO),
             "InstallPath": {
-                # I have no idea why the trailing spaces are needed, but they seem to be needed.
-                "": "[{AppVPackageRoot}][                    ]",
-                "ExecutablePath": "[{AppVPackageRoot}]python.exe[                    ]",
-                "WindowedExecutablePath": "[{AppVPackageRoot}]pythonw.exe[                    ]",
+                "": "[{AppVPackageRoot}]",
+                "ExecutablePath": "[{AppVPackageRoot}]\\python.exe",
+                "WindowedExecutablePath": "[{AppVPackageRoot}]\\pythonw.exe",
             },
             "Help": {
                 "Main Python Documentation": {
                     "_condition": lambda ns: ns.include_chm,
-                    "": "[{{AppVPackageRoot}}]Doc\\{}[                    ]".format(
+                    "": "[{{AppVPackageRoot}}]\\Doc\\{}".format(
                         PYTHON_CHM_NAME
                     ),
                 },
                 "Local Python Documentation": {
                     "_condition": lambda ns: ns.include_html_doc,
-                    "": "[{AppVPackageRoot}]Doc\\html\\index.html[                    ]",
+                    "": "[{AppVPackageRoot}]\\Doc\\html\\index.html",
                 },
                 "Online Python Documentation": {
                     "": "https://docs.python.org/{}".format(VER_DOT)
@@ -181,7 +180,7 @@ REGISTRY = {
             },
             "Idle": {
                 "_condition": lambda ns: ns.include_idle,
-                "": "[{AppVPackageRoot}]Lib\\idlelib\\idle.pyw[                    ]",
+                "": "[{AppVPackageRoot}]\\Lib\\idlelib\\idle.pyw",
             },
         }
     }
