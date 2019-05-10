@@ -1,2 +1,0 @@
-In debug build, import now also looks for C extensions compiled in release
-mode and for C extensions compiled in the stable ABI.

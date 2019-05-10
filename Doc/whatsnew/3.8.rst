@@ -148,6 +148,20 @@ extensions compiled in release mode and for C extensions compiled with the
 stable ABI.
 (Contributed by Victor Stinner in :issue:`36722`.)
 
+f-strings now support =  for quick and easy debugging
+-----------------------------------------------------
+
+Add ``=`` specifier to f-strings. ``f'{expr=}'`` expands
+to the text of the expression, an equal sign, then the repr of the
+evaluated expression.  So::
+
+  x = 3
+  print(f'{x*9 + 15=}')
+
+Would print ``x*9 + 15=42``.
+
+(Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
+
 
 Other Language Changes
 ======================
@@ -496,9 +510,8 @@ Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 unicodedata
 -----------
 
-* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.0.0
-  <http://blog.unicode.org/2019/03/announcing-unicode-standard-version-120.html>`_
-  release.
+* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.1.0
+  <http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 * New function :func:`~unicodedata.is_normalized` can be used to verify a string
   is in a specific normal form. (Contributed by Max Belanger and David Euresti in
@@ -545,6 +558,13 @@ xml
   :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
   (Contributed by Stefan Behnel in :issue:`13611`.)
 
+* The target object of :class:`xml.etree.ElementTree.XMLParser` can
+  receive namespace declaration events through the new callback methods
+  ``start_ns()`` and ``end_ns()``.  Additionally, the
+  :class:`xml.etree.ElementTree.TreeBuilder` target can be configured
+  to process events about comments and processing instructions to include
+  them in the generated tree.
+  (Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
 
 Optimizations
 =============
@@ -783,6 +803,10 @@ The following features and APIs have been removed from Python 3.8:
 * "unicode_internal" codec is removed.
   (Contributed by Inada Naoki in :issue:`36297`.)
 
+* The ``Cache`` and ``Statement`` objects of the :mod:`sqlite3` module are not
+  exposed to the user.
+  (Contributed by Aviv Palivoda in :issue:`30262`.)
+
 
 Porting to Python 3.8
 =====================
@@ -810,6 +834,13 @@ Changes in Python behavior
   In Python 3.8 this happens in less cases.  In particular, exceptions
   raised when getting the attribute from the type dictionary are no longer
   ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
+
+* Removed ``__str__`` implementations from builtin types :class:`bool`,
+  :class:`int`, :class:`float`, :class:`complex` and few classes from
+  the standard library.  They now inherit ``__str__()`` from :class:`object`.
+  As result, defining the ``__repr__()`` method in the subclass of these
+  classes will affect they string representation.
+  (Contributed by Serhiy Storchaka in :issue:`36793`.)
 
 * On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since

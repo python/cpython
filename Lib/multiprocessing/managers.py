@@ -17,6 +17,7 @@ __all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
 
 import sys
 import threading
+import signal
 import array
 import queue
 import time
@@ -419,6 +420,7 @@ class Server(object):
 
         self.incref(c, ident)
         return ident, tuple(exposed)
+    create.__text_signature__ = '($self, c, typeid, /, *args, **kwds)'
 
     def get_methods(self, c, token):
         '''
@@ -595,6 +597,9 @@ class BaseManager(object):
         '''
         Create a server, report its address and run it
         '''
+        # bpo-36368: protect server process from KeyboardInterrupt signals
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         if initializer is not None:
             initializer(*initargs)
 
@@ -1309,6 +1314,7 @@ if HAS_SHMEM:
             if hasattr(self.registry[typeid][-1], "_shared_memory_proxy"):
                 kwargs['shared_memory_context'] = self.shared_memory_context
             return Server.create(*args, **kwargs)
+        create.__text_signature__ = '($self, c, typeid, /, *args, **kwargs)'
 
         def shutdown(self, c):
             "Call unlink() on all tracked shared memory, terminate the Server."

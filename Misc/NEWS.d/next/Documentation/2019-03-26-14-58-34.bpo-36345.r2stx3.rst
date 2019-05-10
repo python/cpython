@@ -1,3 +1,0 @@
-Avoid the duplication of code from ``Tools/scripts/serve.py`` in using the
-:rst:dir:`literalinclude` directive for the basic wsgiref-based web server in the
-documentation of :mod:`wsgiref`.  Contributed by Stéphane Wirtel.

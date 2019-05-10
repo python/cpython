@@ -1,2 +1,0 @@
-Fix ``test_imap4_host_default_value()`` of ``test_imaplib``: catch also
-:data:`errno.ENETUNREACH` error.

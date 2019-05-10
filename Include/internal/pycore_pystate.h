@@ -90,6 +90,8 @@ struct _is {
 
     uint64_t tstate_next_unique_id;
 
+    struct _warnings_runtime_state warnings;
+
     PyObject *audit_hooks;
 };
 
@@ -189,7 +191,6 @@ typedef struct pyruntimestate {
     int nexitfuncs;
 
     struct _gc_runtime_state gc;
-    struct _warnings_runtime_state warnings;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
