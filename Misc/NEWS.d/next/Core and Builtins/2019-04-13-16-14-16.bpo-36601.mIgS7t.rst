@@ -1,0 +1,2 @@
+A long-since-meaningless check for ``getpid() == main_pid`` was removed
+from Python's internal C signal handler.
