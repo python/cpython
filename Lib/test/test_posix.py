@@ -1550,6 +1550,15 @@ class _PosixSpawnMixin:
         with open(envfile) as f:
             self.assertEqual(f.read(), 'bar')
 
+    def test_none_file_actions(self):
+        pid = self.spawn_func(
+            self.NOOP_PROGRAM[0],
+            self.NOOP_PROGRAM,
+            os.environ,
+            file_actions=None
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
     def test_empty_file_actions(self):
         pid = self.spawn_func(
             self.NOOP_PROGRAM[0],
@@ -1828,7 +1837,8 @@ class TestPosixSpawn(unittest.TestCase, _PosixSpawnMixin):
 class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
     spawn_func = getattr(posix, 'posix_spawnp', None)
 
-    def setUp(self):
+    @support.skip_unless_symlink
+    def test_posix_spawnp(self):
         # Use a symlink to create a program in its own temporary directory
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(support.rmtree, temp_dir)
@@ -1842,53 +1852,11 @@ class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
         except KeyError:
             self.path = temp_dir   # PATH is not set
 
-    @support.skip_unless_symlink
-    def test_posix_spawnp(self):
         spawn_args = (self.program, '-I', '-S', '-c', 'pass')
         code = textwrap.dedent("""
             import os
             args = %a
             pid = os.posix_spawnp(args[0], args, os.environ)
-            pid2, status = os.waitpid(pid, 0)
-            if pid2 != pid:
-                raise Exception(f"pid {pid2} != {pid}")
-            if status != 0:
-                raise Exception(f"status {status} != 0")
-        """ % (spawn_args,))
-
-        # Use a subprocess to test os.posix_spawnp() with a modified PATH
-        # environment variable: posix_spawnp() uses the current environment
-        # to locate the program, not its environment argument.
-        args = ('-c', code)
-        assert_python_ok(*args, PATH=self.path)
-
-    @support.skip_unless_symlink
-    def test_posix_spawnp_with_file_actions_as_none(self):
-        spawn_args = (self.program, '-I', '-S', '-c', 'pass')
-        code = textwrap.dedent("""
-            import os
-            args = %a
-            pid = os.posix_spawnp(args[0], args, os.environ, file_actions=None)
-            pid2, status = os.waitpid(pid, 0)
-            if pid2 != pid:
-                raise Exception(f"pid {pid2} != {pid}")
-            if status != 0:
-                raise Exception(f"status {status} != 0")
-        """ % (spawn_args,))
-
-        # Use a subprocess to test os.posix_spawnp() with a modified PATH
-        # environment variable: posix_spawnp() uses the current environment
-        # to locate the program, not its environment argument.
-        args = ('-c', code)
-        assert_python_ok(*args, PATH=self.path)
-
-    @support.skip_unless_symlink
-    def test_posix_spawnp_with_file_actions_as_empty_list(self):
-        spawn_args = (self.program, '-I', '-S', '-c', 'pass')
-        code = textwrap.dedent("""
-            import os
-            args = %a
-            pid = os.posix_spawnp(args[0], args, os.environ, file_actions=[])
             pid2, status = os.waitpid(pid, 0)
             if pid2 != pid:
                 raise Exception(f"pid {pid2} != {pid}")
