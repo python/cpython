@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-
-
 import abc
 
 from importlib.abc import MetaPathFinder

@@ -18,16 +18,9 @@ Python's ``site-packages`` directory via tools such as `pip
 <https://pypi.org/project/pip/>`_.  Specifically,
 it means a package with either a discoverable ``dist-info`` or ``egg-info``
 directory, and metadata defined by `PEP 566`_ or its older specifications.
-By default, package metadata can live on the file system or in wheels on
+By default, package metadata can live on the file system or in zip archives on
 ``sys.path``.  Through an extension mechanism, the metadata can live almost
 anywhere.
-
-.. note::  Although this package supports loading metadata from wheels
-   on ``sys.path``, that support is provisional and does not serve to
-   contravene the `PEP 427 directive
-   <https://www.python.org/dev/peps/pep-0427/#is-it-possible-to-import-python-code-directly-from-a-wheel-file>`_,
-   which states that relying on this format is discouraged, and use is
-   at your own risk.
 
 
 Overview

@@ -1,13 +1,9 @@
 import sys
 import unittest
-import importlib.metadata
 
+from contextlib import ExitStack
+from importlib.metadata import distribution, entry_points, files, version
 from importlib.resources import path
-
-try:
-    from contextlib import ExitStack
-except ImportError:
-    from contextlib2 import ExitStack
 
 
 class BespokeLoader:
@@ -27,22 +23,20 @@ class TestZip(unittest.TestCase):
         self.resources.callback(sys.path.pop, 0)
 
     def test_zip_version(self):
-        self.assertEqual(importlib.metadata.version('example'), '21.12')
+        self.assertEqual(version('example'), '21.12')
 
     def test_zip_entry_points(self):
-        scripts = dict(importlib.metadata.entry_points()['console_scripts'])
+        scripts = dict(entry_points()['console_scripts'])
         entry_point = scripts['example']
         self.assertEqual(entry_point.value, 'example:main')
 
     def test_missing_metadata(self):
-        distribution = importlib.metadata.distribution('example')
-        self.assertIsNone(distribution.read_text('does not exist'))
+        self.assertIsNone(distribution('example').read_text('does not exist'))
 
     def test_case_insensitive(self):
-        self.assertEqual(importlib.metadata.version('Example'), '21.12')
+        self.assertEqual(version('Example'), '21.12')
 
     def test_files(self):
-        files = importlib.metadata.files('example')
-        for file in files:
+        for file in files('example'):
             path = str(file.dist.locate_file(file))
             assert '.whl/' in path, path
