@@ -11,7 +11,7 @@
 # This is important because there may be system limits for such resources: for
 # instance, the system only supports a limited number of named semaphores, and
 # shared-memory segments live in the RAM. If a python process leaks such a
-# resoucre, this resource will not be removed till the next reboot.  Without
+# resource, this resource will not be removed till the next reboot.  Without
 # this resource tracker process, "killall python" would probably leave unlinked
 # resources.
 
