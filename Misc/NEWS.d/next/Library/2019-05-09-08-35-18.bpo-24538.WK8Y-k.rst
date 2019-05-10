@@ -1,0 +1,3 @@
+In `shutil.copystat()`, first copy extended file attributes and then file
+permissions, since extended attributes can only be set on the destination
+while it is still writeable.
