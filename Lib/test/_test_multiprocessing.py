@@ -4828,13 +4828,7 @@ class TestResourceTracker(unittest.TestCase):
 
 
             def create_and_register_resource(rtype):
-                if rtype == "folder":
-                    folder_name = tempfile.mkdtemp()
-                    # tempfile.mkdtemp() does not register the created folder
-                    # automatically.
-                    resource_tracker.register(folder_name, rtype)
-                    return None, folder_name
-                elif rtype == "semaphore":
+                if rtype == "semaphore":
                     lock = mp.Lock()
                     return lock, lock._semlock.name
                 elif rtype == "shared_memory":

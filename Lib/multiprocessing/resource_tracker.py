@@ -16,7 +16,6 @@
 # resources.
 
 import os
-import shutil
 import signal
 import sys
 import threading
@@ -174,9 +173,9 @@ def main(fd):
                     cmd, name, rtype = line.strip().decode('ascii').split(':')
                     cleanup_func = _CLEANUP_FUNCS.get(rtype, None)
                     if cleanup_func is None:
-                        raise ValueError('Cannot register for automatic '
-                                         'cleanup: unknown resource type {}'
-                                         .format(name, rtype))
+                        raise ValueError(
+                            f'Cannot register {name} for automatic cleanup: '
+                            f'unknown resource type {rtype}')
 
                     if cmd == 'REGISTER':
                         cache[rtype].add(name)
