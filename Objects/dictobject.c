@@ -459,6 +459,7 @@ static PyObject *empty_values[1] = { NULL };
 int
 _PyDict_CheckConsistency(PyObject *op, int check_content)
 {
+#ifndef NDEBUG
     _PyObject_ASSERT(op, PyDict_Check(op));
     PyDictObject *mp = (PyDictObject *)op;
 
@@ -481,23 +482,20 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
         PyDictKeyEntry *entries = DK_ENTRIES(keys);
         Py_ssize_t i;
 
-#ifndef NDEBUG
         for (i=0; i < keys->dk_size; i++) {
             Py_ssize_t ix = dictkeys_get_index(keys, i);
             _PyObject_ASSERT(op, DKIX_DUMMY <= ix && ix <= usable);
         }
-#endif
+
         for (i=0; i < usable; i++) {
             PyDictKeyEntry *entry = &entries[i];
             PyObject *key = entry->me_key;
 
             if (key != NULL) {
                 if (PyUnicode_CheckExact(key)) {
-#ifndef NDEBUG
                     Py_hash_t hash = ((PyASCIIObject *)key)->hash;
                     _PyObject_ASSERT(op, hash != -1);
                     _PyObject_ASSERT(op, entry->me_hash == hash);
-#endif
                 }
                 else {
                     /* test_dict fails if PyObject_Hash() is called again */
@@ -520,7 +518,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
             }
         }
     }
-
+#endif
     return 1;
 }
 
