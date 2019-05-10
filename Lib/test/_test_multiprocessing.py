@@ -3886,6 +3886,7 @@ class _TestSharedMemory(BaseTestCase):
             import os, time, sys
             from multiprocessing import shared_memory
 
+            # Create a shared_memory segment, and send the segment name
             sm = shared_memory.SharedMemory(create=True, size=10)
             sm._buf[0] = 1
             os.write({w}, sm._name.encode("ascii") + b"\\n")
@@ -3895,6 +3896,7 @@ class _TestSharedMemory(BaseTestCase):
             from multiprocessing import shared_memory
             import os, time, sys
 
+            # Send back the first byte of sm
             sm = shared_memory.SharedMemory("{smm_name}", create=False)
             os.write({w}, str(sm._buf[0]).encode("ascii") + b"\\n")
             time.sleep(100)
@@ -3911,16 +3913,20 @@ class _TestSharedMemory(BaseTestCase):
                                cmd2.format(smm_name=name, w=w)],
                               pass_fds=[w], stderr=subprocess.PIPE)
 
+        # make sure that the shared memory segment is correctly seen among
+        # different processes
         first_elem = int(f.readline().rstrip().decode('ascii'))
+        self.assertEqual(first_elem, 1)
         f.close()
         os.close(w)
-        self.assertEqual(first_elem, 1)
 
+        # killing abruptly processes holding reference to a shared memory
+        # segment should not leak the given memory segment.
         p.terminate()
         p2.terminate()
         p.wait()
         p2.wait()
-        time.sleep(1.0)
+        time.sleep(1.0)  # wait for the OS to collect the segment
 
         import _posixshmem
         with self.assertRaises(OSError) as ctx:
@@ -3935,6 +3941,7 @@ class _TestSharedMemory(BaseTestCase):
             from multiprocessing import shared_memory, reduction
 
 
+            # Create a shared_memory segment, and send the segment name
             source_process = _winapi.OpenProcess(
                 _winapi.PROCESS_DUP_HANDLE, False, {parent_pid})
             w = msvcrt.open_osfhandle(reduction.duplicate(
@@ -3956,6 +3963,7 @@ class _TestSharedMemory(BaseTestCase):
             w = msvcrt.open_osfhandle(reduction.duplicate(
                     {w}, source_process=source_process), 0)
 
+            # Send back the first byte of sm
             sm = shared_memory.SharedMemory("{smm_name}", create=False)
             os.write(w, str(sm._buf[0]).encode("ascii") + b"\\n")
             time.sleep(100)
@@ -3976,11 +3984,15 @@ class _TestSharedMemory(BaseTestCase):
                                            parent_pid=os.getpid())],
                               stderr=subprocess.PIPE)
 
+        # make sure that the shared memory segment is correctly seen among
+        # different processes
         first_elem = int(f.readline().rstrip().decode('ascii'))
         f.close()
         os.close(w)
         self.assertEqual(first_elem, 1)
 
+        # killing abruptly processes holding reference to a shared memory
+        # segment should not leak the given memory segment.
         p.terminate()
         p2.terminate()
         p.wait()
