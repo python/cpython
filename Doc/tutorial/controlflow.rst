@@ -528,7 +528,9 @@ restrict the way arguments can be passed so that a developer need only look
 at the function definition to determine if items are passed by position, by
 position or keyword, or by keyword.
 
-A function definition may look like::
+A function definition may look like:
+
+.. code-block:: none
 
    def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
          -----------    ----------     ----------
@@ -591,7 +593,7 @@ markers ``/`` and ``*``::
    ...     print(pos_only, standard, kwd_only)
 
 
-The first function definition ``standard_arg``, the most familiar form,
+The first function definition, ``standard_arg``, the most familiar form,
 places no restrictions on the calling convention and arguments may be
 passed by position or keyword::
 
@@ -677,11 +679,14 @@ The use case will determine which parameters to use in the function definition::
 
 As guidance:
 
-* Use positional-only if names do not matter or have no meaning, and there are
-  only a few arguments which will always be passed in the same order or in case
-  when you need arbitrary keyword parameters and some positional ones.
+* Use positional-only if you want the name of the parameters to not be
+  available to the user. This is useful when parameter names have no real
+  meaning, if you want to enforce the order of the arguments when the function
+  is called or if you need to take some positinal parameters and arbitrary
+  keywords.
 * Use keyword-only when names have meaning and the function definition is
-  more understandable by being explicit with names.
+  more understandable by being explicit with names or you want to prevent
+  users relying on the position of the argument being passed.
 
 .. _tut-arbitraryargs:
 
