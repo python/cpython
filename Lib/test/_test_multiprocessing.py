@@ -4875,8 +4875,8 @@ class TestResourceTracker(unittest.TestCase):
                     ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
                 err = p.stderr.read().decode('utf-8')
                 p.stderr.close()
-                expected = (
-                    'resource_tracker: There appear to be 2 leaked {}s'.format(
+                expected = ('resource_tracker: There appear to be 2 leaked {} '
+                            'objects'.format(
                             rtype))
                 self.assertRegex(err, expected)
                 self.assertRegex(err, r'resource_tracker: %r: \[Errno' % name1)
