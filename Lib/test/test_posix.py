@@ -1550,6 +1550,15 @@ class _PosixSpawnMixin:
         with open(envfile) as f:
             self.assertEqual(f.read(), 'bar')
 
+    def test_none_file_actions(self):
+        pid = self.spawn_func(
+            self.NOOP_PROGRAM[0],
+            self.NOOP_PROGRAM,
+            os.environ,
+            file_actions=None
+        )
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+
     def test_empty_file_actions(self):
         pid = self.spawn_func(
             self.NOOP_PROGRAM[0],
