@@ -459,6 +459,7 @@ static PyObject *empty_values[1] = { NULL };
 int
 _PyDict_CheckConsistency(PyObject *op, int check_content)
 {
+#ifndef NDEBUG
     _PyObject_ASSERT(op, PyDict_Check(op));
     PyDictObject *mp = (PyDictObject *)op;
 
@@ -517,7 +518,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
             }
         }
     }
-
+#endif
     return 1;
 }
 
