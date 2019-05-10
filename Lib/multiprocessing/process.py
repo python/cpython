@@ -7,7 +7,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = ['BaseProcess', 'current_process', 'active_children']
+__all__ = ['BaseProcess', 'current_process', 'active_children',
+           'parent_process']
 
 #
 # Imports
@@ -45,6 +46,13 @@ def active_children():
     '''
     _cleanup()
     return list(_children)
+
+
+def parent_process():
+    '''
+    Return process object representing the parent process
+    '''
+    return _parent_process
 
 #
 #
@@ -278,9 +286,9 @@ class BaseProcess(object):
 
     ##
 
-    def _bootstrap(self):
+    def _bootstrap(self, parent_sentinel=None):
         from . import util, context
-        global _current_process, _process_counter, _children
+        global _current_process, _parent_process, _process_counter, _children
 
         try:
             if self._start_method is not None:
@@ -289,6 +297,8 @@ class BaseProcess(object):
             _children = set()
             util._close_stdin()
             old_process = _current_process
+            _parent_process = _ParentProcess(old_process.name, old_process.pid,
+                                             parent_sentinel)
             _current_process = self
             try:
                 util._finalizer_registry.clear()
@@ -337,6 +347,25 @@ class AuthenticationString(bytes):
                 )
         return AuthenticationString, (bytes(self),)
 
+
+#
+# Create object representing the parent process
+#
+
+class _ParentProcess(BaseProcess):
+
+    def __init__(self, name, pid, sentinel):
+        self._identity = ()
+        self._name = name
+        self._parent_pid = pid
+        self._popen = None
+        self._closed = False
+        self._sentinel = sentinel
+
+    def close(self):
+        pass
+
+
 #
 # Create object representing the main process
 #
@@ -365,6 +394,7 @@ class _MainProcess(BaseProcess):
         pass
 
 
+_parent_process = None
 _current_process = _MainProcess()
 _process_counter = itertools.count(1)
 _children = set()

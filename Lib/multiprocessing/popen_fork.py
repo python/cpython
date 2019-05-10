@@ -70,7 +70,7 @@ class Popen(object):
         if self.pid == 0:
             try:
                 os.close(parent_r)
-                code = process_obj._bootstrap()
+                code = process_obj._bootstrap(parent_sentinel=child_w)
             finally:
                 os._exit(code)
         else:

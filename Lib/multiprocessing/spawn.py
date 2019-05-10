@@ -119,7 +119,7 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
 
 
 def _main(fd):
-    with os.fdopen(fd, 'rb', closefd=True) as from_parent:
+    with os.fdopen(fd, 'rb', closefd=False) as from_parent:
         process.current_process()._inheriting = True
         try:
             preparation_data = reduction.pickle.load(from_parent)
@@ -127,7 +127,7 @@ def _main(fd):
             self = reduction.pickle.load(from_parent)
         finally:
             del process.current_process()._inheriting
-    return self._bootstrap()
+    return self._bootstrap(parent_sentinel=fd)
 
 
 def _check_not_importing_main():
