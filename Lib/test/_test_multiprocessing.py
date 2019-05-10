@@ -3879,6 +3879,32 @@ class _TestSharedMemory(BaseTestCase):
         deserialized_sl.shm.close()
         sl.shm.close()
 
+    def test_shared_memory_cleaned_after_process_termination(self):
+        import subprocess
+        from multiprocessing import shared_memory
+        cmd = '''if 1:
+            import os, time, sys
+            from multiprocessing import shared_memory
+
+            # Create a shared_memory segment, and send the segment name
+            sm = shared_memory.SharedMemory(create=True, size=10)
+            sys.stdout.write(sm._name + '\\n')
+            sys.stdout.flush()
+            time.sleep(100)
+        '''
+        p = subprocess.Popen([sys.executable, '-E', '-c', cmd],
+                             stdout=subprocess.PIPE)
+        name = p.stdout.readline().strip().decode()
+
+        # killing abruptly processes holding reference to a shared memory
+        # segment should not leak the given memory segment.
+        p.terminate()
+        p.wait()
+        time.sleep(1.0)  # wait for the OS to collect the segment
+
+        with self.assertRaises(FileNotFoundError):
+            smm = shared_memory.SharedMemory(name, create=False)
+
 #
 #
 #
