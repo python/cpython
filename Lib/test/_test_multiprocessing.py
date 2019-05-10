@@ -4855,6 +4855,9 @@ class TestResourceTracker(unittest.TestCase):
         '''
         for rtype in resource_tracker._CLEANUP_FUNCS:
             with self.subTest(rtype=rtype):
+                if rtype == "noop":
+                    # Artefact resource type used by the resource_tracker
+                    continue
                 r, w = os.pipe()
                 p = subprocess.Popen([sys.executable,
                                      '-E', '-c', cmd.format(w=w, rtype=rtype)],

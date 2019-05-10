@@ -33,7 +33,7 @@ _HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
 _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
 _CLEANUP_FUNCS = {
-    'folder': shutil.rmtree,
+    'noop': lambda: None,
     'semaphore': _multiprocessing.sem_unlink,
     'shared_memory': _posixshmem.shm_unlink
 }
@@ -119,7 +119,7 @@ class ResourceTracker(object):
         try:
             # We cannot use send here as it calls ensure_running, creating
             # a cycle.
-            os.write(self._fd, b'PROBE:0:folder\n')
+            os.write(self._fd, b'PROBE:0:noop\n')
         except OSError:
             return False
         else:
