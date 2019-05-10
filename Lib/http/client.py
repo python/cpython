@@ -1091,7 +1091,7 @@ class HTTPConnection:
             url = '/'
         # Prevent CVE-2019-9740.
         if match := _contains_disallowed_url_pchar_re.search(url):
-            raise ValueError(f"URL can't contain control characters. {url!r} "
+            raise InvalidURL(f"URL can't contain control characters. {url!r} "
                              f"(found at least {match.group()!r})")
         request = '%s %s %s' % (method, url, self._http_vsn_str)
 
@@ -1419,8 +1419,7 @@ class IncompleteRead(HTTPException):
             e = ''
         return '%s(%i bytes read%s)' % (self.__class__.__name__,
                                         len(self.partial), e)
-    def __str__(self):
-        return repr(self)
+    __str__ = object.__str__
 
 class ImproperConnectionState(HTTPException):
     pass

@@ -84,7 +84,6 @@ main(int argc, char *argv[])
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
     config._frozen = 1;
-    config._init_main = 0;
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
@@ -128,7 +127,7 @@ main(int argc, char *argv[])
         size_t i, end = Py_MIN(n + 16, data_size);
         fprintf(outfile, "    ");
         for (i = n; i < end; i++) {
-            fprintf(outfile, "%d,", (unsigned int) data[i]);
+            fprintf(outfile, "%u,", (unsigned int) data[i]);
         }
         fprintf(outfile, "\n");
     }

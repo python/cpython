@@ -649,6 +649,7 @@ class Bdb:
             self.quitting = True
             sys.settrace(None)
         return res
+    runcall.__text_signature__ = '($self, func, /, *args, **kwds)'
 
 
 def set_trace():

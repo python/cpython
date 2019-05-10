@@ -56,7 +56,14 @@ struct _is {
     PyObject *codec_search_cache;
     PyObject *codec_error_registry;
     int codecs_initialized;
-    int fscodec_initialized;
+
+    /* fs_codec.encoding is initialized to NULL.
+       Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
+    struct {
+        char *encoding;   /* Filesystem encoding (encoded to UTF-8) */
+        char *errors;     /* Filesystem errors (encoded to UTF-8) */
+        _Py_error_handler error_handler;
+    } fs_codec;
 
     _PyCoreConfig core_config;
 #ifdef HAVE_DLOPEN
@@ -83,6 +90,8 @@ struct _is {
     PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
+
+    struct _warnings_runtime_state warnings;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
@@ -172,7 +181,6 @@ typedef struct pyruntimestate {
     int nexitfuncs;
 
     struct _gc_runtime_state gc;
-    struct _warnings_runtime_state warnings;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 

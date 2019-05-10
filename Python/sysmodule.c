@@ -424,7 +424,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-    return PyUnicode_FromString(config->filesystem_encoding);
+    return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
 /*[clinic input]
@@ -439,7 +439,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-    return PyUnicode_FromString(config->filesystem_errors);
+    return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
 /*[clinic input]
@@ -1211,30 +1211,9 @@ static PyObject *
 sys__enablelegacywindowsfsencoding_impl(PyObject *module)
 /*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    _PyCoreConfig *config = &interp->core_config;
-
-    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
-    char *encoding = _PyMem_RawStrdup("mbcs");
-    char *errors = _PyMem_RawStrdup("replace");
-    if (encoding == NULL || errors == NULL) {
-        PyMem_Free(encoding);
-        PyMem_Free(errors);
-        PyErr_NoMemory();
+    if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
         return NULL;
     }
-
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
-    PyMem_RawFree(config->filesystem_errors);
-    config->filesystem_errors = errors;
-
-    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
-                                  config->filesystem_errors) < 0) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     Py_RETURN_NONE;
 }
 
@@ -1771,7 +1750,7 @@ _alloc_preinit_entry(const wchar_t *value)
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return node;
-};
+}
 
 static int
 _append_preinit_entry(_Py_PreInitEntry *optionlist, const wchar_t *value)
@@ -1793,7 +1772,7 @@ _append_preinit_entry(_Py_PreInitEntry *optionlist, const wchar_t *value)
         last_entry->next = new_entry;
     }
     return 0;
-};
+}
 
 static void
 _clear_preinit_entries(_Py_PreInitEntry *optionlist)
@@ -1810,7 +1789,7 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
         current = next;
     }
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-};
+}
 
 static void
 _clear_all_preinit_options(void)
@@ -1841,7 +1820,7 @@ _PySys_ReadPreInitOptions(void)
 
     _clear_all_preinit_options();
     return 0;
-};
+}
 
 static PyObject *
 get_warnoptions(void)

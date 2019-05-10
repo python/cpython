@@ -25,6 +25,7 @@ __all__ = (
 __version__ = '1.0'
 
 
+import io
 import inspect
 import pprint
 import sys
@@ -63,10 +64,7 @@ def _get_signature_object(func, as_instance, eat_self):
     """
     if isinstance(func, type) and not as_instance:
         # If it's a type and should be modelled as a type, use __init__.
-        try:
-            func = func.__init__
-        except AttributeError:
-            return None
+        func = func.__init__
         # Skip the `self` argument in __init__
         eat_self = True
     elif not isinstance(func, FunctionTypes):
@@ -147,8 +145,6 @@ def _set_signature(mock, original, instance=False):
     # creates a function with signature (*args, **kwargs) that delegates to a
     # mock. It still does signature checking by calling a lambda with the same
     # signature as the original.
-    if not _callable(original):
-        return
 
     skipfirst = isinstance(original, type)
     result = _get_signature_object(original, instance, skipfirst)
@@ -174,10 +170,6 @@ def _set_signature(mock, original, instance=False):
 
 def _setup_func(funcopy, mock, sig):
     funcopy.mock = mock
-
-    # can't use isinstance with mocks
-    if not _is_instance_mock(mock):
-        return
 
     def assert_called_with(*args, **kwargs):
         return mock.assert_called_with(*args, **kwargs)
@@ -263,12 +255,6 @@ _missing = sentinel.MISSING
 _deleted = sentinel.DELETED
 
 
-def _copy(value):
-    if type(value) in (dict, list, tuple, set):
-        return type(value)(value)
-    return value
-
-
 _allowed_names = {
     'return_value', '_mock_return_value', 'side_effect',
     '_mock_side_effect', '_mock_parent', '_mock_new_parent',
@@ -351,8 +337,6 @@ def _check_and_set_parent(parent, value, name, new_name):
 class _MockIter(object):
     def __init__(self, obj):
         self.obj = iter(obj)
-    def __iter__(self):
-        return self
     def __next__(self):
         return next(self.obj)
 
@@ -452,7 +436,7 @@ class NonCallableMock(Base):
             if isinstance(spec, type):
                 _spec_class = spec
             else:
-                _spec_class = _get_class(spec)
+                _spec_class = type(spec)
             res = _get_signature_object(spec,
                                         _spec_as_instance, _eat_self)
             _spec_signature = res and res[1]
@@ -588,7 +572,8 @@ class NonCallableMock(Base):
             raise AttributeError(name)
         if not self._mock_unsafe:
             if name.startswith(('assert', 'assret')):
-                raise AttributeError(name)
+                raise AttributeError("Attributes cannot start with 'assert' "
+                                     "or 'assret'")
 
         result = self._mock_children.get(name)
         if result is _deleted:
@@ -624,7 +609,7 @@ class NonCallableMock(Base):
         dot = '.'
         if _name_list == ['()']:
             dot = ''
-        seen = set()
+
         while _parent is not None:
             last = _parent
 
@@ -634,11 +619,6 @@ class NonCallableMock(Base):
                 dot = ''
 
             _parent = _parent._mock_new_parent
-
-            # use ids here so as not to call __hash__ on the mocks
-            if id(_parent) in seen:
-                break
-            seen.add(id(_parent))
 
         _name_list = list(reversed(_name_list))
         _first = last._mock_name or 'mock'
@@ -753,8 +733,6 @@ class NonCallableMock(Base):
         message = 'expected call not found.\nExpected: %s\nActual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
-        if len(call_args) == 3:
-            call_args = call_args[1:]
         actual_string = self._format_mock_call_signature(*call_args)
         return message % (expected_string, actual_string)
 
@@ -992,8 +970,6 @@ class CallableMixin(Base):
         self.call_args = _call
         self.call_args_list.append(_call)
 
-        seen = set()
-
         # initial stuff for method_calls:
         do_method_calls = self._mock_parent is not None
         method_call_name = self._mock_name
@@ -1028,13 +1004,6 @@ class CallableMixin(Base):
 
             # follow the parental chain:
             _new_parent = _new_parent._mock_new_parent
-
-            # check we're not in an infinite loop:
-            # ( use ids here so as not to call __hash__ on the mocks)
-            _new_parent_id = id(_new_parent)
-            if _new_parent_id in seen:
-                break
-            seen.add(_new_parent_id)
 
         effect = self.side_effect
         if effect is not None:
@@ -1858,12 +1827,7 @@ def _set_return_value(mock, method, name):
 
     return_calulator = _calculate_return_value.get(name)
     if return_calulator is not None:
-        try:
-            return_value = return_calulator(mock)
-        except AttributeError:
-            # XXXX why do we return AttributeError here?
-            #      set it as a side_effect instead?
-            return_value = AttributeError(name)
+        return_value = return_calulator(mock)
         method.return_value = return_value
         return
 
@@ -1942,10 +1906,6 @@ class MagicProxy(object):
     def __init__(self, name, parent):
         self.name = name
         self.parent = parent
-
-    def __call__(self, *args, **kwargs):
-        m = self.create_mock()
-        return m(*args, **kwargs)
 
     def create_mock(self):
         entry = self.name
@@ -2330,17 +2290,8 @@ def _must_skip(spec, entry, is_type):
         else:
             return False
 
-    # shouldn't get here unless function is a dynamically provided attribute
-    # XXXX untested behaviour
+    # function is a dynamically provided attribute
     return is_type
-
-
-def _get_class(obj):
-    try:
-        return obj.__class__
-    except AttributeError:
-        # it is possible for objects to have no __class__
-        return type(obj)
 
 
 class _SpecState(object):
@@ -2369,25 +2320,12 @@ MethodWrapperTypes = (
 
 file_spec = None
 
-def _iterate_read_data(read_data):
-    # Helper for mock_open:
-    # Retrieve lines from read_data via a generator so that separate calls to
-    # readline, read, and readlines are properly interleaved
-    sep = b'\n' if isinstance(read_data, bytes) else '\n'
-    data_as_list = [l + sep for l in read_data.split(sep)]
 
-    if data_as_list[-1] == sep:
-        # If the last line ended in a newline, the list comprehension will have an
-        # extra entry that's just a newline.  Remove this.
-        data_as_list = data_as_list[:-1]
+def _to_stream(read_data):
+    if isinstance(read_data, bytes):
+        return io.BytesIO(read_data)
     else:
-        # If there wasn't an extra newline by itself, then the file being
-        # emulated doesn't have a newline to end the last line  remove the
-        # newline that our naive format() added
-        data_as_list[-1] = data_as_list[-1][:-1]
-
-    for line in data_as_list:
-        yield line
+        return io.StringIO(read_data)
 
 
 def mock_open(mock=None, read_data=''):
@@ -2402,20 +2340,23 @@ def mock_open(mock=None, read_data=''):
     `read_data` is a string for the `read`, `readline` and `readlines` of the
     file handle to return.  This is an empty string by default.
     """
+    _read_data = _to_stream(read_data)
+    _state = [_read_data, None]
+
     def _readlines_side_effect(*args, **kwargs):
         if handle.readlines.return_value is not None:
             return handle.readlines.return_value
-        return list(_state[0])
+        return _state[0].readlines(*args, **kwargs)
 
     def _read_side_effect(*args, **kwargs):
         if handle.read.return_value is not None:
             return handle.read.return_value
-        return type(read_data)().join(_state[0])
+        return _state[0].read(*args, **kwargs)
 
-    def _readline_side_effect():
+    def _readline_side_effect(*args, **kwargs):
         yield from _iter_side_effect()
         while True:
-            yield type(read_data)()
+            yield _state[0].readline(*args, **kwargs)
 
     def _iter_side_effect():
         if handle.readline.return_value is not None:
@@ -2435,8 +2376,6 @@ def mock_open(mock=None, read_data=''):
     handle = MagicMock(spec=file_spec)
     handle.__enter__.return_value = handle
 
-    _state = [_iterate_read_data(read_data), None]
-
     handle.write.return_value = None
     handle.read.return_value = None
     handle.readline.return_value = None
@@ -2449,7 +2388,7 @@ def mock_open(mock=None, read_data=''):
     handle.__iter__.side_effect = _iter_side_effect
 
     def reset_data(*args, **kwargs):
-        _state[0] = _iterate_read_data(read_data)
+        _state[0] = _to_stream(read_data)
         if handle.readline.side_effect == _state[1]:
             # Only reset the side effect if the user hasn't overridden it.
             _state[1] = _readline_side_effect()

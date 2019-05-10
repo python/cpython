@@ -102,16 +102,21 @@ PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(_PyPreConfig *config);
 /* --- _PyCoreConfig ---------------------------------------------- */
 
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
-PyAPI_FUNC(int) _PyCoreConfig_Copy(
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
+    wchar_t **config_str,
+    const wchar_t *str);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
+    wchar_t **config_str,
+    const char *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config,
     _PyRuntimeState *runtime);
-
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPyArgv(
     _PyCoreConfig *config,
     const _PyArgv *args);

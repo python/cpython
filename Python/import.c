@@ -837,14 +837,18 @@ PyImport_AddModule(const char *name)
 static void
 remove_module(PyObject *name)
 {
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
     PyObject *modules = PyImport_GetModuleDict();
+    if (!PyMapping_HasKey(modules, name)) {
+        goto out;
+    }
     if (PyMapping_DelItem(modules, name) < 0) {
-        if (!PyMapping_HasKey(modules, name)) {
-            return;
-        }
         Py_FatalError("import:  deleting existing key in "
                       "sys.modules failed");
     }
+out:
+    PyErr_Restore(type, value, traceback);
 }
 
 
@@ -2305,7 +2309,7 @@ PyInit__imp(void)
     if (d == NULL)
         goto failure;
     _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
-    PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
+    PyObject *pyc_mode = PyUnicode_FromWideChar(config->check_hash_pycs_mode, -1);
     if (pyc_mode == NULL) {
         goto failure;
     }

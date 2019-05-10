@@ -388,6 +388,7 @@ class partialmethod(object):
             self.func = func
             self.args = args
             self.keywords = keywords
+    __init__.__text_signature__ = '($self, func, /, *args, **keywords)'
 
     def __repr__(self):
         args = ", ".join(map(repr, self.args))
