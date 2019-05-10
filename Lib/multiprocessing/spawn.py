@@ -111,8 +111,8 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
                 _winapi.CloseHandle(source_process)
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
     else:
-        from . import semaphore_tracker
-        semaphore_tracker._semaphore_tracker._fd = tracker_fd
+        from . import resource_tracker
+        resource_tracker._resource_tracker._fd = tracker_fd
         fd = pipe_handle
     exitcode = _main(fd)
     sys.exit(exitcode)
