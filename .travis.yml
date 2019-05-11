@@ -35,14 +35,9 @@ matrix:
     - os: linux
       language: c
       compiler: clang
-      env: TESTING=cpython
-      addons:
-        apt:
-          packages:
-            - xvfb
-    - os: linux
-      language: c
-      compiler: gcc
+      # gcc also works, but to keep the # of concurrent builds down, we use one C
+      # compiler here and the other to run the coverage build. Clang is preferred
+      # in this instance for its better error messages.
       env: TESTING=cpython
       addons:
         apt:
