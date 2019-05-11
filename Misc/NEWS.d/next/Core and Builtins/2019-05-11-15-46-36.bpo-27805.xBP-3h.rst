@@ -1,0 +1,1 @@
+Allow opening ``/dev/std{out,err}`` in append mode.

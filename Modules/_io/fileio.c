@@ -477,9 +477,31 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
            end of file (otherwise, it might be done only on the
            first write()). */
         PyObject *pos = portable_lseek(self, NULL, 2);
-        if (pos == NULL)
+        if (pos != NULL) {
+            Py_DECREF(pos);
+            goto done;
+        }
+        // bpo-27805: ignore ESPIPE.
+        if (!PyErr_ExceptionMatches(PyExc_OSError)) {
             goto error;
-        Py_DECREF(pos);
+        }
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
+        assert(val);
+        PyObject *espipeint = PyLong_FromLong(ESPIPE);
+        PyOSErrorObject *oserror = (PyOSErrorObject *) val;
+        if (espipeint == NULL || oserror->myerrno == NULL ||
+            PyObject_RichCompareBool(oserror->myerrno,
+                                     espipeint, Py_EQ) != 1)
+        {
+            Py_XDECREF(espipeint);
+            _PyErr_ChainExceptions(exc, val, tb);
+            goto error;
+        }
+        Py_DECREF(exc);
+        Py_DECREF(val);
+        Py_XDECREF(tb);
+        Py_DECREF(espipeint);
     }
 
     goto done;

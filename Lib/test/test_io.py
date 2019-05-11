@@ -3660,6 +3660,12 @@ class TextIOWrapperTest(unittest.TestCase):
         t.write('x')
         t.tell()
 
+    def test_issue27805_open_append_dev_stdout(self):
+        p = '/dev/stdout'
+        if not os.path.exists(p):
+            self.skipTest(f"{p} does not exist")
+        self.open(p, 'a').close()
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews
