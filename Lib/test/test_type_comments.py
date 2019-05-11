@@ -76,6 +76,12 @@ def foo():
 
 def bar():
     x = 1  # type: ignore
+
+def baz():
+    pass  # type: ignore[excuse]
+    pass  # type: ignore=excuse
+    pass  # type: ignore [excuse]
+    x = 1  # type: ignore whatever
 """
 
 # Test for long-form type-comments in arguments.  A test function
@@ -266,7 +272,7 @@ class TypeCommentTests(unittest.TestCase):
 
     def test_ignores(self):
         for tree in self.parse_all(ignores):
-            self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5])
+            self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5, 8, 9, 10, 11])
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
@@ -318,6 +324,7 @@ class TypeCommentTests(unittest.TestCase):
         check_both_ways("while True:\n  continue  # type: int\n")
         check_both_ways("try:  # type: int\n  pass\nfinally:\n  pass\n")
         check_both_ways("try:\n  pass\nfinally:  # type: int\n  pass\n")
+        check_both_ways("pass  # type: ignorewhatever\n")
 
     def test_func_type_input(self):
 
