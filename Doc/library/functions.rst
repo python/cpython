@@ -257,10 +257,10 @@ are always available.  They are listed here in alphabetical order.
    can be found as the :attr:`~__future__._Feature.compiler_flag` attribute on
    the :class:`~__future__._Feature` instance in the :mod:`__future__` module.
 
-   The optional argument *flags* also control wether the compiled source is
+   The optional argument *flags* also controls whether the compiled source is
    allowed to contain top-level ``await``, ``async for`` and ``async with``.
    When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the the return code
-   object has ``CO_COROUTINE`` set in ``co_code``, and can be interacitvely
+   object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
    executed via ``yield from eval(code_object)``.
 
    The argument *optimize* specifies the optimization level of the compiler; the
