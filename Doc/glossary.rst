@@ -15,10 +15,10 @@ Glossary
    ``...``
       Can refer to:
 
-      * The default Python prompt of the interactive shell when entering code for
-        an indented code block, when within a pair of matching left and right
-        delimiters (parentheses, square brackets, curly braces or triple quotes),
-        or after specifying a decorator.
+      * The default Python prompt of the interactive shell when entering the
+        code for an indented code block, when within a pair of matching left and
+        right delimiters (parentheses, square brackets, curly braces or triple
+        quotes), or after specifying a decorator.
 
       * The :const:`Ellipsis` built-in constant.
 
