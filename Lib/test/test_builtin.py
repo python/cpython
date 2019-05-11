@@ -386,6 +386,10 @@ class BuiltinTest(unittest.TestCase):
                              msg='source={!r} mode={!r})'.format(source, mode))
 
     def test_compile_async_generator(self):
+        """
+        With the PyCF_ALLOW_TOP_LEVEL_AWAIT flag added in 3.8, we want to
+        make sure AsyncGenerators are still properly not marked with CO_COROUTINE
+        """
         co = compile(dedent("""async def ticker():
                 for i in range(10):
                     yield i
