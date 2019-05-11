@@ -41,8 +41,8 @@ You can get the version string for ``wheel`` by running the following::
 .. highlight:: none
 
     (example) $ python
-    >>> from importlib.metadata import version
-    >>> version('wheel')
+    >>> from importlib.metadata import version  # doctest: +SKIP
+    >>> version('wheel')  # doctest: +SKIP
     '0.32.3'
 
 You can also get the set of entry points keyed by group, such as
@@ -51,7 +51,7 @@ sequence of :ref:`EntryPoint <entry-points>` objects.
 
 You can get the :ref:`metadata for a distribution <metadata>`::
 
-    >>> list(metadata('wheel'))
+    >>> list(metadata('wheel'))  # doctest: +SKIP
     ['Metadata-Version', 'Name', 'Version', 'Summary', 'Home-page', 'Author', 'Author-email', 'Maintainer', 'Maintainer-email', 'License', 'Project-URL', 'Project-URL', 'Project-URL', 'Keywords', 'Platform', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Requires-Python', 'Provides-Extra', 'Requires-Dist', 'Requires-Dist']
 
 You can also get a :ref:`distribution's version number <version>`, list its
@@ -75,15 +75,15 @@ keyed by group.  Entry points are represented by ``EntryPoint`` instances;
 each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
 a ``.load()`` method to resolve the value.
 
-    >>> eps = entry_points()
-    >>> list(eps)
+    >>> eps = entry_points()  # doctest: +SKIP
+    >>> list(eps)  # doctest: +SKIP
     ['console_scripts', 'distutils.commands', 'distutils.setup_keywords', 'egg_info.writers', 'setuptools.installation']
-    >>> scripts = eps['console_scripts']
-    >>> wheel = [ep for ep in scripts if ep.name == 'wheel'][0]
-    >>> wheel
+    >>> scripts = eps['console_scripts']  # doctest: +SKIP
+    >>> wheel = [ep for ep in scripts if ep.name == 'wheel'][0]  # doctest: +SKIP
+    >>> wheel  # doctest: +SKIP
     EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')
-    >>> main = wheel.load()
-    >>> main
+    >>> main = wheel.load()  # doctest: +SKIP
+    >>> main  # doctest: +SKIP
     <function main at 0x103528488>
 
 The ``group`` and ``name`` are arbitrary values defined by the package author
@@ -101,12 +101,12 @@ Distribution metadata
 Every distribution includes some metadata, which you can extract using the
 ``metadata()`` function::
 
-    >>> wheel_metadata = metadata('wheel')
+    >>> wheel_metadata = metadata('wheel')  # doctest: +SKIP
 
 The keys of the returned data structure [#f1]_ name the metadata keywords, and
 their values are returned unparsed from the distribution metadata::
 
-    >>> wheel_metadata['Requires-Python']
+    >>> wheel_metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
 
 
@@ -118,7 +118,7 @@ Distribution versions
 The ``version()`` function is the quickest way to get a distribution's version
 number, as a string::
 
-    >>> version('wheel')
+    >>> version('wheel')  # doctest: +SKIP
     '0.32.3'
 
 
@@ -133,19 +133,19 @@ files installed by this distribution.  Each file object returned is a
 ``PackagePath``, a `pathlib.Path`_ derived object with additional ``dist``,
 ``size``, and ``hash`` properties as indicated by the metadata.  For example::
 
-    >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]
-    >>> util
+    >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]  # doctest: +SKIP
+    >>> util  # doctest: +SKIP
     PackagePath('wheel/util.py')
-    >>> util.size
+    >>> util.size  # doctest: +SKIP
     859
-    >>> util.dist
+    >>> util.dist  # doctest: +SKIP
     <importlib.metadata._hooks.PathDistribution object at 0x101e0cef0>
-    >>> util.hash
+    >>> util.hash  # doctest: +SKIP
     <FileHash mode: sha256 value: bYkw5oMccfazVCoYQwKkkemoVyMAFoR34mmKBx8R1NI>
 
 Once you have the file, you can also read its contents::
 
-    >>> print(util.read_text())
+    >>> print(util.read_text())  # doctest: +SKIP
     import base64
     import sys
     ...
@@ -163,7 +163,7 @@ Distribution requirements
 To get the full set of requirements for a distribution, use the ``requires()``
 function.  Note that this returns an iterator::
 
-    >>> list(requires('wheel'))
+    >>> list(requires('wheel'))  # doctest: +SKIP
     ["pytest (>=3.0.0) ; extra == 'test'"]
 
 
@@ -175,21 +175,21 @@ of that information from the ``Distribution`` class.  A ``Distribution`` is an
 abstract object that represents the metadata for a Python package.  You can
 get the ``Distribution`` instance::
 
-    >>> from importlib.metadata import distribution
-    >>> dist = distribution('wheel')
+    >>> from importlib.metadata import distribution  # doctest: +SKIP
+    >>> dist = distribution('wheel')  # doctest: +SKIP
 
 Thus, an alternative way to get the version number is through the
 ``Distribution`` instance::
 
-    >>> dist.version
+    >>> dist.version  # doctest: +SKIP
     '0.32.3'
 
 There are all kinds of additional metadata available on the ``Distribution``
 instance::
 
-    >>> d.metadata['Requires-Python']
+    >>> d.metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
-    >>> d.metadata['License']
+    >>> d.metadata['License']  # doctest: +SKIP
     'MIT'
 
 The full set of available metadata is not described here.  See `PEP 566
