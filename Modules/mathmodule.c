@@ -1543,7 +1543,7 @@ Equivalent Python code:
 /*[clinic input]
 math.isqrt
 
-    n : 'O'
+    n: object
     /
 
 Return the largest integer not exceeding the square root of the input.
