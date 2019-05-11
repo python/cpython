@@ -1637,7 +1637,7 @@ math_isqrt(PyObject *module, PyObject *n)
 {
     int a_too_large, s;
     size_t c, d;
-    PyObject *a, *b;
+    PyObject *a = NULL, *b;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -1648,8 +1648,7 @@ math_isqrt(PyObject *module, PyObject *n)
         PyErr_SetString(
             PyExc_ValueError,
             "isqrt() argument must be nonnegative");
-        Py_DECREF(n);
-        return NULL;
+        goto error;
     }
     if (_PyLong_Sign(n) == 0) {
         Py_DECREF(n);
@@ -1658,8 +1657,7 @@ math_isqrt(PyObject *module, PyObject *n)
 
     c = _PyLong_NumBits(n);
     if (c == (size_t)(-1)) {
-        Py_DECREF(n);
-        return NULL;
+        goto error;
     }
     c = (c - 1U) / 2U;
 
@@ -1671,8 +1669,7 @@ math_isqrt(PyObject *module, PyObject *n)
 
     a = PyLong_FromLong(1);
     if (a == NULL) {
-        Py_DECREF(n);
-        return NULL;
+        goto error;
     }
     d = 0;
     while (--s >= 0) {
