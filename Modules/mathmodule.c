@@ -1491,26 +1491,27 @@ zero and we have an approximation to the square root of `n` itself.
 At every step, the approximation `a` is strictly within 1.0 of the true square
 root, so we have
 
-   (a - 1)**2 < (n >> s) < (a + 1)**2
+    (a - 1)**2 < (n >> s) < (a + 1)**2
 
 After the final iteration, a check-and-correct step is needed to determine
 whether `a` or `a - 1` gives the desired integer square root of `n`.
 
 The algorithm is remarkable in its simplicity. There's no need for a
-per-iteration check-and-correct step, and termination is straightforward:
-the number of iterations is known in advance (and is roughly log2(log2(n))).
-The only tricky part of the correctness proof is in establishing that
-the bound (a - 1)**2 < (n >> s) < (a + 1)**2 is maintained from one
-iteration to the next. A sketch of the proof of this is given below.
+per-iteration check-and-correct step, and termination is straightforward: the
+number of iterations is known in advance (it's exactly `1 +
+floor(log2(log4(n)))` for `n > 1`). The only tricky part of the correctness
+proof is in establishing that the bound `(a - 1)**2 < (n >> s) < (a + 1)**2` is
+maintained from one iteration to the next. A sketch of the proof of this is
+given below.
 
-In addition to the proof sketch below, a formal, computer-verified proof
+In addition to the proof sketch, a formal, computer-verified proof
 of correctness (using Lean) of an equivalent recursive algorithm can be found
 here:
 
     https://github.com/mdickinson/snippets/blob/master/proofs/isqrt/src/isqrt.lean
 
 
-Equivalent Python code:
+Here's the Python code equivalent to the C implementation:
 
 
     def isqrt(n):
@@ -1573,11 +1574,11 @@ and we must show that
 
 From this point on, we switch to mathematical notation, so `/` means exact
 division rather than integer division and `^` is used for exponentiation. We
-use the √ symbol for the exact square root. From (3), we have
+use the `√` symbol for the exact square root. From (3), we have
 
     (4)  (a - 1)^2 < m / 4^(d - e) < (a + 1)^2
 
-Taking square roots throughout (4), scaling by 2^(d-e), and rearranging gives
+Taking square roots throughout (4), scaling by `2^(d-e)`, and rearranging gives
 
     (5)  0 <= | 2^(d-e)a - √m | < 2^(d-e)
 
@@ -1585,7 +1586,7 @@ Squaring and dividing through by `2^(d-e+1) a` gives
 
     (6)  0 <= 2^(d-e-1) a + m / (2^(d-e+1) a) - √m < 2^(d-e-1) / a
 
-We'll show below that 2^(d-e-1) <= a. Given that, we can replace the
+We'll show below that `2^(d-e-1) <= a`. Given that, we can replace the
 right-hand side of (6) with `1`, and now taking the floor throughout (6) gives
 
     (7) -1 < 2^(d-e-1) a + m // 2^(d-e+1) a - √m < 1
@@ -1597,8 +1598,9 @@ Or equivalently:
 and rearranging gives that `(b-1)^2 < m < (b+1)^2`, which is what we needed
 to prove.
 
-We're not quite done: we still have to show that key inequality on `a`. From
-the definition of `c`, we have 4^c <= n, which implies
+We're not quite done: we still have to prove the inequality `2^(d - e - 1) <=
+a` that was used to get line (7) above. From the definition of `c`, we have
+`4^c <= n`, which implies
 
     (8)  4^d <= m
 
@@ -1607,11 +1609,11 @@ that `2d - 2e - 1 <= d` and hence that
 
     (9)  4^(2d - 2e - 1) <= m
 
-Dividing both sides by 4^(d - e) gives
+Dividing both sides by `4^(d - e)` gives
 
     (10)  4^(d - e - 1) <= m / 4^(d - e)
 
-But we know from (4) that m / 4^(d-e) < (a + 1)^2, hence
+But we know from (4) that `m / 4^(d-e) < (a + 1)^2`, hence
 
     (11)  4^(d - e - 1) < (a + 1)^2
 
@@ -1642,8 +1644,6 @@ math_isqrt(PyObject *module, PyObject *n)
         return NULL;
     }
 
-    // refs: n
-
     if (_PyLong_Sign(n) < 0) {
         PyErr_SetString(
             PyExc_ValueError,
@@ -1671,9 +1671,6 @@ math_isqrt(PyObject *module, PyObject *n)
 
     a = PyLong_FromLong(1);
     d = 0;
-
-    // refs: a, n
-
     while (--s >= 0) {
         PyObject *q, *shift;
         size_t e = d;

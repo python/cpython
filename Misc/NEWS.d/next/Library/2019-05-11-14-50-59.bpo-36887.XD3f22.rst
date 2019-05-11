@@ -1,2 +1,2 @@
-Add new function `math.isqrt` to compute the integer square root of its
+Add new function :func:`math.isqrt` to compute the integer square root of its
 input.
