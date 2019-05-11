@@ -1501,7 +1501,7 @@ per-iteration check-and-correct step, and termination is straightforward:
 the number of iterations is known in advance (and is roughly log2(log2(n))).
 The only tricky part of the correctness proof is in establishing that
 the bound (a - 1)**2 < (n >> s) < (a + 1)**2 is maintained from one
-step to the next. A formal, computer-verified proof of this (using Lean)
+iteration to the next. A formal, computer-verified proof of this (using Lean)
 can be found here:
 
     https://github.com/mdickinson/snippets/blob/master/proofs/isqrt/src/isqrt.lean
@@ -1553,158 +1553,117 @@ static PyObject *
 math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=633fa99eb56c4045]*/
 {
-    int n_sign, cmp;
-    unsigned int c_bit_count;
-    size_t n_length, c, e, d, temp;
-    PyObject *a, *q, *n_shifted, *a_temp, *shift;
+    int a_too_large, s;
+    size_t n_bit_length, c, d, e;
+    PyObject *a, *b, *m, *q, *shift;
 
-    /* Hmm. Problem. Doesn't convert True to 1. */
-    /* Does an input of True give a return of exact object 1. */
-
-    /* Convert arbitrary integer-like to an actual integer. */
     n = PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
     }
 
-    /* references owned: n */
-
-    n_sign = _PyLong_Sign(n);
-
-    if (n_sign == 0) {
+    if (_PyLong_Sign(n) < 0) {
+        PyErr_SetString(
+            PyExc_ValueError,
+            "isqrt() argument must be nonnegative");
+        goto error;
+    }
+    if (_PyLong_Sign(n) == 0) {
         Py_DECREF(n);
         a = _PyLong_Zero;
         Py_INCREF(a);
         return a;
     }
 
-    if (n_sign < 0) {
-        PyErr_SetString(
-            PyExc_ValueError,
-            "isqrt() argument must be nonnegative");
+    n_bit_length = _PyLong_NumBits(n);
+    if (n_bit_length == (size_t)(-1)) {
         goto error;
     }
 
-    /* Get number of bits. */
-    n_length = _PyLong_NumBits(n);
-    if (n_length == (size_t)(-1)) {
-        goto error;
-    }
-
-    /* Floor of log base 4 of x */
-    c = (n_length - 1U) / 2U;
-
-    /* Find number of bits of c */
-    temp = c;
-    c_bit_count = 0;
-    while (temp > 0) {
-        temp >>= 1;
-        c_bit_count += 1;
+    c = (n_bit_length - 1U) / 2U;
+    s = 0;
+    while ((c >> s) > 0) {
+        ++s;
     }
 
     a = _PyLong_One;
     Py_INCREF(a);
 
-    /* references owned: a, n */
-
     d = 0;
-    while (c_bit_count > 0) {
-        c_bit_count--;
+    while (s > 0) {
+        s--;
+
         e = d;
-        d = c >> c_bit_count;
+        d = c >> s;
 
-        /* references owned: a, n */
-
-        /* q = (n >> m - (e + d - 1)) // a */
+        /* m = n >> 2*c - e - d + 1 */
         shift = PyLong_FromSize_t(2U*c - d - e + 1U);
         if (shift == NULL) {
             Py_DECREF(a);
             goto error;
         }
-
-        /* references owned: a, n, shift */
-
-        /* n_shifted = n << shift */
-        n_shifted = PyNumber_Rshift(n, shift);
+        m = PyNumber_Rshift(n, shift);
         Py_DECREF(shift);
-        if (n_shifted == NULL) {
+        if (m == NULL) {
             Py_DECREF(a);
             goto error;
         }
 
-        /* references owned: a, n, n_shifted */
-
-        /* q = n_shifted // a */
-        q = PyNumber_FloorDivide(n_shifted, a);
-        Py_DECREF(n_shifted);
+        /* q = m // a */
+        q = PyNumber_FloorDivide(m, a);
+        Py_DECREF(m);
         if (q == NULL) {
             Py_DECREF(a);
             goto error;
         }
 
-        /* references owned: a, n, q */
-
-        /* a_temp = a << (d - e - 1) */
+        /* b = a << d - 1 - e */
         shift = PyLong_FromSize_t(d - 1U - e);
         if (shift == NULL) {
             Py_DECREF(a);
             Py_DECREF(q);
             goto error;
         }
-
-        /* references owned: a, n, q, shift */
-
-        a_temp = PyNumber_Lshift(a, shift);
+        b = PyNumber_Lshift(a, shift);
         Py_DECREF(a);
         Py_DECREF(shift);
-        if (a_temp == NULL) {
+        if (b == NULL) {
             Py_DECREF(q);
             goto error;
         }
 
-        /* references owned: n, q, a_temp */
-
-        /* a = a_temp + quotient */
-        a = PyNumber_Add(a_temp, q);
-        Py_DECREF(a_temp);
+        /* a = b + q */
+        a = PyNumber_Add(b, q);
+        Py_DECREF(b);
         Py_DECREF(q);
         if (a == NULL) {
             goto error;
         }
-
-        /* references owned: a, n */
     }
 
-    /* At this point, the correct result is either a or a - 1. Figure out
-       which. */
-
-    /* references owned: a, n */
-
-    a_temp = PyNumber_Multiply(a, a);
-    if (a_temp == NULL) {
+    /* The correct result is either a or a - 1. Figure out which, and
+       decrement a if necessary. */
+    b = PyNumber_Multiply(a, a);
+    if (b == NULL) {
         Py_DECREF(a);
         goto error;
     }
-
-    /* references owned: a, n, a_temp */
-
-    cmp = PyObject_RichCompareBool(n, a_temp, Py_LT);
-    Py_DECREF(a_temp);
-    if (cmp == -1) {
+    a_too_large = PyObject_RichCompareBool(n, b, Py_LT);
+    Py_DECREF(b);
+    if (a_too_large == -1) {
         Py_DECREF(a);
         goto error;
     }
-
-    /* references owned: a, n */
-    if (cmp) {
-        a_temp = PyNumber_Subtract(a, _PyLong_One);
+    if (a_too_large) {
+        b = PyNumber_Subtract(a, _PyLong_One);
         Py_DECREF(a);
-        a = a_temp;
+        a = b;
         if (a == NULL) {
             goto error;
         }
     }
 
+    /* Add done; get rid of our extra reference to n. */
     Py_DECREF(n);
     return a;
 
