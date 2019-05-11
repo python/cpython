@@ -818,7 +818,7 @@ class StreamWriter(Stream):
     def __init__(self, transport, protocol, reader, loop,
                  *, _asyncio_internal=False):
         super().__init__(kind=StreamKind.WRITE,
-                         transport=transpotr,
+                         transport=transport,
                          protocol=protocol,
                          loop=loop,
                          _asyncio_internal=_asyncio_internal
