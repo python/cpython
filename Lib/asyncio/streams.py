@@ -392,7 +392,6 @@ class Stream:
         self._eof = False    # Whether we're done.
         self._waiter = None  # A future used by _wait_for_data()
         self._exception = None
-        self._transport = None
         self._paused = False
         self._complete_fut = self._loop.create_future()
         self._complete_fut.set_result(None)
