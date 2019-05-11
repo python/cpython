@@ -2344,7 +2344,7 @@ static PyObject *
 get_date_fromdate(PyObject *self, PyObject *args)
 {
     PyObject *rv = NULL;
-    int macro = 0;
+    int macro;
     int year, month, day;
 
     if (!PyArg_ParseTuple(args, "piii", &macro, &year, &month, &day)) {
