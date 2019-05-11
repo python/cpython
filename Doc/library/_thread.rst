@@ -85,6 +85,15 @@ This module defines the following constants and functions:
    may be recycled when a thread exits and another thread is created.
 
 
+.. function:: get_tid()
+
+   Return the Thread ID of the current thread.  This is a non-negative integer.
+   Its value may be used to uniquely identify this particular thread system-wide
+   (until the thread terminates, after which the value may be recycled by the OS).
+
+   .. versionadded:: 3.8
+
+
 .. function:: stack_size([size])
 
    Return the thread stack size used when creating new threads.  The optional
