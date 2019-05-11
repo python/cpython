@@ -73,6 +73,7 @@ import sys
 import os
 import builtins
 import _sitebuiltins
+import importlib
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -85,6 +86,11 @@ ENABLE_USER_SITE = None
 # functions, through the main() function when Python starts.
 USER_SITE = None
 USER_BASE = None
+
+# usage of external startup, absolute filename here if used
+use_sitevendor    = ""
+use_sitecustomize = ""
+use_usercustomize = ""
 
 
 def makepath(*paths):
@@ -112,23 +118,36 @@ def abs_paths():
             pass
 
 
-def removeduppaths():
-    """ Remove duplicate entries from sys.path along with making them
-    absolute"""
+def removeduppaths_ex(atpath, mustexist):
+    """ Remove duplicate entries in first arg along with making them
+    absolute, optionally can remove noexistent directories"""
     # This ensures that the initial path provided by the interpreter contains
     # only absolute pathnames, even if we're running from the build directory.
     L = []
     known_paths = set()
-    for dir in sys.path:
+    for dir in atpath:
         # Filter out duplicate paths (on case-insensitive file systems also
-        # if they only differ in case); turn relative paths into absolute
-        # paths.
+        # if they only differ in case, in Windows dircase is all lower case, dir is as-is);
+        # turn relative paths into absolute paths.
         dir, dircase = makepath(dir)
+        ###print("dir =%s\ncase=%s" % (dir, dircase))
         if dircase not in known_paths:
-            L.append(dir)
-            known_paths.add(dircase)
-    sys.path[:] = L
+            doadd = True
+            if mustexist :
+               doadd = os.path.exists(dir)
+            if doadd:
+               L.append(dir)
+               known_paths.add(dircase)
+
+    atpath[:] = L
     return known_paths
+# end removeduppath_ex()
+
+
+# compatibility for those, who use it outside site.py, works as before, may be deprecated 
+def removeduppaths():
+    """ Remove duplicate entries from sys.path along with making them absolute"""
+    return removeduppaths_ex(sys.path , False) # False: keep nonexistent in path      
 
 
 def _init_pathinfo():
@@ -511,44 +530,34 @@ def venv(known_paths):
     return known_paths
 
 
-def execsitecustomize():
-    """Run custom site specific code, if available."""
+def exec_imp_module(modName) :
+    """Run customization module by name in variable"""
+    ###print("exec_imp_module BGN:" , modName)
+    usename = ""
     try:
         try:
-            import sitecustomize
+            retmod = importlib.import_module( modName) # import ModName
+            usename = retmod.__file__
+            ###print("exec_imp OK import=%s" % (usename) )
         except ImportError as exc:
-            if exc.name == 'sitecustomize':
-                pass
-            else:
+            ###print("exec_imp: exc.name =" , exc.name)
+            if exc.name == modName : 
+                pass   # continue: no module found - no problem
+            else:      # module found, but error in running
                 raise
     except Exception as err:
+        ###print("exec_imp: Err=" , err)
         if sys.flags.verbose:
             sys.excepthook(*sys.exc_info())
         else:
             sys.stderr.write(
-                "Error in sitecustomize; set PYTHONVERBOSE for traceback:\n"
+                "Error in %s; set PYTHONVERBOSE for traceback:\n"
                 "%s: %s\n" %
-                (err.__class__.__name__, err))
+                (modName , err.__class__.__name__ , err))
 
-
-def execusercustomize():
-    """Run custom user specific code, if available."""
-    try:
-        try:
-            import usercustomize
-        except ImportError as exc:
-            if exc.name == 'usercustomize':
-                pass
-            else:
-                raise
-    except Exception as err:
-        if sys.flags.verbose:
-            sys.excepthook(*sys.exc_info())
-        else:
-            sys.stderr.write(
-                "Error in usercustomize; set PYTHONVERBOSE for traceback:\n"
-                "%s: %s\n" %
-                (err.__class__.__name__, err))
+    ###print("exec_imp_module END:" , modName)
+    return usename   # absolute path if found and executed
+# end exec_imp_module()
 
 
 def main():
@@ -558,9 +567,10 @@ def main():
     unless the python interpreter was started with the -S flag.
     """
     global ENABLE_USER_SITE
+    global use_sitevendor, use_sitecustomize, use_usercustomize
 
     orig_path = sys.path[:]
-    known_paths = removeduppaths()
+    known_paths = removeduppaths() # == removeduppath_ex(sys.path , False)
     if orig_path != sys.path:
         # removeduppaths() might make sys.path absolute.
         # fix __file__ and __cached__ of already imported modules too.
@@ -576,14 +586,26 @@ def main():
     sethelper()
     if not sys.flags.isolated:
         enablerlcompleter()
-    execsitecustomize()
+
+    use_sitevendor    = exec_imp_module('sitevendor')
+    use_sitecustomize = exec_imp_module('sitecustomize')
     if ENABLE_USER_SITE:
-        execusercustomize()
+        use_usercustomize = exec_imp_module('usercustomize')
+# end main()
+
 
 # Prevent extending of sys.path when python was started with -S and
 # site is imported later.
 if not sys.flags.no_site:
     main()
+
+def custsite_info(sname, usepath) :
+  if usepath :
+     print("%s ON: %s" % (sname , usepath) )
+  else :
+     print("%s OFF" % (sname) )
+
+
 
 def _script():
     help = """\
@@ -600,19 +622,34 @@ def _script():
           or for security reasons
      >2 - unknown error
     """
+
+    global use_sitevendor, use_sitecustomize, use_usercustomize
     args = sys.argv[1:]
     if not args:
         user_base = getuserbase()
         user_site = getusersitepackages()
         print("sys.path = [")
         for dir in sys.path:
-            print("    %r," % (dir,))
+            print("  %s" % (dir))
         print("]")
+
+        env = os.environ.copy()
+        strpath = env['PATH']
+        print("env[PATH] = [")
+        for dir in strpath.split(';') :
+            print("  %s" % (dir))
+        print("]")
+
         print("USER_BASE: %r (%s)" % (user_base,
             "exists" if os.path.isdir(user_base) else "doesn't exist"))
         print("USER_SITE: %r (%s)" % (user_site,
             "exists" if os.path.isdir(user_site) else "doesn't exist"))
         print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
+
+        custsite_info("sitevendor" ,   use_sitevendor)
+        custsite_info("sitecustomize", use_sitecustomize)
+        custsite_info("usercustomize", use_usercustomize)
+
         sys.exit(0)
 
     buffer = []
