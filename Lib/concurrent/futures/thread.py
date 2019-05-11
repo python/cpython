@@ -211,11 +211,14 @@ class ThreadPoolExecutor(_base.Executor):
                 if work_item is not None:
                     work_item.future.set_exception(BrokenThreadPool(self._broken))
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, wait_at_exit=True):
         with self._shutdown_lock:
             self._shutdown = True
             self._work_queue.put(None)
         if wait:
             for t in self._threads:
                 t.join()
+        if not wait_at_exit:
+            for t in self._threads:
+                _threads_queues.pop(t, None)
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
