@@ -1,0 +1,2 @@
+Add encode_float argument to :class:`JSONEncoder` which enables customized
+float encoding behavior
