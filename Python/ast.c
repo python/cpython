@@ -5228,10 +5228,15 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
 
     }
     if (equal_flag) {
-        Py_ssize_t len = expr_text_end-expr_start;
+        Py_ssize_t len = expr_text_end - expr_start;
         expr_text = PyUnicode_FromStringAndSize(expr_start, len);
-        if (!expr_text)
+        if (!expr_text) {
             goto error;
+        }
+        if (PyArena_AddPyObject(c->c_arena, expr_text) < 0) {
+            Py_DECREF(expr_text);
+            goto error;
+        }
     }
 
     /* Check for the format spec, if present. */
