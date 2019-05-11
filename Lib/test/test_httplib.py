@@ -4,7 +4,6 @@ import io
 import itertools
 import os
 import array
-import re
 import socket
 
 import unittest
@@ -1598,31 +1597,13 @@ class HTTPSTest(TestCase):
         # We feed the server's cert as a validating cert
         import ssl
         support.requires('network')
-        selfsigned_pythontestdotnet = 'self-signed.pythontest.net'
-        with support.transient_internet(selfsigned_pythontestdotnet):
+        with support.transient_internet('self-signed.pythontest.net'):
             context = ssl.SSLContext(ssl.PROTOCOL_TLS)
             context.verify_mode = ssl.CERT_REQUIRED
-            self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
-            self.assertEqual(context.check_hostname, True)
             context.load_verify_locations(CERT_selfsigned_pythontestdotnet)
-            try:
-                h = client.HTTPSConnection(selfsigned_pythontestdotnet, 443,
-                                           context=context)
-                h.request('GET', '/')
-                resp = h.getresponse()
-            except ssl.SSLError as ssl_err:
-                ssl_err_str = str(ssl_err)
-                # In the error message of [SSL: CERTIFICATE_VERIFY_FAILED] on
-                # modern Linux distros (Debian Buster, etc) default OpenSSL
-                # configurations it'll fail saying "key too weak" until we
-                # address https://bugs.python.org/issue36816 to use a proper
-                # key size on self-signed.pythontest.net.
-                if re.search(r'(?i)key.too.weak', ssl_err_str):
-                    raise unittest.SkipTest(
-                        f'Got {ssl_err_str} trying to connect '
-                        f'to {selfsigned_pythontestdotnet}. '
-                        'See https://bugs.python.org/issue36816.')
-                raise
+            h = client.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
+            h.request('GET', '/')
+            resp = h.getresponse()
             server_string = resp.getheader('server')
             resp.close()
             h.close()
