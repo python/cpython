@@ -1501,19 +1501,17 @@ per-iteration check-and-correct step, and termination is straightforward:
 the number of iterations is known in advance (and is roughly log2(log2(n))).
 The only tricky part of the correctness proof is in establishing that
 the bound (a - 1)**2 < (n >> s) < (a + 1)**2 is maintained from one
-iteration to the next. A formal, computer-verified proof of this (using Lean)
-can be found here:
+iteration to the next. A sketch of the proof of this is given below.
+
+In addition to the proof sketch below, a formal, computer-verified proof
+of correctness (using Lean) of an equivalent recursive algorithm can be found
+here:
 
     https://github.com/mdickinson/snippets/blob/master/proofs/isqrt/src/isqrt.lean
 
-The comments in that file also include an informal proof. Note that the
-Python code given in comments there is recursive, but is equivalent to the
-algorithm given below.
 
 Equivalent Python code:
 
-
-    import operator
 
     def isqrt(n):
         """
@@ -1523,12 +1521,12 @@ Equivalent Python code:
 
         if n < 0:
             raise ValueError("isqrt() argument must be nonnegative")
-        elif n == 0:
+        if n == 0:
             return 0
 
         c = (n.bit_length() - 1) // 2
-        d = 0
         a = 1
+        d = 0
         for s in reversed(range(c.bit_length())):
             e = d
             d = c >> s
@@ -1636,31 +1634,34 @@ math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
     int a_too_large, s;
-    size_t n_bit_length, c, d, e;
-    PyObject *a = NULL, *b, *q = NULL, *shift;
+    size_t c, d;
+    PyObject *a, *b;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
     }
 
+    // refs: n
+
     if (_PyLong_Sign(n) < 0) {
         PyErr_SetString(
             PyExc_ValueError,
             "isqrt() argument must be nonnegative");
-        goto error;
+        Py_DECREF(n);
+        return NULL;
     }
     if (_PyLong_Sign(n) == 0) {
         Py_DECREF(n);
         return PyLong_FromLong(0);
     }
 
-    n_bit_length = _PyLong_NumBits(n);
-    if (n_bit_length == (size_t)(-1)) {
-        goto error;
+    c = _PyLong_NumBits(n);
+    if (c == (size_t)(-1)) {
+        Py_DECREF(n);
+        return NULL;
     }
-
-    c = (n_bit_length - 1U) / 2U;
+    c = (c - 1U) / 2U;
 
     /* s = c.bit_length() */
     s = 0;
@@ -1670,10 +1671,13 @@ math_isqrt(PyObject *module, PyObject *n)
 
     a = PyLong_FromLong(1);
     d = 0;
-    while (s > 0) {
-        --s;
 
-        e = d;
+    // refs: a, n
+
+    while (--s >= 0) {
+        PyObject *q, *shift;
+        size_t e = d;
+
         d = c >> s;
 
         /* q = (n >> 2*c - e - d + 1) // a */
@@ -1681,13 +1685,12 @@ math_isqrt(PyObject *module, PyObject *n)
         if (shift == NULL) {
             goto error;
         }
-        b = PyNumber_Rshift(n, shift);
+        q = PyNumber_Rshift(n, shift);
         Py_DECREF(shift);
-        if (b == NULL) {
+        if (q == NULL) {
             goto error;
         }
-        q = PyNumber_FloorDivide(b, a);
-        Py_DECREF(b);
+        Py_SETREF(q, PyNumber_FloorDivide(q, a));
         if (q == NULL) {
             goto error;
         }
@@ -1695,16 +1698,16 @@ math_isqrt(PyObject *module, PyObject *n)
         /* a = (a << d - 1 - e) + q */
         shift = PyLong_FromSize_t(d - 1U - e);
         if (shift == NULL) {
+            Py_DECREF(q);
             goto error;
         }
-        b = PyNumber_Lshift(a, shift);
-        Py_DECREF(a);
+        Py_SETREF(a, PyNumber_Lshift(a, shift));
         Py_DECREF(shift);
-        if (b == NULL) {
+        if (a == NULL) {
+            Py_DECREF(q);
             goto error;
         }
-        a = PyNumber_Add(b, q);
-        Py_DECREF(b);
+        Py_SETREF(a, PyNumber_Add(a, q));
         Py_DECREF(q);
         if (a == NULL) {
             goto error;
@@ -1727,17 +1730,12 @@ math_isqrt(PyObject *module, PyObject *n)
 
     if (a_too_large) {
         Py_SETREF(a, PyNumber_Subtract(a, _PyLong_One));
-        if (a == NULL) {
-            goto error;
-        }
     }
-
     Py_DECREF(n);
     return a;
 
   error:
-    Py_XDECREF(a);
-    Py_XDECREF(q);
+    Py_DECREF(a);
     Py_DECREF(n);
     return NULL;
 }
