@@ -23,9 +23,24 @@ from .tasks import sleep
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 
 
-class StreamKind(enum.IntEnum):
-    READ = 1
-    WRITE = 2
+class StreamKind(enum.Enum):
+    READ = "read"
+    WRITE = "write"
+    READWRITE = "readwrite"
+
+    def is_read(self):
+        return self in (self.READ, self.READWRITE)
+
+    def is_write(self):
+        return self in (self.WRITE, self.READWRITE)
+
+    def check_read(self):
+        if not self.is_read():
+            raise RuntimeError("The stream is read-only")
+
+    def check_write(self):
+        if not self.is_write():
+            raise RuntimeError("The stream is write-only")
 
 
 async def open_connection(host=None, port=None, *,
@@ -388,7 +403,7 @@ class Stream:
 
     def __repr__(self):
         info = [self.__class__.__name__]
-        info.append(str(self._kind))
+        info.append(f'kind={self._kind}')
         if self._buffer:
             info.append(f'{len(self._buffer)} bytes')
         if self._eof:
@@ -403,8 +418,6 @@ class Stream:
             info.append(f'transport={self._transport!r}')
         if self._paused:
             info.append('paused')
-        if self._transport is not None:
-            info.append(f'transport={self._transport!r}')
         return '<{}>'.format(' '.join(info))
 
     @property
@@ -412,14 +425,12 @@ class Stream:
         return self._transport
 
     def write(self, data):
-        if not self._kind & StreamKind.WRITE:
-            raise RuntimeError("The stream is read-only")
+        self._kind.check_write()
         self._transport.write(data)
         return self._fast_drain()
 
     def writelines(self, data):
-        if not self._kind & StreamKind.WRITE:
-            raise RuntimeError("The stream is read-only")
+        self._kind.check_write()
         self._transport.writelines(data)
         return self._fast_drain()
 
@@ -444,12 +455,11 @@ class Stream:
         return self._loop.create_task(self.drain())
 
     def write_eof(self):
-        if not self._kind & StreamKind.WRITE:
-            raise RuntimeError("The stream is read-only")
+        self._kind.check_write()
         return self._transport.write_eof()
 
     def can_write_eof(self):
-        if not self._kind & StreamKind.WRITE:
+        if not self._kind.is_write():
             return False
         return self._transport.can_write_eof()
 
@@ -474,8 +484,7 @@ class Stream:
           w.write(data)
           await w.drain()
         """
-        if not self._kind & StreamKind.WRITE:
-            raise RuntimeError("The stream is read-only")
+        self._kind.check_read()
         exc = self.exception()
         if exc is not None:
             raise exc
@@ -518,20 +527,17 @@ class Stream:
             self._transport.resume_reading()
 
     def feed_eof(self):
-        if not self._kind & StreamKind.READ:
-            raise RuntimeError("The stream is write-only")
+        self._kind.check_read()
         self._eof = True
         self._wakeup_waiter()
 
     def at_eof(self):
         """Return True if the buffer is empty and 'feed_eof' was called."""
-        if not self._kind & StreamKind.READ:
-            raise RuntimeError("The stream is write-only")
+        self._kind.check_read()
         return self._eof and not self._buffer
 
     def feed_data(self, data):
-        if not self._kind & StreamKind.READ:
-            raise RuntimeError("The stream is write-only")
+        self._kind.check_read()
         assert not self._eof, 'feed_data after feed_eof'
 
         if not data:
@@ -597,8 +603,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        if not self._kind & StreamKind.READ:
-            raise RuntimeError("The stream is write-only")
+        self._kind.check_read()
         sep = b'\n'
         seplen = len(sep)
         try:
@@ -634,8 +639,7 @@ class Stream:
         LimitOverrunError exception  will be raised, and the data
         will be left in the internal buffer, so it can be read again.
         """
-        if not self._kind & StreamKind.READ:
-            raise RuntimeError("The stream is write-only")
+        self._kind.check_read()
         seplen = len(separator)
         if seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
@@ -727,8 +731,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        if not self._kind & StreamKind.READ:
-            raise RuntimeError("The stream is write-only")
+        self._kind.check_read()
 
         if self._exception is not None:
             raise self._exception
@@ -774,8 +777,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        if not self._kind & StreamKind.READ:
-            raise RuntimeError("The stream is write-only")
+        self._kind.check_read()
         if n < 0:
             raise ValueError('readexactly size can not be less than zero')
 
@@ -803,8 +805,7 @@ class Stream:
         return data
 
     def __aiter__(self):
-        if not self._kind & StreamKind.READ:
-            raise RuntimeError("The stream is write-only")
+        self._kind.check_read()
         return self
 
     async def __anext__(self):
