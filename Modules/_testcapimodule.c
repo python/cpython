@@ -2429,7 +2429,7 @@ static PyObject *
 get_time_fromtime(PyObject *self, PyObject *args)
 {
     PyObject *rv = NULL;
-    int macro = 0;
+    int macro;
     int hour, minute, second, microsecond;
 
     if (!PyArg_ParseTuple(args, "piiii",
