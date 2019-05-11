@@ -19,6 +19,7 @@ import unittest
 import warnings
 from contextlib import ExitStack
 from inspect import CO_COROUTINE
+from itertools import product
 from textwrap import dedent
 from types import AsyncGeneratorType
 from operator import neg
@@ -362,20 +363,27 @@ class BuiltinTest(unittest.TestCase):
                 self.assertEqual(rv, tuple(expected))
 
     def test_compile_top_level_await(self):
-        for mode in ('single', 'exec'):
-            for num,code_sample in enumerate(['''await sleep(0)''',
-                                '''async for i in range(10):
-                                       print(i)''',
-                                '''async with asyncio.Lock() as l:
-                                       pass''']):
-                source = dedent(code_sample)
-                with self.assertRaises(SyntaxError,
-                                  msg='source={!r} mode={!r})'.format(source, mode)):
-                    compile(source, '?' , mode)
+        """Test whether code some top level await can be compiled.
 
-                co = compile(source, '?', mode, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
-                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                                 msg='source={!r} mode={!r})'.format(source, mode))
+        Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag set,
+        and make sure the generated code object has the CO_COROUTINE flag set in
+        order to execute it with `yield from eval(.....)` instead of exec.
+        """
+        modes = ('single', 'exec')
+        code_samples = ['''await sleep(0)''',
+        '''async for i in range(10):
+               print(i)''',
+        '''async with asyncio.Lock() as l:
+               pass''']
+        for mode, code_sample in product(modes,code_samples):
+            source = dedent(code_sample)
+            with self.assertRaises(SyntaxError,
+                                   msg='source={!r} mode={!r})'.format(source, mode)):
+                compile(source, '?' , mode)
+
+            co = compile(source, '?', mode, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+            self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                             msg='source={!r} mode={!r})'.format(source, mode))
 
     def test_compile_async_generator(self):
         co = compile(dedent("""async def ticker():
