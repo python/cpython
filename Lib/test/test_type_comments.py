@@ -79,6 +79,8 @@ def bar():
 
 def baz():
     pass  # type: ignore[excuse]
+    pass  # type: ignore=excuse
+    pass  # type: ignore [excuse]
     x = 1  # type: ignore whatever
 """
 
@@ -270,7 +272,7 @@ class TypeCommentTests(unittest.TestCase):
 
     def test_ignores(self):
         for tree in self.parse_all(ignores):
-            self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5, 8, 9])
+            self.assertEqual([ti.lineno for ti in tree.type_ignores], [2, 5, 8, 9, 10, 11])
         tree = self.classic_parse(ignores)
         self.assertEqual(tree.type_ignores, [])
 
