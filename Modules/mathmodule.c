@@ -1538,6 +1538,88 @@ Equivalent Python code:
 
         return a - (a*a > n)
 
+
+Sketch of proof of correctness
+------------------------------
+
+The tricky part of the correctness proof is showing that the loop invariant is
+preserved from one iteration to the next. That is, just before the line
+
+    a = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
+
+is executed in the above code, we know that
+
+    (1)  (a - 1)**2 < (n >> 2*(c - e)) < (a + 1)**2.
+
+(since `e` is always the value of `d` from the previous iteration). We must
+prove that after that line is executed, we have
+
+    (a - 1)**2 < (n >> 2*(c - d)) < (a + 1)**2
+
+To faciliate the proof, we make some changes of notation. Write `m` for
+`n >> 2*(c-d)`, and write `b` for the new value of `a`, so
+
+    b = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
+
+or equivalently:
+
+    (2)  b = (a << d - e - 1) + (m >> d - e + 1)
+
+Then we can rewrite (1) as:
+
+    (3)  (a - 1)**2 < (m >> 2*(d - e)) < (a + 1)**2
+
+and we must show that
+
+    (b - 1)**2 < m < (b + 1)**2
+
+From this point on, we switch to mathematical notation, so `/` means exact
+division rather than integer division and `^` is used for exponentiation. We
+use the √ symbol for the exact square root. From (3), we have
+
+    (4)  (a - 1)^2 < m / 4^(d - e) < (a + 1)^2
+
+Taking square roots throughout (4), scaling by 2^(d-e), and rearranging gives
+
+    (5)  0 <= | 2^(d-e)a - √m | < 2^(d-e)
+
+Squaring and dividing through by `2^(d-e+1) a` gives
+
+    (6)  0 <= 2^(d-e-1) a + m / (2^(d-e+1) a) - √m < 2^(d-e-1) / a
+
+We'll show below that 2^(d-e-1) <= a. Given that, we can replace the
+right-hand side of (6) with `1`, and now taking the floor throughout (6) gives
+
+    (7) -1 < 2^(d-e-1) a + m // 2^(d-e+1) a - √m < 1
+
+Or equivalently:
+
+    (7) -1 < b - √m < 1
+
+and rearranging gives that `(b-1)^2 < m < (b+1)^2`, which is what we needed
+to prove.
+
+We're not quite done: we still have to show that key inequality on `a`. From
+the definition of `c`, we have 4^c <= n, which implies
+
+    (8)  4^d <= m
+
+also, since `e == d >> 1`, `d` is at most `2e + 1`, from which it follows
+that `2d - 2e - 1 <= d` and hence that
+
+    (9)  4^(2d - 2e - 1) <= m
+
+Dividing both sides by 4^(d - e) gives
+
+    (10)  4^(d - e - 1) <= m / 4^(d - e)
+
+But we know from (4) that m / 4^(d-e) < (a + 1)^2, hence
+
+    (11)  4^(d - e - 1) < (a + 1)^2
+
+Now taking square roots of both sides gives `2^(d - e - 1) <= a`, which is
+what we needed. This completes the proof sketch.
+
 */
 
 /*[clinic input]
