@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "pycore_accu.h"
 
 #ifdef STDC_HEADERS
@@ -81,26 +82,15 @@ static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
     assert(self->ob_item == NULL);
+    assert(size > 0);
 
-    PyObject **items;
-    size_t allocated;
-
-    allocated = (size_t)size;
-    if (allocated > (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    if (size == 0) {
-        allocated = 0;
-    }
-    items = (PyObject **)PyMem_New(PyObject*, allocated);
+    PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
     self->ob_item = items;
-    self->allocated = allocated;
+    self->allocated = size;
     return 0;
 }
 
@@ -371,7 +361,7 @@ list_dealloc(PyListObject *op)
 {
     Py_ssize_t i;
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_SAFE_BEGIN(op)
+    Py_TRASHCAN_BEGIN(op, list_dealloc)
     if (op->ob_item != NULL) {
         /* Do it backwards, for Christian Tismer.
            There's a simple test case where somehow this reduces
@@ -387,7 +377,7 @@ list_dealloc(PyListObject *op)
         free_list[numfree++] = op;
     else
         Py_TYPE(op)->tp_free((PyObject *)op);
-    Py_TRASHCAN_SAFE_END(op)
+    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -487,14 +477,6 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     PyListObject *np;
     PyObject **src, **dest;
     Py_ssize_t i, len;
-    if (ilow < 0)
-        ilow = 0;
-    else if (ilow > Py_SIZE(a))
-        ilow = Py_SIZE(a);
-    if (ihigh < ilow)
-        ihigh = ilow;
-    else if (ihigh > Py_SIZE(a))
-        ihigh = Py_SIZE(a);
     len = ihigh - ilow;
     np = (PyListObject *) list_new_prealloc(len);
     if (np == NULL)
@@ -517,6 +499,18 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     if (!PyList_Check(a)) {
         PyErr_BadInternalCall();
         return NULL;
+    }
+    if (ilow < 0) {
+        ilow = 0;
+    }
+    else if (ilow > Py_SIZE(a)) {
+        ilow = Py_SIZE(a);
+    }
+    if (ihigh < ilow) {
+        ihigh = ilow;
+    }
+    else if (ihigh > Py_SIZE(a)) {
+        ihigh = Py_SIZE(a);
     }
     return list_slice((PyListObject *)a, ilow, ihigh);
 }
@@ -2294,7 +2288,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         int ints_are_bounded = 1;
 
         /* Prove that assumption by checking every key. */
-        int i;
         for (i=0; i < saved_ob_size; i++) {
 
             if (keys_are_in_tuples &&
@@ -2313,19 +2306,28 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
 
             if (key->ob_type != key_type) {
                 keys_are_all_same_type = 0;
-                break;
+                /* If keys are in tuple we must loop over the whole list to make
+                   sure all items are tuples */
+                if (!keys_are_in_tuples) {
+                    break;
+                }
             }
 
-            if (key_type == &PyLong_Type) {
-                if (ints_are_bounded && Py_ABS(Py_SIZE(key)) > 1)
+            if (keys_are_all_same_type) {
+                if (key_type == &PyLong_Type &&
+                    ints_are_bounded &&
+                    Py_ABS(Py_SIZE(key)) > 1) {
+
                     ints_are_bounded = 0;
+                }
+                else if (key_type == &PyUnicode_Type &&
+                         strings_are_latin &&
+                         PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND) {
+
+                        strings_are_latin = 0;
+                    }
+                }
             }
-            else if (key_type == &PyUnicode_Type){
-                if (strings_are_latin &&
-                    PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND)
-                strings_are_latin = 0;
-            }
-        }
 
         /* Choose the best compare, given what we now know about the keys. */
         if (keys_are_all_same_type) {
@@ -2342,6 +2344,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             else if ((ms.key_richcompare = key_type->tp_richcompare) != NULL) {
                 ms.key_compare = unsafe_object_compare;
             }
+            else {
+                ms.key_compare = safe_object_compare;
+            }
         }
         else {
             ms.key_compare = safe_object_compare;
@@ -2350,10 +2355,12 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         if (keys_are_in_tuples) {
             /* Make sure we're not dealing with tuples of tuples
              * (remember: here, key_type refers list [key[0] for key in keys]) */
-            if (key_type == &PyTuple_Type)
+            if (key_type == &PyTuple_Type) {
                 ms.tuple_elem_compare = safe_object_compare;
-            else
+            }
+            else {
                 ms.tuple_elem_compare = ms.key_compare;
+            }
 
             ms.key_compare = unsafe_tuple_compare;
         }
@@ -2506,26 +2513,11 @@ PyList_Reverse(PyObject *v)
 PyObject *
 PyList_AsTuple(PyObject *v)
 {
-    PyObject *w;
-    PyObject **p, **q;
-    Py_ssize_t n;
     if (v == NULL || !PyList_Check(v)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    n = Py_SIZE(v);
-    w = PyTuple_New(n);
-    if (w == NULL)
-        return NULL;
-    p = ((PyTupleObject *)w)->ob_item;
-    q = ((PyListObject *)v)->ob_item;
-    while (--n >= 0) {
-        Py_INCREF(*q);
-        *p = *q;
-        p++;
-        q++;
-    }
-    return w;
+    return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
 /*[clinic input]

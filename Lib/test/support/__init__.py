@@ -86,6 +86,7 @@ __all__ = [
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver", "check_syntax_error",
+    "check_syntax_warning",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
@@ -705,9 +706,8 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     issue if/when we come across it.
     """
 
-    tempsock = socket.socket(family, socktype)
-    port = bind_port(tempsock)
-    tempsock.close()
+    with socket.socket(family, socktype) as tempsock:
+        port = bind_port(tempsock)
     del tempsock
     return port
 
@@ -833,6 +833,10 @@ else:
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
+
+# Define the URL of a dedicated HTTP server for the network tests.
+# The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
+TEST_HTTP_URL = "http://www.pythontest.net"
 
 # FS_NONASCII: non-ASCII character encodable by os.fsencode(),
 # or None if there is no such character.
@@ -1002,7 +1006,7 @@ def temp_dir(path=None, quiet=False):
         yield path
     finally:
         # In case the process forks, let only the parent remove the
-        # directory. The child has a diffent process id. (bpo-30028)
+        # directory. The child has a different process id. (bpo-30028)
         if dir_created and pid == os.getpid():
             rmtree(path)
 
@@ -1113,6 +1117,7 @@ def make_bad_fd():
         file.close()
         unlink(TESTFN)
 
+
 def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None):
     with testcase.assertRaisesRegex(SyntaxError, errtext) as cm:
         compile(statement, '<test string>', 'exec')
@@ -1123,6 +1128,33 @@ def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=N
     testcase.assertIsNotNone(err.offset)
     if offset is not None:
         testcase.assertEqual(err.offset, offset)
+
+def check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None):
+    # Test also that a warning is emitted only once.
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.simplefilter('always', SyntaxWarning)
+        compile(statement, '<testcase>', 'exec')
+    testcase.assertEqual(len(warns), 1, warns)
+
+    warn, = warns
+    testcase.assertTrue(issubclass(warn.category, SyntaxWarning), warn.category)
+    if errtext:
+        testcase.assertRegex(str(warn.message), errtext)
+    testcase.assertEqual(warn.filename, '<testcase>')
+    testcase.assertIsNotNone(warn.lineno)
+    if lineno is not None:
+        testcase.assertEqual(warn.lineno, lineno)
+
+    # SyntaxWarning should be converted to SyntaxError when raised,
+    # since the latter contains more information and provides better
+    # error report.
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.simplefilter('error', SyntaxWarning)
+        check_syntax_error(testcase, statement, errtext,
+                           lineno=lineno, offset=offset)
+    # No warnings are leaked when a SyntaxError is raised.
+    testcase.assertEqual(warns, [])
+
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
@@ -1445,6 +1477,22 @@ socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
+def get_socket_conn_refused_errs():
+    """
+    Get the different socket error numbers ('errno') which can be received
+    when a connection is refused.
+    """
+    errors = [errno.ECONNREFUSED]
+    if hasattr(errno, 'ENETUNREACH'):
+        # On Solaris, ENETUNREACH is returned sometimes instead of ECONNREFUSED
+        errors.append(errno.ENETUNREACH)
+    if hasattr(errno, 'EADDRNOTAVAIL'):
+        # bpo-31910: socket.create_connection() fails randomly
+        # with EADDRNOTAVAIL on Travis CI
+        errors.append(errno.EADDRNOTAVAIL)
+    return errors
+
+
 @contextlib.contextmanager
 def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
@@ -1605,7 +1653,7 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "gettotalrefcount"):
+if hasattr(sys, "getobjects"):
     _header = '2P' + _header
     _align = '0P'
 _vheader = _header + 'n'
@@ -1752,10 +1800,11 @@ class _MemoryWatchdog:
             sys.stderr.flush()
             return
 
-        watchdog_script = findfile("memory_watchdog.py")
-        self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
-                                             stdin=f, stderr=subprocess.DEVNULL)
-        f.close()
+        with f:
+            watchdog_script = findfile("memory_watchdog.py")
+            self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
+                                                 stdin=f,
+                                                 stderr=subprocess.DEVNULL)
         self.started = True
 
     def stop(self):
@@ -2264,14 +2313,14 @@ def start_threads(threads, unlock=None):
                 endtime += 60
                 for t in started:
                     t.join(max(endtime - time.monotonic(), 0.01))
-                started = [t for t in started if t.isAlive()]
+                started = [t for t in started if t.is_alive()]
                 if not started:
                     break
                 if verbose:
                     print('Unable to join %d threads during a period of '
                           '%d minutes' % (len(started), timeout))
         finally:
-            started = [t for t in started if t.isAlive()]
+            started = [t for t in started if t.is_alive()]
             if started:
                 faulthandler.dump_traceback(sys.stdout)
                 raise AssertionError('Unable to join %d threads' % len(started))
@@ -2783,7 +2832,7 @@ def missing_compiler_executable(cmd_names=[]):
         if cmd_names:
             assert cmd is not None, \
                     "the '%s' executable is not configured" % name
-        elif cmd is None:
+        elif not cmd:
             continue
         if spawn.find_executable(cmd[0]) is None:
             return cmd[0]
@@ -2944,3 +2993,44 @@ class FakePath:
 def maybe_get_event_loop_policy():
     """Return the global event loop policy if one is set, else return None."""
     return asyncio.events._event_loop_policy
+
+# Helpers for testing hashing.
+NHASHBITS = sys.hash_info.width # number of bits in hash() result
+assert NHASHBITS in (32, 64)
+
+# Return mean and sdev of number of collisions when tossing nballs balls
+# uniformly at random into nbins bins.  By definition, the number of
+# collisions is the number of balls minus the number of occupied bins at
+# the end.
+def collision_stats(nbins, nballs):
+    n, k = nbins, nballs
+    # prob a bin empty after k trials = (1 - 1/n)**k
+    # mean # empty is then n * (1 - 1/n)**k
+    # so mean # occupied is n - n * (1 - 1/n)**k
+    # so collisions = k - (n - n*(1 - 1/n)**k)
+    #
+    # For the variance:
+    # n*(n-1)*(1-2/n)**k + meanempty - meanempty**2 =
+    # n*(n-1)*(1-2/n)**k + meanempty * (1 - meanempty)
+    #
+    # Massive cancellation occurs, and, e.g., for a 64-bit hash code
+    # 1-1/2**64 rounds uselessly to 1.0.  Rather than make heroic (and
+    # error-prone) efforts to rework the naive formulas to avoid those,
+    # we use the `decimal` module to get plenty of extra precision.
+    #
+    # Note:  the exact values are straightforward to compute with
+    # rationals, but in context that's unbearably slow, requiring
+    # multi-million bit arithmetic.
+    import decimal
+    with decimal.localcontext() as ctx:
+        bits = n.bit_length() * 2  # bits in n**2
+        # At least that many bits will likely cancel out.
+        # Use that many decimal digits instead.
+        ctx.prec = max(bits, 30)
+        dn = decimal.Decimal(n)
+        p1empty = ((dn - 1) / dn) ** k
+        meanempty = n * p1empty
+        occupied = n - meanempty
+        collisions = k - occupied
+        var = dn*(dn-1)*((dn-2)/dn)**k + meanempty * (1 - meanempty)
+        return float(collisions), float(var.sqrt())

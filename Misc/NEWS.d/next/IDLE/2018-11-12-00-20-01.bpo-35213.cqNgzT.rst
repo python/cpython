@@ -1,1 +1,0 @@
-Where appropriate, use 'macOS' in idlelib.

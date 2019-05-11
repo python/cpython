@@ -1,6 +1,6 @@
 steps:
 - checkout: self
-  clean: true
+  clean: false
   fetchDepth: 5
 
 - powershell: |
@@ -8,7 +8,8 @@ steps:
     Write-Host '##vso[task.setvariable variable=Py_IntDir]$(Build.BinariesDirectory)\obj'
     # UNDONE: Do not build to a different directory because of broken tests
     Write-Host '##vso[task.setvariable variable=Py_OutDir]$(Build.SourcesDirectory)\PCbuild'
-    Write-Host '##vso[task.setvariable variable=EXTERNAL_DIR]$(Build.BinariesDirectory)\externals'
+    #Write-Host '##vso[task.setvariable variable=Py_OutDir]$(Build.BinariesDirectory)\bin'
+    Write-Host '##vso[task.setvariable variable=EXTERNALS_DIR]$(Build.BinariesDirectory)\externals'
   displayName: Update build locations
 
 - script: PCbuild\build.bat -e $(buildOpt)

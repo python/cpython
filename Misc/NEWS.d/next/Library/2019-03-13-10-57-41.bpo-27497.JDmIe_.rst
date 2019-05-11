@@ -1,0 +1,3 @@
+:meth:`csv.DictWriter.writeheader` now returns the return value of the
+underlying :meth:`csv.Writer.writerow` method. Patch contributed by Ashish
+Nitin Patil.

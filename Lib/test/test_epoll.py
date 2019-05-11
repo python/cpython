@@ -41,9 +41,7 @@ except OSError as e:
 class TestEPoll(unittest.TestCase):
 
     def setUp(self):
-        self.serverSocket = socket.socket()
-        self.serverSocket.bind(('127.0.0.1', 0))
-        self.serverSocket.listen()
+        self.serverSocket = socket.create_server(('127.0.0.1', 0))
         self.connections = [self.serverSocket]
 
     def tearDown(self):
@@ -143,18 +141,17 @@ class TestEPoll(unittest.TestCase):
     def test_fromfd(self):
         server, client = self._connected_pair()
 
-        ep = select.epoll(2)
-        ep2 = select.epoll.fromfd(ep.fileno())
+        with select.epoll(2) as ep:
+            ep2 = select.epoll.fromfd(ep.fileno())
 
-        ep2.register(server.fileno(), select.EPOLLIN | select.EPOLLOUT)
-        ep2.register(client.fileno(), select.EPOLLIN | select.EPOLLOUT)
+            ep2.register(server.fileno(), select.EPOLLIN | select.EPOLLOUT)
+            ep2.register(client.fileno(), select.EPOLLIN | select.EPOLLOUT)
 
-        events = ep.poll(1, 4)
-        events2 = ep2.poll(0.9, 4)
-        self.assertEqual(len(events), 2)
-        self.assertEqual(len(events2), 2)
+            events = ep.poll(1, 4)
+            events2 = ep2.poll(0.9, 4)
+            self.assertEqual(len(events), 2)
+            self.assertEqual(len(events2), 2)
 
-        ep.close()
         try:
             ep2.poll(1, 4)
         except OSError as e:

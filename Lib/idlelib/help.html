@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>IDLE &#8212; Python 3.8.0a0 documentation</title>
+    <title>IDLE &#8212; Python 3.8.0a3 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -19,7 +19,7 @@
     <script type="text/javascript" src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.8.0a0 documentation"
+          title="Search within Python 3.8.0a3 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -72,7 +72,7 @@
 
 
     <li>
-      <a href="../index.html">3.8.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.8.0a3 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -273,6 +273,10 @@ line.</dd>
 <dd>Scroll the shell window to the last Shell restart.</dd>
 <dt>Restart Shell</dt>
 <dd>Restart the shell to clean the environment.</dd>
+<dt>Previous History</dt>
+<dd>Cycle through earlier commands in history which match the current entry.</dd>
+<dt>Next History</dt>
+<dd>Cycle through later commands in history which match the current entry.</dd>
 <dt>Interrupt Execution</dt>
 <dd>Stop a running program.</dd>
 </dl>
@@ -309,7 +313,11 @@ size, additional help sources, and extensions.  On macOS,  open the
 configuration dialog by selecting Preferences in the application
 menu. For more, see
 <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</dd>
-<dt>Code Context (toggle)(Editor Window only)</dt>
+<dt>Zoom/Restore Height</dt>
+<dd>Toggles the window between normal size and maximum height. The initial size
+defaults to 40 lines by 80 chars unless changed on the General tab of the
+Configure IDLE dialog.</dd>
+<dt>Show/Hide Code Context (Editor Window only)</dt>
 <dd>Open a pane at the top of the edit window which shows the block context
 of the code which has scrolled above the top of the window.  See
 <a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section below.</dd>
@@ -317,14 +325,8 @@ of the code which has scrolled above the top of the window.  See
 </div>
 <div class="section" id="window-menu-shell-and-editor">
 <h3>Window menu (Shell and Editor)<a class="headerlink" href="#window-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>Zoom Height</dt>
-<dd>Toggles the window between normal size and maximum height. The initial size
-defaults to 40 lines by 80 chars unless changed on the General tab of the
-Configure IDLE dialog.</dd>
-</dl>
-<p>The rest of this menu lists the names of all open windows; select one to bring
-it to the foreground (deiconifying it if necessary).</p>
+<p>Lists the names of all open windows; select one to bring it to the foreground
+(deiconifying it if necessary).</p>
 </div>
 <div class="section" id="help-menu-shell-and-editor">
 <h3>Help menu (Shell and Editor)<a class="headerlink" href="#help-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
@@ -370,8 +372,8 @@ debugger.  Breakpoints for a file are saved in the user’s .idlerc directory.</
 <dt>Go to file/line</dt>
 <dd>Same as in Debug menu.</dd>
 </dl>
-<p>The Shell window also has an output squeezing facility explained in the
-the <em>Python Shell window</em> subsection below.</p>
+<p>The Shell window also has an output squeezing facility explained in the <em>Python
+Shell window</em> subsection below.</p>
 <dl class="docutils">
 <dt>Squeeze</dt>
 <dd>If the cursor is over an output line, squeeze all the output between
@@ -671,14 +673,29 @@ output to Shell will eventually fill memory, resulting in a memory error.
 In contrast, some system text windows only keep the last n lines of output.
 A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
 with 300 the default.</p>
-<p>Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
-Which characters get a proper glyph instead of a replacement box depends on
-the operating system and installed fonts.  Newline characters cause following
-text to appear on a new line, but other control characters are either
-replaced with a box or deleted.  However, <code class="docutils literal notranslate"><span class="pre">repr()</span></code>, which is used for
-interactive echo of expression values, replaces control characters,
-some BMP codepoints, and all non-BMP characters with escape codes
-before they are output.</p>
+<p>A Tk Text widget, and hence IDLE’s Shell, displays characters (codepoints) in
+the BMP (Basic Multilingual Plane) subset of Unicode.  Which characters are
+displayed with a proper glyph and which with a replacement box depends on the
+operating system and installed fonts.  Tab characters cause the following text
+to begin after the next tab stop. (They occur every 8 ‘characters’).  Newline
+characters cause following text to appear on a new line.  Other control
+characters are ignored or displayed as a space, box, or something else,
+depending on the operating system and font.  (Moving the text cursor through
+such output with arrow keys may exhibit some surprising spacing behavior.)</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;a</span><span class="se">\t</span><span class="s1">b</span><span class="se">\a</span><span class="s1">&lt;</span><span class="se">\x02</span><span class="s1">&gt;&lt;</span><span class="se">\r</span><span class="s1">&gt;</span><span class="se">\b</span><span class="s1">c</span><span class="se">\n</span><span class="s1">d&#39;</span>  <span class="c1"># Enter 22 chars.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">14</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span>  <span class="c1"># Display repr(s)</span>
+<span class="go">&#39;a\tb\x07&lt;\x02&gt;&lt;\r&gt;\x08c\nd&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>  <span class="c1"># Display s as is.</span>
+<span class="go"># Result varies by OS and font.  Try it.</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">repr</span></code> function is used for interactive echo of expression
+values.  It returns an altered version of the input string in which
+control codes, some BMP codepoints, and all non-BMP codepoints are
+replaced with escape codes. As demonstrated above, it allows one to
+identify the characters in a string, regardless of how they are displayed.</p>
 <p>Normal and error output are generally kept separate (on separate lines)
 from code input and each other.  They each get different highlight colors.</p>
 <p>For SyntaxError tracebacks, the normal ‘^’ marking where the error was
@@ -704,7 +721,7 @@ facilitate development of tkinter programs.  Enter <code class="docutils literal
 <span class="pre">root</span> <span class="pre">=</span> <span class="pre">tk.Tk()</span></code> in standard Python and nothing appears.  Enter the same
 in IDLE and a tk window appears.  In standard Python, one must also enter
 <code class="docutils literal notranslate"><span class="pre">root.update()</span></code> to see the window.  IDLE does the equivalent in the
-background, about 20 times a second, which is about every 50 milleseconds.
+background, about 20 times a second, which is about every 50 milliseconds.
 Next enter <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">=</span> <span class="pre">tk.Button(root,</span> <span class="pre">text='button');</span> <span class="pre">b.pack()</span></code>.  Again,
 nothing visibly changes in standard Python until one enters <code class="docutils literal notranslate"><span class="pre">root.update()</span></code>.</p>
 <p>Most tkinter programs run <code class="docutils literal notranslate"><span class="pre">root.mainloop()</span></code>, which usually does not
@@ -769,6 +786,12 @@ changed via Configure IDLE on the Option menu.
 Non-default user settings are saved in a .idlerc directory in the user’s
 home directory.  Problems caused by bad user configuration files are solved
 by editing or deleting one or more of the files in .idlerc.</p>
+<p>On the Font tab, see the text sample for the effect of font face and size
+on multiple characters in multiple languages.  Edit the sample to add
+other characters of personal interest.  Use the sample to select
+monospaced fonts.  If particular characters have problems in Shell or an
+editor, add them to the top of the sample and try changing first size
+and then font.</p>
 <p>On the Highlights and Keys tab, select a built-in or custom color theme
 and key set.  To use a newer built-in color theme or key set with older
 IDLEs, save it as a new custom theme or key set and it well be accessible
@@ -887,7 +910,7 @@ also used for testing.</p>
 
 
     <li>
-      <a href="../index.html">3.8.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.8.0a3 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -910,7 +933,7 @@ also used for testing.</p>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2018, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 2001-2019, Python Software Foundation.
     <br />
 
     The Python Software Foundation is a non-profit corporation.
@@ -918,7 +941,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Dec 20, 2018.
+    Last updated on Apr 26, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

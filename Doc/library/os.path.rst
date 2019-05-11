@@ -172,16 +172,19 @@ the :mod:`glob` module.)
    password directory through the built-in module :mod:`pwd`. An initial ``~user``
    is looked up directly in the password directory.
 
-   On Windows, :envvar:`HOME` and :envvar:`USERPROFILE` will be used if set,
-   otherwise a combination of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be
-   used.  An initial ``~user`` is handled by stripping the last directory component
-   from the created user path derived above.
+   On Windows, :envvar:`USERPROFILE` will be used if set, otherwise a combination
+   of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be used.  An initial
+   ``~user`` is handled by stripping the last directory component from the created
+   user path derived above.
 
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      No longer uses :envvar:`HOME` on Windows.
 
 .. index::
    single: $ (dollar); environment variables expansion
@@ -283,10 +286,11 @@ the :mod:`glob` module.)
 
    Return ``True`` if pathname *path* is a :dfn:`mount point`: a point in a
    file system where a different file system has been mounted.  On POSIX, the
-   function checks whether *path*'s parent, :file:`path/..`, is on a different
-   device than *path*, or whether :file:`path/..` and *path* point to the same
+   function checks whether *path*'s parent, :file:`{path}/..`, is on a different
+   device than *path*, or whether :file:`{path}/..` and *path* point to the same
    i-node on the same device --- this should detect mount points for all Unix
-   and POSIX variants.  On Windows, a drive letter root and a share UNC are
+   and POSIX variants.  It is not able to reliably detect bind mounts on the
+   same filesystem.  On Windows, a drive letter root and a share UNC are
    always mount points, and for any other path ``GetVolumePathName`` is called
    to see if it is different from the input path.
 

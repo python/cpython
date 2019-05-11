@@ -178,7 +178,7 @@ def overrideRootMenu(root, flist):
     del mainmenu.menudefs[-1][1][0:2]
     # Remove the 'Configure Idle' entry from the options menu, it is in the
     # application menu as 'Preferences'
-    del mainmenu.menudefs[-2][1][0]
+    del mainmenu.menudefs[-3][1][0:2]
     menubar = Menu(root)
     root.configure(menu=menubar)
     menudict = {}

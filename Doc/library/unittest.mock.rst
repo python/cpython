@@ -609,9 +609,11 @@ the *new_callable* argument to :func:`patch`.
 
         This is either ``None`` (if the mock hasn't been called), or the
         arguments that the mock was last called with. This will be in the
-        form of a tuple: the first member is any ordered arguments the mock
-        was called with (or an empty tuple) and the second member is any
-        keyword arguments (or an empty dictionary).
+        form of a tuple: the first member, which can also be accessed through
+        the ``args`` property, is any ordered arguments the mock was
+        called with (or an empty tuple) and the second member, which can
+        also be accessed through the ``kwargs`` property, is any keyword
+        arguments (or an empty dictionary).
 
             >>> mock = Mock(return_value=None)
             >>> print(mock.call_args)
@@ -626,9 +628,17 @@ the *new_callable* argument to :func:`patch`.
             call(3, 4)
             >>> mock.call_args == ((3, 4),)
             True
+            >>> mock.call_args.args
+            (3, 4)
+            >>> mock.call_args.kwargs
+            {}
             >>> mock(3, 4, 5, key='fish', next='w00t!')
             >>> mock.call_args
             call(3, 4, 5, key='fish', next='w00t!')
+            >>> mock.call_args.args
+            (3, 4, 5)
+            >>> mock.call_args.kwargs
+            {'key': 'fish', 'next': 'w00t!'}
 
         :attr:`call_args`, along with members of the lists :attr:`call_args_list`,
         :attr:`method_calls` and :attr:`mock_calls` are :data:`call` objects.
@@ -1119,13 +1129,13 @@ patch
     Instead of ``autospec=True`` you can pass ``autospec=some_object`` to use an
     arbitrary object as the spec instead of the one being replaced.
 
-    By default :func:`patch` will fail to replace attributes that don't exist. If
-    you pass in ``create=True``, and the attribute doesn't exist, patch will
-    create the attribute for you when the patched function is called, and
-    delete it again afterwards. This is useful for writing tests against
-    attributes that your production code creates at runtime. It is off by
-    default because it can be dangerous. With it switched on you can write
-    passing tests against APIs that don't actually exist!
+    By default :func:`patch` will fail to replace attributes that don't exist.
+    If you pass in ``create=True``, and the attribute doesn't exist, patch will
+    create the attribute for you when the patched function is called, and delete
+    it again after the patched function has exited. This is useful for writing
+    tests against attributes that your production code creates at runtime. It is
+    off by default because it can be dangerous. With it switched on you can
+    write passing tests against APIs that don't actually exist!
 
     .. note::
 
@@ -1246,6 +1256,27 @@ into a :func:`patch` call using ``**``::
     Traceback (most recent call last):
       ...
     KeyError
+
+By default, attempting to patch a function in a module (or a method or an
+attribute in a class) that does not exist will fail with :exc:`AttributeError`::
+
+    >>> @patch('sys.non_existing_attribute', 42)
+    ... def test():
+    ...     assert sys.non_existing_attribute == 42
+    ...
+    >>> test()
+    Traceback (most recent call last):
+      ...
+    AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing'
+
+but adding ``create=True`` in the call to :func:`patch` will make the previous example
+work as expected::
+
+    >>> @patch('sys.non_existing_attribute', 42, create=True)
+    ... def test(mock_stdout):
+    ...     assert sys.non_existing_attribute == 42
+    ...
+    >>> test()
 
 
 patch.object
@@ -1419,7 +1450,7 @@ passed by keyword *after* any of the standard arguments created by :func:`patch`
     >>> test_function()
 
 If :func:`patch.multiple` is used as a context manager, the value returned by the
-context manger is a dictionary where created mocks are keyed by name::
+context manager is a dictionary where created mocks are keyed by name::
 
     >>> with patch.multiple('__main__', thing=DEFAULT, other=DEFAULT) as values:
     ...     assert 'other' in repr(values['other'])
@@ -1966,14 +1997,13 @@ arguments are a dictionary:
     >>> m = MagicMock(return_value=None)
     >>> m(1, 2, 3, arg='one', arg2='two')
     >>> kall = m.call_args
-    >>> args, kwargs = kall
-    >>> args
+    >>> kall.args
     (1, 2, 3)
-    >>> kwargs
+    >>> kall.kwargs
     {'arg': 'one', 'arg2': 'two'}
-    >>> args is kall[0]
+    >>> kall.args is kall[0]
     True
-    >>> kwargs is kall[1]
+    >>> kall.kwargs is kall[1]
     True
 
     >>> m = MagicMock()

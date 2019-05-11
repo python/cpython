@@ -122,6 +122,7 @@ struct compiler_unit {
     PyObject *u_private;        /* for private name mangling */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
+    Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
     Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
     /* Pointer to the most recently allocated block.  By following b_list
        members, you can reach all early allocated blocks. */
@@ -175,7 +176,7 @@ static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
 static int compiler_error(struct compiler *, const char *);
-static int compiler_warn(struct compiler *, const char *);
+static int compiler_warn(struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
@@ -330,6 +331,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         goto finally;
     if (!flags) {
         local_flags.cf_flags = 0;
+        local_flags.cf_feature_version = PY_MINOR_VERSION;
         flags = &local_flags;
     }
     merged = c.c_future->ff_features | flags->cf_flags;
@@ -551,6 +553,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     memset(u, 0, sizeof(struct compiler_unit));
     u->u_scope_type = scope_type;
     u->u_argcount = 0;
+    u->u_posonlyargcount = 0;
     u->u_kwonlyargcount = 0;
     u->u_ste = PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
@@ -1209,13 +1212,13 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
     PyObject *t = PyDict_SetDefault(c->c_const_cache, key, key);
     if (t != key) {
         // o is registered in c_const_cache.  Just use it.
-        Py_INCREF(t);
+        Py_XINCREF(t);
         Py_DECREF(key);
         return t;
     }
 
     // We registered o in c_const_cache.
-    // When o is a tuple or frozenset, we want to merge it's
+    // When o is a tuple or frozenset, we want to merge its
     // items too.
     if (PyTuple_CheckExact(o)) {
         Py_ssize_t len = PyTuple_GET_SIZE(o);
@@ -1245,7 +1248,7 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
         }
     }
     else if (PyFrozenSet_CheckExact(o)) {
-        // *key* is tuple. And it's first item is frozenset of
+        // *key* is tuple. And its first item is frozenset of
         // constant keys.
         // See _PyCode_ConstantKey() for detail.
         assert(PyTuple_CheckExact(key));
@@ -2126,6 +2129,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_SEQ_IN_SCOPE(c, stmt, body);
     co = assemble(c, 1);
@@ -2284,6 +2288,47 @@ compiler_class(struct compiler *c, stmt_ty s)
     return 1;
 }
 
+/* Return 0 if the expression is a constant value except named singletons.
+   Return 1 otherwise. */
+static int
+check_is_arg(expr_ty e)
+{
+    if (e->kind != Constant_kind) {
+        return 1;
+    }
+    PyObject *value = e->v.Constant.value;
+    return (value == Py_None
+         || value == Py_False
+         || value == Py_True
+         || value == Py_Ellipsis);
+}
+
+/* Check operands of identity chacks ("is" and "is not").
+   Emit a warning if any operand is a constant except named singletons.
+   Return 0 on error.
+ */
+static int
+check_compare(struct compiler *c, expr_ty e)
+{
+    Py_ssize_t i, n;
+    int left = check_is_arg(e->v.Compare.left);
+    n = asdl_seq_LEN(e->v.Compare.ops);
+    for (i = 0; i < n; i++) {
+        cmpop_ty op = (cmpop_ty)asdl_seq_GET(e->v.Compare.ops, i);
+        int right = check_is_arg((expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+        if (op == Is || op == IsNot) {
+            if (!right || !left) {
+                const char *msg = (op == Is)
+                        ? "\"is\" with a literal. Did you mean \"==\"?"
+                        : "\"is not\" with a literal. Did you mean \"!=\"?";
+                return compiler_warn(c, msg);
+            }
+        }
+        left = right;
+    }
+    return 1;
+}
+
 static int
 cmpop(cmpop_ty op)
 {
@@ -2365,6 +2410,9 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
     case Compare_kind: {
         Py_ssize_t i, n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
+            if (!check_compare(c, e)) {
+                return 0;
+            }
             basicblock *cleanup = compiler_new_block(c);
             if (cleanup == NULL)
                 return 0;
@@ -2462,6 +2510,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (c->u->u_ste->ste_generator) {
@@ -3384,7 +3433,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
         case Load:
             op = (c->u->u_ste->ste_type == ClassBlock) ? LOAD_CLASSDEREF : LOAD_DEREF;
             break;
-        case Store: op = STORE_DEREF; break;
+        case Store:
+            op = STORE_DEREF;
+            break;
         case AugLoad:
         case AugStore:
             break;
@@ -3399,7 +3450,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     case OP_FAST:
         switch (ctx) {
         case Load: op = LOAD_FAST; break;
-        case Store: op = STORE_FAST; break;
+        case Store:
+            op = STORE_FAST;
+            break;
         case Del: op = DELETE_FAST; break;
         case AugLoad:
         case AugStore:
@@ -3415,7 +3468,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     case OP_GLOBAL:
         switch (ctx) {
         case Load: op = LOAD_GLOBAL; break;
-        case Store: op = STORE_GLOBAL; break;
+        case Store:
+            op = STORE_GLOBAL;
+            break;
         case Del: op = DELETE_GLOBAL; break;
         case AugLoad:
         case AugStore:
@@ -3430,7 +3485,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     case OP_NAME:
         switch (ctx) {
         case Load: op = LOAD_NAME; break;
-        case Store: op = STORE_NAME; break;
+        case Store:
+            op = STORE_NAME;
+            break;
         case Del: op = DELETE_NAME; break;
         case AugLoad:
         case AugStore:
@@ -3670,6 +3727,9 @@ compiler_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
 
+    if (!check_compare(c, e)) {
+        return 0;
+    }
     VISIT(c, expr, e->v.Compare.left);
     assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
     n = asdl_seq_LEN(e->v.Compare.ops) - 1;
@@ -3707,6 +3767,123 @@ compiler_compare(struct compiler *c, expr_ty e)
     return 1;
 }
 
+static PyTypeObject *
+infer_type(expr_ty e)
+{
+    switch (e->kind) {
+    case Tuple_kind:
+        return &PyTuple_Type;
+    case List_kind:
+    case ListComp_kind:
+        return &PyList_Type;
+    case Dict_kind:
+    case DictComp_kind:
+        return &PyDict_Type;
+    case Set_kind:
+    case SetComp_kind:
+        return &PySet_Type;
+    case GeneratorExp_kind:
+        return &PyGen_Type;
+    case Lambda_kind:
+        return &PyFunction_Type;
+    case JoinedStr_kind:
+    case FormattedValue_kind:
+        return &PyUnicode_Type;
+    case Constant_kind:
+        return e->v.Constant.value->ob_type;
+    default:
+        return NULL;
+    }
+}
+
+static int
+check_caller(struct compiler *c, expr_ty e)
+{
+    switch (e->kind) {
+    case Constant_kind:
+    case Tuple_kind:
+    case List_kind:
+    case ListComp_kind:
+    case Dict_kind:
+    case DictComp_kind:
+    case Set_kind:
+    case SetComp_kind:
+    case GeneratorExp_kind:
+    case JoinedStr_kind:
+    case FormattedValue_kind:
+        return compiler_warn(c, "'%.200s' object is not callable; "
+                                "perhaps you missed a comma?",
+                                infer_type(e)->tp_name);
+    default:
+        return 1;
+    }
+}
+
+static int
+check_subscripter(struct compiler *c, expr_ty e)
+{
+    PyObject *v;
+
+    switch (e->kind) {
+    case Constant_kind:
+        v = e->v.Constant.value;
+        if (!(v == Py_None || v == Py_Ellipsis ||
+              PyLong_Check(v) || PyFloat_Check(v) || PyComplex_Check(v) ||
+              PyAnySet_Check(v)))
+        {
+            return 1;
+        }
+        /* fall through */
+    case Set_kind:
+    case SetComp_kind:
+    case GeneratorExp_kind:
+    case Lambda_kind:
+        return compiler_warn(c, "'%.200s' object is not subscriptable; "
+                                "perhaps you missed a comma?",
+                                infer_type(e)->tp_name);
+    default:
+        return 1;
+    }
+}
+
+static int
+check_index(struct compiler *c, expr_ty e, slice_ty s)
+{
+    PyObject *v;
+
+    if (s->kind != Index_kind) {
+        return 1;
+    }
+    PyTypeObject *index_type = infer_type(s->v.Index.value);
+    if (index_type == NULL
+        || PyType_FastSubclass(index_type, Py_TPFLAGS_LONG_SUBCLASS)
+        || index_type == &PySlice_Type) {
+        return 1;
+    }
+
+    switch (e->kind) {
+    case Constant_kind:
+        v = e->v.Constant.value;
+        if (!(PyUnicode_Check(v) || PyBytes_Check(v) || PyTuple_Check(v))) {
+            return 1;
+        }
+        /* fall through */
+    case Tuple_kind:
+    case List_kind:
+    case ListComp_kind:
+    case JoinedStr_kind:
+    case FormattedValue_kind:
+        return compiler_warn(c, "%.200s indices must be integers or slices, "
+                                "not %.200s; "
+                                "perhaps you missed a comma?",
+                                infer_type(e)->tp_name,
+                                index_type->tp_name);
+    default:
+        return 1;
+    }
+}
+
+// Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
@@ -3740,9 +3917,13 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
-    if (maybe_optimize_method_call(c, e) > 0)
-        return 1;
-
+    int ret = maybe_optimize_method_call(c, e);
+    if (ret >= 0) {
+        return ret;
+    }
+    if (!check_caller(c, e->v.Call.func)) {
+        return 0;
+    }
     VISIT(c, expr, e->v.Call.func);
     return compiler_call_helper(c, 0,
                                 e->v.Call.args,
@@ -3765,8 +3946,8 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     /* Our oparg encodes 2 pieces of information: the conversion
        character, and whether or not a format_spec was provided.
 
-       Convert the conversion char to 2 bits:
-       None: 000  0x0  FVC_NONE
+       Convert the conversion char to 3 bits:
+           : 000  0x0  FVC_NONE   The default if nothing specified.
        !s  : 001  0x1  FVC_STR
        !r  : 010  0x2  FVC_REPR
        !a  : 011  0x3  FVC_ASCII
@@ -3776,19 +3957,26 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
        no  : 000  0x0
     */
 
+    int conversion = e->v.FormattedValue.conversion;
     int oparg;
 
-    /* Evaluate the expression to be formatted. */
+    if (e->v.FormattedValue.expr_text) {
+        /* Push the text of the expression (which already has the '=' in
+           it. */
+        ADDOP_LOAD_CONST(c, e->v.FormattedValue.expr_text);
+    }
+
+    /* The expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
 
-    switch (e->v.FormattedValue.conversion) {
+    switch (conversion) {
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
     case -1:  oparg = FVC_NONE;  break;
     default:
-        PyErr_SetString(PyExc_SystemError,
-                        "Unrecognized conversion character");
+        PyErr_Format(PyExc_SystemError,
+                     "Unrecognized conversion character %d", conversion);
         return 0;
     }
     if (e->v.FormattedValue.format_spec) {
@@ -3799,6 +3987,12 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
 
     /* And push our opcode and oparg */
     ADDOP_I(c, FORMAT_VALUE, oparg);
+
+    /* If we have expr_text, join the 2 strings on the stack. */
+    if (e->v.FormattedValue.expr_text) {
+        ADDOP_I(c, BUILD_STRING, 2);
+    }
+
     return 1;
 }
 
@@ -4522,6 +4716,11 @@ static int
 compiler_visit_expr1(struct compiler *c, expr_ty e)
 {
     switch (e->kind) {
+    case NamedExpr_kind:
+        VISIT(c, expr, e->v.NamedExpr.value);
+        ADDOP(c, DUP_TOP);
+        VISIT(c, expr, e->v.NamedExpr.target);
+        break;
     case BoolOp_kind:
         return compiler_boolop(c, e);
     case BinOp_kind:
@@ -4630,6 +4829,12 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             VISIT_SLICE(c, e->v.Subscript.slice, AugLoad);
             break;
         case Load:
+            if (!check_subscripter(c, e->v.Subscript.value)) {
+                return 0;
+            }
+            if (!check_index(c, e->v.Subscript.value, e->v.Subscript.slice)) {
+                return 0;
+            }
             VISIT(c, expr, e->v.Subscript.value);
             VISIT_SLICE(c, e->v.Subscript.slice, Load);
             break;
@@ -4710,7 +4915,8 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     switch (e->kind) {
     case Attribute_kind:
         auge = Attribute(e->v.Attribute.value, e->v.Attribute.attr,
-                         AugLoad, e->lineno, e->col_offset, c->c_arena);
+                         AugLoad, e->lineno, e->col_offset,
+                         e->end_lineno, e->end_col_offset, c->c_arena);
         if (auge == NULL)
             return 0;
         VISIT(c, expr, auge);
@@ -4721,7 +4927,8 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         break;
     case Subscript_kind:
         auge = Subscript(e->v.Subscript.value, e->v.Subscript.slice,
-                         AugLoad, e->lineno, e->col_offset, c->c_arena);
+                         AugLoad, e->lineno, e->col_offset,
+                         e->end_lineno, e->end_col_offset, c->c_arena);
         if (auge == NULL)
             return 0;
         VISIT(c, expr, auge);
@@ -4921,20 +5128,30 @@ compiler_error(struct compiler *c, const char *errstr)
    and returns 0.
 */
 static int
-compiler_warn(struct compiler *c, const char *errstr)
+compiler_warn(struct compiler *c, const char *format, ...)
 {
-    PyObject *msg = PyUnicode_FromString(errstr);
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    PyObject *msg = PyUnicode_FromFormatV(format, vargs);
+    va_end(vargs);
     if (msg == NULL) {
         return 0;
     }
     if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
                                  c->u->u_lineno, NULL, NULL) < 0)
     {
-        Py_DECREF(msg);
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
+               to get a more accurate error report */
             PyErr_Clear();
-            return compiler_error(c, errstr);
+            assert(PyUnicode_AsUTF8(msg) != NULL);
+            compiler_error(c, PyUnicode_AsUTF8(msg));
         }
+        Py_DECREF(msg);
         return 0;
     }
     Py_DECREF(msg);
@@ -5542,7 +5759,7 @@ makecode(struct compiler *c, struct assembler *a)
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
-    int argcount, kwonlyargcount, maxdepth;
+    int argcount, posonlyargcount, kwonlyargcount, maxdepth;
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     names = dict_keys_inorder(c->u->u_names, 0);
@@ -5587,12 +5804,13 @@ makecode(struct compiler *c, struct assembler *a)
     }
 
     argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
+    posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
         goto error;
     }
-    co = PyCode_New(argcount, kwonlyargcount,
+    co = PyCode_New(argcount, posonlyargcount, kwonlyargcount,
                     nlocals_int, maxdepth, flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,

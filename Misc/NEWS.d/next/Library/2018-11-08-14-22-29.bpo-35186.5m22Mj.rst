@@ -1,2 +1,0 @@
-Removed the "built with" comment added when ``setup.py upload`` is used with
-either ``bdist_rpm`` or ``bdist_dumb``.

@@ -1528,10 +1528,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             ntoappend = 1;
         }
         else if ((ch = *pin++) == '\0') {
-            /* There's a lone trailing %; doesn't make sense. */
-            PyErr_SetString(PyExc_ValueError, "strftime format "
-                            "ends with raw %");
-            goto Done;
+        /* Null byte follows %, copy only '%'. 
+         * 
+         * Back the pin up one char so that we catch the null check
+         * the next time through the loop.*/
+            pin--;
+            ptoappend = pin - 1;
+            ntoappend = 1;
         }
         /* A % has been seen and ch is the character after it. */
         else if (ch == 'z') {
@@ -1616,7 +1619,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         usednew += ntoappend;
         assert(usednew <= totalnew);
     }  /* end while() */
-
+    
     if (_PyBytes_Resize(&newfmt, usednew) < 0)
         goto Done;
     {
@@ -2918,6 +2921,23 @@ datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
     return date_fromtimestamp((PyObject *) type, timestamp);
 }
 
+/* bpo-36025: This is a wrapper for API compatibility with the public C API,
+ * which expects a function that takes an *args tuple, whereas the argument
+ * clinic generates code that takes METH_O.
+ */
+static PyObject *
+datetime_date_fromtimestamp_capi(PyObject *cls, PyObject *args)
+{
+    PyObject *timestamp;
+    PyObject *result = NULL;
+
+    if (PyArg_UnpackTuple(args, "fromtimestamp", 1, 1, &timestamp)) {
+        result = date_fromtimestamp(cls, timestamp);
+    }
+
+    return result;
+}
+
 /* Return new date from proleptic Gregorian ordinal.  Raises ValueError if
  * the ordinal is out of range.
  */
@@ -2983,6 +3003,67 @@ invalid_string_error:
     return NULL;
 }
 
+
+static PyObject *
+date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
+{
+    static char *keywords[] = {
+        "year", "week", "day", NULL
+    };
+
+    int year, week, day;
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
+                keywords,
+                &year, &week, &day) == 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Format(PyExc_ValueError,
+                    "ISO calendar component out of range");
+
+        }
+        return NULL;
+    }
+
+    // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
+    if (year < MINYEAR || year > MAXYEAR) {
+        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
+        return NULL;
+    }
+
+    if (week <= 0 || week >= 53) {
+        int out_of_range = 1;
+        if (week == 53) {
+            // ISO years have 53 weeks in it on years starting with a Thursday
+            // and on leap years starting on Wednesday
+            int first_weekday = weekday(year, 1, 1);
+            if (first_weekday == 3 || (first_weekday == 2 && is_leap(year))) {
+                out_of_range = 0;
+            }
+        }
+
+        if (out_of_range) {
+            PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
+            return NULL;
+        }
+    }
+
+    if (day <= 0 || day >= 8) {
+        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])",
+                     day);
+        return NULL;
+    }
+
+    // Convert (Y, W, D) to (Y, M, D) in-place
+    int day_1 = iso_week1_monday(year);
+
+    int month = week;
+    int day_offset = (month - 1)*7 + day - 1;
+
+    ord_to_ymd(day_1 + day_offset, &year, &month, &day);
+
+    return new_date_subclass_ex(year, month, day, cls);
+}
+
+
 /*
  * Date arithmetic.
  */
@@ -3001,7 +3082,8 @@ add_date_timedelta(PyDateTime_Date *date, PyDateTime_Delta *delta, int negate)
     int day = GET_DAY(date) + (negate ? -deltadays : deltadays);
 
     if (normalize_date(&year, &month, &day) >= 0)
-        result = new_date(year, month, day);
+        result = new_date_subclass_ex(year, month, day,
+                                      (PyObject* )Py_TYPE(date));
     return result;
 }
 
@@ -3274,6 +3356,12 @@ static PyMethodDef date_methods[] = {
      {"fromisoformat", (PyCFunction)date_fromisoformat,  METH_O |
                                                          METH_CLASS,
       PyDoc_STR("str -> Construct a date from the output of date.isoformat()")},
+
+     {"fromisocalendar", (PyCFunction)(void(*)(void))date_fromisocalendar,
+      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+      PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
+                "number and weekday.\n\n"
+                "This is the inverse of the date.isocalendar() function")},
 
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
@@ -5163,9 +5251,10 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
         return NULL;
     }
 
-    return new_datetime(year, month, day,
-                        hour, minute, second, microsecond,
-                        HASTZINFO(date) ? date->tzinfo : Py_None, 0);
+    return new_datetime_subclass_ex(year, month, day,
+                                    hour, minute, second, microsecond,
+                                    HASTZINFO(date) ? date->tzinfo : Py_None,
+                                    (PyObject *)Py_TYPE(date));
 }
 
 static PyObject *
@@ -6270,7 +6359,7 @@ static PyDateTime_CAPI CAPI = {
     new_delta_ex,
     new_timezone,
     datetime_fromtimestamp,
-    date_fromtimestamp,
+    datetime_date_fromtimestamp_capi,
     new_datetime_ex2,
     new_time_ex2
 };

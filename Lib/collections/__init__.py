@@ -311,7 +311,10 @@ except ImportError:
 ### namedtuple
 ################################################################################
 
-_nt_itemgetters = {}
+try:
+    from _collections import _tuplegetter
+except ImportError:
+    _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
 
 def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
     """Returns a new subclass of tuple with named fields.
@@ -387,7 +390,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     arg_list = repr(field_names).replace("'", "")[1:-1]
     repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
     tuple_new = tuple.__new__
-    _len = len
+    _dict, _tuple, _len, _map, _zip = dict, tuple, len, map, zip
 
     # Create all the named tuple methods to be added to the class namespace
 
@@ -411,7 +414,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
                               'or iterable')
 
     def _replace(_self, **kwds):
-        result = _self._make(map(kwds.pop, field_names, _self))
+        result = _self._make(_map(kwds.pop, field_names, _self))
         if kwds:
             raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
         return result
@@ -424,15 +427,14 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         return self.__class__.__name__ + repr_fmt % self
 
     def _asdict(self):
-        'Return a new OrderedDict which maps field names to their values.'
-        return OrderedDict(zip(self._fields, self))
+        'Return a new dict which maps field names to their values.'
+        return _dict(_zip(self._fields, self))
 
     def __getnewargs__(self):
         'Return self as a plain tuple.  Used by copy and pickle.'
-        return tuple(self)
+        return _tuple(self)
 
     # Modify function metadata to help with introspection and debugging
-
     for method in (__new__, _make.__func__, _replace,
                    __repr__, _asdict, __getnewargs__):
         method.__qualname__ = f'{typename}.{method.__name__}'
@@ -443,6 +445,8 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__doc__': f'{typename}({arg_list})',
         '__slots__': (),
         '_fields': field_names,
+        '_field_defaults': field_defaults,
+        # alternate spelling for backward compatiblity
         '_fields_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
@@ -451,15 +455,9 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_asdict': _asdict,
         '__getnewargs__': __getnewargs__,
     }
-    cache = _nt_itemgetters
     for index, name in enumerate(field_names):
-        try:
-            itemgetter_object, doc = cache[index]
-        except KeyError:
-            itemgetter_object = _itemgetter(index)
-            doc = f'Alias for field number {index}'
-            cache[index] = itemgetter_object, doc
-        class_namespace[name] = property(itemgetter_object, doc=doc)
+        doc = _sys.intern(f'Alias for field number {index}')
+        class_namespace[name] = _tuplegetter(index, doc)
 
     result = type(typename, (tuple,), class_namespace)
 
@@ -574,8 +572,8 @@ class Counter(dict):
         '''List the n most common elements and their counts from the most
         common to the least.  If n is None, then list all element counts.
 
-        >>> Counter('abcdeabcdabcaba').most_common(3)
-        [('a', 5), ('b', 4), ('c', 3)]
+        >>> Counter('abracadabra').most_common(3)
+        [('a', 5), ('b', 2), ('r', 2)]
 
         '''
         # Emulate Bag.sortedByCount from Smalltalk
@@ -1018,8 +1016,10 @@ class UserDict(_collections_abc.MutableMapping):
         self.data = {}
         if dict is not None:
             self.update(dict)
-        if len(kwargs):
+        if kwargs:
             self.update(kwargs)
+    __init__.__text_signature__ = '($self, dict=None, /, **kwargs)'
+
     def __len__(self): return len(self.data)
     def __getitem__(self, key):
         if key in self.data:
@@ -1085,7 +1085,11 @@ class UserList(_collections_abc.MutableSequence):
         return other.data if isinstance(other, UserList) else other
     def __contains__(self, item): return item in self.data
     def __len__(self): return len(self.data)
-    def __getitem__(self, i): return self.data[i]
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            return self.__class__(self.data[i])
+        else:
+            return self.data[i]
     def __setitem__(self, i, item): self.data[i] = item
     def __delitem__(self, i): del self.data[i]
     def __add__(self, other):

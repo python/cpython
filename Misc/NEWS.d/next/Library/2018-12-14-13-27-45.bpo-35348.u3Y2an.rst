@@ -1,3 +1,0 @@
-Make :func:`platform.architecture` parsing of ``file`` command output more
-reliable: add the ``-b`` option to the ``file`` command to omit the filename,
-force the usage of the C locale, and search also the "shared object" pattern.

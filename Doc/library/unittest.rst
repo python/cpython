@@ -27,7 +27,7 @@ object-oriented way:
 
 test fixture
    A :dfn:`test fixture` represents the preparation needed to perform one or more
-   tests, and any associate cleanup actions.  This may involve, for example,
+   tests, and any associated cleanup actions.  This may involve, for example,
    creating temporary or proxy databases, directories, or starting a server
    process.
 
@@ -1000,7 +1000,7 @@ Test cases
             int('XYZ')
 
       .. versionadded:: 3.1
-         under the name ``assertRaisesRegexp``.
+         Added under the name ``assertRaisesRegexp``.
 
       .. versionchanged:: 3.2
          Renamed to :meth:`assertRaisesRegex`.
@@ -1145,7 +1145,7 @@ Test cases
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order      |              |
+   |                                       | regardless of their order.     |              |
    +---------------------------------------+--------------------------------+--------------+
 
 
@@ -1193,7 +1193,7 @@ Test cases
       expression suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.1
-         under the name ``assertRegexpMatches``.
+         Added under the name ``assertRegexpMatches``.
       .. versionchanged:: 3.2
          The method ``assertRegexpMatches()`` has been renamed to
          :meth:`.assertRegex`.
@@ -1516,14 +1516,14 @@ along with their deprecated aliases:
    ==============================  ====================== =======================
 
    .. deprecated:: 3.1
-         the fail* aliases listed in the second column.
+         The fail* aliases listed in the second column have been deprecated.
    .. deprecated:: 3.2
-         the assert* aliases listed in the third column.
+         The assert* aliases listed in the third column have been deprecated.
    .. deprecated:: 3.2
          ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
          :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
    .. deprecated:: 3.5
-         the ``assertNotRegexpMatches`` name in favor of :meth:`.assertNotRegex`.
+         The ``assertNotRegexpMatches`` name is deprecated in favor of :meth:`.assertNotRegex`.
 
 .. _testsuite-objects:
 
@@ -2083,7 +2083,7 @@ Loading and running tests
 
    .. method:: run(test)
 
-      This method is the main public interface to the `TextTestRunner`. This
+      This method is the main public interface to the ``TextTestRunner``. This
       method takes a :class:`TestSuite` or :class:`TestCase` instance. A
       :class:`TestResult` is created by calling
       :func:`_makeResult` and the test(s) are run and the

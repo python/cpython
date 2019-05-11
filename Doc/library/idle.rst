@@ -235,6 +235,12 @@ View Last Restart
 Restart Shell
   Restart the shell to clean the environment.
 
+Previous History
+  Cycle through earlier commands in history which match the current entry.
+
+Next History
+  Cycle through later commands in history which match the current entry.
+
 Interrupt Execution
   Stop a running program.
 
@@ -275,7 +281,12 @@ Configure IDLE
    menu. For more, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-Code Context (toggle)(Editor Window only)
+Zoom/Restore Height
+   Toggles the window between normal size and maximum height. The initial size
+   defaults to 40 lines by 80 chars unless changed on the General tab of the
+   Configure IDLE dialog.
+
+Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
    :ref:`Code Context <code-context>` in the Editing and Navigation section below.
@@ -283,13 +294,8 @@ Code Context (toggle)(Editor Window only)
 Window menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Zoom Height
-   Toggles the window between normal size and maximum height. The initial size
-   defaults to 40 lines by 80 chars unless changed on the General tab of the
-   Configure IDLE dialog.
-
-The rest of this menu lists the names of all open windows; select one to bring
-it to the foreground (deiconifying it if necessary).
+Lists the names of all open windows; select one to bring it to the foreground
+(deiconifying it if necessary).
 
 Help menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -350,8 +356,8 @@ Shell and Output windows also have the following.
 Go to file/line
    Same as in Debug menu.
 
-The Shell window also has an output squeezing facility explained in the
-the *Python Shell window* subsection below.
+The Shell window also has an output squeezing facility explained in the *Python
+Shell window* subsection below.
 
 Squeeze
    If the cursor is over an output line, squeeze all the output between
@@ -710,14 +716,29 @@ In contrast, some system text windows only keep the last n lines of output.
 A Windows console, for instance, keeps a user-settable 1 to 9999 lines,
 with 300 the default.
 
-Text widgets display a subset of Unicode, the Basic Multilingual Plane (BMP).
-Which characters get a proper glyph instead of a replacement box depends on
-the operating system and installed fonts.  Newline characters cause following
-text to appear on a new line, but other control characters are either
-replaced with a box or deleted.  However, ``repr()``, which is used for
-interactive echo of expression values, replaces control characters,
-some BMP codepoints, and all non-BMP characters with escape codes
-before they are output.
+A Tk Text widget, and hence IDLE's Shell, displays characters (codepoints) in
+the BMP (Basic Multilingual Plane) subset of Unicode.  Which characters are
+displayed with a proper glyph and which with a replacement box depends on the
+operating system and installed fonts.  Tab characters cause the following text
+to begin after the next tab stop. (They occur every 8 'characters').  Newline
+characters cause following text to appear on a new line.  Other control
+characters are ignored or displayed as a space, box, or something else,
+depending on the operating system and font.  (Moving the text cursor through
+such output with arrow keys may exhibit some surprising spacing behavior.) ::
+
+   >>> s = 'a\tb\a<\x02><\r>\bc\nd'  # Enter 22 chars.
+   >>> len(s)
+   14
+   >>> s  # Display repr(s)
+   'a\tb\x07<\x02><\r>\x08c\nd'
+   >>> print(s, end='')  # Display s as is.
+   # Result varies by OS and font.  Try it.
+
+The ``repr`` function is used for interactive echo of expression
+values.  It returns an altered version of the input string in which
+control codes, some BMP codepoints, and all non-BMP codepoints are
+replaced with escape codes. As demonstrated above, it allows one to
+identify the characters in a string, regardless of how they are displayed.
 
 Normal and error output are generally kept separate (on separate lines)
 from code input and each other.  They each get different highlight colors.
@@ -826,6 +847,13 @@ changed via Configure IDLE on the Option menu.
 Non-default user settings are saved in a .idlerc directory in the user's
 home directory.  Problems caused by bad user configuration files are solved
 by editing or deleting one or more of the files in .idlerc.
+
+On the Font tab, see the text sample for the effect of font face and size
+on multiple characters in multiple languages.  Edit the sample to add
+other characters of personal interest.  Use the sample to select
+monospaced fonts.  If particular characters have problems in Shell or an
+editor, add them to the top of the sample and try changing first size
+and then font.
 
 On the Highlights and Keys tab, select a built-in or custom color theme
 and key set.  To use a newer built-in color theme or key set with older

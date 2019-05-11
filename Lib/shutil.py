@@ -49,7 +49,7 @@ if os.name == 'posix':
 elif _WINDOWS:
     import nt
 
-COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 16 * 1024
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 _HAS_SENDFILE = posix and hasattr(os, "sendfile")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
@@ -187,9 +187,11 @@ def _copyfileobj_readinto(fsrc, fdst, length=COPY_BUFSIZE):
             else:
                 fdst_write(mv)
 
-def copyfileobj(fsrc, fdst, length=COPY_BUFSIZE):
+def copyfileobj(fsrc, fdst, length=0):
     """copy data from file-like object fsrc to file-like object fdst"""
     # Localize variable access to minimize overhead.
+    if not length:
+        length = COPY_BUFSIZE
     fsrc_read = fsrc.read
     fdst_write = fdst.write
     while True:
@@ -288,10 +290,8 @@ def copymode(src, dst, *, follow_symlinks=True):
             stat_func, chmod_func = os.lstat, os.lchmod
         else:
             return
-    elif hasattr(os, 'chmod'):
-        stat_func, chmod_func = _stat, os.chmod
     else:
-        return
+        stat_func, chmod_func = _stat, os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
@@ -359,6 +359,9 @@ def copystat(src, dst, *, follow_symlinks=True):
     mode = stat.S_IMODE(st.st_mode)
     lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
         follow_symlinks=follow)
+    # We must copy extended attributes before the file is (potentially)
+    # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
+    _copyxattr(src, dst, follow_symlinks=follow)
     try:
         lookup("chmod")(dst, mode, follow_symlinks=follow)
     except NotImplementedError:
@@ -382,7 +385,6 @@ def copystat(src, dst, *, follow_symlinks=True):
                     break
             else:
                 raise
-    _copyxattr(src, dst, follow_symlinks=follow)
 
 def copy(src, dst, *, follow_symlinks=True):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
@@ -432,13 +434,13 @@ def ignore_patterns(*patterns):
     return _ignore_patterns
 
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
-              ignore_dangling_symlinks):
+              ignore_dangling_symlinks, dirs_exist_ok=False):
     if ignore is not None:
         ignored_names = ignore(src, set(os.listdir(src)))
     else:
         ignored_names = set()
 
-    os.makedirs(dst)
+    os.makedirs(dst, exist_ok=dirs_exist_ok)
     errors = []
     use_srcentry = copy_function is copy2 or copy_function is copy
 
@@ -461,17 +463,18 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     # ignore dangling symlink if the flag is on
                     if not os.path.exists(linkto) and ignore_dangling_symlinks:
                         continue
-                    # otherwise let the copy occurs. copy2 will raise an error
+                    # otherwise let the copy occur. copy2 will raise an error
                     if srcentry.is_dir():
                         copytree(srcobj, dstname, symlinks, ignore,
-                                 copy_function)
+                                 copy_function, dirs_exist_ok=dirs_exist_ok)
                     else:
                         copy_function(srcobj, dstname)
             elif srcentry.is_dir():
-                copytree(srcobj, dstname, symlinks, ignore, copy_function)
+                copytree(srcobj, dstname, symlinks, ignore, copy_function,
+                         dirs_exist_ok=dirs_exist_ok)
             else:
                 # Will raise a SpecialFileError for unsupported file types
-                copy_function(srcentry, dstname)
+                copy_function(srcobj, dstname)
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except Error as err:
@@ -489,10 +492,12 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
     return dst
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
-             ignore_dangling_symlinks=False):
-    """Recursively copy a directory tree.
+             ignore_dangling_symlinks=False, dirs_exist_ok=False):
+    """Recursively copy a directory tree and return the destination directory.
 
-    The destination directory must not already exist.
+    dirs_exist_ok dictates whether to raise an exception in case dst or any
+    missing parent directory already exists.
+
     If exception(s) occur, an Error is raised with a list of reasons.
 
     If the optional symlinks flag is true, symbolic links in the
@@ -527,7 +532,8 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     with os.scandir(src) as entries:
         return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                          ignore=ignore, copy_function=copy_function,
-                         ignore_dangling_symlinks=ignore_dangling_symlinks)
+                         ignore_dangling_symlinks=ignore_dangling_symlinks,
+                         dirs_exist_ok=dirs_exist_ok)
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onerror):
@@ -1275,6 +1281,15 @@ def get_terminal_size(fallback=(80, 24)):
 
     return os.terminal_size((columns, lines))
 
+
+# Check that a given file can be accessed with the correct mode.
+# Additionally check that `file` is not a directory, as on Windows
+# directories pass the os.access check.
+def _access_check(fn, mode):
+    return (os.path.exists(fn) and os.access(fn, mode)
+            and not os.path.isdir(fn))
+
+
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
     conforms to the given mode on the PATH, or None if there is no such
@@ -1285,13 +1300,6 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     path.
 
     """
-    # Check that a given file can be accessed with the correct mode.
-    # Additionally check that `file` is not a directory, as on Windows
-    # directories pass the os.access check.
-    def _access_check(fn, mode):
-        return (os.path.exists(fn) and os.access(fn, mode)
-                and not os.path.isdir(fn))
-
     # If we're given a path with a directory part, look it up directly rather
     # than referring to PATH directories. This includes checking relative to the
     # current directory, e.g. ./script
@@ -1300,19 +1308,42 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
             return cmd
         return None
 
+    use_bytes = isinstance(cmd, bytes)
+
     if path is None:
-        path = os.environ.get("PATH", os.defpath)
+        path = os.environ.get("PATH", None)
+        if path is None:
+            try:
+                path = os.confstr("CS_PATH")
+            except (AttributeError, ValueError):
+                # os.confstr() or CS_PATH is not available
+                path = os.defpath
+        # bpo-35755: Don't use os.defpath if the PATH environment variable is
+        # set to an empty string
+
+    # PATH='' doesn't match, whereas PATH=':' looks in the current directory
     if not path:
         return None
-    path = path.split(os.pathsep)
+
+    if use_bytes:
+        path = os.fsencode(path)
+        path = path.split(os.fsencode(os.pathsep))
+    else:
+        path = os.fsdecode(path)
+        path = path.split(os.pathsep)
 
     if sys.platform == "win32":
         # The current directory takes precedence on Windows.
-        if not os.curdir in path:
-            path.insert(0, os.curdir)
+        curdir = os.curdir
+        if use_bytes:
+            curdir = os.fsencode(curdir)
+        if curdir not in path:
+            path.insert(0, curdir)
 
         # PATHEXT is necessary to check on Windows.
         pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+        if use_bytes:
+            pathext = [os.fsencode(ext) for ext in pathext]
         # See if the given file matches any of the expected path extensions.
         # This will allow us to short circuit when given "python.exe".
         # If it does match, only test that one, otherwise we have to try

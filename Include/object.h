@@ -54,13 +54,8 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
-/* Py_DEBUG implies Py_TRACE_REFS. */
-#if defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
-#define Py_TRACE_REFS
-#endif
-
-/* Py_TRACE_REFS implies Py_REF_DEBUG. */
-#if defined(Py_TRACE_REFS) && !defined(Py_REF_DEBUG)
+/* Py_DEBUG implies Py_REF_DEBUG. */
+#if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
 #define Py_REF_DEBUG
 #endif
 
@@ -440,6 +435,7 @@ static inline void _Py_NewReference(PyObject *op)
 
 static inline void _Py_ForgetReference(PyObject *op)
 {
+    (void)op; /* may be unused, shut up -Wunused-parameter */
     _Py_INC_TPFREES(op);
 }
 #endif /* !Py_TRACE_REFS */
@@ -458,6 +454,8 @@ static inline void _Py_INCREF(PyObject *op)
 static inline void _Py_DECREF(const char *filename, int lineno,
                               PyObject *op)
 {
+    (void)filename; /* may be unused, shut up -Wunused-parameter */
+    (void)lineno; /* may be unused, shut up -Wunused-parameter */
     _Py_DEC_REFTOTAL;
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
@@ -651,11 +649,11 @@ times.
 
 When deallocating a container object, it's possible to trigger an unbounded
 chain of deallocations, as each Py_DECREF in turn drops the refcount on "the
-next" object in the chain to 0.  This can easily lead to stack faults, and
+next" object in the chain to 0.  This can easily lead to stack overflows,
 especially in threads (which typically have less stack space to work with).
 
-A container object that participates in cyclic gc can avoid this by
-bracketing the body of its tp_dealloc function with a pair of macros:
+A container object can avoid this by bracketing the body of its tp_dealloc
+function with a pair of macros:
 
 static void
 mytype_dealloc(mytype *p)
@@ -663,14 +661,14 @@ mytype_dealloc(mytype *p)
     ... declarations go here ...
 
     PyObject_GC_UnTrack(p);        // must untrack first
-    Py_TRASHCAN_SAFE_BEGIN(p)
+    Py_TRASHCAN_BEGIN(p, mytype_dealloc)
     ... The body of the deallocator goes here, including all calls ...
     ... to Py_DECREF on contained objects.                         ...
-    Py_TRASHCAN_SAFE_END(p)
+    Py_TRASHCAN_END                // there should be no code after this
 }
 
 CAUTION:  Never return from the middle of the body!  If the body needs to
-"get out early", put a label immediately before the Py_TRASHCAN_SAFE_END
+"get out early", put a label immediately before the Py_TRASHCAN_END
 call, and goto it.  Else the call-depth counter (see below) will stay
 above 0 forever, and the trashcan will never get emptied.
 
@@ -686,6 +684,12 @@ notices this, and calls another routine to deallocate all the objects that
 may have been added to the list of deferred deallocations.  In effect, a
 chain of N deallocations is broken into (N-1)/(PyTrash_UNWIND_LEVEL-1) pieces,
 with the call stack never exceeding a depth of PyTrash_UNWIND_LEVEL.
+
+Since the tp_dealloc of a subclass typically calls the tp_dealloc of the base
+class, we need to ensure that the trashcan is only triggered on the tp_dealloc
+of the actual class being deallocated. Otherwise we might end up with a
+partially-deallocated object. To check this, the tp_dealloc function must be
+passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
 /* The new thread-safe private API, invoked by the macros below. */
@@ -694,20 +698,37 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
 
 #define PyTrash_UNWIND_LEVEL 50
 
-#define Py_TRASHCAN_SAFE_BEGIN(op) \
+#define Py_TRASHCAN_BEGIN_CONDITION(op, cond) \
     do { \
-        PyThreadState *_tstate = PyThreadState_GET(); \
-        if (_tstate->trash_delete_nesting < PyTrash_UNWIND_LEVEL) { \
-            ++_tstate->trash_delete_nesting;
-            /* The body of the deallocator is here. */
-#define Py_TRASHCAN_SAFE_END(op) \
+        PyThreadState *_tstate = NULL; \
+        /* If "cond" is false, then _tstate remains NULL and the deallocator \
+         * is run normally without involving the trashcan */ \
+        if (cond) { \
+            _tstate = PyThreadState_GET(); \
+            if (_tstate->trash_delete_nesting >= PyTrash_UNWIND_LEVEL) { \
+                /* Store the object (to be deallocated later) and jump past \
+                 * Py_TRASHCAN_END, skipping the body of the deallocator */ \
+                _PyTrash_thread_deposit_object(_PyObject_CAST(op)); \
+                break; \
+            } \
+            ++_tstate->trash_delete_nesting; \
+        }
+        /* The body of the deallocator is here. */
+#define Py_TRASHCAN_END \
+        if (_tstate) { \
             --_tstate->trash_delete_nesting; \
             if (_tstate->trash_delete_later && _tstate->trash_delete_nesting <= 0) \
                 _PyTrash_thread_destroy_chain(); \
         } \
-        else \
-            _PyTrash_thread_deposit_object(_PyObject_CAST(op)); \
     } while (0);
+
+#define Py_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN_CONDITION(op, \
+        Py_TYPE(op)->tp_dealloc == (destructor)(dealloc))
+
+/* For backwards compatibility, these macros enable the trashcan
+ * unconditionally */
+#define Py_TRASHCAN_SAFE_BEGIN(op) Py_TRASHCAN_BEGIN_CONDITION(op, 1)
+#define Py_TRASHCAN_SAFE_END(op) Py_TRASHCAN_END
 
 
 #ifndef Py_LIMITED_API

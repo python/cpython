@@ -49,6 +49,9 @@ INITIALIZER_STATUS = 'uninitialized'
 def mul(x, y):
     return x * y
 
+def capture(*args, **kwargs):
+    return args, kwargs
+
 def sleep_and_raise(t):
     time.sleep(t)
     raise Exception('this is an exception')
@@ -658,6 +661,13 @@ class ExecutorTest:
     def test_submit_keyword(self):
         future = self.executor.submit(mul, 2, y=8)
         self.assertEqual(16, future.result())
+        future = self.executor.submit(capture, 1, self=2, fn=3)
+        self.assertEqual(future.result(), ((1,), {'self': 2, 'fn': 3}))
+        with self.assertWarns(DeprecationWarning):
+            future = self.executor.submit(fn=capture, arg=1)
+        self.assertEqual(future.result(), ((), {'arg': 1}))
+        with self.assertRaises(TypeError):
+            self.executor.submit(arg=1)
 
     def test_map(self):
         self.assertEqual(
@@ -745,6 +755,13 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
+
+    @unittest.skipUnless(sys.platform=='win32', 'Windows-only process limit')
+    def test_max_workers_too_large(self):
+        with self.assertRaisesRegex(ValueError,
+                                    "max_workers must be <= 61"):
+            futures.ProcessPoolExecutor(max_workers=62)
+
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".

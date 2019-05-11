@@ -88,15 +88,19 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc_type", "exc_value", "traceback", NULL};
-    static _PyArg_Parser _parser = {"OOO:__exit__", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "__exit__", 0};
+    PyObject *argsbuf[3];
     PyObject *exc_type;
     PyObject *exc_value;
     PyObject *traceback;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &exc_type, &exc_value, &traceback)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    exc_type = args[0];
+    exc_value = args[1];
+    traceback = args[2];
     return_value = winreg_HKEYType___exit___impl(self, exc_type, exc_value, traceback);
 
 exit:
@@ -425,8 +429,19 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumKey",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_CheckPositional("EnumKey", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    index = _PyLong_AsInt(args[1]);
+    if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = winreg_EnumKey_impl(module, key, index);
@@ -472,8 +487,19 @@ winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumValue",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_CheckPositional("EnumValue", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    index = _PyLong_AsInt(args[1]);
+    if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = winreg_EnumValue_impl(module, key, index);
@@ -541,7 +567,7 @@ winreg_FlushKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:FlushKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_FlushKey_impl(module, key);
@@ -734,7 +760,7 @@ winreg_QueryInfoKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:QueryInfoKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryInfoKey_impl(module, key);
@@ -1021,7 +1047,7 @@ winreg_DisableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:DisableReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_DisableReflectionKey_impl(module, key);
@@ -1055,7 +1081,7 @@ winreg_EnableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:EnableReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_EnableReflectionKey_impl(module, key);
@@ -1087,7 +1113,7 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:QueryReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryReflectionKey_impl(module, key);
@@ -1095,4 +1121,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ff2cc1951ab1a56c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1204d20c543b5b4a input=a9049054013a1b77]*/

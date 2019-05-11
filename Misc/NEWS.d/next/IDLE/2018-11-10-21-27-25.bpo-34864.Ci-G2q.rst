@@ -1,3 +1,0 @@
-Document two IDLE on MacOS issues. The System Preferences Dock "prefer tabs
-always" setting disables some IDLE features.  Menus are a bit different than
-as described for Windows and Linux.

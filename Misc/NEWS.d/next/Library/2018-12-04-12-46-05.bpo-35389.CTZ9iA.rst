@@ -1,2 +1,0 @@
-:func:`platform.libc_ver` now uses ``os.confstr('CS_GNU_LIBC_VERSION')`` if
-available and the *executable* parameter is not set.

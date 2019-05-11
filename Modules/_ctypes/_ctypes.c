@@ -403,24 +403,35 @@ static PyCArgObject *
 StructUnionType_paramfunc(CDataObject *self)
 {
     PyCArgObject *parg;
+    CDataObject *copied_self;
     StgDictObject *stgdict;
 
+    if ((size_t)self->b_size > sizeof(void*)) {
+        void *new_ptr = PyMem_Malloc(self->b_size);
+        if (new_ptr == NULL)
+            return NULL;
+        memcpy(new_ptr, self->b_ptr, self->b_size);
+        copied_self = (CDataObject *)PyCData_AtAddress(
+            (PyObject *)Py_TYPE(self), new_ptr);
+        copied_self->b_needsfree = 1;
+    } else {
+        copied_self = self;
+        Py_INCREF(copied_self);
+    }
+
     parg = PyCArgObject_new();
-    if (parg == NULL)
+    if (parg == NULL) {
+        Py_DECREF(copied_self);
         return NULL;
+    }
 
     parg->tag = 'V';
-    stgdict = PyObject_stgdict((PyObject *)self);
+    stgdict = PyObject_stgdict((PyObject *)copied_self);
     assert(stgdict); /* Cannot be NULL for structure/union instances */
     parg->pffi_type = &stgdict->ffi_type_pointer;
-    /* For structure parameters (by value), parg->value doesn't contain the structure
-       data itself, instead parg->value.p *points* to the structure's data
-       See also _ctypes.c, function _call_function_pointer().
-    */
-    parg->value.p = self->b_ptr;
-    parg->size = self->b_size;
-    Py_INCREF(self);
-    parg->obj = (PyObject *)self;
+    parg->value.p = copied_self->b_ptr;
+    parg->size = copied_self->b_size;
+    parg->obj = (PyObject *)copied_self;
     return parg;
 }
 
@@ -678,7 +689,9 @@ CDataType_in_dll(PyObject *type, PyObject *args)
     }
 
 #ifdef MS_WIN32
+    Py_BEGIN_ALLOW_THREADS
     address = (void *)GetProcAddress(handle, name);
+    Py_END_ALLOW_THREADS
     if (!address) {
         PyErr_Format(PyExc_ValueError,
                      "symbol '%s' not found",
@@ -1291,8 +1304,6 @@ static int
 WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     Py_ssize_t result = 0;
-    Py_UNICODE *wstr;
-    Py_ssize_t len;
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -1307,12 +1318,14 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
     } else
         Py_INCREF(value);
 
-    wstr = PyUnicode_AsUnicodeAndSize(value, &len);
-    if (wstr == NULL)
+    Py_ssize_t len = PyUnicode_AsWideChar(value, NULL, 0);
+    if (len < 0) {
         return -1;
-    if ((size_t)len > self->b_size/sizeof(wchar_t)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "string too long");
+    }
+    // PyUnicode_AsWideChar() returns number of wchars including trailing null byte,
+    // when it is called with NULL.
+    if (((size_t)len-1) > self->b_size/sizeof(wchar_t)) {
+        PyErr_SetString(PyExc_ValueError, "string too long");
         result = -1;
         goto done;
     }
@@ -1505,7 +1518,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     itemsize = itemdict->size;
-    if (length * itemsize < 0) {
+    if (length > PY_SSIZE_T_MAX / itemsize) {
         PyErr_SetString(PyExc_OverflowError,
                         "array too large");
         goto error;
@@ -1520,6 +1533,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->align = itemalign;
     stgdict->length = length;
     stgdict->proto = type_attr;
+    type_attr = NULL;
 
     stgdict->paramfunc = &PyCArrayType_paramfunc;
 
@@ -2729,10 +2743,11 @@ PyCData_reduce(PyObject *myself, PyObject *args)
                         "ctypes objects containing pointers cannot be pickled");
         return NULL;
     }
-    return Py_BuildValue("O(O(NN))",
-                         _unpickle,
-                         Py_TYPE(myself),
-                         PyObject_GetAttrString(myself, "__dict__"),
+    PyObject *dict = PyObject_GetAttrString(myself, "__dict__");
+    if (dict == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("O(O(NN))", _unpickle, Py_TYPE(myself), dict,
                          PyBytes_FromStringAndSize(self->b_ptr, self->b_size));
 }
 
@@ -3243,18 +3258,23 @@ static PyGetSetDef PyCFuncPtr_getsets[] = {
 #ifdef MS_WIN32
 static PPROC FindAddress(void *handle, const char *name, PyObject *type)
 {
+    PPROC address;
 #ifdef MS_WIN64
     /* win64 has no stdcall calling conv, so it should
        also not have the name mangling of it.
     */
-    return (PPROC)GetProcAddress(handle, name);
+    Py_BEGIN_ALLOW_THREADS
+    address = (PPROC)GetProcAddress(handle, name);
+    Py_END_ALLOW_THREADS
+    return address;
 #else
-    PPROC address;
     char *mangled_name;
     int i;
     StgDictObject *dict;
 
+    Py_BEGIN_ALLOW_THREADS
     address = (PPROC)GetProcAddress(handle, name);
+    Py_END_ALLOW_THREADS
     if (address)
         return address;
     if (((size_t)name & ~0xFFFF) == 0) {
@@ -3275,7 +3295,9 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
         return NULL;
     for (i = 0; i < 32; ++i) {
         sprintf(mangled_name, "_%s@%d", name, i*4);
+        Py_BEGIN_ALLOW_THREADS
         address = (PPROC)GetProcAddress(handle, mangled_name);
+        Py_END_ALLOW_THREADS
         if (address)
             return address;
     }

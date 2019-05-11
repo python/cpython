@@ -28,6 +28,7 @@ import pickle
 import random
 import signal
 import sys
+import sysconfig
 import threading
 import time
 import unittest
@@ -58,6 +59,18 @@ else:
         return obj
     class EmptyStruct(ctypes.Structure):
         pass
+
+_cflags = sysconfig.get_config_var('CFLAGS') or ''
+_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
+MEMORY_SANITIZER = (
+    '-fsanitize=memory' in _cflags or
+    '--with-memory-sanitizer' in _config_args
+)
+
+# Does io.IOBase logs unhandled exceptions on calling close()?
+# They are silenced by default in release build.
+DESTRUCTOR_LOG_ERRORS = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+
 
 def _default_chunk_size():
     """Get the default TextIOWrapper chunk size"""
@@ -978,6 +991,9 @@ class IOTest(unittest.TestCase):
         # This would cause an assertion failure.
         self.assertRaises(OSError, f.close)
 
+        # Silence destructor error
+        R.flush = lambda self: None
+
 
 class CIOTest(IOTest):
 
@@ -1089,9 +1105,16 @@ class CommonBufferedTests:
         s = s.getvalue().strip()
         if s:
             # The destructor *may* have printed an unraisable error, check it
-            self.assertEqual(len(s.splitlines()), 1)
-            self.assertTrue(s.startswith("Exception OSError: "), s)
-            self.assertTrue(s.endswith(" ignored"), s)
+            lines = s.splitlines()
+            if DESTRUCTOR_LOG_ERRORS:
+                self.assertEqual(len(lines), 5)
+                self.assertTrue(lines[0].startswith("Exception ignored in: "), lines)
+                self.assertEqual(lines[1], "Traceback (most recent call last):", lines)
+                self.assertEqual(lines[4], 'OSError:', lines)
+            else:
+                self.assertEqual(len(lines), 1)
+                self.assertTrue(lines[-1].startswith("Exception OSError: "), lines)
+                self.assertTrue(lines[-1].endswith(" ignored"), lines)
 
     def test_repr(self):
         raw = self.MockRawIO()
@@ -1147,6 +1170,10 @@ class CommonBufferedTests:
         self.assertEqual(err.exception.__context__.args, ('flush',))
         self.assertFalse(b.closed)
 
+        # Silence destructor error
+        raw.close = lambda: None
+        b.flush = lambda: None
+
     def test_nonnormalized_close_error_on_close(self):
         # Issue #21677
         raw = self.MockRawIO()
@@ -1163,6 +1190,10 @@ class CommonBufferedTests:
         self.assertIsInstance(err.exception.__context__, NameError)
         self.assertIn('non_existing_flush', str(err.exception.__context__))
         self.assertFalse(b.closed)
+
+        # Silence destructor error
+        b.flush = lambda: None
+        raw.close = lambda: None
 
     def test_multi_close(self):
         raw = self.MockRawIO()
@@ -1496,6 +1527,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
+    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -1840,6 +1873,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
 
+    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -2015,6 +2050,9 @@ class BufferedRWPairTest(unittest.TestCase):
         self.assertFalse(reader.closed)
         self.assertTrue(writer.closed)
 
+        # Silence destructor error
+        reader.close = lambda: None
+
     def test_writer_close_error_on_close(self):
         def writer_close():
             writer_non_existing
@@ -2028,6 +2066,9 @@ class BufferedRWPairTest(unittest.TestCase):
         self.assertFalse(pair.closed)
         self.assertTrue(reader.closed)
         self.assertFalse(writer.closed)
+
+        # Silence destructor error
+        writer.close = lambda: None
 
     def test_reader_writer_close_error_on_close(self):
         def reader_close():
@@ -2047,6 +2088,10 @@ class BufferedRWPairTest(unittest.TestCase):
         self.assertFalse(pair.closed)
         self.assertFalse(reader.closed)
         self.assertFalse(writer.closed)
+
+        # Silence destructor error
+        reader.close = lambda: None
+        writer.close = lambda: None
 
     def test_isatty(self):
         class SelectableIsAtty(MockRawIO):
@@ -2314,6 +2359,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
 
+    @unittest.skipIf(MEMORY_SANITIZER, "MSan defaults to crashing "
+                     "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
         # The allocation can succeed on 32-bit builds, e.g. with more
@@ -2819,9 +2866,16 @@ class TextIOWrapperTest(unittest.TestCase):
         s = s.getvalue().strip()
         if s:
             # The destructor *may* have printed an unraisable error, check it
-            self.assertEqual(len(s.splitlines()), 1)
-            self.assertTrue(s.startswith("Exception OSError: "), s)
-            self.assertTrue(s.endswith(" ignored"), s)
+            lines = s.splitlines()
+            if DESTRUCTOR_LOG_ERRORS:
+                self.assertEqual(len(lines), 5)
+                self.assertTrue(lines[0].startswith("Exception ignored in: "), lines)
+                self.assertEqual(lines[1], "Traceback (most recent call last):", lines)
+                self.assertEqual(lines[4], 'OSError:', lines)
+            else:
+                self.assertEqual(len(lines), 1)
+                self.assertTrue(lines[-1].startswith("Exception OSError: "), lines)
+                self.assertTrue(lines[-1].endswith(" ignored"), lines)
 
     # Systematic tests of the text I/O API
 
@@ -3237,6 +3291,10 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(err.exception.__context__.args, ('flush',))
         self.assertFalse(txt.closed)
 
+        # Silence destructor error
+        buffer.close = lambda: None
+        txt.flush = lambda: None
+
     def test_nonnormalized_close_error_on_close(self):
         # Issue #21677
         buffer = self.BytesIO(self.testdata)
@@ -3253,6 +3311,10 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertIsInstance(err.exception.__context__, NameError)
         self.assertIn('non_existing_flush', str(err.exception.__context__))
         self.assertFalse(txt.closed)
+
+        # Silence destructor error
+        buffer.close = lambda: None
+        txt.flush = lambda: None
 
     def test_multi_close(self):
         txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")

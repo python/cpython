@@ -12,16 +12,6 @@ extern "C" {
 #  define _PyObject_CallMethodId _PyObject_CallMethodId_SizeT
 #endif
 
-PyAPI_FUNC(PyObject*) _PyStack_AsTuple(
-    PyObject *const *stack,
-    Py_ssize_t nargs);
-
-PyAPI_FUNC(PyObject*) _PyStack_AsTupleSlice(
-    PyObject *const *stack,
-    Py_ssize_t nargs,
-    Py_ssize_t start,
-    Py_ssize_t end);
-
 /* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
    format to a Python dictionary ("kwargs" dict).
 
@@ -76,7 +66,7 @@ PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
    If nargs is equal to zero, args can be NULL. kwargs can be NULL.
    nargs must be greater or equal to zero.
 
-   Return the result on success. Raise an exception on return NULL on
+   Return the result on success. Raise an exception and return NULL on
    error. */
 PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
     PyObject *callable,

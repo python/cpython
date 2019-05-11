@@ -638,7 +638,7 @@ define in order to be compatible with the Python codec registry.
 
    .. method:: setstate(state)
 
-      Set the state of the encoder to *state*. *state* must be a decoder state
+      Set the state of the decoder to *state*. *state* must be a decoder state
       returned by :meth:`getstate`.
 
 
@@ -1106,8 +1106,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp1258          | windows-1258                   | Vietnamese                     |
 +-----------------+--------------------------------+--------------------------------+
-| cp65001         |                                | Windows only: Windows UTF-8    |
-|                 |                                | (``CP_UTF8``)                  |
+| cp65001         |                                | Alias to ``utf_8`` encoding    |
 |                 |                                |                                |
 |                 |                                | .. versionadded:: 3.3          |
 +-----------------+--------------------------------+--------------------------------+
@@ -1316,16 +1315,10 @@ encodings.
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
 +--------------------+---------+---------------------------+
-| unicode_internal   |         | Return the internal       |
-|                    |         | representation of the     |
-|                    |         | operand. Stateful codecs  |
-|                    |         | are not supported.        |
-|                    |         |                           |
-|                    |         | .. deprecated:: 3.3       |
-|                    |         |    This representation is |
-|                    |         |    obsoleted by           |
-|                    |         |    :pep:`393`.            |
-+--------------------+---------+---------------------------+
+
+.. versionchanged:: 3.8
+   "unicode_internal" codec is removed.
+
 
 .. _binary-transforms:
 
