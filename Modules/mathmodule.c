@@ -1476,6 +1476,243 @@ count_set_bits(unsigned long n)
     return count;
 }
 
+/* Integer square root
+
+Given a nonnegative integer `n`, we want to compute the largest integer
+`a` for which `a * a <= n`, or equivalently the integer part of the exact
+square root of `n`.
+
+We use an adaptive-precision pure-integer version of Newton's iteration. Given
+a positive integer `n`, the algorithm produces at each iteration an
+approximation `a` to the square root of `n >> s` for some even integer `s`,
+with `s` decreasing as the iterations progress. On the final iteration, `s` is
+zero and we have an approximation to the square root of `n` itself.
+
+At every step, the approximation `a` is strictly within 1.0 of the true square
+root, so we have
+
+   (a - 1)**2 < (n >> s) < (a + 1)**2
+
+After the final iteration, a check-and-correct step is needed to determine
+whether `a` or `a - 1` gives the desired integer square root of `n`.
+
+The algorithm is remarkable in its simplicity. There's no need for a
+per-iteration check-and-correct step, and termination is straightforward:
+the number of iterations is known in advance (and is roughly log2(log2(n))).
+The only tricky part of the correctness proof is in establishing that
+the bound (a - 1)**2 < (n >> s) < (a + 1)**2 is maintained from one
+step to the next. A formal, computer-verified proof of this (using Lean)
+can be found here:
+
+    https://github.com/mdickinson/snippets/blob/master/proofs/isqrt/src/isqrt.lean
+
+The comments in that file also include an informal proof. Note that the
+Python code given in comments there is recursive, but is equivalent to the
+algorithm given below.
+
+Equivalent Python code:
+
+
+    import operator
+
+    def isqrt(n):
+        """
+        Return the largest integer not exceeding the square root of the input.
+        """
+        n = operator.index(n)
+
+        if n < 0:
+            raise ValueError("isqrt() argument must be nonnegative")
+        elif n == 0:
+            return 0
+
+        c = (n.bit_length() - 1) // 2
+        d = 0
+        a = 1
+        for s in reversed(range(c.bit_length())):
+            e = d
+            d = c >> s
+            a = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
+            # Loop invariant
+            assert (a-1)**2 < n >> 2*(c - d) < (a+1)**2
+
+        return a - (a*a > n)
+
+*/
+
+/*[clinic input]
+math.isqrt
+
+    n : 'O'
+    /
+
+Return the largest integer not exceeding the square root of the input.
+[clinic start generated code]*/
+
+static PyObject *
+math_isqrt(PyObject *module, PyObject *n)
+/*[clinic end generated code: output=35a6f7f980beab26 input=633fa99eb56c4045]*/
+{
+    int n_sign, cmp;
+    unsigned int c_bit_count;
+    size_t n_length, c, e, d, temp;
+    PyObject *a, *q, *n_shifted, *a_temp, *shift;
+
+    /* Hmm. Problem. Doesn't convert True to 1. */
+    /* Does an input of True give a return of exact object 1. */
+
+    /* Convert arbitrary integer-like to an actual integer. */
+    n = PyNumber_Index(n);
+    if (n == NULL) {
+        return NULL;
+    }
+
+    /* references owned: n */
+
+    n_sign = _PyLong_Sign(n);
+
+    if (n_sign == 0) {
+        Py_DECREF(n);
+        a = _PyLong_Zero;
+        Py_INCREF(a);
+        return a;
+    }
+
+    if (n_sign < 0) {
+        PyErr_SetString(
+            PyExc_ValueError,
+            "isqrt() argument must be nonnegative");
+        goto error;
+    }
+
+    /* Get number of bits. */
+    n_length = _PyLong_NumBits(n);
+    if (n_length == (size_t)(-1)) {
+        goto error;
+    }
+
+    /* Floor of log base 4 of x */
+    c = (n_length - 1U) / 2U;
+
+    /* Find number of bits of c */
+    temp = c;
+    c_bit_count = 0;
+    while (temp > 0) {
+        temp >>= 1;
+        c_bit_count += 1;
+    }
+
+    a = _PyLong_One;
+    Py_INCREF(a);
+
+    /* references owned: a, n */
+
+    d = 0;
+    while (c_bit_count > 0) {
+        c_bit_count--;
+        e = d;
+        d = c >> c_bit_count;
+
+        /* references owned: a, n */
+
+        /* q = (n >> m - (e + d - 1)) // a */
+        shift = PyLong_FromSize_t(2U*c - d - e + 1U);
+        if (shift == NULL) {
+            Py_DECREF(a);
+            goto error;
+        }
+
+        /* references owned: a, n, shift */
+
+        /* n_shifted = n << shift */
+        n_shifted = PyNumber_Rshift(n, shift);
+        Py_DECREF(shift);
+        if (n_shifted == NULL) {
+            Py_DECREF(a);
+            goto error;
+        }
+
+        /* references owned: a, n, n_shifted */
+
+        /* q = n_shifted // a */
+        q = PyNumber_FloorDivide(n_shifted, a);
+        Py_DECREF(n_shifted);
+        if (q == NULL) {
+            Py_DECREF(a);
+            goto error;
+        }
+
+        /* references owned: a, n, q */
+
+        /* a_temp = a << (d - e - 1) */
+        shift = PyLong_FromSize_t(d - 1U - e);
+        if (shift == NULL) {
+            Py_DECREF(a);
+            Py_DECREF(q);
+            goto error;
+        }
+
+        /* references owned: a, n, q, shift */
+
+        a_temp = PyNumber_Lshift(a, shift);
+        Py_DECREF(a);
+        Py_DECREF(shift);
+        if (a_temp == NULL) {
+            Py_DECREF(q);
+            goto error;
+        }
+
+        /* references owned: n, q, a_temp */
+
+        /* a = a_temp + quotient */
+        a = PyNumber_Add(a_temp, q);
+        Py_DECREF(a_temp);
+        Py_DECREF(q);
+        if (a == NULL) {
+            goto error;
+        }
+
+        /* references owned: a, n */
+    }
+
+    /* At this point, the correct result is either a or a - 1. Figure out
+       which. */
+
+    /* references owned: a, n */
+
+    a_temp = PyNumber_Multiply(a, a);
+    if (a_temp == NULL) {
+        Py_DECREF(a);
+        goto error;
+    }
+
+    /* references owned: a, n, a_temp */
+
+    cmp = PyObject_RichCompareBool(n, a_temp, Py_LT);
+    Py_DECREF(a_temp);
+    if (cmp == -1) {
+        Py_DECREF(a);
+        goto error;
+    }
+
+    /* references owned: a, n */
+    if (cmp) {
+        a_temp = PyNumber_Subtract(a, _PyLong_One);
+        Py_DECREF(a);
+        a = a_temp;
+        if (a == NULL) {
+            goto error;
+        }
+    }
+
+    Py_DECREF(n);
+    return a;
+
+  error:
+    Py_DECREF(n);
+    return NULL;
+}
+
 /* Divide-and-conquer factorial algorithm
  *
  * Based on the formula and pseudo-code provided at:
@@ -2737,6 +2974,7 @@ static PyMethodDef math_methods[] = {
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
+    MATH_ISQRT_METHODDEF
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
