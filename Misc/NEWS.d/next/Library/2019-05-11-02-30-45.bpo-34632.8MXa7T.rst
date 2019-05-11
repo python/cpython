@@ -1,0 +1,1 @@
+Introduce the ``importlib.metadata`` module with (provisional) support for reading metadata from third-party packages.
