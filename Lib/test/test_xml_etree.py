@@ -1968,6 +1968,11 @@ class BugsTest(unittest.TestCase):
         s = ET.tostring(elem)
         self.assertEqual(s, b'<!--hi --&gt; bye-->')
 
+    def test_issue33303_escape_process_instruction_text(self):
+        elem = ET.ProcessingInstruction("test", "?>")
+        s = ET.tostring(elem)
+        self.assertEqual(s, b'<?test &gt;>?>')
+
     def test_lost_text(self):
         # Issue #25902: Borrowed text can disappear
         class Text:
