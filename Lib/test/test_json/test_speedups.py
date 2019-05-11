@@ -44,7 +44,7 @@ class TestEncode(CTest):
         def bad_encoder1(*args):
             return None
         enc = self.json.encoder.c_make_encoder(None, lambda obj: str(obj),
-                                               bad_encoder1, None, ': ', ', ',
+                                               bad_encoder1, None, None, ': ', ', ',
                                                False, False, False)
         with self.assertRaises(TypeError):
             enc('spam', 4)
