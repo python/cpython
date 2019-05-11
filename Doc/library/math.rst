@@ -168,8 +168,12 @@ Number-theoretic and representation functions
 
 .. function:: isqrt(n)
 
-   Return the "integer square root" of the integer *n*. This is the largest
-   integer *s* not exceeding the exact square root of *n*.
+   Return the "integer square root" of the integer *n*. This is the integer
+   part of the exact square root of *n*.
+
+   For some applications, it's convenient to have the ceiling of the
+   square root of *n* rather than the floor. For a positive *n*, the
+   ceiling of the square of *n* can be computed with `1 + isqrt(n - 1)`.
 
    .. versionadded:: 3.8
 

@@ -1517,7 +1517,7 @@ Equivalent Python code:
 
     def isqrt(n):
         """
-        Return the largest integer not exceeding the square root of the input.
+        Return the integer part of the square root of the input.
         """
         n = operator.index(n)
 
@@ -1628,12 +1628,12 @@ math.isqrt
     n: object
     /
 
-Return the largest integer not exceeding the square root of the input.
+Return the integer part of the square root of the input.
 [clinic start generated code]*/
 
 static PyObject *
 math_isqrt(PyObject *module, PyObject *n)
-/*[clinic end generated code: output=35a6f7f980beab26 input=633fa99eb56c4045]*/
+/*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
     int a_too_large, s;
     size_t n_bit_length, c, d, e;
@@ -1652,9 +1652,7 @@ math_isqrt(PyObject *module, PyObject *n)
     }
     if (_PyLong_Sign(n) == 0) {
         Py_DECREF(n);
-        a = _PyLong_Zero;
-        Py_INCREF(a);
-        return a;
+        return PyLong_FromLong(0);
     }
 
     n_bit_length = _PyLong_NumBits(n);
@@ -1663,14 +1661,14 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     c = (n_bit_length - 1U) / 2U;
+
+    /* s = c.bit_length() */
     s = 0;
     while ((c >> s) > 0) {
         ++s;
     }
 
-    a = _PyLong_One;
-    Py_INCREF(a);
-
+    a = PyLong_FromLong(1);
     d = 0;
     while (s > 0) {
         --s;
@@ -1728,9 +1726,7 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     if (a_too_large) {
-        b = PyNumber_Subtract(a, _PyLong_One);
-        Py_DECREF(a);
-        a = b;
+        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_One));
         if (a == NULL) {
             goto error;
         }

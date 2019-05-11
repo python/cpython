@@ -69,7 +69,7 @@ PyDoc_STRVAR(math_isqrt__doc__,
 "isqrt($module, n, /)\n"
 "--\n"
 "\n"
-"Return the largest integer not exceeding the square root of the input.");
+"Return the integer part of the square root of the input.");
 
 #define MATH_ISQRT_METHODDEF    \
     {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
@@ -637,4 +637,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=acd72141d57b8d72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aeed62f403b90199 input=a9049054013a1b77]*/
