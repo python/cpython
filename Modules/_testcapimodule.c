@@ -2366,7 +2366,7 @@ static PyObject *
 get_datetime_fromdateandtime(PyObject *self, PyObject *args)
 {
     PyObject *rv = NULL;
-    int macro = 0;
+    int macro;
     int year, month, day;
     int hour, minute, second, microsecond;
 
