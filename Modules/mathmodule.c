@@ -1625,7 +1625,7 @@ what we needed. This completes the proof sketch.
 /*[clinic input]
 math.isqrt
 
-    n : 'O'
+    n: object
     /
 
 Return the largest integer not exceeding the square root of the input.
@@ -1637,7 +1637,7 @@ math_isqrt(PyObject *module, PyObject *n)
 {
     int a_too_large, s;
     size_t n_bit_length, c, d, e;
-    PyObject *a=NULL, *b, *q=NULL, *shift;
+    PyObject *a = NULL, *b, *q = NULL, *shift;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
