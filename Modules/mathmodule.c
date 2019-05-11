@@ -1555,7 +1555,7 @@ math_isqrt(PyObject *module, PyObject *n)
 {
     int a_too_large, s;
     size_t n_bit_length, c, d, e;
-    PyObject *a, *b, *m, *q, *shift;
+    PyObject *a=NULL, *b, *q=NULL, *shift;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -1591,48 +1591,38 @@ math_isqrt(PyObject *module, PyObject *n)
 
     d = 0;
     while (s > 0) {
-        s--;
+        --s;
 
         e = d;
         d = c >> s;
 
-        /* m = n >> 2*c - e - d + 1 */
+        /* q = (n >> 2*c - e - d + 1) // a */
         shift = PyLong_FromSize_t(2U*c - d - e + 1U);
         if (shift == NULL) {
-            Py_DECREF(a);
             goto error;
         }
-        m = PyNumber_Rshift(n, shift);
+        b = PyNumber_Rshift(n, shift);
         Py_DECREF(shift);
-        if (m == NULL) {
-            Py_DECREF(a);
+        if (b == NULL) {
             goto error;
         }
-
-        /* q = m // a */
-        q = PyNumber_FloorDivide(m, a);
-        Py_DECREF(m);
+        q = PyNumber_FloorDivide(b, a);
+        Py_DECREF(b);
         if (q == NULL) {
-            Py_DECREF(a);
             goto error;
         }
 
-        /* b = a << d - 1 - e */
+        /* a = (a << d - 1 - e) + q */
         shift = PyLong_FromSize_t(d - 1U - e);
         if (shift == NULL) {
-            Py_DECREF(a);
-            Py_DECREF(q);
             goto error;
         }
         b = PyNumber_Lshift(a, shift);
         Py_DECREF(a);
         Py_DECREF(shift);
         if (b == NULL) {
-            Py_DECREF(q);
             goto error;
         }
-
-        /* a = b + q */
         a = PyNumber_Add(b, q);
         Py_DECREF(b);
         Py_DECREF(q);
@@ -1643,17 +1633,18 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* The correct result is either a or a - 1. Figure out which, and
        decrement a if necessary. */
+
+    /* a_too_large = n < a * a */
     b = PyNumber_Multiply(a, a);
     if (b == NULL) {
-        Py_DECREF(a);
         goto error;
     }
     a_too_large = PyObject_RichCompareBool(n, b, Py_LT);
     Py_DECREF(b);
     if (a_too_large == -1) {
-        Py_DECREF(a);
         goto error;
     }
+
     if (a_too_large) {
         b = PyNumber_Subtract(a, _PyLong_One);
         Py_DECREF(a);
@@ -1663,11 +1654,12 @@ math_isqrt(PyObject *module, PyObject *n)
         }
     }
 
-    /* Add done; get rid of our extra reference to n. */
     Py_DECREF(n);
     return a;
 
   error:
+    Py_XDECREF(a);
+    Py_XDECREF(q);
     Py_DECREF(n);
     return NULL;
 }
