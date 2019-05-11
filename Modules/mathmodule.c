@@ -1670,6 +1670,10 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     a = PyLong_FromLong(1);
+    if (a == NULL) {
+        Py_DECREF(n);
+        return NULL;
+    }
     d = 0;
     while (--s >= 0) {
         PyObject *q, *shift;
@@ -1732,7 +1736,7 @@ math_isqrt(PyObject *module, PyObject *n)
     return a;
 
   error:
-    Py_DECREF(a);
+    Py_XDECREF(a);
     Py_DECREF(n);
     return NULL;
 }
