@@ -374,6 +374,9 @@ class Stream:
                           "please avoid its creation from user code",
                           DeprecationWarning)
         self._kind = kind
+        if kind.is_write():
+            assert transport is not None
+            assert protocol is not None
         self._transport = transport
         self._protocol = protocol
 
