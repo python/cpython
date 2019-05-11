@@ -138,7 +138,8 @@ environment variable, can be set using the new ``./configure --with-trace-refs``
 build option.
 (Contributed by Victor Stinner in :issue:`36465`.)
 
-On Unix, C extensions are no longer linked to libpython. It is now possible
+On Unix, C extensions are no longer linked to libpython except on Android.
+It is now possible
 for a statically linked Python to load a C extension built using a shared
 library Python.
 (Contributed by Victor Stinner in :issue:`21536`.)
