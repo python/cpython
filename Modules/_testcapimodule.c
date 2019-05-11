@@ -2454,7 +2454,7 @@ static PyObject *
 get_time_fromtimeandfold(PyObject *self, PyObject *args)
 {
     PyObject *rv = NULL;
-    int macro = 0;
+    int macro;
     int hour, minute, second, microsecond, fold;
 
     if (!PyArg_ParseTuple(args, "piiiii",
