@@ -2,6 +2,7 @@ __all__ = (
     'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
     'open_connection', 'start_server')
 
+import enum
 import socket
 import sys
 import warnings
@@ -20,6 +21,11 @@ from .tasks import sleep
 
 
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
+
+
+class StreamKind(enum.IntEnum):
+    READ = 1
+    WRITE = 2
 
 
 async def open_connection(host=None, port=None, *,
@@ -329,7 +335,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             closed.exception()
 
 
-class StreamWriter:
+class Stream:
     """Wraps a Transport.
 
     This exposes write(), writelines(), [can_]write_eof(),
@@ -339,26 +345,66 @@ class StreamWriter:
     directly.
     """
 
-    def __init__(self, transport, protocol, reader, loop,
-                 *, _asyncio_internal=False):
+    _source_traceback = None
+
+    def __init__(self, kind, *,
+                 transport=None,
+                 protocol=None,
+                 loop=None,
+                 limit=_DEFAULT_LIMIT,
+                 _asyncio_internal=False):
         if not _asyncio_internal:
             warnings.warn(f"{self.__class__} should be instaniated "
                           "by asyncio internals only, "
                           "please avoid its creation from user code",
                           DeprecationWarning)
+        self._kind = kind
         self._transport = transport
         self._protocol = protocol
-        # drain() expects that the reader has an exception() method
-        assert reader is None or isinstance(reader, StreamReader)
-        self._reader = reader
-        self._loop = loop
+
+        # The line length limit is  a security feature;
+        # it also doubles as half the buffer limit.
+
+        if limit <= 0:
+            raise ValueError('Limit cannot be <= 0')
+
+        self._limit = limit
+        if loop is None:
+            self._loop = events.get_event_loop()
+        else:
+            self._loop = loop
+        self._buffer = bytearray()
+        self._eof = False    # Whether we're done.
+        self._waiter = None  # A future used by _wait_for_data()
+        self._exception = None
+        self._transport = None
+        self._paused = False
         self._complete_fut = self._loop.create_future()
         self._complete_fut.set_result(None)
 
+        if self._loop.get_debug():
+            self._source_traceback = format_helpers.extract_stack(
+                sys._getframe(1))
+
     def __repr__(self):
-        info = [self.__class__.__name__, f'transport={self._transport!r}']
-        if self._reader is not None:
-            info.append(f'reader={self._reader!r}')
+        info = [self.__class__.__name__]
+        info.append(str(self._kind))
+        if self._buffer:
+            info.append(f'{len(self._buffer)} bytes')
+        if self._eof:
+            info.append('eof')
+        if self._limit != _DEFAULT_LIMIT:
+            info.append(f'limit={self._limit}')
+        if self._waiter:
+            info.append(f'waiter={self._waiter!r}')
+        if self._exception:
+           info.append(f'exception={self._exception!r}')
+        if self._transport:
+            info.append(f'transport={self._transport!r}')
+        if self._paused:
+            info.append('paused')
+        if self._transport is not None:
+            info.append(f'transport={self._transport!r}')
         return '<{}>'.format(' '.join(info))
 
     @property
@@ -366,10 +412,14 @@ class StreamWriter:
         return self._transport
 
     def write(self, data):
+        if not self._kind & StreamKind.WRITE:
+            raise RuntimeError("The stream is read-only")
         self._transport.write(data)
         return self._fast_drain()
 
     def writelines(self, data):
+        if not self._kind & StreamKind.WRITE:
+            raise RuntimeError("The stream is read-only")
         self._transport.writelines(data)
         return self._fast_drain()
 
@@ -377,13 +427,11 @@ class StreamWriter:
         # The helper tries to use fast-path to return already existing complete future
         # object if underlying transport is not paused and actual waiting for writing
         # resume is not needed
-        if self._reader is not None:
-            # this branch will be simplified after merging reader with writer
-            exc = self._reader.exception()
-            if exc is not None:
-                fut = self._loop.create_future()
-                fut.set_exception(exc)
-                return fut
+        exc = self.exception()
+        if exc is not None:
+            fut = self._loop.create_future()
+            fut.set_exception(exc)
+            return fut
         if not self._transport.is_closing():
             if self._protocol._connection_lost:
                 fut = self._loop.create_future()
@@ -396,9 +444,13 @@ class StreamWriter:
         return self._loop.create_task(self.drain())
 
     def write_eof(self):
+        if not self._kind & StreamKind.WRITE:
+            raise RuntimeError("The stream is read-only")
         return self._transport.write_eof()
 
     def can_write_eof(self):
+        if not self._kind & StreamKind.WRITE:
+            return False
         return self._transport.can_write_eof()
 
     def close(self):
@@ -422,10 +474,11 @@ class StreamWriter:
           w.write(data)
           await w.drain()
         """
-        if self._reader is not None:
-            exc = self._reader.exception()
-            if exc is not None:
-                raise exc
+        if not self._kind & StreamKind.WRITE:
+            raise RuntimeError("The stream is read-only")
+        exc = self.exception()
+        if exc is not None:
+            raise exc
         if self._transport.is_closing():
             # Wait for protocol.connection_lost() call
             # Raise connection closing error if any,
@@ -434,58 +487,6 @@ class StreamWriter:
             await fut
             raise ConnectionResetError('Connection lost')
         await self._protocol._drain_helper()
-
-
-class StreamReader:
-
-    _source_traceback = None
-
-    def __init__(self, limit=_DEFAULT_LIMIT, loop=None,
-                 *, _asyncio_internal=False):
-        if not _asyncio_internal:
-            warnings.warn(f"{self.__class__} should be instaniated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
-
-        # The line length limit is  a security feature;
-        # it also doubles as half the buffer limit.
-
-        if limit <= 0:
-            raise ValueError('Limit cannot be <= 0')
-
-        self._limit = limit
-        if loop is None:
-            self._loop = events.get_event_loop()
-        else:
-            self._loop = loop
-        self._buffer = bytearray()
-        self._eof = False    # Whether we're done.
-        self._waiter = None  # A future used by _wait_for_data()
-        self._exception = None
-        self._transport = None
-        self._paused = False
-        if self._loop.get_debug():
-            self._source_traceback = format_helpers.extract_stack(
-                sys._getframe(1))
-
-    def __repr__(self):
-        info = ['StreamReader']
-        if self._buffer:
-            info.append(f'{len(self._buffer)} bytes')
-        if self._eof:
-            info.append('eof')
-        if self._limit != _DEFAULT_LIMIT:
-            info.append(f'limit={self._limit}')
-        if self._waiter:
-            info.append(f'waiter={self._waiter!r}')
-        if self._exception:
-            info.append(f'exception={self._exception!r}')
-        if self._transport:
-            info.append(f'transport={self._transport!r}')
-        if self._paused:
-            info.append('paused')
-        return '<{}>'.format(' '.join(info))
 
     def exception(self):
         return self._exception
@@ -517,14 +518,20 @@ class StreamReader:
             self._transport.resume_reading()
 
     def feed_eof(self):
+        if not self._kind & StreamKind.READ:
+            raise RuntimeError("The stream is write-only")
         self._eof = True
         self._wakeup_waiter()
 
     def at_eof(self):
         """Return True if the buffer is empty and 'feed_eof' was called."""
+        if not self._kind & StreamKind.READ:
+            raise RuntimeError("The stream is write-only")
         return self._eof and not self._buffer
 
     def feed_data(self, data):
+        if not self._kind & StreamKind.READ:
+            raise RuntimeError("The stream is write-only")
         assert not self._eof, 'feed_data after feed_eof'
 
         if not data:
@@ -590,6 +597,8 @@ class StreamReader:
         If stream was paused, this function will automatically resume it if
         needed.
         """
+        if not self._kind & StreamKind.READ:
+            raise RuntimeError("The stream is write-only")
         sep = b'\n'
         seplen = len(sep)
         try:
@@ -625,6 +634,8 @@ class StreamReader:
         LimitOverrunError exception  will be raised, and the data
         will be left in the internal buffer, so it can be read again.
         """
+        if not self._kind & StreamKind.READ:
+            raise RuntimeError("The stream is write-only")
         seplen = len(separator)
         if seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
@@ -716,6 +727,8 @@ class StreamReader:
         If stream was paused, this function will automatically resume it if
         needed.
         """
+        if not self._kind & StreamKind.READ:
+            raise RuntimeError("The stream is write-only")
 
         if self._exception is not None:
             raise self._exception
@@ -761,6 +774,8 @@ class StreamReader:
         If stream was paused, this function will automatically resume it if
         needed.
         """
+        if not self._kind & StreamKind.READ:
+            raise RuntimeError("The stream is write-only")
         if n < 0:
             raise ValueError('readexactly size can not be less than zero')
 
@@ -788,6 +803,8 @@ class StreamReader:
         return data
 
     def __aiter__(self):
+        if not self._kind & StreamKind.READ:
+            raise RuntimeError("The stream is write-only")
         return self
 
     async def __anext__(self):
@@ -795,3 +812,24 @@ class StreamReader:
         if val == b'':
             raise StopAsyncIteration
         return val
+
+
+class StreamWriter(Stream):
+    def __init__(self, transport, protocol, reader, loop,
+                 *, _asyncio_internal=False):
+        super().__init__(kind=StreamKind.WRITE,
+                         transport=transpotr,
+                         protocol=protocol,
+                         loop=loop,
+                         _asyncio_internal=_asyncio_internal
+        )
+
+
+class StreamReader(Stream):
+    def __init__(self, limit=_DEFAULT_LIMIT, loop=None,
+                 *, _asyncio_internal=False):
+        super().__init__(kind=StreamKind.READ,
+                         limit=limit,
+                         loop=loop,
+                         _asyncio_internal=_asyncio_internal,
+        )
