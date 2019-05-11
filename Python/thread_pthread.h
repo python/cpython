@@ -309,24 +309,24 @@ PyThread_get_thread_ident(void)
 }
 
 unsigned long
-PyThread_get_thread_id(void)
+PyThread_get_thread_native_id(void)
 {
     if (!initialized)
         PyThread_init_thread();
 #ifdef __APPLE__
-    volatile uint64_t tid;
-    pthread_threadid_np(NULL, &tid);
+    uint64_t native_id;
+    pthread_threadid_np(NULL, &native_id);
 #elif defined(__linux__)
-    volatile pid_t tid;
-    tid = syscall(__NR_gettid);
+    pid_t native_id;
+    native_id = syscall(__NR_gettid);
 #elif defined(__FreeBSD__)
-    volatile pid_t tid;
-    tid = pthread_getthreadid_np();
+    pid_t native_id;
+    native_id = pthread_getthreadid_np();
 #else
-    volatile unsigned long tid;
-    tid = NULL;
+    unsigned long native_id;
+    native_id = 0;
 #endif
-    return (unsigned long) tid;
+    return (unsigned long) native_id;
 }
 
 void _Py_NO_RETURN
