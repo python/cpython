@@ -2481,7 +2481,7 @@ static PyObject *
 get_delta_fromdsu(PyObject *self, PyObject *args)
 {
     PyObject *rv = NULL;
-    int macro = 0;
+    int macro;
     int days, seconds, microseconds;
 
     if (!PyArg_ParseTuple(args, "piii",
