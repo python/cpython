@@ -1,1 +1,1 @@
-properly escape XML comment text
+xml.etree.ElementTree now escapes the text within Comment and Processing Instruction tags.
