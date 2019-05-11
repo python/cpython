@@ -25,6 +25,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_ceval.h"   /* _PyEval_ReInitThreads() */
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
@@ -424,7 +425,7 @@ PyOS_AfterFork_Child(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     _PyGILState_Reinit(runtime);
     _PyInterpreterState_DeleteExceptMain(runtime);
-    PyEval_ReInitThreads();
+    _PyEval_ReInitThreads(runtime);
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
     _PyRuntimeState_ReInitThreads(runtime);
