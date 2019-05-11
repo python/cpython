@@ -28,7 +28,7 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
-#if SQLITE_VERSION_NUMBER >= 3007011
+#if SQLITE_VERSION_NUMBER >= 3007004
 #define HAVE_SQLITE3_STMT_READONLY
 #endif
 
