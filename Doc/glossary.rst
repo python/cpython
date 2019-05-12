@@ -13,10 +13,10 @@ Glossary
       examples which can be executed interactively in the interpreter.
 
    ``...``
-      The default Python prompt of the interactive shell when entering code for
-      an indented code block, when within a pair of matching left and right
-      delimiters (parentheses, square brackets, curly braces or triple quotes),
-      or after specifying a decorator.
+      The default Python prompt of the interactive shell when entering the
+      code for an indented code block, when within a pair of matching left and
+      right delimiters (parentheses, square brackets, curly braces or triple
+      quotes), or after specifying a decorator.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
