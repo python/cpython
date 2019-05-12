@@ -145,11 +145,6 @@ class PowTest(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             pow(a, -1001, m)
 
-        # Modulus zero should still raise, even in the case below where
-        # the base and the modulus are still relatively prime.
-        with self.assertRaises(ValueError):
-            pow(1, -1, 0)
-
 
 if __name__ == "__main__":
     unittest.main()
