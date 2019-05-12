@@ -2320,6 +2320,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e.extend([ET.Element('bar')])
         self.assertRaises(ValueError, e.remove, X('baz'))
 
+    @unittest.skipIf(sys.gettrace(), "Skips under coverage.")
     def test_recursive_repr(self):
         # Issue #25455
         e = ET.Element('foo')
