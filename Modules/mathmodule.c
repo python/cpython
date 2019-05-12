@@ -1661,6 +1661,39 @@ math_isqrt(PyObject *module, PyObject *n)
     }
     c = (c - 1U) / 2U;
 
+    /* Fast path: if c < 32 then n < 2**64, so it fits in a uint64_t and we can
+       use C-level integer arithmetic to compute the result. */
+    if (c < 32) {
+        uint32_t u;
+        uint64_t m = (uint64_t)PyLong_AsUnsignedLongLong(n);
+        Py_DECREF(n);
+        if (m == (uint64_t)(-1) && PyErr_Occurred()) {
+            return NULL;
+        }
+
+        /* Shift so that we have a value in [2**62, 2**64) */
+        m <<= 62 - 2*c;
+
+        /* Compute square root using the same algorithm as below, but with the
+           bounds on m we can make the shift amounts explicit. */
+        u = 1U + (uint32_t)(m >> 62);
+        u = (u << 1) + (uint32_t)(m >> 59) / u;
+        u = (u << 3) + (uint32_t)(m >> 53) / u;
+        u = (u << 7) + (uint32_t)(m >> 41) / u;
+        /* for the last step only, divide with uint64_t rather than uint32_t */
+        u = (u << 15) + (uint32_t)((m >> 17) / u);
+        /* u is now within 1 of √m; adjust if necessary. We test `u*u - 1 >= m`
+           instead of the simpler `u*u > m` to deal correctly with a corner
+           case: if m is close to 2**64, then the final addition above can
+           overflow a uint32_t to produce u=0. In that case, we need the test
+           to always be true. */
+        u -= ((uint64_t)u * u - 1U >= m);
+
+        /* shift back to compensate for the original shift, and return */
+        u >>= 31 - c;
+        return PyLong_FromUnsignedLong((unsigned long)u);
+    };
+
     /* s = c.bit_length() */
     s = 0;
     while ((c >> s) > 0) {
