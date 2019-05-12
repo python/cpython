@@ -536,6 +536,9 @@ xml
   :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
   (Contributed by Stefan Behnel in :issue:`13611`.)
 
+* The :mod:`xml.etree.ElementTree` module now escapes the text
+  in Comment tags when writing output.
+  (Contributed by Jeffrey Kintscher in :issue:`33303'.)
 
 Optimizations
 =============
