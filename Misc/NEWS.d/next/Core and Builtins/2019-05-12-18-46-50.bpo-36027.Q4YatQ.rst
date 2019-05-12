@@ -1,0 +1,3 @@
+Allow computation of modular inverses via three-argument ``pow``: the second
+argument is now permitted to be negative in the case where the first and
+third arguments are relatively prime.

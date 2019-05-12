@@ -1122,7 +1122,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertAlmostEqual(pow(-1, 0.5), 1j)
         self.assertAlmostEqual(pow(-1, 1/3), 0.5 + 0.8660254037844386j)
 
-        self.assertRaises(ValueError, pow, -1, -2, 3)
         self.assertRaises(ValueError, pow, 1, 2, 0)
 
         self.assertRaises(TypeError, pow)

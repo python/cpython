@@ -1218,9 +1218,16 @@ are always available.  They are listed here in alphabetical order.
    operands, the result has the same type as the operands (after coercion)
    unless the second argument is negative; in that case, all arguments are
    converted to float and a float result is delivered.  For example, ``10**2``
-   returns ``100``, but ``10**-2`` returns ``0.01``.  If the second argument is
-   negative, the third argument must be omitted.  If *z* is present, *x* and *y*
-   must be of integer types, and *y* must be non-negative.
+   returns ``100``, but ``10**-2`` returns ``0.01``.
+
+   If *z* is present, all three of *x*, *y* and *z* must be of integer type
+   and *z* must be nonzero. If *z* is present and *y* is negative, *x* must
+   be relatively prime to *z*. In that case, ``pow(ix, -y, z)`` is returned,
+   where *ix* is an inverse to *x* modulo *z*.
+
+   .. versionchanged:: 3.8
+      The three-argument form now allows the second argument to be negative,
+      permitting computation of modular inverses.
 
 
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
