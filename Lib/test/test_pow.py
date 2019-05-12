@@ -1,6 +1,5 @@
+import math
 import unittest
-
-from math import gcd
 
 
 class PowTest(unittest.TestCase):
@@ -126,7 +125,7 @@ class PowTest(unittest.TestCase):
         for a in range(-50, 50):
             for m in range(-50, 50):
                 with self.subTest(a=a, m=m):
-                    if m != 0 and gcd(a, m) == 1:
+                    if m != 0 and math.gcd(a, m) == 1:
                         # Exponent -1 should give an inverse, with the
                         # same sign as m.
                         inv = pow(a, -1, m)
