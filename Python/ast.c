@@ -5283,7 +5283,6 @@ unexpected_end_of_string:
     /* Falls through to error. */
 
 error:
-    Py_XDECREF(expr_text);
     return -1;
 
 }
