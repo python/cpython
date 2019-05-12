@@ -2440,6 +2440,9 @@ fi
 AC_CHECK_LIB(intl, textdomain,
 	AC_DEFINE(WITH_LIBINTL, 1,
 	[Define to 1 if libintl is needed for locale functions.]))
+AC_SEARCH_LIBS(bind_textdomain_codeset, intl,
+	AC_DEFINE(HAVE_BIND_TEXTDOMAIN_CODESET, 1,
+	[Define to 1 if bind_textdomain_codeset is available.]))
 
 # checks for system dependent C++ extensions support
 case "$ac_sys_system" in
@@ -3117,7 +3120,7 @@ fi
 AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm setitimer getitimer bind_textdomain_codeset chown \
+AC_CHECK_FUNCS(alarm setitimer getitimer chown \
  clock confstr ctermid execv fchmod fchown fork fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getentropy \
