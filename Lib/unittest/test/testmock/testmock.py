@@ -1336,6 +1336,38 @@ class MockTest(unittest.TestCase):
                         )
 
 
+    def test_assert_has_calls_nested_spec(self):
+        class Something:
+
+            def __init__(self, a): pass
+            def meth(self, a, b, c, d=None): pass
+
+            class Foo:
+
+                def meth1(self, a, b): pass
+
+        mock = create_autospec(Something)
+        mock.meth(1, 2, 3, d=1)
+
+        mock.assert_has_calls([call.meth(1, 2, 3, d=1)])
+        mock.assert_has_calls([call.meth(1, 2, 3, 1)])
+
+        mock = create_autospec(Something)
+        mock.Foo().meth1(1, 2)
+
+        mock.assert_has_calls([call.Foo(), call.Foo().meth1(1, 2)])
+
+        invalid_calls = [call.meth(1),
+                         call.non_existent(1),
+                         call.Foo().non_existent(1)]
+
+        for kall in invalid_calls:
+            self.assertRaises(AssertionError,
+                              mock.assert_has_calls,
+                              [kall]
+            )
+
+
     def test_assert_has_calls_with_function_spec(self):
         def f(a, b, c, d=None): pass
 

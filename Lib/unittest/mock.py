@@ -737,6 +737,34 @@ class NonCallableMock(Base):
         return message % (expected_string, actual_string)
 
 
+    def _get_call_signature_from_name(self, name):
+        """
+        If there is no name like the case for call check against functions
+        with tuples then return the self's spec signature.
+        If the name is not empty then remove () and split by '.' to get
+        list of names to iterate through the children until a potential
+        match is found.
+        """
+        if not name:
+            return self._spec_signature
+
+        sig = None
+        names = name.replace('()', '').split('.')
+        children = self._mock_children
+
+        for name in names:
+            child = children.get(name)
+            if not child:
+                break
+            else:
+                children = child._mock_children.get(name)
+                sig = child._spec_signature
+                if not children:
+                    break
+
+        return sig
+
+
     def _call_matcher(self, _call):
         """
         Given a call (or simply an (args, kwargs) tuple), return a
@@ -744,7 +772,12 @@ class NonCallableMock(Base):
         This is a best effort method which relies on the spec's signature,
         if available, or falls back on the arguments themselves.
         """
-        sig = self._spec_signature
+
+        if isinstance(_call, tuple) and len(_call) > 2:
+            sig = self._get_call_signature_from_name(_call[0])
+        else:
+            sig = self._spec_signature
+
         if sig is not None:
             if len(_call) == 2:
                 name = ''
