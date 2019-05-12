@@ -92,7 +92,7 @@ This module defines the following constants and functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, systems with POSIX threads.
+   .. availability:: Windows, FreeBSD, Linux, macOS.
 
    .. versionadded:: 3.8
 
