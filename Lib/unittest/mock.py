@@ -754,12 +754,12 @@ class NonCallableMock(Base):
 
         for name in names:
             child = children.get(name)
-            if not child:
+            if child is None:
                 break
             else:
                 children = child._mock_children.get(name)
                 sig = child._spec_signature
-                if not children:
+                if children is None:
                     break
 
         return sig

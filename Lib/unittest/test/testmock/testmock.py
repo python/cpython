@@ -1368,6 +1368,14 @@ class MockTest(unittest.TestCase):
             )
 
 
+    def test_assert_has_calls_nested_without_spec(self):
+        m = MagicMock()
+        m().foo().bar().baz()
+        m.one().two().three()
+        calls = call.one().two().three().call_list()
+        m.assert_has_calls(calls)
+
+
     def test_assert_has_calls_with_function_spec(self):
         def f(a, b, c, d=None): pass
 
