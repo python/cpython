@@ -955,7 +955,10 @@ class MathTests(unittest.TestCase):
             math.isqrt(IntegerLike(-3))
 
         # Non-integer-like things
-        bad_values = [3.5, "a string", decimal.Decimal("3.5"), 3.5j]
+        bad_values = [
+            3.5, "a string", decimal.Decimal("3.5"), 3.5j,
+            100.0, -4.0,
+        ]
         for value in bad_values:
             with self.subTest(value=value):
                 with self.assertRaises(TypeError):
