@@ -569,7 +569,7 @@ xml
 
 * The :mod:`xml.etree.ElementTree` module now escapes the text
   in Comment tags when writing output.
-  (Contributed by Jeffrey Kintscher in :issue:`33303'.)
+  (Contributed by Jeffrey Kintscher in :issue:`33303`.)
 
 
 Optimizations
