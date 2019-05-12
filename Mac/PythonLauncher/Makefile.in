@@ -1,5 +1,7 @@
 CC=@CC@
 LD=@CC@
+OBJC=@OBJC@
+OBJCFLAFS=@OBJCFLAGS@
 BASECFLAGS=@BASECFLAGS@
 OPT=@OPT@
 CFLAGS=@CFLAGS@ $(BASECFLAGS) $(OPT)
@@ -52,25 +54,25 @@ Python\ Launcher.app:  Info.plist \
 	cp -R $(srcdir)/English.lproj "Python Launcher.app/Contents/Resources"
 
 FileSettings.o: $(srcdir)/FileSettings.m
-	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/FileSettings.m
+	$(OBJC) $(CFLAGS) -o $@ -c $(srcdir)/FileSettings.m
 
 MyAppDelegate.o: $(srcdir)/MyAppDelegate.m
-	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/MyAppDelegate.m
+	$(OBJC) $(CFLAGS) -o $@ -c $(srcdir)/MyAppDelegate.m
 
 MyDocument.o: $(srcdir)/MyDocument.m
-	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/MyDocument.m
+	$(OBJC) $(CFLAGS) -o $@ -c $(srcdir)/MyDocument.m
 
 PreferencesWindowController.o: $(srcdir)/PreferencesWindowController.m
-	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/PreferencesWindowController.m
+	$(OBJC) $(CFLAGS) -o $@ -c $(srcdir)/PreferencesWindowController.m
 
 doscript.o: $(srcdir)/doscript.m
-	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/doscript.m
+	$(OBJC) $(CFLAGS) -o $@ -c $(srcdir)/doscript.m
 
 main.o: $(srcdir)/main.m
-	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/main.m
+	$(OBJC) $(CFLAGS) -o $@ -c $(srcdir)/main.m
 
 Python\ Launcher: $(OBJECTS)
-	$(CC) $(LDFLAGS) -o "Python Launcher" $(OBJECTS) -framework AppKit -framework Carbon
+	$(OBJC) $(LDFLAGS) -o "Python Launcher" $(OBJECTS) -framework AppKit -framework Carbon
 
 Info.plist: $(srcdir)/Info.plist.in
 	sed 's/%VERSION%/'"`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print(platform.python_version())'`"'/g' < $(srcdir)/Info.plist.in > Info.plist
