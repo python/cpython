@@ -304,14 +304,14 @@ class TestLoader(object):
                 try:
                     start_dir = os.path.abspath(
                        os.path.dirname((the_module.__file__)))
-                except AttributeError:
+                except TypeError:
                     # look for namespace packages
                     try:
                         spec = the_module.__spec__
                     except AttributeError:
                         spec = None
 
-                    if spec and spec.loader is None:
+                    if spec and spec.loader is not None:
                         if spec.submodule_search_locations is not None:
                             is_namespace = True
 

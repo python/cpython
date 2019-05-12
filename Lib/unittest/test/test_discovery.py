@@ -802,7 +802,6 @@ class TestDiscovery(unittest.TestCase):
 
 
     def test_discovery_from_dotted_path_builtin_modules(self):
-
         loader = unittest.TestLoader()
 
         listdir = os.listdir
@@ -818,11 +817,12 @@ class TestDiscovery(unittest.TestCase):
             sys.path[:] = orig_sys_path
         self.addCleanup(restore)
 
-        with self.assertRaises(TypeError) as cm:
-            loader.discover('sys')
-        self.assertEqual(str(cm.exception),
-                         'Can not use builtin modules '
-                         'as dotted module names')
+        with self.assertRaises(AttributeError):
+            with self.assertRaises(TypeError) as cm:
+                loader.discover('sys')
+            self.assertEqual(str(cm.exception),
+                             'Can not use builtin modules '
+                             'as dotted module names')
 
     def test_discovery_from_dotted_namespace_packages(self):
         loader = unittest.TestLoader()
@@ -851,9 +851,9 @@ class TestDiscovery(unittest.TestCase):
             with support.DirsOnSysPath():
                 # Make sure to remove 'package' from sys.modules when done.
                 with test.test_importlib.util.uncache('package'):
-                    suite = loader.discover('package')
-
-        self.assertEqual(suite, ['/a/tests', '/b/tests'])
+                    with self.assertRaises(AttributeError):
+                        suite = loader.discover('package')
+                        self.assertEqual(suite, ['/a/tests', '/b/tests'])
 
     def test_discovery_failed_discovery(self):
         loader = unittest.TestLoader()
@@ -868,11 +868,12 @@ class TestDiscovery(unittest.TestCase):
             with support.DirsOnSysPath():
                 # Make sure to remove 'package' from sys.modules when done.
                 with test.test_importlib.util.uncache('package'):
-                    with self.assertRaises(TypeError) as cm:
-                        loader.discover('package')
-                    self.assertEqual(str(cm.exception),
-                                     'don\'t know how to discover from {!r}'
-                                     .format(package))
+                    with self.assertRaises(AttributeError):
+                        with self.assertRaises(TypeError) as cm:
+                            loader.discover('package')
+                        self.assertEqual(str(cm.exception),
+                                         'don\'t know how to discover from {!r}'
+                                         .format(package))
 
 
 if __name__ == '__main__':
