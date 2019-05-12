@@ -236,6 +236,15 @@ class BaseTaskTests:
         with self.assertRaises(TypeError):
             asyncio.ensure_future('ok')
 
+    def test_ensure_future_error_msg(self):
+        loop = asyncio.new_event_loop()
+        f = self.new_future(self.loop)
+        with self.assertRaisesRegex(ValueError, 'The future belongs to a '
+                                    'different loop than the one specified as '
+                                    'the loop argument'):
+            asyncio.ensure_future(f, loop=loop)
+        loop.close()
+
     def test_get_stack(self):
         T = None
 
@@ -1768,13 +1777,22 @@ class BaseTaskTests:
         test_utils.run_briefly(self.loop)
         self.assertIs(outer.exception(), exc)
 
-    def test_shield_cancel(self):
+    def test_shield_cancel_inner(self):
         inner = self.new_future(self.loop)
         outer = asyncio.shield(inner)
         test_utils.run_briefly(self.loop)
         inner.cancel()
         test_utils.run_briefly(self.loop)
         self.assertTrue(outer.cancelled())
+
+    def test_shield_cancel_outer(self):
+        inner = self.new_future(self.loop)
+        outer = asyncio.shield(inner)
+        test_utils.run_briefly(self.loop)
+        outer.cancel()
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(outer.cancelled())
+        self.assertEqual(0, 0 if outer._callbacks is None else len(outer._callbacks))
 
     def test_shield_shortcut(self):
         fut = self.new_future(self.loop)

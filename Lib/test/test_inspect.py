@@ -3782,6 +3782,17 @@ class TestSignatureDefinitions(unittest.TestCase):
             with self.subTest(builtin=name):
                 self.assertIsNone(obj.__text_signature__)
 
+    def test_python_function_override_signature(self):
+        def func(*args, **kwargs):
+            pass
+        func.__text_signature__ = '($self, a, b=1, *args, c, d=2, **kwargs)'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, a, b=1, *args, c, d=2, **kwargs)')
+        func.__text_signature__ = '($self, a, b=1, /, *args, c, d=2, **kwargs)'
+        sig = inspect.signature(func)
+        self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
+
 
 class NTimesUnwrappable:
     def __init__(self, n):

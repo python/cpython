@@ -684,6 +684,19 @@ class GNUTranslationParsingTest(GettextBaseTest):
             # If this runs cleanly, the bug is fixed.
             t = gettext.GNUTranslations(fp)
 
+    def test_ignore_comments_in_headers_issue36239(self):
+        """Checks that comments like:
+
+            #-#-#-#-#  messages.po (EdX Studio)  #-#-#-#-#
+
+        are ignored.
+        """
+        with open(MOFILE, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_ISSUE_17898))
+        with open(MOFILE, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+            self.assertEqual(t.info()["plural-forms"], "nplurals=2; plural=(n != 1);")
+
 
 class UnicodeTranslationsTest(GettextBaseTest):
     def setUp(self):

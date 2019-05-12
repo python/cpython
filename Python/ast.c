@@ -4854,7 +4854,8 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
 
     assert(expr_end >= expr_start);
     assert(*(expr_start-1) == '{');
-    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
+    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':' ||
+           *expr_end == '=');
 
     /* If the substring is all whitespace, it's an error.  We need to catch this
        here, and not when we call PyParser_SimpleParseStringFlagsFilename,
@@ -4997,9 +4998,9 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
               struct compiling *c, const node *n);
 
 /* Parse the f-string at *str, ending at end.  We know *str starts an
-   expression (so it must be a '{'). Returns the FormattedValue node,
-   which includes the expression, conversion character, and
-   format_spec expression.
+   expression (so it must be a '{'). Returns the FormattedValue node, which
+   includes the expression, conversion character, format_spec expression, and
+   optionally the text of the expression (if = is used).
 
    Note that I don't do a perfect job here: I don't make sure that a
    closing brace doesn't match an opening paren, for example. It
@@ -5016,7 +5017,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     const char *expr_end;
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
-    int conversion = -1; /* The conversion char. -1 if not specified. */
+    int conversion = -1; /* The conversion char.  Use default if not
+                            specified, or !r if using = and no format
+                            spec. */
+    int equal_flag = 0; /* Are we using the = feature? */
+    PyObject *expr_text = NULL; /* The text of the expression, used for =. */
+    const char *expr_text_end;
 
     /* 0 if we're not in a string, else the quote char we're trying to
        match (single or double quote). */
@@ -5033,7 +5039,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* Can only nest one level deep. */
     if (recurse_lvl >= 2) {
         ast_error(c, n, "f-string: expressions nested too deeply");
-        return -1;
+        goto error;
     }
 
     /* The first char must be a left brace, or we wouldn't have gotten
@@ -5061,7 +5067,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             ast_error(c, n,
                       "f-string expression part "
                       "cannot include a backslash");
-            return -1;
+            goto error;
         }
         if (quote_char) {
             /* We're inside a string. See if we're at the end. */
@@ -5106,7 +5112,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         } else if (ch == '[' || ch == '{' || ch == '(') {
             if (nested_depth >= MAXLEVEL) {
                 ast_error(c, n, "f-string: too many nested parenthesis");
-                return -1;
+                goto error;
             }
             parenstack[nested_depth] = ch;
             nested_depth++;
@@ -5114,22 +5120,38 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             /* Error: can't include a comment character, inside parens
                or not. */
             ast_error(c, n, "f-string expression part cannot include '#'");
-            return -1;
+            goto error;
         } else if (nested_depth == 0 &&
-                   (ch == '!' || ch == ':' || ch == '}')) {
-            /* First, test for the special case of "!=". Since '=' is
-               not an allowed conversion character, nothing is lost in
-               this test. */
-            if (ch == '!' && *str+1 < end && *(*str+1) == '=') {
-                /* This isn't a conversion character, just continue. */
-                continue;
+                   (ch == '!' || ch == ':' || ch == '}' ||
+                    ch == '=' || ch == '>' || ch == '<')) {
+            /* See if there's a next character. */
+            if (*str+1 < end) {
+                char next = *(*str+1);
+
+                /* For "!=". since '=' is not an allowed conversion character,
+                   nothing is lost in this test. */
+                if ((ch == '!' && next == '=') ||   /* != */
+                    (ch == '=' && next == '=') ||   /* == */
+                    (ch == '<' && next == '=') ||   /* <= */
+                    (ch == '>' && next == '=')      /* >= */
+                    ) {
+                    *str += 1;
+                    continue;
+                }
+                /* Don't get out of the loop for these, if they're single
+                   chars (not part of 2-char tokens). If by themselves, they
+                   don't end an expression (unlike say '!'). */
+                if (ch == '>' || ch == '<') {
+                    continue;
+                }
             }
+
             /* Normal way out of this loop. */
             break;
         } else if (ch == ']' || ch == '}' || ch == ')') {
             if (!nested_depth) {
                 ast_error(c, n, "f-string: unmatched '%c'", ch);
-                return -1;
+                goto error;
             }
             nested_depth--;
             int opening = parenstack[nested_depth];
@@ -5141,7 +5163,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                           "f-string: closing parenthesis '%c' "
                           "does not match opening parenthesis '%c'",
                           ch, opening);
-                return -1;
+                goto error;
             }
         } else {
             /* Just consume this char and loop around. */
@@ -5154,12 +5176,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        let's just do that.*/
     if (quote_char) {
         ast_error(c, n, "f-string: unterminated string");
-        return -1;
+        goto error;
     }
     if (nested_depth) {
         int opening = parenstack[nested_depth - 1];
         ast_error(c, n, "f-string: unmatched '%c'", opening);
-        return -1;
+        goto error;
     }
 
     if (*str >= end)
@@ -5170,7 +5192,22 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        conversion or format_spec. */
     simple_expression = fstring_compile_expr(expr_start, expr_end, c, n);
     if (!simple_expression)
-        return -1;
+        goto error;
+
+    /* Check for =, which puts the text value of the expression in
+       expr_text. */
+    if (**str == '=') {
+        *str += 1;
+        equal_flag = 1;
+
+        /* Skip over ASCII whitespace.  No need to test for end of string
+           here, since we know there's at least a trailing quote somewhere
+           ahead. */
+        while (Py_ISSPACE(**str)) {
+            *str += 1;
+        }
+        expr_text_end = *str;
+    }
 
     /* Check for a conversion char, if present. */
     if (**str == '!') {
@@ -5182,12 +5219,23 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         *str += 1;
 
         /* Validate the conversion. */
-        if (!(conversion == 's' || conversion == 'r'
-              || conversion == 'a')) {
+        if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
             ast_error(c, n,
                       "f-string: invalid conversion character: "
                       "expected 's', 'r', or 'a'");
-            return -1;
+            goto error;
+        }
+
+    }
+    if (equal_flag) {
+        Py_ssize_t len = expr_text_end - expr_start;
+        expr_text = PyUnicode_FromStringAndSize(expr_start, len);
+        if (!expr_text) {
+            goto error;
+        }
+        if (PyArena_AddPyObject(c->c_arena, expr_text) < 0) {
+            Py_DECREF(expr_text);
+            goto error;
         }
     }
 
@@ -5202,7 +5250,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         /* Parse the format spec. */
         format_spec = fstring_parse(str, end, raw, recurse_lvl+1, c, n);
         if (!format_spec)
-            return -1;
+            goto error;
     }
 
     if (*str >= end || **str != '}')
@@ -5213,20 +5261,30 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     assert(**str == '}');
     *str += 1;
 
+    /* If we're in = mode, and have no format spec and no explict conversion,
+       set the conversion to 'r'. */
+    if (equal_flag && format_spec == NULL && conversion == -1) {
+        conversion = 'r';
+    }
+
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, LINENO(n), n->n_col_offset,
-                                 n->n_end_lineno, n->n_end_col_offset,
-                                 c->c_arena);
+                                 format_spec, expr_text, LINENO(n),
+                                 n->n_col_offset, n->n_end_lineno,
+                                 n->n_end_col_offset, c->c_arena);
     if (!*expression)
-        return -1;
+        goto error;
 
     return 0;
 
 unexpected_end_of_string:
     ast_error(c, n, "f-string: expecting '}'");
+    /* Falls through to error. */
+
+error:
     return -1;
+
 }
 
 /* Return -1 on error.

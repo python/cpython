@@ -203,7 +203,6 @@ if _mswindows:
             return "%s(%d)" % (self.__class__.__name__, int(self))
 
         __del__ = Close
-        __str__ = __repr__
 else:
     # When select or poll has indicated that the file is writable,
     # we can write up to _PIPE_BUF bytes without risk of blocking.

@@ -1259,7 +1259,8 @@ _Py_Sigset_Converter(PyObject *obj, void *addr)
     long signum;
     int overflow;
 
-    if (sigemptyset(mask)) {
+    // The extra parens suppress the unreachable-code warning with clang on MacOS
+    if (sigemptyset(mask) < (0)) {
         /* Probably only if mask == NULL. */
         PyErr_SetFromErrno(PyExc_OSError);
         return 0;
@@ -5464,7 +5465,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    if (file_actions != NULL) {
+    if (file_actions != NULL && file_actions != Py_None) {
         /* There is a bug in old versions of glibc that makes some of the
          * helper functions for manipulating file actions not copy the provided
          * buffers. The problem is that posix_spawn_file_actions_addopen does not
