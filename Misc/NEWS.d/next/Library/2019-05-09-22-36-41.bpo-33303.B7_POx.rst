@@ -1,1 +1,1 @@
-xml.etree.ElementTree now escapes the text within Comment and Processing Instruction tags.
+xml.etree.ElementTree now escapes the text within Comment tags.

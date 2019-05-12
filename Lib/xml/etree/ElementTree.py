@@ -899,7 +899,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
     if tag is Comment:
         write("<!--%s-->" % _escape_cdata(text))
     elif tag is ProcessingInstruction:
-        write("<?%s?>" % _escape_pi(text))
+        write("<?%s?>" % text)
     else:
         tag = qnames[tag]
         if tag is None:
@@ -1107,19 +1107,6 @@ def _escape_attrib_html(text):
             text = text.replace(">", "&gt;")
         if "\"" in text:
             text = text.replace("\"", "&quot;")
-        return text
-    except (TypeError, AttributeError):
-        _raise_serialization_error(text)
-
-def _escape_pi(text):
-    # Escape '?' in a proecessing instruction when
-    # it is followed by '>' because the character
-    # sequence "?>" is used as the closing delimiter.
-    # The XML spec says '<' and '&' must never be
-    # escaped within a processing instruction.
-    try:
-        if "?>" in text:
-            text = text.replace("?>", "&gt;>")
         return text
     except (TypeError, AttributeError):
         _raise_serialization_error(text)
