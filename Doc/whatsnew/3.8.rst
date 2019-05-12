@@ -977,6 +977,10 @@ Changes in the Python API
   replacement by a pure Python implementation. (Contributed by Pablo Galindo
   in :issue:`36623`.)
 
+* :class:`types.CodeType` has a new parameter in the second position of the
+  constructor (*posonlyargcount*) to support positional-only arguments defined
+  in :pep:`570`.
+
 
 Changes in the C API
 --------------------
