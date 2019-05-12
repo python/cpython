@@ -12,6 +12,12 @@
 #endif
 #include <signal.h>
 
+#if defined(__linux__)
+#include <sys/syscall.h>
+#elif defined(__FreeBSD__)
+#include <pthread_np.h>
+#endif
+
 /* The POSIX spec requires that use of pthread_attr_setstacksize
    be conditional on _POSIX_THREAD_ATTR_STACKSIZE being defined. */
 #ifdef _POSIX_THREAD_ATTR_STACKSIZE
@@ -300,6 +306,27 @@ PyThread_get_thread_ident(void)
         PyThread_init_thread();
     threadid = pthread_self();
     return (unsigned long) threadid;
+}
+
+unsigned long
+PyThread_get_thread_native_id(void)
+{
+    if (!initialized)
+        PyThread_init_thread();
+#ifdef __APPLE__
+    uint64_t native_id;
+    pthread_threadid_np(NULL, &native_id);
+#elif defined(__linux__)
+    pid_t native_id;
+    native_id = syscall(__NR_gettid);
+#elif defined(__FreeBSD__)
+    pid_t native_id;
+    native_id = pthread_getthreadid_np();
+#else
+    unsigned long native_id;
+    native_id = 0;
+#endif
+    return (unsigned long) native_id;
 }
 
 void _Py_NO_RETURN
