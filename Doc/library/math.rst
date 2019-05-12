@@ -168,14 +168,14 @@ Number-theoretic and representation functions
 
 .. function:: isqrt(n)
 
-   Return the "integer square root" of the integer *n*. This is the integer
-   part of the exact square root of *n*.
+   Return the integer square root of the nonnegative integer *n*. This is the
+   floor of the exact square root of *n*, or equivalently the greatest integer
+   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
 
-   For some applications, it is convenient to have the ceiling of the square
-   root of *n* (the smallest integer ``a`` such that ``n <= a * a``) rather
-   than the floor (the largest integer ``a`` such that ``a * a <= n``). For a
-   positive *n*, the ceiling of the square root of *n* can be computed as
-   ``1 + isqrt(n - 1)``.
+   For some applications, it may be more convenient to have the least integer
+   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
+   the exact square root of *n*. For positive *n*, this can be computed using
+   ``a = 1 + isqrt(n - 1)``.
 
    .. versionadded:: 3.8
 
@@ -552,3 +552,6 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
+
+.. |nbsp| unicode:: 0xA0
+   :trim:
