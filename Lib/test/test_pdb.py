@@ -1509,6 +1509,33 @@ class PdbTestCase(unittest.TestCase):
             '(Pdb) ',
         ])
 
+    @unittest.skipIf(sys.platform == 'win32', 'Not valid on Windows')
+    def test_resume_from_sigint(self):
+        # Use os.kill() to send Ctrl-C event
+        script = """
+            import pdb
+            import signal
+            import os
+
+            def main():
+                pdb.Pdb(readrc=False).set_trace()
+                os.kill(os.getpid(), signal.SIGINT)
+
+            main()
+        """
+        tested_cmds = ['continue', 'return', 'until 12', 'next']
+        for cmd in tested_cmds:
+            pdb_input = """
+                continue
+                {}
+                p 'Pdb has been resumed'
+                quit
+            """.format(cmd)
+            stdout, stderr = self.run_pdb_script(script, pdb_input)
+            self.assertIn('Received SIGINT signal', stdout)
+            self.assertIn('Pdb has been resumed', stdout)
+
+
 def load_tests(*args):
     from test import test_pdb
     suites = [
