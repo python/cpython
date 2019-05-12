@@ -1,1 +1,1 @@
-xml.etree.ElementTree now escapes the text within Comment tags.
+xml.etree.ElementTree module now escapes the text in Comment tags when writing output.
