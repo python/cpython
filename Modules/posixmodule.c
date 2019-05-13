@@ -25,15 +25,25 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_ceval.h"   /* _PyEval_ReInitThreads() */
+#ifdef MS_WINDOWS
+   /* include <windows.h> early to avoid conflict with pycore_condvar.h:
+
+        #define WIN32_LEAN_AND_MEAN
+        #include <windows.h>
+
+      FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
+#  include <windows.h>
+#endif
+
+#include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
+#include "pycore_pystate.h"   /* _PyRuntime */
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
-#include "posixmodule.h"
+#  include "posixmodule.h"
 #else
-#include "winreparse.h"
+#  include "winreparse.h"
 #endif
-#include "pycore_pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
