@@ -26,7 +26,7 @@ always available.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
    hook will be called in the order it was added with the event name and the
-   tuple of arguments. Native hooks added by :c:func:PySys_AddAuditHook are
+   tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
    called first, followed by hooks added in the current interpreter.
 
    Calling this function will trigger an event for all existing hooks, and if
