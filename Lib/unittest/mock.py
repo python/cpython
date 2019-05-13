@@ -1818,6 +1818,7 @@ _return_values = {
     '__float__': 1.0,
     '__bool__': True,
     '__index__': 1,
+    '__aexit__': False,
 }
 
 
@@ -1854,8 +1855,8 @@ def _get_async_iter(self):
     def __aiter__():
         ret_val = self.__aiter__._mock_return_value
         if ret_val is DEFAULT:
-            return AsyncIterator([])
-        return AsyncIterator(ret_val)
+            return _AsyncIterator(iter([]))
+        return _AsyncIterator(iter(ret_val))
     return __aiter__
 
 _side_effect_methods = {
@@ -1927,8 +1928,33 @@ class NonCallableMagicMock(MagicMixin, NonCallableMock):
         self._mock_set_magics()
 
 
+class AsyncMagicMixin:
+    def __init__(self, *args, **kw):
+        self._mock_set_async_magics()  # make magic work for kwargs in init
+        _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
+        self._mock_set_async_magics()  # fix magic broken by upper level init
 
-class MagicMock(MagicMixin, Mock):
+    def _mock_set_async_magics(self):
+        these_magics = _async_magics
+
+        if getattr(self, "_mock_methods", None) is not None:
+            these_magics = _async_magics.intersection(self._mock_methods)
+            remove_magics = _async_magics - these_magics
+
+            for entry in remove_magics:
+                if entry in type(self).__dict__:
+                    # remove unneeded magic methods
+                    delattr(self, entry)
+
+        # don't overwrite existing attributes if called a second time
+        these_magics = these_magics - set(type(self).__dict__)
+
+        _type = type(self)
+        for entry in these_magics:
+            setattr(_type, entry, MagicProxy(entry, self))
+
+
+class MagicMock(MagicMixin, AsyncMagicMixin, Mock):
     """
     MagicMock is a subclass of Mock with default implementations
     of most of the magic methods. You can use MagicMock without having to
@@ -1966,32 +1992,6 @@ class MagicProxy(object):
 
     def __get__(self, obj, _type=None):
         return self.create_mock()
-
-
-class AsyncMagicMixin:
-    def __init__(self, *args, **kw):
-        self._mock_set_async_magics()  # make magic work for kwargs in init
-        _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
-        self._mock_set_async_magics()  # fix magic broken by upper level init
-
-    def _mock_set_async_magics(self):
-        these_magics = _async_magics
-
-        if getattr(self, "_mock_methods", None) is not None:
-            these_magics = _async_magics.intersection(self._mock_methods)
-            remove_magics = _async_magics - these_magics
-
-            for entry in remove_magics:
-                if entry in type(self).__dict__:
-                    # remove unneeded magic methods
-                    delattr(self, entry)
-
-        # don't overwrite existing attributes if called a second time
-        these_magics = these_magics - set(type(self).__dict__)
-
-        _type = type(self)
-        for entry in these_magics:
-            setattr(_type, entry, MagicProxy(entry, self))
 
 
 class AsyncMockMixin(Base):
@@ -2052,13 +2052,13 @@ class AsyncMockMixin(Base):
             msg = f"Expected {self._mock_name or 'mock'} to have been awaited."
             raise AssertionError(msg)
 
-    def assert_awaited_once(_mock_self, *args, **kwargs):
+    def assert_awaited_once(_mock_self):
         """
         Assert that the mock was awaited exactly once.
         """
         self = _mock_self
         if not self.await_count == 1:
-            msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once.",
+            msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once."
                    f" Awaited {self.await_count} times.")
             raise AssertionError(msg)
 
@@ -2088,7 +2088,7 @@ class AsyncMockMixin(Base):
         """
         self = _mock_self
         if not self.await_count == 1:
-            msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once.",
+            msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once."
                    f" Awaited {self.await_count} times.")
             raise AssertionError(msg)
         return self.assert_awaited_with(*args, **kwargs)
@@ -2150,7 +2150,7 @@ class AsyncMockMixin(Base):
         """
         self = _mock_self
         if self.await_count != 0:
-            msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once.",
+            msg = (f"Expected {self._mock_name or 'mock'} to have been awaited once."
                    f" Awaited {self.await_count} times.")
             raise AssertionError(msg)
 
@@ -2167,10 +2167,10 @@ class AsyncMockMixin(Base):
 class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     """
     Enhance :class:`Mock` with features allowing to mock
-    a async function.
+    an async function.
 
     The :class:`AsyncMock` object will behave so the object is
-    recognized as async function, and the result of a call as a async:
+    recognized as an async function, and the result of a call is an awaitable:
 
     >>> mock = AsyncMock()
     >>> asyncio.iscoroutinefunction(mock)
@@ -2193,8 +2193,8 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
       value defined by ``return_value``, hence, by default, the async function
       returns a new :class:`AsyncMock` object.
 
-    If the outcome of ``side_effect`` or ``return_value`` is an async function, the
-    mock async function obtained when the mock object is called will be this
+    If the outcome of ``side_effect`` or ``return_value`` is an async function,
+    the mock async function obtained when the mock object is called will be this
     async function itself (and not an async function returning an async
     function).
 
@@ -2757,20 +2757,19 @@ async def _raise(exception):
     raise exception
 
 
-class AsyncIterator:
+class _AsyncIterator:
     """
     Wraps an iterator in an asynchronous iterator.
     """
     def __init__(self, iterator):
         self.iterator = iterator
         code_mock = NonCallableMock(spec_set=CodeType)
-        code_mock.co_flags = inspect.CO_ITERATOR_COROUTINE
+        code_mock.co_flags = inspect.CO_ITERABLE_COROUTINE
         self.__dict__['__code__'] = code_mock
 
     def __aiter__(self):
         return self
 
-    # cannot use async before 3.7
     async def __anext__(self):
         try:
             return next(self.iterator)

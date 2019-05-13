@@ -129,6 +129,10 @@ class AsyncMockTest(unittest.TestCase):
         self.assertTrue(asyncio.iscoroutinefunction(mock))
         self.assertTrue(inspect.iscoroutinefunction(mock))
 
+    def test_future_isfuture(self):
+        mock = AsyncMock(asyncio.Future())
+        self.assertIsInstance(mock, asyncio.Future)
+
 
 class AsyncAutospecTest(unittest.TestCase):
     def test_is_AsyncMock_patch(self):
@@ -156,6 +160,7 @@ class AsyncSpecTest(unittest.TestCase):
     def tearDown(self):
         # Restore the original event loop policy.
         asyncio.events._event_loop_policy = self.old_policy
+
     def test_spec_as_async_positional_magicmock(self):
         mock = MagicMock(async_func)
         self.assertIsInstance(mock, MagicMock)
@@ -277,15 +282,42 @@ class AsyncArguments(unittest.TestCase):
         self.assertEqual(output, 10)
 
     def test_add_side_effect_exception(self):
-        async def addition(self, var):
+        async def addition(var):
             return var + 1
         mock = AsyncMock(addition, side_effect=Exception('err'))
         with self.assertRaises(Exception):
             asyncio.run(mock(5))
 
+    def test_add_side_effect_function(self):
+        async def addition(var):
+            return var + 1
+        mock = AsyncMock(side_effect=addition)
+        result = asyncio.run(mock(5))
+        self.assertEqual(result, 6)
 
-class AsyncMagicMethods(unittest.TestCase):
-    class AsyncContextManager:
+    def test_add_side_effect_iterable(self):
+        vals = [1, 2, 3]
+        mock = AsyncMock(side_effect=vals)
+        for item in vals:
+            self.assertEqual(item, asyncio.run(mock()))
+
+        with self.assertRaises(RuntimeError) as e:
+            asyncio.run(mock())
+            self.assertEqual(
+                e.exception,
+                RuntimeError('coroutine raised StopIteration')
+            )
+
+
+class AsyncContextManagerTest(unittest.TestCase):
+    def setUp(self):
+        self.old_policy = asyncio.events._event_loop_policy
+
+    def tearDown(self):
+        # Restore the original event loop policy.
+        asyncio.events._event_loop_policy = self.old_policy
+
+    class WithAsyncContextManager:
         def __init__(self):
             self.entered = False
             self.exited = False
@@ -297,10 +329,93 @@ class AsyncMagicMethods(unittest.TestCase):
         async def __aexit__(self, *args, **kwargs):
             self.exited = True
 
-    class AsyncIterator(object):
+    def test_magic_methods_are_async_mocks(self):
+        mock = MagicMock(self.WithAsyncContextManager())
+        self.assertIsInstance(mock.__aenter__, AsyncMock)
+        self.assertIsInstance(mock.__aexit__, AsyncMock)
+
+    def test_mock_supports_async_context_manager(self):
+        called = False
+        instance = self.WithAsyncContextManager()
+        mock_instance = MagicMock(instance)
+
+        async def use_context_manager():
+            nonlocal called
+            async with mock_instance as result:
+                called = True
+            return result
+
+        result = asyncio.run(use_context_manager())
+        self.assertFalse(instance.entered)
+        self.assertFalse(instance.exited)
+        self.assertTrue(called)
+        self.assertTrue(mock_instance.entered)
+        self.assertTrue(mock_instance.exited)
+        self.assertTrue(mock_instance.__aenter__.called)
+        self.assertTrue(mock_instance.__aexit__.called)
+        self.assertIsNot(mock_instance, result)
+        self.assertIsInstance(result, AsyncMock)
+
+    def test_mock_customize_async_context_manager(self):
+        instance = self.WithAsyncContextManager()
+        mock_instance = MagicMock(instance)
+
+        expected_result = object()
+        mock_instance.__aenter__.return_value = expected_result
+
+        async def use_context_manager():
+            async with mock_instance as result:
+                return result
+
+        self.assertIs(asyncio.run(use_context_manager()), expected_result)
+
+    def test_mock_customize_async_context_manager_with_coroutine(self):
+        enter_called = False
+        exit_called = False
+
+        async def enter_coroutine(*args):
+            nonlocal enter_called
+            enter_called = True
+
+        async def exit_coroutine(*args):
+            nonlocal exit_called
+            exit_called = True
+
+        instance = self.WithAsyncContextManager()
+        mock_instance = MagicMock(instance)
+
+        mock_instance.__aenter__ = enter_coroutine
+        mock_instance.__aexit__ = exit_coroutine
+
+        async def use_context_manager():
+            async with mock_instance:
+                pass
+
+        asyncio.run(use_context_manager())
+        self.assertTrue(enter_called)
+        self.assertTrue(exit_called)
+
+    def test_context_manager_raise_exception_by_default(self):
+        async def raise_in(context_manager):
+            async with context_manager:
+                raise TypeError()
+
+        instance = self.WithAsyncContextManager()
+        mock_instance = MagicMock(instance)
+        with self.assertRaises(TypeError):
+            asyncio.run(raise_in(mock_instance))
+
+
+class AsyncIteratorTest(unittest.TestCase):
+    def setUp(self):
+        self.old_policy = asyncio.events._event_loop_policy
+
+    def tearDown(self):
+        # Restore the original event loop policy.
+        asyncio.events._event_loop_policy = self.old_policy
+
+    class WithAsyncIterator(object):
         def __init__(self):
-            self.iter_called = False
-            self.next_called = False
             self.items = ["foo", "NormalFoo", "baz"]
 
         def __aiter__(self):
@@ -313,6 +428,51 @@ class AsyncMagicMethods(unittest.TestCase):
                 pass
 
             raise StopAsyncIteration
+
+    def test_mock_aiter_and_anext(self):
+        instance = self.WithAsyncIterator()
+        mock_instance = MagicMock(instance)
+
+        self.assertEqual(asyncio.iscoroutine(instance.__aiter__),
+                         asyncio.iscoroutine(mock_instance.__aiter__))
+        self.assertEqual(asyncio.iscoroutine(instance.__anext__),
+                         asyncio.iscoroutine(mock_instance.__anext__))
+
+        iterator = instance.__aiter__()
+        if asyncio.iscoroutine(iterator):
+            iterator = asyncio.run(iterator)
+
+        mock_iterator = mock_instance.__aiter__()
+        if asyncio.iscoroutine(mock_iterator):
+            mock_iterator = asyncio.run(mock_iterator)
+
+        self.assertEqual(asyncio.iscoroutine(iterator.__aiter__),
+                         asyncio.iscoroutine(mock_iterator.__aiter__))
+        self.assertEqual(asyncio.iscoroutine(iterator.__anext__),
+                         asyncio.iscoroutine(mock_iterator.__anext__))
+
+    # def test_mock_async_for(self):
+    #     async def iterate(iterator):
+    #         accumulator = []
+    #         async for item in iterator:
+    #             accumulator.append(item)
+    #
+    #         return accumulator
+    #
+    #     expected = ["FOO", "BAR", "BAZ"]
+    #     with self.subTest("iterate through default value"):
+    #         mock_instance = MagicMock(self.WithAsyncIterator())
+    #         self.assertEqual([], asyncio.run(iterate(mock_instance)))
+    #
+    #     with self.subTest("iterate through set return_value"):
+    #         mock_instance = MagicMock(self.WithAsyncIterator())
+    #         mock_instance.__aiter__.return_value = expected[:]
+    #         self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
+    #
+    #     with self.subTest("iterate through set return_value iterator"):
+    #         mock_instance = MagicMock(self.WithAsyncIterator())
+    #         mock_instance.__aiter__.return_value = iter(expected[:])
+    #         self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
 
 
 class AsyncMockAssert(unittest.TestCase):
