@@ -46,7 +46,7 @@ else:
     __all__ += unix_events.__all__
 
 
-__all__ += ('StreamReader', 'StreamWriter', 'StreamReaderProtocol')  # deprecated
+__all__ += ('StreamReader', 'StreamWriter')  # deprecated
 
 
 def __getattr__(name):
