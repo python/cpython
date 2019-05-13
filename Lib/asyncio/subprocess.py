@@ -27,6 +27,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         self._process_exited = False
         self._pipe_fds = []
         self._stdin_closed = self._loop.create_future()
+        self._stdout_closed = self._loop.create_future()
+        self._stderr_closed = self._loop.create_future()
 
     def __repr__(self):
         info = [self.__class__.__name__]
@@ -119,6 +121,10 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
     def _get_close_waiter(self, stream):
         if stream is self.stdin:
             return self._stdin_closed
+        elif stream is self.stdout:
+            return self._stdout_closed
+        elif stream is self.stderr:
+            return self._stderr_closed
 
 
 class Process:

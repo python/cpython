@@ -249,8 +249,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             self._stream_wr = None
         else:
             self._strong_stream = None
-            self._stream_wr = weakref.ref(stream,
-                                          self._on_gc)
+            self._stream_wr = weakref.ref(stream, self._on_gc)
         self._source_traceback = stream._source_traceback
         self._reject_connection = False
         self._transport = None
