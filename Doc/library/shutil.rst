@@ -537,7 +537,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *base_dir* is the directory where we start archiving from;
    i.e. *base_dir* will be the common prefix of all files and
    directories in the archive.  *base_dir* must be given relative
-   to *root_dir*.
+   to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
+   use *base_dir* and *root_dir* together.
 
    *root_dir* and *base_dir* both default to the current directory.
 
