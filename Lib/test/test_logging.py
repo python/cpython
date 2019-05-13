@@ -670,9 +670,10 @@ class HandlerTest(BaseTest):
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
-            def __init__(self, stream):
+            def __init__(self):
                 super().__init__()
-                self.sub_handler = logging.StreamHandler(stream=stream)
+                self.sub_handler = logging.StreamHandler(
+                    stream=open('/dev/null', 'wt'))
 
             def emit(self, record):
                 self.sub_handler.acquire()
@@ -682,9 +683,7 @@ class HandlerTest(BaseTest):
                     self.sub_handler.release()
 
         self.assertEqual(len(logging._handlers), 0)
-        stream = open('/dev/null', 'wt')
-        self.addCleanup(stream.close)
-        refed_h = _OurHandler(stream)
+        refed_h = _OurHandler()
         refed_h.name = 'because we need at least one for this test'
         self.assertGreater(len(logging._handlers), 0)
         self.assertGreater(len(logging._at_fork_reinit_lock_weakset), 1)
