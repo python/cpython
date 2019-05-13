@@ -87,7 +87,7 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
     if (initerr(err_ret, filename) < 0)
         return NULL;
 
-    if (PySys_Audit("compile", "yO", s, filename) < 0) {
+    if (PySys_Audit("compile", "yO", s, err_ret->filename) < 0) {
         err_ret->error = E_ERROR;
         return NULL;
     }
@@ -160,12 +160,12 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
 {
     struct tok_state *tok;
 
-    if (PySys_Audit("compile", "OO", Py_None, filename) < 0) {
-        return NULL;
-    }
-
     if (initerr(err_ret, filename) < 0)
         return NULL;
+
+    if (PySys_Audit("compile", "OO", Py_None, err_ret->filename) < 0) {
+        return NULL;
+    }
 
     if ((tok = PyTokenizer_FromFile(fp, enc, ps1, ps2)) == NULL) {
         err_ret->error = E_NOMEM;
