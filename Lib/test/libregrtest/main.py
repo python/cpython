@@ -37,6 +37,8 @@ else:
     TEMPDIR = tempfile.gettempdir()
 TEMPDIR = os.path.abspath(TEMPDIR)
 
+# Add an auditing hook for all tests to ensure these paths are tested
+sys.addaudithook(lambda *a: None)
 
 class Regrtest:
     """Execute a test suite.
