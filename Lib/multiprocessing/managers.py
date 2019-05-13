@@ -21,6 +21,7 @@ import signal
 import array
 import queue
 import time
+import os
 from os import getpid
 
 from traceback import format_exc
@@ -1349,6 +1350,14 @@ if HAS_SHMEM:
         _Server = SharedMemoryServer
 
         def __init__(self, *args, **kwargs):
+            if os.name == "posix":
+                # bpo-36867: Ensure the resource_tracker is running before
+                # launching the manager process, so that concurrent
+                # shared_memory manipulation both in the manager and in the
+                # current process does not create two resource_tracker
+                # processes.
+                from . import resource_tracker
+                resource_tracker.ensure_running()
             BaseManager.__init__(self, *args, **kwargs)
             util.debug(f"{self.__class__.__name__} created by pid {getpid()}")
 

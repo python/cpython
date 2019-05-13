@@ -17,6 +17,7 @@ import array
 import socket
 import random
 import logging
+import subprocess
 import struct
 import operator
 import pickle
@@ -3765,6 +3766,27 @@ class _TestSharedMemory(BaseTestCase):
 
         smm.shutdown()
 
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
+        # bpo-36867: test that a SharedMemoryManager uses the
+        # same resource_tracker process as its parent.
+        cmd = '''if 1:
+            from multiprocessing.managers import SharedMemoryManager
+
+
+            smm = SharedMemoryManager()
+            smm.start()
+            sl = smm.ShareableList(range(10))
+            smm.shutdown()
+        '''
+        rc, out, err = test.support.script_helper.assert_python_ok('-c', cmd)
+
+        # Before bpo-36867 was fixed, a SharedMemoryManager not using the same
+        # resource_tracker process as its parent would make the parent's
+        # tracker complain about sl being leaked even though smm.shutdown()
+        # properly released sl.
+        self.assertFalse(err)
+
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
         with self.assertRaises(ValueError):
@@ -3904,8 +3926,6 @@ class _TestSharedMemory(BaseTestCase):
         sl.shm.close()
 
     def test_shared_memory_cleaned_after_process_termination(self):
-        import subprocess
-        from multiprocessing import shared_memory
         cmd = '''if 1:
             import os, time, sys
             from multiprocessing import shared_memory
@@ -3916,18 +3936,29 @@ class _TestSharedMemory(BaseTestCase):
             sys.stdout.flush()
             time.sleep(100)
         '''
-        p = subprocess.Popen([sys.executable, '-E', '-c', cmd],
-                             stdout=subprocess.PIPE)
-        name = p.stdout.readline().strip().decode()
+        with subprocess.Popen([sys.executable, '-E', '-c', cmd],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as p:
+            name = p.stdout.readline().strip().decode()
 
-        # killing abruptly processes holding reference to a shared memory
-        # segment should not leak the given memory segment.
-        p.terminate()
-        p.wait()
-        time.sleep(1.0)  # wait for the OS to collect the segment
+            # killing abruptly processes holding reference to a shared memory
+            # segment should not leak the given memory segment.
+            p.terminate()
+            p.wait()
+            time.sleep(1.0)  # wait for the OS to collect the segment
 
-        with self.assertRaises(FileNotFoundError):
-            smm = shared_memory.SharedMemory(name, create=False)
+            # The shared memory file was deleted.
+            with self.assertRaises(FileNotFoundError):
+                smm = shared_memory.SharedMemory(name, create=False)
+
+            if os.name == 'posix':
+                # A warning was emitted by the subprocess' own
+                # resource_tracker (on Windows, shared memory segments
+                # are released automatically by the OS).
+                err = p.stderr.read().decode()
+                self.assertIn(
+                    "resource_tracker: There appear to be 1 leaked "
+                    "shared_memory objects to clean up at shutdown", err)
 
 #
 #
@@ -4560,7 +4591,7 @@ class TestFlags(unittest.TestCase):
         print(json.dumps(flags))
 
     def test_flags(self):
-        import json, subprocess
+        import json
         # start child process using unusual flags
         prog = ('from test._test_multiprocessing import TestFlags; ' +
                 'TestFlags.run_in_child()')
@@ -4866,7 +4897,6 @@ class TestResourceTracker(unittest.TestCase):
         #
         # Check that killing process does not leak named semaphores
         #
-        import subprocess
         cmd = '''if 1:
             import time, os, tempfile
             import multiprocessing as mp

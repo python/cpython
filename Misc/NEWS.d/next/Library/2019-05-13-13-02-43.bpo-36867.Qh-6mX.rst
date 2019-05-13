@@ -1,0 +1,1 @@
+Fix a bug making a SharedMemoryManager instance and its parent process use two separate resource_tracker processes.
