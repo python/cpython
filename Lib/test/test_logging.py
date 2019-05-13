@@ -684,6 +684,7 @@ class HandlerTest(BaseTest):
 
         self.assertEqual(len(logging._handlers), 0)
         refed_h = _OurHandler()
+        self.addCleanup(refed_h.sub_handler.stream.close)
         refed_h.name = 'because we need at least one for this test'
         self.assertGreater(len(logging._handlers), 0)
         self.assertGreater(len(logging._at_fork_reinit_lock_weakset), 1)
