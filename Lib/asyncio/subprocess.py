@@ -40,30 +40,35 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
 
     def connection_made(self, transport):
         self._transport = transport
-
         stdout_transport = transport.get_pipe_transport(1)
         if stdout_transport is not None:
-            self.stdout = streams.StreamReader(limit=self._limit,
-                                               loop=self._loop,
-                                               _asyncio_internal=True)
+            self.stdout = streams.Stream(mode=streams.StreamMode.READ,
+                                         transport=stdout_transport,
+                                         protocol=self,
+                                         limit=self._limit,
+                                         loop=self._loop,
+                                         _asyncio_internal=True)
             self.stdout.set_transport(stdout_transport)
             self._pipe_fds.append(1)
 
         stderr_transport = transport.get_pipe_transport(2)
         if stderr_transport is not None:
-            self.stderr = streams.StreamReader(limit=self._limit,
-                                               loop=self._loop,
-                                               _asyncio_internal=True)
+            self.stderr = streams.Stream(mode=streams.StreamMode.READ,
+                                         transport=stderr_transport,
+                                         protocol=self,
+                                         limit=self._limit,
+                                         loop=self._loop,
+                                         _asyncio_internal=True)
             self.stderr.set_transport(stderr_transport)
             self._pipe_fds.append(2)
 
         stdin_transport = transport.get_pipe_transport(0)
         if stdin_transport is not None:
-            self.stdin = streams.StreamWriter(stdin_transport,
-                                              protocol=self,
-                                              reader=None,
-                                              loop=self._loop,
-                                              _asyncio_internal=True)
+            self.stdin = streams.Stream(mode=streams.StreamMode.WRITE,
+                                        transport=stdin_transport,
+                                        protocol=self,
+                                        loop=self._loop,
+                                        _asyncio_internal=True)
 
     def pipe_data_received(self, fd, data):
         if fd == 1:

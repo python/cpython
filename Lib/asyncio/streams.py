@@ -518,6 +518,8 @@ class Stream:
                 waiter.set_result(None)
 
     def set_transport(self, transport):
+        if transport is self._transport:
+            return
         assert self._transport is None, 'Transport already set'
         self._transport = transport
 
