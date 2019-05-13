@@ -73,7 +73,6 @@ import sys
 import os
 import builtins
 import _sitebuiltins
-import importlib
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -532,15 +531,20 @@ def venv(known_paths):
 
 def exec_imp_module(modName) :
     """Run customization module by name in variable"""
-    ###print("exec_imp_module BGN:" , modName)
     usename = ""
     try:
         try:
-            retmod = importlib.import_module( modName) # import ModName
+            # __import__() is used here. I did try to use 'import importlib' (for import_module())
+            # and I was hit by problem in Lib\test\test_site.py, function
+            # StartupImportTests::test_startup_imports()
+            # There is 'collection_mods' list there and subsequent AssertFailed()
+            # is trying to ensure listed modules not loaded yet.
+            # Attempt to use 'import importlib' cause listed module 'types' loaded.
+            # Same problem  it just try 'from importlib import import_module', 
+            # even without any other changes this file 
+            retmod = __import__( modName )
             usename = retmod.__file__
-            ###print("exec_imp OK import=%s" % (usename) )
         except ImportError as exc:
-            ###print("exec_imp: exc.name =" , exc.name)
             if exc.name == modName : 
                 pass   # continue: no module found - no problem
             else:      # module found, but error in running
@@ -606,6 +610,19 @@ def custsite_info(sname, usepath) :
      print("%s OFF" % (sname) )
 
 
+def envpath_info(vname) :
+  env = os.environ.copy()
+  strpath = env[vname]
+  if strpath == "" :
+     return
+
+  print("env[%s] = [" % vname)
+  for vdir in strpath.split(';') :
+    if vdir :
+      print("  %s" % (vdir))
+
+  print("]")
+
 
 def _script():
     help = """\
@@ -626,26 +643,21 @@ def _script():
     global use_sitevendor, use_sitecustomize, use_usercustomize
     args = sys.argv[1:]
     if not args:
-        user_base = getuserbase()
-        user_site = getusersitepackages()
         print("sys.path = [")
         for dir in sys.path:
             print("  %s" % (dir))
         print("]")
 
-        env = os.environ.copy()
-        strpath = env['PATH']
-        print("env[PATH] = [")
-        for dir in strpath.split(';') :
-            print("  %s" % (dir))
-        print("]")
+        envpath_info('PATH')
 
+        user_base = getuserbase()
+        user_site = getusersitepackages()
         print("USER_BASE: %r (%s)" % (user_base,
             "exists" if os.path.isdir(user_base) else "doesn't exist"))
         print("USER_SITE: %r (%s)" % (user_site,
             "exists" if os.path.isdir(user_site) else "doesn't exist"))
-        print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
 
+        print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
         custsite_info("sitevendor" ,   use_sitevendor)
         custsite_info("sitecustomize", use_sitecustomize)
         custsite_info("usercustomize", use_usercustomize)
