@@ -77,9 +77,9 @@ main(int argc, char *argv[])
     text[text_size] = '\0';
 
     _PyCoreConfig config = _PyCoreConfig_INIT;
+    config.use_environment = 0;
     config.user_site_directory = 0;
     config.site_import = 0;
-    config.use_environment = 0;
     config.program_name = L"./_freeze_importlib";
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
@@ -89,7 +89,7 @@ main(int argc, char *argv[])
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
        memory: program_name is a constant string. */
     if (_Py_INIT_FAILED(err)) {
-        _Py_FatalInitError(err);
+        _Py_ExitInitError(err);
     }
 
     sprintf(buf, "<frozen %s>", name);
@@ -127,7 +127,7 @@ main(int argc, char *argv[])
         size_t i, end = Py_MIN(n + 16, data_size);
         fprintf(outfile, "    ");
         for (i = n; i < end; i++) {
-            fprintf(outfile, "%d,", (unsigned int) data[i]);
+            fprintf(outfile, "%u,", (unsigned int) data[i]);
         }
         fprintf(outfile, "\n");
     }

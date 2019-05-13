@@ -126,7 +126,7 @@ Legacy API:
    email.header.rst
    email.charset.rst
    email.encoders.rst
-   email.util.rst
+   email.utils.rst
    email.iterators.rst
 
 

@@ -312,6 +312,14 @@ defined and implemented by all standard Python codecs:
 The following error handlers are only applicable to
 :term:`text encodings <text encoding>`:
 
+.. index::
+   single: ? (question mark); replacement character
+   single: \ (backslash); escape sequence
+   single: \x; escape sequence
+   single: \u; escape sequence
+   single: \U; escape sequence
+   single: \N; escape sequence
+
 +-------------------------+-----------------------------------------------+
 | Value                   | Meaning                                       |
 +=========================+===============================================+
@@ -630,7 +638,7 @@ define in order to be compatible with the Python codec registry.
 
    .. method:: setstate(state)
 
-      Set the state of the encoder to *state*. *state* must be a decoder state
+      Set the state of the decoder to *state*. *state* must be a decoder state
       returned by :meth:`getstate`.
 
 
@@ -1098,8 +1106,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp1258          | windows-1258                   | Vietnamese                     |
 +-----------------+--------------------------------+--------------------------------+
-| cp65001         |                                | Windows only: Windows UTF-8    |
-|                 |                                | (``CP_UTF8``)                  |
+| cp65001         |                                | Alias to ``utf_8`` encoding    |
 |                 |                                |                                |
 |                 |                                | .. versionadded:: 3.3          |
 +-----------------+--------------------------------+--------------------------------+
@@ -1113,10 +1120,10 @@ particular, the following variants typically exist:
 |                 | ks_c-5601, ks_c-5601-1987,     |                                |
 |                 | ksx1001, ks_x-1001             |                                |
 +-----------------+--------------------------------+--------------------------------+
-| gb2312          | chinese, csiso58gb231280, euc- | Simplified Chinese             |
-|                 | cn, euccn, eucgb2312-cn,       |                                |
-|                 | gb2312-1980, gb2312-80, iso-   |                                |
-|                 | ir-58                          |                                |
+| gb2312          | chinese, csiso58gb231280,      | Simplified Chinese             |
+|                 | euc-cn, euccn, eucgb2312-cn,   |                                |
+|                 | gb2312-1980, gb2312-80,        |                                |
+|                 | iso-ir-58                      |                                |
 +-----------------+--------------------------------+--------------------------------+
 | gbk             | 936, cp936, ms936              | Unified Chinese                |
 +-----------------+--------------------------------+--------------------------------+
@@ -1308,16 +1315,10 @@ encodings.
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
 +--------------------+---------+---------------------------+
-| unicode_internal   |         | Return the internal       |
-|                    |         | representation of the     |
-|                    |         | operand. Stateful codecs  |
-|                    |         | are not supported.        |
-|                    |         |                           |
-|                    |         | .. deprecated:: 3.3       |
-|                    |         |    This representation is |
-|                    |         |    obsoleted by           |
-|                    |         |    :pep:`393`.            |
-+--------------------+---------+---------------------------+
+
+.. versionchanged:: 3.8
+   "unicode_internal" codec is removed.
+
 
 .. _binary-transforms:
 

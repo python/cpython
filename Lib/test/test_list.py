@@ -1,5 +1,6 @@
 import sys
 from test import list_tests
+from test.support import cpython_only
 import pickle
 import unittest
 
@@ -156,6 +157,14 @@ class ListTest(list_tests.CommonTest):
         class L(list): pass
         with self.assertRaises(TypeError):
             (3,) + L([1,2])
+
+    @cpython_only
+    def test_preallocation(self):
+        iterable = [0] * 10
+        iter_size = sys.getsizeof(iterable)
+
+        self.assertEqual(iter_size, sys.getsizeof(list([0] * 10)))
+        self.assertEqual(iter_size, sys.getsizeof(list(range(10))))
 
 if __name__ == "__main__":
     unittest.main()

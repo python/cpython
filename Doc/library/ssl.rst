@@ -665,7 +665,7 @@ Constants
 
 .. data:: PROTOCOL_SSLv23
 
-   Alias for data:`PROTOCOL_TLS`.
+   Alias for :data:`PROTOCOL_TLS`.
 
    .. deprecated:: 3.6
 
@@ -1328,11 +1328,11 @@ SSL sockets also have the following additional methods and attributes:
    If any precondition isn't met (e.g. not TLS 1.3, PHA not enabled), an
    :exc:`SSLError` is raised.
 
-   .. versionadded:: 3.8
-
    .. note::
       Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
       support, the method raises :exc:`NotImplementedError`.
+
+   .. versionadded:: 3.8
 
 .. method:: SSLSocket.version()
 
@@ -1821,7 +1821,7 @@ to speed up repeated connections from the same clients.
 
 .. attribute:: SSLContext.sslsocket_class
 
-   The return type of :meth:`SSLContext.wrap_sockets`, defaults to
+   The return type of :meth:`SSLContext.wrap_socket`, defaults to
    :class:`SSLSocket`. The attribute can be overridden on instance of class
    in order to return a custom subclass of :class:`SSLSocket`.
 
@@ -1831,7 +1831,7 @@ to speed up repeated connections from the same clients.
                                 server_hostname=None, session=None)
 
    Wrap the BIO objects *incoming* and *outgoing* and return an instance of
-   attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
+   :attr:`SSLContext.sslobject_class` (default :class:`SSLObject`). The SSL
    routines will read input data from the incoming BIO and write data to the
    outgoing BIO.
 
@@ -1922,6 +1922,8 @@ to speed up repeated connections from the same clients.
      This attribute is not available unless the ssl module is compiled
      with OpenSSL 1.1.0g or newer.
 
+   .. versionadded:: 3.7
+
 .. attribute:: SSLContext.minimum_version
 
    Like :attr:`SSLContext.maximum_version` except it is the lowest
@@ -1932,6 +1934,8 @@ to speed up repeated connections from the same clients.
      This attribute is not available unless the ssl module is compiled
      with OpenSSL 1.1.0g or newer.
 
+   .. versionadded:: 3.7
+
 .. attribute:: SSLContext.options
 
    An integer representing the set of SSL options enabled on this context.
@@ -1941,7 +1945,7 @@ to speed up repeated connections from the same clients.
    .. note::
       With versions of OpenSSL older than 0.9.8m, it is only possible
       to set options, not to clear them.  Attempting to clear an option
-      (by resetting the corresponding bits) will raise a ``ValueError``.
+      (by resetting the corresponding bits) will raise a :exc:`ValueError`.
 
    .. versionchanged:: 3.6
       :attr:`SSLContext.options` returns :class:`Options` flags:
@@ -1965,11 +1969,11 @@ to speed up repeated connections from the same clients.
    :meth:`SSLSocket.verify_client_post_handshake` is called and some I/O is
    performed.
 
-   .. versionadded:: 3.8
-
    .. note::
       Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
       support, the property value is None and can't be modified
+
+   .. versionadded:: 3.8
 
 .. attribute:: SSLContext.protocol
 
@@ -1982,10 +1986,10 @@ to speed up repeated connections from the same clients.
    subject common name in the absence of a subject alternative name
    extension (default: true).
 
-   .. versionadded:: 3.7
-
    .. note::
       Only writeable with OpenSSL 1.1.0 or higher.
+
+   .. versionadded:: 3.7
 
 .. attribute:: SSLContext.verify_flags
 

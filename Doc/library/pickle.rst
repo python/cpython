@@ -71,7 +71,9 @@ The :mod:`pickle` module differs from :mod:`marshal` in several significant ways
   :file:`.pyc` files, the Python implementers reserve the right to change the
   serialization format in non-backwards compatible ways should the need arise.
   The :mod:`pickle` serialization format is guaranteed to be backwards compatible
-  across Python releases.
+  across Python releases provided a compatible pickle protocol is chosen and
+  pickling and unpickling code deals with Python 2 to Python 3 type differences
+  if your data is crossing that unique breaking change language boundary.
 
 Comparison with ``json``
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -243,6 +245,9 @@ process more convenient:
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
    be 'bytes' to read these 8-bit string instances as bytes objects.
+   Using ``encoding='latin1'`` is required for unpickling NumPy arrays and
+   instances of :class:`~datetime.datetime`, :class:`~datetime.date` and
+   :class:`~datetime.time` pickled by Python 2.
 
 .. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
@@ -260,6 +265,9 @@ process more convenient:
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
    be 'bytes' to read these 8-bit string instances as bytes objects.
+   Using ``encoding='latin1'`` is required for unpickling NumPy arrays and
+   instances of :class:`~datetime.datetime`, :class:`~datetime.date` and
+   :class:`~datetime.time` pickled by Python 2.
 
 
 The :mod:`pickle` module defines three exceptions:
@@ -347,6 +355,18 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       See :ref:`pickle-dispatch` for usage examples.
 
       .. versionadded:: 3.3
+
+   .. method:: reducer_override(self, obj)
+
+      Special reducer that can be defined in :class:`Pickler` subclasses. This
+      method has priority over any reducer in the :attr:`dispatch_table`.  It
+      should conform to the same interface as a :meth:`__reduce__` method, and
+      can optionally return ``NotImplemented`` to fallback on
+      :attr:`dispatch_table`-registered reducers to pickle ``obj``.
+
+      For a detailed example, see :ref:`reducer_override`.
+
+      .. versionadded:: 3.8
 
    .. attribute:: fast
 
@@ -590,7 +610,7 @@ or both.
    module; the pickle module searches the module namespace to determine the
    object's module.  This behaviour is typically useful for singletons.
 
-   When a tuple is returned, it must be between two and five items long.
+   When a tuple is returned, it must be between two and six items long.
    Optional items can either be omitted, or ``None`` can be provided as their
    value.  The semantics of each item are in order:
 
@@ -620,6 +640,15 @@ or both.
      pairs.  These items will be stored to the object using ``obj[key] =
      value``.  This is primarily used for dictionary subclasses, but may be used
      by other classes as long as they implement :meth:`__setitem__`.
+
+   * Optionally, a callable with a ``(obj, state)`` signature. This
+     callable allows the user to programatically control the state-updating
+     behavior of a specific object, instead of using ``obj``'s static
+     :meth:`__setstate__` method. If not ``None``, this callable will have
+     priority over ``obj``'s :meth:`__setstate__`.
+
+     .. versionadded:: 3.8
+        The optional sixth tuple item, ``(obj, state)``, was added.
 
 
 .. method:: object.__reduce_ex__(protocol)
@@ -774,6 +803,65 @@ A sample usage might be something like this::
    >>> new_reader.readline()
    '3: Goodbye!'
 
+.. _reducer_override:
+
+Custom Reduction for Types, Functions, and Other Objects
+--------------------------------------------------------
+
+.. versionadded:: 3.8
+
+Sometimes, :attr:`~Pickler.dispatch_table` may not be flexible enough.
+In particular we may want to customize pickling based on another criterion
+than the object's type, or we may want to customize the pickling of
+functions and classes.
+
+For those cases, it is possible to subclass from the :class:`Pickler` class and
+implement a :meth:`~Pickler.reducer_override` method. This method can return an
+arbitrary reduction tuple (see :meth:`__reduce__`). It can alternatively return
+``NotImplemented`` to fallback to the traditional behavior.
+
+If both the :attr:`~Pickler.dispatch_table` and
+:meth:`~Pickler.reducer_override` are defined, then
+:meth:`~Pickler.reducer_override` method takes priority.
+
+.. Note::
+   For performance reasons, :meth:`~Pickler.reducer_override` may not be
+   called for the following objects: ``None``, ``True``, ``False``, and
+   exact instances of :class:`int`, :class:`float`, :class:`bytes`,
+   :class:`str`, :class:`dict`, :class:`set`, :class:`frozenset`, :class:`list`
+   and :class:`tuple`.
+
+Here is a simple example where we allow pickling and reconstructing
+a given class::
+
+   import io
+   import pickle
+
+   class MyClass:
+       my_attribute = 1
+
+   class MyPickler(pickle.Pickler):
+       def reducer_override(self, obj):
+           """Custom reducer for MyClass."""
+           if getattr(obj, "__name__", None) == "MyClass":
+               return type, (obj.__name__, obj.__bases__,
+                             {'my_attribute': obj.my_attribute})
+           else:
+               # For any other object, fallback to usual reduction
+               return NotImplemented
+
+   f = io.BytesIO()
+   p = MyPickler(f)
+   p.dump(MyClass)
+
+   del MyClass
+
+   unpickled_class = pickle.loads(f.getvalue())
+
+   assert isinstance(unpickled_class, type)
+   assert unpickled_class.__name__ == "MyClass"
+   assert unpickled_class.my_attribute == 1
+
 
 .. _pickle-restrict:
 
@@ -923,7 +1011,7 @@ The following example reads the resulting pickled data. ::
 .. [#] Don't confuse this with the :mod:`marshal` module
 
 .. [#] This is why :keyword:`lambda` functions cannot be pickled:  all
-    :keyword:`lambda` functions share the same name:  ``<lambda>``.
+    :keyword:`!lambda` functions share the same name:  ``<lambda>``.
 
 .. [#] The exception raised will likely be an :exc:`ImportError` or an
    :exc:`AttributeError` but it could be something else.

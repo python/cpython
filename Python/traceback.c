@@ -2,7 +2,7 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 
 #include "code.h"
 #include "frameobject.h"
@@ -163,11 +163,11 @@ static void
 tb_dealloc(PyTracebackObject *tb)
 {
     PyObject_GC_UnTrack(tb);
-    Py_TRASHCAN_SAFE_BEGIN(tb)
+    Py_TRASHCAN_BEGIN(tb, tb_dealloc)
     Py_XDECREF(tb->tb_next);
     Py_XDECREF(tb->tb_frame);
     PyObject_GC_Del(tb);
-    Py_TRASHCAN_SAFE_END(tb)
+    Py_TRASHCAN_END
 }
 
 static int
@@ -178,11 +178,12 @@ tb_traverse(PyTracebackObject *tb, visitproc visit, void *arg)
     return 0;
 }
 
-static void
+static int
 tb_clear(PyTracebackObject *tb)
 {
     Py_CLEAR(tb->tb_next);
     Py_CLEAR(tb->tb_frame);
+    return 0;
 }
 
 PyTypeObject PyTraceBack_Type = {

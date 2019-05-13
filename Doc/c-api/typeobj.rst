@@ -1558,6 +1558,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_init` function is called; if :c:member:`~PyTypeObject.tp_new` returns an instance of a
    subtype of the original type, the subtype's :c:member:`~PyTypeObject.tp_init` is called.
 
+   Returns ``0`` on success, ``-1`` and sets an exception on error.
+
    **Inheritance:**
 
    This field is inherited by subtypes.
@@ -2050,7 +2052,7 @@ Sequence Object Structures
    signature.  It should modify its first operand, and return it.  This slot
    may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceConcat`
    will fall back to :c:func:`PySequence_Concat`.  It is also used by the
-   augmented assignment ``+=``, after trying numeric inplace addition
+   augmented assignment ``+=``, after trying numeric in-place addition
    via the :c:member:`~PyNumberMethods.nb_inplace_add` slot.
 
 .. c:member:: ssizeargfunc PySequenceMethods.sq_inplace_repeat
@@ -2059,7 +2061,7 @@ Sequence Object Structures
    signature.  It should modify its first operand, and return it.  This slot
    may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceRepeat`
    will fall back to :c:func:`PySequence_Repeat`.  It is also used by the
-   augmented assignment ``*=``, after trying numeric inplace multiplication
+   augmented assignment ``*=``, after trying numeric in-place multiplication
    via the :c:member:`~PyNumberMethods.nb_inplace_multiply` slot.
 
 

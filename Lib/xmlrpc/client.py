@@ -186,8 +186,7 @@ INTERNAL_ERROR        = -32603
 
 class Error(Exception):
     """Base class for client errors."""
-    def __str__(self):
-        return repr(self)
+    __str__ = object.__str__
 
 ##
 # Indicates an HTTP-level protocol error.  This is raised by the HTTP
@@ -869,8 +868,6 @@ class MultiCall:
     def __repr__(self):
         return "<%s at %#x>" % (self.__class__.__name__, id(self))
 
-    __str__ = __repr__
-
     def __getattr__(self, name):
         return _MultiCallMethod(self.__call_list, name)
 
@@ -1131,10 +1128,12 @@ class Transport:
     # that they can decode such a request
     encode_threshold = None #None = don't encode
 
-    def __init__(self, use_datetime=False, use_builtin_types=False):
+    def __init__(self, use_datetime=False, use_builtin_types=False,
+                 *, headers=()):
         self._use_datetime = use_datetime
         self._use_builtin_types = use_builtin_types
         self._connection = (None, None)
+        self._headers = list(headers)
         self._extra_headers = []
 
     ##
@@ -1265,7 +1264,7 @@ class Transport:
 
     def send_request(self, host, handler, request_body, debug):
         connection = self.make_connection(host)
-        headers = self._extra_headers[:]
+        headers = self._headers + self._extra_headers
         if debug:
             connection.set_debuglevel(1)
         if self.accept_gzip_encoding and gzip:
@@ -1347,9 +1346,11 @@ class Transport:
 class SafeTransport(Transport):
     """Handles an HTTPS transaction to an XML-RPC server."""
 
-    def __init__(self, use_datetime=False, use_builtin_types=False, *,
-                 context=None):
-        super().__init__(use_datetime=use_datetime, use_builtin_types=use_builtin_types)
+    def __init__(self, use_datetime=False, use_builtin_types=False,
+                 *, headers=(), context=None):
+        super().__init__(use_datetime=use_datetime,
+                         use_builtin_types=use_builtin_types,
+                         headers=headers)
         self.context = context
 
     # FIXME: mostly untested
@@ -1409,7 +1410,7 @@ class ServerProxy:
 
     def __init__(self, uri, transport=None, encoding=None, verbose=False,
                  allow_none=False, use_datetime=False, use_builtin_types=False,
-                 *, context=None):
+                 *, headers=(), context=None):
         # establish a "logical" server connection
 
         # get the url
@@ -1429,6 +1430,7 @@ class ServerProxy:
                 extra_kwargs = {}
             transport = handler(use_datetime=use_datetime,
                                 use_builtin_types=use_builtin_types,
+                                headers=headers,
                                 **extra_kwargs)
         self.__transport = transport
 
@@ -1462,8 +1464,6 @@ class ServerProxy:
             "<%s for %s%s>" %
             (self.__class__.__name__, self.__host, self.__handler)
             )
-
-    __str__ = __repr__
 
     def __getattr__(self, name):
         # magic method dispatcher

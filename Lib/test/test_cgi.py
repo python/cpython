@@ -401,33 +401,38 @@ Larry
         data = """---123
 Content-Disposition: form-data; name="a"
 
-a
+3
 ---123
 Content-Type: application/x-www-form-urlencoded
 
-a=a&a=a
+a=4
+---123
+Content-Type: application/x-www-form-urlencoded
+
+a=5
 ---123--
 """
         environ = {
             'CONTENT_LENGTH':   str(len(data)),
             'CONTENT_TYPE':     'multipart/form-data; boundary=-123',
-            'QUERY_STRING':     'a=a&a=a',
+            'QUERY_STRING':     'a=1&a=2',
             'REQUEST_METHOD':   'POST',
         }
 
         # 2 GET entities
-        # 2 top level POST entities
-        # 2 entities within the second POST entity
+        # 1 top level POST entities
+        # 1 entity within the second POST entity
+        # 1 entity within the third POST entity
         with self.assertRaises(ValueError):
             cgi.FieldStorage(
                 fp=BytesIO(data.encode()),
                 environ=environ,
-                max_num_fields=5,
+                max_num_fields=4,
             )
         cgi.FieldStorage(
             fp=BytesIO(data.encode()),
             environ=environ,
-            max_num_fields=6,
+            max_num_fields=5,
         )
 
     def testQSAndFormData(self):

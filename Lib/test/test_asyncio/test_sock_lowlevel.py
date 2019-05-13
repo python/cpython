@@ -2,6 +2,7 @@ import socket
 import asyncio
 import sys
 from asyncio import proactor_events
+from itertools import cycle, islice
 from test.test_asyncio import utils as test_utils
 from test import support
 
@@ -119,6 +120,110 @@ class BaseSockTestsMixin:
             self._basetest_sock_client_ops(httpd, sock)
             sock = socket.socket()
             self._basetest_sock_recv_into(httpd, sock)
+
+    async def _basetest_huge_content(self, address):
+        sock = socket.socket()
+        sock.setblocking(False)
+        DATA_SIZE = 10_000_00
+
+        chunk = b'0123456789' * (DATA_SIZE // 10)
+
+        await self.loop.sock_connect(sock, address)
+        await self.loop.sock_sendall(sock,
+                                     (b'POST /loop HTTP/1.0\r\n' +
+                                      b'Content-Length: %d\r\n' % DATA_SIZE +
+                                      b'\r\n'))
+
+        task = asyncio.create_task(self.loop.sock_sendall(sock, chunk))
+
+        data = await self.loop.sock_recv(sock, DATA_SIZE)
+        # HTTP headers size is less than MTU,
+        # they are sent by the first packet always
+        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        while data.find(b'\r\n\r\n') == -1:
+            data += await self.loop.sock_recv(sock, DATA_SIZE)
+        # Strip headers
+        headers = data[:data.index(b'\r\n\r\n') + 4]
+        data = data[len(headers):]
+
+        size = DATA_SIZE
+        checker = cycle(b'0123456789')
+
+        expected = bytes(islice(checker, len(data)))
+        self.assertEqual(data, expected)
+        size -= len(data)
+
+        while True:
+            data = await self.loop.sock_recv(sock, DATA_SIZE)
+            if not data:
+                break
+            expected = bytes(islice(checker, len(data)))
+            self.assertEqual(data, expected)
+            size -= len(data)
+        self.assertEqual(size, 0)
+
+        await task
+        sock.close()
+
+    def test_huge_content(self):
+        with test_utils.run_test_server() as httpd:
+            self.loop.run_until_complete(
+                self._basetest_huge_content(httpd.address))
+
+    async def _basetest_huge_content_recvinto(self, address):
+        sock = socket.socket()
+        sock.setblocking(False)
+        DATA_SIZE = 10_000_00
+
+        chunk = b'0123456789' * (DATA_SIZE // 10)
+
+        await self.loop.sock_connect(sock, address)
+        await self.loop.sock_sendall(sock,
+                                     (b'POST /loop HTTP/1.0\r\n' +
+                                      b'Content-Length: %d\r\n' % DATA_SIZE +
+                                      b'\r\n'))
+
+        task = asyncio.create_task(self.loop.sock_sendall(sock, chunk))
+
+        array = bytearray(DATA_SIZE)
+        buf = memoryview(array)
+
+        nbytes = await self.loop.sock_recv_into(sock, buf)
+        data = bytes(buf[:nbytes])
+        # HTTP headers size is less than MTU,
+        # they are sent by the first packet always
+        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        while data.find(b'\r\n\r\n') == -1:
+            nbytes = await self.loop.sock_recv_into(sock, buf)
+            data = bytes(buf[:nbytes])
+        # Strip headers
+        headers = data[:data.index(b'\r\n\r\n') + 4]
+        data = data[len(headers):]
+
+        size = DATA_SIZE
+        checker = cycle(b'0123456789')
+
+        expected = bytes(islice(checker, len(data)))
+        self.assertEqual(data, expected)
+        size -= len(data)
+
+        while True:
+            nbytes = await self.loop.sock_recv_into(sock, buf)
+            data = buf[:nbytes]
+            if not data:
+                break
+            expected = bytes(islice(checker, len(data)))
+            self.assertEqual(data, expected)
+            size -= len(data)
+        self.assertEqual(size, 0)
+
+        await task
+        sock.close()
+
+    def test_huge_content_recvinto(self):
+        with test_utils.run_test_server() as httpd:
+            self.loop.run_until_complete(
+                self._basetest_huge_content_recvinto(httpd.address))
 
     @support.skip_unless_bind_unix_socket
     def test_unix_sock_client_ops(self):

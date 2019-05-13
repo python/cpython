@@ -17,7 +17,7 @@ those of the :mod:`threading` module with two important caveats:
   argument; use the :func:`asyncio.wait_for` function to perform
   operations with timeouts.
 
-asyncio has the following basic sychronization primitives:
+asyncio has the following basic synchronization primitives:
 
 * :class:`Lock`
 * :class:`Event`
@@ -180,11 +180,11 @@ Condition
        cond = asyncio.Condition()
 
        # ... later
-       await lock.acquire()
+       await cond.acquire()
        try:
            await cond.wait()
        finally:
-           lock.release()
+           cond.release()
 
    .. coroutinemethod:: acquire()
 

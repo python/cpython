@@ -153,8 +153,7 @@ and (read-only) attributes:
    number of bytes written.  If the audio device is in blocking mode (the
    default), the entire data is always written (again, this is different from
    usual Unix device semantics).  If the device is in non-blocking mode, some
-   data may not be written
-   ---see :meth:`writeall`.
+   data may not be written---see :meth:`writeall`.
 
    .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
