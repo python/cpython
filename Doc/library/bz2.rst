@@ -317,7 +317,7 @@ Writing and reading a bzip2-compressed file in binary mode:
 
     >>> with bz2.open("myfile.bz2", "wb") as f:
     ...     # Write compressed data to file
-    ...     bytes_written = f.write(data)
+    ...     unused = f.write(data)
 
     >>> with bz2.open("myfile.bz2", "rb") as f:
     ...     # Decompress data from file
