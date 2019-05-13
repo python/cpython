@@ -990,6 +990,11 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
+* The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
+  It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
+  instead.
+  (Contributed by Victor Stinner in :issue:`36728`.)
+
 * On Unix, C extensions are no longer linked to libpython except on
   Android. When Python is embedded, ``libpython`` must not be loaded with
   ``RTLD_LOCAL``, but ``RTLD_GLOBAL`` instead. Previously, using
