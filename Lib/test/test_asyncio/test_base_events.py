@@ -1310,6 +1310,38 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             test_utils.run_briefly(self.loop)  # allow transport to close
 
     @patch_socket
+    def test_create_connection_ipv6_scope(self, m_socket):
+        m_socket.getaddrinfo = socket.getaddrinfo
+        sock = m_socket.socket.return_value
+        sock.family = socket.AF_INET6
+
+        # I'm not certain the loopback interface is always scope ID 1 so I'm
+        # relying on the socket module to provide it. If anyone knows
+        # otherwise, feel free to remove this.
+        for _, sock_kind, _, _, sock_addr in socket.getaddrinfo("fe80::1%lo", 80):
+            if sock_kind == socket.SOCK_STREAM:
+                scope_id = sock_addr[3]
+                break
+        else:
+            self.fail("couldn't find lo's scope id")
+
+        self.loop._add_reader = mock.Mock()
+        self.loop._add_reader._is_coroutine = False
+        self.loop._add_writer = mock.Mock()
+        self.loop._add_writer._is_coroutine = False
+
+        coro = self.loop.create_connection(asyncio.Protocol, 'fe80::1%lo', 80)
+        t, p = self.loop.run_until_complete(coro)
+        try:
+            sock.connect.assert_called_with(('fe80::1', 80, 0, scope_id))
+            _, kwargs = m_socket.socket.call_args
+            self.assertEqual(kwargs['family'], m_socket.AF_INET6)
+            self.assertEqual(kwargs['type'], m_socket.SOCK_STREAM)
+        finally:
+            t.close()
+            test_utils.run_briefly(self.loop)  # allow transport to close
+
+    @patch_socket
     def test_create_connection_ip_addr(self, m_socket):
         self._test_create_connection_ip_addr(m_socket, True)
 

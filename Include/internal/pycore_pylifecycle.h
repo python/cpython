@@ -54,6 +54,8 @@ extern int _PyFloat_Init(void);
 extern _PyInitError _Py_HashRandomization_Init(const _PyCoreConfig *);
 
 extern _PyInitError _PyTypes_Init(void);
+extern _PyInitError _PyImportZip_Init(PyInterpreterState *interp);
+
 
 /* Various internal finalizers */
 
