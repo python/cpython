@@ -304,6 +304,11 @@ gzip
 Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
 (Contributed by Guo Ci Teo in :issue:`34898`.)
 
+A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
+for certain types of invalid or corrupt gzip files.
+(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
+:issue:`6584`.)
+
 
 idlelib and IDLE
 ----------------
