@@ -686,26 +686,38 @@ The resulting archive contains:
 Archiving example with *base_dir*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this example, we have a file :file:`please_add.txt` within the directory
-structure :file:`tmp/root/structure/content`, which we want to add to the
-archive along with the directories :file:`structure` and :file:`content`, and a
-second file :file:`do_not_add.txt` in :file:`tmp/root/structure`, which we don't
-want to have in the archive. Therefore we use the following::
-
-    >>> from shutil import make_archive
-    >>> make_archive(base_name='tmp/archive',
-                     format='tar',
-                     root_dir='tmp/root',
-                     base_dir='structure/content/')
-    '/Users/user/tmp/archive.tar'
-
-Listing the files in the resulting archive gives us the following:
+In this example, similar to the `one above <shutil-archiving-example_>`_,
+we show how to use :func:`make_archive`, but this time with the usage of
+*base_dir*.  We now have the following directory structure:
 
 .. code-block:: shell-session
 
-    $ tar -tvf tmp/archive.zip
-    drwxr-xr-x  0 user staff   0 Nov  6 02:07 structure/content/
-    -rw-r--r--  0 user staff  11 Nov  6 02:07 structure/content/please_add.txt
+    $ tree tmp
+    tmp
+    └── root
+        └── structure
+            ├── content
+                └── please_add.txt
+            └── do_not_add.txt
+
+In the final archive, :file:`please_add.txt` should be included, but
+:file:`do_not_add.txt` should not.  Therefore we use the following::
+
+    >>> from shutil import make_archive
+    >>> make_archive(
+    ...     'my_archive',
+    ...     'tar',
+    ...     root_dir='tmp/root',
+    ...     base_dir='structure/content')
+    '/Users/user/my_archive.tar'
+
+Listing the files in the resulting archive gives us:
+
+.. code-block:: shell-session
+
+    $ python -m tarfile -l my_archive.tar
+    structure/content/
+    structure/content/please_add.txt
 
 
 Querying the size of the output terminal
