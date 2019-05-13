@@ -1003,10 +1003,10 @@ os.close(fd)
             # make a chance to close the socket
             test_utils.run_briefly(self.loop)
 
-            self.assertEqual(1, len(messages))
+            self.assertEqual(1, len(messages), messages)
             self.assertEqual(sock.fileno(), -1)
 
-        self.assertEqual(1, len(messages))
+        self.assertEqual(1, len(messages), messages)
         self.assertEqual('An open stream object is being garbage '
                          'collected; call "stream.close()" explicitly.',
                          messages[0]['message'])

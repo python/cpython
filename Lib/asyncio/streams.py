@@ -244,8 +244,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     def __init__(self, stream, client_connected_cb=None, loop=None,
                  *, _asyncio_internal=False):
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
-        self._stream_wr = weakref.ref(stream,
-                                      self._on_gc)
+        if client_connected_cb:
+            self._strong_stream = stream
+            self._stream_wr = None
+        else:
+            self._strong_stream = None
+            self._stream_wr = weakref.ref(stream,
+                                          self._on_gc)
         self._source_traceback = stream._source_traceback
         self._reject_connection = False
         self._transport = None
@@ -271,7 +276,10 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     @property
     def _stream(self):
-        assert self._stream_wr is not None
+        if self._strong_stream is not None:
+            return self._strong_stream
+        if self._stream_wr is None:
+            return None
         return self._stream_wr()
 
     def connection_made(self, transport):
@@ -287,8 +295,11 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             transport.abort()
             return
         self._transport = transport
-        self._stream.set_transport(transport)
-        self._stream._protocol = self
+        stream = self._stream
+        if stream is None:
+            return
+        stream.set_transport(transport)
+        stream._protocol = self
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
             res = self._client_connected_cb(self._stream,
@@ -297,12 +308,12 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._loop.create_task(res)
 
     def connection_lost(self, exc):
-        if self._reject_connection:
-            return
-        if exc is None:
-            self._stream.feed_eof()
-        else:
-            self._stream.set_exception(exc)
+        stream = self._stream
+        if stream is not None:
+            if exc is None:
+                stream.feed_eof()
+            else:
+                stream.set_exception(exc)
         if not self._closed.done():
             if exc is None:
                 self._closed.set_result(None)
@@ -313,14 +324,14 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._transport = None
 
     def data_received(self, data):
-        if self._reject_connection:
-            return
-        self._stream.feed_data(data)
+        stream = self._stream
+        if stream is not None:
+            stream.feed_data(data)
 
     def eof_received(self):
-        if self._reject_connection:
-            return
-        self._stream.feed_eof()
+        stream = self._stream
+        if stream is not None:
+            stream.feed_eof()
         if self._over_ssl:
             # Prevent a warning in SSLProtocol.eof_received:
             # "returning true from eof_received()
@@ -472,7 +483,7 @@ class Stream:
           w.write(data)
           await w.drain()
         """
-        self._kind.check_read()
+        self._kind.check_write()
         exc = self.exception()
         if exc is not None:
             raise exc
