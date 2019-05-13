@@ -62,11 +62,7 @@ def __getattr__(name):
         return Stream
 
     if name == 'StreamReaderProtocol':
-        warnings.warn("StreamReaderProtocol is a private API, "
-                      "don't use the class in user code",
-                      DeprecationWarning,
-                      stacklevel=2)
-        from .streams import StreamReaderProtocol
-        return StreamReaderProtocol
+        raise AttributeError("StreamReaderProtocol is a private API, "
+                              "don't use the class in user code")
 
     raise AttributeError(f"module {__name__} has no attribute {name}")

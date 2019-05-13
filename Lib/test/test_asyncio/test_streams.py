@@ -347,7 +347,7 @@ class StreamTests(test_utils.TestCase):
         self.assertTrue(stream.at_eof())
 
     def test_readline_limit(self):
-        # Read one line. StreamReaders are fed with data after
+        # Read one line. Streams are fed with data after
         # their 'readline' methods are called.
 
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
@@ -930,9 +930,9 @@ os.close(fd)
         self.assertEqual("<Stream mode=StreamMode.READ>", repr(stream))
 
     def test___repr__nondefault_limit(self):
-        stream = asyncio.StreamReader(mode=asyncio.StreamMode.READ,
-                                      loop=self.loop, limit=123,
-                                      _asyncio_internal=True)
+        stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
+                                loop=self.loop, limit=123,
+                                _asyncio_internal=True)
         self.assertEqual("<Stream mode=StreamMode.READ limit=123>", repr(stream))
 
     def test___repr__eof(self):
@@ -969,7 +969,7 @@ os.close(fd)
         stream._waiter.set_result(None)
         self.loop.run_until_complete(stream._waiter)
         stream._waiter = None
-        self.assertEqual("<StreamReader mode=StreamMode.READ>", repr(stream))
+        self.assertEqual("<Stream mode=StreamMode.READ>", repr(stream))
 
     def test___repr__transport(self):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
@@ -1146,7 +1146,7 @@ os.close(fd)
             asyncio.StreamReader
 
     def test_stream_reader_protocol_create_warning(self):
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(AttributeError):
             asyncio.StreamReaderProtocol
 
     def test_stream_writer_create_warning(self):
