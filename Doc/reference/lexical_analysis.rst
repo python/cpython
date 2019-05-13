@@ -70,7 +70,7 @@ Comments
 A comment starts with a hash character (``#``) that is not part of a string
 literal, and ends at the end of the physical line.  A comment signifies the end
 of the logical line unless the implicit line joining rules are invoked. Comments
-are ignored by the syntax; they are not tokens.
+are ignored by the syntax.
 
 
 .. _encodings:
