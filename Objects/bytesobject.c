@@ -1421,7 +1421,8 @@ bytes_repr(PyObject *op)
 static PyObject *
 bytes_str(PyObject *op)
 {
-    if (Py_BytesWarningFlag) {
+    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    if (config->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytes instance", 1)) {
             return NULL;
@@ -1578,7 +1579,8 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 
     /* Make sure both arguments are strings. */
     if (!(PyBytes_Check(a) && PyBytes_Check(b))) {
-        if (Py_BytesWarningFlag && (op == Py_EQ || op == Py_NE)) {
+        _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+        if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             rc = PyObject_IsInstance((PyObject*)a,
                                      (PyObject*)&PyUnicode_Type);
             if (!rc)
