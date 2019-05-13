@@ -63,9 +63,10 @@ async def open_connection(host=None, port=None, *,
     really nothing special here except some convenience.)
     """
     if loop is None:
-        loop = events.get_running_loop()
+        loop = events.get_event_loop()
     stream = Stream(kind=StreamKind.READWRITE,
-                    limit=limit, loop=loop,
+                    limit=limit,
+                    loop=loop,
                     _asyncio_internal=True)
     transport, _ = await loop.create_connection(
         lambda: StreamReaderProtocol(stream, loop=loop,
@@ -101,9 +102,11 @@ async def start_server(client_connected_cb, host=None, port=None, *,
         loop = events.get_event_loop()
 
     def factory():
-        reader = StreamReader(limit=limit, loop=loop,
-                              _asyncio_internal=True)
-        protocol = StreamReaderProtocol(reader, client_connected_cb,
+        stream = Stream(kind=StreamKind.READWRITE,
+                        limit=limit,
+                        loop=loop,
+                        _asyncio_internal=True)
+        protocol = StreamReaderProtocol(stream, client_connected_cb,
                                         loop=loop,
                                         _asyncio_internal=True)
         return protocol
@@ -119,15 +122,16 @@ if hasattr(socket, 'AF_UNIX'):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
         if loop is None:
             loop = events.get_event_loop()
-        reader = StreamReader(limit=limit, loop=loop,
-                              _asyncio_internal=True)
-        protocol = StreamReaderProtocol(reader, loop=loop,
-                                        _asyncio_internal=True)
+        stream = Stream(kind=StreamKind.READWRITE,
+                        limit=limit,
+                        loop=loop,
+                        _asyncio_internal=True)
         transport, _ = await loop.create_unix_connection(
-            lambda: protocol, path, **kwds)
-        writer = StreamWriter(transport, protocol, reader, loop,
-                              _asyncio_internal=True)
-        return reader, writer
+            lambda: StreamReaderProtocol(stream,
+                                         loop=loop,
+                                        _asyncio_internal=True),
+            path, **kwds)
+        return stream, stream
 
     async def start_unix_server(client_connected_cb, path=None, *,
                                 loop=None, limit=_DEFAULT_LIMIT, **kwds):
@@ -136,9 +140,12 @@ if hasattr(socket, 'AF_UNIX'):
             loop = events.get_event_loop()
 
         def factory():
-            reader = StreamReader(limit=limit, loop=loop,
-                                  _asyncio_internal=True)
-            protocol = StreamReaderProtocol(reader, client_connected_cb,
+            stream = Stream(kind=StreamKind.READWRITE,
+                            limit=limit,
+                            loop=loop,
+                            _asyncio_internal=True)
+            protocol = StreamReaderProtocol(stream,
+                                            client_connected_cb,
                                             loop=loop,
                                             _asyncio_internal=True)
             return protocol
@@ -234,28 +241,19 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     _source_traceback = None
 
-    def __init__(self, stream_reader, client_connected_cb=None, loop=None,
+    def __init__(self, stream, client_connected_cb=None, loop=None,
                  *, _asyncio_internal=False):
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
-        if stream_reader is not None:
-            self._stream_reader_wr = weakref.ref(stream_reader,
-                                                 self._on_reader_gc)
-            self._source_traceback = stream_reader._source_traceback
-        else:
-            self._stream_reader_wr = None
-        if client_connected_cb is not None:
-            # This is a stream created by the `create_server()` function.
-            # Keep a strong reference to the reader until a connection
-            # is established.
-            self._strong_reader = stream_reader
+        self._stream_wr = weakref.ref(stream,
+                                      self._on_gc)
+        self._source_traceback = stream._source_traceback
         self._reject_connection = False
-        self._stream_writer = None
         self._transport = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
         self._closed = self._loop.create_future()
 
-    def _on_reader_gc(self, wr):
+    def _on_gc(self, wr):
         transport = self._transport
         if transport is not None:
             # connection_made was called
@@ -269,13 +267,12 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             transport.abort()
         else:
             self._reject_connection = True
-        self._stream_reader_wr = None
+        self._stream_wr = None
 
     @property
-    def _stream_reader(self):
-        if self._stream_reader_wr is None:
-            return None
-        return self._stream_reader_wr()
+    def _stream(self):
+        assert self._stream_wr is not None
+        return self._stream_wr()
 
     def connection_made(self, transport):
         if self._reject_connection:
@@ -290,48 +287,40 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             transport.abort()
             return
         self._transport = transport
-        reader = self._stream_reader
-        if reader is not None:
-            reader.set_transport(transport)
-            reader._protocol = self
+        self._stream.set_transport(transport)
+        self._stream._protocol = self
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
-            self._stream_writer = StreamWriter(transport, self,
-                                               reader,
-                                               self._loop,
-                                               _asyncio_internal=True)
-            res = self._client_connected_cb(reader,
-                                            self._stream_writer)
+            res = self._client_connected_cb(self._stream,
+                                            self._stream)
             if coroutines.iscoroutine(res):
                 self._loop.create_task(res)
-            self._strong_reader = None
 
     def connection_lost(self, exc):
-        reader = self._stream_reader
-        if reader is not None:
-            if exc is None:
-                reader.feed_eof()
-            else:
-                reader.set_exception(exc)
+        if self._reject_connection:
+            return
+        if exc is None:
+            self._stream.feed_eof()
+        else:
+            self._stream.set_exception(exc)
         if not self._closed.done():
             if exc is None:
                 self._closed.set_result(None)
             else:
                 self._closed.set_exception(exc)
         super().connection_lost(exc)
-        self._stream_reader_wr = None
-        self._stream_writer = None
+        self._stream_wr = None
         self._transport = None
 
     def data_received(self, data):
-        reader = self._stream_reader
-        if reader is not None:
-            reader.feed_data(data)
+        if self._reject_connection:
+            return
+        self._stream.feed_data(data)
 
     def eof_received(self):
-        reader = self._stream_reader
-        if reader is not None:
-            reader.feed_eof()
+        if self._reject_connection:
+            return
+        self._stream.feed_eof()
         if self._over_ssl:
             # Prevent a warning in SSLProtocol.eof_received:
             # "returning true from eof_received()
