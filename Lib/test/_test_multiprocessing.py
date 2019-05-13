@@ -3765,6 +3765,32 @@ class _TestSharedMemory(BaseTestCase):
 
         smm.shutdown()
 
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
+        # bpo-36867: test that a SharedMemoryManager uses the
+        # same resource_tracker process as its parent.
+        import subprocess
+        cmd = '''if 1:
+            from multiprocessing.managers import SharedMemoryManager
+
+
+            smm = SharedMemoryManager()
+            smm.start()
+            sl = smm.ShareableList(range(10))
+            smm.shutdown()
+        '''
+        p = subprocess.Popen([sys.executable, '-E', '-c', cmd],
+                             stderr=subprocess.PIPE)
+        p.wait()
+
+        # Before bpo-36867 was fixed, a SharedMemoryManager not using the same
+        # resource_tracker process as its parent would make the parent's
+        # tracker complain about sl being leaked even though smm.shutdown()
+        # properly released sl.
+        stderr = p.stderr.read().strip().decode()
+        resource_tracker_msg_pattern = "resource_tracker"
+        self.assertNotRegex(stderr, resource_tracker_msg_pattern)
+
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
         with self.assertRaises(ValueError):
