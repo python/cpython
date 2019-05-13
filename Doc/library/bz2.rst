@@ -285,12 +285,11 @@ Using :func:`compress` and :func:`decompress` to demonstrate round-trip compress
 Using :class:`BZ2Compressor` for incremental compression:
 
     >>> import bz2
-    >>> import os
     >>>
     >>> def gen_data(chunks=10, chunksize=1000):
     ...     """Yield incremental blocks of chunksize bytes."""
     ...     for _ in range(chunks):
-    ...         yield os.urandom(chunksize)
+    ...         yield b"z" * chunksize
     ...
     >>> comp = bz2.BZ2Compressor()
     >>> out = b""
@@ -301,6 +300,10 @@ Using :class:`BZ2Compressor` for incremental compression:
     >>> # Finish the compression process.  Call this once you have
     >>> # finished providing data to the compressor.
     >>> out = out + comp.flush()
+
+The example above uses a very "nonrandom" stream of data
+(a stream of `b"z"` chunks).  Random data tends to compress poorly,
+while ordered, repetitive data usually yields a high compression ratio.
 
 Writing and reading a bzip2-compressed file in binary mode:
 
