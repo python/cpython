@@ -3788,8 +3788,7 @@ class _TestSharedMemory(BaseTestCase):
         # tracker complain about sl being leaked even though smm.shutdown()
         # properly released sl.
         stderr = p.stderr.read().strip().decode()
-        resource_tracker_msg_pattern = "resource_tracker"
-        self.assertNotRegex(stderr, resource_tracker_msg_pattern)
+        self.assertNotRegex(stderr, "resource_tracker")
 
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
