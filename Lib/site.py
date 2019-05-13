@@ -604,24 +604,22 @@ if not sys.flags.no_site:
     main()
 
 def custsite_info(sname, usepath) :
-  if usepath :
-     print("%s ON: %s" % (sname , usepath) )
-  else :
-     print("%s OFF" % (sname) )
+    if usepath :
+        print("%s ON: %s" % (sname , usepath) )
+    else :
+        print("%s OFF" % (sname) )
 
 
 def envpath_info(vname) :
-  env = os.environ.copy()
-  strpath = env[vname]
-  if strpath == "" :
-     return
-
-  print("env[%s] = [" % vname)
-  for vdir in strpath.split(';') :
-    if vdir :
-      print("  %s" % (vdir))
-
-  print("]")
+    env = os.environ.copy()
+    strpath = env[vname]
+    if strpath == "" :
+       return
+    print("env[%s] = [" % vname)
+    for vdir in strpath.split(';') :
+        if vdir :
+            print("  %s" % (vdir))
+    print("]")
 
 
 def _script():
