@@ -149,7 +149,9 @@ PySys_Audit(const char *event, const char *argFormat, ...)
         va_start(args, argFormat);
         eventArgs = Py_VaBuildValue(argFormat, args);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
-            eventArgs = PyTuple_Pack(1, eventArgs);
+            PyObject *argTuple = PyTuple_Pack(1, eventArgs);
+            Py_DECREF(eventArgs);
+            eventArgs = argTuple;
         }
     } else {
         eventArgs = PyTuple_New(0);

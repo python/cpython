@@ -38,8 +38,8 @@ else:
 TEMPDIR = os.path.abspath(TEMPDIR)
 
 if hasattr(sys, 'addaudithook'):
-    # Add an auditing hook for all tests to ensure these paths are tested
-    def _test_audit_hook(*a):
+    # Add an auditing hook for all tests to ensure PySys_Audit is tested
+    def _test_audit_hook(name, args):
         pass
     sys.addaudithook(_test_audit_hook)
 
