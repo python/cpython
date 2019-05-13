@@ -445,18 +445,20 @@ _normal_accessor = _NormalAccessor()
 # Globbing helpers
 #
 
-def _make_selector(pattern_parts):
+def _make_selector(pattern_parts, case_sensitive=True):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
     if pat == '**':
         cls = _RecursiveWildcardSelector
+        return cls(pat, child_parts, case_sensitive)
     elif '**' in pat:
         raise ValueError("Invalid pattern: '**' can only be an entire path component")
     elif _is_wildcard_pattern(pat):
         cls = _WildcardSelector
+        return cls(pat, child_parts, case_sensitive)
     else:
         cls = _PreciseSelector
-    return cls(pat, child_parts)
+        return cls(pat, child_parts)
 
 if hasattr(functools, "lru_cache"):
     _make_selector = functools.lru_cache()(_make_selector)
@@ -466,10 +468,10 @@ class _Selector:
     """A selector matches a specific glob pattern part against the children
     of a given path."""
 
-    def __init__(self, child_parts):
+    def __init__(self, child_parts, case_sensitive=True):
         self.child_parts = child_parts
         if child_parts:
-            self.successor = _make_selector(child_parts)
+            self.successor = _make_selector(child_parts, case_sensitive)
             self.dironly = True
         else:
             self.successor = _TerminatingSelector()
@@ -511,8 +513,11 @@ class _PreciseSelector(_Selector):
 
 class _WildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts):
-        self.pat = re.compile(fnmatch.translate(pat))
+    def __init__(self, pat, child_parts, case_sensitive=True):
+        if case_sensitive:
+            self.pat = re.compile(fnmatch.translate(pat))
+        else:
+            self.pat = re.compile(fnmatch.translate(pat), re.I)
         _Selector.__init__(self, child_parts)
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
@@ -534,8 +539,8 @@ class _WildcardSelector(_Selector):
 
 class _RecursiveWildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts):
-        _Selector.__init__(self, child_parts)
+    def __init__(self, pat, child_parts, case_sensitive=True):
+        _Selector.__init__(self, child_parts, case_sensitive)
 
     def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
@@ -1090,9 +1095,12 @@ class Path(PurePath):
             if self._closed:
                 self._raise_closed()
 
-    def glob(self, pattern):
+    def glob(self, pattern, case_sensitive=True):
         """Iterate over this subtree and yield all existing files (of any
-        kind, including directories) matching the given relative pattern.
+        kind, including directories) matching the given pattern.
+
+        If @case_sensitive is False, @pattern would not be case sensitive.
+        e.g., you could get a.TIF by Path.glob("*.tif", case_sensitive=False)
         """
         if not pattern:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
@@ -1100,20 +1108,22 @@ class Path(PurePath):
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        selector = _make_selector(tuple(pattern_parts))
+        selector = _make_selector(tuple(pattern_parts), case_sensitive)
         for p in selector.select_from(self):
             yield p
 
-    def rglob(self, pattern):
+    def rglob(self, pattern, case_sensitive=True):
         """Recursively yield all existing files (of any kind, including
-        directories) matching the given relative pattern, anywhere in
-        this subtree.
+        directories) matching the given pattern, anywhere in this subtree.
+
+        If @case_sensitive is False, @pattern would not be case sensitive.
+        e.g., you could get a.TIF by Path.rglob("*.tif", case_sensitive=False)
         """
         pattern = self._flavour.casefold(pattern)
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        selector = _make_selector(("**",) + tuple(pattern_parts))
+        selector = _make_selector(("**",) + tuple(pattern_parts), case_sensitive)
         for p in selector.select_from(self):
             yield p
 
