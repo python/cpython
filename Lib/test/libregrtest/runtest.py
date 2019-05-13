@@ -24,7 +24,7 @@ SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
-TEST_DID_NOT_RUN = -6   # error in a child process
+TEST_DID_NOT_RUN = -6
 
 _FORMAT_TEST_RESULT = {
     PASSED: '%s passed',
@@ -62,6 +62,15 @@ NOTTESTS = set()
 
 # used by --findleaks, store for gc.garbage
 FOUND_GARBAGE = []
+
+
+def is_failed(result, ns):
+    ok = result.result
+    if ok in (PASSED, RESOURCE_DENIED, SKIPPED, TEST_DID_NOT_RUN):
+        return False
+    if ok == ENV_CHANGED:
+        return ns.fail_env_changed
+    return True
 
 
 def format_test_result(result):

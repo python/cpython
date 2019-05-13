@@ -16,7 +16,7 @@ from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
     INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
-    PROGRESS_MIN_TIME, format_test_result)
+    PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
@@ -404,7 +404,7 @@ class Regrtest:
             test_time = time.monotonic() - start_time
             if test_time >= PROGRESS_MIN_TIME:
                 previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result[0] == PASSED:
+            elif result.result == PASSED:
                 # be quiet: say nothing if the test passed shortly
                 previous_test = None
 
@@ -412,6 +412,9 @@ class Regrtest:
             for module in sys.modules.keys():
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
+
+            if self.ns.failfast and is_failed(result, self.ns):
+                break
 
         if previous_test:
             print(previous_test)
