@@ -1,0 +1,1 @@
+Skip specific nntplib and ssl networking tests when they would otherwise fail due to a modern OS or distro with a default OpenSSL policy of rejecting connections to servers with weak certificates or disabling TLS below TLSv1.2.

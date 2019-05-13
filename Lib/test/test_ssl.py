@@ -19,6 +19,7 @@ import urllib2
 import traceback
 import weakref
 import platform
+import re
 import functools
 from contextlib import closing
 
@@ -158,6 +159,36 @@ def skip_if_broken_ubuntu_ssl(func):
         return f
     else:
         return func
+
+def skip_if_openssl_cnf_minprotocol_gt_tls1(func):
+    """Skip a test if the OpenSSL config MinProtocol is > TLSv1.
+    OS distros with an /etc/ssl/openssl.cnf and MinProtocol set often do so to
+    require TLSv1.2 or higher (Debian Buster).  Some of our tests for older
+    protocol versions will fail under such a config.
+    Alternative workaround: Run this test in a process with
+    OPENSSL_CONF=/dev/null in the environment.
+    """
+    @functools.wraps(func)
+    def f(*args, **kwargs):
+        openssl_cnf = os.environ.get("OPENSSL_CONF", "/etc/ssl/openssl.cnf")
+        try:
+            with open(openssl_cnf, "r") as config:
+                for line in config:
+                    match = re.match(r"MinProtocol\s*=\s*(TLSv\d+\S*)", line)
+                    if match:
+                        tls_ver = match.group(1)
+                        if tls_ver > "TLSv1":
+                            raise unittest.SkipTest(
+                                "%s has MinProtocol = %s which is > TLSv1." %
+                                (openssl_cnf, tls_ver))
+        except (EnvironmentError, UnicodeDecodeError) as err:
+            # no config file found, etc.
+            if support.verbose:
+                sys.stdout.write("\n Could not scan %s for MinProtocol: %s\n"
+                                 % (openssl_cnf, err))
+        return func(*args, **kwargs)
+    return f
+
 
 needs_sni = unittest.skipUnless(ssl.HAS_SNI, "SNI support needed for this test")
 
@@ -2351,6 +2382,7 @@ else:
                                client_options=ssl.OP_NO_TLSv1)
 
         @skip_if_broken_ubuntu_ssl
+        @skip_if_openssl_cnf_minprotocol_gt_tls1
         def test_protocol_sslv23(self):
             """Connecting to an SSLv23 server with various client options"""
             if support.verbose:
@@ -2428,6 +2460,7 @@ else:
         @skip_if_broken_ubuntu_ssl
         @unittest.skipUnless(hasattr(ssl, "PROTOCOL_TLSv1_1"),
                              "TLS version 1.1 not supported.")
+        @skip_if_openssl_cnf_minprotocol_gt_tls1
         def test_protocol_tlsv1_1(self):
             """Connecting to a TLSv1.1 server with various client options.
                Testing against older TLS versions."""
