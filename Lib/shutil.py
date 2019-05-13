@@ -359,6 +359,9 @@ def copystat(src, dst, *, follow_symlinks=True):
     mode = stat.S_IMODE(st.st_mode)
     lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
         follow_symlinks=follow)
+    # We must copy extended attributes before the file is (potentially)
+    # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
+    _copyxattr(src, dst, follow_symlinks=follow)
     try:
         lookup("chmod")(dst, mode, follow_symlinks=follow)
     except NotImplementedError:
@@ -382,7 +385,6 @@ def copystat(src, dst, *, follow_symlinks=True):
                     break
             else:
                 raise
-    _copyxattr(src, dst, follow_symlinks=follow)
 
 def copy(src, dst, *, follow_symlinks=True):
     """Copy data and mode bits ("cp src dst"). Return the file's destination.
@@ -1309,9 +1311,20 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     use_bytes = isinstance(cmd, bytes)
 
     if path is None:
-        path = os.environ.get("PATH", os.defpath)
+        path = os.environ.get("PATH", None)
+        if path is None:
+            try:
+                path = os.confstr("CS_PATH")
+            except (AttributeError, ValueError):
+                # os.confstr() or CS_PATH is not available
+                path = os.defpath
+        # bpo-35755: Don't use os.defpath if the PATH environment variable is
+        # set to an empty string
+
+    # PATH='' doesn't match, whereas PATH=':' looks in the current directory
     if not path:
         return None
+
     if use_bytes:
         path = os.fsencode(path)
         path = path.split(os.fsencode(os.pathsep))

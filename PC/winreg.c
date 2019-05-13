@@ -12,6 +12,7 @@
 
 */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
 #include "windows.h"
@@ -520,7 +521,7 @@ fixupMultiSZ(wchar_t **str, wchar_t *data, int len)
     Q = data + len;
     for (P = data, i = 0; P < Q && *P != '\0'; P++, i++) {
         str[i] = P;
-        for(; *P != '\0'; P++)
+        for (; P < Q && *P != '\0'; P++)
             ;
     }
 }
@@ -1604,13 +1605,16 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     long rc;
 
     if (type != REG_SZ) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Type must be winreg.REG_SZ");
+        PyErr_SetString(PyExc_TypeError, "type must be winreg.REG_SZ");
+        return NULL;
+    }
+    if ((size_t)value_length >= PY_DWORD_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "value is too long");
         return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = RegSetValueW(key, sub_key, REG_SZ, value, value_length+1);
+    rc = RegSetValueW(key, sub_key, REG_SZ, value, (DWORD)(value_length + 1));
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");

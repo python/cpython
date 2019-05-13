@@ -535,7 +535,7 @@ PyImport_Cleanup(void)
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
        machinery. */
-    _PyGC_DumpShutdownStats();
+    _PyGC_DumpShutdownStats(&_PyRuntime);
 
     /* Now, if there are any modules left alive, clear their globals to
        minimize potential leaks.  All C extension modules actually end
@@ -837,14 +837,18 @@ PyImport_AddModule(const char *name)
 static void
 remove_module(PyObject *name)
 {
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
     PyObject *modules = PyImport_GetModuleDict();
+    if (!PyMapping_HasKey(modules, name)) {
+        goto out;
+    }
     if (PyMapping_DelItem(modules, name) < 0) {
-        if (!PyMapping_HasKey(modules, name)) {
-            return;
-        }
         Py_FatalError("import:  deleting existing key in "
                       "sys.modules failed");
     }
+out:
+    PyErr_Restore(type, value, traceback);
 }
 
 
@@ -966,11 +970,10 @@ exec_code_in_module(PyObject *name, PyObject *module_dict, PyObject *code_object
     Py_DECREF(v);
 
     m = PyImport_GetModule(name);
-    if (m == NULL) {
+    if (m == NULL && !PyErr_Occurred()) {
         PyErr_Format(PyExc_ImportError,
                      "Loaded module %R not found in sys.modules",
                      name);
-        return NULL;
     }
 
     return m;
@@ -1735,6 +1738,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     mod = PyImport_GetModule(abs_name);
+    if (mod == NULL && PyErr_Occurred()) {
+        goto error;
+    }
+
     if (mod != NULL && mod != Py_None) {
         _Py_IDENTIFIER(__spec__);
         _Py_IDENTIFIER(_lock_unlock_module);
@@ -1810,9 +1817,11 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                 final_mod = PyImport_GetModule(to_return);
                 Py_DECREF(to_return);
                 if (final_mod == NULL) {
-                    PyErr_Format(PyExc_KeyError,
-                                 "%R not in sys.modules as expected",
-                                 to_return);
+                    if (!PyErr_Occurred()) {
+                        PyErr_Format(PyExc_KeyError,
+                                     "%R not in sys.modules as expected",
+                                     to_return);
+                    }
                     goto error;
                 }
             }
@@ -1875,6 +1884,10 @@ PyImport_ReloadModule(PyObject *m)
     PyObject *reloaded_module = NULL;
     PyObject *imp = _PyImport_GetModuleId(&PyId_imp);
     if (imp == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+
         imp = PyImport_ImportModule("imp");
         if (imp == NULL) {
             return NULL;
@@ -1983,13 +1996,14 @@ _imp_extension_suffixes_impl(PyObject *module)
 /*[clinic end generated code: output=0bf346e25a8f0cd3 input=ecdeeecfcb6f839e]*/
 {
     PyObject *list;
-    const char *suffix;
-    unsigned int index = 0;
 
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
 #ifdef HAVE_DYNAMIC_LOADING
+    const char *suffix;
+    unsigned int index = 0;
+
     while ((suffix = _PyImport_DynLoadFiletab[index])) {
         PyObject *item = PyUnicode_FromString(suffix);
         if (item == NULL) {
@@ -2295,7 +2309,7 @@ PyInit__imp(void)
     if (d == NULL)
         goto failure;
     _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
-    PyObject *pyc_mode = PyUnicode_FromString(config->_check_hash_pycs_mode);
+    PyObject *pyc_mode = PyUnicode_FromWideChar(config->check_hash_pycs_mode, -1);
     if (pyc_mode == NULL) {
         goto failure;
     }

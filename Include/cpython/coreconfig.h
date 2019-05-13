@@ -5,23 +5,21 @@
 extern "C" {
 #endif
 
-/* --- _PyArgv ---------------------------------------------------- */
-
-typedef struct {
-    int argc;
-    int use_bytes_argv;
-    char **bytes_argv;
-    wchar_t **wchar_argv;
-} _PyArgv;
-
-
 /* --- _PyInitError ----------------------------------------------- */
 
 typedef struct {
-    const char *prefix;
-    const char *msg;
-    int user_err;
+    enum {
+        _Py_INIT_ERR_TYPE_OK=0,
+        _Py_INIT_ERR_TYPE_ERROR=1,
+        _Py_INIT_ERR_TYPE_EXIT=2
+    } _type;
+    const char *_func;
+    const char *err_msg;
+#ifdef MS_WINDOWS
+    unsigned int exitcode;
+#else
     int exitcode;
+#endif
 } _PyInitError;
 
 /* Almost all errors causing Python initialization to fail */
@@ -33,22 +31,46 @@ typedef struct {
 #endif
 
 #define _Py_INIT_OK() \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = -1}
-#define _Py_INIT_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 0, .exitcode = -1}
-/* Error that can be fixed by the user like invalid input parameter.
-   Don't abort() the process on such error. */
-#define _Py_INIT_USER_ERR(MSG) \
-    (_PyInitError){.prefix = _Py_INIT_GET_FUNC(), .msg = (MSG), .user_err = 1, .exitcode = -1}
-#define _Py_INIT_NO_MEMORY() _Py_INIT_USER_ERR("memory allocation failed")
+    (_PyInitError){._type = _Py_INIT_ERR_TYPE_OK,}
+    /* other fields are set to 0 */
+#define _Py_INIT_ERR(ERR_MSG) \
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_ERROR, \
+        ._func = _Py_INIT_GET_FUNC(), \
+        .err_msg = (ERR_MSG)}
+        /* other fields are set to 0 */
+#define _Py_INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
 #define _Py_INIT_EXIT(EXITCODE) \
-    (_PyInitError){.prefix = NULL, .msg = NULL, .user_err = 0, .exitcode = (EXITCODE)}
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_EXIT, \
+        .exitcode = (EXITCODE)}
+#define _Py_INIT_IS_ERROR(err) \
+    (err._type == _Py_INIT_ERR_TYPE_ERROR)
+#define _Py_INIT_IS_EXIT(err) \
+    (err._type == _Py_INIT_ERR_TYPE_EXIT)
 #define _Py_INIT_FAILED(err) \
-    (err.msg != NULL || err.exitcode != -1)
+    (err._type != _Py_INIT_ERR_TYPE_OK)
+
+/* --- _PyWstrList ------------------------------------------------ */
+
+typedef struct {
+    /* If length is greater than zero, items must be non-NULL
+       and all items strings must be non-NULL */
+    Py_ssize_t length;
+    wchar_t **items;
+} _PyWstrList;
+
+#define _PyWstrList_INIT (_PyWstrList){.length = 0, .items = NULL}
+
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
+#define _Py_CONFIG_VERSION 1
+
 typedef struct {
+    int _config_version;  /* Internal configuration version,
+                             used for ABI compatibility */
+
     /* If greater than 0, enable isolated mode: sys.path contains
        neither the script's directory nor the user's site-packages directory.
 
@@ -61,8 +83,20 @@ typedef struct {
        set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
 
-    int coerce_c_locale;    /* PYTHONCOERCECLOCALE, -1 means unknown */
-    int coerce_c_locale_warn; /* PYTHONCOERCECLOCALE=warn */
+    /* Coerce the LC_CTYPE locale if it's equal to "C"? (PEP 538)
+
+       Set to 0 by PYTHONCOERCECLOCALE=0. Set to 1 by PYTHONCOERCECLOCALE=1.
+       Set to 2 if the user preferred LC_CTYPE locale is "C".
+
+       If it is equal to 1, LC_CTYPE locale is read to decide it it should be
+       coerced or not (ex: PYTHONCOERCECLOCALE=1). Internally, it is set to 2
+       if the LC_CTYPE locale must be coerced. */
+    int coerce_c_locale;
+
+    /* Emit a warning if the LC_CTYPE locale is coerced?
+
+       Disabled by default. Set to 1 by PYTHONCOERCECLOCALE=warn. */
+    int coerce_c_locale_warn;
 
 #ifdef MS_WINDOWS
     /* If greater than 1, use the "mbcs" encoding instead of the UTF-8
@@ -76,9 +110,17 @@ typedef struct {
     int legacy_windows_fs_encoding;
 #endif
 
-    /* Enable UTF-8 mode?
-       Set by -X utf8 command line option and PYTHONUTF8 environment variable.
-       If set to -1 (default), inherit Py_UTF8Mode value. */
+    /* Enable UTF-8 mode? (PEP 540)
+
+       Disabled by default (equals to 0).
+
+       Set to 1 by "-X utf8" and "-X utf8=1" command line options.
+       Set to 1 by PYTHONUTF8=1 environment variable.
+
+       Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
+
+       If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
+       "POSIX", otherwise inherit Py_UTF8Mode value. */
     int utf8_mode;
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
@@ -95,16 +137,22 @@ typedef struct {
 #define _PyPreConfig_INIT \
     (_PyPreConfig){ \
         _PyPreConfig_WINDOWS_INIT \
+        ._config_version = _Py_CONFIG_VERSION, \
         .isolated = -1, \
         .use_environment = -1, \
-        .coerce_c_locale = -1, \
-        .utf8_mode = -1}
+        .dev_mode = -1, \
+        .allocator = NULL}
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */
 
 typedef struct {
-    _PyPreConfig preconfig;
+    int _config_version;  /* Internal configuration version,
+                             used for ABI compatibility */
+
+    int isolated;         /* Isolated mode? see _PyPreConfig.isolated */
+    int use_environment;  /* Use environment variables? see _PyPreConfig.use_environment */
+    int dev_mode;         /* Development mode? See _PyPreConfig.dev_mode */
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -159,22 +207,15 @@ typedef struct {
 
        See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
        */
-    char *filesystem_encoding;
-    char *filesystem_errors;
+    wchar_t *filesystem_encoding;
+    wchar_t *filesystem_errors;
 
-    wchar_t *pycache_prefix; /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
-
-    wchar_t *program_name;  /* Program name, see also Py_GetProgramName() */
-    int argc;               /* Number of command line arguments,
-                               -1 means unset */
-    wchar_t **argv;         /* Command line arguments */
-    wchar_t *program;       /* argv[0] or "" */
-
-    int nxoption;           /* Number of -X options */
-    wchar_t **xoptions;     /* -X options */
-
-    int nwarnoption;        /* Number of warnings options */
-    wchar_t **warnoptions;  /* Warnings options */
+    wchar_t *pycache_prefix;  /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
+    wchar_t *program_name;    /* Program name, see also Py_GetProgramName() */
+    _PyWstrList argv;         /* Command line arguments */
+    wchar_t *program;         /* argv[0] or "" */
+    _PyWstrList xoptions;     /* Command line -X options */
+    _PyWstrList warnoptions;  /* Warnings options */
 
     /* Path configuration inputs */
     wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
@@ -182,9 +223,11 @@ typedef struct {
                                see also Py_SetPythonHome(). */
 
     /* Path configuration outputs */
-    int nmodule_search_path;        /* Number of sys.path paths,
-                                       -1 means unset */
-    wchar_t **module_search_paths;  /* sys.path paths */
+    int use_module_search_paths;  /* If non-zero, use module_search_paths */
+    _PyWstrList module_search_paths;  /* sys.path paths. Computed if
+                                       use_module_search_paths is equal
+                                       to zero. */
+
     wchar_t *executable;    /* sys.executable */
     wchar_t *prefix;        /* sys.prefix */
     wchar_t *base_prefix;   /* sys.base_prefix */
@@ -291,13 +334,13 @@ typedef struct {
        Value set from PYTHONIOENCODING environment variable and
        Py_SetStandardStreamEncoding() function.
        See also 'stdio_errors' attribute. */
-    char *stdio_encoding;
+    wchar_t *stdio_encoding;
 
     /* Error handler of sys.stdin and sys.stdout.
        Value set from PYTHONIOENCODING environment variable and
        Py_SetStandardStreamEncoding() function.
        See also 'stdio_encoding' attribute. */
-    char *stdio_errors;
+    wchar_t *stdio_errors;
 
 #ifdef MS_WINDOWS
     /* If greater than zero, use io.FileIO instead of WindowsConsoleIO for sys
@@ -329,7 +372,7 @@ typedef struct {
        Needed by freeze_importlib. */
     int _install_importlib;
 
-    /* Value of the --check-hash-based-pycs configure option. Valid values:
+    /* Value of the --check-hash-based-pycs command line option:
 
        - "default" means the 'check_source' flag in hash-based pycs
          determines invalidation
@@ -338,11 +381,10 @@ typedef struct {
        - "never" causes the interpreter to always assume hash-based pycs are
          valid
 
-       Set by the --check-hash-based-pycs command line option.
        The default value is "default".
 
        See PEP 552 "Deterministic pycs" for more details. */
-    const char *_check_hash_pycs_mode;
+    wchar_t *check_hash_pycs_mode;
 
     /* If greater than 0, suppress _PyPathConfig_Calculate() warnings.
 
@@ -361,13 +403,15 @@ typedef struct {
 #define _PyCoreConfig_INIT \
     (_PyCoreConfig){ \
         _PyCoreConfig_WINDOWS_INIT \
-        .preconfig = _PyPreConfig_INIT, \
+        ._config_version = _Py_CONFIG_VERSION, \
+        .isolated = -1, \
+        .use_environment = -1, \
+        .dev_mode = -1, \
         .install_signal_handlers = 1, \
         .use_hash_seed = -1, \
         .faulthandler = -1, \
         .tracemalloc = -1, \
-        .argc = -1, \
-        .nmodule_search_path = -1, \
+        .use_module_search_paths = 0, \
         .site_import = -1, \
         .bytes_warning = -1, \
         .inspect = -1, \
@@ -380,15 +424,9 @@ typedef struct {
         .user_site_directory = -1, \
         .buffered_stdio = -1, \
         ._install_importlib = 1, \
-        ._check_hash_pycs_mode = "default", \
+        .check_hash_pycs_mode = NULL, \
         ._frozen = -1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
-
-
-/* --- Function used for testing ---------------------------------- */
-
-PyAPI_FUNC(PyObject *) _Py_GetGlobalVariablesAsDict(void);
-PyAPI_FUNC(PyObject *) _PyCoreConfig_AsDict(const _PyCoreConfig *config);
 
 #ifdef __cplusplus
 }

@@ -4,59 +4,97 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN defined"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* --- _Py_wstrlist ----------------------------------------------- */
+#include "pycore_pystate.h"   /* _PyRuntimeState */
 
-PyAPI_FUNC(void) _Py_wstrlist_clear(
-    int len,
-    wchar_t **list);
-PyAPI_FUNC(wchar_t**) _Py_wstrlist_copy(
-    int len,
-    wchar_t * const *list);
-PyAPI_FUNC(_PyInitError) _Py_wstrlist_append(
-    int *len,
-    wchar_t ***list,
-    const wchar_t *str);
-PyAPI_FUNC(PyObject*) _Py_wstrlist_as_pylist(
-    int len,
-    wchar_t **list);
+
+/* --- _PyWstrList ------------------------------------------------ */
+
+#ifndef NDEBUG
+PyAPI_FUNC(int) _PyWstrList_CheckConsistency(const _PyWstrList *list);
+#endif
+PyAPI_FUNC(void) _PyWstrList_Clear(_PyWstrList *list);
+PyAPI_FUNC(int) _PyWstrList_Copy(_PyWstrList *list,
+    const _PyWstrList *list2);
+PyAPI_FUNC(int) _PyWstrList_Append(_PyWstrList *list,
+    const wchar_t *item);
+PyAPI_FUNC(PyObject*) _PyWstrList_AsList(const _PyWstrList *list);
+PyAPI_FUNC(int) _PyWstrList_Extend(_PyWstrList *list,
+    const _PyWstrList *list2);
+
 
 /* --- _PyArgv ---------------------------------------------------- */
 
-PyAPI_FUNC(_PyInitError) _PyArgv_Decode(const _PyArgv *args,
-    wchar_t*** argv_p);
+typedef struct {
+    int argc;
+    int use_bytes_argv;
+    char **bytes_argv;
+    wchar_t **wchar_argv;
+} _PyArgv;
 
-/* --- Py_GetArgcArgv() helpers ----------------------------------- */
+PyAPI_FUNC(_PyInitError) _PyArgv_AsWstrList(const _PyArgv *args,
+    _PyWstrList *list);
 
-PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
 
-/* --- _PyPreConfig ----------------------------------------------- */
+/* --- Helper functions ------------------------------------------- */
 
 PyAPI_FUNC(int) _Py_str_to_int(
     const char *str,
     int *result);
 PyAPI_FUNC(const wchar_t*) _Py_get_xoption(
-    int nxoption,
-    wchar_t * const *xoptions,
+    const _PyWstrList *xoptions,
     const wchar_t *name);
+PyAPI_FUNC(const char*) _Py_GetEnv(
+    int use_environment,
+    const char *name);
+PyAPI_FUNC(void) _Py_get_env_flag(
+    int use_environment,
+    int *flag,
+    const char *name);
+
+/* Py_GetArgcArgv() helper */
+PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
+
+
+/* --- _PyPreCmdline ------------------------------------------------- */
+
+typedef struct {
+    _PyWstrList argv;
+    _PyWstrList xoptions;     /* "-X value" option */
+    int isolated;             /* -I option */
+    int use_environment;      /* -E option */
+    int dev_mode;             /* -X dev and PYTHONDEVMODE */
+} _PyPreCmdline;
+
+#define _PyPreCmdline_INIT \
+    (_PyPreCmdline){ \
+        .use_environment = -1, \
+        .isolated = -1, \
+        .dev_mode = -1}
+/* Note: _PyPreCmdline_INIT sets other fields to 0/NULL */
+
+PyAPI_FUNC(void) _PyPreCmdline_Clear(_PyPreCmdline *cmdline);
+PyAPI_FUNC(_PyInitError) _PyPreCmdline_SetArgv(_PyPreCmdline *cmdline,
+    const _PyArgv *args);
+PyAPI_FUNC(int) _PyPreCmdline_SetCoreConfig(
+    const _PyPreCmdline *cmdline,
+    _PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline,
+    const _PyPreConfig *preconfig);
+
+
+/* --- _PyPreConfig ----------------------------------------------- */
 
 PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
 PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
-PyAPI_FUNC(void) _PyPreConfig_GetGlobalConfig(_PyPreConfig *config);
-PyAPI_FUNC(void) _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config);
-PyAPI_FUNC(const char*) _PyPreConfig_GetEnv(const _PyPreConfig *config,
-    const char *name);
-PyAPI_FUNC(void) _Py_get_env_flag(_PyPreConfig *config,
-    int *flag,
-    const char *name);
-PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config);
-PyAPI_FUNC(int) _PyPreConfig_AsDict(const _PyPreConfig *config,
-    PyObject *dict);
-PyAPI_FUNC(_PyInitError) _PyPreConfig_ReadFromArgv(_PyPreConfig *config,
+PyAPI_FUNC(PyObject*) _PyPreConfig_AsDict(const _PyPreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
+    const _PyCoreConfig *core_config);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
     const _PyArgv *args);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(_PyPreConfig *config);
 
@@ -64,28 +102,36 @@ PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(_PyPreConfig *config);
 /* --- _PyCoreConfig ---------------------------------------------- */
 
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
-PyAPI_FUNC(int) _PyCoreConfig_Copy(
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
+    wchar_t **config_str,
+    const wchar_t *str);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
+    wchar_t **config_str,
+    const char *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config);
-PyAPI_FUNC(const char*) _PyCoreConfig_GetEnv(
-    const _PyCoreConfig *config,
-    const char *name);
-PyAPI_FUNC(int) _PyCoreConfig_GetEnvDup(
-    const _PyCoreConfig *config,
-    wchar_t **dest,
-    wchar_t *wname,
-    char *name);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config,
-    const _PyPreConfig *preconfig);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_ReadFromArgv(_PyCoreConfig *config,
-    const _PyArgv *args,
-    const _PyPreConfig *preconfig);
-PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config,
+    _PyRuntimeState *runtime);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPyArgv(
+    _PyCoreConfig *config,
+    const _PyArgv *args);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
+    _PyCoreConfig *config,
+    int argc,
+    char **argv);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
+    int argc,
+    wchar_t **argv);
+
+
+/* --- Function used for testing ---------------------------------- */
+
+PyAPI_FUNC(PyObject*) _Py_GetConfigsAsDict(void);
 
 #ifdef __cplusplus
 }

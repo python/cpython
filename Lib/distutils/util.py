@@ -15,7 +15,7 @@ from distutils.spawn import spawn
 from distutils import log
 from distutils.errors import DistutilsByteCompileError
 
-def get_platform ():
+def get_host_platform():
     """Return a string that identifies the current platform.  This is used mainly to
     distinguish platform-specific build directories and platform-specific built
     distributions.  Typically includes the OS name and version and the
@@ -38,6 +38,8 @@ def get_platform ():
     if os.name == 'nt':
         if 'amd64' in sys.version.lower():
             return 'win-amd64'
+        if '(arm)' in sys.version.lower():
+            return 'win-arm32'
         return sys.platform
 
     # Set for cross builds explicitly
@@ -90,8 +92,16 @@ def get_platform ():
 
     return "%s-%s-%s" % (osname, release, machine)
 
-# get_platform ()
-
+def get_platform():
+    if os.name == 'nt':
+        TARGET_TO_PLAT = {
+            'x86' : 'win32',
+            'x64' : 'win-amd64',
+            'arm' : 'win-arm32',
+        }
+        return TARGET_TO_PLAT.get(os.environ.get('VSCMD_ARG_TGT_ARCH')) or get_host_platform()
+    else:
+        return get_host_platform()
 
 def convert_path (pathname):
     """Return 'pathname' as a name that will work on the native filesystem,

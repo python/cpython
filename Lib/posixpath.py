@@ -18,7 +18,7 @@ pardir = '..'
 extsep = '.'
 sep = '/'
 pathsep = ':'
-defpath = ':/bin:/usr/bin'
+defpath = '/bin:/usr/bin'
 altsep = None
 devnull = '/dev/null'
 
@@ -51,11 +51,7 @@ def _get_sep(path):
 
 def normcase(s):
     """Normalize case of pathname.  Has no effect under Posix"""
-    s = os.fspath(s)
-    if not isinstance(s, (bytes, str)):
-        raise TypeError("normcase() argument must be str or bytes, "
-                        "not '{}'".format(s.__class__.__name__))
-    return s
+    return os.fspath(s)
 
 
 # Return whether a path is absolute.

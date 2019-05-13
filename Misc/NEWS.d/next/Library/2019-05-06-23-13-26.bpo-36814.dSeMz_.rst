@@ -1,0 +1,1 @@
+Fix an issue where os.posix_spawnp() would incorrectly raise a TypeError when file_actions is None.

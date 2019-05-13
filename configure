@@ -631,7 +631,9 @@ SRCDIRS
 THREADHEADERS
 LIBPL
 PY_ENABLE_SHARED
+LIBPYTHON
 EXT_SUFFIX
+ALT_SOABI
 SOABI
 LIBC
 LIBM
@@ -783,7 +785,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -815,6 +816,7 @@ with_suffix
 enable_shared
 enable_profiling
 with_pydebug
+with_trace_refs
 with_assertions
 enable_optimizations
 with_lto
@@ -895,7 +897,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1148,15 +1149,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1294,7 +1286,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1447,7 +1439,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1512,6 +1503,7 @@ Optional Packages:
                           compiler
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
+  --with-trace-refs       enable tracing references for debugging purpose
   --with-assertions       build with C assertions enabled
   --with-lto              Enable Link Time Optimization in any build. Disabled
                           by default.
@@ -3293,6 +3285,7 @@ then
     MACHDEP="$ac_md_system$ac_md_release"
 
     case $MACHDEP in
+	aix*) MACHDEP="aix";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -6344,8 +6337,30 @@ $as_echo "no" >&6; }
 fi
 
 
-# Check for --with-assertions. Py_DEBUG implies assertions, but also changes
-# the ABI. This allows enabling assertions without changing the ABI.
+# Check for --with-trace-refs
+# --with-trace-refs
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-trace-refs" >&5
+$as_echo_n "checking for --with-trace-refs... " >&6; }
+
+# Check whether --with-trace-refs was given.
+if test "${with_trace_refs+set}" = set; then :
+  withval=$with_trace_refs;
+else
+  with_trace_refs=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_trace_refs" >&5
+$as_echo "$with_trace_refs" >&6; }
+
+if test "$with_trace_refs" = "yes"
+then
+
+$as_echo "#define Py_TRACE_REFS 1" >>confdefs.h
+
+fi
+
+# Check for --with-assertions.
+# This allows enabling assertions without Py_DEBUG.
 assertions='false'
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-assertions" >&5
 $as_echo_n "checking for --with-assertions... " >&6; }
@@ -6824,6 +6839,19 @@ esac
 # compiler and platform.  BASECFLAGS tweaks need to be made even if the
 # user set OPT.
 
+case $CC in
+    *clang*)
+        cc_is_clang=1
+        ;;
+    *)
+        if $CC --version 2>&1 | grep -q clang
+        then
+            cc_is_clang=1
+        else
+            cc_is_clang=
+        fi
+esac
+
 # tweak OPT based on compiler and platform, only if the user didn't set
 # it on the command line
 
@@ -6836,19 +6864,6 @@ then
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
         fi
-
-        case $CC in
-            *clang*)
-                cc_is_clang=1
-                ;;
-            *)
-                if $CC --version 2>&1 | grep -q clang
-                then
-                    cc_is_clang=1
-                else
-                    cc_is_clang=
-                fi
-        esac
 
         if test -n "${cc_is_clang}"
         then
@@ -6888,6 +6903,26 @@ then
 	OPT="-O"
 	;;
     esac
+fi
+
+if test -n "${cc_is_clang}"
+then
+    # bpo-36618: Add -fmax-type-align=8 to CFLAGS when clang compiler is
+    # detected. The pymalloc memory allocator aligns memory on 8 bytes. On
+    # x86-64, clang expects alignment on 16 bytes by default and so uses MOVAPS
+    # instruction which can lead to segmentation fault. Instruct clang that
+    # Python is limited to alignemnt on 8 bytes to use MOVUPS instruction
+    # instead: slower but don't trigger a SIGSEGV if the memory is not aligned
+    # on 16 bytes.
+    #
+    # Sadly, the flag must be added to CFLAGS and not just CFLAGS_NODIST,
+    # since third party C extensions can have the same issue.
+    #
+    # Check if -fmax-type-align flag is supported (it's not supported by old
+    # clang versions):
+    if "$CC" -v --help 2>/dev/null |grep -- -fmax-type-align > /dev/null; then
+        CFLAGS="$CFLAGS -fmax-type-align=8"
+    fi
 fi
 
 
@@ -9507,12 +9542,6 @@ then
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
-
-		# Issue #18075: the default maximum stack size (8MBytes) is too
-		# small for the default recursion limit. Increase the stack size
-		# to ensure that tests don't crash
-		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
-
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -11229,7 +11258,6 @@ then
 
 $as_echo "#define WITH_PYMALLOC 1" >>confdefs.h
 
-    ABIFLAGS="${ABIFLAGS}m"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 $as_echo "$with_pymalloc" >&6; }
@@ -15077,12 +15105,13 @@ $as_echo "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
 # * --with-pydebug (adds a 'd')
-# * --with-pymalloc (adds a 'm')
-# * --with-wide-unicode (adds a 'u')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
 # would get a shared library ABI version tag of 'cpython-32dmu' and shared
 # libraries would be named 'foo.cpython-32dmu.so'.
+#
+# In Python 3.2 and older, --with-wide-unicode added a 'u' flag.
+# In Python 3.7 and older, --with-pymalloc added a 'm' flag.
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking ABIFLAGS" >&5
 $as_echo_n "checking ABIFLAGS... " >&6; }
@@ -15093,6 +15122,18 @@ $as_echo_n "checking SOABI... " >&6; }
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SOABI" >&5
 $as_echo "$SOABI" >&6; }
+
+# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
+if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
+  # Similar to SOABI but remove "d" flag from ABIFLAGS
+
+  ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
+
+cat >>confdefs.h <<_ACEOF
+#define ALT_SOABI "${ALT_SOABI}"
+_ACEOF
+
+fi
 
 
 case $ac_sys_system in
@@ -15107,6 +15148,14 @@ $as_echo_n "checking LDVERSION... " >&6; }
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 $as_echo "$LDVERSION" >&6; }
+
+# On Android the shared libraries must be linked with libpython.
+
+if test -z "$ANDROID_API_LEVEL"; then
+  LIBPYTHON=''
+else
+  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+fi
 
 
 if test x$PLATFORM_TRIPLET = x; then
@@ -16544,7 +16593,7 @@ do
 done
 
 
-SRCDIRS="Parser Objects Python Modules Programs"
+SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do

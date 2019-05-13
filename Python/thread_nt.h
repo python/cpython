@@ -143,6 +143,8 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
 
 unsigned long PyThread_get_thread_ident(void);
 
+unsigned long PyThread_get_thread_native_id(void);
+
 /*
  * Initialization of the C package, should not be needed.
  */
@@ -227,7 +229,21 @@ PyThread_get_thread_ident(void)
     return GetCurrentThreadId();
 }
 
-void
+/*
+ * Return the native Thread ID (TID) of the calling thread.
+ * The native ID of a thread is valid and guaranteed to be unique system-wide
+ * from the time the thread is created until the thread has been terminated.
+ */
+unsigned long
+PyThread_get_thread_native_id(void)
+{
+    if (!initialized)
+        PyThread_init_thread();
+
+    return GetCurrentThreadId();
+}
+
+void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
     dprintf(("%lu: PyThread_exit_thread called\n", PyThread_get_thread_ident()));

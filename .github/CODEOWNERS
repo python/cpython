@@ -11,6 +11,7 @@
 **/*context*                  @1st1
 **/*genobject*                @1st1
 **/*hamt*                     @1st1
+Objects/dict*                 @methane
 
 # Hashing
 **/*hashlib*                  @python/crypto-team
@@ -25,8 +26,8 @@
 # Ignoring importlib.h so as to not get flagged on
 # all pull requests that change the emitted
 # bytecode.
-**/*import*.c                 @python/import-team
-**/*import*.py                @python/import-team
+**/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 
 
 # SSL
@@ -42,12 +43,21 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
+# Parser/Pgen
+/Parser/pgen/                 @pablogsal
+
+# SQLite 3
+**/*sqlite*                   @berkerpeksag
+
 # subprocess
 **/*subprocess*               @gpshead
 
 # Windows
 /PC/                          @python/windows-team
 /PCbuild/                     @python/windows-team
+
+# Urllib
+**/*robotparser*              @berkerpeksag
 
 # Windows installer packages
 /Tools/msi/                   @python/windows-team

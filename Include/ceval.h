@@ -58,7 +58,6 @@ PyAPI_FUNC(int) PyEval_MergeCompilerFlags(PyCompilerFlags *cf);
 #endif
 
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
-PyAPI_FUNC(void) _PyEval_SignalReceived(void);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
 
 /* Protection against deeply nested recursive calls
@@ -192,14 +191,10 @@ PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
 PyAPI_FUNC(int)  PyEval_ThreadsInitialized(void);
 PyAPI_FUNC(void) PyEval_InitThreads(void);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyEval_FiniThreads(void);
-#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(void) PyEval_AcquireLock(void) Py_DEPRECATED(3.2);
 PyAPI_FUNC(void) PyEval_ReleaseLock(void) /* Py_DEPRECATED(3.2) */;
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
-PyAPI_FUNC(void) PyEval_ReInitThreads(void);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyEval_SetSwitchInterval(unsigned long microseconds);
@@ -221,7 +216,6 @@ PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(void);
 #endif
 
 /* Masks and values used by FORMAT_VALUE opcode. */

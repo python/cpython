@@ -1313,9 +1313,9 @@ if __name__ == "__main__":
     for o, v in opts:
         if o == '-h':
             H_FILE = v
-        if o == '-c':
+        elif o == '-c':
             C_FILE = v
-        if o == '-d':
+        elif o == '-d':
             dump_module = True
     if H_FILE and C_FILE:
         print('Must specify exactly one output file')

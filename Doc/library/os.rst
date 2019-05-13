@@ -1453,16 +1453,19 @@ features:
 .. _path_fd:
 
 * **specifying a file descriptor:**
-  For some functions, the *path* argument can be not only a string giving a path
-  name, but also a file descriptor.  The function will then operate on the file
-  referred to by the descriptor.  (For POSIX systems, Python will call the
-  ``f...`` version of the function.)
+  Normally the *path* argument provided to functions in the :mod:`os` module
+  must be a string specifying a file path.  However, some functions now
+  alternatively accept an open file descriptor for their *path* argument.
+  The function will then operate on the file referred to by the descriptor.
+  (For POSIX systems, Python will call the variant of the function prefixed
+  with ``f`` (e.g. call ``fchdir`` instead of ``chdir``).)
 
-  You can check whether or not *path* can be specified as a file descriptor on
-  your platform using :data:`os.supports_fd`.  If it is unavailable, using it
-  will raise a :exc:`NotImplementedError`.
+  You can check whether or not *path* can be specified as a file descriptor
+  for a particular function on your platform using :data:`os.supports_fd`.
+  If this functionality is unavailable, using it will raise a
+  :exc:`NotImplementedError`.
 
-  If the function also supports *dir_fd* or *follow_symlinks* arguments, it is
+  If the function also supports *dir_fd* or *follow_symlinks* arguments, it's
   an error to specify one of those when supplying *path* as a file descriptor.
 
 .. _dir_fd:
@@ -1471,23 +1474,24 @@ features:
   should be a file descriptor referring to a directory, and the path to operate
   on should be relative; path will then be relative to that directory.  If the
   path is absolute, *dir_fd* is ignored.  (For POSIX systems, Python will call
-  the ``...at`` or ``f...at`` version of the function.)
+  the variant of the function with an ``at`` suffix and possibly prefixed with
+  ``f`` (e.g. call ``faccessat`` instead of ``access``).
 
-  You can check whether or not *dir_fd* is supported on your platform using
-  :data:`os.supports_dir_fd`.  If it is unavailable, using it will raise a
-  :exc:`NotImplementedError`.
+  You can check whether or not *dir_fd* is supported for a particular function
+  on your platform using :data:`os.supports_dir_fd`.  If it's unavailable,
+  using it will raise a :exc:`NotImplementedError`.
 
 .. _follow_symlinks:
 
 * **not following symlinks:** If *follow_symlinks* is
   ``False``, and the last element of the path to operate on is a symbolic link,
-  the function will operate on the symbolic link itself instead of the file the
-  link points to.  (For POSIX systems, Python will call the ``l...`` version of
-  the function.)
+  the function will operate on the symbolic link itself rather than the file
+  pointed to by the link.  (For POSIX systems, Python will call the ``l...``
+  variant of the function.)
 
-  You can check whether or not *follow_symlinks* is supported on your platform
-  using :data:`os.supports_follow_symlinks`.  If it is unavailable, using it
-  will raise a :exc:`NotImplementedError`.
+  You can check whether or not *follow_symlinks* is supported for a particular
+  function on your platform using :data:`os.supports_follow_symlinks`.
+  If it's unavailable, using it will raise a :exc:`NotImplementedError`.
 
 
 
@@ -1662,7 +1666,7 @@ features:
    .. availability:: Unix.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*,
+      Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
    .. versionchanged:: 3.6
@@ -1781,7 +1785,7 @@ features:
       The *path* parameter became optional.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*.
+      Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2593,7 +2597,7 @@ features:
       The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*.
+      Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.4
       The :const:`ST_NODEV`, :const:`ST_NOEXEC`, :const:`ST_SYNCHRONOUS`,
@@ -2610,59 +2614,61 @@ features:
 
 .. data:: supports_dir_fd
 
-   A :class:`~collections.abc.Set` object indicating which functions in the
-   :mod:`os` module permit use of their *dir_fd* parameter.  Different platforms
-   provide different functionality, and an option that might work on one might
-   be unsupported on another.  For consistency's sakes, functions that support
-   *dir_fd* always allow specifying the parameter, but will raise an exception
-   if the functionality is not actually available.
+   A :class:`set` object indicating which functions in the :mod:`os`
+   module accept an open file descriptor for their *dir_fd* parameter.
+   Different platforms provide different features, and the underlying
+   functionality Python uses to implement the *dir_fd* parameter is not
+   available on all platforms Python supports.  For consistency's sake,
+   functions that may support *dir_fd* always allow specifying the
+   parameter, but will throw an exception if the functionality is used
+   when it's not locally available. (Specifying ``None`` for *dir_fd*
+   is always supported on all platforms.)
 
-   To check whether a particular function permits use of its *dir_fd*
-   parameter, use the ``in`` operator on ``supports_dir_fd``.  As an example,
-   this expression determines whether the *dir_fd* parameter of :func:`os.stat`
-   is locally available::
+   To check whether a particular function accepts an open file descriptor
+   for its *dir_fd* parameter, use the ``in`` operator on ``supports_dir_fd``.
+   As an example, this expression evaluates to ``True`` if :func:`os.stat`
+   accepts open file descriptors for *dir_fd* on the local platform::
 
        os.stat in os.supports_dir_fd
 
-   Currently *dir_fd* parameters only work on Unix platforms; none of them work
-   on Windows.
+   Currently *dir_fd* parameters only work on Unix platforms;
+   none of them work on Windows.
 
    .. versionadded:: 3.3
 
 
 .. data:: supports_effective_ids
 
-   A :class:`~collections.abc.Set` object indicating which functions in the
-   :mod:`os` module permit use of the *effective_ids* parameter for
-   :func:`os.access`.  If the local platform supports it, the collection will
-   contain :func:`os.access`, otherwise it will be empty.
+   A :class:`set` object indicating whether :func:`os.access` permits
+   specifying ``True`` for its *effective_ids* parameter on the local platform.
+   (Specifying ``False`` for *effective_ids* is always supported on all
+   platforms.)  If the local platform supports it, the collection will contain
+   :func:`os.access`; otherwise it will be empty.
 
-   To check whether you can use the *effective_ids* parameter for
-   :func:`os.access`, use the ``in`` operator on ``supports_effective_ids``,
-   like so::
+   This expression evaluates to ``True`` if :func:`os.access` supports
+   ``effective_ids=True`` on the local platform::
 
        os.access in os.supports_effective_ids
 
-   Currently *effective_ids* only works on Unix platforms; it does not work on
-   Windows.
+   Currently *effective_ids* is only supported on Unix platforms;
+   it does not work on Windows.
 
    .. versionadded:: 3.3
 
 
 .. data:: supports_fd
 
-   A :class:`~collections.abc.Set` object indicating which functions in the
+   A :class:`set` object indicating which functions in the
    :mod:`os` module permit specifying their *path* parameter as an open file
-   descriptor.  Different platforms provide different functionality, and an
-   option that might work on one might be unsupported on another.  For
-   consistency's sakes, functions that support *fd* always allow specifying
-   the parameter, but will raise an exception if the functionality is not
-   actually available.
+   descriptor on the local platform.  Different platforms provide different
+   features, and the underlying functionality Python uses to accept open file
+   descriptors as *path* arguments is not available on all platforms Python
+   supports.
 
-   To check whether a particular function permits specifying an open file
+   To determine whether a particular function permits specifying an open file
    descriptor for its *path* parameter, use the ``in`` operator on
-   ``supports_fd``. As an example, this expression determines whether
-   :func:`os.chdir` accepts open file descriptors when called on your local
+   ``supports_fd``. As an example, this expression evaluates to ``True`` if
+   :func:`os.chdir` accepts open file descriptors for *path* on your local
    platform::
 
        os.chdir in os.supports_fd
@@ -2672,17 +2678,21 @@ features:
 
 .. data:: supports_follow_symlinks
 
-   A :class:`~collections.abc.Set` object indicating which functions in the
-   :mod:`os` module permit use of their *follow_symlinks* parameter.  Different
-   platforms provide different functionality, and an option that might work on
-   one might be unsupported on another.  For consistency's sakes, functions that
-   support *follow_symlinks* always allow specifying the parameter, but will
-   raise an exception if the functionality is not actually available.
+   A :class:`set` object indicating which functions in the :mod:`os` module
+   accept ``False`` for their *follow_symlinks* parameter on the local platform.
+   Different platforms provide different features, and the underlying
+   functionality Python uses to implement *follow_symlinks* is not available
+   on all platforms Python supports.  For consistency's sake, functions that
+   may support *follow_symlinks* always allow specifying the parameter, but
+   will throw an exception if the functionality is used when it's not locally
+   available.  (Specifying ``True`` for *follow_symlinks* is always supported
+   on all platforms.)
 
-   To check whether a particular function permits use of its *follow_symlinks*
-   parameter, use the ``in`` operator on ``supports_follow_symlinks``.  As an
-   example, this expression determines whether the *follow_symlinks* parameter
-   of :func:`os.stat` is locally available::
+   To check whether a particular function accepts ``False`` for its
+   *follow_symlinks* parameter, use the ``in`` operator on
+   ``supports_follow_symlinks``.  As an example, this expression evaluates
+   to ``True`` if you may specify ``follow_symlinks=False`` when calling
+   :func:`os.stat` on the local platform::
 
        os.stat in os.supports_follow_symlinks
 
@@ -2699,19 +2709,15 @@ features:
    as a directory if *target_is_directory* is ``True`` or a file symlink (the
    default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
-   Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
-   will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
-
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
    .. note::
 
-      On Windows, the *SeCreateSymbolicLinkPrivilege* is required in order to
-      successfully create symlinks. This privilege is not typically granted to
-      regular users but is available to accounts which can escalate privileges
-      to the administrator level. Either obtaining the privilege or running your
-      application as an administrator are ways to successfully create symlinks.
+      On newer versions of Windows 10, unprivileged accounts can create symlinks
+      if Developer Mode is enabled. When Developer Mode is not available/enabled,
+      the *SeCreateSymbolicLinkPrivilege* privilege is required, or the process
+      must be run as an administrator.
 
 
       :exc:`OSError` is raised when the function is called by an unprivileged
@@ -2728,6 +2734,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
+
+   .. versionchanged:: 3.8
+      Added support for unelevated symlinks on Windows with Developer Mode.
 
 
 .. function:: sync()
@@ -2802,7 +2811,7 @@ features:
    following symlinks <follow_symlinks>`.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*,
+      Added support for specifying *path* as an open file descriptor,
       and the *dir_fd*, *follow_symlinks*, and *ns* parameters.
 
    .. versionchanged:: 3.6
@@ -3079,6 +3088,36 @@ to be ignored.
    :func:`signal.signal`.
 
 
+.. function:: add_dll_directory(path)
+
+   Add a path to the DLL search path.
+
+   This search path is used when resolving dependencies for imported
+   extension modules (the module itself is resolved through sys.path),
+   and also by :mod:`ctypes`.
+
+   Remove the directory by calling **close()** on the returned object
+   or using it in a :keyword:`with` statement.
+
+   See the `Microsoft documentation
+   <https://msdn.microsoft.com/44228cf2-6306-466c-8f16-f513cd3ba8b5>`_
+   for more information about how DLLs are loaded.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.8
+      Previous versions of CPython would resolve DLLs using the default
+      behavior for the current process. This led to inconsistencies,
+      such as only sometimes searching :envvar:`PATH` or the current
+      working directory, and OS functions such as ``AddDllDirectory``
+      having no effect.
+
+      In 3.8, the two primary ways DLLs are loaded now explicitly
+      override the process-wide behavior to ensure consistency. See the
+      :ref:`porting notes <bpo-36085-whatsnew>` for information on
+      updating libraries.
+
+
 .. function:: execl(path, arg0, arg1, ...)
               execle(path, arg0, arg1, ..., env)
               execlp(file, arg0, arg1, ...)
@@ -3133,7 +3172,7 @@ to be ignored.
    .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*
+      Added support for specifying *path* as an open file descriptor
       for :func:`execve`.
 
    .. versionchanged:: 3.6

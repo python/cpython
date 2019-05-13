@@ -1006,7 +1006,7 @@ def temp_dir(path=None, quiet=False):
         yield path
     finally:
         # In case the process forks, let only the parent remove the
-        # directory. The child has a diffent process id. (bpo-30028)
+        # directory. The child has a different process id. (bpo-30028)
         if dir_created and pid == os.getpid():
             rmtree(path)
 
@@ -1477,6 +1477,22 @@ socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
+def get_socket_conn_refused_errs():
+    """
+    Get the different socket error numbers ('errno') which can be received
+    when a connection is refused.
+    """
+    errors = [errno.ECONNREFUSED]
+    if hasattr(errno, 'ENETUNREACH'):
+        # On Solaris, ENETUNREACH is returned sometimes instead of ECONNREFUSED
+        errors.append(errno.ENETUNREACH)
+    if hasattr(errno, 'EADDRNOTAVAIL'):
+        # bpo-31910: socket.create_connection() fails randomly
+        # with EADDRNOTAVAIL on Travis CI
+        errors.append(errno.EADDRNOTAVAIL)
+    return errors
+
+
 @contextlib.contextmanager
 def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
@@ -1637,7 +1653,7 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "gettotalrefcount"):
+if hasattr(sys, "getobjects"):
     _header = '2P' + _header
     _align = '0P'
 _vheader = _header + 'n'
