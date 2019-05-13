@@ -1,0 +1,1 @@
+Allow "sitevendor" Python startup-plugin in addition to already existed "sitecustomize" and "usercustomize".
