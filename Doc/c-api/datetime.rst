@@ -106,18 +106,18 @@ Macros to create objects:
    .. versionadded:: 3.6
 
 
+.. c:function:: PyObject* PyTime_FromTime(int hour, int minute, int second, int usecond)
+
+   Return a :class:`datetime.time` object with the specified hour, minute, second and
+   microsecond.
+
+
 .. c:function:: PyObject* PyTime_FromTimeAndFold(int hour, int minute, int second, int usecond, int fold)
 
    Return a :class:`datetime.time` object with the specified hour, minute, second,
    microsecond and fold.
 
    .. versionadded:: 3.6
-
-
-.. c:function:: PyObject* PyTime_FromTime(int hour, int minute, int second, int usecond)
-
-   Return a :class:`datetime.time` object with the specified hour, minute, second and
-   microsecond.
 
 
 .. c:function:: PyObject* PyDelta_FromDSU(int days, int seconds, int useconds)
