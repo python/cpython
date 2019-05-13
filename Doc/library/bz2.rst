@@ -285,7 +285,7 @@ Using :func:`compress` and :func:`decompress` to demonstrate round-trip compress
 Using :class:`BZ2Compressor` for incremental compression:
 
     >>> import bz2
-    >>>
+
     >>> def gen_data(chunks=10, chunksize=1000):
     ...     """Yield incremental blocks of chunksize bytes."""
     ...     for _ in range(chunks):
