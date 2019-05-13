@@ -131,7 +131,10 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
     PyThreadState *ts = _PyThreadState_GET();
     PyInterpreterState *is = ts ? ts->interp : NULL;
-    if (!e && (!is || !is->audit_hooks) && !dtrace) {
+    if (!is) {
+        return 0;
+    }
+    if (!e && !is->audit_hooks && !dtrace) {
         return 0;
     }
 
@@ -214,6 +217,10 @@ exit:
     return res;
 }
 
+/* We expose this function primarily for our own cleanup during
+ * finalization. In general, it should not need to be called,
+ * and as such it is not defined in any header files.
+ */
 void _PySys_ClearAuditHooks(void) {
     /* Must be finalizing to clear hooks */
     _PyRuntimeState *runtime = &_PyRuntime;
@@ -228,14 +235,14 @@ void _PySys_ClearAuditHooks(void) {
 
     /* Hooks can abort later hooks for this event, but cannot
        abort the clear operation itself. */
-    PySys_Audit("sys._clearaudithooks", NULL);
+    PySys_Audit("cpython._PySys_ClearAuditHooks", NULL);
     PyErr_Clear();
 
     _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head, *n;
     _PyRuntime.audit_hook_head = NULL;
     while (e) {
         n = e->next;
-        free(e);
+        PyMem_RawFree(e);
         e = n;
     }
 }
@@ -258,12 +265,13 @@ PySys_AddAuditHook(void *hook, void *userData)
 
     _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
     if (!e) {
-        e = (_Py_AuditHookEntry*)malloc(sizeof(_Py_AuditHookEntry));
+        e = (_Py_AuditHookEntry*)PyMem_RawMalloc(sizeof(_Py_AuditHookEntry));
         _PyRuntime.audit_hook_head = e;
     } else {
         while (e->next)
             e = e->next;
-        e = e->next = (_Py_AuditHookEntry*)malloc(sizeof(_Py_AuditHookEntry));
+        e = e->next = (_Py_AuditHookEntry*)PyMem_RawMalloc(
+            sizeof(_Py_AuditHookEntry));
     }
 
     if (!e) {

@@ -278,11 +278,17 @@ class Tracer:
             frame.f_trace_opcodes = self.trace_opcode_events
 
     def trace(self, frame, event, arg):
+        # Do not track our auditing hook
+        if frame.f_code.co_name == "_test_audit_hook":
+            return
         self._reconfigure_frame(frame)
         self.events.append((frame.f_lineno, event))
         return self.trace
 
     def traceWithGenexp(self, frame, event, arg):
+        # Do not track our auditing hook
+        if frame.f_code.co_name == "_test_audit_hook":
+            return
         self._reconfigure_frame(frame)
         (o for o in [1])
         self.events.append((frame.f_lineno, event))

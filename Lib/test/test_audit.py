@@ -59,7 +59,7 @@ class TestFinalizeHook:
 
         print(event, id(self), file=sys.stderr, flush=True)
 
-        if event == 'sys._clearaudithooks':
+        if event == 'cpython._PySys_ClearAuditHooks':
             raise RuntimeError('Should be ignored')
         elif event == 'cpython.PyInterpreterState_Clear':
             raise RuntimeError('Should be ignored')
@@ -105,7 +105,7 @@ class AuditTest(unittest.TestCase):
         firstId = events[0][2]
         self.assertSequenceEqual([
             ('Created', ' ', firstId),
-            ('sys._clearaudithooks', ' ', firstId),
+            ('cpython._PySys_ClearAuditHooks', ' ', firstId),
         ], events)
 
     def test_pickle(self):

@@ -21,11 +21,13 @@ always available.
 
 .. function:: addaudithook(hook)
 
-   Adds the callable *hook* to the collection of active auditing hooks.
+   Adds the callable *hook* to the collection of active auditing hooks for the
+   current interpreter.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
    hook will be called in the order it was added with the event name and the
-   tuple of arguments.
+   tuple of arguments. Native hooks added by :c:func:PySys_AddAuditHook are
+   called first, followed by hooks added in the current interpreter.
 
    Calling this function will trigger an event for all existing hooks, and if
    any raise an exception derived from :class:`Exception`, the add will be
@@ -68,9 +70,11 @@ always available.
    these errors should not be handled and should terminate the process as
    quickly as possible.
 
-   Hooks are added using the :func:`sys.addaudithook` function. The native
-   equivalent of this function is :c:func:`PySys_Audit`, and is preferred over
-   the Python function where possible.
+   Hooks are added using the :func:`sys.addaudithook` or
+   :c:func:`PySys_AddAuditHook` functions.
+
+   The native equivalent of this function is :c:func:`PySys_Audit`. Using the
+   native function is preferred when possible.
 
    .. versionadded:: 3.8
 

@@ -361,8 +361,13 @@ func_set_defaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
                         "__defaults__ must be set to a tuple object");
         return -1;
     }
-    if (PySys_Audit("object.__setattr__", "OsO",
-                    op, "__defaults__", value) < 0) {
+    if (value) {
+        if (PySys_Audit("object.__setattr__", "OsO",
+                        op, "__defaults__", value) < 0) {
+            return -1;
+        }
+    } else if (PySys_Audit("object.__delattr__", "Os",
+                           op, "__defaults__") < 0) {
         return -1;
     }
 
@@ -397,8 +402,13 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignor
             "__kwdefaults__ must be set to a dict object");
         return -1;
     }
-    if (PySys_Audit("object.__setattr__", "OsO",
-                    op, "__kwdefaults__", value) < 0) {
+    if (value) {
+        if (PySys_Audit("object.__setattr__", "OsO",
+                        op, "__kwdefaults__", value) < 0) {
+            return -1;
+        }
+    } else if (PySys_Audit("object.__delattr__", "Os",
+                           op, "__kwdefaults__") < 0) {
         return -1;
     }
 

@@ -37,6 +37,10 @@ class HookWatcher:
         if frame is None:
             frame = sys._getframe(1)
 
+        # Do not track our auditing hook
+        if frame.f_code.co_name == "_test_audit_hook":
+            return
+
         try:
             frameno = self.frames.index(frame)
         except ValueError:
