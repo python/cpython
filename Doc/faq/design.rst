@@ -490,7 +490,8 @@ times don't require an actual resize.
 How are dictionaries implemented in CPython?
 --------------------------------------------
 
-CPython's dictionaries are implemented as resizable hash tables.  Compared to
+CPython's dictionaries are implemented as resizable 
+`hash tables <https://en.wikipedia.org/wiki/Hash_table>`_.  Compared to
 B-trees, this gives better performance for lookup (the most common operation by
 far) under most circumstances, and the implementation is simpler.
 
