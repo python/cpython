@@ -20,8 +20,6 @@ import signal
 import sys
 import threading
 import warnings
-import _multiprocessing
-import _posixshmem
 
 from . import spawn
 from . import util
@@ -33,9 +31,16 @@ _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
 _CLEANUP_FUNCS = {
     'noop': lambda: None,
-    'semaphore': _multiprocessing.sem_unlink,
-    'shared_memory': _posixshmem.shm_unlink
 }
+
+if os.name == 'posix':
+    import _multiprocessing
+    import _posixshmem
+
+    _CLEANUP_FUNCS.update({
+        'semaphore': _multiprocessing.sem_unlink,
+        'shared_memory': _posixshmem.shm_unlink,
+    })
 
 
 class ResourceTracker(object):
