@@ -61,8 +61,4 @@ def __getattr__(name):
                       stacklevel=2)
         return Stream
 
-    if name == 'StreamReaderProtocol':
-        raise AttributeError("StreamReaderProtocol is a private API, "
-                              "don't use the class in user code")
-
     raise AttributeError(f"module {__name__} has no attribute {name}")
