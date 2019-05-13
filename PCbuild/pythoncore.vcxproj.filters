@@ -108,6 +108,9 @@
     <ClInclude Include="..\Include\cpython\pystate.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\sysmodule.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\tupleobject.h">
       <Filter>Include</Filter>
     </ClInclude>
