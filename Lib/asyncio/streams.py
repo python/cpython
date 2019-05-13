@@ -23,7 +23,7 @@ from .tasks import sleep
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 
 
-class StreamKind(enum.Enum):
+class StreamMode(enum.Enum):
     READ = "read"
     WRITE = "write"
     READWRITE = "readwrite"
@@ -64,7 +64,7 @@ async def open_connection(host=None, port=None, *,
     """
     if loop is None:
         loop = events.get_event_loop()
-    stream = Stream(kind=StreamKind.READWRITE,
+    stream = Stream(mode=StreamMode.READWRITE,
                     limit=limit,
                     loop=loop,
                     _asyncio_internal=True)
@@ -102,7 +102,7 @@ async def start_server(client_connected_cb, host=None, port=None, *,
         loop = events.get_event_loop()
 
     def factory():
-        stream = Stream(kind=StreamKind.READWRITE,
+        stream = Stream(mode=StreamMode.READWRITE,
                         limit=limit,
                         loop=loop,
                         _asyncio_internal=True)
@@ -122,7 +122,7 @@ if hasattr(socket, 'AF_UNIX'):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
         if loop is None:
             loop = events.get_event_loop()
-        stream = Stream(kind=StreamKind.READWRITE,
+        stream = Stream(mode=StreamMode.READWRITE,
                         limit=limit,
                         loop=loop,
                         _asyncio_internal=True)
@@ -140,7 +140,7 @@ if hasattr(socket, 'AF_UNIX'):
             loop = events.get_event_loop()
 
         def factory():
-            stream = Stream(kind=StreamKind.READWRITE,
+            stream = Stream(mode=StreamMode.READWRITE,
                             limit=limit,
                             loop=loop,
                             _asyncio_internal=True)
@@ -362,7 +362,7 @@ class Stream:
 
     _source_traceback = None
 
-    def __init__(self, kind, *,
+    def __init__(self, mode, *,
                  transport=None,
                  protocol=None,
                  loop=None,
@@ -373,7 +373,7 @@ class Stream:
                           "by asyncio internals only, "
                           "please avoid its creation from user code",
                           DeprecationWarning)
-        self._kind = kind
+        self._mode = mode
         self._transport = transport
         self._protocol = protocol
 
@@ -402,7 +402,7 @@ class Stream:
 
     def __repr__(self):
         info = [self.__class__.__name__]
-        info.append(f'kind={self._kind}')
+        info.append(f'mode={self._mode}')
         if self._buffer:
             info.append(f'{len(self._buffer)} bytes')
         if self._eof:
@@ -424,12 +424,12 @@ class Stream:
         return self._transport
 
     def write(self, data):
-        self._kind.check_write()
+        self._mode.check_write()
         self._transport.write(data)
         return self._fast_drain()
 
     def writelines(self, data):
-        self._kind.check_write()
+        self._mode.check_write()
         self._transport.writelines(data)
         return self._fast_drain()
 
@@ -454,11 +454,11 @@ class Stream:
         return self._loop.create_task(self.drain())
 
     def write_eof(self):
-        self._kind.check_write()
+        self._mode.check_write()
         return self._transport.write_eof()
 
     def can_write_eof(self):
-        if not self._kind.is_write():
+        if not self._mode.is_write():
             return False
         return self._transport.can_write_eof()
 
@@ -483,7 +483,7 @@ class Stream:
           w.write(data)
           await w.drain()
         """
-        self._kind.check_write()
+        self._mode.check_write()
         exc = self.exception()
         if exc is not None:
             raise exc
@@ -526,17 +526,17 @@ class Stream:
             self._transport.resume_reading()
 
     def feed_eof(self):
-        self._kind.check_read()
+        self._mode.check_read()
         self._eof = True
         self._wakeup_waiter()
 
     def at_eof(self):
         """Return True if the buffer is empty and 'feed_eof' was called."""
-        self._kind.check_read()
+        self._mode.check_read()
         return self._eof and not self._buffer
 
     def feed_data(self, data):
-        self._kind.check_read()
+        self._mode.check_read()
         assert not self._eof, 'feed_data after feed_eof'
 
         if not data:
@@ -602,7 +602,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._kind.check_read()
+        self._mode.check_read()
         sep = b'\n'
         seplen = len(sep)
         try:
@@ -638,7 +638,7 @@ class Stream:
         LimitOverrunError exception  will be raised, and the data
         will be left in the internal buffer, so it can be read again.
         """
-        self._kind.check_read()
+        self._mode.check_read()
         seplen = len(separator)
         if seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
@@ -730,7 +730,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._kind.check_read()
+        self._mode.check_read()
 
         if self._exception is not None:
             raise self._exception
@@ -776,7 +776,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._kind.check_read()
+        self._mode.check_read()
         if n < 0:
             raise ValueError('readexactly size can not be less than zero')
 
@@ -804,7 +804,7 @@ class Stream:
         return data
 
     def __aiter__(self):
-        self._kind.check_read()
+        self._mode.check_read()
         return self
 
     async def __anext__(self):
@@ -817,7 +817,10 @@ class Stream:
 class StreamWriter(Stream):
     def __init__(self, transport, protocol, reader, loop,
                  *, _asyncio_internal=False):
-        super().__init__(kind=StreamKind.WRITE,
+        warnings.warn("StreamReader class is deprecated in favor of Stream",
+                      DeprecationWarning,
+                      stacklevel=2)
+        super().__init__(mode=StreamMode.WRITE,
                          transport=transport,
                          protocol=protocol,
                          loop=loop,
@@ -828,7 +831,10 @@ class StreamWriter(Stream):
 class StreamReader(Stream):
     def __init__(self, limit=_DEFAULT_LIMIT, loop=None,
                  *, _asyncio_internal=False):
-        super().__init__(kind=StreamKind.READ,
+        warnings.warn("StreamWriter class is deprecated in favor of Stream",
+                      DeprecationWarning,
+                      stacklevel=2)
+        super().__init__(mode=StreamMode.READ,
                          limit=limit,
                          loop=loop,
                          _asyncio_internal=_asyncio_internal,
