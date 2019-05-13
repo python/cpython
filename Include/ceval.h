@@ -195,7 +195,6 @@ PyAPI_FUNC(void) PyEval_AcquireLock(void) Py_DEPRECATED(3.2);
 PyAPI_FUNC(void) PyEval_ReleaseLock(void) /* Py_DEPRECATED(3.2) */;
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
-PyAPI_FUNC(void) PyEval_ReInitThreads(void);
 
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyEval_SetSwitchInterval(unsigned long microseconds);

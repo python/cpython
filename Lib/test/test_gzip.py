@@ -391,6 +391,15 @@ class TestGzip(BaseTest):
             d = f.read()
             self.assertEqual(d, data1 * 50, "Incorrect data in file")
 
+    def test_gzip_BadGzipFile_exception(self):
+        self.assertTrue(issubclass(gzip.BadGzipFile, OSError))
+
+    def test_bad_gzip_file(self):
+        with open(self.filename, 'wb') as file:
+            file.write(data1 * 50)
+        with gzip.GzipFile(self.filename, 'r') as file:
+            self.assertRaises(gzip.BadGzipFile, file.readlines)
+
     def test_non_seekable_file(self):
         uncompressed = data1 * 50
         buf = UnseekableIO()
