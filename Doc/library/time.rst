@@ -153,7 +153,7 @@ Functions
    :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
    microsecond.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.8
       The behaviour of this function depends on the platform: use
       :func:`perf_counter` or :func:`process_time` instead, depending on your
       requirements, to have a well defined behaviour.
