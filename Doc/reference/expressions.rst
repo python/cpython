@@ -196,7 +196,7 @@ the comprehension is executed in a separate implicitly nested scope. This ensure
 that names assigned to in the target list don't "leak" into the enclosing scope.
 
 The iterable expression in the leftmost :keyword:`!for` clause is evaluated
-directly in the enclosing scope and then passed as an argument to the implictly
+directly in the enclosing scope and then passed as an argument to the implicitly
 nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
 leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
 they may depend on the values obtained from the leftmost iterable. For example:
