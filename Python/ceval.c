@@ -289,9 +289,8 @@ PyEval_ReleaseThread(PyThreadState *tstate)
  */
 
 void
-PyEval_ReInitThreads(void)
+_PyEval_ReInitThreads(_PyRuntimeState *runtime)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     if (!gil_created(&ceval->gil)) {
         return;
