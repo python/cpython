@@ -743,7 +743,9 @@ class NonCallableMock(Base):
         with tuples then return the self's spec signature.
         If the name is not empty then remove () and split by '.' to get
         list of names to iterate through the children until a potential
-        match is found.
+        match is found. A child mock is created only during attribute access
+        so if we get a _SpecState then no attributes of the spec were accessed
+        and can be safely exited.
         """
         if not name:
             return self._spec_signature
@@ -754,13 +756,11 @@ class NonCallableMock(Base):
 
         for name in names:
             child = children.get(name)
-            if child is None:
+            if child is None or isinstance(child, _SpecState):
                 break
             else:
-                children = child._mock_children.get(name)
+                children = child._mock_children
                 sig = child._spec_signature
-                if children is None:
-                    break
 
         return sig
 
