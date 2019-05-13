@@ -133,20 +133,20 @@ def removeduppaths_ex(atpath, mustexist):
         if dircase not in known_paths:
             doadd = True
             if mustexist :
-               doadd = os.path.exists(dir)
+                doadd = os.path.exists(dir)
             if doadd:
-               L.append(dir)
-               known_paths.add(dircase)
+                L.append(dir)
+                known_paths.add(dircase)
 
     atpath[:] = L
     return known_paths
 # end removeduppath_ex()
 
 
-# compatibility for those, who use it outside site.py, works as before, may be deprecated 
+# compatibility for those, who use it outside site.py, works as before, may be deprecated
 def removeduppaths():
     """ Remove duplicate entries from sys.path along with making them absolute"""
-    return removeduppaths_ex(sys.path , False) # False: keep nonexistent in path      
+    return removeduppaths_ex(sys.path , False) # False: keep nonexistent in path
 
 
 def _init_pathinfo():
@@ -540,12 +540,12 @@ def exec_imp_module(modName) :
             # There is 'collection_mods' list there and subsequent AssertFailed()
             # is trying to ensure listed modules not loaded yet.
             # Attempt to use 'import importlib' cause listed module 'types' loaded.
-            # Same problem  it just try 'from importlib import import_module', 
-            # even without any other changes this file 
+            # Same problem  it just try 'from importlib import import_module',
+            # even without any other changes this file
             retmod = __import__( modName )
             usename = retmod.__file__
         except ImportError as exc:
-            if exc.name == modName : 
+            if exc.name == modName :
                 pass   # continue: no module found - no problem
             else:      # module found, but error in running
                 raise
@@ -614,7 +614,7 @@ def envpath_info(vname) :
     env = os.environ.copy()
     strpath = env[vname]
     if strpath == "" :
-       return
+        return
     print("env[%s] = [" % vname)
     for vdir in strpath.split(';') :
         if vdir :
