@@ -3950,10 +3950,15 @@ class _TestSharedMemory(BaseTestCase):
             # The shared memory file was deleted.
             with self.assertRaises(FileNotFoundError):
                 smm = shared_memory.SharedMemory(name, create=False)
-            # A warning was emitted by the subprocess' own resource_tracker.
-            err = p.stderr.read().decode()
-            self.assertIn("resource_tracker: There appear to be 1 leaked "
-                          "shared_memory objects to clean up at shutdown", err)
+
+            if os.name == 'posix':
+                # A warning was emitted by the subprocess' own
+                # resource_tracker (on Windows, shared memory segments
+                # are released automatically by the OS).
+                err = p.stderr.read().decode()
+                self.assertIn(
+                    "resource_tracker: There appear to be 1 leaked "
+                    "shared_memory objects to clean up at shutdown", err)
 
 #
 #
