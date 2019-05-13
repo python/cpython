@@ -101,10 +101,10 @@ class ProactorTests(test_utils.TestCase):
 
         clients = []
         for i in range(5):
-            stream = asyncio.StreamReader(mode=asyncio.StreamMode.READ,
-                                          loop=self.loop)
-            protocol = asyncio.StreamReaderProtocol(stream,
-                                                    loop=self.loop)
+            stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
+                                    loop=self.loop)
+            protocol = StreamReaderProtocol(stream,
+                                            loop=self.loop)
             trans, proto = await self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)
