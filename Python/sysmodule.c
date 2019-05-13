@@ -216,9 +216,10 @@ exit:
 
 void _PySys_ClearAuditHooks(void) {
     /* Must be finalizing to clear hooks */
-    PyThreadState *ts = PyThreadState_GET();
-    assert(!ts || _Py_CURRENTLY_FINALIZING(ts));
-    if (!ts || !_Py_CURRENTLY_FINALIZING(ts))
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *ts = _PyRuntimeState_GetThreadState(runtime);
+    assert(!ts || _Py_CURRENTLY_FINALIZING(runtime, ts));
+    if (!ts || !_Py_CURRENTLY_FINALIZING(runtime, ts))
         return;
 
     if (Py_VerboseFlag) {
