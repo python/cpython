@@ -887,31 +887,31 @@ os.close(fd)
     def test___repr__(self):
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
-        self.assertEqual("<StreamReader kind=StreamKind.READ>", repr(stream))
+        self.assertEqual("<StreamReader mode=StreamMode.READ>", repr(stream))
 
     def test___repr__nondefault_limit(self):
         stream = asyncio.StreamReader(loop=self.loop, limit=123,
                                       _asyncio_internal=True)
-        self.assertEqual("<StreamReader kind=StreamKind.READ limit=123>", repr(stream))
+        self.assertEqual("<StreamReader mode=StreamMode.READ limit=123>", repr(stream))
 
     def test___repr__eof(self):
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
         stream.feed_eof()
-        self.assertEqual("<StreamReader kind=StreamKind.READ eof>", repr(stream))
+        self.assertEqual("<StreamReader mode=StreamMode.READ eof>", repr(stream))
 
     def test___repr__data(self):
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
         stream.feed_data(b'data')
-        self.assertEqual("<StreamReader kind=StreamKind.READ 4 bytes>", repr(stream))
+        self.assertEqual("<StreamReader mode=StreamMode.READ 4 bytes>", repr(stream))
 
     def test___repr__exception(self):
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
         exc = RuntimeError()
         stream.set_exception(exc)
-        self.assertEqual("<StreamReader kind=StreamKind.READ exception=RuntimeError()>",
+        self.assertEqual("<StreamReader mode=StreamMode.READ exception=RuntimeError()>",
                          repr(stream))
 
     def test___repr__waiter(self):
@@ -924,7 +924,7 @@ os.close(fd)
         stream._waiter.set_result(None)
         self.loop.run_until_complete(stream._waiter)
         stream._waiter = None
-        self.assertEqual("<StreamReader kind=StreamKind.READ>", repr(stream))
+        self.assertEqual("<StreamReader mode=StreamMode.READ>", repr(stream))
 
     def test___repr__transport(self):
         stream = asyncio.StreamReader(loop=self.loop,
@@ -932,7 +932,7 @@ os.close(fd)
         stream._transport = mock.Mock()
         stream._transport.__repr__ = mock.Mock()
         stream._transport.__repr__.return_value = "<Transport>"
-        self.assertEqual("<StreamReader kind=StreamKind.READ transport=<Transport>>",
+        self.assertEqual("<StreamReader mode=StreamMode.READ transport=<Transport>>",
                          repr(stream))
 
     def test_IncompleteReadError_pickleable(self):

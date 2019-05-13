@@ -1,5 +1,6 @@
 __all__ = (
     'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
+    'Stream', 'StreamMode',
     'open_connection', 'start_server')
 
 import enum
