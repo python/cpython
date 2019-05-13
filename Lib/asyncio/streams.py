@@ -411,7 +411,7 @@ class Stream:
         if self._waiter:
             info.append(f'waiter={self._waiter!r}')
         if self._exception:
-           info.append(f'exception={self._exception!r}')
+            info.append(f'exception={self._exception!r}')
         if self._transport:
             info.append(f'transport={self._transport!r}')
         if self._paused:
