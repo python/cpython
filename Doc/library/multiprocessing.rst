@@ -131,13 +131,17 @@ to start a process.  These *start methods* are
    handles on Windows.
 
 On Unix using the *spawn* or *forkserver* start methods will also
-start a *semaphore tracker* process which tracks the unlinked named
-semaphores created by processes of the program.  When all processes
-have exited the semaphore tracker unlinks any remaining semaphores.
+start a *resource tracker* process which tracks the unlinked named
+system resources (such as named semaphores or
+:class:`~multiprocessing.shared_memory.SharedMemory` objects) created
+by processes of the program.  When all processes
+have exited the resource tracker unlinks any remaining tracked object.
 Usually there should be none, but if a process was killed by a signal
-there may be some "leaked" semaphores.  (Unlinking the named semaphores
-is a serious matter since the system allows only a limited number, and
-they will not be automatically unlinked until the next reboot.)
+there may be some "leaked" resources.  (Neither leaked semaphores nor shared
+memory segments will be automatically unlinked until the next reboot. This is
+problematic for both objects because the system allows only a limited number of
+named semaphores, and shared memory segments occupy some space in the main
+memory.)
 
 To select a start method you use the :func:`set_start_method` in
 the ``if __name__ == '__main__'`` clause of the main module.  For
