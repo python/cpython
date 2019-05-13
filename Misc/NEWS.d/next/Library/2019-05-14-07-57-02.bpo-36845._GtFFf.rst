@@ -1,2 +1,2 @@
-Added validation of integer prefixes to the constuction of IP networks and
+Added validation of integer prefixes to the construction of IP networks and
 interfaces in the ipaddress module.
