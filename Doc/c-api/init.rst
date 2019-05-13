@@ -877,13 +877,6 @@ code, or when embedding the Python interpreter:
    and is not released.
 
 
-.. c:function:: void PyEval_ReInitThreads()
-
-   This function is called from :c:func:`PyOS_AfterFork_Child` to ensure
-   that newly created child processes don't hold locks referring to threads
-   which are not running in the child process.
-
-
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
 
