@@ -54,7 +54,7 @@ Directory and files operations
    *dst* and return *dst* in the most efficient way possible.
    *src* and *dst* are path names given as strings.
 
-   *dst* must be the complete target file name; look at :func:`shutil.copy`
+   *dst* must be the complete target file name; look at :func:`~shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
    specify the same file, :exc:`SameFileError` is raised.
 
@@ -218,7 +218,7 @@ Directory and files operations
    already exists.
 
    Permissions and times of directories are copied with :func:`copystat`,
-   individual files are copied using :func:`shutil.copy2`.
+   individual files are copied using :func:`~shutil.copy2`.
 
    If *symlinks* is true, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
@@ -246,8 +246,8 @@ Directory and files operations
 
    If *copy_function* is given, it must be a callable that will be used to copy
    each file. It will be called with the source path and the destination path
-   as arguments. By default, :func:`shutil.copy2` is used, but any function
-   that supports the same signature (like :func:`shutil.copy`) can be used.
+   as arguments. By default, :func:`~shutil.copy2` is used, but any function
+   that supports the same signature (like :func:`~shutil.copy`) can be used.
 
    .. versionchanged:: 3.3
       Copy metadata when *symlinks* is false.
