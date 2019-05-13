@@ -1,5 +1,4 @@
 __all__ = (
-    'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
     'Stream', 'StreamMode',
     'open_connection', 'start_server')
 
@@ -815,30 +814,3 @@ class Stream:
         if val == b'':
             raise StopAsyncIteration
         return val
-
-
-class StreamWriter(Stream):
-    def __init__(self, transport, protocol, reader, loop,
-                 *, _asyncio_internal=False):
-        warnings.warn("StreamReader class is deprecated in favor of Stream",
-                      DeprecationWarning,
-                      stacklevel=2)
-        super().__init__(mode=StreamMode.WRITE,
-                         transport=transport,
-                         protocol=protocol,
-                         loop=loop,
-                         _asyncio_internal=_asyncio_internal
-        )
-
-
-class StreamReader(Stream):
-    def __init__(self, limit=_DEFAULT_LIMIT, loop=None,
-                 *, _asyncio_internal=False):
-        warnings.warn("StreamWriter class is deprecated in favor of Stream",
-                      DeprecationWarning,
-                      stacklevel=2)
-        super().__init__(mode=StreamMode.READ,
-                         limit=limit,
-                         loop=loop,
-                         _asyncio_internal=_asyncio_internal,
-        )

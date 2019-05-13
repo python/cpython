@@ -3,6 +3,7 @@
 # flake8: noqa
 
 import sys
+import warnings
 
 # This relies on each of the submodules having an __all__ variable.
 from .base_events import *
@@ -43,3 +44,29 @@ if sys.platform == 'win32':  # pragma: no cover
 else:
     from .unix_events import *  # pragma: no cover
     __all__ += unix_events.__all__
+
+
+__all__ += ('StreamReader', 'StreamWriter', 'StreamReaderProtocol')  # deprecated
+
+
+def __getattr__(name):
+    if name == 'StreamReader':
+        warnings.warn("StreamReader is deprecated, use asyncio.Stream instead",
+                      DeprecationWarning,
+                      stacklevel=2)
+        return Stream
+    if name == 'StreamWriter':
+        warnings.warn("StreamWriter is deprecated, use asyncio.Stream instead",
+                      DeprecationWarning,
+                      stacklevel=2)
+        return Stream
+
+    if name == 'StreamReaderProtocol':
+        warnings.warn("StreamReaderProtocol is a private API, "
+                      "don't use the class in user code",
+                      DeprecationWarning,
+                      stacklevel=2)
+        from .streams import StreamReaderProtocol
+        return StreamReaderProtocol
+
+    raise AttributeError(f"module {__name__} has no attribute {name}")
