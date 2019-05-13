@@ -63,16 +63,15 @@ async def open_connection(host=None, port=None, *,
     really nothing special here except some convenience.)
     """
     if loop is None:
-        loop = events.get_event_loop()
-    reader = StreamReader(limit=limit, loop=loop,
-                          _asyncio_internal=True)
-    protocol = StreamReaderProtocol(reader, loop=loop,
-                                    _asyncio_internal=True)
+        loop = events.get_running_loop()
+    stream = Stream(kind=StreamKind.READWRITE,
+                    limit=limit, loop=loop,
+                    _asyncio_internal=True)
     transport, _ = await loop.create_connection(
-        lambda: protocol, host, port, **kwds)
-    writer = StreamWriter(transport, protocol, reader, loop,
-                          _asyncio_internal=True)
-    return reader, writer
+        lambda: StreamReaderProtocol(stream, loop=loop,
+                                    _asyncio_internal=True),
+        host, port, **kwds)
+    return stream, stream
 
 
 async def start_server(client_connected_cb, host=None, port=None, *,
@@ -294,6 +293,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         reader = self._stream_reader
         if reader is not None:
             reader.set_transport(transport)
+            reader._protocol = self
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
             self._stream_writer = StreamWriter(transport, self,
@@ -374,9 +374,6 @@ class Stream:
                           "please avoid its creation from user code",
                           DeprecationWarning)
         self._kind = kind
-        if kind.is_write():
-            assert transport is not None
-            assert protocol is not None
         self._transport = transport
         self._protocol = protocol
 
