@@ -288,7 +288,7 @@ Using :class:`BZ2Compressor` for incremental compression:
     >>> import os
     >>>
     >>> def gen_data(chunks=10, chunksize=1000):
-    ...     """Yield incremental blocks of ``chunksize`` bytes."""
+    ...     """Yield incremental blocks of chunksize bytes."""
     ...     for _ in range(chunks):
     ...         yield os.urandom(chunksize)
     ...
