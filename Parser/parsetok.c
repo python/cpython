@@ -84,13 +84,13 @@ PyParser_ParseStringObject(const char *s, PyObject *filename,
     struct tok_state *tok;
     int exec_input = start == file_input;
 
+    if (initerr(err_ret, filename) < 0)
+        return NULL;
+
     if (PySys_Audit("compile", "yO", s, filename) < 0) {
         err_ret->error = E_ERROR;
         return NULL;
     }
-
-    if (initerr(err_ret, filename) < 0)
-        return NULL;
 
     if (*flags & PyPARSE_IGNORE_COOKIE)
         tok = PyTokenizer_FromUTF8(s, exec_input);

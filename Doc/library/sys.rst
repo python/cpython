@@ -36,6 +36,12 @@ always available.
 
    .. versionadded:: 3.8
 
+   .. impl-detail::
+
+      When tracing is enabled, Python hooks are only traced if the callable has
+      a ``__cantrace__`` member that is set to a true value. Otherwise, trace
+      functions will not see the hook.
+
 
 .. data:: argv
 

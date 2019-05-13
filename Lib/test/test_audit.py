@@ -217,6 +217,38 @@ class AuditTest(unittest.TestCase):
         )
         self.assertSequenceEqual([], actual_flag)
 
+    def test_cantrace(self):
+        traced = []
+
+        def trace(frame, event, *args):
+            if frame.f_code == TestHook.__call__.__code__:
+                traced.append(event)
+
+        old = sys.settrace(trace)
+        try:
+            with TestHook() as hook:
+                # No traced call
+                eval("1")
+
+                # No traced call
+                hook.__cantrace__ = False
+                eval("2")
+
+                # One traced call
+                hook.__cantrace__ = True
+                eval("3")
+
+                # Two traced calls (writing to private member, eval)
+                hook.__cantrace__ = 1
+                eval("4")
+
+                # One traced call (writing to private member)
+                hook.__cantrace__ = 0
+        finally:
+            sys.settrace(old)
+
+        self.assertSequenceEqual(["call"] * 4, traced)
+
 
 if __name__ == "__main__":
     if len(sys.argv) >= 2 and sys.argv[1] == "spython_test":

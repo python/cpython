@@ -184,15 +184,42 @@ PySys_Audit(const char *event, const char *argFormat, ...)
             goto exit;
         }
 
+        /* Disallow tracing in hooks unless explicitly enabled */
+        ts->tracing++;
+        ts->use_tracing = 0;
         while ((hook = PyIter_Next(hooks)) != NULL) {
-            PyObject *ores = PyObject_CallFunctionObjArgs(
-                hook, eventName, eventArgs, NULL);
-            if (!ores) {
-                goto exit;
+            PyObject *o;
+            int canTrace = -1;
+            o = PyObject_GetAttrString(hook, "__cantrace__");
+            if (o) {
+                canTrace = PyObject_IsTrue(o);
+                Py_DECREF(o);
+            } else if (PyErr_Occurred() &&
+                       PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+                canTrace = 0;
             }
-            Py_DECREF(ores);
+            if (canTrace < 0) {
+                break;
+            }
+            if (canTrace) {
+                ts->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
+                ts->tracing--;
+            }
+            o = PyObject_CallFunctionObjArgs(hook, eventName,
+                                             eventArgs, NULL);
+            if (canTrace) {
+                ts->tracing++;
+                ts->use_tracing = 0;
+            }
+            if (!o) {
+                break;
+            }
+            Py_DECREF(o);
             Py_CLEAR(hook);
         }
+        ts->use_tracing = (ts->c_tracefunc || ts->c_profilefunc);
+        ts->tracing--;
         if (PyErr_Occurred()) {
             goto exit;
         }
