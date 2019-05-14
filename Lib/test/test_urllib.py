@@ -79,8 +79,6 @@ def fakehttp(fakedata):
 
         def close(self):
             self.io_refs -= 1
-            if self.io_refs == 0:
-                io.BytesIO.close(self)
 
     class FakeHTTPConnection(http.client.HTTPConnection):
 
