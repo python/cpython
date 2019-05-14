@@ -28,8 +28,7 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
-@asyncio.coroutine
-def coroutine_function():
+async def coroutine_function():
     pass
 
 
@@ -2562,8 +2561,7 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
     @support.refcount_test
     def test_refleaks_in_task___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             pass
         task = self.new_task(self.loop, coro())
         self.loop.run_until_complete(task)
@@ -2574,8 +2572,7 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     def test_del__log_destroy_pending_segfault(self):
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             pass
         task = self.new_task(self.loop, coro())
         self.loop.run_until_complete(task)
@@ -3320,24 +3317,27 @@ class CompatibilityTests(test_utils.TestCase):
 
     def test_yield_from_awaitable(self):
 
-        @asyncio.coroutine
-        def coro():
-            yield from asyncio.sleep(0)
-            return 'ok'
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro():
+                yield from asyncio.sleep(0)
+                return 'ok'
 
         result = self.loop.run_until_complete(coro())
         self.assertEqual('ok', result)
 
     def test_await_old_style_coro(self):
 
-        @asyncio.coroutine
-        def coro1():
-            return 'ok1'
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro1():
+                return 'ok1'
 
-        @asyncio.coroutine
-        def coro2():
-            yield from asyncio.sleep(0)
-            return 'ok2'
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro2():
+                yield from asyncio.sleep(0)
+                return 'ok2'
 
         async def inner():
             return await asyncio.gather(coro1(), coro2(), loop=self.loop)

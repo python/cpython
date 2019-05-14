@@ -638,7 +638,7 @@ def ensure_future(coro_or_future, *, loop=None):
                         'required')
 
 
-@coroutine
+@types.coroutine
 def _wrap_awaitable(awaitable):
     """Helper for asyncio.ensure_future().
 
@@ -646,6 +646,9 @@ def _wrap_awaitable(awaitable):
     that will later be wrapped in a Task by ensure_future().
     """
     return (yield from awaitable.__await__())
+
+
+_wrap_awaitable._is_coroutine = coroutines._is_coroutine
 
 
 class _GatheringFuture(futures.Future):
