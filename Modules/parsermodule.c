@@ -24,10 +24,6 @@
  *  Py_[X]DECREF() and Py_[X]INCREF() macros.  The lint annotations
  *  look like "NOTE(...)".
  *
- *  To debug parser errors like
- *      "parser.ParserError: Expected node type 12, got 333."
- *  decode symbol numbers using the automatically-generated files
- *  Lib/symbol.h and Include/token.h.
  */
 
 #include "Python.h"                     /* general Python API             */
@@ -648,7 +644,6 @@ validate_node(node *tree)
 {
     int type = TYPE(tree);
     int nch = NCH(tree);
-    dfa *nt_dfa;
     state *dfa_state;
     int pos, arc;
 
@@ -658,7 +653,7 @@ validate_node(node *tree)
         PyErr_Format(parser_error, "Unrecognized node type %d.", TYPE(tree));
         return 0;
     }
-    nt_dfa = &_PyParser_Grammar.g_dfa[type];
+    const dfa *nt_dfa = &_PyParser_Grammar.g_dfa[type];
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */
@@ -666,6 +661,13 @@ validate_node(node *tree)
     for (pos = 0; pos < nch; ++pos) {
         node *ch = CHILD(tree, pos);
         int ch_type = TYPE(ch);
+        if ((ch_type >= NT_OFFSET + _PyParser_Grammar.g_ndfas)
+            || (ISTERMINAL(ch_type) && (ch_type >= N_TOKENS))
+            || (ch_type < 0)
+           ) {
+            PyErr_Format(parser_error, "Unrecognized node type %d.", ch_type);
+            return 0;
+        }
         if (ch_type == suite && TYPE(tree) == funcdef) {
             /* This is the opposite hack of what we do in parser.c
                (search for func_body_suite), except we don't ever
@@ -700,8 +702,10 @@ validate_node(node *tree)
             const char *expected_str = _PyParser_Grammar.g_ll.ll_label[a_label].lb_str;
 
             if (ISNONTERMINAL(next_type)) {
-                PyErr_Format(parser_error, "Expected node type %d, got %d.",
-                             next_type, ch_type);
+                PyErr_Format(parser_error, "Expected %s, got %s.",
+                             _PyParser_Grammar.g_dfa[next_type - NT_OFFSET].d_name,
+                             ISTERMINAL(ch_type) ? _PyParser_TokenNames[ch_type] :
+                             _PyParser_Grammar.g_dfa[ch_type - NT_OFFSET].d_name);
             }
             else if (expected_str != NULL) {
                 PyErr_Format(parser_error, "Illegal terminal: expected '%s'.",

@@ -192,8 +192,8 @@ The following classes are provided:
    *data* must be an object specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
    requests are the only ones that use *data*.  The supported object
-   types include bytes, file-like objects, and iterables.  If no
-   ``Content-Length`` nor ``Transfer-Encoding`` header field
+   types include bytes, file-like objects, and iterables of bytes-like objects.
+   If no ``Content-Length`` nor ``Transfer-Encoding`` header field
    has been provided, :class:`HTTPHandler` will set these headers according
    to the type of *data*.  ``Content-Length`` will be used to send
    bytes objects, while ``Transfer-Encoding: chunked`` as specified in
@@ -1435,6 +1435,7 @@ some point in the future.
       The *data* argument has the same meaning as the *data* argument of
       :func:`urlopen`.
 
+      This method always quotes *fullurl* using :func:`~urllib.parse.quote`.
 
    .. method:: open_unknown(fullurl, data=None)
 

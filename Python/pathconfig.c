@@ -331,7 +331,7 @@ _PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
 #endif
 
     if (path_config.isolated != -1) {
-        config->preconfig.isolated = path_config.isolated;
+        config->isolated = path_config.isolated;
     }
     if (path_config.site_import != -1) {
         config->site_import = path_config.site_import;
@@ -394,7 +394,7 @@ pathconfig_global_init(void)
     _PyInitError err;
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
-    err = _PyCoreConfig_Read(&config, NULL);
+    err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
         goto error;
     }

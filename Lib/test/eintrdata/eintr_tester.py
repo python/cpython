@@ -285,12 +285,9 @@ class SocketEINTRTest(EINTRBaseTest):
         self._test_send(lambda sock, data: sock.sendmsg([data]))
 
     def test_accept(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.create_server((support.HOST, 0))
         self.addCleanup(sock.close)
-
-        sock.bind((support.HOST, 0))
         port = sock.getsockname()[1]
-        sock.listen()
 
         code = '\n'.join((
             'import socket, time',

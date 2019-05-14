@@ -314,10 +314,12 @@ static char *Call_fields[]={
 static PyTypeObject *FormattedValue_type;
 _Py_IDENTIFIER(conversion);
 _Py_IDENTIFIER(format_spec);
+_Py_IDENTIFIER(expr_text);
 static char *FormattedValue_fields[]={
     "value",
     "conversion",
     "format_spec",
+    "expr_text",
 };
 static PyTypeObject *JoinedStr_type;
 static char *JoinedStr_fields[]={
@@ -469,6 +471,7 @@ static char *ExceptHandler_fields[]={
 };
 static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
+_Py_IDENTIFIER(posonlyargs);
 _Py_IDENTIFIER(vararg);
 _Py_IDENTIFIER(kwonlyargs);
 _Py_IDENTIFIER(kw_defaults);
@@ -476,6 +479,7 @@ _Py_IDENTIFIER(kwarg);
 _Py_IDENTIFIER(defaults);
 static char *arguments_fields[]={
     "args",
+    "posonlyargs",
     "vararg",
     "kwonlyargs",
     "kw_defaults",
@@ -948,7 +952,7 @@ static int init_types(void)
     Call_type = make_type("Call", expr_type, Call_fields, 3);
     if (!Call_type) return 0;
     FormattedValue_type = make_type("FormattedValue", expr_type,
-                                    FormattedValue_fields, 3);
+                                    FormattedValue_fields, 4);
     if (!FormattedValue_type) return 0;
     JoinedStr_type = make_type("JoinedStr", expr_type, JoinedStr_fields, 1);
     if (!JoinedStr_type) return 0;
@@ -1141,7 +1145,7 @@ static int init_types(void)
     ExceptHandler_type = make_type("ExceptHandler", excepthandler_type,
                                    ExceptHandler_fields, 3);
     if (!ExceptHandler_type) return 0;
-    arguments_type = make_type("arguments", &AST_type, arguments_fields, 6);
+    arguments_type = make_type("arguments", &AST_type, arguments_fields, 7);
     if (!arguments_type) return 0;
     if (!add_attributes(arguments_type, NULL, 0)) return 0;
     arg_type = make_type("arg", &AST_type, arg_fields, 3);
@@ -2247,9 +2251,9 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int lineno, int
 }
 
 expr_ty
-FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
-               int col_offset, int end_lineno, int end_col_offset, PyArena
-               *arena)
+FormattedValue(expr_ty value, int conversion, expr_ty format_spec, string
+               expr_text, int lineno, int col_offset, int end_lineno, int
+               end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2264,6 +2268,7 @@ FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
     p->v.FormattedValue.value = value;
     p->v.FormattedValue.conversion = conversion;
     p->v.FormattedValue.format_spec = format_spec;
+    p->v.FormattedValue.expr_text = expr_text;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -2569,14 +2574,16 @@ ExceptHandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
 }
 
 arguments_ty
-arguments(asdl_seq * args, arg_ty vararg, asdl_seq * kwonlyargs, asdl_seq *
-          kw_defaults, arg_ty kwarg, asdl_seq * defaults, PyArena *arena)
+arguments(asdl_seq * args, asdl_seq * posonlyargs, arg_ty vararg, asdl_seq *
+          kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg, asdl_seq *
+          defaults, PyArena *arena)
 {
     arguments_ty p;
     p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->args = args;
+    p->posonlyargs = posonlyargs;
     p->vararg = vararg;
     p->kwonlyargs = kwonlyargs;
     p->kw_defaults = kw_defaults;
@@ -3492,6 +3499,11 @@ ast2obj_expr(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_format_spec, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_string(o->v.FormattedValue.expr_text);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_expr_text, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case JoinedStr_kind:
         result = PyType_GenericNew(JoinedStr_type, NULL, NULL);
@@ -3952,6 +3964,11 @@ ast2obj_arguments(void* _o)
     value = ast2obj_list(o->args, ast2obj_arg);
     if (!value) goto failed;
     if (_PyObject_SetAttrId(result, &PyId_args, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_list(o->posonlyargs, ast2obj_arg);
+    if (!value) goto failed;
+    if (_PyObject_SetAttrId(result, &PyId_posonlyargs, value) == -1)
         goto failed;
     Py_DECREF(value);
     value = ast2obj_arg(o->vararg);
@@ -7139,6 +7156,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty value;
         int conversion;
         expr_ty format_spec;
+        string expr_text;
 
         if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
             return 1;
@@ -7179,8 +7197,22 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = FormattedValue(value, conversion, format_spec, lineno,
-                              col_offset, end_lineno, end_col_offset, arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_expr_text, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            expr_text = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &expr_text, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = FormattedValue(value, conversion, format_spec, expr_text,
+                              lineno, col_offset, end_lineno, end_col_offset,
+                              arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8267,6 +8299,7 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
 {
     PyObject* tmp = NULL;
     asdl_seq* args;
+    asdl_seq* posonlyargs;
     arg_ty vararg;
     asdl_seq* kwonlyargs;
     asdl_seq* kw_defaults;
@@ -8300,6 +8333,36 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
                 goto failed;
             }
             asdl_seq_SET(args, i, val);
+        }
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttrId(obj, &PyId_posonlyargs, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"posonlyargs\" missing from arguments");
+        return 1;
+    }
+    else {
+        int res;
+        Py_ssize_t len;
+        Py_ssize_t i;
+        if (!PyList_Check(tmp)) {
+            PyErr_Format(PyExc_TypeError, "arguments field \"posonlyargs\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+            goto failed;
+        }
+        len = PyList_GET_SIZE(tmp);
+        posonlyargs = _Py_asdl_seq_new(len, arena);
+        if (posonlyargs == NULL) goto failed;
+        for (i = 0; i < len; i++) {
+            arg_ty val;
+            res = obj2ast_arg(PyList_GET_ITEM(tmp, i), &val, arena);
+            if (res != 0) goto failed;
+            if (len != PyList_GET_SIZE(tmp)) {
+                PyErr_SetString(PyExc_RuntimeError, "arguments field \"posonlyargs\" changed size during iteration");
+                goto failed;
+            }
+            asdl_seq_SET(posonlyargs, i, val);
         }
         Py_CLEAR(tmp);
     }
@@ -8419,8 +8482,8 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
         }
         Py_CLEAR(tmp);
     }
-    *out = arguments(args, vararg, kwonlyargs, kw_defaults, kwarg, defaults,
-                     arena);
+    *out = arguments(args, posonlyargs, vararg, kwonlyargs, kw_defaults, kwarg,
+                     defaults, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);

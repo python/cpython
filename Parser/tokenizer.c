@@ -2,7 +2,6 @@
 /* Tokenizer implementation */
 
 #include "Python.h"
-#include "pgenheaders.h"
 
 #include <ctype.h>
 #include <assert.h>
@@ -963,7 +962,6 @@ tok_nextc(struct tok_state *tok)
                 newbuf = (char *)PyMem_REALLOC(newbuf,
                                                newsize);
                 if (newbuf == NULL) {
-                    PyMem_FREE(tok->buf);
                     tok->done = E_NOMEM;
                     tok->cur = tok->inp;
                     return EOF;
@@ -1274,14 +1272,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
 
                 type_start = p;
 
-                is_type_ignore = tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0;
-                p += 6;
-                while (is_type_ignore && p < tok->cur) {
-                    if (*p == '#')
-                        break;
-                    is_type_ignore = is_type_ignore && (*p == ' ' || *p == '\t');
-                    p++;
-                }
+                /* A TYPE_IGNORE is "type: ignore" followed by the end of the token
+                 * or anything non-alphanumeric. */
+                is_type_ignore = (
+                    tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0
+                    && !(tok->cur > p + 6 && isalnum(p[6])));
 
                 if (is_type_ignore) {
                     /* If this type ignore is the only thing on the line, consume the newline also. */

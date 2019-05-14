@@ -40,6 +40,7 @@ or sample.
 =======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
 :func:`fmean`            Fast, floating point arithmetic mean.
+:func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
@@ -47,6 +48,7 @@ or sample.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
 :func:`mode`             Single mode (most common value) of discrete or nominal data.
 :func:`multimode`        List of modes (most common values) of discrete or nomimal data.
+:func:`quantiles`        Divide data into intervals with equal probability.
 =======================  ===============================================================
 
 Measures of spread
@@ -126,6 +128,24 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       >>> fmean([3.5, 4.0, 5.25])
       4.25
+
+   .. versionadded:: 3.8
+
+
+.. function:: geometric_mean(data)
+
+   Convert *data* to floats and compute the geometric mean.
+
+   Raises a :exc:`StatisticsError` if the input dataset is empty,
+   if it contains a zero, or if it contains a negative value.
+
+   No special efforts are made to achieve exact results.
+   (However, this may change in the future.)
+
+   .. doctest::
+
+      >>> round(geometric_mean([54, 24, 36]), 9)
+      36.0
 
    .. versionadded:: 3.8
 
@@ -480,6 +500,53 @@ However, for reading convenience, most of the examples show sorted sequences.
       :func:`pvariance` function as the *mu* parameter to get the variance of a
       sample.
 
+.. function:: quantiles(dist, *, n=4, method='exclusive')
+
+   Divide *dist* into *n* continuous intervals with equal probability.
+   Returns a list of ``n - 1`` cut points separating the intervals.
+
+   Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.  Set
+   *n* to 100 for percentiles which gives the 99 cuts points that separate
+   *dist* in to 100 equal sized groups.  Raises :exc:`StatisticsError` if *n*
+   is not least 1.
+
+   The *dist* can be any iterable containing sample data or it can be an
+   instance of a class that defines an :meth:`~inv_cdf` method.
+   Raises :exc:`StatisticsError` if there are not at least two data points.
+
+   For sample data, the cut points are linearly interpolated from the
+   two nearest data points.  For example, if a cut point falls one-third
+   of the distance between two sample values, ``100`` and ``112``, the
+   cut-point will evaluate to ``104``.  Other selection methods may be
+   offered in the future (for example choose ``100`` as the nearest
+   value or compute ``106`` as the midpoint).  This might matter if
+   there are too few samples for a given number of cut points.
+
+   If *method* is set to *inclusive*, *dist* is treated as population data.
+   The minimum value is treated as the 0th percentile and the maximum
+   value is treated as the 100th percentile.  If *dist* is an instance of
+   a class that defines an :meth:`~inv_cdf` method, setting *method*
+   has no effect.
+
+   .. doctest::
+
+        # Decile cut points for empirically sampled data
+        >>> data = [105, 129, 87, 86, 111, 111, 89, 81, 108, 92, 110,
+        ...         100, 75, 105, 103, 109, 76, 119, 99, 91, 103, 129,
+        ...         106, 101, 84, 111, 74, 87, 86, 103, 103, 106, 86,
+        ...         111, 75, 87, 102, 121, 111, 88, 89, 101, 106, 95,
+        ...         103, 107, 101, 81, 109, 104]
+        >>> [round(q, 1) for q in quantiles(data, n=10)]
+        [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
+
+        >>> # Quartile cut points for the standard normal distibution
+        >>> Z = NormalDist()
+        >>> [round(q, 4) for q in quantiles(Z, n=4)]
+        [-0.6745, 0.0, 0.6745]
+
+   .. versionadded:: 3.8
+
+
 Exceptions
 ----------
 
@@ -540,7 +607,7 @@ of applications in statistics.
        :exc:`StatisticsError` because it takes at least one point to estimate
        a central value and at least two points to estimate dispersion.
 
-    .. method:: NormalDist.samples(n, seed=None)
+    .. method:: NormalDist.samples(n, *, seed=None)
 
        Generates *n* random samples for a given mean and standard deviation.
        Returns a :class:`list` of :class:`float` values.
@@ -587,7 +654,7 @@ of applications in statistics.
        <http://www.iceaaonline.com/ready/wp-content/uploads/2014/06/MM-9-Presentation-Meet-the-Overlapping-Coefficient-A-Measure-for-Elevator-Speeches.pdf>`_
        between two normal distributions, giving a measure of agreement.
        Returns a value between 0.0 and 1.0 giving `the overlapping area for
-       two probability density functions
+       the two probability density functions
        <https://www.rasch.org/rmt/rmt101r.htm>`_.
 
     Instances of :class:`NormalDist` support addition, subtraction,
@@ -630,8 +697,8 @@ of applications in statistics.
 For example, given `historical data for SAT exams
 <https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
 are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with scores between 1100 and 1200, after
-rounding to the nearest whole number:
+determine the percentage of students with test scores between 1100 and
+1200, after rounding to the nearest whole number:
 
 .. doctest::
 

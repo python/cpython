@@ -2625,7 +2625,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                 want_encoding = False
                 last_ew = None
                 if part.syntactic_break:
-                    encoded_part = part.fold(policy=policy)[:-1] # strip nl
+                    encoded_part = part.fold(policy=policy)[:-len(policy.linesep)]
                     if policy.linesep not in encoded_part:
                         # It fits on a single line
                         if len(encoded_part) > maxlen - len(lines[-1]):
@@ -2723,16 +2723,19 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
             lines.append(' ')
             # XXX We'll get an infinite loop here if maxlen is <= 7
             continue
-        first_part = to_encode[:text_space]
-        ew = _ew.encode(first_part, charset=encode_as)
-        excess = len(ew) - remaining_space
-        if excess > 0:
-            # encode always chooses the shortest encoding, so this
-            # is guaranteed to fit at this point.
-            first_part = first_part[:-excess]
-            ew = _ew.encode(first_part)
-        lines[-1] += ew
-        to_encode = to_encode[len(first_part):]
+
+        to_encode_word = to_encode[:text_space]
+        encoded_word = _ew.encode(to_encode_word, charset=encode_as)
+        excess = len(encoded_word) - remaining_space
+        while excess > 0:
+            # Since the chunk to encode is guaranteed to fit into less than 100 characters,
+            # shrinking it by one at a time shouldn't take long.
+            to_encode_word = to_encode_word[:-1]
+            encoded_word = _ew.encode(to_encode_word, charset=encode_as)
+            excess = len(encoded_word) - remaining_space
+        lines[-1] += encoded_word
+        to_encode = to_encode[len(to_encode_word):]
+
         if to_encode:
             lines.append(' ')
             new_last_ew = len(lines[-1])

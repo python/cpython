@@ -1141,7 +1141,7 @@ original insertion position is changed and moved to the end::
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)
-            super().move_to_end(key)
+            self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
 variants of :func:`functools.lru_cache`::

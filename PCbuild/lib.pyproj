@@ -678,7 +678,7 @@
     <Compile Include="multiprocessing\queues.py" />
     <Compile Include="multiprocessing\reduction.py" />
     <Compile Include="multiprocessing\resource_sharer.py" />
-    <Compile Include="multiprocessing\semaphore_tracker.py" />
+    <Compile Include="multiprocessing\resource_tracker.py" />
     <Compile Include="multiprocessing\sharedctypes.py" />
     <Compile Include="multiprocessing\spawn.py" />
     <Compile Include="multiprocessing\synchronize.py" />
