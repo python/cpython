@@ -921,7 +921,8 @@ conflict.
 .. envvar:: PYTHONHISTORY
 
    This environment variable can be used to set the location of a
-   ``.python_history`` file (it is ``~/.python_history`` by default).
+   ``.python_history`` file (by default, it is ``.python_history`` in the
+   user's home directory).
 
    .. versionadded:: 3.8
 

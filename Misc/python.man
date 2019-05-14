@@ -504,7 +504,7 @@ If this environment variable is set to 0, it disables the default debugger. It
 can be set to the callable of your debugger of choice.
 .IP PYTHONHISTORY
 This environment variable can be used to set the location of a history file
-(it is \fI~/.python_history\fP by default).
+(on UNIX, it is \fI~/.python_history\fP by default).
 .SS Debug-mode variables
 Setting these variables only has an effect in a debug build of Python, that is,
 if Python was configured with the

@@ -396,11 +396,11 @@ def sethelper():
 def gethistoryfile():
     """Check if the PYTHONHISTORY environment variable is set and define
     it as the .python_history file.  If PYTHONHISTORY is not set, use the
-    default ~/.python_history file.
+    default .python_history file.
     """
-    h = os.environ.get("PYTHONHISTORY")
-    if h:
-        return h
+    history = os.environ.get("PYTHONHISTORY")
+    if history:
+        return history
     return os.path.join(os.path.expanduser('~'),
         '.python_history')
 
