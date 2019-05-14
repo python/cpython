@@ -26,23 +26,38 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
     PyObject *const *values,
     PyObject *kwnames);
 
-/* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
+/* Convert (args, nargs, kwargs: dict) into a (args, nargs, kwnames: tuple).
 
-   Return 0 on success, raise an exception and return -1 on error.
+   Return a pointer to the new args vector or NULL (with an exception) in
+   case of failure. Return the kwnames tuple in *p_kwnames.
 
-   Write the new stack into *p_stack. If *p_stack is differen than args, it
-   must be released by PyMem_Free().
+   If there are no keyword arguments, then args is returned unchanged (unless
+   args is NULL, in which case an arbitrary non-NULL pointer is returned)
+   and *p_kwnames is NULL. Reference counts are not changed.
 
-   The stack uses borrowed references.
+   If there are keyword arguments, then the kwnames tuple and the args array
+   are allocated together in a special way. Reference counts are increased, so
+   we do not rely on the references held by the dict (see bpo-36907).
+
+   When done, _PyStack_DictAsVector_Free(*p_kwnames) must be called
+   (this checks for NULL so the caller doesn't need to do that).
 
    The type of keyword keys is not checked, these checks should be done
    later (ex: _PyArg_ParseStackAndKeywords). */
-PyAPI_FUNC(int) _PyStack_UnpackDict(
+PyAPI_FUNC(PyObject *const *) _PyStack_DictAsVector(
     PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwargs,
-    PyObject *const **p_stack,
     PyObject **p_kwnames);
+
+PyAPI_FUNC(void) _PyStack_DictAsVector_Free_impl(PyObject *kwtuple);
+
+static inline void _PyStack_DictAsVector_Free(PyObject *kwtuple) {
+    if (kwtuple != NULL) {
+        _PyStack_DictAsVector_Free_impl(kwtuple);
+    }
+}
+
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such

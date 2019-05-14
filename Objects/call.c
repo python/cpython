@@ -535,19 +535,16 @@ _PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self,
 
     case METH_FASTCALL | METH_KEYWORDS:
     {
-        PyObject *const *stack;
-        PyObject *kwnames;
         _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)(void(*)(void))meth;
 
-        if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
+        PyObject *kwnames;
+        args = _PyStack_DictAsVector(args, nargs, kwargs, &kwnames);
+        if (args == NULL) {
             goto exit;
         }
 
-        result = (*fastmeth) (self, stack, nargs, kwnames);
-        if (stack != args) {
-            PyMem_Free((PyObject **)stack);
-        }
-        Py_XDECREF(kwnames);
+        result = (*fastmeth) (self, args, nargs, kwnames);
+        _PyStack_DictAsVector_Free(kwnames);
         break;
     }
 
@@ -1298,59 +1295,80 @@ _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
 }
 
 
-int
-_PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
-                    PyObject *const **p_stack, PyObject **p_kwnames)
+PyObject *const *
+_PyStack_DictAsVector(PyObject *const *args, Py_ssize_t nargs,
+                      PyObject *kwargs, PyObject **p_kwnames)
 {
-    PyObject **stack, **kwstack;
-    Py_ssize_t nkwargs;
-    Py_ssize_t pos, i;
-    PyObject *key, *value;
-    PyObject *kwnames;
-
     assert(nargs >= 0);
-    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+    assert(args != NULL || nargs == 0);
 
-    if (kwargs == NULL || (nkwargs = PyDict_GET_SIZE(kwargs)) == 0) {
-        *p_stack = args;
+    Py_ssize_t nkwargs = 0;
+    if (kwargs != NULL) {
+        assert(PyDict_Check(kwargs));
+        nkwargs = PyDict_GET_SIZE(kwargs);
+    }
+
+    if (nkwargs == 0) {
         *p_kwnames = NULL;
-        return 0;
+        /* If there are no arguments, we don't want to return NULL because that
+         * would mean an error. Return an arbitrary non-NULL pointer. */
+        if (args == NULL) {
+            return args + 1;
+        }
+        else {
+            return args;
+        }
     }
 
-    if ((size_t)nargs > PY_SSIZE_T_MAX / sizeof(stack[0]) - (size_t)nkwargs) {
-        PyErr_NoMemory();
-        return -1;
+    /* Allocate one big tuple for everything, plus one sentinel NULL */
+    Py_ssize_t n = 2 * nkwargs + nargs + 1;
+    PyObject *kwtuple = PyTuple_New(n);
+    *p_kwnames = kwtuple;
+    if (kwtuple == NULL) {
+        return NULL;
+    }
+    /* Truncate the tuple to the desired length */
+    Py_SIZE(kwtuple) = nkwargs;
+
+    /* C array of arguments (allocated as part of the tuple) */
+    PyObject **newargs = _PyTuple_ITEMS(kwtuple) + nkwargs;
+
+    /* C array of keyword arguments (values) */
+    PyObject **kwvals = newargs + nargs;
+
+    /* Copy positional arguments */
+    Py_ssize_t i;
+    for (i = 0; i < nargs; i++) {
+        Py_INCREF(args[i]);
+        newargs[i] = args[i];
     }
 
-    stack = PyMem_Malloc((nargs + nkwargs) * sizeof(stack[0]));
-    if (stack == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    kwnames = PyTuple_New(nkwargs);
-    if (kwnames == NULL) {
-        PyMem_Free(stack);
-        return -1;
-    }
-
-    /* Copy position arguments (borrowed references) */
-    memcpy(stack, args, nargs * sizeof(stack[0]));
-
-    kwstack = stack + nargs;
-    pos = i = 0;
-    /* This loop doesn't support lookup function mutating the dictionary
+    /* Copy keyword arguments.
+       This loop doesn't support lookup function mutating the dictionary
        to change its size. It's a deliberate choice for speed, this function is
        called in the performance critical hot code. */
+    i = 0;
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
         Py_INCREF(key);
-        PyTuple_SET_ITEM(kwnames, i, key);
-        /* The stack contains borrowed references */
-        kwstack[i] = value;
+        Py_INCREF(value);
+        PyTuple_SET_ITEM(kwtuple, i, key);
+        kwvals[i] = value;
         i++;
     }
+    return newargs;
+}
 
-    *p_stack = stack;
-    *p_kwnames = kwnames;
-    return 0;
+
+void
+_PyStack_DictAsVector_Free_impl(PyObject *kwtuple)
+{
+    /* C array of arguments (allocated as part of the tuple) */
+    PyObject **args = _PyTuple_ITEMS(kwtuple) + PyTuple_GET_SIZE(kwtuple);
+    while (*args != NULL) {
+        Py_DECREF(*args);
+        args += 1;
+    }
+    Py_DECREF(kwtuple);
 }
