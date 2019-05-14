@@ -133,31 +133,34 @@ def _translate(pat):
                 res = res + '\\{'
             else:
                 stuff = pat[i:j]
-                i = j + 1
 
                 # Find indices of ',' in pattern excluding r'\,'.
                 # E.g. for r'a\,a,b\b,c' it will be [4, 8]
                 indices = [m.end() for m in re.finditer(r'[^\\],', stuff)]
 
-                # Splitting pattern string based on ',' character.
-                # Also '\,' is translated to ','. E.g. for r'a\,a,b\b,c':
-                # * first_part = 'a,a'
-                # * last_part = 'c'
-                # * middle_part = ['b,b']
-                first_part = stuff[:indices[0] - 1].replace(r'\,', ',')
-                last_part = stuff[indices[-1]:].replace(r'\,', ',')
-                middle_parts = [
-                        stuff[st:en - 1].replace(r'\,', ',')
-                        for st, en in zip(indices, indices[1:])
-                ]
+                if len(indices) == 0:
+                    res = res + '\\{'
+                else:
+                    i = j + 1
+                    # Splitting pattern string based on ',' character.
+                    # Also '\,' is translated to ','. E.g. for r'a\,a,b\b,c':
+                    # * first_part = 'a,a'
+                    # * last_part = 'c'
+                    # * middle_part = ['b,b']
+                    first_part = stuff[:indices[0] - 1].replace(r'\,', ',')
+                    last_part = stuff[indices[-1]:].replace(r'\,', ',')
+                    middle_parts = [
+                            stuff[st:en - 1].replace(r'\,', ',')
+                            for st, en in zip(indices, indices[1:])
+                    ]
 
-                # creating the regex from splitted pattern. Each part is
-                # recursivelly evaluated.
-                expanded = functools.reduce(
-                        lambda a,b: '|'.join((a, b)),
-                        (_translate(elem) for elem in [first_part] + middle_parts + [last_part])
-                )
-                res = '%s(%s)' % (res, expanded)
+                    # creating the regex from splitted pattern. Each part is
+                    # recursivelly evaluated.
+                    expanded = functools.reduce(
+                            lambda a,b: '|'.join((a, b)),
+                            (_translate(elem) for elem in [first_part] + middle_parts + [last_part])
+                    )
+                    res = '%s(%s)' % (res, expanded)
         else:
             res = res + re.escape(c)
     return res

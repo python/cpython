@@ -124,6 +124,8 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('[abc]'), r'(?s:[abc])\Z')
         self.assertEqual(translate('{a,b,c}'), r'(?s:(a|b|c))\Z')
         self.assertEqual(translate(r'{a\,b,c}'), r'(?s:(a,b|c))\Z')
+        self.assertEqual(translate('{abc}'), r'(?s:\{abc\})\Z')
+        self.assertEqual(translate('{ab\,c}'), r'(?s:\{ab\\,c\})\Z')
         self.assertEqual(translate('[]]'), r'(?s:[]])\Z')
         self.assertEqual(translate('[!x]'), r'(?s:[^x])\Z')
         self.assertEqual(translate('[^x]'), r'(?s:[\^x])\Z')
