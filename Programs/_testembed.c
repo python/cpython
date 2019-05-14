@@ -1,4 +1,10 @@
+/* FIXME: PEP 587 makes these functions public */
+#ifndef Py_BUILD_CORE_MODULE
+#  define Py_BUILD_CORE_MODULE
+#endif
+
 #include <Python.h>
+#include "pycore_coreconfig.h"   /* FIXME: PEP 587 makes these functions public */
 #include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
@@ -679,6 +685,47 @@ static int test_init_dev_mode(void)
 }
 
 
+static int test_init_read_set(void)
+{
+    _PyInitError err;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    err = _PyCoreConfig_DecodeLocale(&config.program_name, "./init_read_set");
+    if (_Py_INIT_FAILED(err)) {
+        goto fail;
+    }
+
+    err = _PyCoreConfig_Read(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto fail;
+    }
+
+    if (_PyWstrList_Append(&config.module_search_paths,
+                           L"init_read_set_path") < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto fail;
+    }
+
+    /* override executable computed by _PyCoreConfig_Read() */
+    err = _PyCoreConfig_SetString(&config.executable, L"my_executable");
+    if (_Py_INIT_FAILED(err)) {
+        goto fail;
+    }
+
+    err = _Py_InitializeFromConfig(&config);
+    _PyCoreConfig_Clear(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto fail;
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+fail:
+    _Py_ExitInitError(err);
+}
+
+
 static int test_run_main(void)
 {
     _PyCoreConfig config = _PyCoreConfig_INIT;
@@ -736,6 +783,7 @@ static struct TestCase TestCases[] = {
     { "init_isolated", test_init_isolated },
     { "preinit_isolated1", test_preinit_isolated1 },
     { "preinit_isolated2", test_preinit_isolated2 },
+    { "init_read_set", test_init_read_set },
     { "run_main", test_run_main },
     { NULL, NULL }
 };

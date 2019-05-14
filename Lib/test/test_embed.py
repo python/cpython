@@ -273,7 +273,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     UNTESTED_CORE_CONFIG = (
         # FIXME: untested core configuration variables
         'dll_path',
-        'executable',
         'module_search_paths',
     )
     # Mark config which should be get by get_default_config()
@@ -310,7 +309,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'filesystem_errors': GET_DEFAULT_CONFIG,
 
         'pycache_prefix': None,
-        'program_name': './_testembed',
+        'program_name': GET_DEFAULT_CONFIG,
         'argv': [""],
         'program': '',
 
@@ -319,6 +318,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'module_search_path_env': None,
         'home': None,
+        'executable': GET_DEFAULT_CONFIG,
 
         'prefix': GET_DEFAULT_CONFIG,
         'base_prefix': GET_DEFAULT_CONFIG,
@@ -404,7 +404,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 xoptions[opt] = True
         return xoptions
 
-    def get_expected_config(self, expected, env):
+    def get_expected_config(self, expected, env, add_path=None):
         expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
 
         code = textwrap.dedent('''
@@ -420,6 +420,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_exec_prefix': sys.base_exec_prefix,
                 'filesystem_encoding': sys.getfilesystemencoding(),
                 'filesystem_errors': sys.getfilesystemencodeerrors(),
+                'module_search_paths': sys.path,
             }
 
             data = json.dumps(data)
@@ -447,9 +448,21 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         except json.JSONDecodeError:
             self.fail(f"fail to decode stdout: {stdout!r}")
 
+        if expected['executable'] is self.GET_DEFAULT_CONFIG:
+            if sys.platform == 'win32':
+                expected['executable'] = self.test_exe
+            else:
+                if expected['program_name'] is not self.GET_DEFAULT_CONFIG:
+                    expected['executable'] = os.path.abspath(expected['program_name'])
+                else:
+                    expected['executable'] = os.path.join(os.getcwd(), '_testembed')
+        if expected['program_name'] is self.GET_DEFAULT_CONFIG:
+            expected['program_name'] = './_testembed'
+
         for key, value in expected.items():
             if value is self.GET_DEFAULT_CONFIG:
                 expected[key] = config[key]
+        expected['module_search_paths'] = config['module_search_paths']
         return expected
 
     def check_pre_config(self, config, expected):
@@ -457,10 +470,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         core_config = dict(config['core_config'])
         self.assertEqual(pre_config, expected)
 
-    def check_core_config(self, config, expected):
+    def check_core_config(self, config, expected, add_path=None):
         core_config = dict(config['core_config'])
+        if add_path is not None:
+            paths = [*expected['module_search_paths'], add_path]
+            if not paths[0]:
+                del paths[0]
+            self.assertEqual(core_config['module_search_paths'], paths)
         for key in self.UNTESTED_CORE_CONFIG:
             core_config.pop(key, None)
+            expected.pop(key, None)
         self.assertEqual(core_config, expected)
 
     def check_global_config(self, config):
@@ -485,7 +504,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         self.assertEqual(config['global_config'], expected)
 
-    def check_config(self, testname, expected_config, expected_preconfig):
+    def check_config(self, testname, expected_config, expected_preconfig, add_path=None):
         env = dict(os.environ)
         # Remove PYTHON* environment variables to get deterministic environment
         for key in list(env):
@@ -504,13 +523,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             self.fail(f"fail to decode stdout: {out!r}")
 
         expected_preconfig = dict(self.DEFAULT_PRE_CONFIG, **expected_preconfig)
-        expected_config = self.get_expected_config(expected_config, env)
+        expected_config = self.get_expected_config(expected_config, env, add_path)
         for key in self.COPY_PRE_CONFIG:
             if key not in expected_preconfig:
                 expected_preconfig[key] = expected_config[key]
 
         self.check_pre_config(config, expected_preconfig)
-        self.check_core_config(config, expected_config)
+        self.check_core_config(config, expected_config, add_path)
         self.check_global_config(config)
 
     def test_init_default_config(self):
@@ -664,6 +683,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
         }
         self.check_config("preinit_isolated2", config, preconfig)
+
+    def test_init_read_set(self):
+        preconfig = {}
+        core_config = {
+            'program_name': './init_read_set',
+            'executable': 'my_executable',
+        }
+        self.check_config("init_read_set", core_config, preconfig,
+                          add_path="init_read_set_path")
 
 
 if __name__ == "__main__":
