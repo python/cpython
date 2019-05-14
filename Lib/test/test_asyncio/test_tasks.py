@@ -1036,14 +1036,16 @@ class BaseTaskTests:
         # there is possibility that some tasks in the pending list
         # became done but their callbacks haven't all been called yet
 
-        @asyncio.coroutine
-        def coro1():
-            yield
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro1():
+                yield
 
-        @asyncio.coroutine
-        def coro2():
-            yield
-            yield
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro2():
+                yield
+                yield
 
         a = self.new_task(self.loop, coro1())
         b = self.new_task(self.loop, coro2())
@@ -1131,9 +1133,8 @@ class BaseTaskTests:
 
         a = self.new_task(loop, asyncio.sleep(0.1))
 
-        @asyncio.coroutine
-        def sleeper():
-            yield from asyncio.sleep(0.15)
+        async def sleeper():
+            await asyncio.sleep(0.15)
             raise ZeroDivisionError('really')
 
         b = self.new_task(loop, sleeper())
@@ -1220,24 +1221,28 @@ class BaseTaskTests:
         completed = set()
         time_shifted = False
 
-        async def sleeper(dt, x):
-            nonlocal time_shifted
-            await asyncio.sleep(dt)
-            completed.add(x)
-            if not time_shifted and 'a' in completed and 'b' in completed:
-                time_shifted = True
-                loop.advance_time(0.14)
-            return x
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def sleeper(dt, x):
+                nonlocal time_shifted
+                yield from asyncio.sleep(dt)
+                completed.add(x)
+                if not time_shifted and 'a' in completed and 'b' in completed:
+                    time_shifted = True
+                    loop.advance_time(0.14)
+                return x
 
         a = sleeper(0.01, 'a')
         b = sleeper(0.01, 'b')
         c = sleeper(0.15, 'c')
 
-        async def foo():
-            values = []
-            for f in asyncio.as_completed([b, c, a], loop=loop):
-                values.append(await f)
-            return values
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def foo():
+                values = []
+                for f in asyncio.as_completed([b, c, a], loop=loop):
+                    values.append((yield from f))
+                return values
 
         res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertAlmostEqual(0.15, loop.time())
@@ -1918,19 +1923,24 @@ class BaseTaskTests:
 
     def test_yield_from_corowrapper(self):
         with set_coroutine_debug(True):
-            @asyncio.coroutine
-            def t1():
-                return (yield from t2())
+            with self.assertWarns(DeprecationWarning):
+                @asyncio.coroutine
+                def t1():
+                    with self.assertWarns(DeprecationWarning):
+                        return (yield from t2())
 
-            @asyncio.coroutine
-            def t2():
-                f = self.new_future(self.loop)
-                self.new_task(self.loop, t3(f))
-                return (yield from f)
+            with self.assertWarns(DeprecationWarning):
+                @asyncio.coroutine
+                def t2():
+                    f = self.new_future(self.loop)
+                    self.new_task(self.loop, t3(f))
+                    with self.assertWarns(DeprecationWarning):
+                        return (yield from f)
 
-            @asyncio.coroutine
-            def t3(f):
-                f.set_result((1, 2, 3))
+            with self.assertWarns(DeprecationWarning):
+                @asyncio.coroutine
+                def t3(f):
+                    f.set_result((1, 2, 3))
 
             task = self.new_task(self.loop, t1())
             val = self.loop.run_until_complete(task)
@@ -3257,11 +3267,10 @@ class SleepTests(test_utils.TestCase):
             nonlocal result
             result += num
 
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             self.loop.call_soon(inc_result, 1)
             self.assertEqual(result, 0)
-            num = yield from asyncio.sleep(0, result=10)
+            num = await asyncio.sleep(0, result=10)
             self.assertEqual(result, 1) # inc'ed by call_soon
             inc_result(num) # num should be 11
 
