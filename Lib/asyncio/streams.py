@@ -439,9 +439,7 @@ class StreamWriter:
             # Wait for protocol.connection_lost() call
             # Raise connection closing error if any,
             # ConnectionResetError otherwise
-            fut = self._protocol._get_close_waiter(self)
-            await fut
-            raise ConnectionResetError('Connection lost')
+            await sleep(0)
         await self._protocol._drain_helper()
 
 
