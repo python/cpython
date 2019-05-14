@@ -309,7 +309,7 @@ accessible to C code.  They all work with the current interpreter thread's
    .. versionadded:: 3.8
 
 
-.. c:function:: int PySys_AddAuditHook(void *hook, void *userData)
+.. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 
    .. index:: single: audit events
 
@@ -324,8 +324,8 @@ accessible to C code.  They all work with the current interpreter thread's
    :class:`Exception` (other errors will not be silenced).
 
    The hook function is of type :c:type:`int (*)(const char *event, PyObject
-   *args, void* userData)`, where ``args`` is guaranteed to be a
-   :c:type:`PyTupleObject*`. The hook function is always called with the GIL
+   *args, void *userData)`, where *args* is guaranteed to be a
+   :c:type:`PyTupleObject`. The hook function is always called with the GIL
    held by the Python interpreter that raised the event.
 
    The *userData* pointer is passed into the hook function. Since hook

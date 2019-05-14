@@ -22,6 +22,7 @@ Data members:
 #include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pystate.h"
+#include "pycore_tupleobject.h"
 #include "pythread.h"
 #include "pydtrace.h"
 
@@ -112,6 +113,15 @@ PySys_SetObject(const char *name, PyObject *v)
     }
 }
 
+static int
+should_audit(void)
+{
+    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
+    PyThreadState *ts = _PyThreadState_GET();
+    PyInterpreterState *is = ts ? ts->interp : NULL;
+    return e || (is && is->audit_hooks) || PyDTrace_AUDIT_ENABLED();
+}
+
 int
 PySys_Audit(const char *event, const char *argFormat, ...)
 {
@@ -120,7 +130,6 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     PyObject *hooks = NULL;
     PyObject *hook = NULL;
     int res = -1;
-    int dtrace = PyDTrace_AUDIT_ENABLED();
 
     /* N format is inappropriate, because you do not know
        whether the reference is consumed by the call.
@@ -128,15 +137,14 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     assert(!argFormat || !strchr(argFormat, 'N'));
 
     /* Early exit when no hooks are registered */
+    if (!should_audit()) {
+        return 0;
+    }
+
     _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
     PyThreadState *ts = _PyThreadState_GET();
     PyInterpreterState *is = ts ? ts->interp : NULL;
-    if (!is) {
-        return 0;
-    }
-    if (!e && !is->audit_hooks && !dtrace) {
-        return 0;
-    }
+    int dtrace = PyDTrace_AUDIT_ENABLED();
 
     PyObject *exc_type, *exc_value, *exc_tb;
     if (ts) {
@@ -237,6 +245,7 @@ exit:
         if (!res) {
             PyErr_Restore(exc_type, exc_value, exc_tb);
         } else {
+            assert(PyErr_Occurred());
             Py_XDECREF(exc_type);
             Py_XDECREF(exc_value);
             Py_XDECREF(exc_tb);
@@ -277,7 +286,7 @@ void _PySys_ClearAuditHooks(void) {
 }
 
 int
-PySys_AddAuditHook(void *hook, void *userData)
+PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 {
     /* Invoke existing audit hooks to allow them an opportunity to abort. */
     /* Cannot invoke hooks until we are initialized */
@@ -310,7 +319,7 @@ PySys_AddAuditHook(void *hook, void *userData)
     }
 
     e->next = NULL;
-    e->hookCFunction = (_Py_AuditHookFunction)hook;
+    e->hookCFunction = (Py_AuditHookFunction)hook;
     e->userData = userData;
 
     return 0;
@@ -360,20 +369,18 @@ PyDoc_STRVAR(audit_doc,
 Passes the event to any audit hooks that are attached.");
 
 static PyObject *
-sys_audit(PyObject *self, PyObject *args)
+sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 {
-    if (!PyTuple_Check(args)) {
-        PyErr_Format(PyExc_TypeError, "expected tuple, not %.200s", Py_TYPE(args)->tp_name);
-        return NULL;
-    }
-
-    Py_ssize_t argc = PyTuple_GET_SIZE(args);
     if (argc == 0) {
         PyErr_SetString(PyExc_TypeError, "audit() missing 1 required positional argument: 'event'");
         return NULL;
     }
 
-    PyObject *auditEvent = PyTuple_GET_ITEM(args, 0);
+    if (!should_audit()) {
+        Py_RETURN_NONE;
+    }
+
+    PyObject *auditEvent = args[0];
     if (!auditEvent) {
         PyErr_SetString(PyExc_TypeError, "expected str for argument 'event'");
         return NULL;
@@ -388,14 +395,9 @@ sys_audit(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    PyObject *auditArgs = PyTuple_New(argc - 1);
+    PyObject *auditArgs = _PyTuple_FromArray(args + 1, argc - 1);
     if (!auditArgs) {
         return NULL;
-    }
-    for (int i = 0; i < argc - 1; ++i) {
-        PyObject *o = PyTuple_GET_ITEM(args, i + 1);
-        Py_INCREF(o);
-        PyTuple_SET_ITEM(auditArgs, i, o);
     }
 
     int res = PySys_Audit(event, "O", auditArgs);
@@ -1924,7 +1926,7 @@ sys_getandroidapilevel_impl(PyObject *module)
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
-    {"audit",           sys_audit, METH_VARARGS, audit_doc },
+    {"audit",           (PyCFunction)(void(*)(void))sys_audit, METH_FASTCALL, audit_doc },
     {"breakpointhook",  (PyCFunction)(void(*)(void))sys_breakpointhook,
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     SYS_CALLSTATS_METHODDEF

@@ -3459,11 +3459,17 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+#ifdef MS_WIN32
     if (PySys_Audit("ctypes.dlsym",
                     ((uintptr_t)name & ~0xFFFF) ? "Os" : "On",
                     dll, name) < 0) {
         return NULL;
     }
+#else
+    if (PySys_Audit("ctypes.dlsym", "Os", dll, name) < 0) {
+        return NULL;
+    }
+#endif
 
     obj = PyObject_GetAttrString(dll, "_handle");
     if (!obj) {

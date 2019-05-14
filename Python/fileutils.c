@@ -1334,6 +1334,17 @@ _Py_open_noraise(const char *pathname, int flags)
 FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
+    /* Normally a PySys_Audit call would be included here, but since
+       we do not know whether the GIL is held, one should be added
+       immediately before calling this function. The snippet below is
+       the pattern to use. This also avoids a double message from
+       _Py_wfopen_obj
+
+    /* Cannot audit in _Py_wfopen, so raise 'open' here *
+    if (PySys_Audit("open", "ssi", filename, mode, 0) < 0) {
+        return NULL;
+    }
+    */
     FILE *f;
 #ifndef MS_WINDOWS
     char *cpath;
@@ -1348,25 +1359,9 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     if (cpath == NULL) {
         return NULL;
     }
-    if (_Py_IsCoreInitialized() &&
-        PySys_Audit("open", "uui", path, mode, 0) < 0) {
-        /* Audit hooks can abort this, but the caller is not
-           expecting Python exceptions so we have to clear it */
-        PyErr_Clear();
-        errno = EPERM;
-        return NULL;
-    }
     f = fopen(cpath, cmode);
     PyMem_RawFree(cpath);
 #else
-    if (_Py_IsCoreInitialized() &&
-        PySys_Audit("open", "uui", path, mode, 0) < 0) {
-        /* Audit hooks can abort this, but the caller is not
-           expecting Python exceptions so we have to clear it */
-        PyErr_Clear();
-        errno = EPERM;
-        return NULL;
-    }
     f = _wfopen(path, mode);
 #endif
     if (f == NULL)
@@ -1386,16 +1381,19 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
-    FILE *f;
-    if (_Py_IsCoreInitialized() &&
-        PySys_Audit("open", "ssi", pathname, mode, 0) < 0) {
-        /* Audit hooks can abort this, but the caller is not
-           expecting Python exceptions so we have to clear it */
-        PyErr_Clear();
-        errno = EPERM;
+    /* Normally a PySys_Audit call would be included here, but since
+       we do not know whether the GIL is held, one should be added
+       immediately before calling this function. The snippet below is
+       the pattern to use. This also avoids a double message from
+       _Py_fopen_obj
+
+    /* Cannot audit in _Py_fopen, so raise 'open' here *
+    if (PySys_Audit("open", "ssi", filename, mode, 0) < 0) {
         return NULL;
     }
-    f = fopen(pathname, mode);
+    */
+
+    FILE *f = fopen(pathname, mode);
     if (f == NULL)
         return NULL;
     if (make_non_inheritable(fileno(f)) < 0) {

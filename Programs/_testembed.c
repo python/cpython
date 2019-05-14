@@ -678,7 +678,8 @@ static int test_init_dev_mode(void)
     return 0;
 }
 
-static PyObject *_open_code_hook(PyObject *path, void *data) {
+static PyObject *_open_code_hook(PyObject *path, void *data)
+{
     if (PyUnicode_CompareWithASCIIString(path, "$$test-filename") == 0) {
         return PyLong_FromVoidPtr(data);
     }
@@ -830,7 +831,7 @@ static int test_audit_subinterpreter(void)
     Py_Finalize();
 
     switch (_audit_subinterpreter_interpreter_count) {
-        case 3: return 0;
+        case 4: return 0;
         case 0: return -1;
         default: return _audit_subinterpreter_interpreter_count;
     }

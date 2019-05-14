@@ -520,10 +520,8 @@ PyTypeObject PyStdPrinter_Type = {
  * open files that are going to be used by the runtime to execute code
  */
 
-typedef PyObject *(*open_code_func)(PyObject *, void *);
-
 int
-PyFile_SetOpenCodeHook(void *hook, void *userData) {
+PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction hook, void *userData) {
     if (Py_IsInitialized() &&
         PySys_Audit("setopencodehook", NULL) < 0) {
         return -1;
@@ -554,7 +552,7 @@ PyFile_OpenCodeObject(PyObject *path)
         return NULL;
     }
 
-    open_code_func hook = (open_code_func)_PyRuntime.open_code_hook;
+    Py_OpenCodeHookFunction hook = _PyRuntime.open_code_hook;
     if (hook) {
         f = hook(path, _PyRuntime.open_code_userdata);
     } else {

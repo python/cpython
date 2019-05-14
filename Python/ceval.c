@@ -4555,15 +4555,12 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 void
 PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *tstate;
-    PyObject *temp;
-
     if (PySys_Audit("sys.setprofile", NULL) < 0) {
         return;
     }
 
-    tstate = _PyThreadState_GET();
-    temp = tstate->c_profileobj;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *temp = tstate->c_profileobj;
     Py_XINCREF(arg);
     tstate->c_profilefunc = NULL;
     tstate->c_profileobj = NULL;
@@ -4579,14 +4576,13 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyObject *temp = tstate->c_traceobj;
-
     if (PySys_Audit("sys.settrace", NULL) < 0) {
         return;
     }
 
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyObject *temp = tstate->c_traceobj;
     runtime->ceval.tracing_possible += (func != NULL) - (tstate->c_tracefunc != NULL);
     Py_XINCREF(arg);
     tstate->c_tracefunc = NULL;

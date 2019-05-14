@@ -253,8 +253,9 @@ PyInterpreterState_New(void)
 static void
 _PyInterpreterState_Clear(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
-    PySys_Audit("cpython.PyInterpreterState_Clear", NULL);
-    PyErr_Clear();
+    if (PySys_Audit("cpython.PyInterpreterState_Clear", NULL) < 0) {
+        PyErr_Clear();
+    }
 
     HEAD_LOCK(runtime);
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {

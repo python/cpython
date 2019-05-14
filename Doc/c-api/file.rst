@@ -60,16 +60,21 @@ the :mod:`io` APIs instead.
    raised if the end of the file is reached immediately.
 
 
-.. c:function:: int PyFile_SetOpenCodeHook(void *handler)
+.. c:function:: int PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction handler)
 
    Overrides the normal behavior of :func:`io.open_code` to pass its parameter
    through the provided handler.
 
-   The handler is a function of type :c:type:`PyObject *(\*)(const char *narrow,
-   const wchar_t *wide)`. When called, one of the two arguments will contain the
-   filename to open while the other will contain ``NULL``, depending on the
-   current platform. It should always return a :term:`file object` or ``NULL``
-   with an exception set.
+   The handler is a function of type :c:type:`PyObject *(\*)(PyObject *path,
+   void *userData)`, where *path* is guaranteed to be :c:type:`PyUnicodeObject`.
+
+   The *userData* pointer is passed into the hook function. Since hook
+   functions may be called from different runtimes, this pointer should not
+   refer directly to Python state.
+
+   As this hook is intentionally used during import, avoid importing new modules
+   during its execution unless they are known to be frozen or available in
+   ``sys.modules``.
 
    Once a hook has been set, it cannot be removed or replaced, and later calls to
    :c:func:`PyFile_SetOpenCodeHook` will fail. On failure, the function returns

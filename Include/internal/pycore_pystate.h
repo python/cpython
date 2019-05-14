@@ -9,8 +9,10 @@ extern "C" {
 #endif
 
 #include "cpython/coreconfig.h"
+#include "fileobject.h"
 #include "pystate.h"
 #include "pythread.h"
+#include "sysmodule.h"
 
 #include "pycore_gil.h"   /* _gil_runtime_state  */
 #include "pycore_pathconfig.h"
@@ -158,11 +160,9 @@ struct _xidregitem {
 
 /* runtime audit hook state */
 
-typedef int(*_Py_AuditHookFunction)(const char *, PyObject *, void *);
-
 typedef struct _Py_AuditHookEntry {
     struct _Py_AuditHookEntry *next;
-    _Py_AuditHookFunction hookCFunction;
+    Py_AuditHookFunction hookCFunction;
     void *userData;
 } _Py_AuditHookEntry;
 
@@ -236,7 +236,7 @@ typedef struct pyruntimestate {
 
     _PyPreConfig preconfig;
 
-    void *open_code_hook;
+    Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head;
 
