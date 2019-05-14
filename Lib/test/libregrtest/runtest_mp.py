@@ -33,6 +33,12 @@ def must_stop(result, ns):
     return False
 
 
+def parse_worker_args(worker_args):
+    ns_dict, test_name = json.loads(worker_args)
+    ns = types.SimpleNamespace(**ns_dict)
+    return (ns, test_name)
+
+
 def run_test_in_subprocess(testname, ns):
     ns_dict = vars(ns)
     worker_args = (ns_dict, testname)
@@ -42,8 +48,6 @@ def run_test_in_subprocess(testname, ns):
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.regrtest',
            '--worker-args', worker_args]
-    if ns.pgo:
-        cmd += ['--pgo']
 
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
@@ -56,15 +60,15 @@ def run_test_in_subprocess(testname, ns):
                             cwd=support.SAVEDCWD)
 
 
-def run_tests_worker(worker_args):
-    ns_dict, testname = json.loads(worker_args)
-    ns = types.SimpleNamespace(**ns_dict)
-
+def run_tests_worker(ns, test_name):
     setup_tests(ns)
 
-    result = runtest(ns, testname)
+    result = runtest(ns, test_name)
+
     print()   # Force a newline (just in case)
-    print(json.dumps(result), flush=True)
+
+    # Serialize TestResult as list in JSON
+    print(json.dumps(list(result)), flush=True)
     sys.exit(0)
 
 
