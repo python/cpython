@@ -123,6 +123,7 @@ clean:
 
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
+	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
 	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
