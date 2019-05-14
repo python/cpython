@@ -7,6 +7,7 @@ import os
 import sys
 import traceback
 import types
+import warnings
 
 from . import base_futures
 from . import constants
@@ -52,6 +53,8 @@ class CoroWrapper:
         return f'<{self.__class__.__name__} {coro_repr}>'
 
     def __iter__(self):
+        warnings.warn("yield from coro is deprecated, please use await coro instead",
+                      DeprecationWarning)
         return self
 
     def __next__(self):
@@ -107,6 +110,10 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
+    warnings.warn("@coroutine decoratur is deprecated, "
+                  "please use async def function instead",
+                  DeprecationWarning,
+                  stacklevel=2)
     if inspect.iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
         # defined with "async def".

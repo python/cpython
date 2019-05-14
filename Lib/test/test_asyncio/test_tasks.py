@@ -1220,10 +1220,9 @@ class BaseTaskTests:
         completed = set()
         time_shifted = False
 
-        @asyncio.coroutine
-        def sleeper(dt, x):
+        async def sleeper(dt, x):
             nonlocal time_shifted
-            yield from asyncio.sleep(dt)
+            await asyncio.sleep(dt)
             completed.add(x)
             if not time_shifted and 'a' in completed and 'b' in completed:
                 time_shifted = True
@@ -1234,11 +1233,10 @@ class BaseTaskTests:
         b = sleeper(0.01, 'b')
         c = sleeper(0.15, 'c')
 
-        @asyncio.coroutine
-        def foo():
+        async def foo():
             values = []
             for f in asyncio.as_completed([b, c, a], loop=loop):
-                values.append((yield from f))
+                values.append(await f)
             return values
 
         res = loop.run_until_complete(self.new_task(loop, foo()))
@@ -1350,17 +1348,15 @@ class BaseTaskTests:
 
     def test_as_completed_duplicate_coroutines(self):
 
-        @asyncio.coroutine
-        def coro(s):
+        async def coro(s):
             return s
 
-        @asyncio.coroutine
-        def runner():
+        async def runner():
             result = []
             c = coro('ham')
             for f in asyncio.as_completed([c, c, coro('spam')],
                                           loop=self.loop):
-                result.append((yield from f))
+                result.append(await f)
             return result
 
         fut = self.new_task(self.loop, runner())
@@ -1380,10 +1376,9 @@ class BaseTaskTests:
 
         loop = self.new_test_loop(gen)
 
-        @asyncio.coroutine
-        def sleeper(dt, arg):
-            yield from asyncio.sleep(dt/2)
-            res = yield from asyncio.sleep(dt/2, arg)
+        async def sleeper(dt, arg):
+            await asyncio.sleep(dt/2)
+            res = await asyncio.sleep(dt/2, arg)
             return res
 
         t = self.new_task(loop, sleeper(0.1, 'yeah'))
@@ -1431,16 +1426,14 @@ class BaseTaskTests:
 
         loop = self.new_test_loop(gen)
 
-        @asyncio.coroutine
-        def sleep(dt):
-            yield from asyncio.sleep(dt)
+        async def sleep(dt):
+            await asyncio.sleep(dt)
 
-        @asyncio.coroutine
-        def doit():
+        async def doit():
             sleeper = self.new_task(loop, sleep(5000))
             loop.call_later(0.1, sleeper.cancel)
             try:
-                yield from sleeper
+                await sleeper
             except asyncio.CancelledError:
                 return 'cancelled'
             else:
@@ -1453,9 +1446,8 @@ class BaseTaskTests:
     def test_task_cancel_waiter_future(self):
         fut = self.new_future(self.loop)
 
-        @asyncio.coroutine
-        def coro():
-            yield from fut
+        async def coro():
+            await fut
 
         task = self.new_task(self.loop, coro())
         test_utils.run_briefly(self.loop)
@@ -1469,8 +1461,7 @@ class BaseTaskTests:
         self.assertTrue(fut.cancelled())
 
     def test_task_set_methods(self):
-        @asyncio.coroutine
-        def notmuch():
+        async def notmuch():
             return 'ko'
 
         gen = notmuch()
@@ -1487,11 +1478,12 @@ class BaseTaskTests:
             'ko')
 
     def test_step_result(self):
-        @asyncio.coroutine
-        def notmuch():
-            yield None
-            yield 1
-            return 'ko'
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def notmuch():
+                yield None
+                yield 1
+                return 'ko'
 
         self.assertRaises(
             RuntimeError, self.loop.run_until_complete, notmuch())
@@ -1511,10 +1503,9 @@ class BaseTaskTests:
         fut = Fut(loop=self.loop)
         result = None
 
-        @asyncio.coroutine
-        def wait_for_future():
+        async def wait_for_future():
             nonlocal result
-            result = yield from fut
+            result = await fut
 
         t = self.new_task(self.loop, wait_for_future())
         test_utils.run_briefly(self.loop)
@@ -1536,16 +1527,14 @@ class BaseTaskTests:
 
         loop = self.new_test_loop(gen)
 
-        @asyncio.coroutine
-        def sleeper():
-            yield from asyncio.sleep(10)
+        async def sleeper():
+            await asyncio.sleep(10)
 
         base_exc = BaseException()
 
-        @asyncio.coroutine
-        def notmutch():
+        async def notmutch():
             try:
-                yield from sleeper()
+                await sleeper()
             except asyncio.CancelledError:
                 raise base_exc
 
@@ -1571,9 +1560,10 @@ class BaseTaskTests:
             yield
         self.assertFalse(asyncio.iscoroutinefunction(fn1))
 
-        @asyncio.coroutine
-        def fn2():
-            yield
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def fn2():
+                yield
         self.assertTrue(asyncio.iscoroutinefunction(fn2))
 
         self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
@@ -1581,9 +1571,10 @@ class BaseTaskTests:
     def test_yield_vs_yield_from(self):
         fut = self.new_future(self.loop)
 
-        @asyncio.coroutine
-        def wait_for_future():
-            yield fut
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def wait_for_future():
+                yield fut
 
         task = wait_for_future()
         with self.assertRaises(RuntimeError):
@@ -1592,17 +1583,19 @@ class BaseTaskTests:
         self.assertFalse(fut.done())
 
     def test_yield_vs_yield_from_generator(self):
-        @asyncio.coroutine
-        def coro():
-            yield
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro():
+                yield
 
-        @asyncio.coroutine
-        def wait_for_future():
-            gen = coro()
-            try:
-                yield gen
-            finally:
-                gen.close()
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def wait_for_future():
+                gen = coro()
+                try:
+                    yield gen
+                finally:
+                    gen.close()
 
         task = wait_for_future()
         self.assertRaises(
@@ -1610,9 +1603,10 @@ class BaseTaskTests:
             self.loop.run_until_complete, task)
 
     def test_coroutine_non_gen_function(self):
-        @asyncio.coroutine
-        def func():
-            return 'test'
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def func():
+                return 'test'
 
         self.assertTrue(asyncio.iscoroutinefunction(func))
 
@@ -1625,13 +1619,15 @@ class BaseTaskTests:
     def test_coroutine_non_gen_function_return_future(self):
         fut = self.new_future(self.loop)
 
-        @asyncio.coroutine
-        def func():
-            return fut
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def func():
+                return fut
 
-        @asyncio.coroutine
-        def coro():
-            fut.set_result('test')
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro():
+                fut.set_result('test')
 
         t1 = self.new_task(self.loop, func())
         t2 = self.new_task(self.loop, coro())

@@ -128,6 +128,8 @@ class _asyncio.Future "FutureObj *" "&Future_Type"
 
 /* Get FutureIter from Future */
 static PyObject * future_new_iter(PyObject *);
+/* Deprecated version of future_new_iter */
+static PyObject * future_new_iter_deprecated(PyObject *);
 
 static PyRunningLoopHolder * new_running_loop_holder(PyObject *);
 
@@ -1437,7 +1439,7 @@ static PyTypeObject FutureType = {
     .tp_traverse = (traverseproc)FutureObj_traverse,
     .tp_clear = (inquiry)FutureObj_clear,
     .tp_weaklistoffset = offsetof(FutureObj, fut_weakreflist),
-    .tp_iter = (getiterfunc)future_new_iter,
+    .tp_iter = (getiterfunc)future_new_iter_deprecated,
     .tp_methods = FutureType_methods,
     .tp_getset = FutureType_getsetlist,
     .tp_dictoffset = offsetof(FutureObj, dict),
@@ -1666,6 +1668,17 @@ future_new_iter(PyObject *fut)
     return (PyObject*)it;
 }
 
+
+static PyObject *
+future_new_iter_deprecated(PyObject *fut)
+{
+    if(PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "yield from fut is deprecated, please use await fut instead",
+                    1)) {
+        return NULL;
+    }
+    return future_new_iter(fut);
+}
 
 /*********************** Task **************************/
 
@@ -2468,7 +2481,7 @@ static PyTypeObject TaskType = {
     .tp_traverse = (traverseproc)TaskObj_traverse,
     .tp_clear = (inquiry)TaskObj_clear,
     .tp_weaklistoffset = offsetof(TaskObj, task_weakreflist),
-    .tp_iter = (getiterfunc)future_new_iter,
+    .tp_iter = (getiterfunc)future_new_iter_deprecated,
     .tp_methods = TaskType_methods,
     .tp_getset = TaskType_getsetlist,
     .tp_dictoffset = offsetof(TaskObj, dict),

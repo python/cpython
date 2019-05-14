@@ -8,6 +8,7 @@ import concurrent.futures
 import contextvars
 import logging
 import sys
+import warnings
 
 from . import base_futures
 from . import events
@@ -259,7 +260,11 @@ class Future:
             raise RuntimeError("await wasn't used with future")
         return self.result()  # May raise too.
 
-    __iter__ = __await__  # make compatible with 'yield from'.
+    def __iter__(self):
+        warnings.warn("yield from fut is deprecated, please use await fut instead",
+                      DeprecationWarning,
+                      stacklevel=2)
+        return self.__await__()
 
 
 # Needed for testing purposes.
