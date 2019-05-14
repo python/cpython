@@ -717,6 +717,8 @@ MULTIARCH_CPPFLAGS
 PLATFORM_TRIPLET
 MULTIARCH
 ac_ct_CXX
+NOSCPROXY
+SCPROXY
 ac_ct_OBJCXX
 OBJCXXFLAGS
 OBJCXX
@@ -5190,7 +5192,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+	SCPROXY=
+	NOSCPROXY=#
+else
+	SCPROXY=#
+	NOSCPROXY=
 fi
+
+
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-cxx-main=<compiler>" >&5
 $as_echo_n "checking for --with-cxx-main=<compiler>... " >&6; }
