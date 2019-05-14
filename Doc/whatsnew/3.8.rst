@@ -788,6 +788,10 @@ The following features and APIs have been removed from Python 3.8:
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
 
+* The function :func:`time.clock` has been removed, it was deprecated since Python
+  3.3: use :func:`time.perf_counter` or :func:`time.process_time` instead, depending
+  on your requirements, to have a well defined behavior.
+
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
