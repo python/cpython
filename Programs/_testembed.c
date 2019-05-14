@@ -831,7 +831,7 @@ static int test_audit_subinterpreter(void)
     Py_Finalize();
 
     switch (_audit_subinterpreter_interpreter_count) {
-        case 4: return 0;
+        case 3: return 0;
         case 0: return -1;
         default: return _audit_subinterpreter_interpreter_count;
     }
