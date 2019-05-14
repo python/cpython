@@ -150,12 +150,13 @@ init_importlib(PyInterpreterState *interp, PyObject *sysmod)
     PyObject *importlib;
     PyObject *impmod;
     PyObject *value;
+    int verbose = interp->core_config.verbose;
 
     /* Import _importlib through its frozen version, _frozen_importlib. */
     if (PyImport_ImportFrozenModule("_frozen_importlib") <= 0) {
         return _Py_INIT_ERR("can't import _frozen_importlib");
     }
-    else if (Py_VerboseFlag) {
+    else if (verbose) {
         PySys_FormatStderr("import _frozen_importlib # frozen\n");
     }
     importlib = PyImport_AddModule("_frozen_importlib");
@@ -175,7 +176,7 @@ init_importlib(PyInterpreterState *interp, PyObject *sysmod)
     if (impmod == NULL) {
         return _Py_INIT_ERR("can't import _imp");
     }
-    else if (Py_VerboseFlag) {
+    else if (verbose) {
         PySys_FormatStderr("import _imp # builtin\n");
     }
     if (_PyImport_SetModuleString("_imp", impmod) < 0) {

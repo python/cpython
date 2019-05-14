@@ -363,6 +363,13 @@ class _ServerStreamProtocol(_BaseStreamProtocol):
         self._stream = None
 
 
+def _swallow_unhandled_exception(task):
+    # Do a trick to suppress unhandled exception
+    # if stream.write() was used without await and
+    # stream.drain() was paused and resumed with an exception
+    task.exception()
+
+
 class Stream:
     """Wraps a Transport.
 
@@ -468,7 +475,9 @@ class Stream:
                 # fast path, the stream is not paused
                 # no need to wait for resume signal
                 return self._complete_fut
-        return self._loop.create_task(self.drain())
+        ret = self._loop.create_task(self.drain())
+        ret.add_done_callback(_swallow_unhandled_exception)
+        return ret
 
     def write_eof(self):
         self._mode._check_write()

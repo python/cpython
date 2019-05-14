@@ -908,6 +908,8 @@ os.close(fd)
         # where it never gives up the event loop but the socket is
         # closed on the  server side.
 
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
         q = queue.Queue()
 
         def server():
@@ -940,6 +942,7 @@ os.close(fd)
         # Clean up the thread.  (Only on success; on failure, it may
         # be stuck in accept().)
         thread.join()
+        self.assertEqual([], messages)
 
     def test___repr__(self):
         stream = asyncio.Stream(mode=asyncio.StreamMode.READ,

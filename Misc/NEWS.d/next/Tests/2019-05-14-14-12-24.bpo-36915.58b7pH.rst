@@ -1,0 +1,3 @@
+The main regrtest process now always removes all temporary directories of
+worker processes even if they crash or if they are killed on
+KeyboardInterrupt (CTRL+c).

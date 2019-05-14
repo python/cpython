@@ -102,7 +102,7 @@ class ProactorTests(test_utils.TestCase):
         clients = []
         for i in range(5):
             stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
-                                    loop=self.loop)
+                                    loop=self.loop, _asyncio_internal=True)
             protocol = _StreamProtocol(stream,
                                        loop=self.loop)
             trans, proto = await self.loop.create_pipe_connection(
