@@ -171,11 +171,9 @@ def fix(filename):
 
 
 def parse_shebang(shebangline):
-    # find doesn't search last character
     shebangline = shebangline.decode()
     end = len(shebangline)
     start = shebangline.find(' -', 0, end) + 2  # find returns index at space
-    err(str(shebangline[start]))
     if shebangline[start].isalpha():
         flags = shebangline[start:end].split()
         args = ''

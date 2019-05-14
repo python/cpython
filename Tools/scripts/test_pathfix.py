@@ -20,7 +20,6 @@ test_cases_for_parsing = [
 def test_parse_shebangs(line, output):
     assert parse_shebang(line) == output
 
-# I don't know how to fix these to test properly
 
 @pytest.mark.parametrize("line,output", test_cases)
 def test_fixline(line, output):
