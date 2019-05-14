@@ -439,7 +439,8 @@ class BaseTaskTests:
             async def func(x, y):
                 await asyncio.sleep(0)
 
-            partial_func = asyncio.coroutine(functools.partial(func, 1))
+            with self.assertWarns(DeprecationWarning):
+                partial_func = asyncio.coroutine(functools.partial(func, 1))
             task = self.loop.create_task(partial_func(2))
 
             # make warnings quiet
@@ -973,9 +974,10 @@ class BaseTaskTests:
 
     def test_wait_duplicate_coroutines(self):
 
-        @asyncio.coroutine
-        def coro(s):
-            return s
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro(s):
+                return s
         c = coro('test')
 
         task =self.new_task(
@@ -1632,7 +1634,8 @@ class BaseTaskTests:
 
         t1 = self.new_task(self.loop, func())
         t2 = self.new_task(self.loop, coro())
-        res = self.loop.run_until_complete(t1)
+        with self.assertWarns(DeprecationWarning):
+            res = self.loop.run_until_complete(t1)
         self.assertEqual(res, 'test')
         self.assertIsNone(t2.result())
 
@@ -1884,11 +1887,13 @@ class BaseTaskTests:
             # A function that asserts various things.
             # Called twice, with different debug flag values.
 
-            @asyncio.coroutine
-            def coro():
-                # The actual coroutine.
-                self.assertTrue(gen.gi_running)
-                yield from fut
+            with self.assertWarns(DeprecationWarning):
+                @asyncio.coroutine
+                def coro():
+                    # The actual coroutine.
+                    self.assertTrue(gen.gi_running)
+                    with self.assertWarns(DeprecationWarning):
+                        yield from fut
 
             # A completed Future used to run the coroutine.
             fut = self.new_future(self.loop)
@@ -2011,13 +2016,15 @@ class BaseTaskTests:
     def test_log_destroyed_pending_task(self):
         Task = self.__class__.Task
 
-        @asyncio.coroutine
-        def kill_me(loop):
-            future = self.new_future(loop)
-            yield from future
-            # at this point, the only reference to kill_me() task is
-            # the Task._wakeup() method in future._callbacks
-            raise Exception("code never reached")
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def kill_me(loop):
+                future = self.new_future(loop)
+                with self.assertWarns(DeprecationWarning):
+                    yield from future
+                # at this point, the only reference to kill_me() task is
+                # the Task._wakeup() method in future._callbacks
+                raise Exception("code never reached")
 
         mock_handler = mock.Mock()
         self.loop.set_debug(True)
@@ -2066,14 +2073,12 @@ class BaseTaskTests:
         loop = asyncio.new_event_loop()
         self.set_event_loop(loop)
 
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             raise TypeError
 
-        @asyncio.coroutine
-        def runner():
+        async def runner():
             task = self.new_task(loop, coro())
-            yield from asyncio.sleep(0.05)
+            await asyncio.sleep(0.05)
             task.cancel()
             task = None
 
@@ -2083,9 +2088,10 @@ class BaseTaskTests:
     @mock.patch('asyncio.coroutines.logger')
     def test_coroutine_never_yielded(self, m_log):
         with set_coroutine_debug(True):
-            @asyncio.coroutine
-            def coro_noop():
-                pass
+            with self.assertWarns(DeprecationWarning):
+                @asyncio.coroutine
+                def coro_noop():
+                    pass
 
         tb_filename = __file__
         tb_lineno = sys._getframe().f_lineno + 2
@@ -2114,13 +2120,15 @@ class BaseTaskTests:
         from @asyncio.coroutine()-wrapped function should have same effect as
         returning generator object or Future."""
         def check():
-            @asyncio.coroutine
-            def outer_coro():
+            with self.assertWarns(DeprecationWarning):
                 @asyncio.coroutine
-                def inner_coro():
-                    return 1
+                def outer_coro():
+                    with self.assertWarns(DeprecationWarning):
+                        @asyncio.coroutine
+                        def inner_coro():
+                            return 1
 
-                return inner_coro()
+                    return inner_coro()
 
             result = self.loop.run_until_complete(outer_coro())
             self.assertEqual(result, 1)
@@ -2131,7 +2139,8 @@ class BaseTaskTests:
 
         # Test with debug flag set.
         with set_coroutine_debug(True):
-            check()
+            with self.assertWarns(DeprecationWarning):
+                check()
 
     def test_task_source_traceback(self):
         self.loop.set_debug(True)
@@ -2232,14 +2241,12 @@ class BaseTaskTests:
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843
 
-        @asyncio.coroutine
-        def foo():
+        async def foo():
             1 / 0
 
-        @asyncio.coroutine
-        def main():
+        async def main():
             task = self.new_task(self.loop, foo())
-            yield  # skip one loop iteration
+            await asyncio.sleep(0)  # skip one loop iteration
             self.assertIsNotNone(task.exception().__traceback__)
 
         self.loop.run_until_complete(main())
@@ -2250,8 +2257,7 @@ class BaseTaskTests:
             raise ValueError
         self.loop.call_soon = call_soon
 
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             pass
 
         self.assertFalse(m_log.error.called)
@@ -2282,9 +2288,10 @@ class BaseTaskTests:
 
     def test_create_task_with_oldstyle_coroutine(self):
 
-        @asyncio.coroutine
-        def coro():
-            pass
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro():
+                pass
 
         task = self.new_task(self.loop, coro())
         self.assertIsInstance(task, self.Task)

@@ -54,7 +54,8 @@ class CoroWrapper:
 
     def __iter__(self):
         warnings.warn("yield from coro is deprecated, please use await coro instead",
-                      DeprecationWarning)
+                      DeprecationWarning,
+                      stacklevel=2)
         return self
 
     def __next__(self):
@@ -110,7 +111,7 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
-    warnings.warn("@coroutine decoratur is deprecated, "
+    warnings.warn("@coroutine decorator is deprecated, "
                   "please use async def function instead",
                   DeprecationWarning,
                   stacklevel=2)
