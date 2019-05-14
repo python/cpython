@@ -69,8 +69,8 @@ async def open_connection(host=None, port=None, *,
                     loop=loop,
                     _asyncio_internal=True)
     transport, _ = await loop.create_connection(
-        lambda: StreamReaderProtocol(stream, loop=loop,
-                                    _asyncio_internal=True),
+        lambda: _StreamProtocol(stream, loop=loop,
+                                _asyncio_internal=True),
         host, port, **kwds)
     return stream, stream
 
@@ -106,9 +106,9 @@ async def start_server(client_connected_cb, host=None, port=None, *,
                         limit=limit,
                         loop=loop,
                         _asyncio_internal=True)
-        protocol = StreamReaderProtocol(stream, client_connected_cb,
-                                        loop=loop,
-                                        _asyncio_internal=True)
+        protocol = _ServerStreamProtocol(stream, client_connected_cb,
+                                         loop=loop,
+                                         _asyncio_internal=True)
         return protocol
 
     return await loop.create_server(factory, host, port, **kwds)
@@ -127,9 +127,9 @@ if hasattr(socket, 'AF_UNIX'):
                         loop=loop,
                         _asyncio_internal=True)
         transport, _ = await loop.create_unix_connection(
-            lambda: StreamReaderProtocol(stream,
-                                         loop=loop,
-                                        _asyncio_internal=True),
+            lambda: _StreamProtocol(stream,
+                                    loop=loop,
+                                    _asyncio_internal=True),
             path, **kwds)
         return stream, stream
 
@@ -144,10 +144,10 @@ if hasattr(socket, 'AF_UNIX'):
                             limit=limit,
                             loop=loop,
                             _asyncio_internal=True)
-            protocol = StreamReaderProtocol(stream,
-                                            client_connected_cb,
-                                            loop=loop,
-                                            _asyncio_internal=True)
+            protocol = _ServerStreamProtocol(stream,
+                                             client_connected_cb,
+                                             loop=loop,
+                                             _asyncio_internal=True)
             return protocol
 
         return await loop.create_unix_server(factory, path, **kwds)
@@ -230,7 +230,7 @@ class FlowControlMixin(protocols.Protocol):
         raise NotImplementedError
 
 
-class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
+class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
     """Helper class to adapt between Protocol and StreamReader.
 
     (This is a helper class instead of making StreamReader itself a
@@ -240,59 +240,16 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     """
 
     _source_traceback = None
+    _stream = None  # initialized in derived classes
 
-    def __init__(self, stream, client_connected_cb=None, loop=None,
+    def __init__(self, loop=None,
                  *, _asyncio_internal=False):
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
-        if client_connected_cb:
-            self._strong_stream = stream
-            self._stream_wr = None
-        else:
-            self._strong_stream = None
-            self._stream_wr = weakref.ref(stream, self._on_gc)
-        self._source_traceback = stream._source_traceback
-        self._reject_connection = False
         self._transport = None
-        self._client_connected_cb = client_connected_cb
         self._over_ssl = False
         self._closed = self._loop.create_future()
 
-    def _on_gc(self, wr):
-        transport = self._transport
-        if transport is not None:
-            # connection_made was called
-            context = {
-                'message': ('An open stream object is being garbage '
-                            'collected; call "stream.close()" explicitly.')
-            }
-            if self._source_traceback:
-                context['source_traceback'] = self._source_traceback
-            self._loop.call_exception_handler(context)
-            transport.abort()
-        else:
-            self._reject_connection = True
-        self._stream_wr = None
-
-    @property
-    def _stream(self):
-        if self._strong_stream is not None:
-            return self._strong_stream
-        if self._stream_wr is None:
-            return None
-        return self._stream_wr()
-
     def connection_made(self, transport):
-        if self._reject_connection:
-            context = {
-                'message': ('An open stream was garbage collected prior to '
-                            'establishing network connection; '
-                            'call "stream.close()" explicitly.')
-            }
-            if self._source_traceback:
-                context['source_traceback'] = self._source_traceback
-            self._loop.call_exception_handler(context)
-            transport.abort()
-            return
         self._transport = transport
         stream = self._stream
         if stream is None:
@@ -300,11 +257,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         stream.set_transport(transport)
         stream._protocol = self
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
-        if self._client_connected_cb is not None:
-            res = self._client_connected_cb(self._stream,
-                                            self._stream)
-            if coroutines.iscoroutine(res):
-                self._loop.create_task(res)
 
     def connection_lost(self, exc):
         stream = self._stream
@@ -319,7 +271,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             else:
                 self._closed.set_exception(exc)
         super().connection_lost(exc)
-        self._stream_wr = None
         self._transport = None
 
     def data_received(self, data):
@@ -347,6 +298,75 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         closed = self._closed
         if closed.done() and not closed.cancelled():
             closed.exception()
+
+
+class _StreamProtocol(_BaseStreamProtocol):
+    def __init__(self, stream, loop=None,
+                 *, _asyncio_internal=False):
+        super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
+        self._source_traceback = stream._source_traceback
+        self._stream_wr = weakref.ref(stream, self._on_gc)
+        self._reject_connection = False
+
+    def _on_gc(self, wr):
+        transport = self._transport
+        if transport is not None:
+            # connection_made was called
+            context = {
+                'message': ('An open stream object is being garbage '
+                            'collected; call "stream.close()" explicitly.')
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
+            transport.abort()
+        else:
+            self._reject_connection = True
+        self._stream_wr = None
+
+    @property
+    def _stream(self):
+        if self._stream_wr is None:
+            return None
+        return self._stream_wr()
+
+    def connection_made(self, transport):
+        if self._reject_connection:
+            context = {
+                'message': ('An open stream was garbage collected prior to '
+                            'establishing network connection; '
+                            'call "stream.close()" explicitly.')
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
+            transport.abort()
+            return
+        super().connection_made(transport)
+
+    def connection_lost(self, exc):
+        super().connection_lost(exc)
+        self._stream_wr = None
+
+
+class _ServerStreamProtocol(_BaseStreamProtocol):
+    def __init__(self, stream, client_connected_cb, loop=None,
+                 *, _asyncio_internal=False):
+        super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
+        self._source_traceback = stream._source_traceback
+        self._stream = stream
+        self._client_connected_cb = client_connected_cb
+
+    def connection_made(self, transport):
+        super().connection_made(transport)
+        res = self._client_connected_cb(self._stream,
+                                        self._stream)
+        if coroutines.iscoroutine(res):
+            self._loop.create_task(res)
+
+    def connection_lost(self, exc):
+        super().connection_lost(exc)
+        self._stream = None
 
 
 class Stream:

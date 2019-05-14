@@ -16,7 +16,7 @@ except ImportError:
     ssl = None
 
 import asyncio
-from asyncio.streams import StreamReaderProtocol
+from asyncio.streams import _StreamProtocol
 from test.test_asyncio import utils as test_utils
 
 
@@ -838,11 +838,11 @@ os.close(fd)
         args = [sys.executable, '-c', code, str(wfd)]
 
         pipe = open(rfd, 'rb', 0)
-        reader = asyncio.Stream(mode=asyncio.StreamMode.READ,
+        stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 loop=self.loop, limit=1,
                                 _asyncio_internal=True)
-        protocol = StreamReaderProtocol(reader, loop=self.loop,
-                                        _asyncio_internal=True)
+        protocol = _StreamProtocol(stream, loop=self.loop,
+                                   _asyncio_internal=True)
         transport, _ = self.loop.run_until_complete(
             self.loop.connect_read_pipe(lambda: protocol, pipe))
 
@@ -859,14 +859,14 @@ os.close(fd)
             asyncio.set_child_watcher(None)
 
         os.close(wfd)
-        data = self.loop.run_until_complete(reader.read(-1))
+        data = self.loop.run_until_complete(stream.read(-1))
         self.assertEqual(data, b'data')
 
     def test_streamreader_constructor(self):
         self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
 
-        # asyncio issue #184: Ensure that StreamReaderProtocol constructor
+        # asyncio issue #184: Ensure that _StreamProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         reader = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                 _asyncio_internal=True)
@@ -876,10 +876,10 @@ os.close(fd)
         self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
 
-        # asyncio issue #184: Ensure that StreamReaderProtocol constructor
+        # asyncio issue #184: Ensure that _StreamProtocol constructor
         # retrieves the current loop if the loop parameter is not set
-        reader = mock.Mock()
-        protocol = StreamReaderProtocol(reader, _asyncio_internal=True)
+        stream = mock.Mock()
+        protocol = _StreamProtocol(stream, _asyncio_internal=True)
         self.assertIs(protocol._loop, self.loop)
 
     def test_drain_raises(self):
@@ -1062,12 +1062,12 @@ os.close(fd)
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
         with test_utils.run_test_server() as httpd:
-            rd = asyncio.Stream(mode=asyncio.StreamMode.READ,
-                                loop=self.loop,
-                                _asyncio_internal=True)
-            pr = StreamReaderProtocol(rd, loop=self.loop,
-                                      _asyncio_internal=True)
-            del rd
+            stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
+                                    loop=self.loop,
+                                    _asyncio_internal=True)
+            pr = _StreamProtocol(stream, loop=self.loop,
+                                 _asyncio_internal=True)
+            del stream
             gc.collect()
             tr, _ = self.loop.run_until_complete(
                 self.loop.create_connection(
@@ -1144,10 +1144,6 @@ os.close(fd)
     def test_stream_reader_create_warning(self):
         with self.assertWarns(DeprecationWarning):
             asyncio.StreamReader
-
-    def test_stream_reader_protocol_create_warning(self):
-        with self.assertRaises(AttributeError):
-            asyncio.StreamReaderProtocol
 
     def test_stream_writer_create_warning(self):
         with self.assertWarns(DeprecationWarning):

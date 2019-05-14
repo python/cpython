@@ -17,7 +17,7 @@ import _winapi
 
 import asyncio
 from asyncio import windows_events
-from asyncio.streams import StreamReaderProtocol
+from asyncio.streams import _StreamProtocol
 from test.test_asyncio import utils as test_utils
 from test.support.script_helper import spawn_python
 
@@ -103,8 +103,8 @@ class ProactorTests(test_utils.TestCase):
         for i in range(5):
             stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                     loop=self.loop)
-            protocol = StreamReaderProtocol(stream,
-                                            loop=self.loop)
+            protocol = _StreamProtocol(stream,
+                                       loop=self.loop)
             trans, proto = await self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)
