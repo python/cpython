@@ -23,24 +23,18 @@ from .tasks import sleep
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 
 
-class StreamMode(enum.Enum):
-    READ = "read"
-    WRITE = "write"
-    READWRITE = "readwrite"
+class StreamMode(enum.Flag):
+    READ = enum.auto()
+    WRITE = enum.auto()
+    READWRITE = READ | WRITE
 
-    def is_read(self):
-        return self in (self.READ, self.READWRITE)
-
-    def is_write(self):
-        return self in (self.WRITE, self.READWRITE)
-
-    def check_read(self):
-        if not self.is_read():
-            raise RuntimeError("The stream is read-only")
-
-    def check_write(self):
-        if not self.is_write():
+    def _check_read(self):
+        if not self & self.READ:
             raise RuntimeError("The stream is write-only")
+
+    def _check_write(self):
+        if not self & self.WRITE:
+            raise RuntimeError("The stream is read-only")
 
 
 async def open_connection(host=None, port=None, *,
@@ -439,16 +433,20 @@ class Stream:
         return '<{}>'.format(' '.join(info))
 
     @property
+    def mode(self):
+        return self._mode
+
+    @property
     def transport(self):
         return self._transport
 
     def write(self, data):
-        self._mode.check_write()
+        self._mode._check_write()
         self._transport.write(data)
         return self._fast_drain()
 
     def writelines(self, data):
-        self._mode.check_write()
+        self._mode._check_write()
         self._transport.writelines(data)
         return self._fast_drain()
 
@@ -473,7 +471,7 @@ class Stream:
         return self._loop.create_task(self.drain())
 
     def write_eof(self):
-        self._mode.check_write()
+        self._mode._check_write()
         return self._transport.write_eof()
 
     def can_write_eof(self):
@@ -502,7 +500,7 @@ class Stream:
           w.write(data)
           await w.drain()
         """
-        self._mode.check_write()
+        self._mode._check_write()
         exc = self.exception()
         if exc is not None:
             raise exc
@@ -547,17 +545,17 @@ class Stream:
             self._transport.resume_reading()
 
     def feed_eof(self):
-        self._mode.check_read()
+        self._mode._check_read()
         self._eof = True
         self._wakeup_waiter()
 
     def at_eof(self):
         """Return True if the buffer is empty and 'feed_eof' was called."""
-        self._mode.check_read()
+        self._mode._check_read()
         return self._eof and not self._buffer
 
     def feed_data(self, data):
-        self._mode.check_read()
+        self._mode._check_read()
         assert not self._eof, 'feed_data after feed_eof'
 
         if not data:
@@ -623,7 +621,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._mode.check_read()
+        self._mode._check_read()
         sep = b'\n'
         seplen = len(sep)
         try:
@@ -659,7 +657,7 @@ class Stream:
         LimitOverrunError exception  will be raised, and the data
         will be left in the internal buffer, so it can be read again.
         """
-        self._mode.check_read()
+        self._mode._check_read()
         seplen = len(separator)
         if seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
@@ -751,7 +749,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._mode.check_read()
+        self._mode._check_read()
 
         if self._exception is not None:
             raise self._exception
@@ -797,7 +795,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._mode.check_read()
+        self._mode._check_read()
         if n < 0:
             raise ValueError('readexactly size can not be less than zero')
 
@@ -825,7 +823,7 @@ class Stream:
         return data
 
     def __aiter__(self):
-        self._mode.check_read()
+        self._mode._check_read()
         return self
 
     async def __anext__(self):
