@@ -109,7 +109,7 @@ class ProactorTests(test_utils.TestCase):
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)
             self.assertEqual(protocol, proto)
-            clients.append((stream_reader, trans))
+            clients.append((stream, trans))
 
         for i, (r, w) in enumerate(clients):
             w.write('lower-{}\n'.format(i).encode())
