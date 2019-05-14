@@ -335,7 +335,7 @@ def _swallow_unhandled_exception(task):
     # stream.drain() was paused and resumed with an exception
     task.exception()
 
- 
+
 class StreamWriter:
     """Wraps a Transport.
 
