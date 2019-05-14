@@ -4,6 +4,10 @@
  Using importlib.metadata
 ==========================
 
+.. note::
+   This functionality is provisional and may deviate from the usual
+   version semantics of the standard library.
+
 ``importlib.metadata`` is a library that provides for access to installed
 package metadata.  Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
