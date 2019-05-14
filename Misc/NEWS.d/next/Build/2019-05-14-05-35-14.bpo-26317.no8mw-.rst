@@ -1,0 +1,1 @@
+The OBJC and OBJCXX standard command line options for the configure script are now supported. This is required to support building on Mac OS X using the GNU compiler for everything except the system-specific source files that include system headers that are incompatible with the GNU compiler (e.g. PythonLauncher and the _scproxy module).
