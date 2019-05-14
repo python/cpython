@@ -439,7 +439,7 @@ class StreamWriter:
             # Wait for protocol.connection_lost() call
             # Raise connection closing error if any,
             # ConnectionResetError otherwise
-            await asyncio.sleep(0)
+            await sleep(0)
         await self._protocol._drain_helper()
 
 
