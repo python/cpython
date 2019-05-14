@@ -91,7 +91,7 @@ _PyImportHooks_Init(void)
 }
 
 _PyInitError
-_PyImportZip_Init(void)
+_PyImportZip_Init(PyInterpreterState *interp)
 {
     PyObject *path_hooks, *zipimport;
     int err = 0;
@@ -102,14 +102,17 @@ _PyImportZip_Init(void)
         goto error;
     }
 
-    if (Py_VerboseFlag)
+    int verbose = interp->core_config.verbose;
+    if (verbose) {
         PySys_WriteStderr("# installing zipimport hook\n");
+    }
 
     zipimport = PyImport_ImportModule("zipimport");
     if (zipimport == NULL) {
         PyErr_Clear(); /* No zip import module -- okay */
-        if (Py_VerboseFlag)
+        if (verbose) {
             PySys_WriteStderr("# can't import zipimport\n");
+        }
     }
     else {
         _Py_IDENTIFIER(zipimporter);
@@ -118,9 +121,9 @@ _PyImportZip_Init(void)
         Py_DECREF(zipimport);
         if (zipimporter == NULL) {
             PyErr_Clear(); /* No zipimporter object -- okay */
-            if (Py_VerboseFlag)
-                PySys_WriteStderr(
-                    "# can't import zipimport.zipimporter\n");
+            if (verbose) {
+                PySys_WriteStderr("# can't import zipimport.zipimporter\n");
+            }
         }
         else {
             /* sys.path_hooks.insert(0, zipimporter) */
@@ -129,9 +132,9 @@ _PyImportZip_Init(void)
             if (err < 0) {
                 goto error;
             }
-            if (Py_VerboseFlag)
-                PySys_WriteStderr(
-                    "# installed zipimport hook\n");
+            if (verbose) {
+                PySys_WriteStderr("# installed zipimport hook\n");
+            }
         }
     }
 
@@ -415,22 +418,26 @@ PyImport_Cleanup(void)
 
     /* XXX Perhaps these precautions are obsolete. Who knows? */
 
-    if (Py_VerboseFlag)
+    int verbose = interp->core_config.verbose;
+    if (verbose) {
         PySys_WriteStderr("# clear builtins._\n");
+    }
     if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
         PyErr_WriteUnraisable(NULL);
     }
 
     for (p = sys_deletes; *p != NULL; p++) {
-        if (Py_VerboseFlag)
+        if (verbose) {
             PySys_WriteStderr("# clear sys.%s\n", *p);
+        }
         if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
             PyErr_WriteUnraisable(NULL);
         }
     }
     for (p = sys_files; *p != NULL; p+=2) {
-        if (Py_VerboseFlag)
+        if (verbose) {
             PySys_WriteStderr("# restore sys.%s\n", *p);
+        }
         value = _PyDict_GetItemStringWithError(interp->sysdict, *(p+1));
         if (value == NULL) {
             if (PyErr_Occurred()) {
@@ -469,8 +476,9 @@ PyImport_Cleanup(void)
     }
 #define CLEAR_MODULE(name, mod) \
     if (PyModule_Check(mod)) { \
-        if (Py_VerboseFlag && PyUnicode_Check(name)) \
+        if (verbose && PyUnicode_Check(name)) { \
             PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
+        } \
         STORE_MODULE_WEAKREF(name, mod); \
         if (PyObject_SetItem(modules, name, Py_None) < 0) { \
             PyErr_WriteUnraisable(NULL); \
@@ -563,8 +571,9 @@ PyImport_Cleanup(void)
             if (dict == interp->builtins || dict == interp->sysdict)
                 continue;
             Py_INCREF(mod);
-            if (Py_VerboseFlag && PyUnicode_Check(name))
+            if (verbose && PyUnicode_Check(name)) {
                 PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
+            }
             _PyModule_Clear(mod);
             Py_DECREF(mod);
         }
@@ -572,11 +581,13 @@ PyImport_Cleanup(void)
     }
 
     /* Next, delete sys and builtins (in that order) */
-    if (Py_VerboseFlag)
+    if (verbose) {
         PySys_FormatStderr("# cleanup[3] wiping sys\n");
+    }
     _PyModule_ClearDict(interp->sysdict);
-    if (Py_VerboseFlag)
+    if (verbose) {
         PySys_FormatStderr("# cleanup[3] wiping builtins\n");
+    }
     _PyModule_ClearDict(interp->builtins);
 
     /* Clear and delete the modules directory.  Actual modules will
@@ -755,9 +766,11 @@ _PyImport_FindExtensionObjectEx(PyObject *name, PyObject *filename,
         PyMapping_DelItem(modules, name);
         return NULL;
     }
-    if (Py_VerboseFlag)
+    int verbose = _PyInterpreterState_Get()->core_config.verbose;
+    if (verbose) {
         PySys_FormatStderr("import %U # previously loaded (%R)\n",
-                          name, filename);
+                           name, filename);
+    }
     return mod;
 
 }
@@ -1427,7 +1440,7 @@ PyImport_ImportModuleNoBlock(const char *name)
 /* Remove importlib frames from the traceback,
  * except in Verbose mode. */
 static void
-remove_importlib_frames(void)
+remove_importlib_frames(PyInterpreterState *interp)
 {
     const char *importlib_filename = "<frozen importlib._bootstrap>";
     const char *external_filename = "<frozen importlib._bootstrap_external>";
@@ -1442,8 +1455,10 @@ remove_importlib_frames(void)
        which end with a call to "_call_with_frames_removed". */
 
     PyErr_Fetch(&exception, &value, &base_tb);
-    if (!exception || Py_VerboseFlag)
+    if (!exception || interp->core_config.verbose) {
         goto done;
+    }
+
     if (PyType_IsSubtype((PyTypeObject *) exception,
                          (PyTypeObject *) PyExc_ImportError))
         always_trim = 1;
@@ -1853,8 +1868,9 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     Py_XDECREF(abs_name);
     Py_XDECREF(mod);
     Py_XDECREF(package);
-    if (final_mod == NULL)
-        remove_importlib_frames();
+    if (final_mod == NULL) {
+        remove_importlib_frames(interp);
+    }
     return final_mod;
 }
 
@@ -2303,13 +2319,16 @@ PyInit__imp(void)
     PyObject *m, *d;
 
     m = PyModule_Create(&impmodule);
-    if (m == NULL)
+    if (m == NULL) {
         goto failure;
+    }
     d = PyModule_GetDict(m);
-    if (d == NULL)
+    if (d == NULL) {
         goto failure;
-    _PyCoreConfig *config = &_PyInterpreterState_Get()->core_config;
-    PyObject *pyc_mode = PyUnicode_FromWideChar(config->check_hash_pycs_mode, -1);
+    }
+
+    const wchar_t *mode = _PyInterpreterState_Get()->core_config.check_hash_pycs_mode;
+    PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
     if (pyc_mode == NULL) {
         goto failure;
     }

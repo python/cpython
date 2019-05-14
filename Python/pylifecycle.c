@@ -205,7 +205,7 @@ init_importlib_external(PyInterpreterState *interp)
         return _Py_INIT_ERR("external importer setup failed");
     }
     Py_DECREF(value);
-    return _PyImportZip_Init();
+    return _PyImportZip_Init(interp);
 }
 
 /* Helper functions to better handle the legacy C locale
