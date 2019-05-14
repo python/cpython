@@ -1169,7 +1169,8 @@ os.close(fd)
 
     def test_stream_reader_forbidden_ops(self):
         async def inner():
-            stream = asyncio.Stream(mode=asyncio.StreamMode.READ)
+            stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
+                                    _asyncio_internal=True)
             with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
                 await stream.write(b'data')
             with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
@@ -1183,7 +1184,8 @@ os.close(fd)
 
     def test_stream_writer_forbidden_ops(self):
         async def inner():
-            stream = asyncio.Stream(mode=asyncio.StreamMode.WRITE)
+            stream = asyncio.Stream(mode=asyncio.StreamMode.WRITE,
+                                    _asyncio_internal=True)
             with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
                 stream.feed_eof()
             with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):

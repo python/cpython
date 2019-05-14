@@ -96,11 +96,8 @@ async def start_server(client_connected_cb, host=None, port=None, *,
         loop = events.get_event_loop()
 
     def factory():
-        stream = Stream(mode=StreamMode.READWRITE,
-                        limit=limit,
-                        loop=loop,
-                        _asyncio_internal=True)
-        protocol = _ServerStreamProtocol(stream, client_connected_cb,
+        protocol = _ServerStreamProtocol(limit,
+                                         client_connected_cb,
                                          loop=loop,
                                          _asyncio_internal=True)
         return protocol
@@ -134,11 +131,7 @@ if hasattr(socket, 'AF_UNIX'):
             loop = events.get_event_loop()
 
         def factory():
-            stream = Stream(mode=StreamMode.READWRITE,
-                            limit=limit,
-                            loop=loop,
-                            _asyncio_internal=True)
-            protocol = _ServerStreamProtocol(stream,
+            protocol = _ServerStreamProtocol(limit,
                                              client_connected_cb,
                                              loop=loop,
                                              _asyncio_internal=True)
@@ -233,7 +226,6 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
     call inappropriate methods of the protocol.)
     """
 
-    _source_traceback = None
     _stream = None  # initialized in derived classes
 
     def __init__(self, loop=None,
@@ -245,11 +237,6 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
 
     def connection_made(self, transport):
         self._transport = transport
-        stream = self._stream
-        if stream is None:
-            return
-        stream.set_transport(transport)
-        stream._protocol = self
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
 
     def connection_lost(self, exc):
@@ -295,6 +282,8 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
 
 
 class _StreamProtocol(_BaseStreamProtocol):
+    _source_traceback = None
+
     def __init__(self, stream, loop=None,
                  *, _asyncio_internal=False):
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
@@ -337,6 +326,11 @@ class _StreamProtocol(_BaseStreamProtocol):
             transport.abort()
             return
         super().connection_made(transport)
+        stream = self._stream
+        if stream is None:
+            return
+        stream.set_transport(transport)
+        stream._protocol = self
 
     def connection_lost(self, exc):
         super().connection_lost(exc)
@@ -344,15 +338,21 @@ class _StreamProtocol(_BaseStreamProtocol):
 
 
 class _ServerStreamProtocol(_BaseStreamProtocol):
-    def __init__(self, stream, client_connected_cb, loop=None,
+    def __init__(self, limit, client_connected_cb, loop=None,
                  *, _asyncio_internal=False):
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
-        self._source_traceback = stream._source_traceback
-        self._stream = stream
         self._client_connected_cb = client_connected_cb
+        self._limit = limit
 
     def connection_made(self, transport):
         super().connection_made(transport)
+        stream = Stream(mode=StreamMode.READWRITE,
+                        transport=transport,
+                        protocol=self,
+                        limit=self._limit,
+                        loop=self._loop,
+                        _asyncio_internal=True)
+        self._stream = stream
         res = self._client_connected_cb(self._stream,
                                         self._stream)
         if coroutines.iscoroutine(res):
