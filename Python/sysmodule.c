@@ -116,10 +116,14 @@ PySys_SetObject(const char *name, PyObject *v)
 static int
 should_audit(void)
 {
-    _Py_AuditHookEntry *e = _PyRuntime.audit_hook_head;
     PyThreadState *ts = _PyThreadState_GET();
+    if (!ts) {
+        return 0;
+    }
     PyInterpreterState *is = ts ? ts->interp : NULL;
-    return e || (is && is->audit_hooks) || PyDTrace_AUDIT_ENABLED();
+    return _PyRuntime.audit_hook_head
+        || (is && is->audit_hooks)
+        || PyDTrace_AUDIT_ENABLED();
 }
 
 int

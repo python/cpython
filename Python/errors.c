@@ -1169,10 +1169,6 @@ PyErr_ProgramText(const char *filename, int lineno)
     FILE *fp;
     if (filename == NULL || *filename == '\0' || lineno <= 0)
         return NULL;
-    /* Cannot audit in _Py_fopen, so raise 'open' here */
-    if (PySys_Audit("open", "ssi", filename, "r", 0) < 0) {
-        return NULL;
-    }
     fp = _Py_fopen(filename, "r" PY_STDIOTEXTMODE);
     return err_programtext(fp, lineno);
 }

@@ -1334,18 +1334,10 @@ _Py_open_noraise(const char *pathname, int flags)
 FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
-    /* Normally a PySys_Audit call would be included here, but since
-       we do not know whether the GIL is held, one should be added
-       immediately before calling this function. The snippet below is
-       the pattern to use. This also avoids a double message from
-       _Py_wfopen_obj
-
-    /* Cannot audit in _Py_wfopen, so raise 'open' here *
-    if (PySys_Audit("open", "ssi", filename, mode, 0) < 0) {
+    FILE *f;
+    if (PySys_Audit("open", "uui", path, mode, 0) < 0) {
         return NULL;
     }
-    */
-    FILE *f;
 #ifndef MS_WINDOWS
     char *cpath;
     char cmode[10];
@@ -1381,17 +1373,9 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
-    /* Normally a PySys_Audit call would be included here, but since
-       we do not know whether the GIL is held, one should be added
-       immediately before calling this function. The snippet below is
-       the pattern to use. This also avoids a double message from
-       _Py_fopen_obj
-
-    /* Cannot audit in _Py_fopen, so raise 'open' here *
-    if (PySys_Audit("open", "ssi", filename, mode, 0) < 0) {
+    if (PySys_Audit("open", "ssi", pathname, mode, 0) < 0) {
         return NULL;
     }
-    */
 
     FILE *f = fopen(pathname, mode);
     if (f == NULL)

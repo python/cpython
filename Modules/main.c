@@ -350,11 +350,6 @@ pymain_run_startup(_PyCoreConfig *config, PyCompilerFlags *cf)
         return;
     }
 
-    /* Cannot audit in _Py_fopen reliably, so raise open() here */
-    if (PySys_Audit("open", "ssi", startup, "r", 0) < 0) {
-        PyErr_Print();
-        return;
-    }
     FILE *fp = _Py_fopen(startup, "r");
     if (fp == NULL) {
         int save_errno = errno;

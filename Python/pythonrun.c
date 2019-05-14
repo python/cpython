@@ -406,10 +406,6 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
         /* Try to run a pyc file. First, re-open in binary */
         if (closeit)
             fclose(fp);
-        /* Cannot audit in _Py_fopen, so raise 'open' here */
-        if (PySys_Audit("open", "ssi", filename, "rb", 0) < 0) {
-            goto done;
-        }
         if ((pyc_fp = _Py_fopen(filename, "rb")) == NULL) {
             fprintf(stderr, "python: Can't reopen .pyc file\n");
             goto done;
