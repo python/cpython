@@ -652,6 +652,12 @@ Build and C API Changes
   allocation or deallocation may need to be adjusted.
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
+* The configure script now supports the standard OBJC and OBJCXX command
+  line options. This change is required to support building on Mac OS X
+  using the GNU compiler for the C and C++ source files while using the
+  system clang compiler for the system-specific source files that include
+  system header files that are incompatible with the GNU compiler.
+
 
 Deprecated
 ==========
