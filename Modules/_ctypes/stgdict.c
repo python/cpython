@@ -639,7 +639,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     stgdict->size = size;
     stgdict->align = total_align;
-    stgdict->length = len;      /* ADD ffi_ofs? */
+    stgdict->length = ffi_ofs + len;
 
     /* We did check that this flag was NOT set above, it must not
        have been set until now. */
