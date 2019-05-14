@@ -22,13 +22,13 @@ streams::
             '127.0.0.1', 8888)
 
         print(f'Send: {message!r}')
-        await writer.write(message.encode())
+        await writer.awrite(message.encode())
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
 
         print('Close the connection')
-        await writer.close()
+        await writer.aclose()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -226,70 +226,23 @@ StreamWriter
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
-   .. method:: write(data)
+   .. coroutinemethod:: awrite(data)
 
-      The method attempts to write the *data* to the underlying socket immediately.
-      If that fails, the data is queued in an internal write buffer until it can be
-      sent.
+      Write *data* to the stream.
 
-      Starting with Python 3.8, it is possible to directly await on the `write()`
-      method::
+      The method respects flow control, execution is paused if the write
+      buffer reaches the high watermark.
 
-         await stream.write(data)
+      .. versionadded:: 3.8
 
-      The ``await`` pauses the current coroutine until the data is written to the
-      socket.
+   .. coroutinemethod:: aclose()
 
-      Below is an equivalent code that works with Python <= 3.7::
+      Close the stream.
 
-         stream.write(data)
-         await stream.drain()
+      Wait until all closing actions are complete, e.g. SSL shutdown for
+      secure sockets.
 
-      .. versionchanged:: 3.8
-         Support ``await stream.write(...)`` syntax.
-
-   .. method:: writelines(data)
-
-      The method writes a list (or any iterable) of bytes to the underlying socket
-      immediately.
-      If that fails, the data is queued in an internal write buffer until it can be
-      sent.
-
-      Starting with Python 3.8, it is possible to directly await on the `write()`
-      method::
-
-         await stream.writelines(lines)
-
-      The ``await`` pauses the current coroutine until the data is written to the
-      socket.
-
-      Below is an equivalent code that works with Python <= 3.7::
-
-         stream.writelines(lines)
-         await stream.drain()
-
-      .. versionchanged:: 3.8
-         Support ``await stream.writelines()`` syntax.
-
-   .. method:: close()
-
-      The method closes the stream and the underlying socket.
-
-      Starting with Python 3.8, it is possible to directly await on the `close()`
-      method::
-
-         await stream.close()
-
-      The ``await`` pauses the current coroutine until the stream and the underlying
-      socket are closed (and SSL shutdown is performed for a secure connection).
-
-      Below is an equivalent code that works with Python <= 3.7::
-
-         stream.close()
-         await stream.wait_closed()
-
-      .. versionchanged:: 3.8
-         Support ``await stream.close()`` syntax.
+      .. versionadded:: 3.8
 
    .. method:: can_write_eof()
 
@@ -310,6 +263,21 @@ StreamWriter
       Access optional transport information; see
       :meth:`BaseTransport.get_extra_info` for details.
 
+   .. method:: write(data)
+
+      Write *data* to the stream.
+
+      This method is not subject to flow control.  Calls to ``write()`` should
+      be followed by :meth:`drain`.  The :meth:`awrite` method is a
+      recommended alternative the applies flow control automatically.
+
+   .. method:: writelines(data)
+
+      Write a list (or any iterable) of bytes to the stream.
+
+      This method is not subject to flow control. Calls to ``writelines()``
+      should be followed by :meth:`drain`.
+
    .. coroutinemethod:: drain()
 
       Wait until it is appropriate to resume writing to the stream.
@@ -324,6 +292,10 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
+
+   .. method:: close()
+
+      Close the stream.
 
    .. method:: is_closing()
 

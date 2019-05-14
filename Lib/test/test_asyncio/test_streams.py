@@ -1035,42 +1035,24 @@ os.close(fd)
                          messages[0]['message'])
 
     def test_async_writer_api(self):
-        async def inner(httpd):
-            rd, wr = await asyncio.open_connection(*httpd.address)
-
-            await wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            data = await rd.readline()
-            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-            data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
-            await wr.close()
-
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
         with test_utils.run_test_server() as httpd:
-            self.loop.run_until_complete(inner(httpd))
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address,
+                                        loop=self.loop))
 
-        self.assertEqual(messages, [])
-
-    def test_async_writer_api(self):
-        async def inner(httpd):
-            rd, wr = await asyncio.open_connection(*httpd.address)
-
-            await wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            data = await rd.readline()
+            f = wr.awrite(b'GET / HTTP/1.0\r\n\r\n')
+            self.loop.run_until_complete(f)
+            f = rd.readline()
+            data = self.loop.run_until_complete(f)
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-            data = await rd.read()
+            f = rd.read()
+            data = self.loop.run_until_complete(f)
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
-            wr.close()
-            with self.assertRaises(ConnectionResetError):
-                await wr.write(b'data')
-
-        messages = []
-        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-
-        with test_utils.run_test_server() as httpd:
-            self.loop.run_until_complete(inner(httpd))
+            f = wr.aclose()
+            self.loop.run_until_complete(f)
 
         self.assertEqual(messages, [])
 
@@ -1084,7 +1066,7 @@ os.close(fd)
                 asyncio.open_connection(*httpd.address,
                                         loop=self.loop))
 
-            f = wr.close()
+            f = wr.aclose()
             self.loop.run_until_complete(f)
             assert rd.at_eof()
             f = rd.read()
