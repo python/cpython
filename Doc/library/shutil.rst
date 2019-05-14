@@ -705,18 +705,21 @@ In the final archive, :file:`please_add.txt` should be included, but
 :file:`do_not_add.txt` should not.  Therefore we use the following::
 
     >>> from shutil import make_archive
+    >>> import os
+    >>> archive_name = os.path.expanduser(os.path.join('~', 'myarchive'))
     >>> make_archive(
-    ...     'my_archive',
+    ...     archive_name,
     ...     'tar',
     ...     root_dir='tmp/root',
-    ...     base_dir='structure/content')
-    '/Users/user/my_archive.tar'
+    ...     base_dir='structure/content',
+    ... )
+    '/Users/tarek/my_archive.tar'
 
 Listing the files in the resulting archive gives us:
 
 .. code-block:: shell-session
 
-    $ python -m tarfile -l my_archive.tar
+    $ python -m tarfile -l /Users/tarek/myarchive.tar
     structure/content/
     structure/content/please_add.txt
 
