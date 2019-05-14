@@ -402,6 +402,8 @@ Connection: close
 Content-Type: text/html; charset=iso-8859-1
 ''')
         try:
+            # Silence destructor error
+            http.client.HTTPConnection.close = lambda self: None
             self.assertRaises(OSError, urlopen, "http://python.org/")
         finally:
             self.unfakehttp()
@@ -416,6 +418,8 @@ Connection: close
 Content-Type: text/html; charset=iso-8859-1
 ''')
         try:
+            # Silence destructor error
+            http.client.HTTPConnection.close = lambda self: None
             msg = "Redirection to url 'file:"
             with self.assertRaisesRegex(urllib.error.HTTPError, msg):
                 urlopen("http://python.org/")
@@ -431,6 +435,8 @@ Location: file://guidocomputer.athome.com:/python/license
 Connection: close
 ''')
             try:
+                # Silence destructor error
+                http.client.HTTPConnection.close = lambda self: None
                 self.assertRaises(urllib.error.HTTPError, urlopen,
                     "http://something")
             finally:
