@@ -253,9 +253,11 @@ class BaseFutureTests:
 
         def fixture():
             yield 'A'
-            x = yield from f
+            with self.assertWarns(DeprecationWarning):
+                x = yield from f
             yield 'B', x
-            y = yield from f
+            with self.assertWarns(DeprecationWarning):
+                y = yield from f
             yield 'C', y
 
         g = fixture()
@@ -533,7 +535,8 @@ class BaseFutureTests:
     def test_future_stop_iteration_args(self):
         fut = self._new_future(loop=self.loop)
         fut.set_result((1, 2))
-        fi = fut.__iter__()
+        with self.assertWarns(DeprecationWarning):
+            fi = fut.__iter__()
         result = None
         try:
             fi.send(None)
@@ -545,7 +548,8 @@ class BaseFutureTests:
 
     def test_future_iter_throw(self):
         fut = self._new_future(loop=self.loop)
-        fi = iter(fut)
+        with self.assertWarns(DeprecationWarning):
+            fi = iter(fut)
         self.assertRaises(TypeError, fi.throw,
                           Exception, Exception("elephant"), 32)
         self.assertRaises(TypeError, fi.throw,
