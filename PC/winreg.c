@@ -765,13 +765,6 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                 for (index = 0; index < s; index++)
                 {
                     size_t slen = wcsnlen(str[index], len);
-                    if (slen > INT_MAX) {
-                        PyErr_SetString(PyExc_OverflowError,
-                            "registry string is too long for a Python string");
-                        Py_DECREF(obData);
-                        PyMem_Free(str);
-                        return NULL;
-                    }
                     PyObject *uni = PyUnicode_FromWideChar(str[index], slen);
                     if (uni == NULL) {
                         Py_DECREF(obData);
@@ -779,7 +772,7 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                         return NULL;
                     }
                     PyList_SET_ITEM(obData, index, uni);
-                    len -= slen;
+                    len -= slen + 1;
                 }
                 PyMem_Free(str);
 
