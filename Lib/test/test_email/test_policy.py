@@ -237,6 +237,14 @@ class PolicyAPITests(unittest.TestCase):
                          email.policy.EmailPolicy.header_factory)
         self.assertEqual(newpolicy.__dict__, {'raise_on_defect': True})
 
+    def test_non_ascii_chars_do_not_cause_inf_loop(self):
+        policy = email.policy.default.clone(max_line_length=20)
+        actual = policy.fold('Subject', 'ą' * 12)
+        self.assertEqual(
+            actual,
+            'Subject: \n' +
+            12 * ' =?utf-8?q?=C4=85?=\n')
+
     # XXX: Need subclassing tests.
     # For adding subclassed objects, make sure the usual rules apply (subclass
     # wins), but that the order still works (right overrides left).
