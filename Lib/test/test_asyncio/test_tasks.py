@@ -1069,8 +1069,7 @@ class BaseTaskTests:
         # first_exception, task already has exception
         a = self.new_task(loop, asyncio.sleep(10.0))
 
-        @asyncio.coroutine
-        def exc():
+        async def exc():
             raise ZeroDivisionError('err')
 
         b = self.new_task(loop, exc())
