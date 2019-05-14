@@ -24,6 +24,24 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
+class StreamModeTests(unittest.TestCase):
+    def test__check_read_ok(self):
+        self.assertIsNone(asyncio.StreamMode.READ._check_read())
+        self.assertIsNone(asyncio.StreamMode.READWRITE._check_read())
+
+    def test__check_read_fail(self):
+        with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+            asyncio.StreamMode.WRITE._check_read()
+
+    def test__check_write_ok(self):
+        self.assertIsNone(asyncio.StreamMode.WRITE._check_write())
+        self.assertIsNone(asyncio.StreamMode.READWRITE._check_write())
+
+    def test__check_write_fail(self):
+        with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
+            asyncio.StreamMode.READ._check_write()
+
+
 class StreamTests(test_utils.TestCase):
 
     DATA = b'line1\nline2\nline3\n'
@@ -1149,7 +1167,42 @@ os.close(fd)
         with self.assertWarns(DeprecationWarning):
             asyncio.StreamWriter
 
+    def test_stream_reader_forbidden_ops(self):
+        async def inner():
+            stream = asyncio.Stream(mode=asyncio.StreamMode.READ)
+            with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
+                await stream.write(b'data')
+            with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
+                await stream.writelines([b'data', b'other'])
+            with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
+                stream.write_eof()
+            with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
+                await stream.drain()
 
+        self.loop.run_until_complete(inner())
+
+    def test_stream_writer_forbidden_ops(self):
+        async def inner():
+            stream = asyncio.Stream(mode=asyncio.StreamMode.WRITE)
+            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+                stream.feed_eof()
+            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+                stream.at_eof()
+            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+                stream.feed_data(b'data')
+            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+                await stream.readline()
+            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+                await stream.readuntil()
+            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+                await stream.read()
+            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+                await stream.readexactly(10)
+            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
+                async for chunk in stream:
+                    pass
+
+        self.loop.run_until_complete(inner())
 
 if __name__ == '__main__':
     unittest.main()
