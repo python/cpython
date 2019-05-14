@@ -24,6 +24,7 @@
 #include "Python.h"
 
 #include "Python-ast.h"
+#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"
@@ -310,6 +311,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags;
     int merged;
+    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -338,7 +340,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
+    c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
     c.c_nestlevel = 0;
 
     if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {

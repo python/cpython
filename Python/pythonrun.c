@@ -591,10 +591,12 @@ handle_system_exit(void)
     PyObject *exception, *value, *tb;
     int exitcode = 0;
 
-    if (Py_InspectFlag)
+    int inspect = _PyInterpreterState_GET_UNSAFE()->core_config.inspect;
+    if (inspect) {
         /* Don't exit if -i flag was given. This flag is set to 0
          * when entering interactive mode for inspecting. */
         return;
+    }
 
     PyErr_Fetch(&exception, &value, &tb);
     fflush(stdout);
