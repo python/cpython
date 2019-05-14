@@ -1,24 +1,5 @@
-import sys
-
 from .api import Distribution
-from .abc import DistributionFinder
 from contextlib import suppress
-
-
-def install(cls):
-    """Class decorator for installation on sys.meta_path."""
-    sys.meta_path.append(cls())
-    return cls
-
-
-class NullFinder(DistributionFinder):
-    """
-    A "Finder" (aka "MetaClassFinder") that never finds any modules,
-    but may find distributions.
-    """
-    @staticmethod
-    def find_spec(*args, **kwargs):
-        return None
 
 
 class PathDistribution(Distribution):

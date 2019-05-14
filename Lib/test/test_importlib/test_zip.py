@@ -45,7 +45,7 @@ class TestEgg(TestZip):
         self.resources = ExitStack()
         self.addCleanup(self.resources.close)
         egg = self.resources.enter_context(
-            path('importlib_metadata.tests.data',
+            path('test.test_importlib.data',
                  'example-21.12-py3.6.egg'))
         sys.path.insert(0, str(egg))
         self.resources.callback(sys.path.pop, 0)
