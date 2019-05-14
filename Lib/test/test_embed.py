@@ -309,7 +309,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'filesystem_errors': GET_DEFAULT_CONFIG,
 
         'pycache_prefix': None,
-        'program_name': './_testembed',
+        'program_name': GET_DEFAULT_CONFIG,
         'argv': [""],
         'program': '',
 
@@ -452,7 +452,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if sys.platform == 'win32':
                 expected['executable'] = self.test_exe
             else:
-                expected['executable'] = os.path.join(os.getcwd(), '_testembed')
+                if expected['program_name'] is not self.GET_DEFAULT_CONFIG:
+                    expected['executable'] = os.path.abspath(expected['program_name'])
+                else:
+                    expected['executable'] = os.path.join(os.getcwd(), '_testembed')
+        if expected['program_name'] is self.GET_DEFAULT_CONFIG:
+            expected['program_name'] = './_testembed'
 
         for key, value in expected.items():
             if value is self.GET_DEFAULT_CONFIG:
@@ -536,7 +541,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         config = {
             'program_name': './globalvar',
-            'executable': os.path.join(os.getcwd(), 'globalvar'),
             'site_import': 0,
             'bytes_warning': 1,
             'warnoptions': ['default::BytesWarning'],
@@ -578,7 +582,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
-            'executable': os.path.join(os.getcwd(), 'conf_program_name'),
             'argv': ['-c', 'arg2'],
             'program': 'conf_program',
             'xoptions': ['core_xoption1=3', 'core_xoption2=', 'core_xoption3'],
