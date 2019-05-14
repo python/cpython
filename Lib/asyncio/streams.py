@@ -329,6 +329,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             closed.exception()
 
 
+def _swallow_unhandled_exception(task):
+    # Do a trick to suppress unhandled exception
+    # if stream.write() was used without await and
+    # stream.drain() was paused and resumed with an exception
+    task.exception()
+
+
 class StreamWriter:
     """Wraps a Transport.
 
@@ -393,7 +400,9 @@ class StreamWriter:
                 # fast path, the stream is not paused
                 # no need to wait for resume signal
                 return self._complete_fut
-        return self._loop.create_task(self.drain())
+        ret = self._loop.create_task(self.drain())
+        ret.add_done_callback(_swallow_unhandled_exception)
+        return ret
 
     def write_eof(self):
         return self._transport.write_eof()
