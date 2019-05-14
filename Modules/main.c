@@ -403,8 +403,8 @@ static int
 pymain_run_stdin(_PyCoreConfig *config, PyCompilerFlags *cf)
 {
     if (stdin_is_interactive(config)) {
-        Py_InspectFlag = 0; /* do exit on SystemExit */
         config->inspect = 0;
+        Py_InspectFlag = 0; /* do exit on SystemExit */
         pymain_run_startup(config, cf);
         pymain_run_interactive_hook();
     }
@@ -425,17 +425,17 @@ pymain_repl(_PyCoreConfig *config, PyCompilerFlags *cf, int *exitcode)
 {
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
-    if (!Py_InspectFlag && _Py_GetEnv(config->use_environment, "PYTHONINSPECT")) {
-        Py_InspectFlag = 1;
+    if (!config->inspect && _Py_GetEnv(config->use_environment, "PYTHONINSPECT")) {
         config->inspect = 1;
+        Py_InspectFlag = 1;
     }
 
-    if (!(Py_InspectFlag && stdin_is_interactive(config) && RUN_CODE(config))) {
+    if (!(config->inspect && stdin_is_interactive(config) && RUN_CODE(config))) {
         return;
     }
 
-    Py_InspectFlag = 0;
     config->inspect = 0;
+    Py_InspectFlag = 0;
     pymain_run_interactive_hook();
 
     int res = PyRun_AnyFileFlags(stdin, "<stdin>", cf);
