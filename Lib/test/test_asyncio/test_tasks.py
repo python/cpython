@@ -492,11 +492,12 @@ class BaseTaskTests:
         self.assertFalse(t.cancel())
 
     def test_cancel_yield(self):
-        @asyncio.coroutine
-        def task():
-            yield
-            yield
-            return 12
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def task():
+                yield
+                yield
+                return 12
 
         t = self.new_task(self.loop, task())
         test_utils.run_briefly(self.loop)  # start coro
@@ -618,8 +619,7 @@ class BaseTaskTests:
         loop = asyncio.new_event_loop()
         self.set_event_loop(loop)
 
-        @asyncio.coroutine
-        def task():
+        async def task():
             t.cancel()
             self.assertTrue(t._must_cancel)  # White-box test.
             return 12
@@ -2158,11 +2158,10 @@ class BaseTaskTests:
         loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
 
-        @asyncio.coroutine
-        def blocking_coroutine():
+        async def blocking_coroutine():
             fut = self.new_future(loop)
             # Block: fut result is never set
-            yield from fut
+            await fut
 
         task = loop.create_task(blocking_coroutine())
 
@@ -2191,7 +2190,8 @@ class BaseTaskTests:
         # The indirection fut->child_coro is needed since otherwise the
         # gathering task is done at the same time as the child future
         def child_coro():
-            return (yield from fut)
+            with self.assertWarns(DeprecationWarning):
+                return (yield from fut)
         gather_future = asyncio.gather(child_coro(), loop=loop)
         gather_task = asyncio.ensure_future(gather_future, loop=loop)
 
@@ -3063,15 +3063,13 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
     def wrap_futures(self, *futures):
         coros = []
         for fut in futures:
-            @asyncio.coroutine
-            def coro(fut=fut):
-                return (yield from fut)
+            async def coro(fut=fut):
+                return await fut
             coros.append(coro())
         return coros
 
     def test_constructor_loop_selection(self):
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             return 'abc'
         gen1 = coro()
         gen2 = coro()
@@ -3087,9 +3085,10 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         self.other_loop.run_until_complete(fut2)
 
     def test_duplicate_coroutines(self):
-        @asyncio.coroutine
-        def coro(s):
-            return s
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro(s):
+                return s
         c = coro('abc')
         fut = asyncio.gather(c, c, coro('def'), c, loop=self.one_loop)
         self._run_loop(self.one_loop)
@@ -3100,21 +3099,19 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         proof = 0
         waiter = asyncio.Future(loop=self.one_loop)
 
-        @asyncio.coroutine
-        def inner():
+        async def inner():
             nonlocal proof
-            yield from waiter
+            await waiter
             proof += 1
 
         child1 = asyncio.ensure_future(inner(), loop=self.one_loop)
         child2 = asyncio.ensure_future(inner(), loop=self.one_loop)
         gatherer = None
 
-        @asyncio.coroutine
-        def outer():
+        async def outer():
             nonlocal proof, gatherer
             gatherer = asyncio.gather(child1, child2, loop=self.one_loop)
-            yield from gatherer
+            await gatherer
             proof += 100
 
         f = asyncio.ensure_future(outer(), loop=self.one_loop)
@@ -3132,17 +3129,15 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
     def test_exception_marking(self):
         # Test for the first line marked "Mark exception retrieved."
 
-        @asyncio.coroutine
-        def inner(f):
-            yield from f
+        async def inner(f):
+            await f
             raise RuntimeError('should not be ignored')
 
         a = asyncio.Future(loop=self.one_loop)
         b = asyncio.Future(loop=self.one_loop)
 
-        @asyncio.coroutine
-        def outer():
-            yield from asyncio.gather(inner(a), inner(b), loop=self.one_loop)
+        async def outer():
+            await asyncio.gather(inner(a), inner(b), loop=self.one_loop)
 
         f = asyncio.ensure_future(outer(), loop=self.one_loop)
         test_utils.run_briefly(self.one_loop)
@@ -3161,15 +3156,14 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop) # Will cleanup properly
 
-    @asyncio.coroutine
-    def add(self, a, b, fail=False, cancel=False):
+    async def add(self, a, b, fail=False, cancel=False):
         """Wait 0.05 second and return a + b."""
-        yield from asyncio.sleep(0.05)
+        await asyncio.sleep(0.05)
         if fail:
             raise RuntimeError("Fail!")
         if cancel:
             asyncio.current_task(self.loop).cancel()
-            yield
+            await asyncio.sleep(0)
         return a + b
 
     def target(self, fail=False, cancel=False, timeout=None,
