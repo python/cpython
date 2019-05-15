@@ -669,7 +669,7 @@ fill_and_set_sslerror(PySSLSocket *sslsock, PyObject *type, int ssl_errno,
     if (msg == NULL)
         goto fail;
 
-    init_value = Py_BuildValue("iN", ssl_errno, msg);
+    init_value = Py_BuildValue("iN", ERR_GET_REASON(ssl_errno), msg);
     if (init_value == NULL)
         goto fail;
 
