@@ -76,26 +76,22 @@ class ContextDecorator(object):
         return inner
 
 
-class _GeneratorContextManagerBase:
-    """Shared functionality for @contextmanager and @asynccontextmanager."""
+def _class_wrapper(cls, func):
+    "Creates a class out of a function, that inherits from a given class."
+    def __init__(self, *args, **kwds):
+        self.gen = self.func(*args, **kwds)
+        self.args, self.kwds = args, kwds
 
-    def __init__(self, func, args, kwds):
-        self.gen = func(*args, **kwds)
-        self.func, self.args, self.kwds = func, args, kwds
-        # Issue 19330: ensure context manager instances have good docstrings
-        doc = getattr(func, "__doc__", None)
-        if doc is None:
-            doc = type(self).__doc__
-        self.__doc__ = doc
-        # Unfortunately, this still doesn't provide good help output when
-        # inspecting the created context manager instances, since pydoc
-        # currently bypasses the instance docstring and shows the docstring
-        # for the class instead.
-        # See http://bugs.python.org/issue19404 for more details.
+    dict = {'__module__':       func.__module__,
+            '__qualname__':     func.__qualname__,
+            '__doc__':          func.__doc__,
+            'func':             staticmethod(func),
+            '__init__':         __init__
+            }
+    return type(func.__name__, (cls,), dict)
 
 
-class _GeneratorContextManager(_GeneratorContextManagerBase,
-                               AbstractContextManager,
+class _GeneratorContextManager(AbstractContextManager,
                                ContextDecorator):
     """Helper for @contextmanager decorator."""
 
@@ -103,12 +99,12 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
         # _GCM instances are one-shot context managers, so the
         # CM must be recreated each time a decorated function is
         # called
-        return self.__class__(self.func, self.args, self.kwds)
+        return _class_wrapper(_GeneratorContextManager,self.func)(*self.args,**self.kwds)
 
     def __enter__(self):
         # do not keep args and kwds alive unnecessarily
         # they are only needed for recreation, which is not possible anymore
-        del self.args, self.kwds, self.func
+        del self.args, self.kwds
         try:
             return next(self.gen)
         except StopIteration:
@@ -162,8 +158,7 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
             raise RuntimeError("generator didn't stop after throw()")
 
 
-class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
-                                    AbstractAsyncContextManager):
+class _AsyncGeneratorContextManager(AbstractAsyncContextManager):
     """Helper for @asynccontextmanager."""
 
     async def __aenter__(self):
@@ -235,11 +230,7 @@ def contextmanager(func):
         finally:
             <cleanup>
     """
-    @wraps(func)
-    def helper(*args, **kwds):
-        return _GeneratorContextManager(func, args, kwds)
-    return helper
-
+    return _class_wrapper(_GeneratorContextManager, func)
 
 def asynccontextmanager(func):
     """@asynccontextmanager decorator.
@@ -268,10 +259,7 @@ def asynccontextmanager(func):
         finally:
             <cleanup>
     """
-    @wraps(func)
-    def helper(*args, **kwds):
-        return _AsyncGeneratorContextManager(func, args, kwds)
-    return helper
+    return _class_wrapper(_AsyncGeneratorContextManager, func)
 
 
 class closing(AbstractContextManager):
