@@ -1,0 +1,2 @@
+Prevent fold function used in email header encoding from entering infinite
+loop when there are too many non-ASCII characters in a header.
