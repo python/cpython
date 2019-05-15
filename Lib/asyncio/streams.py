@@ -1,6 +1,7 @@
 __all__ = (
     'Stream', 'StreamMode',
-    'open_connection', 'start_server')
+    'open_connection', 'start_server',
+    'connect')
 
 import enum
 import socket
@@ -9,7 +10,8 @@ import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
-    __all__ += ('open_unix_connection', 'start_unix_server')
+    __all__ += ('open_unix_connection', 'start_unix_server',
+                'connect_unix')
 
 from . import coroutines
 from . import events
@@ -37,6 +39,20 @@ class StreamMode(enum.Flag):
             raise RuntimeError("The stream is read-only")
 
 
+async def connect(host=None, port=None, *,
+                  limit=_DEFAULT_LIMIT, **kwds):
+    loop = events.get_running_loop()
+    stream = Stream(mode=StreamMode.READWRITE,
+                    limit=limit,
+                    loop=loop,
+                    _asyncio_internal=True)
+    await loop.create_connection(
+        lambda: _StreamProtocol(stream, loop=loop,
+                                _asyncio_internal=True),
+        host, port, **kwds)
+    return stream
+
+
 async def open_connection(host=None, port=None, *,
                           loop=None, limit=_DEFAULT_LIMIT, **kwds):
     """A wrapper for create_connection() returning a (reader, writer) pair.
@@ -62,7 +78,7 @@ async def open_connection(host=None, port=None, *,
                     limit=limit,
                     loop=loop,
                     _asyncio_internal=True)
-    transport, _ = await loop.create_connection(
+    await loop.create_connection(
         lambda: _StreamProtocol(stream, loop=loop,
                                 _asyncio_internal=True),
         host, port, **kwds)
@@ -117,12 +133,28 @@ if hasattr(socket, 'AF_UNIX'):
                         limit=limit,
                         loop=loop,
                         _asyncio_internal=True)
-        transport, _ = await loop.create_unix_connection(
+        await loop.create_unix_connection(
             lambda: _StreamProtocol(stream,
                                     loop=loop,
                                     _asyncio_internal=True),
             path, **kwds)
         return stream, stream
+
+    async def connect_unix(path=None, *,
+                           loop=None, limit=_DEFAULT_LIMIT, **kwds):
+        """Similar to `connect()` but works with UNIX Domain Sockets."""
+        loop = events.get_running_loop()
+        stream = Stream(mode=StreamMode.READWRITE,
+                        limit=limit,
+                        loop=loop,
+                        _asyncio_internal=True)
+        await loop.create_unix_connection(
+            lambda: _StreamProtocol(stream,
+                                    loop=loop,
+                                    _asyncio_internal=True),
+            path, **kwds)
+        return stream
+
 
     async def start_unix_server(client_connected_cb, path=None, *,
                                 loop=None, limit=_DEFAULT_LIMIT, **kwds):
