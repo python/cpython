@@ -1,0 +1,2 @@
+Deprecate ``@coroutine`` and ``yield from`` in asyncio in favor or ``async
+def`` and ``await``.
