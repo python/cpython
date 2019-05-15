@@ -753,6 +753,7 @@ cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
 {
     assert(!PyErr_Occurred());
     assert(kwargs == NULL || PyDict_Check(kwargs));
+    assert(PyCFunction_GET_FLAGS(func) & METH_VARARGS);
 
     PyCFunction meth = PyCFunction_GET_FUNCTION(func);
     PyObject *self = PyCFunction_GET_SELF(func);

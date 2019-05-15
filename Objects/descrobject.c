@@ -227,14 +227,15 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
 }
 
 static PyObject *
-methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
+methoddescr_call_varargs_keywords(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
 {
-    Py_ssize_t nargs;
-    PyObject *self, *result;
+    assert(!PyErr_Occurred());
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+    assert(descr->d_method->ml_flags & METH_VARARGS);
+    assert(descr->d_method->ml_flags & METH_KEYWORDS);
 
     /* Make sure that the first argument is acceptable as 'self' */
-    assert(PyTuple_Check(args));
-    nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     if (nargs < 1) {
         PyErr_Format(PyExc_TypeError,
                      "descriptor '%V' of '%.100s' "
@@ -243,7 +244,7 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
                      PyDescr_TYPE(descr)->tp_name);
         return NULL;
     }
-    self = PyTuple_GET_ITEM(args, 0);
+    PyObject *self = PyTuple_GET_ITEM(args, 0);
     if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
                                   (PyObject *)PyDescr_TYPE(descr))) {
         PyErr_Format(PyExc_TypeError,
@@ -255,10 +256,51 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    result = _PyMethodDef_RawFastCallDict(descr->d_method, self,
-                                          &_PyTuple_ITEMS(args)[1], nargs - 1,
-                                          kwargs);
-    result = _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
+    /* Remove self from args */
+    PyObject *slicedargs = _PyTuple_FromArray(_PyTuple_ITEMS(args) + 1, nargs - 1);
+    if (slicedargs == NULL) {
+        return NULL;
+    }
+
+    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+        Py_DECREF(slicedargs);
+        return NULL;
+    }
+
+    PyCFunctionWithKeywords meth = (PyCFunctionWithKeywords)(void(*)(void))descr->d_method->ml_meth;
+    PyObject *result = meth(self, slicedargs, kwargs);
+
+    Py_LeaveRecursiveCall();
+    Py_DECREF(slicedargs);
+
+    return _Py_CheckFunctionResult((PyObject *)descr, result, NULL);
+}
+
+static PyObject *
+methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
+{
+    int flags = descr->d_method->ml_flags;
+    if ((flags & (METH_VARARGS|METH_KEYWORDS)) == (METH_VARARGS|METH_KEYWORDS)) {
+        /* For METH_VARARGS|METH_KEYWORDS, using FastCallKeywords would
+         * be less optimal because the kwargs dict would be converted
+         * to a tuple and then back to a dict. */
+        return methoddescr_call_varargs_keywords(descr, args, kwargs);
+    }
+
+    /* Use FastCallKeywords instead */
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *const *stack;
+    PyObject *kwnames;
+    if (_PyStack_UnpackDict(_PyTuple_ITEMS(args), nargs, kwargs, &stack, &kwnames) < 0) {
+        return NULL;
+    }
+
+    PyObject *result = _PyMethodDescr_FastCallKeywords((PyObject *)descr,
+                                                       stack, nargs, kwnames);
+    if (stack != _PyTuple_ITEMS(args)) {
+        PyMem_Free((PyObject **)stack);
+    }
+    Py_XDECREF(kwnames);
     return result;
 }
 
