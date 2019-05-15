@@ -1353,7 +1353,7 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
-   .. deprecated:: 3.7
+   .. deprecated-removed:: 3.7 3.8
       The coroutine wrapper functionality has been deprecated, and
       will be removed in 3.8. See :issue:`32591` for details.
 
