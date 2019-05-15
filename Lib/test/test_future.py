@@ -275,6 +275,8 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('f((x for x in a), 2)')
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
+        eq("(x:=10)")
+        eq("f'{(x:=10):=10}'")
 
 
 if __name__ == "__main__":
