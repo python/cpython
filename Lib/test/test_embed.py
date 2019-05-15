@@ -269,12 +269,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
     UTF8_MODE_ERRORS = ('surrogatepass' if MS_WINDOWS else 'surrogateescape')
 
-    # core config
-    UNTESTED_CORE_CONFIG = (
-        # FIXME: untested core configuration variables
-        'dll_path',
-        'module_search_paths',
-    )
     # Mark config which should be get by get_default_config()
     GET_DEFAULT_CONFIG = object()
     DEFAULT_PRE_CONFIG = {
@@ -324,6 +318,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'base_prefix': GET_DEFAULT_CONFIG,
         'exec_prefix': GET_DEFAULT_CONFIG,
         'base_exec_prefix': GET_DEFAULT_CONFIG,
+        'module_search_paths': GET_DEFAULT_CONFIG,
 
         'site_import': 1,
         'bytes_warning': 0,
@@ -354,6 +349,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'legacy_windows_fs_encoding': 0,
         })
         DEFAULT_CORE_CONFIG.update({
+            'dll_path': GET_DEFAULT_CONFIG,
             'legacy_windows_stdio': 0,
         })
 
@@ -410,7 +406,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         code = textwrap.dedent('''
             import json
             import sys
+            import _testinternalcapi
 
+            configs = _testinternalcapi.get_configs()
+            core_config = configs['core_config']
             data = {
                 'stdio_encoding': sys.stdout.encoding,
                 'stdio_errors': sys.stdout.errors,
@@ -420,8 +419,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_exec_prefix': sys.base_exec_prefix,
                 'filesystem_encoding': sys.getfilesystemencoding(),
                 'filesystem_errors': sys.getfilesystemencodeerrors(),
-                'module_search_paths': sys.path,
+                'module_search_paths': core_config['module_search_paths'],
             }
+            if sys.platform == 'win32':
+                data['dll_path'] = core_config['dll_path']
 
             data = json.dumps(data)
             data = data.encode('utf-8')
@@ -431,7 +432,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         # Use -S to not import the site module: get the proper configuration
         # when test_embed is run from a venv (bpo-35313)
-        args = (sys.executable, '-S', '-c', code)
+        args = [sys.executable, '-S', '-c', code]
         env = dict(env)
         if not expected['isolated']:
             env['PYTHONCOERCECLOCALE'] = '0'
@@ -462,7 +463,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         for key, value in expected.items():
             if value is self.GET_DEFAULT_CONFIG:
                 expected[key] = config[key]
-        expected['module_search_paths'] = config['module_search_paths']
+
+        if add_path is not None:
+            expected['module_search_paths'].append(add_path)
         return expected
 
     def check_pre_config(self, config, expected):
@@ -470,16 +473,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         core_config = dict(config['core_config'])
         self.assertEqual(pre_config, expected)
 
-    def check_core_config(self, config, expected, add_path=None):
+    def check_core_config(self, config, expected):
         core_config = dict(config['core_config'])
-        if add_path is not None:
-            paths = [*expected['module_search_paths'], add_path]
-            if not paths[0]:
-                del paths[0]
-            self.assertEqual(core_config['module_search_paths'], paths)
-        for key in self.UNTESTED_CORE_CONFIG:
-            core_config.pop(key, None)
-            expected.pop(key, None)
         self.assertEqual(core_config, expected)
 
     def check_global_config(self, config):
@@ -529,7 +524,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 expected_preconfig[key] = expected_config[key]
 
         self.check_pre_config(config, expected_preconfig)
-        self.check_core_config(config, expected_config, add_path)
+        self.check_core_config(config, expected_config)
         self.check_global_config(config)
 
     def test_init_default_config(self):
@@ -692,6 +687,18 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_config("init_read_set", core_config, preconfig,
                           add_path="init_read_set_path")
+
+    def test_run_main_config(self):
+        preconfig = {}
+        code = ('import _testinternalcapi, json; '
+                'print(json.dumps(_testinternalcapi.get_configs()))')
+        core_config = {
+            'argv': ['-c', 'arg2'],
+            'program': 'python3',
+            'program_name': './python3',
+            'run_command': code + '\n',
+        }
+        self.check_config("run_main_config", core_config, preconfig)
 
 
 if __name__ == "__main__":
