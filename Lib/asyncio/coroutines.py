@@ -108,7 +108,7 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
-    warnings.warn('"@coroutine" decorator is deprecated, use "async def" instead',
+    warnings.warn('"@coroutine" decorator is deprecated since Python 3.8 , use "async def" instead',
                   DeprecationWarning,
                   stacklevel=2)
     if inspect.iscoroutinefunction(func):
