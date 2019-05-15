@@ -2004,12 +2004,14 @@ class BaseTaskTests:
     def test_log_destroyed_pending_task(self):
         Task = self.__class__.Task
 
-        async def kill_me(loop):
-            future = self.new_future(loop)
-            await future
-            # at this point, the only reference to kill_me() task is
-            # the Task._wakeup() method in future._callbacks
-            raise Exception("code never reached")
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def kill_me(loop):
+                future = self.new_future(loop)
+                yield from future
+                # at this point, the only reference to kill_me() task is
+                # the Task._wakeup() method in future._callbacks
+                raise Exception("code never reached")
 
         mock_handler = mock.Mock()
         self.loop.set_debug(True)
@@ -2143,7 +2145,7 @@ class BaseTaskTests:
         async def blocking_coroutine():
             fut = self.new_future(loop)
             # Block: fut result is never set
-            yield from fut
+            await fut
 
         task = loop.create_task(blocking_coroutine())
 
