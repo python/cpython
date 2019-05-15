@@ -2137,7 +2137,8 @@ class HandleTests(test_utils.TestCase):
                         '<Handle cancelled>')
 
         # decorated function
-        cb = asyncio.coroutine(noop)
+        with self.assertWarns(DeprecationWarning):
+            cb = asyncio.coroutine(noop)
         h = asyncio.Handle(cb, (), self.loop)
         self.assertEqual(repr(h),
                         '<Handle noop() at %s:%s>'
