@@ -1,0 +1,1 @@
+"make install" now runs compileall in parallel.
