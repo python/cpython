@@ -2949,6 +2949,9 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
     return 1;
 }
 
+static PyObject *cached_print_prefix = NULL;
+static PyObject *cached_exec_prefix = NULL;
+
 static int
 _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
 {
@@ -2957,8 +2960,6 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
      *    0: nothing happened
      *    1: the check triggered & the error message was changed
      */
-    static PyObject *print_prefix = NULL;
-    static PyObject *exec_prefix = NULL;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
     void *data = PyUnicode_DATA(self->text);
@@ -2976,13 +2977,13 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
 
     /* Check for legacy print statements */
-    if (print_prefix == NULL) {
-        print_prefix = PyUnicode_InternFromString("print ");
-        if (print_prefix == NULL) {
+    if (cached_print_prefix == NULL) {
+        cached_print_prefix = PyUnicode_InternFromString("print ");
+        if (cached_print_prefix == NULL) {
             return -1;
         }
     }
-    match = PyUnicode_Tailmatch(self->text, print_prefix,
+    match = PyUnicode_Tailmatch(self->text, cached_print_prefix,
                                 start, text_len, -1);
     if (match == -1) {
         return -1;
@@ -2992,13 +2993,14 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
 
     /* Check for legacy exec statements */
-    if (exec_prefix == NULL) {
-        exec_prefix = PyUnicode_InternFromString("exec ");
-        if (exec_prefix == NULL) {
+    if (cached_exec_prefix == NULL) {
+        cached_exec_prefix = PyUnicode_InternFromString("exec ");
+        if (cached_exec_prefix == NULL) {
             return -1;
         }
     }
-    match = PyUnicode_Tailmatch(self->text, exec_prefix, start, text_len, -1);
+    match = PyUnicode_Tailmatch(self->text, cached_exec_prefix,
+                                start, text_len, -1);
     if (match == -1) {
         return -1;
     }

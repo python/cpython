@@ -19,6 +19,7 @@ static int numfree = 0;
 
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__qualname__);
+_Py_IDENTIFIER(__doc__);
 
 PyObject *
 PyMethod_Function(PyObject *im)
@@ -116,13 +117,13 @@ static PyMemberDef method_memberlist[] = {
 static PyObject *
 method_get_doc(PyMethodObject *im, void *context)
 {
-    static PyObject *docstr;
-    if (docstr == NULL) {
-        docstr= PyUnicode_InternFromString("__doc__");
-        if (docstr == NULL)
-            return NULL;
-    }
-    return PyObject_GetAttr(im->im_func, docstr);
+//    if (cached_str___doc__ == NULL) {
+//        cached_str___doc__= PyUnicode_InternFromString("__doc__");
+//        if (cached_str___doc__ == NULL)
+//            return NULL;
+//    }
+//    return PyObject_GetAttr(im->im_func, cached_str___doc__);
+    return _PyObject_GetAttrId(im->im_func, &PyId___doc__);
 }
 
 static PyGetSetDef method_getset[] = {
@@ -413,13 +414,7 @@ static PyMemberDef instancemethod_memberlist[] = {
 static PyObject *
 instancemethod_get_doc(PyObject *self, void *context)
 {
-    static PyObject *docstr;
-    if (docstr == NULL) {
-        docstr = PyUnicode_InternFromString("__doc__");
-        if (docstr == NULL)
-            return NULL;
-    }
-    return PyObject_GetAttr(PyInstanceMethod_GET_FUNCTION(self), docstr);
+    return _PyObject_GetAttrId(PyInstanceMethod_GET_FUNCTION(self), &PyId___doc__);
 }
 
 static PyGetSetDef instancemethod_getset[] = {

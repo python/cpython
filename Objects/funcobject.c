@@ -9,18 +9,13 @@
 #include "code.h"
 #include "structmember.h"
 
+_Py_IDENTIFIER(__name__);
+
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
     PyFunctionObject *op;
     PyObject *doc, *consts, *module;
-    static PyObject *__name__ = NULL;
-
-    if (__name__ == NULL) {
-        __name__ = PyUnicode_InternFromString("__name__");
-        if (__name__ == NULL)
-            return NULL;
-    }
 
     op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
     if (op == NULL)
@@ -54,7 +49,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 
     /* __module__: If module name is in globals, use it.
        Otherwise, use None. */
-    module = PyDict_GetItemWithError(globals, __name__);
+    module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
     if (module) {
         Py_INCREF(module);
         op->func_module = module;

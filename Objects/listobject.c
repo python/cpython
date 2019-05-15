@@ -152,12 +152,15 @@ _PyList_DebugMallocStats(FILE *out)
                            numfree, sizeof(PyListObject));
 }
 
+#ifdef SHOW_ALLOC_COUNT
+static int initialized = 0;
+#endif
+
 PyObject *
 PyList_New(Py_ssize_t size)
 {
     PyListObject *op;
 #ifdef SHOW_ALLOC_COUNT
-    static int initialized = 0;
     if (!initialized) {
         Py_AtExit(show_alloc);
         initialized = 1;

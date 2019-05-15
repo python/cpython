@@ -226,22 +226,23 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
     return co;
 }
 
+static PyObject *cached_emptystring = NULL;
+static PyObject *cached_nulltuple = NULL;
+
 PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
-    static PyObject *emptystring = NULL;
-    static PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
-    if (emptystring == NULL) {
-        emptystring = PyBytes_FromString("");
-        if (emptystring == NULL)
+    if (cached_emptystring == NULL) {
+        cached_emptystring = PyBytes_FromString("");
+        if (cached_emptystring == NULL)
             goto failed;
     }
-    if (nulltuple == NULL) {
-        nulltuple = PyTuple_New(0);
-        if (nulltuple == NULL)
+    if (cached_nulltuple == NULL) {
+        cached_nulltuple = PyTuple_New(0);
+        if (cached_nulltuple == NULL)
             goto failed;
     }
     funcname_ob = PyUnicode_FromString(funcname);
@@ -257,16 +258,16 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
                 0,                              /* nlocals */
                 0,                              /* stacksize */
                 0,                              /* flags */
-                emptystring,                    /* code */
-                nulltuple,                      /* consts */
-                nulltuple,                      /* names */
-                nulltuple,                      /* varnames */
-                nulltuple,                      /* freevars */
-                nulltuple,                      /* cellvars */
+                cached_emptystring,             /* code */
+                cached_nulltuple,               /* consts */
+                cached_nulltuple,               /* names */
+                cached_nulltuple,               /* varnames */
+                cached_nulltuple,               /* freevars */
+                cached_nulltuple,               /* cellvars */
                 filename_ob,                    /* filename */
                 funcname_ob,                    /* name */
                 firstlineno,                    /* firstlineno */
-                emptystring                     /* lnotab */
+                cached_emptystring              /* lnotab */
                 );
 
 failed:

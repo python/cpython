@@ -2439,9 +2439,9 @@ digit beyond the first.
         const char *scan, *lastdigit;
         char prev = 0;
 
-        static double log_base_BASE[37] = {0.0e0,};
-        static int convwidth_base[37] = {0,};
-        static twodigits convmultmax_base[37] = {0,};
+        static double log_base_BASE[37] = {0.0e0,};  // Static is okay here (global cache).
+        static int convwidth_base[37] = {0,};  // Static is okay here (global cache).
+        static twodigits convmultmax_base[37] = {0,};  // Static is okay here (global cache).
 
         if (log_base_BASE[base] == 0.0) {
             twodigits convmax = base;
@@ -2918,7 +2918,9 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
     /* Correction term for round-half-to-even rounding.  For a digit x,
        "x + half_even_correction[x & 7]" gives x rounded to the nearest
        multiple of 4, rounding ties to a multiple of 8. */
-    static const int half_even_correction[8] = {0, -1, -2, 1, 0, -1, 2, 1};
+    static const int half_even_correction[8] = {  // Static is okay here (immutable data).
+        0, -1, -2, 1, 0, -1, 2, 1
+    };
 
     a_size = Py_ABS(Py_SIZE(a));
     if (a_size == 0) {

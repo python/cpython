@@ -4158,7 +4158,8 @@ unicode_decode_call_errorhandler_wchar(
     Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
     wchar_t **buf, Py_ssize_t *bufsize, Py_ssize_t *outpos)
 {
-    static const char *argparse = "Un;decoding error handler must return (str, int) tuple";
+    static const char *argparse =  // Static is okay here (immutable data).
+        "Un;decoding error handler must return (str, int) tuple";
 
     PyObject *restuple = NULL;
     PyObject *repunicode = NULL;
@@ -4262,7 +4263,8 @@ unicode_decode_call_errorhandler_writer(
     Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
     _PyUnicodeWriter *writer /* PyObject **output, Py_ssize_t *outpos */)
 {
-    static const char *argparse = "Un;decoding error handler must return (str, int) tuple";
+    static const char *argparse =  // Static is okay here (immutable data).
+        "Un;decoding error handler must return (str, int) tuple";
 
     PyObject *restuple = NULL;
     PyObject *repunicode = NULL;
@@ -6705,7 +6707,8 @@ unicode_encode_call_errorhandler(const char *errors,
                                  Py_ssize_t startpos, Py_ssize_t endpos,
                                  Py_ssize_t *newpos)
 {
-    static const char *argparse = "On;encoding error handler must return (str/bytes, int) tuple";
+    static const char *argparse =  // Static is okay here (immutable data).
+        "On;encoding error handler must return (str/bytes, int) tuple";
     Py_ssize_t len;
     PyObject *restuple;
     PyObject *resunicode;
@@ -8694,7 +8697,8 @@ unicode_translate_call_errorhandler(const char *errors,
                                     Py_ssize_t startpos, Py_ssize_t endpos,
                                     Py_ssize_t *newpos)
 {
-    static const char *argparse = "Un;translating error handler must return (str, int) tuple";
+    static const char *argparse =  // Static is okay here (immutable data).
+        "Un;translating error handler must return (str, int) tuple";
 
     Py_ssize_t i_newpos;
     PyObject *restuple;

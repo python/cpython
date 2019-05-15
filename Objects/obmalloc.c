@@ -1150,6 +1150,8 @@ _Py_GetAllocatedBlocks(void)
 }
 
 
+static int debug_stats = -1;
+
 /* Allocate a new arena.  If we run out of memory, return NULL.  Else
  * allocate a new arena, and return the address of an arena_object
  * describing the new arena.  It's expected that the caller will set
@@ -1161,7 +1163,6 @@ new_arena(void)
     struct arena_object* arenaobj;
     uint excess;        /* number of bytes above pool alignment */
     void *address;
-    static int debug_stats = -1;
 
     if (debug_stats == -1) {
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");

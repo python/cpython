@@ -68,6 +68,7 @@ _Py_IDENTIFIER(__len__);
 _Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__new__);
+_Py_IDENTIFIER(__reduce__);
 _Py_IDENTIFIER(__set_name__);
 _Py_IDENTIFIER(__setitem__);
 _Py_IDENTIFIER(builtins);
@@ -4552,6 +4553,8 @@ object___reduce___impl(PyObject *self)
     return _common_reduce(self, 0);
 }
 
+static PyObject *objreduce = NULL;
+
 /*[clinic input]
 object.__reduce_ex__
 
@@ -4565,9 +4568,7 @@ static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
-    static PyObject *objreduce;
     PyObject *reduce, *res;
-    _Py_IDENTIFIER(__reduce__);
 
     if (objreduce == NULL) {
         objreduce = _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
@@ -7078,6 +7079,10 @@ slotptr(PyTypeObject *type, int ioffset)
    appropriate to declare fixed-size arrays for this. */
 #define MAX_EQUIV 10
 
+/* These act as a little cache. */
+static PyObject *last_slot_name = NULL;
+static slotdef *last_slot_ptrs[MAX_EQUIV];
+
 /* Return a slot pointer for a given name, but ONLY if the attribute has
    exactly one slot function.  The name must be an interned string. */
 static void **
@@ -7085,16 +7090,14 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
 {
     /* XXX Maybe this could be optimized more -- but is it worth it? */
 
-    /* pname and ptrs act as a little cache */
-    static PyObject *pname;
-    static slotdef *ptrs[MAX_EQUIV];
     slotdef *p, **pp;
     void **res, **ptr;
+    slotdef **ptrs = last_slot_ptrs;
 
-    if (pname != name) {
+    if (last_slot_name != name) {
         /* Collect all slotdefs that match name into ptrs. */
-        pname = name;
-        pp = ptrs;
+        last_slot_name = name;
+        pp = last_slot_ptrs;
         for (p = slotdefs; p->name_strobj; p++) {
             if (p->name_strobj == name)
                 *pp++ = p;
