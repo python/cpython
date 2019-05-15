@@ -34,9 +34,9 @@
 const char *
 Py_GetBuildInfo(void)
 {
-    static char buildinfo[50 + sizeof(GITVERSION) +
-                          ((sizeof(GITTAG) > sizeof(GITBRANCH)) ?
-                           sizeof(GITTAG) : sizeof(GITBRANCH))];
+    static char buildinfo[  // Static is okay here (buffer, non-threaded).
+        50 + sizeof(GITVERSION) + ((sizeof(GITTAG) > sizeof(GITBRANCH)) ?
+        sizeof(GITTAG) : sizeof(GITBRANCH))];
     const char *revision = _Py_gitversion();
     const char *sep = *revision ? ":" : "";
     const char *gitid = _Py_gitidentifier();

@@ -246,16 +246,16 @@ getaddrinfo(const char*hostname, const char*servname,
     u_short port;
 
 #ifdef FAITH
-    static int firsttime = 1;
+    static int getaddrinfo_firsttime = 1;  // Static is okay here (process-global).
 
-    if (firsttime) {
+    if (getaddrinfo_firsttime) {
         /* translator hack */
         {
             const char *q = getenv("GAI");
             if (q && inet_pton(AF_INET6, q, &faith_prefix) == 1)
                 translate = YES;
         }
-        firsttime = 0;
+        getaddrinfo_firsttime = 0;
     }
 #endif
 
