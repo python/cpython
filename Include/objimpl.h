@@ -255,7 +255,7 @@ typedef union _gc_head {
         union _gc_head *gc_prev;
         Py_ssize_t gc_refs;
     } gc;
-    double dummy;  /* force worst-case alignment */
+    long double dummy;  /* force worst-case alignment (16 byte for amd64) */
 } PyGC_Head;
 
 extern PyGC_Head *_PyGC_generation0;
