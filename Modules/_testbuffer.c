@@ -2234,11 +2234,11 @@ ndarray_memoryview_from_buffer(PyObject *self, PyObject *dummy)
     const NDArrayObject *nd = (NDArrayObject *)self;
     const Py_buffer *view = &nd->head->base;
     const ndbuf_t *ndbuf;
-    static char format[ND_MAX_NDIM+1];
-    static Py_ssize_t shape[ND_MAX_NDIM];
-    static Py_ssize_t strides[ND_MAX_NDIM];
-    static Py_ssize_t suboffsets[ND_MAX_NDIM];
-    static Py_buffer info;
+    static char format[ND_MAX_NDIM+1];  // Static is okay here (testing).
+    static Py_ssize_t shape[ND_MAX_NDIM];  // Static is okay here (testing).
+    static Py_ssize_t strides[ND_MAX_NDIM];  // Static is okay here (testing).
+    static Py_ssize_t suboffsets[ND_MAX_NDIM];  // Static is okay here (testing).
+    static Py_buffer info;  // Static is okay here (testing).
     char *p;
 
     if (!ND_IS_CONSUMER(nd))

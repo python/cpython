@@ -874,14 +874,15 @@ EXPORT(S8I) __stdcall s_ret_8i_func(S8I inp) { return ret_8i_func(inp); }
 #include <stdlib.h>
 #include <search.h>
 
+static IUnknown *keep_object_last_punk = NULL;
+
 EXPORT (HRESULT) KeepObject(IUnknown *punk)
 {
-    static IUnknown *pobj;
     if (punk)
         punk->lpVtbl->AddRef(punk);
-    if (pobj)
-        pobj->lpVtbl->Release(pobj);
-    pobj = punk;
+    if (keep_object_last_punk)
+        keep_object_last_punk->lpVtbl->Release(keep_object_last_punk);
+    keep_object_last_punk = punk;
     return S_OK;
 }
 
