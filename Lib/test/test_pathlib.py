@@ -1635,6 +1635,11 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
+    def test_unlink_missing_ok(self):
+        p = self.cls(BASE) / 'fileAAA'
+        self.assertFileNotFound(p.unlink)
+        p.unlink(missing_ok=True)
+
     def test_rmdir(self):
         p = self.cls(BASE) / 'dirA'
         for q in p.iterdir():
