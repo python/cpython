@@ -1569,11 +1569,11 @@ static struct fielddesc formattable[] = {
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
 {
-    static int initialized = 0;
     struct fielddesc *table = formattable;
 
-    if (!initialized) {
-        initialized = 1;
+    static int ctypes_fielddesc_initialized = 0;  // Static is okay here (process-global).
+    if (!ctypes_fielddesc_initialized) {
+        ctypes_fielddesc_initialized = 1;
 #ifdef CTYPES_UNICODE
         if (sizeof(wchar_t) == sizeof(short))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sshort;

@@ -100,13 +100,23 @@ Copyright (C) 1994 Steen Lumholt.
 #include <conio.h>
 #define WAIT_FOR_STDIN
 
+static int tcl_library_path_initialized = 0;
+static PyObject *cached_tcl_library_path = NULL;
+
 static PyObject *
 _get_tcl_lib_path()
 {
-    static PyObject *tcl_library_path = NULL;
-    static int already_checked = 0;
-
-    if (already_checked == 0) {
+    PyObject *tcl_library_path = cached_tcl_library_path;
+    /* Note that we do not check if tcl_library_path is NULL, where NULL
+     * indicates that either it hasn't been cached yet or the first
+     * attempt failed.  This is on purpose.  The first time will cause
+     * the caller to fail, but subsequent calls will return NULL with
+     * no exception set.  The callers silently ignore that case.
+     * XXX Is that really on purpose?  Shouldn't the callers either
+     * always fail or always silently ignore the failure (and maybe
+     * emit a warning)?
+     */
+    if (tcl_library_path_initialized == 0) {
         PyObject *prefix;
         struct stat stat_buf;
         int stat_return_value;
@@ -153,7 +163,8 @@ _get_tcl_lib_path()
             tcl_library_path = NULL;
 #endif
         }
-        already_checked = 1;
+        tcl_library_path_initialized = 1;
+        cached_tcl_library_path = tcl_library_path;
     }
     return tcl_library_path;
 }

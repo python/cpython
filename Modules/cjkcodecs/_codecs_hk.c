@@ -16,13 +16,13 @@
 static const encode_map *big5_encmap = NULL;
 static const decode_map *big5_decmap = NULL;
 
+static int big5hkscs_initialized = 0;
+
 CODEC_INIT(big5hkscs)
 {
-    static int initialized = 0;
-
-    if (!initialized && IMPORT_MAP(tw, big5, &big5_encmap, &big5_decmap))
+    if (!big5hkscs_initialized && IMPORT_MAP(tw, big5, &big5_encmap, &big5_decmap))
         return -1;
-    initialized = 1;
+    big5hkscs_initialized = 1;
     return 0;
 }
 

@@ -1054,7 +1054,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
                          const XML_Char *name,
                          XML_Encoding *info)
 {
-    static unsigned char template_buffer[256] = {0};
+    static unsigned char template_buffer[256] = {0};  /// Static is okay here (effectively immutable data).
     PyObject* u;
     int i;
     void *data;
@@ -1628,6 +1628,8 @@ static int init_handler_descrs(void)
     return 0;
 }
 
+static struct PyExpat_CAPI capi;
+
 PyMODINIT_FUNC
 MODULE_INITFUNC(void)
 {
@@ -1640,7 +1642,6 @@ MODULE_INITFUNC(void)
     PyObject *codes_dict;
     PyObject *rev_codes_dict;
     int res;
-    static struct PyExpat_CAPI capi;
     PyObject *capi_object;
 
     if (errmod_name == NULL)

@@ -48,7 +48,7 @@ void (* mpd_traphandler)(mpd_context_t *) = mpd_dflt_traphandler;
 void
 mpd_setminalloc(mpd_ssize_t n)
 {
-    static int minalloc_is_set = 0;
+    static int minalloc_is_set = 0;  // Static is okay here (process-global).
 
     if (minalloc_is_set) {
         mpd_err_warn("mpd_setminalloc: ignoring request to set "

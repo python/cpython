@@ -125,6 +125,8 @@ static void pymem_destructor(PyObject *ptr)
     private copies value.
 */
 
+static PyObject *error_object_name = NULL;
+
 /*
   This function creates and returns a thread-local Python object that has
   space to store two integer error numbers; once created the Python object is
@@ -135,7 +137,6 @@ _ctypes_get_errobj(int **pspace)
 {
     PyObject *dict = PyThreadState_GetDict();
     PyObject *errobj;
-    static PyObject *error_object_name;
     if (dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot get thread state");

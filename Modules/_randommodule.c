@@ -98,7 +98,9 @@ static uint32_t
 genrand_int32(RandomObject *self)
 {
     uint32_t y;
-    static const uint32_t mag01[2] = {0x0U, MATRIX_A};
+    static const uint32_t mag01[2] = {  // Static is okay here (immutable data).
+        0x0U, MATRIX_A
+    };
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
     uint32_t *mt;
 

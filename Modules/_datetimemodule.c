@@ -1336,10 +1336,10 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
 static PyObject *
 format_ctime(PyDateTime_Date *date, int hours, int minutes, int seconds)
 {
-    static const char * const DayNames[] = {
+    static const char * const DayNames[] = {  // Static is okay here (immutable data).
         "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
     };
-    static const char * const MonthNames[] = {
+    static const char * const MonthNames[] = {  // Static is okay here (immutable data).
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
@@ -2432,13 +2432,13 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     PyObject *y = NULL;         /* temp sum of microseconds */
     double leftover_us = 0.0;
 
-    static char *keywords[] = {
+    static char *kwlist[] = {
         "days", "seconds", "microseconds", "milliseconds",
         "minutes", "hours", "weeks", NULL
     };
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOO:__new__",
-                                    keywords,
+                                    kwlist,
                                     &day, &second, &us,
                                     &ms, &minute, &hour, &week) == 0)
         goto Done;
@@ -3007,13 +3007,13 @@ invalid_string_error:
 static PyObject *
 date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
 {
-    static char *keywords[] = {
+    static char *kwlist[] = {
         "year", "week", "day", NULL
     };
 
     int year, week, day;
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
-                keywords,
+                kwlist,
                 &year, &week, &day) == 0) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_Format(PyExc_ValueError,
@@ -3183,9 +3183,9 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
     PyObject *tuple;
     PyObject *format;
     _Py_IDENTIFIER(timetuple);
-    static char *keywords[] = {"format", NULL};
+    static char *kwlist[] = {"format", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", kwlist,
                                       &format))
         return NULL;
 
@@ -4184,10 +4184,10 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
     char buf[100];
     char *timespec = NULL;
-    static char *keywords[] = {"timespec", NULL};
+    static char *kwlist[] = {"timespec", NULL};
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
-    static char *specs[][2] = {
+    static const char *specs[5][2] = {  // Static is okay here (immutable data).
         {"hours", "%02d"},
         {"minutes", "%02d:%02d"},
         {"seconds", "%02d:%02d:%02d"},
@@ -4196,7 +4196,7 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     };
     size_t given_spec;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|s:isoformat", keywords, &timespec))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|s:isoformat", kwlist, &timespec))
         return NULL;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
@@ -4250,9 +4250,9 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     PyObject *result;
     PyObject *tuple;
     PyObject *format;
-    static char *keywords[] = {"format", NULL};
+    static char *kwlist[] = {"format", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", kwlist,
                                       &format))
         return NULL;
 
@@ -4984,10 +4984,10 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
     PyObject *self;
     PyObject *timestamp;
     PyObject *tzinfo = Py_None;
-    static char *keywords[] = {"timestamp", "tz", NULL};
+    static char *kwlist[] = {"timestamp", "tz", NULL};
 
     if (! PyArg_ParseTupleAndKeywords(args, kw, "O|O:fromtimestamp",
-                                      keywords, &timestamp, &tzinfo))
+                                      kwlist, &timestamp, &tzinfo))
         return NULL;
     if (check_tzinfo_subclass(tzinfo) < 0)
         return NULL;
@@ -5017,23 +5017,24 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
     return result;
 }
 
+static PyObject *cached__strptime = NULL;
+
 /* Return new datetime from _strptime.strptime_datetime(). */
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-    static PyObject *module = NULL;
     PyObject *string, *format;
     _Py_IDENTIFIER(_strptime_datetime);
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
-    if (module == NULL) {
-        module = PyImport_ImportModuleNoBlock("_strptime");
-        if (module == NULL)
+    if (cached__strptime == NULL) {
+        cached__strptime = PyImport_ImportModuleNoBlock("_strptime");
+        if (cached__strptime == NULL)
             return NULL;
     }
-    return _PyObject_CallMethodIdObjArgs(module, &PyId__strptime_datetime,
+    return _PyObject_CallMethodIdObjArgs(cached__strptime, &PyId__strptime_datetime,
                                          cls, string, format, NULL);
 }
 
@@ -5041,13 +5042,13 @@ datetime_strptime(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 {
-    static char *keywords[] = {"date", "time", "tzinfo", NULL};
+    static char *kwlist[] = {"date", "time", "tzinfo", NULL};
     PyObject *date;
     PyObject *time;
     PyObject *tzinfo = NULL;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "O!O!|O:combine", keywords,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "O!O!|O:combine", kwlist,
                                     &PyDateTime_DateType, &date,
                                     &PyDateTime_TimeType, &time, &tzinfo)) {
         if (tzinfo == NULL) {
@@ -5415,11 +5416,11 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
     int sep = 'T';
     char *timespec = NULL;
-    static char *keywords[] = {"sep", "timespec", NULL};
+    static char *kwlist[] = {"sep", "timespec", NULL};
     char buffer[100];
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
-    static char *specs[][2] = {
+    static const char *specs[5][2] = {  // Static is okay here (immutable data).
         {"hours", "%04d-%02d-%02d%c%02d"},
         {"minutes", "%04d-%02d-%02d%c%02d:%02d"},
         {"seconds", "%04d-%02d-%02d%c%02d:%02d:%02d"},
@@ -5428,7 +5429,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     };
     size_t given_spec;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Cs:isoformat", keywords, &sep, &timespec))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Cs:isoformat", kwlist, &sep, &timespec))
         return NULL;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
@@ -5871,9 +5872,9 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     PyObject *temp;
     PyObject *self_tzinfo;
     PyObject *tzinfo = Py_None;
-    static char *keywords[] = {"tz", NULL};
+    static char *kwlist[] = {"tz", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:astimezone", keywords,
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:astimezone", kwlist,
                                       &tzinfo))
         return NULL;
 

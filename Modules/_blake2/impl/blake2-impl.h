@@ -131,7 +131,7 @@ BLAKE2_LOCAL_INLINE(uint64_t) rotr64( const uint64_t w, const unsigned c )
 /* prevents compiler optimizing out memset() */
 BLAKE2_LOCAL_INLINE(void) secure_zero_memory(void *v, size_t n)
 {
-  static void *(*const volatile memset_v)(void *, int, size_t) = &memset;
+  static void *(*const volatile memset_v)(void *, int, size_t) = &memset;  // Static is okay here (process-global).
   memset_v(v, 0, n);
 }
 

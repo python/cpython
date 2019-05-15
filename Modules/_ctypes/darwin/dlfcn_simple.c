@@ -78,11 +78,12 @@ static void *dlsymIntern(void *handle, const char *symbol);
 
 static const char *error(int setget, const char *str, ...);
 
+static int err_filled = 0;
+static char errstr[ERR_STR_LEN];
+
 /* Set and get the error string for use by dlerror */
 static const char *error(int setget, const char *str, ...)
 {
-    static char errstr[ERR_STR_LEN];
-    static int err_filled = 0;
     const char *retval;
     va_list arg;
     if (setget == 0)
@@ -213,7 +214,7 @@ static int darwin_dlclose(void *handle)
 /* dlsym, prepend the underscore and call dlsymIntern */
 static void *darwin_dlsym(void *handle, const char *symbol)
 {
-    static char undersym[257];          /* Saves calls to malloc(3) */
+    static char undersym[257];  // Static is okay here (saves calls to malloc(3)).
     int sym_len = strlen(symbol);
     void *value = NULL;
     char *malloc_sym = NULL;

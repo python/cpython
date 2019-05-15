@@ -2514,8 +2514,8 @@ static int
 cmsg_min_space(struct msghdr *msg, struct cmsghdr *cmsgh, size_t space)
 {
     size_t cmsg_offset;
-    static const size_t cmsg_len_end = (offsetof(struct cmsghdr, cmsg_len) +
-                                        sizeof(cmsgh->cmsg_len));
+    static const size_t cmsg_len_end =  // Static is okay here (immutable data).
+        (offsetof(struct cmsghdr, cmsg_len) + sizeof(cmsgh->cmsg_len));
 
     /* Note that POSIX allows msg_controllen to be of signed type. */
     if (cmsgh == NULL || msg->msg_control == NULL)
@@ -4569,7 +4569,7 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
     struct sock_sendmsg ctx;
     Py_ssize_t controllen;
     void *controlbuf = NULL;
-    static char *keywords[] = {"msg", "op", "iv", "assoclen", "flags", 0};
+    static char *kwlist[] = {"msg", "op", "iv", "assoclen", "flags", 0};
 
     if (self->sock_family != AF_ALG) {
         PyErr_SetString(PyExc_OSError,
@@ -4578,7 +4578,7 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
     }
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O$O!y*O!i:sendmsg_afalg", keywords,
+                                     "|O$O!y*O!i:sendmsg_afalg", kwlist,
                                      &data_arg,
                                      &PyLong_Type, &opobj, &iv,
                                      &PyLong_Type, &assoclenobj, &flags)) {
@@ -5016,7 +5016,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *fdobj = NULL;
     SOCKET_T fd = INVALID_SOCKET;
     int family = -1, type = -1, proto = -1;
-    static char *keywords[] = {"family", "type", "proto", "fileno", 0};
+    static char *kwlist[] = {"family", "type", "proto", "fileno", 0};
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &sock_cloexec_works;
@@ -5026,7 +5026,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 #endif
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|iiiO:socket", keywords,
+                                     "|iiiO:socket", kwlist,
                                      &family, &type, &proto, &fdobj))
         return -1;
 
@@ -6330,8 +6330,8 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 static PyObject *
 socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 {
-    static char* kwnames[] = {"host", "port", "family", "type", "proto",
-                              "flags", 0};
+    static char *kwlist[] = {"host", "port", "family", "type", "proto",
+                             "flags", 0};
     struct addrinfo hints, *res;
     struct addrinfo *res0 = NULL;
     PyObject *hobj = NULL;
@@ -6346,7 +6346,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     socktype = protocol = flags = 0;
     family = AF_UNSPEC;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|iiii:getaddrinfo",
-                          kwnames, &hobj, &pobj, &family, &socktype,
+                          kwlist, &hobj, &pobj, &family, &socktype,
                           &protocol, &flags)) {
         return NULL;
     }

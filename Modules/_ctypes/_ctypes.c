@@ -1900,6 +1900,8 @@ static PyMethodDef c_void_p_method = { "from_param", c_void_p_from_param, METH_O
 static PyMethodDef c_char_p_method = { "from_param", c_char_p_from_param, METH_O };
 static PyMethodDef c_wchar_p_method = { "from_param", c_wchar_p_from_param, METH_O };
 
+static PyObject *swapped_type_suffix = NULL;
+
 static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject *kwds,
                                    PyObject *proto, struct fielddesc *fmt)
 {
@@ -1908,25 +1910,25 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     PyObject *newname;
     PyObject *swapped_args;
-    static PyObject *suffix;
     Py_ssize_t i;
 
     swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
     if (!swapped_args)
         return NULL;
 
-    if (suffix == NULL)
+    if (swapped_type_suffix == NULL) {
 #ifdef WORDS_BIGENDIAN
-        suffix = PyUnicode_InternFromString("_le");
+        swapped_type_suffix = PyUnicode_InternFromString("_le");
 #else
-        suffix = PyUnicode_InternFromString("_be");
+        swapped_type_suffix = PyUnicode_InternFromString("_be");
 #endif
-    if (suffix == NULL) {
-        Py_DECREF(swapped_args);
-        return NULL;
+        if (swapped_type_suffix == NULL) {
+            Py_DECREF(swapped_args);
+            return NULL;
+        }
     }
 
-    newname = PyUnicode_Concat(name, suffix);
+    newname = PyUnicode_Concat(name, swapped_type_suffix);
     if (newname == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
@@ -4731,18 +4733,19 @@ PyTypeObject PyCArray_Type = {
     0,                                          /* tp_free */
 };
 
+static PyObject *array_type_cache;
+
 PyObject *
 PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
 {
-    static PyObject *cache;
     PyObject *key;
     PyObject *result;
     char name[256];
     PyObject *len;
 
-    if (cache == NULL) {
-        cache = PyDict_New();
-        if (cache == NULL)
+    if (array_type_cache == NULL) {
+        array_type_cache = PyDict_New();
+        if (array_type_cache == NULL)
             return NULL;
     }
     len = PyLong_FromSsize_t(length);
@@ -4752,7 +4755,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
     Py_DECREF(len);
     if (!key)
         return NULL;
-    result = PyDict_GetItemProxy(cache, key);
+    result = PyDict_GetItemProxy(array_type_cache, key);
     if (result) {
         Py_INCREF(result);
         Py_DECREF(key);
@@ -4790,7 +4793,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         Py_DECREF(key);
         return NULL;
     }
-    if (-1 == PyDict_SetItemProxy(cache, key, result)) {
+    if (-1 == PyDict_SetItemProxy(array_type_cache, key, result)) {
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;

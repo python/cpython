@@ -4441,17 +4441,18 @@ PyMODINIT_FUNC
 PyInit__curses(void)
 {
     PyObject *m, *d, *v, *c_api_object;
-    static void *PyCurses_API[PyCurses_API_pointers];
 
     /* Initialize object type */
     if (PyType_Ready(&PyCursesWindow_Type) < 0)
         return NULL;
 
     /* Initialize the C API pointer array */
-    PyCurses_API[0] = (void *)&PyCursesWindow_Type;
-    PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
-    PyCurses_API[2] = (void *)func_PyCursesInitialised;
-    PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
+    void *PyCurses_API[PyCurses_API_pointers] = {
+        (void *)&PyCursesWindow_Type,
+        (void *)func_PyCursesSetupTermCalled,
+        (void *)func_PyCursesInitialised,
+        (void *)func_PyCursesInitialisedColor,
+    };
 
     /* Create the module and add the functions */
     m = PyModule_Create(&_cursesmodule);

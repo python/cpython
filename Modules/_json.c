@@ -73,17 +73,18 @@ static PyMemberDef encoder_members[] = {
     {NULL}
 };
 
+static PyObject *cached_temp_sep = NULL;
+
 static PyObject *
 join_list_unicode(PyObject *lst)
 {
     /* return u''.join(lst) */
-    static PyObject *sep = NULL;
-    if (sep == NULL) {
-        sep = PyUnicode_FromStringAndSize("", 0);
-        if (sep == NULL)
+    if (cached_temp_sep == NULL) {
+        cached_temp_sep = PyUnicode_FromStringAndSize("", 0);
+        if (cached_temp_sep == NULL)
             return NULL;
     }
-    return PyUnicode_Join(sep, lst);
+    return PyUnicode_Join(cached_temp_sep, lst);
 }
 
 /* Forward decls */
@@ -326,11 +327,12 @@ escape_unicode(PyObject *pystr)
     return rval;
 }
 
+static PyObject *JSONDecodeError = NULL;
+
 static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
-    static PyObject *JSONDecodeError = NULL;
     PyObject *exc;
     if (JSONDecodeError == NULL) {
         PyObject *decoder = PyImport_ImportModule("json.decoder");
@@ -1371,33 +1373,34 @@ encoder_call(PyObject *self, PyObject *args, PyObject *kwds)
     return _PyAccu_FinishAsList(&acc);
 }
 
+static PyObject *cached_str_null = NULL;
+static PyObject *cached_str_true = NULL;
+static PyObject *cached_str_false = NULL;
+
 static PyObject *
 _encoded_const(PyObject *obj)
 {
     /* Return the JSON string representation of None, True, False */
     if (obj == Py_None) {
-        static PyObject *s_null = NULL;
-        if (s_null == NULL) {
-            s_null = PyUnicode_InternFromString("null");
+        if (cached_str_null == NULL) {
+            cached_str_null = PyUnicode_InternFromString("null");
         }
-        Py_XINCREF(s_null);
-        return s_null;
+        Py_XINCREF(cached_str_null);
+        return cached_str_null;
     }
     else if (obj == Py_True) {
-        static PyObject *s_true = NULL;
-        if (s_true == NULL) {
-            s_true = PyUnicode_InternFromString("true");
+        if (cached_str_true == NULL) {
+            cached_str_true = PyUnicode_InternFromString("true");
         }
-        Py_XINCREF(s_true);
-        return s_true;
+        Py_XINCREF(cached_str_true);
+        return cached_str_true;
     }
     else if (obj == Py_False) {
-        static PyObject *s_false = NULL;
-        if (s_false == NULL) {
-            s_false = PyUnicode_InternFromString("false");
+        if (cached_str_false == NULL) {
+            cached_str_false = PyUnicode_InternFromString("false");
         }
-        Py_XINCREF(s_false);
-        return s_false;
+        Py_XINCREF(cached_str_false);
+        return cached_str_false;
     }
     else {
         PyErr_SetString(PyExc_ValueError, "not a const");
@@ -1556,14 +1559,15 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
     }
 }
 
+static PyObject *cached_str_open_dict = NULL;
+static PyObject *cached_str_close_dict = NULL;
+static PyObject *cached_str_empty_dict = NULL;
+
 static int
 encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *dct, Py_ssize_t indent_level)
 {
     /* Encode Python dict dct a JSON term */
-    static PyObject *open_dict = NULL;
-    static PyObject *close_dict = NULL;
-    static PyObject *empty_dict = NULL;
     PyObject *kstr = NULL;
     PyObject *ident = NULL;
     PyObject *it = NULL;
@@ -1571,13 +1575,19 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
     PyObject *item = NULL;
     Py_ssize_t idx;
 
-    if (open_dict == NULL || close_dict == NULL || empty_dict == NULL) {
-        open_dict = PyUnicode_InternFromString("{");
-        close_dict = PyUnicode_InternFromString("}");
-        empty_dict = PyUnicode_InternFromString("{}");
-        if (open_dict == NULL || close_dict == NULL || empty_dict == NULL)
+    if (cached_str_open_dict == NULL || cached_str_close_dict == NULL ||
+            cached_str_empty_dict == NULL) {
+        cached_str_open_dict = PyUnicode_InternFromString("{");
+        cached_str_close_dict = PyUnicode_InternFromString("}");
+        cached_str_empty_dict = PyUnicode_InternFromString("{}");
+        if (cached_str_open_dict == NULL || cached_str_close_dict == NULL ||
+                cached_str_empty_dict == NULL) {
             return -1;
+        }
     }
+    PyObject *open_dict = cached_str_open_dict;
+    PyObject *close_dict = cached_str_close_dict;
+    PyObject *empty_dict = cached_str_empty_dict;
     if (PyDict_GET_SIZE(dct) == 0)  /* Fast path */
         return _PyAccu_Accumulate(acc, empty_dict);
 
@@ -1713,25 +1723,32 @@ bail:
 }
 
 
+static PyObject *cached_str_open_array = NULL;
+static PyObject *cached_str_close_array = NULL;
+static PyObject *cached_str_empty_array = NULL;
+
 static int
 encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *seq, Py_ssize_t indent_level)
 {
     /* Encode Python list seq to a JSON term */
-    static PyObject *open_array = NULL;
-    static PyObject *close_array = NULL;
-    static PyObject *empty_array = NULL;
     PyObject *ident = NULL;
     PyObject *s_fast = NULL;
     Py_ssize_t i;
 
-    if (open_array == NULL || close_array == NULL || empty_array == NULL) {
-        open_array = PyUnicode_InternFromString("[");
-        close_array = PyUnicode_InternFromString("]");
-        empty_array = PyUnicode_InternFromString("[]");
-        if (open_array == NULL || close_array == NULL || empty_array == NULL)
+    if (cached_str_open_array == NULL || cached_str_close_array == NULL ||
+            cached_str_empty_array == NULL) {
+        cached_str_open_array = PyUnicode_InternFromString("[");
+        cached_str_close_array = PyUnicode_InternFromString("]");
+        cached_str_empty_array = PyUnicode_InternFromString("[]");
+        if (cached_str_open_array == NULL || cached_str_close_array == NULL ||
+                cached_str_empty_array == NULL) {
             return -1;
+        }
     }
+    PyObject *open_array = cached_str_open_array;
+    PyObject *close_array = cached_str_close_array;
+    PyObject *empty_array = cached_str_empty_array;
     ident = NULL;
     s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
     if (s_fast == NULL)

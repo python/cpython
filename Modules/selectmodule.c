@@ -1823,9 +1823,14 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
     PyObject *pfd;
     static char *kwlist[] = {"ident", "filter", "flags", "fflags",
                              "data", "udata", NULL};
-    static const char fmt[] = "O|"
-                FILTER_FMT_UNIT FLAGS_FMT_UNIT FFLAGS_FMT_UNIT DATA_FMT_UNIT
-                UINTPTRT_FMT_UNIT ":kevent";
+    static const char fmt[] =  // Static is okay here (immutable data).
+        "O|"
+        FILTER_FMT_UNIT
+        FLAGS_FMT_UNIT
+        FFLAGS_FMT_UNIT
+        DATA_FMT_UNIT
+        UINTPTRT_FMT_UNIT
+        ":kevent";
 
     EV_SET(&(self->e), 0, EVFILT_READ, EV_ADD, 0, 0, 0); /* defaults */
 

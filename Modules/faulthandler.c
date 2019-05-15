@@ -218,7 +218,7 @@ static void
 faulthandler_dump_traceback(int fd, int all_threads,
                             PyInterpreterState *interp)
 {
-    static volatile int reentrant = 0;
+    static volatile int reentrant = 0;  // Static is okay here (process-global).
     PyThreadState *tstate;
 
     if (reentrant)

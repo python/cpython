@@ -830,7 +830,7 @@ attlist2(PROLOG_STATE *state,
     return XML_ROLE_ATTLIST_NONE;
   case XML_TOK_NAME:
     {
-      static const char * const types[] = {
+      static const char * const types[] = {  // Static is okay here (immutable data).
         KW_CDATA,
         KW_ID,
         KW_IDREF,

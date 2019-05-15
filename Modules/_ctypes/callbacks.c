@@ -429,14 +429,17 @@ static void LoadPython(void)
 
 /******************************************************************/
 
+static PyObject *context_dll_get_cls = NULL;
+
 long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
     PyObject *mod, *func, *result;
     long retval;
-    static PyObject *context;
 
-    if (context == NULL)
-        context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
+    if (context_dll_get_cls == NULL) {
+        context_dll_get_cls = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
+    }
+    PyObject *context = context_dll_get_cls;
 
     mod = PyImport_ImportModuleNoBlock("ctypes");
     if (!mod) {
@@ -502,14 +505,17 @@ STDAPI DllGetClassObject(REFCLSID rclsid,
     return result;
 }
 
+static PyObject *context_dll_can_unload = NULL;
+
 long Call_CanUnloadNow(void)
 {
     PyObject *mod, *func, *result;
     long retval;
-    static PyObject *context;
 
-    if (context == NULL)
-        context = PyUnicode_InternFromString("_ctypes.DllCanUnloadNow");
+    if (context_dll_can_unload == NULL) {
+        context_dll_can_unload = PyUnicode_InternFromString("_ctypes.DllCanUnloadNow");
+    }
+    PyObject *context = context_dll_can_unload;
 
     mod = PyImport_ImportModuleNoBlock("ctypes");
     if (!mod) {

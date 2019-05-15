@@ -337,7 +337,7 @@ static
 nisresp_maplist *
 nisproc_maplist_2(domainname *argp, CLIENT *clnt)
 {
-    static nisresp_maplist res;
+    static nisresp_maplist res;  // Static is okay here (non-threaded?).
 
     memset(&res, 0, sizeof(res));
     if (clnt_call(clnt, YPPROC_MAPLIST,

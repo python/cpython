@@ -2164,6 +2164,8 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     return result;
 }
 
+static PyObject *cached_array_reconstructor = NULL;
+
 /*[clinic input]
 array.array.__reduce_ex__
 
@@ -2182,20 +2184,19 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
     PyObject *array_str;
     int typecode = self->ob_descr->typecode;
     int mformat_code;
-    static PyObject *array_reconstructor = NULL;
     long protocol;
     _Py_IDENTIFIER(_array_reconstructor);
     _Py_IDENTIFIER(__dict__);
 
-    if (array_reconstructor == NULL) {
+    if (cached_array_reconstructor == NULL) {
         PyObject *array_module = PyImport_ImportModule("array");
         if (array_module == NULL)
             return NULL;
-        array_reconstructor = _PyObject_GetAttrId(
+        cached_array_reconstructor = _PyObject_GetAttrId(
             array_module,
             &PyId__array_reconstructor);
         Py_DECREF(array_module);
-        if (array_reconstructor == NULL)
+        if (cached_array_reconstructor == NULL)
             return NULL;
     }
 
@@ -2248,7 +2249,7 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
         return NULL;
     }
     result = Py_BuildValue(
-        "O(OCiN)O", array_reconstructor, Py_TYPE(self), typecode,
+        "O(OCiN)O", cached_array_reconstructor, Py_TYPE(self), typecode,
         mformat_code, array_str, dict);
     Py_DECREF(dict);
     return result;

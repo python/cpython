@@ -63,6 +63,7 @@ struct pair_encodemap {
 static const MultibyteCodec *codec_list;
 static const struct dbcs_map *mapping_list;
 
+// Macros for building encoding-specific function headers:
 #define CODEC_INIT(encoding)                                            \
     static int encoding##_codec_init(const void *config)
 
@@ -202,6 +203,7 @@ static const struct dbcs_map *mapping_list;
 #define TRYMAP_DEC(charset, assi, c1, c2)                     \
     _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
 
+// The two static locals in these macros are okay (immutable data).
 #define BEGIN_MAPPINGS_LIST static const struct dbcs_map _mapping_list[] = {
 #define MAPPING_ENCONLY(enc) {#enc, (void*)enc##_encmap, NULL},
 #define MAPPING_DECONLY(enc) {#enc, NULL, (void*)enc##_decmap},
@@ -211,6 +213,7 @@ static const struct dbcs_map *mapping_list;
     static const struct dbcs_map *mapping_list =        \
         (const struct dbcs_map *)_mapping_list;
 
+// The two static locals in these macros are okay (immutable data).
 #define BEGIN_CODECS_LIST static const MultibyteCodec _codec_list[] = {
 #define _STATEFUL_METHODS(enc)          \
     enc##_encode,                       \
@@ -242,11 +245,11 @@ static const struct dbcs_map *mapping_list;
 
 
 
+    static PyObject *cofunc = NULL;
+
 static PyObject *
 getmultibytecodec(void)
 {
-    static PyObject *cofunc = NULL;
-
     if (cofunc == NULL) {
         PyObject *mod = PyImport_ImportModuleNoBlock("_multibytecodec");
         if (mod == NULL)

@@ -2457,7 +2457,7 @@ XML_ExpatVersionInfo(void)
 const XML_Feature * XMLCALL
 XML_GetFeatureList(void)
 {
-  static const XML_Feature features[] = {
+  static const XML_Feature features[] = {  // Static is okay here (immutable data).
     {XML_FEATURE_SIZEOF_XML_CHAR,  XML_L("sizeof(XML_Char)"),
      sizeof(XML_Char)},
     {XML_FEATURE_SIZEOF_XML_LCHAR, XML_L("sizeof(XML_LChar)"),
@@ -3561,7 +3561,7 @@ static enum XML_Error
 addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
            const XML_Char *uri, BINDING **bindingsPtr)
 {
-  static const XML_Char xmlNamespace[] = {
+  static const XML_Char xmlNamespace[] = {  // Static is okay here (immutable data).
     ASCII_h, ASCII_t, ASCII_t, ASCII_p, ASCII_COLON, ASCII_SLASH, ASCII_SLASH,
     ASCII_w, ASCII_w, ASCII_w, ASCII_PERIOD, ASCII_w, ASCII_3, ASCII_PERIOD,
     ASCII_o, ASCII_r, ASCII_g, ASCII_SLASH, ASCII_X, ASCII_M, ASCII_L,
@@ -3569,17 +3569,19 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
     ASCII_n, ASCII_a, ASCII_m, ASCII_e, ASCII_s, ASCII_p, ASCII_a, ASCII_c,
     ASCII_e, '\0'
   };
-  static const int xmlLen =
-    (int)sizeof(xmlNamespace)/sizeof(XML_Char) - 1;
-  static const XML_Char xmlnsNamespace[] = {
+  //static const int xmlLen = (int)sizeof(xmlNamespace)/sizeof(XML_Char) - 1;  // Static is okay here (immutable data).
+  static const int xmlLen =  // Static is okay here (immutable data).
+      (int)sizeof(xmlNamespace)/sizeof(XML_Char) - 1;
+  static const XML_Char xmlnsNamespace[] = {  // Static is okay here (immutable data).
     ASCII_h, ASCII_t, ASCII_t, ASCII_p, ASCII_COLON, ASCII_SLASH, ASCII_SLASH,
     ASCII_w, ASCII_w, ASCII_w, ASCII_PERIOD, ASCII_w, ASCII_3, ASCII_PERIOD,
     ASCII_o, ASCII_r, ASCII_g, ASCII_SLASH, ASCII_2, ASCII_0, ASCII_0,
     ASCII_0, ASCII_SLASH, ASCII_x, ASCII_m, ASCII_l, ASCII_n, ASCII_s,
     ASCII_SLASH, '\0'
   };
-  static const int xmlnsLen =
-    (int)sizeof(xmlnsNamespace)/sizeof(XML_Char) - 1;
+  //static const int xmlnsLen = (int)sizeof(xmlnsNamespace)/sizeof(XML_Char) - 1;  // Static is okay here (immutable data).
+  static const int xmlnsLen =  // Static is okay here (immutable data).
+      (int)sizeof(xmlnsNamespace)/sizeof(XML_Char) - 1;
 
   XML_Bool mustBeXML = XML_FALSE;
   XML_Bool isXML = XML_TRUE;
@@ -4305,27 +4307,44 @@ doProlog(XML_Parser parser,
          XML_Bool haveMore)
 {
 #ifdef XML_DTD
-  static const XML_Char externalSubsetName[] = { ASCII_HASH , '\0' };
+  static const XML_Char externalSubsetName[] = {  // Static is okay here (immutable data).
+      ASCII_HASH ,
+      '\0'
+  };
 #endif /* XML_DTD */
-  static const XML_Char atypeCDATA[] =
-      { ASCII_C, ASCII_D, ASCII_A, ASCII_T, ASCII_A, '\0' };
-  static const XML_Char atypeID[] = { ASCII_I, ASCII_D, '\0' };
-  static const XML_Char atypeIDREF[] =
-      { ASCII_I, ASCII_D, ASCII_R, ASCII_E, ASCII_F, '\0' };
-  static const XML_Char atypeIDREFS[] =
-      { ASCII_I, ASCII_D, ASCII_R, ASCII_E, ASCII_F, ASCII_S, '\0' };
-  static const XML_Char atypeENTITY[] =
-      { ASCII_E, ASCII_N, ASCII_T, ASCII_I, ASCII_T, ASCII_Y, '\0' };
-  static const XML_Char atypeENTITIES[] = { ASCII_E, ASCII_N,
-      ASCII_T, ASCII_I, ASCII_T, ASCII_I, ASCII_E, ASCII_S, '\0' };
-  static const XML_Char atypeNMTOKEN[] = {
-      ASCII_N, ASCII_M, ASCII_T, ASCII_O, ASCII_K, ASCII_E, ASCII_N, '\0' };
-  static const XML_Char atypeNMTOKENS[] = { ASCII_N, ASCII_M, ASCII_T,
-      ASCII_O, ASCII_K, ASCII_E, ASCII_N, ASCII_S, '\0' };
-  static const XML_Char notationPrefix[] = { ASCII_N, ASCII_O, ASCII_T,
-      ASCII_A, ASCII_T, ASCII_I, ASCII_O, ASCII_N, ASCII_LPAREN, '\0' };
-  static const XML_Char enumValueSep[] = { ASCII_PIPE, '\0' };
-  static const XML_Char enumValueStart[] = { ASCII_LPAREN, '\0' };
+  static const XML_Char atypeCDATA[] = {  // Static is okay here (immutable data).
+      ASCII_C, ASCII_D, ASCII_A, ASCII_T, ASCII_A,
+      '\0' };
+  static const XML_Char atypeID[] = {  // Static is okay here (immutable data).
+      ASCII_I, ASCII_D,
+      '\0' };
+  static const XML_Char atypeIDREF[] = {  // Static is okay here (immutable data).
+      ASCII_I, ASCII_D, ASCII_R, ASCII_E, ASCII_F,
+      '\0' };
+  static const XML_Char atypeIDREFS[] = {  // Static is okay here (immutable data).
+      ASCII_I, ASCII_D, ASCII_R, ASCII_E, ASCII_F, ASCII_S,
+      '\0' };
+  static const XML_Char atypeENTITY[] = {  // Static is okay here (immutable data).
+      ASCII_E, ASCII_N, ASCII_T, ASCII_I, ASCII_T, ASCII_Y,
+      '\0' };
+  static const XML_Char atypeENTITIES[] = {  // Static is okay here (immutable data).
+      ASCII_E, ASCII_N, ASCII_T, ASCII_I, ASCII_T, ASCII_I, ASCII_E, ASCII_S,
+      '\0' };
+  static const XML_Char atypeNMTOKEN[] = {  // Static is okay here (immutable data).
+      ASCII_N, ASCII_M, ASCII_T, ASCII_O, ASCII_K, ASCII_E, ASCII_N,
+      '\0' };
+  static const XML_Char atypeNMTOKENS[] = {  // Static is okay here (immutable data).
+      ASCII_N, ASCII_M, ASCII_T, ASCII_O, ASCII_K, ASCII_E, ASCII_N, ASCII_S,
+      '\0' };
+  static const XML_Char notationPrefix[] = {  // Static is okay here (immutable data).
+      ASCII_N, ASCII_O, ASCII_T, ASCII_A, ASCII_T, ASCII_I, ASCII_O, ASCII_N, ASCII_LPAREN,
+      '\0' };
+  static const XML_Char enumValueSep[] = {  // Static is okay here (immutable data).
+      ASCII_PIPE, '\0'
+  };
+  static const XML_Char enumValueStart[] = {  // Static is okay here (immutable data).
+      ASCII_LPAREN, '\0'
+  };
 
   /* save one level of indirection */
   DTD * const dtd = parser->m_dtd;

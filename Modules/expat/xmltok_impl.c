@@ -327,8 +327,9 @@ static int PTRCALL
 PREFIX(scanCdataSection)(const ENCODING *UNUSED_P(enc), const char *ptr,
                          const char *end, const char **nextTokPtr)
 {
-  static const char CDATA_LSQB[] = { ASCII_C, ASCII_D, ASCII_A,
-                                     ASCII_T, ASCII_A, ASCII_LSQB };
+  static const char CDATA_LSQB[] = {  // Static is okay here (immutable data).
+      ASCII_C, ASCII_D, ASCII_A, ASCII_T, ASCII_A, ASCII_LSQB
+  };
   int i;
   /* CDATA[ */
   REQUIRE_CHARS(enc, ptr, end, 6);

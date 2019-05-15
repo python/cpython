@@ -51,7 +51,7 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static char *kwlist[] = {"a", "x", "lo", "hi", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
@@ -59,7 +59,7 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
     }
     else {
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_right",
-                                         keywords, &list, &item, &lo, &hi))
+                                         kwlist, &list, &item, &lo, &hi))
             return NULL;
     }
     index = internal_bisect_right(list, item, lo, hi);
@@ -87,7 +87,7 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static char *kwlist[] = {"a", "x", "lo", "hi", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
@@ -95,7 +95,7 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
     }
     else {
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_right",
-                                         keywords, &list, &item, &lo, &hi))
+                                         kwlist, &list, &item, &lo, &hi))
             return NULL;
     }
     index = internal_bisect_right(list, item, lo, hi);
@@ -168,7 +168,7 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static char *kwlist[] = {"a", "x", "lo", "hi", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
@@ -176,7 +176,7 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
     }
     else {
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:bisect_left",
-                                         keywords, &list, &item, &lo, &hi))
+                                         kwlist, &list, &item, &lo, &hi))
             return NULL;
     }
     index = internal_bisect_left(list, item, lo, hi);
@@ -204,14 +204,14 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t lo = 0;
     Py_ssize_t hi = -1;
     Py_ssize_t index;
-    static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+    static char *kwlist[] = {"a", "x", "lo", "hi", NULL};
 
     if (kw == NULL && PyTuple_GET_SIZE(args) == 2) {
         list = PyTuple_GET_ITEM(args, 0);
         item = PyTuple_GET_ITEM(args, 1);
     } else {
         if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|nn:insort_left",
-                                         keywords, &list, &item, &lo, &hi))
+                                         kwlist, &list, &item, &lo, &hi))
             return NULL;
     }
     index = internal_bisect_left(list, item, lo, hi);

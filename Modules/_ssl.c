@@ -5317,29 +5317,29 @@ _ssl_nid2obj_impl(PyObject *module, int nid)
 
 #ifdef _MSC_VER
 
+static PyObject *cached_str_x509_asn = NULL;
+static PyObject *cached_str_pkcs_7_asn = NULL;
+
 static PyObject*
 certEncodingType(DWORD encodingType)
 {
-    static PyObject *x509_asn = NULL;
-    static PyObject *pkcs_7_asn = NULL;
-
-    if (x509_asn == NULL) {
-        x509_asn = PyUnicode_InternFromString("x509_asn");
-        if (x509_asn == NULL)
+    if (cached_str_x509_asn == NULL) {
+        cached_str_x509_asn = PyUnicode_InternFromString("x509_asn");
+        if (cached_str_x509_asn == NULL)
             return NULL;
     }
-    if (pkcs_7_asn == NULL) {
-        pkcs_7_asn = PyUnicode_InternFromString("pkcs_7_asn");
-        if (pkcs_7_asn == NULL)
+    if (cached_str_pkcs_7_asn == NULL) {
+        cached_str_pkcs_7_asn = PyUnicode_InternFromString("pkcs_7_asn");
+        if (cached_str_pkcs_7_asn == NULL)
             return NULL;
     }
     switch(encodingType) {
     case X509_ASN_ENCODING:
-        Py_INCREF(x509_asn);
-        return x509_asn;
+        Py_INCREF(cached_str_x509_asn);
+        return cached_str_x509_asn;
     case PKCS_7_ASN_ENCODING:
-        Py_INCREF(pkcs_7_asn);
-        return pkcs_7_asn;
+        Py_INCREF(cached_str_pkcs_7_asn);
+        return cached_str_pkcs_7_asn;
     default:
         return PyLong_FromLong(encodingType);
     }
@@ -5410,7 +5410,7 @@ ssl_collect_certificates(const char *store_name)
  */
 
     HCERTSTORE hCollectionStore = NULL, hSystemStore = NULL;
-    static DWORD system_stores[] = {
+    static const DWORD system_stores[] = {  // Static is okay here (immutable data).
         CERT_SYSTEM_STORE_LOCAL_MACHINE,
         CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
         CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
