@@ -2107,13 +2107,15 @@ class BaseTaskTests:
         from @asyncio.coroutine()-wrapped function should have same effect as
         returning generator object or Future."""
         def check():
-            @asyncio.coroutine
-            def outer_coro():
+            with self.assertWarns(DeprecationWarning):
                 @asyncio.coroutine
-                def inner_coro():
-                    return 1
+                def outer_coro():
+                    with self.assertWarns(DeprecationWarning):
+                        @asyncio.coroutine
+                        def inner_coro():
+                            return 1
 
-                return inner_coro()
+                    return inner_coro()
 
             result = self.loop.run_until_complete(outer_coro())
             self.assertEqual(result, 1)
@@ -2224,14 +2226,12 @@ class BaseTaskTests:
     def test_exception_traceback(self):
         # See http://bugs.python.org/issue28843
 
-        @asyncio.coroutine
-        def foo():
+        async def foo():
             1 / 0
 
-        @asyncio.coroutine
-        def main():
+        async def main():
             task = self.new_task(self.loop, foo())
-            yield  # skip one loop iteration
+            await asyncio.sleep(0)  # skip one loop iteration
             self.assertIsNotNone(task.exception().__traceback__)
 
         self.loop.run_until_complete(main())
