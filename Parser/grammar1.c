@@ -19,7 +19,7 @@ PyGrammar_FindDFA(grammar *g, int type)
 const char *
 PyGrammar_LabelRepr(label *lb)
 {
-    static char buf[100];
+    static char buf[100];  // Static is okay here (buffer, non-threaded).
 
     if (lb->lb_type == ENDMARKER)
         return "EMPTY";

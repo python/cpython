@@ -101,7 +101,7 @@ extern char _get_console_type(HANDLE handle);
 char *
 _PyOS_WindowsConsoleReadline(HANDLE hStdIn)
 {
-    static wchar_t wbuf_local[1024 * 16];
+    static wchar_t wbuf_local[1024 * 16];  // Static is okay here (buffer, non-threaded).
     const DWORD chunk_size = 1024;
 
     DWORD n_read, total_read, wbuflen, u8len;
