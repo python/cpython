@@ -1224,7 +1224,7 @@ _sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *memo)
 static PyObject *
 pattern_repr(PatternObject *obj)
 {
-    static const struct {
+    static const struct {  // Static is okay here (immutable data).
         const char *name;
         int value;
     } flag_names[] = {

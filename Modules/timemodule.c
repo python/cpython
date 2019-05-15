@@ -101,7 +101,7 @@ Return the current time in nanoseconds since the Epoch.");
 static int
 _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    static int initialized = 0;
+    static int initialized = 0;  // Static is okay here (process-global).
     clock_t ticks;
 
     if (!initialized) {
@@ -886,10 +886,10 @@ _asctime(struct tm *timeptr)
 {
     /* Inspired by Open Group reference implementation available at
      * http://pubs.opengroup.org/onlinepubs/009695399/functions/asctime.html */
-    static const char wday_name[7][4] = {
+    static const char wday_name[7][4] = {  // Static is okay here (immutable data).
         "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
     };
-    static const char mon_name[12][4] = {
+    static const char mon_name[12][4] = {  // Static is okay here (immutable data).
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
@@ -1219,7 +1219,7 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     struct tms t;
 
     if (times(&t) != (clock_t)-1) {
-        static long ticks_per_second = -1;
+        static long ticks_per_second = -1;  // Static is okay here (process-global).
 
         if (ticks_per_second == -1) {
             long freq;
@@ -1596,7 +1596,7 @@ init_timezone(PyObject *m)
     }
     PyModule_AddObject(m, "tzname", tzname_obj);
 #else // !HAVE_DECL_TZNAME
-    static const time_t YEAR = (365 * 24 + 6) * 3600;
+    static const time_t YEAR = (365 * 24 + 6) * 3600;  // Static is okay here (immutable data).
     time_t t;
     struct tm p;
     time_t janzone_t, julyzone_t;

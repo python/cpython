@@ -756,6 +756,8 @@ _buffered_init(buffered *self)
     return 0;
 }
 
+static PyObject *cached_eintr_int = NULL;
+
 /* Return 1 if an OSError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.
    Should only be called when PyErr_Occurred() is true.
@@ -763,13 +765,12 @@ _buffered_init(buffered *self)
 int
 _PyIO_trap_eintr(void)
 {
-    static PyObject *eintr_int = NULL;
     PyObject *typ, *val, *tb;
     PyOSErrorObject *env_err;
 
-    if (eintr_int == NULL) {
-        eintr_int = PyLong_FromLong(EINTR);
-        assert(eintr_int != NULL);
+    if (cached_eintr_int == NULL) {
+        cached_eintr_int = PyLong_FromLong(EINTR);
+        assert(cached_eintr_int != NULL);
     }
     if (!PyErr_ExceptionMatches(PyExc_OSError))
         return 0;
@@ -778,7 +779,7 @@ _PyIO_trap_eintr(void)
     env_err = (PyOSErrorObject *) val;
     assert(env_err != NULL);
     if (env_err->myerrno != NULL &&
-        PyObject_RichCompareBool(env_err->myerrno, eintr_int, Py_EQ) > 0) {
+        PyObject_RichCompareBool(env_err->myerrno, cached_eintr_int, Py_EQ) > 0) {
         Py_DECREF(typ);
         Py_DECREF(val);
         Py_XDECREF(tb);

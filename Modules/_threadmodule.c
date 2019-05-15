@@ -699,7 +699,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     localobject *self;
     PyObject *wr;
-    static PyMethodDef wr_callback_def = {
+    static PyMethodDef wr_callback_def = {  // Static is okay here (dynamic method def).
         "_localdummy_destroyed", (PyCFunction) _localdummy_destroyed, METH_O
     };
 

@@ -7360,11 +7360,12 @@ os_setgroups(PyObject *module, PyObject *groups)
 #endif /* HAVE_SETGROUPS */
 
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
+static PyObject *struct_rusage = NULL;
+
 static PyObject *
 wait_helper(pid_t pid, int status, struct rusage *ru)
 {
     PyObject *result;
-    static PyObject *struct_rusage;
     _Py_IDENTIFIER(struct_rusage);
 
     if (pid == -1)
@@ -7871,7 +7872,7 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
     DWORD flags = 0;
 
     /* Assumed true, set to false if detected to not be available. */
-    static int windows_has_symlink_unprivileged_flag = TRUE;
+    static int windows_has_symlink_unprivileged_flag = TRUE;  // Static is okay here (process-global).
 #else
     int result;
 #endif
@@ -8344,7 +8345,7 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
 #if defined(HAVE_DUP3) && \
     !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
     /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
-    static int dup3_works = -1;
+    static int dup3_works = -1;  // Static is okay here (process-global).
 #endif
 
     if (fd < 0 || fd2 < 0) {
@@ -8845,19 +8846,19 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     struct sf_hdtr sf;
     int flags = 0;
     /* Beware that "in" clashes with Python's own "in" operator keyword */
-    static char *keywords[] = {"out", "in",
-                                "offset", "count",
-                                "headers", "trailers", "flags", NULL};
+    static char *kwlist[] = {"out", "in",
+                             "offset", "count",
+                             "headers", "trailers", "flags", NULL};
 
     sf.headers = NULL;
     sf.trailers = NULL;
 
 #ifdef __APPLE__
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&O&|OOi:sendfile",
-        keywords, &out, &in, Py_off_t_converter, &offset, Py_off_t_converter, &sbytes,
+        kwlist, &out, &in, Py_off_t_converter, &offset, Py_off_t_converter, &sbytes,
 #else
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&n|OOi:sendfile",
-        keywords, &out, &in, Py_off_t_converter, &offset, &len,
+        kwlist, &out, &in, Py_off_t_converter, &offset, &len,
 #endif
                 &headers, &trailers, &flags))
             return NULL;
@@ -8961,10 +8962,10 @@ done:
 #else
     Py_ssize_t count;
     PyObject *offobj;
-    static char *keywords[] = {"out", "in",
-                                "offset", "count", NULL};
+    static char *kwlist[] = {"out", "in",
+                             "offset", "count", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiOn:sendfile",
-            keywords, &out, &in, &offobj, &count))
+            kwlist, &out, &in, &offobj, &count))
         return NULL;
 #ifdef __linux__
     if (offobj == Py_None) {
@@ -11554,7 +11555,9 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     for (i = 0; ; i++) {
         void *ptr;
         ssize_t result;
-        static const Py_ssize_t buffer_sizes[] = {128, XATTR_SIZE_MAX, 0};
+        static const Py_ssize_t buffer_sizes[] = {  // Static is okay here (immutable data).
+            128, XATTR_SIZE_MAX, 0
+        };
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
             path_error(path);
@@ -11720,7 +11723,9 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
     for (i = 0; ; i++) {
         const char *start, *trace, *end;
         ssize_t length;
-        static const Py_ssize_t buffer_sizes[] = { 256, XATTR_LIST_MAX, 0 };
+        static const Py_ssize_t buffer_sizes[] = {  // Static is okay here (immutable data).
+            256, XATTR_LIST_MAX, 0
+        };
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
             /* ERANGE */
@@ -11946,7 +11951,7 @@ os_cpu_count_impl(PyObject *module)
     /* Vista is supported and the GetMaximumProcessorCount API is Win7+
        Need to fallback to Vista behavior if this call isn't present */
     HINSTANCE hKernel32;
-    static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
+    static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;  // Static is okay here (buffer, non-threaded).
     Py_BEGIN_ALLOW_THREADS
     hKernel32 = GetModuleHandleW(L"KERNEL32");
     *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,

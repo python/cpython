@@ -510,9 +510,9 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
 {
     PyObject *object;
     keyobject *result;
-    static char *kwargs[] = {"obj", NULL};
+    static char *kwlist[] = {"obj", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwlist, &object))
         return NULL;
     result = PyObject_New(keyobject, &keyobject_type);
     if (!result)
@@ -566,10 +566,10 @@ static PyObject *
 functools_cmp_to_key(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *cmp;
-    static char *kwargs[] = {"mycmp", NULL};
+    static char *kwlist[] = {"mycmp", NULL};
     keyobject *object;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:cmp_to_key", kwargs, &cmp))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:cmp_to_key", kwlist, &cmp))
         return NULL;
     object = PyObject_New(keyobject, &keyobject_type);
     if (!object)
@@ -1096,10 +1096,10 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     lru_cache_object *obj;
     Py_ssize_t maxsize;
     PyObject *(*wrapper)(lru_cache_object *, PyObject *, PyObject *);
-    static char *keywords[] = {"user_function", "maxsize", "typed",
-                               "cache_info_type", NULL};
+    static char *kwlist[] = {"user_function", "maxsize", "typed",
+                             "cache_info_type", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OOpO:lru_cache", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "OOpO:lru_cache", kwlist,
                                      &func, &maxsize_O, &typed,
                                      &cache_info_type)) {
         return NULL;
