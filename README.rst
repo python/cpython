@@ -1,4 +1,4 @@
-This is Python version 3.8.0 alpha 3
+This is Python version 3.8.0 alpha 4
 ====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
@@ -70,7 +70,7 @@ to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
 If you are running on macOS with the latest updates installed, make sure to install
-openSSL or some other SSL software along with Homebrew or another package manager.
+OpenSSL or some other SSL software along with Homebrew or another package manager.
 If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more
 information.
 
@@ -92,7 +92,7 @@ For example::
     make test
 
 (This will fail if you *also* built at the top-level directory.  You should do
-a ``make clean`` at the toplevel first.)
+a ``make clean`` at the top-level first.)
 
 To get an optimized build of Python, ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
@@ -146,7 +146,7 @@ detailed change log, read `Misc/NEWS
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/master>`_.
 
-If you want to install multiple versions of Python see the section below
+If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
 
 

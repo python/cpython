@@ -83,6 +83,31 @@ See :pep:`572` for a full description.
 .. TODO: Emily will sprint on docs at PyCon US 2019.
 
 
+Positional-only parameters
+--------------------------
+
+There is new syntax (``/``) to indicate that some function parameters
+must be specified positionally (i.e., cannot be used as keyword
+arguments).  This is the same notation as shown by ``help()`` for
+functions implemented in C (produced by Larry Hastings' "Argument
+Clinic" tool).  Example::
+
+  def pow(x, y, z=None, /):
+      r = x**y
+      if z is not None:
+          r %= z
+      return r
+
+Now ``pow(2, 10)`` and ``pow(2, 10, 17)`` are valid calls, but
+``pow(x=2, y=10)`` and ``pow(2, 10, z=17)`` are invalid.
+
+See :pep:`570` for a full description.
+
+(Contributed by Pablo Galindo in :issue:`36540`.)
+
+.. TODO: Pablo will sprint on docs at PyCon US 2019.
+
+
 Parallel filesystem cache for compiled bytecode files
 -----------------------------------------------------
 
@@ -113,7 +138,8 @@ environment variable, can be set using the new ``./configure --with-trace-refs``
 build option.
 (Contributed by Victor Stinner in :issue:`36465`.)
 
-On Unix, C extensions are no longer linked to libpython. It is now possible
+On Unix, C extensions are no longer linked to libpython except on Android.
+It is now possible
 for a statically linked Python to load a C extension built using a shared
 library Python.
 (Contributed by Victor Stinner in :issue:`21536`.)
@@ -122,6 +148,20 @@ On Unix, when Python is built in debug mode, import now also looks for C
 extensions compiled in release mode and for C extensions compiled with the
 stable ABI.
 (Contributed by Victor Stinner in :issue:`36722`.)
+
+f-strings now support =  for quick and easy debugging
+-----------------------------------------------------
+
+Add ``=`` specifier to f-strings. ``f'{expr=}'`` expands
+to the text of the expression, an equal sign, then the repr of the
+evaluated expression.  So::
+
+  x = 3
+  print(f'{x*9 + 15=}')
+
+Would print ``x*9 + 15=42``.
+
+(Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
 
 
 Other Language Changes
@@ -191,22 +231,22 @@ New Modules
 Improved Modules
 ================
 
-* The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
-  a :class:`dict` instead of a :class:`collections.OrderedDict`.  This works because
-  regular dicts have guaranteed ordering in since Python 3.7.  If the extra
-  features of :class:`OrderedDict` are required, the suggested remediation is
-  to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
-  (Contributed by Raymond Hettinger in :issue:`35864`.)
-
-* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.0.0
-  <http://blog.unicode.org/2019/03/announcing-unicode-standard-version-120.html>`_
-  release.
-
 
 asyncio
 -------
 
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
+
+
+collections
+-----------
+
+The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
+a :class:`dict` instead of a :class:`collections.OrderedDict`. This works because
+regular dicts have guaranteed ordering since Python 3.7. If the extra
+features of :class:`OrderedDict` are required, the suggested remediation is
+to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
+(Contributed by Raymond Hettinger in :issue:`35864`.)
 
 
 ctypes
@@ -217,6 +257,16 @@ to specify flags for the underlying ``LoadLibraryEx`` call. The default flags ar
 set to only load DLL dependencies from trusted locations, including the path
 where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
+
+
+datetime
+--------
+
+Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
+:class:`datetime` objects respectively from ISO year, week number and weekday;
+these are the inverse of each class's ``isocalendar`` method.
+(Contributed by Paul Ganssle in :issue:`36004`.)
 
 
 gettext
@@ -253,6 +303,11 @@ gzip
 
 Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
 (Contributed by Guo Ci Teo in :issue:`34898`.)
+
+A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
+for certain types of invalid or corrupt gzip files.
+(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
+:issue:`6584`.)
 
 
 idlelib and IDLE
@@ -334,6 +389,10 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
+Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
+to a path.
+(Contributed by Joannah Nanjekye in :issue:`26978`)
+
 
 socket
 ------
@@ -389,8 +448,10 @@ and manipulating normal distributions of a random variable.
 ::
 
     >>> temperature_feb = NormalDist.from_samples([4, 12, -3, 2, 7, 14])
-    >>> temperature_feb
-    NormalDist(mu=6.0, sigma=6.356099432828281)
+    >>> temperature_feb.mean
+    6.0
+    >>> temperature_feb.stdev
+    6.356099432828281
 
     >>> temperature_feb.cdf(3)            # Chance of being under 3 degrees
     0.3184678262814532
@@ -398,8 +459,8 @@ and manipulating normal distributions of a random variable.
     >>> temperature_feb.pdf(7) / temperature_feb.pdf(10)
     1.2039930378537762
 
-    >>> el_nino = NormalDist(4, 2.5)
-    >>> temperature_feb += el_nino        # Add in a climate effect
+    >>> el_niño = NormalDist(4, 2.5)
+    >>> temperature_feb += el_niño        # Add in a climate effect
     >>> temperature_feb
     NormalDist(mu=10.0, sigma=6.830080526611674)
 
@@ -455,9 +516,13 @@ Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 unicodedata
 -----------
 
+* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.1.0
+  <http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
+
 * New function :func:`~unicodedata.is_normalized` can be used to verify a string
   is in a specific normal form. (Contributed by Max Belanger and David Euresti in
   :issue:`32285`).
+
 
 unittest
 --------
@@ -490,6 +555,22 @@ xml
   external entities by default.
   (Contributed by Christian Heimes in :issue:`17239`.)
 
+* The ``.find*()`` methods in the :mod:`xml.etree.ElementTree` module
+  support wildcard searches like ``{*}tag`` which ignores the namespace
+  and ``{namespace}*`` which returns all tags in the given namespace.
+  (Contributed by Stefan Behnel in :issue:`28238`.)
+
+* The :mod:`xml.etree.ElementTree` module provides a new function
+  :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
+  (Contributed by Stefan Behnel in :issue:`13611`.)
+
+* The target object of :class:`xml.etree.ElementTree.XMLParser` can
+  receive namespace declaration events through the new callback methods
+  ``start_ns()`` and ``end_ns()``.  Additionally, the
+  :class:`xml.etree.ElementTree.TreeBuilder` target can be configured
+  to process events about comments and processing instructions to include
+  them in the generated tree.
+  (Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
 
 Optimizations
 =============
@@ -691,6 +772,10 @@ Deprecated
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
+* The function :func:`~inspect.getfullargspec` in the :mod:`inspect`
+  module is deprecated in favor of the :func:`inspect.signature`
+  API.  (Contributed by Pablo Galindo in :issue:`36751`.)
+
 
 API and Feature Removals
 ========================
@@ -702,6 +787,10 @@ The following features and APIs have been removed from Python 3.8:
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
+
+* The function :func:`time.clock` has been removed, it was deprecated since Python
+  3.3: use :func:`time.perf_counter` or :func:`time.process_time` instead, depending
+  on your requirements, to have a well defined behavior.
 
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
@@ -723,6 +812,10 @@ The following features and APIs have been removed from Python 3.8:
 
 * "unicode_internal" codec is removed.
   (Contributed by Inada Naoki in :issue:`36297`.)
+
+* The ``Cache`` and ``Statement`` objects of the :mod:`sqlite3` module are not
+  exposed to the user.
+  (Contributed by Aviv Palivoda in :issue:`30262`.)
 
 
 Porting to Python 3.8
@@ -752,11 +845,25 @@ Changes in Python behavior
   raised when getting the attribute from the type dictionary are no longer
   ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
 
+* Removed ``__str__`` implementations from builtin types :class:`bool`,
+  :class:`int`, :class:`float`, :class:`complex` and few classes from
+  the standard library.  They now inherit ``__str__()`` from :class:`object`.
+  As result, defining the ``__repr__()`` method in the subclass of these
+  classes will affect they string representation.
+  (Contributed by Serhiy Storchaka in :issue:`36793`.)
+
 * On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
   older Python versions include the version number, it is recommended to
   always use the ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
+
+* :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+  terminate the current thread if called while the interpreter is
+  finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
+  :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
+  behaviour is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
+  or :c:func:`sys.is_finalizing`.
 
 Changes in the Python API
 -------------------------
@@ -879,16 +986,25 @@ Changes in the Python API
   replacement by a pure Python implementation. (Contributed by Pablo Galindo
   in :issue:`36623`.)
 
+* :class:`types.CodeType` has a new parameter in the second position of the
+  constructor (*posonlyargcount*) to support positional-only arguments defined
+  in :pep:`570`.
+
 
 Changes in the C API
 --------------------
 
-* On Unix, C extensions are no longer linked to libpython. When Python is
-  embedded, ``libpython`` must not be loaded with ``RTLD_LOCAL``, but
-  ``RTLD_GLOBAL`` instead. Previously, using ``RTLD_LOCAL``, it was already not
-  possible to load C extensions which were not linked to ``libpython``, like C
-  extensions of the standard library built by the ``*shared*`` section of
-  ``Modules/Setup``.
+* The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
+  It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
+  instead.
+  (Contributed by Victor Stinner in :issue:`36728`.)
+
+* On Unix, C extensions are no longer linked to libpython except on
+  Android. When Python is embedded, ``libpython`` must not be loaded with
+  ``RTLD_LOCAL``, but ``RTLD_GLOBAL`` instead. Previously, using
+  ``RTLD_LOCAL``, it was already not possible to load C extensions which were
+  not linked to ``libpython``, like C extensions of the standard library built
+  by the ``*shared*`` section of ``Modules/Setup``.
 
 * Use of ``#`` variants of formats in parsing or building value (e.g.
   :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,

@@ -1,4 +1,10 @@
+/* FIXME: PEP 587 makes these functions public */
+#ifndef Py_BUILD_CORE_MODULE
+#  define Py_BUILD_CORE_MODULE
+#endif
+
 #include <Python.h>
+#include "pycore_coreconfig.h"   /* FIXME: PEP 587 makes these functions public */
 #include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
@@ -354,8 +360,6 @@ static int test_init_global_config(void)
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 1;
 
-    Py_FrozenFlag = 1;
-
     /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
     /* FIXME: test Py_LegacyWindowsStdioFlag */
 
@@ -488,17 +492,14 @@ static int test_init_from_config(void)
        Force it to 0 through the config. */
     config.legacy_windows_stdio = 0;
 #endif
-    config.stdio_encoding = "iso8859-1";
-    config.stdio_errors = "replace";
+    config.stdio_encoding = L"iso8859-1";
+    config.stdio_errors = L"replace";
 
     putenv("PYTHONNOUSERSITE=");
     Py_NoUserSiteDirectory = 0;
     config.user_site_directory = 0;
 
-    config._check_hash_pycs_mode = "always";
-
-    Py_FrozenFlag = 0;
-    config._frozen = 1;
+    config.check_hash_pycs_mode = L"always";
 
     err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
@@ -684,6 +685,47 @@ static int test_init_dev_mode(void)
 }
 
 
+static int test_init_read_set(void)
+{
+    _PyInitError err;
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    err = _PyCoreConfig_DecodeLocale(&config.program_name, "./init_read_set");
+    if (_Py_INIT_FAILED(err)) {
+        goto fail;
+    }
+
+    err = _PyCoreConfig_Read(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto fail;
+    }
+
+    if (_PyWstrList_Append(&config.module_search_paths,
+                           L"init_read_set_path") < 0) {
+        err = _Py_INIT_NO_MEMORY();
+        goto fail;
+    }
+
+    /* override executable computed by _PyCoreConfig_Read() */
+    err = _PyCoreConfig_SetString(&config.executable, L"my_executable");
+    if (_Py_INIT_FAILED(err)) {
+        goto fail;
+    }
+
+    err = _Py_InitializeFromConfig(&config);
+    _PyCoreConfig_Clear(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto fail;
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+fail:
+    _Py_ExitInitError(err);
+}
+
+
 static int test_run_main(void)
 {
     _PyCoreConfig config = _PyCoreConfig_INIT;
@@ -691,6 +733,27 @@ static int test_run_main(void)
     wchar_t *argv[] = {L"python3", L"-c",
                        (L"import sys; "
                         L"print(f'_Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.program_name = L"./python3";
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
+
+static int test_run_main_config(void)
+{
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import _testinternalcapi, json; "
+                        L"print(json.dumps(_testinternalcapi.get_configs()))"),
                        L"arg2"};
     config.argv.length = Py_ARRAY_LENGTH(argv);
     config.argv.items = argv;
@@ -741,7 +804,9 @@ static struct TestCase TestCases[] = {
     { "init_isolated", test_init_isolated },
     { "preinit_isolated1", test_preinit_isolated1 },
     { "preinit_isolated2", test_preinit_isolated2 },
+    { "init_read_set", test_init_read_set },
     { "run_main", test_run_main },
+    { "run_main_config", test_run_main_config },
     { NULL, NULL }
 };
 

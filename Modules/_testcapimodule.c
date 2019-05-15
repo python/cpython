@@ -2340,6 +2340,71 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
     }
 }
 
+static PyObject *
+get_date_fromtimestamp(PyObject* self, PyObject *args)
+{
+    PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
+    int macro = 0;
+
+    if (!PyArg_ParseTuple(args, "O|p", &ts, &macro)) {
+        return NULL;
+    }
+
+    // Construct the argument tuple
+    if ((tsargs = PyTuple_Pack(1, ts)) == NULL) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDate_FromTimestamp(tsargs);
+    }
+    else {
+        rv = PyDateTimeAPI->Date_FromTimestamp(
+                (PyObject *)PyDateTimeAPI->DateType, tsargs
+        );
+    }
+
+    Py_DECREF(tsargs);
+    return rv;
+}
+
+static PyObject *
+get_datetime_fromtimestamp(PyObject* self, PyObject *args)
+{
+    int macro = 0;
+    int usetz = 0;
+    PyObject *tsargs = NULL, *ts = NULL, *tzinfo = Py_None, *rv = NULL;
+    if (!PyArg_ParseTuple(args, "OO|pp", &ts, &tzinfo, &usetz, &macro)) {
+        return NULL;
+    }
+
+    // Construct the argument tuple
+    if (usetz) {
+        tsargs = PyTuple_Pack(2, ts, tzinfo);
+    }
+    else {
+        tsargs = PyTuple_Pack(1, ts);
+    }
+
+    if (tsargs == NULL) {
+        return NULL;
+    }
+
+    // Pass along to the API function
+    if (macro) {
+        rv = PyDateTime_FromTimestamp(tsargs);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromTimestamp(
+                (PyObject *)PyDateTimeAPI->DateTimeType, tsargs, NULL
+        );
+    }
+
+    Py_DECREF(tsargs);
+    return rv;
+}
+
 
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
@@ -4769,7 +4834,9 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
-    {"get_timezone_utc_capi",    get_timezone_utc_capi,            METH_VARARGS},
+    {"get_timezone_utc_capi",    get_timezone_utc_capi,          METH_VARARGS},
+    {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
+    {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -5384,6 +5451,76 @@ recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 
+/* Test bpo-35983: create a subclass of "list" which checks that instances
+ * are not deallocated twice */
+
+typedef struct {
+    PyListObject list;
+    int deallocated;
+} MyListObject;
+
+static PyObject *
+MyList_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject* op = PyList_Type.tp_new(type, args, kwds);
+    ((MyListObject*)op)->deallocated = 0;
+    return op;
+}
+
+void
+MyList_dealloc(MyListObject* op)
+{
+    if (op->deallocated) {
+        /* We cannot raise exceptions here but we still want the testsuite
+         * to fail when we hit this */
+        Py_FatalError("MyList instance deallocated twice");
+    }
+    op->deallocated = 1;
+    PyList_Type.tp_dealloc((PyObject *)op);
+}
+
+static PyTypeObject MyList_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MyList",
+    sizeof(MyListObject),
+    0,
+    (destructor)MyList_dealloc,                 /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,  /* &PyList_Type */                      /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    MyList_new,                                 /* tp_new */
+};
+
+
 /* Test PEP 560 */
 
 typedef struct {
@@ -5496,6 +5633,12 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    MyList_Type.tp_base = &PyList_Type;
+    if (PyType_Ready(&MyList_Type) < 0)
+        return NULL;
+    Py_INCREF(&MyList_Type);
+    PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
         return NULL;

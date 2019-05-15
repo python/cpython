@@ -674,7 +674,8 @@ func_filename = func.__code__.co_filename
         foreign_code = importlib.import_module.__code__
         pos = constants.index(1)
         constants[pos] = foreign_code
-        code = type(code)(code.co_argcount, code.co_kwonlyargcount,
+        code = type(code)(code.co_argcount, code.co_posonlyargcount,
+                          code.co_kwonlyargcount,
                           code.co_nlocals, code.co_stacksize,
                           code.co_flags, code.co_code, tuple(constants),
                           code.co_names, code.co_varnames, code.co_filename,

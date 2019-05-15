@@ -454,6 +454,7 @@ class _BaseExitStack:
         _exit_wrapper.__wrapped__ = callback
         self._push_exit_callback(_exit_wrapper)
         return callback  # Allow use as a decorator
+    callback.__text_signature__ = '($self, callback, /, *args, **kwds)'
 
     def _push_cm_exit(self, cm, cm_exit):
         """Helper to correctly register callbacks to __exit__ methods."""
@@ -615,6 +616,7 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
         _exit_wrapper.__wrapped__ = callback
         self._push_exit_callback(_exit_wrapper, False)
         return callback  # Allow use as a decorator
+    push_async_callback.__text_signature__ = '($self, callback, /, *args, **kwds)'
 
     async def aclose(self):
         """Immediately unwind the context stack."""
