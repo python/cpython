@@ -109,29 +109,6 @@ class StreamTests(test_utils.TestCase):
 
             self._basetest_open_connection_no_loop_ssl(conn_fut)
 
-    @unittest.skipIf(ssl is None, 'No ssl module')
-    def test_drain_on_closed_writer_ssl(self):
-
-        async def inner(httpd):
-            reader, writer = await asyncio.open_connection(
-                *httpd.address,
-                ssl=test_utils.dummy_ssl_context())
-
-            messages = []
-            self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-            writer.write(b'GET / HTTP/1.0\r\n\r\n')
-            data = await reader.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
-
-            writer.close()
-            with self.assertRaises(ConnectionResetError):
-                await writer.drain()
-
-            self.assertEqual(messages, [])
-
-        with test_utils.run_test_server(use_ssl=True) as httpd:
-            self.loop.run_until_complete(inner(httpd))
-
     def _basetest_open_connection_error(self, open_connection_fut):
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
