@@ -394,6 +394,14 @@ to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
 
 
+plistlib
+--------
+
+Added new :class:`plistlib.UID` and enabled support for reading and writing
+NSKeyedArchiver-encoded binary plists.
+(Contributed by Jon Janzen in :issue:`26707`.)
+
+
 socket
 ------
 
