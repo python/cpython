@@ -2140,8 +2140,7 @@ class BaseTaskTests:
         loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
 
-        @asyncio.coroutine
-        def blocking_coroutine():
+        async def blocking_coroutine():
             fut = self.new_future(loop)
             # Block: fut result is never set
             yield from fut
