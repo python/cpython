@@ -2242,9 +2242,10 @@ class BaseTaskTests:
             raise ValueError
         self.loop.call_soon = call_soon
 
-        @asyncio.coroutine
-        def coro():
-            pass
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro():
+                pass
 
         self.assertFalse(m_log.error.called)
 
@@ -2274,9 +2275,10 @@ class BaseTaskTests:
 
     def test_create_task_with_oldstyle_coroutine(self):
 
-        @asyncio.coroutine
-        def coro():
-            pass
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro():
+                pass
 
         task = self.new_task(self.loop, coro())
         self.assertIsInstance(task, self.Task)
@@ -2547,8 +2549,7 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
     @support.refcount_test
     def test_refleaks_in_task___init__(self):
         gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             pass
         task = self.new_task(self.loop, coro())
         self.loop.run_until_complete(task)
@@ -2559,8 +2560,7 @@ class CTask_CFuture_Tests(BaseTaskTests, SetMethodsTest,
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     def test_del__log_destroy_pending_segfault(self):
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             pass
         task = self.new_task(self.loop, coro())
         self.loop.run_until_complete(task)
@@ -3048,15 +3048,13 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
     def wrap_futures(self, *futures):
         coros = []
         for fut in futures:
-            @asyncio.coroutine
-            def coro(fut=fut):
-                return (yield from fut)
+            async def coro(fut=fut):
+                return await fut
             coros.append(coro())
         return coros
 
     def test_constructor_loop_selection(self):
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             return 'abc'
         gen1 = coro()
         gen2 = coro()
@@ -3072,9 +3070,10 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         self.other_loop.run_until_complete(fut2)
 
     def test_duplicate_coroutines(self):
-        @asyncio.coroutine
-        def coro(s):
-            return s
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def coro(s):
+                return s
         c = coro('abc')
         fut = asyncio.gather(c, c, coro('def'), c, loop=self.one_loop)
         self._run_loop(self.one_loop)
@@ -3085,21 +3084,19 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         proof = 0
         waiter = asyncio.Future(loop=self.one_loop)
 
-        @asyncio.coroutine
-        def inner():
+        async def inner():
             nonlocal proof
-            yield from waiter
+            await waiter
             proof += 1
 
         child1 = asyncio.ensure_future(inner(), loop=self.one_loop)
         child2 = asyncio.ensure_future(inner(), loop=self.one_loop)
         gatherer = None
 
-        @asyncio.coroutine
-        def outer():
+        async def outer():
             nonlocal proof, gatherer
             gatherer = asyncio.gather(child1, child2, loop=self.one_loop)
-            yield from gatherer
+            await gatherer
             proof += 100
 
         f = asyncio.ensure_future(outer(), loop=self.one_loop)
@@ -3117,17 +3114,15 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
     def test_exception_marking(self):
         # Test for the first line marked "Mark exception retrieved."
 
-        @asyncio.coroutine
-        def inner(f):
-            yield from f
+        async def inner(f):
+            await f
             raise RuntimeError('should not be ignored')
 
         a = asyncio.Future(loop=self.one_loop)
         b = asyncio.Future(loop=self.one_loop)
 
-        @asyncio.coroutine
-        def outer():
-            yield from asyncio.gather(inner(a), inner(b), loop=self.one_loop)
+        async def outer():
+            await asyncio.gather(inner(a), inner(b), loop=self.one_loop)
 
         f = asyncio.ensure_future(outer(), loop=self.one_loop)
         test_utils.run_briefly(self.one_loop)
