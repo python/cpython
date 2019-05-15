@@ -722,13 +722,16 @@ mmap_madvise_method(mmap_object *self, PyObject *args)
         return NULL;
     }
 
-    if (start < 0 || start > self->size) {
+    if (start < 0 || start >= self->size) {
         PyErr_SetString(PyExc_ValueError, "madvise start invalid");
         return NULL;
     }
-
-    if (length <= 0 || length > self->size) {
+    if (length <= 0) {
         PyErr_SetString(PyExc_ValueError, "madvise length invalid");
+        return NULL;
+    }
+    if (PY_SSIZE_T_MAX - start < length) {
+        PyErr_SetString(PyExc_OverflowError, "overflow in madvise");
         return NULL;
     }
 
@@ -736,7 +739,7 @@ mmap_madvise_method(mmap_object *self, PyObject *args)
         length = self->size - start;
     }
 
-    if (madvise(self->data + start, length, option) == -1) {
+    if (madvise(self->data + start, length, option) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }

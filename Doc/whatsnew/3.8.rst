@@ -344,6 +344,15 @@ Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
 numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 
+
+mmap
+----
+
+The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.madvise` method to
+access the ``madvise()`` system call.
+(Contributed by Zackery Spytz in :issue:`32941`.)
+
+
 os
 --
 
