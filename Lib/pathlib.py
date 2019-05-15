@@ -1279,14 +1279,18 @@ class Path(PurePath):
             self._raise_closed()
         self._accessor.lchmod(self, mode)
 
-    def unlink(self):
+    def unlink(self, missing_ok=False):
         """
         Remove this file or link.
         If the path is a directory, use rmdir() instead.
         """
         if self._closed:
             self._raise_closed()
-        self._accessor.unlink(self)
+        try:
+            self._accessor.unlink(self)
+        except FileNotFoundError:
+            if not missing_ok:
+                raise
 
     def rmdir(self):
         """
