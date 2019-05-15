@@ -747,6 +747,27 @@ static int test_run_main(void)
 }
 
 
+static int test_run_main_config(void)
+{
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import _testinternalcapi, json; "
+                        L"print(json.dumps(_testinternalcapi.get_configs()))"),
+                       L"arg2"};
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.program_name = L"./python3";
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -785,6 +806,7 @@ static struct TestCase TestCases[] = {
     { "preinit_isolated2", test_preinit_isolated2 },
     { "init_read_set", test_init_read_set },
     { "run_main", test_run_main },
+    { "run_main_config", test_run_main_config },
     { NULL, NULL }
 };
 
