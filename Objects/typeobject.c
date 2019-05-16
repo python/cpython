@@ -5418,7 +5418,7 @@ PyType_Ready(PyTypeObject *type)
        precision.
     */
     PyObject* index = _PyDict_GetItemIdWithError(type->tp_dict, &PyId___index__);
-    if (PyErr_Occurred()) {
+    if (index == NULL && PyErr_Occurred()) {
         goto error;
     }
     if (index != NULL && _PyDict_GetItemIdWithError(type->tp_dict, &PyId___int__) == NULL) {
