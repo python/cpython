@@ -28,6 +28,7 @@ import unittest
 import uuid
 import warnings
 from test import support
+from platform import win32_is_iot
 
 try:
     import resource
@@ -238,7 +239,6 @@ class StatAttributeTests(unittest.TestCase):
         self.addCleanup(support.unlink, self.fname)
         create_file(self.fname, b"ABC")
 
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def check_stat_attributes(self, fname):
         result = os.stat(fname)
 
@@ -634,6 +634,45 @@ class UtimeTests(unittest.TestCase):
         # seconds and nanoseconds parameters are mutually exclusive
         with self.assertRaises(ValueError):
             os.utime(self.fname, (5, 5), ns=(5, 5))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, [5, 5])
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, (5,))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, (5, 5, 5))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=[5, 5])
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(5,))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(5, 5, 5))
+
+        if os.utime not in os.supports_follow_symlinks:
+            with self.assertRaises(NotImplementedError):
+                os.utime(self.fname, (5, 5), follow_symlinks=False)
+        if os.utime not in os.supports_fd:
+            with open(self.fname, 'wb', 0) as fp:
+                with self.assertRaises(TypeError):
+                    os.utime(fp.fileno(), (5, 5))
+        if os.utime not in os.supports_dir_fd:
+            with self.assertRaises(NotImplementedError):
+                os.utime(self.fname, (5, 5), dir_fd=0)
+
+    @support.cpython_only
+    def test_issue31577(self):
+        # The interpreter shouldn't crash in case utime() received a bad
+        # ns argument.
+        def get_bad_int(divmod_ret_val):
+            class BadInt:
+                def __divmod__(*args):
+                    return divmod_ret_val
+            return BadInt()
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int(42), 1))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int(()), 1))
+        with self.assertRaises(TypeError):
+            os.utime(self.fname, ns=(get_bad_int((1, 2, 3)), 1))
 
 
 from test import mapping_tests
@@ -884,7 +923,7 @@ class WalkTests(unittest.TestCase):
                               ["broken_link", "broken_link2", "broken_link3",
                                "tmp3"])
         else:
-            self.sub2_tree = (sub2_path, [], ["tmp3"])
+            self.sub2_tree = (sub2_path, ["SUB21"], ["tmp3"])
 
         os.chmod(sub21_path, 0)
         try:
@@ -1115,8 +1154,8 @@ class MakedirTests(unittest.TestCase):
             self.assertTrue(os.path.exists(path))
             self.assertTrue(os.path.isdir(path))
             if os.name != 'nt':
-                self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o555)
-                self.assertEqual(stat.S_IMODE(os.stat(parent).st_mode), 0o775)
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
     def test_exist_ok_existing_directory(self):
         path = os.path.join(support.TESTFN, 'dir1')
@@ -1162,9 +1201,8 @@ class MakedirTests(unittest.TestCase):
     def test_exist_ok_existing_regular_file(self):
         base = support.TESTFN
         path = os.path.join(support.TESTFN, 'dir1')
-        f = open(path, 'w')
-        f.write('abc')
-        f.close()
+        with open(path, 'w') as f:
+            f.write('abc')
         self.assertRaises(OSError, os.makedirs, path)
         self.assertRaises(OSError, os.makedirs, path, exist_ok=False)
         self.assertRaises(OSError, os.makedirs, path, exist_ok=True)
@@ -1573,6 +1611,16 @@ class ExecTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
+    @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
+    def test_execve_with_empty_path(self):
+        # bpo-32890: Check GetLastError() misuse
+        try:
+            os.execve('', ['arg'], {})
+        except OSError as e:
+            self.assertTrue(e.winerror is None or e.winerror != 0)
+        else:
+            self.fail('No OSError raised')
+
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32ErrorTests(unittest.TestCase):
@@ -1749,36 +1797,46 @@ class LinkTests(unittest.TestCase):
 
 @unittest.skipIf(sys.platform == "win32", "Posix specific tests")
 class PosixUidGidTests(unittest.TestCase):
+    # uid_t and gid_t are 32-bit unsigned integers on Linux
+    UID_OVERFLOW = (1 << 32)
+    GID_OVERFLOW = (1 << 32)
+
     @unittest.skipUnless(hasattr(os, 'setuid'), 'test needs os.setuid()')
     def test_setuid(self):
         if os.getuid() != 0:
             self.assertRaises(OSError, os.setuid, 0)
-        self.assertRaises(OverflowError, os.setuid, 1<<32)
+        self.assertRaises(TypeError, os.setuid, 'not an int')
+        self.assertRaises(OverflowError, os.setuid, self.UID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setgid'), 'test needs os.setgid()')
     def test_setgid(self):
         if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
             self.assertRaises(OSError, os.setgid, 0)
-        self.assertRaises(OverflowError, os.setgid, 1<<32)
+        self.assertRaises(TypeError, os.setgid, 'not an int')
+        self.assertRaises(OverflowError, os.setgid, self.GID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'seteuid'), 'test needs os.seteuid()')
     def test_seteuid(self):
         if os.getuid() != 0:
             self.assertRaises(OSError, os.seteuid, 0)
-        self.assertRaises(OverflowError, os.seteuid, 1<<32)
+        self.assertRaises(TypeError, os.setegid, 'not an int')
+        self.assertRaises(OverflowError, os.seteuid, self.UID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setegid'), 'test needs os.setegid()')
     def test_setegid(self):
         if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
             self.assertRaises(OSError, os.setegid, 0)
-        self.assertRaises(OverflowError, os.setegid, 1<<32)
+        self.assertRaises(TypeError, os.setegid, 'not an int')
+        self.assertRaises(OverflowError, os.setegid, self.GID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'test needs os.setreuid()')
     def test_setreuid(self):
         if os.getuid() != 0:
             self.assertRaises(OSError, os.setreuid, 0, 0)
-        self.assertRaises(OverflowError, os.setreuid, 1<<32, 0)
-        self.assertRaises(OverflowError, os.setreuid, 0, 1<<32)
+        self.assertRaises(TypeError, os.setreuid, 'not an int', 0)
+        self.assertRaises(TypeError, os.setreuid, 0, 'not an int')
+        self.assertRaises(OverflowError, os.setreuid, self.UID_OVERFLOW, 0)
+        self.assertRaises(OverflowError, os.setreuid, 0, self.UID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'test needs os.setreuid()')
     def test_setreuid_neg1(self):
@@ -1792,8 +1850,10 @@ class PosixUidGidTests(unittest.TestCase):
     def test_setregid(self):
         if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
             self.assertRaises(OSError, os.setregid, 0, 0)
-        self.assertRaises(OverflowError, os.setregid, 1<<32, 0)
-        self.assertRaises(OverflowError, os.setregid, 0, 1<<32)
+        self.assertRaises(TypeError, os.setregid, 'not an int', 0)
+        self.assertRaises(TypeError, os.setregid, 0, 'not an int')
+        self.assertRaises(OverflowError, os.setregid, self.GID_OVERFLOW, 0)
+        self.assertRaises(OverflowError, os.setregid, 0, self.GID_OVERFLOW)
 
     @unittest.skipUnless(hasattr(os, 'setregid'), 'test needs os.setregid()')
     def test_setregid_neg1(self):
@@ -2276,6 +2336,55 @@ class Win32JunctionTests(unittest.TestCase):
         os.unlink(self.junction)
         self.assertFalse(os.path.exists(self.junction))
 
+@unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
+class Win32NtTests(unittest.TestCase):
+    def test_getfinalpathname_handles(self):
+        nt = support.import_module('nt')
+        ctypes = support.import_module('ctypes')
+        import ctypes.wintypes
+
+        kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
+        kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
+
+        kernel.GetProcessHandleCount.restype = ctypes.wintypes.BOOL
+        kernel.GetProcessHandleCount.argtypes = (ctypes.wintypes.HANDLE,
+                                                 ctypes.wintypes.LPDWORD)
+
+        # This is a pseudo-handle that doesn't need to be closed
+        hproc = kernel.GetCurrentProcess()
+
+        handle_count = ctypes.wintypes.DWORD()
+        ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
+        self.assertEqual(1, ok)
+
+        before_count = handle_count.value
+
+        # The first two test the error path, __file__ tests the success path
+        filenames = [
+            r'\\?\C:',
+            r'\\?\NUL',
+            r'\\?\CONIN',
+            __file__,
+        ]
+
+        for _ in range(10):
+            for name in filenames:
+                try:
+                    nt._getfinalpathname(name)
+                except Exception:
+                    # Failure is expected
+                    pass
+                try:
+                    os.stat(name)
+                except Exception:
+                    pass
+
+        ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
+        self.assertEqual(1, ok)
+
+        handle_delta = handle_count.value - before_count
+
+        self.assertEqual(0, handle_delta)
 
 @support.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
@@ -2331,7 +2440,7 @@ class DeviceEncodingTests(unittest.TestCase):
         # Return None when an fd doesn't actually exist.
         self.assertIsNone(os.device_encoding(123456))
 
-    @unittest.skipUnless(os.isatty(0) and (sys.platform.startswith('win') or
+    @unittest.skipUnless(os.isatty(0) and not win32_is_iot() and (sys.platform.startswith('win') or
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires a tty and either Windows or nl_langinfo(CODESET)')
     def test_device_encoding(self):
@@ -3239,7 +3348,7 @@ class PathTConverterTests(unittest.TestCase):
                             cleanup_fn(result)
 
                 with self.assertRaisesRegex(
-                        TypeError, 'should be string, bytes'):
+                        TypeError, 'to return str or bytes'):
                     fn(int_fspath, *extra_args)
 
                 if allow_fd:
@@ -3251,6 +3360,15 @@ class PathTConverterTests(unittest.TestCase):
                             TypeError,
                             'os.PathLike'):
                         fn(fd, *extra_args)
+
+    def test_path_t_converter_and_custom_class(self):
+        msg = r'__fspath__\(\) to return str or bytes, not %s'
+        with self.assertRaisesRegex(TypeError, msg % r'int'):
+            os.stat(FakePath(2))
+        with self.assertRaisesRegex(TypeError, msg % r'float'):
+            os.stat(FakePath(2.34))
+        with self.assertRaisesRegex(TypeError, msg % r'object'):
+            os.stat(FakePath(object()))
 
 
 @unittest.skipUnless(hasattr(os, 'get_blocking'),

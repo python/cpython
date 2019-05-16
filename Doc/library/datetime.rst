@@ -254,8 +254,9 @@ Supported operations:
 |                                | rounded to the nearest multiple of            |
 |                                | timedelta.resolution using round-half-to-even.|
 +--------------------------------+-----------------------------------------------+
-| ``f = t2 / t3``                | Division (3) of *t2* by *t3*.  Returns a      |
-|                                | :class:`float` object.                        |
+| ``f = t2 / t3``                | Division (3) of overall duration *t2* by      |
+|                                | interval unit *t3*. Returns a :class:`float`  |
+|                                | object.                                       |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 / f or t1 = t2 / i`` | Delta divided by a float or an int. The result|
 |                                | is rounded to the nearest multiple of         |
@@ -276,9 +277,10 @@ Supported operations:
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
 +--------------------------------+-----------------------------------------------+
-| ``-t1``                        | equivalent to :class:`timedelta`\             |
-|                                | (-*t1.days*, -*t1.seconds*,                   |
-|                                | -*t1.microseconds*), and to *t1*\* -1. (1)(4) |
+| ``-t1``                        | equivalent to                                 |
+|                                | :class:`timedelta`\ (-*t1.days*,              |
+|                                | -*t1.seconds*, -*t1.microseconds*),           |
+|                                | and to *t1*\* -1. (1)(4)                      |
 +--------------------------------+-----------------------------------------------+
 | ``abs(t)``                     | equivalent to +\ *t* when ``t.days >= 0``, and|
 |                                | to -*t* when ``t.days < 0``. (2)              |
@@ -350,7 +352,8 @@ Instance methods:
 .. method:: timedelta.total_seconds()
 
    Return the total number of seconds contained in the duration. Equivalent to
-   ``td / timedelta(seconds=1)``.
+   ``td / timedelta(seconds=1)``. For interval units other than seconds, use the
+   division form directly (e.g. ``td / timedelta(microseconds=1)``).
 
    Note that for very large time intervals (greater than 270 years on
    most platforms) this method will lose microsecond accuracy.
@@ -455,6 +458,13 @@ Other constructors, all class methods:
   .. versionadded:: 3.7
 
 
+.. classmethod:: date.fromisocalendar(year, week, day)
+
+   Return a :class:`date` corresponding to the ISO calendar date specified by
+   year, week and day. This is the inverse of the function :meth:`date.isocalendar`.
+
+   .. versionadded:: 3.8
+
 
 Class attributes:
 
@@ -526,10 +536,9 @@ Notes:
 
 (4)
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
-   date2.toordinal()``. In order to stop comparison from falling back to the
-   default scheme of comparing object addresses, date comparison normally raises
-   :exc:`TypeError` if the other comparand isn't also a :class:`date` object.
-   However, ``NotImplemented`` is returned instead if the other comparand has a
+   date2.toordinal()``. Date comparison raises :exc:`TypeError` if
+   the other comparand isn't also a :class:`date` object. However,
+   ``NotImplemented`` is returned instead if the other comparand has a
    :meth:`timetuple` attribute.  This hook gives other kinds of date objects a
    chance at implementing mixed-type comparison. If not, when a :class:`date`
    object is compared to an object of a different type, :exc:`TypeError` is raised
@@ -842,7 +851,7 @@ Other constructors, all class methods:
   Return a :class:`datetime` corresponding to a *date_string* in one of the
   formats emitted by :meth:`date.isoformat` and :meth:`datetime.isoformat`.
   Specifically, this function supports strings in the format(s)
-  ``YYYY-MM-DD[*HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]]``,
+  ``YYYY-MM-DD[*HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]]``,
   where ``*`` can match any single character.
 
   .. caution::
@@ -851,6 +860,16 @@ Other constructors, all class methods:
     as the inverse operation of :meth:`datetime.isoformat`.
 
   .. versionadded:: 3.7
+
+
+.. classmethod:: datetime.fromisocalendar(year, week, day)
+
+   Return a :class:`datetime` corresponding to the ISO calendar date specified
+   by year, week and day. The non-date components of the datetime are populated
+   with their normal default values. This is the inverse of the function
+   :meth:`datetime.isocalendar`.
+
+   .. versionadded:: 3.8
 
 .. classmethod:: datetime.strptime(date_string, format)
 
@@ -1216,13 +1235,13 @@ Instance methods:
 .. method:: datetime.isoformat(sep='T', timespec='auto')
 
    Return a string representing the date and time in ISO 8601 format,
-   YYYY-MM-DDTHH:MM:SS.mmmmmm or, if :attr:`microsecond` is 0,
+   YYYY-MM-DDTHH:MM:SS.ffffff or, if :attr:`microsecond` is 0,
    YYYY-MM-DDTHH:MM:SS
 
-   If :meth:`utcoffset` does not return ``None``, a 6-character string is
-   appended, giving the UTC offset in (signed) hours and minutes:
-   YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM or, if :attr:`microsecond` is 0
-   YYYY-MM-DDTHH:MM:SS+HH:MM
+   If :meth:`utcoffset` does not return ``None``, a string is
+   appended, giving the UTC offset:
+   YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]] or, if :attr:`microsecond`
+   is 0 YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]].
 
    The optional argument *sep* (default ``'T'``) is a one-character separator,
    placed between the date and time portions of the result.  For example,
@@ -1246,7 +1265,7 @@ Instance methods:
      in HH:MM:SS format.
    - ``'milliseconds'``: Include full time, but truncate fractional second
      part to milliseconds. HH:MM:SS.sss format.
-   - ``'microseconds'``: Include full time in HH:MM:SS.mmmmmm format.
+   - ``'microseconds'``: Include full time in HH:MM:SS.ffffff format.
 
    .. note::
 
@@ -1523,7 +1542,7 @@ Other constructor:
 
   Return a :class:`time` corresponding to a *time_string* in one of the
   formats emitted by :meth:`time.isoformat`. Specifically, this function supports
-  strings in the format(s) ``HH[:MM[:SS[.mmm[mmm]]]][+HH:MM[:SS[.ffffff]]]``.
+  strings in the format(s) ``HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]``.
 
   .. caution::
 
@@ -1549,10 +1568,10 @@ Instance methods:
 
 .. method:: time.isoformat(timespec='auto')
 
-   Return a string representing the time in ISO 8601 format, HH:MM:SS.mmmmmm or, if
+   Return a string representing the time in ISO 8601 format, HH:MM:SS.ffffff or, if
    :attr:`microsecond` is 0, HH:MM:SS If :meth:`utcoffset` does not return ``None``, a
-   6-character string is appended, giving the UTC offset in (signed) hours and
-   minutes: HH:MM:SS.mmmmmm+HH:MM or, if self.microsecond is 0, HH:MM:SS+HH:MM
+   string is appended, giving the UTC offset: HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]
+   or, if self.microsecond is 0, HH:MM:SS+HH:MM[:SS[.ffffff]].
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
@@ -1566,7 +1585,7 @@ Instance methods:
      in HH:MM:SS format.
    - ``'milliseconds'``: Include full time, but truncate fractional second
      part to milliseconds. HH:MM:SS.sss format.
-   - ``'microseconds'``: Include full time in HH:MM:SS.mmmmmm format.
+   - ``'microseconds'``: Include full time in HH:MM:SS.ffffff format.
 
    .. note::
 
@@ -2000,6 +2019,9 @@ Class attributes:
    The UTC timezone, ``timezone(timedelta(0))``.
 
 
+.. index::
+   single: % (percent); datetime format
+
 .. _strftime-strptime-behavior:
 
 :meth:`strftime` and :meth:`strptime` Behavior
@@ -2014,7 +2036,9 @@ although not all objects support a :meth:`timetuple` method.
 Conversely, the :meth:`datetime.strptime` class method creates a
 :class:`.datetime` object from a string representing a date and time and a
 corresponding format string. ``datetime.strptime(date_string, format)`` is
-equivalent to ``datetime(*(time.strptime(date_string, format)[0:6]))``.
+equivalent to ``datetime(*(time.strptime(date_string, format)[0:6]))``, except
+when the format includes sub-second components or timezone offset information,
+which are supported in ``datetime.strptime`` but are discarded by ``time.strptime``.
 
 For :class:`.time` objects, the format codes for year, month, and day should not
 be used, as time objects have no such values.  If they're used anyway, ``1900``
@@ -2028,6 +2052,12 @@ The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common.  To see the full set of format codes supported on your
 platform, consult the :manpage:`strftime(3)` documentation.
+
+For the same reason, handling of format strings containing Unicode code points
+that can't be represented in the charset of the current locale is also
+platform-dependent. On some platforms such code points are preserved intact in
+the output, while on others ``strftime`` may raise :exc:`UnicodeError` or return
+an empty string instead.
 
 The following is a list of all the format codes that the C standard (1989
 version) requires, and these work on all platforms with a standard C
@@ -2092,9 +2122,10 @@ format codes.
 |           | number, zero-padded on the     | 999999                 |       |
 |           | left.                          |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form         | (empty), +0000, -0400, | \(6)  |
-|           | ±HHMM[SS] (empty string if the | +1030                  |       |
-|           | object is naive).              |                        |       |
+| ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
+|           | ±HHMM[SS[.ffffff]] (empty      | -0400, +1030,          |       |
+|           | string if the object is        | +063415,               |       |
+|           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
 |           | if the object is naive).       |                        |       |
@@ -2207,12 +2238,12 @@ Notes:
 
    ``%z``
       :meth:`utcoffset` is transformed into a string of the form
-      ±HHMM[SS[.uuuuuu]], where HH is a 2-digit string giving the number of UTC
-      offset hours, and MM is a 2-digit string giving the number of UTC offset
+      ±HHMM[SS[.ffffff]], where HH is a 2-digit string giving the number of UTC
+      offset hours, MM is a 2-digit string giving the number of UTC offset
       minutes, SS is a 2-digit string giving the number of UTC offset
-      seconds and uuuuuu is a 2-digit string giving the number of UTC
-      offset microseconds.  The uuuuuu part is omitted when the offset is a
-      whole number of minutes and both the uuuuuu and the SS parts are omitted
+      seconds and ffffff is a 6-digit string giving the number of UTC
+      offset microseconds.  The ffffff part is omitted when the offset is a
+      whole number of seconds and both the ffffff and the SS part is omitted
       when the offset is a whole number of minutes.  For example, if
       :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
       replaced with the string ``'-0330'``.

@@ -212,7 +212,7 @@ append_ast_args(_PyUnicodeWriter *writer, arguments_ty args)
     }
 
     /* vararg, or bare '*' if no varargs but keyword-only arguments present */
-    if (args->vararg || args->kwonlyargs) {
+    if (args->vararg || asdl_seq_LEN(args->kwonlyargs)) {
         APPEND_STR_IF_NOT_FIRST(", ");
         APPEND_STR("*");
         if (args->vararg) {
@@ -229,8 +229,11 @@ append_ast_args(_PyUnicodeWriter *writer, arguments_ty args)
 
         di = i - arg_count + default_count;
         if (di >= 0) {
-            APPEND_STR("=");
-            APPEND_EXPR((expr_ty)asdl_seq_GET(args->kw_defaults, di), PR_TEST);
+            expr_ty default_ = (expr_ty)asdl_seq_GET(args->kw_defaults, di);
+            if (default_) {
+                APPEND_STR("=");
+                APPEND_EXPR(default_, PR_TEST);
+            }
         }
     }
 
@@ -248,7 +251,7 @@ static int
 append_ast_lambda(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_TEST, "(");
-    APPEND_STR("lambda ");
+    APPEND_STR(asdl_seq_LEN(e->v.Lambda.args->args) ? "lambda " : "lambda");
     APPEND(args, e->v.Lambda.args);
     APPEND_STR(": ");
     APPEND_EXPR(e->v.Lambda.body, PR_TEST);
@@ -567,8 +570,6 @@ append_fstring_element(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
     switch (e->kind) {
     case Constant_kind:
         return append_fstring_unicode(writer, e->v.Constant.value);
-    case Str_kind:
-        return append_fstring_unicode(writer, e->v.Str.s);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, is_format_spec);
     case FormattedValue_kind:
@@ -654,6 +655,11 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
     }
     Py_DECREF(temp_fv_str);
 
+    if (e->v.FormattedValue.expr_text) {
+        /* Use the = for debug text expansion. */
+        APPEND_STR("=");
+    }
+
     if (e->v.FormattedValue.conversion > 0) {
         switch (e->v.FormattedValue.conversion) {
         case 'a':
@@ -690,13 +696,12 @@ static int
 append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
 {
     const char *period;
-    APPEND_EXPR(e->v.Attribute.value, PR_ATOM);
+    expr_ty v = e->v.Attribute.value;
+    APPEND_EXPR(v, PR_ATOM);
 
     /* Special case: integers require a space for attribute access to be
-       unambiguous.  Floats and complex numbers don't but work with it, too. */
-    if (e->v.Attribute.value->kind == Num_kind ||
-        e->v.Attribute.value->kind == Constant_kind)
-    {
+       unambiguous. */
+    if (v->kind == Constant_kind && PyLong_CheckExact(v->v.Constant.value)) {
         period = " .";
     }
     else {
@@ -841,21 +846,14 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
     case Call_kind:
         return append_ast_call(writer, e);
     case Constant_kind:
+        if (e->v.Constant.value == Py_Ellipsis) {
+            APPEND_STR_FINISH("...");
+        }
         return append_repr(writer, e->v.Constant.value);
-    case Num_kind:
-        return append_repr(writer, e->v.Num.n);
-    case Str_kind:
-        return append_repr(writer, e->v.Str.s);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
     case FormattedValue_kind:
         return append_formattedvalue(writer, e, false);
-    case Bytes_kind:
-        return append_repr(writer, e->v.Bytes.s);
-    case Ellipsis_kind:
-        APPEND_STR_FINISH("...");
-    case NameConstant_kind:
-        return append_repr(writer, e->v.NameConstant.value);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         return append_ast_attribute(writer, e);

@@ -136,28 +136,6 @@ Functions
       Unlike the C function of the same name, :func:`asctime` does not add a
       trailing newline.
 
-
-.. function:: clock()
-
-   .. index::
-      single: CPU time
-      single: processor time
-      single: benchmarking
-
-   On Unix, return the current processor time as a floating point number expressed
-   in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name.
-
-   On Windows, this function returns wall-clock seconds elapsed since the first
-   call to this function, as a floating point number, based on the Win32 function
-   :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
-   microsecond.
-
-   .. deprecated:: 3.3
-      The behaviour of this function depends on the platform: use
-      :func:`perf_counter` or :func:`process_time` instead, depending on your
-      requirements, to have a well defined behaviour.
-
 .. function:: pthread_getcpuclockid(thread_id)
 
    Return the *clk_id* of the thread-specific CPU-time clock for the specified *thread_id*.
@@ -170,8 +148,8 @@ Functions
       Passing an invalid or expired *thread_id* may result in
       undefined behavior, such as segmentation fault.
 
-   Availability: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
-   further information)
+   .. availability:: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
+      further information).
 
    .. versionadded:: 3.7
 
@@ -180,7 +158,7 @@ Functions
    Return the resolution (precision) of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -190,7 +168,7 @@ Functions
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -199,7 +177,7 @@ Functions
 
    Similar to :func:`clock_gettime` but return time as nanoseconds.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -209,7 +187,7 @@ Functions
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -218,7 +196,7 @@ Functions
 
    Similar to :func:`clock_settime` but set time with nanoseconds.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
 
@@ -293,17 +271,9 @@ Functions
    The reference point of the returned value is undefined, so that only the
    difference between the results of consecutive calls is valid.
 
-   On Windows versions older than Vista, :func:`monotonic` detects
-   :c:func:`GetTickCount` integer overflow (32 bits, roll-over after 49.7 days).
-   It increases an internal epoch (reference time) by 2\ :sup:`32` each time
-   that an overflow is detected.  The epoch is stored in the process-local state
-   and so the value of :func:`monotonic` may be different in two Python
-   processes running for more than 49 days. On more recent versions of Windows
-   and on other operating systems, :func:`monotonic` is system-wide.
-
    .. versionadded:: 3.3
    .. versionchanged:: 3.5
-      The function is now always available.
+      The function is now always available and always system-wide.
 
 
 .. function:: monotonic_ns() -> int
@@ -368,6 +338,9 @@ Functions
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+
+.. index::
+   single: % (percent); datetime format
 
 .. function:: strftime(format[, t])
 
@@ -500,6 +473,9 @@ Functions
    it is 3.
 
 
+.. index::
+   single: % (percent); datetime format
+
 .. function:: strptime(string[, format])
 
    Parse a string representing a time according to a format.  The return value
@@ -617,8 +593,8 @@ Functions
    returned value is undefined, so that only the difference between the results
    of consecutive calls in the same thread is valid.
 
-   Availability:  Windows, Linux, Unix systems supporting
-   ``CLOCK_THREAD_CPUTIME_ID``.
+   .. availability::  Windows, Linux, Unix systems supporting
+      ``CLOCK_THREAD_CPUTIME_ID``.
 
    .. versionadded:: 3.7
 
@@ -647,7 +623,7 @@ Functions
    nonzero if there is a time, past, present or future when daylight saving time
    applies).
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. note::
 
@@ -743,7 +719,7 @@ These constants are used as parameters for :func:`clock_getres` and
    have  discontinuities if the time is changed using ``settimeofday()`` or
    similar.
 
-   Availability: Linux 2.6.39 or later.
+   .. availability:: Linux 2.6.39 or later.
 
    .. versionadded:: 3.7
 
@@ -754,7 +730,7 @@ These constants are used as parameters for :func:`clock_getres` and
    hardware source, and may give close to nanosecond resolution.
    ``CLOCK_HIGHRES`` is the nonadjustable, high-resolution clock.
 
-   Availability: Solaris.
+   .. availability:: Solaris.
 
    .. versionadded:: 3.3
 
@@ -764,7 +740,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Clock that cannot be set and represents monotonic time since some unspecified
    starting point.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -774,7 +750,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
    hardware-based time that is not subject to NTP adjustments.
 
-   Availability: Linux 2.6.28 or later.
+   .. availability:: Linux 2.6.28 and newer, macOS 10.12 and newer.
 
    .. versionadded:: 3.3
 
@@ -783,7 +759,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 
@@ -792,7 +768,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   Availability: FreeBSD, NetBSD 7 or later, OpenBSD.
+   .. availability:: FreeBSD, NetBSD 7 or later, OpenBSD.
 
    .. versionadded:: 3.7
 
@@ -801,7 +777,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    Thread-specific CPU-time clock.
 
-   Availability: Unix.
+   .. availability::  Unix.
 
    .. versionadded:: 3.3
 
@@ -812,20 +788,32 @@ These constants are used as parameters for :func:`clock_getres` and
    suspended, providing accurate uptime measurement, both absolute and
    interval.
 
-   Availability: FreeBSD, OpenBSD 5.5 or later.
+   .. availability:: FreeBSD, OpenBSD 5.5 or later.
 
    .. versionadded:: 3.7
 
 
+.. data:: CLOCK_UPTIME_RAW
+
+   Clock that increments monotonically, tracking the time since an arbitrary
+   point, unaffected by frequency or time adjustments and not incremented while
+   the system is asleep.
+
+   .. availability:: macOS 10.12 and newer.
+
+   .. versionadded:: 3.8
+
+
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
+
 
 .. data:: CLOCK_REALTIME
 
    System-wide real-time clock.  Setting this clock requires appropriate
    privileges.
 
-   Availability: Unix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.3
 

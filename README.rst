@@ -1,4 +1,4 @@
-This is Python version 3.8.0 alpha 0
+This is Python version 3.8.0 alpha 4
 ====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
@@ -9,6 +9,10 @@ This is Python version 3.8.0 alpha 0
    :alt: CPython build status on Appveyor
    :target: https://ci.appveyor.com/project/python/cpython/branch/master
 
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+   :alt: CPython build status on Azure DevOps
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
+
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
@@ -16,11 +20,9 @@ This is Python version 3.8.0 alpha 0
 .. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
    :alt: Python Zulip chat
    :target: https://python.zulipchat.com
-  
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+
+Copyright (c) 2001-2019 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -61,16 +63,16 @@ On Unix, Linux, BSD, macOS, and Cygwin::
     make test
     sudo make install
 
-This will install Python as python3.
+This will install Python as ``python3``.
 
 You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
 elsewhere it's just ``python``.
 
 If you are running on macOS with the latest updates installed, make sure to install
-openSSL or some other SSL software along with Homebrew or another package manager.
-If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
-information. 
+OpenSSL or some other SSL software along with Homebrew or another package manager.
+If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more
+information.
 
 On macOS, if you have configured Python with ``--enable-framework``, you
 should use ``make frameworkinstall`` to do the installation.  Note that this
@@ -90,7 +92,7 @@ For example::
     make test
 
 (This will fail if you *also* built at the top-level directory.  You should do
-a ``make clean`` at the toplevel first.)
+a ``make clean`` at the top-level first.)
 
 To get an optimized build of Python, ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
@@ -144,7 +146,7 @@ detailed change log, read `Misc/NEWS
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/master>`_.
 
-If you want to install multiple versions of Python see the section below
+If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
 
 
@@ -247,9 +249,7 @@ See :pep:`569` for Python 3.8 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2019 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

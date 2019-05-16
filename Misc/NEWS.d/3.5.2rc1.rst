@@ -300,7 +300,7 @@ Fixed problem with in-place string concatenation and utf-8 cache.
 .. nonce: tCCgmH
 .. section: Core and Builtins
 
-Mention PEP 420 in the importlib docs.
+Mention :pep:`420` in the importlib docs.
 
 ..
 
@@ -423,7 +423,7 @@ A new version of typing.py provides several new classes and features:
 @overload outside stubs, Reversible, DefaultDict, Text, ContextManager,
 Type[], NewType(), TYPE_CHECKING, and numerous bug fixes (note that some of
 the new features are not yet implemented in mypy or other static analyzers).
-Also classes for PEP 492 (Awaitable, AsyncIterable, AsyncIterator) have been
+Also classes for :pep:`492` (Awaitable, AsyncIterable, AsyncIterator) have been
 added (in fact they made it into 3.5.1 but were never mentioned).
 
 ..
@@ -568,9 +568,9 @@ string.  Original fix by Ján Janech.
 .. section: Library
 
 The "urllib.request" module now percent-encodes non-ASCII bytes found in
-redirect target URLs.  Some servers send Location header fields with non-
-ASCII bytes, but "http.client" requires the request target to be ASCII-
-encodable, otherwise a UnicodeEncodeError is raised.  Based on patch by
+redirect target URLs.  Some servers send Location header fields with
+non-ASCII bytes, but "http.client" requires the request target to be
+ASCII-encodable, otherwise a UnicodeEncodeError is raised.  Based on patch by
 Christian Heimes.
 
 ..
@@ -678,7 +678,6 @@ Fixed the comparison of plistlib.Data with other types.
 .. section: Library
 
 Fix an uninitialized variable in `ctypes.util`.
-
 The bug only occurs on SunOS when the ctypes implementation searches for the
 `crle` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
 
@@ -1366,7 +1365,7 @@ fileinput now uses sys.stdin as-is if it does not have a buffer attribute
 .. nonce: AtHkWA
 .. section: Library
 
-Copying the lru_cache() wrapper object now always works, independedly from
+Copying the lru_cache() wrapper object now always works, independently from
 the type of the wrapped object (by returning the original object unchanged).
 
 ..
@@ -1816,7 +1815,7 @@ Patch by Ammar Askar.
 .. nonce: MUK0zK
 .. section: Documentation
 
-Document the new PEP 448 unpacking syntax of 3.5.
+Document the new :pep:`448` unpacking syntax of 3.5.
 
 ..
 
@@ -1952,10 +1951,10 @@ Fix linking extension modules for cross builds. Patch by Xavier de Gaye.
 .. nonce: HDjM4s
 .. section: Build
 
-Disable the rules for running _freeze_importlib and pgen when cross-
-compiling.  The output of these programs is normally saved with the source
-code anyway, and is still regenerated when doing a native build. Patch by
-Xavier de Gaye.
+Disable the rules for running _freeze_importlib and pgen when
+cross-compiling.  The output of these programs is normally saved with the
+source code anyway, and is still regenerated when doing a native build.
+Patch by Xavier de Gaye.
 
 ..
 

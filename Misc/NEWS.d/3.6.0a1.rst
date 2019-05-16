@@ -144,7 +144,7 @@ Fix the doc comment for FileFinder.find_spec().
 .. nonce: tCCgmH
 .. section: Core and Builtins
 
-Mention PEP 420 in the importlib docs.
+Mention :pep:`420` in the importlib docs.
 
 ..
 
@@ -203,7 +203,7 @@ Add tests for reloading namespace packages.
 .. nonce: CuMWZJ
 .. section: Core and Builtins
 
-Switch applicable importlib tests to use PEP 451 API.
+Switch applicable importlib tests to use :pep:`451` API.
 
 ..
 
@@ -782,7 +782,7 @@ Patch from Mark Dickinson.
 .. nonce: wfyxbB
 .. section: Core and Builtins
 
-Implement PEP 498 "Literal String Interpolation". This allows you to embed
+Implement :pep:`498` "Literal String Interpolation". This allows you to embed
 expressions inside f-strings, which are converted to normal strings at run
 time. Given x=3, then f'value={x}' == 'value=3'. Patch by Eric V. Smith.
 
@@ -1011,7 +1011,7 @@ Patch by Stefan Krah.
 .. nonce: LR__VD
 .. section: Library
 
-Add secrets module as described in PEP 506.
+Add secrets module as described in :pep:`506`.
 
 ..
 
@@ -1081,7 +1081,6 @@ Fixed the comparison of plistlib.Data with other types.
 .. section: Library
 
 Fix an uninitialized variable in `ctypes.util`.
-
 The bug only occurs on SunOS when the ctypes implementation searches for the
 `crle` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
 
@@ -2684,7 +2683,7 @@ pickletools.dis() now outputs implicit memo index for the MEMOIZE opcode.
 .. nonce: ebqGy-
 .. section: Library
 
-Add an optional newline paramer to binascii.b2a_base64(). base64.b64encode()
+Add an optional newline parameter to binascii.b2a_base64(). base64.b64encode()
 uses it to avoid a memory copy.
 
 ..
@@ -3938,4 +3937,4 @@ programming bugs.
 
 ValueError is now raised instead of TypeError on buffer overflow in parsing
 "es#" and "et#" format units.  SystemError is now raised instead of
-TypeError on programmical error in parsing format string.
+TypeError on programmatical error in parsing format string.

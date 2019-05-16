@@ -111,7 +111,7 @@ static PyTypeObject Reader_Type;
 typedef struct {
     PyObject_HEAD
 
-    PyObject *writeline;    /* write output lines to this file */
+    PyObject *write;    /* write output lines to this file */
 
     DialectObj *dialect;    /* parsing dialect */
 
@@ -132,7 +132,7 @@ get_dialect_from_registry(PyObject * name_obj)
 {
     PyObject *dialect_obj;
 
-    dialect_obj = PyDict_GetItem(_csvstate_global->dialects, name_obj);
+    dialect_obj = PyDict_GetItemWithError(_csvstate_global->dialects, name_obj);
     if (dialect_obj == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
@@ -160,31 +160,31 @@ get_nullchar_as_None(Py_UCS4 c)
 }
 
 static PyObject *
-Dialect_get_lineterminator(DialectObj *self)
+Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_string(self->lineterminator);
 }
 
 static PyObject *
-Dialect_get_delimiter(DialectObj *self)
+Dialect_get_delimiter(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->delimiter);
 }
 
 static PyObject *
-Dialect_get_escapechar(DialectObj *self)
+Dialect_get_escapechar(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->escapechar);
 }
 
 static PyObject *
-Dialect_get_quotechar(DialectObj *self)
+Dialect_get_quotechar(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return get_nullchar_as_None(self->quotechar);
 }
 
 static PyObject *
-Dialect_get_quoting(DialectObj *self)
+Dialect_get_quoting(DialectObj *self, void *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(self->quoting);
 }
@@ -1231,14 +1231,16 @@ csv_writerow(WriterObj *self, PyObject *seq)
 
     /* Add line terminator.
      */
-    if (!join_append_lineterminator(self))
+    if (!join_append_lineterminator(self)) {
         return NULL;
+    }
 
     line = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                      (void *) self->rec, self->rec_len);
-    if (line == NULL)
+    if (line == NULL) {
         return NULL;
-    result = PyObject_CallFunctionObjArgs(self->writeline, line, NULL);
+    }
+    result = PyObject_CallFunctionObjArgs(self->write, line, NULL);
     Py_DECREF(line);
     return result;
 }
@@ -1294,7 +1296,7 @@ Writer_dealloc(WriterObj *self)
 {
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->dialect);
-    Py_XDECREF(self->writeline);
+    Py_XDECREF(self->write);
     if (self->rec != NULL)
         PyMem_Free(self->rec);
     PyObject_GC_Del(self);
@@ -1304,7 +1306,7 @@ static int
 Writer_traverse(WriterObj *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dialect);
-    Py_VISIT(self->writeline);
+    Py_VISIT(self->write);
     return 0;
 }
 
@@ -1312,7 +1314,7 @@ static int
 Writer_clear(WriterObj *self)
 {
     Py_CLEAR(self->dialect);
-    Py_CLEAR(self->writeline);
+    Py_CLEAR(self->write);
     return 0;
 }
 
@@ -1369,7 +1371,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         return NULL;
 
     self->dialect = NULL;
-    self->writeline = NULL;
+    self->write = NULL;
 
     self->rec = NULL;
     self->rec_size = 0;
@@ -1380,8 +1382,8 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->writeline = _PyObject_GetAttrId(output_file, &PyId_write);
-    if (self->writeline == NULL || !PyCallable_Check(self->writeline)) {
+    self->write = _PyObject_GetAttrId(output_file, &PyId_write);
+    if (self->write == NULL || !PyCallable_Check(self->write)) {
         PyErr_SetString(PyExc_TypeError,
                         "argument 1 must have a \"write\" method");
         Py_DECREF(self);
@@ -1434,8 +1436,12 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 static PyObject *
 csv_unregister_dialect(PyObject *module, PyObject *name_obj)
 {
-    if (PyDict_DelItem(_csvstate_global->dialects, name_obj) < 0)
-        return PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
+    if (PyDict_DelItem(_csvstate_global->dialects, name_obj) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
+        }
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1583,13 +1589,13 @@ PyDoc_STRVAR(csv_field_size_limit_doc,
 "the old limit is returned");
 
 static struct PyMethodDef csv_methods[] = {
-    { "reader", (PyCFunction)csv_reader,
+    { "reader", (PyCFunction)(void(*)(void))csv_reader,
         METH_VARARGS | METH_KEYWORDS, csv_reader_doc},
-    { "writer", (PyCFunction)csv_writer,
+    { "writer", (PyCFunction)(void(*)(void))csv_writer,
         METH_VARARGS | METH_KEYWORDS, csv_writer_doc},
     { "list_dialects", (PyCFunction)csv_list_dialects,
         METH_NOARGS, csv_list_dialects_doc},
-    { "register_dialect", (PyCFunction)csv_register_dialect,
+    { "register_dialect", (PyCFunction)(void(*)(void))csv_register_dialect,
         METH_VARARGS | METH_KEYWORDS, csv_register_dialect_doc},
     { "unregister_dialect", (PyCFunction)csv_unregister_dialect,
         METH_O, csv_unregister_dialect_doc},

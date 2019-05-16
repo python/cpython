@@ -417,6 +417,7 @@ class PydocBaseTest(unittest.TestCase):
 
 
 class PydocDocTest(unittest.TestCase):
+    maxDiff = None
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -517,6 +518,135 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(stripid("<type 'exceptions.Exception'>"),
                          "<type 'exceptions.Exception'>")
 
+    def test_builtin_with_more_than_four_children(self):
+        """Tests help on builtin object which have more than four child classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section and only 4 classes
+        should be displayed with a hint on how many more subclasses are present.
+        For example:
+
+        >>> help(object)
+        Help on class object in module builtins:
+
+        class object
+         |  The most base type
+         |
+         |  Built-in subclasses:
+         |      async_generator
+         |      BaseException
+         |      builtin_function_or_method
+         |      bytearray
+         |      ... and 82 other subclasses
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(object)
+        snip = (" |  Built-in subclasses:\n"
+                " |      async_generator\n"
+                " |      BaseException\n"
+                " |      builtin_function_or_method\n"
+                " |      bytearray\n"
+                " |      ... and \\d+ other subclasses")
+        self.assertRegex(text, snip)
+
+    def test_builtin_with_child(self):
+        """Tests help on builtin object which have only child classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section. For example:
+
+        >>> help(ArithmeticError)
+        Help on class ArithmeticError in module builtins:
+
+        class ArithmeticError(Exception)
+         |  Base class for arithmetic errors.
+         |
+         ...
+         |
+         |  Built-in subclasses:
+         |      FloatingPointError
+         |      OverflowError
+         |      ZeroDivisionError
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(ArithmeticError)
+        snip = (" |  Built-in subclasses:\n"
+                " |      FloatingPointError\n"
+                " |      OverflowError\n"
+                " |      ZeroDivisionError")
+        self.assertIn(snip, text)
+
+    def test_builtin_with_grandchild(self):
+        """Tests help on builtin classes which have grandchild classes.
+
+        When running help() on a builtin class which has child classes, it
+        should contain a "Built-in subclasses" section. However, if it also has
+        grandchildren, these should not show up on the subclasses section.
+        For example:
+
+        >>> help(Exception)
+        Help on class Exception in module builtins:
+
+        class Exception(BaseException)
+         |  Common base class for all non-exit exceptions.
+         |
+         ...
+         |
+         |  Built-in subclasses:
+         |      ArithmeticError
+         |      AssertionError
+         |      AttributeError
+         ...
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(Exception)
+        snip = (" |  Built-in subclasses:\n"
+                " |      ArithmeticError\n"
+                " |      AssertionError\n"
+                " |      AttributeError")
+        self.assertIn(snip, text)
+        # Testing that the grandchild ZeroDivisionError does not show up
+        self.assertNotIn('ZeroDivisionError', text)
+
+    def test_builtin_no_child(self):
+        """Tests help on builtin object which have no child classes.
+
+        When running help() on a builtin class which has no child classes, it
+        should not contain any "Built-in subclasses" section. For example:
+
+        >>> help(ZeroDivisionError)
+
+        Help on class ZeroDivisionError in module builtins:
+
+        class ZeroDivisionError(ArithmeticError)
+         |  Second argument to a division or modulo operation was zero.
+         |
+         |  Method resolution order:
+         |      ZeroDivisionError
+         |      ArithmeticError
+         |      Exception
+         |      BaseException
+         |      object
+         |
+         |  Methods defined here:
+         ...
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(ZeroDivisionError)
+        # Testing that the subclasses section does not appear
+        self.assertNotIn('Built-in subclasses', text)
+
+    def test_builtin_on_metaclasses(self):
+        """Tests help on metaclasses.
+
+        When running help() on a metaclasses such as type, it
+        should not contain any "Built-in subclasses" section.
+        """
+        doc = pydoc.TextDoc()
+        text = doc.docclass(type)
+        # Testing that the subclasses section does not appear
+        self.assertNotIn('Built-in subclasses', text)
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
@@ -556,6 +686,16 @@ class PydocDocTest(unittest.TestCase):
                 self.assertEqual(expected_text, result)
         finally:
             pydoc.getpager = getpager_old
+
+    def test_namedtuple_fields(self):
+        Person = namedtuple('Person', ['nickname', 'firstname'])
+        with captured_stdout() as help_io:
+            pydoc.help(Person)
+        helptext = help_io.getvalue()
+        self.assertIn("nickname", helptext)
+        self.assertIn("firstname", helptext)
+        self.assertIn("Alias for field number 0", helptext)
+        self.assertIn("Alias for field number 1", helptext)
 
     def test_namedtuple_public_underscore(self):
         NT = namedtuple('NT', ['abc', 'def'], rename=True)
@@ -603,15 +743,6 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(pydoc.splitdoc(example_string),
                          ('I Am A Doc', '\nHere is my description'))
 
-    def test_is_object_or_method(self):
-        doc = pydoc.Doc()
-        # Bound Method
-        self.assertTrue(pydoc._is_some_method(doc.fail))
-        # Method Descriptor
-        self.assertTrue(pydoc._is_some_method(int.__add__))
-        # String
-        self.assertFalse(pydoc._is_some_method("I am not a method"))
-
     def test_is_package_when_not_package(self):
         with test.support.temp_cwd() as test_dir:
             self.assertFalse(pydoc.ispackage(test_dir))
@@ -647,6 +778,104 @@ class PydocDocTest(unittest.TestCase):
 
         methods = pydoc.allmethods(TestClass)
         self.assertDictEqual(methods, expected)
+
+    def test_method_aliases(self):
+        class A:
+            def tkraise(self, aboveThis=None):
+                """Raise this widget in the stacking order."""
+            lift = tkraise
+            def a_size(self):
+                """Return size"""
+        class B(A):
+            def itemconfigure(self, tagOrId, cnf=None, **kw):
+                """Configure resources of an item TAGORID."""
+            itemconfig = itemconfigure
+            b_size = A.a_size
+
+        doc = pydoc.render_doc(B)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''\
+Python Library Documentation: class B in module %s
+
+class B(A)
+ |  Method resolution order:
+ |      B
+ |      A
+ |      builtins.object
+ |\x20\x20
+ |  Methods defined here:
+ |\x20\x20
+ |  b_size = a_size(self)
+ |\x20\x20
+ |  itemconfig = itemconfigure(self, tagOrId, cnf=None, **kw)
+ |\x20\x20
+ |  itemconfigure(self, tagOrId, cnf=None, **kw)
+ |      Configure resources of an item TAGORID.
+ |\x20\x20
+ |  ----------------------------------------------------------------------
+ |  Methods inherited from A:
+ |\x20\x20
+ |  a_size(self)
+ |      Return size
+ |\x20\x20
+ |  lift = tkraise(self, aboveThis=None)
+ |\x20\x20
+ |  tkraise(self, aboveThis=None)
+ |      Raise this widget in the stacking order.
+ |\x20\x20
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from A:
+ |\x20\x20
+ |  __dict__
+ |      dictionary for instance variables (if defined)
+ |\x20\x20
+ |  __weakref__
+ |      list of weak references to the object (if defined)
+''' % __name__)
+
+        doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
+        self.assertEqual(doc, '''\
+Python Library Documentation: class B in module %s
+
+<p>
+<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="B">class <strong>B</strong></a>(A)</font></td></tr>
+\x20\x20\x20\x20
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%%"><dl><dt>Method resolution order:</dt>
+<dd>B</dd>
+<dd>A</dd>
+<dd><a href="builtins.html#object">builtins.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="B-b_size"><strong>b_size</strong></a> = <a href="#B-a_size">a_size</a>(self)</dt></dl>
+
+<dl><dt><a name="B-itemconfig"><strong>itemconfig</strong></a> = <a href="#B-itemconfigure">itemconfigure</a>(self, tagOrId, cnf=None, **kw)</dt></dl>
+
+<dl><dt><a name="B-itemconfigure"><strong>itemconfigure</strong></a>(self, tagOrId, cnf=None, **kw)</dt><dd><tt>Configure&nbsp;resources&nbsp;of&nbsp;an&nbsp;item&nbsp;TAGORID.</tt></dd></dl>
+
+<hr>
+Methods inherited from A:<br>
+<dl><dt><a name="B-a_size"><strong>a_size</strong></a>(self)</dt><dd><tt>Return&nbsp;size</tt></dd></dl>
+
+<dl><dt><a name="B-lift"><strong>lift</strong></a> = <a href="#B-tkraise">tkraise</a>(self, aboveThis=None)</dt></dl>
+
+<dl><dt><a name="B-tkraise"><strong>tkraise</strong></a>(self, aboveThis=None)</dt><dd><tt>Raise&nbsp;this&nbsp;widget&nbsp;in&nbsp;the&nbsp;stacking&nbsp;order.</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from A:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table>\
+''' % __name__)
 
 
 class PydocImportTest(PydocBaseTest):
@@ -855,6 +1084,12 @@ class TestDescriptions(unittest.TestCase):
         assert len(lines) >= 2
         return lines[2]
 
+    @staticmethod
+    def _get_summary_lines(o):
+        text = pydoc.plain(pydoc.render_doc(o))
+        lines = text.split('\n')
+        return '\n'.join(lines[2:])
+
     # these should include "self"
     def test_unbound_python_method(self):
         self.assertEqual(self._get_summary_line(textwrap.TextWrapper.wrap),
@@ -870,7 +1105,6 @@ class TestDescriptions(unittest.TestCase):
         t = textwrap.TextWrapper()
         self.assertEqual(self._get_summary_line(t.wrap),
             "wrap(text) method of textwrap.TextWrapper instance")
-
     def test_field_order_for_named_tuples(self):
         Person = namedtuple('Person', ['nickname', 'firstname', 'agegroup'])
         s = pydoc.render_doc(Person)
@@ -900,6 +1134,160 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line(os.stat),
             "stat(path, *, dir_fd=None, follow_symlinks=True)")
 
+    @requires_docstrings
+    def test_staticmethod(self):
+        class X:
+            @staticmethod
+            def sm(x, y):
+                '''A static method'''
+                ...
+        self.assertEqual(self._get_summary_lines(X.__dict__['sm']),
+                         "<staticmethod object>")
+        self.assertEqual(self._get_summary_lines(X.sm), """\
+sm(x, y)
+    A static method
+""")
+        self.assertIn("""
+ |  Static methods defined here:
+ |\x20\x20
+ |  sm(x, y)
+ |      A static method
+""", pydoc.plain(pydoc.render_doc(X)))
+
+    @requires_docstrings
+    def test_classmethod(self):
+        class X:
+            @classmethod
+            def cm(cls, x):
+                '''A class method'''
+                ...
+        self.assertEqual(self._get_summary_lines(X.__dict__['cm']),
+                         "<classmethod object>")
+        self.assertEqual(self._get_summary_lines(X.cm), """\
+cm(x) method of builtins.type instance
+    A class method
+""")
+        self.assertIn("""
+ |  Class methods defined here:
+ |\x20\x20
+ |  cm(x) from builtins.type
+ |      A class method
+""", pydoc.plain(pydoc.render_doc(X)))
+
+    @requires_docstrings
+    def test_getset_descriptor(self):
+        # Currently these attributes are implemented as getset descriptors
+        # in CPython.
+        self.assertEqual(self._get_summary_line(int.numerator), "numerator")
+        self.assertEqual(self._get_summary_line(float.real), "real")
+        self.assertEqual(self._get_summary_line(Exception.args), "args")
+        self.assertEqual(self._get_summary_line(memoryview.obj), "obj")
+
+    @requires_docstrings
+    def test_member_descriptor(self):
+        # Currently these attributes are implemented as member descriptors
+        # in CPython.
+        self.assertEqual(self._get_summary_line(complex.real), "real")
+        self.assertEqual(self._get_summary_line(range.start), "start")
+        self.assertEqual(self._get_summary_line(slice.start), "start")
+        self.assertEqual(self._get_summary_line(property.fget), "fget")
+        self.assertEqual(self._get_summary_line(StopIteration.value), "value")
+
+    @requires_docstrings
+    def test_slot_descriptor(self):
+        class Point:
+            __slots__ = 'x', 'y'
+        self.assertEqual(self._get_summary_line(Point.x), "x")
+
+    @requires_docstrings
+    def test_dict_attr_descriptor(self):
+        class NS:
+            pass
+        self.assertEqual(self._get_summary_line(NS.__dict__['__dict__']),
+                         "__dict__")
+
+    @requires_docstrings
+    def test_structseq_member_descriptor(self):
+        self.assertEqual(self._get_summary_line(type(sys.hash_info).width),
+                         "width")
+        self.assertEqual(self._get_summary_line(type(sys.flags).debug),
+                         "debug")
+        self.assertEqual(self._get_summary_line(type(sys.version_info).major),
+                         "major")
+        self.assertEqual(self._get_summary_line(type(sys.float_info).max),
+                         "max")
+
+    @requires_docstrings
+    def test_namedtuple_field_descriptor(self):
+        Box = namedtuple('Box', ('width', 'height'))
+        self.assertEqual(self._get_summary_lines(Box.width), """\
+    Alias for field number 0
+""")
+
+    @requires_docstrings
+    def test_property(self):
+        class Rect:
+            @property
+            def area(self):
+                '''Area of the rect'''
+                return self.w * self.h
+
+        self.assertEqual(self._get_summary_lines(Rect.area), """\
+    Area of the rect
+""")
+        self.assertIn("""
+ |  area
+ |      Area of the rect
+""", pydoc.plain(pydoc.render_doc(Rect)))
+
+    @requires_docstrings
+    def test_custom_non_data_descriptor(self):
+        class Descr:
+            def __get__(self, obj, cls):
+                if obj is None:
+                    return self
+                return 42
+        class X:
+            attr = Descr()
+
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+
+        X.attr.__doc__ = 'Custom descriptor'
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+
+        X.attr.__name__ = 'foo'
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+foo(...)
+    Custom descriptor
+""")
+
+    @requires_docstrings
+    def test_custom_data_descriptor(self):
+        class Descr:
+            def __get__(self, obj, cls):
+                if obj is None:
+                    return self
+                return 42
+            def __set__(self, obj, cls):
+                1/0
+        class X:
+            attr = Descr()
+
+        self.assertEqual(self._get_summary_lines(X.attr), "")
+
+        X.attr.__doc__ = 'Custom descriptor'
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+    Custom descriptor
+""")
+
+        X.attr.__name__ = 'foo'
+        self.assertEqual(self._get_summary_lines(X.attr), """\
+foo
+    Custom descriptor
+""")
+
 
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
@@ -914,12 +1302,12 @@ class PydocServerTest(unittest.TestCase):
         serverthread = pydoc._start_server(my_url_handler, hostname='0.0.0.0', port=0)
         self.assertIn('0.0.0.0', serverthread.docserver.address)
 
-        starttime = time.time()
+        starttime = time.monotonic()
         timeout = 1  #seconds
 
         while serverthread.serving:
             time.sleep(.01)
-            if serverthread.serving and time.time() - starttime > timeout:
+            if serverthread.serving and time.monotonic() - starttime > timeout:
                 serverthread.stop()
                 break
 

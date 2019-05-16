@@ -20,10 +20,10 @@ rearrange their members in place, and don't return a specific item, never return
 the collection instance itself but ``None``.
 
 Some operations are supported by several object types; in particular,
-practically all objects can be compared, tested for truth value, and converted
-to a string (with the :func:`repr` function or the slightly different
-:func:`str` function).  The latter function is implicitly used when an object is
-written by the :func:`print` function.
+practically all objects can be compared for equality, tested for truth
+value, and converted to a string (with the :func:`repr` function or the
+slightly different :func:`str` function).  The latter function is implicitly
+used when an object is written by the :func:`print` function.
 
 
 .. _truth:
@@ -74,8 +74,8 @@ one of their operands.)
 
 .. _boolean:
 
-Boolean Operations --- :keyword:`and`, :keyword:`or`, :keyword:`not`
-====================================================================
+Boolean Operations --- :keyword:`!and`, :keyword:`!or`, :keyword:`!not`
+=======================================================================
 
 .. index:: pair: Boolean; operations
 
@@ -123,9 +123,9 @@ Comparisons
    pair: chaining; comparisons
    pair: operator; comparison
    operator: ==
-   operator: <
+   operator: < (less)
    operator: <=
-   operator: >
+   operator: > (greater)
    operator: >=
    operator: !=
    operator: is
@@ -164,12 +164,10 @@ This table summarizes the comparison operations:
    pair: objects; comparing
 
 Objects of different types, except different numeric types, never compare equal.
-Furthermore, some types (for example, function objects) support only a degenerate
-notion of comparison where any two objects of that type are unequal.  The ``<``,
-``<=``, ``>`` and ``>=`` operators will raise a :exc:`TypeError` exception when
-comparing a complex number with another built-in numeric type, when the objects
-are of different types that cannot be compared, or in other cases where there is
-no defined ordering.
+The ``==`` operator is always defined but for some object types (for example,
+class objects) is equivalent to :keyword:`is`. The ``<``, ``<=``, ``>`` and ``>=``
+operators are only defined where they make sense; for example, they raise a
+:exc:`TypeError` exception when one of the arguments is a complex number.
 
 .. index::
    single: __eq__() (instance method)
@@ -197,8 +195,8 @@ exception.
    operator: not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
-:keyword:`not in`, are supported only by sequence types (below).
-
+:keyword:`not in`, are supported by types that are :term:`iterable` or
+implement the :meth:`__contains__` method.
 
 .. _typesnumeric:
 
@@ -222,8 +220,8 @@ numbers for the machine on which your program is running is available
 in :data:`sys.float_info`.  Complex numbers have a real and imaginary
 part, which are each a floating point number.  To extract these parts
 from a complex number *z*, use ``z.real`` and ``z.imag``. (The standard
-library includes additional numeric types, :mod:`fractions` that hold
-rationals, and :mod:`decimal` that hold floating-point numbers with
+library includes the additional numeric types :mod:`fractions.Fraction`, for
+rationals, and :mod:`decimal.Decimal`, for floating-point numbers with
 user-definable precision.)
 
 .. index::
@@ -248,12 +246,16 @@ and imaginary parts.
    builtin: int
    builtin: float
    builtin: complex
-   operator: +
-   operator: -
-   operator: *
-   operator: /
+   single: operator; + (plus)
+   single: + (plus); unary operator
+   single: + (plus); binary operator
+   single: operator; - (minus)
+   single: - (minus); unary operator
+   single: - (minus); binary operator
+   operator: * (asterisk)
+   operator: / (slash)
    operator: //
-   operator: %
+   operator: % (percent)
    operator: **
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
@@ -349,7 +351,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/12.1.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -389,12 +391,12 @@ Bitwise Operations on Integer Types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
-   operator: |
-   operator: ^
-   operator: &
+   operator: | (vertical bar)
+   operator: ^ (caret)
+   operator: & (ampersand)
    operator: <<
    operator: >>
-   operator: ~
+   operator: ~ (tilde)
 
 Bitwise operations only make sense for integers. The result of bitwise
 operations is calculated as though carried out in two's complement with an
@@ -441,7 +443,7 @@ Notes:
 (4)
    Performing these calculations with at least one extra sign extension bit in
    a finite two's complement representation (a working bit-width of
-   ``1 + max(x.bit_length(), y.bit_length()`` or more) is sufficient to get the
+   ``1 + max(x.bit_length(), y.bit_length())`` or more) is sufficient to get the
    same result as if there were an infinite number of sign bits.
 
 
@@ -539,6 +541,14 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
+.. method:: int.as_integer_ratio()
+
+   Return a pair of integers whose ratio is exactly equal to the original
+   integer and with a positive denominator. The integer ratio of integers
+   (whole numbers) is always the integer as the numerator and ``1`` as the
+   denominator.
+
+   .. versionadded:: 3.8
 
 Additional Methods on Float
 ---------------------------
@@ -1195,6 +1205,8 @@ application).
       --- this is helpful for sorting in multiple passes (for example, sort by
       department, then by salary grade).
 
+      For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
+
       .. impl-detail::
 
          While a list is being sorted, the effect of attempting to mutate, or even
@@ -1497,6 +1509,10 @@ expression support in the :mod:`re` module).
    Return a copy of the string with its first character capitalized and the
    rest lowercased.
 
+   .. versionchanged:: 3.8
+      The first character is now put into titlecase rather than uppercase.
+      This means that characters like digraphs will only have their first
+      letter capitalized, instead of the full character.
 
 .. method:: str.casefold()
 
@@ -1694,8 +1710,19 @@ expression support in the :mod:`re` module).
    Return true if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   Use :func:`keyword.iskeyword` to test for reserved identifiers such as
-   :keyword:`def` and :keyword:`class`.
+   Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
+   identifier, such as :keyword:`def` and :keyword:`class`.
+
+   Example:
+   ::
+
+      >>> from keyword import iskeyword
+
+      >>> 'hello'.isidentifier(), iskeyword('hello')
+      True, False
+      >>> 'def'.isidentifier(), iskeyword('def')
+      True, True
+
 
 .. method:: str.islower()
 
@@ -2029,8 +2056,7 @@ expression support in the :mod:`re` module).
         >>> import re
         >>> def titlecase(s):
         ...     return re.sub(r"[A-Za-z]+('[A-Za-z]+)?",
-        ...                   lambda mo: mo.group(0)[0].upper() +
-        ...                              mo.group(0)[1:].lower(),
+        ...                   lambda mo: mo.group(0).capitalize(),
         ...                   s)
         ...
         >>> titlecase("they're bill's friends.")
@@ -2096,8 +2122,7 @@ expression support in the :mod:`re` module).
    single: string; interpolation, printf
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -2119,6 +2144,11 @@ If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format string, or a single mapping object (for example, a
 dictionary).
+
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
 
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
@@ -2157,6 +2187,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -2663,8 +2699,8 @@ arbitrary binary data.
    containing the part before the separator, the separator itself or its
    bytearray copy, and the part after the separator.
    If the separator is not found, return a 3-tuple
-   containing a copy of the original sequence, followed by two empty bytes or
-   bytearray objects.
+   containing two empty bytes or bytearray objects, followed by a copy of the
+   original sequence.
 
    The separator to search for may be any :term:`bytes-like object`.
 
@@ -3187,7 +3223,7 @@ place, and instead produce new objects.
 
    Return a copy of the sequence left filled with ASCII ``b'0'`` digits to
    make a sequence of length *width*. A leading sign prefix (``b'+'``/
-   ``b'-'`` is handled by inserting the padding *after* the sign character
+   ``b'-'``) is handled by inserting the padding *after* the sign character
    rather than before. For :class:`bytes` objects, the original sequence is
    returned if *width* is less than or equal to ``len(seq)``.
 
@@ -3210,18 +3246,17 @@ place, and instead produce new objects.
 ----------------------------------
 
 .. index::
-   single: formatting, bytes (%)
-   single: formatting, bytearray (%)
-   single: interpolation, bytes (%)
-   single: interpolation, bytearray (%)
+   single: formatting; bytes (%)
+   single: formatting; bytearray (%)
+   single: interpolation; bytes (%)
+   single: interpolation; bytearray (%)
    single: bytes; formatting
    single: bytearray; formatting
    single: bytes; interpolation
    single: bytearray; interpolation
    single: printf-style formatting
    single: sprintf-style formatting
-   single: % formatting
-   single: % interpolation
+   single: % (percent); printf-style formatting
 
 .. note::
 
@@ -3241,6 +3276,11 @@ If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
 items specified by the format bytes object, or a single mapping object (for
 example, a dictionary).
+
+.. index::
+   single: () (parentheses); in printf-style formatting
+   single: * (asterisk); in printf-style formatting
+   single: . (dot); in printf-style formatting
 
 A conversion specifier contains two or more characters and has the following
 components, which must occur in this order:
@@ -3279,6 +3319,12 @@ In this case no ``*`` specifiers may occur in a format (since they require a
 sequential parameter list).
 
 The conversion flag characters are:
+
+.. index::
+   single: # (hash); in printf-style formatting
+   single: - (minus); in printf-style formatting
+   single: + (plus); in printf-style formatting
+   single: space; in printf-style formatting
 
 +---------+---------------------------------------------------------------------+
 | Flag    | Meaning                                                             |
@@ -3557,7 +3603,7 @@ copying.
          Previous versions compared the raw memory disregarding the item format
          and the logical array structure.
 
-   .. method:: tobytes()
+   .. method:: tobytes(order=None)
 
       Return the data in the buffer as a bytestring.  This is equivalent to
       calling the :class:`bytes` constructor on the memoryview. ::
@@ -3572,6 +3618,13 @@ copying.
       representation with all elements converted to bytes. :meth:`tobytes`
       supports all format strings, including those that are not in
       :mod:`struct` module syntax.
+
+      .. versionadded:: 3.8
+         *Order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
+         of the original array is converted to C or Fortran order. For contiguous
+         views, 'A' returns an exact copy of the physical memory. In particular,
+         in-memory Fortran order is preserved. For non-contiguous views, the
+         data is converted to C first. *order=None* is the same as *order='C'*.
 
    .. method:: hex()
 
@@ -3762,7 +3815,7 @@ copying.
 
       ``nbytes == product(shape) * itemsize == len(m.tobytes())``. This is
       the amount of space in bytes that the array would use in a contiguous
-      representation. It is not necessarily equal to len(m)::
+      representation. It is not necessarily equal to ``len(m)``::
 
          >>> import array
          >>> a = array.array('i', [1,2,3,4,5])
@@ -3970,7 +4023,7 @@ The constructors for both classes work the same:
 
    .. method:: copy()
 
-      Return a new set with a shallow copy of *s*.
+      Return a shallow copy of the set.
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
@@ -4196,12 +4249,15 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return a shallow copy of the dictionary.
 
-   .. classmethod:: fromkeys(seq[, value])
+   .. classmethod:: fromkeys(iterable[, value])
 
-      Create a new dictionary with keys from *seq* and values set to *value*.
+      Create a new dictionary with keys from *iterable* and values set to *value*.
 
       :meth:`fromkeys` is a class method that returns a new dictionary. *value*
-      defaults to ``None``.
+      defaults to ``None``.  All of the values refer to just a single instance,
+      so it generally doesn't make sense for *value* to be a mutable object
+      such as an empty list.  To get distinct values, use a :ref:`dict
+      comprehension <dict>` instead.
 
    .. method:: get(key[, default])
 
@@ -4237,6 +4293,11 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       .. versionchanged:: 3.7
          LIFO order is now guaranteed. In prior versions, :meth:`popitem` would
          return an arbitrary key/value pair.
+
+   .. describe:: reversed(d)
+
+      Return a reverse iterator over the keys of the dictionary. This is a
+      shortcut for ``reversed(d.keys())``.
 
    .. method:: setdefault(key[, default])
 
@@ -4283,7 +4344,23 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    .. versionchanged:: 3.7
       Dictionary order is guaranteed to be insertion order.  This behavior was
-      implementation detail of CPython from 3.6.
+      an implementation detail of CPython from 3.6.
+
+   Dictionaries and dictionary views are reversible. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(reversed(d))
+      ['four', 'three', 'two', 'one']
+      >>> list(reversed(d.values()))
+      [4, 3, 2, 1]
+      >>> list(reversed(d.items()))
+      [('four', 4), ('three', 3), ('two', 2), ('one', 1)]
+
+   .. versionchanged:: 3.8
+      Dictionaries are now reversible.
+
 
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
@@ -4327,6 +4404,14 @@ support membership tests:
 
    Return ``True`` if *x* is in the underlying dictionary's keys, values or
    items (in the latter case, *x* should be a ``(key, value)`` tuple).
+
+.. describe:: reversed(dictview)
+
+   Return a reverse iterator over the keys, values or items of the dictionary.
+   The view will be iterated in reverse order of the insertion.
+
+   .. versionchanged:: 3.8
+      Dictionary views are now reversible.
 
 
 Keys views are set-like since their entries are unique and hashable.  If all
@@ -4388,7 +4473,7 @@ before the statement body is executed and exited when the statement ends:
 
    Enter the runtime context and return either this object or another object
    related to the runtime context. The value returned by this method is bound to
-   the identifier in the :keyword:`as` clause of :keyword:`with` statements using
+   the identifier in the :keyword:`!as` clause of :keyword:`with` statements using
    this context manager.
 
    An example of a context manager that returns itself is a :term:`file object`.
@@ -4400,7 +4485,7 @@ before the statement body is executed and exited when the statement ends:
    decimal context to a copy of the original decimal context and then return the
    copy. This allows changes to be made to the current decimal context in the body
    of the :keyword:`with` statement without affecting code outside the
-   :keyword:`with` statement.
+   :keyword:`!with` statement.
 
 
 .. method:: contextmanager.__exit__(exc_type, exc_val, exc_tb)
@@ -4412,10 +4497,10 @@ before the statement body is executed and exited when the statement ends:
 
    Returning a true value from this method will cause the :keyword:`with` statement
    to suppress the exception and continue execution with the statement immediately
-   following the :keyword:`with` statement. Otherwise the exception continues
+   following the :keyword:`!with` statement. Otherwise the exception continues
    propagating after this method has finished executing. Exceptions that occur
    during execution of this method will replace any exception that occurred in the
-   body of the :keyword:`with` statement.
+   body of the :keyword:`!with` statement.
 
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
@@ -4601,6 +4686,7 @@ supports no special operations.  There is exactly one null object, named
 It is written as ``None``.
 
 
+.. index:: single: ...; ellipsis literal
 .. _bltin-ellipsis-object:
 
 The Ellipsis Object
@@ -4735,4 +4821,3 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
-

@@ -51,7 +51,6 @@ __all__ = ['Trace', 'CoverageResults']
 
 import linecache
 import os
-import re
 import sys
 import token
 import tokenize
@@ -299,7 +298,7 @@ class CoverageResults:
         try:
             outfile = open(path, "w", encoding=encoding)
         except OSError as err:
-            print(("trace: Could not open %r for writing: %s"
+            print(("trace: Could not open %r for writing: %s "
                                   "- skipping" % (path, err)), file=sys.stderr)
             return 0, 0
 
@@ -452,7 +451,22 @@ class Trace:
                 sys.settrace(None)
                 threading.settrace(None)
 
-    def runfunc(self, func, *args, **kw):
+    def runfunc(*args, **kw):
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor 'runfunc' of 'Trace' object "
+                            "needs an argument")
+        elif 'func' in kw:
+            func = kw.pop('func')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'func' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('runfunc expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         result = None
         if not self.donothing:
             sys.settrace(self.globaltrace)
@@ -462,6 +476,7 @@ class Trace:
             if not self.donothing:
                 sys.settrace(None)
         return result
+    runfunc.__text_signature__ = '($self, func, /, *args, **kw)'
 
     def file_module_function_of(self, frame):
         code = frame.f_code
@@ -644,7 +659,7 @@ def main():
     grp = parser.add_argument_group('Filters',
             'Can be specified multiple times')
     grp.add_argument('--ignore-module', action='append', default=[],
-            help='Ignore the given module(s) and its submodules'
+            help='Ignore the given module(s) and its submodules '
                  '(if it is a package). Accepts comma separated list of '
                  'module names.')
     grp.add_argument('--ignore-dir', action='append', default=[],

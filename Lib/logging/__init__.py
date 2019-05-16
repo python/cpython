@@ -23,9 +23,11 @@ Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback, warnings, weakref, collections.abc
+import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 from string import Template
+from string import Formatter as StrFormatter
+
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -225,6 +227,44 @@ def _releaseLock():
     if _lock:
         _lock.release()
 
+
+# Prevent a held logging lock from blocking a child from logging.
+
+if not hasattr(os, 'register_at_fork'):  # Windows and friends.
+    def _register_at_fork_reinit_lock(instance):
+        pass  # no-op when os.register_at_fork does not exist.
+else:
+    # A collection of instances with a createLock method (logging.Handler)
+    # to be called in the child after forking.  The weakref avoids us keeping
+    # discarded Handler instances alive.  A set is used to avoid accumulating
+    # duplicate registrations as createLock() is responsible for registering
+    # a new Handler instance with this set in the first place.
+    _at_fork_reinit_lock_weakset = weakref.WeakSet()
+
+    def _register_at_fork_reinit_lock(instance):
+        _acquireLock()
+        try:
+            _at_fork_reinit_lock_weakset.add(instance)
+        finally:
+            _releaseLock()
+
+    def _after_at_fork_child_reinit_locks():
+        # _acquireLock() was called in the parent before forking.
+        for handler in _at_fork_reinit_lock_weakset:
+            try:
+                handler.createLock()
+            except Exception as err:
+                # Similar to what PyErr_WriteUnraisable does.
+                print("Ignoring exception from logging atfork", instance,
+                      "._reinit_lock() method:", err, file=sys.stderr)
+        _releaseLock()  # Acquired by os.register_at_fork(before=.
+
+
+    os.register_at_fork(before=_acquireLock,
+                        after_in_child=_after_at_fork_child_reinit_locks,
+                        after_in_parent=_releaseLock)
+
+
 #---------------------------------------------------------------------------
 #   The logging record
 #---------------------------------------------------------------------------
@@ -313,11 +353,9 @@ class LogRecord(object):
         else:
             self.process = None
 
-    def __str__(self):
+    def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
-
-    __repr__ = __str__
 
     def getMessage(self):
         """
@@ -364,15 +402,20 @@ def makeLogRecord(dict):
     rv.__dict__.update(dict)
     return rv
 
+
 #---------------------------------------------------------------------------
 #   Formatter classes and functions
 #---------------------------------------------------------------------------
+_str_formatter = StrFormatter()
+del StrFormatter
+
 
 class PercentStyle(object):
 
     default_format = '%(message)s'
     asctime_format = '%(asctime)s'
     asctime_search = '%(asctime)'
+    validation_pattern = re.compile(r'%\(\w+\)[#0+ -]*(\*|\d+)?(\.(\*|\d+))?[diouxefgcrsa%]', re.I)
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
@@ -380,16 +423,49 @@ class PercentStyle(object):
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
 
-    def format(self, record):
+    def validate(self):
+        """Validate the input format, ensure it matches the correct style"""
+        if not self.validation_pattern.search(self._fmt):
+            raise ValueError("Invalid format '%s' for '%s' style" % (self._fmt, self.default_format[0]))
+
+    def _format(self, record):
         return self._fmt % record.__dict__
+
+    def format(self, record):
+        try:
+            return self._format(record)
+        except KeyError as e:
+            raise ValueError('Formatting field not found in record: %s' % e)
+
 
 class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
 
-    def format(self, record):
+    fmt_spec = re.compile(r'^(.?[<>=^])?[+ -]?#?0?(\d+|{\w+})?[,_]?(\.(\d+|{\w+}))?[bcdefgnosx%]?$', re.I)
+    field_spec = re.compile(r'^(\d+|\w+)(\.\w+|\[[^]]+\])*$')
+
+    def _format(self, record):
         return self._fmt.format(**record.__dict__)
+
+    def validate(self):
+        """Validate the input format, ensure it is the correct string formatting style"""
+        fields = set()
+        try:
+            for _, fieldname, spec, conversion in _str_formatter.parse(self._fmt):
+                if fieldname:
+                    if not self.field_spec.match(fieldname):
+                        raise ValueError('invalid field name/expression: %r' % fieldname)
+                    fields.add(fieldname)
+                if conversion and conversion not in 'rsa':
+                    raise ValueError('invalid conversion: %r' % conversion)
+                if spec and not self.fmt_spec.match(spec):
+                    raise ValueError('bad specifier: %r' % spec)
+        except ValueError as e:
+            raise ValueError('invalid format: %s' % e)
+        if not fields:
+            raise ValueError('invalid format: no fields')
 
 
 class StringTemplateStyle(PercentStyle):
@@ -405,8 +481,23 @@ class StringTemplateStyle(PercentStyle):
         fmt = self._fmt
         return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
 
-    def format(self, record):
+    def validate(self):
+        pattern = Template.pattern
+        fields = set()
+        for m in pattern.finditer(self._fmt):
+            d = m.groupdict()
+            if d['named']:
+                fields.add(d['named'])
+            elif d['braced']:
+                fields.add(d['braced'])
+            elif m.group(0) == '$':
+                raise ValueError('invalid format: bare \'$\' not allowed')
+        if not fields:
+            raise ValueError('invalid format: no fields')
+
+    def _format(self, record):
         return self._tpl.substitute(**record.__dict__)
+
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
@@ -461,7 +552,7 @@ class Formatter(object):
 
     converter = time.localtime
 
-    def __init__(self, fmt=None, datefmt=None, style='%'):
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=True):
         """
         Initialize the formatter with specified format strings.
 
@@ -481,6 +572,9 @@ class Formatter(object):
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
         self._style = _STYLES[style][0](fmt)
+        if validate:
+            self._style.validate()
+
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
@@ -795,6 +889,7 @@ class Handler(Filterer):
         Acquire a thread lock for serializing access to the underlying I/O.
         """
         self.lock = threading.RLock()
+        _register_at_fork_reinit_lock(self)
 
     def acquire(self):
         """
@@ -924,6 +1019,8 @@ class Handler(Filterer):
                     sys.stderr.write('Message: %r\n'
                                      'Arguments: %s\n' % (record.msg,
                                                           record.args))
+                except RecursionError:  # See issue 36272
+                    raise
                 except Exception:
                     sys.stderr.write('Unable to print the message and arguments'
                                      ' - possible formatting error.\nUse the'
@@ -983,9 +1080,11 @@ class StreamHandler(Handler):
         try:
             msg = self.format(record)
             stream = self.stream
-            stream.write(msg)
-            stream.write(self.terminator)
+            # issue 35046: merged two stream.writes into one.
+            stream.write(msg + self.terminator)
             self.flush()
+        except RecursionError:  # See issue 36272
+            raise
         except Exception:
             self.handleError(record)
 
@@ -1012,6 +1111,8 @@ class StreamHandler(Handler):
     def __repr__(self):
         level = getLevelName(self.level)
         name = getattr(self.stream, 'name', '')
+        #  bpo-36015: name can be an int
+        name = str(name)
         if name:
             name += ' '
         return '<%s %s(%s)>' % (self.__class__.__name__, name, level)

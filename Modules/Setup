@@ -101,38 +101,37 @@ PYTHONPATH=$(COREPYTHONPATH)
 # This only contains the minimal set of modules required to run the
 # setup.py script in the root of the Python source tree.
 
-posix -DPy_BUILD_CORE posixmodule.c	# posix (UNIX) system calls
+posix -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal posixmodule.c # posix (UNIX) system calls
 errno errnomodule.c			# posix (UNIX) errno values
 pwd pwdmodule.c				# this is needed to find out the user's home dir
 					# if $HOME is not set
 _sre _sre.c				# Fredrik Lundh's new regular expressions
 _codecs _codecsmodule.c			# access to the builtin codecs and codec registry
 _weakref _weakref.c			# weak references
-_functools -DPy_BUILD_CORE _functoolsmodule.c   # Tools for working with functions and callable objects
+_functools -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _functoolsmodule.c   # Tools for working with functions and callable objects
 _operator _operator.c	        	# operator.add() and similar goodies
 _collections _collectionsmodule.c	# Container types
 _abc _abc.c				# Abstract base classes
 itertools itertoolsmodule.c		# Functions creating iterators for efficient looping
 atexit atexitmodule.c			# Register functions to be run at interpreter-shutdown
-_signal -DPy_BUILD_CORE signalmodule.c
+_signal -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal signalmodule.c
 _stat _stat.c				# stat.h interface
-time -DPy_BUILD_CORE timemodule.c	# -lm # time operations and variables
-_thread -DPy_BUILD_CORE _threadmodule.c	# low-level threading interface
+time -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal timemodule.c	# -lm # time operations and variables
+_thread -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _threadmodule.c	# low-level threading interface
 
 # access to ISO C locale support
-_locale _localemodule.c  # -lintl
+_locale -DPy_BUILD_CORE_BUILTIN _localemodule.c  # -lintl
 
 # Standard I/O baseline
-_io -DPy_BUILD_CORE -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
-
-# The zipimport module is always imported at startup. Having it as a
-# builtin module avoids some bootstrapping problems and reduces overhead.
-zipimport -DPy_BUILD_CORE zipimport.c
+_io -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
 
 # faulthandler module
 faulthandler faulthandler.c
 
 # debug tool to trace memory blocks allocated by Python
+#
+# bpo-35053: The module must be builtin since _Py_NewReference()
+# can call _PyTraceMalloc_NewReference().
 _tracemalloc _tracemalloc.c hashtable.c
 
 # The rest of the modules listed in this file are all commented out by
@@ -174,6 +173,7 @@ _symtable symtablemodule.c
 #_struct _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
+#_testinternalcapi _testinternalcapi.c -I$(srcdir)/Include/internal -DPy_BUILD_CORE_MODULE  # Python internal C API test module
 #_random _randommodule.c	# Random number generator
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
@@ -181,6 +181,7 @@ _symtable symtablemodule.c
 #_bisect _bisectmodule.c	# Bisection algorithms
 #_heapq _heapqmodule.c	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future
+#_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
 
 #unicodedata unicodedata.c    # static Unicode character database
 
@@ -335,17 +336,9 @@ _symtable symtablemodule.c
 #zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
 
 # Interface to the Expat XML parser
-#
-# Expat was written by James Clark and is now maintained by a group of
-# developers on SourceForge; see www.libexpat.org for more
-# information.  The pyexpat module was written by Paul Prescod after a
-# prototype by Jack Jansen.  Source of Expat 1.95.2 is included in
-# Modules/expat/.  Usage of a system shared libexpat.so/expat.dll is
-# not advised.
-#
 # More information on Expat can be found at www.libexpat.org.
 #
-#pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI
+#pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DXML_POOR_ENTROPY=1 -DUSE_PYEXPAT_CAPI
 
 # Hye-Shik Chang's CJKCodecs
 

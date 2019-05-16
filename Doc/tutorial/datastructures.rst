@@ -41,7 +41,7 @@ objects:
    :noindex:
 
    Remove the first item from the list whose value is equal to *x*.  It raises a
-   ``ValueError`` if there is no such item.
+   :exc:`ValueError` if there is no such item.
 
 
 .. method:: list.pop([i])
@@ -216,9 +216,9 @@ or, equivalently::
 which is more concise and readable.
 
 A list comprehension consists of brackets containing an expression followed
-by a :keyword:`for` clause, then zero or more :keyword:`for` or :keyword:`if`
+by a :keyword:`!for` clause, then zero or more :keyword:`!for` or :keyword:`!if`
 clauses.  The result will be a new list resulting from evaluating the expression
-in the context of the :keyword:`for` and :keyword:`if` clauses which follow it.
+in the context of the :keyword:`!for` and :keyword:`!if` clauses which follow it.
 For example, this listcomp combines the elements of two lists if they are not
 equal::
 
@@ -330,12 +330,12 @@ See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
 
 .. _tut-del:
 
-The :keyword:`del` statement
-============================
+The :keyword:`!del` statement
+=============================
 
 There is a way to remove an item from a list given its index instead of its
 value: the :keyword:`del` statement.  This differs from the :meth:`pop` method
-which returns a value.  The :keyword:`del` statement can also be used to remove
+which returns a value.  The :keyword:`!del` statement can also be used to remove
 slices from a list or clear the entire list (which we did earlier by assignment
 of an empty list to the slice).  For example::
 
@@ -678,18 +678,17 @@ intended.
 
 Comparing Sequences and Other Types
 ===================================
-
-Sequence objects may be compared to other objects with the same sequence type.
-The comparison uses *lexicographical* ordering: first the first two items are
-compared, and if they differ this determines the outcome of the comparison; if
-they are equal, the next two items are compared, and so on, until either
-sequence is exhausted. If two items to be compared are themselves sequences of
-the same type, the lexicographical comparison is carried out recursively.  If
-all items of two sequences compare equal, the sequences are considered equal.
-If one sequence is an initial sub-sequence of the other, the shorter sequence is
-the smaller (lesser) one.  Lexicographical ordering for strings uses the Unicode
-code point number to order individual characters.  Some examples of comparisons
-between sequences of the same type::
+Sequence objects typically may be compared to other objects with the same sequence
+type. The comparison uses *lexicographical* ordering: first the first two
+items are compared, and if they differ this determines the outcome of the
+comparison; if they are equal, the next two items are compared, and so on, until
+either sequence is exhausted. If two items to be compared are themselves
+sequences of the same type, the lexicographical comparison is carried out
+recursively.  If all items of two sequences compare equal, the sequences are
+considered equal. If one sequence is an initial sub-sequence of the other, the
+shorter sequence is the smaller (lesser) one.  Lexicographical ordering for
+strings uses the Unicode code point number to order individual characters.
+Some examples of comparisons between sequences of the same type::
 
    (1, 2, 3)              < (1, 2, 4)
    [1, 2, 3]              < [1, 2, 4]

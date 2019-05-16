@@ -137,12 +137,6 @@ def stripid(text):
     # The behaviour of %p is implementation-dependent in terms of case.
     return _re_stripid.sub(r'\1', text)
 
-def _is_some_method(obj):
-    return (inspect.isfunction(obj) or
-            inspect.ismethod(obj) or
-            inspect.isbuiltin(obj) or
-            inspect.ismethoddescriptor(obj))
-
 def _is_bound_method(fn):
     """
     Returns True if fn is a bound method, regardless of whether
@@ -158,7 +152,7 @@ def _is_bound_method(fn):
 
 def allmethods(cl):
     methods = {}
-    for key, value in inspect.getmembers(cl, _is_some_method):
+    for key, value in inspect.getmembers(cl, inspect.isroutine):
         methods[key] = 1
     for base in cl.__bases__:
         methods.update(allmethods(base)) # all your base are belong to us
@@ -209,6 +203,8 @@ def classify_class_attrs(object):
     for (name, kind, cls, value) in inspect.classify_class_attrs(object):
         if inspect.isdatadescriptor(value):
             kind = 'data descriptor'
+            if isinstance(value, property) and value.fset is None:
+                kind = 'readonly property'
         results.append((name, kind, cls, value))
     return results
 
@@ -379,15 +375,13 @@ class Doc:
         # identifies something in a way that pydoc itself has issues handling;
         # think 'super' and how it is a descriptor (which raises the exception
         # by lacking a __name__ attribute) and an instance.
-        if inspect.isgetsetdescriptor(object): return self.docdata(*args)
-        if inspect.ismemberdescriptor(object): return self.docdata(*args)
         try:
             if inspect.ismodule(object): return self.docmodule(*args)
             if inspect.isclass(object): return self.docclass(*args)
             if inspect.isroutine(object): return self.docroutine(*args)
         except AttributeError:
             pass
-        if isinstance(object, property): return self.docproperty(*args)
+        if inspect.isdatadescriptor(object): return self.docdata(*args)
         return self.docother(*args)
 
     def fail(self, object, name=None, *args):
@@ -809,7 +803,7 @@ class HTMLDoc(Doc):
                     except Exception:
                         # Some descriptors may meet a failure in their __get__.
                         # (bug #1785)
-                        push(self._docdescriptor(name, value, mod))
+                        push(self.docdata(value, name, mod))
                     else:
                         push(self.document(value, name, mod,
                                         funcs, classes, mdict, object))
@@ -822,7 +816,7 @@ class HTMLDoc(Doc):
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(self._docdescriptor(name, value, mod))
+                    push(self.docdata(value, name, mod))
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -892,6 +886,8 @@ class HTMLDoc(Doc):
                           lambda t: t[1] == 'class method')
             attrs = spill('Static methods %s' % tag, attrs,
                           lambda t: t[1] == 'static method')
+            attrs = spilldescriptors("Readonly properties %s" % tag, attrs,
+                                     lambda t: t[1] == 'readonly property')
             attrs = spilldescriptors('Data descriptors %s' % tag, attrs,
                                      lambda t: t[1] == 'data descriptor')
             attrs = spilldata('Data and other attributes %s' % tag, attrs,
@@ -958,8 +954,7 @@ class HTMLDoc(Doc):
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
-            if (cl and realname in cl.__dict__ and
-                cl.__dict__[realname] is object):
+            if cl and inspect.getattr_static(cl, realname, []) is object:
                 reallink = '<a href="#%s">%s</a>' % (
                     cl.__name__ + '-' + realname, realname)
                 skipdocs = 1
@@ -995,31 +990,26 @@ class HTMLDoc(Doc):
             doc = doc and '<dd><tt>%s</tt></dd>' % doc
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
-    def _docdescriptor(self, name, value, mod):
+    def docdata(self, object, name=None, mod=None, cl=None):
+        """Produce html documentation for a data descriptor."""
         results = []
         push = results.append
 
         if name:
             push('<dl><dt><strong>%s</strong></dt>\n' % name)
-        if value.__doc__ is not None:
-            doc = self.markup(getdoc(value), self.preformat)
+        doc = self.markup(getdoc(object), self.preformat)
+        if doc:
             push('<dd><tt>%s</tt></dd>\n' % doc)
         push('</dl>\n')
 
         return ''.join(results)
 
-    def docproperty(self, object, name=None, mod=None, cl=None):
-        """Produce html documentation for a property."""
-        return self._docdescriptor(name, object, mod)
+    docproperty = docdata
 
     def docother(self, object, name=None, mod=None, *ignored):
         """Produce HTML documentation for a data object."""
         lhs = name and '<strong>%s</strong> = ' % name or ''
         return lhs + self.repr(object)
-
-    def docdata(self, object, name=None, mod=None, cl=None):
-        """Produce html documentation for a data descriptor."""
-        return self._docdescriptor(name, object, mod)
 
     def index(self, dir, shadowed=None):
         """Generate an HTML index for a directory of modules."""
@@ -1254,6 +1244,24 @@ location listed above.
                 push('    ' + makename(base))
             push('')
 
+        # List the built-in subclasses, if any:
+        subclasses = sorted(
+            (str(cls.__name__) for cls in type.__subclasses__(object)
+             if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+            key=str.lower
+        )
+        no_of_subclasses = len(subclasses)
+        MAX_SUBCLASSES_TO_DISPLAY = 4
+        if subclasses:
+            push("Built-in subclasses:")
+            for subclassname in subclasses[:MAX_SUBCLASSES_TO_DISPLAY]:
+                push('    ' + subclassname)
+            if no_of_subclasses > MAX_SUBCLASSES_TO_DISPLAY:
+                push('    ... and ' +
+                     str(no_of_subclasses - MAX_SUBCLASSES_TO_DISPLAY) +
+                     ' other subclasses')
+            push('')
+
         # Cute little class to pump out a horizontal rule between sections.
         class HorizontalRule:
             def __init__(self):
@@ -1275,7 +1283,7 @@ location listed above.
                     except Exception:
                         # Some descriptors may meet a failure in their __get__.
                         # (bug #1785)
-                        push(self._docdescriptor(name, value, mod))
+                        push(self.docdata(value, name, mod))
                     else:
                         push(self.document(value,
                                         name, mod, object))
@@ -1287,7 +1295,7 @@ location listed above.
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(self._docdescriptor(name, value, mod))
+                    push(self.docdata(value, name, mod))
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -1337,6 +1345,8 @@ location listed above.
                           lambda t: t[1] == 'class method')
             attrs = spill("Static methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'static method')
+            attrs = spilldescriptors("Readonly properties %s:\n" % tag, attrs,
+                                     lambda t: t[1] == 'readonly property')
             attrs = spilldescriptors("Data descriptors %s:\n" % tag, attrs,
                                      lambda t: t[1] == 'data descriptor')
             attrs = spilldata("Data and other attributes %s:\n" % tag, attrs,
@@ -1375,8 +1385,7 @@ location listed above.
         if name == realname:
             title = self.bold(realname)
         else:
-            if (cl and realname in cl.__dict__ and
-                cl.__dict__[realname] is object):
+            if cl and inspect.getattr_static(cl, realname, []) is object:
                 skipdocs = 1
             title = self.bold(name) + ' = ' + realname
         argspec = None
@@ -1404,26 +1413,21 @@ location listed above.
             doc = getdoc(object) or ''
             return decl + '\n' + (doc and self.indent(doc).rstrip() + '\n')
 
-    def _docdescriptor(self, name, value, mod):
+    def docdata(self, object, name=None, mod=None, cl=None):
+        """Produce text documentation for a data descriptor."""
         results = []
         push = results.append
 
         if name:
             push(self.bold(name))
             push('\n')
-        doc = getdoc(value) or ''
+        doc = getdoc(object) or ''
         if doc:
             push(self.indent(doc))
             push('\n')
         return ''.join(results)
 
-    def docproperty(self, object, name=None, mod=None, cl=None):
-        """Produce text documentation for a property."""
-        return self._docdescriptor(name, object, mod)
-
-    def docdata(self, object, name=None, mod=None, cl=None):
-        """Produce text documentation for a data descriptor."""
-        return self._docdescriptor(name, object, mod)
+    docproperty = docdata
 
     def docother(self, object, name=None, mod=None, parent=None, maxlen=None, doc=None):
         """Produce text documentation for a data object."""
@@ -1657,9 +1661,7 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     if not (inspect.ismodule(object) or
               inspect.isclass(object) or
               inspect.isroutine(object) or
-              inspect.isgetsetdescriptor(object) or
-              inspect.ismemberdescriptor(object) or
-              isinstance(object, property)):
+              inspect.isdatadescriptor(object)):
         # If the passed object is a piece of data or an instance,
         # document its available methods instead of its value.
         object = type(object)
@@ -2215,14 +2217,14 @@ def _start_server(urlhandler, hostname, port):
         Let the server do its thing. We just need to monitor its status.
         Use time.sleep so the loop doesn't hog the CPU.
 
-        >>> starttime = time.time()
+        >>> starttime = time.monotonic()
         >>> timeout = 1                    #seconds
 
         This is a short timeout for testing purposes.
 
         >>> while serverthread.serving:
         ...     time.sleep(.01)
-        ...     if serverthread.serving and time.time() - starttime > timeout:
+        ...     if serverthread.serving and time.monotonic() - starttime > timeout:
         ...          serverthread.stop()
         ...          break
 

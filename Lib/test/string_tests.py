@@ -977,7 +977,7 @@ class CommonTest(BaseTest):
     def test_capitalize_nonascii(self):
         # check that titlecased chars are lowered correctly
         # \u1ffc is the titlecased char
-        self.checkequal('\u03a9\u0399\u1ff3\u1ff3\u1ff3',
+        self.checkequal('\u1ffc\u1ff3\u1ff3\u1ff3',
                         '\u1ff3\u1ff3\u1ffc\u1ffc', 'capitalize')
         # check with cased non-letter chars
         self.checkequal('\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',

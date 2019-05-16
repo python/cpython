@@ -316,10 +316,9 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         self._closed = True
         self._ssl_protocol._start_shutdown()
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if not self._closed:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self.close()
 
     def is_reading(self):
@@ -499,7 +498,11 @@ class SSLProtocol(protocols.Protocol):
                 self._app_transport._closed = True
         self._transport = None
         self._app_transport = None
+        if getattr(self, '_handshake_timeout_handle', None):
+            self._handshake_timeout_handle.cancel()
         self._wakeup_waiter(exc)
+        self._app_protocol = None
+        self._sslpipe = None
 
     def pause_writing(self):
         """Called when the low-level transport's buffer goes over

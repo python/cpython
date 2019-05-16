@@ -10,6 +10,7 @@ module _asyncio
 
 /* identifiers used from some functions */
 _Py_IDENTIFIER(__asyncio_running_event_loop__);
+_Py_IDENTIFIER(_asyncio_future_blocking);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(_all_tasks_compat);
 _Py_IDENTIFIER(call_soon);
@@ -22,7 +23,6 @@ _Py_IDENTIFIER(throw);
 
 /* State of the _asyncio module */
 static PyObject *asyncio_mod;
-static PyObject *inspect_isgenerator;
 static PyObject *traceback_extract_stack;
 static PyObject *asyncio_get_event_loop_policy;
 static PyObject *asyncio_future_repr_info_func;
@@ -61,7 +61,7 @@ typedef enum {
     PyObject_HEAD                                                           \
     PyObject *prefix##_loop;                                                \
     PyObject *prefix##_callback0;                                           \
-    PyContext *prefix##_context0;                                           \
+    PyObject *prefix##_context0;                                            \
     PyObject *prefix##_callbacks;                                           \
     PyObject *prefix##_exception;                                           \
     PyObject *prefix##_result;                                              \
@@ -81,7 +81,7 @@ typedef struct {
     PyObject *task_fut_waiter;
     PyObject *task_coro;
     PyObject *task_name;
-    PyContext *task_context;
+    PyObject *task_context;
     int task_must_cancel;
     int task_log_destroy_pending;
 } TaskObj;
@@ -340,7 +340,7 @@ get_event_loop(void)
 
 
 static int
-call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyContext *ctx)
+call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
 {
     PyObject *handle;
     PyObject *stack[3];
@@ -451,7 +451,7 @@ future_schedule_callbacks(FutureObj *fut)
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
 
-        if (call_soon(fut->fut_loop, cb, (PyObject *)fut, (PyContext *)ctx)) {
+        if (call_soon(fut->fut_loop, cb, (PyObject *)fut, ctx)) {
             /* If an error occurs in pure-Python implementation,
                all callbacks are cleared. */
             Py_CLEAR(fut->fut_callbacks);
@@ -619,7 +619,7 @@ future_get_result(FutureObj *fut, PyObject **result)
 }
 
 static PyObject *
-future_add_done_callback(FutureObj *fut, PyObject *arg, PyContext *ctx)
+future_add_done_callback(FutureObj *fut, PyObject *arg, PyObject *ctx)
 {
     if (!future_is_alive(fut)) {
         PyErr_SetString(PyExc_RuntimeError, "uninitialized Future object");
@@ -906,16 +906,15 @@ _asyncio_Future_add_done_callback_impl(FutureObj *self, PyObject *fn,
 /*[clinic end generated code: output=7ce635bbc9554c1e input=15ab0693a96e9533]*/
 {
     if (context == NULL) {
-        context = (PyObject *)PyContext_CopyCurrent();
+        context = PyContext_CopyCurrent();
         if (context == NULL) {
             return NULL;
         }
-        PyObject *res = future_add_done_callback(
-            self, fn, (PyContext *)context);
+        PyObject *res = future_add_done_callback(self, fn, context);
         Py_DECREF(context);
         return res;
     }
-    return future_add_done_callback(self, fn, (PyContext *)context);
+    return future_add_done_callback(self, fn, context);
 }
 
 /*[clinic input]
@@ -1098,7 +1097,7 @@ _asyncio_Future_get_loop_impl(FutureObj *self)
 }
 
 static PyObject *
-FutureObj_get_blocking(FutureObj *fut)
+FutureObj_get_blocking(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     if (future_is_alive(fut) && fut->fut_blocking) {
         Py_RETURN_TRUE;
@@ -1109,9 +1108,13 @@ FutureObj_get_blocking(FutureObj *fut)
 }
 
 static int
-FutureObj_set_blocking(FutureObj *fut, PyObject *val)
+FutureObj_set_blocking(FutureObj *fut, PyObject *val, void *Py_UNUSED(ignored))
 {
     if (future_ensure_alive(fut)) {
+        return -1;
+    }
+    if (val == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
 
@@ -1124,7 +1127,7 @@ FutureObj_set_blocking(FutureObj *fut, PyObject *val)
 }
 
 static PyObject *
-FutureObj_get_log_traceback(FutureObj *fut)
+FutureObj_get_log_traceback(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     ENSURE_FUTURE_ALIVE(fut)
     if (fut->fut_log_tb) {
@@ -1136,8 +1139,12 @@ FutureObj_get_log_traceback(FutureObj *fut)
 }
 
 static int
-FutureObj_set_log_traceback(FutureObj *fut, PyObject *val)
+FutureObj_set_log_traceback(FutureObj *fut, PyObject *val, void *Py_UNUSED(ignored))
 {
+    if (val == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     int is_true = PyObject_IsTrue(val);
     if (is_true < 0) {
         return -1;
@@ -1152,7 +1159,7 @@ FutureObj_set_log_traceback(FutureObj *fut, PyObject *val)
 }
 
 static PyObject *
-FutureObj_get_loop(FutureObj *fut)
+FutureObj_get_loop(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     if (!future_is_alive(fut)) {
         Py_RETURN_NONE;
@@ -1162,7 +1169,7 @@ FutureObj_get_loop(FutureObj *fut)
 }
 
 static PyObject *
-FutureObj_get_callbacks(FutureObj *fut)
+FutureObj_get_callbacks(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     Py_ssize_t i;
 
@@ -1214,7 +1221,7 @@ FutureObj_get_callbacks(FutureObj *fut)
 }
 
 static PyObject *
-FutureObj_get_result(FutureObj *fut)
+FutureObj_get_result(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     ENSURE_FUTURE_ALIVE(fut)
     if (fut->fut_result == NULL) {
@@ -1225,7 +1232,7 @@ FutureObj_get_result(FutureObj *fut)
 }
 
 static PyObject *
-FutureObj_get_exception(FutureObj *fut)
+FutureObj_get_exception(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     ENSURE_FUTURE_ALIVE(fut)
     if (fut->fut_exception == NULL) {
@@ -1236,7 +1243,7 @@ FutureObj_get_exception(FutureObj *fut)
 }
 
 static PyObject *
-FutureObj_get_source_traceback(FutureObj *fut)
+FutureObj_get_source_traceback(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     if (!future_is_alive(fut) || fut->fut_source_tb == NULL) {
         Py_RETURN_NONE;
@@ -1246,7 +1253,7 @@ FutureObj_get_source_traceback(FutureObj *fut)
 }
 
 static PyObject *
-FutureObj_get_state(FutureObj *fut)
+FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     _Py_IDENTIFIER(PENDING);
     _Py_IDENTIFIER(CANCELLED);
@@ -1304,13 +1311,8 @@ FutureObj_repr(FutureObj *fut)
         return NULL;
     }
 
-    PyObject *rstr = NULL;
-    PyObject *type_name = PyObject_GetAttrString((PyObject*)Py_TYPE(fut),
-                                                 "__name__");
-    if (type_name != NULL) {
-        rstr = PyUnicode_FromFormat("<%S %U>", type_name, rinfo_s);
-        Py_DECREF(type_name);
-    }
+    PyObject *rstr = PyUnicode_FromFormat("<%s %U>",
+                                          _PyType_Name(Py_TYPE(fut)), rinfo_s);
     Py_DECREF(rinfo_s);
     return rstr;
 }
@@ -1326,7 +1328,6 @@ FutureObj_finalize(FutureObj *fut)
 
     PyObject *error_type, *error_value, *error_traceback;
     PyObject *context;
-    PyObject *type_name;
     PyObject *message = NULL;
     PyObject *func;
 
@@ -1344,14 +1345,8 @@ FutureObj_finalize(FutureObj *fut)
         goto finally;
     }
 
-    type_name = PyObject_GetAttrString((PyObject*)Py_TYPE(fut), "__name__");
-    if (type_name == NULL) {
-        goto finally;
-    }
-
     message = PyUnicode_FromFormat(
-        "%S exception was never retrieved", type_name);
-    Py_DECREF(type_name);
+        "%s exception was never retrieved", _PyType_Name(Py_TYPE(fut)));
     if (message == NULL) {
         goto finally;
     }
@@ -1543,7 +1538,7 @@ static PyObject *
 FutureIter_send(futureiterobject *self, PyObject *unused)
 {
     /* Future.__iter__ doesn't care about values that are pushed to the
-     * generator, it just returns "self.result().
+     * generator, it just returns self.result().
      */
     return FutureIter_iternext(self);
 }
@@ -1727,7 +1722,7 @@ TaskStepMethWrapper_traverse(TaskStepMethWrapper *o,
 }
 
 static PyObject *
-TaskStepMethWrapper_get___self__(TaskStepMethWrapper *o)
+TaskStepMethWrapper_get___self__(TaskStepMethWrapper *o, void *Py_UNUSED(ignored))
 {
     if (o->sw_task) {
         Py_INCREF(o->sw_task);
@@ -2015,7 +2010,7 @@ TaskObj_traverse(TaskObj *task, visitproc visit, void *arg)
 }
 
 static PyObject *
-TaskObj_get_log_destroy_pending(TaskObj *task)
+TaskObj_get_log_destroy_pending(TaskObj *task, void *Py_UNUSED(ignored))
 {
     if (task->task_log_destroy_pending) {
         Py_RETURN_TRUE;
@@ -2026,8 +2021,12 @@ TaskObj_get_log_destroy_pending(TaskObj *task)
 }
 
 static int
-TaskObj_set_log_destroy_pending(TaskObj *task, PyObject *val)
+TaskObj_set_log_destroy_pending(TaskObj *task, PyObject *val, void *Py_UNUSED(ignored))
 {
+    if (val == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     int is_true = PyObject_IsTrue(val);
     if (is_true < 0) {
         return -1;
@@ -2037,7 +2036,7 @@ TaskObj_set_log_destroy_pending(TaskObj *task, PyObject *val)
 }
 
 static PyObject *
-TaskObj_get_must_cancel(TaskObj *task)
+TaskObj_get_must_cancel(TaskObj *task, void *Py_UNUSED(ignored))
 {
     if (task->task_must_cancel) {
         Py_RETURN_TRUE;
@@ -2048,7 +2047,7 @@ TaskObj_get_must_cancel(TaskObj *task)
 }
 
 static PyObject *
-TaskObj_get_coro(TaskObj *task)
+TaskObj_get_coro(TaskObj *task, void *Py_UNUSED(ignored))
 {
     if (task->task_coro) {
         Py_INCREF(task->task_coro);
@@ -2059,7 +2058,7 @@ TaskObj_get_coro(TaskObj *task)
 }
 
 static PyObject *
-TaskObj_get_fut_waiter(TaskObj *task)
+TaskObj_get_fut_waiter(TaskObj *task, void *Py_UNUSED(ignored))
 {
     if (task->task_fut_waiter) {
         Py_INCREF(task->task_fut_waiter);
@@ -2089,7 +2088,7 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
     PyObject *ret;
     PyObject *current_task_func;
 
-    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "Task.current_task() is deprecated, " \
                      "use asyncio.current_task() instead",
                      1) < 0) {
@@ -2137,7 +2136,7 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
     PyObject *res;
     PyObject *all_tasks_func;
 
-    if (PyErr_WarnEx(PyExc_PendingDeprecationWarning,
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "Task.all_tasks() is deprecated, " \
                      "use asyncio.all_tasks() instead",
                      1) < 0) {
@@ -2702,139 +2701,46 @@ set_exception:
             goto different_loop;
         }
 
-        if (fut->fut_blocking) {
-            fut->fut_blocking = 0;
-
-            /* result.add_done_callback(task._wakeup) */
-            wrapper = TaskWakeupMethWrapper_new(task);
-            if (wrapper == NULL) {
-                goto fail;
-            }
-            res = future_add_done_callback(
-                (FutureObj*)result, wrapper, task->task_context);
-            Py_DECREF(wrapper);
-            if (res == NULL) {
-                goto fail;
-            }
-            Py_DECREF(res);
-
-            /* task._fut_waiter = result */
-            task->task_fut_waiter = result;  /* no incref is necessary */
-
-            if (task->task_must_cancel) {
-                PyObject *r;
-                r = future_cancel(fut);
-                if (r == NULL) {
-                    return NULL;
-                }
-                if (r == Py_True) {
-                    task->task_must_cancel = 0;
-                }
-                Py_DECREF(r);
-            }
-
-            Py_RETURN_NONE;
-        }
-        else {
+        if (!fut->fut_blocking) {
             goto yield_insteadof_yf;
         }
-    }
 
-    /* Check if `result` is a Future-compatible object */
-    o = PyObject_GetAttrString(result, "_asyncio_future_blocking");
-    if (o == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
-        else {
+        fut->fut_blocking = 0;
+
+        /* result.add_done_callback(task._wakeup) */
+        wrapper = TaskWakeupMethWrapper_new(task);
+        if (wrapper == NULL) {
             goto fail;
         }
-    }
-    else {
-        if (o == Py_None) {
-            Py_DECREF(o);
+        res = future_add_done_callback(
+            (FutureObj*)result, wrapper, task->task_context);
+        Py_DECREF(wrapper);
+        if (res == NULL) {
+            goto fail;
         }
-        else {
-            /* `result` is a Future-compatible object */
-            PyObject *wrapper;
-            PyObject *res;
+        Py_DECREF(res);
 
-            int blocking = PyObject_IsTrue(o);
-            Py_DECREF(o);
-            if (blocking < 0) {
-                goto fail;
+        /* task._fut_waiter = result */
+        task->task_fut_waiter = result;  /* no incref is necessary */
+
+        if (task->task_must_cancel) {
+            PyObject *r;
+            int is_true;
+            r = _PyObject_CallMethodId(result, &PyId_cancel, NULL);
+            if (r == NULL) {
+                return NULL;
             }
-
-            /* Check if `result` future is attached to a different loop */
-            PyObject *oloop = get_future_loop(result);
-            if (oloop == NULL) {
-                goto fail;
+            is_true = PyObject_IsTrue(r);
+            Py_DECREF(r);
+            if (is_true < 0) {
+                return NULL;
             }
-            if (oloop != task->task_loop) {
-                Py_DECREF(oloop);
-                goto different_loop;
-            }
-            else {
-                Py_DECREF(oloop);
-            }
-
-            if (blocking) {
-                /* result._asyncio_future_blocking = False */
-                if (PyObject_SetAttrString(
-                        result, "_asyncio_future_blocking", Py_False) == -1) {
-                    goto fail;
-                }
-
-                wrapper = TaskWakeupMethWrapper_new(task);
-                if (wrapper == NULL) {
-                    goto fail;
-                }
-
-                /* result.add_done_callback(task._wakeup) */
-                PyObject *add_cb = _PyObject_GetAttrId(
-                    result, &PyId_add_done_callback);
-                if (add_cb == NULL) {
-                    Py_DECREF(wrapper);
-                    goto fail;
-                }
-                PyObject *stack[2];
-                stack[0] = wrapper;
-                stack[1] = (PyObject *)task->task_context;
-                res = _PyObject_FastCallKeywords(
-                    add_cb, stack, 1, context_kwname);
-                Py_DECREF(add_cb);
-                Py_DECREF(wrapper);
-                if (res == NULL) {
-                    goto fail;
-                }
-                Py_DECREF(res);
-
-                /* task._fut_waiter = result */
-                task->task_fut_waiter = result;  /* no incref is necessary */
-
-                if (task->task_must_cancel) {
-                    PyObject *r;
-                    int is_true;
-                    r = _PyObject_CallMethodId(result, &PyId_cancel, NULL);
-                    if (r == NULL) {
-                        return NULL;
-                    }
-                    is_true = PyObject_IsTrue(r);
-                    Py_DECREF(r);
-                    if (is_true < 0) {
-                        return NULL;
-                    }
-                    else if (is_true) {
-                        task->task_must_cancel = 0;
-                    }
-                }
-
-                Py_RETURN_NONE;
-            }
-            else {
-                goto yield_insteadof_yf;
+            else if (is_true) {
+                task->task_must_cancel = 0;
             }
         }
+
+        Py_RETURN_NONE;
     }
 
     /* Check if `result` is None */
@@ -2846,19 +2752,96 @@ set_exception:
         return result;
     }
 
+    /* Check if `result` is a Future-compatible object */
+    if (_PyObject_LookupAttrId(result, &PyId__asyncio_future_blocking, &o) < 0) {
+        goto fail;
+    }
+    if (o != NULL && o != Py_None) {
+        /* `result` is a Future-compatible object */
+        PyObject *wrapper;
+        PyObject *res;
+
+        int blocking = PyObject_IsTrue(o);
+        Py_DECREF(o);
+        if (blocking < 0) {
+            goto fail;
+        }
+
+        /* Check if `result` future is attached to a different loop */
+        PyObject *oloop = get_future_loop(result);
+        if (oloop == NULL) {
+            goto fail;
+        }
+        if (oloop != task->task_loop) {
+            Py_DECREF(oloop);
+            goto different_loop;
+        }
+        Py_DECREF(oloop);
+
+        if (!blocking) {
+            goto yield_insteadof_yf;
+        }
+
+        /* result._asyncio_future_blocking = False */
+        if (_PyObject_SetAttrId(
+                result, &PyId__asyncio_future_blocking, Py_False) == -1) {
+            goto fail;
+        }
+
+        wrapper = TaskWakeupMethWrapper_new(task);
+        if (wrapper == NULL) {
+            goto fail;
+        }
+
+        /* result.add_done_callback(task._wakeup) */
+        PyObject *add_cb = _PyObject_GetAttrId(
+            result, &PyId_add_done_callback);
+        if (add_cb == NULL) {
+            Py_DECREF(wrapper);
+            goto fail;
+        }
+        PyObject *stack[2];
+        stack[0] = wrapper;
+        stack[1] = (PyObject *)task->task_context;
+        res = _PyObject_FastCallKeywords(
+            add_cb, stack, 1, context_kwname);
+        Py_DECREF(add_cb);
+        Py_DECREF(wrapper);
+        if (res == NULL) {
+            goto fail;
+        }
+        Py_DECREF(res);
+
+        /* task._fut_waiter = result */
+        task->task_fut_waiter = result;  /* no incref is necessary */
+
+        if (task->task_must_cancel) {
+            PyObject *r;
+            int is_true;
+            r = _PyObject_CallMethodId(result, &PyId_cancel, NULL);
+            if (r == NULL) {
+                return NULL;
+            }
+            is_true = PyObject_IsTrue(r);
+            Py_DECREF(r);
+            if (is_true < 0) {
+                return NULL;
+            }
+            else if (is_true) {
+                task->task_must_cancel = 0;
+            }
+        }
+
+        Py_RETURN_NONE;
+    }
+
+    Py_XDECREF(o);
     /* Check if `result` is a generator */
-    o = PyObject_CallFunctionObjArgs(inspect_isgenerator, result, NULL);
-    if (o == NULL) {
-        /* An exception in inspect.isgenerator */
+    res = PyObject_IsInstance(result, (PyObject*)&PyGen_Type);
+    if (res < 0) {
         goto fail;
     }
-    res = PyObject_IsTrue(o);
-    Py_DECREF(o);
-    if (res == -1) {
-        /* An exception while checking if 'val' is True */
-        goto fail;
-    }
-    if (res == 1) {
+    if (res) {
         /* `result` is a generator */
         o = task_set_error_soon(
             task, PyExc_RuntimeError,
@@ -2922,7 +2905,7 @@ task_step(TaskObj *task, PyObject *exc)
         return NULL;
     }
     else {
-        if(leave_task(task->task_loop, (PyObject*)task) < 0) {
+        if (leave_task(task->task_loop, (PyObject*)task) < 0) {
             Py_DECREF(res);
             return NULL;
         }
@@ -3237,7 +3220,6 @@ static void
 module_free(void *m)
 {
     Py_CLEAR(asyncio_mod);
-    Py_CLEAR(inspect_isgenerator);
     Py_CLEAR(traceback_extract_stack);
     Py_CLEAR(asyncio_future_repr_info_func);
     Py_CLEAR(asyncio_get_event_loop_policy);
@@ -3278,15 +3260,10 @@ module_init(void)
     }
 
 
-    context_kwname = PyTuple_New(1);
+    context_kwname = Py_BuildValue("(s)", "context");
     if (context_kwname == NULL) {
         goto fail;
     }
-    PyObject *context_str = PyUnicode_FromString("context");
-    if (context_str == NULL) {
-        goto fail;
-    }
-    PyTuple_SET_ITEM(context_kwname, 0, context_str);
 
 #define WITH_MOD(NAME) \
     Py_CLEAR(module); \
@@ -3306,6 +3283,8 @@ module_init(void)
 
     WITH_MOD("asyncio.base_futures")
     GET_MOD_ATTR(asyncio_future_repr_info_func, "_future_repr_info")
+
+    WITH_MOD("asyncio.exceptions")
     GET_MOD_ATTR(asyncio_InvalidStateError, "InvalidStateError")
     GET_MOD_ATTR(asyncio_CancelledError, "CancelledError")
 
@@ -3316,9 +3295,6 @@ module_init(void)
 
     WITH_MOD("asyncio.coroutines")
     GET_MOD_ATTR(asyncio_iscoroutine_func, "iscoroutine")
-
-    WITH_MOD("inspect")
-    GET_MOD_ATTR(inspect_isgenerator, "isgenerator")
 
     WITH_MOD("traceback")
     GET_MOD_ATTR(traceback_extract_stack, "extract_stack")
@@ -3386,7 +3362,7 @@ PyInit__asyncio(void)
     if (PyType_Ready(&TaskStepMethWrapper_Type) < 0) {
         return NULL;
     }
-    if(PyType_Ready(&TaskWakeupMethWrapper_Type) < 0) {
+    if (PyType_Ready(&TaskWakeupMethWrapper_Type) < 0) {
         return NULL;
     }
     if (PyType_Ready(&TaskType) < 0) {

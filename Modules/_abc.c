@@ -66,9 +66,9 @@ PyDoc_STRVAR(abc_data_doc,
 "Internal state held by ABC machinery.");
 
 static PyTypeObject _abc_data_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_abc_data",                        /*tp_name*/
-    sizeof(_abc_data),                  /*tp_size*/
+    sizeof(_abc_data),                  /*tp_basicsize*/
     .tp_dealloc = (destructor)abc_data_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_alloc = PyType_GenericAlloc,
@@ -728,6 +728,10 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     // Weakref callback may remove entry from set.
     // So we take snapshot of registry first.
     PyObject **copy = PyMem_Malloc(sizeof(PyObject*) * registry_size);
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     PyObject *key;
     Py_ssize_t pos = 0;
     Py_hash_t hash;

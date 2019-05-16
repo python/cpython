@@ -141,7 +141,7 @@ And::
    each worker thread; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
-   as well any attempt to submit more jobs to the pool.
+   as well as any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -153,7 +153,7 @@ And::
 
    .. versionadded:: 3.6
       The *thread_name_prefix* argument was added to allow users to
-      control the threading.Thread names for worker threads created by
+      control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
    .. versionchanged:: 3.7
@@ -216,6 +216,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    given, it will default to the number of processors on the machine.
    If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
    will be raised.
+   On Windows, *max_workers* must be equal or lower than ``61``. If it is not
+   then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
+   the default chosen will be at most ``61``, even if more processors are
+   available.
    *mp_context* can be a multiprocessing context or None. It will be used to
    launch the workers. If *mp_context* is ``None`` or not given, the default
    multiprocessing context is used.
@@ -223,7 +227,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
-   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
    as well any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.3
@@ -257,6 +261,10 @@ ProcessPoolExecutor Example
        1099726899285419]
 
    def is_prime(n):
+       if n < 2:
+           return False
+       if n == 2:
+           return True
        if n % 2 == 0:
            return False
 

@@ -54,7 +54,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
 
    This function is useful when creating a gateway that wraps CGI or a CGI-like
    protocol such as FastCGI.  Typically, servers providing such protocols will
-   include a ``HTTPS`` variable with a value of "1" "yes", or "on" when a request
+   include a ``HTTPS`` variable with a value of "1", "yes", or "on" when a request
    is received via SSL.  So, this function returns "https" if such a value is
    found, and "http" otherwise.
 
@@ -739,7 +739,7 @@ input, output, and error streams.
 
 .. function:: read_environ()
 
-   Transcode CGI variables from ``os.environ`` to PEP 3333 "bytes in unicode"
+   Transcode CGI variables from ``os.environ`` to :pep:`3333` "bytes in unicode"
    strings, returning a new dictionary.  This function is used by
    :class:`CGIHandler` and :class:`IISCGIHandler` in place of directly using
    ``os.environ``, which is not necessarily WSGI-compliant on all platforms
@@ -767,7 +767,7 @@ This is a working "Hello World" WSGI application::
    # use a function (note that you're not limited to a function, you can
    # use a class for example). The first argument passed to the function
    # is a dictionary containing CGI-style environment variables and the
-   # second variable is the callable object (see PEP 333).
+   # second variable is the callable object.
    def hello_world_app(environ, start_response):
        status = '200 OK'  # HTTP Status
        headers = [('Content-type', 'text/plain; charset=utf-8')]  # HTTP Headers
@@ -781,3 +781,9 @@ This is a working "Hello World" WSGI application::
 
        # Serve until process is killed
        httpd.serve_forever()
+
+
+Example of a WSGI application serving the current directory, accept optional
+directory and port number (default: 8000) on the command line:
+
+.. literalinclude:: ../../Tools/scripts/serve.py

@@ -34,8 +34,17 @@ __all__ = [
 # Internals
 #
 
-# EBADF - guard agains macOS `stat` throwing EBADF
+# EBADF - guard against macOS `stat` throwing EBADF
 _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF)
+
+_IGNORED_WINERRORS = (
+    21,  # ERROR_NOT_READY - drive exists but is not accessible
+)
+
+def _ignore_error(exception):
+    return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
+            getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
+
 
 def _is_wildcard_pattern(pat):
     # Whether this pattern needs actual matching using fnmatch, or can
@@ -402,6 +411,8 @@ class _NormalAccessor(_Accessor):
 
     unlink = os.unlink
 
+    link_to = os.link
+
     rmdir = os.rmdir
 
     rename = os.rename
@@ -535,7 +546,7 @@ class _RecursiveWildcardSelector(_Selector):
                 try:
                     entry_is_dir = entry.is_dir()
                 except OSError as e:
-                    if e.errno not in _IGNORED_ERROS:
+                    if not _ignore_error(e):
                         raise
                 if entry_is_dir and not entry.is_symlink():
                     path = parent_path._make_child_relpath(entry.name)
@@ -1081,7 +1092,7 @@ class Path(PurePath):
 
     def glob(self, pattern):
         """Iterate over this subtree and yield all existing files (of any
-        kind, including directories) matching the given pattern.
+        kind, including directories) matching the given relative pattern.
         """
         if not pattern:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
@@ -1095,7 +1106,8 @@ class Path(PurePath):
 
     def rglob(self, pattern):
         """Recursively yield all existing files (of any kind, including
-        directories) matching the given pattern, anywhere in this subtree.
+        directories) matching the given relative pattern, anywhere in
+        this subtree.
         """
         pattern = self._flavour.casefold(pattern)
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
@@ -1267,14 +1279,18 @@ class Path(PurePath):
             self._raise_closed()
         self._accessor.lchmod(self, mode)
 
-    def unlink(self):
+    def unlink(self, missing_ok=False):
         """
         Remove this file or link.
         If the path is a directory, use rmdir() instead.
         """
         if self._closed:
             self._raise_closed()
-        self._accessor.unlink(self)
+        try:
+            self._accessor.unlink(self)
+        except FileNotFoundError:
+            if not missing_ok:
+                raise
 
     def rmdir(self):
         """
@@ -1292,6 +1308,14 @@ class Path(PurePath):
         if self._closed:
             self._raise_closed()
         return self._accessor.lstat(self)
+
+    def link_to(self, target):
+        """
+        Create a hard link pointing to a path named target.
+        """
+        if self._closed:
+            self._raise_closed()
+        self._accessor.link_to(self, target)
 
     def rename(self, target):
         """
@@ -1328,8 +1352,11 @@ class Path(PurePath):
         try:
             self.stat()
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
         return True
 
@@ -1340,10 +1367,13 @@ class Path(PurePath):
         try:
             return S_ISDIR(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def is_file(self):
@@ -1354,10 +1384,13 @@ class Path(PurePath):
         try:
             return S_ISREG(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def is_mount(self):
@@ -1388,9 +1421,12 @@ class Path(PurePath):
         try:
             return S_ISLNK(self.lstat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def is_block_device(self):
@@ -1400,10 +1436,13 @@ class Path(PurePath):
         try:
             return S_ISBLK(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def is_char_device(self):
@@ -1413,10 +1452,13 @@ class Path(PurePath):
         try:
             return S_ISCHR(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def is_fifo(self):
@@ -1426,10 +1468,13 @@ class Path(PurePath):
         try:
             return S_ISFIFO(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def is_socket(self):
@@ -1439,10 +1484,13 @@ class Path(PurePath):
         try:
             return S_ISSOCK(self.stat().st_mode)
         except OSError as e:
-            if e.errno not in _IGNORED_ERROS:
+            if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            return False
+        except ValueError:
+            # Non-encodable path
             return False
 
     def expanduser(self):
