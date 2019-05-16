@@ -31,6 +31,9 @@ class AsyncioTestCase(TestCase):
         def _callSetUp(self):
             self._callMaybeAsync(self.setUp)
 
+        def _callTestMethod(self, method):
+            self._callMaybeAsync(method)
+
         def _callTearDown(self):
             self._callMaybeAsync(self.tearDown)
 

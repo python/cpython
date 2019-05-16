@@ -648,6 +648,9 @@ class TestCase(object):
     def _callSetUp(self):
         self.setUp()
 
+    def _callTestMethod(self, method):
+        method()
+
     def _callTearDown(self):
         self.tearDown()
 
@@ -686,7 +689,7 @@ class TestCase(object):
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    self._callTestMethod(testMethod)
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
                     self._callTearDown()
