@@ -55,6 +55,14 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
+/* Call callable using tp_call. Arguments are the same as
+   _PyObject_FastCallKeywords() or _PyObject_FastCallDict()
+   (both forms are supported) */
+PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
+    PyObject *callable,
+    PyObject *const *args, Py_ssize_t nargs,
+    PyObject *keywords);
+
 /* Return 1 if callable supports FASTCALL calling convention for positional
    arguments: see _PyObject_FastCallDict() and _PyObject_FastCallKeywords() */
 PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);

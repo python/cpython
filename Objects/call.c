@@ -103,34 +103,8 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, Py_ssize_t nar
         return _PyCFunction_FastCallDict(callable, args, nargs, kwargs);
     }
     else {
-        PyObject *argstuple, *result;
-        ternaryfunc call;
-
-        /* Slow-path: build a temporary tuple */
-        call = callable->ob_type->tp_call;
-        if (call == NULL) {
-            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
-            return NULL;
-        }
-
-        argstuple = _PyTuple_FromArray(args, nargs);
-        if (argstuple == NULL) {
-            return NULL;
-        }
-
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            Py_DECREF(argstuple);
-            return NULL;
-        }
-
-        result = (*call)(callable, argstuple, kwargs);
-
-        Py_LeaveRecursiveCall();
-        Py_DECREF(argstuple);
-
-        result = _Py_CheckFunctionResult(callable, result, NULL);
-        return result;
+        /* Use tp_call instead of FastCall */
+        return _PyObject_MakeTpCall(callable, args, nargs, kwargs);
     }
 }
 
@@ -158,109 +132,59 @@ _PyObject_FastCallKeywords(PyObject *callable, PyObject *const *stack, Py_ssize_
         return _PyCFunction_FastCallKeywords(callable, stack, nargs, kwnames);
     }
     else {
-        /* Slow-path: build a temporary tuple for positional arguments and a
-           temporary dictionary for keyword arguments (if any) */
+        /* Use tp_call instead of FastCall */
+        return _PyObject_MakeTpCall(callable, stack, nargs, kwnames);
+    }
+}
 
-        ternaryfunc call;
-        PyObject *argstuple;
-        PyObject *kwdict, *result;
-        Py_ssize_t nkwargs;
 
-        nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-        assert((nargs == 0 && nkwargs == 0) || stack != NULL);
+PyObject *
+_PyObject_MakeTpCall(PyObject *callable, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
+{
+    /* Slow path: build a temporary tuple for positional arguments and a
+     * temporary dictionary for keyword arguments (if any) */
+    ternaryfunc call = Py_TYPE(callable)->tp_call;
+    if (call == NULL) {
+        PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
+                     Py_TYPE(callable)->tp_name);
+        return NULL;
+    }
 
-        call = callable->ob_type->tp_call;
-        if (call == NULL) {
-            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
-            return NULL;
-        }
+    assert(nargs >= 0);
+    assert(args != NULL || args == 0);
+    assert(keywords == NULL || PyTuple_Check(keywords) || PyDict_Check(keywords));
 
-        argstuple = _PyTuple_FromArray(stack, nargs);
-        if (argstuple == NULL) {
-            return NULL;
-        }
+    PyObject *argstuple = _PyTuple_FromArray(args, nargs);
+    if (argstuple == NULL) {
+        return NULL;
+    }
 
-        if (nkwargs > 0) {
-            kwdict = _PyStack_AsDict(stack + nargs, kwnames);
+    PyObject *kwdict = keywords;
+    if (keywords != NULL && PyTuple_Check(keywords)) {
+        if (PyTuple_GET_SIZE(keywords)) {
+            assert(args != NULL);
+            kwdict = _PyStack_AsDict(args + nargs, keywords);
             if (kwdict == NULL) {
                 Py_DECREF(argstuple);
                 return NULL;
             }
         }
         else {
-            kwdict = NULL;
+            keywords = kwdict = NULL;
         }
+    }
 
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            Py_DECREF(argstuple);
-            Py_XDECREF(kwdict);
-            return NULL;
-        }
-
-        result = (*call)(callable, argstuple, kwdict);
-
+    PyObject *result = NULL;
+    if (Py_EnterRecursiveCall(" while calling a Python object") == 0)
+    {
+        result = call(callable, argstuple, kwdict);
         Py_LeaveRecursiveCall();
-
-        Py_DECREF(argstuple);
-        Py_XDECREF(kwdict);
-
-        result = _Py_CheckFunctionResult(callable, result, NULL);
-        return result;
     }
-}
-
-
-PyObject *
-PyCall_MakeTpCall(PyObject *callable, PyObject *const *stack, Py_ssize_t nargs, PyObject *kwnames) {
-    /* Slow-path: build a temporary tuple for positional arguments and a
-        temporary dictionary for keyword arguments (if any) */
-
-    ternaryfunc call;
-    PyObject *argstuple;
-    PyObject *kwdict, *result;
-    Py_ssize_t nkwargs;
-
-    nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-
-    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
-
-    call = callable->ob_type->tp_call;
-    if (call == NULL) {
-        PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                        callable->ob_type->tp_name);
-        return NULL;
-    }
-
-    argstuple = _PyTuple_FromArray(stack, nargs);
-    if (argstuple == NULL) {
-        return NULL;
-    }
-
-    if (nkwargs > 0) {
-        kwdict = _PyStack_AsDict(stack + nargs, kwnames);
-        if (kwdict == NULL) {
-            Py_DECREF(argstuple);
-            return NULL;
-        }
-    }
-    else {
-        kwdict = NULL;
-    }
-
-    if (Py_EnterRecursiveCall(" while calling a Python object")) {
-        Py_DECREF(argstuple);
-        Py_XDECREF(kwdict);
-        return NULL;
-    }
-
-    result = (*call)(callable, argstuple, kwdict);
-
-    Py_LeaveRecursiveCall();
 
     Py_DECREF(argstuple);
-    Py_XDECREF(kwdict);
-
+    if (kwdict != keywords) {
+        Py_DECREF(kwdict);
+    }
     result = _Py_CheckFunctionResult(callable, result, NULL);
     return result;
 }
