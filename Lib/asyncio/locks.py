@@ -79,7 +79,8 @@ class _ContextManagerMixin:
         yield from self.acquire()
         return _ContextManager(self)
 
-    __iter__._is_coroutine = _is_coroutine
+    # The flag is needed for legacy asyncio.iscoroutine()
+    __iter__._is_coroutine = coroutines._is_coroutine
 
     async def __acquire_ctx(self):
         await self.acquire()
