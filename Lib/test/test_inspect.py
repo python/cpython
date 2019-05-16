@@ -750,25 +750,22 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def assertArgSpecEquals(self, routine, args_e, varargs_e=None,
                             varkw_e=None, defaults_e=None, formatted=None):
-        with self.assertWarns(DeprecationWarning):
-            args, varargs, varkw, defaults = inspect.getargspec(routine)
+        args, varargs, varkw, defaults = inspect.getargspec(routine)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
         self.assertEqual(defaults, defaults_e)
         if formatted is not None:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
-                                 formatted)
+            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
+                             formatted)
 
     def assertFullArgSpecEquals(self, routine, args_e, varargs_e=None,
                                     varkw_e=None, defaults_e=None,
                                     posonlyargs_e=[], kwonlyargs_e=[],
                                     kwonlydefaults_e=None,
                                     ann_e={}, formatted=None):
-        with self.assertWarns(DeprecationWarning):
-            args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-                inspect.getfullargspec(routine)
+        args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
+            inspect.getfullargspec(routine)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
@@ -777,9 +774,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(kwonlydefaults, kwonlydefaults_e)
         self.assertEqual(ann, ann_e)
         if formatted is not None:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
-                                                       kwonlyargs, kwonlydefaults, ann),
+            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
+                                                   kwonlyargs, kwonlydefaults, ann),
                              formatted)
 
     def test_getargspec(self):
@@ -879,13 +875,11 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def test_getfullargspec_signature_annos(self):
         def test(a:'spam') -> 'ham': pass
-        with self.assertWarns(DeprecationWarning):
-            spec = inspect.getfullargspec(test)
+        spec = inspect.getfullargspec(test)
         self.assertEqual(test.__annotations__, spec.annotations)
 
         def test(): pass
-        with self.assertWarns(DeprecationWarning):
-            spec = inspect.getfullargspec(test)
+        spec = inspect.getfullargspec(test)
         self.assertEqual(test.__annotations__, spec.annotations)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
@@ -910,8 +904,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     def test_getfullargspec_builtin_func(self):
         import _testcapi
         builtin = _testcapi.docstring_with_signature_with_defaults
-        with self.assertWarns(DeprecationWarning):
-            spec = inspect.getfullargspec(builtin)
+        spec = inspect.getfullargspec(builtin)
         self.assertEqual(spec.defaults[0], 'avocado')
 
     @cpython_only
@@ -920,20 +913,17 @@ class TestClassesAndFunctions(unittest.TestCase):
     def test_getfullargspec_builtin_func_no_signature(self):
         import _testcapi
         builtin = _testcapi.docstring_no_signature
-        with self.assertWarns(DeprecationWarning):
-            with self.assertRaises(TypeError):
-                inspect.getfullargspec(builtin)
+        with self.assertRaises(TypeError):
+            inspect.getfullargspec(builtin)
 
     def test_getfullargspec_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
-            with self.assertWarns(DeprecationWarning):
-                signature = inspect.getfullargspec(fn)
+            signature = inspect.getfullargspec(fn)
             l = list(signature.kwonlyargs)
             sorted_l = sorted(l)
             self.assertTrue(l)
             self.assertEqual(l, sorted_l)
-        with self.assertWarns(DeprecationWarning):
-            signature = inspect.getfullargspec(unsorted_keyword_only_parameters_fn)
+        signature = inspect.getfullargspec(unsorted_keyword_only_parameters_fn)
         l = list(signature.kwonlyargs)
         self.assertEqual(l, unsorted_keyword_only_parameters)
 
@@ -1390,9 +1380,8 @@ class TestGetcallargsFunctions(unittest.TestCase):
     def assertEqualCallArgs(self, func, call_params_string, locs=None):
         locs = dict(locs or {}, func=func)
         r1 = eval('func(%s)' % call_params_string, None, locs)
-        with self.assertWarns(DeprecationWarning):
-            r2 = eval('inspect.getcallargs(func, %s)' % call_params_string, None,
-                      locs)
+        r2 = eval('inspect.getcallargs(func, %s)' % call_params_string, None,
+                  locs)
         self.assertEqual(r1, r2)
 
     def assertEqualException(self, func, call_param_string, locs=None):
@@ -1404,9 +1393,8 @@ class TestGetcallargsFunctions(unittest.TestCase):
         else:
             self.fail('Exception not raised')
         try:
-            with self.assertWarns(DeprecationWarning):
-                eval('inspect.getcallargs(func, %s)' % call_param_string, None,
-                     locs)
+            eval('inspect.getcallargs(func, %s)' % call_param_string, None,
+                 locs)
         except Exception as e:
             ex2 = e
         else:
@@ -1564,16 +1552,14 @@ class TestGetcallargsFunctions(unittest.TestCase):
         def f5(*, a): pass
         with self.assertRaisesRegex(TypeError,
                                     'missing 1 required keyword-only'):
-            with self.assertWarns(DeprecationWarning):
-                inspect.getcallargs(f5)
+            inspect.getcallargs(f5)
 
 
         # issue20817:
         def f6(a, b, c):
             pass
         with self.assertRaisesRegex(TypeError, "'a', 'b' and 'c'"):
-            with self.assertWarns(DeprecationWarning):
-                inspect.getcallargs(f6)
+            inspect.getcallargs(f6)
 
         # bpo-33197
         with self.assertRaisesRegex(ValueError,

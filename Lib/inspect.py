@@ -1103,16 +1103,10 @@ def getfullargspec(func):
     'kwonlydefaults' is a dictionary mapping names from kwonlyargs to defaults.
     'annotations' is a dictionary mapping parameter names to annotations.
 
-    .. deprecated:: 3.8
-        Use inspect.signature() instead of inspect.getfullargspec().
-
     Notable differences from inspect.signature():
       - the "self" parameter is always reported, even for bound methods
       - wrapper chains defined by __wrapped__ *not* unwrapped automatically
     """
-
-    warnings.warn("Use inspect.signature() instead of inspect.getfullargspec()",
-                  DeprecationWarning, stacklevel=2)
     try:
         # Re: `skip_bound_arg=False`
         #
