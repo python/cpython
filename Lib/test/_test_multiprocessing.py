@@ -277,14 +277,15 @@ class _TestProcess(BaseTestCase):
         p = self.Process(target=self._test_send_parent_process, args=(wconn,))
         p.start()
         p.join()
-        parent_process = rconn.recv()
-        assert parent_process.pid == current_process().pid
-        assert parent_process.name == current_process().name
+        parent_pid, parent_name = rconn.recv()
+        self.assertEqual(parent_pid, current_process().pid)
+        self.assertEqual(parent_pid, os.getpid())
+        self.assertEqual(parent_name, current_process().name)
 
     @classmethod
     def _test_send_parent_process(cls, wconn):
         from multiprocessing.process import parent_process
-        wconn.send(parent_process())
+        wconn.send([parent_process().pid, parent_process().name])
 
     def test_parent_process(self):
         if self.TYPE == "threads":
@@ -297,11 +298,19 @@ class _TestProcess(BaseTestCase):
         p = self.Process(
             target=self._test_create_grandchild_process, args=(wconn, ))
         p.start()
-        time.sleep(1)
+
+        if not rconn.poll(timeout=5):
+            raise AssertionError("Could not communicate with child process")
+        parent_process_status = rconn.recv()
+        self.assertEqual(parent_process_status, "alive")
+
         p.terminate()
         p.join()
-        parent_process_status_log = rconn.recv()
-        assert parent_process_status_log == ["alive", "not alive"]
+
+        if not rconn.poll(timeout=5):
+            raise AssertionError("Could not communicate with child process")
+        parent_process_status = rconn.recv()
+        self.assertEqual(parent_process_status, "not alive")
 
     @classmethod
     def _test_create_grandchild_process(cls, wconn):
@@ -312,18 +321,14 @@ class _TestProcess(BaseTestCase):
     @classmethod
     def _test_report_parent_status(cls, wconn):
         from multiprocessing.process import parent_process
-        status_log = []
-        status_log.append(
-            "alive" if parent_process().is_alive() else "not alive")
+        wconn.send("alive" if parent_process().is_alive() else "not alive")
 
         start_time = time.monotonic()
         while (parent_process().is_alive() and
                (time.monotonic() - start_time) < 5):
             time.sleep(0.1)
 
-        status_log.append(
-            "alive" if parent_process().is_alive() else "not alive")
-        wconn.send(status_log)
+        wconn.send("alive" if parent_process().is_alive() else "not alive")
 
     def test_process(self):
         q = self.Queue(1)
