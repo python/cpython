@@ -280,9 +280,7 @@ Sleeping
    to run.
 
    .. deprecated-removed:: 3.8 3.10
-
-      The *loop* argument is deprecated and scheduled for removal
-      in Python 3.10.
+      The *loop* parameter.
 
    .. _asyncio_example_sleep:
 
@@ -440,9 +438,7 @@ Timeouts
    If the wait is cancelled, the future *aw* is also cancelled.
 
    .. deprecated-removed:: 3.8 3.10
-
-      The *loop* argument is deprecated and scheduled for removal
-      in Python 3.10.
+      The *loop* parameter.
 
    .. _asyncio_example_waitfor:
 
@@ -496,9 +492,7 @@ Waiting Primitives
         done, pending = await asyncio.wait(aws)
 
    .. deprecated-removed:: 3.8 3.10
-
-      The *loop* argument is deprecated and scheduled for removal
-      in Python 3.10.
+      The *loop* parameter.
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -880,8 +874,8 @@ Task Object
 
       .. deprecated-removed:: 3.7 3.9
 
-         This method is **deprecated** and will be removed in
-         Python 3.9.  Use the :func:`asyncio.all_tasks` function instead.
+         Do not call this as a task method. Use the :func:`asyncio.all_tasks`
+         function instead.
 
    .. classmethod:: current_task(loop=None)
 
@@ -892,9 +886,8 @@ Task Object
 
       .. deprecated-removed:: 3.7 3.9
 
-         This method is **deprecated** and will be removed in
-         Python 3.9.  Use the :func:`asyncio.current_task` function
-         instead.
+         Do not call this as a task method.  Use the
+         :func:`asyncio.current_task` function instead.
 
 
 .. _asyncio_generator_based_coro:
