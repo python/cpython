@@ -379,6 +379,11 @@ extern char        *ctermid_r(char *);
 # include <sanitizer/msan_interface.h>
 #endif
 
+
+_Py_IDENTIFIER(st_mode);
+_Py_IDENTIFIER(__fspath__);
+_Py_IDENTIFIER(struct_rusage);
+
 #ifdef HAVE_FORK
 static void
 run_at_forkers(PyObject *lst, int reverse)
@@ -963,7 +968,6 @@ path_converter(PyObject *o, void *p)
 
     if (!is_index && !is_buffer && !is_unicode && !is_bytes) {
         /* Inline PyOS_FSPath() for better error messages. */
-        _Py_IDENTIFIER(__fspath__);
         PyObject *func, *res;
 
         func = _PyObject_LookupSpecial(o, &PyId___fspath__);
@@ -7366,7 +7370,6 @@ static PyObject *
 wait_helper(pid_t pid, int status, struct rusage *ru)
 {
     PyObject *result;
-    _Py_IDENTIFIER(struct_rusage);
 
     if (pid == -1)
         return posix_error();
@@ -12291,7 +12294,6 @@ DirEntry_test_mode(DirEntry *self, int follow_symlinks, unsigned short mode_bits
 #ifdef MS_WINDOWS
     unsigned long dir_bits;
 #endif
-    _Py_IDENTIFIER(st_mode);
 
 #ifdef MS_WINDOWS
     is_symlink = (self->win32_lstat.st_mode & S_IFMT) == S_IFLNK;
@@ -13071,7 +13073,6 @@ PyOS_FSPath(PyObject *path)
 {
     /* For error message reasons, this function is manually inlined in
        path_converter(). */
-    _Py_IDENTIFIER(__fspath__);
     PyObject *func = NULL;
     PyObject *path_repr = NULL;
 

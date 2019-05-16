@@ -15,6 +15,12 @@
 #endif /* HAVE_SYS_TYPES_H */
 #endif /* !STDC_HEADERS */
 
+_Py_IDENTIFIER(iter);
+_Py_IDENTIFIER(read);
+_Py_IDENTIFIER(write);
+_Py_IDENTIFIER(_array_reconstructor);
+_Py_IDENTIFIER(__dict__);
+
 /*[clinic input]
 module array
 [clinic start generated code]*/
@@ -1432,7 +1438,6 @@ array_array_fromfile_impl(arrayobject *self, PyObject *f, Py_ssize_t n)
     PyObject *b, *res;
     Py_ssize_t itemsize = self->ob_descr->itemsize;
     Py_ssize_t nbytes;
-    _Py_IDENTIFIER(read);
     int not_enough_bytes;
 
     if (n < 0) {
@@ -1500,7 +1505,6 @@ array_array_tofile(arrayobject *self, PyObject *f)
         char* ptr = self->ob_item + i*BLOCKSIZE;
         Py_ssize_t size = BLOCKSIZE;
         PyObject *bytes, *res;
-        _Py_IDENTIFIER(write);
 
         if (i*BLOCKSIZE + size > nbytes)
             size = nbytes - i*BLOCKSIZE;
@@ -2185,8 +2189,6 @@ array_array___reduce_ex__(arrayobject *self, PyObject *value)
     int typecode = self->ob_descr->typecode;
     int mformat_code;
     long protocol;
-    _Py_IDENTIFIER(_array_reconstructor);
-    _Py_IDENTIFIER(__dict__);
 
     if (cached_array_reconstructor == NULL) {
         PyObject *array_module = PyImport_ImportModule("array");
@@ -2944,7 +2946,6 @@ static PyObject *
 array_arrayiterator___reduce___impl(arrayiterobject *self)
 /*[clinic end generated code: output=7898a52e8e66e016 input=a062ea1e9951417a]*/
 {
-    _Py_IDENTIFIER(iter);
     PyObject *func = _PyEval_GetBuiltinId(&PyId_iter);
     if (self->ao == NULL) {
         return Py_BuildValue("N(())", func);

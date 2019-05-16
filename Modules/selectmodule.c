@@ -58,6 +58,9 @@ extern void bzero(void *, int);
 #  define SOCKET int
 #endif
 
+
+_Py_IDENTIFIER(close);
+
 /*[clinic input]
 module select
 class select.poll "pollObject *" "&poll_Type"
@@ -1632,8 +1635,6 @@ select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
                            PyObject *exc_value, PyObject *exc_tb)
 /*[clinic end generated code: output=c480f38ce361748e input=7ae81a5a4c1a98d8]*/
 {
-    _Py_IDENTIFIER(close);
-
     return _PyObject_CallMethodId((PyObject *)self, &PyId_close, NULL);
 }
 

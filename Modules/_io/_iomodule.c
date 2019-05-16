@@ -25,6 +25,12 @@
 #include <windows.h>
 #endif
 
+
+_Py_IDENTIFIER(_blksize);
+_Py_IDENTIFIER(isatty);
+_Py_IDENTIFIER(mode);
+_Py_IDENTIFIER(close);
+
 /* Various interned strings */
 
 PyObject *_PyIO_str_close = NULL;
@@ -245,11 +251,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     long isatty = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
-
-    _Py_IDENTIFIER(_blksize);
-    _Py_IDENTIFIER(isatty);
-    _Py_IDENTIFIER(mode);
-    _Py_IDENTIFIER(close);
 
     is_number = PyNumber_Check(file);
 

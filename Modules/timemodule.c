@@ -50,6 +50,9 @@
 
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
+
+_Py_IDENTIFIER(_strptime_time);
+
 /* Forward declarations */
 static int pysleep(_PyTime_t);
 
@@ -855,7 +858,6 @@ static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *module, *func, *result;
-    _Py_IDENTIFIER(_strptime_time);
 
     module = PyImport_ImportModuleNoBlock("_strptime");
     if (!module)

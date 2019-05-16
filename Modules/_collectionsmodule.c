@@ -7,6 +7,12 @@
 #include <sys/types.h>          /* For size_t */
 #endif
 
+
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(items);
+_Py_IDENTIFIER(get);
+_Py_IDENTIFIER(__setitem__);
+
 /*[clinic input]
 class _tuplegetter "_tuplegetterobject *" "&tuplegetter_type"
 [clinic start generated code]*/
@@ -1321,7 +1327,6 @@ static PyObject *
 deque_reduce(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *dict, *it;
-    _Py_IDENTIFIER(__dict__);
 
     if (_PyObject_LookupAttrId((PyObject *)deque, &PyId___dict__, &dict) < 0) {
         return NULL;
@@ -2031,7 +2036,6 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
     PyObject *items;
     PyObject *iter;
     PyObject *result;
-    _Py_IDENTIFIER(items);
 
     if (dd->default_factory == NULL || dd->default_factory == Py_None)
         args = PyTuple_New(0);
@@ -2236,8 +2240,6 @@ Count elements in the iterable, updating the mapping");
 static PyObject *
 _count_elements(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(get);
-    _Py_IDENTIFIER(__setitem__);
     PyObject *it, *iterable, *mapping, *oldval;
     PyObject *newval = NULL;
     PyObject *key = NULL;

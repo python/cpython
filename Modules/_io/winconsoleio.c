@@ -27,6 +27,9 @@
 
 #include "_iomodule.h"
 
+
+_Py_IDENTIFIER(close);
+
 /* BUFSIZ determines how many characters can be typed at the console
    before it starts blocking. */
 #if BUFSIZ < (16*1024)
@@ -203,7 +206,6 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    _Py_IDENTIFIER(close);
     res = _PyObject_CallMethodIdObjArgs((PyObject*)&PyRawIOBase_Type,
                                         &PyId_close, self, NULL);
     if (!self->closehandle) {

@@ -395,6 +395,14 @@ spec_add_field(PyObject *spec, _Py_Identifier *key, unsigned long long value)
     return status;
 }
 
+_Py_IDENTIFIER(id);
+_Py_IDENTIFIER(lc);
+_Py_IDENTIFIER(lp);
+_Py_IDENTIFIER(pb);
+_Py_IDENTIFIER(dict_size);
+_Py_IDENTIFIER(dist);
+_Py_IDENTIFIER(start_offset);
+
 static PyObject *
 build_filter_spec(const lzma_filter *f)
 {
@@ -406,7 +414,6 @@ build_filter_spec(const lzma_filter *f)
 
 #define ADD_FIELD(SOURCE, FIELD) \
     do { \
-        _Py_IDENTIFIER(FIELD); \
         if (spec_add_field(spec, &PyId_##FIELD, SOURCE->FIELD) == -1) \
             goto error;\
     } while (0)

@@ -47,6 +47,9 @@
 #define SMALLCHUNK BUFSIZ
 #endif
 
+
+_Py_IDENTIFIER(close);
+
 /*[clinic input]
 module _io
 class _io.FileIO "fileio *" "&PyFileIO_Type"
@@ -144,7 +147,6 @@ _io_FileIO_close_impl(fileio *self)
     PyObject *res;
     PyObject *exc, *val, *tb;
     int rc;
-    _Py_IDENTIFIER(close);
     res = _PyObject_CallMethodIdObjArgs((PyObject*)&PyRawIOBase_Type,
                                         &PyId_close, self, NULL);
     if (!self->closefd) {

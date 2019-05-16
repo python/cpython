@@ -16,6 +16,9 @@
 extern const char * gdbm_strerror(gdbm_error);
 #endif
 
+
+_Py_IDENTIFIER(close);
+
 /*[clinic input]
 module _gdbm
 class _gdbm.gdbm "dbmobject *" "&Dbmtype"
@@ -496,7 +499,6 @@ dbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
     return _PyObject_CallMethodId(self, &PyId_close, NULL);
 }
 

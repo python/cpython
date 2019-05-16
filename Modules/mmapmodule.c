@@ -79,6 +79,9 @@ my_getpagesize(void)
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
+
+_Py_IDENTIFIER(close);
+
 typedef enum
 {
     ACCESS_DEFAULT,
@@ -690,8 +693,6 @@ mmap__enter__method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap__exit__method(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-
     return _PyObject_CallMethodId(self, &PyId_close, NULL);
 }
 

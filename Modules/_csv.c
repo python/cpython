@@ -15,6 +15,8 @@ module instead.
 #include <stdbool.h>
 
 
+_Py_IDENTIFIER(write);
+
 typedef struct {
     PyObject *error_obj;   /* CSV exception */
     PyObject *dialects;   /* Dialect registry */
@@ -1365,7 +1367,6 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * output_file, * dialect = NULL;
     WriterObj * self = PyObject_GC_New(WriterObj, &Writer_Type);
-    _Py_IDENTIFIER(write);
 
     if (!self)
         return NULL;

@@ -4,6 +4,12 @@
 #include "pycore_tupleobject.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(fillvalue);
+_Py_IDENTIFIER(iter);
+_Py_IDENTIFIER(__copy__);
+_Py_IDENTIFIER(__setstate__);
+
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
 */
@@ -369,7 +375,6 @@ _grouper_next(_grouperobject *igo)
 static PyObject *
 _grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
         return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
     }
@@ -875,7 +880,6 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 {
     Py_ssize_t i;
     PyObject *it, *copyable, *copyfunc, *result;
-    _Py_IDENTIFIER(__copy__);
 
     if (n < 0) {
         PyErr_SetString(PyExc_ValueError, "n must be >= 0");
@@ -1042,7 +1046,6 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
         if (it == NULL)
             return NULL;
         if (lz->index != 0) {
-            _Py_IDENTIFIER(__setstate__);
             PyObject *res = _PyObject_CallMethodId(it, &PyId___setstate__,
                                                    "n", lz->index);
             if (res == NULL) {
@@ -4400,7 +4403,6 @@ static PyTypeObject ziplongest_type;
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _Py_IDENTIFIER(fillvalue);
     ziplongestobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */

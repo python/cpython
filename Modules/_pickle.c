@@ -11,6 +11,38 @@
 #include "Python.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(__class__);
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__getinitargs__);
+_Py_IDENTIFIER(__main__);
+_Py_IDENTIFIER(__module__);
+_Py_IDENTIFIER(__name__);
+_Py_IDENTIFIER(__newobj__);
+_Py_IDENTIFIER(__newobj_ex__);
+_Py_IDENTIFIER(__new__);
+_Py_IDENTIFIER(__qualname__);
+_Py_IDENTIFIER(__reduce__);
+_Py_IDENTIFIER(__reduce_ex__);
+_Py_IDENTIFIER(__setstate__);
+_Py_IDENTIFIER(add);
+_Py_IDENTIFIER(append);
+_Py_IDENTIFIER(dispatch_table);
+_Py_IDENTIFIER(extend);
+_Py_IDENTIFIER(find_class);
+_Py_IDENTIFIER(getattr);
+_Py_IDENTIFIER(items);
+_Py_IDENTIFIER(latin1);
+_Py_IDENTIFIER(modules);
+_Py_IDENTIFIER(peek);
+_Py_IDENTIFIER(read);
+_Py_IDENTIFIER(readline);
+_Py_IDENTIFIER(reducer_override);
+_Py_IDENTIFIER(persistent_id);
+_Py_IDENTIFIER(persistent_load);
+_Py_IDENTIFIER(write);
+
+
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
 
@@ -216,7 +248,6 @@ _Pickle_InitState(PickleState *st)
     PyObject *compat_pickle = NULL;
     PyObject *codecs = NULL;
     PyObject *functools = NULL;
-    _Py_IDENTIFIER(getattr);
 
     st->getattr = _PyEval_GetBuiltinId(&PyId_getattr);
     if (st->getattr == NULL)
@@ -1160,7 +1191,6 @@ _Pickler_SetProtocol(PicklerObject *self, PyObject *protocol, int fix_imports)
 static int
 _Pickler_SetOutputStream(PicklerObject *self, PyObject *file)
 {
-    _Py_IDENTIFIER(write);
     assert(file != NULL);
     if (_PyObject_LookupAttrId(file, &PyId_write, &self->write) < 0) {
         return -1;
@@ -1511,10 +1541,6 @@ _Unpickler_New(void)
 static int
 _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
-    _Py_IDENTIFIER(peek);
-    _Py_IDENTIFIER(read);
-    _Py_IDENTIFIER(readline);
-
     if (_PyObject_LookupAttrId(file, &PyId_peek, &self->peek) < 0) {
         return -1;
     }
@@ -1766,9 +1792,6 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     PyObject *module = NULL;
     Py_ssize_t i;
     PyObject *modules;
-    _Py_IDENTIFIER(__module__);
-    _Py_IDENTIFIER(modules);
-    _Py_IDENTIFIER(__main__);
 
     if (_PyObject_LookupAttrId(global, &PyId___module__, &module_name) < 0) {
         return NULL;
@@ -2236,7 +2259,6 @@ save_bytes(PicklerObject *self, PyObject *obj)
                 PyUnicode_DecodeLatin1(PyBytes_AS_STRING(obj),
                                        PyBytes_GET_SIZE(obj),
                                        "strict");
-            _Py_IDENTIFIER(latin1);
 
             if (unicode_str == NULL)
                 return -1;
@@ -3058,7 +3080,6 @@ save_dict(PicklerObject *self, PyObject *obj)
             status = batch_dict_exact(self, obj);
             Py_LeaveRecursiveCall();
         } else {
-            _Py_IDENTIFIER(items);
 
             items = _PyObject_CallMethodId(obj, &PyId_items, NULL);
             if (items == NULL)
@@ -3312,8 +3333,6 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
     PyObject *cls;
     PickleState *st = _Pickle_GetGlobalState();
     int status = 0;
-    _Py_IDENTIFIER(__name__);
-    _Py_IDENTIFIER(__qualname__);
 
     const char global_op = GLOBAL;
 
@@ -3646,7 +3665,6 @@ static PyObject *
 get_class(PyObject *obj)
 {
     PyObject *cls;
-    _Py_IDENTIFIER(__class__);
 
     if (_PyObject_LookupAttrId(obj, &PyId___class__, &cls) == 0) {
         cls = (PyObject *) Py_TYPE(obj);
@@ -3731,17 +3749,14 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 
     if (self->proto >= 2) {
         PyObject *name;
-        _Py_IDENTIFIER(__name__);
 
         if (_PyObject_LookupAttrId(callable, &PyId___name__, &name) < 0) {
             return -1;
         }
         if (name != NULL && PyUnicode_Check(name)) {
-            _Py_IDENTIFIER(__newobj_ex__);
             use_newobj_ex = _PyUnicode_EqualToASCIIId(
                     name, &PyId___newobj_ex__);
             if (!use_newobj_ex) {
-                _Py_IDENTIFIER(__newobj__);
                 use_newobj = _PyUnicode_EqualToASCIIId(name, &PyId___newobj__);
             }
         }
@@ -3794,7 +3809,6 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             PyObject *newargs;
             PyObject *cls_new;
             Py_ssize_t i;
-            _Py_IDENTIFIER(__new__);
 
             newargs = PyTuple_New(PyTuple_GET_SIZE(args) + 2);
             if (newargs == NULL)
@@ -4128,8 +4142,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         goto done;
     }
     else {
-        _Py_IDENTIFIER(__reduce__);
-        _Py_IDENTIFIER(__reduce_ex__);
 
 
         /* XXX: If the __reduce__ method is defined, __reduce_ex__ is
@@ -4204,7 +4216,6 @@ dump(PicklerObject *self, PyObject *obj)
 {
     const char stop_op = STOP;
     PyObject *tmp;
-    _Py_IDENTIFIER(reducer_override);
 
     if (_PyObject_LookupAttrId((PyObject *)self, &PyId_reducer_override,
                                &tmp) < 0) {
@@ -4411,9 +4422,6 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports)
 /*[clinic end generated code: output=b5f31078dab17fb0 input=4faabdbc763c2389]*/
 {
-    _Py_IDENTIFIER(persistent_id);
-    _Py_IDENTIFIER(dispatch_table);
-
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->write != NULL)
         (void)Pickler_clear(self);
@@ -4804,8 +4812,6 @@ static PyTypeObject Pickler_Type = {
 static PyObject *
 find_class(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
 {
-    _Py_IDENTIFIER(find_class);
-
     return _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId_find_class,
                                          module_name, global_name, NULL);
 }
@@ -5411,8 +5417,6 @@ instantiate(PyObject *cls, PyObject *args)
        into a newly created tuple. */
     assert(PyTuple_Check(args));
     if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
-        _Py_IDENTIFIER(__getinitargs__);
-        _Py_IDENTIFIER(__new__);
         PyObject *func;
         if (_PyObject_LookupAttrId(cls, &PyId___getinitargs__, &func) < 0) {
             return NULL;
@@ -6089,7 +6093,6 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
     }
     else {
         PyObject *extend_func;
-        _Py_IDENTIFIER(extend);
 
         extend_func = _PyObject_GetAttrId(list, &PyId_extend);
         if (extend_func != NULL) {
@@ -6106,7 +6109,6 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
         }
         else {
             PyObject *append_func;
-            _Py_IDENTIFIER(append);
 
             /* Even if the PEP 307 requires extend() and append() methods,
                fall back on append() if the object has no extend() method
@@ -6235,7 +6237,6 @@ load_additems(UnpicklerObject *self)
     }
     else {
         PyObject *add_func;
-        _Py_IDENTIFIER(add);
 
         add_func = _PyObject_GetAttrId(set, &PyId_add);
         if (add_func == NULL)
@@ -6265,7 +6266,6 @@ load_build(UnpicklerObject *self)
     PyObject *state, *inst, *slotstate;
     PyObject *setstate;
     int status = 0;
-    _Py_IDENTIFIER(__setstate__);
 
     /* Stack is ... instance, state.  We want to leave instance at
      * the stack top, possibly mutated via instance.__setstate__(state).
@@ -6315,7 +6315,6 @@ load_build(UnpicklerObject *self)
         PyObject *dict;
         PyObject *d_key, *d_value;
         Py_ssize_t i;
-        _Py_IDENTIFIER(__dict__);
 
         if (!PyDict_Check(state)) {
             PickleState *st = _Pickle_GetGlobalState();
@@ -6859,8 +6858,6 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
                                 const char *errors)
 /*[clinic end generated code: output=e2c8ce748edc57b0 input=f9b7da04f5f4f335]*/
 {
-    _Py_IDENTIFIER(persistent_load);
-
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->read != NULL)
         (void)Unpickler_clear(self);

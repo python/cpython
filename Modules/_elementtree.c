@@ -16,6 +16,16 @@
 #include "Python.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(find);
+_Py_IDENTIFIER(findtext);
+_Py_IDENTIFIER(findall);
+_Py_IDENTIFIER(iterfind);
+_Py_IDENTIFIER(text);
+_Py_IDENTIFIER(tail);
+_Py_IDENTIFIER(append);
+_Py_IDENTIFIER(doctype);
+
 /* -------------------------------------------------------------------- */
 /* configuration */
 
@@ -1246,7 +1256,6 @@ _elementtree_Element_find_impl(ElementObject *self, PyObject *path,
     elementtreestate *st = ET_STATE_GLOBAL;
 
     if (checkpath(path) || namespaces != Py_None) {
-        _Py_IDENTIFIER(find);
         return _PyObject_CallMethodIdObjArgs(
             st->elementpath_obj, &PyId_find, self, path, namespaces, NULL
             );
@@ -1287,7 +1296,6 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyObject *path,
 /*[clinic end generated code: output=83b3ba4535d308d2 input=b53a85aa5aa2a916]*/
 {
     Py_ssize_t i;
-    _Py_IDENTIFIER(findtext);
     elementtreestate *st = ET_STATE_GLOBAL;
 
     if (checkpath(path) || namespaces != Py_None)
@@ -1344,7 +1352,6 @@ _elementtree_Element_findall_impl(ElementObject *self, PyObject *path,
     elementtreestate *st = ET_STATE_GLOBAL;
 
     if (checkpath(path) || namespaces != Py_None) {
-        _Py_IDENTIFIER(findall);
         return _PyObject_CallMethodIdObjArgs(
             st->elementpath_obj, &PyId_findall, self, path, namespaces, NULL
             );
@@ -1388,7 +1395,6 @@ _elementtree_Element_iterfind_impl(ElementObject *self, PyObject *path,
 /*[clinic end generated code: output=ecdd56d63b19d40f input=abb974e350fb65c7]*/
 {
     PyObject* tag = path;
-    _Py_IDENTIFIER(iterfind);
     elementtreestate *st = ET_STATE_GLOBAL;
 
     return _PyObject_CallMethodIdObjArgs(
@@ -2654,13 +2660,11 @@ treebuilder_flush_data(TreeBuilderObject* self)
     }
 
     if (self->this == element) {
-        _Py_IDENTIFIER(text);
         return treebuilder_set_element_text_or_tail(
                 element, &self->data,
                 &((ElementObject *) element)->text, &PyId_text);
     }
     else {
-        _Py_IDENTIFIER(tail);
         return treebuilder_set_element_text_or_tail(
                 element, &self->data,
                 &((ElementObject *) element)->tail, &PyId_tail);
@@ -2670,7 +2674,6 @@ treebuilder_flush_data(TreeBuilderObject* self)
 static int
 treebuilder_add_subelement(PyObject *element, PyObject *child)
 {
-    _Py_IDENTIFIER(append);
     if (Element_CheckExact(element)) {
         ElementObject *elem = (ElementObject *) element;
         return element_add_subelement(elem, child);
@@ -3527,7 +3530,6 @@ expat_start_doctype_handler(XMLParserObject *self,
                             const XML_Char *pubid,
                             int has_internal_subset)
 {
-    _Py_IDENTIFIER(doctype);
     PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
     PyObject *res;
 

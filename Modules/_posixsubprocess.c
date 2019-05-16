@@ -50,12 +50,15 @@
 #define POSIX_CALL(call)   do { if ((call) == -1) goto error; } while (0)
 
 
+_Py_IDENTIFIER(enable);
+_Py_IDENTIFIER(isenabled);
+_Py_IDENTIFIER(disable);
+
 /* If gc was disabled, call gc.enable().  Return 0 on success. */
 static int
 _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 {
     PyObject *result;
-    _Py_IDENTIFIER(enable);
     PyObject *exctype, *val, *tb;
 
     if (need_to_reenable_gc) {
@@ -600,8 +603,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     /* We need to call gc.disable() when we'll be calling preexec_fn */
     if (preexec_fn != Py_None) {
         PyObject *result;
-        _Py_IDENTIFIER(isenabled);
-        _Py_IDENTIFIER(disable);
 
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)

@@ -25,6 +25,9 @@
 #include "module.h"
 #include "util.h"
 
+
+_Py_IDENTIFIER(upper);
+
 PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
 
 static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
@@ -100,7 +103,6 @@ _pysqlite_get_converter(const char *keystr, Py_ssize_t keylen)
     PyObject *key;
     PyObject *upcase_key;
     PyObject *retval;
-    _Py_IDENTIFIER(upper);
 
     key = PyUnicode_FromStringAndSize(keystr, keylen);
     if (!key) {

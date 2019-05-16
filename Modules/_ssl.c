@@ -75,6 +75,12 @@ static PySocketModule_APIObject PySocketModule;
 #  endif
 #endif
 
+
+_Py_IDENTIFIER(reason);
+_Py_IDENTIFIER(library);
+_Py_IDENTIFIER(verify_message);
+_Py_IDENTIFIER(verify_code);
+
 /* SSL error object */
 static PyObject *PySSLErrorObject;
 static PyObject *PySSLCertVerificationErrorObject;
@@ -577,10 +583,6 @@ fill_and_set_sslerror(PySSLSocket *sslsock, PyObject *type, int ssl_errno,
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
     PyObject *init_value, *msg, *key;
-    _Py_IDENTIFIER(reason);
-    _Py_IDENTIFIER(library);
-    _Py_IDENTIFIER(verify_message);
-    _Py_IDENTIFIER(verify_code);
 
     if (errcode != 0) {
         int lib, reason;

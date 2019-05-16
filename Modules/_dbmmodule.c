@@ -28,6 +28,9 @@ static const char which_dbm[] = "Berkeley DB";
 #error "No ndbm.h available!"
 #endif
 
+
+_Py_IDENTIFIER(close);
+
 /*[clinic input]
 module _dbm
 class _dbm.dbm "dbmobject *" "&Dbmtype"
@@ -369,7 +372,6 @@ dbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
     return _PyObject_CallMethodId(self, &PyId_close, NULL);
 }
 

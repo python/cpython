@@ -32,6 +32,9 @@
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+
+_Py_IDENTIFIER(__tp_del__);
+
 static PyObject *TestError;     /* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -3250,7 +3253,6 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
 static void
 slot_tp_del(PyObject *self)
 {
-    _Py_IDENTIFIER(__tp_del__);
     PyObject *del, *res;
     PyObject *error_type, *error_value, *error_traceback;
 

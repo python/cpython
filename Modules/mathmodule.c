@@ -55,6 +55,11 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "_math.h"
 
+
+_Py_IDENTIFIER(__ceil__);
+_Py_IDENTIFIER(__floor__);
+_Py_IDENTIFIER(__trunc__);
+
 #include "clinic/mathmodule.c.h"
 
 /*[clinic input]
@@ -1108,7 +1113,6 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
-    _Py_IDENTIFIER(__ceil__);
     PyObject *method, *result;
 
     method = _PyObject_LookupSpecial(number, &PyId___ceil__);
@@ -1166,7 +1170,6 @@ static PyObject *
 math_floor(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=c6a65c4884884b8a input=63af6b5d7ebcc3d6]*/
 {
-    _Py_IDENTIFIER(__floor__);
     PyObject *method, *result;
 
     method = _PyObject_LookupSpecial(number, &PyId___floor__);
@@ -1757,7 +1760,6 @@ static PyObject *
 math_trunc(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
 {
-    _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
 
     if (Py_TYPE(x)->tp_dict == NULL) {

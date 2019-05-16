@@ -31,6 +31,9 @@
 extern "C" {
 #endif
 
+
+_Py_IDENTIFIER(path);
+
 /* --- pymain_init() ---------------------------------------------- */
 
 static _PyInitError
@@ -124,7 +127,6 @@ error:
 static int
 pymain_sys_path_add_path0(PyInterpreterState *interp, PyObject *path0)
 {
-    _Py_IDENTIFIER(path);
     PyObject *sys_path;
     PyObject *sysdict = interp->sysdict;
     if (sysdict != NULL) {

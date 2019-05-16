@@ -51,6 +51,9 @@ typedef unsigned long uint32_t;
 
 #endif
 
+
+_Py_IDENTIFIER(close);
+
 typedef struct {
     PyObject_HEAD
     const char *devicename;           /* name of the device file */
@@ -537,8 +540,6 @@ oss_self(PyObject *self, PyObject *unused)
 static PyObject *
 oss_exit(PyObject *self, PyObject *unused)
 {
-    _Py_IDENTIFIER(close);
-
     PyObject *ret = _PyObject_CallMethodId(self, &PyId_close, NULL);
     if (!ret)
         return NULL;

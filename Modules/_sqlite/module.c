@@ -35,6 +35,8 @@
 
 /* static objects at module-level */
 
+_Py_IDENTIFIER(upper);
+
 PyObject *pysqlite_Error = NULL;
 PyObject *pysqlite_Warning = NULL;
 PyObject *pysqlite_InterfaceError = NULL;
@@ -192,7 +194,6 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     PyObject* name = NULL;
     PyObject* callable;
     PyObject* retval = NULL;
-    _Py_IDENTIFIER(upper);
 
     if (!PyArg_ParseTuple(args, "UO", &orig_name, &callable)) {
         return NULL;

@@ -7,6 +7,9 @@
 
 #include "pyexpat.h"
 
+
+_Py_IDENTIFIER(read);
+
 /* Do not emit Clinic output to a file as that wreaks havoc with conditionally
    included methods. */
 /*[clinic input]
@@ -808,7 +811,6 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyObject *file)
 {
     int rv = 1;
     PyObject *readmethod = NULL;
-    _Py_IDENTIFIER(read);
 
     readmethod = _PyObject_GetAttrId(file, &PyId_read);
     if (readmethod == NULL) {

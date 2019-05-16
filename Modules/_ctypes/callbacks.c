@@ -7,6 +7,11 @@
 #endif
 #include "ctypes.h"
 
+
+#ifdef MS_WIN32
+_Py_IDENTIFIER(_needs_com_addref_);
+#endif
+
 /**************************************************************/
 
 static void
@@ -107,7 +112,6 @@ static void
 TryAddRef(StgDictObject *dict, CDataObject *obj)
 {
     IUnknown *punk;
-    _Py_IDENTIFIER(_needs_com_addref_);
 
     if (!_PyDict_GetItemIdWithError((PyObject *)dict, &PyId__needs_com_addref_)) {
         if (PyErr_Occurred()) {

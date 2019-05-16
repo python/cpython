@@ -79,6 +79,11 @@
 #include <sanitizer/msan_interface.h>
 #endif
 
+
+_Py_IDENTIFIER(_as_parameter_);
+_Py_IDENTIFIER(__new__);
+_Py_IDENTIFIER(__setstate__);
+
 #if defined(_DEBUG) || defined(__MINGW32__)
 /* Don't use structured exception handling on Windows if this is defined.
    MingW, AFAIK, doesn't support it.
@@ -707,7 +712,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #endif
 
     {
-        _Py_IDENTIFIER(_as_parameter_);
         PyObject *arg;
         if (_PyObject_LookupAttrId(obj, &PyId__as_parameter_, &arg) < 0) {
             return -1;
@@ -1688,8 +1692,6 @@ static PyObject *
 unpickle(PyObject *self, PyObject *args)
 {
     PyObject *typ, *state, *meth, *obj, *result;
-    _Py_IDENTIFIER(__new__);
-    _Py_IDENTIFIER(__setstate__);
 
     if (!PyArg_ParseTuple(args, "OO!", &typ, &PyTuple_Type, &state))
         return NULL;

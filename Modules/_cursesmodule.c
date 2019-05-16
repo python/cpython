@@ -125,6 +125,12 @@ static const char PyCursesVersion[] = "2.2";
 #include <langinfo.h>
 #endif
 
+
+_Py_IDENTIFIER(write);
+_Py_IDENTIFIER(read);
+_Py_IDENTIFIER(LINES);
+_Py_IDENTIFIER(COLS);
+
 #if !defined(HAVE_NCURSES_H) && (defined(sgi) || defined(__sun) || defined(SCO5))
 #define STRICT_SYSV_CURSES       /* Don't use ncurses extensions */
 typedef chtype attr_t;           /* No attr_t type is available */
@@ -2020,7 +2026,6 @@ _curses_window_putwin(PyCursesWindowObject *self, PyObject *file)
     while (1) {
         char buf[BUFSIZ];
         Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
-        _Py_IDENTIFIER(write);
 
         if (n <= 0)
             break;
@@ -2894,7 +2899,6 @@ _curses_getwin(PyObject *module, PyObject *file)
     PyObject *data;
     size_t datalen;
     WINDOW *win;
-    _Py_IDENTIFIER(read);
     PyObject *res = NULL;
 
     PyCursesInitialised;
@@ -3701,8 +3705,6 @@ update_lines_cols(void)
 {
     PyObject *o;
     PyObject *m = PyImport_ImportModuleNoBlock("curses");
-    _Py_IDENTIFIER(LINES);
-    _Py_IDENTIFIER(COLS);
 
     if (!m)
         return 0;

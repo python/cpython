@@ -116,6 +116,19 @@ bytes(cdata)
 #endif
 #include "ctypes.h"
 
+
+_Py_IDENTIFIER(_abstract_);
+_Py_IDENTIFIER(_fields_);
+_Py_IDENTIFIER(_as_parameter_);
+_Py_IDENTIFIER(_type_);
+_Py_IDENTIFIER(_length_);
+_Py_IDENTIFIER(from_param);
+_Py_IDENTIFIER(_flags_);
+_Py_IDENTIFIER(_argtypes_);
+_Py_IDENTIFIER(_restype_);
+_Py_IDENTIFIER(_check_retval_);
+_Py_IDENTIFIER(__ctypes_from_outparam__);
+
 PyObject *PyExc_ArgError = NULL;
 
 /* This dict maps ctypes types to POINTER types */
@@ -441,8 +454,6 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
     PyTypeObject *result;
     PyObject *fields;
     StgDictObject *dict;
-    _Py_IDENTIFIER(_abstract_);
-    _Py_IDENTIFIER(_fields_);
 
     /* create the new instance (which is a class,
        since we are a metatype!) */
@@ -721,7 +732,6 @@ static const char from_param_doc[] =
 static PyObject *
 CDataType_from_param(PyObject *type, PyObject *value)
 {
-    _Py_IDENTIFIER(_as_parameter_);
     PyObject *as_parameter;
     int res = PyObject_IsInstance(value, type);
     if (res == -1)
@@ -992,7 +1002,6 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     StgDictObject *stgdict;
     PyObject *proto;
     PyObject *typedict;
-    _Py_IDENTIFIER(_type_);
 
     typedict = PyTuple_GetItem(args, 2);
     if (!typedict)
@@ -1070,7 +1079,6 @@ static PyObject *
 PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
 {
     StgDictObject *dict;
-    _Py_IDENTIFIER(_type_);
 
     dict = PyType_stgdict((PyObject *)self);
     if (!dict) {
@@ -1427,8 +1435,6 @@ PyCArrayType_paramfunc(CDataObject *self)
 static PyObject *
 PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _Py_IDENTIFIER(_length_);
-    _Py_IDENTIFIER(_type_);
     PyTypeObject *result;
     StgDictObject *stgdict;
     StgDictObject *itemdict;
@@ -1626,7 +1632,6 @@ static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
 static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)
 {
-    _Py_IDENTIFIER(_as_parameter_);
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
@@ -1693,7 +1698,6 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
 static PyObject *
 c_char_p_from_param(PyObject *type, PyObject *value)
 {
-    _Py_IDENTIFIER(_as_parameter_);
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
@@ -1760,7 +1764,6 @@ c_char_p_from_param(PyObject *type, PyObject *value)
 static PyObject *
 c_void_p_from_param(PyObject *type, PyObject *value)
 {
-    _Py_IDENTIFIER(_as_parameter_);
     StgDictObject *stgd;
     PyObject *as_parameter;
     int res;
@@ -2007,7 +2010,6 @@ PyCSimpleType_paramfunc(CDataObject *self)
 static PyObject *
 PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _Py_IDENTIFIER(_type_);
     PyTypeObject *result;
     StgDictObject *stgdict;
     PyObject *proto;
@@ -2192,7 +2194,6 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 PyCSimpleType_from_param(PyObject *type, PyObject *value)
 {
-    _Py_IDENTIFIER(_as_parameter_);
     StgDictObject *dict;
     const char *fmt;
     PyCArgObject *parg;
@@ -2313,7 +2314,6 @@ PyTypeObject PyCSimpleType_Type = {
 static PyObject *
 converters_from_argtypes(PyObject *ob)
 {
-    _Py_IDENTIFIER(from_param);
     PyObject *converters;
     Py_ssize_t i;
     Py_ssize_t nArgs;
@@ -2361,10 +2361,6 @@ make_funcptrtype_dict(StgDictObject *stgdict)
 {
     PyObject *ob;
     PyObject *converters = NULL;
-    _Py_IDENTIFIER(_flags_);
-    _Py_IDENTIFIER(_argtypes_);
-    _Py_IDENTIFIER(_restype_);
-    _Py_IDENTIFIER(_check_retval_);
 
     stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
@@ -3166,7 +3162,6 @@ PyCFuncPtr_get_errcheck(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
 static int
 PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(_check_retval_);
     PyObject *checker, *oldchecker;
     if (ob == NULL) {
         oldchecker = self->checker;
@@ -3957,7 +3952,6 @@ _build_result(PyObject *result, PyObject *callargs,
             PyTuple_SET_ITEM(tup, index, v);
             index++;
         } else if (bit & outmask) {
-            _Py_IDENTIFIER(__ctypes_from_outparam__);
 
             v = PyTuple_GET_ITEM(callargs, i);
             v = _PyObject_CallMethodId(v, &PyId___ctypes_from_outparam__, NULL);
@@ -4243,7 +4237,6 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
     StgDictObject *dict;
     PyObject *fields;
     Py_ssize_t i;
-    _Py_IDENTIFIER(_fields_);
 
     if (PyType_stgdict((PyObject *)type->tp_base)) {
         index = _init_pos_args(self, type->tp_base,

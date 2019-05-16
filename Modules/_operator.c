@@ -3,6 +3,9 @@
 
 #include "clinic/_operator.c.h"
 
+
+_Py_IDENTIFIER(partial);
+
 /*[clinic input]
 module _operator
 [clinic start generated code]*/
@@ -1671,7 +1674,6 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         PyObject *constructor;
         PyObject *newargs[2];
 
-        _Py_IDENTIFIER(partial);
         functools = PyImport_ImportModule("functools");
         if (!functools)
             return NULL;

@@ -46,6 +46,9 @@
 #endif
 
 _Py_IDENTIFIER(cursor);
+_Py_IDENTIFIER(finalize);
+_Py_IDENTIFIER(upper);
+_Py_IDENTIFIER(_iterdump);
 
 static const char * const begin_statements[] = {
     "BEGIN ",
@@ -692,7 +695,6 @@ void _pysqlite_final_callback(sqlite3_context* context)
 {
     PyObject* function_result;
     PyObject** aggregate_instance;
-    _Py_IDENTIFIER(finalize);
     int ok;
     PyObject *exception, *value, *tb;
     int restore;
@@ -1176,7 +1178,6 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
     } else {
         const char * const *candidate;
         PyObject *uppercase_level;
-        _Py_IDENTIFIER(upper);
 
         if (!PyUnicode_Check(isolation_level)) {
             PyErr_Format(PyExc_TypeError,
@@ -1436,7 +1437,6 @@ finally:
 static PyObject *
 pysqlite_connection_iterdump(pysqlite_Connection* self, PyObject* args)
 {
-    _Py_IDENTIFIER(_iterdump);
     PyObject* retval = NULL;
     PyObject* module = NULL;
     PyObject* module_dict;
@@ -1640,7 +1640,6 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     PyObject* name;
     PyObject* retval;
     Py_ssize_t i, len;
-    _Py_IDENTIFIER(upper);
     const char *uppercase_name_str;
     int rc;
     unsigned int kind;

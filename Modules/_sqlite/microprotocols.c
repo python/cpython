@@ -31,6 +31,9 @@
 #include "prepare_protocol.h"
 
 
+_Py_IDENTIFIER(__adapt__);
+_Py_IDENTIFIER(__conform__);
+
 /** the adapters registry **/
 
 static PyObject *psyco_adapters = NULL;
@@ -75,8 +78,6 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
 PyObject *
 pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
 {
-    _Py_IDENTIFIER(__adapt__);
-    _Py_IDENTIFIER(__conform__);
     PyObject *adapter, *key, *adapted;
 
     /* we don't check for exact type conformance as specified in PEP 246

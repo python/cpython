@@ -17,6 +17,17 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
+
+_Py_IDENTIFIER(replace);
+_Py_IDENTIFIER(tzname);
+_Py_IDENTIFIER(time);
+_Py_IDENTIFIER(struct_time);
+_Py_IDENTIFIER(fromtimestamp);
+_Py_IDENTIFIER(timetuple);
+_Py_IDENTIFIER(__getinitargs__);
+_Py_IDENTIFIER(__getstate__);
+_Py_IDENTIFIER(_strptime_datetime);
+
 #define PyDate_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateType)
 #define PyDate_CheckExact(op) (Py_TYPE(op) == &PyDateTime_DateType)
 
@@ -1228,7 +1239,6 @@ static PyObject *
 call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
 {
     PyObject *result;
-    _Py_IDENTIFIER(tzname);
 
     assert(tzinfo != NULL);
     assert(check_tzinfo_subclass(tzinfo) >= 0);
@@ -1418,7 +1428,6 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
     PyObject *temp;
     PyObject *tzinfo = get_tzinfo_member(object);
     PyObject *Zreplacement = PyUnicode_FromStringAndSize(NULL, 0);
-    _Py_IDENTIFIER(replace);
 
     if (Zreplacement == NULL)
         return NULL;
@@ -1657,7 +1666,6 @@ time_time(void)
     PyObject *time = PyImport_ImportModuleNoBlock("time");
 
     if (time != NULL) {
-        _Py_IDENTIFIER(time);
 
         result = _PyObject_CallMethodId(time, &PyId_time, NULL);
         Py_DECREF(time);
@@ -1673,7 +1681,6 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 {
     PyObject *time;
     PyObject *result;
-    _Py_IDENTIFIER(struct_time);
     PyObject *args;
 
 
@@ -2883,7 +2890,6 @@ date_today(PyObject *cls, PyObject *dummy)
 {
     PyObject *time;
     PyObject *result;
-    _Py_IDENTIFIER(fromtimestamp);
 
     time = time_time();
     if (time == NULL)
@@ -3182,7 +3188,6 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
     PyObject *result;
     PyObject *tuple;
     PyObject *format;
-    _Py_IDENTIFIER(timetuple);
     static char *kwlist[] = {"format", NULL};
 
     if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", kwlist,
@@ -3603,8 +3608,6 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args, *state;
     PyObject *getinitargs, *getstate;
-    _Py_IDENTIFIER(__getinitargs__);
-    _Py_IDENTIFIER(__getstate__);
 
     getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
     if (getinitargs != NULL) {
@@ -5024,7 +5027,6 @@ static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
     PyObject *string, *format;
-    _Py_IDENTIFIER(_strptime_datetime);
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;

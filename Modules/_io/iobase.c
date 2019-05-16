@@ -14,6 +14,12 @@
 #include "structmember.h"
 #include "_iomodule.h"
 
+
+_Py_IDENTIFIER(seek);
+_Py_IDENTIFIER(_finalizing);
+_Py_IDENTIFIER(extend);
+_Py_IDENTIFIER(readall);
+
 /*[clinic input]
 module _io
 class _io._IOBase "PyObject *" "&PyIOBase_Type"
@@ -113,7 +119,6 @@ static PyObject *
 _io__IOBase_tell_impl(PyObject *self)
 /*[clinic end generated code: output=89a1c0807935abe2 input=04e615fec128801f]*/
 {
-    _Py_IDENTIFIER(seek);
 
     return _PyObject_CallMethodId(self, &PyId_seek, "ii", 0, 1);
 }
@@ -259,7 +264,6 @@ iobase_finalize(PyObject *self)
     PyObject *res;
     PyObject *error_type, *error_value, *error_traceback;
     int closed;
-    _Py_IDENTIFIER(_finalizing);
 
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -697,7 +701,6 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
         /* XXX special-casing this made sense in the Python version in order
            to remove the bytecode interpretation overhead, but it could
            probably be removed here. */
-        _Py_IDENTIFIER(extend);
         PyObject *ret = _PyObject_CallMethodIdObjArgs(result, &PyId_extend,
                                                       self, NULL);
 
@@ -919,7 +922,6 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
     PyObject *b, *res;
 
     if (n < 0) {
-        _Py_IDENTIFIER(readall);
 
         return _PyObject_CallMethodId(self, &PyId_readall, NULL);
     }

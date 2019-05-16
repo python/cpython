@@ -6,6 +6,12 @@
 #endif
 #include "ctypes.h"
 
+
+_Py_IDENTIFIER(_anonymous_);
+_Py_IDENTIFIER(_swappedbytes_);
+_Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
+_Py_IDENTIFIER(_pack_);
+
 /******************************************************************/
 /*
   StdDict - a dictionary subclass, containing additional C accessible fields
@@ -281,7 +287,6 @@ MakeFields(PyObject *type, CFieldObject *descr,
 static int
 MakeAnonFields(PyObject *type)
 {
-    _Py_IDENTIFIER(_anonymous_);
     PyObject *anon;
     PyObject *anon_names;
     Py_ssize_t i;
@@ -337,9 +342,6 @@ MakeAnonFields(PyObject *type)
 int
 PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 {
-    _Py_IDENTIFIER(_swappedbytes_);
-    _Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
-    _Py_IDENTIFIER(_pack_);
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
