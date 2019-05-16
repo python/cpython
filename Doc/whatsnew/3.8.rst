@@ -780,10 +780,6 @@ Deprecated
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
-* The function :func:`~inspect.getfullargspec` in the :mod:`inspect`
-  module is deprecated in favor of the :func:`inspect.signature`
-  API.  (Contributed by Pablo Galindo in :issue:`36751`.)
-
 
 API and Feature Removals
 ========================
