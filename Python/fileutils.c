@@ -1091,7 +1091,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     DWORD flags;
 #else
 #if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
-    static int ioctl_works = -1;
+    static int ioctl_works = -1;  // Static is okay here (process-global).
     int request;
     int err;
 #endif

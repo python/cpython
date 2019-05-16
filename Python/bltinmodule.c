@@ -1851,8 +1851,8 @@ builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z)
 static PyObject *
 builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    static const char * const _keywords[] = {"sep", "end", "file", "flush", 0};
-    static struct _PyArg_Parser _parser = {"|OOOO:print", _keywords, 0};
+    static const char * const _kwlist[] = {"sep", "end", "file", "flush", 0};
+    static struct _PyArg_Parser _parser = {"|OOOO:print", _kwlist, 0};  // Static is okay here (immutable data).
     PyObject *sep = NULL, *end = NULL, *file = NULL, *flush = NULL;
     int i, err;
 

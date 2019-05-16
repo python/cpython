@@ -154,6 +154,8 @@ aix_loaderror(const char *pathname)
 }
 
 
+static void *staticmodlistptr = NULL;
+
 dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
                                        const char *shortname,
                                        const char *pathname, FILE *fp)
@@ -168,8 +170,6 @@ dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
     -- (only those that belong to the python executable). Get these
     -- with loadquery(L_GETINFO).
     */
-
-    static void *staticmodlistptr = NULL;
 
     if (!staticmodlistptr)
         if (aix_getoldmodules(&staticmodlistptr) == -1)

@@ -102,7 +102,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
     /* Is getrandom() supported by the running kernel? Set to 0 if getrandom()
        failed with ENOSYS or EPERM. Need Linux kernel 3.17 or newer, or Solaris
        11.3 or newer */
-    static int getrandom_works = 1;
+    static int getrandom_works = 1;  // Static is okay here (process-global).
     int flags;
     char *dest;
     long n;
@@ -212,7 +212,7 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
 {
     /* Is getentropy() supported by the running kernel? Set to 0 if
        getentropy() failed with ENOSYS or EPERM. */
-    static int getentropy_works = 1;
+    static int getentropy_works = 1;  // Static is okay here (process-global).
 
     if (!getentropy_works) {
         return 0;

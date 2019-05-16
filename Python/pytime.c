@@ -800,8 +800,8 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     }
 
 #elif defined(__APPLE__)
-    static mach_timebase_info_data_t timebase;
-    static uint64_t t0 = 0;
+    static mach_timebase_info_data_t timebase;  // Static is okay here (process-global?).
+    static uint64_t t0 = 0;  // Static is okay here (process-global?).
     uint64_t ticks;
 
     if (timebase.denom == 0) {
@@ -938,8 +938,8 @@ _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 static int
 win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    static LONGLONG frequency = 0;
-    static LONGLONG t0 = 0;
+    static LONGLONG frequency = 0;  // Static is okay here (process-global?).
+    static LONGLONG t0 = 0;  // Static is okay here (process-global?).
     LARGE_INTEGER now;
     LONGLONG ticksll;
     _PyTime_t ticks;

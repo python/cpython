@@ -3178,7 +3178,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                 // To remain LL(1), the grammar accepts any test (basically, any
                 // expression) in the keyword slot of a call site.  So, we need
                 // to manually enforce that the keyword is a NAME here.
-                static const int name_tree[] = {
+                static const int name_tree[] = {  // Static is okay here (immutable data).
                     test,
                     or_test,
                     and_test,

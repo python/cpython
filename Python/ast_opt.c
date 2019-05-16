@@ -75,7 +75,7 @@ fold_unaryop(expr_ty node, PyArena *arena, int optimize)
     }
 
     typedef PyObject *(*unary_op)(PyObject*);
-    static const unary_op ops[] = {
+    static const unary_op ops[] = {  // Static is okay here (immutable data).
         [Invert] = PyNumber_Invert,
         [Not] = unary_not,
         [UAdd] = PyNumber_Positive,

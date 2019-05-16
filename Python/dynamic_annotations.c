@@ -142,7 +142,7 @@ static int GetRunningOnValgrind(void) {
 
 /* See the comments in dynamic_annotations.h */
 int RunningOnValgrind(void) {
-  static volatile int running_on_valgrind = -1;
+  static volatile int running_on_valgrind = -1;  // Static is okay here (process-global).
   /* C doesn't have thread-safe initialization of statics, and we
      don't want to depend on pthread_once here, so hack it. */
   int local_running_on_valgrind = running_on_valgrind;

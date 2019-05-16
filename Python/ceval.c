@@ -479,21 +479,21 @@ handle_signals(_PyRuntimeState *runtime)
     return 0;
 }
 
+static int pending_calls_busy = 0;
+
 static int
 make_pending_calls(_PyRuntimeState *runtime)
 {
-    static int busy = 0;
-
     /* only service pending calls on main thread */
     if (PyThread_get_thread_ident() != runtime->main_thread) {
         return 0;
     }
 
     /* don't perform recursive pending calls */
-    if (busy) {
+    if (pending_calls_busy) {
         return 0;
     }
-    busy = 1;
+    pending_calls_busy = 1;
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
@@ -521,11 +521,11 @@ make_pending_calls(_PyRuntimeState *runtime)
         }
     }
 
-    busy = 0;
+    pending_calls_busy = 0;
     return res;
 
 error:
-    busy = 0;
+    pending_calls_busy = 0;
     SIGNAL_PENDING_CALLS(ceval);
     return res;
 }

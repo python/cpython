@@ -1649,6 +1649,10 @@ resolve_name(PyObject *name, PyObject *globals, int level)
     return NULL;
 }
 
+static int import_level = 0;
+static _PyTime_t accumulated = 0;
+static int header = 1;
+
 static PyObject *
 import_find_and_load(PyObject *abs_name)
 {
@@ -1656,8 +1660,6 @@ import_find_and_load(PyObject *abs_name)
     PyObject *mod = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     int import_time = interp->core_config.import_time;
-    static int import_level;
-    static _PyTime_t accumulated;
 
     _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
@@ -1667,7 +1669,6 @@ import_find_and_load(PyObject *abs_name)
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-        static int header = 1;
         if (header) {
             fputs("import time: self [us] | cumulative | imported package\n",
                   stderr);
@@ -1925,12 +1926,13 @@ PyImport_ReloadModule(PyObject *m)
    e.g. PyImport_Import(PyUnicode_FromString("win32com.client.gencache"))
    will return <module "gencache"> instead of <module "win32com">. */
 
+static PyObject *silly_list = NULL;
+static PyObject *builtins_str = NULL;
+static PyObject *import_str = NULL;
+
 PyObject *
 PyImport_Import(PyObject *module_name)
 {
-    static PyObject *silly_list = NULL;
-    static PyObject *builtins_str = NULL;
-    static PyObject *import_str = NULL;
     PyObject *globals = NULL;
     PyObject *import = NULL;
     PyObject *builtins = NULL;

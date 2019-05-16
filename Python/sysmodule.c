@@ -264,6 +264,8 @@ finally:
     return ret;
 }
 
+static PyObject *newline = NULL;
+
 /*[clinic input]
 sys.displayhook
 
@@ -279,7 +281,6 @@ sys_displayhook(PyObject *module, PyObject *o)
 {
     PyObject *outf;
     PyObject *builtins;
-    static PyObject *newline = NULL;
     int err;
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
@@ -481,7 +482,7 @@ static PyObject *whatstrings[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NUL
 static int
 trace_init(void)
 {
-    static const char * const whatnames[8] = {
+    static const char * const whatnames[8] = {  // Static is okay here (immutable data).
         "call", "exception", "line", "return",
         "c_call", "c_exception", "c_return",
         "opcode"
@@ -909,12 +910,12 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
 static PyObject *
 sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 {
-    static char *keywords[] = {"firstiter", "finalizer", NULL};
+    static char *kwlist[] = {"firstiter", "finalizer", NULL};
     PyObject *firstiter = NULL;
     PyObject *finalizer = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kw, "|OO", keywords,
+            args, kw, "|OO", kwlist,
             &firstiter, &finalizer)) {
         return NULL;
     }

@@ -686,7 +686,7 @@ pow5mult(Bigint *b, int k)
 {
     Bigint *b1, *p5, *p51;
     int i;
-    static const int p05[3] = { 5, 25, 125 };
+    static const int p05[3] = { 5, 25, 125 };  // Static is okay here (immutable data).
 
     if ((i = k & 3)) {
         b = multadd(b, p05[i-1], 0);
@@ -742,7 +742,7 @@ pow5mult(Bigint *b, int k)
 {
     Bigint *b1, *p5, *p51;
     int i;
-    static const int p05[3] = { 5, 25, 125 };
+    static const int p05[3] = { 5, 25, 125 };  // Static is okay here (immutable data).
 
     if ((i = k & 3)) {
         b = multadd(b, p05[i-1], 0);

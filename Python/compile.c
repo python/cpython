@@ -1717,19 +1717,20 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
     return 1;
 }
 
+static PyObject *cached_name_module = NULL;
+
 static PyCodeObject *
 compiler_mod(struct compiler *c, mod_ty mod)
 {
     PyCodeObject *co;
     int addNone = 1;
-    static PyObject *module;
-    if (!module) {
-        module = PyUnicode_InternFromString("<module>");
-        if (!module)
+    if (!cached_name_module) {
+        cached_name_module = PyUnicode_InternFromString("<module>");
+        if (!cached_name_module)
             return NULL;
     }
     /* Use 0 for firstlineno initially, will fixup in assemble(). */
-    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 0))
+    if (!compiler_enter_scope(c, cached_name_module, COMPILER_SCOPE_MODULE, mod, 0))
         return NULL;
     switch (mod->kind) {
     case Module_kind:
@@ -1973,6 +1974,8 @@ compiler_visit_argannotations(struct compiler *c, asdl_seq* args,
     return 1;
 }
 
+static identifier return_str = NULL;
+
 static int
 compiler_visit_annotations(struct compiler *c, arguments_ty args,
                            expr_ty returns)
@@ -1982,7 +1985,6 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
        Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
        */
-    static identifier return_str;
     PyObject *names;
     Py_ssize_t len;
     names = PyList_New(0);
@@ -2481,19 +2483,20 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     return 1;
 }
 
+static identifier cached_name_lambda;
+
 static int
 compiler_lambda(struct compiler *c, expr_ty e)
 {
     PyCodeObject *co;
     PyObject *qualname;
-    static identifier name;
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
 
-    if (!name) {
-        name = PyUnicode_InternFromString("<lambda>");
-        if (!name)
+    if (!cached_name_lambda) {
+        cached_name_lambda = PyUnicode_InternFromString("<lambda>");
+        if (!cached_name_lambda)
             return 0;
     }
 
@@ -2502,7 +2505,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
-    if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
+    if (!compiler_enter_scope(c, cached_name_lambda, COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno))
         return 0;
 
@@ -3082,12 +3085,13 @@ compiler_import(struct compiler *c, stmt_ty s)
     return 1;
 }
 
+static PyObject *empty_string;
+
 static int
 compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
     PyObject *names;
-    static PyObject *empty_string;
 
     if (!empty_string) {
         empty_string = PyUnicode_FromString("");
@@ -3146,17 +3150,18 @@ compiler_from_import(struct compiler *c, stmt_ty s)
     return 1;
 }
 
+static PyObject *cached_name_assertion_error = NULL;
+
 static int
 compiler_assert(struct compiler *c, stmt_ty s)
 {
-    static PyObject *assertion_error = NULL;
     basicblock *end;
 
     if (c->c_optimize)
         return 1;
-    if (assertion_error == NULL) {
-        assertion_error = PyUnicode_InternFromString("AssertionError");
-        if (assertion_error == NULL)
+    if (cached_name_assertion_error == NULL) {
+        cached_name_assertion_error = PyUnicode_InternFromString("AssertionError");
+        if (cached_name_assertion_error == NULL)
             return 0;
     }
     if (s->v.Assert.test->kind == Tuple_kind &&
@@ -3173,7 +3178,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         return 0;
     if (!compiler_jump_if(c, s->v.Assert.test, end, 1))
         return 0;
-    ADDOP_O(c, LOAD_GLOBAL, assertion_error, names);
+    ADDOP_O(c, LOAD_GLOBAL, cached_name_assertion_error, names);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, CALL_FUNCTION, 1);
@@ -4449,63 +4454,67 @@ error:
     return 0;
 }
 
+static identifier cached_name_getexpr;
+
 static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
-    static identifier name;
-    if (!name) {
-        name = PyUnicode_InternFromString("<genexpr>");
-        if (!name)
+    if (!cached_name_getexpr) {
+        cached_name_getexpr = PyUnicode_InternFromString("<genexpr>");
+        if (!cached_name_getexpr)
             return 0;
     }
     assert(e->kind == GeneratorExp_kind);
-    return compiler_comprehension(c, e, COMP_GENEXP, name,
+    return compiler_comprehension(c, e, COMP_GENEXP, cached_name_getexpr,
                                   e->v.GeneratorExp.generators,
                                   e->v.GeneratorExp.elt, NULL);
 }
 
+static identifier cached_name_listcomp;
+
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-    static identifier name;
-    if (!name) {
-        name = PyUnicode_InternFromString("<listcomp>");
-        if (!name)
+    if (!cached_name_listcomp) {
+        cached_name_listcomp = PyUnicode_InternFromString("<listcomp>");
+        if (!cached_name_listcomp)
             return 0;
     }
     assert(e->kind == ListComp_kind);
-    return compiler_comprehension(c, e, COMP_LISTCOMP, name,
+    return compiler_comprehension(c, e, COMP_LISTCOMP, cached_name_listcomp,
                                   e->v.ListComp.generators,
                                   e->v.ListComp.elt, NULL);
 }
 
+static identifier cached_name_setcomp;
+
 static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
-    static identifier name;
-    if (!name) {
-        name = PyUnicode_InternFromString("<setcomp>");
-        if (!name)
+    if (!cached_name_setcomp) {
+        cached_name_setcomp = PyUnicode_InternFromString("<setcomp>");
+        if (!cached_name_setcomp)
             return 0;
     }
     assert(e->kind == SetComp_kind);
-    return compiler_comprehension(c, e, COMP_SETCOMP, name,
+    return compiler_comprehension(c, e, COMP_SETCOMP, cached_name_setcomp,
                                   e->v.SetComp.generators,
                                   e->v.SetComp.elt, NULL);
 }
 
 
+static identifier cached_name_dictcomp;
+
 static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
-    static identifier name;
-    if (!name) {
-        name = PyUnicode_InternFromString("<dictcomp>");
-        if (!name)
+    if (!cached_name_dictcomp) {
+        cached_name_dictcomp = PyUnicode_InternFromString("<dictcomp>");
+        if (!cached_name_dictcomp)
             return 0;
     }
     assert(e->kind == DictComp_kind);
-    return compiler_comprehension(c, e, COMP_DICTCOMP, name,
+    return compiler_comprehension(c, e, COMP_DICTCOMP, cached_name_dictcomp,
                                   e->v.DictComp.generators,
                                   e->v.DictComp.key, e->v.DictComp.value);
 }

@@ -118,11 +118,14 @@ do { \
 // NULL when pthread_condattr_setclock(CLOCK_MONOTONIC) is not supported.
 static pthread_condattr_t *condattr_monotonic = NULL;
 
+#ifdef CONDATTR_MONOTONIC
+static pthread_condattr_t ca;
+#endif
+
 static void
 init_condattr()
 {
 #ifdef CONDATTR_MONOTONIC
-    static pthread_condattr_t ca;
     pthread_condattr_init(&ca);
     if (pthread_condattr_setclock(&ca, CLOCK_MONOTONIC) == 0) {
         condattr_monotonic = &ca;  // Use monotonic clock

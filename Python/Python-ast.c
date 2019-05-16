@@ -838,9 +838,10 @@ static int add_ast_fields(void)
 }
 
 
+static int initialized;
+
 static int init_types(void)
 {
-    static int initialized;
     if (initialized) return 1;
     if (add_ast_fields() < 0) return 0;
     mod_type = make_type("mod", &AST_type, NULL, 0);
