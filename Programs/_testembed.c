@@ -757,17 +757,25 @@ fail:
 }
 
 
-static int test_run_main(void)
+wchar_t *init_main_argv[] = {
+    L"python3", L"-c",
+    (L"import _testinternalcapi, json; "
+     L"print(json.dumps(_testinternalcapi.get_configs()))"),
+    L"arg2"};
+
+
+static void configure_init_main(_PyCoreConfig *config)
+{
+    config->argv.length = Py_ARRAY_LENGTH(init_main_argv);
+    config->argv.items = init_main_argv;
+    config->program_name = L"./python3";
+}
+
+
+static int test_init_run_main(void)
 {
     _PyCoreConfig config = _PyCoreConfig_INIT;
-
-    wchar_t *argv[] = {L"python3", L"-c",
-                       (L"import sys; "
-                        L"print(f'_Py_RunMain(): sys.argv={sys.argv}')"),
-                       L"arg2"};
-    config.argv.length = Py_ARRAY_LENGTH(argv);
-    config.argv.items = argv;
-    config.program_name = L"./python3";
+    configure_init_main(&config);
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
@@ -778,13 +786,42 @@ static int test_run_main(void)
 }
 
 
-static int test_run_main_config(void)
+static int test_init_main(void)
+{
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    configure_init_main(&config);
+    config._init_main = 0;
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
+    int res = PyRun_SimpleString(
+        "import sys; "
+        "print('Run Python code before _Py_InitializeMain', "
+               "file=sys.stderr)");
+    if (res < 0) {
+        exit(1);
+    }
+
+    err = _Py_InitializeMain();
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
+
+static int test_run_main(void)
 {
     _PyCoreConfig config = _PyCoreConfig_INIT;
 
     wchar_t *argv[] = {L"python3", L"-c",
-                       (L"import _testinternalcapi, json; "
-                        L"print(json.dumps(_testinternalcapi.get_configs()))"),
+                       (L"import sys; "
+                        L"print(f'_Py_RunMain(): sys.argv={sys.argv}')"),
                        L"arg2"};
     config.argv.length = Py_ARRAY_LENGTH(argv);
     config.argv.items = argv;
@@ -837,8 +874,9 @@ static struct TestCase TestCases[] = {
     { "preinit_isolated1", test_preinit_isolated1 },
     { "preinit_isolated2", test_preinit_isolated2 },
     { "init_read_set", test_init_read_set },
+    { "init_run_main", test_init_run_main },
+    { "init_main", test_init_main },
     { "run_main", test_run_main },
-    { "run_main_config", test_run_main_config },
     { NULL, NULL }
 };
 
