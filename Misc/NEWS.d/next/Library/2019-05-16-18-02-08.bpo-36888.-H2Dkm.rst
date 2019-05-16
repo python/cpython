@@ -1,0 +1,2 @@
+Python child processes can now access the status of their parent process
+using multiprocessing.process.parent_process
