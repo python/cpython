@@ -304,6 +304,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'pycache_prefix': None,
         'program_name': GET_DEFAULT_CONFIG,
+        'parse_argv': 1,
         'argv': [""],
         'program': '',
 
@@ -699,6 +700,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'run_command': code + '\n',
         }
         self.check_config("run_main_config", core_config, preconfig)
+
+    def test_init_dont_parse_argv(self):
+        core_config = {
+            'argv': ['-v', '-c', 'arg1', '-W', 'arg2'],
+            'parse_argv': 0,
+            'program': 'program',
+        }
+        self.check_config("init_dont_parse_argv", core_config, {})
 
 
 if __name__ == "__main__":

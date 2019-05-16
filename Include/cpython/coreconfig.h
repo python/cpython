@@ -207,31 +207,25 @@ typedef struct {
     wchar_t *filesystem_errors;
 
     wchar_t *pycache_prefix;  /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
+    int parse_argv;           /* Parse argv command line arguments? */
+
+    /* Command line arguments (sys.argv).
+
+       By default, Python command line arguments are parsed and then stripped
+       from argv. Set parse_argv to 0 to avoid that.
+
+       If argv is empty, an empty string is added to ensure that sys.argv
+       always exists and is never empty. */
+    _PyWstrList argv;
+
+    /* Program: argv[0] or "".
+       Used to display Python usage if parsing command line arguments fails.
+       Used to initialize the default value of program_name */
+    wchar_t *program;
     wchar_t *program_name;    /* Program name, see also Py_GetProgramName() */
-    _PyWstrList argv;         /* Command line arguments */
-    wchar_t *program;         /* argv[0] or "" */
+
     _PyWstrList xoptions;     /* Command line -X options */
     _PyWstrList warnoptions;  /* Warnings options */
-
-    /* Path configuration inputs */
-    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
-    wchar_t *home;          /* PYTHONHOME environment variable,
-                               see also Py_SetPythonHome(). */
-
-    /* Path configuration outputs */
-    int use_module_search_paths;  /* If non-zero, use module_search_paths */
-    _PyWstrList module_search_paths;  /* sys.path paths. Computed if
-                                       use_module_search_paths is equal
-                                       to zero. */
-
-    wchar_t *executable;    /* sys.executable */
-    wchar_t *prefix;        /* sys.prefix */
-    wchar_t *base_prefix;   /* sys.base_prefix */
-    wchar_t *exec_prefix;   /* sys.exec_prefix */
-    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
-#ifdef MS_WINDOWS
-    wchar_t *dll_path;      /* Windows DLL path */
-#endif
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -350,6 +344,28 @@ typedef struct {
     int legacy_windows_stdio;
 #endif
 
+    /* --- Path configuration inputs ------------ */
+
+    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
+    wchar_t *home;          /* PYTHONHOME environment variable,
+                               see also Py_SetPythonHome(). */
+
+    /* --- Path configuration outputs ----------- */
+
+    int use_module_search_paths;  /* If non-zero, use module_search_paths */
+    _PyWstrList module_search_paths;  /* sys.path paths. Computed if
+                                       use_module_search_paths is equal
+                                       to zero. */
+
+    wchar_t *executable;    /* sys.executable */
+    wchar_t *prefix;        /* sys.prefix */
+    wchar_t *base_prefix;   /* sys.base_prefix */
+    wchar_t *exec_prefix;   /* sys.exec_prefix */
+    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
+#ifdef MS_WINDOWS
+    wchar_t *dll_path;      /* Windows DLL path */
+#endif
+
     /* --- Parameter only used by Py_Main() ---------- */
 
     /* Skip the first line of the source ('run_filename' parameter), allowing use of non-Unix forms of
@@ -408,6 +424,7 @@ typedef struct {
         .faulthandler = -1, \
         .tracemalloc = -1, \
         .use_module_search_paths = 0, \
+        .parse_argv = 1, \
         .site_import = -1, \
         .bytes_warning = -1, \
         .inspect = -1, \

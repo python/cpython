@@ -574,13 +574,13 @@ _Py_RunMain(void)
     int exitcode = 0;
 
     pymain_run_python(&exitcode);
+
     if (Py_FinalizeEx() < 0) {
         /* Value unlikely to be confused with a non-error exit status or
            other special meaning */
         exitcode = 120;
     }
 
-done:
     pymain_free();
 
     if (_Py_UnhandledKeyboardInterrupt) {
