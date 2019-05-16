@@ -2239,6 +2239,11 @@ class TestQuantiles(unittest.TestCase):
             actual = quantiles(statistics.NormalDist(), n=n, method="inclusive")
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
+        # Natural deciles
+        self.assertEqual(quantiles([0, 100], n=10, method='inclusive'),
+                         [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0])
+        self.assertEqual(quantiles(range(0, 101), n=10, method='inclusive'),
+                         [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0])
         # Whenever n is smaller than the number of data points, running
         # method='inclusive' should give the same result as method='exclusive'
         # after the two included extreme points are removed.
