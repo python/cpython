@@ -398,10 +398,14 @@ typedef struct {
        See PEP 552 "Deterministic pycs" for more details. */
     wchar_t *check_hash_pycs_mode;
 
-    /* If greater than 0, suppress _PyPathConfig_Calculate() warnings.
+    /* If greater than 0, suppress _PyPathConfig_Calculate() warnings on Unix.
+       The parameter has no effect on Windows.
 
-       If set to -1 (default), inherit Py_FrozenFlag value. */
-    int _frozen;
+       If set to -1 (default), inherit !Py_FrozenFlag value. */
+    int pathconfig_warnings;
+
+    /* If equal to 0, stop Python initialization before the "main" phase */
+    int _init_main;
 
 } _PyCoreConfig;
 
@@ -438,7 +442,8 @@ typedef struct {
         .buffered_stdio = -1, \
         ._install_importlib = 1, \
         .check_hash_pycs_mode = NULL, \
-        ._frozen = -1}
+        .pathconfig_warnings = -1, \
+        ._init_main = 1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
 
 #ifdef __cplusplus

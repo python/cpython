@@ -970,6 +970,21 @@ _Py_InitializeMainInterpreter(_PyRuntimeState *runtime,
     return _Py_INIT_OK();
 }
 
+
+_PyInitError
+_Py_InitializeMain(void)
+{
+    _PyInitError err = _PyRuntime_Initialize();
+    if (_Py_INIT_FAILED(err)) {
+        return err;
+    }
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
+
+    return _Py_InitializeMainInterpreter(runtime, interp);
+}
+
+
 #undef _INIT_DEBUG_PRINT
 
 static _PyInitError
@@ -990,7 +1005,7 @@ init_python(const _PyCoreConfig *config, const _PyArgv *args)
     }
     config = &interp->core_config;
 
-    if (!config->_frozen) {
+    if (config->_init_main) {
         err = _Py_InitializeMainInterpreter(runtime, interp);
         if (_Py_INIT_FAILED(err)) {
             return err;

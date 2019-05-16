@@ -40,6 +40,7 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeFromWideArgs(
     const _PyCoreConfig *config,
     int argc,
     wchar_t **argv);
+PyAPI_FUNC(_PyInitError) _Py_InitializeMain(void);
 
 PyAPI_FUNC(int) _Py_RunMain(void);
 
