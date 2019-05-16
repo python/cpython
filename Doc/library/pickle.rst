@@ -642,7 +642,7 @@ or both.
      by other classes as long as they implement :meth:`__setitem__`.
 
    * Optionally, a callable with a ``(obj, state)`` signature. This
-     callable allows the user to programatically control the state-updating
+     callable allows the user to programmatically control the state-updating
      behavior of a specific object, instead of using ``obj``'s static
      :meth:`__setstate__` method. If not ``None``, this callable will have
      priority over ``obj``'s :meth:`__setstate__`.
