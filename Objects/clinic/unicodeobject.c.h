@@ -1232,4 +1232,21 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=d1541724cb4a0070 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(unicode_dedent__doc__,
+"dedent($self, /)\n"
+"--\n"
+"\n");
+
+#define UNICODE_DEDENT_METHODDEF    \
+    {"dedent", (PyCFunction)unicode_dedent, METH_NOARGS, unicode_dedent__doc__},
+
+static PyObject *
+unicode_dedent_impl(PyObject *self);
+
+static PyObject *
+unicode_dedent(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicode_dedent_impl(self);
+}
+/*[clinic end generated code: output=631704de60a08efa input=a9049054013a1b77]*/

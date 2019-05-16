@@ -2436,6 +2436,124 @@ class UnicodeTest(string_tests.CommonTest,
         support.check_free_after_iterating(self, iter, str)
         support.check_free_after_iterating(self, reversed, str)
 
+    def assertUnchanged(self, text):
+        """assert that dedent() has no effect on 'text'"""
+        self.assertEqual(text, text.dedent())
+
+    def test_dedent_nomargin(self):
+        # No lines indented.
+        text = "Hello there.\nHow are you?\nOh good, I'm glad."
+        self.assertUnchanged(text)
+
+        # Similar, with a blank line.
+        text = "Hello there.\n\nBoo!"
+        self.assertUnchanged(text)
+
+        # Some lines indented, but overall margin is still zero.
+        text = "Hello there.\n  This is indented."
+        self.assertUnchanged(text)
+
+        # Again, add a blank line.
+        text = "Hello there.\n\n  Boo!\n"
+        self.assertUnchanged(text)
+
+    def test_dedent_even(self):
+        # All lines indented by two spaces.
+        text = "  Hello there.\n  How are ya?\n  Oh good."
+        expect = "Hello there.\nHow are ya?\nOh good."
+        self.assertEqual(expect, text.dedent())
+
+        # Same, with blank lines.
+        text = "  Hello there.\n\n  How are ya?\n  Oh good.\n"
+        expect = "Hello there.\n\nHow are ya?\nOh good.\n"
+        self.assertEqual(expect, text.dedent())
+
+        # Now indent one of the blank lines.
+        text = "  Hello there.\n  \n  How are ya?\n  Oh good.\n"
+        expect = "Hello there.\n\nHow are ya?\nOh good.\n"
+        self.assertEqual(expect, text.dedent())
+
+    def test_dedent_uneven(self):
+        # Lines indented unevenly.
+        text = '''\
+        def foo():
+            while 1:
+                return foo
+        '''
+        expect = '''\
+def foo():
+    while 1:
+        return foo
+'''
+        self.assertEqual(expect, text.dedent())
+
+        # Uneven indentation with a blank line.
+        text = "  Foo\n    Bar\n\n   Baz\n"
+        expect = "Foo\n  Bar\n\n Baz\n"
+        self.assertEqual(expect, text.dedent())
+
+        # Uneven indentation with a whitespace-only line.
+        text = "  Foo\n    Bar\n \n   Baz\n"
+        expect = "Foo\n  Bar\n\n Baz\n"
+        self.assertEqual(expect, text.dedent())
+
+    def test_dedent_declining(self):
+        # Uneven indentation with declining indent level.
+        text = "     Foo\n    Bar\n"  # 5 spaces, then 4
+        expect = " Foo\nBar\n"
+        self.assertEqual(expect, text.dedent())
+
+        # Declining indent level with blank line.
+        text = "     Foo\n\n    Bar\n"  # 5 spaces, blank, then 4
+        expect = " Foo\n\nBar\n"
+        self.assertEqual(expect, text.dedent())
+
+        # Declining indent level with whitespace only line.
+        text = "     Foo\n    \n    Bar\n"  # 5 spaces, then 4, then 4
+        expect = " Foo\n\nBar\n"
+        self.assertEqual(expect, text.dedent())
+
+    # dedent() should not mangle internal tabs
+    def test_dedent_preserve_internal_tabs(self):
+        text = "  hello\tthere\n  how are\tyou?"
+        expect = "hello\tthere\nhow are\tyou?"
+        self.assertEqual(expect, text.dedent())
+
+        # make sure that it preserves tabs when it's not making any
+        # changes at all
+        self.assertEqual(expect, expect.dedent())
+
+    # dedent() should not mangle tabs in the margin (i.e.
+    # tabs and spaces both count as margin, but are *not*
+    # considered equivalent)
+    def test_dedent_preserve_margin_tabs(self):
+        text = "  hello there\n\thow are you?"
+        self.assertUnchanged(text)
+
+        # same effect even if we have 8 spaces
+        text = "        hello there\n\thow are you?"
+        self.assertUnchanged(text)
+
+        # dedent() only removes whitespace that can be uniformly removed!
+        text = "\thello there\n\thow are you?"
+        expect = "hello there\nhow are you?"
+        self.assertEqual(expect, text.dedent())
+
+        text = "  \thello there\n  \thow are you?"
+        self.assertEqual(expect, text.dedent())
+
+        text = "  \t  hello there\n  \t  how are you?"
+        self.assertEqual(expect, text.dedent())
+
+        text = "  \thello there\n  \t  how are you?"
+        expect = "hello there\n  how are you?"
+        self.assertEqual(expect, text.dedent())
+
+        # test margin is smaller than smallest indent
+        text = "  \thello there\n   \thow are you?\n \tI'm fine, thanks"
+        expect = " \thello there\n  \thow are you?\n\tI'm fine, thanks"
+        self.assertEqual(expect, text.dedent())
+
 
 class CAPITest(unittest.TestCase):
 

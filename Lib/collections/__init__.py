@@ -1285,3 +1285,4 @@ class UserString(_collections_abc.Sequence):
         return self.__class__(self.data.translate(*args))
     def upper(self): return self.__class__(self.data.upper())
     def zfill(self, width): return self.__class__(self.data.zfill(width))
+    def dedent(self): return self.__class__(self.data.dedent())
