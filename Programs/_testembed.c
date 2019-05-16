@@ -511,6 +511,37 @@ static int test_init_from_config(void)
 }
 
 
+static int test_init_dont_parse_argv(void)
+{
+    _PyInitError err;
+
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+
+    static wchar_t* argv[] = {
+        L"-v",
+        L"-c",
+        L"arg1",
+        L"-W",
+        L"arg2",
+    };
+
+    config.program = L"program";
+    config.program_name = L"./_testembed";
+
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.parse_argv = 0;
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static void test_init_env_putenvs(void)
 {
     putenv("PYTHONHASHSEED=42");
@@ -797,6 +828,7 @@ static struct TestCase TestCases[] = {
     { "init_default_config", test_init_default_config },
     { "init_global_config", test_init_global_config },
     { "init_from_config", test_init_from_config },
+    { "init_dont_parse_argv", test_init_dont_parse_argv },
     { "init_env", test_init_env },
     { "init_env_dev_mode", test_init_env_dev_mode },
     { "init_env_dev_mode_alloc", test_init_env_dev_mode_alloc },
