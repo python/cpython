@@ -1,0 +1,2 @@
+Fix a reference counting issue when a :mod:`ctypes` callback with return
+type :class:`~ctypes.py_object` returns ``None``, which could cause crashes.

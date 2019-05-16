@@ -270,15 +270,16 @@ if (x == NULL) _PyTraceback_Add(what, "_ctypes/callbacks.c", __LINE__ - 1), PyEr
            be the result.  EXCEPT when restype is py_object - Python
            itself knows how to manage the refcount of these objects.
         */
-        if (keep == NULL) /* Could not convert callback result. */
+        if (keep == NULL) { /* Could not convert callback result. */
             PyErr_WriteUnraisable(callable);
-        else if (keep == Py_None) /* Nothing to keep */
-            Py_DECREF(keep);
-        else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
-            if (-1 == PyErr_WarnEx(PyExc_RuntimeWarning,
-                                   "memory leak in callback function.",
-                                   1))
+        } else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
+            if (keep == Py_None) { /* Nothing to keep */
+                Py_DECREF(keep);
+            } else if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                                    "memory leak in callback function.",
+                                    1) == -1) {
                 PyErr_WriteUnraisable(callable);
+            }
         }
     }
     Py_XDECREF(result);
