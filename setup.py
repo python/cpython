@@ -1597,6 +1597,8 @@ class PyBuildExt(build_ext):
                                ['cjkcodecs/_codecs_%s.c' % loc]))
 
     def detect_multiprocessing(self):
+        multiprocessing_lib = []
+
         # Richard Oudkerk's multiprocessing module
         if MS_WINDOWS:
             multiprocessing_srcs = ['_multiprocessing/multiprocessing.c',
@@ -1619,7 +1621,11 @@ class PyBuildExt(build_ext):
                                    libraries=libs,
                                    include_dirs=["Modules/_multiprocessing"]))
 
+            if HOST_PLATFORM.startswith('linux'):
+                multiprocessing_lib = ['pthread']
+
         self.add(Extension('_multiprocessing', multiprocessing_srcs,
+                           libraries=multiprocessing_lib,
                            include_dirs=["Modules/_multiprocessing"]))
 
     def detect_uuid(self):
