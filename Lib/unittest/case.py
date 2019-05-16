@@ -654,6 +654,9 @@ class TestCase(object):
     def _callTearDown(self):
         self.tearDown()
 
+    def _callCleanup(self, function, *args, **kwargs):
+        function(*args, **kwargs)
+
     def run(self, result=None):
         orig_result = result
         if result is None:
@@ -722,9 +725,6 @@ class TestCase(object):
 
             # clear the outcome, no more needed
             self._outcome = None
-
-    def _callCleanup(self, function, *args, **kwargs):
-        function(*args, **kwargs)
 
     def doCleanups(self):
         """Execute all cleanup functions. Normally called for you after
