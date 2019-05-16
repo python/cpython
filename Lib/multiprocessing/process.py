@@ -84,6 +84,7 @@ class BaseProcess(object):
         self._identity = _current_process._identity + (count,)
         self._config = _current_process._config.copy()
         self._parent_pid = os.getpid()
+        self._parent_name = _current_process.name
         self._popen = None
         self._closed = False
         self._target = target
