@@ -294,7 +294,7 @@ def _serve_one(child_r, fds, unused_fds, handlers):
      *_forkserver._inherited_fds) = fds
 
     # Run process object received over pipe
-    code = spawn._main(child_r)
+    code = spawn._main(child_r, child_r)
 
     return code
 
