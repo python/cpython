@@ -570,18 +570,17 @@ Py_GetProgramName(void)
    directory ("-m module" case) which will be prepended to sys.argv:
    sys.path[0].
 
-   Return 1 if the path is correctly resolved, but *path0_p can be NULL
-   if the Unicode object fail to be created.
+   Return 1 if the path is correctly resolved and written into *path0_p.
 
-   Return 0 if it fails to resolve the full path (and *path0_p will be NULL).
-   For example, return 0 if the current working directory has been removed
-   (bpo-36236) or if argv is empty.
+   Return 0 if it fails to resolve the full path. For example, return 0 if the
+   current working directory has been removed (bpo-36236) or if argv is empty.
+
+   Raise an exception and return -1 on error.
    */
 int
 _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
 {
     assert(_PyWstrList_CheckConsistency(argv));
-    assert(*path0_p == NULL);
 
     if (argv->length == 0) {
         /* Leave sys.path unchanged if sys.argv is empty */
@@ -697,7 +696,12 @@ _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
     }
 #endif /* All others */
 
-    *path0_p = PyUnicode_FromWideChar(path0, n);
+    PyObject *path0_obj = PyUnicode_FromWideChar(path0, n);
+    if (path0_obj == NULL) {
+        return -1;
+    }
+
+    *path0_p = path0_obj;
     return 1;
 }
 
