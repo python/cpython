@@ -1,6 +1,5 @@
 import datetime
 import faulthandler
-import json
 import locale
 import os
 import platform
@@ -16,26 +15,10 @@ from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
     INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
-    PROGRESS_MIN_TIME, format_test_result)
+    PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
-
-
-# When tests are run from the Python build directory, it is best practice
-# to keep the test files in a subfolder.  This eases the cleanup of leftover
-# files using the "make distclean" command.
-if sysconfig.is_python_build():
-    TEMPDIR = sysconfig.get_config_var('abs_builddir')
-    if TEMPDIR is None:
-        # bpo-30284: On Windows, only srcdir is available. Using abs_builddir
-        # mostly matters on UNIX when building Python out of the source tree,
-        # especially when the source tree is read only.
-        TEMPDIR = sysconfig.get_config_var('srcdir')
-    TEMPDIR = os.path.join(TEMPDIR, 'build')
-else:
-    TEMPDIR = tempfile.gettempdir()
-TEMPDIR = os.path.abspath(TEMPDIR)
 
 
 class Regrtest:
@@ -98,7 +81,10 @@ class Regrtest:
         # used by --junit-xml
         self.testsuite_xml = None
 
+        # misc
         self.win_load_tracker = None
+        self.tmp_dir = None
+        self.worker_test_name = None
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
@@ -177,6 +163,13 @@ class Regrtest:
         if ns.xmlpath:
             support.junit_xml_list = self.testsuite_xml = []
 
+        worker_args = ns.worker_args
+        if worker_args is not None:
+            from test.libregrtest.runtest_mp import parse_worker_args
+            ns, test_name = parse_worker_args(ns.worker_args)
+            ns.worker_args = worker_args
+            self.worker_test_name = test_name
+
         # Strip .py extensions.
         removepy(ns.args)
 
@@ -186,7 +179,7 @@ class Regrtest:
         self.tests = tests
 
         if self.ns.single:
-            self.next_single_filename = os.path.join(TEMPDIR, 'pynexttest')
+            self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
                 with open(self.next_single_filename, 'r') as fp:
                     next_test = fp.read().strip()
@@ -404,7 +397,7 @@ class Regrtest:
             test_time = time.monotonic() - start_time
             if test_time >= PROGRESS_MIN_TIME:
                 previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result[0] == PASSED:
+            elif result.result == PASSED:
                 # be quiet: say nothing if the test passed shortly
                 previous_test = None
 
@@ -412,6 +405,9 @@ class Regrtest:
             for module in sys.modules.keys():
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
+
+            if self.ns.failfast and is_failed(result, self.ns):
+                break
 
         if previous_test:
             print(previous_test)
@@ -541,29 +537,54 @@ class Regrtest:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def main(self, tests=None, **kwargs):
-        global TEMPDIR
-        self.ns = self.parse_args(kwargs)
-
+    def create_temp_dir(self):
         if self.ns.tempdir:
-            TEMPDIR = self.ns.tempdir
-        elif self.ns.worker_args:
-            ns_dict, _ = json.loads(self.ns.worker_args)
-            TEMPDIR = ns_dict.get("tempdir") or TEMPDIR
+            self.tmp_dir = self.ns.tempdir
 
-        os.makedirs(TEMPDIR, exist_ok=True)
+        if not self.tmp_dir:
+            # When tests are run from the Python build directory, it is best practice
+            # to keep the test files in a subfolder.  This eases the cleanup of leftover
+            # files using the "make distclean" command.
+            if sysconfig.is_python_build():
+                self.tmp_dir = sysconfig.get_config_var('abs_builddir')
+                if self.tmp_dir is None:
+                    # bpo-30284: On Windows, only srcdir is available. Using
+                    # abs_builddir mostly matters on UNIX when building Python
+                    # out of the source tree, especially when the source tree
+                    # is read only.
+                    self.tmp_dir = sysconfig.get_config_var('srcdir')
+                self.tmp_dir = os.path.join(self.tmp_dir, 'build')
+            else:
+                self.tmp_dir = tempfile.gettempdir()
+
+        self.tmp_dir = os.path.abspath(self.tmp_dir)
+        os.makedirs(self.tmp_dir, exist_ok=True)
 
         # Define a writable temp dir that will be used as cwd while running
         # the tests. The name of the dir includes the pid to allow parallel
         # testing (see the -j option).
-        test_cwd = 'test_python_{}'.format(os.getpid())
-        test_cwd = os.path.join(TEMPDIR, test_cwd)
+        pid = os.getpid()
+        if self.worker_test_name is not None:
+            test_cwd = 'worker_{}'.format(pid)
+        else:
+            test_cwd = 'test_python_{}'.format(pid)
+        test_cwd = os.path.join(self.tmp_dir, test_cwd)
+        return test_cwd
 
-        # Run the tests in a context manager that temporarily changes the CWD to a
-        # temporary and writable directory.  If it's not possible to create or
-        # change the CWD, the original CWD will be used.  The original CWD is
-        # available from support.SAVEDCWD.
+    def main(self, tests=None, **kwargs):
+        self.ns = self.parse_args(kwargs)
+
+        test_cwd = self.create_temp_dir()
+
+        # Run the tests in a context manager that temporarily changes the CWD
+        # to a temporary and writable directory. If it's not possible to
+        # create or change the CWD, the original CWD will be used.
+        # The original CWD is available from support.SAVEDCWD.
         with support.temp_cwd(test_cwd, quiet=True):
+            # When using multiprocessing, worker processes will use test_cwd
+            # as their parent temporary directory. So when the main process
+            # exit, it removes also subdirectories of worker processes.
+            self.ns.tempdir = test_cwd
             self._main(tests, kwargs)
 
     def getloadavg(self):
@@ -585,9 +606,9 @@ class Regrtest:
                 print(msg, file=sys.stderr, flush=True)
                 sys.exit(2)
 
-        if self.ns.worker_args is not None:
+        if self.worker_test_name is not None:
             from test.libregrtest.runtest_mp import run_tests_worker
-            run_tests_worker(self.ns.worker_args)
+            run_tests_worker(self.ns, self.worker_test_name)
 
         if self.ns.wait:
             input("Press any key to continue...")
@@ -608,7 +629,7 @@ class Regrtest:
 
         # If we're on windows and this is the parent runner (not a worker),
         # track the load average.
-        if sys.platform == 'win32' and (self.ns.worker_args is None):
+        if sys.platform == 'win32' and self.worker_test_name is None:
             from test.libregrtest.win_utils import WindowsLoadTracker
 
             try:

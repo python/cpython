@@ -54,6 +54,8 @@ extern int _PyFloat_Init(void);
 extern _PyInitError _Py_HashRandomization_Init(const _PyCoreConfig *);
 
 extern _PyInitError _PyTypes_Init(void);
+extern _PyInitError _PyImportZip_Init(PyInterpreterState *interp);
+
 
 /* Various internal finalizers */
 
@@ -81,7 +83,7 @@ extern void PyLong_Fini(void);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern int _PyTraceMalloc_Fini(void);
-extern void _PyWarnings_Fini(_PyRuntimeState *runtime);
+extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
 extern void _PyGILState_Init(
     _PyRuntimeState *runtime,

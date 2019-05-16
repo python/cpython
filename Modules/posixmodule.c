@@ -25,14 +25,25 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#ifdef MS_WINDOWS
+   /* include <windows.h> early to avoid conflict with pycore_condvar.h:
+
+        #define WIN32_LEAN_AND_MEAN
+        #include <windows.h>
+
+      FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
+#  include <windows.h>
+#endif
+
+#include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
+#include "pycore_pystate.h"   /* _PyRuntime */
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
-#include "posixmodule.h"
+#  include "posixmodule.h"
 #else
-#include "winreparse.h"
+#  include "winreparse.h"
 #endif
-#include "pycore_pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
@@ -424,7 +435,7 @@ PyOS_AfterFork_Child(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     _PyGILState_Reinit(runtime);
     _PyInterpreterState_DeleteExceptMain(runtime);
-    PyEval_ReInitThreads();
+    _PyEval_ReInitThreads(runtime);
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
     _PyRuntimeState_ReInitThreads(runtime);
@@ -5465,7 +5476,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    if (file_actions != NULL) {
+    if (file_actions != NULL && file_actions != Py_None) {
         /* There is a bug in old versions of glibc that makes some of the
          * helper functions for manipulating file actions not copy the provided
          * buffers. The problem is that posix_spawn_file_actions_addopen does not
