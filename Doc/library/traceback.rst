@@ -152,7 +152,8 @@ The module defines the following functions:
 
 .. function:: format_tb(tb, limit=None)
 
-   A shorthand for ``format_list(extract_tb(tb, limit))``.
+   A shorthand for ``format_list(extract_tb(tb, limit))``,
+   which returns a list of strings ready for printing.
 
 
 .. function:: format_stack(f=None, limit=None)

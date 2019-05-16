@@ -1,0 +1,2 @@
+Make the docstring of :meth:`format_tb` more clean than the previous one.
+Now it's clear that :meth:`format_tb` returns a list of strings.
