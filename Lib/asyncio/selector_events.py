@@ -428,32 +428,35 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         if n == len(data):
             # all data sent
             return
-        else:
-            data = bytearray(memoryview(data)[n:])
 
         fut = self.create_future()
         fd = sock.fileno()
         fut.add_done_callback(
             functools.partial(self._sock_write_done, fd))
-        self.add_writer(fd, self._sock_sendall, fut, sock, data)
+        # use a trick with a list in closure to store a mutable state
+        self.add_writer(fd, self._sock_sendall, fut, sock,
+                        memoryview(data), [n])
         return await fut
 
-    def _sock_sendall(self, fut, sock, data):
+    def _sock_sendall(self, fut, sock, view, pos):
         if fut.done():
             # Future cancellation can be scheduled on previous loop iteration
             return
+        start = pos[0]
         try:
-            n = sock.send(data)
+            n = sock.send(view[start:])
         except (BlockingIOError, InterruptedError):
             return
         except Exception as exc:
             fut.set_exception(exc)
             return
 
-        if n == len(data):
+        start += n
+
+        if start == len(view):
             fut.set_result(None)
         else:
-            del data[:n]
+            pos[0] = start
 
     async def sock_connect(self, sock, address):
         """Connect to a remote socket at address.
