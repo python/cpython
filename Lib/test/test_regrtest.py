@@ -612,10 +612,13 @@ class ProgramsTestCase(BaseTestCase):
     @unittest.skipUnless(sysconfig.is_python_build(),
                          'test.bat script is not installed')
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
+    @unittest.skipIf(sys.platform=='win32' and platform.machine()=='ARM64',
+                    "rt.bat/test.bat changes needed for arm64")
     def test_tools_buildbot_test(self):
         # Tools\buildbot\test.bat
         script = os.path.join(ROOT_DIR, 'Tools', 'buildbot', 'test.bat')
         test_args = ['--testdir=%s' % self.tmptestdir]
+        # need to check platform.machine() here to distinguish between arm64 and amd64
         if platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
         if not Py_DEBUG:
@@ -623,12 +626,15 @@ class ProgramsTestCase(BaseTestCase):
         self.run_batch(script, *test_args, *self.tests)
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
+    @unittest.skipIf(sys.platform=='win32' and platform.machine()=='ARM64',
+                    "rt.bat/test.bat changes needed for arm64")
     def test_pcbuild_rt(self):
         # PCbuild\rt.bat
         script = os.path.join(ROOT_DIR, r'PCbuild\rt.bat')
         if not os.path.isfile(script):
             self.skipTest(f'File "{script}" does not exist')
         rt_args = ["-q"]             # Quick, don't run tests twice
+        # need to check platform.machine() here to distinguish between arm64 and amd64
         if platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build
         if Py_DEBUG:

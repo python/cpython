@@ -1,6 +1,7 @@
 """Tests for distutils.command.install."""
 
 import os
+import platform
 import sys
 import unittest
 import site
@@ -196,6 +197,8 @@ class InstallTestCase(support.TempdirManager,
                     'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
         self.assertEqual(found, expected)
 
+    @unittest.skipIf(sys.platform=='win32' and platform.machine()=='ARM64',
+                    "on-target builds not supported")
     def test_record_extensions(self):
         cmd = test_support.missing_compiler_executable()
         if cmd is not None:

@@ -1,5 +1,6 @@
 import sys
 import os
+import platform
 from io import StringIO
 import textwrap
 
@@ -58,6 +59,8 @@ class BuildExtTestCase(TempdirManager,
     def build_ext(self, *args, **kwargs):
         return build_ext(*args, **kwargs)
 
+    @unittest.skipIf(sys.platform=='win32' and platform.machine()=='ARM64',
+                    "on-target builds not supported")
     def test_build_ext(self):
         cmd = support.missing_compiler_executable()
         if cmd is not None:
