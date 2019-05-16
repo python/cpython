@@ -1,1 +1,1 @@
-Avoid file reading as disallowing the unnecessary URL scheme in urllib.urlopen
+CVE-2019-9948: Avoid file reading as disallowing the unnecessary URL scheme in urllib.urlopen
