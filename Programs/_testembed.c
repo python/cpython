@@ -360,6 +360,8 @@ static int test_init_global_config(void)
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 1;
 
+    Py_FrozenFlag = 1;
+
     /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
     /* FIXME: test Py_LegacyWindowsStdioFlag */
 
@@ -481,6 +483,8 @@ static int test_init_from_config(void)
     Py_QuietFlag = 0;
     config.quiet = 1;
 
+    config.configure_c_stdio = 0;
+
     putenv("PYTHONUNBUFFERED=");
     Py_UnbufferedStdioFlag = 0;
     config.buffered_stdio = 0;
@@ -500,6 +504,9 @@ static int test_init_from_config(void)
     config.user_site_directory = 0;
 
     config.check_hash_pycs_mode = L"always";
+
+    Py_FrozenFlag = 0;
+    config.pathconfig_warnings = 0;
 
     err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {

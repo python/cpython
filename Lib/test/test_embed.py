@@ -331,6 +331,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'verbose': 0,
         'quiet': 0,
         'user_site_directory': 1,
+        'configure_c_stdio': 1,
         'buffered_stdio': 1,
 
         'stdio_encoding': GET_DEFAULT_CONFIG,
@@ -558,6 +559,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'filesystem_encoding': 'utf-8',
             'filesystem_errors': self.UTF8_MODE_ERRORS,
             'user_site_directory': 0,
+            'pathconfig_warnings': 0,
         }
         self.check_config("init_global_config", config, preconfig)
 
@@ -597,11 +599,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': 0,
             'verbose': 1,
             'quiet': 1,
+            'configure_c_stdio': 0,
             'buffered_stdio': 0,
             'user_site_directory': 0,
             'faulthandler': 1,
 
             'check_hash_pycs_mode': 'always',
+            'pathconfig_warnings': 0,
         }
         self.check_config("init_from_config", config, preconfig)
 
