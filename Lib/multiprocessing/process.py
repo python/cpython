@@ -298,9 +298,9 @@ class BaseProcess(object):
             _children = set()
             util._close_stdin()
             old_process = _current_process
-            _parent_process = _ParentProcess(old_process.name, old_process.pid,
-                                             parent_sentinel)
             _current_process = self
+            _parent_process = _ParentProcess(
+                self._parent_name, self._parent_pid, parent_sentinel)
             try:
                 util._finalizer_registry.clear()
                 util._run_after_forkers()
