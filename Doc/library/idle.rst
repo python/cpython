@@ -50,7 +50,7 @@ default title and context menu.
 
 On macOS, there is one application menu.  It dynamically changes according
 to the window currently selected.  It has an IDLE menu, and some entries
-described below are moved around to conform to Apple guidlines.
+described below are moved around to conform to Apple guidelines.
 
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -769,7 +769,7 @@ facilitate development of tkinter programs.  Enter ``import tkinter as tk;
 root = tk.Tk()`` in standard Python and nothing appears.  Enter the same
 in IDLE and a tk window appears.  In standard Python, one must also enter
 ``root.update()`` to see the window.  IDLE does the equivalent in the
-background, about 20 times a second, which is about every 50 milleseconds.
+background, about 20 times a second, which is about every 50 milliseconds.
 Next enter ``b = tk.Button(root, text='button'); b.pack()``.  Again,
 nothing visibly changes in standard Python until one enters ``root.update()``.
 
