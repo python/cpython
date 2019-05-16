@@ -357,7 +357,8 @@ class _ParentProcess(BaseProcess):
     def __init__(self, name, pid, sentinel):
         self._identity = ()
         self._name = name
-        self._parent_pid = pid
+        self._pid = pid
+        self._parent_pid = None
         self._popen = None
         self._closed = False
         self._sentinel = sentinel
@@ -366,6 +367,11 @@ class _ParentProcess(BaseProcess):
     def close(self):
         pass
 
+    @property
+    def ident(self):
+        return self._pid
+
+    pid = ident
 
 #
 # Create object representing the main process
