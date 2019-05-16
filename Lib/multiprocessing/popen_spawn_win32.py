@@ -68,7 +68,7 @@ class Popen(object):
         else:
             env = None
 
-        with open(wfd, 'wb', closefd=True) as to_child:
+        with open(wfd, 'wb', closefd=False) as to_child:
             # start process
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(
