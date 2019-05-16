@@ -667,7 +667,8 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_WSTR_ATTR(run_module);
     COPY_WSTR_ATTR(run_filename);
     COPY_WSTR_ATTR(check_hash_pycs_mode);
-    COPY_ATTR(_frozen);
+    COPY_ATTR(pathconfig_warnings);
+    COPY_ATTR(_init_main);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -766,7 +767,8 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_WSTR(run_filename);
     SET_ITEM_INT(_install_importlib);
     SET_ITEM_WSTR(check_hash_pycs_mode);
-    SET_ITEM_INT(_frozen);
+    SET_ITEM_INT(pathconfig_warnings);
+    SET_ITEM_INT(_init_main);
 
     return dict;
 
@@ -855,7 +857,7 @@ _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
-    COPY_FLAG(_frozen, Py_FrozenFlag);
+    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
 
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
@@ -892,7 +894,7 @@ _PyCoreConfig_SetGlobalConfig(const _PyCoreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_stdio, Py_LegacyWindowsStdioFlag);
 #endif
-    COPY_FLAG(_frozen, Py_FrozenFlag);
+    COPY_NOT_FLAG(pathconfig_warnings, Py_FrozenFlag);
 
     COPY_NOT_FLAG(buffered_stdio, Py_UnbufferedStdioFlag);
     COPY_NOT_FLAG(site_import, Py_NoSiteFlag);
@@ -2253,7 +2255,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     assert(!(config->run_command != NULL && config->run_module != NULL));
     assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
-    assert(config->_frozen >= 0);
+    assert(config->pathconfig_warnings >= 0);
 
     err = _Py_INIT_OK();
 

@@ -1046,6 +1046,15 @@ run_eval_code_obj(PyCodeObject *co, PyObject *globals, PyObject *locals)
      * Py_Main() based one.
      */
     _Py_UnhandledKeyboardInterrupt = 0;
+
+    /* Set globals['__builtins__'] if it doesn't exist */
+    if (globals != NULL && PyDict_GetItemString(globals, "__builtins__") == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_Get();
+        if (PyDict_SetItemString(globals, "__builtins__", interp->builtins) < 0) {
+            return NULL;
+        }
+    }
+
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (!v && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
         _Py_UnhandledKeyboardInterrupt = 1;

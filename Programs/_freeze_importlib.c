@@ -83,7 +83,8 @@ main(int argc, char *argv[])
     config.program_name = L"./_freeze_importlib";
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
-    config._frozen = 1;
+    config.pathconfig_warnings = 0;
+    config._init_main = 0;
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
     /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
