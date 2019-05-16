@@ -654,7 +654,7 @@ class TestCase(object):
     def _callTearDown(self):
         self.tearDown()
 
-    def _callCleanup(self, function, *args, **kwargs):
+    def _callCleanup(self, function, /, *args, **kwargs):
         function(*args, **kwargs)
 
     def run(self, result=None):
