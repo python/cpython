@@ -361,6 +361,7 @@ class _ParentProcess(BaseProcess):
         self._popen = None
         self._closed = False
         self._sentinel = sentinel
+        self._config = {}
 
     def close(self):
         pass
