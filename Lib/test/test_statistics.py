@@ -2189,6 +2189,11 @@ class TestQuantiles(unittest.TestCase):
             actual = quantiles(statistics.NormalDist(), n=n)
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
+        # Q2 agrees with median()
+        for k in range(2, 60):
+            data = random.choices(range(100), k=k)
+            q1, q2, q3 = quantiles(data)
+            self.assertEqual(q2, statistics.median(data))
 
     def test_specific_cases_inclusive(self):
         # Match results computed by hand and cross-checked
@@ -2243,6 +2248,11 @@ class TestQuantiles(unittest.TestCase):
         data.remove(max(data))
         expected = quantiles(data, n=32)
         self.assertEqual(expected, actual)
+        # Q2 agrees with median()
+        for k in range(2, 60):
+            data = random.choices(range(100), k=k)
+            q1, q2, q3 = quantiles(data, method='inclusive')
+            self.assertEqual(q2, statistics.median(data))
 
     def test_equal_inputs(self):
         quantiles = statistics.quantiles
