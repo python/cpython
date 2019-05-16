@@ -822,12 +822,12 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF8(
 
 /* --- UTF-32 Codecs ------------------------------------------------------ */
 
-PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF32(
+Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF32(
     const Py_UNICODE *data,     /* Unicode char buffer */
     Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
     const char *errors,         /* error handling */
     int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
-    ) Py_DEPRECATED(3.3);
+    );
 
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF32(
     PyObject *object,           /* Unicode object */
