@@ -2161,17 +2161,18 @@ class TestQuantiles(unittest.TestCase):
             # Quantiles should be idempotent
             if len(expected) >= 2:
                 self.assertEqual(quantiles(expected, n=n), expected)
-            # Cross-check against other methods
-            if len(data) >= n:
-                # After end caps are added, method='inclusive' should
-                # give the same result as method='exclusive' whenever
-                # there are more data points than desired cut points.
-                padded_data = [min(data) - 1000] + data + [max(data) + 1000]
-                self.assertEqual(
-                    quantiles(data, n=n),
-                    quantiles(padded_data, n=n, method='inclusive'),
-                    (n, data),
-                )
+            # Cross-check against method='inclusive' which should give
+            # the same result after adding in minimum and maximum values
+            # extrapolated from the two lowest and two highest points.
+            sdata = sorted(data)
+            lo = 2 * sdata[0] - sdata[1]
+            hi = 2 * sdata[-1] - sdata[-2]
+            padded_data = data + [lo, hi]
+            self.assertEqual(
+                quantiles(data, n=n),
+                quantiles(padded_data, n=n, method='inclusive'),
+                (n, data),
+            )
             # Invariant under tranlation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
