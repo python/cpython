@@ -403,7 +403,7 @@ class TestSupport(unittest.TestCase):
                              ("unittest.result", "unittest.case",
                               "unittest.suite", "unittest.loader",
                               "unittest.main", "unittest.runner",
-                              "unittest.signals"),
+                              "unittest.signals", "unittest.async_case"),
                              extra=extra,
                              blacklist=blacklist)
 
