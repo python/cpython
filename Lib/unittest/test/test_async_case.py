@@ -20,15 +20,21 @@ class TestAsyncCase(unittest.TestCase):
                 nonlocal calls
                 self.assertEqual(calls, 1)
                 calls = 2
+                self.addCleanup(self.on_cleanup)
 
             async def tearDown(self):
                 nonlocal calls
                 self.assertEqual(calls, 2)
                 calls = 3
 
+            async def on_cleanup(self):
+                nonlocal calls
+                self.assertEqual(calls, 3)
+                calls = 4
+
         test = Test("test_func")
         test.run()
-        self.assertEqual(calls, 3)
+        self.assertEqual(calls, 4)
 
 
 if __name__ == "__main__":
