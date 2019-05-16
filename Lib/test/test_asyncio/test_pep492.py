@@ -130,9 +130,10 @@ class CoroutineTests(BaseTest):
             def __await__(self):
                 return ('spam',)
 
-        @asyncio.coroutine
-        def func():
-            return Awaitable()
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def func():
+                return Awaitable()
 
         coro = func()
         self.assertEqual(coro.send(None), 'spam')

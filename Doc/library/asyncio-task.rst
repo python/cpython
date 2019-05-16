@@ -916,11 +916,12 @@ enforced.
         async def main():
             await old_style_coroutine()
 
-    This decorator is **deprecated** and is scheduled for removal in
-    Python 3.10.
-
     This decorator should not be used for :keyword:`async def`
     coroutines.
+
+    .. deprecated-removed:: 3.8 3.10
+
+       Use :keyword:`async def` instead.
 
 .. function:: iscoroutine(obj)
 
