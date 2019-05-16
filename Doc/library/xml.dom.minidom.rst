@@ -143,6 +143,16 @@ module documentation.  This section lists the differences between the API and
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
 
+   .. note::
+
+      You should specify the "xmlcharrefreplace" error handler when open a file with
+      specified encoding::
+
+         writer = open(
+                filename, "w", encoding="utf-8",
+                errors="xmlcharrefreplace")
+         doc.writexml(writer, "", "  ", "utf-8")
+
    .. versionchanged:: 3.8
       The :meth:`writexml` method now preserves the attribute order specified
       by the user.
