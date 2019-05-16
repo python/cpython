@@ -26,6 +26,7 @@
     -->
     <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'x64'">amd64</ArchName>
     <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'ARM'">arm32</ArchName>
+    <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'ARM64'">arm64</ArchName>
     <ArchName Condition="'$(ArchName)' == ''">win32</ArchName>
     
     <!-- Root directory of the repository -->
@@ -56,8 +57,8 @@
     <libffiDir>$(ExternalsDir)libffi\</libffiDir>
     <libffiOutDir>$(ExternalsDir)libffi\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.0j\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.0j\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.1b\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1b\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
