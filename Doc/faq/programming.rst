@@ -792,7 +792,7 @@ Its documentation looks like this::
       invoked using the three argument form.
 
 The slash at the end of the parameter list means that all three parameters are
-positional-only. Thus, calling :func:`pow` with keyword aguments would lead to
+positional-only. Thus, calling :func:`pow` with keyword arguments would lead to
 an error::
 
    >>> pow(x=3, y=4)

@@ -23,7 +23,7 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import futures
-from .coroutines import coroutine
+from .coroutines import _is_coroutine
 
 # Helper to generate new task names
 # This uses itertools.count() instead of a "+= 1" operation because the latter
@@ -638,7 +638,7 @@ def ensure_future(coro_or_future, *, loop=None):
                         'required')
 
 
-@coroutine
+@types.coroutine
 def _wrap_awaitable(awaitable):
     """Helper for asyncio.ensure_future().
 
@@ -646,6 +646,8 @@ def _wrap_awaitable(awaitable):
     that will later be wrapped in a Task by ensure_future().
     """
     return (yield from awaitable.__await__())
+
+_wrap_awaitable._is_coroutine = _is_coroutine
 
 
 class _GatheringFuture(futures.Future):
