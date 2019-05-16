@@ -9,6 +9,7 @@ import test.support
 from test import support
 from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
                           change_cwd)
+from test.support.script_helper import assert_python_ok
 import builtins
 import os
 import sys
@@ -315,6 +316,12 @@ class HelperFunctionsTests(unittest.TestCase):
         with EnvironmentVarGuard() as environ:
             environ['PYTHONHISTORY'] = 'xoxo'
             self.assertEqual(site.gethistoryfile(), "xoxo")
+
+        # Check that PYTHONHISTORY is ignored in isolated mode.
+        rc, out, err = assert_python_ok('-I', '-c',
+            'import site; assert site.gethistoryfile() != "file"',
+            PYTHONHISTORY='file')
+        self.assertEqual(rc, 0)
 
 
 class PthFile(object):
