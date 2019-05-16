@@ -50,7 +50,7 @@ default title and context menu.
 
 On macOS, there is one application menu.  It dynamically changes according
 to the window currently selected.  It has an IDLE menu, and some entries
-described below are moved around to conform to Apple guidelines.
+described below are moved around to conform to Apple guidlines.
 
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
