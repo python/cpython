@@ -2124,17 +2124,14 @@ Py_FatalError(const char *msg)
 void _Py_NO_RETURN
 _Py_ExitInitError(_PyInitError err)
 {
-    assert(_Py_INIT_FAILED(err));
     if (_Py_INIT_IS_EXIT(err)) {
-#ifdef MS_WINDOWS
-        ExitProcess(err.exitcode);
-#else
         exit(err.exitcode);
-#endif
+    }
+    else if (_Py_INIT_IS_ERROR(err)) {
+        fatal_error(err._func, err.err_msg, 1);
     }
     else {
-        assert(_Py_INIT_IS_ERROR(err));
-        fatal_error(err._func, err.err_msg, 1);
+        Py_FatalError("_Py_ExitInitError() must not be called on success");
     }
 }
 
