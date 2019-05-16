@@ -3357,7 +3357,9 @@ main_loop:
             PyObject **sp, *res, *names;
 
             names = POP();
-            assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
+            assert(PyTuple_CheckExact(names));
+            assert(PyTuple_GET_SIZE(names) > 0);
+            assert(PyTuple_GET_SIZE(names) <= oparg);
             sp = stack_pointer;
             res = call_function(tstate, &sp, oparg, names);
             stack_pointer = sp;
