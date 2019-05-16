@@ -654,6 +654,7 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_ATTR(verbose);
     COPY_ATTR(quiet);
     COPY_ATTR(user_site_directory);
+    COPY_ATTR(configure_c_stdio);
     COPY_ATTR(buffered_stdio);
     COPY_WSTR_ATTR(filesystem_encoding);
     COPY_WSTR_ATTR(filesystem_errors);
@@ -755,6 +756,7 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_INT(verbose);
     SET_ITEM_INT(quiet);
     SET_ITEM_INT(user_site_directory);
+    SET_ITEM_INT(configure_c_stdio);
     SET_ITEM_INT(buffered_stdio);
     SET_ITEM_WSTR(stdio_encoding);
     SET_ITEM_WSTR(stdio_errors);
@@ -1582,7 +1584,6 @@ config_read(_PyCoreConfig *config, _PyPreCmdline *cmdline)
             return _Py_INIT_NO_MEMORY();
         }
     }
-
     return _Py_INIT_OK();
 }
 
@@ -1632,7 +1633,10 @@ void
 _PyCoreConfig_Write(const _PyCoreConfig *config, _PyRuntimeState *runtime)
 {
     _PyCoreConfig_SetGlobalConfig(config);
-    config_init_stdio(config);
+
+    if (config->configure_c_stdio) {
+        config_init_stdio(config);
+    }
 
     /* Write the new pre-configuration into _PyRuntime */
     _PyPreConfig *preconfig = &runtime->preconfig;
@@ -2067,6 +2071,9 @@ config_read_cmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
     if (config->parse_argv < 0) {
         config->parse_argv = 1;
     }
+    if (config->configure_c_stdio < 0) {
+        config->configure_c_stdio = 1;
+    }
 
     if (config->parse_argv) {
         int opt_index;
@@ -2171,7 +2178,9 @@ _PyCoreConfig_SetWideArgv(_PyCoreConfig *config, int argc, wchar_t **argv)
 
    * Command line arguments
    * Environment variables
-   * Py_xxx global configuration variables */
+   * Py_xxx global configuration variables
+
+   The only side effects are to modify config and to call _Py_SetArgcArgv(). */
 _PyInitError
 _PyCoreConfig_Read(_PyCoreConfig *config)
 {
@@ -2227,14 +2236,19 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     assert(config->quiet >= 0);
     assert(config->user_site_directory >= 0);
     assert(config->parse_argv >= 0);
+    assert(config->configure_c_stdio >= 0);
     assert(config->buffered_stdio >= 0);
     assert(config->program_name != NULL);
     assert(config->program != NULL);
     assert(_PyWstrList_CheckConsistency(&config->argv));
+    /* sys.argv must be non-empty: empty argv is replaced with [''] */
+    assert(config->argv.length >= 1);
     assert(_PyWstrList_CheckConsistency(&config->xoptions));
     assert(_PyWstrList_CheckConsistency(&config->warnoptions));
     assert(_PyWstrList_CheckConsistency(&config->module_search_paths));
     if (config->_install_importlib) {
+        assert(config->use_module_search_paths != 0);
+        /* don't check config->module_search_paths */
         assert(config->executable != NULL);
         assert(config->prefix != NULL);
         assert(config->base_prefix != NULL);
