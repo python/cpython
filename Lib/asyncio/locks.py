@@ -9,7 +9,7 @@ import warnings
 from . import events
 from . import futures
 from . import exceptions
-from .coroutines import _is_coroutine
+from .import coroutines
 
 
 class _ContextManager:
