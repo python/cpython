@@ -575,9 +575,8 @@ class BaseEventLoopTests(test_utils.TestCase):
     def test_default_exc_handler_coro(self):
         self.loop._process_events = mock.Mock()
 
-        @asyncio.coroutine
-        def zero_error_coro():
-            yield from asyncio.sleep(0.01)
+        async def zero_error_coro():
+            await asyncio.sleep(0.01)
             1/0
 
         # Test Future.__del__
@@ -723,8 +722,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         class MyTask(asyncio.Task):
             pass
 
-        @asyncio.coroutine
-        def coro():
+        async def coro():
             pass
 
         factory = lambda loop, coro: MyTask(coro, loop=loop)
@@ -779,8 +777,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         class MyTask(asyncio.Task):
             pass
 
-        @asyncio.coroutine
-        def test():
+        async def test():
             pass
 
         class EventLoop(base_events.BaseEventLoop):
@@ -830,8 +827,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         # Python issue #22601: ensure that the temporary task created by
         # run_forever() consumes the KeyboardInterrupt and so don't log
         # a warning
-        @asyncio.coroutine
-        def raise_keyboard_interrupt():
+        async def raise_keyboard_interrupt():
             raise KeyboardInterrupt
 
         self.loop._process_events = mock.Mock()
@@ -849,8 +845,7 @@ class BaseEventLoopTests(test_utils.TestCase):
     def test_run_until_complete_baseexception(self):
         # Python issue #22429: run_until_complete() must not schedule a pending
         # call to stop() if the future raised a BaseException
-        @asyncio.coroutine
-        def raise_keyboard_interrupt():
+        async def raise_keyboard_interrupt():
             raise KeyboardInterrupt
 
         self.loop._process_events = mock.Mock()
@@ -1070,9 +1065,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         class MyProto(asyncio.Protocol):
             pass
 
-        @asyncio.coroutine
-        def getaddrinfo(*args, **kw):
-            yield from []
+        async def getaddrinfo(*args, **kw):
             return [(2, 1, 6, '', ('107.6.106.82', 80)),
                     (2, 1, 6, '', ('107.6.106.82', 80))]
 
@@ -1191,9 +1184,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
 
     def test_create_connection_no_getaddrinfo(self):
-        @asyncio.coroutine
-        def getaddrinfo(*args, **kw):
-            yield from []
+        async def getaddrinfo(*args, **kw):
+            return []
 
         def getaddrinfo_task(*args, **kwds):
             return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
@@ -1219,8 +1211,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             OSError, self.loop.run_until_complete, coro)
 
     def test_create_connection_multiple(self):
-        @asyncio.coroutine
-        def getaddrinfo(*args, **kw):
+        async def getaddrinfo(*args, **kw):
             return [(2, 1, 6, '', ('0.0.0.1', 80)),
                     (2, 1, 6, '', ('0.0.0.2', 80))]
 
@@ -1247,8 +1238,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
         m_socket.socket.return_value.bind = bind
 
-        @asyncio.coroutine
-        def getaddrinfo(*args, **kw):
+        async def getaddrinfo(*args, **kw):
             return [(2, 1, 6, '', ('0.0.0.1', 80)),
                     (2, 1, 6, '', ('0.0.0.2', 80))]
 
@@ -1349,8 +1339,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 self.loop.run_until_complete(coro)
 
     def test_create_connection_no_local_addr(self):
-        @asyncio.coroutine
-        def getaddrinfo(host, *args, **kw):
+        async def getaddrinfo(host, *args, **kw):
             if host == 'example.com':
                 return [(2, 1, 6, '', ('107.6.106.82', 80)),
                         (2, 1, 6, '', ('107.6.106.82', 80))]
@@ -1488,11 +1477,10 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         # if host is empty string use None instead
         host = object()
 
-        @asyncio.coroutine
-        def getaddrinfo(*args, **kw):
+        async def getaddrinfo(*args, **kw):
             nonlocal host
             host = args[0]
-            yield from []
+            return []
 
         def getaddrinfo_task(*args, **kwds):
             return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
@@ -1854,9 +1842,10 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, sock, None, None, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
-        @asyncio.coroutine
-        def simple_coroutine():
-            pass
+        with self.assertWarns(DeprecationWarning):
+            @asyncio.coroutine
+            def simple_coroutine():
+                pass
 
         self.loop.set_debug(True)
         coro_func = simple_coroutine
@@ -1880,9 +1869,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         def stop_loop_cb(loop):
             loop.stop()
 
-        @asyncio.coroutine
-        def stop_loop_coro(loop):
-            yield from ()
+        async def stop_loop_coro(loop):
             loop.stop()
 
         asyncio.set_event_loop(self.loop)
@@ -1909,8 +1896,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 class RunningLoopTests(unittest.TestCase):
 
     def test_running_loop_within_a_loop(self):
-        @asyncio.coroutine
-        def runner(loop):
+        async def runner(loop):
             loop.run_forever()
 
         loop = asyncio.new_event_loop()
