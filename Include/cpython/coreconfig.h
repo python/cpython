@@ -15,11 +15,7 @@ typedef struct {
     } _type;
     const char *_func;
     const char *err_msg;
-#ifdef MS_WINDOWS
-    unsigned int exitcode;
-#else
     int exitcode;
-#endif
 } _PyInitError;
 
 /* Almost all errors causing Python initialization to fail */
