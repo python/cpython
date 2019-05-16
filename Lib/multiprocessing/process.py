@@ -367,6 +367,10 @@ class _ParentProcess(BaseProcess):
     def close(self):
         pass
 
+    def is_alive(self):
+        from multiprocessing.connection import wait
+        return not wait([self._sentinel], timeout=0)
+
     @property
     def ident(self):
         return self._pid
