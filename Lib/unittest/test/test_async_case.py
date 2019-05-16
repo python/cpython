@@ -1,13 +1,35 @@
-from unittest import AsyncioTestCase
+import asyncio
+import unittest
 
 
-class TestAsyncCase(AsyncioTestCase):
-    async def setUp(self):
-        self._setup_called = 1
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
-    async def test_func(self):
-        assert self._setup_called == 1
-        self._setup_called = 2
 
-    async def tearDown(self):
-        assert self._setup_called == 2
+class TestAsyncCase(unittest.TestCase):
+    def test_basic(self):
+        calls = 0
+
+        class Test(unittest.AsyncioTestCase):
+            async def setUp(self):
+                nonlocal calls
+                self.assertEqual(calls, 0)
+                calls = 1
+
+            async def test_func(self):
+                nonlocal calls
+                self.assertEqual(calls, 1)
+                calls = 2
+
+            async def tearDown(self):
+                nonlocal calls
+                self.assertEqual(calls, 2)
+                calls = 3
+
+        test = Test("test_func")
+        test.run()
+        self.assertEqual(calls, 3)
+
+
+if __name__ == "__main__":
+    unittest.main()
