@@ -312,6 +312,14 @@ typedef struct {
       !Py_NoUserSiteDirectory. */
     int user_site_directory;
 
+    /* If non-zero, configure C standard steams (stdio, stdout,
+       stderr):
+
+       - Set O_BINARY mode on Windows.
+       - If buffered_stdio is equal to zero, make streams unbuffered.
+         Otherwise, enable streams buffering if interactive is non-zero. */
+    int configure_c_stdio;
+
     /* If equal to 0, enable unbuffered mode: force the stdout and stderr
        streams to be unbuffered.
 
@@ -439,6 +447,7 @@ typedef struct {
         .verbose = -1, \
         .quiet = -1, \
         .user_site_directory = -1, \
+        .configure_c_stdio = 1, \
         .buffered_stdio = -1, \
         ._install_importlib = 1, \
         .check_hash_pycs_mode = NULL, \
