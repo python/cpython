@@ -2062,7 +2062,10 @@ core_read_precmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
 
     if (_PyPreCmdline_SetCoreConfig(precmdline, config) < 0) {
         err = _Py_INIT_NO_MEMORY();
+        goto done;
     }
+
+    err = _Py_INIT_OK();
 
 done:
     _PyPreConfig_Clear(&preconfig);
