@@ -701,7 +701,8 @@ _Py_PreInitializeFromPyArgv(const _PyPreConfig *src_config, const _PyArgv *args)
         return _Py_INIT_OK();
     }
 
-    _PyPreConfig config = _PyPreConfig_INIT;
+    _PyPreConfig config;
+    _PyPreConfig_Init(&config);
 
     if (src_config) {
         if (_PyPreConfig_Copy(&config, src_config) < 0) {
@@ -752,7 +753,8 @@ _PyInitError
 _Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig,
                                 const _PyArgv *args)
 {
-    _PyPreConfig config = _PyPreConfig_INIT;
+    _PyPreConfig config;
+    _PyPreConfig_Init(&config);
     if (coreconfig != NULL) {
         _PyCoreConfig_GetCoreConfig(&config, coreconfig);
     }
@@ -829,7 +831,8 @@ _Py_InitializeCore(_PyRuntimeState *runtime,
         return err;
     }
 
-    _PyCoreConfig local_config = _PyCoreConfig_INIT;
+    _PyCoreConfig local_config;
+    _PyCoreConfig_Init(&local_config);
     err = pyinit_coreconfig(runtime, &local_config, src_config, args, interp_p);
     _PyCoreConfig_Clear(&local_config);
     return err;
@@ -1051,7 +1054,8 @@ Py_InitializeEx(int install_sigs)
         return;
     }
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
     config.install_signal_handlers = install_sigs;
 
     err = _Py_InitializeFromConfig(&config);

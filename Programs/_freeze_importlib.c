@@ -76,7 +76,8 @@ main(int argc, char *argv[])
     }
     text[text_size] = '\0';
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
     config.use_environment = 0;
     config.user_site_directory = 0;
     config.site_import = 0;
