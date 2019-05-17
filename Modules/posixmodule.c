@@ -5654,6 +5654,7 @@ _rtp_spawn(int mode, const char *rtpFileName, const char *argv[],
      RTP_ID rtpid;
      int status;
      pid_t res;
+     int async_err = 0;
 
      if (envp) {
          rtpid = rtpSpawn(rtpFileName, argv, envp,
@@ -5666,7 +5667,7 @@ _rtp_spawn(int mode, const char *rtpFileName, const char *argv[],
      if ((rtpid != RTP_ID_ERROR) && (mode == _P_WAIT)) {
          do {
              res = waitpid((pid_t)rtpid, &status, 0);
-         } while (res < 0 && errno == EINTR);
+         } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
          if (res < 0)
              return RTP_ID_ERROR;
