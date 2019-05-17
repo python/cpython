@@ -2475,9 +2475,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # because we don't know what type they return
         _kwargs = {}
     elif is_async_func:
-        # if instance:
-        #     raise RuntimeError("Instance can not be True when create_autospec "
-        #                        "is mocking an async function")
+        if instance:
+            raise RuntimeError("Instance can not be True when create_autospec "
+                               "is mocking an async function")
         Klass = AsyncMock
     elif not _callable(spec):
         Klass = NonCallableMagicMock

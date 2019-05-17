@@ -1033,7 +1033,7 @@ object::
 
       >>> mock = AsyncMock()
       >>> async def main(*args):
-      ...     await mock()
+      ...     await mock(*args)
       ...
       >>> mock.await_args
       >>> asyncio.run(main('foo'))
@@ -1052,7 +1052,7 @@ object::
 
       >>> mock = AsyncMock()
       >>> async def main(*args):
-      ...     await mock()
+      ...     await mock(*args)
       ...
       >>> mock.await_args_list
       []
