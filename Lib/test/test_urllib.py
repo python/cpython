@@ -1464,11 +1464,15 @@ class URLopener_Tests(unittest.TestCase, FakeHTTPMixin):
                 "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
 
     def test_urlopener_retrieve_file(self):
-        with tempfile.NamedTemporaryFile() as file_obj:
-            with self.assertWarns(DeprecationWarning):
-                url = f'file://localhost{file_obj.name}'
-                filename, _ = urllib.request.URLopener().retrieve(url)
-                self.assertEqual(filename, file_obj.name)
+        with self.assertWarns(DeprecationWarning):
+            try:
+                fd, tmp_file = tempfile.mkstemp()
+                fileurl = 'file:' + urllib.request.pathname2url(tmp_file)
+                filename, _ = urllib.request.URLopener().retrieve(fileurl)
+                self.assertEqual(filename, tmp_file)
+            finally:
+                os.close(fd)
+                os.unlink(tmp_file)
 
     def test_urlopener_retrieve_remote(self):
         with self.assertWarns(DeprecationWarning):
