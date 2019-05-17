@@ -1171,8 +1171,8 @@ always available.
 
    Set the system's trace function, which allows you to implement a Python
    source code debugger in Python.  The function is thread-specific; for a
-   debugger to support multiple threads, it must be registered using
-   :func:`settrace` for each thread being debugged.
+   debugger to support multiple threads, it must register a trace function using
+   :func:`settrace` for each thread being debugged or use :func:`threading.settrace`.
 
    Trace functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
