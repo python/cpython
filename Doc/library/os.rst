@@ -3575,9 +3575,12 @@ written in Python, such as a mail server's external command delivery program.
 
    If *mode* is :const:`P_NOWAIT`, this function returns the process id of the new
    process; if *mode* is :const:`P_WAIT`, returns the process's exit code if it
-   exits normally, or ``-signal`` on non-VxWorks platform, where *signal* is the 
-   signal that killed the process.  On Windows, the process id will actually be the 
-   process handle, so can be used with the :func:`waitpid` function.
+   exits normally, or ``-signal``, where *signal* is the signal that killed the
+   process.  On Windows, the process id will actually be the process handle, so can
+   be used with the :func:`waitpid` function.
+
+   Note on VxWorks, this function desn't return ``-signal`` when the new process is
+   killed. Instead it raises OSError exception.
 
    The "l" and "v" variants of the :func:`spawn\* <spawnl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
