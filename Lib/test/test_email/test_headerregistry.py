@@ -1648,6 +1648,13 @@ class TestFolding(TestHeaderBase):
                 'xxxxxxxxxxxxxxxxxxxx=3D=3D-xxx-xx-xx?=\n'
             ' =?utf-8?q?=3E?=\n')
 
+    def test_message_id_header_is_not_folded(self):
+        h = self.make_header(
+            'Message-ID',
+            '<somemessageidlongerthan@maxlinelength.com>')
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'Message-ID: <somemessageidlongerthan@maxlinelength.com>\n')
 
 if __name__ == '__main__':
     unittest.main()
