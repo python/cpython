@@ -18,11 +18,11 @@ PyAPI_FUNC(_PyInitError) _Py_PreInitialize(
     const _PyPreConfig *src_config);
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromArgs(
     const _PyPreConfig *src_config,
-    int argc,
+    Py_ssize_t argc,
     char **argv);
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromWideArgs(
     const _PyPreConfig *src_config,
-    int argc,
+    Py_ssize_t argc,
     wchar_t **argv);
 
 PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
@@ -34,11 +34,11 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
     const _PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromArgs(
     const _PyCoreConfig *config,
-    int argc,
+    Py_ssize_t argc,
     char **argv);
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromWideArgs(
     const _PyCoreConfig *config,
-    int argc,
+    Py_ssize_t argc,
     wchar_t **argv);
 PyAPI_FUNC(_PyInitError) _Py_InitializeMain(void);
 
