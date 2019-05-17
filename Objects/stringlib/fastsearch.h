@@ -192,7 +192,6 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                 }
             return count;
         }
-        return -1;
     }
 
     mlast = m - 1;
