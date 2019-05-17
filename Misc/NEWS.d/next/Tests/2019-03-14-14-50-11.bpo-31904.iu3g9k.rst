@@ -1,2 +1,1 @@
-Improve the test_urandom_failure.
-Skip the ExecTests test cases in test_os.py for VxWorks.
+Skip ExecTests and URandomFDTests in test_os.py for VxWorks.

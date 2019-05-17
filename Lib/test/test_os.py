@@ -1407,6 +1407,8 @@ OS_URANDOM_DONT_USE_FD = (
 
 @unittest.skipIf(OS_URANDOM_DONT_USE_FD ,
                  "os.random() does not use a file descriptor")
+@unittest.skipIf(sys.platform == "vxworks",
+                 "VxWorks can't set RLIMIT_NOFILE to 1")
 class URandomFDTests(unittest.TestCase):
     @unittest.skipUnless(resource, "test requires the resource module")
     def test_urandom_failure(self):
@@ -1419,20 +1421,9 @@ class URandomFDTests(unittest.TestCase):
             import errno
             import os
             import resource
+
             soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-            try:
-                resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
-            except (ValueError,OSError):
-                for i in range(1, hard_limit + 1):
-                    try:
-                        os.open(os.devnull, os.O_RDONLY)
-                    except OSError as e:
-                        if e.errno == errno.EMFILE:
-                           break
-                    else:
-                        continue
-            else:
-                pass
+            resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
             try:
                 os.urandom(16)
             except OSError as e:
@@ -1529,7 +1520,7 @@ def _execvpe_mockup(defpath=None):
         os.defpath = orig_defpath
 
 @unittest.skipUnless(hasattr(os, 'execv'),
-                         "No os.execv or os.execve function to test.")
+                     "No os.execv or os.execve function to test.")
 class ExecTests(unittest.TestCase):
     @unittest.skipIf(USING_LINUXTHREADS,
                      "avoid triggering a linuxthreads bug: see issue #4970")
