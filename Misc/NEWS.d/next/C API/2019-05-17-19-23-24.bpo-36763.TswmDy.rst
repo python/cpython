@@ -1,0 +1,3 @@
+``Py_Main()`` now returns the exitcode rather than calling
+``Py_Exit(exitcode)`` when calling ``PyErr_Print()`` if the current
+exception type is ``SystemExit``.
