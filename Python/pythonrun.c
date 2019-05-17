@@ -585,23 +585,31 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
     PyFile_WriteString("^\n", f);
 }
 
-static void
-handle_system_exit(void)
-{
-    PyObject *exception, *value, *tb;
-    int exitcode = 0;
 
+int
+_Py_HandleSystemExit(int *exitcode_p)
+{
     int inspect = _PyInterpreterState_GET_UNSAFE()->core_config.inspect;
     if (inspect) {
         /* Don't exit if -i flag was given. This flag is set to 0
          * when entering interactive mode for inspecting. */
-        return;
+        return 0;
     }
 
+    if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+        return 0;
+    }
+
+    PyObject *exception, *value, *tb;
     PyErr_Fetch(&exception, &value, &tb);
+
     fflush(stdout);
-    if (value == NULL || value == Py_None)
+
+    int exitcode = 0;
+    if (value == NULL || value == Py_None) {
         goto done;
+    }
+
     if (PyExceptionInstance_Check(value)) {
         /* The error code should be in the `code' attribute. */
         _Py_IDENTIFIER(code);
@@ -615,8 +623,10 @@ handle_system_exit(void)
         /* If we failed to dig out the 'code' attribute,
            just let the else clause below print the error. */
     }
-    if (PyLong_Check(value))
+
+    if (PyLong_Check(value)) {
         exitcode = (int)PyLong_AsLong(value);
+    }
     else {
         PyObject *sys_stderr = _PySys_GetObjectId(&PyId_stderr);
         /* We clear the exception here to avoid triggering the assertion
@@ -633,6 +643,7 @@ handle_system_exit(void)
         PySys_WriteStderr("\n");
         exitcode = 1;
     }
+
  done:
     /* Restore and clear the exception info, in order to properly decref
      * the exception, value, and traceback.      If we just exit instead,
@@ -641,18 +652,28 @@ handle_system_exit(void)
      */
     PyErr_Restore(exception, value, tb);
     PyErr_Clear();
-    Py_Exit(exitcode);
-    /* NOTREACHED */
+    *exitcode_p = exitcode;
+    return 1;
 }
+
+
+static void
+handle_system_exit(void)
+{
+    int exitcode;
+    if (_Py_HandleSystemExit(&exitcode)) {
+        Py_Exit(exitcode);
+    }
+}
+
 
 void
 PyErr_PrintEx(int set_sys_last_vars)
 {
     PyObject *exception, *v, *tb, *hook;
 
-    if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
-        handle_system_exit();
-    }
+    handle_system_exit();
+
     PyErr_Fetch(&exception, &v, &tb);
     if (exception == NULL)
         return;
@@ -686,10 +707,9 @@ PyErr_PrintEx(int set_sys_last_vars)
         stack[2] = tb;
         result = _PyObject_FastCall(hook, stack, 3);
         if (result == NULL) {
+            handle_system_exit();
+
             PyObject *exception2, *v2, *tb2;
-            if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
-                handle_system_exit();
-            }
             PyErr_Fetch(&exception2, &v2, &tb2);
             PyErr_NormalizeException(&exception2, &v2, &tb2);
             /* It should not be possible for exception2 or v2

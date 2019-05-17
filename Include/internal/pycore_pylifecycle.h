@@ -100,6 +100,8 @@ PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromCoreConfig(
     const _PyCoreConfig *coreconfig,
     const _PyArgv *args);
 
+PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
+
 #ifdef __cplusplus
 }
 #endif
