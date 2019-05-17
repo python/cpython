@@ -25,6 +25,7 @@ echo.Available flags:
 echo.  -x64    build for x64
 echo.  -x86    build for x86
 echo.  -arm32  build for arm32
+echo.  -arm64  build for arm64
 echo.  -?      this help
 echo.  --install-cygwin  install cygwin to c:\cygwin
 exit /b 127
@@ -34,6 +35,9 @@ exit /b 127
 set BUILD_X64=
 set BUILD_X86=
 set BUILD_ARM32=
+set BUILD_ARM64=
+set BUILD_PDB=
+set BUILD_NOOPT=
 set INSTALL_CYGWIN=
 
 :CheckOpts
@@ -41,16 +45,20 @@ if "%1"=="" goto :CheckOptsDone
 if /I "%1"=="-x64" (set BUILD_X64=1) & shift & goto :CheckOpts
 if /I "%1"=="-x86" (set BUILD_X86=1) & shift & goto :CheckOpts
 if /I "%1"=="-arm32" (set BUILD_ARM32=1) & shift & goto :CheckOpts
+if /I "%1"=="-arm64" (set BUILD_ARM64=1) & shift & goto :CheckOpts
+if /I "%1"=="-pdb" (set BUILD_PDB=-g) & shift & goto :CheckOpts
+if /I "%1"=="-noopt" (set BUILD_NOOPT=CFLAGS='-Od -warn all') & shift & goto :CheckOpts
 if /I "%1"=="-?" goto :Usage
 if /I "%1"=="--install-cygwin" (set INSTALL_CYGWIN=1) & shift & goto :CheckOpts
 goto :Usage
 
 :CheckOptsDone
 
-if NOT DEFINED BUILD_X64 if NOT DEFINED BUILD_X86 if NOT DEFINED BUILD_ARM32 (
+if NOT DEFINED BUILD_X64 if NOT DEFINED BUILD_X86 if NOT DEFINED BUILD_ARM32 if NOT DEFINED BUILD_ARM64 (
     set BUILD_X64=1
     set BUILD_X86=1
     set BUILD_ARM32=1
+    set BUILD_ARM64=1
 )
 
 if "%INSTALL_CYGWIN%"=="1" call :InstallCygwin
@@ -90,6 +98,7 @@ if not exist Makefile.in (%SH% -lc "(cd $LIBFFI_SOURCE; ./autogen.sh;)")
 if "%BUILD_X64%"=="1" call :BuildOne x64 x86_64-w64-cygwin x86_64-w64-cygwin
 if "%BUILD_X86%"=="1" call :BuildOne x86 i686-pc-cygwin i686-pc-cygwin
 if "%BUILD_ARM32%"=="1" call :BuildOne x86_arm i686-pc-cygwin arm-w32-cygwin
+if "%BUILD_ARM64%"=="1" call :BuildOne x86_arm64 i686-pc-cygwin aarch64-w64-cygwin
 
 popd
 endlocal
@@ -129,6 +138,12 @@ if /I "%VCVARS_PLATFORM%" EQU "x86_arm" (
     set ASSEMBLER=-marm
     set SRC_ARCHITECTURE=ARM
 )
+if /I "%VCVARS_PLATFORM%" EQU "x86_arm64" (
+    set ARCH=arm64
+    set ARTIFACTS=%LIBFFI_SOURCE%\aarch64-w64-cygwin
+    set ASSEMBLER=-marm64
+    set SRC_ARCHITECTURE=aarch64
+)
 
 if NOT DEFINED LIBFFI_OUT set LIBFFI_OUT=%~dp0\..\externals\libffi
 set _LIBFFI_OUT=%LIBFFI_OUT%\%ARCH%
@@ -139,10 +154,14 @@ call %VCVARSALL% %VCVARS_PLATFORM%
 echo clean %_LIBFFI_OUT%
 if exist %_LIBFFI_OUT% (rd %_LIBFFI_OUT% /s/q)
 
+echo ================================================================
 echo Configure the build to generate fficonfig.h and ffi.h
-%SH% -lc "(cd $OLDPWD; ./configure CC='%MSVCC% %ASSEMBLER%' CXX='%MSVCC% %ASSEMBLER%' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
+echo ================================================================
+%SH% -lc "(cd $OLDPWD; ./configure CC='%MSVCC% %ASSEMBLER% %BUILD_PDB%' CXX='%MSVCC% %ASSEMBLER% %BUILD_PDB%' LD='link' CPP='cl -nologo -EP' CXXCPP='cl -nologo -EP' CPPFLAGS='-DFFI_BUILDING_DLL' %BUILD_NOOPT% NM='dumpbin -symbols' STRIP=':' --build=$BUILD --host=$HOST;)"
 
+echo ================================================================
 echo Building libffi
+echo ================================================================
 %SH% -lc "(cd $OLDPWD; export PATH=/usr/bin:$PATH; cp src/%SRC_ARCHITECTURE%/ffitarget.h include; make; find .;)"
 
 REM Tests are not needed to produce artifacts
@@ -158,6 +177,7 @@ echo copying files to %_LIBFFI_OUT%
 if not exist %_LIBFFI_OUT%\include (md %_LIBFFI_OUT%\include)
 copy %ARTIFACTS%\.libs\libffi-7.dll %_LIBFFI_OUT%
 copy %ARTIFACTS%\.libs\libffi-7.lib %_LIBFFI_OUT%
+copy %ARTIFACTS%\.libs\libffi-7.pdb %_LIBFFI_OUT%
 copy %ARTIFACTS%\fficonfig.h %_LIBFFI_OUT%\include
 copy %ARTIFACTS%\include\*.h %_LIBFFI_OUT%\include
 
