@@ -1673,7 +1673,8 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
         return PyLong_FromLong((unsigned char)self->ob_sval[i]);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         char* source_buf;
         char* result_buf;
         PyObject* result;

@@ -283,7 +283,7 @@ class BaseBytesTest:
         # Test extended slicing by comparing with list slicing.
         L = list(range(255))
         b = self.type2test(L)
-        indices = (0, None, 1, 3, 19, 100, -1, -2, -31, -100)
+        indices = (0, None, 1, 3, 19, 100, sys.maxsize, -1, -2, -31, -100)
         for start in indices:
             for stop in indices:
                 # Skip step 0 (invalid)
@@ -1238,7 +1238,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertLessEqual(sys.getsizeof(b), size)
 
     def test_extended_set_del_slice(self):
-        indices = (0, None, 1, 3, 19, 300, 1<<333, -1, -2, -31, -300)
+        indices = (0, None, 1, 3, 19, 300, 1<<333, sys.maxsize,
+            -1, -2, -31, -300)
         for start in indices:
             for stop in indices:
                 # Skip invalid step 0
