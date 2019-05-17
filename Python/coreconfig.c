@@ -203,6 +203,34 @@ fail:
 }
 
 
+/* --- _PyInitError ----------------------------------------------- */
+
+_PyInitError _PyInitError_Ok(void)
+{ return _Py_INIT_OK(); }
+
+_PyInitError _PyInitError_Error(const char *err_msg)
+{
+    return (_PyInitError){._type = _Py_INIT_ERR_TYPE_ERROR,
+                          .err_msg = err_msg};
+}
+
+_PyInitError _PyInitError_NoMemory(void)
+{ return _PyInitError_Error("memory allocation failed"); }
+
+_PyInitError _PyInitError_Exit(int exitcode)
+{ return _Py_INIT_EXIT(exitcode); }
+
+
+int _PyInitError_IsError(_PyInitError err)
+{ return _Py_INIT_IS_ERROR(err); }
+
+int _PyInitError_IsExit(_PyInitError err)
+{ return _Py_INIT_IS_EXIT(err); }
+
+int _PyInitError_Failed(_PyInitError err)
+{ return _Py_INIT_FAILED(err); }
+
+
 /* --- _PyWstrList ------------------------------------------------ */
 
 #ifndef NDEBUG
