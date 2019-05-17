@@ -8,7 +8,6 @@ import sys
 import sysconfig
 import threading
 import warnings
-import weakref
 from test import support
 from test.libregrtest.utils import print_warning
 try:
@@ -267,12 +266,6 @@ class saved_test_environment:
                                                    in self.resource_info())
         return self
 
-    @staticmethod
-    def _repr(o):
-        if isinstance(o, weakref.WeakSet):
-            return repr(list(o))
-        return repr(o)
-
     def __exit__(self, exc_type, exc_val, exc_tb):
         saved_values = self.saved_values
         del self.saved_values
@@ -292,8 +285,6 @@ class saved_test_environment:
                 restore(original)
                 if not self.quiet and not self.pgo:
                     print_warning(f"{name} was modified by {self.testname}")
-                    r1 = self._repr(original)
-                    r2 = self._repr(current)
-                    print(f"  Before: {r1}\n  After:  {r2} ",
+                    print(f"  Before: {original}\n  After:  {current} ",
                           file=sys.stderr, flush=True)
         return False
