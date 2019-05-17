@@ -260,6 +260,42 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
+void
+_PyPreConfig_Init(_PyPreConfig *config)
+{
+    *config = _PyPreConfig_INIT;
+}
+
+
+void
+_PyPreConfig_InitPythonConfig(_PyPreConfig *config)
+{
+    _PyPreConfig_Init(config);
+
+    /* Set to -1 to enable C locale coercion (PEP 538) and UTF-8 Mode (PEP 540)
+       depending on the LC_CTYPE locale, PYTHONUTF8 and PYTHONCOERCECLOCALE
+       environment variables. */
+    config->coerce_c_locale = -1;
+    config->coerce_c_locale_warn = -1;
+    config->utf8_mode = -1;
+}
+
+
+void
+_PyPreConfig_InitIsolatedConfig(_PyPreConfig *config)
+{
+    _PyPreConfig_Init(config);
+
+    config->isolated = 1;
+    config->use_environment = 0;
+#ifdef MS_WINDOWS
+    config->legacy_windows_fs_encoding = 0;
+#endif
+    config->utf8_mode = 0;
+    config->dev_mode = 0;
+}
+
+
 int
 _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 {
@@ -346,7 +382,7 @@ fail:
 
 
 void
-_PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
+_PyPreConfig_GetCoreConfig(_PyPreConfig *config,
                             const _PyCoreConfig *core_config)
 {
 #define COPY_ATTR(ATTR) \
@@ -366,11 +402,11 @@ static void
 _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 {
 #define COPY_FLAG(ATTR, VALUE) \
-    if (config->ATTR == -1) { \
+    if (config->ATTR < 0) { \
         config->ATTR = VALUE; \
     }
 #define COPY_NOT_FLAG(ATTR, VALUE) \
-    if (config->ATTR == -1) { \
+    if (config->ATTR < 0) { \
         config->ATTR = !(VALUE); \
     }
 
@@ -379,8 +415,8 @@ _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
-    if (Py_UTF8Mode > 0) {
-        config->utf8_mode = 1;
+    if (config->utf8_mode == -2) {
+        config->utf8_mode = Py_UTF8Mode;
     }
 
 #undef COPY_FLAG
@@ -392,11 +428,11 @@ static void
 _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config)
 {
 #define COPY_FLAG(ATTR, VAR) \
-    if (config->ATTR != -1) { \
+    if (config->ATTR >= 0) { \
         VAR = config->ATTR; \
     }
 #define COPY_NOT_FLAG(ATTR, VAR) \
-    if (config->ATTR != -1) { \
+    if (config->ATTR >= 0) { \
         VAR = !config->ATTR; \
     }
 
@@ -575,7 +611,9 @@ preconfig_init_coerce_c_locale(_PyPreConfig *config)
             }
         }
         else if (strcmp(env, "warn") == 0) {
-            config->coerce_c_locale_warn = 1;
+            if (config->coerce_c_locale_warn < 0) {
+                config->coerce_c_locale_warn = 1;
+            }
         }
         else {
             if (config->coerce_c_locale < 0) {
@@ -587,19 +625,19 @@ preconfig_init_coerce_c_locale(_PyPreConfig *config)
     /* Test if coerce_c_locale equals to -1 or equals to 1:
        PYTHONCOERCECLOCALE=1 doesn't imply that the C locale is always coerced.
        It is only coerced if if the LC_CTYPE locale is "C". */
-    if (config->coerce_c_locale == 0 || config->coerce_c_locale == 2) {
-        return;
+    if (config->coerce_c_locale < 0 || config->coerce_c_locale == 1) {
+        /* The C locale enables the C locale coercion (PEP 538) */
+        if (_Py_LegacyLocaleDetected()) {
+            config->coerce_c_locale = 2;
+        }
+        else {
+            config->coerce_c_locale = 0;
+        }
     }
 
-    /* The C locale enables the C locale coercion (PEP 538) */
-    if (_Py_LegacyLocaleDetected()) {
-        config->coerce_c_locale = 2;
+    if (config->coerce_c_locale_warn < 0) {
+        config->coerce_c_locale_warn = 0;
     }
-    else {
-        config->coerce_c_locale = 0;
-    }
-
-    assert(config->coerce_c_locale >= 0);
 }
 
 
@@ -659,6 +697,7 @@ preconfig_read(_PyPreConfig *config, _PyPreCmdline *cmdline)
     }
 
     assert(config->coerce_c_locale >= 0);
+    assert(config->coerce_c_locale_warn >= 0);
 #ifdef MS_WINDOWS
     assert(config->legacy_windows_fs_encoding >= 0);
 #endif
@@ -700,7 +739,8 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
     }
 
     /* Save the config to be able to restore it if encodings change */
-    _PyPreConfig save_config = _PyPreConfig_INIT;
+    _PyPreConfig save_config;
+    _PyPreConfig_Init(&save_config);
     if (_PyPreConfig_Copy(&save_config, config) < 0) {
         return _Py_INIT_NO_MEMORY();
     }

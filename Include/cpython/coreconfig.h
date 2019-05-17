@@ -86,12 +86,18 @@ typedef struct {
 
        If it is equal to 1, LC_CTYPE locale is read to decide it it should be
        coerced or not (ex: PYTHONCOERCECLOCALE=1). Internally, it is set to 2
-       if the LC_CTYPE locale must be coerced. */
+       if the LC_CTYPE locale must be coerced.
+
+       Disable by default (set to 0). Set it to -1 to let Python decides if it
+       should be enabled or not. */
     int coerce_c_locale;
 
     /* Emit a warning if the LC_CTYPE locale is coerced?
 
-       Disabled by default. Set to 1 by PYTHONCOERCECLOCALE=warn. */
+       Set to 1 by PYTHONCOERCECLOCALE=warn.
+
+       Disable by default (set to 0). Set it to -1 to let Python decides if it
+       should be enabled or not. */
     int coerce_c_locale_warn;
 
 #ifdef MS_WINDOWS
@@ -116,7 +122,10 @@ typedef struct {
        Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
 
        If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
-       "POSIX", otherwise inherit Py_UTF8Mode value. */
+       "POSIX", otherwise it is set to 0.
+
+       If equals to -2, inherit Py_UTF8Mode value value (which is equal to 0
+       by default). */
     int utf8_mode;
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
@@ -138,8 +147,13 @@ typedef struct {
         ._config_version = _Py_CONFIG_VERSION, \
         .isolated = -1, \
         .use_environment = -1, \
+        .utf8_mode = -2, \
         .dev_mode = -1, \
         .allocator = PYMEM_ALLOCATOR_NOT_SET}
+
+PyAPI_FUNC(void) _PyPreConfig_Init(_PyPreConfig *config);
+PyAPI_FUNC(void) _PyPreConfig_InitPythonConfig(_PyPreConfig *config);
+PyAPI_FUNC(void) _PyPreConfig_InitIsolateConfig(_PyPreConfig *config);
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */
@@ -213,8 +227,8 @@ typedef struct {
 
     /* Command line arguments (sys.argv).
 
-       By default, Python command line arguments are parsed and then stripped
-       from argv. Set parse_argv to 0 to avoid that.
+       Set parse_argv to 1 to parse argv as Python command line arguments
+       and then strip Python arguments from argv.
 
        If argv is empty, an empty string is added to ensure that sys.argv
        always exists and is never empty. */
@@ -442,7 +456,7 @@ typedef struct {
         .faulthandler = -1, \
         .tracemalloc = -1, \
         .use_module_search_paths = 0, \
-        .parse_argv = 1, \
+        .parse_argv = 0, \
         .site_import = -1, \
         .bytes_warning = -1, \
         .inspect = -1, \
@@ -453,13 +467,17 @@ typedef struct {
         .verbose = -1, \
         .quiet = -1, \
         .user_site_directory = -1, \
-        .configure_c_stdio = 1, \
+        .configure_c_stdio = 0, \
         .buffered_stdio = -1, \
         ._install_importlib = 1, \
         .check_hash_pycs_mode = NULL, \
         .pathconfig_warnings = -1, \
         ._init_main = 1}
 /* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
+
+PyAPI_FUNC(void) _PyCoreConfig_Init(_PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitIsolateConfig(_PyCoreConfig *config);
 
 #ifdef __cplusplus
 }
