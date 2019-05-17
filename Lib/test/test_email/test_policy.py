@@ -1,4 +1,5 @@
 import io
+import sys
 import types
 import textwrap
 import unittest
@@ -133,6 +134,18 @@ class PolicyAPITests(unittest.TestCase):
         added = added + email.policy.default
         for attr, value in expected.items():
             self.assertEqual(getattr(added, attr), value)
+
+    def test_fold_zero_max_line_length(self):
+        expected = 'Subject: =?utf-8?q?=C3=A1?=\n'
+
+        msg = email.message.EmailMessage()
+        msg['Subject'] = 'á'
+
+        p1 = email.policy.default.clone(max_line_length=0)
+        p2 = email.policy.default.clone(max_line_length=None)
+
+        self.assertEqual(p1.fold('Subject', msg['Subject']), expected)
+        self.assertEqual(p2.fold('Subject', msg['Subject']), expected)
 
     def test_register_defect(self):
         class Dummy:
