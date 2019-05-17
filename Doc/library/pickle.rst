@@ -227,7 +227,7 @@ process more convenient:
    protocol argument is needed.  Bytes past the pickled object's
    representation are ignored.
 
-   Arguments *file*, *fix_imports*, *encoding*, *errors* and *strict*
+   Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
    have the same meaning as in :class:`Unpickler`.
 
    .. versionchanged:: 3.8
@@ -242,7 +242,7 @@ process more convenient:
    protocol argument is needed.  Bytes past the pickled object's
    representation are ignored.
 
-   Arguments *file*, *fix_imports*, *encoding*, *errors* and *strict*
+   Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
    have the same meaning as in :class:`Unpickler`.
 
    .. versionchanged:: 3.8
@@ -985,9 +985,9 @@ able to participate in out-of-band buffer pickling::
                else:
                    return cls(obj)
 
-We see that the reconstructor (the ``_reconstruct`` class method) returns
-the buffer's providing object if it has the right type.  This is an easy way
-to simulate zero-copy behaviour on this toy example.
+The reconstructor (the ``_reconstruct`` class method) returns the buffer's
+providing object if it has the right type.  This is an easy way to simulate
+zero-copy behaviour on this toy example.
 
 On the consumer side, we can pickle those objects the usual way, which
 when unserialized will give us a copy of the original object::
