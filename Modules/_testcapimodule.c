@@ -2341,6 +2341,168 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
 }
 
 static PyObject *
+get_date_fromdate(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int year, month, day;
+
+    if (!PyArg_ParseTuple(args, "piii", &macro, &year, &month, &day)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyDate_FromDate(year, month, day);
+    }
+    else {
+        rv = PyDateTimeAPI->Date_FromDate(
+            year, month, day,
+            PyDateTimeAPI->DateType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_datetime_fromdateandtime(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int year, month, day;
+    int hour, minute, second, microsecond;
+
+    if (!PyArg_ParseTuple(args, "piiiiiii",
+                          &macro,
+                          &year, &month, &day,
+                          &hour, &minute, &second, &microsecond)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyDateTime_FromDateAndTime(
+            year, month, day,
+            hour, minute, second, microsecond);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromDateAndTime(
+            year, month, day,
+            hour, minute, second, microsecond,
+            Py_None,
+            PyDateTimeAPI->DateTimeType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int year, month, day;
+    int hour, minute, second, microsecond, fold;
+
+    if (!PyArg_ParseTuple(args, "piiiiiiii",
+                          &macro,
+                          &year, &month, &day,
+                          &hour, &minute, &second, &microsecond,
+                          &fold)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyDateTime_FromDateAndTimeAndFold(
+            year, month, day,
+            hour, minute, second, microsecond,
+            fold);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromDateAndTimeAndFold(
+            year, month, day,
+            hour, minute, second, microsecond,
+            Py_None,
+            fold,
+            PyDateTimeAPI->DateTimeType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_time_fromtime(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int hour, minute, second, microsecond;
+
+    if (!PyArg_ParseTuple(args, "piiii",
+                          &macro,
+                          &hour, &minute, &second, &microsecond)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyTime_FromTime(hour, minute, second, microsecond);
+    }
+    else {
+        rv = PyDateTimeAPI->Time_FromTime(
+            hour, minute, second, microsecond,
+            Py_None,
+            PyDateTimeAPI->TimeType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_time_fromtimeandfold(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int hour, minute, second, microsecond, fold;
+
+    if (!PyArg_ParseTuple(args, "piiiii",
+                          &macro,
+                          &hour, &minute, &second, &microsecond,
+                          &fold)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyTime_FromTimeAndFold(hour, minute, second, microsecond, fold);
+    }
+    else {
+        rv = PyDateTimeAPI->Time_FromTimeAndFold(
+            hour, minute, second, microsecond,
+            Py_None,
+            fold,
+            PyDateTimeAPI->TimeType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_delta_fromdsu(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int days, seconds, microseconds;
+
+    if (!PyArg_ParseTuple(args, "piii",
+                          &macro,
+                          &days, &seconds, &microseconds)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyDelta_FromDSU(days, seconds, microseconds);
+    }
+    else {
+        rv = PyDateTimeAPI->Delta_FromDelta(
+            days, seconds, microseconds, 1,
+            PyDateTimeAPI->DeltaType);
+    }
+
+    return rv;
+}
+
+static PyObject *
 get_date_fromtimestamp(PyObject* self, PyObject *args)
 {
     PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
@@ -4826,7 +4988,7 @@ static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
     {"test_sizeof_c_types",     test_sizeof_c_types,             METH_NOARGS},
-    {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
+    {"test_datetime_capi",      test_datetime_capi,              METH_NOARGS},
     {"datetime_check_date",     datetime_check_date,             METH_VARARGS},
     {"datetime_check_time",     datetime_check_time,             METH_VARARGS},
     {"datetime_check_datetime",     datetime_check_datetime,     METH_VARARGS},
@@ -4835,6 +4997,12 @@ static PyMethodDef TestMethods[] = {
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
     {"get_timezone_utc_capi",    get_timezone_utc_capi,          METH_VARARGS},
+    {"get_date_fromdate",        get_date_fromdate,              METH_VARARGS},
+    {"get_datetime_fromdateandtime", get_datetime_fromdateandtime, METH_VARARGS},
+    {"get_datetime_fromdateandtimeandfold", get_datetime_fromdateandtimeandfold, METH_VARARGS},
+    {"get_time_fromtime",        get_time_fromtime,              METH_VARARGS},
+    {"get_time_fromtimeandfold", get_time_fromtimeandfold,       METH_VARARGS},
+    {"get_delta_fromdsu",        get_delta_fromdsu,              METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
