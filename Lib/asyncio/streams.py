@@ -122,22 +122,25 @@ async def start_server(client_connected_cb, host=None, port=None, *,
         loop = events.get_event_loop()
 
     def factory():
-        protocol = _ServerStreamProtocol(limit,
-                                         client_connected_cb,
-                                         loop=loop,
-                                         _asyncio_internal=True)
+        protocol = _LegacyServerStreamProtocol(limit,
+                                               client_connected_cb,
+                                               loop=loop,
+                                               _asyncio_internal=True)
         return protocol
 
     return await loop.create_server(factory, host, port, **kwds)
 
 
 class ServerStream:
+    # TODO: API for enumerating open server streams
+
     def __init__(self, client_connected_cb, host=None, port=None, *,
                   limit=_DEFAULT_LIMIT,
                  family=socket.AF_UNSPEC,
                  flags=socket.AI_PASSIVE, sock=None, backlog=100,
                  ssl=None, reuse_address=None, reuse_port=None,
-                 ssl_handshake_timeout=None):
+                 ssl_handshake_timeout=None,
+                 shutdown_timeout=60):
         self._client_connected_cb = client_connected_cb
         self._host = host
         self._port = port
@@ -152,8 +155,12 @@ class ServerStream:
         self._ssl_handshake_timeout = ssl_handshake_timeout
         self._loop = asyncio.get_running_loop()
         self._low_server = None
+        self._streams = {}
+        self._shutdown_timeout = shutdown_timeout
 
-    async def __aenter__(self):
+    async def bind(self):
+        if self._low_server is not None:
+            return
         def factory():
             protocol = _ServerStreamProtocol(self._limit,
                                              self._client_connected_cb,
@@ -173,10 +180,6 @@ class ServerStream:
             reuse_address=self._reuse_address,
             reuse_port=self._reuse_port,
             ssl_handshake_timeout=self._ssl_handshake_timeout)
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, exc_tb):
-        await self.close()
 
     def is_serving(self):
         if self._low_server is None:
@@ -184,20 +187,58 @@ class ServerStream:
         return self._low_server.is_serving()
 
     async def start_serving(self):
-        assert self._low_server is not None
+        await self.bind()
         await self._low_server.start_serving()
 
     async def serve_forever(self):
-        assert self._low_server is not None
+        await self.start_serving()
         await self._low_server.serve_forever()
 
     async def close(self):
-        assert self._low_server is not None
+        if self._low_server is None:
+            return
         self._low_server.close()
+        tasks = list(self._streams.values())
+        await asyncio.gather(*[stream.close() for stream in self._streams])
         await self._low_server.wait_closed()
+        await self._warn_active_tasks(tasks)
 
     async def abort(self):
-        pass
+        if self._low_server is None:
+            return
+        self._low_server.close()
+        tasks = list(self._streams.values())
+        await asyncio.gather(*[stream.abort() for stream in self._streams])
+        await self._low_server.wait_closed()
+        await self._warn_active_tasks(tasks)
+
+    async def __aenter__(self):
+        await self.bind()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, exc_tb):
+        await self.close()
+
+    def _attach(self, stream, task):
+        self._streams[stream] = task
+
+    def _detach(self, stream, task):
+        del self._streams[stream]
+
+    async def _warn_active_tasks(tasks):
+        if not tasks:
+            return
+
+        done, pending = await asyncio.wait(tasks, timeout=self._shutdown_timeout)
+        if not pending:
+            return
+        for task in pending:
+            task.cancel()
+        done, pending = await asyncio.wait(pending, timeout=self._shutdown_timeout)
+        for task in pending:
+            self._loop.call_exception_handler({
+                "message": f'{task} has not finished on stream server closing'
+            })
 
 
 if hasattr(socket, 'AF_UNIX'):
@@ -249,10 +290,10 @@ if hasattr(socket, 'AF_UNIX'):
             loop = events.get_event_loop()
 
         def factory():
-            protocol = _ServerStreamProtocol(limit,
-                                             client_connected_cb,
-                                             loop=loop,
-                                             _asyncio_internal=True)
+            protocol = _LegacyServerStreamProtocol(limit,
+                                                   client_connected_cb,
+                                                   loop=loop,
+                                                   _asyncio_internal=True)
             return protocol
 
         return await loop.create_unix_server(factory, path, **kwds)
@@ -455,7 +496,7 @@ class _StreamProtocol(_BaseStreamProtocol):
         self._stream_wr = None
 
 
-class _ServerStreamProtocol(_BaseStreamProtocol):
+class _LegacyServerStreamProtocol(_BaseStreamProtocol):
     def __init__(self, limit, client_connected_cb, loop=None,
                  *, _asyncio_internal=False):
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
@@ -473,11 +514,38 @@ class _ServerStreamProtocol(_BaseStreamProtocol):
         self._stream = stream
         res = self._client_connected_cb(self._stream, self._stream)
         if coroutines.iscoroutine(res):
-            # TODO: wait for task finish in new API
             self._loop.create_task(res)
 
     def connection_lost(self, exc):
         super().connection_lost(exc)
+        self._stream = None
+
+
+class _ServerStreamProtocol(_BaseStreamProtocol):
+    def __init__(self, server, limit, client_connected_cb, loop=None,
+                 *, _asyncio_internal=False):
+        super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
+        self._client_connected_cb = client_connected_cb
+        self._limit = limit
+        self._server = server
+        self._task = None
+
+    def connection_made(self, transport):
+        super().connection_made(transport)
+        stream = Stream(mode=StreamMode.READWRITE,
+                        transport=transport,
+                        protocol=self,
+                        limit=self._limit,
+                        loop=self._loop,
+                        _asyncio_internal=True)
+        self._stream = stream
+        self._task = self._loop.create_task(
+            self._client_connected_cb(self._stream))
+        self._server._attach(stream, self._task)
+
+    def connection_lost(self, exc):
+        super().connection_lost(exc)
+        self._server._detach(self._stream, self._task)
         self._stream = None
 
 
