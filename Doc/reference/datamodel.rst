@@ -165,7 +165,9 @@ NotImplemented
 
 
 Ellipsis
-   .. index:: object: Ellipsis
+   .. index::
+      object: Ellipsis
+      single: ...; ellipsis literal
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the literal ``...`` or the built-in name
@@ -473,13 +475,13 @@ Callable types
       | :attr:`__doc__`         | The function's documentation  | Writable  |
       |                         | string, or ``None`` if        |           |
       |                         | unavailable; not inherited by |           |
-      |                         | subclasses                    |           |
+      |                         | subclasses.                   |           |
       +-------------------------+-------------------------------+-----------+
-      | :attr:`~definition.\    | The function's name           | Writable  |
+      | :attr:`~definition.\    | The function's name.          | Writable  |
       | __name__`               |                               |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`~definition.\    | The function's                | Writable  |
-      | __qualname__`           | :term:`qualified name`        |           |
+      | __qualname__`           | :term:`qualified name`.       |           |
       |                         |                               |           |
       |                         | .. versionadded:: 3.3         |           |
       +-------------------------+-------------------------------+-----------+
@@ -491,7 +493,7 @@ Callable types
       |                         | argument values for those     |           |
       |                         | arguments that have defaults, |           |
       |                         | or ``None`` if no arguments   |           |
-      |                         | have a default value          |           |
+      |                         | have a default value.         |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__code__`        | The code object representing  | Writable  |
       |                         | the compiled function body.   |           |
@@ -537,7 +539,9 @@ Callable types
       the value of the cell, as well as set the value.
 
       Additional information about a function's definition can be retrieved from its
-      code object; see the description of internal types below.
+      code object; see the description of internal types below. The
+      :data:`cell <types.CellType>` type can be accessed in the :mod:`types`
+      module.
 
    Instance methods
       .. index::
@@ -573,12 +577,6 @@ Callable types
       :attr:`__self__` attribute is the instance, and the method object is said
       to be bound.  The new method's :attr:`__func__` attribute is the original
       function object.
-
-      When a user-defined method object is created by retrieving another method
-      object from a class or instance, the behaviour is the same as for a
-      function object, except that the :attr:`__func__` attribute of the new
-      instance is not the original method object but its :attr:`__func__`
-      attribute.
 
       When an instance method object is created by retrieving a class method
       object from a class or instance, its :attr:`__self__` attribute is the
@@ -618,7 +616,7 @@ Callable types
       called, always returns an iterator object which can be used to execute the
       body of the function:  calling the iterator's :meth:`iterator.__next__`
       method will cause the function to execute until it provides a value
-      using the :keyword:`yield` statement.  When the function executes a
+      using the :keyword:`!yield` statement.  When the function executes a
       :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
       exception is raised and the iterator will have reached the end of the set of
       values to be returned.
@@ -698,7 +696,7 @@ Modules
 
    Modules are a basic organizational unit of Python code, and are created by
    the :ref:`import system <importsystem>` as invoked either by the
-   :keyword:`import` statement (see :keyword:`import`), or by calling
+   :keyword:`import` statement, or by calling
    functions such as :func:`importlib.import_module` and built-in
    :func:`__import__`.  A module object has a namespace implemented by a
    dictionary object (this is the dictionary referenced by the ``__globals__``
@@ -768,7 +766,7 @@ Custom classes
 
    When a class attribute reference (for class :class:`C`, say) would yield a
    class method object, it is transformed into an instance method object whose
-   :attr:`__self__` attributes is :class:`C`.  When it would yield a static
+   :attr:`__self__` attribute is :class:`C`.  When it would yield a static
    method object, it is transformed into the object wrapped by the static method
    object. See section :ref:`descriptors` for another way in which attributes
    retrieved from a class may differ from those actually contained in its
@@ -950,7 +948,7 @@ Internal types
       .. index:: object: frame
 
       Frame objects represent execution frames.  They may occur in traceback objects
-      (see below).
+      (see below), and are also passed to registered trace functions.
 
       .. index::
          single: f_back (frame attribute)
@@ -1003,6 +1001,8 @@ Internal types
 
          .. versionadded:: 3.4
 
+   .. _traceback-objects:
+
    Traceback objects
       .. index::
          object: traceback
@@ -1015,31 +1015,51 @@ Internal types
          single: sys.last_traceback
 
       Traceback objects represent a stack trace of an exception.  A traceback object
-      is created when an exception occurs.  When the search for an exception handler
+      is implicitly created when an exception occurs, and may also be explicitly
+      created by calling :class:`types.TracebackType`.
+
+      For implicitly created tracebacks, when the search for an exception handler
       unwinds the execution stack, at each unwound level a traceback object is
       inserted in front of the current traceback.  When an exception handler is
       entered, the stack trace is made available to the program. (See section
       :ref:`try`.) It is accessible as the third item of the
-      tuple returned by ``sys.exc_info()``. When the program contains no suitable
+      tuple returned by ``sys.exc_info()``, and as the ``__traceback__`` attribute
+      of the caught exception.
+
+      When the program contains no suitable
       handler, the stack trace is written (nicely formatted) to the standard error
       stream; if the interpreter is interactive, it is also made available to the user
       as ``sys.last_traceback``.
 
+      For explicitly created tracebacks, it is up to the creator of the traceback
+      to determine how the ``tb_next`` attributes should be linked to form a
+      full stack trace.
+
       .. index::
-         single: tb_next (traceback attribute)
          single: tb_frame (traceback attribute)
          single: tb_lineno (traceback attribute)
          single: tb_lasti (traceback attribute)
          statement: try
 
-      Special read-only attributes: :attr:`tb_next` is the next level in the stack
-      trace (towards the frame where the exception occurred), or ``None`` if there is
-      no next level; :attr:`tb_frame` points to the execution frame of the current
-      level; :attr:`tb_lineno` gives the line number where the exception occurred;
-      :attr:`tb_lasti` indicates the precise instruction.  The line number and last
-      instruction in the traceback may differ from the line number of its frame object
-      if the exception occurred in a :keyword:`try` statement with no matching except
-      clause or with a finally clause.
+      Special read-only attributes:
+      :attr:`tb_frame` points to the execution frame of the current level;
+      :attr:`tb_lineno` gives the line number where the exception occurred;
+      :attr:`tb_lasti` indicates the precise instruction.
+      The line number and last instruction in the traceback may differ from the
+      line number of its frame object if the exception occurred in a
+      :keyword:`try` statement with no matching except clause or with a
+      finally clause.
+
+      .. index::
+         single: tb_next (traceback attribute)
+
+      Special writable attribute: :attr:`tb_next` is the next level in the stack
+      trace (towards the frame where the exception occurred), or ``None`` if
+      there is no next level.
+
+      .. versionchanged:: 3.7
+         Traceback objects can now be explicitly instantiated from Python code,
+         and the ``tb_next`` attribute of existing instances can be updated.
 
    Slice objects
       .. index:: builtin: slice
@@ -1173,60 +1193,68 @@ Basic customization
 
    .. index::
       single: destructor
+      single: finalizer
       statement: del
 
    Called when the instance is about to be destroyed.  This is also called a
-   destructor.  If a base class has a :meth:`__del__` method, the derived class's
-   :meth:`__del__` method, if any, must explicitly call it to ensure proper
-   deletion of the base class part of the instance.  Note that it is possible
-   (though not recommended!) for the :meth:`__del__` method to postpone destruction
-   of the instance by creating a new reference to it.  It may then be called at a
-   later time when this new reference is deleted.  It is not guaranteed that
-   :meth:`__del__` methods are called for objects that still exist when the
-   interpreter exits.
+   finalizer or (improperly) a destructor.  If a base class has a
+   :meth:`__del__` method, the derived class's :meth:`__del__` method,
+   if any, must explicitly call it to ensure proper deletion of the base
+   class part of the instance.
+
+   It is possible (though not recommended!) for the :meth:`__del__` method
+   to postpone destruction of the instance by creating a new reference to
+   it.  This is called object *resurrection*.  It is implementation-dependent
+   whether :meth:`__del__` is called a second time when a resurrected object
+   is about to be destroyed; the current :term:`CPython` implementation
+   only calls it once.
+
+   It is not guaranteed that :meth:`__del__` methods are called for objects
+   that still exist when the interpreter exits.
 
    .. note::
 
       ``del x`` doesn't directly call ``x.__del__()`` --- the former decrements
       the reference count for ``x`` by one, and the latter is only called when
-      ``x``'s reference count reaches zero.  Some common situations that may
-      prevent the reference count of an object from going to zero include:
-      circular references between objects (e.g., a doubly-linked list or a tree
-      data structure with parent and child pointers); a reference to the object
-      on the stack frame of a function that caught an exception (the traceback
-      stored in ``sys.exc_info()[2]`` keeps the stack frame alive); or a
-      reference to the object on the stack frame that raised an unhandled
-      exception in interactive mode (the traceback stored in
-      ``sys.last_traceback`` keeps the stack frame alive).  The first situation
-      can only be remedied by explicitly breaking the cycles; the second can be
-      resolved by freeing the reference to the traceback object when it is no
-      longer useful, and the third can be resolved by storing ``None`` in
-      ``sys.last_traceback``.
-      Circular references which are garbage are detected and cleaned up when
-      the cyclic garbage collector is enabled (it's on by default). Refer to the
-      documentation for the :mod:`gc` module for more information about this
-      topic.
+      ``x``'s reference count reaches zero.
+
+   .. impl-detail::
+      It is possible for a reference cycle to prevent the reference count
+      of an object from going to zero.  In this case, the cycle will be
+      later detected and deleted by the :term:`cyclic garbage collector
+      <garbage collection>`.  A common cause of reference cycles is when
+      an exception has been caught in a local variable.  The frame's
+      locals then reference the exception, which references its own
+      traceback, which references the locals of all frames caught in the
+      traceback.
+
+      .. seealso::
+         Documentation for the :mod:`gc` module.
 
    .. warning::
 
       Due to the precarious circumstances under which :meth:`__del__` methods are
       invoked, exceptions that occur during their execution are ignored, and a warning
-      is printed to ``sys.stderr`` instead.  Also, when :meth:`__del__` is invoked in
-      response to a module being deleted (e.g., when execution of the program is
-      done), other globals referenced by the :meth:`__del__` method may already have
-      been deleted or in the process of being torn down (e.g. the import
-      machinery shutting down).  For this reason, :meth:`__del__` methods
-      should do the absolute
-      minimum needed to maintain external invariants.  Starting with version 1.5,
-      Python guarantees that globals whose name begins with a single underscore are
-      deleted from their module before other globals are deleted; if no other
-      references to such globals exist, this may help in assuring that imported
-      modules are still available at the time when the :meth:`__del__` method is
-      called.
+      is printed to ``sys.stderr`` instead.  In particular:
 
-      .. index::
-         single: repr() (built-in function); __repr__() (object method)
+      * :meth:`__del__` can be invoked when arbitrary code is being executed,
+        including from any arbitrary thread.  If :meth:`__del__` needs to take
+        a lock or invoke any other blocking resource, it may deadlock as
+        the resource may already be taken by the code that gets interrupted
+        to execute :meth:`__del__`.
 
+      * :meth:`__del__` can be executed during interpreter shutdown.  As a
+        consequence, the global variables it needs to access (including other
+        modules) may already have been deleted or set to ``None``. Python
+        guarantees that globals whose name begins with a single underscore
+        are deleted from their module before other globals are deleted; if
+        no other references to such globals exist, this may help in assuring
+        that imported modules are still available at the time when the
+        :meth:`__del__` method is called.
+
+
+   .. index::
+      single: repr() (built-in function); __repr__() (object method)
 
 .. method:: object.__repr__(self)
 
@@ -1283,9 +1311,9 @@ Basic customization
    Called by the :func:`format` built-in function,
    and by extension, evaluation of :ref:`formatted string literals
    <f-strings>` and the :meth:`str.format` method, to produce a "formatted"
-   string representation of an object. The ``format_spec`` argument is
+   string representation of an object. The *format_spec* argument is
    a string that contains a description of the formatting options desired.
-   The interpretation of the ``format_spec`` argument is up to the type
+   The interpretation of the *format_spec* argument is up to the type
    implementing :meth:`__format__`, however most classes will either
    delegate formatting to one of the built-in types, or use a similar
    formatting option syntax.
@@ -1420,8 +1448,8 @@ Basic customization
       dict insertion, O(n^2) complexity.  See
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
-      Changing hash values affects the iteration order of dicts, sets and
-      other mappings.  Python has never made guarantees about this ordering
+      Changing hash values affects the iteration order of sets.
+      Python has never made guarantees about this ordering
       (and it typically varies between 32-bit and 64-bit builds).
 
       See also :envvar:`PYTHONHASHSEED`.
@@ -1455,10 +1483,12 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__getattr__(self, name)
 
-   Called when an attribute lookup has not found the attribute in the usual places
-   (i.e. it is not an instance attribute nor is it found in the class tree for
-   ``self``).  ``name`` is the attribute name. This method should return the
-   (computed) attribute value or raise an :exc:`AttributeError` exception.
+   Called when the default attribute access fails with an :exc:`AttributeError`
+   (either :meth:`__getattribute__` raises an :exc:`AttributeError` because
+   *name* is not an instance attribute or an attribute in the class tree
+   for ``self``; or :meth:`__get__` of a *name* property raises
+   :exc:`AttributeError`).  This method should either return the (computed)
+   attribute value or raise an :exc:`AttributeError` exception.
 
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
@@ -1510,6 +1540,62 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
    Called when :func:`dir` is called on the object. A sequence must be
    returned. :func:`dir` converts the returned sequence to a list and sorts it.
+
+
+Customizing module attribute access
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: __getattr__ (module attribute)
+   single: __dir__ (module attribute)
+   single: __class__ (module attribute)
+
+Special names ``__getattr__`` and ``__dir__`` can be also used to customize
+access to module attributes. The ``__getattr__`` function at the module level
+should accept one argument which is the name of an attribute and return the
+computed value or raise an :exc:`AttributeError`. If an attribute is
+not found on a module object through the normal lookup, i.e.
+:meth:`object.__getattribute__`, then ``__getattr__`` is searched in
+the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
+it is called with the attribute name and the result is returned.
+
+The ``__dir__`` function should accept no arguments, and return a list of
+strings that represents the names accessible on module. If present, this
+function overrides the standard :func:`dir` search on a module.
+
+For a more fine grained customization of the module behavior (setting
+attributes, properties, etc.), one can set the ``__class__`` attribute of
+a module object to a subclass of :class:`types.ModuleType`. For example::
+
+   import sys
+   from types import ModuleType
+
+   class VerboseModule(ModuleType):
+       def __repr__(self):
+           return f'Verbose {self.__name__}'
+
+       def __setattr__(self, attr, value):
+           print(f'Setting {attr}...')
+           super().__setattr__(attr, value)
+
+   sys.modules[__name__].__class__ = VerboseModule
+
+.. note::
+   Defining module ``__getattr__`` and setting module ``__class__`` only
+   affect lookups made using the attribute access syntax -- directly accessing
+   the module globals (whether by code within the module, or via a reference
+   to the module's globals dictionary) is unaffected.
+
+.. versionchanged:: 3.5
+   ``__class__`` module attribute is now writable.
+
+.. versionadded:: 3.7
+   ``__getattr__`` and ``__dir__`` module attributes.
+
+.. seealso::
+
+   :pep:`562` - Module __getattr__ and __dir__
+      Describes the ``__getattr__`` and ``__dir__`` functions on modules.
 
 
 .. _descriptors:
@@ -1635,6 +1721,7 @@ properties) and deny the creation of *__dict__* and *__weakref__*
 (unless explicitly declared in *__slots__* or available in a parent.)
 
 The space saved over using *__dict__* can be significant.
+Attribute lookup speed can be significantly improved as well.
 
 .. data:: object.__slots__
 
@@ -1743,8 +1830,9 @@ Metaclasses
 ^^^^^^^^^^^
 
 .. index::
-    single: metaclass
-    builtin: type
+   single: metaclass
+   builtin: type
+   single: = (equals); class definition
 
 By default, classes are constructed using :func:`type`. The class body is
 executed in a new namespace and the class name is bound locally to the
@@ -1769,10 +1857,26 @@ passed through to all metaclass operations described below.
 
 When a class definition is executed, the following steps occur:
 
-* the appropriate metaclass is determined
-* the class namespace is prepared
-* the class body is executed
-* the class object is created
+* MRO entries are resolved;
+* the appropriate metaclass is determined;
+* the class namespace is prepared;
+* the class body is executed;
+* the class object is created.
+
+
+Resolving MRO entries
+^^^^^^^^^^^^^^^^^^^^^
+
+If a base that appears in class definition is not an instance of :class:`type`,
+then an ``__mro_entries__`` method is searched on it. If found, it is called
+with the original bases tuple. This method must return a tuple of classes that
+will be used instead of this base. The tuple may be empty, in such case
+the original base is ignored.
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
+
 
 Determining the appropriate metaclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1781,11 +1885,11 @@ Determining the appropriate metaclass
 
 The appropriate metaclass for a class definition is determined as follows:
 
-* if no bases and no explicit metaclass are given, then :func:`type` is used
+* if no bases and no explicit metaclass are given, then :func:`type` is used;
 * if an explicit metaclass is given and it is *not* an instance of
-  :func:`type`, then it is used directly as the metaclass
+  :func:`type`, then it is used directly as the metaclass;
 * if an instance of :func:`type` is given as the explicit metaclass, or
-  bases are defined, then the most derived metaclass is used
+  bases are defined, then the most derived metaclass is used.
 
 The most derived metaclass is selected from the explicitly specified
 metaclass (if any) and the metaclasses (i.e. ``type(cls)``) of all specified
@@ -1863,8 +1967,7 @@ current call is identified based on the first argument passed to the method.
    as a ``__classcell__`` entry in the class namespace. If present, this must
    be propagated up to the ``type.__new__`` call in order for the class to be
    initialised correctly.
-   Failing to do so will result in a :exc:`DeprecationWarning` in Python 3.6,
-   and a :exc:`RuntimeWarning` in the future.
+   Failing to do so will result in a :exc:`RuntimeError` in Python 3.8.
 
 When using the default metaclass :class:`type`, or any metaclass that ultimately
 calls ``type.__new__``, the following additional customisation steps are
@@ -1873,7 +1976,7 @@ invoked after creating the class object:
 * first, ``type.__new__`` collects all of the descriptors in the class
   namespace that define a :meth:`~object.__set_name__` method;
 * second, all of these ``__set_name__`` methods are called with the class
-  being defined and the assigned name of that particular descriptor; and
+  being defined and the assigned name of that particular descriptor;
 * finally, the :meth:`~object.__init_subclass__` hook is called on the
   immediate parent of the new class in its method resolution order.
 
@@ -1892,45 +1995,13 @@ becomes the :attr:`~object.__dict__` attribute of the class object.
       Describes the implicit ``__class__`` closure reference
 
 
-Metaclass example
-^^^^^^^^^^^^^^^^^
+Uses for metaclasses
+^^^^^^^^^^^^^^^^^^^^
 
 The potential uses for metaclasses are boundless. Some ideas that have been
 explored include enum, logging, interface checking, automatic delegation,
 automatic property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
-
-Here is an example of a metaclass that uses an :class:`collections.OrderedDict`
-to remember the order that class variables are defined::
-
-    class OrderedClass(type):
-
-        @classmethod
-        def __prepare__(metacls, name, bases, **kwds):
-            return collections.OrderedDict()
-
-        def __new__(cls, name, bases, namespace, **kwds):
-            result = type.__new__(cls, name, bases, dict(namespace))
-            result.members = tuple(namespace)
-            return result
-
-    class A(metaclass=OrderedClass):
-        def one(self): pass
-        def two(self): pass
-        def three(self): pass
-        def four(self): pass
-
-    >>> A.members
-    ('__module__', 'one', 'two', 'three', 'four')
-
-When the class definition for *A* gets executed, the process begins with
-calling the metaclass's :meth:`__prepare__` method which returns an empty
-:class:`collections.OrderedDict`.  That mapping records the methods and
-attributes of *A* as they are defined within the body of the class statement.
-Once those definitions are executed, the ordered dictionary is fully populated
-and the metaclass's :meth:`__new__` method gets invoked.  That method builds
-the new type and it saves the ordered dictionary keys in an attribute
-called ``members``.
 
 
 Customizing instance and subclass checks
@@ -1971,6 +2042,27 @@ case the instance is itself a class.
       :meth:`~class.__subclasscheck__`, with motivation for this functionality
       in the context of adding Abstract Base Classes (see the :mod:`abc`
       module) to the language.
+
+
+Emulating generic types
+-----------------------
+
+One can implement the generic class syntax as specified by :pep:`484`
+(for example ``List[int]``) by defining a special method:
+
+.. classmethod:: object.__class_getitem__(cls, key)
+
+   Return an object representing the specialization of a generic class
+   by type arguments found in *key*.
+
+This method is looked up on the class object itself, and when defined in
+the class body, this method is implicitly a class method.  Note, this
+mechanism is primarily reserved for use with static type hints, other usage
+is discouraged.
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
 
 
 .. _callable-types:
@@ -2051,6 +2143,8 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    .. versionadded:: 3.4
 
 
+.. index:: object: slice
+
 .. note::
 
    Slicing is done exclusively with the following three methods.  A call like ::
@@ -2066,8 +2160,6 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
 .. method:: object.__getitem__(self, key)
 
-   .. index:: object: slice
-
    Called to implement evaluation of ``self[key]``. For sequence types, the
    accepted keys should be integers and slice objects.  Note that the special
    interpretation of negative indexes (if the class wishes to emulate a sequence
@@ -2081,12 +2173,6 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
       :keyword:`for` loops expect that an :exc:`IndexError` will be raised for illegal
       indexes to allow proper detection of the end of the sequence.
-
-
-.. method:: object.__missing__(self, key)
-
-   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
-   when key is not in the dictionary.
 
 
 .. method:: object.__setitem__(self, key, value)
@@ -2105,6 +2191,12 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    objects support removal of keys, or for sequences if elements can be removed
    from the sequence.  The same exceptions should be raised for improper *key*
    values as for the :meth:`__getitem__` method.
+
+
+.. method:: object.__missing__(self, key)
+
+   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
+   when key is not in the dictionary.
 
 
 .. method:: object.__iter__(self)
@@ -2276,16 +2368,14 @@ left undefined.
 .. method:: object.__complex__(self)
             object.__int__(self)
             object.__float__(self)
-            object.__round__(self, [,n])
 
    .. index::
       builtin: complex
       builtin: int
       builtin: float
-      builtin: round
 
    Called to implement the built-in functions :func:`complex`,
-   :func:`int`, :func:`float` and :func:`round`.  Should return a value
+   :func:`int` and :func:`float`.  Should return a value
    of the appropriate type.
 
 
@@ -2304,6 +2394,23 @@ left undefined.
       the same value.
 
 
+.. method:: object.__round__(self, [,ndigits])
+            object.__trunc__(self)
+            object.__floor__(self)
+            object.__ceil__(self)
+
+   .. index:: builtin: round
+
+   Called to implement the built-in function :func:`round` and :mod:`math`
+   functions :func:`~math.trunc`, :func:`~math.floor` and :func:`~math.ceil`.
+   Unless *ndigits* is passed to :meth:`!__round__` all these methods should
+   return the value of the object truncated to an :class:`~numbers.Integral`
+   (typically an :class:`int`).
+
+   If :meth:`__int__` is not defined then the built-in function :func:`int`
+   falls back to :meth:`__trunc__`.
+
+
 .. _context-managers:
 
 With Statement Context Managers
@@ -2313,7 +2420,7 @@ A :dfn:`context manager` is an object that defines the runtime context to be
 established when executing a :keyword:`with` statement. The context manager
 handles the entry into, and the exit from, the desired runtime context for the
 execution of the block of code.  Context managers are normally invoked using the
-:keyword:`with` statement (described in section :ref:`with`), but can also be
+:keyword:`!with` statement (described in section :ref:`with`), but can also be
 used by directly invoking their methods.
 
 .. index::
@@ -2330,7 +2437,7 @@ For more information on context managers, see :ref:`typecontextmanager`.
 
    Enter the runtime context related to this object. The :keyword:`with` statement
    will bind this method's return value to the target(s) specified in the
-   :keyword:`as` clause of the statement, if any.
+   :keyword:`!as` clause of the statement, if any.
 
 
 .. method:: object.__exit__(self, exc_type, exc_value, traceback)
@@ -2573,13 +2680,13 @@ Asynchronous context managers can be used in an :keyword:`async with` statement.
 
 .. method:: object.__aenter__(self)
 
-   This method is semantically similar to the :meth:`__enter__`, with only
-   difference that it must return an *awaitable*.
+   Semantically similar to :meth:`__enter__`, the only
+   difference being that it must return an *awaitable*.
 
 .. method:: object.__aexit__(self, exc_type, exc_value, traceback)
 
-   This method is semantically similar to the :meth:`__exit__`, with only
-   difference that it must return an *awaitable*.
+   Semantically similar to :meth:`__exit__`, the only
+   difference being that it must return an *awaitable*.
 
 An example of an asynchronous context manager class::
 

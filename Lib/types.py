@@ -15,6 +15,13 @@ CodeType = type(_f.__code__)
 MappingProxyType = type(type.__dict__)
 SimpleNamespace = type(sys.implementation)
 
+def _cell_factory():
+    a = 1
+    def f():
+        nonlocal a
+    return f.__closure__[0]
+CellType = type(_cell_factory())
+
 def _g():
     yield 1
 GeneratorType = type(_g())
@@ -39,6 +46,7 @@ BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 WrapperDescriptorType = type(object.__init__)
 MethodWrapperType = type(object().__str__)
 MethodDescriptorType = type(str.join)
+ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 
 ModuleType = type(sys)
 
@@ -54,16 +62,40 @@ except TypeError:
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C, _c,                           # Not for export
+del sys, _f, _g, _C, _c, _ag  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
 def new_class(name, bases=(), kwds=None, exec_body=None):
     """Create a class object dynamically using the appropriate metaclass."""
-    meta, ns, kwds = prepare_class(name, bases, kwds)
+    resolved_bases = resolve_bases(bases)
+    meta, ns, kwds = prepare_class(name, resolved_bases, kwds)
     if exec_body is not None:
         exec_body(ns)
-    return meta(name, bases, ns, **kwds)
+    if resolved_bases is not bases:
+        ns['__orig_bases__'] = bases
+    return meta(name, resolved_bases, ns, **kwds)
+
+def resolve_bases(bases):
+    """Resolve MRO entries dynamically as specified by PEP 560."""
+    new_bases = list(bases)
+    updated = False
+    shift = 0
+    for i, base in enumerate(bases):
+        if isinstance(base, type):
+            continue
+        if not hasattr(base, "__mro_entries__"):
+            continue
+        new_base = base.__mro_entries__(bases)
+        updated = True
+        if not isinstance(new_base, tuple):
+            raise TypeError("__mro_entries__ must return a tuple")
+        else:
+            new_bases[i+shift:i+shift+1] = new_base
+            shift += len(new_base) - 1
+    if not updated:
+        return bases
+    return tuple(new_bases)
 
 def prepare_class(name, bases=(), kwds=None):
     """Call the __prepare__ method of the appropriate metaclass.
@@ -231,7 +263,7 @@ def coroutine(func):
             # TODO: Implement this in C.
             co = func.__code__
             func.__code__ = CodeType(
-                co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
+                co.co_argcount, co.co_posonlyargcount, co.co_kwonlyargcount, co.co_nlocals,
                 co.co_stacksize,
                 co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
                 co.co_code,

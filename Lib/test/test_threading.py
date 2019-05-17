@@ -25,8 +25,7 @@ from test import support
 # #12316 and #11870), and fork() from a worker thread is known to trigger
 # problems with some operating systems (issue #3863): skip problematic tests
 # on platforms known to behave badly.
-platforms_to_skip = ('freebsd4', 'freebsd5', 'freebsd6', 'netbsd5',
-                     'hp-ux11')
+platforms_to_skip = ('netbsd5', 'hp-ux11')
 
 
 # A trivial mutable counter.
@@ -105,6 +104,10 @@ class ThreadTests(BaseTestCase):
             self.assertRegex(repr(t), r'^<TestThread\(.*, initial\)>$')
             t.start()
 
+        native_ids = set(t.native_id for t in threads) | {threading.get_native_id()}
+        self.assertNotIn(None, native_ids)
+        self.assertEqual(len(native_ids), NUMTASKS + 1)
+
         if verbose:
             print('waiting for all tasks to complete')
         for t in threads:
@@ -132,10 +135,10 @@ class ThreadTests(BaseTestCase):
         # Kill the "immortal" _DummyThread
         del threading._active[ident[0]]
 
-    # run with a small(ish) thread stack size (256kB)
+    # run with a small(ish) thread stack size (256 KiB)
     def test_various_ops_small_stack(self):
         if verbose:
-            print('with 256kB thread stack size...')
+            print('with 256 KiB thread stack size...')
         try:
             threading.stack_size(262144)
         except _thread.error:
@@ -144,10 +147,10 @@ class ThreadTests(BaseTestCase):
         self.test_various_ops()
         threading.stack_size(0)
 
-    # run with a large thread stack size (1MB)
+    # run with a large thread stack size (1 MiB)
     def test_various_ops_large_stack(self):
         if verbose:
-            print('with 1MB thread stack size...')
+            print('with 1 MiB thread stack size...')
         try:
             threading.stack_size(0x100000)
         except _thread.error:
@@ -416,7 +419,8 @@ class ThreadTests(BaseTestCase):
         t.setDaemon(True)
         t.getName()
         t.setName("name")
-        t.isAlive()
+        with self.assertWarnsRegex(DeprecationWarning, 'use is_alive()'):
+            t.isAlive()
         e = threading.Event()
         e.isSet()
         threading.activeCount()
@@ -427,7 +431,7 @@ class ThreadTests(BaseTestCase):
         t.daemon = True
         self.assertIn('daemon', repr(t))
 
-    def test_deamon_param(self):
+    def test_daemon_param(self):
         t = threading.Thread()
         self.assertFalse(t.daemon)
         t = threading.Thread(daemon=False)
@@ -547,6 +551,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
 
+    @requires_type_collecting
     def test_main_thread_during_shutdown(self):
         # bpo-31516: current_thread() should still point to the main thread
         # at shutdown
@@ -787,13 +792,11 @@ class ThreadJoinOnShutdown(BaseTestCase):
             def random_io():
                 '''Loop for a while sleeping random tiny amounts and doing some I/O.'''
                 while True:
-                    in_f = open(os.__file__, 'rb')
-                    stuff = in_f.read(200)
-                    null_f = open(os.devnull, 'wb')
-                    null_f.write(stuff)
-                    time.sleep(random.random() / 1995)
-                    null_f.close()
-                    in_f.close()
+                    with open(os.__file__, 'rb') as in_f:
+                        stuff = in_f.read(200)
+                        with open(os.devnull, 'wb') as null_f:
+                            null_f.write(stuff)
+                            time.sleep(random.random() / 1995)
                     thread_has_run.add(threading.current_thread())
 
             def main():

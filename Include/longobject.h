@@ -65,6 +65,14 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 #  error "void* different in size from int, long and long long"
 #endif /* SIZEOF_VOID_P */
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
+#endif
+
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
    _PyBytes_DecodeEscapeRecode(), etc. */
 #ifndef Py_LIMITED_API
@@ -169,7 +177,17 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
    nb_int slot is not available or the result of the call to nb_int
    returns something not of type int.
 */
-PyAPI_FUNC(PyLongObject *)_PyLong_FromNbInt(PyObject *);
+PyAPI_FUNC(PyObject *) _PyLong_FromNbInt(PyObject *);
+
+/* Convert the given object to a PyLongObject using the nb_index or
+   nb_int slots, if available (the latter is deprecated).
+   Raise TypeError if either nb_index and nb_int slots are not
+   available or the result of the call to nb_index or nb_int
+   returns something not of type int.
+   Should be replaced with PyNumber_Index after the end of the
+   deprecation period.
+*/
+PyAPI_FUNC(PyObject *) _PyLong_FromNbIndexOrNbInt(PyObject *);
 
 /* _PyLong_Format: Convert the long to a string object with given base,
    appending a base prefix of 0[box] if base is 2, 8 or 16. */

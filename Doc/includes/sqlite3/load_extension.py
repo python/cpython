@@ -11,7 +11,7 @@ con.execute("select load_extension('./fts3.so')")
 # alternatively you can load the extension using an API call:
 # con.load_extension("./fts3.so")
 
-# disable extension laoding again
+# disable extension loading again
 con.enable_load_extension(False)
 
 # example from SQLite wiki

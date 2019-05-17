@@ -256,7 +256,7 @@ static PyThreadState *tcl_tstate = NULL;
     if (((TkappObject *)self)->threaded && \
         ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) { \
         PyErr_SetString(PyExc_RuntimeError, \
-                        "Calling Tcl from different appartment"); \
+                        "Calling Tcl from different apartment"); \
         return 0; \
     }
 
@@ -617,7 +617,6 @@ Tkapp_New(const char *screenName, const char *className,
     v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
     if (v == NULL)
         return NULL;
-    Py_INCREF(Tkapp_Type);
 
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
@@ -802,7 +801,6 @@ newPyTclObject(Tcl_Obj *arg)
     self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
     if (self == NULL)
         return NULL;
-    Py_INCREF(PyTclObject_Type);
     Tcl_IncrRefCount(arg);
     self->value = arg;
     self->string = NULL;
@@ -842,7 +840,7 @@ PyTclObject_string(PyTclObject *self, void *ignored)
 }
 
 static PyObject *
-PyTclObject_str(PyTclObject *self, void *ignored)
+PyTclObject_str(PyTclObject *self)
 {
     if (self->string) {
         Py_INCREF(self->string);
@@ -855,7 +853,7 @@ PyTclObject_str(PyTclObject *self, void *ignored)
 static PyObject *
 PyTclObject_repr(PyTclObject *self)
 {
-    PyObject *repr, *str = PyTclObject_str(self, NULL);
+    PyObject *repr, *str = PyTclObject_str(self);
     if (str == NULL)
         return NULL;
     repr = PyUnicode_FromFormat("<%s object: %R>",
@@ -864,13 +862,10 @@ PyTclObject_repr(PyTclObject *self)
     return repr;
 }
 
-#define TEST_COND(cond) ((cond) ? Py_True : Py_False)
-
 static PyObject *
 PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
 {
     int result;
-    PyObject *v;
 
     /* neither argument should be NULL, unless something's gone wrong */
     if (self == NULL || other == NULL) {
@@ -880,8 +875,7 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
 
     /* both arguments should be instances of PyTclObject */
     if (!PyTclObject_Check(self) || !PyTclObject_Check(other)) {
-        v = Py_NotImplemented;
-        goto finished;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if (self == other)
@@ -890,33 +884,7 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
     else
         result = strcmp(Tcl_GetString(((PyTclObject *)self)->value),
                         Tcl_GetString(((PyTclObject *)other)->value));
-    /* Convert return value to a Boolean */
-    switch (op) {
-    case Py_EQ:
-        v = TEST_COND(result == 0);
-        break;
-    case Py_NE:
-        v = TEST_COND(result != 0);
-        break;
-    case Py_LE:
-        v = TEST_COND(result <= 0);
-        break;
-    case Py_GE:
-        v = TEST_COND(result >= 0);
-        break;
-    case Py_LT:
-        v = TEST_COND(result < 0);
-        break;
-    case Py_GT:
-        v = TEST_COND(result > 0);
-        break;
-    default:
-        PyErr_BadArgument();
-        return NULL;
-    }
-  finished:
-    Py_INCREF(v);
-    return v;
+    Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
@@ -1131,9 +1099,7 @@ AsObj(PyObject *value)
     }
 
     if (PyTclObject_Check(value)) {
-        Tcl_Obj *v = ((PyTclObject*)value)->value;
-        Tcl_IncrRefCount(v);
-        return v;
+        return ((PyTclObject*)value)->value;
     }
 
     {
@@ -2754,7 +2720,6 @@ Tktt_New(PyObject *func)
     v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
     if (v == NULL)
         return NULL;
-    Py_INCREF(Tktt_Type);
 
     Py_INCREF(func);
     v->token = NULL;

@@ -392,7 +392,6 @@
     <Compile Include="encodings\tis_620.py" />
     <Compile Include="encodings\undefined.py" />
     <Compile Include="encodings\unicode_escape.py" />
-    <Compile Include="encodings\unicode_internal.py" />
     <Compile Include="encodings\utf_16.py" />
     <Compile Include="encodings\utf_16_be.py" />
     <Compile Include="encodings\utf_16_le.py" />
@@ -655,7 +654,6 @@
     <Compile Include="logging\handlers.py" />
     <Compile Include="logging\__init__.py" />
     <Compile Include="lzma.py" />
-    <Compile Include="macpath.py" />
     <Compile Include="mailbox.py" />
     <Compile Include="mailcap.py" />
     <Compile Include="mimetypes.py" />
@@ -680,7 +678,7 @@
     <Compile Include="multiprocessing\queues.py" />
     <Compile Include="multiprocessing\reduction.py" />
     <Compile Include="multiprocessing\resource_sharer.py" />
-    <Compile Include="multiprocessing\semaphore_tracker.py" />
+    <Compile Include="multiprocessing\resource_tracker.py" />
     <Compile Include="multiprocessing\sharedctypes.py" />
     <Compile Include="multiprocessing\spawn.py" />
     <Compile Include="multiprocessing\synchronize.py" />
@@ -1176,7 +1174,6 @@
     <Compile Include="test\test_long.py" />
     <Compile Include="test\test_longexp.py" />
     <Compile Include="test\test_lzma.py" />
-    <Compile Include="test\test_macpath.py" />
     <Compile Include="test\test_mailbox.py" />
     <Compile Include="test\test_mailcap.py" />
     <Compile Include="test\test_marshal.py" />

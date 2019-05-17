@@ -23,8 +23,8 @@ except ImportError:
 # with the multiprocessing module, which doesn't provide the old
 # Java inspired names.
 
-__all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
-           'enumerate', 'main_thread', 'TIMEOUT_MAX',
+__all__ = ['get_ident', 'get_native_id', 'active_count', 'Condition',
+           'current_thread', 'enumerate', 'main_thread', 'TIMEOUT_MAX',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size']
@@ -34,6 +34,7 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+get_native_id = _thread.get_native_id
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -568,8 +569,8 @@ class Barrier:
     """Implements a Barrier.
 
     Useful for synchronizing a fixed number of threads at known synchronization
-    points.  Threads block on 'wait()' and are simultaneously once they have all
-    made that call.
+    points.  Threads block on 'wait()' and are simultaneously awoken once they
+    have all made that call.
 
     """
 
@@ -578,7 +579,7 @@ class Barrier:
 
         'action' is a callable which, when supplied, will be called by one of
         the threads after they have all entered the barrier and just prior to
-        releasing them all. If a 'timeout' is provided, it is uses as the
+        releasing them all. If a 'timeout' is provided, it is used as the
         default for all subsequent 'wait()' calls.
 
         """
@@ -790,6 +791,7 @@ class Thread:
         else:
             self._daemonic = current_thread().daemon
         self._ident = None
+        self._native_id = 0
         self._tstate_lock = None
         self._started = Event()
         self._is_stopped = False
@@ -891,6 +893,9 @@ class Thread:
     def _set_ident(self):
         self._ident = get_ident()
 
+    def _set_native_id(self):
+        self._native_id = get_native_id()
+
     def _set_tstate_lock(self):
         """
         Set a lock object which will be released by the interpreter when
@@ -903,6 +908,7 @@ class Thread:
         try:
             self._set_ident()
             self._set_tstate_lock()
+            self._set_native_id()
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -1007,7 +1013,7 @@ class Thread:
         When the timeout argument is present and not None, it should be a
         floating point number specifying a timeout for the operation in seconds
         (or fractions thereof). As join() always returns None, you must call
-        isAlive() after join() to decide whether a timeout happened -- if the
+        is_alive() after join() to decide whether a timeout happened -- if the
         thread is still alive, the join() call timed out.
 
         When the timeout argument is not present or None, the operation will
@@ -1069,13 +1075,24 @@ class Thread:
     def ident(self):
         """Thread identifier of this thread or None if it has not been started.
 
-        This is a nonzero integer. See the thread.get_ident() function. Thread
+        This is a nonzero integer. See the get_ident() function. Thread
         identifiers may be recycled when a thread exits and another thread is
         created. The identifier is available even after the thread has exited.
 
         """
         assert self._initialized, "Thread.__init__() not called"
         return self._ident
+
+    @property
+    def native_id(self):
+        """Native integral thread ID of this thread or 0 if it has not been started.
+
+        This is a non-negative integer. See the get_native_id() function.
+        This represents the Thread ID as reported by the kernel.
+
+        """
+        assert self._initialized, "Thread.__init__() not called"
+        return self._native_id
 
     def is_alive(self):
         """Return whether the thread is alive.
@@ -1091,7 +1108,15 @@ class Thread:
         self._wait_for_tstate_lock(False)
         return not self._is_stopped
 
-    isAlive = is_alive
+    def isAlive(self):
+        """Return whether the thread is alive.
+
+        This method is deprecated, use is_alive() instead.
+        """
+        import warnings
+        warnings.warn('isAlive() is deprecated, use is_alive() instead',
+                      DeprecationWarning, stacklevel=2)
+        return self.is_alive()
 
     @property
     def daemon(self):
@@ -1168,6 +1193,7 @@ class _MainThread(Thread):
         self._set_tstate_lock()
         self._started.set()
         self._set_ident()
+        self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
 
@@ -1187,6 +1213,7 @@ class _DummyThread(Thread):
 
         self._started.set()
         self._set_ident()
+        self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
 

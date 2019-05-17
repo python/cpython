@@ -25,11 +25,11 @@ runctx.__doc__ = _pyprofile.runctx.__doc__
 # ____________________________________________________________
 
 class Profile(_lsprof.Profiler):
-    """Profile(custom_timer=None, time_unit=None, subcalls=True, builtins=True)
+    """Profile(timer=None, timeunit=None, subcalls=True, builtins=True)
 
     Builds a profiler object using the specified timer function.
     The default timer is a fast built-in one based on real time.
-    For custom timer functions returning integers, time_unit can
+    For custom timer functions returning integers, timeunit can
     be a float specifying a scale (i.e. how long each integer unit
     is, in seconds).
     """
@@ -103,12 +103,35 @@ class Profile(_lsprof.Profiler):
         return self
 
     # This method is more useful to profile a single function call.
-    def runcall(self, func, *args, **kw):
+    def runcall(*args, **kw):
+        if len(args) >= 2:
+            self, func, *args = args
+        elif not args:
+            raise TypeError("descriptor 'runcall' of 'Profile' object "
+                            "needs an argument")
+        elif 'func' in kw:
+            func = kw.pop('func')
+            self, *args = args
+            import warnings
+            warnings.warn("Passing 'func' as keyword argument is deprecated",
+                          DeprecationWarning, stacklevel=2)
+        else:
+            raise TypeError('runcall expected at least 1 positional argument, '
+                            'got %d' % (len(args)-1))
+
         self.enable()
         try:
             return func(*args, **kw)
         finally:
             self.disable()
+    runcall.__text_signature__ = '($self, func, /, *args, **kw)'
+
+    def __enter__(self):
+        self.enable()
+        return self
+
+    def __exit__(self, *exc_info):
+        self.disable()
 
 # ____________________________________________________________
 
@@ -121,16 +144,22 @@ def label(code):
 # ____________________________________________________________
 
 def main():
-    import os, sys
+    import os
+    import sys
+    import runpy
+    import pstats
     from optparse import OptionParser
-    usage = "cProfile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."
+    usage = "cProfile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
     parser.allow_interspersed_args = False
     parser.add_option('-o', '--outfile', dest="outfile",
         help="Save stats to <outfile>", default=None)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class",
-        default=-1)
+        default=-1,
+        choices=sorted(pstats.Stats.sort_arg_dict_default))
+    parser.add_option('-m', dest="module", action="store_true",
+        help="Profile a library module", default=False)
 
     if not sys.argv[1:]:
         parser.print_usage()
@@ -140,16 +169,23 @@ def main():
     sys.argv[:] = args
 
     if len(args) > 0:
-        progname = args[0]
-        sys.path.insert(0, os.path.dirname(progname))
-        with open(progname, 'rb') as fp:
-            code = compile(fp.read(), progname, 'exec')
-        globs = {
-            '__file__': progname,
-            '__name__': '__main__',
-            '__package__': None,
-            '__cached__': None,
-        }
+        if options.module:
+            code = "run_module(modname, run_name='__main__')"
+            globs = {
+                'run_module': runpy.run_module,
+                'modname': args[0]
+            }
+        else:
+            progname = args[0]
+            sys.path.insert(0, os.path.dirname(progname))
+            with open(progname, 'rb') as fp:
+                code = compile(fp.read(), progname, 'exec')
+            globs = {
+                '__file__': progname,
+                '__name__': '__main__',
+                '__package__': None,
+                '__cached__': None,
+            }
         runctx(code, globs, None, options.outfile, options.sort)
     else:
         parser.print_usage()

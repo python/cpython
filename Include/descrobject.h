@@ -92,7 +92,7 @@ PyAPI_FUNC(PyObject *) PyDescr_NewGetSet(PyTypeObject *,
 #ifndef Py_LIMITED_API
 
 PyAPI_FUNC(PyObject *) _PyMethodDescr_FastCallKeywords(
-        PyObject *descrobj, PyObject **stack, Py_ssize_t nargs, PyObject *kwnames);
+        PyObject *descrobj, PyObject *const *stack, Py_ssize_t nargs, PyObject *kwnames);
 PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
                                                 struct wrapperbase *, void *);
 #define PyDescr_IsData(d) (Py_TYPE(d)->tp_descr_set != NULL)

@@ -293,7 +293,7 @@ md5_done(struct md5_state *md5, unsigned char *out)
         md5->curlen = 0;
     }
 
-    /* pad upto 56 bytes of zeroes */
+    /* pad up to 56 bytes of zeroes */
     while (md5->curlen < 56) {
         md5->buf[md5->curlen++] = (unsigned char)0;
     }
@@ -361,12 +361,12 @@ MD5Type_copy_impl(MD5object *self)
 /*[clinic input]
 MD5Type.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 MD5Type_digest_impl(MD5object *self)
-/*[clinic end generated code: output=eb691dc4190a07ec input=7b96e65389412a34]*/
+/*[clinic end generated code: output=eb691dc4190a07ec input=bc0c4397c2994be6]*/
 {
     unsigned char digest[MD5_DIGESTSIZE];
     struct md5_state temp;
@@ -465,7 +465,7 @@ static PyGetSetDef MD5_getseters[] = {
 static PyTypeObject MD5type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_md5.md5",         /*tp_name*/
-    sizeof(MD5object),  /*tp_size*/
+    sizeof(MD5object),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     MD5_dealloc,        /*tp_dealloc*/
