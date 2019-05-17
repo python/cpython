@@ -1,6 +1,6 @@
 :tocdepth: 2
 
-.. highlightlang:: none
+.. highlight:: none
 
 .. _windows-faq:
 
