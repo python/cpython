@@ -5,7 +5,6 @@ from struct import calcsize
 import _ctypes_test
 from ctypes.util import find_library
 import test.support
-import pdb
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
