@@ -34,6 +34,7 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     PyObject *io, *stream;
     _Py_IDENTIFIER(open);
 
+    /* import _io in case we are being used to open io.py */
     io = PyImport_ImportModule("_io");
     if (io == NULL)
         return NULL;
