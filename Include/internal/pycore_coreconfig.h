@@ -88,7 +88,6 @@ PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
-PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
 PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
 PyAPI_FUNC(PyObject*) _PyPreConfig_AsDict(const _PyPreConfig *config);
@@ -96,7 +95,7 @@ PyAPI_FUNC(void) _PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
     const _PyCoreConfig *core_config);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(_PyPreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(const _PyPreConfig *config);
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */

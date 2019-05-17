@@ -379,7 +379,7 @@ static int test_init_from_config(void)
     _PyPreConfig preconfig = _PyPreConfig_INIT;
 
     putenv("PYTHONMALLOC=malloc_debug");
-    preconfig.allocator = "malloc";
+    preconfig.allocator = PYMEM_ALLOCATOR_MALLOC;
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;

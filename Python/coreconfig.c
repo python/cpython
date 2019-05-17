@@ -2021,26 +2021,22 @@ core_read_precmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
     _PyPreConfig preconfig = _PyPreConfig_INIT;
     if (_PyPreConfig_Copy(&preconfig, &_PyRuntime.preconfig) < 0) {
         err = _Py_INIT_NO_MEMORY();
-        goto done;
+        return err;
     }
 
     _PyCoreConfig_GetCoreConfig(&preconfig, config);
 
     err = _PyPreCmdline_Read(precmdline, &preconfig);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
     if (_PyPreCmdline_SetCoreConfig(precmdline, config) < 0) {
         err = _Py_INIT_NO_MEMORY();
-        goto done;
+        return err;
     }
 
-    err = _Py_INIT_OK();
-
-done:
-    _PyPreConfig_Clear(&preconfig);
-    return err;
+    return _Py_INIT_OK();
 }
 
 

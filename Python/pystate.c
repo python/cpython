@@ -106,8 +106,6 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         runtime->xidregistry.mutex = NULL;
     }
 
-    _PyPreConfig_Clear(&runtime->preconfig);
-
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 

@@ -13,6 +13,9 @@ import textwrap
 
 
 MS_WINDOWS = (os.name == 'nt')
+PYMEM_ALLOCATOR_NOT_SET = 0
+PYMEM_ALLOCATOR_DEBUG = 2
+PYMEM_ALLOCATOR_MALLOC = 3
 
 
 class EmbeddingTestsMixin:
@@ -272,7 +275,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     # Mark config which should be get by get_default_config()
     GET_DEFAULT_CONFIG = object()
     DEFAULT_PRE_CONFIG = {
-        'allocator': None,
+        'allocator': PYMEM_ALLOCATOR_NOT_SET,
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
         'utf8_mode': 0,
@@ -564,7 +567,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_from_config(self):
         preconfig = {
-            'allocator': 'malloc',
+            'allocator': PYMEM_ALLOCATOR_MALLOC,
             'utf8_mode': 1,
         }
         config = {
@@ -608,7 +611,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_config("init_from_config", config, preconfig)
 
     INIT_ENV_PRECONFIG = {
-        'allocator': 'malloc',
+        'allocator': PYMEM_ALLOCATOR_MALLOC,
     }
     INIT_ENV_CONFIG = {
         'use_hash_seed': 1,
@@ -633,7 +636,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_env_dev_mode(self):
         preconfig = dict(self.INIT_ENV_PRECONFIG,
-                      allocator='debug')
+                      allocator=PYMEM_ALLOCATOR_DEBUG)
         config = dict(self.INIT_ENV_CONFIG,
                       dev_mode=1,
                       warnoptions=['default'])
@@ -641,7 +644,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_env_dev_mode_alloc(self):
         preconfig = dict(self.INIT_ENV_PRECONFIG,
-                         allocator='malloc')
+                         allocator=PYMEM_ALLOCATOR_MALLOC)
         config = dict(self.INIT_ENV_CONFIG,
                       dev_mode=1,
                       warnoptions=['default'])
@@ -649,7 +652,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_dev_mode(self):
         preconfig = {
-            'allocator': 'debug',
+            'allocator': PYMEM_ALLOCATOR_DEBUG,
         }
         config = {
             'faulthandler': 1,

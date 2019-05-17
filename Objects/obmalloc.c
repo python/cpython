@@ -268,26 +268,65 @@ _PyMem_SetDefaultAllocator(PyMemAllocatorDomain domain,
 
 
 int
-_PyMem_SetupAllocators(const char *opt)
+_PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
 {
-    if (opt == NULL || *opt == '\0') {
+    if (name == NULL || *name == '\0') {
         /* PYTHONMALLOC is empty or is not set or ignored (-E/-I command line
-           options): use default memory allocators */
-        opt = "default";
+           nameions): use default memory allocators */
+        *allocator = PYMEM_ALLOCATOR_DEFAULT;
     }
+    else if (strcmp(name, "default") == 0) {
+        *allocator = PYMEM_ALLOCATOR_DEFAULT;
+    }
+    else if (strcmp(name, "debug") == 0) {
+        *allocator = PYMEM_ALLOCATOR_DEBUG;
+    }
+#ifdef WITH_PYMALLOC
+    else if (strcmp(name, "pymalloc") == 0) {
+        *allocator = PYMEM_ALLOCATOR_PYMALLOC;
+    }
+    else if (strcmp(name, "pymalloc_debug") == 0) {
+        *allocator = PYMEM_ALLOCATOR_PYMALLOC_DEBUG;
+    }
+#endif
+    else if (strcmp(name, "malloc") == 0) {
+        *allocator = PYMEM_ALLOCATOR_MALLOC;
+    }
+    else if (strcmp(name, "malloc_debug") == 0) {
+        *allocator = PYMEM_ALLOCATOR_MALLOC_DEBUG;
+    }
+    else {
+        /* unknown allocator */
+        return -1;
+    }
+    return 0;
+}
 
-    if (strcmp(opt, "default") == 0) {
+
+int
+_PyMem_SetupAllocators(PyMemAllocatorName allocator)
+{
+    switch (allocator) {
+    case PYMEM_ALLOCATOR_NOT_SET:
+        /* do nothing */
+        break;
+
+    case PYMEM_ALLOCATOR_DEFAULT:
         (void)_PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, NULL);
         (void)_PyMem_SetDefaultAllocator(PYMEM_DOMAIN_MEM, NULL);
         (void)_PyMem_SetDefaultAllocator(PYMEM_DOMAIN_OBJ, NULL);
-    }
-    else if (strcmp(opt, "debug") == 0) {
+        break;
+
+    case PYMEM_ALLOCATOR_DEBUG:
         (void)pymem_set_default_allocator(PYMEM_DOMAIN_RAW, 1, NULL);
         (void)pymem_set_default_allocator(PYMEM_DOMAIN_MEM, 1, NULL);
         (void)pymem_set_default_allocator(PYMEM_DOMAIN_OBJ, 1, NULL);
-    }
+        break;
+
 #ifdef WITH_PYMALLOC
-    else if (strcmp(opt, "pymalloc") == 0 || strcmp(opt, "pymalloc_debug") == 0) {
+    case PYMEM_ALLOCATOR_PYMALLOC:
+    case PYMEM_ALLOCATOR_PYMALLOC_DEBUG:
+    {
         PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &malloc_alloc);
 
@@ -295,22 +334,28 @@ _PyMem_SetupAllocators(const char *opt)
         PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &pymalloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &pymalloc);
 
-        if (strcmp(opt, "pymalloc_debug") == 0) {
+        if (allocator == PYMEM_ALLOCATOR_PYMALLOC_DEBUG) {
             PyMem_SetupDebugHooks();
         }
+        break;
     }
 #endif
-    else if (strcmp(opt, "malloc") == 0 || strcmp(opt, "malloc_debug") == 0) {
+
+    case PYMEM_ALLOCATOR_MALLOC:
+    case PYMEM_ALLOCATOR_MALLOC_DEBUG:
+    {
         PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &malloc_alloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &malloc_alloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &malloc_alloc);
 
-        if (strcmp(opt, "malloc_debug") == 0) {
+        if (allocator == PYMEM_ALLOCATOR_MALLOC_DEBUG) {
             PyMem_SetupDebugHooks();
         }
+        break;
     }
-    else {
+
+    default:
         /* unknown allocator */
         return -1;
     }
@@ -326,7 +371,7 @@ pymemallocator_eq(PyMemAllocatorEx *a, PyMemAllocatorEx *b)
 
 
 const char*
-_PyMem_GetAllocatorsName(void)
+_PyMem_GetCurrentAllocatorName(void)
 {
     PyMemAllocatorEx malloc_alloc = MALLOC_ALLOC;
 #ifdef WITH_PYMALLOC
