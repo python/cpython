@@ -382,7 +382,7 @@ fail:
 
 
 void
-_PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
+_PyPreConfig_GetCoreConfig(_PyPreConfig *config,
                             const _PyCoreConfig *core_config)
 {
 #define COPY_ATTR(ATTR) \

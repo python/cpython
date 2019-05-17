@@ -748,10 +748,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_parse_argv(self):
         core_config = {
             'argv': ['-c', 'arg1', '-v', 'arg3'],
+            'program_name': './argv0',
             'parse_argv': 1,
             'run_command': 'pass\n',
+            'use_environment': 0,
         }
         self.check_config("init_parse_argv", core_config, {})
+
+    def test_init_dont_parse_argv(self):
+        core_config = {
+            'argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
+            'program_name': './argv0',
+        }
+        self.check_config("init_dont_parse_argv", core_config, {})
 
 
 if __name__ == "__main__":

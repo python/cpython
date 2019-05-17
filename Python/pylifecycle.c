@@ -756,11 +756,19 @@ _Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig,
     _PyPreConfig config;
     _PyPreConfig_Init(&config);
     if (coreconfig != NULL) {
-        _PyCoreConfig_GetCoreConfig(&config, coreconfig);
+        _PyPreConfig_GetCoreConfig(&config, coreconfig);
     }
-    return _Py_PreInitializeFromPyArgv(&config, args);
-    /* No need to clear config:
-       _PyCoreConfig_GetCoreConfig() doesn't allocate memory */
+
+    if (args == NULL && coreconfig != NULL && coreconfig->parse_argv) {
+        _PyArgv config_args = {
+            .use_bytes_argv = 0,
+            .argc = coreconfig->argv.length,
+            .wchar_argv = coreconfig->argv.items};
+        return _Py_PreInitializeFromPyArgv(&config, &config_args);
+    }
+    else {
+        return _Py_PreInitializeFromPyArgv(&config, args);
+    }
 }
 
 

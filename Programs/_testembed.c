@@ -521,7 +521,7 @@ static int test_init_from_config(void)
 }
 
 
-static int init_parse_argv(void)
+static int test_init_parse_argv(int parse_argv)
 {
     _PyInitError err;
 
@@ -529,6 +529,7 @@ static int init_parse_argv(void)
     _PyCoreConfig_Init(&config);
 
     static wchar_t* argv[] = {
+        L"./argv0",
         L"-E",
         L"-c",
         L"pass",
@@ -537,11 +538,9 @@ static int init_parse_argv(void)
         L"arg3",
     };
 
-    config.program_name = L"./_testembed";
-
     config.argv.length = Py_ARRAY_LENGTH(argv);
     config.argv.items = argv;
-    config.parse_argv = 1;
+    config.parse_argv = parse_argv;
 
     err = _Py_InitializeFromConfig(&config);
     if (_Py_INIT_FAILED(err)) {
@@ -550,6 +549,18 @@ static int init_parse_argv(void)
     dump_config();
     Py_Finalize();
     return 0;
+}
+
+
+static int init_parse_argv(void)
+{
+    return test_init_parse_argv(1);
+}
+
+
+static int init_dont_parse_argv(void)
+{
+    return test_init_parse_argv(0);
 }
 
 
@@ -951,6 +962,7 @@ static struct TestCase TestCases[] = {
     { "init_global_config", test_init_global_config },
     { "init_from_config", test_init_from_config },
     { "init_parse_argv", init_parse_argv },
+    { "init_dont_parse_argv", init_dont_parse_argv },
     { "init_env", test_init_env },
     { "init_env_dev_mode", test_init_env_dev_mode },
     { "init_env_dev_mode_alloc", test_init_env_dev_mode_alloc },

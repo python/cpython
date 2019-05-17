@@ -2069,8 +2069,10 @@ core_read_precmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
 {
     _PyInitError err;
 
-    if (_PyWstrList_Copy(&precmdline->argv, &config->argv) < 0) {
-        return _Py_INIT_NO_MEMORY();
+    if (config->parse_argv) {
+        if (_PyWstrList_Copy(&precmdline->argv, &config->argv) < 0) {
+            return _Py_INIT_NO_MEMORY();
+        }
     }
 
     _PyPreConfig preconfig;
@@ -2080,7 +2082,7 @@ core_read_precmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
         return err;
     }
 
-    _PyCoreConfig_GetCoreConfig(&preconfig, config);
+    _PyPreConfig_GetCoreConfig(&preconfig, config);
 
     err = _PyPreCmdline_Read(precmdline, &preconfig);
     if (_Py_INIT_FAILED(err)) {
@@ -2211,6 +2213,7 @@ _PyInitError
 _PyCoreConfig_Read(_PyCoreConfig *config)
 {
     _PyInitError err;
+    _PyWstrList orig_argv = _PyWstrList_INIT;
 
     err = _Py_PreInitializeFromCoreConfig(config, NULL);
     if (_Py_INIT_FAILED(err)) {
@@ -2218,6 +2221,10 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     }
 
     _PyCoreConfig_GetGlobalConfig(config);
+
+    if (_PyWstrList_Copy(&orig_argv, &config->argv) < 0) {
+        return _Py_INIT_NO_MEMORY();
+    }
 
     _PyPreCmdline precmdline = _PyPreCmdline_INIT;
     err = core_read_precmdline(config, &precmdline);
@@ -2241,10 +2248,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         goto done;
     }
 
-    /* precmdline.argv is a copy of config.argv which is modified
-       by config_read_cmdline() */
-    const _PyWstrList *argv = &precmdline.argv;
-    if (_Py_SetArgcArgv(argv->length, argv->items) < 0) {
+    if (_Py_SetArgcArgv(orig_argv.length, orig_argv.items) < 0) {
         err = _Py_INIT_NO_MEMORY();
         goto done;
     }
@@ -2305,6 +2309,7 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     err = _Py_INIT_OK();
 
 done:
+    _PyWstrList_Clear(&orig_argv);
     _PyPreCmdline_Clear(&precmdline);
     return err;
 }

@@ -88,16 +88,16 @@ typedef struct {
        coerced or not (ex: PYTHONCOERCECLOCALE=1). Internally, it is set to 2
        if the LC_CTYPE locale must be coerced.
 
-       It is set to 0 by default. Set it to -1 to let Python decides
-       if it should be enabled or not. */
+       Disable by default (set to 0). Set it to -1 to let Python decides if it
+       should be enabled or not. */
     int coerce_c_locale;
 
     /* Emit a warning if the LC_CTYPE locale is coerced?
 
-       Disabled by default. Set to 1 by PYTHONCOERCECLOCALE=warn.
+       Set to 1 by PYTHONCOERCECLOCALE=warn.
 
-       Set it to -1 to get its value from the PYTHONCOERCECLOCALE environment
-       variable. */
+       Disable by default (set to 0). Set it to -1 to let Python decides if it
+       should be enabled or not. */
     int coerce_c_locale_warn;
 
 #ifdef MS_WINDOWS
@@ -227,8 +227,8 @@ typedef struct {
 
     /* Command line arguments (sys.argv).
 
-       Set parse_argv to 1 to parse argv as Python command line arguments are
-       parsed and then strip Python arguments from argv.
+       Set parse_argv to 1 to parse argv as Python command line arguments
+       and then strip Python arguments from argv.
 
        If argv is empty, an empty string is added to ensure that sys.argv
        always exists and is never empty. */

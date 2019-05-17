@@ -94,7 +94,7 @@ PyAPI_FUNC(void) _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config);
 PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
 PyAPI_FUNC(PyObject*) _PyPreConfig_AsDict(const _PyPreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
+PyAPI_FUNC(void) _PyPreConfig_GetCoreConfig(_PyPreConfig *config,
     const _PyCoreConfig *core_config);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
     const _PyArgv *args);
