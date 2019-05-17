@@ -307,7 +307,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'pycache_prefix': None,
         'program_name': GET_DEFAULT_CONFIG,
-        'parse_argv': 1,
+        'parse_argv': 0,
         'argv': [""],
 
         'xoptions': [],
@@ -333,7 +333,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'verbose': 0,
         'quiet': 0,
         'user_site_directory': 1,
-        'configure_c_stdio': 1,
+        'configure_c_stdio': 0,
         'buffered_stdio': 1,
 
         'stdio_encoding': GET_DEFAULT_CONFIG,
@@ -588,6 +588,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
             'argv': ['-c', 'arg2'],
+            'parse_argv': 1,
             'xoptions': ['core_xoption1=3', 'core_xoption2=', 'core_xoption3'],
             'warnoptions': ['error::ResourceWarning', 'default::BytesWarning'],
             'run_command': 'pass\n',
@@ -600,7 +601,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': 0,
             'verbose': 1,
             'quiet': 1,
-            'configure_c_stdio': 0,
+            'configure_c_stdio': 1,
             'buffered_stdio': 0,
             'user_site_directory': 0,
             'faulthandler': 1,
@@ -661,14 +662,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_config("init_dev_mode", config, preconfig)
 
-    def test_init_isolated(self):
+    def test_init_isolated_flag(self):
         preconfig = {}
         config = {
             'isolated': 1,
             'use_environment': 0,
             'user_site_directory': 0,
         }
-        self.check_config("init_isolated", config, preconfig)
+        self.check_config("init_isolated_flag", config, preconfig)
 
     def test_preinit_isolated1(self):
         # _PyPreConfig.isolated=1, _PyCoreConfig.isolated not set
@@ -690,6 +691,25 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_config("preinit_isolated2", config, preconfig)
 
+    def test_init_isolated_config(self):
+        preconfig = {}
+        config = {
+            'isolated': 1,
+            'use_environment': 0,
+            'user_site_directory': 0,
+            'install_signal_handlers': 0,
+            'pathconfig_warnings': 0,
+        }
+        self.check_config("init_isolated_config", config, preconfig)
+
+    def test_init_python_config(self):
+        preconfig = {}
+        config = {
+            'configure_c_stdio': 1,
+            'parse_argv': 1,
+        }
+        self.check_config("init_python_config", config, preconfig)
+
     def test_init_read_set(self):
         preconfig = {}
         core_config = {
@@ -707,6 +727,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'argv': ['-c', 'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
+            'parse_argv': 1,
         }
         self.check_config("init_run_main", core_config, preconfig)
 
@@ -718,15 +739,26 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'argv': ['-c', 'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
+            'parse_argv': 1,
             '_init_main': 0,
         }
         self.check_config("init_main", core_config, preconfig,
                           stderr="Run Python code before _Py_InitializeMain")
 
+    def test_init_parse_argv(self):
+        core_config = {
+            'argv': ['-c', 'arg1', '-v', 'arg3'],
+            'program_name': './argv0',
+            'parse_argv': 1,
+            'run_command': 'pass\n',
+            'use_environment': 0,
+        }
+        self.check_config("init_parse_argv", core_config, {})
+
     def test_init_dont_parse_argv(self):
         core_config = {
-            'argv': ['-v', '-c', 'arg1', '-W', 'arg2'],
-            'parse_argv': 0,
+            'argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
+            'program_name': './argv0',
         }
         self.check_config("init_dont_parse_argv", core_config, {})
 
