@@ -890,11 +890,11 @@ _PyPreConfig_Write(const _PyPreConfig *config)
 
     _PyPreConfig_SetGlobalConfig(config);
 
-    if (config->coerce_c_locale) {
-        _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
-    }
-
     if (config->configure_locale) {
+        if (config->coerce_c_locale) {
+            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
+        }
+
         /* Set LC_CTYPE to the user preferred locale */
         _Py_SetLocaleFromEnv(LC_CTYPE);
     }
