@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #ifdef MS_WINDOWS
 #  include <windows.h>
 /* All sample MSDN wincrypt programs include the header below. It is at least

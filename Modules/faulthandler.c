@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "pythread.h"
 #include <signal.h>
 #include <object.h>
