@@ -1315,6 +1315,22 @@ Instance methods:
    complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
 
+.. method:: datetime.tzidx()
+
+    This method is only intended to be called from :class:`tzinfo`
+    implementations that implement :meth:`tzinfo.utcoffset`, :meth:`tzinfo.dst`,
+    and :meth:`tzinfo.tzname` in such a way that caching a small amount of
+    information on the datetime object could speed up subsequent lookups.
+
+    This function returns the potentially-cached return value of
+    :meth:`tzinfo.tzidx`. If :meth:`tzinfo.tzidx` returns a value that fits
+    in the datetime object's cache, it will store the value and subsequent
+    calls to ``tzidx`` will not call :meth:`tzinfo.tzidx`. The size and type
+    of the cache is implementation-defined, and in CPython only integers in
+    the interval ``[0, 254]`` are cached.
+
+    .. versionadded:: 3.8
+
 
 Examples of working with datetime objects:
 
@@ -1861,6 +1877,25 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
               return dt + dtdst
           else:
               return dt
+
+Additionally, for ``tzinfo`` implementations that use an indexed container of
+time zone data (e.g. a ``list`` of offsets and abbreviations), implementing
+``tzidx`` may provide some performance improvements:
+
+
+.. method:: tzinfo.tzidx(dt):
+
+    This method is called whenever a :meth:`datetime.tzidx` call cannot return
+    a cached value. Though the size and type of cache is implementation-defined,
+    in CPython, if this function returns an integer in the interval
+    ``[0, 254]``, the value will be cached on subsequent calls to
+    :meth:`datetime.tzidx`.
+
+    In many situations, this can be used to improve performance by implementing
+    :meth:`tzinfo.utcoffset`, :meth:`tzinfo.dst`, :meth:`tzinfo.tzname` and
+    :meth:`tzinfo.fromutc` in terms of ``datetime.tzidx`` calls.
+
+    .. versionadded:: 3.8
 
 In the following :download:`tzinfo_examples.py
 <../includes/tzinfo_examples.py>` file there are some examples of
