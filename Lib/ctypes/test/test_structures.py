@@ -3,7 +3,9 @@ from ctypes import *
 from ctypes.test import need_symbol
 from struct import calcsize
 import _ctypes_test
+from ctypes.util import find_library
 import test.support
+import pdb
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -438,6 +440,84 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
+    def test_issue18060_a(self):
+        # The call to atan2() should succeed if the
+        # class fields were correctly cloned in the
+        # subclasses. Otherwise, it will segfault.
+        #
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment, and PyCStgDict_clone()
+        # for the Mid and Vector class definitions.
+        libm = CDLL(find_library('m'))
+
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+
+        class Mid(Base):
+            pass
+
+        Mid._fields_ = []
+
+        class Vector(Mid): pass
+
+        libm.atan2.argtypes = [Vector]
+        libm.atan2.restype = c_double
+
+        arg = Vector(y=0.0, x=-1.0)
+        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
+
+    def test_issue18060_b(self):
+        # The call to atan2() should succeed if the
+        # class fields were correctly cloned in the
+        # subclasses. Otherwise, it will segfault.
+        #
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment.
+        libm = CDLL(find_library('m'))
+
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+
+        class Mid(Base):
+            _fields_ = []
+
+        class Vector(Mid):
+            _fields_ = []
+
+        libm.atan2.argtypes = [Vector]
+        libm.atan2.restype = c_double
+
+        arg = Vector(y=0.0, x=-1.0)
+        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
+
+    def test_issue18060_c(self):
+        # The call to atan2() should succeed if the
+        # class fields were correctly cloned in the
+        # subclasses. Otherwise, it will segfault.
+        #
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment.
+        libm = CDLL(find_library('m'))
+
+        class Base(Structure):
+            _fields_ = [('y', c_double)]
+
+        class Mid(Base):
+            _fields_ = []
+
+        class Vector(Mid):
+            _fields_ = [('x', c_double)]
+
+        libm.atan2.argtypes = [Vector]
+        libm.atan2.restype = c_double
+
+        arg = Vector(y=0.0, x=-1.0)
+        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
 
 class PointerMemberTestCase(unittest.TestCase):
 
