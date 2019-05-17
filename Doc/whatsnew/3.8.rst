@@ -231,6 +231,22 @@ New Modules
 Improved Modules
 ================
 
+* The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
+  a :class:`dict` instead of a :class:`collections.OrderedDict`.  This works because
+  regular dicts have guaranteed ordering in since Python 3.7.  If the extra
+  features of :class:`OrderedDict` are required, the suggested remediation is
+  to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
+  (Contributed by Raymond Hettinger in :issue:`35864`.)
+
+* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.0.0
+  <http://blog.unicode.org/2019/03/announcing-unicode-standard-version-120.html>`_
+  release.
+
+* The :meth:`py_compile.compile` method now supports silent mode. (Contributed by
+  Joannah Nanjekye in :issue:`22640`.)
+
+
+=======
 
 asyncio
 -------
