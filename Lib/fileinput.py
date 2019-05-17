@@ -80,7 +80,9 @@ __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
 
 _state = None
 
-def input(files=None, inplace=False, backup="", bufsize=0,
+_sentinel = object()
+
+def input(files=None, inplace=False, backup="", bufsize=_sentinel,
           mode="r", openhook=None):
     """Return an instance of the FileInput class, which can be iterated.
 
@@ -91,7 +93,13 @@ def input(files=None, inplace=False, backup="", bufsize=0,
     global _state
     if _state and _state._file:
         raise RuntimeError("input() already active")
-    _state = FileInput(files, inplace, backup, bufsize, mode, openhook)
+    if bufsize is not _sentinel:
+        import warnings
+        warnings.warn('bufsize is deprecated and ignored since Python 3.6'
+                      ' and will be removed in 3.8',
+                      DeprecationWarning, stacklevel=2)
+
+    _state = FileInput(files, inplace, backup, mode=mode, openhook=openhook)
     return _state
 
 def close():
@@ -185,7 +193,7 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
-    def __init__(self, files=None, inplace=False, backup="", bufsize=0,
+    def __init__(self, files=None, inplace=False, backup="", bufsize=_sentinel,
                  mode="r", openhook=None):
         if isinstance(files, str):
             files = (files,)
@@ -201,9 +209,10 @@ class FileInput:
         self._files = files
         self._inplace = inplace
         self._backup = backup
-        if bufsize:
+        if bufsize is not _sentinel:
             import warnings
-            warnings.warn('bufsize is deprecated and ignored',
+            warnings.warn('bufsize is deprecated and ignored since Python 3.6'
+                          ' and will be removed in 3.8',
                           DeprecationWarning, stacklevel=2)
         self._savestdout = None
         self._output = None

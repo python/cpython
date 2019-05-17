@@ -1,0 +1,2 @@
+Improve fileinput's DeprecationWarning and emit them when bufsize=0 is
+passed.

@@ -83,12 +83,13 @@ class LineReader:
 class BufferSizesTests(BaseTests, unittest.TestCase):
     def test_buffer_sizes(self):
         # First, run the tests with default and teeny buffer size.
-        for round, bs in (0, 0), (1, 30):
+        from fileinput import _sentinel
+        for round, bs in (0, 0), (1, 30), (2, _sentinel):
             t1 = self.writeTmp(''.join("Line %s of file 1\n" % (i+1) for i in range(15)))
             t2 = self.writeTmp(''.join("Line %s of file 2\n" % (i+1) for i in range(10)))
             t3 = self.writeTmp(''.join("Line %s of file 3\n" % (i+1) for i in range(5)))
             t4 = self.writeTmp(''.join("Line %s of file 4\n" % (i+1) for i in range(1)))
-            if bs:
+            if bs is  not _sentinel:
                 with self.assertWarns(DeprecationWarning):
                     self.buffer_size_test(t1, t2, t3, t4, bs, round)
             else:
@@ -646,9 +647,10 @@ class Test_fileinput_input(BaseFileInputGlobalMethodsTest):
         openhook = object()
 
         # call fileinput.input() with different values for each argument
-        result = fileinput.input(files=files, inplace=inplace, backup=backup,
-                                 bufsize=bufsize,
-            mode=mode, openhook=openhook)
+        with self.assertWarns(DeprecationWarning):
+            result = fileinput.input(files=files, inplace=inplace, backup=backup,
+                                    bufsize=bufsize,
+                mode=mode, openhook=openhook)
 
         # ensure fileinput._state was set to the returned object
         self.assertIs(result, fileinput._state, "fileinput._state")
@@ -658,9 +660,12 @@ class Test_fileinput_input(BaseFileInputGlobalMethodsTest):
         self.assertIs(files, result.files, "files")
         self.assertIs(inplace, result.inplace, "inplace")
         self.assertIs(backup, result.backup, "backup")
-        self.assertIs(bufsize, result.bufsize, "bufsize")
         self.assertIs(mode, result.mode, "mode")
         self.assertIs(openhook, result.openhook, "openhook")
+
+        # FileInput(bufsize=..) is deprecated, check that fileinut.input will
+        # _not_ its value to the MockFileInput
+        self.assertIsNot(bufsize, result.bufsize, "bufsize")
 
 class Test_fileinput_close(BaseFileInputGlobalMethodsTest):
     """Unit tests for fileinput.close()"""
