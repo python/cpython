@@ -272,10 +272,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
     UTF8_MODE_ERRORS = ('surrogatepass' if MS_WINDOWS else 'surrogateescape')
 
-    # Mark config which should be get by get_default_config()
+    # Marker to read the default configuration: get_default_config()
     GET_DEFAULT_CONFIG = object()
+
+    # Marker to ignore a configuration parameter
+    IGNORE_CONFIG = object()
+
     DEFAULT_PRE_CONFIG = {
         'allocator': PYMEM_ALLOCATOR_NOT_SET,
+        'configure_locale': 1,
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
         'utf8_mode': 0,
@@ -405,7 +410,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 xoptions[opt] = True
         return xoptions
 
-    def get_expected_config(self, expected, env, add_path=None):
+    def get_expected_config(self, expected_preconfig, expected, env, add_path=None):
         expected = dict(self.DEFAULT_CORE_CONFIG, **expected)
 
         code = textwrap.dedent('''
@@ -471,6 +476,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         if add_path is not None:
             expected['module_search_paths'].append(add_path)
+
+        if not expected_preconfig['configure_locale']:
+            # there is no easy way to get the locale encoding before
+            # setlocale(LC_CTYPE, "") is called: don't test encodings
+            for key in ('filesystem_encoding', 'filesystem_errors',
+                        'stdio_encoding', 'stdio_errors'):
+                expected[key] = self.IGNORE_CONFIG
+
         return expected
 
     def check_pre_config(self, config, expected):
@@ -480,6 +493,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def check_core_config(self, config, expected):
         core_config = dict(config['core_config'])
+        for key, value in list(expected.items()):
+            if value is self.IGNORE_CONFIG:
+                del core_config[key]
+                del expected[key]
         self.assertEqual(core_config, expected)
 
     def check_global_config(self, config):
@@ -517,7 +534,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         env['PYTHONUTF8'] = '0'
 
         expected_preconfig = dict(self.DEFAULT_PRE_CONFIG, **expected_preconfig)
-        expected_config = self.get_expected_config(expected_config, env, add_path)
+        expected_config = self.get_expected_config(expected_preconfig, expected_config, env, add_path)
         for key in self.COPY_PRE_CONFIG:
             if key not in expected_preconfig:
                 expected_preconfig[key] = expected_config[key]
@@ -692,7 +709,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_config("preinit_isolated2", config, preconfig)
 
     def test_init_isolated_config(self):
-        preconfig = {}
+        preconfig = {
+            'configure_locale': 0,
+        }
         config = {
             'isolated': 1,
             'use_environment': 0,
@@ -709,6 +728,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'parse_argv': 1,
         }
         self.check_config("init_python_config", config, preconfig)
+
+    def test_init_dont_configure_locale(self):
+        # _PyPreConfig.configure_locale=0
+        preconfig = {
+            'configure_locale': 0,
+        }
+        self.check_config("init_dont_configure_locale", {}, preconfig)
 
     def test_init_read_set(self):
         preconfig = {}

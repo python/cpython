@@ -788,6 +788,33 @@ static int init_python_config(void)
 }
 
 
+static int init_dont_configure_locale(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig = _PyPreConfig_INIT;
+    preconfig.configure_locale = 0;
+    preconfig.coerce_c_locale = 1;
+    preconfig.coerce_c_locale_warn = 1;
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    _PyCoreConfig config = _PyCoreConfig_INIT;
+    config.program_name = L"./_testembed";
+    err = _Py_InitializeFromConfig(&config);
+    if (_Py_INIT_FAILED(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static int init_dev_mode(void)
 {
     _PyCoreConfig config;
@@ -966,6 +993,7 @@ static struct TestCase TestCases[] = {
     { "init_env", test_init_env },
     { "init_env_dev_mode", test_init_env_dev_mode },
     { "init_env_dev_mode_alloc", test_init_env_dev_mode_alloc },
+    { "init_dont_configure_locale", init_dont_configure_locale },
     { "init_dev_mode", init_dev_mode },
     { "init_isolated_flag", init_isolated_flag },
     { "init_isolated_config", init_isolated_config },
