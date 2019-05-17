@@ -68,6 +68,7 @@ XXX: provide complete list of token types.
 """
 
 import re
+import sys
 import urllib   # For urllib.parse.unquote
 from string import hexdigits
 from collections import OrderedDict
@@ -2591,7 +2592,7 @@ def _refold_parse_tree(parse_tree, *, policy):
 
     """
     # max_line_length 0/None means no limit, ie: infinitely long.
-    maxlen = policy.max_line_length or float("+inf")
+    maxlen = policy.max_line_length or sys.maxsize
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
     lines = ['']
     last_ew = None
