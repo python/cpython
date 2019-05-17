@@ -9,7 +9,20 @@ PyDoc_STRVAR(warnings__doc__,
 MODULE_NAME " provides basic warning filtering support.\n"
 "It is a helper module to speed up interpreter start-up.");
 
+_Py_IDENTIFIER(__loader__);
+_Py_IDENTIFIER(__name__);
+_Py_IDENTIFIER(__warningregistry__);
+_Py_IDENTIFIER(_showwarnmsg);
+_Py_IDENTIFIER(_warn_unawaited_coroutine);
+_Py_IDENTIFIER(defaultaction);
+_Py_IDENTIFIER(filters);
+_Py_IDENTIFIER(get_source);
+_Py_IDENTIFIER(match);
+_Py_IDENTIFIER(onceregistry);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(version);
+_Py_IDENTIFIER(warnings);
+_Py_IDENTIFIER(WarningMessage);
 #ifndef Py_DEBUG
 _Py_IDENTIFIER(default);
 _Py_IDENTIFIER(ignore);
@@ -147,7 +160,6 @@ static int
 check_matched(PyObject *obj, PyObject *arg)
 {
     PyObject *result;
-    _Py_IDENTIFIER(match);
     int rc;
 
     /* A 'None' filter always matches */
@@ -182,7 +194,6 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
 {
     PyObject *warnings_str;
     PyObject *warnings_module, *obj;
-    _Py_IDENTIFIER(warnings);
 
     warnings_str = _PyUnicode_FromId(&PyId_warnings);
     if (warnings_str == NULL) {
@@ -224,7 +235,6 @@ static PyObject *
 get_once_registry(WarningsState *st)
 {
     PyObject *registry;
-    _Py_IDENTIFIER(onceregistry);
 
     registry = get_warnings_attr(&PyId_onceregistry, 0);
     if (registry == NULL) {
@@ -250,7 +260,6 @@ static PyObject *
 get_default_action(WarningsState *st)
 {
     PyObject *default_action;
-    _Py_IDENTIFIER(defaultaction);
 
     default_action = get_warnings_attr(&PyId_defaultaction, 0);
     if (default_action == NULL) {
@@ -281,7 +290,6 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
     PyObject *action;
     Py_ssize_t i;
     PyObject *warnings_filters;
-    _Py_IDENTIFIER(filters);
     WarningsState *st = _Warnings_GetState();
     if (st == NULL) {
         return NULL;
@@ -379,7 +387,6 @@ static int
 already_warned(PyObject *registry, PyObject *key, int should_set)
 {
     PyObject *version_obj, *already_warned;
-    _Py_IDENTIFIER(version);
 
     if (key == NULL)
         return -1;
@@ -482,7 +489,6 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     PyObject *f_stderr;
     PyObject *name;
     char lineno_str[128];
-    _Py_IDENTIFIER(__name__);
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
@@ -554,8 +560,6 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
                   PyObject *sourceline, PyObject *source)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
-    _Py_IDENTIFIER(_showwarnmsg);
-    _Py_IDENTIFIER(WarningMessage);
 
     /* If the source parameter is set, try to get the Python implementation.
        The Python implementation is able to log the traceback where the source
@@ -816,8 +820,6 @@ static int
 setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
               PyObject **module, PyObject **registry)
 {
-    _Py_IDENTIFIER(__warningregistry__);
-    _Py_IDENTIFIER(__name__);
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
@@ -966,9 +968,6 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
 static PyObject *
 get_source_line(PyObject *module_globals, int lineno)
 {
-    _Py_IDENTIFIER(get_source);
-    _Py_IDENTIFIER(__loader__);
-    _Py_IDENTIFIER(__name__);
     PyObject *loader;
     PyObject *module_name;
     PyObject *get_source;
@@ -1280,7 +1279,6 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
        Since this is called from __del__ context, it's careful to never raise
        an exception.
     */
-    _Py_IDENTIFIER(_warn_unawaited_coroutine);
     int warned = 0;
     PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
     if (fn) {

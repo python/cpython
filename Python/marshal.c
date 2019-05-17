@@ -14,6 +14,11 @@
 #include "marshal.h"
 #include "../Modules/hashtable.h"
 
+
+_Py_IDENTIFIER(read);
+_Py_IDENTIFIER(readinto);
+_Py_IDENTIFIER(write);
+
 /*[clinic input]
 module marshal
 [clinic start generated code]*/
@@ -685,7 +690,6 @@ r_string(Py_ssize_t n, RFILE *p)
         read = fread(p->buf, 1, n, p->fp);
     }
     else {
-        _Py_IDENTIFIER(readinto);
         PyObject *res, *mview;
         Py_buffer buf;
 
@@ -1648,7 +1652,6 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
     /* XXX Quick hack -- need to do this differently */
     PyObject *s;
     PyObject *res;
-    _Py_IDENTIFIER(write);
 
     s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
@@ -1680,7 +1683,6 @@ marshal_load(PyObject *module, PyObject *file)
 /*[clinic end generated code: output=f8e5c33233566344 input=c85c2b594cd8124a]*/
 {
     PyObject *data, *result;
-    _Py_IDENTIFIER(read);
     RFILE rf;
 
     /*

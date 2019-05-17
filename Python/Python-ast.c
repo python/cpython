@@ -5,6 +5,10 @@
 #include "Python.h"
 #include "Python-ast.h"
 
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__module__);
+_Py_IDENTIFIER(_ast);
+
 static PyTypeObject AST_type;
 static PyTypeObject *mod_type;
 static PyObject* ast2obj_mod(void*);
@@ -613,7 +617,6 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
-    _Py_IDENTIFIER(__dict__);
     PyObject *dict;
     if (_PyObject_LookupAttrId(self, &PyId___dict__, &dict) < 0) {
         return NULL;
@@ -679,8 +682,6 @@ static PyTypeObject AST_type = {
 
 static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int num_fields)
 {
-    _Py_IDENTIFIER(__module__);
-    _Py_IDENTIFIER(_ast);
     PyObject *fnames, *result;
     int i;
     fnames = PyTuple_New(num_fields);

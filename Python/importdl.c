@@ -23,6 +23,8 @@ extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
                                               const char *pathname, FILE *fp);
 #endif
 
+_Py_IDENTIFIER(replace);
+
 static const char * const ascii_only_prefix = "PyInit";
 static const char * const nonascii_prefix = "PyInitU";
 
@@ -38,7 +40,6 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     PyObject *encoded = NULL;
     PyObject *modname = NULL;
     Py_ssize_t name_len, lastdot;
-    _Py_IDENTIFIER(replace);
 
     /* Get the short name (substring after last dot) */
     name_len = PyUnicode_GetLength(name);

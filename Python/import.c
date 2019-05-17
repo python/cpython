@@ -25,6 +25,24 @@ extern "C" {
 
 #define CACHEDIR "__pycache__"
 
+
+_Py_IDENTIFIER(__builtins__);
+_Py_IDENTIFIER(__name__);
+_Py_IDENTIFIER(__package__);
+_Py_IDENTIFIER(__path__);
+_Py_IDENTIFIER(__spec__);
+_Py_IDENTIFIER(_find_and_load);
+_Py_IDENTIFIER(_fix_up_module);
+_Py_IDENTIFIER(_get_sourcefile);
+_Py_IDENTIFIER(_handle_fromlist);
+_Py_IDENTIFIER(_lock_unlock_module);
+_Py_IDENTIFIER(clear);
+_Py_IDENTIFIER(imp);
+_Py_IDENTIFIER(parent);
+_Py_IDENTIFIER(reload);
+_Py_IDENTIFIER(zipimporter);
+
+
 /* See _PyImport_FixupExtensionObject() below */
 static PyObject *extensions = NULL;
 
@@ -115,7 +133,6 @@ _PyImportZip_Init(PyInterpreterState *interp)
         }
     }
     else {
-        _Py_IDENTIFIER(zipimporter);
         PyObject *zipimporter = _PyObject_GetAttrId(zipimport,
                                                     &PyId_zipimporter);
         Py_DECREF(zipimport);
@@ -521,7 +538,6 @@ PyImport_Cleanup(void)
         PyDict_Clear(modules);
     }
     else {
-        _Py_IDENTIFIER(clear);
         if (_PyObject_CallMethodId(modules, &PyId_clear, "") == NULL) {
             PyErr_WriteUnraisable(NULL);
         }
@@ -916,7 +932,6 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
     }
     else if (cpathobj != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-        _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
             Py_FatalError("PyImport_ExecCodeModuleWithPathnames: "
@@ -948,7 +963,6 @@ error:
 static PyObject *
 module_dict_for_exec(PyObject *name)
 {
-    _Py_IDENTIFIER(__builtins__);
     PyObject *m, *d = NULL;
 
     m = PyImport_AddModuleObject(name);
@@ -998,7 +1012,6 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
 {
     PyObject *d, *external, *res;
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    _Py_IDENTIFIER(_fix_up_module);
 
     d = module_dict_for_exec(name);
     if (d == NULL) {
@@ -1501,11 +1514,6 @@ done:
 static PyObject *
 resolve_name(PyObject *name, PyObject *globals, int level)
 {
-    _Py_IDENTIFIER(__spec__);
-    _Py_IDENTIFIER(__package__);
-    _Py_IDENTIFIER(__path__);
-    _Py_IDENTIFIER(__name__);
-    _Py_IDENTIFIER(parent);
     PyObject *abs_name;
     PyObject *package = NULL;
     PyObject *spec;
@@ -1656,7 +1664,6 @@ static int header = 1;
 static PyObject *
 import_find_and_load(PyObject *abs_name)
 {
-    _Py_IDENTIFIER(_find_and_load);
     PyObject *mod = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     int import_time = interp->core_config.import_time;
@@ -1711,7 +1718,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  PyObject *locals, PyObject *fromlist,
                                  int level)
 {
-    _Py_IDENTIFIER(_handle_fromlist);
     PyObject *abs_name = NULL;
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
@@ -1759,8 +1765,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     if (mod != NULL && mod != Py_None) {
-        _Py_IDENTIFIER(__spec__);
-        _Py_IDENTIFIER(_lock_unlock_module);
         PyObject *spec;
 
         /* Optimization: only call _bootstrap._lock_unlock_module() if
@@ -1848,7 +1852,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        _Py_IDENTIFIER(__path__);
         PyObject *path;
         if (_PyObject_LookupAttrId(mod, &PyId___path__, &path) < 0) {
             goto error;
@@ -1896,8 +1899,6 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
-    _Py_IDENTIFIER(imp);
-    _Py_IDENTIFIER(reload);
     PyObject *reloaded_module = NULL;
     PyObject *imp = _PyImport_GetModuleId(&PyId_imp);
     if (imp == NULL) {

@@ -45,12 +45,18 @@ extern PyTypeObject PyWindowsConsoleIO_Type;
 #define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
 
+_Py_IDENTIFIER(_shutdown);
 _Py_IDENTIFIER(flush);
+_Py_IDENTIFIER(isatty);
+_Py_IDENTIFIER(mode);
 _Py_IDENTIFIER(name);
+_Py_IDENTIFIER(open);
+_Py_IDENTIFIER(raw);
 _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(threading);
+_Py_IDENTIFIER(TextIOWrapper);
 
 #ifdef __cplusplus
 extern "C" {
@@ -1690,10 +1696,6 @@ create_stdio(const _PyCoreConfig *config, PyObject* io,
     const char* newline;
     PyObject *line_buffering, *write_through;
     int buffering, isatty;
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(isatty);
-    _Py_IDENTIFIER(TextIOWrapper);
-    _Py_IDENTIFIER(mode);
     const int buffered_stdio = config->buffered_stdio;
 
     if (!is_valid_fd(fd))
@@ -1720,7 +1722,6 @@ create_stdio(const _PyCoreConfig *config, PyObject* io,
         goto error;
 
     if (buffering) {
-        _Py_IDENTIFIER(raw);
         raw = _PyObject_GetAttrId(buf, &PyId_raw);
         if (raw == NULL)
             goto error;
@@ -2183,7 +2184,6 @@ call_py_exitfuncs(PyInterpreterState *istate)
 static void
 wait_for_thread_shutdown(void)
 {
-    _Py_IDENTIFIER(_shutdown);
     PyObject *result;
     PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
     if (threading == NULL) {

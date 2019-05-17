@@ -31,6 +31,9 @@
 #include "opcode.h"
 #include "wordcode_helpers.h"
 
+
+_Py_IDENTIFIER(__class__);
+
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_BLOCKS 8
 #define DEFAULT_CODE_SIZE 128
@@ -572,7 +575,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
-        _Py_IDENTIFIER(__class__);
         PyObject *name;
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);

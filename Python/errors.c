@@ -21,8 +21,15 @@ extern char *strerror(int);
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(builtins);
+_Py_IDENTIFIER(filename);
+_Py_IDENTIFIER(lineno);
+_Py_IDENTIFIER(msg);
+_Py_IDENTIFIER(offset);
+_Py_IDENTIFIER(print_file_and_line);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(text);
 
 
 void
@@ -858,7 +865,6 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 PyObject *
 PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
-    _Py_IDENTIFIER(__module__);
     const char *dot;
     PyObject *modulename = NULL;
     PyObject *classname = NULL;
@@ -949,7 +955,6 @@ PyErr_NewExceptionWithDoc(const char *name, const char *doc,
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
-    _Py_IDENTIFIER(__module__);
     PyObject *f, *t, *v, *tb;
     PyObject *moduleName = NULL;
     const char *className;
@@ -1049,12 +1054,6 @@ void
 PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
 {
     PyObject *exc, *v, *tb, *tmp;
-    _Py_IDENTIFIER(filename);
-    _Py_IDENTIFIER(lineno);
-    _Py_IDENTIFIER(msg);
-    _Py_IDENTIFIER(offset);
-    _Py_IDENTIFIER(print_file_and_line);
-    _Py_IDENTIFIER(text);
 
     /* add attributes for the line number and filename for the error */
     PyErr_Fetch(&exc, &v, &tb);

@@ -13,6 +13,9 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "ucnhash.h"
 #include <ctype.h>
 
+
+_Py_IDENTIFIER(_is_text_encoding);
+
 const char *Py_hexdigits = "0123456789abcdef";
 
 /* --- Codec Registry ----------------------------------------------------- */
@@ -528,7 +531,6 @@ PyObject *PyCodec_Decode(PyObject *object,
 PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
                                        const char *alternate_command)
 {
-    _Py_IDENTIFIER(_is_text_encoding);
     PyObject *codec;
     PyObject *attr;
     int is_text_codec;

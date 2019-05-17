@@ -35,6 +35,22 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
+_Py_IDENTIFIER(__aenter__);
+_Py_IDENTIFIER(__aexit__);
+_Py_IDENTIFIER(__all__);
+_Py_IDENTIFIER(__annotations__);
+_Py_IDENTIFIER(__build_class__);
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__enter__);
+_Py_IDENTIFIER(__exit__);
+_Py_IDENTIFIER(__import__);
+#ifdef LLTRACE
+_Py_IDENTIFIER(__ltrace__);
+#endif
+_Py_IDENTIFIER(__name__);
+_Py_IDENTIFIER(displayhook);
+_Py_IDENTIFIER(send);
+
 /* Private API for the LOAD_METHOD opcode. */
 extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 
@@ -715,10 +731,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     const _Py_CODEUNIT *first_instr;
     PyObject *names;
     PyObject *consts;
-
-#ifdef LLTRACE
-    _Py_IDENTIFIER(__ltrace__);
-#endif
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -1757,7 +1769,6 @@ main_loop:
         }
 
         case TARGET(PRINT_EXPR): {
-            _Py_IDENTIFIER(displayhook);
             PyObject *value = POP();
             PyObject *hook = _PySys_GetObjectId(&PyId_displayhook);
             PyObject *res;
@@ -1945,7 +1956,6 @@ main_loop:
             if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
                 retval = _PyGen_Send((PyGenObject *)receiver, v);
             } else {
-                _Py_IDENTIFIER(send);
                 if (v == Py_None)
                     retval = Py_TYPE(receiver)->tp_iternext(receiver);
                 else
@@ -2140,7 +2150,6 @@ main_loop:
         }
 
         case TARGET(LOAD_BUILD_CLASS): {
-            _Py_IDENTIFIER(__build_class__);
 
             PyObject *bc;
             if (PyDict_CheckExact(f->f_builtins)) {
@@ -2656,7 +2665,6 @@ main_loop:
         }
 
         case TARGET(SETUP_ANNOTATIONS): {
-            _Py_IDENTIFIER(__annotations__);
             int err;
             PyObject *ann_dict;
             if (f->f_locals == NULL) {
@@ -3083,8 +3091,6 @@ main_loop:
         }
 
         case TARGET(BEFORE_ASYNC_WITH): {
-            _Py_IDENTIFIER(__aexit__);
-            _Py_IDENTIFIER(__aenter__);
 
             PyObject *mgr = TOP();
             PyObject *exit = special_lookup(mgr, &PyId___aexit__),
@@ -3117,8 +3123,6 @@ main_loop:
         }
 
         case TARGET(SETUP_WITH): {
-            _Py_IDENTIFIER(__exit__);
-            _Py_IDENTIFIER(__enter__);
             PyObject *mgr = TOP();
             PyObject *enter = special_lookup(mgr, &PyId___enter__), *exit;
             PyObject *res;
@@ -5012,7 +5016,6 @@ cmp_outcome(int op, PyObject *v, PyObject *w)
 static PyObject *
 import_name(PyFrameObject *f, PyObject *name, PyObject *fromlist, PyObject *level)
 {
-    _Py_IDENTIFIER(__import__);
     PyObject *import_func, *res;
     PyObject* stack[5];
 
@@ -5055,7 +5058,6 @@ static PyObject *
 import_from(PyObject *v, PyObject *name)
 {
     PyObject *x;
-    _Py_IDENTIFIER(__name__);
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
     if (_PyObject_LookupAttr(v, name, &x) != 0) {
@@ -5123,9 +5125,6 @@ import_from(PyObject *v, PyObject *name)
 static int
 import_all_from(PyObject *locals, PyObject *v)
 {
-    _Py_IDENTIFIER(__all__);
-    _Py_IDENTIFIER(__dict__);
-    _Py_IDENTIFIER(__name__);
     PyObject *all, *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;

@@ -31,6 +31,9 @@
                || c == '_'\
                || (c >= 128))
 
+_Py_IDENTIFIER(open);
+_Py_IDENTIFIER(readline);
+
 extern char *PyOS_Readline(FILE *, FILE *, const char *);
 /* Return malloc'ed string including trailing \n;
    empty malloc'ed string for EOF;
@@ -412,8 +415,6 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
     PyObject *readline, *io, *stream;
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(readline);
     int fd;
     long pos;
 

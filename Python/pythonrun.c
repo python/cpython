@@ -39,17 +39,27 @@
 #include "windows.h"
 #endif
 
+_Py_IDENTIFIER(__main__);
+_Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(builtins);
+_Py_IDENTIFIER(code);
+_Py_IDENTIFIER(encoding);
 _Py_IDENTIFIER(excepthook);
+_Py_IDENTIFIER(filename);
 _Py_IDENTIFIER(flush);
 _Py_IDENTIFIER(last_traceback);
 _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
+_Py_IDENTIFIER(lineno);
+_Py_IDENTIFIER(msg);
+_Py_IDENTIFIER(offset);
+_Py_IDENTIFIER(print_file_and_line);
 _Py_IDENTIFIER(ps1);
 _Py_IDENTIFIER(ps2);
 _Py_IDENTIFIER(stdin);
 _Py_IDENTIFIER(stdout);
 _Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(text);
 _Py_static_string(PyId_string, "<string>");
 
 #ifdef __cplusplus
@@ -185,8 +195,6 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     PyArena *arena;
     const char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
-    _Py_IDENTIFIER(encoding);
-    _Py_IDENTIFIER(__main__);
 
     mod_name = _PyUnicode_FromId(&PyId___main__); /* borrowed */
     if (mod_name == NULL) {
@@ -473,11 +481,6 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
 {
     int hold;
     PyObject *v;
-    _Py_IDENTIFIER(msg);
-    _Py_IDENTIFIER(filename);
-    _Py_IDENTIFIER(lineno);
-    _Py_IDENTIFIER(offset);
-    _Py_IDENTIFIER(text);
 
     *message = NULL;
     *filename = NULL;
@@ -604,7 +607,6 @@ handle_system_exit(void)
         goto done;
     if (PyExceptionInstance_Check(value)) {
         /* The error code should be in the `code' attribute. */
-        _Py_IDENTIFIER(code);
         PyObject *code = _PyObject_GetAttrId(value, &PyId_code);
         if (code) {
             Py_DECREF(value);
@@ -727,7 +729,6 @@ print_exception(PyObject *f, PyObject *value)
 {
     int err = 0;
     PyObject *type, *tb;
-    _Py_IDENTIFIER(print_file_and_line);
 
     if (!PyExceptionInstance_Check(value)) {
         err = PyFile_WriteString("TypeError: print_exception(): Exception expected for value, ", f);
@@ -783,7 +784,6 @@ print_exception(PyObject *f, PyObject *value)
     else {
         PyObject* moduleName;
         const char *className;
-        _Py_IDENTIFIER(__module__);
         assert(PyExceptionClass_Check(type));
         className = PyExceptionClass_Name(type);
         if (className != NULL) {

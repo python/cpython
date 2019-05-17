@@ -15,6 +15,8 @@
 
 #define MAXLEVEL 200    /* Max parentheses level */
 
+_Py_IDENTIFIER(NFKC);
+
 static int validate_stmts(asdl_seq *);
 static int validate_exprs(asdl_seq *, expr_context_ty, int);
 static int validate_nonempty_seq(asdl_seq *, const char *, const char *);
@@ -618,7 +620,6 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
-        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
