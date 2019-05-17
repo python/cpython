@@ -79,6 +79,10 @@ typedef struct {
        set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
 
+    /* Set the LC_CTYPE locale to the user preferred locale? If equals to 0,
+       set coerce_c_locale and coerce_c_locale_warn to 0. */
+    int configure_locale;
+
     /* Coerce the LC_CTYPE locale if it's equal to "C"? (PEP 538)
 
        Set to 0 by PYTHONCOERCECLOCALE=0. Set to 1 by PYTHONCOERCECLOCALE=1.
@@ -147,6 +151,7 @@ typedef struct {
         ._config_version = _Py_CONFIG_VERSION, \
         .isolated = -1, \
         .use_environment = -1, \
+        .configure_locale = 1, \
         .utf8_mode = -2, \
         .dev_mode = -1, \
         .allocator = PYMEM_ALLOCATOR_NOT_SET}

@@ -286,6 +286,7 @@ _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config)
 {
     _PyPreConfig_Init(config);
 
+    config->configure_locale = 0;
     config->isolated = 1;
     config->use_environment = 0;
 #ifdef MS_WINDOWS
@@ -312,6 +313,7 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
+    COPY_ATTR(configure_locale);
     COPY_ATTR(dev_mode);
     COPY_ATTR(coerce_c_locale);
     COPY_ATTR(coerce_c_locale_warn);
@@ -360,6 +362,7 @@ _PyPreConfig_AsDict(const _PyPreConfig *config)
 
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
+    SET_ITEM_INT(configure_locale);
     SET_ITEM_INT(coerce_c_locale);
     SET_ITEM_INT(coerce_c_locale_warn);
     SET_ITEM_INT(utf8_mode);
@@ -603,6 +606,12 @@ preconfig_init_utf8_mode(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 static void
 preconfig_init_coerce_c_locale(_PyPreConfig *config)
 {
+    if (!config->configure_locale) {
+        config->coerce_c_locale = 0;
+        config->coerce_c_locale_warn = 0;
+        return;
+    }
+
     const char *env = _Py_GetEnv(config->use_environment, "PYTHONCOERCECLOCALE");
     if (env) {
         if (strcmp(env, "0") == 0) {
@@ -746,7 +755,9 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
     }
 
     /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
+    if (config->configure_locale) {
+        _Py_SetLocaleFromEnv(LC_CTYPE);
+    }
 
     _PyPreCmdline cmdline = _PyPreCmdline_INIT;
     int init_utf8_mode = Py_UTF8Mode;
@@ -879,12 +890,14 @@ _PyPreConfig_Write(const _PyPreConfig *config)
 
     _PyPreConfig_SetGlobalConfig(config);
 
-    if (config->coerce_c_locale) {
-        _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
-    }
+    if (config->configure_locale) {
+        if (config->coerce_c_locale) {
+            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
+        }
 
-    /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
+        /* Set LC_CTYPE to the user preferred locale */
+        _Py_SetLocaleFromEnv(LC_CTYPE);
+    }
 
     /* Write the new pre-configuration into _PyRuntime */
     PyMemAllocatorEx old_alloc;
