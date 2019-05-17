@@ -1445,7 +1445,7 @@ class Utility_Tests(unittest.TestCase):
         self.assertIsInstance(urllib.request.thishost(), tuple)
 
 
-class URLopener_Tests(unittest.TestCase):
+class URLopener_Tests(unittest.TestCase, FakeHTTPMixin):
     """Testcase to test the open method of URLopener class."""
 
     def test_quoted_open(self):
@@ -1462,6 +1462,24 @@ class URLopener_Tests(unittest.TestCase):
             self.assertEqual(DummyURLopener().open(
                 "spam://c:|windows%/:=&?~#+!$,;'@()*[]|/path/"),
                 "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
+
+    def test_urlopener_retrieve_file(self):
+        with tempfile.NamedTemporaryFile() as file_obj:
+            with self.assertWarns(DeprecationWarning):
+                url = f'file://{file_obj.name}'
+                filename, _ = urllib.request.URLopener().retrieve(url)
+                self.assertEqual(filename, file_obj.name)
+
+    def test_urlopener_retrieve_remote(self):
+        with self.assertWarns(DeprecationWarning):
+            try:
+                self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
+                url = "http://www.python.org/file.txt"
+                filename, _ = urllib.request.URLopener().retrieve(url)
+                self.assertEqual(os.path.splitext(filename)[1], '.txt')
+            finally:
+                self.unfakehttp()
+
 
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
