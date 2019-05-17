@@ -5426,6 +5426,7 @@ PyType_Ready(PyTypeObject *type)
             _PyDict_SetItemId(type->tp_dict, &PyId___int__, index) < 0) {
             goto error;
         }
+        type->tp_as_number->nb_int = type->tp_as_number->nb_index;
     }
 
     /* Some more special stuff */
