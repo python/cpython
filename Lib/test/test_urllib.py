@@ -1466,7 +1466,7 @@ class URLopener_Tests(unittest.TestCase, FakeHTTPMixin):
     def test_urlopener_retrieve_file(self):
         with tempfile.NamedTemporaryFile() as file_obj:
             with self.assertWarns(DeprecationWarning):
-                url = f'file://{file_obj.name}'
+                url = f'file://localhost{file_obj.name}'
                 filename, _ = urllib.request.URLopener().retrieve(url)
                 self.assertEqual(filename, file_obj.name)
 
