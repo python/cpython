@@ -297,19 +297,10 @@ _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config)
 }
 
 
-int
+void
 _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 {
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
-#define COPY_STR_ATTR(ATTR) \
-    do { \
-        if (config2->ATTR != NULL) { \
-            config->ATTR = _PyMem_RawStrdup(config2->ATTR); \
-            if (config->ATTR == NULL) { \
-                return -1; \
-            } \
-        } \
-    } while (0)
 
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
@@ -317,15 +308,13 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
     COPY_ATTR(dev_mode);
     COPY_ATTR(coerce_c_locale);
     COPY_ATTR(coerce_c_locale_warn);
+    COPY_ATTR(utf8_mode);
+    COPY_ATTR(allocator);
 #ifdef MS_WINDOWS
     COPY_ATTR(legacy_windows_fs_encoding);
 #endif
-    COPY_ATTR(utf8_mode);
-    COPY_ATTR(allocator);
 
 #undef COPY_ATTR
-#undef COPY_STR_ATTR
-    return 0;
 }
 
 
@@ -750,9 +739,7 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
     /* Save the config to be able to restore it if encodings change */
     _PyPreConfig save_config;
     _PyPreConfig_Init(&save_config);
-    if (_PyPreConfig_Copy(&save_config, config) < 0) {
-        return _Py_INIT_NO_MEMORY();
-    }
+    _PyPreConfig_Copy(&save_config, config);
 
     /* Set LC_CTYPE to the user preferred locale */
     if (config->configure_locale) {
@@ -835,10 +822,7 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
            just keep UTF-8 Mode value. */
         int new_utf8_mode = config->utf8_mode;
         int new_coerce_c_locale = config->coerce_c_locale;
-        if (_PyPreConfig_Copy(config, &save_config) < 0) {
-            err = _Py_INIT_NO_MEMORY();
-            goto done;
-        }
+        _PyPreConfig_Copy(config, &save_config);
         config->utf8_mode = new_utf8_mode;
         config->coerce_c_locale = new_coerce_c_locale;
 
@@ -900,13 +884,7 @@ _PyPreConfig_Write(const _PyPreConfig *config)
     }
 
     /* Write the new pre-configuration into _PyRuntime */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    int res = _PyPreConfig_Copy(&_PyRuntime.preconfig, config);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    if (res < 0) {
-        return _Py_INIT_NO_MEMORY();
-    }
+    _PyPreConfig_Copy(&_PyRuntime.preconfig, config);
 
     return _Py_INIT_OK();
 }
