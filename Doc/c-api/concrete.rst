@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _concrete:
@@ -113,5 +113,5 @@ Other Objects
    capsule.rst
    gen.rst
    coro.rst
+   contextvars.rst
    datetime.rst
-

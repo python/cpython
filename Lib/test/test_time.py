@@ -9,7 +9,6 @@ import sysconfig
 import time
 import threading
 import unittest
-import warnings
 try:
     import _testcapi
 except ImportError:
@@ -19,7 +18,7 @@ except ImportError:
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
 TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
-TIME_MINYEAR = -TIME_MAXYEAR - 1
+TIME_MINYEAR = -TIME_MAXYEAR - 1 + 1900
 
 SEC_TO_US = 10 ** 6
 US_TO_NS = 10 ** 3
@@ -81,18 +80,13 @@ class TimeTestCase(unittest.TestCase):
         check_ns(time.process_time(),
                  time.process_time_ns())
 
+        if hasattr(time, 'thread_time'):
+            check_ns(time.thread_time(),
+                     time.thread_time_ns())
+
         if hasattr(time, 'clock_gettime'):
             check_ns(time.clock_gettime(time.CLOCK_REALTIME),
                      time.clock_gettime_ns(time.CLOCK_REALTIME))
-
-    def test_clock(self):
-        with self.assertWarns(DeprecationWarning):
-            time.clock()
-
-        with self.assertWarns(DeprecationWarning):
-            info = time.get_clock_info('clock')
-        self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjustable)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -116,7 +110,13 @@ class TimeTestCase(unittest.TestCase):
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
-        self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        # when in 32-bit mode AIX only returns the predefined constant
+        if not platform.system() == "AIX":
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        elif (sys.maxsize.bit_length() > 32):
+            self.assertNotEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
+        else:
+            self.assertEqual(clk_id, time.CLOCK_THREAD_CPUTIME_ID)
         t1 = time.clock_gettime(clk_id)
         t2 = time.clock_gettime(clk_id)
         self.assertLessEqual(t1, t2)
@@ -421,13 +421,6 @@ class TimeTestCase(unittest.TestCase):
     def test_mktime(self):
         # Issue #1726687
         for t in (-2, -1, 0, 1):
-            if sys.platform.startswith('aix') and t == -1:
-                # Issue #11188, #19748: mktime() returns -1 on error. On Linux,
-                # the tm_wday field is used as a sentinel () to detect if -1 is
-                # really an error or a valid timestamp. On AIX, tm_wday is
-                # unchanged even on success and so cannot be used as a
-                # sentinel.
-                continue
             try:
                 tt = time.localtime(t)
             except (OverflowError, OSError):
@@ -466,8 +459,9 @@ class TimeTestCase(unittest.TestCase):
         t2 = time.monotonic()
         dt = t2 - t1
         self.assertGreater(t2, t1)
-        # Issue #20101: On some Windows machines, dt may be slightly low
-        self.assertTrue(0.45 <= dt <= 1.0, dt)
+        # bpo-20101: tolerate a difference of 50 ms because of bad timer
+        # resolution on Windows
+        self.assertTrue(0.450 <= dt)
 
         # monotonic() is a monotonic but non adjustable clock
         info = time.get_clock_info('monotonic')
@@ -487,6 +481,26 @@ class TimeTestCase(unittest.TestCase):
         self.assertLess(stop - start, 0.020)
 
         info = time.get_clock_info('process_time')
+        self.assertTrue(info.monotonic)
+        self.assertFalse(info.adjustable)
+
+    def test_thread_time(self):
+        if not hasattr(time, 'thread_time'):
+            if sys.platform.startswith(('linux', 'win')):
+                self.fail("time.thread_time() should be available on %r"
+                          % (sys.platform,))
+            else:
+                self.skipTest("need time.thread_time")
+
+        # thread_time() should not include time spend during a sleep
+        start = time.thread_time()
+        time.sleep(0.100)
+        stop = time.thread_time()
+        # use 20 ms because thread_time() has usually a resolution of 15 ms
+        # on Windows
+        self.assertLess(stop - start, 0.020)
+
+        info = time.get_clock_info('thread_time')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
 
@@ -527,14 +541,10 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.ctime, float("nan"))
 
     def test_get_clock_info(self):
-        clocks = ['clock', 'monotonic', 'perf_counter', 'process_time', 'time']
+        clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
 
         for name in clocks:
-            if name == 'clock':
-                with self.assertWarns(DeprecationWarning):
-                    info = time.get_clock_info('clock')
-            else:
-                info = time.get_clock_info(name)
+            info = time.get_clock_info(name)
 
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)
@@ -636,9 +646,9 @@ class _Test4dYear:
         self.assertEqual(func(9999), fmt % 9999)
 
     def test_large_year(self):
-        self.assertEqual(self.yearstr(12345), '12345')
-        self.assertEqual(self.yearstr(123456789), '123456789')
-        self.assertEqual(self.yearstr(TIME_MAXYEAR), str(TIME_MAXYEAR))
+        self.assertEqual(self.yearstr(12345).lstrip('+'), '12345')
+        self.assertEqual(self.yearstr(123456789).lstrip('+'), '123456789')
+        self.assertEqual(self.yearstr(TIME_MAXYEAR).lstrip('+'), str(TIME_MAXYEAR))
         self.assertRaises(OverflowError, self.yearstr, TIME_MAXYEAR + 1)
 
     def test_negative(self):
@@ -647,12 +657,11 @@ class _Test4dYear:
         self.assertEqual(self.yearstr(-123456), '-123456')
         self.assertEqual(self.yearstr(-123456789), str(-123456789))
         self.assertEqual(self.yearstr(-1234567890), str(-1234567890))
-        self.assertEqual(self.yearstr(TIME_MINYEAR + 1900), str(TIME_MINYEAR + 1900))
-        # Issue #13312: it may return wrong value for year < TIME_MINYEAR + 1900
-        # Skip the value test, but check that no error is raised
-        self.yearstr(TIME_MINYEAR)
-        # self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        self.assertEqual(self.yearstr(TIME_MINYEAR), str(TIME_MINYEAR))
+        # Modules/timemodule.c checks for underflow
         self.assertRaises(OverflowError, self.yearstr, TIME_MINYEAR - 1)
+        with self.assertRaises(OverflowError):
+            self.yearstr(-TIME_MAXYEAR - 1)
 
 
 class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear, unittest.TestCase):
@@ -805,19 +814,19 @@ class CPyTimeTestCase:
         ns_timestamps = self._rounding_values(use_float)
         valid_values = convert_values(ns_timestamps)
         for time_rnd, decimal_rnd in ROUNDING_MODES :
-            context = decimal.getcontext()
-            context.rounding = decimal_rnd
+            with decimal.localcontext() as context:
+                context.rounding = decimal_rnd
 
-            for value in valid_values:
-                debug_info = {'value': value, 'rounding': decimal_rnd}
-                try:
-                    result = pytime_converter(value, time_rnd)
-                    expected = expected_func(value)
-                except Exception as exc:
-                    self.fail("Error on timestamp conversion: %s" % debug_info)
-                self.assertEqual(result,
-                                 expected,
-                                 debug_info)
+                for value in valid_values:
+                    debug_info = {'value': value, 'rounding': decimal_rnd}
+                    try:
+                        result = pytime_converter(value, time_rnd)
+                        expected = expected_func(value)
+                    except Exception as exc:
+                        self.fail("Error on timestamp conversion: %s" % debug_info)
+                    self.assertEqual(result,
+                                     expected,
+                                     debug_info)
 
         # test overflow
         ns = self.OVERFLOW_SECONDS * SEC_TO_NS
