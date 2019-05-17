@@ -10,8 +10,40 @@ extern "C" {
 
 #include "pycore_pystate.h"   /* _PyRuntimeState */
 
+/* --- _PyInitError ----------------------------------------------- */
+
+/* Almost all errors causing Python initialization to fail */
+#ifdef _MSC_VER
+   /* Visual Studio 2015 doesn't implement C99 __func__ in C */
+#  define _Py_INIT_GET_FUNC() __FUNCTION__
+#else
+#  define _Py_INIT_GET_FUNC() __func__
+#endif
+
+#define _Py_INIT_OK() \
+    (_PyInitError){._type = _Py_INIT_ERR_TYPE_OK,}
+    /* other fields are set to 0 */
+#define _Py_INIT_ERR(ERR_MSG) \
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_ERROR, \
+        ._func = _Py_INIT_GET_FUNC(), \
+        .err_msg = (ERR_MSG)}
+        /* other fields are set to 0 */
+#define _Py_INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
+#define _Py_INIT_EXIT(EXITCODE) \
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_EXIT, \
+        .exitcode = (EXITCODE)}
+#define _Py_INIT_IS_ERROR(err) \
+    (err._type == _Py_INIT_ERR_TYPE_ERROR)
+#define _Py_INIT_IS_EXIT(err) \
+    (err._type == _Py_INIT_ERR_TYPE_EXIT)
+#define _Py_INIT_FAILED(err) \
+    (err._type != _Py_INIT_ERR_TYPE_OK)
 
 /* --- _PyWstrList ------------------------------------------------ */
+
+#define _PyWstrList_INIT (_PyWstrList){.length = 0, .items = NULL}
 
 #ifndef NDEBUG
 PyAPI_FUNC(int) _PyWstrList_CheckConsistency(const _PyWstrList *list);

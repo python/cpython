@@ -1,6 +1,7 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "osdefs.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
