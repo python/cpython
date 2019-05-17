@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 **********************
 Argument Clinic How-To
