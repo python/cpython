@@ -389,7 +389,7 @@ static int test_init_from_config(void)
     preconfig.utf8_mode = 1;
 
     err = _Py_PreInitialize(&preconfig);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
@@ -512,7 +512,7 @@ static int test_init_from_config(void)
     config.pathconfig_warnings = 0;
 
     err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     dump_config();
@@ -543,7 +543,7 @@ static int test_init_parse_argv(int parse_argv)
     config.parse_argv = parse_argv;
 
     err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     dump_config();
@@ -653,7 +653,7 @@ static int init_isolated_flag(void)
 
     test_init_env_dev_mode_putenvs();
     err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     dump_config();
@@ -672,7 +672,7 @@ static int test_preinit_isolated1(void)
     preconfig.isolated = 1;
 
     err = _Py_PreInitialize(&preconfig);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
@@ -682,7 +682,7 @@ static int test_preinit_isolated1(void)
 
     test_init_env_dev_mode_putenvs();
     err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     dump_config();
@@ -701,7 +701,7 @@ static int test_preinit_isolated2(void)
     preconfig.isolated = 0;
 
     err = _Py_PreInitialize(&preconfig);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
@@ -717,7 +717,7 @@ static int test_preinit_isolated2(void)
 
     test_init_env_dev_mode_putenvs();
     err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     dump_config();
@@ -734,7 +734,7 @@ static int init_isolated_config(void)
     _PyPreConfig_InitIsolatedConfig(&preconfig);
 
     err = _Py_PreInitialize(&preconfig);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
@@ -744,13 +744,13 @@ static int init_isolated_config(void)
 
     _PyCoreConfig config;
     err = _PyCoreConfig_InitIsolatedConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     config.program_name = L"./_testembed";
 
     err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     dump_config();
@@ -767,19 +767,19 @@ static int init_python_config(void)
     _PyPreConfig_InitPythonConfig(&preconfig);
 
     err = _Py_PreInitialize(&preconfig);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
     _PyCoreConfig config;
     err = _PyCoreConfig_InitPythonConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     config.program_name = L"./_testembed";
 
     err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     dump_config();
@@ -798,14 +798,14 @@ static int init_dont_configure_locale(void)
     preconfig.coerce_c_locale_warn = 1;
 
     err = _Py_PreInitialize(&preconfig);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
     _PyCoreConfig config = _PyCoreConfig_INIT;
     config.program_name = L"./_testembed";
     err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
@@ -824,7 +824,7 @@ static int init_dev_mode(void)
     config.dev_mode = 1;
     config.program_name = L"./_testembed";
     _PyInitError err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
     dump_config();
@@ -840,30 +840,30 @@ static int test_init_read_set(void)
     _PyCoreConfig_Init(&config);
 
     err = _PyCoreConfig_DecodeLocale(&config.program_name, "./init_read_set");
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         goto fail;
     }
 
     err = _PyCoreConfig_Read(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         goto fail;
     }
 
     if (_PyWstrList_Append(&config.module_search_paths,
                            L"init_read_set_path") < 0) {
-        err = _Py_INIT_NO_MEMORY();
+        err = _PyInitError_NoMemory();
         goto fail;
     }
 
     /* override executable computed by _PyCoreConfig_Read() */
     err = _PyCoreConfig_SetString(&config.executable, L"my_executable");
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         goto fail;
     }
 
     err = _Py_InitializeFromConfig(&config);
     _PyCoreConfig_Clear(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         goto fail;
     }
     dump_config();
@@ -898,7 +898,7 @@ static int test_init_run_main(void)
     configure_init_main(&config);
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
@@ -914,7 +914,7 @@ static int test_init_main(void)
     config._init_main = 0;
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
@@ -928,7 +928,7 @@ static int test_init_main(void)
     }
 
     err = _Py_InitializeMain();
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
@@ -951,7 +951,7 @@ static int test_run_main(void)
     config.program_name = L"./python3";
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
-    if (_Py_INIT_FAILED(err)) {
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 
