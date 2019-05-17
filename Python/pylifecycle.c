@@ -705,10 +705,7 @@ _Py_PreInitializeFromPyArgv(const _PyPreConfig *src_config, const _PyArgv *args)
     _PyPreConfig_Init(&config);
 
     if (src_config) {
-        if (_PyPreConfig_Copy(&config, src_config) < 0) {
-            err = _Py_INIT_NO_MEMORY();
-            return err;
-        }
+        _PyPreConfig_Copy(&config, src_config);
     }
 
     err = _PyPreConfig_Read(&config, args);
@@ -727,7 +724,7 @@ _Py_PreInitializeFromPyArgv(const _PyPreConfig *src_config, const _PyArgv *args)
 
 
 _PyInitError
-_Py_PreInitializeFromArgs(const _PyPreConfig *src_config, int argc, char **argv)
+_Py_PreInitializeFromArgs(const _PyPreConfig *src_config, Py_ssize_t argc, char **argv)
 {
     _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
     return _Py_PreInitializeFromPyArgv(src_config, &args);
@@ -735,7 +732,7 @@ _Py_PreInitializeFromArgs(const _PyPreConfig *src_config, int argc, char **argv)
 
 
 _PyInitError
-_Py_PreInitializeFromWideArgs(const _PyPreConfig *src_config, int argc, wchar_t **argv)
+_Py_PreInitializeFromWideArgs(const _PyPreConfig *src_config, Py_ssize_t argc, wchar_t **argv)
 {
     _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
     return _Py_PreInitializeFromPyArgv(src_config, &args);
@@ -1024,7 +1021,7 @@ init_python(const _PyCoreConfig *config, const _PyArgv *args)
 
 
 _PyInitError
-_Py_InitializeFromArgs(const _PyCoreConfig *config, int argc, char **argv)
+_Py_InitializeFromArgs(const _PyCoreConfig *config, Py_ssize_t argc, char **argv)
 {
     _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
     return init_python(config, &args);
@@ -1032,7 +1029,7 @@ _Py_InitializeFromArgs(const _PyCoreConfig *config, int argc, char **argv)
 
 
 _PyInitError
-_Py_InitializeFromWideArgs(const _PyCoreConfig *config, int argc, wchar_t **argv)
+_Py_InitializeFromWideArgs(const _PyCoreConfig *config, Py_ssize_t argc, wchar_t **argv)
 {
     _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
     return init_python(config, &args);

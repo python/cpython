@@ -1746,7 +1746,7 @@ config_usage(int error, const wchar_t* program)
 /* Parse the command line arguments */
 static _PyInitError
 config_parse_cmdline(_PyCoreConfig *config, _PyWstrList *warnoptions,
-                     int *opt_index)
+                     Py_ssize_t *opt_index)
 {
     _PyInitError err;
     const _PyWstrList *argv = &config->argv;
@@ -2044,7 +2044,7 @@ config_init_warnoptions(_PyCoreConfig *config,
 
 
 static _PyInitError
-config_update_argv(_PyCoreConfig *config, int opt_index)
+config_update_argv(_PyCoreConfig *config, Py_ssize_t opt_index)
 {
     const _PyWstrList *cmdline_argv = &config->argv;
     _PyWstrList config_argv = _PyWstrList_INIT;
@@ -2105,10 +2105,7 @@ core_read_precmdline(_PyCoreConfig *config, _PyPreCmdline *precmdline)
 
     _PyPreConfig preconfig;
     _PyPreConfig_Init(&preconfig);
-    if (_PyPreConfig_Copy(&preconfig, &_PyRuntime.preconfig) < 0) {
-        err = _Py_INIT_NO_MEMORY();
-        return err;
-    }
+    _PyPreConfig_Copy(&preconfig, &_PyRuntime.preconfig);
 
     _PyPreConfig_GetCoreConfig(&preconfig, config);
 
@@ -2145,7 +2142,7 @@ config_read_cmdline(_PyCoreConfig *config)
     }
 
     if (config->parse_argv) {
-        int opt_index;
+        Py_ssize_t opt_index;
         err = config_parse_cmdline(config, &cmdline_warnoptions, &opt_index);
         if (_Py_INIT_FAILED(err)) {
             goto done;
@@ -2207,7 +2204,7 @@ _PyCoreConfig_SetPyArgv(_PyCoreConfig *config, const _PyArgv *args)
 /* Set config.argv: decode argv using Py_DecodeLocale(). Pre-initialize Python
    if needed to ensure that encodings are properly configured. */
 _PyInitError
-_PyCoreConfig_SetArgv(_PyCoreConfig *config, int argc, char **argv)
+_PyCoreConfig_SetArgv(_PyCoreConfig *config, Py_ssize_t argc, char **argv)
 {
     _PyArgv args = {
         .argc = argc,
@@ -2219,7 +2216,7 @@ _PyCoreConfig_SetArgv(_PyCoreConfig *config, int argc, char **argv)
 
 
 _PyInitError
-_PyCoreConfig_SetWideArgv(_PyCoreConfig *config, int argc, wchar_t **argv)
+_PyCoreConfig_SetWideArgv(_PyCoreConfig *config, Py_ssize_t argc, wchar_t **argv)
 {
     _PyArgv args = {
         .argc = argc,
