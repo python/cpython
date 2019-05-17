@@ -3945,11 +3945,19 @@ class _TestSharedMemory(BaseTestCase):
             # segment should not leak the given memory segment.
             p.terminate()
             p.wait()
-            time.sleep(1.0)  # wait for the OS to collect the segment
 
-            # The shared memory file was deleted.
-            with self.assertRaises(FileNotFoundError):
-                smm = shared_memory.SharedMemory(name, create=False)
+            deadline = time.monotonic() + 60
+            t = 0.1
+            while time.monotonic() < deadline:
+                time.sleep(t)
+                t = min(t*2, 5)
+                try:
+                    smm = shared_memory.SharedMemory(name, create=False)
+                except FileNotFoundError:
+                    break
+            else:
+                raise AssertionError("A SharedMemory segment was leaked after"
+                                     " a process was abruptly terminated.")
 
             if os.name == 'posix':
                 # A warning was emitted by the subprocess' own
