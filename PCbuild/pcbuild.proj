@@ -7,6 +7,7 @@
     <IncludeExtensions Condition="'$(IncludeExtensions)' == ''">true</IncludeExtensions>
     <IncludeExternals Condition="'$(IncludeExternals)' == ''">true</IncludeExternals>
     <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
+    <IncludeCTypes Condition="'$(IncludeCTypes)' == ''">true</IncludeCTypes>
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
     <IncludeUwp Condition="'$(IncludeUwp)' == ''">false</IncludeUwp>
@@ -50,7 +51,8 @@
     <!-- pyshellext.dll -->
     <Projects Include="pyshellext.vcxproj" />
     <!-- Extension modules -->
-    <ExtensionModules Include="_asyncio;_ctypes;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound" />
+    <ExtensionModules Include="_asyncio;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound" />
+    <ExtensionModules Include="_ctypes" Condition="$(IncludeCTypes)" />
     <!-- Extension modules that require external sources -->
     <ExternalModules Include="_bz2;_lzma;_sqlite3" />
     <!-- venv launchers -->
@@ -70,7 +72,7 @@
     </Projects>
 
     <!-- _freeze_importlib -->
-    <Projects2 Condition="$(Platform) != 'ARM'" Include="_freeze_importlib.vcxproj" />
+    <Projects2 Condition="$(Platform) != 'ARM' and $(Platform) != 'ARM64'" Include="_freeze_importlib.vcxproj" />
     <!-- python[w].exe -->
     <Projects2 Include="python.vcxproj;pythonw.vcxproj" />
     <Projects2 Include="python_uwp.vcxproj;pythonw_uwp.vcxproj" Condition="$(IncludeUwp)" />
