@@ -174,7 +174,7 @@ _PyPreCmdline_SetCoreConfig(const _PyPreCmdline *cmdline, _PyCoreConfig *config)
 static _PyInitError
 precmdline_parse_cmdline(_PyPreCmdline *cmdline)
 {
-    _PyWstrList *argv = &cmdline->argv;
+    const _PyWstrList *argv = &cmdline->argv;
 
     _PyOS_ResetGetOpt();
     /* Don't log parsing errors into stderr here: _PyCoreConfig_Read()
