@@ -4297,7 +4297,7 @@ pymem_malloc_without_gil(PyObject *self, PyObject *args)
 static PyObject*
 test_pymem_getallocatorsname(PyObject *self, PyObject *args)
 {
-    const char *name = _PyMem_GetAllocatorsName();
+    const char *name = _PyMem_GetCurrentAllocatorName();
     if (name == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "cannot get allocators name");
         return NULL;

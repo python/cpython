@@ -179,6 +179,15 @@ static inline int _PyMem_IsPtrFreed(void *ptr)
 #endif
 }
 
+PyAPI_FUNC(int) _PyMem_GetAllocatorName(
+    const char *name,
+    PyMemAllocatorName *allocator);
+
+/* Configure the Python memory allocators.
+   Pass PYMEM_ALLOCATOR_DEFAULT to use default allocators.
+   PYMEM_ALLOCATOR_NOT_SET does nothing. */
+PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
+
 #ifdef __cplusplus
 }
 #endif

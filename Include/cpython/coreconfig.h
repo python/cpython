@@ -120,7 +120,9 @@ typedef struct {
     int utf8_mode;
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
-    char *allocator;        /* Memory allocator: PYTHONMALLOC */
+
+    /* Memory allocator: PYTHONMALLOC env var */
+    PyMemAllocatorName allocator;
 } _PyPreConfig;
 
 #ifdef MS_WINDOWS
@@ -137,7 +139,7 @@ typedef struct {
         .isolated = -1, \
         .use_environment = -1, \
         .dev_mode = -1, \
-        .allocator = NULL}
+        .allocator = PYMEM_ALLOCATOR_NOT_SET}
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */
