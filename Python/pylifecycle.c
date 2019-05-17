@@ -706,26 +706,22 @@ _Py_PreInitializeFromPyArgv(const _PyPreConfig *src_config, const _PyArgv *args)
     if (src_config) {
         if (_PyPreConfig_Copy(&config, src_config) < 0) {
             err = _Py_INIT_NO_MEMORY();
-            goto done;
+            return err;
         }
     }
 
     err = _PyPreConfig_Read(&config, args);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
     err = _PyPreConfig_Write(&config);
     if (_Py_INIT_FAILED(err)) {
-        goto done;
+        return err;
     }
 
     runtime->pre_initialized = 1;
-    err = _Py_INIT_OK();
-
-done:
-    _PyPreConfig_Clear(&config);
-    return err;
+    return _Py_INIT_OK();
 }
 
 
