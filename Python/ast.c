@@ -110,8 +110,9 @@ expr_context_name(expr_context_ty ctx)
 static int
 validate_arguments(arguments_ty args)
 {
-    if (!validate_args(args->args))
+    if (!validate_args(args->posonlyargs) || !validate_args(args->args)) {
         return 0;
+    }
     if (args->vararg && args->vararg->annotation
         && !validate_expr(args->vararg->annotation, Load)) {
             return 0;
@@ -316,13 +317,14 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         return validate_exprs(exp->v.List.elts, ctx, 0);
     case Tuple_kind:
         return validate_exprs(exp->v.Tuple.elts, ctx, 0);
+    case NamedExpr_kind:
+        return validate_expr(exp->v.NamedExpr.value, Load);
     /* This last case doesn't have any checking. */
     case Name_kind:
         return 1;
-    default:
-        PyErr_SetString(PyExc_SystemError, "unexpected expression");
-        return 0;
     }
+    PyErr_SetString(PyExc_SystemError, "unexpected expression");
+    return 0;
 }
 
 static int
@@ -1399,7 +1401,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     goto error;
                 asdl_seq_SET(kwonlyargs, j++, arg);
                 i += 1; /* the name */
-                if (TYPE(CHILD(n, i)) == COMMA)
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
                     i += 1; /* the comma, if present */
                 break;
             case TYPE_COMMENT:
@@ -1430,31 +1432,73 @@ ast_for_arguments(struct compiling *c, const node *n)
        and varargslist (lambda definition).
 
        parameters: '(' [typedargslist] ')'
-       typedargslist: (tfpdef ['=' test] (',' tfpdef ['=' test])* [',' [
-               '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
-             | '**' tfpdef [',']]]
-         | '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
-         | '**' tfpdef [','])
+
+       The following definition for typedarglist is equivalent to this set of rules:
+
+         arguments = argument (',' [TYPE_COMMENT] argument)*
+         argument = tfpdef ['=' test]
+         kwargs = '**' tfpdef [','] [TYPE_COMMENT]
+         args = '*' [tfpdef]
+         kwonly_kwargs = (',' [TYPE_COMMENT] argument)* (TYPE_COMMENT | [','
+                         [TYPE_COMMENT] [kwargs]])
+         args_kwonly_kwargs = args kwonly_kwargs | kwargs
+         poskeyword_args_kwonly_kwargs = arguments ( TYPE_COMMENT | [','
+                                         [TYPE_COMMENT] [args_kwonly_kwargs]])
+         typedargslist_no_posonly  = poskeyword_args_kwonly_kwargs | args_kwonly_kwargs
+         typedarglist = (arguments ',' [TYPE_COMMENT] '/' [',' [[TYPE_COMMENT]
+                        typedargslist_no_posonly]])|(typedargslist_no_posonly)"
+
+       typedargslist: ( (tfpdef ['=' test] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           ',' [TYPE_COMMENT] '/' [',' [ [TYPE_COMMENT] tfpdef ['=' test] ( ','
+           [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [ '*'
+           [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [','
+           [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) | '**' tfpdef [',']
+           [TYPE_COMMENT]]]) | '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) |
+           '**' tfpdef [','] [TYPE_COMMENT]]] ) |  (tfpdef ['=' test] (','
+           [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [ '*'
+           [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [','
+           [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) | '**' tfpdef [',']
+           [TYPE_COMMENT]]]) | '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])*
+           (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]]) |
+           '**' tfpdef [','] [TYPE_COMMENT]))
+
        tfpdef: NAME [':' test]
-       varargslist: (vfpdef ['=' test] (',' vfpdef ['=' test])* [',' [
-               '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-             | '**' vfpdef [',']]]
-         | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-         | '**' vfpdef [',']
-       )
+
+       The following definition for varargslist is equivalent to this set of rules:
+
+         arguments = argument (',' argument )*
+         argument = vfpdef ['=' test]
+         kwargs = '**' vfpdef [',']
+         args = '*' [vfpdef]
+         kwonly_kwargs = (',' argument )* [',' [kwargs]]
+         args_kwonly_kwargs = args kwonly_kwargs | kwargs
+         poskeyword_args_kwonly_kwargs = arguments [',' [args_kwonly_kwargs]]
+         vararglist_no_posonly = poskeyword_args_kwonly_kwargs | args_kwonly_kwargs
+         varargslist = arguments ',' '/' [','[(vararglist_no_posonly)]] |
+                       (vararglist_no_posonly)
+
+       varargslist: vfpdef ['=' test ](',' vfpdef ['=' test])* ',' '/' [',' [ (vfpdef ['='
+           test] (',' vfpdef ['=' test])* [',' [ '*' [vfpdef] (',' vfpdef ['=' test])* [','
+           ['**' vfpdef [',']]] | '**' vfpdef [',']]] | '*' [vfpdef] (',' vfpdef ['=' test])*
+           [',' ['**' vfpdef [',']]] | '**' vfpdef [',']) ]] | (vfpdef ['=' test] (',' vfpdef
+           ['=' test])* [',' [ '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
+           | '**' vfpdef [',']]] | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef
+           [',']]] | '**' vfpdef [','])
+
        vfpdef: NAME
 
     */
-    int i, j, k, nposargs = 0, nkwonlyargs = 0;
+    int i, j, k, l, nposonlyargs=0, nposargs = 0, nkwonlyargs = 0;
     int nposdefaults = 0, found_default = 0;
-    asdl_seq *posargs, *posdefaults, *kwonlyargs, *kwdefaults;
+    asdl_seq *posonlyargs, *posargs, *posdefaults, *kwonlyargs, *kwdefaults;
     arg_ty vararg = NULL, kwarg = NULL;
     arg_ty arg = NULL;
     node *ch;
 
     if (TYPE(n) == parameters) {
         if (NCH(n) == 2) /* () as argument list */
-            return arguments(NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
+            return arguments(NULL, NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
         n = CHILD(n, 1);
     }
     assert(TYPE(n) == typedargslist || TYPE(n) == varargslist);
@@ -1478,6 +1522,10 @@ ast_for_arguments(struct compiling *c, const node *n)
         if (TYPE(ch) == DOUBLESTAR) break;
         if (TYPE(ch) == vfpdef || TYPE(ch) == tfpdef) nposargs++;
         if (TYPE(ch) == EQUAL) nposdefaults++;
+        if (TYPE(ch) == SLASH ) {
+            nposonlyargs = nposargs;
+            nposargs = 0;
+        }
     }
     /* count the number of keyword only args &
        defaults for keyword only args */
@@ -1485,6 +1533,10 @@ ast_for_arguments(struct compiling *c, const node *n)
         ch = CHILD(n, i);
         if (TYPE(ch) == DOUBLESTAR) break;
         if (TYPE(ch) == tfpdef || TYPE(ch) == vfpdef) nkwonlyargs++;
+    }
+    posonlyargs = (nposonlyargs ? _Py_asdl_seq_new(nposonlyargs, c->c_arena) : NULL);
+    if (!posonlyargs && nposonlyargs) {
+        return NULL;
     }
     posargs = (nposargs ? _Py_asdl_seq_new(nposargs, c->c_arena) : NULL);
     if (!posargs && nposargs)
@@ -1511,6 +1563,7 @@ ast_for_arguments(struct compiling *c, const node *n)
     i = 0;
     j = 0;  /* index for defaults */
     k = 0;  /* index for args */
+    l = 0;  /* index for posonlyargs */
     while (i < NCH(n)) {
         ch = CHILD(n, i);
         switch (TYPE(ch)) {
@@ -1536,10 +1589,22 @@ ast_for_arguments(struct compiling *c, const node *n)
                 arg = ast_for_arg(c, ch);
                 if (!arg)
                     return NULL;
-                asdl_seq_SET(posargs, k++, arg);
+                if (l < nposonlyargs) {
+                    asdl_seq_SET(posonlyargs, l++, arg);
+                } else {
+                    asdl_seq_SET(posargs, k++, arg);
+                }
                 i += 1; /* the name */
                 if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
                     i += 1; /* the comma, if present */
+                break;
+             case SLASH:
+                /* Advance the slash and the comma. If there are more names
+                 * after the slash there will be a comma so we are advancing
+                 * the correct number of nodes. If the slash is the last item,
+                 * we will be advancing an extra token but then * i > NCH(n)
+                 * and the enclosing while will finish correctly. */
+                i += 2;
                 break;
             case STAR:
                 if (i+1 >= NCH(n) ||
@@ -1598,7 +1663,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 if (!kwarg)
                     return NULL;
                 i += 2; /* the double star and the name */
-                if (TYPE(CHILD(n, i)) == COMMA)
+                if (i < NCH(n) && TYPE(CHILD(n, i)) == COMMA)
                     i += 1; /* the comma, if present */
                 break;
             case TYPE_COMMENT:
@@ -1620,7 +1685,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(posargs, posonlyargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
@@ -1908,7 +1973,7 @@ ast_for_lambdef(struct compiling *c, const node *n)
     expr_ty expression;
 
     if (NCH(n) == 3) {
-        args = arguments(NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
+        args = arguments(NULL, NULL, NULL, NULL, NULL, NULL, NULL, c->c_arena);
         if (!args)
             return NULL;
         expression = ast_for_expr(c, CHILD(n, 2));
@@ -4789,7 +4854,8 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
 
     assert(expr_end >= expr_start);
     assert(*(expr_start-1) == '{');
-    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':');
+    assert(*expr_end == '}' || *expr_end == '!' || *expr_end == ':' ||
+           *expr_end == '=');
 
     /* If the substring is all whitespace, it's an error.  We need to catch this
        here, and not when we call PyParser_SimpleParseStringFlagsFilename,
@@ -4932,9 +4998,9 @@ fstring_parse(const char **str, const char *end, int raw, int recurse_lvl,
               struct compiling *c, const node *n);
 
 /* Parse the f-string at *str, ending at end.  We know *str starts an
-   expression (so it must be a '{'). Returns the FormattedValue node,
-   which includes the expression, conversion character, and
-   format_spec expression.
+   expression (so it must be a '{'). Returns the FormattedValue node, which
+   includes the expression, conversion character, format_spec expression, and
+   optionally the text of the expression (if = is used).
 
    Note that I don't do a perfect job here: I don't make sure that a
    closing brace doesn't match an opening paren, for example. It
@@ -4951,7 +5017,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     const char *expr_end;
     expr_ty simple_expression;
     expr_ty format_spec = NULL; /* Optional format specifier. */
-    int conversion = -1; /* The conversion char. -1 if not specified. */
+    int conversion = -1; /* The conversion char.  Use default if not
+                            specified, or !r if using = and no format
+                            spec. */
+    int equal_flag = 0; /* Are we using the = feature? */
+    PyObject *expr_text = NULL; /* The text of the expression, used for =. */
+    const char *expr_text_end;
 
     /* 0 if we're not in a string, else the quote char we're trying to
        match (single or double quote). */
@@ -4968,7 +5039,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* Can only nest one level deep. */
     if (recurse_lvl >= 2) {
         ast_error(c, n, "f-string: expressions nested too deeply");
-        return -1;
+        goto error;
     }
 
     /* The first char must be a left brace, or we wouldn't have gotten
@@ -4996,7 +5067,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             ast_error(c, n,
                       "f-string expression part "
                       "cannot include a backslash");
-            return -1;
+            goto error;
         }
         if (quote_char) {
             /* We're inside a string. See if we're at the end. */
@@ -5041,7 +5112,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         } else if (ch == '[' || ch == '{' || ch == '(') {
             if (nested_depth >= MAXLEVEL) {
                 ast_error(c, n, "f-string: too many nested parenthesis");
-                return -1;
+                goto error;
             }
             parenstack[nested_depth] = ch;
             nested_depth++;
@@ -5049,22 +5120,38 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
             /* Error: can't include a comment character, inside parens
                or not. */
             ast_error(c, n, "f-string expression part cannot include '#'");
-            return -1;
+            goto error;
         } else if (nested_depth == 0 &&
-                   (ch == '!' || ch == ':' || ch == '}')) {
-            /* First, test for the special case of "!=". Since '=' is
-               not an allowed conversion character, nothing is lost in
-               this test. */
-            if (ch == '!' && *str+1 < end && *(*str+1) == '=') {
-                /* This isn't a conversion character, just continue. */
-                continue;
+                   (ch == '!' || ch == ':' || ch == '}' ||
+                    ch == '=' || ch == '>' || ch == '<')) {
+            /* See if there's a next character. */
+            if (*str+1 < end) {
+                char next = *(*str+1);
+
+                /* For "!=". since '=' is not an allowed conversion character,
+                   nothing is lost in this test. */
+                if ((ch == '!' && next == '=') ||   /* != */
+                    (ch == '=' && next == '=') ||   /* == */
+                    (ch == '<' && next == '=') ||   /* <= */
+                    (ch == '>' && next == '=')      /* >= */
+                    ) {
+                    *str += 1;
+                    continue;
+                }
+                /* Don't get out of the loop for these, if they're single
+                   chars (not part of 2-char tokens). If by themselves, they
+                   don't end an expression (unlike say '!'). */
+                if (ch == '>' || ch == '<') {
+                    continue;
+                }
             }
+
             /* Normal way out of this loop. */
             break;
         } else if (ch == ']' || ch == '}' || ch == ')') {
             if (!nested_depth) {
                 ast_error(c, n, "f-string: unmatched '%c'", ch);
-                return -1;
+                goto error;
             }
             nested_depth--;
             int opening = parenstack[nested_depth];
@@ -5076,7 +5163,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
                           "f-string: closing parenthesis '%c' "
                           "does not match opening parenthesis '%c'",
                           ch, opening);
-                return -1;
+                goto error;
             }
         } else {
             /* Just consume this char and loop around. */
@@ -5089,12 +5176,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        let's just do that.*/
     if (quote_char) {
         ast_error(c, n, "f-string: unterminated string");
-        return -1;
+        goto error;
     }
     if (nested_depth) {
         int opening = parenstack[nested_depth - 1];
         ast_error(c, n, "f-string: unmatched '%c'", opening);
-        return -1;
+        goto error;
     }
 
     if (*str >= end)
@@ -5105,7 +5192,22 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
        conversion or format_spec. */
     simple_expression = fstring_compile_expr(expr_start, expr_end, c, n);
     if (!simple_expression)
-        return -1;
+        goto error;
+
+    /* Check for =, which puts the text value of the expression in
+       expr_text. */
+    if (**str == '=') {
+        *str += 1;
+        equal_flag = 1;
+
+        /* Skip over ASCII whitespace.  No need to test for end of string
+           here, since we know there's at least a trailing quote somewhere
+           ahead. */
+        while (Py_ISSPACE(**str)) {
+            *str += 1;
+        }
+        expr_text_end = *str;
+    }
 
     /* Check for a conversion char, if present. */
     if (**str == '!') {
@@ -5117,12 +5219,23 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         *str += 1;
 
         /* Validate the conversion. */
-        if (!(conversion == 's' || conversion == 'r'
-              || conversion == 'a')) {
+        if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
             ast_error(c, n,
                       "f-string: invalid conversion character: "
                       "expected 's', 'r', or 'a'");
-            return -1;
+            goto error;
+        }
+
+    }
+    if (equal_flag) {
+        Py_ssize_t len = expr_text_end - expr_start;
+        expr_text = PyUnicode_FromStringAndSize(expr_start, len);
+        if (!expr_text) {
+            goto error;
+        }
+        if (PyArena_AddPyObject(c->c_arena, expr_text) < 0) {
+            Py_DECREF(expr_text);
+            goto error;
         }
     }
 
@@ -5137,7 +5250,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
         /* Parse the format spec. */
         format_spec = fstring_parse(str, end, raw, recurse_lvl+1, c, n);
         if (!format_spec)
-            return -1;
+            goto error;
     }
 
     if (*str >= end || **str != '}')
@@ -5148,20 +5261,30 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     assert(**str == '}');
     *str += 1;
 
+    /* If we're in = mode, and have no format spec and no explict conversion,
+       set the conversion to 'r'. */
+    if (equal_flag && format_spec == NULL && conversion == -1) {
+        conversion = 'r';
+    }
+
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, LINENO(n), n->n_col_offset,
-                                 n->n_end_lineno, n->n_end_col_offset,
-                                 c->c_arena);
+                                 format_spec, expr_text, LINENO(n),
+                                 n->n_col_offset, n->n_end_lineno,
+                                 n->n_end_col_offset, c->c_arena);
     if (!*expression)
-        return -1;
+        goto error;
 
     return 0;
 
 unexpected_end_of_string:
     ast_error(c, n, "f-string: expecting '}'");
+    /* Falls through to error. */
+
+error:
     return -1;
+
 }
 
 /* Return -1 on error.

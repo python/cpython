@@ -101,29 +101,29 @@ PYTHONPATH=$(COREPYTHONPATH)
 # This only contains the minimal set of modules required to run the
 # setup.py script in the root of the Python source tree.
 
-posix -DPy_BUILD_CORE -I$(srcdir)/Include/internal posixmodule.c # posix (UNIX) system calls
+posix -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal posixmodule.c # posix (UNIX) system calls
 errno errnomodule.c			# posix (UNIX) errno values
 pwd pwdmodule.c				# this is needed to find out the user's home dir
 					# if $HOME is not set
 _sre _sre.c				# Fredrik Lundh's new regular expressions
 _codecs _codecsmodule.c			# access to the builtin codecs and codec registry
 _weakref _weakref.c			# weak references
-_functools -DPy_BUILD_CORE -I$(srcdir)/Include/internal _functoolsmodule.c   # Tools for working with functions and callable objects
+_functools -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _functoolsmodule.c   # Tools for working with functions and callable objects
 _operator _operator.c	        	# operator.add() and similar goodies
 _collections _collectionsmodule.c	# Container types
 _abc _abc.c				# Abstract base classes
 itertools itertoolsmodule.c		# Functions creating iterators for efficient looping
 atexit atexitmodule.c			# Register functions to be run at interpreter-shutdown
-_signal -DPy_BUILD_CORE -I$(srcdir)/Include/internal signalmodule.c
+_signal -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal signalmodule.c
 _stat _stat.c				# stat.h interface
-time -DPy_BUILD_CORE -I$(srcdir)/Include/internal timemodule.c	# -lm # time operations and variables
-_thread -DPy_BUILD_CORE -I$(srcdir)/Include/internal _threadmodule.c	# low-level threading interface
+time -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal timemodule.c	# -lm # time operations and variables
+_thread -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _threadmodule.c	# low-level threading interface
 
 # access to ISO C locale support
-_locale -DPy_BUILD_CORE _localemodule.c  # -lintl
+_locale -DPy_BUILD_CORE_BUILTIN _localemodule.c  # -lintl
 
 # Standard I/O baseline
-_io -DPy_BUILD_CORE -I$(srcdir)/Include/internal -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
+_io -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal -I$(srcdir)/Modules/_io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io/textio.c _io/stringio.c
 
 # faulthandler module
 faulthandler faulthandler.c
@@ -173,6 +173,7 @@ _symtable symtablemodule.c
 #_struct _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
+#_testinternalcapi _testinternalcapi.c -I$(srcdir)/Include/internal -DPy_BUILD_CORE_MODULE  # Python internal C API test module
 #_random _randommodule.c	# Random number generator
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator

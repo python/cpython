@@ -4,8 +4,8 @@
 extern "C" {
 #endif
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 typedef struct _PyPathConfig {
@@ -44,7 +44,9 @@ PyAPI_FUNC(_PyInitError) _PyPathConfig_SetGlobal(
 PyAPI_FUNC(_PyInitError) _PyPathConfig_Calculate_impl(
     _PyPathConfig *config,
     const _PyCoreConfig *core_config);
-PyAPI_FUNC(PyObject*) _PyPathConfig_ComputeArgv0(const _PyWstrList *argv);
+PyAPI_FUNC(int) _PyPathConfig_ComputeSysPath0(
+    const _PyWstrList *argv,
+    PyObject **path0);
 PyAPI_FUNC(int) _Py_FindEnvConfigValue(
     FILE *env_file,
     const wchar_t *key,

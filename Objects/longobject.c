@@ -4637,8 +4637,7 @@ long_bitwise(PyLongObject *a,
         size_z = negb ? size_b : size_a;
         break;
     default:
-        PyErr_BadArgument();
-        return NULL;
+        Py_UNREACHABLE();
     }
 
     /* We allow an extra digit if z is negative, to make sure that
@@ -4665,8 +4664,7 @@ long_bitwise(PyLongObject *a,
             z->ob_digit[i] = a->ob_digit[i] ^ b->ob_digit[i];
         break;
     default:
-        PyErr_BadArgument();
-        return NULL;
+        Py_UNREACHABLE();
     }
 
     /* Copy any remaining digits of a, inverting if necessary. */
@@ -5594,7 +5592,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)long_hash,                        /* tp_hash */
     0,                                          /* tp_call */
-    long_to_decimal_string,                     /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */

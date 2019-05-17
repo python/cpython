@@ -1062,26 +1062,23 @@ _PyTime_localtime(time_t t, struct tm *tm)
     }
     return 0;
 #else /* !MS_WINDOWS */
+
 #ifdef _AIX
-    /* AIX does not return NULL on an error
-       so test ranges - asif!
-       (1902-01-01, -2145916800.0)
-       (2038-01-01,  2145916800.0) */
-    if (abs(t) > (time_t) 2145916800) {
-#ifdef EINVAL
+    /* bpo-34373: AIX does not return NULL if t is too small or too large */
+    if (t < -2145916800 /* 1902-01-01 */
+       || t > 2145916800 /* 2038-01-01 */) {
         errno = EINVAL;
-#endif
         PyErr_SetString(PyExc_OverflowError,
-                        "ctime argument out of range");
+                        "localtime argument out of range");
         return -1;
     }
 #endif
+
+    errno = 0;
     if (localtime_r(&t, tm) == NULL) {
-#ifdef EINVAL
         if (errno == 0) {
             errno = EINVAL;
         }
-#endif
         PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }

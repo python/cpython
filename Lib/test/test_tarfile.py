@@ -2136,15 +2136,16 @@ class MiscTest(unittest.TestCase):
     def test_write_number_fields(self):
         self.assertEqual(tarfile.itn(1), b"0000001\x00")
         self.assertEqual(tarfile.itn(0o7777777), b"7777777\x00")
-        self.assertEqual(tarfile.itn(0o10000000),
+        self.assertEqual(tarfile.itn(0o10000000, format=tarfile.GNU_FORMAT),
                          b"\x80\x00\x00\x00\x00\x20\x00\x00")
-        self.assertEqual(tarfile.itn(0xffffffff),
+        self.assertEqual(tarfile.itn(0xffffffff, format=tarfile.GNU_FORMAT),
                          b"\x80\x00\x00\x00\xff\xff\xff\xff")
-        self.assertEqual(tarfile.itn(-1),
+        self.assertEqual(tarfile.itn(-1, format=tarfile.GNU_FORMAT),
                          b"\xff\xff\xff\xff\xff\xff\xff\xff")
-        self.assertEqual(tarfile.itn(-100),
+        self.assertEqual(tarfile.itn(-100, format=tarfile.GNU_FORMAT),
                          b"\xff\xff\xff\xff\xff\xff\xff\x9c")
-        self.assertEqual(tarfile.itn(-0x100000000000000),
+        self.assertEqual(tarfile.itn(-0x100000000000000,
+                                     format=tarfile.GNU_FORMAT),
                          b"\xff\x00\x00\x00\x00\x00\x00\x00")
 
         # Issue 32713: Test if itn() supports float values outside the

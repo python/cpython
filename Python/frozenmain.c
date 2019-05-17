@@ -18,9 +18,7 @@ Py_FrozenMain(int argc, char **argv)
 {
     _PyInitError err = _PyRuntime_Initialize();
     if (_Py_INIT_FAILED(err)) {
-        fprintf(stderr, "Fatal Python error: %s\n", err.msg);
-        fflush(stderr);
-        exit(1);
+        _Py_ExitInitError(err);
     }
 
     const char *p;
@@ -42,7 +40,7 @@ Py_FrozenMain(int argc, char **argv)
     }
 
     _PyCoreConfig config = _PyCoreConfig_INIT;
-    config._frozen = 1;   /* Suppress errors from getpath.c */
+    config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
         inspect = 1;
