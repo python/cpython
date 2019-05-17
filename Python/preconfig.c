@@ -260,19 +260,9 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
-void
-_PyPreConfig_Clear(_PyPreConfig *config)
-{
-    PyMem_RawFree(config->allocator);
-    config->allocator = NULL;
-}
-
-
 int
 _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 {
-    _PyPreConfig_Clear(config);
-
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 #define COPY_STR_ATTR(ATTR) \
     do { \
@@ -293,7 +283,7 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
     COPY_ATTR(legacy_windows_fs_encoding);
 #endif
     COPY_ATTR(utf8_mode);
-    COPY_STR_ATTR(allocator);
+    COPY_ATTR(allocator);
 
 #undef COPY_ATTR
 #undef COPY_STR_ATTR
@@ -341,7 +331,7 @@ _PyPreConfig_AsDict(const _PyPreConfig *config)
     SET_ITEM_INT(legacy_windows_fs_encoding);
 #endif
     SET_ITEM_INT(dev_mode);
-    SET_ITEM_STR(allocator);
+    SET_ITEM_INT(allocator);
     return dict;
 
 fail:
@@ -616,25 +606,21 @@ preconfig_init_coerce_c_locale(_PyPreConfig *config)
 static _PyInitError
 preconfig_init_allocator(_PyPreConfig *config)
 {
-    if (config->allocator == NULL) {
+    if (config->allocator == PYMEM_ALLOCATOR_NOT_SET) {
         /* bpo-34247. The PYTHONMALLOC environment variable has the priority
            over PYTHONDEV env var and "-X dev" command line option.
            For example, PYTHONMALLOC=malloc PYTHONDEVMODE=1 sets the memory
            allocators to "malloc" (and not to "debug"). */
-        const char *allocator = _Py_GetEnv(config->use_environment, "PYTHONMALLOC");
-        if (allocator) {
-            config->allocator = _PyMem_RawStrdup(allocator);
-            if (config->allocator == NULL) {
-                return _Py_INIT_NO_MEMORY();
+        const char *envvar = _Py_GetEnv(config->use_environment, "PYTHONMALLOC");
+        if (envvar) {
+            if (_PyMem_GetAllocatorName(envvar, &config->allocator) < 0) {
+                return _Py_INIT_ERR("PYTHONMALLOC: unknown allocator");
             }
         }
     }
 
-    if (config->dev_mode && config->allocator == NULL) {
-        config->allocator = _PyMem_RawStrdup("debug");
-        if (config->allocator == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
+    if (config->dev_mode && config->allocator == PYMEM_ALLOCATOR_NOT_SET) {
+        config->allocator = PYMEM_ALLOCATOR_DEBUG;
     }
     return _Py_INIT_OK();
 }
@@ -815,47 +801,12 @@ done:
         setlocale(LC_CTYPE, init_ctype_locale);
         PyMem_RawFree(init_ctype_locale);
     }
-    _PyPreConfig_Clear(&save_config);
     Py_UTF8Mode = init_utf8_mode ;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
 #endif
     _PyPreCmdline_Clear(&cmdline);
     return err;
-}
-
-
-static _PyInitError
-_PyPreConfig_SetAllocator(_PyPreConfig *config)
-{
-    assert(!_PyRuntime.core_initialized);
-
-    PyMemAllocatorEx old_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    if (_PyMem_SetupAllocators(config->allocator) < 0) {
-        return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
-    }
-
-    /* Copy the pre-configuration with the new allocator */
-    _PyPreConfig config2 = _PyPreConfig_INIT;
-    if (_PyPreConfig_Copy(&config2, config) < 0) {
-        _PyPreConfig_Clear(&config2);
-        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-        return _Py_INIT_NO_MEMORY();
-    }
-
-    /* Free the old config and replace config with config2. Since config now
-       owns the data, don't free config2. */
-    PyMemAllocatorEx new_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &new_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyPreConfig_Clear(config);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &new_alloc);
-
-    *config = config2;
-
-    return _Py_INIT_OK();
 }
 
 
@@ -872,7 +823,7 @@ _PyPreConfig_SetAllocator(_PyPreConfig *config)
    Do nothing if called after Py_Initialize(): ignore the new
    pre-configuration. */
 _PyInitError
-_PyPreConfig_Write(_PyPreConfig *config)
+_PyPreConfig_Write(const _PyPreConfig *config)
 {
     if (_PyRuntime.core_initialized) {
         /* bpo-34008: Calling this functions after Py_Initialize() ignores
@@ -880,10 +831,9 @@ _PyPreConfig_Write(_PyPreConfig *config)
         return _Py_INIT_OK();
     }
 
-    if (config->allocator != NULL) {
-        _PyInitError err = _PyPreConfig_SetAllocator(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
+    if (config->allocator != PYMEM_ALLOCATOR_NOT_SET) {
+        if (_PyMem_SetupAllocators(config->allocator) < 0) {
+            return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
         }
     }
 
