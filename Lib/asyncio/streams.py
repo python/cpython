@@ -40,7 +40,12 @@ class StreamMode(enum.Flag):
 
 
 async def connect(host=None, port=None, *,
-                  limit=_DEFAULT_LIMIT, **kwds):
+                  limit=_DEFAULT_LIMIT,
+                  ssl=None, family=0, proto=0,
+                  flags=0, sock=None, local_addr=None,
+                  server_hostname=None,
+                  ssl_handshake_timeout=None,
+                  happy_eyeballs_delay=None, interleave=None):
     loop = events.get_running_loop()
     stream = Stream(mode=StreamMode.READWRITE,
                     limit=limit,
@@ -49,7 +54,12 @@ async def connect(host=None, port=None, *,
     await loop.create_connection(
         lambda: _StreamProtocol(stream, loop=loop,
                                 _asyncio_internal=True),
-        host, port, **kwds)
+        host, port,
+        ssl=ssl, family=family, proto=proto,
+        flags=flags, sock=sock, local_addr=local_addr,
+        server_hostname=server_hostname,
+        ssl_handshake_timeout=ssl_handshake_timeout,
+        happy_eyeballs_delay=happy_eyeballs_delay, interleave=interleave)
     return stream
 
 
@@ -121,6 +131,75 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     return await loop.create_server(factory, host, port, **kwds)
 
 
+class ServerStream:
+    def __init__(self, client_connected_cb, host=None, port=None, *,
+                  limit=_DEFAULT_LIMIT,
+                 family=socket.AF_UNSPEC,
+                 flags=socket.AI_PASSIVE, sock=None, backlog=100,
+                 ssl=None, reuse_address=None, reuse_port=None,
+                 ssl_handshake_timeout=None):
+        self._client_connected_cb = client_connected_cb
+        self._host = host
+        self._port = port
+        self._limit = limit
+        self._family = family
+        self._flags = flags
+        self._sock = sock
+        self._backlog = backlog
+        self._ssl = ssl
+        self._reuse_address = reuse_address
+        self._reuse_port = reuse_port
+        self._ssl_handshake_timeout = ssl_handshake_timeout
+        self._loop = asyncio.get_running_loop()
+        self._low_server = None
+
+    async def __aenter__(self):
+        def factory():
+            protocol = _ServerStreamProtocol(self._limit,
+                                             self._client_connected_cb,
+                                             loop=self._loop,
+                                             _asyncio_internal=True)
+            return protocol
+        self._low_server = await self._loop.create_server(
+            factory,
+            self._host,
+            self._port,
+            start_serving=False,
+            family=self._family,
+            flags=self._flags,
+            sock=self._sock,
+            backlog=self._backlog,
+            ssl=self._ssl,
+            reuse_address=self._reuse_address,
+            reuse_port=self._reuse_port,
+            ssl_handshake_timeout=self._ssl_handshake_timeout)
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, exc_tb):
+        await self.close()
+
+    def is_serving(self):
+        if self._low_server is None:
+            return False
+        return self._low_server.is_serving()
+
+    async def start_serving(self):
+        assert self._low_server is not None
+        await self._low_server.start_serving()
+
+    async def serve_forever(self):
+        assert self._low_server is not None
+        await self._low_server.serve_forever()
+
+    async def close(self):
+        assert self._low_server is not None
+        self._low_server.close()
+        await self._low_server.wait_closed()
+
+    async def abort(self):
+        pass
+
+
 if hasattr(socket, 'AF_UNIX'):
     # UNIX Domain Sockets are supported on this platform
 
@@ -141,7 +220,10 @@ if hasattr(socket, 'AF_UNIX'):
         return stream, stream
 
     async def connect_unix(path=None, *,
-                           loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                           limit=_DEFAULT_LIMIT,
+                           ssl=None, sock=None,
+                           server_hostname=None,
+                           ssl_handshake_timeout=None):
         """Similar to `connect()` but works with UNIX Domain Sockets."""
         loop = events.get_running_loop()
         stream = Stream(mode=StreamMode.READWRITE,
@@ -152,7 +234,11 @@ if hasattr(socket, 'AF_UNIX'):
             lambda: _StreamProtocol(stream,
                                     loop=loop,
                                     _asyncio_internal=True),
-            path, **kwds)
+            path,
+            ssl=ssl,
+            sock=sock,
+            server_hostname=server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout)
         return stream
 
 
@@ -385,9 +471,9 @@ class _ServerStreamProtocol(_BaseStreamProtocol):
                         loop=self._loop,
                         _asyncio_internal=True)
         self._stream = stream
-        res = self._client_connected_cb(self._stream,
-                                        self._stream)
+        res = self._client_connected_cb(self._stream, self._stream)
         if coroutines.iscoroutine(res):
+            # TODO: wait for task finish in new API
             self._loop.create_task(res)
 
     def connection_lost(self, exc):
@@ -399,6 +485,8 @@ def _swallow_unhandled_exception(task):
     # Do a trick to suppress unhandled exception
     # if stream.write() was used without await and
     # stream.drain() was paused and resumed with an exception
+
+    # TODO: add if not task.cancelled() check!!!!
     task.exception()
 
 
