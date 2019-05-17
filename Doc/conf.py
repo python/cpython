@@ -24,8 +24,7 @@ except ImportError:
     _tkinter = None
 '''
 
-# Manpage config
-manpages_url = os.getenv('MANPAGES_URL', 'https://manpages.debian.org/{path}')
+manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
