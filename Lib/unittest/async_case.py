@@ -36,17 +36,33 @@ class AsyncioTestCase(TestCase):
         self._asyncioTestLoop = None
         self._asyncioCallsQueue = None
 
+    async def asyncSetUp(self):
+        pass
+
+    async def asyncTearDown(self):
+        pass
+
     def _callSetUp(self):
-        self._callMaybeAsync(self.setUp)
+        self.setUp()
+        self._callAsync(self.asyncSetUp)
 
     def _callTestMethod(self, method):
         self._callMaybeAsync(method)
 
     def _callTearDown(self):
-        self._callMaybeAsync(self.tearDown)
+        self._callAsync(self.asyncTearDown)
+        self.tearDown()
 
     def _callCleanup(self, function, *args, **kwargs):
         self._callMaybeAsync(function, *args, **kwargs)
+
+    def _callAsync(self, func, /, *args, **kwargs):
+        assert self._asyncioTestLoop is not None
+        ret = func(*args, **kwargs)
+        assert inspect.isawaitable(ret)
+        fut = self._asyncioTestLoop.create_future()
+        self._asyncioCallsQueue.put_nowait((fut, ret))
+        return self._asyncioTestLoop.run_until_complete(fut)
 
     def _callMaybeAsync(self, func, /, *args, **kwargs):
         assert self._asyncioTestLoop is not None
