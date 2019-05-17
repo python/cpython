@@ -201,9 +201,11 @@ The Mock Class
 
 .. testsetup::
 
+    import asyncio
+    import inspect
     import unittest
     from unittest.mock import sentinel, DEFAULT, ANY
-    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
+    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
     from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
@@ -885,9 +887,9 @@ object::
     ...
     >>> mock = MagicMock(async_func)
     >>> mock
-    <MagicMock spec='function' id='4568403696'>
+    <MagicMock spec='function' id='...'>
     >>> mock()
-    <coroutine object AsyncMockMixin._mock_call at 0x1104cb440>
+    <coroutine object AsyncMockMixin._mock_call at ...>
 
   .. method:: assert_awaited()
 
@@ -976,11 +978,11 @@ object::
       Assert the mock has been awaited with the specified calls.
       The :attr:`await_args_list` list is checked for the awaits.
 
-      If `any_order` is False (the default) then the awaits must be
+      If *any_order* is False (the default) then the awaits must be
       sequential. There can be extra calls before or after the
       specified awaits.
 
-      If `any_order` is True then the awaits can be in any order, but
+      If *any_order* is True then the awaits can be in any order, but
       they must all appear in :attr:`await_args_list`.
 
         >>> mock = AsyncMock()
@@ -1008,6 +1010,58 @@ object::
 
     See :func:`Mock.reset_mock`. Also sets :attr:`await_count` to 0,
     :attr:`await_args` to None, and clears the :attr:`await_args_list`.
+
+  .. attribute:: await_count
+
+    An integer keeping track of how many times the mock object has been awaited.
+
+      >>> mock = AsyncMock()
+      >>> async def main():
+      ...     await mock()
+      ...
+      >>> asyncio.run(main())
+      >>> mock.await_count
+      1
+      >>> asyncio.run(main())
+      >>> mock.await_count
+      2
+
+  .. attribute:: await_args
+
+    This is either ``None`` (if the mock hasn’t been awaited), or the arguments that
+    the mock was last awaited with. Functions the same as :attr:`Mock.call_args`.
+
+      >>> mock = AsyncMock()
+      >>> async def main(*args):
+      ...     await mock()
+      ...
+      >>> mock.await_args
+      >>> asyncio.run(main('foo'))
+      >>> mock.await_args
+      call('foo')
+      >>> asyncio.run(main('bar'))
+      >>> mock.await_args
+      call('bar')
+
+
+  .. attribute:: await_args_list
+
+    This is a list of all the awaits made to the mock object in sequence (so the
+    length of the list is the number of times it has been awaited). Before any
+    awaits have been made it is an empty list.
+
+      >>> mock = AsyncMock()
+      >>> async def main(*args):
+      ...     await mock()
+      ...
+      >>> mock.await_args_list
+      []
+      >>> asyncio.run(main('foo'))
+      >>> mock.await_args
+      [call('foo')]
+      >>> asyncio.run(main('bar'))
+      >>> mock.await_args_list
+      [call('foo'), call('bar')]
 
 
 Calling

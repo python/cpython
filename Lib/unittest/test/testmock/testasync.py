@@ -2,7 +2,12 @@ import asyncio
 import inspect
 import unittest
 
-from unittest.mock import call, AsyncMock, patch, MagicMock
+from unittest.mock import call, AsyncMock, patch, MagicMock, create_autospec
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
 
 class AsyncClass:
     def __init__(self):
@@ -28,14 +33,6 @@ normal_foo_name = f'{__name__}.NormalClass'
 
 
 class AsyncPatchDecoratorTest(unittest.TestCase):
-    def setUp(self):
-        # Prevents altering the execution environment
-        self.old_policy = asyncio.events._event_loop_policy
-
-    def tearDown(self):
-        # Restore the original event loop policy.
-        asyncio.events._event_loop_policy = self.old_policy
-
     def test_is_coroutine_function_patch(self):
         @patch.object(AsyncClass, 'async_method')
         def test_async(mock_method):
@@ -61,19 +58,12 @@ class AsyncPatchDecoratorTest(unittest.TestCase):
     def test_is_AsyncMock_patch(self):
         @patch.object(AsyncClass, 'async_method')
         def test_async(mock_method):
-            self.assertTrue(isinstance(mock_method, AsyncMock))
+            self.assertIsInstance(mock_method, AsyncMock)
 
         test_async()
 
 
 class AsyncPatchCMTest(unittest.TestCase):
-    def setUp(self):
-        self.old_policy = asyncio.events._event_loop_policy
-
-    def tearDown(self):
-        # Restore the original event loop policy.
-        asyncio.events._event_loop_policy = self.old_policy
-
     def test_is_async_function_cm(self):
         def test_async():
             with patch.object(AsyncClass, 'async_method') as mock_method:
@@ -93,19 +83,12 @@ class AsyncPatchCMTest(unittest.TestCase):
     def test_is_AsyncMock_cm(self):
         def test_async():
             with patch.object(AsyncClass, 'async_method') as mock_method:
-                self.assertTrue(isinstance(mock_method, AsyncMock))
+                self.assertIsInstance(mock_method, AsyncMock)
 
         test_async()
 
 
 class AsyncMockTest(unittest.TestCase):
-    def setUp(self):
-        self.old_policy = asyncio.events._event_loop_policy
-
-    def tearDown(self):
-        # Restore the original event loop policy.
-        asyncio.events._event_loop_policy = self.old_policy
-
     def test_iscoroutinefunction_default(self):
         mock = AsyncMock()
         self.assertTrue(asyncio.iscoroutinefunction(mock))
@@ -130,7 +113,12 @@ class AsyncMockTest(unittest.TestCase):
         self.assertTrue(inspect.iscoroutinefunction(mock))
 
     def test_future_isfuture(self):
-        mock = AsyncMock(asyncio.Future())
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        fut = asyncio.Future()
+        loop.stop()
+        loop.close()
+        mock = AsyncMock(fut)
         self.assertIsInstance(mock, asyncio.Future)
 
 
@@ -138,29 +126,26 @@ class AsyncAutospecTest(unittest.TestCase):
     def test_is_AsyncMock_patch(self):
         @patch(async_foo_name, autospec=True)
         def test_async(mock_method):
-            self.assertTrue(isinstance(
-                             mock_method.async_method,
-                             AsyncMock))
-            self.assertTrue(isinstance(mock_method, MagicMock))
+            self.assertIsInstance(mock_method.async_method, AsyncMock)
+            self.assertIsInstance(mock_method, MagicMock)
 
         @patch(async_foo_name, autospec=True)
         def test_normal_method(mock_method):
-            self.assertTrue(isinstance(
-                                mock_method.normal_method,
-                                MagicMock))
+            self.assertIsInstance(mock_method.normal_method, MagicMock)
 
         test_async()
         test_normal_method()
 
+    def test_create_autospec_instance(self):
+        with self.assertRaises(RuntimeError):
+            create_autospec(async_func, instance=True)
+
+    def test_create_autospec(self):
+        spec = create_autospec(async_func)
+        self.assertTrue(asyncio.iscoroutinefunction(spec))
+
 
 class AsyncSpecTest(unittest.TestCase):
-    def setUp(self):
-        self.old_policy = asyncio.events._event_loop_policy
-
-    def tearDown(self):
-        # Restore the original event loop policy.
-        asyncio.events._event_loop_policy = self.old_policy
-
     def test_spec_as_async_positional_magicmock(self):
         mock = MagicMock(async_func)
         self.assertIsInstance(mock, MagicMock)
@@ -206,23 +191,22 @@ class AsyncSpecTest(unittest.TestCase):
     def test_spec_async_mock(self):
         @patch.object(AsyncClass, 'async_method', spec=True)
         def test_async(mock_method):
-            self.assertTrue(isinstance(mock_method, AsyncMock))
+            self.assertIsInstance(mock_method, AsyncMock)
 
         test_async()
 
     def test_spec_parent_not_async_attribute_is(self):
         @patch(async_foo_name, spec=True)
         def test_async(mock_method):
-            self.assertTrue(isinstance(mock_method, MagicMock))
-            self.assertTrue(isinstance(mock_method.async_method,
-                                       AsyncMock))
+            self.assertIsInstance(mock_method, MagicMock)
+            self.assertIsInstance(mock_method.async_method, AsyncMock)
 
         test_async()
 
     def test_target_async_spec_not(self):
         @patch.object(AsyncClass, 'async_method', spec=NormalClass.a)
         def test_async_attribute(mock_method):
-            self.assertTrue(isinstance(mock_method, MagicMock))
+            self.assertIsInstance(mock_method, MagicMock)
             self.assertFalse(inspect.iscoroutine(mock_method))
             self.assertFalse(inspect.isawaitable(mock_method))
 
@@ -231,15 +215,14 @@ class AsyncSpecTest(unittest.TestCase):
     def test_target_not_async_spec_is(self):
         @patch.object(NormalClass, 'a', spec=async_func)
         def test_attribute_not_async_spec_is(mock_async_func):
-            self.assertTrue(isinstance(mock_async_func, AsyncMock))
+            self.assertIsInstance(mock_async_func, AsyncMock)
         test_attribute_not_async_spec_is()
 
     def test_spec_async_attributes(self):
         @patch(normal_foo_name, spec=AsyncClass)
         def test_async_attributes_coroutines(MockNormalClass):
-            self.assertTrue(isinstance(MockNormalClass.async_method,
-                                       AsyncMock))
-            self.assertTrue(isinstance(MockNormalClass, MagicMock))
+            self.assertIsInstance(MockNormalClass.async_method, AsyncMock)
+            self.assertIsInstance(MockNormalClass, MagicMock)
 
         test_async_attributes_coroutines()
 
@@ -248,30 +231,23 @@ class AsyncSpecSetTest(unittest.TestCase):
     def test_is_AsyncMock_patch(self):
         @patch.object(AsyncClass, 'async_method', spec_set=True)
         def test_async(async_method):
-            self.assertTrue(isinstance(async_method, AsyncMock))
+            self.assertIsInstance(async_method, AsyncMock)
 
     def test_is_async_AsyncMock(self):
         mock = AsyncMock(spec_set=AsyncClass.async_method)
         self.assertTrue(asyncio.iscoroutinefunction(mock))
-        self.assertTrue(isinstance(mock, AsyncMock))
+        self.assertIsInstance(mock, AsyncMock)
 
     def test_is_child_AsyncMock(self):
         mock = MagicMock(spec_set=AsyncClass)
         self.assertTrue(asyncio.iscoroutinefunction(mock.async_method))
         self.assertFalse(asyncio.iscoroutinefunction(mock.normal_method))
-        self.assertTrue(isinstance(mock.async_method, AsyncMock))
-        self.assertTrue(isinstance(mock.normal_method, MagicMock))
-        self.assertTrue(isinstance(mock, MagicMock))
+        self.assertIsInstance(mock.async_method, AsyncMock)
+        self.assertIsInstance(mock.normal_method, MagicMock)
+        self.assertIsInstance(mock, MagicMock)
 
 
 class AsyncArguments(unittest.TestCase):
-    def setUp(self):
-        self.old_policy = asyncio.events._event_loop_policy
-
-    def tearDown(self):
-        # Restore the original event loop policy.
-        asyncio.events._event_loop_policy = self.old_policy
-
     def test_add_return_value(self):
         async def addition(self, var):
             return var + 1
@@ -310,13 +286,6 @@ class AsyncArguments(unittest.TestCase):
 
 
 class AsyncContextManagerTest(unittest.TestCase):
-    def setUp(self):
-        self.old_policy = asyncio.events._event_loop_policy
-
-    def tearDown(self):
-        # Restore the original event loop policy.
-        asyncio.events._event_loop_policy = self.old_policy
-
     class WithAsyncContextManager:
         def __init__(self):
             self.entered = False
@@ -407,13 +376,6 @@ class AsyncContextManagerTest(unittest.TestCase):
 
 
 class AsyncIteratorTest(unittest.TestCase):
-    def setUp(self):
-        self.old_policy = asyncio.events._event_loop_policy
-
-    def tearDown(self):
-        # Restore the original event loop policy.
-        asyncio.events._event_loop_policy = self.old_policy
-
     class WithAsyncIterator(object):
         def __init__(self):
             self.items = ["foo", "NormalFoo", "baz"]
@@ -476,14 +438,8 @@ class AsyncIteratorTest(unittest.TestCase):
 
 
 class AsyncMockAssert(unittest.TestCase):
-
     def setUp(self):
         self.mock = AsyncMock()
-        self.old_policy = asyncio.events._event_loop_policy
-
-    def tearDown(self):
-        # Restore the original event loop policy.
-        asyncio.events._event_loop_policy = self.old_policy
 
     async def _runnable_test(self, *args):
         if not args:

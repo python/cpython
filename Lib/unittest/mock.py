@@ -2429,7 +2429,6 @@ class _Call(tuple):
 call = _Call(from_kall=False)
 
 
-
 def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                     _name=None, **kwargs):
     """Create a mock object using another object as a spec. Attributes on the
@@ -2476,9 +2475,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # because we don't know what type they return
         _kwargs = {}
     elif is_async_func:
-        if instance:
-            raise RuntimeError("Instance can not be True when create_autospec "
-                               "is mocking an async function")
+        # if instance:
+        #     raise RuntimeError("Instance can not be True when create_autospec "
+        #                        "is mocking an async function")
         Klass = AsyncMock
     elif not _callable(spec):
         Klass = NonCallableMagicMock
@@ -2501,7 +2500,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # recurse for functions
         mock = _set_signature(mock, spec)
         if is_async_func:
-            mock._is_coroutine = _is_coroutine
+            mock._is_coroutine = asyncio.coroutines._is_coroutine
             mock.await_count = 0
             mock.await_args = None
             mock.await_args_list = _CallList()
