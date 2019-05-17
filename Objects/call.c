@@ -701,7 +701,7 @@ _PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self,
 
     default:
         PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyCFunction_FastCallKeywords. "
+                        "Bad call flags in _PyMethodDef_RawFastCallKeywords. "
                         "METH_OLDARGS is no longer supported!");
         goto exit;
     }
