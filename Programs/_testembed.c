@@ -433,8 +433,6 @@ static int test_init_from_config(void)
     config.argv.length = Py_ARRAY_LENGTH(argv);
     config.argv.items = argv;
 
-    config.program = L"conf_program";
-
     static wchar_t* xoptions[3] = {
         L"core_xoption1=3",
         L"core_xoption2=",
@@ -532,7 +530,6 @@ static int test_init_dont_parse_argv(void)
         L"arg2",
     };
 
-    config.program = L"program";
     config.program_name = L"./_testembed";
 
     config.argv.length = Py_ARRAY_LENGTH(argv);

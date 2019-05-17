@@ -306,7 +306,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'program_name': GET_DEFAULT_CONFIG,
         'parse_argv': 1,
         'argv': [""],
-        'program': '',
 
         'xoptions': [],
         'warnoptions': [],
@@ -586,7 +585,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
             'argv': ['-c', 'arg2'],
-            'program': 'conf_program',
             'xoptions': ['core_xoption1=3', 'core_xoption2=', 'core_xoption3'],
             'warnoptions': ['error::ResourceWarning', 'default::BytesWarning'],
             'run_command': 'pass\n',
@@ -704,7 +702,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'print(json.dumps(_testinternalcapi.get_configs()))')
         core_config = {
             'argv': ['-c', 'arg2'],
-            'program': 'python3',
             'program_name': './python3',
             'run_command': code + '\n',
         }
@@ -716,7 +713,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'print(json.dumps(_testinternalcapi.get_configs()))')
         core_config = {
             'argv': ['-c', 'arg2'],
-            'program': 'python3',
             'program_name': './python3',
             'run_command': code + '\n',
             '_init_main': 0,
@@ -728,7 +724,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         core_config = {
             'argv': ['-v', '-c', 'arg1', '-W', 'arg2'],
             'parse_argv': 0,
-            'program': 'program',
         }
         self.check_config("init_dont_parse_argv", core_config, {})
 

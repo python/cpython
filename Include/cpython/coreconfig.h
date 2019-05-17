@@ -218,11 +218,15 @@ typedef struct {
        always exists and is never empty. */
     _PyWstrList argv;
 
-    /* Program: argv[0] or "".
-       Used to display Python usage if parsing command line arguments fails.
-       Used to initialize the default value of program_name */
-    wchar_t *program;
-    wchar_t *program_name;    /* Program name, see also Py_GetProgramName() */
+    /* Program name:
+
+       - If Py_SetProgramName() was called, use its value.
+       - On macOS, use PYTHONEXECUTABLE environment variable if set.
+       - If WITH_NEXT_FRAMEWORK macro is defined, use __PYVENV_LAUNCHER__
+         environment variable is set.
+       - Use argv[0] if available and non-empty.
+       - Use "python" on Windows, or "python3 on other platforms. */
+    wchar_t *program_name;
 
     _PyWstrList xoptions;     /* Command line -X options */
     _PyWstrList warnoptions;  /* Warnings options */

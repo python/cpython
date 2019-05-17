@@ -283,7 +283,7 @@ pymain_run_file(_PyCoreConfig *config, PyCompilerFlags *cf)
         else
             cfilename = "<unprintable file name>";
         fprintf(stderr, "%ls: can't open file '%s': [Errno %d] %s\n",
-                config->program, cfilename, err, strerror(err));
+                config->program_name, cfilename, err, strerror(err));
         PyMem_RawFree(cfilename_buffer);
         return 2;
     }
@@ -303,7 +303,7 @@ pymain_run_file(_PyCoreConfig *config, PyCompilerFlags *cf)
     if (_Py_fstat_noraise(fileno(fp), &sb) == 0 && S_ISDIR(sb.st_mode)) {
         fprintf(stderr,
                 "%ls: '%ls' is a directory, cannot continue\n",
-                config->program, filename);
+                config->program_name, filename);
         fclose(fp);
         return 1;
     }
