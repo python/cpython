@@ -696,6 +696,20 @@ class SyntaxTestCase(unittest.TestCase):
     def test_break_outside_loop(self):
         self._check_error("break", "outside loop")
 
+    def test_yield_outside_function(self):
+        self._check_error("if 0: yield",               "outside function")
+        self._check_error("class C:\n    if 0: yield", "outside function")
+
+    def test_return_outside_function(self):
+        self._check_error("if 0: return",               "outside function")
+        self._check_error("class C:\n    if 0: return", "outside function")
+
+    def test_break_outside_loop(self):
+        self._check_error("if 0: break",                "outside loop")
+
+    def test_continue_outside_loop(self):
+        self._check_error("if 0: continue",     "not properly in loop")
+
     def test_unexpected_indent(self):
         self._check_error("foo()\n bar()\n", "unexpected indent",
                           subclass=IndentationError)
