@@ -122,6 +122,9 @@ WIN32 is still required for the locale module.
 #if defined(_M_X64) || defined(_M_AMD64)
 #if defined(__INTEL_COMPILER)
 #define COMPILER ("[ICC v." _Py_STRINGIZE(__INTEL_COMPILER) " 64 bit (amd64) with MSC v." _Py_STRINGIZE(_MSC_VER) " CRT]")
+#elif defined(_M_ARM64)
+#define COMPILER _Py_PASTE_VERSION("64 bit (ARM)")
+#define PYD_PLATFORM_TAG "win_arm64"
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
 #endif /* __INTEL_COMPILER */
