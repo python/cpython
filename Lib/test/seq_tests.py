@@ -209,6 +209,7 @@ class CommonTest(unittest.TestCase):
         a = self.type2test([0,1,2,3,4])
         self.assertEqual(a[ -pow(2,128): 3 ], self.type2test([0,1,2]))
         self.assertEqual(a[ 3: pow(2,145) ], self.type2test([3,4]))
+        self.assertEqual(a[3::sys.maxsize], self.type2test([3]))
 
     def test_contains(self):
         u = self.type2test([0, 1, 2])
