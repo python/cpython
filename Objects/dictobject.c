@@ -116,6 +116,15 @@ converting the dict to the combined table.
 #include "dict-common.h"
 #include "stringlib/eq.h"    /* to get unicode_eq() */
 
+
+_Py_IDENTIFIER(__missing__);
+_Py_IDENTIFIER(difference_update);
+_Py_IDENTIFIER(intersection_update);
+_Py_IDENTIFIER(iter);
+_Py_IDENTIFIER(keys);
+_Py_IDENTIFIER(symmetric_difference_update);
+_Py_IDENTIFIER(update);
+
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
 [clinic start generated code]*/
@@ -2109,7 +2118,6 @@ dict_subscript(PyDictObject *mp, PyObject *key)
         if (!PyDict_CheckExact(mp)) {
             /* Look up __missing__ method if we're a subclass. */
             PyObject *missing, *res;
-            _Py_IDENTIFIER(__missing__);
             missing = _PyObject_LookupSpecial((PyObject *)mp, &PyId___missing__);
             if (missing != NULL) {
                 res = PyObject_CallFunctionObjArgs(missing,
@@ -2317,7 +2325,6 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
         result = -1;
     }
     else if (arg != NULL) {
-        _Py_IDENTIFIER(keys);
         PyObject *func;
         if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
             result = -1;
@@ -3910,7 +3917,6 @@ dict___reversed___impl(PyDictObject *self)
 static PyObject *
 dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     dictiterobject tmp = *di;
     Py_XINCREF(tmp.di_dict);
@@ -4154,7 +4160,6 @@ dictviews_sub(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_IDENTIFIER(difference_update);
 
     if (result == NULL)
         return NULL;
@@ -4174,7 +4179,6 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_IDENTIFIER(intersection_update);
 
     if (result == NULL)
         return NULL;
@@ -4194,7 +4198,6 @@ dictviews_or(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_IDENTIFIER(update);
 
     if (result == NULL)
         return NULL;
@@ -4214,7 +4217,6 @@ dictviews_xor(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
-    _Py_IDENTIFIER(symmetric_difference_update);
 
     if (result == NULL)
         return NULL;

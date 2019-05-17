@@ -6,6 +6,9 @@
 #include "pycore_pystate.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(getattr);
+
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
 /* Free list for method objects to safe malloc/free overhead
@@ -80,7 +83,6 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
     PyObject *self = PyMethod_GET_SELF(im);
     PyObject *func = PyMethod_GET_FUNCTION(im);
     PyObject *funcname;
-    _Py_IDENTIFIER(getattr);
 
     funcname = _PyObject_GetAttrId(func, &PyId___name__);
     if (funcname == NULL) {

@@ -3,6 +3,9 @@
 #include "Python.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(iter);
+
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
    This could be sped up for small PyLongs if they fit in a Py_ssize_t.
@@ -742,7 +745,6 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
 
@@ -900,7 +902,6 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 static PyObject *
 longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     PyObject *product, *stop=NULL;
     PyObject *range;
 

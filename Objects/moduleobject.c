@@ -5,6 +5,18 @@
 #include "pycore_pystate.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__dir__);
+_Py_IDENTIFIER(__doc__);
+_Py_IDENTIFIER(__file__);
+_Py_IDENTIFIER(__getattr__);
+_Py_IDENTIFIER(__loader__);
+_Py_IDENTIFIER(__name__);
+_Py_IDENTIFIER(__package__);
+_Py_IDENTIFIER(__spec__);
+_Py_IDENTIFIER(_initializing);
+
 static Py_ssize_t max_module_number;
 
 typedef struct {
@@ -58,12 +70,6 @@ static int
 module_init_dict(PyModuleObject *mod, PyObject *md_dict,
                  PyObject *name, PyObject *doc)
 {
-    _Py_IDENTIFIER(__name__);
-    _Py_IDENTIFIER(__doc__);
-    _Py_IDENTIFIER(__package__);
-    _Py_IDENTIFIER(__loader__);
-    _Py_IDENTIFIER(__spec__);
-
     if (md_dict == NULL)
         return -1;
     if (doc == NULL)
@@ -458,7 +464,6 @@ int
 PyModule_SetDocString(PyObject *m, const char *doc)
 {
     PyObject *v;
-    _Py_IDENTIFIER(__doc__);
 
     v = PyUnicode_FromString(doc);
     if (v == NULL || _PyObject_SetAttrId(m, &PyId___doc__, v) != 0) {
@@ -485,7 +490,6 @@ PyModule_GetDict(PyObject *m)
 PyObject*
 PyModule_GetNameObject(PyObject *m)
 {
-    _Py_IDENTIFIER(__name__);
     PyObject *d;
     PyObject *name;
     if (!PyModule_Check(m)) {
@@ -517,7 +521,6 @@ PyModule_GetName(PyObject *m)
 PyObject*
 PyModule_GetFilenameObject(PyObject *m)
 {
-    _Py_IDENTIFIER(__file__);
     PyObject *d;
     PyObject *fileobj;
     if (!PyModule_Check(m)) {
@@ -709,7 +712,6 @@ int
 _PyModuleSpec_IsInitializing(PyObject *spec)
 {
     if (spec != NULL) {
-        _Py_IDENTIFIER(_initializing);
         PyObject *value = _PyObject_GetAttrId(spec, &PyId__initializing);
         if (value != NULL) {
             int initializing = PyObject_IsTrue(value);
@@ -733,16 +735,13 @@ module_getattro(PyModuleObject *m, PyObject *name)
     }
     PyErr_Clear();
     if (m->md_dict) {
-        _Py_IDENTIFIER(__getattr__);
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
             PyObject* stack[1] = {name};
             return _PyObject_FastCall(getattr, stack, 1);
         }
-        _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
-            _Py_IDENTIFIER(__spec__);
             Py_INCREF(mod_name);
             PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
             Py_XINCREF(spec);
@@ -795,8 +794,6 @@ module_clear(PyModuleObject *m)
 static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(__dict__);
-    _Py_IDENTIFIER(__dir__);
     PyObject *result = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 

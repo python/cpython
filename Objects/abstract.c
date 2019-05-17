@@ -7,6 +7,18 @@
 #include "longintrepr.h"
 
 
+_Py_IDENTIFIER(__bases__);
+_Py_IDENTIFIER(__class__);
+_Py_IDENTIFIER(__class_getitem__);
+_Py_IDENTIFIER(__format__);
+_Py_IDENTIFIER(__instancecheck__);
+_Py_IDENTIFIER(__length_hint__);
+_Py_IDENTIFIER(__subclasscheck__);
+_Py_IDENTIFIER(__trunc__);
+_Py_IDENTIFIER(items);
+_Py_IDENTIFIER(keys);
+_Py_IDENTIFIER(values);
+
 
 /* Shorthands to return certain errors */
 
@@ -87,7 +99,6 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 {
     PyObject *hint, *result;
     Py_ssize_t res;
-    _Py_IDENTIFIER(__length_hint__);
     if (_PyObject_HasLen(o)) {
         res = PyObject_Length(o);
         if (res < 0) {
@@ -173,7 +184,6 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 
     if (PyType_Check(o)) {
         PyObject *meth, *result, *stack[1] = {key};
-        _Py_IDENTIFIER(__class_getitem__);
         if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
             return NULL;
         }
@@ -700,7 +710,6 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     PyObject *meth;
     PyObject *empty = NULL;
     PyObject *result = NULL;
-    _Py_IDENTIFIER(__format__);
 
     if (format_spec != NULL && !PyUnicode_Check(format_spec)) {
         PyErr_Format(PyExc_SystemError,
@@ -1355,7 +1364,6 @@ PyNumber_Long(PyObject *o)
     PyNumberMethods *m;
     PyObject *trunc_func;
     Py_buffer view;
-    _Py_IDENTIFIER(__trunc__);
 
     if (o == NULL) {
         return null_error();
@@ -2227,7 +2235,6 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
 PyObject *
 PyMapping_Keys(PyObject *o)
 {
-    _Py_IDENTIFIER(keys);
 
     if (o == NULL) {
         return null_error();
@@ -2241,7 +2248,6 @@ PyMapping_Keys(PyObject *o)
 PyObject *
 PyMapping_Items(PyObject *o)
 {
-    _Py_IDENTIFIER(items);
 
     if (o == NULL) {
         return null_error();
@@ -2255,7 +2261,6 @@ PyMapping_Items(PyObject *o)
 PyObject *
 PyMapping_Values(PyObject *o)
 {
-    _Py_IDENTIFIER(values);
 
     if (o == NULL) {
         return null_error();
@@ -2295,7 +2300,6 @@ PyMapping_Values(PyObject *o)
 static PyObject *
 abstract_get_bases(PyObject *cls)
 {
-    _Py_IDENTIFIER(__bases__);
     PyObject *bases;
 
     Py_ALLOW_RECURSION
@@ -2365,7 +2369,6 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
     int retval;
-    _Py_IDENTIFIER(__class__);
 
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
@@ -2401,7 +2404,6 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
 int
 PyObject_IsInstance(PyObject *inst, PyObject *cls)
 {
-    _Py_IDENTIFIER(__instancecheck__);
     PyObject *checker;
 
     /* Quick test for an exact match */
@@ -2476,7 +2478,6 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 int
 PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 {
-    _Py_IDENTIFIER(__subclasscheck__);
     PyObject *checker;
 
     /* We know what type's __subclasscheck__ does. */

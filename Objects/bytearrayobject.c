@@ -10,6 +10,10 @@
 #include "bytesobject.h"
 #include "pystrhex.h"
 
+
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(iter);
+
 /*[clinic input]
 class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 [clinic start generated code]*/
@@ -2037,7 +2041,6 @@ static PyObject *
 _common_reduce(PyByteArrayObject *self, int proto)
 {
     PyObject *dict;
-    _Py_IDENTIFIER(__dict__);
     char *buf;
 
     dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
@@ -2349,7 +2352,6 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);

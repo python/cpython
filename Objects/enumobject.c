@@ -4,6 +4,9 @@
 
 #include "clinic/enumobject.c.h"
 
+
+_Py_IDENTIFIER(__reversed__);
+
 /*[clinic input]
 class enumerate "enumobject *" "&PyEnum_Type"
 class reversed "reversedobject *" "&PyReversed_Type"
@@ -273,7 +276,6 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
     Py_ssize_t n;
     PyObject *reversed_meth;
     reversedobject *ro;
-    _Py_IDENTIFIER(__reversed__);
 
     reversed_meth = _PyObject_LookupSpecial(seq, &PyId___reversed__);
     if (reversed_meth == Py_None) {

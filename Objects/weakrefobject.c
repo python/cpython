@@ -6,6 +6,9 @@
         ((PyWeakReference **) PyObject_GET_WEAKREFS_LISTPTR(o))
 
 
+_Py_IDENTIFIER(__name__);
+
+
 Py_ssize_t
 _PyWeakref_GetWeakrefCount(PyWeakReference *head)
 {
@@ -158,7 +161,6 @@ static PyObject *
 weakref_repr(PyWeakReference *self)
 {
     PyObject *name, *repr;
-    _Py_IDENTIFIER(__name__);
 
     if (PyWeakref_GET_OBJECT(self) == Py_None)
         return PyUnicode_FromFormat("<weakref at %p; dead>", self);

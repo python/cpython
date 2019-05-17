@@ -11,6 +11,10 @@
 #include "pystrhex.h"
 #include <stddef.h>
 
+
+_Py_IDENTIFIER(__bytes__);
+_Py_IDENTIFIER(iter);
+
 /*[clinic input]
 class bytes "PyBytesObject *" "&PyBytes_Type"
 [clinic start generated code]*/
@@ -543,7 +547,6 @@ static PyObject *
 format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
     PyObject *func, *result;
-    _Py_IDENTIFIER(__bytes__);
     /* is it a bytes object? */
     if (PyBytes_Check(v)) {
         *pbuf = PyBytes_AS_STRING(v);
@@ -2536,7 +2539,6 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *func;
     Py_ssize_t size;
     static char *kwlist[] = {"source", "encoding", "errors", 0};
-    _Py_IDENTIFIER(__bytes__);
 
     if (type != &PyBytes_Type)
         return bytes_subtype_new(type, args, kwds);
@@ -3110,7 +3112,6 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);

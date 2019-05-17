@@ -6,6 +6,16 @@
 #include "pycore_tupleobject.h"
 #include "structmember.h" /* Why is this not included in Python.h? */
 
+
+_Py_IDENTIFIER(__doc__);
+_Py_IDENTIFIER(__qualname__);
+_Py_IDENTIFIER(copy);
+_Py_IDENTIFIER(get);
+_Py_IDENTIFIER(getattr);
+_Py_IDENTIFIER(items);
+_Py_IDENTIFIER(keys);
+_Py_IDENTIFIER(values);
+
 /*[clinic input]
 class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
@@ -411,7 +421,6 @@ static PyObject *
 calculate_qualname(PyDescrObject *descr)
 {
     PyObject *type_qualname, *res;
-    _Py_IDENTIFIER(__qualname__);
 
     if (descr->d_name == NULL || !PyUnicode_Check(descr->d_name)) {
         PyErr_SetString(PyExc_TypeError,
@@ -448,7 +457,6 @@ descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 static PyObject *
 descr_reduce(PyDescrObject *descr, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(getattr);
     return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
                          PyDescr_TYPE(descr), PyDescr_NAME(descr));
 }
@@ -852,7 +860,6 @@ static PyObject *
 mappingproxy_get(mappingproxyobject *pp, PyObject *args)
 {
     PyObject *key, *def = Py_None;
-    _Py_IDENTIFIER(get);
 
     if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &def))
         return NULL;
@@ -863,28 +870,24 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *args)
 static PyObject *
 mappingproxy_keys(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(keys);
     return _PyObject_CallMethodId(pp->mapping, &PyId_keys, NULL);
 }
 
 static PyObject *
 mappingproxy_values(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(values);
     return _PyObject_CallMethodId(pp->mapping, &PyId_values, NULL);
 }
 
 static PyObject *
 mappingproxy_items(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(items);
     return _PyObject_CallMethodId(pp->mapping, &PyId_items, NULL);
 }
 
 static PyObject *
 mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(copy);
     return _PyObject_CallMethodId(pp->mapping, &PyId_copy, NULL);
 }
 
@@ -1078,7 +1081,6 @@ wrapper_repr(wrapperobject *wp)
 static PyObject *
 wrapper_reduce(wrapperobject *wp, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(getattr);
     return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_getattr),
                          wp->self, PyDescr_NAME(wp->descr));
 }
@@ -1461,7 +1463,6 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
 
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
-        _Py_IDENTIFIER(__doc__);
         PyObject *get_doc = _PyObject_GetAttrId(fget, &PyId___doc__);
         if (get_doc) {
             if (Py_TYPE(self) == &PyProperty_Type) {

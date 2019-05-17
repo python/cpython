@@ -12,6 +12,10 @@
 #include <sys/types.h>          /* For size_t */
 #endif
 
+
+_Py_IDENTIFIER(iter);
+_Py_IDENTIFIER(reversed);
+
 /*[clinic input]
 class list "PyListObject *" "&PyList_Type"
 [clinic start generated code]*/
@@ -3351,8 +3355,6 @@ listreviter_setstate(listreviterobject *it, PyObject *state)
 static PyObject *
 listiter_reduce_general(void *_it, int forward)
 {
-    _Py_IDENTIFIER(iter);
-    _Py_IDENTIFIER(reversed);
     PyObject *list;
 
     /* the objects are not the same, index is of different types! */

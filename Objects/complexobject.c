@@ -8,6 +8,9 @@
 #include "Python.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(__complex__);
+
 /*[clinic input]
 class complex "PyComplexObject *" "&PyComplex_Type"
 [clinic start generated code]*/
@@ -277,7 +280,6 @@ static PyObject *
 try_complex_special_method(PyObject *op)
 {
     PyObject *f;
-    _Py_IDENTIFIER(__complex__);
 
     f = _PyObject_LookupSpecial(op, &PyId___complex__);
     if (f) {

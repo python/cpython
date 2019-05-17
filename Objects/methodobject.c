@@ -7,6 +7,11 @@
 #include "pycore_pystate.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(__qualname__);
+_Py_IDENTIFIER(getattr);
+
+
 /* Free list for method objects to safe malloc/free overhead
  * The m_self element is used to chain the objects.
  */
@@ -104,8 +109,6 @@ meth_dealloc(PyCFunctionObject *m)
 static PyObject *
 meth_reduce(PyCFunctionObject *m, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(getattr);
-
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);
 
@@ -148,7 +151,6 @@ meth_get__qualname__(PyCFunctionObject *m, void *closure)
        Otherwise return type(m.__self__).__qualname__ + '.' + m.__name__
        (e.g. [].append.__qualname__ == 'list.append') */
     PyObject *type, *type_qualname, *res;
-    _Py_IDENTIFIER(__qualname__);
 
     if (m->m_self == NULL || PyModule_Check(m->m_self))
         return PyUnicode_FromString(m->m_ml->ml_name);

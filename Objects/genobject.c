@@ -7,6 +7,10 @@
 #include "structmember.h"
 #include "opcode.h"
 
+
+_Py_IDENTIFIER(close);
+_Py_IDENTIFIER(throw);
+
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
 static PyObject *async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
@@ -304,7 +308,6 @@ static int
 gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
-    _Py_IDENTIFIER(close);
 
     if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
         retval = gen_close((PyGenObject *)yf, NULL);
@@ -399,7 +402,6 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
     PyObject *yf = _PyGen_yf(gen);
-    _Py_IDENTIFIER(throw);
 
     if (yf) {
         PyObject *ret;

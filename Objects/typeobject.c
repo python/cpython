@@ -8,6 +8,7 @@
 
 #include <ctype.h>
 
+
 /*[clinic input]
 class type "PyTypeObject *" "&PyType_Type"
 class object "PyObject *" "&PyBaseObject_Type"
@@ -55,23 +56,59 @@ static size_t method_cache_collisions = 0;
 
 /* alphabetical order */
 _Py_IDENTIFIER(__abstractmethods__);
+_Py_IDENTIFIER(__await__);
+_Py_IDENTIFIER(__aiter__);
+_Py_IDENTIFIER(__anext__);
+_Py_IDENTIFIER(__bases__);
+_Py_IDENTIFIER(__bool__);
+_Py_IDENTIFIER(__call__);
 _Py_IDENTIFIER(__class__);
+_Py_IDENTIFIER(__classcell__);
 _Py_IDENTIFIER(__class_getitem__);
+_Py_IDENTIFIER(__contains__);
+_Py_IDENTIFIER(__del__);
+_Py_IDENTIFIER(__delattr__);
+_Py_IDENTIFIER(__delete__);
 _Py_IDENTIFIER(__delitem__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__doc__);
+_Py_IDENTIFIER(__eq__);
+_Py_IDENTIFIER(__get__);
+_Py_IDENTIFIER(__getattr__);
 _Py_IDENTIFIER(__getattribute__);
 _Py_IDENTIFIER(__getitem__);
+_Py_IDENTIFIER(__getnewargs__);
+_Py_IDENTIFIER(__getnewargs_ex__);
+_Py_IDENTIFIER(__getstate__);
 _Py_IDENTIFIER(__hash__);
+_Py_IDENTIFIER(__index__);
+_Py_IDENTIFIER(__init__);
 _Py_IDENTIFIER(__init_subclass__);
+_Py_IDENTIFIER(__ipow__);
+_Py_IDENTIFIER(__iter__);
 _Py_IDENTIFIER(__len__);
 _Py_IDENTIFIER(__module__);
+_Py_IDENTIFIER(__mro_entries__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__new__);
+_Py_IDENTIFIER(__newobj__);
+_Py_IDENTIFIER(__newobj_ex__);
+_Py_IDENTIFIER(__next__);
+_Py_IDENTIFIER(__pow__);
+_Py_IDENTIFIER(__qualname__);
 _Py_IDENTIFIER(__reduce__);
+_Py_IDENTIFIER(__repr__);
+_Py_IDENTIFIER(__set__);
 _Py_IDENTIFIER(__set_name__);
+_Py_IDENTIFIER(__setattr__);
 _Py_IDENTIFIER(__setitem__);
+_Py_IDENTIFIER(__slots__);
+_Py_IDENTIFIER(__slotnames__);
+_Py_IDENTIFIER(_slotnames);
 _Py_IDENTIFIER(builtins);
+_Py_IDENTIFIER(copyreg);
+_Py_IDENTIFIER(items);
+_Py_IDENTIFIER(mro);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -1850,7 +1887,6 @@ mro_invoke(PyTypeObject *type)
     int custom = (Py_TYPE(type) != &PyType_Type);
 
     if (custom) {
-        _Py_IDENTIFIER(mro);
         int unbound;
         PyObject *mro_meth = lookup_method((PyObject *)type, &PyId_mro,
                                            &unbound);
@@ -2297,9 +2333,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     PyMemberDef *mp;
     Py_ssize_t i, nbases, nslots, slotoffset, name_size;
     int j, may_add_dict, may_add_weak, add_dict, add_weak;
-    _Py_IDENTIFIER(__qualname__);
-    _Py_IDENTIFIER(__slots__);
-    _Py_IDENTIFIER(__classcell__);
 
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
@@ -2342,7 +2375,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         nbases = 1;
     }
     else {
-        _Py_IDENTIFIER(__mro_entries__);
         for (i = 0; i < nbases; i++) {
             tmp = PyTuple_GET_ITEM(bases, i);
             if (PyType_Check(tmp)) {
@@ -3383,7 +3415,6 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
 {
     PyObject *classdict;
     PyObject *bases;
-    _Py_IDENTIFIER(__bases__);
 
     assert(PyDict_Check(dict));
     assert(aclass);
@@ -4049,7 +4080,6 @@ import_copyreg(void)
 {
     PyObject *copyreg_str;
     PyObject *copyreg_module;
-    _Py_IDENTIFIER(copyreg);
 
     copyreg_str = _PyUnicode_FromId(&PyId_copyreg);
     if (copyreg_str == NULL) {
@@ -4075,8 +4105,6 @@ _PyType_GetSlotNames(PyTypeObject *cls)
 {
     PyObject *copyreg;
     PyObject *slotnames;
-    _Py_IDENTIFIER(__slotnames__);
-    _Py_IDENTIFIER(_slotnames);
 
     assert(PyType_Check(cls));
 
@@ -4128,7 +4156,6 @@ _PyObject_GetState(PyObject *obj, int required)
 {
     PyObject *state;
     PyObject *getstate;
-    _Py_IDENTIFIER(__getstate__);
 
     if (_PyObject_LookupAttrId(obj, &PyId___getstate__, &getstate) < 0) {
         return NULL;
@@ -4268,8 +4295,6 @@ static int
 _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
 {
     PyObject *getnewargs, *getnewargs_ex;
-    _Py_IDENTIFIER(__getnewargs_ex__);
-    _Py_IDENTIFIER(__getnewargs__);
 
     if (args == NULL || kwargs == NULL) {
         PyErr_BadInternalCall();
@@ -4385,7 +4410,6 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
     }
     else {
         PyObject *items;
-        _Py_IDENTIFIER(items);
 
         items = _PyObject_CallMethodIdObjArgs(obj, &PyId_items, NULL);
         if (items == NULL) {
@@ -4431,7 +4455,6 @@ reduce_newobj(PyObject *obj)
     }
     hasargs = (args != NULL);
     if (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) {
-        _Py_IDENTIFIER(__newobj__);
         PyObject *cls;
         Py_ssize_t i, n;
 
@@ -4460,8 +4483,6 @@ reduce_newobj(PyObject *obj)
         Py_XDECREF(args);
     }
     else if (args != NULL) {
-        _Py_IDENTIFIER(__newobj_ex__);
-
         newobj = _PyObject_GetAttrId(copyreg, &PyId___newobj_ex__);
         Py_DECREF(copyreg);
         if (newobj == NULL) {
@@ -4976,7 +4997,6 @@ static int
 overrides_hash(PyTypeObject *type)
 {
     PyObject *dict = type->tp_dict;
-    _Py_IDENTIFIER(__eq__);
 
     assert(dict != NULL);
     if (_PyDict_GetItemId(dict, &PyId___eq__) != NULL)
@@ -6175,7 +6195,6 @@ slot_sq_contains(PyObject *self, PyObject *value)
 {
     PyObject *func, *res;
     int result = -1, unbound;
-    _Py_IDENTIFIER(__contains__);
 
     func = lookup_maybe_method(self, &PyId___contains__, &unbound);
     if (func == Py_None) {
@@ -6242,8 +6261,6 @@ SLOT1BINFULL(slot_nb_power_binary, slot_nb_power,
 static PyObject *
 slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
 {
-    _Py_IDENTIFIER(__pow__);
-
     if (modulus == Py_None)
         return slot_nb_power_binary(self, other);
     /* Three-arg power doesn't use __rpow__.  But ternary_op
@@ -6267,7 +6284,6 @@ slot_nb_bool(PyObject *self)
     PyObject *func, *value;
     int result, unbound;
     int using_len = 0;
-    _Py_IDENTIFIER(__bool__);
 
     func = lookup_maybe_method(self, &PyId___bool__, &unbound);
     if (func == NULL) {
@@ -6318,7 +6334,6 @@ error:
 static PyObject *
 slot_nb_index(PyObject *self)
 {
-    _Py_IDENTIFIER(__index__);
     return call_method(self, &PyId___index__, NULL, 0);
 }
 
@@ -6342,7 +6357,6 @@ static PyObject *
 slot_nb_inplace_power(PyObject *self, PyObject * arg1, PyObject *arg2)
 {
     PyObject *stack[1] = {arg1};
-    _Py_IDENTIFIER(__ipow__);
     return call_method(self, &PyId___ipow__, stack, 1);
 }
 SLOT1(slot_nb_inplace_lshift, "__ilshift__", PyObject *)
@@ -6360,7 +6374,6 @@ static PyObject *
 slot_tp_repr(PyObject *self)
 {
     PyObject *func, *res;
-    _Py_IDENTIFIER(__repr__);
     int unbound;
 
     func = lookup_maybe_method(self, &PyId___repr__, &unbound);
@@ -6427,7 +6440,6 @@ slot_tp_hash(PyObject *self)
 static PyObject *
 slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    _Py_IDENTIFIER(__call__);
     int unbound;
     PyObject *meth = lookup_method(self, &PyId___call__, &unbound);
     PyObject *res;
@@ -6487,7 +6499,6 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *getattr, *getattribute, *res;
-    _Py_IDENTIFIER(__getattr__);
 
     /* speed hack: we could use lookup_maybe, but that would resolve the
        method fully for each attribute lookup for classes with
@@ -6530,8 +6541,6 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
     PyObject *stack[2];
     PyObject *res;
-    _Py_IDENTIFIER(__delattr__);
-    _Py_IDENTIFIER(__setattr__);
 
     stack[0] = name;
     if (value == NULL) {
@@ -6579,7 +6588,6 @@ slot_tp_iter(PyObject *self)
 {
     int unbound;
     PyObject *func, *res;
-    _Py_IDENTIFIER(__iter__);
 
     func = lookup_maybe_method(self, &PyId___iter__, &unbound);
     if (func == Py_None) {
@@ -6611,7 +6619,6 @@ slot_tp_iter(PyObject *self)
 static PyObject *
 slot_tp_iternext(PyObject *self)
 {
-    _Py_IDENTIFIER(__next__);
     return call_method(self, &PyId___next__, NULL, 0);
 }
 
@@ -6620,7 +6627,6 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject *get;
-    _Py_IDENTIFIER(__get__);
 
     get = _PyType_LookupId(tp, &PyId___get__);
     if (get == NULL) {
@@ -6642,8 +6648,6 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 {
     PyObject* stack[2];
     PyObject *res;
-    _Py_IDENTIFIER(__delete__);
-    _Py_IDENTIFIER(__set__);
 
     stack[0] = target;
     if (value == NULL) {
@@ -6662,7 +6666,6 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 static int
 slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    _Py_IDENTIFIER(__init__);
     int unbound;
     PyObject *meth = lookup_method(self, &PyId___init__, &unbound);
     PyObject *res;
@@ -6707,7 +6710,6 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 slot_tp_finalize(PyObject *self)
 {
-    _Py_IDENTIFIER(__del__);
     int unbound;
     PyObject *del, *res;
     PyObject *error_type, *error_value, *error_traceback;
@@ -6735,7 +6737,6 @@ slot_am_await(PyObject *self)
 {
     int unbound;
     PyObject *func, *res;
-    _Py_IDENTIFIER(__await__);
 
     func = lookup_maybe_method(self, &PyId___await__, &unbound);
     if (func != NULL) {
@@ -6754,7 +6755,6 @@ slot_am_aiter(PyObject *self)
 {
     int unbound;
     PyObject *func, *res;
-    _Py_IDENTIFIER(__aiter__);
 
     func = lookup_maybe_method(self, &PyId___aiter__, &unbound);
     if (func != NULL) {
@@ -6773,7 +6773,6 @@ slot_am_anext(PyObject *self)
 {
     int unbound;
     PyObject *func, *res;
-    _Py_IDENTIFIER(__anext__);
 
     func = lookup_maybe_method(self, &PyId___anext__, &unbound);
     if (func != NULL) {

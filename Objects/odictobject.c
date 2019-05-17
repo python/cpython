@@ -471,6 +471,12 @@ later:
 #include "dict-common.h"
 #include <stddef.h>
 
+
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(items);
+_Py_IDENTIFIER(iter);
+_Py_IDENTIFIER(keys);
+
 #include "clinic/odictobject.c.h"
 
 /*[clinic input]
@@ -895,8 +901,6 @@ PyDoc_STRVAR(odict_reduce__doc__, "Return state information for pickling");
 static PyObject *
 odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(__dict__);
-    _Py_IDENTIFIER(items);
     PyObject *dict = NULL, *result = NULL;
     PyObject *items_iter, *items, *args = NULL;
 
@@ -1375,7 +1379,6 @@ static PyObject *
 odict_repr(PyODictObject *self)
 {
     int i;
-    _Py_IDENTIFIER(items);
     PyObject *pieces = NULL, *result = NULL;
 
     if (PyODict_SIZE(self) == 0)
@@ -1795,7 +1798,6 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 static PyObject *
 odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     odictiterobject tmp = *di;
     Py_XINCREF(tmp.di_odict);
@@ -2195,8 +2197,6 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int res = 0;
     Py_ssize_t len;
-    _Py_IDENTIFIER(items);
-    _Py_IDENTIFIER(keys);
 
     /* first handle args, if any */
     assert(args == NULL || PyTuple_Check(args));

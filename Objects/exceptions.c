@@ -13,6 +13,9 @@
 #include "osdefs.h"
 
 
+_Py_IDENTIFIER(name);
+_Py_IDENTIFIER(path);
+
 /* Compatibility aliases */
 PyObject *PyExc_EnvironmentError = NULL;
 PyObject *PyExc_IOError = NULL;
@@ -699,8 +702,6 @@ ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
     if (self->name || self->path) {
-        _Py_IDENTIFIER(name);
-        _Py_IDENTIFIER(path);
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;

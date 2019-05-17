@@ -24,6 +24,11 @@
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(open);
+_Py_IDENTIFIER(readline);
+_Py_IDENTIFIER(write);
+_Py_IDENTIFIER(fileno);
+
 /* External C interface */
 
 PyObject *
@@ -31,7 +36,6 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
               const char *errors, const char *newline, int closefd)
 {
     PyObject *io, *stream;
-    _Py_IDENTIFIER(open);
 
     io = PyImport_ImportModule("io");
     if (io == NULL)
@@ -50,7 +54,6 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
 PyObject *
 PyFile_GetLine(PyObject *f, int n)
 {
-    _Py_IDENTIFIER(readline);
     PyObject *result;
 
     if (f == NULL) {
@@ -116,7 +119,6 @@ int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
     PyObject *writer, *value, *result;
-    _Py_IDENTIFIER(write);
 
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
@@ -178,7 +180,6 @@ PyObject_AsFileDescriptor(PyObject *o)
 {
     int fd;
     PyObject *meth;
-    _Py_IDENTIFIER(fileno);
 
     if (PyLong_Check(o)) {
         fd = _PyLong_AsInt(o);

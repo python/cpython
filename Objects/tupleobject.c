@@ -6,6 +6,9 @@
 #include "pycore_pystate.h"
 #include "pycore_accu.h"
 
+
+_Py_IDENTIFIER(iter);
+
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
 [clinic start generated code]*/
@@ -1025,7 +1028,6 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (it->it_seq)
         return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);

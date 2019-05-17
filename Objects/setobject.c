@@ -36,6 +36,10 @@
 #include "pycore_pystate.h"
 #include "structmember.h"
 
+
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(iter);
+
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
 
@@ -842,7 +846,6 @@ static PyObject *setiter_iternext(setiterobject *si);
 static PyObject *
 setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
@@ -1954,7 +1957,6 @@ static PyObject *
 set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *dict=NULL;
-    _Py_IDENTIFIER(__dict__);
 
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
