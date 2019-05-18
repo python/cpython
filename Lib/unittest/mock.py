@@ -2202,6 +2202,8 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     case, the :class:`Mock` object behavior is the same as with an
     :class:`.Mock` object: the wrapped object may have methods
     defined as async function functions.
+
+    Based on Martin Richard's asyntest project.
     """
 
 
