@@ -2254,6 +2254,10 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
                 self.fail("Bad file descriptor not handled.")
             raise
 
+    def test_kwargs(self):
+        with self.assertRaises(TypeError):
+            self.cls(".", test_kwarg="test")
+
 
 @only_nt
 class WindowsPathTest(_BasePathTest, unittest.TestCase):
@@ -2324,6 +2328,9 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             env['USERPROFILE'] = 'C:\\Users\\alice'
             check()
 
+    def test_kwargs(self):
+        with self.assertRaises(TypeError):
+            self.cls(".", test_kwarg="test")
 
 if __name__ == "__main__":
     unittest.main()
