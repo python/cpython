@@ -54,7 +54,7 @@ provided by this module.
 The following function is the primary interface of this module:
 
 
-.. function:: input(files=None, inplace=False, backup='', bufsize=0, mode='r', openhook=None)
+.. function:: input(files=None, inplace=False, backup='', mode='r', openhook=None)
 
    Create an instance of the :class:`FileInput` class.  The instance will be used
    as global state for the functions of this module, and is also returned to use
@@ -71,9 +71,6 @@ The following function is the primary interface of this module:
 
    .. versionchanged:: 3.2
       Can be used as a context manager.
-
-   .. deprecated-removed:: 3.6 3.8
-      The *bufsize* parameter.
 
 The following functions use the global state created by :func:`fileinput.input`;
 if there is no active state, :exc:`RuntimeError` is raised.
@@ -135,7 +132,7 @@ The class which implements the sequence behavior provided by the module is
 available for subclassing as well:
 
 
-.. class:: FileInput(files=None, inplace=False, backup='', bufsize=0, mode='r', openhook=None)
+.. class:: FileInput(files=None, inplace=False, backup='', mode='r', openhook=None)
 
    Class :class:`FileInput` is the implementation; its methods :meth:`filename`,
    :meth:`fileno`, :meth:`lineno`, :meth:`filelineno`, :meth:`isfirstline`,
@@ -165,9 +162,6 @@ available for subclassing as well:
 
    .. deprecated:: 3.4
       The ``'rU'`` and ``'U'`` modes.
-
-   .. deprecated-removed:: 3.6 3.8
-      The *bufsize* parameter.
 
    .. deprecated:: 3.8
       Support for :meth:`__getitem__` method is deprecated.
