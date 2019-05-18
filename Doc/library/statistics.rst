@@ -520,9 +520,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    of the distance between two sample values, ``100`` and ``112``, the
    cut-point will evaluate to ``104``.
 
-   Quantiles can be computed differently depending on whether the data
-   in *dist* includes or excludes the lowest and highest possible values
-   from the population.
+   The *method* for computing quantiles can be varied depending on
+   whether the data in *dist* includes or excludes the lowest and
+   highest possible values from the population.
 
    The default *method* is "exclusive" and is used for data sampled from
    a population that can have more extreme values than found in the
