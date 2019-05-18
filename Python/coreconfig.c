@@ -531,9 +531,6 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
     CLEAR(config->prefix);
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
-#ifdef MS_WINDOWS
-    CLEAR(config->dll_path);
-#endif
     CLEAR(config->base_exec_prefix);
 
     CLEAR(config->filesystem_encoding);
@@ -761,9 +758,6 @@ _PyCoreConfig_Copy(_PyCoreConfig *config, const _PyCoreConfig *config2)
     COPY_WSTR_ATTR(prefix);
     COPY_WSTR_ATTR(base_prefix);
     COPY_WSTR_ATTR(exec_prefix);
-#ifdef MS_WINDOWS
-    COPY_WSTR_ATTR(dll_path);
-#endif
     COPY_WSTR_ATTR(base_exec_prefix);
 
     COPY_ATTR(site_import);
@@ -864,9 +858,6 @@ _PyCoreConfig_AsDict(const _PyCoreConfig *config)
     SET_ITEM_WSTR(base_prefix);
     SET_ITEM_WSTR(exec_prefix);
     SET_ITEM_WSTR(base_exec_prefix);
-#ifdef MS_WINDOWS
-    SET_ITEM_WSTR(dll_path);
-#endif
     SET_ITEM_INT(site_import);
     SET_ITEM_INT(bytes_warning);
     SET_ITEM_INT(inspect);
@@ -2355,9 +2346,6 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         assert(config->base_prefix != NULL);
         assert(config->exec_prefix != NULL);
         assert(config->base_exec_prefix != NULL);
-#ifdef MS_WINDOWS
-        assert(config->dll_path != NULL);
-#endif
     }
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
