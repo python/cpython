@@ -1057,7 +1057,7 @@ object::
       >>> mock.await_args_list
       []
       >>> asyncio.run(main('foo'))
-      >>> mock.await_args
+      >>> mock.await_args_list
       [call('foo')]
       >>> asyncio.run(main('bar'))
       >>> mock.await_args_list
