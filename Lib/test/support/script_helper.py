@@ -9,6 +9,7 @@ import os.path
 import subprocess
 import py_compile
 import zipfile
+import time
 
 from importlib.util import source_from_cache
 from test.support import make_legacy_pyc, strip_python_stderr
@@ -82,6 +83,21 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
                              % (self.rc, cmd_line,
                                 out,
                                 err))
+
+
+def run_until(condition, timeout=60, error_msg=None):
+    """Evaluates a condition until it becomes True, or a timeout is reached."""
+    deadline = time.monotonic() + timeout
+    t = 0.1
+    while time.monotonic() < deadline:
+        time.sleep(t)
+        t = min(t*2, 5)
+        if condition():
+            break
+    else:
+        msg = (error_msg or
+               f"The condition was not met after {timeout} seconds")
+        raise TimeoutError(msg)
 
 
 # Executing the interpreter in a subprocess
