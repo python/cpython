@@ -1,0 +1,1 @@
+Now we can resume the `Pdb` execution by using `Ctrl+C` when we are running a long processing function. It works if the function is run by `continue`, `next`, `until` and `return` commands. Patch by Chun-Yu Tseng.
