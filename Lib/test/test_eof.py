@@ -1,9 +1,8 @@
 """test script for a few new invalid token catches"""
 
-import subprocess
 import sys
-import tempfile
 from test import support
+from test.support import script_helper
 import unittest
 
 class EOFTestCase(unittest.TestCase):
@@ -40,20 +39,14 @@ class EOFTestCase(unittest.TestCase):
     @unittest.skipIf(not sys.executable, "sys.executable required")
     def test_line_continuation_EOF_from_file_bpo2180(self):
         """Ensure tok_nextc() does not add too many ending newlines."""
-        with tempfile.NamedTemporaryFile() as temp_f:
-            temp_f.write(b'\\')
-            temp_f.flush()
-            proc = subprocess.run([sys.executable, temp_f.name],
-                                  capture_output=True)
-            self.assertIn(b'unexpected EOF while parsing', proc.stderr)
-            self.assertGreater(proc.returncode, 0)
-            temp_f.seek(0)
-            temp_f.write(b'y = 6\\')
-            temp_f.flush()
-            proc = subprocess.run([sys.executable, temp_f.name],
-                                  capture_output=True)
-            self.assertIn(b'unexpected EOF while parsing', proc.stderr)
-            self.assertGreater(proc.returncode, 0)
+        with support.temp_dir() as temp_dir:
+            file_name = script_helper.make_script(temp_dir, 'foo', '\\')
+            rc, out, err = script_helper.assert_python_failure(file_name)
+            self.assertIn(b'unexpected EOF while parsing', err)
+
+            file_name = script_helper.make_script(temp_dir, 'foo', 'y = 6\\')
+            rc, out, err = script_helper.assert_python_failure(file_name)
+            self.assertIn(b'unexpected EOF while parsing', err)
 
 if __name__ == "__main__":
     unittest.main()
