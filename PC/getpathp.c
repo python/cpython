@@ -508,8 +508,8 @@ done:
 #endif /* Py_ENABLE_SHARED */
 
 
-static _PyInitError
-get_dll_path(PyCalculatePath *calculate, _PyPathConfig *config)
+wchar_t*
+_Py_GetDLLPath(void)
 {
     wchar_t dll_path[MAXPATHLEN+1];
     memset(dll_path, 0, sizeof(dll_path));
@@ -525,11 +525,7 @@ get_dll_path(PyCalculatePath *calculate, _PyPathConfig *config)
     dll_path[0] = 0;
 #endif
 
-    config->dll_path = _PyMem_RawWcsdup(dll_path);
-    if (config->dll_path == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
+    return _PyMem_RawWcsdup(dll_path);
 }
 
 
@@ -956,9 +952,11 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 {
     _PyInitError err;
 
-    err = get_dll_path(calculate, config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    assert(config->dll_path == NULL);
+
+    config->dll_path = _Py_GetDLLPath();
+    if (config->dll_path == NULL) {
+        return _Py_INIT_NO_MEMORY();
     }
 
     err = get_program_full_path(core_config, calculate, config);
