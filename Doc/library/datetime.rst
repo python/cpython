@@ -2048,6 +2048,9 @@ For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
 values.  If they're used anyway, ``0`` is substituted for them.
 
+For the :meth:`datetime.strptime` class method, the default value is ``1900-01-01T00:00:00.000``:
+any components not specified in the format string will be pulled from the default value. [#]_
+
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common.  To see the full set of format codes supported on your
@@ -2282,3 +2285,4 @@ Notes:
 .. rubric:: Footnotes
 
 .. [#] If, that is, we ignore the effects of Relativity
+.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since ``1900`` is not a leap year.
