@@ -517,28 +517,23 @@ However, for reading convenience, most of the examples show sorted sequences.
    For sample data, the cut points are linearly interpolated from the
    two nearest data points.  For example, if a cut point falls one-third
    of the distance between two sample values, ``100`` and ``112``, the
-   cut-point will evaluate to ``104``.  Other selection methods may be
-   offered in the future (for example choose ``100`` as the nearest
-   value or compute ``106`` as the midpoint).  This might matter if
-   there are too few samples for a given number of cut points.
+   cut-point will evaluate to ``104``.
 
-   The choice of *method* depends on whether dataset includes or
-   excludes the lowest and highest possible values from the
-   population.
+   Quantiles can be computed differently depending on whether the data
+   in *dist* includes or excludes the lowest and highest possible values
+   from the population.
 
-   The *method* defaults to *exclusive*.  This is used for data
-   sampled from a population with more extreme values than found in
-   the samples.  The quantiles are computed with the assumption
-   that each data point, including the smallest and largest,
-   separates two continuous intervals with equal probability.
+   The default *method* is *exclusive* and is used for data sampled from
+   a population that can have more extreme values than found in the
+   samples.  The portion of the population falling below the *i-th* of
+   *m* data points is computed as ``i // (m + 1)``.
 
-   When the *method* is set to *inclusive*, the minimum value in
-   *dist* is treated as the 0th percentile and the maximum value is
-   treated as the 100th percentile.  This is useful for describing
-   population data.  It also applies to sample data that is known to
-   include the most extreme possible values (such as a sample of test
-   scores including 0 and 100, the lowest and highest possible
-   scores).
+   Setting the *method* to *inclusive* is used for describing population
+   data or for samples that include the extreme points.  The minimum
+   value in *dist* is treated as the 0th percentile and the maximum
+   value is treated as the 100th percentile.  The portion of the
+   population falling below the *i-th* of *m* data points is computed as
+   ``(i - 1) // (m - 1)``.
 
    If *dist* is an instance of a class that defines an
    :meth:`~inv_cdf` method, setting *method* has no effect.
