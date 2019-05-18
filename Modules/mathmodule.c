@@ -1633,9 +1633,11 @@ static PyObject *
 math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
-    int a_too_large, s;
-    size_t c, d;
-    PyObject *a = NULL, *b;
+    int a_too_large, c_bit_length;
+    size_t c, d, n_shift;
+    uint64_t m, v;
+    uint32_t u;
+    PyObject *a = NULL, *b, *shift;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -1653,58 +1655,86 @@ math_isqrt(PyObject *module, PyObject *n)
         return PyLong_FromLong(0);
     }
 
+    /* c = (n.bit_length() - 1) // 2 */
     c = _PyLong_NumBits(n);
     if (c == (size_t)(-1)) {
         goto error;
     }
     c = (c - 1U) / 2U;
 
-    /* Fast path: if c < 32 then n < 2**64, so it fits in a uint64_t and we can
-       use C-level integer arithmetic to compute the result. */
-    if (c < 32) {
-        uint32_t u;
-        uint64_t m = (uint64_t)PyLong_AsUnsignedLongLong(n);
+    /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with
+       a fast, almost branch-free algorithm. */
+    if (c <= 31U) {
+        /* Convert and shift n to get a uint64_t m with 2**62 <= m < 2**64. */
+        n_shift = 31U - c;
+        m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
         if (m == (uint64_t)(-1) && PyErr_Occurred()) {
             return NULL;
         }
+        m <<= 2U * n_shift;
 
-        /* Shift so that we have a value in [2**62, 2**64) */
-        m <<= 62 - 2*c;
-
-        /* Compute square root using the same algorithm as below, but with the
-           bounds on m we can make the shift amounts explicit. */
+        /* With m bounded, the shifts in the algorithm can be made explicit. */
         u = 1U + (uint32_t)(m >> 62);
         u = (u << 1) + (uint32_t)(m >> 59) / u;
         u = (u << 3) + (uint32_t)(m >> 53) / u;
         u = (u << 7) + (uint32_t)(m >> 41) / u;
-        /* for the last step only, divide with uint64_t rather than uint32_t */
+        /* The last step needs a 64-bit division */
         u = (u << 15) + (uint32_t)((m >> 17) / u);
-        /* u is now within 1 of √m; adjust if necessary. We test `u*u - 1 >= m`
-           instead of the simpler `u*u > m` to deal correctly with a corner
-           case: if m is close to 2**64, then the final addition above can
-           overflow a uint32_t to produce u=0. In that case, we need the test
-           to always be true. */
+        /* Adjust u if necessary. We test `u*u - 1 >= m` instead of the simpler
+           `u*u > m` to deal correctly with the corner case in which the final
+           addition above overflowed to give u = 0. */
         u -= ((uint64_t)u * u - 1U >= m);
 
-        /* shift back to compensate for the original shift, and return */
-        u >>= 31 - c;
-        return PyLong_FromUnsignedLong((unsigned long)u);
-    };
-
-    /* s = c.bit_length() */
-    s = 0;
-    while ((c >> s) > 0) {
-        ++s;
+        /* shift back and return */
+        return PyLong_FromUnsignedLong((unsigned long)(u >> n_shift));
     }
 
-    a = PyLong_FromLong(1);
+    /* Slow path: n >= 2**64. We perform the first five iterations in C integer
+       arithmetic, then switch to using Python long integers. */
+
+    /* Compute c.bit_length(); from n >= 2**64 it follows that this is >= 6. */
+    c_bit_length = 0;
+    while ((c >> c_bit_length) > 0U) {
+        ++c_bit_length;
+    }
+    assert(c_bit_length >= 6);
+
+    /* Shift and convert n to get a uint64_t m with 2**62 <= m < 2**64. */
+    n_shift = c - 31U;
+    shift = PyLong_FromSize_t(2U * n_shift);
+    if (shift == NULL) {
+        goto error;
+    }
+    b = PyNumber_Rshift(n, shift);
+    Py_DECREF(shift);
+    if (b == NULL) {
+        goto error;
+    }
+    m = (uint64_t)PyLong_AsUnsignedLongLong(b);
+    Py_DECREF(b);
+    if (m == (uint64_t)(-1) && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    /* The first 4 steps can be performed entirely in 32-bit arithmetic;
+        the last needs 64-bit arithmetic. */
+    u = 1U + (uint32_t)(m >> 62);
+    u = (u << 1) + (uint32_t)(m >> 59) / u;
+    u = (u << 3) + (uint32_t)(m >> 53) / u;
+    u = (u << 7) + (uint32_t)(m >> 41) / u;
+    v = (u << 15) + ((m >> 17) / u);
+
+    /* Now we have an *approximate* square root for the top 64 bits of n */
+    /* Shift to get only the bits we need, and initialize a and d. */
+    d = c >> (c_bit_length - 5);
+    a = PyLong_FromUnsignedLongLong((unsigned long long)(v >> (31U - d)));
     if (a == NULL) {
         goto error;
     }
-    d = 0;
-    while (--s >= 0) {
-        PyObject *q, *shift;
+
+    for (int s = c_bit_length - 6; s >= 0; --s) {
+        PyObject *q;
         size_t e = d;
 
         d = c >> s;
