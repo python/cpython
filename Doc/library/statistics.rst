@@ -522,11 +522,26 @@ However, for reading convenience, most of the examples show sorted sequences.
    value or compute ``106`` as the midpoint).  This might matter if
    there are too few samples for a given number of cut points.
 
-   If *method* is set to *inclusive*, *dist* is treated as population data.
-   The minimum value is treated as the 0th percentile and the maximum
-   value is treated as the 100th percentile.  If *dist* is an instance of
-   a class that defines an :meth:`~inv_cdf` method, setting *method*
-   has no effect.
+   The choice of *method* depends on whether dataset includes or
+   excludes the lowest and highest possible values from the
+   population.
+
+   The *method* defaults to *exclusive*.  This is used for data
+   sampled from a population with more extreme values than found in
+   the samples.  The quantiles are computed with the assumption
+   that each data point, including the smallest and largest,
+   separates two continuous intervals with equal probability.
+
+   When the *method* is set to *inclusive*, the minimum value in
+   *dist* is treated as the 0th percentile and the maximum value is
+   treated as the 100th percentile.  This is useful for describing
+   population data.  It also applies to sample data that is known to
+   include the most extreme possible values (such as a sample of test
+   scores including 0 and 100, the lowest and highest possible
+   scores).
+
+   If *dist* is an instance of a class that defines an
+   :meth:`~inv_cdf` method, setting *method* has no effect.
 
    .. doctest::
 
