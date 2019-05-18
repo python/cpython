@@ -511,22 +511,33 @@ However, for reading convenience, most of the examples show sorted sequences.
    is not least 1.
 
    The *dist* can be any iterable containing sample data or it can be an
-   instance of a class that defines an :meth:`~inv_cdf` method.
+   instance of a class that defines an :meth:`~inv_cdf` method.  For meaningful
+   results, the number of data points in *dist* should be larger than *n*.
    Raises :exc:`StatisticsError` if there are not at least two data points.
 
    For sample data, the cut points are linearly interpolated from the
    two nearest data points.  For example, if a cut point falls one-third
    of the distance between two sample values, ``100`` and ``112``, the
-   cut-point will evaluate to ``104``.  Other selection methods may be
-   offered in the future (for example choose ``100`` as the nearest
-   value or compute ``106`` as the midpoint).  This might matter if
-   there are too few samples for a given number of cut points.
+   cut-point will evaluate to ``104``.
 
-   If *method* is set to *inclusive*, *dist* is treated as population data.
-   The minimum value is treated as the 0th percentile and the maximum
-   value is treated as the 100th percentile.  If *dist* is an instance of
-   a class that defines an :meth:`~inv_cdf` method, setting *method*
-   has no effect.
+   The *method* for computing quantiles can be varied depending on
+   whether the data in *dist* includes or excludes the lowest and
+   highest possible values from the population.
+
+   The default *method* is "exclusive" and is used for data sampled from
+   a population that can have more extreme values than found in the
+   samples.  The portion of the population falling below the *i-th* of
+   *m* data points is computed as ``i / (m + 1)``.
+
+   Setting the *method* to "inclusive" is used for describing population
+   data or for samples that include the extreme points.  The minimum
+   value in *dist* is treated as the 0th percentile and the maximum
+   value is treated as the 100th percentile.  The portion of the
+   population falling below the *i-th* of *m* data points is computed as
+   ``(i - 1) / (m - 1)``.
+
+   If *dist* is an instance of a class that defines an
+   :meth:`~inv_cdf` method, setting *method* has no effect.
 
    .. doctest::
 
