@@ -1586,7 +1586,9 @@ class TestRFC2047(unittest.TestCase):
     def test_rfc2047_missing_whitespace(self):
         s = 'Sm=?ISO-8859-1?B?9g==?=rg=?ISO-8859-1?B?5Q==?=sbord'
         dh = decode_header(s)
-        self.assertEqual(dh, [(s, None)])
+        self.assertEqual(dh, [(b'Sm', None), (b'\xf6', 'iso-8859-1'),
+                              (b'rg', None), (b'\xe5', 'iso-8859-1'),
+                              (b'sbord', None)])
 
     def test_rfc2047_with_whitespace(self):
         s = 'Sm =?ISO-8859-1?B?9g==?= rg =?ISO-8859-1?B?5Q==?= sbord'
