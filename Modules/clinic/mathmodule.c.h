@@ -65,6 +65,15 @@ PyDoc_STRVAR(math_fsum__doc__,
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
 
+PyDoc_STRVAR(math_isqrt__doc__,
+"isqrt($module, n, /)\n"
+"--\n"
+"\n"
+"Return the integer part of the square root of the input.");
+
+#define MATH_ISQRT_METHODDEF    \
+    {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
+
 PyDoc_STRVAR(math_factorial__doc__,
 "factorial($module, x, /)\n"
 "--\n"
@@ -628,4 +637,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96e71135dce41c48 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aeed62f403b90199 input=a9049054013a1b77]*/
