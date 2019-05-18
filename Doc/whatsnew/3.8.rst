@@ -344,6 +344,9 @@ Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
 numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 
+Added new function :func:`math.isqrt` for computing integer square roots.
+(Contributed by Mark Dickinson in :issue:`36887`.)
+
 os
 --
 
