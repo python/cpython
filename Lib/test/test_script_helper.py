@@ -10,6 +10,23 @@ from unittest import mock
 
 class TestScriptHelper(unittest.TestCase):
 
+    def test_run_until(self):
+        script_helper.run_until(lambda: True, timeout=1)
+
+        # Use a condition that never turns True
+        with self.assertRaises(TimeoutError):
+            script_helper.run_until(lambda: False, timeout=1)
+
+        # Do not give run_until enough time to evaluate a condition
+        with self.assertRaises(TimeoutError):
+            script_helper.run_until(lambda: True, timeout=0)
+
+        # run_until allows the user to specify an error message in case the
+        # condition is not met after *timeout* seconds.
+        msg = 'Custom error message'
+        with self.assertRaisesRegex(TimeoutError, msg):
+            script_helper.run_until(lambda: False, timeout=1, error_msg=msg)
+
     def test_assert_python_ok(self):
         t = script_helper.assert_python_ok('-c', 'import sys; sys.exit(0)')
         self.assertEqual(0, t[0], 'return code was not 0')
