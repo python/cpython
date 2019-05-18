@@ -1363,8 +1363,11 @@ class PathFinder:
 
     @classmethod
     def find_distributions(cls, name=None, path=None):
-        """Return an iterable of all Distribution instances capable of
-        loading the metadata for packages matching the name
+        """
+        Find distributions.
+
+        Return an iterable of all Distribution instances capable of
+        loading the metadata for packages matching the ``name``
         (or all names if not supplied) along the paths in the list
         of directories ``path`` (defaults to sys.path).
         """
@@ -1378,9 +1381,7 @@ class PathFinder:
 
     @classmethod
     def _search_paths(cls, pattern, paths):
-        """
-        Find metadata directories in paths heuristically.
-        """
+        """Find metadata directories in paths heuristically."""
         import itertools
         return itertools.chain.from_iterable(
             cls._search_path(path, pattern)
