@@ -1348,6 +1348,18 @@ script execution tests.
    interpreter can start.
 
 
+.. function:: run_until(condition, timeout=60, error_msg=None)
+
+   Evaluates repeatedly ``condition`` (which must be a callable), until it
+   becomes ``True``.
+
+   If ``condition`` did not evaluate to ``True`` after ``timeout`` seconds, a
+   :exc:`TimeoutError` is raised. The :exc:`TimeoutError` message can be
+   customized by specifying ``error_msg``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: run_python_until_end(*args, **env_vars)
 
    Set up the environment based on *env_vars* for running the interpreter
