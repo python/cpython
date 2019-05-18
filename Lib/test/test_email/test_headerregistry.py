@@ -1656,5 +1656,26 @@ class TestFolding(TestHeaderBase):
             h.fold(policy=policy.default.clone(max_line_length=20)),
             'Message-ID: <somemessageidlongerthan@maxlinelength.com>\n')
 
+        # Test message-id isn't folded when id-right is no-fold-literal.
+        h = self.make_header(
+            'Message-ID',
+            '<somemessageidlongerthan@[127.0.0.0.0.0.0.0.0.1]>')
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'Message-ID: <somemessageidlongerthan@[127.0.0.0.0.0.0.0.0.1]>\n')
+
+        # Test message-id isn't folded when id-right is non-ascii characters.
+        h = self.make_header('Message-ID', '<ईमेल@wők.com>')
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=30)),
+            'Message-ID: <ईमेल@wők.com>\n')
+
+        # Test message-id is folded without breaking the msg-id token into
+        # encoded words, *even* if they don't fit into max_line_length.
+        h = self.make_header('Message-ID', '<ईमेलfromMessage@wők.com>')
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'Message-ID:\n <ईमेलfromMessage@wők.com>\n')
+
 if __name__ == '__main__':
     unittest.main()

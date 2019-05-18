@@ -179,37 +179,30 @@ class WhiteSpaceTokenList(TokenList):
 
 
 class UnstructuredTokenList(TokenList):
-
     token_type = 'unstructured'
 
 
 class Phrase(TokenList):
-
     token_type = 'phrase'
 
 class Word(TokenList):
-
     token_type = 'word'
 
 
 class CFWSList(WhiteSpaceTokenList):
-
     token_type = 'cfws'
 
 
 class Atom(TokenList):
-
     token_type = 'atom'
 
 
 class Token(TokenList):
-
     token_type = 'token'
     encode_as_ew = False
 
 
 class EncodedWord(TokenList):
-
     token_type = 'encoded-word'
     cte = None
     charset = None
@@ -496,18 +489,15 @@ class Domain(TokenList):
 
 
 class DotAtom(TokenList):
-
     token_type = 'dot-atom'
 
 
 class DotAtomText(TokenList):
-
     token_type = 'dot-atom-text'
     as_ew_allowed = True
 
 
 class NoFoldLiteral(TokenList):
-
     token_type = 'no-fold-literal'
     as_ew_allowed = False
 
@@ -815,7 +805,6 @@ class ParameterizedHeaderValue(TokenList):
 
 
 class ContentType(ParameterizedHeaderValue):
-
     token_type = 'content-type'
     as_ew_allowed = False
     maintype = 'text'
@@ -823,38 +812,33 @@ class ContentType(ParameterizedHeaderValue):
 
 
 class ContentDisposition(ParameterizedHeaderValue):
-
     token_type = 'content-disposition'
     as_ew_allowed = False
     content_disposition = None
 
 
 class ContentTransferEncoding(TokenList):
-
     token_type = 'content-transfer-encoding'
     as_ew_allowed = False
     cte = '7bit'
 
 
 class HeaderLabel(TokenList):
-
     token_type = 'header-label'
     as_ew_allowed = False
 
 
 class MsgID(TokenList):
-
     token_type = 'msg-id'
     as_ew_allowed = False
+    fold_subparts = False
 
 
 class MessageID(MsgID):
-
     token_type = 'message-id'
 
 
 class Header(TokenList):
-
     token_type = 'header'
 
 
@@ -2763,6 +2747,10 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # to unpacking the subparts and wrapping them.
             if not hasattr(part, 'encode'):
                 # It's not a Terminal, do each piece individually.
+                if not getattr(part, 'fold_subparts', True):
+                    # This part can't be folded and also doesn't allow folding
+                    # of subparts.
+                    wrap_as_ew_blocked += 1
                 parts = list(part) + parts
             else:
                 # It's a terminal, wrap it as an encoded word, possibly
