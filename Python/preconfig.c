@@ -241,8 +241,9 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline,
     }
 
     /* dev_mode */
-    if ((cmdline && _Py_get_xoption(&cmdline->xoptions, L"dev"))
-        || _Py_GetEnv(cmdline->use_environment, "PYTHONDEVMODE"))
+    if ((cmdline->dev_mode < 0)
+        && (_Py_get_xoption(&cmdline->xoptions, L"dev")
+            || _Py_GetEnv(cmdline->use_environment, "PYTHONDEVMODE")))
     {
         cmdline->dev_mode = 1;
     }
@@ -260,10 +261,22 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
+
 void
 _PyPreConfig_Init(_PyPreConfig *config)
 {
-    *config = _PyPreConfig_INIT;
+    memset(config, 0, sizeof(*config));
+
+    config->_config_version = _Py_CONFIG_VERSION;
+    config->isolated = -1;
+    config->use_environment = -1;
+    config->configure_locale = 1;
+    config->utf8_mode = -2;
+    config->dev_mode = -1;
+    config->allocator = PYMEM_ALLOCATOR_NOT_SET;
+#ifdef MS_WINDOWS
+    config->legacy_windows_fs_encoding = -1;
+#endif
 }
 
 
@@ -289,11 +302,11 @@ _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config)
     config->configure_locale = 0;
     config->isolated = 1;
     config->use_environment = 0;
+    config->utf8_mode = 0;
+    config->dev_mode = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = 0;
 #endif
-    config->utf8_mode = 0;
-    config->dev_mode = 0;
 }
 
 

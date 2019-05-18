@@ -77,14 +77,12 @@ main(int argc, char *argv[])
     text[text_size] = '\0';
 
     _PyCoreConfig config;
-    _PyCoreConfig_Init(&config);
-    config.use_environment = 0;
-    config.user_site_directory = 0;
+    _PyCoreConfig_InitIsolatedConfig(&config);
+
     config.site_import = 0;
     config.program_name = L"./_freeze_importlib";
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
-    config.pathconfig_warnings = 0;
     config._init_main = 0;
 
     _PyInitError err = _Py_InitializeFromConfig(&config);
