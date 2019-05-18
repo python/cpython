@@ -1483,7 +1483,7 @@ Given a nonnegative integer `n`, we want to compute the largest integer
 square root of `n`.
 
 We use an adaptive-precision pure-integer version of Newton's iteration. Given
-a positive integer `n`, the algorithm produces at each iteration an
+a positive integer `n`, the algorithm produces at each iteration an integer
 approximation `a` to the square root of `n >> s` for some even integer `s`,
 with `s` decreasing as the iterations progress. On the final iteration, `s` is
 zero and we have an approximation to the square root of `n` itself.
@@ -1498,11 +1498,10 @@ whether `a` or `a - 1` gives the desired integer square root of `n`.
 
 The algorithm is remarkable in its simplicity. There's no need for a
 per-iteration check-and-correct step, and termination is straightforward: the
-number of iterations is known in advance (it's exactly `1 +
-floor(log2(log4(n)))` for `n > 1`). The only tricky part of the correctness
-proof is in establishing that the bound `(a - 1)**2 < (n >> s) < (a + 1)**2` is
-maintained from one iteration to the next. A sketch of the proof of this is
-given below.
+number of iterations is known in advance (it's exactly `floor(log2(log2(n)))`
+for `n > 1`). The only tricky part of the correctness proof is in establishing
+that the bound `(a - 1)**2 < (n >> s) < (a + 1)**2` is maintained from one
+iteration to the next. A sketch of the proof of this is given below.
 
 In addition to the proof sketch, a formal, computer-verified proof
 of correctness (using Lean) of an equivalent recursive algorithm can be found
@@ -1511,8 +1510,7 @@ here:
     https://github.com/mdickinson/snippets/blob/master/proofs/isqrt/src/isqrt.lean
 
 
-Here's the Python code equivalent to the C implementation:
-
+Here's Python code equivalent to the C implementation below:
 
     def isqrt(n):
         """
@@ -1532,7 +1530,6 @@ Here's the Python code equivalent to the C implementation:
             e = d
             d = c >> s
             a = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
-            # Loop invariant
             assert (a-1)**2 < n >> 2*(c - d) < (a+1)**2
 
         return a - (a*a > n)
@@ -1541,8 +1538,8 @@ Here's the Python code equivalent to the C implementation:
 Sketch of proof of correctness
 ------------------------------
 
-The tricky part of the correctness proof is showing that the loop invariant is
-preserved from one iteration to the next. That is, just before the line
+The delicate part of the correctness proof is showing that the loop invariant
+is preserved from one iteration to the next. That is, just before the line
 
     a = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
 
@@ -1562,19 +1559,18 @@ To faciliate the proof, we make some changes of notation. Write `m` for
 
 or equivalently:
 
-    (2)  b = (a << d - e - 1) + (m >> d - e + 1)
+    (2)  b = (a << d - e - 1) + (m >> d - e + 1) // a
 
 Then we can rewrite (1) as:
 
     (3)  (a - 1)**2 < (m >> 2*(d - e)) < (a + 1)**2
 
-and we must show that
-
-    (b - 1)**2 < m < (b + 1)**2
+and we must show that (b - 1)**2 < m < (b + 1)**2.
 
 From this point on, we switch to mathematical notation, so `/` means exact
 division rather than integer division and `^` is used for exponentiation. We
-use the `√` symbol for the exact square root. From (3), we have
+use the `√` symbol for the exact square root. In (3), we can remove the
+implicit floor operation to give:
 
     (4)  (a - 1)^2 < m / 4^(d - e) < (a + 1)^2
 
@@ -1587,11 +1583,12 @@ Squaring and dividing through by `2^(d-e+1) a` gives
     (6)  0 <= 2^(d-e-1) a + m / (2^(d-e+1) a) - √m < 2^(d-e-1) / a
 
 We'll show below that `2^(d-e-1) <= a`. Given that, we can replace the
-right-hand side of (6) with `1`, and now taking the floor throughout (6) gives
+right-hand side of (6) with `1`, and now replacing the central
+term `m / (2^(d-e+1) a)` with its floor in (6) gives
 
     (7) -1 < 2^(d-e-1) a + m // 2^(d-e+1) a - √m < 1
 
-Or equivalently:
+Or equivalently, from (2):
 
     (7) -1 < b - √m < 1
 
@@ -1617,8 +1614,9 @@ But we know from (4) that `m / 4^(d-e) < (a + 1)^2`, hence
 
     (11)  4^(d - e - 1) < (a + 1)^2
 
-Now taking square roots of both sides gives `2^(d - e - 1) <= a`, which is
-what we needed. This completes the proof sketch.
+Now taking square roots of both sides and observing that both `2^(d-e-1)` and
+`a` are integers gives `2^(d - e - 1) <= a`, which is what we needed. This
+completes the proof sketch.
 
 */
 
