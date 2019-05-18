@@ -142,7 +142,7 @@ static inline void secure_zero_memory(void *v, size_t n)
   SecureZeroMemory(v, n);
 #else
 // prioritize first the general C11 call
-#if defined(HAVE_MEMSET_S)
+#if defined(HAVE_MEMSET_S) && !defined(__APPLE__)
   memset_s(v, n, 0, n);
 #elif defined(HAVE_EXPLICIT_BZERO)
   explicit_bzero(v, n);
