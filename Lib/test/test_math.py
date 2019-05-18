@@ -912,6 +912,57 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.dist(p, q), 5*scale)
             self.assertEqual(math.dist(q, p), 5*scale)
 
+    def testIsqrt(self):
+        # Test a variety of inputs, large and small.
+        test_values = (
+            list(range(1000))
+            + list(range(10**6 - 1000, 10**6 + 1000))
+            + [3**9999, 10**5001]
+        )
+
+        for value in test_values:
+            with self.subTest(value=value):
+                s = math.isqrt(value)
+                self.assertIs(type(s), int)
+                self.assertLessEqual(s*s, value)
+                self.assertLess(value, (s+1)*(s+1))
+
+        # Negative values
+        with self.assertRaises(ValueError):
+            math.isqrt(-1)
+
+        # Integer-like things
+        s = math.isqrt(True)
+        self.assertIs(type(s), int)
+        self.assertEqual(s, 1)
+
+        s = math.isqrt(False)
+        self.assertIs(type(s), int)
+        self.assertEqual(s, 0)
+
+        class IntegerLike(object):
+            def __init__(self, value):
+                self.value = value
+
+            def __index__(self):
+                return self.value
+
+        s = math.isqrt(IntegerLike(1729))
+        self.assertIs(type(s), int)
+        self.assertEqual(s, 41)
+
+        with self.assertRaises(ValueError):
+            math.isqrt(IntegerLike(-3))
+
+        # Non-integer-like things
+        bad_values = [
+            3.5, "a string", decimal.Decimal("3.5"), 3.5j,
+            100.0, -4.0,
+        ]
+        for value in bad_values:
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    math.isqrt(value)
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
