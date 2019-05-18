@@ -358,8 +358,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     tz = -1
     gmtoff = None
     gmtoff_fraction = 0
-    # Default to -1 to signify that values not known; not critical to have,
-    # though
     iso_week = week_of_year = None
     week_of_year_start = None
     # weekday and julian defaulted to None so as to signal need to calculate
@@ -483,19 +481,11 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     else:
                         tz = value
                         break
-    # Deal with the cases where ambiguities arize
+
+    # Deal with the cases where ambiguities arise
     # don't assume default values for ISO week/year
-    if year is None and iso_year is not None:
-        if iso_week is None or weekday is None:
-            raise ValueError("ISO year directive '%G' must be used with "
-                             "the ISO week directive '%V' and a weekday "
-                             "directive ('%A', '%a', '%w', or '%u').")
-        if julian is not None:
-            raise ValueError("Day of the year directive '%j' is not "
-                             "compatible with ISO year directive '%G'. "
-                             "Use '%Y' instead.")
-    elif week_of_year is None and iso_week is not None:
-        if weekday is None:
+    if iso_year is None and iso_week is not None:
+        if year is None or weekday is None:
             raise ValueError("ISO week directive '%V' must be used with "
                              "the ISO year directive '%G' and a weekday "
                              "directive ('%A', '%a', '%w', or '%u').")
@@ -503,6 +493,16 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             raise ValueError("ISO week directive '%V' is incompatible with "
                              "the year directive '%Y'. Use the ISO year '%G' "
                              "instead.")
+    elif iso_year is not None:
+        if julian is not None:
+            raise ValueError("Day of the year directive '%j' is not "
+                             "compatible with ISO year directive '%G'. "
+                             "Use '%Y' instead.")
+        elif iso_week is None or weekday is None:
+            raise ValueError("ISO year directive '%G' must be used with "
+                             "the ISO week directive '%V' and a weekday "
+                             "directive ('%A', '%a', '%w', or '%u').")
+
 
     leap_year_fix = False
     if year is None:

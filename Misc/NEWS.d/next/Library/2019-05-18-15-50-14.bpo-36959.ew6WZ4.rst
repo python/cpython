@@ -1,0 +1,5 @@
+Fix checks for invalid combinations of ISO format strings in strptime.
+
+(This will change ValueError messages for certain invalid combinations.)
+
+Patch by Gordon P. Hemsley.
