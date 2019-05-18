@@ -551,14 +551,69 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
 void
 _PyCoreConfig_Init(_PyCoreConfig *config)
 {
-    *config = _PyCoreConfig_INIT;
+    memset(config, 0, sizeof(*config));
+
+    config->_config_version = _Py_CONFIG_VERSION;
+    config->isolated = -1;
+    config->use_environment = -1;
+    config->dev_mode = -1;
+    config->install_signal_handlers = 1;
+    config->use_hash_seed = -1;
+    config->faulthandler = -1;
+    config->tracemalloc = -1;
+    config->use_module_search_paths = 0;
+    config->parse_argv = 0;
+    config->site_import = -1;
+    config->bytes_warning = -1;
+    config->inspect = -1;
+    config->interactive = -1;
+    config->optimization_level = -1;
+    config->parser_debug= -1;
+    config->write_bytecode = -1;
+    config->verbose = -1;
+    config->quiet = -1;
+    config->user_site_directory = -1;
+    config->configure_c_stdio = 0;
+    config->buffered_stdio = -1;
+    config->_install_importlib = 1;
+    config->check_hash_pycs_mode = NULL;
+    config->pathconfig_warnings = -1;
+    config->_init_main = 1;
+#ifdef MS_WINDOWS
+    config->legacy_windows_stdio = -1;
+#endif
+}
+
+
+static void
+_PyCoreConfig_InitDefaults(_PyCoreConfig *config)
+{
+    _PyCoreConfig_Init(config);
+
+    config->isolated = 0;
+    config->use_environment = 1;
+    config->site_import = 1;
+    config->bytes_warning = 0;
+    config->inspect = 0;
+    config->interactive = 0;
+    config->optimization_level = 0;
+    config->parser_debug= 0;
+    config->write_bytecode = 1;
+    config->verbose = 0;
+    config->quiet = 0;
+    config->user_site_directory = 1;
+    config->buffered_stdio = 1;
+    config->pathconfig_warnings = 1;
+#ifdef MS_WINDOWS
+    config->legacy_windows_stdio = 0;
+#endif
 }
 
 
 _PyInitError
 _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config)
 {
-    _PyCoreConfig_Init(config);
+    _PyCoreConfig_InitDefaults(config);
 
     config->configure_c_stdio = 1;
     config->parse_argv = 1;
@@ -570,30 +625,16 @@ _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config)
 _PyInitError
 _PyCoreConfig_InitIsolatedConfig(_PyCoreConfig *config)
 {
-    _PyCoreConfig_Init(config);
+    _PyCoreConfig_InitDefaults(config);
 
-    /* set to 1 */
     config->isolated = 1;
-    config->site_import = 1;
-    config->write_bytecode = 1;
-    config->buffered_stdio = 1;
-
-    /* set to 0 */
     config->use_environment = 0;
+    config->user_site_directory = 0;
     config->dev_mode = 0;
     config->install_signal_handlers = 0;
     config->use_hash_seed = 0;
     config->faulthandler = 0;
     config->tracemalloc = 0;
-    config->bytes_warning = 0;
-    config->inspect = 0;
-    config->interactive = 0;
-    config->optimization_level = 0;
-    config->parser_debug = 0;
-    config->verbose = 0;
-    config->quiet = 0;
-    config->user_site_directory = 0;
-    config->configure_c_stdio = 0;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
