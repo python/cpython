@@ -810,6 +810,17 @@ append_ast_await(_PyUnicodeWriter *writer, expr_ty e, int level)
 }
 
 static int
+append_named_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
+{
+    APPEND_STR_IF(level > PR_TUPLE, "(");
+    APPEND_EXPR(e->v.NamedExpr.target, PR_ATOM);
+    APPEND_STR(":=");
+    APPEND_EXPR(e->v.NamedExpr.value, PR_ATOM);
+    APPEND_STR_IF(level > PR_TUPLE, ")");
+    return 0;
+}
+
+static int
 append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     switch (e->kind) {
@@ -867,6 +878,8 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_list(writer, e);
     case Tuple_kind:
         return append_ast_tuple(writer, e, level);
+    case NamedExpr_kind:
+        return append_named_expr(writer, e, level);
     default:
         PyErr_SetString(PyExc_SystemError,
                         "unknown expression kind");
