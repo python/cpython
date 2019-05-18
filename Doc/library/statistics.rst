@@ -523,17 +523,17 @@ However, for reading convenience, most of the examples show sorted sequences.
    in *dist* includes or excludes the lowest and highest possible values
    from the population.
 
-   The default *method* is *exclusive* and is used for data sampled from
+   The default *method* is "exclusive" and is used for data sampled from
    a population that can have more extreme values than found in the
    samples.  The portion of the population falling below the *i-th* of
-   *m* data points is computed as ``i // (m + 1)``.
+   *m* data points is computed as ``i / (m + 1)``.
 
-   Setting the *method* to *inclusive* is used for describing population
+   Setting the *method* to "inclusive" is used for describing population
    data or for samples that include the extreme points.  The minimum
    value in *dist* is treated as the 0th percentile and the maximum
    value is treated as the 100th percentile.  The portion of the
    population falling below the *i-th* of *m* data points is computed as
-   ``(i - 1) // (m - 1)``.
+   ``(i - 1) / (m - 1)``.
 
    If *dist* is an instance of a class that defines an
    :meth:`~inv_cdf` method, setting *method* has no effect.
