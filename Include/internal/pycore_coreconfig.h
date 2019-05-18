@@ -121,8 +121,6 @@ PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 /* --- _PyPreConfig ----------------------------------------------- */
 
 PyAPI_FUNC(void) _PyPreConfig_Init(_PyPreConfig *config);
-PyAPI_FUNC(void) _PyPreConfig_InitPythonConfig(_PyPreConfig *config);
-PyAPI_FUNC(void) _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config);
 PyAPI_FUNC(void) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
 PyAPI_FUNC(PyObject*) _PyPreConfig_AsDict(const _PyPreConfig *config);
@@ -135,34 +133,18 @@ PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(const _PyPreConfig *config);
 
 /* --- _PyCoreConfig ---------------------------------------------- */
 
-PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitIsolatedConfig(_PyCoreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_Init(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
-    wchar_t **config_str,
-    const wchar_t *str);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
-    wchar_t **config_str,
-    const char *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config,
     _PyRuntimeState *runtime);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPyArgv(
     _PyCoreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
-    _PyCoreConfig *config,
-    Py_ssize_t argc,
-    char **argv);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
-    Py_ssize_t argc,
-    wchar_t **argv);
 
 
 /* --- Function used for testing ---------------------------------- */

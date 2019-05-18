@@ -40,7 +40,7 @@ Py_FrozenMain(int argc, char **argv)
     }
 
     _PyCoreConfig config;
-    _PyCoreConfig_Init(&config);
+    _PyCoreConfig_InitPythonConfig(&config);
     config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')

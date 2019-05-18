@@ -115,27 +115,8 @@ typedef struct {
     PyMemAllocatorName allocator;
 } _PyPreConfig;
 
-#ifdef MS_WINDOWS
-#  define _PyPreConfig_WINDOWS_INIT \
-        .legacy_windows_fs_encoding = -1,
-#else
-#  define _PyPreConfig_WINDOWS_INIT
-#endif
-
-#define _PyPreConfig_INIT \
-    (_PyPreConfig){ \
-        _PyPreConfig_WINDOWS_INIT \
-        ._config_version = _Py_CONFIG_VERSION, \
-        .isolated = -1, \
-        .use_environment = -1, \
-        .configure_locale = 1, \
-        .utf8_mode = -2, \
-        .dev_mode = -1, \
-        .allocator = PYMEM_ALLOCATOR_NOT_SET}
-
-PyAPI_FUNC(void) _PyPreConfig_Init(_PyPreConfig *config);
 PyAPI_FUNC(void) _PyPreConfig_InitPythonConfig(_PyPreConfig *config);
-PyAPI_FUNC(void) _PyPreConfig_InitIsolateConfig(_PyPreConfig *config);
+PyAPI_FUNC(void) _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config);
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */
@@ -419,47 +400,23 @@ typedef struct {
 
 } _PyCoreConfig;
 
-#ifdef MS_WINDOWS
-#  define _PyCoreConfig_WINDOWS_INIT \
-        .legacy_windows_stdio = -1,
-#else
-#  define _PyCoreConfig_WINDOWS_INIT
-#endif
-
-#define _PyCoreConfig_INIT \
-    (_PyCoreConfig){ \
-        _PyCoreConfig_WINDOWS_INIT \
-        ._config_version = _Py_CONFIG_VERSION, \
-        .isolated = -1, \
-        .use_environment = -1, \
-        .dev_mode = -1, \
-        .install_signal_handlers = 1, \
-        .use_hash_seed = -1, \
-        .faulthandler = -1, \
-        .tracemalloc = -1, \
-        .use_module_search_paths = 0, \
-        .parse_argv = 0, \
-        .site_import = -1, \
-        .bytes_warning = -1, \
-        .inspect = -1, \
-        .interactive = -1, \
-        .optimization_level = -1, \
-        .parser_debug= -1, \
-        .write_bytecode = -1, \
-        .verbose = -1, \
-        .quiet = -1, \
-        .user_site_directory = -1, \
-        .configure_c_stdio = 0, \
-        .buffered_stdio = -1, \
-        ._install_importlib = 1, \
-        .check_hash_pycs_mode = NULL, \
-        .pathconfig_warnings = -1, \
-        ._init_main = 1}
-/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
-
-PyAPI_FUNC(void) _PyCoreConfig_Init(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitIsolateConfig(_PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitIsolatedConfig(_PyCoreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
+    wchar_t **config_str,
+    const wchar_t *str);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
+    wchar_t **config_str,
+    const char *str);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
+    _PyCoreConfig *config,
+    Py_ssize_t argc,
+    char **argv);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
+    Py_ssize_t argc,
+    wchar_t **argv);
 
 #ifdef __cplusplus
 }
