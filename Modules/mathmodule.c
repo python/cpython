@@ -1694,11 +1694,10 @@ math_isqrt(PyObject *module, PyObject *n)
        arithmetic, then switch to using Python long integers. */
 
     /* Compute c.bit_length(); from n >= 2**64 it follows that this is >= 6. */
-    c_bit_length = 0;
+    c_bit_length = 6;
     while ((c >> c_bit_length) > 0U) {
         ++c_bit_length;
     }
-    assert(c_bit_length >= 6);
 
     /* Shift and convert n to get a uint64_t m with 2**62 <= m < 2**64. */
     n_shift = c - 31U;
