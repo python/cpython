@@ -511,7 +511,8 @@ However, for reading convenience, most of the examples show sorted sequences.
    is not least 1.
 
    The *dist* can be any iterable containing sample data or it can be an
-   instance of a class that defines an :meth:`~inv_cdf` method.
+   instance of a class that defines an :meth:`~inv_cdf` method.  For meaningful
+   results, the number of data points in *dist* should be larger than *n*.
    Raises :exc:`StatisticsError` if there are not at least two data points.
 
    For sample data, the cut points are linearly interpolated from the
