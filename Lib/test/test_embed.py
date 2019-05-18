@@ -369,7 +369,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'legacy_windows_fs_encoding': 0,
         })
         DEFAULT_CORE_CONFIG.update({
-            'dll_path': GET_DEFAULT_CONFIG,
             'legacy_windows_stdio': 0,
         })
 
@@ -466,8 +465,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'filesystem_errors': sys.getfilesystemencodeerrors(),
                 'module_search_paths': core_config['module_search_paths'],
             }
-            if sys.platform == 'win32':
-                data['dll_path'] = core_config['dll_path']
 
             data = json.dumps(data)
             data = data.encode('utf-8')
