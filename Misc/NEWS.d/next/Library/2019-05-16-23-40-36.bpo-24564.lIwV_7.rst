@@ -1,3 +1,3 @@
-shutil.copystat(): ignore EINVAL on os.setxattr() which may occur when copying files on NFS filesystems. 
+:func:`shutil.copystat` now ignores :const:`errno.EINVAL` on :func:`os.setxattr` which may occur when copying files on filesystems without extended attributes support.
 
-(patch by Giampaolo Rodola, pull request update by Ying Wang)
+Original patch by Giampaolo Rodola, updated by Ying Wang.
