@@ -26,6 +26,7 @@
     -->
     <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'x64'">amd64</ArchName>
     <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'ARM'">arm32</ArchName>
+    <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'ARM64'">arm64</ArchName>
     <ArchName Condition="'$(ArchName)' == ''">win32</ArchName>
     
     <!-- Root directory of the repository -->
@@ -39,9 +40,12 @@
     <BuildPath64 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\amd64\</BuildPath64>
     <BuildPathArm32 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\arm32\</BuildPathArm32>
     <BuildPathArm32 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\arm32\</BuildPathArm32>
+    <BuildPathArm64 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\arm64\</BuildPathArm64>
+    <BuildPathArm64 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\arm64\</BuildPathArm64>
     <BuildPath Condition="'$(ArchName)' == 'win32'">$(BuildPath32)</BuildPath>
     <BuildPath Condition="'$(ArchName)' == 'amd64'">$(BuildPath64)</BuildPath>
     <BuildPath Condition="'$(ArchName)' == 'arm32'">$(BuildPathArm32)</BuildPath>
+    <BuildPath Condition="'$(ArchName)' == 'arm64'">$(BuildPathArm64)</BuildPath>
     <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCbuild\$(ArchName)\</BuildPath>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
     <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
@@ -56,8 +60,8 @@
     <libffiDir>$(ExternalsDir)libffi\</libffiDir>
     <libffiOutDir>$(ExternalsDir)libffi\$(ArchName)\</libffiOutDir>
     <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.0j\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.0j\$(ArchName)\</opensslOutDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.1b\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1b\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
@@ -71,12 +75,17 @@
     <!-- Suffix for versions/keys when building for particular platforms -->
     <PyArchExt Condition="'$(ArchName)' == 'win32'">-32</PyArchExt>
     <PyArchExt Condition="'$(ArchName)' == 'arm32'">-arm32</PyArchExt>
+    <PyArchExt Condition="'$(ArchName)' == 'arm64'">-arm64</PyArchExt>
     
     <!-- Full path of the resulting python.exe binary -->
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Platform)'=='ARM'" Label="ArmConfiguration">
+    <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Platform)'=='ARM64'" Label="Arm64Configuration">
     <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
   </PropertyGroup>
 
@@ -193,6 +202,7 @@
     <!-- The version and platform tag to include in .pyd filenames -->
     <PydTag Condition="$(ArchName) == 'win32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>
     <PydTag Condition="$(ArchName) == 'arm32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_arm32</PydTag>
+    <PydTag Condition="$(ArchName) == 'arm64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_arm64</PydTag>
     <PydTag Condition="$(ArchName) == 'amd64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_amd64</PydTag>
     
     <!-- The version number for sys.winver -->

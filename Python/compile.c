@@ -24,6 +24,7 @@
 #include "Python.h"
 
 #include "Python-ast.h"
+#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"
@@ -310,6 +311,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags;
     int merged;
+    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -338,7 +340,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
+    c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
     c.c_nestlevel = 0;
 
     if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
@@ -2544,13 +2546,12 @@ compiler_if(struct compiler *c, stmt_ty s)
         return 0;
 
     constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0"
+    /* constant = 0: "if 0" Leave the optimizations to
+     * the pephole optimizer to check for syntax errors
+     * in the block.
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
-    if (constant == 0) {
-        if (s->v.If.orelse)
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-    } else if (constant == 1) {
+    if (constant == 1) {
         VISIT_SEQ(c, stmt, s->v.If.body);
     } else {
         if (asdl_seq_LEN(s->v.If.orelse)) {
@@ -4867,7 +4868,6 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             return compiler_error(c,
                 "can't use starred expression here");
         }
-        break;
     case Name_kind:
         return compiler_nameop(c, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */

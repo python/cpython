@@ -53,6 +53,10 @@ PyAPI_FUNC(int) _Py_FindEnvConfigValue(
     wchar_t *value,
     size_t value_size);
 
+#ifdef MS_WINDOWS
+extern wchar_t* _Py_GetDLLPath(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

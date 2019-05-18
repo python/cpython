@@ -329,6 +329,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             closed.exception()
 
 
+def _swallow_unhandled_exception(task):
+    # Do a trick to suppress unhandled exception
+    # if stream.write() was used without await and
+    # stream.drain() was paused and resumed with an exception
+    task.exception()
+
+
 class StreamWriter:
     """Wraps a Transport.
 
@@ -352,6 +359,8 @@ class StreamWriter:
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
         self._loop = loop
+        self._complete_fut = self._loop.create_future()
+        self._complete_fut.set_result(None)
 
     def __repr__(self):
         info = [self.__class__.__name__, f'transport={self._transport!r}']
@@ -365,9 +374,35 @@ class StreamWriter:
 
     def write(self, data):
         self._transport.write(data)
+        return self._fast_drain()
 
     def writelines(self, data):
         self._transport.writelines(data)
+        return self._fast_drain()
+
+    def _fast_drain(self):
+        # The helper tries to use fast-path to return already existing complete future
+        # object if underlying transport is not paused and actual waiting for writing
+        # resume is not needed
+        if self._reader is not None:
+            # this branch will be simplified after merging reader with writer
+            exc = self._reader.exception()
+            if exc is not None:
+                fut = self._loop.create_future()
+                fut.set_exception(exc)
+                return fut
+        if not self._transport.is_closing():
+            if self._protocol._connection_lost:
+                fut = self._loop.create_future()
+                fut.set_exception(ConnectionResetError('Connection lost'))
+                return fut
+            if not self._protocol._paused:
+                # fast path, the stream is not paused
+                # no need to wait for resume signal
+                return self._complete_fut
+        ret = self._loop.create_task(self.drain())
+        ret.add_done_callback(_swallow_unhandled_exception)
+        return ret
 
     def write_eof(self):
         return self._transport.write_eof()
@@ -377,6 +412,7 @@ class StreamWriter:
 
     def close(self):
         self._transport.close()
+        return self._protocol._get_close_waiter(self)
 
     def is_closing(self):
         return self._transport.is_closing()
@@ -403,18 +439,8 @@ class StreamWriter:
             # Wait for protocol.connection_lost() call
             # Raise connection closing error if any,
             # ConnectionResetError otherwise
-            fut = self._protocol._get_close_waiter(self)
-            await fut
-            raise ConnectionResetError('Connection lost')
+            await sleep(0)
         await self._protocol._drain_helper()
-
-    async def aclose(self):
-        self.close()
-        await self.wait_closed()
-
-    async def awrite(self, data):
-        self.write(data)
-        await self.drain()
 
 
 class StreamReader:

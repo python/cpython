@@ -49,6 +49,18 @@ This module defines the following functions:
    .. versionadded:: 3.3
 
 
+.. function:: get_native_id()
+
+   Return the native integral Thread ID of the current thread assigned by the kernel.
+   This is a non-negative integer.
+   Its value may be used to uniquely identify this particular thread system-wide
+   (until the thread terminates, after which the value may be recycled by the OS).
+
+   .. availability:: Windows, FreeBSD, Linux, macOS.
+
+   .. versionadded:: 3.8
+
+
 .. function:: enumerate()
 
    Return a list of all :class:`Thread` objects currently alive.  The list
@@ -296,6 +308,25 @@ since it is impossible to detect the termination of alien threads.
       function.  Thread identifiers may be recycled when a thread exits and
       another thread is created.  The identifier is available even after the
       thread has exited.
+
+   .. attribute:: native_id
+
+      The native integral thread ID of this thread or ``0`` if the thread has not
+      been started.  This is a non-negative integer.  See the
+      :func:`get_native_id` function.
+      This represents the Thread ID (``TID``) as assigned to the
+      thread by the OS (kernel).  Its value may be used to uniquely identify
+      this particular thread system-wide.
+
+      .. note::
+
+         Similar to Process IDs, Thread IDs are only valid (guaranteed unique
+         system-wide) from the time the thread is created until the thread
+         has been terminated.
+
+      .. availability:: Windows, FreeBSD, Linux, macOS.
+
+      .. versionadded:: 3.8
 
    .. method:: is_alive()
 
@@ -937,7 +968,7 @@ As an example, here is a simple way to synchronize a client and server thread::
       Return the barrier to the default, empty state.  Any threads waiting on it
       will receive the :class:`BrokenBarrierError` exception.
 
-      Note that using this function may can require some external
+      Note that using this function may require some external
       synchronization if there are other threads whose state is unknown.  If a
       barrier is broken it may be better to just leave it and create a new one.
 
@@ -945,7 +976,7 @@ As an example, here is a simple way to synchronize a client and server thread::
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.  Use
-      this for example if one of the needs to abort, to avoid deadlocking the
+      this for example if one of the threads needs to abort, to avoid deadlocking the
       application.
 
       It may be preferable to simply create the barrier with a sensible

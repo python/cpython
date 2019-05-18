@@ -256,7 +256,7 @@ def _create_parser():
                        help='suppress error message boxes on Windows')
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
-                            'error happens')
+                            'error happens; imply --failfast')
     group.add_argument('--list-tests', action='store_true',
                        help="only write the name of tests that will be run, "
                             "don't execute them")
@@ -389,5 +389,8 @@ def _parse_args(args, **kwargs):
         with open(ns.match_filename) as fp:
             for line in fp:
                 ns.match_tests.append(line.strip())
+    if ns.forever:
+        # --forever implies --failfast
+        ns.failfast = True
 
     return ns

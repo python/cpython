@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -376,7 +377,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     {
         PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
 #ifdef MS_WINDOWS
-        if (!Py_LegacyWindowsStdioFlag && _PyIO_get_console_type(path_or_fd) != '\0') {
+        _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+        if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
             encoding = "utf-8";
         }

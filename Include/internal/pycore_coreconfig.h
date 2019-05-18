@@ -10,8 +10,40 @@ extern "C" {
 
 #include "pycore_pystate.h"   /* _PyRuntimeState */
 
+/* --- _PyInitError ----------------------------------------------- */
+
+/* Almost all errors causing Python initialization to fail */
+#ifdef _MSC_VER
+   /* Visual Studio 2015 doesn't implement C99 __func__ in C */
+#  define _Py_INIT_GET_FUNC() __FUNCTION__
+#else
+#  define _Py_INIT_GET_FUNC() __func__
+#endif
+
+#define _Py_INIT_OK() \
+    (_PyInitError){._type = _Py_INIT_ERR_TYPE_OK,}
+    /* other fields are set to 0 */
+#define _Py_INIT_ERR(ERR_MSG) \
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_ERROR, \
+        ._func = _Py_INIT_GET_FUNC(), \
+        .err_msg = (ERR_MSG)}
+        /* other fields are set to 0 */
+#define _Py_INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
+#define _Py_INIT_EXIT(EXITCODE) \
+    (_PyInitError){ \
+        ._type = _Py_INIT_ERR_TYPE_EXIT, \
+        .exitcode = (EXITCODE)}
+#define _Py_INIT_IS_ERROR(err) \
+    (err._type == _Py_INIT_ERR_TYPE_ERROR)
+#define _Py_INIT_IS_EXIT(err) \
+    (err._type == _Py_INIT_ERR_TYPE_EXIT)
+#define _Py_INIT_FAILED(err) \
+    (err._type != _Py_INIT_ERR_TYPE_OK)
 
 /* --- _PyWstrList ------------------------------------------------ */
+
+#define _PyWstrList_INIT (_PyWstrList){.length = 0, .items = NULL}
 
 #ifndef NDEBUG
 PyAPI_FUNC(int) _PyWstrList_CheckConsistency(const _PyWstrList *list);
@@ -29,7 +61,7 @@ PyAPI_FUNC(int) _PyWstrList_Extend(_PyWstrList *list,
 /* --- _PyArgv ---------------------------------------------------- */
 
 typedef struct {
-    int argc;
+    Py_ssize_t argc;
     int use_bytes_argv;
     char **bytes_argv;
     wchar_t **wchar_argv;
@@ -88,45 +120,31 @@ PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
-PyAPI_FUNC(void) _PyPreConfig_Clear(_PyPreConfig *config);
-PyAPI_FUNC(int) _PyPreConfig_Copy(_PyPreConfig *config,
+PyAPI_FUNC(void) _PyPreConfig_Init(_PyPreConfig *config);
+PyAPI_FUNC(void) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
 PyAPI_FUNC(PyObject*) _PyPreConfig_AsDict(const _PyPreConfig *config);
-PyAPI_FUNC(void) _PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
+PyAPI_FUNC(void) _PyPreConfig_GetCoreConfig(_PyPreConfig *config,
     const _PyCoreConfig *core_config);
 PyAPI_FUNC(_PyInitError) _PyPreConfig_Read(_PyPreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(_PyPreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyPreConfig_Write(const _PyPreConfig *config);
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */
 
-PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
+PyAPI_FUNC(void) _PyCoreConfig_Init(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Copy(
     _PyCoreConfig *config,
     const _PyCoreConfig *config2);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
-    wchar_t **config_str,
-    const wchar_t *str);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
-    wchar_t **config_str,
-    const char *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPathConfig(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPathConfig(
     const _PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Write(const _PyCoreConfig *config,
     _PyRuntimeState *runtime);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetPyArgv(
     _PyCoreConfig *config,
     const _PyArgv *args);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
-    _PyCoreConfig *config,
-    int argc,
-    char **argv);
-PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
-    int argc,
-    wchar_t **argv);
 
 
 /* --- Function used for testing ---------------------------------- */

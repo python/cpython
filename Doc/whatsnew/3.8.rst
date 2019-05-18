@@ -138,7 +138,8 @@ environment variable, can be set using the new ``./configure --with-trace-refs``
 build option.
 (Contributed by Victor Stinner in :issue:`36465`.)
 
-On Unix, C extensions are no longer linked to libpython. It is now possible
+On Unix, C extensions are no longer linked to libpython except on Android.
+It is now possible
 for a statically linked Python to load a C extension built using a shared
 library Python.
 (Contributed by Victor Stinner in :issue:`21536`.)
@@ -303,6 +304,11 @@ gzip
 Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
 (Contributed by Guo Ci Teo in :issue:`34898`.)
 
+A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
+for certain types of invalid or corrupt gzip files.
+(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
+:issue:`6584`.)
+
 
 idlelib and IDLE
 ----------------
@@ -389,6 +395,14 @@ contain characters unrepresentable at the OS level.
 Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
+
+
+plistlib
+--------
+
+Added new :class:`plistlib.UID` and enabled support for reading and writing
+NSKeyedArchiver-encoded binary plists.
+(Contributed by Jon Janzen in :issue:`26707`.)
 
 
 socket
@@ -561,6 +575,13 @@ xml
   :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
   (Contributed by Stefan Behnel in :issue:`13611`.)
 
+* The target object of :class:`xml.etree.ElementTree.XMLParser` can
+  receive namespace declaration events through the new callback methods
+  ``start_ns()`` and ``end_ns()``.  Additionally, the
+  :class:`xml.etree.ElementTree.TreeBuilder` target can be configured
+  to process events about comments and processing instructions to include
+  them in the generated tree.
+  (Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
 
 Optimizations
 =============
@@ -762,10 +783,6 @@ Deprecated
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
-* The function :func:`~inspect.getfullargspec` in the :mod:`inspect`
-  module is deprecated in favor of the :func:`inspect.signature`
-  API.  (Contributed by Pablo Galindo in :issue:`36751`.)
-
 
 API and Feature Removals
 ========================
@@ -777,6 +794,10 @@ The following features and APIs have been removed from Python 3.8:
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
+
+* The function :func:`time.clock` has been removed, it was deprecated since Python
+  3.3: use :func:`time.perf_counter` or :func:`time.process_time` instead, depending
+  on your requirements, to have a well defined behavior.
 
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
@@ -798,6 +819,10 @@ The following features and APIs have been removed from Python 3.8:
 
 * "unicode_internal" codec is removed.
   (Contributed by Inada Naoki in :issue:`36297`.)
+
+* The ``Cache`` and ``Statement`` objects of the :mod:`sqlite3` module are not
+  exposed to the user.
+  (Contributed by Aviv Palivoda in :issue:`30262`.)
 
 
 Porting to Python 3.8
@@ -968,9 +993,18 @@ Changes in the Python API
   replacement by a pure Python implementation. (Contributed by Pablo Galindo
   in :issue:`36623`.)
 
+* :class:`types.CodeType` has a new parameter in the second position of the
+  constructor (*posonlyargcount*) to support positional-only arguments defined
+  in :pep:`570`.
+
 
 Changes in the C API
 --------------------
+
+* The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
+  It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
+  instead.
+  (Contributed by Victor Stinner in :issue:`36728`.)
 
 * On Unix, C extensions are no longer linked to libpython except on
   Android. When Python is embedded, ``libpython`` must not be loaded with

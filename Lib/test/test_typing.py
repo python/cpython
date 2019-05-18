@@ -1708,9 +1708,8 @@ class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
     def __aiter__(self) -> typing.AsyncIterator[T_a]:
         return self
 
-    @asyncio.coroutine
-    def __anext__(self) -> T_a:
-        data = yield from self.value
+    async def __anext__(self) -> T_a:
+        data = await self.value
         if data:
             return data
         else:

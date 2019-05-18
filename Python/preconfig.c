@@ -174,7 +174,7 @@ _PyPreCmdline_SetCoreConfig(const _PyPreCmdline *cmdline, _PyCoreConfig *config)
 static _PyInitError
 precmdline_parse_cmdline(_PyPreCmdline *cmdline)
 {
-    _PyWstrList *argv = &cmdline->argv;
+    const _PyWstrList *argv = &cmdline->argv;
 
     _PyOS_ResetGetOpt();
     /* Don't log parsing errors into stderr here: _PyCoreConfig_Read()
@@ -241,8 +241,9 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline,
     }
 
     /* dev_mode */
-    if ((cmdline && _Py_get_xoption(&cmdline->xoptions, L"dev"))
-        || _Py_GetEnv(cmdline->use_environment, "PYTHONDEVMODE"))
+    if ((cmdline->dev_mode < 0)
+        && (_Py_get_xoption(&cmdline->xoptions, L"dev")
+            || _Py_GetEnv(cmdline->use_environment, "PYTHONDEVMODE")))
     {
         cmdline->dev_mode = 1;
     }
@@ -260,44 +261,73 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 
 /* --- _PyPreConfig ----------------------------------------------- */
 
+
 void
-_PyPreConfig_Clear(_PyPreConfig *config)
+_PyPreConfig_Init(_PyPreConfig *config)
 {
-    PyMem_RawFree(config->allocator);
-    config->allocator = NULL;
+    memset(config, 0, sizeof(*config));
+
+    config->_config_version = _Py_CONFIG_VERSION;
+    config->isolated = -1;
+    config->use_environment = -1;
+    config->configure_locale = 1;
+    config->utf8_mode = -2;
+    config->dev_mode = -1;
+    config->allocator = PYMEM_ALLOCATOR_NOT_SET;
+#ifdef MS_WINDOWS
+    config->legacy_windows_fs_encoding = -1;
+#endif
 }
 
 
-int
+void
+_PyPreConfig_InitPythonConfig(_PyPreConfig *config)
+{
+    _PyPreConfig_Init(config);
+
+    /* Set to -1 to enable C locale coercion (PEP 538) and UTF-8 Mode (PEP 540)
+       depending on the LC_CTYPE locale, PYTHONUTF8 and PYTHONCOERCECLOCALE
+       environment variables. */
+    config->coerce_c_locale = -1;
+    config->coerce_c_locale_warn = -1;
+    config->utf8_mode = -1;
+}
+
+
+void
+_PyPreConfig_InitIsolatedConfig(_PyPreConfig *config)
+{
+    _PyPreConfig_Init(config);
+
+    config->configure_locale = 0;
+    config->isolated = 1;
+    config->use_environment = 0;
+    config->utf8_mode = 0;
+    config->dev_mode = 0;
+#ifdef MS_WINDOWS
+    config->legacy_windows_fs_encoding = 0;
+#endif
+}
+
+
+void
 _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 {
-    _PyPreConfig_Clear(config);
-
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
-#define COPY_STR_ATTR(ATTR) \
-    do { \
-        if (config2->ATTR != NULL) { \
-            config->ATTR = _PyMem_RawStrdup(config2->ATTR); \
-            if (config->ATTR == NULL) { \
-                return -1; \
-            } \
-        } \
-    } while (0)
 
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
+    COPY_ATTR(configure_locale);
     COPY_ATTR(dev_mode);
     COPY_ATTR(coerce_c_locale);
     COPY_ATTR(coerce_c_locale_warn);
+    COPY_ATTR(utf8_mode);
+    COPY_ATTR(allocator);
 #ifdef MS_WINDOWS
     COPY_ATTR(legacy_windows_fs_encoding);
 #endif
-    COPY_ATTR(utf8_mode);
-    COPY_STR_ATTR(allocator);
 
 #undef COPY_ATTR
-#undef COPY_STR_ATTR
-    return 0;
 }
 
 
@@ -334,6 +364,7 @@ _PyPreConfig_AsDict(const _PyPreConfig *config)
 
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
+    SET_ITEM_INT(configure_locale);
     SET_ITEM_INT(coerce_c_locale);
     SET_ITEM_INT(coerce_c_locale_warn);
     SET_ITEM_INT(utf8_mode);
@@ -341,7 +372,7 @@ _PyPreConfig_AsDict(const _PyPreConfig *config)
     SET_ITEM_INT(legacy_windows_fs_encoding);
 #endif
     SET_ITEM_INT(dev_mode);
-    SET_ITEM_STR(allocator);
+    SET_ITEM_INT(allocator);
     return dict;
 
 fail:
@@ -356,7 +387,7 @@ fail:
 
 
 void
-_PyCoreConfig_GetCoreConfig(_PyPreConfig *config,
+_PyPreConfig_GetCoreConfig(_PyPreConfig *config,
                             const _PyCoreConfig *core_config)
 {
 #define COPY_ATTR(ATTR) \
@@ -376,11 +407,11 @@ static void
 _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 {
 #define COPY_FLAG(ATTR, VALUE) \
-    if (config->ATTR == -1) { \
+    if (config->ATTR < 0) { \
         config->ATTR = VALUE; \
     }
 #define COPY_NOT_FLAG(ATTR, VALUE) \
-    if (config->ATTR == -1) { \
+    if (config->ATTR < 0) { \
         config->ATTR = !(VALUE); \
     }
 
@@ -389,8 +420,8 @@ _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
-    if (Py_UTF8Mode > 0) {
-        config->utf8_mode = 1;
+    if (config->utf8_mode == -2) {
+        config->utf8_mode = Py_UTF8Mode;
     }
 
 #undef COPY_FLAG
@@ -402,11 +433,11 @@ static void
 _PyPreConfig_SetGlobalConfig(const _PyPreConfig *config)
 {
 #define COPY_FLAG(ATTR, VAR) \
-    if (config->ATTR != -1) { \
+    if (config->ATTR >= 0) { \
         VAR = config->ATTR; \
     }
 #define COPY_NOT_FLAG(ATTR, VAR) \
-    if (config->ATTR != -1) { \
+    if (config->ATTR >= 0) { \
         VAR = !config->ATTR; \
     }
 
@@ -577,6 +608,12 @@ preconfig_init_utf8_mode(_PyPreConfig *config, const _PyPreCmdline *cmdline)
 static void
 preconfig_init_coerce_c_locale(_PyPreConfig *config)
 {
+    if (!config->configure_locale) {
+        config->coerce_c_locale = 0;
+        config->coerce_c_locale_warn = 0;
+        return;
+    }
+
     const char *env = _Py_GetEnv(config->use_environment, "PYTHONCOERCECLOCALE");
     if (env) {
         if (strcmp(env, "0") == 0) {
@@ -585,7 +622,9 @@ preconfig_init_coerce_c_locale(_PyPreConfig *config)
             }
         }
         else if (strcmp(env, "warn") == 0) {
-            config->coerce_c_locale_warn = 1;
+            if (config->coerce_c_locale_warn < 0) {
+                config->coerce_c_locale_warn = 1;
+            }
         }
         else {
             if (config->coerce_c_locale < 0) {
@@ -597,44 +636,40 @@ preconfig_init_coerce_c_locale(_PyPreConfig *config)
     /* Test if coerce_c_locale equals to -1 or equals to 1:
        PYTHONCOERCECLOCALE=1 doesn't imply that the C locale is always coerced.
        It is only coerced if if the LC_CTYPE locale is "C". */
-    if (config->coerce_c_locale == 0 || config->coerce_c_locale == 2) {
-        return;
+    if (config->coerce_c_locale < 0 || config->coerce_c_locale == 1) {
+        /* The C locale enables the C locale coercion (PEP 538) */
+        if (_Py_LegacyLocaleDetected()) {
+            config->coerce_c_locale = 2;
+        }
+        else {
+            config->coerce_c_locale = 0;
+        }
     }
 
-    /* The C locale enables the C locale coercion (PEP 538) */
-    if (_Py_LegacyLocaleDetected()) {
-        config->coerce_c_locale = 2;
+    if (config->coerce_c_locale_warn < 0) {
+        config->coerce_c_locale_warn = 0;
     }
-    else {
-        config->coerce_c_locale = 0;
-    }
-
-    assert(config->coerce_c_locale >= 0);
 }
 
 
 static _PyInitError
 preconfig_init_allocator(_PyPreConfig *config)
 {
-    if (config->allocator == NULL) {
+    if (config->allocator == PYMEM_ALLOCATOR_NOT_SET) {
         /* bpo-34247. The PYTHONMALLOC environment variable has the priority
            over PYTHONDEV env var and "-X dev" command line option.
            For example, PYTHONMALLOC=malloc PYTHONDEVMODE=1 sets the memory
            allocators to "malloc" (and not to "debug"). */
-        const char *allocator = _Py_GetEnv(config->use_environment, "PYTHONMALLOC");
-        if (allocator) {
-            config->allocator = _PyMem_RawStrdup(allocator);
-            if (config->allocator == NULL) {
-                return _Py_INIT_NO_MEMORY();
+        const char *envvar = _Py_GetEnv(config->use_environment, "PYTHONMALLOC");
+        if (envvar) {
+            if (_PyMem_GetAllocatorName(envvar, &config->allocator) < 0) {
+                return _Py_INIT_ERR("PYTHONMALLOC: unknown allocator");
             }
         }
     }
 
-    if (config->dev_mode && config->allocator == NULL) {
-        config->allocator = _PyMem_RawStrdup("debug");
-        if (config->allocator == NULL) {
-            return _Py_INIT_NO_MEMORY();
-        }
+    if (config->dev_mode && config->allocator == PYMEM_ALLOCATOR_NOT_SET) {
+        config->allocator = PYMEM_ALLOCATOR_DEBUG;
     }
     return _Py_INIT_OK();
 }
@@ -673,6 +708,7 @@ preconfig_read(_PyPreConfig *config, _PyPreCmdline *cmdline)
     }
 
     assert(config->coerce_c_locale >= 0);
+    assert(config->coerce_c_locale_warn >= 0);
 #ifdef MS_WINDOWS
     assert(config->legacy_windows_fs_encoding >= 0);
 #endif
@@ -714,13 +750,14 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
     }
 
     /* Save the config to be able to restore it if encodings change */
-    _PyPreConfig save_config = _PyPreConfig_INIT;
-    if (_PyPreConfig_Copy(&save_config, config) < 0) {
-        return _Py_INIT_NO_MEMORY();
-    }
+    _PyPreConfig save_config;
+    _PyPreConfig_Init(&save_config);
+    _PyPreConfig_Copy(&save_config, config);
 
     /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
+    if (config->configure_locale) {
+        _Py_SetLocaleFromEnv(LC_CTYPE);
+    }
 
     _PyPreCmdline cmdline = _PyPreCmdline_INIT;
     int init_utf8_mode = Py_UTF8Mode;
@@ -798,10 +835,7 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
            just keep UTF-8 Mode value. */
         int new_utf8_mode = config->utf8_mode;
         int new_coerce_c_locale = config->coerce_c_locale;
-        if (_PyPreConfig_Copy(config, &save_config) < 0) {
-            err = _Py_INIT_NO_MEMORY();
-            goto done;
-        }
+        _PyPreConfig_Copy(config, &save_config);
         config->utf8_mode = new_utf8_mode;
         config->coerce_c_locale = new_coerce_c_locale;
 
@@ -815,47 +849,12 @@ done:
         setlocale(LC_CTYPE, init_ctype_locale);
         PyMem_RawFree(init_ctype_locale);
     }
-    _PyPreConfig_Clear(&save_config);
     Py_UTF8Mode = init_utf8_mode ;
 #ifdef MS_WINDOWS
     Py_LegacyWindowsFSEncodingFlag = init_legacy_encoding;
 #endif
     _PyPreCmdline_Clear(&cmdline);
     return err;
-}
-
-
-static _PyInitError
-_PyPreConfig_SetAllocator(_PyPreConfig *config)
-{
-    assert(!_PyRuntime.core_initialized);
-
-    PyMemAllocatorEx old_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    if (_PyMem_SetupAllocators(config->allocator) < 0) {
-        return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
-    }
-
-    /* Copy the pre-configuration with the new allocator */
-    _PyPreConfig config2 = _PyPreConfig_INIT;
-    if (_PyPreConfig_Copy(&config2, config) < 0) {
-        _PyPreConfig_Clear(&config2);
-        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-        return _Py_INIT_NO_MEMORY();
-    }
-
-    /* Free the old config and replace config with config2. Since config now
-       owns the data, don't free config2. */
-    PyMemAllocatorEx new_alloc;
-    PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &new_alloc);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    _PyPreConfig_Clear(config);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &new_alloc);
-
-    *config = config2;
-
-    return _Py_INIT_OK();
 }
 
 
@@ -872,7 +871,7 @@ _PyPreConfig_SetAllocator(_PyPreConfig *config)
    Do nothing if called after Py_Initialize(): ignore the new
    pre-configuration. */
 _PyInitError
-_PyPreConfig_Write(_PyPreConfig *config)
+_PyPreConfig_Write(const _PyPreConfig *config)
 {
     if (_PyRuntime.core_initialized) {
         /* bpo-34008: Calling this functions after Py_Initialize() ignores
@@ -880,30 +879,25 @@ _PyPreConfig_Write(_PyPreConfig *config)
         return _Py_INIT_OK();
     }
 
-    if (config->allocator != NULL) {
-        _PyInitError err = _PyPreConfig_SetAllocator(config);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
+    if (config->allocator != PYMEM_ALLOCATOR_NOT_SET) {
+        if (_PyMem_SetupAllocators(config->allocator) < 0) {
+            return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
         }
     }
 
     _PyPreConfig_SetGlobalConfig(config);
 
-    if (config->coerce_c_locale) {
-        _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
-    }
+    if (config->configure_locale) {
+        if (config->coerce_c_locale) {
+            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
+        }
 
-    /* Set LC_CTYPE to the user preferred locale */
-    _Py_SetLocaleFromEnv(LC_CTYPE);
+        /* Set LC_CTYPE to the user preferred locale */
+        _Py_SetLocaleFromEnv(LC_CTYPE);
+    }
 
     /* Write the new pre-configuration into _PyRuntime */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    int res = _PyPreConfig_Copy(&_PyRuntime.preconfig, config);
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    if (res < 0) {
-        return _Py_INIT_NO_MEMORY();
-    }
+    _PyPreConfig_Copy(&_PyRuntime.preconfig, config);
 
     return _Py_INIT_OK();
 }

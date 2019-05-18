@@ -2341,6 +2341,168 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
 }
 
 static PyObject *
+get_date_fromdate(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int year, month, day;
+
+    if (!PyArg_ParseTuple(args, "piii", &macro, &year, &month, &day)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyDate_FromDate(year, month, day);
+    }
+    else {
+        rv = PyDateTimeAPI->Date_FromDate(
+            year, month, day,
+            PyDateTimeAPI->DateType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_datetime_fromdateandtime(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int year, month, day;
+    int hour, minute, second, microsecond;
+
+    if (!PyArg_ParseTuple(args, "piiiiiii",
+                          &macro,
+                          &year, &month, &day,
+                          &hour, &minute, &second, &microsecond)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyDateTime_FromDateAndTime(
+            year, month, day,
+            hour, minute, second, microsecond);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromDateAndTime(
+            year, month, day,
+            hour, minute, second, microsecond,
+            Py_None,
+            PyDateTimeAPI->DateTimeType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int year, month, day;
+    int hour, minute, second, microsecond, fold;
+
+    if (!PyArg_ParseTuple(args, "piiiiiiii",
+                          &macro,
+                          &year, &month, &day,
+                          &hour, &minute, &second, &microsecond,
+                          &fold)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyDateTime_FromDateAndTimeAndFold(
+            year, month, day,
+            hour, minute, second, microsecond,
+            fold);
+    }
+    else {
+        rv = PyDateTimeAPI->DateTime_FromDateAndTimeAndFold(
+            year, month, day,
+            hour, minute, second, microsecond,
+            Py_None,
+            fold,
+            PyDateTimeAPI->DateTimeType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_time_fromtime(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int hour, minute, second, microsecond;
+
+    if (!PyArg_ParseTuple(args, "piiii",
+                          &macro,
+                          &hour, &minute, &second, &microsecond)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyTime_FromTime(hour, minute, second, microsecond);
+    }
+    else {
+        rv = PyDateTimeAPI->Time_FromTime(
+            hour, minute, second, microsecond,
+            Py_None,
+            PyDateTimeAPI->TimeType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_time_fromtimeandfold(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int hour, minute, second, microsecond, fold;
+
+    if (!PyArg_ParseTuple(args, "piiiii",
+                          &macro,
+                          &hour, &minute, &second, &microsecond,
+                          &fold)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyTime_FromTimeAndFold(hour, minute, second, microsecond, fold);
+    }
+    else {
+        rv = PyDateTimeAPI->Time_FromTimeAndFold(
+            hour, minute, second, microsecond,
+            Py_None,
+            fold,
+            PyDateTimeAPI->TimeType);
+    }
+    return rv;
+}
+
+static PyObject *
+get_delta_fromdsu(PyObject *self, PyObject *args)
+{
+    PyObject *rv = NULL;
+    int macro;
+    int days, seconds, microseconds;
+
+    if (!PyArg_ParseTuple(args, "piii",
+                          &macro,
+                          &days, &seconds, &microseconds)) {
+        return NULL;
+    }
+
+    if (macro) {
+        rv = PyDelta_FromDSU(days, seconds, microseconds);
+    }
+    else {
+        rv = PyDateTimeAPI->Delta_FromDelta(
+            days, seconds, microseconds, 1,
+            PyDateTimeAPI->DeltaType);
+    }
+
+    return rv;
+}
+
+static PyObject *
 get_date_fromtimestamp(PyObject* self, PyObject *args)
 {
     PyObject *tsargs = NULL, *ts = NULL, *rv = NULL;
@@ -4297,7 +4459,7 @@ pymem_malloc_without_gil(PyObject *self, PyObject *args)
 static PyObject*
 test_pymem_getallocatorsname(PyObject *self, PyObject *args)
 {
-    const char *name = _PyMem_GetAllocatorsName();
+    const char *name = _PyMem_GetCurrentAllocatorName();
     if (name == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "cannot get allocators name");
         return NULL;
@@ -4826,7 +4988,7 @@ static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
     {"test_sizeof_c_types",     test_sizeof_c_types,             METH_NOARGS},
-    {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
+    {"test_datetime_capi",      test_datetime_capi,              METH_NOARGS},
     {"datetime_check_date",     datetime_check_date,             METH_VARARGS},
     {"datetime_check_time",     datetime_check_time,             METH_VARARGS},
     {"datetime_check_datetime",     datetime_check_datetime,     METH_VARARGS},
@@ -4835,6 +4997,12 @@ static PyMethodDef TestMethods[] = {
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
     {"get_timezone_utc_capi",    get_timezone_utc_capi,          METH_VARARGS},
+    {"get_date_fromdate",        get_date_fromdate,              METH_VARARGS},
+    {"get_datetime_fromdateandtime", get_datetime_fromdateandtime, METH_VARARGS},
+    {"get_datetime_fromdateandtimeandfold", get_datetime_fromdateandtimeandfold, METH_VARARGS},
+    {"get_time_fromtime",        get_time_fromtime,              METH_VARARGS},
+    {"get_time_fromtimeandfold", get_time_fromtimeandfold,       METH_VARARGS},
+    {"get_delta_fromdsu",        get_delta_fromdsu,              METH_VARARGS},
     {"get_date_fromtimestamp",   get_date_fromtimestamp,         METH_VARARGS},
     {"get_datetime_fromtimestamp", get_datetime_fromtimestamp,   METH_VARARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
@@ -5451,6 +5619,76 @@ recurse_infinitely_error_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 
+/* Test bpo-35983: create a subclass of "list" which checks that instances
+ * are not deallocated twice */
+
+typedef struct {
+    PyListObject list;
+    int deallocated;
+} MyListObject;
+
+static PyObject *
+MyList_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject* op = PyList_Type.tp_new(type, args, kwds);
+    ((MyListObject*)op)->deallocated = 0;
+    return op;
+}
+
+void
+MyList_dealloc(MyListObject* op)
+{
+    if (op->deallocated) {
+        /* We cannot raise exceptions here but we still want the testsuite
+         * to fail when we hit this */
+        Py_FatalError("MyList instance deallocated twice");
+    }
+    op->deallocated = 1;
+    PyList_Type.tp_dealloc((PyObject *)op);
+}
+
+static PyTypeObject MyList_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "MyList",
+    sizeof(MyListObject),
+    0,
+    (destructor)MyList_dealloc,                 /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    0,                                          /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    0,                                          /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,  /* &PyList_Type */                      /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    MyList_new,                                 /* tp_new */
+};
+
+
 /* Test PEP 560 */
 
 typedef struct {
@@ -5563,6 +5801,12 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
+
+    MyList_Type.tp_base = &PyList_Type;
+    if (PyType_Ready(&MyList_Type) < 0)
+        return NULL;
+    Py_INCREF(&MyList_Type);
+    PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
         return NULL;

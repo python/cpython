@@ -214,7 +214,8 @@ _PyCoreConfig_SetPathConfig(const _PyCoreConfig *core_config)
         goto no_memory;
     }
 #ifdef MS_WINDOWS
-    if (copy_wstr(&path_config.dll_path, core_config->dll_path) < 0) {
+    path_config.dll_path = _Py_GetDLLPath();
+    if (path_config.dll_path == NULL) {
         goto no_memory;
     }
 #endif
@@ -322,14 +323,6 @@ _PyCoreConfig_CalculatePathConfig(_PyCoreConfig *config)
         }
     }
 
-#ifdef MS_WINDOWS
-    if (config->dll_path == NULL) {
-        if (copy_wstr(&config->dll_path, path_config.dll_path) < 0) {
-            goto no_memory;
-        }
-    }
-#endif
-
     if (path_config.isolated != -1) {
         config->isolated = path_config.isolated;
     }
@@ -356,9 +349,6 @@ _PyCoreConfig_InitPathConfig(_PyCoreConfig *config)
     if (!config->use_module_search_paths
         || (config->executable == NULL)
         || (config->prefix == NULL)
-#ifdef MS_WINDOWS
-        || (config->dll_path == NULL)
-#endif
         || (config->exec_prefix == NULL))
     {
         _PyInitError err = _PyCoreConfig_CalculatePathConfig(config);
@@ -392,7 +382,8 @@ pathconfig_global_init(void)
     }
 
     _PyInitError err;
-    _PyCoreConfig config = _PyCoreConfig_INIT;
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
 
     err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
@@ -434,7 +425,7 @@ Py_SetPath(const wchar_t *path)
     new_config.exec_prefix = _PyMem_RawWcsdup(L"");
     alloc_error |= (new_config.exec_prefix == NULL);
 #ifdef MS_WINDOWS
-    new_config.dll_path = _PyMem_RawWcsdup(L"");
+    new_config.dll_path = _Py_GetDLLPath();
     alloc_error |= (new_config.dll_path == NULL);
 #endif
     new_config.module_search_path = _PyMem_RawWcsdup(path);
@@ -570,18 +561,17 @@ Py_GetProgramName(void)
    directory ("-m module" case) which will be prepended to sys.argv:
    sys.path[0].
 
-   Return 1 if the path is correctly resolved, but *path0_p can be NULL
-   if the Unicode object fail to be created.
+   Return 1 if the path is correctly resolved and written into *path0_p.
 
-   Return 0 if it fails to resolve the full path (and *path0_p will be NULL).
-   For example, return 0 if the current working directory has been removed
-   (bpo-36236) or if argv is empty.
+   Return 0 if it fails to resolve the full path. For example, return 0 if the
+   current working directory has been removed (bpo-36236) or if argv is empty.
+
+   Raise an exception and return -1 on error.
    */
 int
 _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
 {
     assert(_PyWstrList_CheckConsistency(argv));
-    assert(*path0_p == NULL);
 
     if (argv->length == 0) {
         /* Leave sys.path unchanged if sys.argv is empty */
@@ -697,7 +687,12 @@ _PyPathConfig_ComputeSysPath0(const _PyWstrList *argv, PyObject **path0_p)
     }
 #endif /* All others */
 
-    *path0_p = PyUnicode_FromWideChar(path0, n);
+    PyObject *path0_obj = PyUnicode_FromWideChar(path0, n);
+    if (path0_obj == NULL) {
+        return -1;
+    }
+
+    *path0_p = path0_obj;
     return 1;
 }
 

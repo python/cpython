@@ -15,41 +15,16 @@ typedef struct {
     } _type;
     const char *_func;
     const char *err_msg;
-#ifdef MS_WINDOWS
-    unsigned int exitcode;
-#else
     int exitcode;
-#endif
 } _PyInitError;
 
-/* Almost all errors causing Python initialization to fail */
-#ifdef _MSC_VER
-   /* Visual Studio 2015 doesn't implement C99 __func__ in C */
-#  define _Py_INIT_GET_FUNC() __FUNCTION__
-#else
-#  define _Py_INIT_GET_FUNC() __func__
-#endif
-
-#define _Py_INIT_OK() \
-    (_PyInitError){._type = _Py_INIT_ERR_TYPE_OK,}
-    /* other fields are set to 0 */
-#define _Py_INIT_ERR(ERR_MSG) \
-    (_PyInitError){ \
-        ._type = _Py_INIT_ERR_TYPE_ERROR, \
-        ._func = _Py_INIT_GET_FUNC(), \
-        .err_msg = (ERR_MSG)}
-        /* other fields are set to 0 */
-#define _Py_INIT_NO_MEMORY() _Py_INIT_ERR("memory allocation failed")
-#define _Py_INIT_EXIT(EXITCODE) \
-    (_PyInitError){ \
-        ._type = _Py_INIT_ERR_TYPE_EXIT, \
-        .exitcode = (EXITCODE)}
-#define _Py_INIT_IS_ERROR(err) \
-    (err._type == _Py_INIT_ERR_TYPE_ERROR)
-#define _Py_INIT_IS_EXIT(err) \
-    (err._type == _Py_INIT_ERR_TYPE_EXIT)
-#define _Py_INIT_FAILED(err) \
-    (err._type != _Py_INIT_ERR_TYPE_OK)
+PyAPI_FUNC(_PyInitError) _PyInitError_Ok(void);
+PyAPI_FUNC(_PyInitError) _PyInitError_Error(const char *err_msg);
+PyAPI_FUNC(_PyInitError) _PyInitError_NoMemory(void);
+PyAPI_FUNC(_PyInitError) _PyInitError_Exit(int exitcode);
+PyAPI_FUNC(int) _PyInitError_IsError(_PyInitError err);
+PyAPI_FUNC(int) _PyInitError_IsExit(_PyInitError err);
+PyAPI_FUNC(int) _PyInitError_Failed(_PyInitError err);
 
 /* --- _PyWstrList ------------------------------------------------ */
 
@@ -59,8 +34,6 @@ typedef struct {
     Py_ssize_t length;
     wchar_t **items;
 } _PyWstrList;
-
-#define _PyWstrList_INIT (_PyWstrList){.length = 0, .items = NULL}
 
 
 /* --- _PyPreConfig ----------------------------------------------- */
@@ -83,6 +56,10 @@ typedef struct {
        set to !Py_IgnoreEnvironmentFlag. */
     int use_environment;
 
+    /* Set the LC_CTYPE locale to the user preferred locale? If equals to 0,
+       set coerce_c_locale and coerce_c_locale_warn to 0. */
+    int configure_locale;
+
     /* Coerce the LC_CTYPE locale if it's equal to "C"? (PEP 538)
 
        Set to 0 by PYTHONCOERCECLOCALE=0. Set to 1 by PYTHONCOERCECLOCALE=1.
@@ -90,12 +67,18 @@ typedef struct {
 
        If it is equal to 1, LC_CTYPE locale is read to decide it it should be
        coerced or not (ex: PYTHONCOERCECLOCALE=1). Internally, it is set to 2
-       if the LC_CTYPE locale must be coerced. */
+       if the LC_CTYPE locale must be coerced.
+
+       Disable by default (set to 0). Set it to -1 to let Python decides if it
+       should be enabled or not. */
     int coerce_c_locale;
 
     /* Emit a warning if the LC_CTYPE locale is coerced?
 
-       Disabled by default. Set to 1 by PYTHONCOERCECLOCALE=warn. */
+       Set to 1 by PYTHONCOERCECLOCALE=warn.
+
+       Disable by default (set to 0). Set it to -1 to let Python decides if it
+       should be enabled or not. */
     int coerce_c_locale_warn;
 
 #ifdef MS_WINDOWS
@@ -120,28 +103,20 @@ typedef struct {
        Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
 
        If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
-       "POSIX", otherwise inherit Py_UTF8Mode value. */
+       "POSIX", otherwise it is set to 0.
+
+       If equals to -2, inherit Py_UTF8Mode value value (which is equal to 0
+       by default). */
     int utf8_mode;
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
-    char *allocator;        /* Memory allocator: PYTHONMALLOC */
+
+    /* Memory allocator: PYTHONMALLOC env var */
+    PyMemAllocatorName allocator;
 } _PyPreConfig;
 
-#ifdef MS_WINDOWS
-#  define _PyPreConfig_WINDOWS_INIT \
-        .legacy_windows_fs_encoding = -1,
-#else
-#  define _PyPreConfig_WINDOWS_INIT
-#endif
-
-#define _PyPreConfig_INIT \
-    (_PyPreConfig){ \
-        _PyPreConfig_WINDOWS_INIT \
-        ._config_version = _Py_CONFIG_VERSION, \
-        .isolated = -1, \
-        .use_environment = -1, \
-        .dev_mode = -1, \
-        .allocator = NULL}
+PyAPI_FUNC(void) _PyPreConfig_InitPythonConfig(_PyPreConfig *config);
+PyAPI_FUNC(void) _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config);
 
 
 /* --- _PyCoreConfig ---------------------------------------------- */
@@ -211,31 +186,29 @@ typedef struct {
     wchar_t *filesystem_errors;
 
     wchar_t *pycache_prefix;  /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
-    wchar_t *program_name;    /* Program name, see also Py_GetProgramName() */
-    _PyWstrList argv;         /* Command line arguments */
-    wchar_t *program;         /* argv[0] or "" */
+    int parse_argv;           /* Parse argv command line arguments? */
+
+    /* Command line arguments (sys.argv).
+
+       Set parse_argv to 1 to parse argv as Python command line arguments
+       and then strip Python arguments from argv.
+
+       If argv is empty, an empty string is added to ensure that sys.argv
+       always exists and is never empty. */
+    _PyWstrList argv;
+
+    /* Program name:
+
+       - If Py_SetProgramName() was called, use its value.
+       - On macOS, use PYTHONEXECUTABLE environment variable if set.
+       - If WITH_NEXT_FRAMEWORK macro is defined, use __PYVENV_LAUNCHER__
+         environment variable is set.
+       - Use argv[0] if available and non-empty.
+       - Use "python" on Windows, or "python3 on other platforms. */
+    wchar_t *program_name;
+
     _PyWstrList xoptions;     /* Command line -X options */
     _PyWstrList warnoptions;  /* Warnings options */
-
-    /* Path configuration inputs */
-    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
-    wchar_t *home;          /* PYTHONHOME environment variable,
-                               see also Py_SetPythonHome(). */
-
-    /* Path configuration outputs */
-    int use_module_search_paths;  /* If non-zero, use module_search_paths */
-    _PyWstrList module_search_paths;  /* sys.path paths. Computed if
-                                       use_module_search_paths is equal
-                                       to zero. */
-
-    wchar_t *executable;    /* sys.executable */
-    wchar_t *prefix;        /* sys.prefix */
-    wchar_t *base_prefix;   /* sys.base_prefix */
-    wchar_t *exec_prefix;   /* sys.exec_prefix */
-    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
-#ifdef MS_WINDOWS
-    wchar_t *dll_path;      /* Windows DLL path */
-#endif
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -322,6 +295,14 @@ typedef struct {
       !Py_NoUserSiteDirectory. */
     int user_site_directory;
 
+    /* If non-zero, configure C standard steams (stdio, stdout,
+       stderr):
+
+       - Set O_BINARY mode on Windows.
+       - If buffered_stdio is equal to zero, make streams unbuffered.
+         Otherwise, enable streams buffering if interactive is non-zero. */
+    int configure_c_stdio;
+
     /* If equal to 0, enable unbuffered mode: force the stdout and stderr
        streams to be unbuffered.
 
@@ -353,6 +334,25 @@ typedef struct {
        See PEP 528 for more details. */
     int legacy_windows_stdio;
 #endif
+
+    /* --- Path configuration inputs ------------ */
+
+    wchar_t *module_search_path_env; /* PYTHONPATH environment variable */
+    wchar_t *home;          /* PYTHONHOME environment variable,
+                               see also Py_SetPythonHome(). */
+
+    /* --- Path configuration outputs ----------- */
+
+    int use_module_search_paths;  /* If non-zero, use module_search_paths */
+    _PyWstrList module_search_paths;  /* sys.path paths. Computed if
+                                       use_module_search_paths is equal
+                                       to zero. */
+
+    wchar_t *executable;    /* sys.executable */
+    wchar_t *prefix;        /* sys.prefix */
+    wchar_t *base_prefix;   /* sys.base_prefix */
+    wchar_t *exec_prefix;   /* sys.exec_prefix */
+    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
 
     /* --- Parameter only used by Py_Main() ---------- */
 
@@ -386,47 +386,34 @@ typedef struct {
        See PEP 552 "Deterministic pycs" for more details. */
     wchar_t *check_hash_pycs_mode;
 
-    /* If greater than 0, suppress _PyPathConfig_Calculate() warnings.
+    /* If greater than 0, suppress _PyPathConfig_Calculate() warnings on Unix.
+       The parameter has no effect on Windows.
 
-       If set to -1 (default), inherit Py_FrozenFlag value. */
-    int _frozen;
+       If set to -1 (default), inherit !Py_FrozenFlag value. */
+    int pathconfig_warnings;
+
+    /* If equal to 0, stop Python initialization before the "main" phase */
+    int _init_main;
 
 } _PyCoreConfig;
 
-#ifdef MS_WINDOWS
-#  define _PyCoreConfig_WINDOWS_INIT \
-        .legacy_windows_stdio = -1,
-#else
-#  define _PyCoreConfig_WINDOWS_INIT
-#endif
-
-#define _PyCoreConfig_INIT \
-    (_PyCoreConfig){ \
-        _PyCoreConfig_WINDOWS_INIT \
-        ._config_version = _Py_CONFIG_VERSION, \
-        .isolated = -1, \
-        .use_environment = -1, \
-        .dev_mode = -1, \
-        .install_signal_handlers = 1, \
-        .use_hash_seed = -1, \
-        .faulthandler = -1, \
-        .tracemalloc = -1, \
-        .use_module_search_paths = 0, \
-        .site_import = -1, \
-        .bytes_warning = -1, \
-        .inspect = -1, \
-        .interactive = -1, \
-        .optimization_level = -1, \
-        .parser_debug= -1, \
-        .write_bytecode = -1, \
-        .verbose = -1, \
-        .quiet = -1, \
-        .user_site_directory = -1, \
-        .buffered_stdio = -1, \
-        ._install_importlib = 1, \
-        .check_hash_pycs_mode = NULL, \
-        ._frozen = -1}
-/* Note: _PyCoreConfig_INIT sets other fields to 0/NULL */
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitIsolatedConfig(_PyCoreConfig *config);
+PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
+    wchar_t **config_str,
+    const wchar_t *str);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
+    wchar_t **config_str,
+    const char *str);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
+    _PyCoreConfig *config,
+    Py_ssize_t argc,
+    char **argv);
+PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
+    Py_ssize_t argc,
+    wchar_t **argv);
 
 #ifdef __cplusplus
 }
