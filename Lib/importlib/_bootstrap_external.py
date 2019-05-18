@@ -1369,7 +1369,7 @@ class PathFinder:
         of directories ``path`` (defaults to sys.path).
         """
         import re
-        from importlib.metadata._hooks import PathDistribution
+        from importlib.metadata import PathDistribution
         if path is None:
             path = sys.path
         pattern = '.*' if name is None else re.escape(name)

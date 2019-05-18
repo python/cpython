@@ -7,9 +7,8 @@ from collections.abc import Iterator
 from . import fixtures
 from importlib.metadata import (
     Distribution, PackageNotFoundError, distribution,
-    entry_points, files, metadata, requires, version,
+    entry_points, files, local_distribution, metadata, requires, version,
     )
-from importlib.metadata.api import local_distribution
 
 
 class APITests(

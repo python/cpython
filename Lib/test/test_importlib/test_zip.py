@@ -48,6 +48,7 @@ class TestEgg(TestZip):
         egg = self.resources.enter_context(
             path(self.root, 'example-21.12-py3.6.egg'))
         sys.path.insert(0, str(egg))
+        print('***', sys.path)
         self.resources.callback(sys.path.pop, 0)
 
     def test_files(self):

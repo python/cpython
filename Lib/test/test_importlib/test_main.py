@@ -3,12 +3,14 @@
 import re
 import textwrap
 import unittest
-import importlib
+import importlib.metadata
 
 from . import fixtures
 from importlib.metadata import (
-    Distribution, PackageNotFoundError, api, distributions,
-    entry_points, metadata, version)
+    Distribution, EntryPoint,
+    PackageNotFoundError, distributions,
+    entry_points, metadata, version,
+    )
 
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
@@ -40,12 +42,12 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
         self.assertEqual(ep.load().__name__, "main")
 
     def test_resolve_without_attr(self):
-        ep = api.EntryPoint(
+        ep = EntryPoint(
             name='ep',
-            value='importlib.metadata.api',
+            value='importlib.metadata',
             group='grp',
             )
-        assert ep.load() is api
+        assert ep.load() is importlib.metadata
 
 
 class NameNormalizationTests(fixtures.SiteDir, unittest.TestCase):
@@ -144,7 +146,7 @@ class DiscoveryTests(fixtures.EggInfoPkg,
         assert all(
             isinstance(dist, Distribution)
             for dist in dists
-            )
+            ), dists
         assert any(
             dist.metadata['Name'] == 'egginfo-pkg'
             for dist in dists
