@@ -505,11 +505,12 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                              "instead.")
 
     leap_year_fix = False
-    if year is None and month == 2 and day == 29:
-        year = 1904  # 1904 is first leap year of 20th century
-        leap_year_fix = True
-    elif year is None:
-        year = 1900
+    if year is None:
+        if month == 2 and day == 29:
+            year = 1904  # 1904 is first leap year of 20th century
+            leap_year_fix = True
+        else:
+            year = 1900
 
 
     # If we know the week of the year and what day of that week, we can figure
