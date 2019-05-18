@@ -366,9 +366,9 @@ class Stats:
         for func in self.top_level:
             print(indent, func_get_function_name(func), file=self.stream)
 
-        print(indent, self.total_calls, "function calls", end=' ', file=self.stream)
+        print(indent, '{0:,}'.format(self.total_calls), "function calls", end=' ', file=self.stream)
         if self.total_calls != self.prim_calls:
-            print("(%d primitive calls)" % self.prim_calls, end=' ', file=self.stream)
+            print("({0:,} primitive calls)".format(self.prim_calls), end=' ', file=self.stream)
         print("in %.3f seconds" % self.total_tt, file=self.stream)
         print(file=self.stream)
         width, list = self.get_print_list(amount)
@@ -450,19 +450,26 @@ class Stats:
     def print_line(self, func):  # hack: should print percentages
         cc, nc, tt, ct, callers = self.stats[func]
         c = '{0:,}'.format(nc)
+
         if nc != cc:
-            c = c + '/' + str(cc)
+            c = c + '/' + '{0:,}'.format(cc)
         print(c.rjust(12), end=' ', file=self.stream)
-        print(f8(tt), end=' ', file=self.stream)
+        tt_padded = f8(tt, overpadding(c))
+        print(tt_padded, end=' ', file=self.stream)
+
         if nc == 0:
-            print(' '*11, end=' ', file=self.stream)
+            nc_padded = ' '*(11-overpadding(tt_padded))
         else:
-            print(f8(tt/nc), end=' ', file=self.stream)
-        print(f8(ct), end=' ', file=self.stream)
+            nc_padded = f8(tt/nc, overpadding(tt_padded))
+        print(nc_padded, end=' ', file=self.stream)
+        ct_padded = f8(ct, overpadding(nc_padded))
+        print(ct_padded, end=' ', file=self.stream)
+
         if cc == 0:
-            print(' '*11, end=' ', file=self.stream)
+            cc2 = ' '*(11-overpadding(ct_padded))
         else:
-            print(f8(ct/cc), end=' ', file=self.stream)
+            cc2 = f8(ct/cc, overpadding(ct_padded))
+        print(cc2, end=' ', file=self.stream)
         print(func_std_string(func), file=self.stream)
 
 class TupleComp:
@@ -549,8 +556,12 @@ def count_calls(callers):
 # The following functions support printing of reports
 #**************************************************************************
 
-def f8(x):
-    return "{0:11,.3f}".format(x)
+def f8(x, overpadding=0):
+    return ("{0:%s,.3f}" % ( 11 - overpadding ) ).format(x)
+
+def overpadding(value, maximum=12):
+    """Reduce the next padding length when the last `value` overstepped its boundaries."""
+    return len(value) - maximum if len(value) > maximum else 0
 
 #**************************************************************************
 # Statistics browser added by ESR, April 2001
