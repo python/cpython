@@ -13,3 +13,5 @@ cur = con.cursor()
 now = datetime.datetime.now()
 cur.execute("select ?", (now,))
 print(cur.fetchone()[0])
+
+con.close()
