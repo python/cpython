@@ -1,4 +1,5 @@
 import io
+import sys
 import types
 import textwrap
 import unittest
@@ -134,6 +135,18 @@ class PolicyAPITests(unittest.TestCase):
         for attr, value in expected.items():
             self.assertEqual(getattr(added, attr), value)
 
+    def test_fold_zero_max_line_length(self):
+        expected = 'Subject: =?utf-8?q?=C3=A1?=\n'
+
+        msg = email.message.EmailMessage()
+        msg['Subject'] = 'á'
+
+        p1 = email.policy.default.clone(max_line_length=0)
+        p2 = email.policy.default.clone(max_line_length=None)
+
+        self.assertEqual(p1.fold('Subject', msg['Subject']), expected)
+        self.assertEqual(p2.fold('Subject', msg['Subject']), expected)
+
     def test_register_defect(self):
         class Dummy:
             def __init__(self):
@@ -236,6 +249,14 @@ class PolicyAPITests(unittest.TestCase):
         self.assertEqual(newpolicy.header_factory,
                          email.policy.EmailPolicy.header_factory)
         self.assertEqual(newpolicy.__dict__, {'raise_on_defect': True})
+
+    def test_non_ascii_chars_do_not_cause_inf_loop(self):
+        policy = email.policy.default.clone(max_line_length=20)
+        actual = policy.fold('Subject', 'ą' * 12)
+        self.assertEqual(
+            actual,
+            'Subject: \n' +
+            12 * ' =?utf-8?q?=C4=85?=\n')
 
     # XXX: Need subclassing tests.
     # For adding subclassed objects, make sure the usual rules apply (subclass

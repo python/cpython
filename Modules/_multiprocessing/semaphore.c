@@ -141,7 +141,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
     default:
         PyErr_Format(PyExc_RuntimeError, "WaitForSingleObject() or "
                      "WaitForMultipleObjects() gave unrecognized "
-                     "value %d", res);
+                     "value %u", res);
         return NULL;
     }
 }
@@ -449,8 +449,9 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (!unlink) {
         name_copy = PyMem_Malloc(strlen(name) + 1);
-        if (name_copy == NULL)
-            goto failure;
+        if (name_copy == NULL) {
+            return PyErr_NoMemory();
+        }
         strcpy(name_copy, name);
     }
 
@@ -473,7 +474,9 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (handle != SEM_FAILED)
         SEM_CLOSE(handle);
     PyMem_Free(name_copy);
-    _PyMp_SetError(NULL, MP_STANDARD_ERROR);
+    if (!PyErr_Occurred()) {
+        _PyMp_SetError(NULL, MP_STANDARD_ERROR);
+    }
     return NULL;
 }
 
@@ -581,11 +584,11 @@ semlock_afterfork(SemLockObject *self, PyObject *Py_UNUSED(ignored))
  */
 
 static PyMethodDef semlock_methods[] = {
-    {"acquire", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
+    {"acquire", (PyCFunction)(void(*)(void))semlock_acquire, METH_VARARGS | METH_KEYWORDS,
      "acquire the semaphore/lock"},
     {"release", (PyCFunction)semlock_release, METH_NOARGS,
      "release the semaphore/lock"},
-    {"__enter__", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
+    {"__enter__", (PyCFunction)(void(*)(void))semlock_acquire, METH_VARARGS | METH_KEYWORDS,
      "enter the semaphore/lock"},
     {"__exit__", (PyCFunction)semlock_release, METH_VARARGS,
      "exit the semaphore/lock"},

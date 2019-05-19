@@ -4,7 +4,8 @@
 
 import unittest
 from test.support import requires
-from tkinter import Tk, Frame  ##, BooleanVar, StringVar
+from tkinter import Tk
+from tkinter.ttk import Frame
 from idlelib import searchengine as se
 from idlelib import searchbase as sdb
 from idlelib.idle_test.mock_idle import Func
@@ -97,11 +98,12 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.dialog.top = self.root
         frame, label = self.dialog.make_frame()
         self.assertEqual(label, '')
-        self.assertIsInstance(frame, Frame)
+        self.assertEqual(str(type(frame)), "<class 'tkinter.ttk.Frame'>")
+        # self.assertIsInstance(frame, Frame) fails when test is run by
+        # test_idle not run from IDLE editor.  See issue 33987 PR.
 
         frame, label = self.dialog.make_frame('testlabel')
         self.assertEqual(label['text'], 'testlabel')
-        self.assertIsInstance(frame, Frame)
 
     def btn_test_setup(self, meth):
         self.dialog.top = self.root

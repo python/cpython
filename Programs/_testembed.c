@@ -1,3 +1,10 @@
+/* FIXME: PEP 587 makes these functions public */
+#ifndef Py_BUILD_CORE_MODULE
+#  define Py_BUILD_CORE_MODULE
+#endif
+
+#include <Python.h>
+#include "pycore_coreconfig.h"   /* FIXME: PEP 587 makes these functions public */
 #include <Python.h>
 #include "pythread.h"
 #include <inttypes.h>
@@ -113,9 +120,9 @@ static int test_forced_io_encoding(void)
     printf("--- Set errors only ---\n");
     check_stdio_details(NULL, "ignore");
     printf("--- Set encoding only ---\n");
-    check_stdio_details("latin-1", NULL);
+    check_stdio_details("iso8859-1", NULL);
     printf("--- Set encoding and errors ---\n");
-    check_stdio_details("latin-1", "replace");
+    check_stdio_details("iso8859-1", "replace");
 
     /* Check calling after initialization fails */
     Py_Initialize();
@@ -139,6 +146,9 @@ static int test_forced_io_encoding(void)
 
 static int test_pre_initialization_api(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* Leading "./" ensures getpath.c can still find the standard library */
     _Py_EMBED_PREINIT_CHECK("Checking Py_DecodeLocale\n");
     wchar_t *program = Py_DecodeLocale("./spam", NULL);
@@ -235,6 +245,9 @@ static void bpo20891_thread(void *lockp)
 
 static int test_bpo20891(void)
 {
+    /* the test doesn't support custom memory allocators */
+    putenv("PYTHONMALLOC=");
+
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
        call PyEval_InitThreads() for us in this case. */
@@ -276,6 +289,718 @@ static int test_initialize_twice(void)
     return 0;
 }
 
+static int test_initialize_pymain(void)
+{
+    wchar_t *argv[] = {L"PYTHON", L"-c",
+                       (L"import sys; "
+                        L"print(f'Py_Main() after Py_Initialize: "
+                        L"sys.argv={sys.argv}')"),
+                       L"arg2"};
+    _testembed_Py_Initialize();
+
+    /* bpo-34008: Calling Py_Main() after Py_Initialize() must not crash */
+    Py_Main(Py_ARRAY_LENGTH(argv), argv);
+
+    Py_Finalize();
+
+    return 0;
+}
+
+
+static void
+dump_config(void)
+{
+    (void) PyRun_SimpleStringFlags(
+        "import _testinternalcapi, json; "
+        "print(json.dumps(_testinternalcapi.get_configs()))",
+        0);
+}
+
+
+static int test_init_default_config(void)
+{
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_global_config(void)
+{
+    /* FIXME: test Py_IgnoreEnvironmentFlag */
+
+    putenv("PYTHONUTF8=0");
+    Py_UTF8Mode = 1;
+
+    /* Test initialization from global configuration variables (Py_xxx) */
+    Py_SetProgramName(L"./globalvar");
+
+    /* Py_IsolatedFlag is not tested */
+    Py_NoSiteFlag = 1;
+    Py_BytesWarningFlag = 1;
+
+    putenv("PYTHONINSPECT=");
+    Py_InspectFlag = 1;
+
+    putenv("PYTHONOPTIMIZE=0");
+    Py_InteractiveFlag = 1;
+
+    putenv("PYTHONDEBUG=0");
+    Py_OptimizeFlag = 2;
+
+    /* Py_DebugFlag is not tested */
+
+    putenv("PYTHONDONTWRITEBYTECODE=");
+    Py_DontWriteBytecodeFlag = 1;
+
+    putenv("PYTHONVERBOSE=0");
+    Py_VerboseFlag = 1;
+
+    Py_QuietFlag = 1;
+    Py_NoUserSiteDirectory = 1;
+
+    putenv("PYTHONUNBUFFERED=");
+    Py_UnbufferedStdioFlag = 1;
+
+    Py_FrozenFlag = 1;
+
+    /* FIXME: test Py_LegacyWindowsFSEncodingFlag */
+    /* FIXME: test Py_LegacyWindowsStdioFlag */
+
+    Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_from_config(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig;
+    _PyPreConfig_Init(&preconfig);
+
+    putenv("PYTHONMALLOC=malloc_debug");
+    preconfig.allocator = PYMEM_ALLOCATOR_MALLOC;
+
+    putenv("PYTHONUTF8=0");
+    Py_UTF8Mode = 0;
+    preconfig.utf8_mode = 1;
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    /* Test _Py_InitializeFromConfig() */
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
+    config.install_signal_handlers = 0;
+
+    /* FIXME: test use_environment */
+
+    putenv("PYTHONHASHSEED=42");
+    config.use_hash_seed = 1;
+    config.hash_seed = 123;
+
+    /* dev_mode=1 is tested in test_init_dev_mode() */
+
+    putenv("PYTHONFAULTHANDLER=");
+    config.faulthandler = 1;
+
+    putenv("PYTHONTRACEMALLOC=0");
+    config.tracemalloc = 2;
+
+    putenv("PYTHONPROFILEIMPORTTIME=0");
+    config.import_time = 1;
+
+    config.show_ref_count = 1;
+    config.show_alloc_count = 1;
+    /* FIXME: test dump_refs: bpo-34223 */
+
+    putenv("PYTHONMALLOCSTATS=0");
+    config.malloc_stats = 1;
+
+    putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
+    config.pycache_prefix = L"conf_pycache_prefix";
+
+    Py_SetProgramName(L"./globalvar");
+    config.program_name = L"./conf_program_name";
+
+    static wchar_t* argv[] = {
+        L"python3",
+        L"-c",
+        L"pass",
+        L"arg2",
+    };
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.parse_argv = 1;
+
+    static wchar_t* xoptions[3] = {
+        L"core_xoption1=3",
+        L"core_xoption2=",
+        L"core_xoption3",
+    };
+    config.xoptions.length = Py_ARRAY_LENGTH(xoptions);
+    config.xoptions.items = xoptions;
+
+    static wchar_t* warnoptions[1] = {
+        L"error::ResourceWarning",
+    };
+    config.warnoptions.length = Py_ARRAY_LENGTH(warnoptions);
+    config.warnoptions.items = warnoptions;
+
+    /* FIXME: test module_search_path_env */
+    /* FIXME: test home */
+    /* FIXME: test path config: module_search_path .. dll_path */
+
+    putenv("PYTHONVERBOSE=0");
+    Py_VerboseFlag = 0;
+    config.verbose = 1;
+
+    Py_NoSiteFlag = 0;
+    config.site_import = 0;
+
+    Py_BytesWarningFlag = 0;
+    config.bytes_warning = 1;
+
+    putenv("PYTHONINSPECT=");
+    Py_InspectFlag = 0;
+    config.inspect = 1;
+
+    Py_InteractiveFlag = 0;
+    config.interactive = 1;
+
+    putenv("PYTHONOPTIMIZE=0");
+    Py_OptimizeFlag = 1;
+    config.optimization_level = 2;
+
+    /* FIXME: test parser_debug */
+
+    putenv("PYTHONDONTWRITEBYTECODE=");
+    Py_DontWriteBytecodeFlag = 0;
+    config.write_bytecode = 0;
+
+    Py_QuietFlag = 0;
+    config.quiet = 1;
+
+    config.configure_c_stdio = 1;
+
+    putenv("PYTHONUNBUFFERED=");
+    Py_UnbufferedStdioFlag = 0;
+    config.buffered_stdio = 0;
+
+    putenv("PYTHONIOENCODING=cp424");
+    Py_SetStandardStreamEncoding("ascii", "ignore");
+#ifdef MS_WINDOWS
+    /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
+       Force it to 0 through the config. */
+    config.legacy_windows_stdio = 0;
+#endif
+    config.stdio_encoding = L"iso8859-1";
+    config.stdio_errors = L"replace";
+
+    putenv("PYTHONNOUSERSITE=");
+    Py_NoUserSiteDirectory = 0;
+    config.user_site_directory = 0;
+
+    config.check_hash_pycs_mode = L"always";
+
+    Py_FrozenFlag = 0;
+    config.pathconfig_warnings = 0;
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int check_init_parse_argv(int parse_argv)
+{
+    _PyInitError err;
+
+    _PyCoreConfig config;
+    _PyCoreConfig_InitPythonConfig(&config);
+
+    static wchar_t* argv[] = {
+        L"./argv0",
+        L"-E",
+        L"-c",
+        L"pass",
+        L"arg1",
+        L"-v",
+        L"arg3",
+    };
+
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.parse_argv = parse_argv;
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_parse_argv(void)
+{
+    return check_init_parse_argv(1);
+}
+
+
+static int test_init_dont_parse_argv(void)
+{
+    return check_init_parse_argv(0);
+}
+
+
+static void test_init_env_putenvs(void)
+{
+    putenv("PYTHONHASHSEED=42");
+    putenv("PYTHONMALLOC=malloc");
+    putenv("PYTHONTRACEMALLOC=2");
+    putenv("PYTHONPROFILEIMPORTTIME=1");
+    putenv("PYTHONMALLOCSTATS=1");
+    putenv("PYTHONUTF8=1");
+    putenv("PYTHONVERBOSE=1");
+    putenv("PYTHONINSPECT=1");
+    putenv("PYTHONOPTIMIZE=2");
+    putenv("PYTHONDONTWRITEBYTECODE=1");
+    putenv("PYTHONUNBUFFERED=1");
+    putenv("PYTHONPYCACHEPREFIX=env_pycache_prefix");
+    putenv("PYTHONNOUSERSITE=1");
+    putenv("PYTHONFAULTHANDLER=1");
+    putenv("PYTHONIOENCODING=iso8859-1:replace");
+    /* FIXME: test PYTHONWARNINGS */
+    /* FIXME: test PYTHONEXECUTABLE */
+    /* FIXME: test PYTHONHOME */
+    /* FIXME: test PYTHONDEBUG */
+    /* FIXME: test PYTHONDUMPREFS */
+    /* FIXME: test PYTHONCOERCECLOCALE */
+    /* FIXME: test PYTHONPATH */
+}
+
+
+static int test_init_env(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    test_init_env_putenvs();
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static void set_all_env_vars(void)
+{
+    test_init_env_putenvs();
+    putenv("PYTHONMALLOC=");
+    putenv("PYTHONFAULTHANDLER=");
+    putenv("PYTHONDEVMODE=1");
+}
+
+
+static int test_init_env_dev_mode(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    set_all_env_vars();
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_env_dev_mode_alloc(void)
+{
+    /* Test initialization from environment variables */
+    Py_IgnoreEnvironmentFlag = 0;
+    set_all_env_vars();
+    putenv("PYTHONMALLOC=malloc");
+    _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_isolated_flag(void)
+{
+    _PyInitError err;
+
+    /* Test _PyCoreConfig.isolated=1 */
+    _PyCoreConfig config;
+    _PyCoreConfig_InitPythonConfig(&config);
+
+    Py_IsolatedFlag = 0;
+    config.isolated = 1;
+
+    /* Use path starting with "./" avoids a search along the PATH */
+    config.program_name = L"./_testembed";
+
+    set_all_env_vars();
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* _PyPreConfig.isolated=1, _PyCoreConfig.isolated=0 */
+static int test_preinit_isolated1(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig;
+    _PyPreConfig_Init(&preconfig);
+    preconfig.isolated = 1;
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
+    config.program_name = L"./_testembed";
+
+    set_all_env_vars();
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+/* _PyPreConfig.isolated=0, _PyCoreConfig.isolated=1 */
+static int test_preinit_isolated2(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig;
+    _PyPreConfig_Init(&preconfig);
+    preconfig.isolated = 0;
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    /* Test _PyCoreConfig.isolated=1 */
+    _PyCoreConfig config;
+    _PyCoreConfig_Init(&config);
+
+    Py_IsolatedFlag = 0;
+    config.isolated = 1;
+
+    /* Use path starting with "./" avoids a search along the PATH */
+    config.program_name = L"./_testembed";
+
+    set_all_env_vars();
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static void set_all_global_config_variables(void)
+{
+    Py_IsolatedFlag = 0;
+    Py_IgnoreEnvironmentFlag = 0;
+    Py_BytesWarningFlag = 2;
+    Py_InspectFlag = 1;
+    Py_InteractiveFlag = 1;
+    Py_OptimizeFlag = 1;
+    Py_DebugFlag = 1;
+    Py_VerboseFlag = 1;
+    Py_QuietFlag = 1;
+    Py_FrozenFlag = 0;
+    Py_UnbufferedStdioFlag = 1;
+    Py_NoSiteFlag = 1;
+    Py_DontWriteBytecodeFlag = 1;
+    Py_NoUserSiteDirectory = 1;
+#ifdef MS_WINDOWS
+    Py_LegacyWindowsStdioFlag = 1;
+#endif
+}
+
+
+static int test_init_isolated_config(void)
+{
+    _PyInitError err;
+
+    /* environment variables must be ignored */
+    set_all_env_vars();
+
+    /* global configuration variables must be ignored */
+    set_all_global_config_variables();
+
+    _PyPreConfig preconfig;
+    _PyPreConfig_InitIsolatedConfig(&preconfig);
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    _PyPreConfig *rt_preconfig = &_PyRuntime.preconfig;
+    assert(rt_preconfig->isolated == 1);
+    assert(rt_preconfig->use_environment == 0);
+
+    _PyCoreConfig config;
+    err = _PyCoreConfig_InitIsolatedConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    config.program_name = L"./_testembed";
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_python_config(void)
+{
+    _PyInitError err;
+
+    /* global configuration variables must be ignored */
+    set_all_global_config_variables();
+    Py_IsolatedFlag = 1;
+    Py_IgnoreEnvironmentFlag = 1;
+    Py_FrozenFlag = 1;
+    Py_UnbufferedStdioFlag = 1;
+    Py_NoSiteFlag = 1;
+    Py_DontWriteBytecodeFlag = 1;
+    Py_NoUserSiteDirectory = 1;
+#ifdef MS_WINDOWS
+    Py_LegacyWindowsStdioFlag = 1;
+#endif
+
+    _PyPreConfig preconfig;
+    _PyPreConfig_InitPythonConfig(&preconfig);
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    _PyCoreConfig config;
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    config.program_name = L"./_testembed";
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_dont_configure_locale(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig;
+    _PyPreConfig_InitPythonConfig(&preconfig);
+    preconfig.configure_locale = 0;
+    preconfig.coerce_c_locale = 1;
+    preconfig.coerce_c_locale_warn = 1;
+
+    err = _Py_PreInitialize(&preconfig);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    _PyCoreConfig config;
+    _PyCoreConfig_InitPythonConfig(&config);
+    config.program_name = L"./_testembed";
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_dev_mode(void)
+{
+    _PyCoreConfig config;
+    _PyCoreConfig_InitPythonConfig(&config);
+    putenv("PYTHONFAULTHANDLER=");
+    putenv("PYTHONMALLOC=");
+    config.dev_mode = 1;
+    config.program_name = L"./_testembed";
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_read_set(void)
+{
+    _PyInitError err;
+    _PyCoreConfig config;
+    _PyCoreConfig_InitPythonConfig(&config);
+
+    err = _PyCoreConfig_DecodeLocale(&config.program_name, "./init_read_set");
+    if (_PyInitError_Failed(err)) {
+        goto fail;
+    }
+
+    err = _PyCoreConfig_Read(&config);
+    if (_PyInitError_Failed(err)) {
+        goto fail;
+    }
+
+    if (_PyWstrList_Append(&config.module_search_paths,
+                           L"init_read_set_path") < 0) {
+        err = _PyInitError_NoMemory();
+        goto fail;
+    }
+
+    /* override executable computed by _PyCoreConfig_Read() */
+    err = _PyCoreConfig_SetString(&config.executable, L"my_executable");
+    if (_PyInitError_Failed(err)) {
+        goto fail;
+    }
+
+    err = _Py_InitializeFromConfig(&config);
+    _PyCoreConfig_Clear(&config);
+    if (_PyInitError_Failed(err)) {
+        goto fail;
+    }
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+fail:
+    _Py_ExitInitError(err);
+}
+
+
+wchar_t *init_main_argv[] = {
+    L"python3", L"-c",
+    (L"import _testinternalcapi, json; "
+     L"print(json.dumps(_testinternalcapi.get_configs()))"),
+    L"arg2"};
+
+
+static void configure_init_main(_PyCoreConfig *config)
+{
+    config->argv.length = Py_ARRAY_LENGTH(init_main_argv);
+    config->argv.items = init_main_argv;
+    config->parse_argv = 1;
+    config->program_name = L"./python3";
+}
+
+
+static int test_init_run_main(void)
+{
+    _PyCoreConfig config;
+    _PyCoreConfig_InitPythonConfig(&config);
+    configure_init_main(&config);
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
+
+static int test_init_main(void)
+{
+    _PyCoreConfig config;
+    _PyCoreConfig_InitPythonConfig(&config);
+    configure_init_main(&config);
+    config._init_main = 0;
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
+    int res = PyRun_SimpleString(
+        "import sys; "
+        "print('Run Python code before _Py_InitializeMain', "
+               "file=sys.stderr)");
+    if (res < 0) {
+        exit(1);
+    }
+
+    err = _Py_InitializeMain();
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
+
+static int test_run_main(void)
+{
+    _PyCoreConfig config;
+    _PyCoreConfig_InitPythonConfig(&config);
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import sys; "
+                        L"print(f'_Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config.argv.length = Py_ARRAY_LENGTH(argv);
+    config.argv.items = argv;
+    config.program_name = L"./python3";
+
+    _PyInitError err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    return _Py_RunMain();
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -302,6 +1027,26 @@ static struct TestCase TestCases[] = {
     { "pre_initialization_sys_options", test_pre_initialization_sys_options },
     { "bpo20891", test_bpo20891 },
     { "initialize_twice", test_initialize_twice },
+    { "initialize_pymain", test_initialize_pymain },
+    { "init_default_config", test_init_default_config },
+    { "init_global_config", test_init_global_config },
+    { "init_from_config", test_init_from_config },
+    { "init_parse_argv", test_init_parse_argv },
+    { "init_dont_parse_argv", test_init_dont_parse_argv },
+    { "init_env", test_init_env },
+    { "init_env_dev_mode", test_init_env_dev_mode },
+    { "init_env_dev_mode_alloc", test_init_env_dev_mode_alloc },
+    { "init_dont_configure_locale", test_init_dont_configure_locale },
+    { "init_dev_mode", test_init_dev_mode },
+    { "init_isolated_flag", test_init_isolated_flag },
+    { "init_isolated_config", test_init_isolated_config },
+    { "init_python_config", test_init_python_config },
+    { "preinit_isolated1", test_preinit_isolated1 },
+    { "preinit_isolated2", test_preinit_isolated2 },
+    { "init_read_set", test_init_read_set },
+    { "init_run_main", test_init_run_main },
+    { "init_main", test_init_main },
+    { "run_main", test_run_main },
     { NULL, NULL }
 };
 

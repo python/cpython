@@ -44,7 +44,8 @@ are always available.  They are listed here in alphabetical order.
 
    Return the absolute value of a number.  The argument may be an
    integer or a floating point number.  If the argument is a complex number, its
-   magnitude is returned.
+   magnitude is returned. If *x* defines :meth:`__abs__`,
+   ``abs(x)`` returns ``x.__abs__()``.
 
 
 .. function:: all(iterable)
@@ -98,7 +99,7 @@ are always available.  They are listed here in alphabetical order.
       >>> f'{14:#b}', f'{14:b}'
       ('0b1110', '1110')
 
-  See also :func:`format` for more information.
+   See also :func:`format` for more information.
 
 
 .. class:: bool([x])
@@ -112,6 +113,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. index:: pair: Boolean; type
 
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 .. function:: breakpoint(*args, **kws)
 
@@ -208,19 +211,18 @@ are always available.  They are listed here in alphabetical order.
           @classmethod
           def f(cls, arg1, arg2, ...): ...
 
-   The ``@classmethod`` form is a function :term:`decorator` -- see the description
-   of function definitions in :ref:`function` for details.
+   The ``@classmethod`` form is a function :term:`decorator` -- see
+   :ref:`function` for details.
 
-   It can be called either on the class (such as ``C.f()``) or on an instance (such
+   A class method can be called either on the class (such as ``C.f()``) or on an instance (such
    as ``C().f()``).  The instance is ignored except for its class. If a class
    method is called for a derived class, the derived class object is passed as the
    implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
-   see :func:`staticmethod` in this section.
+   see :func:`staticmethod`.
 
-   For more information on class methods, consult the documentation on the standard
-   type hierarchy in :ref:`types`.
+   For more information on class methods, see :ref:`types`.
 
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
@@ -240,8 +242,8 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* control which future
-   statements (see :pep:`236`) affect the compilation of *source*.  If neither
+   The optional arguments *flags* and *dont_inherit* control which :ref:`future
+   statements <future>` affect the compilation of *source*.  If neither
    is present (or both are zero) the code is compiled with those future
    statements that are in effect in the code that is calling :func:`compile`.  If the
    *flags* argument is given and *dont_inherit* is not (or is zero) then the
@@ -434,8 +436,10 @@ are always available.  They are listed here in alphabetical order.
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    dictionaries as global and local namespace.  If the *globals* dictionary is
-   present and lacks '__builtins__', the current globals are copied into *globals*
-   before *expression* is parsed.  This means that *expression* normally has full
+   present and does not contain a value for the key ``__builtins__``, a
+   reference to the dictionary of the built-in module :mod:`builtins` is
+   inserted under that key before *expression* is parsed.
+   This means that *expression* normally has full
    access to the standard :mod:`builtins` module and restricted environments are
    propagated.  If the *locals* dictionary is omitted it defaults to the *globals*
    dictionary.  If both dictionaries are omitted, the expression is executed in the
@@ -575,6 +579,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
 
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
+
 
 .. index::
    single: __format__
@@ -646,11 +653,11 @@ are always available.  They are listed here in alphabetical order.
    dictionary lookup.  Numeric values that compare equal have the same hash
    value (even if they are of different types, as is the case for 1 and 1.0).
 
-  .. note::
+   .. note::
 
-    For objects with custom :meth:`__hash__` methods, note that :func:`hash`
-    truncates the return value based on the bit width of the host machine.
-    See :meth:`__hash__` for details.
+      For objects with custom :meth:`__hash__` methods, note that :func:`hash`
+      truncates the return value based on the bit width of the host machine.
+      See :meth:`__hash__` for details.
 
 .. function:: help([object])
 
@@ -660,6 +667,11 @@ are always available.  They are listed here in alphabetical order.
    as the name of a module, function, class, method, keyword, or documentation
    topic, and a help page is printed on the console.  If the argument is any other
    kind of object, a help page on the object is generated.
+
+   Note that if a slash(/) appears in the parameter list of a function, when
+   invoking :func:`help`, it means that the parameters prior to the slash are
+   positional-only. For more info, see
+   :ref:`the FAQ entry on positional-only parameters <faq-positional-only-arguments>`.
 
    This function is added to the built-in namespace by the :mod:`site` module.
 
@@ -726,7 +738,7 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. class:: int(x=0)
+.. class:: int([x])
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
@@ -759,6 +771,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
+
+   .. versionchanged:: 3.7
+      *x* is now a positional-only parameter.
 
 
 .. function:: isinstance(object, classinfo)
@@ -799,13 +814,14 @@ are always available.  They are listed here in alphabetical order.
 
    See also :ref:`typeiter`.
 
-   One useful application of the second form of :func:`iter` is to read lines of
-   a file until a certain line is reached.  The following example reads a file
-   until the :meth:`~io.TextIOBase.readline` method returns an empty string::
+   One useful application of the second form of :func:`iter` is to build a
+   block-reader. For example, reading fixed-width blocks from a binary
+   database file until the end of file is reached::
 
-      with open('mydata.txt') as fp:
-          for line in iter(fp.readline, ''):
-              process_line(line)
+      from functools import partial
+      with open('mydata.db', 'rb') as f:
+          for block in iter(partial(f.read, 64), b''):
+              process_block(block)
 
 
 .. function:: len(s)
@@ -827,7 +843,8 @@ are always available.  They are listed here in alphabetical order.
 
    Update and return a dictionary representing the current local symbol table.
    Free variables are returned by :func:`locals` when it is called in function
-   blocks, but not in class blocks.
+   blocks, but not in class blocks. Note that at the module level, :func:`locals`
+   and :func:`globals` are the same dictionary.
 
    .. note::
       The contents of this dictionary should not be modified; changes may not
@@ -868,6 +885,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.4
       The *default* keyword-only argument.
 
+   .. versionchanged:: 3.8
+      The *key* can be ``None``.
+
 
 .. _func-memoryview:
 .. function:: memoryview(obj)
@@ -901,6 +921,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.4
       The *default* keyword-only argument.
+
+   .. versionchanged:: 3.8
+      The *key* can be ``None``.
 
 
 .. function:: next(iterator[, default])
@@ -971,6 +994,11 @@ are always available.  They are listed here in alphabetical order.
    encoding. (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
+   .. _filemodes:
+
+   .. index::
+      pair: file; modes
+
    ========= ===============================================================
    Character Meaning
    ========= ===============================================================
@@ -981,7 +1009,6 @@ are always available.  They are listed here in alphabetical order.
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   :term:`universal newlines` mode (deprecated)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
@@ -995,6 +1022,12 @@ are always available.  They are listed here in alphabetical order.
    the contents of the file are returned as :class:`str`, the bytes having been
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
+
+   There is an additional mode character permitted, ``'U'``, which no longer
+   has any effect, and is considered deprecated. It previously enabled
+   :term:`universal newlines` in text mode, which became the default behaviour
+   in Python 3.0. Refer to the documentation of the
+   :ref:`newline <open-newline-parameter>` parameter for further details.
 
    .. note::
 
@@ -1061,6 +1094,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. index::
       single: universal newlines; open() built-in function
+
+   .. _open-newline-parameter:
 
    *newline* controls how :term:`universal newlines` mode works (it only
    applies to text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and
@@ -1390,8 +1425,8 @@ are always available.  They are listed here in alphabetical order.
    Has two optional arguments which must be specified as keyword arguments.
 
    *key* specifies a function of one argument that is used to extract a comparison
-   key from each list element: ``key=str.lower``.  The default value is ``None``
-   (compare the elements directly).
+   key from each element in *iterable* (for example, ``key=str.lower``).  The
+   default value is ``None`` (compare the elements directly).
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
@@ -1417,11 +1452,11 @@ are always available.  They are listed here in alphabetical order.
           @staticmethod
           def f(arg1, arg2, ...): ...
 
-   The ``@staticmethod`` form is a function :term:`decorator` -- see the
-   description of function definitions in :ref:`function` for details.
+   The ``@staticmethod`` form is a function :term:`decorator` -- see
+   :ref:`function` for details.
 
-   It can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).  The instance is ignored except for its class.
+   A static method can be called either on the class (such as ``C.f()``) or on an instance (such
+   as ``C().f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1436,8 +1471,7 @@ are always available.  They are listed here in alphabetical order.
       class C:
           builtin_open = staticmethod(open)
 
-   For more information on static methods, consult the documentation on the
-   standard type hierarchy in :ref:`types`.
+   For more information on static methods, see :ref:`types`.
 
 
 .. index::
@@ -1465,6 +1499,9 @@ are always available.  They are listed here in alphabetical order.
    ``''.join(sequence)``.  To add floating point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
+
+   .. versionchanged:: 3.8
+      The *start* parameter can be specified as a keyword argument.
 
 .. function:: super([type[, object-or-type]])
 
@@ -1640,7 +1677,7 @@ are always available.  They are listed here in alphabetical order.
    This function is invoked by the :keyword:`import` statement.  It can be
    replaced (by importing the :mod:`builtins` module and assigning to
    ``builtins.__import__``) in order to change semantics of the
-   :keyword:`import` statement, but doing so is **strongly** discouraged as it
+   :keyword:`!import` statement, but doing so is **strongly** discouraged as it
    is usually simpler to use import hooks (see :pep:`302`) to attain the same
    goals and does not cause issues with code which assumes the default import
    implementation is in use.  Direct use of :func:`__import__` is also

@@ -28,7 +28,7 @@
 #define RC_NO_PYTHON        103
 #define RC_NO_MEMORY        104
 /*
- * SCRIPT_WRAPPER is used to choose between two variants of an executable built
+ * SCRIPT_WRAPPER is used to choose one of the variants of an executable built
  * from this source file. If not defined, the PEP 397 Python launcher is built;
  * if defined, a script launcher of the type used by setuptools is built, which
  * looks for a script name related to the executable name and runs that script
@@ -39,6 +39,15 @@
  */
 #if defined(SCRIPT_WRAPPER)
 #define RC_NO_SCRIPT        105
+#endif
+/*
+ * VENV_REDIRECT is used to choose the variant that looks for an adjacent or
+ * one-level-higher pyvenv.cfg, and uses its "home" property to locate and
+ * launch the original python.exe.
+ */
+#if defined(VENV_REDIRECT)
+#define RC_NO_VENV_CFG      106
+#define RC_BAD_VENV_CFG     107
 #endif
 
 /* Just for now - static definition */
@@ -97,7 +106,7 @@ error(int rc, wchar_t * format, ... )
 #if !defined(_WINDOWS)
     fwprintf(stderr, L"%ls\n", message);
 #else
-    MessageBox(NULL, message, TEXT("Python Launcher is sorry to say ..."),
+    MessageBoxW(NULL, message, L"Python Launcher is sorry to say ...",
                MB_OK);
 #endif
     exit(rc);
@@ -131,6 +140,17 @@ static wchar_t * get_env(wchar_t * key)
     return buf;
 }
 
+#if defined(_DEBUG)
+#if defined(_WINDOWS)
+
+#define PYTHON_EXECUTABLE L"pythonw_d.exe"
+
+#else
+
+#define PYTHON_EXECUTABLE L"python_d.exe"
+
+#endif
+#else
 #if defined(_WINDOWS)
 
 #define PYTHON_EXECUTABLE L"pythonw.exe"
@@ -139,6 +159,7 @@ static wchar_t * get_env(wchar_t * key)
 
 #define PYTHON_EXECUTABLE L"python.exe"
 
+#endif
 #endif
 
 #define MAX_VERSION_SIZE    4
@@ -645,7 +666,7 @@ run_child(wchar_t * cmdline)
     if (!ok)
         error(RC_CREATE_PROCESS, L"Job information setting failed");
     memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
+    GetStartupInfoW(&si);
     ok = safe_duplicate_handle(GetStdHandle(STD_INPUT_HANDLE), &si.hStdInput);
     if (!ok)
         error(RC_NO_STD_HANDLES, L"stdin duplication failed");
@@ -697,7 +718,7 @@ invoke_child(wchar_t * executable, wchar_t * suffix, wchar_t * cmdline)
         }
         child_command = calloc(child_command_size, sizeof(wchar_t));
         if (child_command == NULL)
-            error(RC_CREATE_PROCESS, L"unable to allocate %d bytes for child command.",
+            error(RC_CREATE_PROCESS, L"unable to allocate %zd bytes for child command.",
                   child_command_size);
         if (no_suffix)
             _snwprintf_s(child_command, child_command_size,
@@ -1051,7 +1072,7 @@ static BOOL
 validate_version(wchar_t * p)
 {
     /*
-    Version information should start with one of 2 or 3,
+    Version information should start with the major version,
     Optionally followed by a period and a minor version,
     Optionally followed by a minus and one of 32 or 64.
     Valid examples:
@@ -1068,7 +1089,7 @@ validate_version(wchar_t * p)
     */
     BOOL result = (p != NULL); /* Default to False if null pointer. */
 
-    result = result && iswdigit(*p);  /* Result = False if fist string element is not a digit. */
+    result = result && iswdigit(*p);  /* Result = False if first string element is not a digit. */
 
     while (result && iswdigit(*p))   /* Require a major version */
         ++p;  /* Skip all leading digit(s) */
@@ -1118,7 +1139,7 @@ static PYC_MAGIC magic_values[] = {
     { 3320, 3351, L"3.5" },
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
-    { 3400, 3409, L"3.8" },
+    { 3400, 3410, L"3.8" },
     { 0 }
 };
 
@@ -1168,7 +1189,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
 
     if (rc == 0) {
         read = fread(buffer, sizeof(char), BUFSIZE, fp);
-        debug(L"maybe_handle_shebang: read %d bytes\n", read);
+        debug(L"maybe_handle_shebang: read %zd bytes\n", read);
         fclose(fp);
 
         if ((read >= 4) && (buffer[3] == '\n') && (buffer[2] == '\r')) {
@@ -1188,7 +1209,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
             bom = BOMs; /* points to UTF-8 entry - the default */
         }
         else {
-            debug(L"maybe_handle_shebang: BOM found, code page %d\n",
+            debug(L"maybe_handle_shebang: BOM found, code page %u\n",
                   bom->code_page);
             start = &buffer[bom->length];
         }
@@ -1454,7 +1475,88 @@ show_python_list(wchar_t ** argv)
         fwprintf(stderr, L"\n\nCan't find a Default Python.\n\n");
     else
         fwprintf(stderr, L"\n\n"); /* End with a blank line */
-    return(FALSE); /* If this has been called we cannot continue */
+    return FALSE; /* If this has been called we cannot continue */
+}
+
+#if defined(VENV_REDIRECT)
+
+static int
+find_home_value(const char *buffer, const char **start, DWORD *length)
+{
+    for (const char *s = strstr(buffer, "home"); s; s = strstr(s + 1, "\nhome")) {
+        if (*s == '\n') {
+            ++s;
+        }
+        for (int i = 4; i > 0 && *s; --i, ++s);
+
+        while (*s && iswspace(*s)) {
+            ++s;
+        }
+        if (*s != L'=') {
+            continue;
+        }
+
+        do {
+            ++s;
+        } while (*s && iswspace(*s));
+
+        *start = s;
+        char *nl = strchr(s, '\n');
+        if (nl) {
+            *length = (DWORD)((ptrdiff_t)nl - (ptrdiff_t)s);
+        } else {
+            *length = (DWORD)strlen(s);
+        }
+        return 1;
+    }
+    return 0;
+}
+#endif
+
+static wchar_t *
+wcsdup_pad(const wchar_t *s, int padding, int *newlen)
+{
+    size_t len = wcslen(s);
+    len += 1 + padding;
+    wchar_t *r = (wchar_t *)malloc(len * sizeof(wchar_t));
+    if (!r) {
+        return NULL;
+    }
+    if (wcscpy_s(r, len, s)) {
+        free(r);
+        return NULL;
+    }
+    *newlen = len < MAXINT ? (int)len : MAXINT;
+    return r;
+}
+
+static wchar_t *
+get_process_name()
+{
+    DWORD bufferLen = MAX_PATH;
+    DWORD len = bufferLen;
+    wchar_t *r = NULL;
+
+    while (!r) {
+        r = (wchar_t *)malloc(bufferLen * sizeof(wchar_t));
+        if (!r) {
+            error(RC_NO_MEMORY, L"out of memory");
+            return NULL;
+        }
+        len = GetModuleFileNameW(NULL, r, bufferLen);
+        if (len == 0) {
+            free(r);
+            error(0, L"Failed to get module name");
+            return NULL;
+        } else if (len == bufferLen &&
+                   GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+            free(r);
+            r = NULL;
+            bufferLen *= 2;
+        }
+    }
+
+    return r;
 }
 
 static int
@@ -1464,22 +1566,27 @@ process(int argc, wchar_t ** argv)
     wchar_t * command;
     wchar_t * executable;
     wchar_t * p;
+    wchar_t * argv0;
     int rc = 0;
-    size_t plen;
-    size_t slen;
     INSTALLED_PYTHON * ip;
     BOOL valid;
     DWORD size, attrs;
-    HRESULT hr;
     wchar_t message[MSGSIZE];
     void * version_data;
     VS_FIXEDFILEINFO * file_info;
     UINT block_size;
-    int index;
-#if defined(SCRIPT_WRAPPER)
+#if defined(VENV_REDIRECT)
+    wchar_t * venv_cfg_path;
     int newlen;
+#elif defined(SCRIPT_WRAPPER)
     wchar_t * newcommand;
     wchar_t * av[2];
+    int newlen;
+    HRESULT hr;
+    int index;
+#else
+    HRESULT hr;
+    int index;
 #endif
 
     setvbuf(stderr, (char *)NULL, _IONBF, 0);
@@ -1497,6 +1604,7 @@ process(int argc, wchar_t ** argv)
 #else
     debug(L"launcher executable: Console\n");
 #endif
+#if !defined(VENV_REDIRECT)
     /* Get the local appdata folder (non-roaming) */
     hr = SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA,
                           NULL, 0, appdata_ini_path);
@@ -1505,9 +1613,7 @@ process(int argc, wchar_t ** argv)
         appdata_ini_path[0] = L'\0';
     }
     else {
-        plen = wcslen(appdata_ini_path);
-        p = &appdata_ini_path[plen];
-        wcsncpy_s(p, MAX_PATH - plen, L"\\py.ini", _TRUNCATE);
+        wcsncat_s(appdata_ini_path, MAX_PATH, L"\\py.ini", _TRUNCATE);
         attrs = GetFileAttributesW(appdata_ini_path);
         if (attrs == INVALID_FILE_ATTRIBUTES) {
             debug(L"File '%ls' non-existent\n", appdata_ini_path);
@@ -1516,8 +1622,9 @@ process(int argc, wchar_t ** argv)
             debug(L"Using local configuration file '%ls'\n", appdata_ini_path);
         }
     }
-    plen = GetModuleFileNameW(NULL, launcher_ini_path, MAX_PATH);
-    size = GetFileVersionInfoSizeW(launcher_ini_path, &size);
+#endif
+    argv0 = get_process_name();
+    size = GetFileVersionInfoSizeW(argv0, &size);
     if (size == 0) {
         winerror(GetLastError(), message, MSGSIZE);
         debug(L"GetFileVersionInfoSize failed: %ls\n", message);
@@ -1525,7 +1632,7 @@ process(int argc, wchar_t ** argv)
     else {
         version_data = malloc(size);
         if (version_data) {
-            valid = GetFileVersionInfoW(launcher_ini_path, 0, size,
+            valid = GetFileVersionInfoW(argv0, 0, size,
                                         version_data);
             if (!valid)
                 debug(L"GetFileVersionInfo failed: %X\n", GetLastError());
@@ -1542,15 +1649,51 @@ process(int argc, wchar_t ** argv)
             free(version_data);
         }
     }
+
+#if defined(VENV_REDIRECT)
+    /* Allocate some extra space for new filenames */
+    venv_cfg_path = wcsdup_pad(argv0, 32, &newlen);
+    if (!venv_cfg_path) {
+        error(RC_NO_MEMORY, L"Failed to copy module name");
+    }
+    p = wcsrchr(venv_cfg_path, L'\\');
+
+    if (p == NULL) {
+        error(RC_NO_VENV_CFG, L"No pyvenv.cfg file");
+    }
+    p[0] = L'\0';
+    wcscat_s(venv_cfg_path, newlen, L"\\pyvenv.cfg");
+    attrs = GetFileAttributesW(venv_cfg_path);
+    if (attrs == INVALID_FILE_ATTRIBUTES) {
+        debug(L"File '%ls' non-existent\n", venv_cfg_path);
+        p[0] = '\0';
+        p = wcsrchr(venv_cfg_path, L'\\');
+        if (p != NULL) {
+            p[0] = '\0';
+            wcscat_s(venv_cfg_path, newlen, L"\\pyvenv.cfg");
+            attrs = GetFileAttributesW(venv_cfg_path);
+            if (attrs == INVALID_FILE_ATTRIBUTES) {
+                debug(L"File '%ls' non-existent\n", venv_cfg_path);
+                error(RC_NO_VENV_CFG, L"No pyvenv.cfg file");
+            }
+        }
+    }
+    debug(L"Using venv configuration file '%ls'\n", venv_cfg_path);
+#else
+    /* Allocate some extra space for new filenames */
+    if (wcscpy_s(launcher_ini_path, MAX_PATH, argv0)) {
+        error(RC_NO_MEMORY, L"Failed to copy module name");
+    }
     p = wcsrchr(launcher_ini_path, L'\\');
+
     if (p == NULL) {
         debug(L"GetModuleFileNameW returned value has no backslash: %ls\n",
               launcher_ini_path);
         launcher_ini_path[0] = L'\0';
     }
     else {
-        wcsncpy_s(p, MAX_PATH - (p - launcher_ini_path), L"\\py.ini",
-                  _TRUNCATE);
+        p[0] = L'\0';
+        wcscat_s(launcher_ini_path, MAX_PATH, L"\\py.ini");
         attrs = GetFileAttributesW(launcher_ini_path);
         if (attrs == INVALID_FILE_ATTRIBUTES) {
             debug(L"File '%ls' non-existent\n", launcher_ini_path);
@@ -1559,9 +1702,21 @@ process(int argc, wchar_t ** argv)
             debug(L"Using global configuration file '%ls'\n", launcher_ini_path);
         }
     }
+#endif
 
     command = skip_me(GetCommandLineW());
     debug(L"Called with command line: %ls\n", command);
+
+#if !defined(VENV_REDIRECT)
+    /* bpo-35811: The __PYVENV_LAUNCHER__ variable is used to
+     * override sys.executable and locate the original prefix path. 
+     * However, if it is silently inherited by a non-venv Python
+     * process, that process will believe it is running in the venv
+     * still. This is the only place where *we* can clear it (that is,
+     * when py.exe is being used to launch Python), so we do.
+     */
+    SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", NULL);
+#endif
 
 #if defined(SCRIPT_WRAPPER)
     /* The launcher is being used in "script wrapper" mode.
@@ -1594,6 +1749,55 @@ process(int argc, wchar_t ** argv)
         command = newcommand;
         valid = FALSE;
     }
+#elif defined(VENV_REDIRECT)
+    {
+        FILE *f;
+        char buffer[4096]; /* 4KB should be enough for anybody */
+        char *start;
+        DWORD len, cch, cch_actual;
+        size_t cb;
+        if (_wfopen_s(&f, venv_cfg_path, L"r")) {
+            error(RC_BAD_VENV_CFG, L"Cannot read '%ls'", venv_cfg_path);
+        }
+        cb = fread_s(buffer, sizeof(buffer), sizeof(buffer[0]),
+                     sizeof(buffer) / sizeof(buffer[0]), f);
+        fclose(f);
+
+        if (!find_home_value(buffer, &start, &len)) {
+            error(RC_BAD_VENV_CFG, L"Cannot find home in '%ls'",
+                  venv_cfg_path);
+        }
+
+        cch = MultiByteToWideChar(CP_UTF8, 0, start, len, NULL, 0);
+        if (!cch) {
+            error(0, L"Cannot determine memory for home path");
+        }
+        cch += (DWORD)wcslen(PYTHON_EXECUTABLE) + 1 + 1; /* include sep and null */
+        executable = (wchar_t *)malloc(cch * sizeof(wchar_t));
+        if (executable == NULL) {
+            error(RC_NO_MEMORY, L"A memory allocation failed");
+        }
+        cch_actual = MultiByteToWideChar(CP_UTF8, 0, start, len, executable, cch);
+        if (!cch_actual) {
+            error(RC_BAD_VENV_CFG, L"Cannot decode home path in '%ls'",
+                  venv_cfg_path);
+        }
+        if (executable[cch_actual - 1] != L'\\') {
+            executable[cch_actual++] = L'\\';
+            executable[cch_actual] = L'\0';
+        }
+        if (wcscat_s(executable, cch, PYTHON_EXECUTABLE)) {
+            error(RC_BAD_VENV_CFG, L"Cannot create executable path from '%ls'",
+                  venv_cfg_path);
+        }
+        if (GetFileAttributesW(executable) == INVALID_FILE_ATTRIBUTES) {
+            error(RC_NO_PYTHON, L"No Python at '%ls'", executable);
+        }
+        if (!SetEnvironmentVariableW(L"__PYVENV_LAUNCHER__", argv0)) {
+            error(0, L"Failed to set launcher environment");
+        }
+        valid = 1;
+    }
 #else
     if (argc <= 1) {
         valid = FALSE;
@@ -1601,11 +1805,12 @@ process(int argc, wchar_t ** argv)
     }
     else {
         p = argv[1];
-        plen = wcslen(p);
-        if (argc == 2) {
-            slen = wcslen(L"-0");
-            if(!wcsncmp(p, L"-0", slen)) /* Starts with -0 */
-                valid = show_python_list(argv); /* Check for -0 FIRST */
+        if ((argc == 2) && // list version args
+            (!wcsncmp(p, L"-0", wcslen(L"-0")) ||
+            !wcsncmp(p, L"--list", wcslen(L"--list"))))
+        {
+            show_python_list(argv);
+            return rc;
         }
         valid = valid && (*p == L'-') && validate_version(&p[1]);
         if (valid) {
@@ -1638,10 +1843,13 @@ installed, use -0 for available pythons", &p[1]);
     if (!valid) {
         if ((argc == 2) && (!_wcsicmp(p, L"-h") || !_wcsicmp(p, L"--help")))
             show_help_text(argv);
-        if ((argc == 2) && (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"-0p")))
-            executable = NULL; /* Info call only */
-        else
+        if ((argc == 2) &&
+            (!_wcsicmp(p, L"-0") || !_wcsicmp(p, L"--list") ||
+            !_wcsicmp(p, L"-0p") || !_wcsicmp(p, L"--list-paths")))
         {
+            executable = NULL; /* Info call only */
+        }
+        else {
             /* Look for an active virtualenv */
             executable = find_python_by_venv();
 

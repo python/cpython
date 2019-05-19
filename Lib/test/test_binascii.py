@@ -3,6 +3,7 @@
 import unittest
 import binascii
 import array
+import re
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
 b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_hqx', 'b2a_qp', 'b2a_uu',
@@ -127,7 +128,10 @@ class BinASCIITest(unittest.TestCase):
 
         # Test base64 with invalid number of valid characters (1 mod 4)
         def assertInvalidLength(data):
-            with self.assertRaisesRegex(binascii.Error, r'(?i)invalid.+length'):
+            n_data_chars = len(re.sub(br'[^A-Za-z0-9/+]', br'', data))
+            expected_errmsg_re = \
+                r'(?i)Invalid.+number of data characters.+' + str(n_data_chars)
+            with self.assertRaisesRegex(binascii.Error, expected_errmsg_re):
                 binascii.a2b_base64(self.type2test(data))
 
         assertInvalidLength(b'a')

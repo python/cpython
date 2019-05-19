@@ -1,10 +1,8 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
-import collections
 import itertools
 import queue
 import random
-import sys
 import threading
 import time
 import unittest

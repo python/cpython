@@ -19,7 +19,7 @@ need to encode the payloads for transport through compliant mail servers. This
 is especially true for :mimetype:`image/\*` and :mimetype:`text/\*` type messages
 containing binary data.
 
-The :mod:`email` package provides some convenient encodings in its
+The :mod:`email` package provides some convenient encoders in its
 :mod:`encoders` module.  These encoders are actually used by the
 :class:`~email.mime.audio.MIMEAudio` and :class:`~email.mime.image.MIMEImage`
 class constructors to provide default encodings.  All encoder functions take

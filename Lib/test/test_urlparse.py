@@ -1,6 +1,7 @@
+import sys
+import unicodedata
 import unittest
 import urllib.parse
-import warnings
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
@@ -880,6 +881,13 @@ class UrlParseTestCase(unittest.TestCase):
                                                           errors="ignore")
         self.assertEqual(result, [('key', '\u0141-')])
 
+    def test_parse_qsl_max_num_fields(self):
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qs('&'.join(['a=a']*11), max_num_fields=10)
+        with self.assertRaises(ValueError):
+            urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10)
+        urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
+
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:
         # Sequence and object values.
@@ -988,6 +996,33 @@ class UrlParseTestCase(unittest.TestCase):
                 expected.append(name)
         self.assertCountEqual(urllib.parse.__all__, expected)
 
+    def test_urlsplit_normalization(self):
+        # Certain characters should never occur in the netloc,
+        # including under normalization.
+        # Ensure that ALL of them are detected and cause an error
+        illegal_chars = '/:#?@'
+        hex_chars = {'{:04X}'.format(ord(c)) for c in illegal_chars}
+        denorm_chars = [
+            c for c in map(chr, range(128, sys.maxunicode))
+            if (hex_chars & set(unicodedata.decomposition(c).split()))
+            and c not in illegal_chars
+        ]
+        # Sanity check that we found at least one such character
+        self.assertIn('\u2100', denorm_chars)
+        self.assertIn('\uFF03', denorm_chars)
+
+        # bpo-36742: Verify port separators are ignored when they
+        # existed prior to decomposition
+        urllib.parse.urlsplit('http://\u30d5\u309a:80')
+        with self.assertRaises(ValueError):
+            urllib.parse.urlsplit('http://\u30d5\u309a\ufe1380')
+
+        for scheme in ["http", "https", "ftp"]:
+            for c in denorm_chars:
+                url = "{}://netloc{}false.netloc/path".format(scheme, c)
+                with self.subTest(url=url, char='{:04X}'.format(ord(c))):
+                    with self.assertRaises(ValueError):
+                        urllib.parse.urlsplit(url)
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""

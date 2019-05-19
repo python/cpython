@@ -1,10 +1,12 @@
 import io
 import locale
 import mimetypes
+import pathlib
 import sys
 import unittest
 
 from test import support
+from platform import win32_edition
 
 # Tell it we don't know about external files:
 mimetypes.knownfiles = []
@@ -77,6 +79,29 @@ class MimeTypesTestCase(unittest.TestCase):
                                           strict=True)
         self.assertEqual(exts, ['.g3', '.g\xb3'])
 
+    def test_path_like_ob(self):
+        filename = "LICENSE.txt"
+        filepath = pathlib.Path(filename)
+        filepath_with_abs_dir = pathlib.Path('/dir/'+filename)
+        filepath_relative = pathlib.Path('../dir/'+filename)
+        path_dir = pathlib.Path('./')
+
+        expected = self.db.guess_type(filename)
+
+        self.assertEqual(self.db.guess_type(filepath), expected)
+        self.assertEqual(self.db.guess_type(
+            filepath_with_abs_dir), expected)
+        self.assertEqual(self.db.guess_type(filepath_relative), expected)
+        self.assertEqual(self.db.guess_type(path_dir), (None, None))
+
+    def test_keywords_args_api(self):
+        self.assertEqual(self.db.guess_type(
+            url="foo.html", strict=True), ("text/html", None))
+        self.assertEqual(self.db.guess_all_extensions(
+            type='image/jpg', strict=True), [])
+        self.assertEqual(self.db.guess_extension(
+            type='image/jpg', strict=False), '.jpg')
+
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
 class Win32MimeTypesTestCase(unittest.TestCase):
@@ -92,6 +117,8 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         mimetypes.types_map.clear()
         mimetypes.types_map.update(self.original_types_map)
 
+    @unittest.skipIf(win32_edition() in ('NanoServer', 'WindowsCoreHeadless', 'IoTEdgeOS'),
+                                         "MIME types registry keys unavailable")
     def test_registry_parsing(self):
         # the original, minimum contents of the MIME database in the
         # Windows registry is undocumented AFAIK.

@@ -11,6 +11,8 @@ with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
 
+.. index:: single: # (hash); comment
+
 Many of the examples in this manual, even those entered at the interactive
 prompt, include comments.  Comments in Python start with the hash character,
 ``#``, and extend to the end of the physical line.  A comment may appear at the
@@ -223,10 +225,14 @@ This only works with two literals though, not with variables or expressions::
 
    >>> prefix = 'Py'
    >>> prefix 'thon'  # can't concatenate a variable and a string literal
-     ...
+     File "<stdin>", line 1
+       prefix 'thon'
+                   ^
    SyntaxError: invalid syntax
    >>> ('un' * 3) 'ium'
-     ...
+     File "<stdin>", line 1
+       ('un' * 3) 'ium'
+                      ^
    SyntaxError: invalid syntax
 
 If you want to concatenate variables or a variable and a literal, use ``+``::
@@ -320,10 +326,12 @@ Python strings cannot be changed --- they are :term:`immutable`.
 Therefore, assigning to an indexed position in the string results in an error::
 
    >>> word[0] = 'J'
-     ...
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
    >>> word[2:] = 'py'
-     ...
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
 
 If you need a different string, you should create a new one::
@@ -375,7 +383,7 @@ items of different types, but usually the items all have the same type. ::
    >>> squares
    [1, 4, 9, 16, 25]
 
-Like strings (and all other built-in :term:`sequence` type), lists can be
+Like strings (and all other built-in :term:`sequence` types), lists can be
 indexed and sliced::
 
    >>> squares[0]  # indexing returns the item
