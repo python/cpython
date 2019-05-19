@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#include "pystate.h"   /* _PyErr_StackItem */
+
 struct _frame; /* Avoid including frameobject.h */
 
 /* _PyGenObject_HEAD defines the initial segment of generator

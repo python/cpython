@@ -13,6 +13,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_traceback.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
