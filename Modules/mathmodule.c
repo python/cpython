@@ -1637,7 +1637,7 @@ math_isqrt(PyObject *module, PyObject *n)
     size_t c, d, n_shift;
     uint64_t m, v;
     uint32_t u;
-    PyObject *a = NULL, *b, *shift;
+    PyObject *a = NULL, *b;
 
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -1701,12 +1701,7 @@ math_isqrt(PyObject *module, PyObject *n)
 
     /* Shift and convert n to get a uint64_t m with 2**62 <= m < 2**64. */
     n_shift = c - 31U;
-    shift = PyLong_FromSize_t(2U * n_shift);
-    if (shift == NULL) {
-        goto error;
-    }
-    b = PyNumber_Rshift(n, shift);
-    Py_DECREF(shift);
+    b = _PyLong_Rshift(n, 2U * n_shift);
     if (b == NULL) {
         goto error;
     }
@@ -1739,12 +1734,7 @@ math_isqrt(PyObject *module, PyObject *n)
         d = c >> s;
 
         /* q = (n >> 2*c - e - d + 1) // a */
-        shift = PyLong_FromSize_t(2U*c - d - e + 1U);
-        if (shift == NULL) {
-            goto error;
-        }
-        q = PyNumber_Rshift(n, shift);
-        Py_DECREF(shift);
+        q = _PyLong_Rshift(n, 2U*c - d - e + 1U);
         if (q == NULL) {
             goto error;
         }
@@ -1754,13 +1744,7 @@ math_isqrt(PyObject *module, PyObject *n)
         }
 
         /* a = (a << d - 1 - e) + q */
-        shift = PyLong_FromSize_t(d - 1U - e);
-        if (shift == NULL) {
-            Py_DECREF(q);
-            goto error;
-        }
-        Py_SETREF(a, PyNumber_Lshift(a, shift));
-        Py_DECREF(shift);
+        Py_SETREF(a, _PyLong_Lshift(a, d - 1U - e));
         if (a == NULL) {
             Py_DECREF(q);
             goto error;
@@ -2001,9 +1985,9 @@ static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=6686f26fae00e9ca input=6d1c8105c0d91fb4]*/
 {
-    long x;
+    long x, two_valuation;
     int overflow;
-    PyObject *result, *odd_part, *two_valuation, *pyint_form;
+    PyObject *result, *odd_part, *pyint_form;
 
     if (PyFloat_Check(arg)) {
         PyObject *lx;
@@ -2052,13 +2036,8 @@ math_factorial(PyObject *module, PyObject *arg)
     odd_part = factorial_odd_part(x);
     if (odd_part == NULL)
         return NULL;
-    two_valuation = PyLong_FromLong(x - count_set_bits(x));
-    if (two_valuation == NULL) {
-        Py_DECREF(odd_part);
-        return NULL;
-    }
-    result = PyNumber_Lshift(odd_part, two_valuation);
-    Py_DECREF(two_valuation);
+    two_valuation = x - count_set_bits(x);
+    result = _PyLong_Lshift(odd_part, two_valuation);
     Py_DECREF(odd_part);
     return result;
 }

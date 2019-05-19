@@ -23,6 +23,9 @@ try:
 except ImportError:
     _tkinter = None
 '''
+
+manpages_url = 'https://manpages.debian.org/{path}'
+
 # General substitutions.
 project = 'Python'
 copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')
