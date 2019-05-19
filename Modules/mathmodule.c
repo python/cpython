@@ -1624,7 +1624,7 @@ completes the proof sketch.
 /* Approximate square root of a large 64-bit integer.
 
    Given `n` satisfying `2**62 <= n < 2**64`, return `a`
-   satisfying `(a - 1)**2 < n < (a + 1)**2. */
+   satisfying `(a - 1)**2 < n < (a + 1)**2`. */
 
 static uint64_t
 _approximate_isqrt(uint64_t n)
