@@ -1,4 +1,3 @@
-
 /* Frame object interface */
 
 #ifndef Py_LIMITED_API
