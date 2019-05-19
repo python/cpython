@@ -1114,7 +1114,7 @@ Notes:
    item is removed and returned.
 
 (3)
-   ``remove`` raises :exc:`ValueError` when *x* is not found in *s*.
+   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
 
 (4)
    The :meth:`reverse` method modifies the sequence in place for economy of
@@ -1124,7 +1124,9 @@ Notes:
 (5)
    :meth:`clear` and :meth:`!copy` are included for consistency with the
    interfaces of mutable containers that don't support slicing operations
-   (such as :class:`dict` and :class:`set`)
+   (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
+   :class:`collections.abc.MutableSequence` ABC, but most concrete
+   mutable sequence classes provide it.
 
    .. versionadded:: 3.3
       :meth:`clear` and :meth:`!copy` methods.
