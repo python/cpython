@@ -248,6 +248,8 @@ always available.
    before the program exits.  The handling of such top-level exceptions can be
    customized by assigning another three-argument function to ``sys.excepthook``.
 
+   See also :func:`unraisablehook` which handles unraisable exceptions.
+
 
 .. data:: __breakpointhook__
           __displayhook__
@@ -1499,12 +1501,14 @@ always available.
    The *unraisable* argument has the following attributes:
 
    * *exc_type*: Exception type.
-   * *exc_value*: Exception value.
-   * *exc_tb*: Exception traceback, can be ``None``.
-   * *obj*: Object causing the exception, can be ``None``.
+   * *exc_value*: Exception value, can be ``None``.
+   * *exc_traceback*: Exception traceback, can be ``None``.
+   * *object*: Object causing the exception, can be ``None``.
 
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
+
+   See also :func:`unraisablehook` which handles uncaught exceptions.
 
    .. versionadded:: 3.8
 

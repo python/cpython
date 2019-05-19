@@ -889,8 +889,8 @@ class UnraisableHookTest(unittest.TestCase):
                 _testcapi.write_unraisable_exc(exc2, obj)
                 return types.SimpleNamespace(exc_type=type(exc2),
                                              exc_value=exc2,
-                                             exc_tb=exc2.__traceback__,
-                                             obj=obj)
+                                             exc_traceback=exc2.__traceback__,
+                                             object=obj)
         finally:
             # Explicitly break any reference cycle
             exc = None
@@ -920,7 +920,7 @@ class UnraisableHookTest(unittest.TestCase):
         try:
             with test.support.swap_attr(sys, 'unraisablehook', hook_func):
                 expected = self.write_unraisable_exc(ValueError(42), obj)
-                for attr in "exc_type exc_value exc_tb obj".split():
+                for attr in "exc_type exc_value exc_traceback object".split():
                     self.assertEqual(getattr(hook_args, attr),
                                      getattr(expected, attr),
                                      (hook_args, expected))

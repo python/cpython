@@ -955,8 +955,8 @@ static PyTypeObject UnraisableHookArgsType;
 static PyStructSequence_Field UnraisableHookArgs_fields[] = {
     {"exc_type", "Exception type"},
     {"exc_value", "Exception value"},
-    {"exc_tb", "Exception traceback"},
-    {"obj", "Object causing the exception"},
+    {"exc_traceback", "Exception traceback"},
+    {"object", "Object causing the exception"},
     {0}
 };
 
@@ -1160,13 +1160,22 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
 
    This function can be used when an exception has occurred but there is no way
    for Python to handle it. For example, when a destructor raises an exception
-   or during garbage collection (gc.collect()). */
+   or during garbage collection (gc.collect()).
+
+   An exception must be set to call this function. */
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
     PyObject *exc_type, *exc_value, *exc_tb;
 
     PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+
+    assert(exc_type != NULL);
+
+    if (exc_type == NULL) {
+        /* sys.unraisablehook requires that at least exc_type is set */
+        goto default_hook;
+    }
 
     _Py_IDENTIFIER(unraisablehook);
     PyObject *hook = _PySys_GetObjectId(&PyId_unraisablehook);
@@ -1193,6 +1202,7 @@ PyErr_WriteUnraisable(PyObject *obj)
         obj = hook;
     }
 
+default_hook:
     /* Call the default unraisable hook (ignore failure) */
     (void)write_unraisable_exc(exc_type, exc_value, exc_tb, obj);
 
