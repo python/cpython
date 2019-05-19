@@ -1445,7 +1445,7 @@ class Utility_Tests(unittest.TestCase):
         self.assertIsInstance(urllib.request.thishost(), tuple)
 
 
-class URLopener_Tests(unittest.TestCase, FakeHTTPMixin):
+class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
     """Testcase to test the open method of URLopener class."""
 
     def test_quoted_open(self):
