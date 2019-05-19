@@ -1467,7 +1467,7 @@ class URLopener_Tests(unittest.TestCase, FakeHTTPMixin):
     def test_urlopener_retrieve_file(self):
         with support.temp_dir() as tmpdir:
             fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
-            self.addCleanup(os.close, fd)
+            os.close(fd)
             fileurl = "file:" + urllib.request.pathname2url(tmpfile)
             filename, _ = urllib.request.URLopener().retrieve(fileurl)
             self.assertEqual(filename, tmpfile)
