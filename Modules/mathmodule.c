@@ -1623,16 +1623,16 @@ completes the proof sketch.
 
 /* Approximate square root of a large 64-bit integer.
 
-   Given `n` satisfying 2**62 <= n < 2**64, return `a`
-   satisfying `(a - 1)*(a - 1) < n < (a + 1) * (a + 1). */
+   Given `n` satisfying `2**62 <= n < 2**64`, return `a`
+   satisfying `(a - 1)**2 < n < (a + 1)**2. */
 
 uint64_t
 _approximate_isqrt(uint64_t n)
 {
-    uint32_t u = 1U + (uint32_t)(n >> 62);
-    u = (u << 1) + (uint32_t)(n >> 59) / u;
-    u = (u << 3) + (uint32_t)(n >> 53) / u;
-    u = (u << 7) + (uint32_t)(n >> 41) / u;
+    uint32_t u = 1U + (n >> 62);
+    u = (u << 1) + (n >> 59) / u;
+    u = (u << 3) + (n >> 53) / u;
+    u = (u << 7) + (n >> 41) / u;
     return (u << 15) + (n >> 17) / u;
 }
 
@@ -1650,7 +1650,7 @@ math_isqrt(PyObject *module, PyObject *n)
 /*[clinic end generated code: output=35a6f7f980beab26 input=5b6e7ae4fa6c43d6]*/
 {
     int a_too_large, c_bit_length;
-    size_t c, d, n_shift;
+    size_t c, d;
     uint64_t m, u;
     PyObject *a = NULL, *b;
 
@@ -1702,8 +1702,7 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     /* Shift and convert n to get a uint64_t m with 2**62 <= m < 2**64. */
-    n_shift = c - 31U;
-    b = _PyLong_Rshift(n, 2U * n_shift);
+    b = _PyLong_Rshift(n, 2*c - 62U);
     if (b == NULL) {
         goto error;
     }
