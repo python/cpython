@@ -620,7 +620,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.addTypeEqualityFunc(SadSnake, AllSnakesCreatedEqual)
         self.assertEqual(s1, s2)
         # No this doesn't clean up and remove the SadSnake equality func
-        # from this TestCase instance but since its a local nothing else
+        # from this TestCase instance but since it's local nothing else
         # will ever notice that.
 
     def testAssertIs(self):
