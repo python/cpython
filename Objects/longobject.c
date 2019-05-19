@@ -4496,8 +4496,7 @@ long_rshift(PyObject *a, PyObject *b)
     CHECK_BINOP(a, b);
 
     if (Py_SIZE(b) < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "negative shift count");
+        PyErr_SetString(PyExc_ValueError, "negative shift count");
         return NULL;
     }
     if (Py_SIZE(a) == 0) {
@@ -4508,6 +4507,7 @@ long_rshift(PyObject *a, PyObject *b)
     return long_rshift1((PyLongObject *)a, wordshift, remshift);
 }
 
+/* Return a >> shiftby. */
 PyObject *
 _PyLong_Rshift(PyObject *a, size_t shiftby)
 {
@@ -4578,6 +4578,7 @@ long_lshift(PyObject *a, PyObject *b)
     return long_lshift1((PyLongObject *)a, wordshift, remshift);
 }
 
+/* Return a << shiftby. */
 PyObject *
 _PyLong_Lshift(PyObject *a, size_t shiftby)
 {
