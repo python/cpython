@@ -1784,7 +1784,7 @@ class URLopener:
                 fp = self.open_local_file(url1)
                 hdrs = fp.info()
                 fp.close()
-                return url2pathname(splithost(url1)[1]), hdrs
+                return url2pathname(_splithost(url1)[1]), hdrs
             except OSError as msg:
                 pass
         fp = self.open(url, data)
@@ -1793,10 +1793,10 @@ class URLopener:
             if filename:
                 tfp = open(filename, 'wb')
             else:
-                garbage, path = splittype(url)
-                garbage, path = splithost(path or "")
-                path, garbage = splitquery(path or "")
-                path, garbage = splitattr(path or "")
+                garbage, path = _splittype(url)
+                garbage, path = _splithost(path or "")
+                path, garbage = _splitquery(path or "")
+                path, garbage = _splitattr(path or "")
                 suffix = os.path.splitext(path)[1]
                 (fd, filename) = tempfile.mkstemp(suffix)
                 self.__tempfiles.append(filename)
