@@ -1626,7 +1626,7 @@ completes the proof sketch.
    Given `n` satisfying `2**62 <= n < 2**64`, return `a`
    satisfying `(a - 1)**2 < n < (a + 1)**2. */
 
-uint64_t
+static uint64_t
 _approximate_isqrt(uint64_t n)
 {
     uint32_t u = 1U + (n >> 62);
