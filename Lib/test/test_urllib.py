@@ -1463,26 +1463,20 @@ class URLopener_Tests(unittest.TestCase, FakeHTTPMixin):
                 "spam://c:|windows%/:=&?~#+!$,;'@()*[]|/path/"),
                 "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
 
+    @support.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_file(self):
-        with self.assertWarns(DeprecationWarning):
-            try:
-                fd, tmp_file = tempfile.mkstemp()
-                fileurl = 'file:' + urllib.request.pathname2url(tmp_file)
-                filename, _ = urllib.request.URLopener().retrieve(fileurl)
-                self.assertEqual(filename, tmp_file)
-            finally:
-                os.close(fd)
-                os.unlink(tmp_file)
+        with tempfile.NamedTemporaryFile() as fileobj:
+            fileurl = "file:" + urllib.request.pathname2url(fileobj.name)
+            filename, _ = urllib.request.URLopener().retrieve(fileurl)
+            self.assertEqual(filename, fileobj.name)
 
+    @support.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_remote(self):
-        with self.assertWarns(DeprecationWarning):
-            try:
-                self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
-                url = "http://www.python.org/file.txt"
-                filename, _ = urllib.request.URLopener().retrieve(url)
-                self.assertEqual(os.path.splitext(filename)[1], '.txt')
-            finally:
-                self.unfakehttp()
+        url = "http://www.python.org/file.txt"
+        self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
+        self.addCleanup(self.unfakehttp)
+        filename, _ = urllib.request.URLopener().retrieve(url)
+        self.assertEqual(os.path.splitext(filename)[1], ".txt")
 
 
 # Just commented them out.
