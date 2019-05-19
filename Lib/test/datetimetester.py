@@ -2536,6 +2536,12 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("-2400", "%z")
         with self.assertRaises(ValueError): strptime("-000", "%z")
 
+    def test_strptime_ampm(self):
+        for hour in range(0, 24):
+            with self.subTest(hour=hour):
+                hour_date = (1999, 3, 17, hour, 44, 55, 2, 76, 0)
+                self.assertEqual(self.theclass.strptime(_time.strftime("%I %p", hour_date), "%I %p").hour, hour)
+
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates and times are allowed.
 
