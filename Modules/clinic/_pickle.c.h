@@ -85,9 +85,16 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "to map the new Python 3 names to the old module names used in Python\n"
 "2, so that the pickle data stream is readable with Python 2.\n"
 "\n"
-"If *buffer_callback* is None (the default), buffer views are serialized\n"
-"into *file* as part of the pickle stream.  It is an error if\n"
-"*buffer_callback* is not None and *protocol* is None or smaller than 5.");
+"If *buffer_callback* is None (the default), buffer views are\n"
+"serialized into *file* as part of the pickle stream.\n"
+"\n"
+"If *buffer_callback* is not None, then it can be called any number\n"
+"of times with a buffer view.  If the callback returns a false value\n"
+"(such as None), the given buffer is out-of-band; otherwise the\n"
+"buffer is serialized in-band, i.e. inside the pickle stream.\n"
+"\n"
+"It is an error if *buffer_callback* is not None and *protocol*\n"
+"is None or smaller than 5.");
 
 static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
@@ -828,4 +835,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2fafc02c65351b51 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8dc0e862f96c4afe input=a9049054013a1b77]*/

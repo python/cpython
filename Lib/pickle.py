@@ -423,9 +423,15 @@ class _Pickler:
         with Python 2.
 
         If *buffer_callback* is None (the default), buffer views are
-        serialized into *file* as part of the pickle stream.  It is
-        an error if *buffer_callback* is not None and *protocol* is
-        None or smaller than 5.
+        serialized into *file* as part of the pickle stream.
+
+        If *buffer_callback* is not None, then it can be called any number
+        of times with a buffer view.  If the callback returns a false value
+        (such as None), the given buffer is out-of-band; otherwise the
+        buffer is serialized in-band, i.e. inside the pickle stream.
+
+        It is an error if *buffer_callback* is not None and *protocol*
+        is None or smaller than 5.
         """
         if protocol is None:
             protocol = DEFAULT_PROTOCOL
@@ -819,7 +825,7 @@ class _Pickler:
                 in_band = bool(self._buffer_callback(obj))
             if in_band:
                 # Write data in-band
-                # XXX we could avoid a copy here
+                # XXX The C implementation avoids a copy here
                 if m.readonly:
                     self.save_bytes(m.tobytes())
                 else:

@@ -201,7 +201,7 @@ process more convenient:
    This is equivalent to ``Pickler(file, protocol).dump(obj)``.
 
    Arguments *file*, *protocol*, *fix_imports* and *buffer_callback* have
-   the same meaning as in :class:`Pickler`.
+   the same meaning as in the :class:`Pickler` constructor.
 
    .. versionchanged:: 3.8
       The *buffer_callback* argument was added.
@@ -212,7 +212,7 @@ process more convenient:
    instead of writing it to a file.
 
    Arguments *protocol*, *fix_imports* and *buffer_callback* have the same
-   meaning as in :class:`Pickler`.
+   meaning as in the :class:`Pickler` constructor.
 
    .. versionchanged:: 3.8
       The *buffer_callback* argument was added.
@@ -228,7 +228,7 @@ process more convenient:
    representation are ignored.
 
    Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
-   have the same meaning as in :class:`Unpickler`.
+   have the same meaning as in the :class:`Unpickler` constructor.
 
    .. versionchanged:: 3.8
       The *buffers* argument was added.
@@ -243,7 +243,7 @@ process more convenient:
    representation are ignored.
 
    Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
-   have the same meaning as in :class:`Unpickler`.
+   have the same meaning as in the :class:`Unpickler` constructor.
 
    .. versionchanged:: 3.8
       The *buffers* argument was added.
@@ -300,8 +300,11 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
    If *buffer_callback* is not None, then it can be called any number
    of times with a buffer view.  If the callback returns a false value
-   (such as None), the given buffer is out-of-band; otherwise the
-   buffer is serialized in-band, i.e. inside the pickle stream.
+   (such as None), the given buffer is :ref:`out-of-band <pickle-oob>`;
+   otherwise the buffer is serialized in-band, i.e. inside the pickle stream.
+
+   It is an error if *buffer_callback* is not None and *protocol* is
+   None or smaller than 5.
 
    .. versionchanged:: 3.8
       The *buffer_callback* argument was added.
@@ -401,8 +404,8 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
    If *buffers* is not None, it should be an iterable of buffer-enabled
    objects that is consumed each time the pickle stream references
-   an out-of-band buffer view.  Such buffers have been given in order
-   to the *buffer_callback* of a Pickler object.
+   an :ref:`out-of-band <pickle-oob>` buffer view.  Such buffers have been
+   given in order to the *buffer_callback* of a Pickler object.
 
    .. versionchanged:: 3.8
       The *buffers* argument was added.
@@ -438,7 +441,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
 .. class:: PickleBuffer(buffer)
 
-   A wrapper for a potentially out-of-band buffer.  *buffer* must be a
+   A wrapper for a buffer representing picklable data.  *buffer* must be a
    :ref:`buffer-providing <bufferobjects>` object, such as a
    :term:`bytes-like object` or a N-dimensional array.
 
@@ -954,7 +957,7 @@ reconstructors of the objects whose pickling produced the original
 :class:`PickleBuffer` objects.
 
 Between the sending side and the receiving side, the communications system
-is free to implement its own transfer mechanisms for out-of-band buffers.
+is free to implement its own transfer mechanism for out-of-band buffers.
 Potential optimizations include the use of shared memory or datatype-dependent
 compression.
 

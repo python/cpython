@@ -1371,10 +1371,12 @@ _Unpickler_ReadInto(UnpicklerObject *self, char *buf, Py_ssize_t n)
     }
 
     /* Read from file */
-    if (!self->readinto)
+    if (!self->readinto) {
         return bad_readline();
-    if (_Unpickler_SkipConsumed(self) < 0)
+    }
+    if (_Unpickler_SkipConsumed(self) < 0) {
         return -1;
+    }
 
     /* Call readinto() into user buffer */
     PyObject *buf_obj = PyMemoryView_FromMemory(buf, n, PyBUF_WRITE);
@@ -1395,8 +1397,9 @@ _Unpickler_ReadInto(UnpicklerObject *self, char *buf, Py_ssize_t n)
         }
         return -1;
     }
-    if (read_size < n)
+    if (read_size < n) {
         return bad_readline();
+    }
     return n;
 }
 
@@ -2349,7 +2352,8 @@ _save_bytes_data(PicklerObject *self, PyObject *obj, const char *data,
     }
     else {
         PyErr_SetString(PyExc_OverflowError,
-                        "cannot serialize a bytes object larger than 4 GiB");
+                        "serializing a bytes object larger than 4 GiB "
+                        "requires pickle protocol 4 or higher");
         return -1;
     }
 
@@ -2655,7 +2659,8 @@ write_unicode_binary(PicklerObject *self, PyObject *obj)
     }
     else {
         PyErr_SetString(PyExc_OverflowError,
-                        "cannot serialize a string larger than 4GiB");
+                        "serializing a string larger than 4 GiB "
+                        "requires pickle protocol 4 or higher");
         Py_XDECREF(encoded);
         return -1;
     }
@@ -4655,9 +4660,16 @@ If *fix_imports* is True and protocol is less than 3, pickle will try
 to map the new Python 3 names to the old module names used in Python
 2, so that the pickle data stream is readable with Python 2.
 
-If *buffer_callback* is None (the default), buffer views are serialized
-into *file* as part of the pickle stream.  It is an error if
-*buffer_callback* is not None and *protocol* is None or smaller than 5.
+If *buffer_callback* is None (the default), buffer views are
+serialized into *file* as part of the pickle stream.
+
+If *buffer_callback* is not None, then it can be called any number
+of times with a buffer view.  If the callback returns a false value
+(such as None), the given buffer is out-of-band; otherwise the
+buffer is serialized in-band, i.e. inside the pickle stream.
+
+It is an error if *buffer_callback* is not None and *protocol*
+is None or smaller than 5.
 
 [clinic start generated code]*/
 
@@ -4665,7 +4677,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=10e101f062872d3c]*/
+/*[clinic end generated code: output=0abedc50590d259b input=9a43a1c50ab91652]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -5490,8 +5502,9 @@ load_counted_bytearray(UnpicklerObject *self)
     Py_ssize_t size;
     char *s;
 
-    if (_Unpickler_Read(self, &s, 8) < 0)
+    if (_Unpickler_Read(self, &s, 8) < 0) {
         return -1;
+    }
 
     size = calc_binsize(s, 8);
     if (size < 0) {
@@ -5502,8 +5515,9 @@ load_counted_bytearray(UnpicklerObject *self)
     }
 
     bytearray = PyByteArray_FromStringAndSize(NULL, size);
-    if (bytearray == NULL)
+    if (bytearray == NULL) {
         return -1;
+    }
     if (_Unpickler_ReadInto(self, PyByteArray_AS_STRING(bytearray), size) < 0) {
         Py_DECREF(bytearray);
         return -1;
@@ -5541,8 +5555,9 @@ static int
 load_readonly_buffer(UnpicklerObject *self)
 {
     Py_ssize_t len = Py_SIZE(self->stack);
-    if (len <= self->stack->fence)
+    if (len <= self->stack->fence) {
         return Pdata_stack_underflow(self->stack);
+    }
 
     PyObject *obj = self->stack->data[len - 1];
     PyObject *view = PyMemoryView_FromObject(obj);
