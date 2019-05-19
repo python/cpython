@@ -1687,7 +1687,7 @@ math_isqrt(PyObject *module, PyObject *n)
         if (m == (uint64_t)(-1) && PyErr_Occurred()) {
             return NULL;
         }
-        u = _approximate_isqrt(m << (62U - 2*c)) >> (31U - c);
+        u = _approximate_isqrt(m << (62U - 2U*c)) >> (31U - c);
         u -= u * u - 1U >= m;
         return PyLong_FromUnsignedLongLong((unsigned long long)u);
     }
@@ -1695,28 +1695,25 @@ math_isqrt(PyObject *module, PyObject *n)
     /* Slow path: n >= 2**64. We perform the first five iterations in C integer
        arithmetic, then switch to using Python long integers. */
 
-    /* Compute c.bit_length(); from n >= 2**64 it follows that this is >= 6. */
+    /* From n >= 2**64 it follows that c.bit_length() >= 6. */
     c_bit_length = 6;
     while ((c >> c_bit_length) > 0U) {
         ++c_bit_length;
     }
 
-    /* Shift and convert n to get a uint64_t m with 2**62 <= m < 2**64. */
-    b = _PyLong_Rshift(n, 2*c - 62U);
+    /* Initialise d and a. */
+    d = c >> (c_bit_length - 5);
+    b = _PyLong_Rshift(n, 2U*c - 62U);
     if (b == NULL) {
         goto error;
     }
     m = (uint64_t)PyLong_AsUnsignedLongLong(b);
     Py_DECREF(b);
     if (m == (uint64_t)(-1) && PyErr_Occurred()) {
-        return NULL;
+        goto error;
     }
-    u = _approximate_isqrt(m);
-
-    /* Now we have an *approximate* square root for the top 64 bits of n */
-    /* Shift to get only the bits we need, and initialize a and d. */
-    d = c >> (c_bit_length - 5);
-    a = PyLong_FromUnsignedLongLong((unsigned long long)(u >> (31U - d)));
+    u = _approximate_isqrt(m) >> (31U - d);
+    a = PyLong_FromUnsignedLongLong((unsigned long long)u);
     if (a == NULL) {
         goto error;
     }
