@@ -71,8 +71,6 @@ _Py_IDENTIFIER(__new__);
 _Py_IDENTIFIER(__set_name__);
 _Py_IDENTIFIER(__setitem__);
 _Py_IDENTIFIER(builtins);
-_Py_IDENTIFIER(__index__);
-_Py_IDENTIFIER(__int__);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -5413,22 +5411,6 @@ PyType_Ready(PyTypeObject *type)
         }
     }
 
-    /* If __index__ is defined but not __int__, make it default to __index__.
-       Don't touch __float__ and __complex__ as there could be some loss of
-       precision.
-    */
-    PyObject* index = _PyDict_GetItemIdWithError(type->tp_dict, &PyId___index__);
-    if (index == NULL && PyErr_Occurred()) {
-        goto error;
-    }
-    if (index != NULL && _PyDict_GetItemIdWithError(type->tp_dict, &PyId___int__) == NULL) {
-        if (PyErr_Occurred() ||
-            _PyDict_SetItemId(type->tp_dict, &PyId___int__, index) < 0) {
-            goto error;
-        }
-        type->tp_as_number->nb_int = type->tp_as_number->nb_index;
-    }
-
     /* Some more special stuff */
     base = type->tp_base;
     if (base != NULL) {
@@ -5452,6 +5434,14 @@ PyType_Ready(PyTypeObject *type)
         if (PyType_Check(b) &&
             add_subclass((PyTypeObject *)b, type) < 0)
             goto error;
+    }
+
+    /* If __index__ is defined but not __int__, make it default to __index__.
+       Don't touch __float__ and __complex__ as there could be some loss of
+       precision.
+    */
+    if (type->tp_as_number != NULL && type->tp_as_number->nb_int == NULL) {
+        type->tp_as_number->nb_int = type->tp_as_number->nb_index;
     }
 
     /* All done -- set the ready flag */
