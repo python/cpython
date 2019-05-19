@@ -909,6 +909,13 @@ class UnraisableHookTest(unittest.TestCase):
         self.assertIn('Traceback (most recent call last):\n', err)
         self.assertIn('ValueError: 42\n', err)
 
+    def test_original_unraisablehook_wrong_type(self):
+        exc = ValueError(42)
+        with test.support.swap_attr(sys, 'unraisablehook',
+                                    sys.__unraisablehook__):
+            with self.assertRaises(TypeError):
+                sys.unraisablehook(exc)
+
     def test_custom_unraisablehook(self):
         hook_args = None
 

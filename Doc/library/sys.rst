@@ -1508,7 +1508,7 @@ always available.
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
 
-   See also :func:`unraisablehook` which handles uncaught exceptions.
+   See also :func:`excepthook` which handles uncaught exceptions.
 
    .. versionadded:: 3.8
 

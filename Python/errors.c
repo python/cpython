@@ -1162,7 +1162,7 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
    for Python to handle it. For example, when a destructor raises an exception
    or during garbage collection (gc.collect()).
 
-   An exception must be set to call this function. */
+   An exception must be set when calling this function. */
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
