@@ -1620,6 +1620,22 @@ completes the proof sketch.
 
 */
 
+
+/* Approximate square root of a large 64-bit integer.
+
+   Given `n` satisfying 2**62 <= n < 2**64, return `a`
+   satisfying `(a - 1)*(a - 1) < n < (a + 1) * (a + 1). */
+
+uint64_t
+_approximate_isqrt(uint64_t n)
+{
+    uint32_t u = 1U + (uint32_t)(n >> 62);
+    u = (u << 1) + (uint32_t)(n >> 59) / u;
+    u = (u << 3) + (uint32_t)(n >> 53) / u;
+    u = (u << 7) + (uint32_t)(n >> 41) / u;
+    return (u << 15) + (n >> 17) / u;
+}
+
 /*[clinic input]
 math.isqrt
 
@@ -1635,8 +1651,7 @@ math_isqrt(PyObject *module, PyObject *n)
 {
     int a_too_large, c_bit_length;
     size_t c, d, n_shift;
-    uint64_t m, v;
-    uint32_t u;
+    uint64_t m, u;
     PyObject *a = NULL, *b;
 
     n = PyNumber_Index(n);
@@ -1662,32 +1677,19 @@ math_isqrt(PyObject *module, PyObject *n)
     }
     c = (c - 1U) / 2U;
 
-    /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with
-       a fast, almost branch-free algorithm. */
+    /* Fast path: if c <= 31 then n < 2**64 and we can compute directly with a
+       fast, almost branch-free algorithm. In the final correction, we use `u*u
+       - 1 >= m` instead of the simpler `u*u > m` in order to get the correct
+       result in the corner case where `u=2**32`. */
     if (c <= 31U) {
-        /* Convert and shift n to get a uint64_t m with 2**62 <= m < 2**64. */
-        n_shift = 31U - c;
         m = (uint64_t)PyLong_AsUnsignedLongLong(n);
         Py_DECREF(n);
         if (m == (uint64_t)(-1) && PyErr_Occurred()) {
             return NULL;
         }
-        m <<= 2U * n_shift;
-
-        /* With m bounded, the shifts in the algorithm can be made explicit. */
-        u = 1U + (uint32_t)(m >> 62);
-        u = (u << 1) + (uint32_t)(m >> 59) / u;
-        u = (u << 3) + (uint32_t)(m >> 53) / u;
-        u = (u << 7) + (uint32_t)(m >> 41) / u;
-        /* The last step needs a 64-bit division */
-        u = (u << 15) + (uint32_t)((m >> 17) / u);
-        /* Adjust u if necessary. We test `u*u - 1 >= m` instead of the simpler
-           `u*u > m` to deal correctly with the corner case in which the final
-           addition above overflowed to give u = 0. */
-        u -= ((uint64_t)u * u - 1U >= m);
-
-        /* shift back and return */
-        return PyLong_FromUnsignedLong((unsigned long)(u >> n_shift));
+        u = _approximate_isqrt(m << (62U - 2*c)) >> (31U - c);
+        u -= u * u - 1U >= m;
+        return PyLong_FromUnsignedLongLong((unsigned long long)u);
     }
 
     /* Slow path: n >= 2**64. We perform the first five iterations in C integer
@@ -1710,19 +1712,12 @@ math_isqrt(PyObject *module, PyObject *n)
     if (m == (uint64_t)(-1) && PyErr_Occurred()) {
         return NULL;
     }
-
-    /* The first 4 steps can be performed entirely in 32-bit arithmetic;
-        the last needs 64-bit arithmetic. */
-    u = 1U + (uint32_t)(m >> 62);
-    u = (u << 1) + (uint32_t)(m >> 59) / u;
-    u = (u << 3) + (uint32_t)(m >> 53) / u;
-    u = (u << 7) + (uint32_t)(m >> 41) / u;
-    v = (u << 15) + ((m >> 17) / u);
+    u = _approximate_isqrt(m);
 
     /* Now we have an *approximate* square root for the top 64 bits of n */
     /* Shift to get only the bits we need, and initialize a and d. */
     d = c >> (c_bit_length - 5);
-    a = PyLong_FromUnsignedLongLong((unsigned long long)(v >> (31U - d)));
+    a = PyLong_FromUnsignedLongLong((unsigned long long)(u >> (31U - d)));
     if (a == NULL) {
         goto error;
     }
