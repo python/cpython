@@ -1,6 +1,6 @@
 """Utilities to support packages."""
-
-from collections import namedtuple
+from __future__ import annotations
+from dataclasses import dataclass, field, astuple
 from functools import singledispatch as simplegeneric
 import importlib
 import importlib.util
@@ -19,9 +19,32 @@ __all__ = [
 ]
 
 
-ModuleInfo = namedtuple('ModuleInfo', 'module_finder name ispkg')
-ModuleInfo.__doc__ = 'A namedtuple with minimal info about a module.'
+@dataclass(frozen=True, order=True)
+class ModuleInfo:
+    """A dataclass with minimal info about a module."""
+    module_finder: FileFinder = field(compare = False)
+    name: str
+    ispkg: bool
 
+    def __contains__(self, item):
+        warnings.warn("Sequence access is deprecated, use attribute access instead",
+                      DeprecationWarning)
+        return item in astuple(self)
+
+    def __len__(self):
+        warnings.warn("Sequence access is deprecated, use attribute access instead",
+                      DeprecationWarning)
+        return len(astuple(self))
+
+    def __iter__(self):
+        warnings.warn("Sequence access is deprecated, use attribute access instead",
+                      DeprecationWarning)
+        return iter(astuple(self))
+
+    def __getitem__(self, item):
+        warnings.warn("Sequence access is deprecated, use attribute access instead",
+                      DeprecationWarning)
+        return astuple(self)[item]
 
 def _get_spec(finder, name):
     """Return the finder-specific module spec."""

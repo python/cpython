@@ -133,7 +133,7 @@ class PkgutilTests(unittest.TestCase):
             'test_walkpackages_filesys.sub',
             'test_walkpackages_filesys.sub.mod',
         ]
-        actual= [e[1] for e in pkgutil.walk_packages([self.dirname])]
+        actual= [e.name for e in pkgutil.walk_packages([self.dirname])]
         self.assertEqual(actual, expected)
 
         for pkg in expected:
@@ -167,7 +167,7 @@ class PkgutilTests(unittest.TestCase):
             'test_walkpackages_zipfile.sub',
             'test_walkpackages_zipfile.sub.mod',
         ]
-        actual= [e[1] for e in pkgutil.walk_packages([zip_file])]
+        actual= [e.name for e in pkgutil.walk_packages([zip_file])]
         self.assertEqual(actual, expected)
         del sys.path[0]
 
@@ -228,6 +228,20 @@ class PkgutilPEP302Tests(unittest.TestCase):
         self.assertEqual(pkgutil.get_data('foo', 'dummy'), "Hello, world!")
         self.assertEqual(foo.loads, 1)
         del sys.modules['foo']
+
+    def test_module_info(self):
+        dummy = pkgutil.ModuleInfo(None, 'dummy', False)
+        with check_warnings() as w:
+            self.assertEqual(dummy[1], 'dummy')
+            self.assertTrue('dummy' in dummy)
+            self.assertEqual(len(dummy), 3)
+            _, name, __ = dummy
+            self.assertEqual(name, 'dummy')
+            self.assertEqual(len(w.warnings), 4)
+
+        self.assertEqual(dummy.name, 'dummy')
+        dummy2 = pkgutil.ModuleInfo(None, 'dummiest', False)
+        self.assertTrue(dummy > dummy2)
 
 
 # These tests, especially the setup and cleanup, are hideous. They

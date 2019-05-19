@@ -1,0 +1,2 @@
+pkgutil.ModuleInfo now a dataclass with rich compare methods instead of a
+namedtuple
