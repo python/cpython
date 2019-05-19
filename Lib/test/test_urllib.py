@@ -1465,12 +1465,12 @@ class URLopener_Tests(unittest.TestCase, FakeHTTPMixin):
 
     @support.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_file(self):
-        fd, tmpfile = tempfile.mkstemp()
-        self.addCleanup(os.close, fd)
-        self.addCleanup(os.unlink, tmpfile)
-        fileurl = "file:" + urllib.request.pathname2url(tmpfile)
-        filename, _ = urllib.request.URLopener().retrieve(fileurl)
-        self.assertEqual(filename, tmpfile)
+        with support.temp_dir() as tmpdir:
+            fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
+            self.addCleanup(os.close, fd)
+            fileurl = "file:" + urllib.request.pathname2url(tmpfile)
+            filename, _ = urllib.request.URLopener().retrieve(fileurl)
+            self.assertEqual(filename, tmpfile)
 
     @support.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_remote(self):
