@@ -1445,7 +1445,7 @@ class Utility_Tests(unittest.TestCase):
         self.assertIsInstance(urllib.request.thishost(), tuple)
 
 
-class URLopener_Tests(unittest.TestCase):
+class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
     """Testcase to test the open method of URLopener class."""
 
     def test_quoted_open(self):
@@ -1462,6 +1462,24 @@ class URLopener_Tests(unittest.TestCase):
             self.assertEqual(DummyURLopener().open(
                 "spam://c:|windows%/:=&?~#+!$,;'@()*[]|/path/"),
                 "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
+
+    @support.ignore_warnings(category=DeprecationWarning)
+    def test_urlopener_retrieve_file(self):
+        with support.temp_dir() as tmpdir:
+            fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
+            os.close(fd)
+            fileurl = "file:" + urllib.request.pathname2url(tmpfile)
+            filename, _ = urllib.request.URLopener().retrieve(fileurl)
+            self.assertEqual(filename, tmpfile)
+
+    @support.ignore_warnings(category=DeprecationWarning)
+    def test_urlopener_retrieve_remote(self):
+        url = "http://www.python.org/file.txt"
+        self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
+        self.addCleanup(self.unfakehttp)
+        filename, _ = urllib.request.URLopener().retrieve(url)
+        self.assertEqual(os.path.splitext(filename)[1], ".txt")
+
 
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
