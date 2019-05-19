@@ -4416,9 +4416,9 @@ long_bool(PyLongObject *v)
 
 /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
 static int
-divmod_shift(PyLongObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
+divmod_shift(PyObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
 {
-    assert(PyLong_Check((PyObject *)shiftby));
+    assert(PyLong_Check(shiftby));
     assert(Py_SIZE(shiftby) >= 0);
     Py_ssize_t lshiftby = PyLong_AsSsize_t((PyObject *)shiftby);
     if (lshiftby >= 0) {
@@ -4430,7 +4430,7 @@ divmod_shift(PyLongObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
        be that PyLong_AsSsize_t raised an OverflowError. */
     assert(PyErr_ExceptionMatches(PyExc_OverflowError));
     PyErr_Clear();
-    PyLongObject *wordshift_obj = divrem1(shiftby, PyLong_SHIFT, remshift);
+    PyLongObject *wordshift_obj = divrem1((PyLongObject *)shiftby, PyLong_SHIFT, remshift);
     if (wordshift_obj == NULL) {
         return -1;
     }
@@ -4448,19 +4448,11 @@ divmod_shift(PyLongObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
 }
 
 static PyObject *
-long_rshift(PyLongObject *a, PyLongObject *b)
+long_rshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
 {
     PyLongObject *z = NULL;
-    Py_ssize_t newsize, wordshift, hishift, i, j;
-    digit loshift, lomask, himask;
-
-    CHECK_BINOP(a, b);
-
-    if (Py_SIZE(b) < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "negative shift count");
-        return NULL;
-    }
+    Py_ssize_t newsize, hishift, i, j;
+    digit lomask, himask;
 
     if (Py_SIZE(a) < 0) {
         /* Right shifting negative numbers is harder */
@@ -4468,7 +4460,7 @@ long_rshift(PyLongObject *a, PyLongObject *b)
         a1 = (PyLongObject *) long_invert(a);
         if (a1 == NULL)
             return NULL;
-        a2 = (PyLongObject *) long_rshift(a1, b);
+        a2 = (PyLongObject *) long_rshift1(a1, wordshift, remshift);
         Py_DECREF(a1);
         if (a2 == NULL)
             return NULL;
@@ -4476,19 +4468,17 @@ long_rshift(PyLongObject *a, PyLongObject *b)
         Py_DECREF(a2);
     }
     else {
-        if (divmod_shift(b, &wordshift, &loshift) < 0)
-            return NULL;
         newsize = Py_SIZE(a) - wordshift;
         if (newsize <= 0)
             return PyLong_FromLong(0);
-        hishift = PyLong_SHIFT - loshift;
+        hishift = PyLong_SHIFT - remshift;
         lomask = ((digit)1 << hishift) - 1;
         himask = PyLong_MASK ^ lomask;
         z = _PyLong_New(newsize);
         if (z == NULL)
             return NULL;
         for (i = 0, j = wordshift; i < newsize; i++, j++) {
-            z->ob_digit[i] = (a->ob_digit[j] >> loshift) & lomask;
+            z->ob_digit[i] = (a->ob_digit[j] >> remshift) & lomask;
             if (i+1 < newsize)
                 z->ob_digit[i] |= (a->ob_digit[j+1] << hishift) & himask;
         }
@@ -4498,15 +4488,10 @@ long_rshift(PyLongObject *a, PyLongObject *b)
 }
 
 static PyObject *
-long_lshift(PyObject *v, PyObject *w)
+long_rshift(PyObject *a, PyObject *b)
 {
-    /* This version due to Tim Peters */
-    PyLongObject *a = (PyLongObject*)v;
-    PyLongObject *b = (PyLongObject*)w;
-    PyLongObject *z = NULL;
-    Py_ssize_t oldsize, newsize, wordshift, i, j;
+    Py_ssize_t wordshift;
     digit remshift;
-    twodigits accum;
 
     CHECK_BINOP(a, b);
 
@@ -4517,9 +4502,35 @@ long_lshift(PyObject *v, PyObject *w)
     if (Py_SIZE(a) == 0) {
         return PyLong_FromLong(0);
     }
-
     if (divmod_shift(b, &wordshift, &remshift) < 0)
         return NULL;
+    return long_rshift1((PyLongObject *)a, wordshift, remshift);
+}
+
+/* Return a >> shiftby. */
+PyObject *
+_PyLong_Rshift(PyObject *a, size_t shiftby)
+{
+    Py_ssize_t wordshift;
+    digit remshift;
+
+    assert(PyLong_Check(a));
+    if (Py_SIZE(a) == 0) {
+        return PyLong_FromLong(0);
+    }
+    wordshift = shiftby / PyLong_SHIFT;
+    remshift = shiftby % PyLong_SHIFT;
+    return long_rshift1((PyLongObject *)a, wordshift, remshift);
+}
+
+static PyObject *
+long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
+{
+    /* This version due to Tim Peters */
+    PyLongObject *z = NULL;
+    Py_ssize_t oldsize, newsize, i, j;
+    twodigits accum;
+
     oldsize = Py_ABS(Py_SIZE(a));
     newsize = oldsize + wordshift;
     if (remshift)
@@ -4545,6 +4556,42 @@ long_lshift(PyObject *v, PyObject *w)
         assert(!accum);
     z = long_normalize(z);
     return (PyObject *) maybe_small_long(z);
+}
+
+static PyObject *
+long_lshift(PyObject *a, PyObject *b)
+{
+    Py_ssize_t wordshift;
+    digit remshift;
+
+    CHECK_BINOP(a, b);
+
+    if (Py_SIZE(b) < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative shift count");
+        return NULL;
+    }
+    if (Py_SIZE(a) == 0) {
+        return PyLong_FromLong(0);
+    }
+    if (divmod_shift(b, &wordshift, &remshift) < 0)
+        return NULL;
+    return long_lshift1((PyLongObject *)a, wordshift, remshift);
+}
+
+/* Return a << shiftby. */
+PyObject *
+_PyLong_Lshift(PyObject *a, size_t shiftby)
+{
+    Py_ssize_t wordshift;
+    digit remshift;
+
+    assert(PyLong_Check(a));
+    if (Py_SIZE(a) == 0) {
+        return PyLong_FromLong(0);
+    }
+    wordshift = shiftby / PyLong_SHIFT;
+    remshift = shiftby % PyLong_SHIFT;
+    return long_lshift1((PyLongObject *)a, wordshift, remshift);
 }
 
 /* Compute two's complement of digit vector a[0:m], writing result to
@@ -5552,7 +5599,7 @@ static PyNumberMethods long_as_number = {
     (inquiry)long_bool,         /*tp_bool*/
     (unaryfunc)long_invert,     /*nb_invert*/
     long_lshift,                /*nb_lshift*/
-    (binaryfunc)long_rshift,    /*nb_rshift*/
+    long_rshift,                /*nb_rshift*/
     long_and,                   /*nb_and*/
     long_xor,                   /*nb_xor*/
     long_or,                    /*nb_or*/
