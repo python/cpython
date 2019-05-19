@@ -1,0 +1,3 @@
+Email headers containing 2047 encoded words with no leading whitespace are
+parsed correctly. Also, missing trailing whitespaces now register a defect
+instead of silently ignoring.

@@ -75,7 +75,7 @@ from operator import itemgetter
 from email import _encoded_words as _ew
 from email import errors
 from email import utils
-
+from email.header import ecre as rfc2047_matcher
 #
 # Useful constants and functions
 #
@@ -1049,6 +1049,10 @@ def get_encoded_word(value):
         _validate_xtext(vtext)
         ew.append(vtext)
         text = ''.join(remainder)
+    # Encoded words should be followed by a LWS.
+    if value and value[0] != ' ':
+        ew.defects.append(errors.InvalidHeaderDefect(
+            "missing trailing whitespace after encoded-word"))
     return ew, value
 
 def get_unstructured(value):
@@ -1101,6 +1105,10 @@ def get_unstructured(value):
                 unstructured.append(token)
                 continue
         tok, *remainder = _wsp_splitter(value, 1)
+        # Split in the middle of an atom if there is a rfc2047 encoded word
+        # which does not have WS on both sides.
+        if rfc2047_matcher.search(tok):
+            tok, *remainder = value.partition('=?')
         vtext = ValueTerminal(tok, 'vtext')
         _validate_xtext(vtext)
         unstructured.append(vtext)

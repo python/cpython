@@ -118,7 +118,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                          '=?us-ascii?q?first?==?utf-8?q?second?=',
                          'first',
                          'first',
-                         [],
+                         [errors.InvalidHeaderDefect],
                          '=?utf-8?q?second?=')
 
     def test_get_encoded_word_sets_extra_attributes(self):
@@ -361,6 +361,25 @@ class TestParser(TestParserMixin, TestEmailBase):
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
             'foobar',
             'foobar',
+            [errors.InvalidHeaderDefect,
+            errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_ew_without_leading_whitespace(self):
+        self._test_get_x(
+            self._get_unst,
+            'nowhitespace=?utf-8?q?somevalue?=',
+            'nowhitespacesomevalue',
+            'nowhitespacesomevalue',
+            [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_ew_without_trailing_whitespace(self):
+        self._test_get_x(
+            self._get_unst,
+            '=?utf-8?q?somevalue?=nowhitespace',
+            'somevaluenowhitespace',
+            'somevaluenowhitespace',
             [errors.InvalidHeaderDefect],
             '')
 
@@ -546,7 +565,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             '"=?utf-8?Q?not_really_valid?="',
             '"not really valid"',
             'not really valid',
-            [errors.InvalidHeaderDefect],
+            [errors.InvalidHeaderDefect,
+             errors.InvalidHeaderDefect],
             '')
 
     # get_comment
