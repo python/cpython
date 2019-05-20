@@ -378,7 +378,7 @@ class _ParentProcess(BaseProcess):
         Wait until parent process terminates
         '''
         from multiprocessing.connection import wait
-        wait([self._sentinel], timeout=5)
+        wait([self._sentinel], timeout=timeout)
 
     pid = ident
 
