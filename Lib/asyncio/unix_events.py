@@ -757,12 +757,18 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             # other end).  Notably this is needed on AIX, and works
             # just fine on other platforms.
             stdin, stdin_w = socket.socketpair()
-        self._proc = subprocess.Popen(
-            args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
-            universal_newlines=False, bufsize=bufsize, **kwargs)
-        if stdin_w is not None:
-            stdin.close()
-            self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+        try:
+            self._proc = subprocess.Popen(
+                args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
+                universal_newlines=False, bufsize=bufsize, **kwargs)
+            if stdin_w is not None:
+                stdin.close()
+                self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+                stdin_w = None
+        finally:
+            if stdin_w is not None:
+                stdin.close()
+                stdin_w.close()
 
 
 class AbstractChildWatcher:
