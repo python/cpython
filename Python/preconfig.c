@@ -660,7 +660,7 @@ preconfig_init_coerce_c_locale(_PyPreConfig *config)
        It is only coerced if if the LC_CTYPE locale is "C". */
     if (config->coerce_c_locale < 0 || config->coerce_c_locale == 1) {
         /* The C locale enables the C locale coercion (PEP 538) */
-        if (_Py_LegacyLocaleDetected()) {
+        if (_Py_LegacyLocaleDetected(0)) {
             config->coerce_c_locale = 2;
         }
         else {
@@ -888,32 +888,38 @@ done:
    - set the LC_CTYPE locale (coerce C locale, PEP 538) and set the UTF-8 mode
      (PEP 540)
 
-   If the memory allocator is changed, config is re-allocated with new
-   allocator. So calling _PyPreConfig_Clear(config) is safe after this call.
+   The applied configuration is written into _PyRuntime.preconfig.
+   If the C locale cannot be coerced, set coerce_c_locale to 0.
 
    Do nothing if called after Py_Initialize(): ignore the new
    pre-configuration. */
 _PyInitError
-_PyPreConfig_Write(const _PyPreConfig *config)
+_PyPreConfig_Write(const _PyPreConfig *src_config)
 {
+    _PyPreConfig config;
+    _PyPreConfig_InitFromPreConfig(&config, src_config);
+
     if (_PyRuntime.core_initialized) {
         /* bpo-34008: Calling this functions after Py_Initialize() ignores
            the new configuration. */
         return _Py_INIT_OK();
     }
 
-    PyMemAllocatorName name = (PyMemAllocatorName)config->allocator;
+    PyMemAllocatorName name = (PyMemAllocatorName)config.allocator;
     if (name != PYMEM_ALLOCATOR_NOT_SET) {
         if (_PyMem_SetupAllocators(name) < 0) {
             return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
         }
     }
 
-    _PyPreConfig_SetGlobalConfig(config);
+    _PyPreConfig_SetGlobalConfig(&config);
 
-    if (config->configure_locale) {
-        if (config->coerce_c_locale) {
-            _Py_CoerceLegacyLocale(config->coerce_c_locale_warn);
+    if (config.configure_locale) {
+        if (config.coerce_c_locale) {
+            if (!_Py_CoerceLegacyLocale(config.coerce_c_locale_warn)) {
+                /* C locale not coerced */
+                config.coerce_c_locale = 0;
+            }
         }
 
         /* Set LC_CTYPE to the user preferred locale */
@@ -921,7 +927,7 @@ _PyPreConfig_Write(const _PyPreConfig *config)
     }
 
     /* Write the new pre-configuration into _PyRuntime */
-    _PyPreConfig_Copy(&_PyRuntime.preconfig, config);
+    _PyPreConfig_Copy(&_PyRuntime.preconfig, &config);
 
     return _Py_INIT_OK();
 }
