@@ -80,8 +80,7 @@ __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
 
 _state = None
 
-def input(files=None, inplace=False, backup="", bufsize=0,
-          mode="r", openhook=None):
+def input(files=None, inplace=False, backup="", *, mode="r", openhook=None):
     """Return an instance of the FileInput class, which can be iterated.
 
     The parameters are passed to the constructor of the FileInput class.
@@ -91,7 +90,7 @@ def input(files=None, inplace=False, backup="", bufsize=0,
     global _state
     if _state and _state._file:
         raise RuntimeError("input() already active")
-    _state = FileInput(files, inplace, backup, bufsize, mode, openhook)
+    _state = FileInput(files, inplace, backup, mode=mode, openhook=openhook)
     return _state
 
 def close():
@@ -173,7 +172,7 @@ def isstdin():
     return _state.isstdin()
 
 class FileInput:
-    """FileInput([files[, inplace[, backup[, bufsize, [, mode[, openhook]]]]]])
+    """FileInput([files[, inplace[, backup]]], *, mode=None, openhook=None)
 
     Class FileInput is the implementation of the module; its methods
     filename(), lineno(), fileline(), isfirstline(), isstdin(), fileno(),
@@ -185,7 +184,7 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
-    def __init__(self, files=None, inplace=False, backup="", bufsize=0,
+    def __init__(self, files=None, inplace=False, backup="", *,
                  mode="r", openhook=None):
         if isinstance(files, str):
             files = (files,)
@@ -201,10 +200,6 @@ class FileInput:
         self._files = files
         self._inplace = inplace
         self._backup = backup
-        if bufsize:
-            import warnings
-            warnings.warn('bufsize is deprecated and ignored',
-                          DeprecationWarning, stacklevel=2)
         self._savestdout = None
         self._output = None
         self._filename = None
