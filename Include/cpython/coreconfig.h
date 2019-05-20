@@ -44,6 +44,10 @@ typedef struct {
     int _config_version;  /* Internal configuration version,
                              used for ABI compatibility */
 
+    /* Parse _Py_PreInitializeFromArgs() arguments?
+       See _PyCoreConfig.parse_argv */
+    int parse_argv;
+
     /* If greater than 0, enable isolated mode: sys.path contains
        neither the script's directory nor the user's site-packages directory.
 
@@ -111,8 +115,9 @@ typedef struct {
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
 
-    /* Memory allocator: PYTHONMALLOC env var */
-    PyMemAllocatorName allocator;
+    /* Memory allocator: PYTHONMALLOC env var.
+       See PyMemAllocatorName for valid values. */
+    int allocator;
 } _PyPreConfig;
 
 PyAPI_FUNC(void) _PyPreConfig_InitPythonConfig(_PyPreConfig *config);
@@ -121,9 +126,16 @@ PyAPI_FUNC(void) _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config);
 
 /* --- _PyCoreConfig ---------------------------------------------- */
 
+typedef enum {
+    _PyCoreConfig_INIT = 0,
+    _PyCoreConfig_INIT_PYTHON = 1,
+    _PyCoreConfig_INIT_ISOLATED = 2
+} _PyCoreConfigInitEnum;
+
 typedef struct {
     int _config_version;  /* Internal configuration version,
                              used for ABI compatibility */
+    int _config_init;     /* _PyCoreConfigInitEnum value */
 
     int isolated;         /* Isolated mode? see _PyPreConfig.isolated */
     int use_environment;  /* Use environment variables? see _PyPreConfig.use_environment */
@@ -401,19 +413,21 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitIsolatedConfig(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
+    _PyCoreConfig *config,
     wchar_t **config_str,
     const wchar_t *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
+    _PyCoreConfig *config,
     wchar_t **config_str,
     const char *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
     _PyCoreConfig *config,
     Py_ssize_t argc,
-    char **argv);
+    char * const *argv);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
     Py_ssize_t argc,
-    wchar_t **argv);
+    wchar_t * const *argv);
 
 #ifdef __cplusplus
 }
