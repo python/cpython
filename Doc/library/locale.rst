@@ -331,6 +331,8 @@ The :mod:`locale` module defines the following exception and functions:
       The function now always returns ``UTF-8`` on Android or if the UTF-8 mode
       is enabled.
 
+   On VxWorks, always return ``'UTF-8'``, the locale and the *do_setlocale*
+   argument are ignored.
 
 .. function:: normalize(localename)
 

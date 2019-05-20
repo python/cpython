@@ -1,0 +1,1 @@
+Port test_c_locale_coercion to VxWorks: only UTF-8 encoding is supported on VxWorks
