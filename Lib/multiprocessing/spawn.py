@@ -100,7 +100,8 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
 
         if parent_pid is not None:
             source_process = _winapi.OpenProcess(
-                _winapi.PROCESS_ALL_ACCESS, False, parent_pid)
+                _winapi.SYNCHRONIZE | _winapi.PROCESS_DUP_HANDLE,
+                False, parent_pid)
         else:
             source_process = None
         new_handle = reduction.duplicate(pipe_handle,
