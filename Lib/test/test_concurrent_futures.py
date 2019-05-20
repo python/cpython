@@ -346,10 +346,10 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         pass
 
     def test_threads_terminate(self):
-        self.executor.submit(mul, 21, 2)
-        self.executor.submit(mul, 6, 7)
-        self.executor.submit(mul, 3, 14)
-        self.assertTrue(len(self.executor._threads) < 3)
+        self.executor.submit(mul, 21, 2).result()
+        self.executor.submit(mul, 6, 7).result()
+        self.executor.submit(mul, 3, 14).result()
+        self.assertTrue(len(self.executor._threads) == 1)
         self.executor.shutdown()
         for t in self.executor._threads:
             t.join()
@@ -752,6 +752,10 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         executor = self.executor_type()
         self.assertEqual(executor._max_workers,
                          (os.cpu_count() or 1) * 5)
+
+    def test_saturation(self):
+        list(self.executor.map(lambda x: mul(0, x), range(100 * self.executor._max_workers)))
+        self.assertEqual(len(self.executor._threads), self.executor._max_workers)
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
