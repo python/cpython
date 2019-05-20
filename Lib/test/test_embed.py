@@ -17,6 +17,10 @@ PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
 PYMEM_ALLOCATOR_MALLOC = 3
 
+CONFIG_INIT = 0
+CONFIG_INIT_PYTHON = 1
+CONFIG_INIT_ISOLATED = 2
+
 
 class EmbeddingTestsMixin:
     def setUp(self):
@@ -280,11 +284,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     DEFAULT_PRE_CONFIG = {
         'allocator': PYMEM_ALLOCATOR_NOT_SET,
+        'parse_argv': 0,
         'configure_locale': 1,
         'coerce_c_locale': 0,
         'coerce_c_locale_warn': 0,
         'utf8_mode': 0,
     }
+    if MS_WINDOWS:
+        DEFAULT_PRE_CONFIG.update({
+            'legacy_windows_fs_encoding': 0,
+        })
+    PYTHON_PRE_CONFIG = dict(DEFAULT_PRE_CONFIG,
+        parse_argv=1,
+    )
     ISOLATED_PRE_CONFIG = dict(DEFAULT_PRE_CONFIG,
         configure_locale=0,
         isolated=1,
@@ -292,8 +304,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         utf8_mode=0,
         dev_mode=0,
     )
-    if MS_WINDOWS:
-        ISOLATED_PRE_CONFIG['legacy_windows_fs_encoding'] = 0
 
     COPY_PRE_CONFIG = [
         'dev_mode',
@@ -302,6 +312,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     ]
 
     DEFAULT_CORE_CONFIG = {
+        '_config_init': CONFIG_INIT,
         'isolated': 0,
         'use_environment': 1,
         'dev_mode': 0,
@@ -365,9 +376,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         '_init_main': 1,
     }
     if MS_WINDOWS:
-        DEFAULT_PRE_CONFIG.update({
-            'legacy_windows_fs_encoding': 0,
-        })
         DEFAULT_CORE_CONFIG.update({
             'legacy_windows_stdio': 0,
         })
@@ -439,13 +447,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def get_expected_config(self, expected_preconfig, expected, env, api,
                             add_path=None):
-        if api == "python":
+        if api == CONFIG_INIT_PYTHON:
             default_config = self.PYTHON_CORE_CONFIG
-        elif api == "isolated":
+        elif api == CONFIG_INIT_ISOLATED:
             default_config = self.ISOLATED_CORE_CONFIG
         else:
             default_config = self.DEFAULT_CORE_CONFIG
         expected = dict(default_config, **expected)
+        expected['_config_init'] = api
 
         code = textwrap.dedent('''
             import json
@@ -519,9 +528,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         return expected
 
     def check_pre_config(self, config, expected):
-        pre_config = dict(config['pre_config'])
-        core_config = dict(config['core_config'])
-        self.assertEqual(pre_config, expected)
+        self.assertEqual(config['pre_config'], expected)
 
     def check_core_config(self, config, expected):
         core_config = dict(config['core_config'])
@@ -554,7 +561,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(config['global_config'], expected)
 
     def check_config(self, testname, expected_config=None, expected_preconfig=None,
-                     add_path=None, stderr=None, api="default"):
+                     add_path=None, stderr=None, api=CONFIG_INIT):
         env = dict(os.environ)
         # Remove PYTHON* environment variables to get deterministic environment
         for key in list(env):
@@ -565,8 +572,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         env['PYTHONCOERCECLOCALE'] = '0'
         env['PYTHONUTF8'] = '0'
 
-        if api == "isolated":
+        if api == CONFIG_INIT_ISOLATED:
             default_preconfig = self.ISOLATED_PRE_CONFIG
+        elif api == CONFIG_INIT_PYTHON:
+            default_preconfig = self.PYTHON_PRE_CONFIG
         else:
             default_preconfig = self.DEFAULT_PRE_CONFIG
         if expected_preconfig is None:
@@ -719,7 +728,38 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'dev_mode': 1,
             'warnoptions': ['default'],
         }
-        self.check_config("init_dev_mode", config, preconfig, api="python")
+        self.check_config("init_dev_mode", config, preconfig,
+                          api=CONFIG_INIT_PYTHON)
+
+    def test_preinit_parse_argv(self):
+        # Pre-initialize implicitly using argv: make sure that -X dev
+        # is used to configure the allocation in preinitialization
+        preconfig = {
+            'allocator': PYMEM_ALLOCATOR_DEBUG,
+        }
+        config = {
+            'argv': ['script.py'],
+            'run_filename': 'script.py',
+            'dev_mode': 1,
+            'faulthandler': 1,
+            'warnoptions': ['default'],
+            'xoptions': ['dev'],
+        }
+        self.check_config("preinit_parse_argv", config, preconfig,
+                          api=CONFIG_INIT_PYTHON)
+
+    def test_preinit_dont_parse_argv(self):
+        # -X dev must be ignored by isolated preconfiguration
+        preconfig = {
+            'isolated': 0,
+        }
+        config = {
+            'argv': ["python3", "-E", "-I",
+                     "-X", "dev", "-X", "utf8", "script.py"],
+            'isolated': 0,
+        }
+        self.check_config("preinit_dont_parse_argv", config, preconfig,
+                          api=CONFIG_INIT_ISOLATED)
 
     def test_init_isolated_flag(self):
         config = {
@@ -727,7 +767,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_environment': 0,
             'user_site_directory': 0,
         }
-        self.check_config("init_isolated_flag", config, api="python")
+        self.check_config("init_isolated_flag", config, api=CONFIG_INIT_PYTHON)
 
     def test_preinit_isolated1(self):
         # _PyPreConfig.isolated=1, _PyCoreConfig.isolated not set
@@ -747,25 +787,30 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_config("preinit_isolated2", config)
 
+    def test_preinit_isolated_config(self):
+        self.check_config("preinit_isolated_config", api=CONFIG_INIT_ISOLATED)
+
     def test_init_isolated_config(self):
-        self.check_config("init_isolated_config", api="isolated")
+        self.check_config("init_isolated_config", api=CONFIG_INIT_ISOLATED)
 
     def test_init_python_config(self):
-        self.check_config("init_python_config", api="python")
+        self.check_config("init_python_config", api=CONFIG_INIT_PYTHON)
 
     def test_init_dont_configure_locale(self):
         # _PyPreConfig.configure_locale=0
         preconfig = {
             'configure_locale': 0,
         }
-        self.check_config("init_dont_configure_locale", {}, preconfig, api="python")
+        self.check_config("init_dont_configure_locale", {}, preconfig,
+                          api=CONFIG_INIT_PYTHON)
 
     def test_init_read_set(self):
         core_config = {
             'program_name': './init_read_set',
             'executable': 'my_executable',
         }
-        self.check_config("init_read_set", core_config, api="python",
+        self.check_config("init_read_set", core_config,
+                          api=CONFIG_INIT_PYTHON,
                           add_path="init_read_set_path")
 
     def test_init_run_main(self):
@@ -777,7 +822,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'run_command': code + '\n',
             'parse_argv': 1,
         }
-        self.check_config("init_run_main", core_config, api="python")
+        self.check_config("init_run_main", core_config,
+                          api=CONFIG_INIT_PYTHON)
 
     def test_init_main(self):
         code = ('import _testinternalcapi, json; '
@@ -789,7 +835,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'parse_argv': 1,
             '_init_main': 0,
         }
-        self.check_config("init_main", core_config, api="python",
+        self.check_config("init_main", core_config,
+                          api=CONFIG_INIT_PYTHON,
                           stderr="Run Python code before _Py_InitializeMain")
 
     def test_init_parse_argv(self):
@@ -800,15 +847,20 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'run_command': 'pass\n',
             'use_environment': 0,
         }
-        self.check_config("init_parse_argv", core_config, api="python")
+        self.check_config("init_parse_argv", core_config,
+                          api=CONFIG_INIT_PYTHON)
 
     def test_init_dont_parse_argv(self):
+        pre_config = {
+            'parse_argv': 0,
+        }
         core_config = {
             'parse_argv': 0,
             'argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',
         }
-        self.check_config("init_dont_parse_argv", core_config, api="python")
+        self.check_config("init_dont_parse_argv", core_config, pre_config,
+                          api=CONFIG_INIT_PYTHON)
 
 
 if __name__ == "__main__":

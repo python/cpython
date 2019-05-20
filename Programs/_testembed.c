@@ -527,7 +527,10 @@ static int check_init_parse_argv(int parse_argv)
     _PyInitError err;
 
     _PyCoreConfig config;
-    _PyCoreConfig_InitPythonConfig(&config);
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
 
     static wchar_t* argv[] = {
         L"./argv0",
@@ -565,7 +568,7 @@ static int test_init_dont_parse_argv(void)
 }
 
 
-static void test_init_env_putenvs(void)
+static void set_all_env_vars(void)
 {
     putenv("PYTHONHASHSEED=42");
     putenv("PYTHONMALLOC=malloc");
@@ -596,7 +599,7 @@ static int test_init_env(void)
 {
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
-    test_init_env_putenvs();
+    set_all_env_vars();
     _testembed_Py_Initialize();
     dump_config();
     Py_Finalize();
@@ -604,9 +607,9 @@ static int test_init_env(void)
 }
 
 
-static void set_all_env_vars(void)
+static void set_all_env_vars_dev_mode(void)
 {
-    test_init_env_putenvs();
+    set_all_env_vars();
     putenv("PYTHONMALLOC=");
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONDEVMODE=1");
@@ -617,7 +620,7 @@ static int test_init_env_dev_mode(void)
 {
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
-    set_all_env_vars();
+    set_all_env_vars_dev_mode();
     _testembed_Py_Initialize();
     dump_config();
     Py_Finalize();
@@ -629,7 +632,7 @@ static int test_init_env_dev_mode_alloc(void)
 {
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
-    set_all_env_vars();
+    set_all_env_vars_dev_mode();
     putenv("PYTHONMALLOC=malloc");
     _testembed_Py_Initialize();
     dump_config();
@@ -644,7 +647,10 @@ static int test_init_isolated_flag(void)
 
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config;
-    _PyCoreConfig_InitPythonConfig(&config);
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
@@ -727,6 +733,107 @@ static int test_preinit_isolated2(void)
 }
 
 
+static int test_preinit_dont_parse_argv(void)
+{
+    _PyInitError err;
+
+    _PyPreConfig preconfig;
+    _PyPreConfig_InitIsolatedConfig(&preconfig);
+
+    preconfig.isolated = 0;
+
+    /* -X dev must be ignored by isolated preconfiguration */
+    wchar_t *argv[] = {L"python3",
+                       L"-E",
+                       L"-I",
+                       L"-X", L"dev",
+                       L"-X", L"utf8",
+                       L"script.py"};
+    err = _Py_PreInitializeFromWideArgs(&preconfig, Py_ARRAY_LENGTH(argv), argv);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+
+    _PyCoreConfig config;
+
+    err = _PyCoreConfig_InitIsolatedConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+
+    config.isolated = 0;
+
+    /* Pre-initialize implicitly using argv: make sure that -X dev
+       is used to configure the allocation in preinitialization */
+    err = _PyCoreConfig_SetWideArgv(&config, Py_ARRAY_LENGTH(argv), argv);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+
+    err = _PyCoreConfig_SetString(&config, &config.program_name,
+                                  L"./_testembed");
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+    _PyCoreConfig_Clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+failed:
+    _PyCoreConfig_Clear(&config);
+    _Py_ExitInitError(err);
+}
+
+
+static int test_preinit_parse_argv(void)
+{
+    _PyInitError err;
+    _PyCoreConfig config;
+
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+
+    /* Pre-initialize implicitly using argv: make sure that -X dev
+       is used to configure the allocation in preinitialization */
+    wchar_t *argv[] = {L"python3", L"-X", L"dev", L"script.py"};
+    err = _PyCoreConfig_SetWideArgv(&config, Py_ARRAY_LENGTH(argv), argv);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+
+    err = _PyCoreConfig_SetString(&config, &config.program_name,
+                                  L"./_testembed");
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+    _PyCoreConfig_Clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+failed:
+    _PyCoreConfig_Clear(&config);
+    _Py_ExitInitError(err);
+}
+
+
+
+
 static void set_all_global_config_variables(void)
 {
     Py_IsolatedFlag = 0;
@@ -749,9 +856,10 @@ static void set_all_global_config_variables(void)
 }
 
 
-static int test_init_isolated_config(void)
+static int check_preinit_isolated_config(int preinit)
 {
     _PyInitError err;
+    _PyPreConfig *rt_preconfig;
 
     /* environment variables must be ignored */
     set_all_env_vars();
@@ -759,17 +867,19 @@ static int test_init_isolated_config(void)
     /* global configuration variables must be ignored */
     set_all_global_config_variables();
 
-    _PyPreConfig preconfig;
-    _PyPreConfig_InitIsolatedConfig(&preconfig);
+    if (preinit) {
+        _PyPreConfig preconfig;
+        _PyPreConfig_InitIsolatedConfig(&preconfig);
 
-    err = _Py_PreInitialize(&preconfig);
-    if (_PyInitError_Failed(err)) {
-        _Py_ExitInitError(err);
+        err = _Py_PreInitialize(&preconfig);
+        if (_PyInitError_Failed(err)) {
+            _Py_ExitInitError(err);
+        }
+
+        rt_preconfig = &_PyRuntime.preconfig;
+        assert(rt_preconfig->isolated == 1);
+        assert(rt_preconfig->use_environment == 0);
     }
-
-    _PyPreConfig *rt_preconfig = &_PyRuntime.preconfig;
-    assert(rt_preconfig->isolated == 1);
-    assert(rt_preconfig->use_environment == 0);
 
     _PyCoreConfig config;
     err = _PyCoreConfig_InitIsolatedConfig(&config);
@@ -782,13 +892,30 @@ static int test_init_isolated_config(void)
     if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
+
+    rt_preconfig = &_PyRuntime.preconfig;
+    assert(rt_preconfig->isolated == 1);
+    assert(rt_preconfig->use_environment == 0);
+
     dump_config();
     Py_Finalize();
     return 0;
 }
 
 
-static int test_init_python_config(void)
+static int test_preinit_isolated_config(void)
+{
+    return check_preinit_isolated_config(1);
+}
+
+
+static int test_init_isolated_config(void)
+{
+    return check_preinit_isolated_config(0);
+}
+
+
+static int check_init_python_config(int preinit)
 {
     _PyInitError err;
 
@@ -805,12 +932,14 @@ static int test_init_python_config(void)
     Py_LegacyWindowsStdioFlag = 1;
 #endif
 
-    _PyPreConfig preconfig;
-    _PyPreConfig_InitPythonConfig(&preconfig);
+    if (preinit) {
+        _PyPreConfig preconfig;
+        _PyPreConfig_InitPythonConfig(&preconfig);
 
-    err = _Py_PreInitialize(&preconfig);
-    if (_PyInitError_Failed(err)) {
-        _Py_ExitInitError(err);
+        err = _Py_PreInitialize(&preconfig);
+        if (_PyInitError_Failed(err)) {
+            _Py_ExitInitError(err);
+        }
     }
 
     _PyCoreConfig config;
@@ -830,6 +959,18 @@ static int test_init_python_config(void)
 }
 
 
+static int test_preinit_python_config(void)
+{
+    return check_init_python_config(1);
+}
+
+
+static int test_init_python_config(void)
+{
+    return check_init_python_config(0);
+}
+
+
 static int test_init_dont_configure_locale(void)
 {
     _PyInitError err;
@@ -846,7 +987,10 @@ static int test_init_dont_configure_locale(void)
     }
 
     _PyCoreConfig config;
-    _PyCoreConfig_InitPythonConfig(&config);
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
     config.program_name = L"./_testembed";
     err = _Py_InitializeFromConfig(&config);
     if (_PyInitError_Failed(err)) {
@@ -861,13 +1005,17 @@ static int test_init_dont_configure_locale(void)
 
 static int test_init_dev_mode(void)
 {
+    _PyInitError err;
     _PyCoreConfig config;
-    _PyCoreConfig_InitPythonConfig(&config);
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
     config.dev_mode = 1;
     config.program_name = L"./_testembed";
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config);
     if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
@@ -881,9 +1029,13 @@ static int test_init_read_set(void)
 {
     _PyInitError err;
     _PyCoreConfig config;
-    _PyCoreConfig_InitPythonConfig(&config);
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
 
-    err = _PyCoreConfig_DecodeLocale(&config.program_name, "./init_read_set");
+    err = _PyCoreConfig_DecodeLocale(&config, &config.program_name,
+                                     "./init_read_set");
     if (_PyInitError_Failed(err)) {
         goto fail;
     }
@@ -900,7 +1052,7 @@ static int test_init_read_set(void)
     }
 
     /* override executable computed by _PyCoreConfig_Read() */
-    err = _PyCoreConfig_SetString(&config.executable, L"my_executable");
+    err = _PyCoreConfig_SetString(&config, &config.executable, L"my_executable");
     if (_PyInitError_Failed(err)) {
         goto fail;
     }
@@ -937,11 +1089,15 @@ static void configure_init_main(_PyCoreConfig *config)
 
 static int test_init_run_main(void)
 {
+    _PyInitError err;
     _PyCoreConfig config;
-    _PyCoreConfig_InitPythonConfig(&config);
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
     configure_init_main(&config);
 
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config);
     if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
@@ -952,12 +1108,17 @@ static int test_init_run_main(void)
 
 static int test_init_main(void)
 {
+    _PyInitError err;
     _PyCoreConfig config;
-    _PyCoreConfig_InitPythonConfig(&config);
+
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
     configure_init_main(&config);
     config._init_main = 0;
 
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    err = _Py_InitializeFromConfig(&config);
     if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
@@ -982,23 +1143,40 @@ static int test_init_main(void)
 
 static int test_run_main(void)
 {
+    _PyInitError err;
     _PyCoreConfig config;
-    _PyCoreConfig_InitPythonConfig(&config);
+
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
 
     wchar_t *argv[] = {L"python3", L"-c",
                        (L"import sys; "
                         L"print(f'_Py_RunMain(): sys.argv={sys.argv}')"),
                        L"arg2"};
-    config.argv.length = Py_ARRAY_LENGTH(argv);
-    config.argv.items = argv;
-    config.program_name = L"./python3";
-
-    _PyInitError err = _Py_InitializeFromConfig(&config);
+    err = _PyCoreConfig_SetWideArgv(&config, Py_ARRAY_LENGTH(argv), argv);
     if (_PyInitError_Failed(err)) {
-        _Py_ExitInitError(err);
+        goto failed;
     }
 
+    err = _PyCoreConfig_SetString(&config, &config.program_name,
+                                  L"./python3");
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        goto failed;
+    }
+    _PyCoreConfig_Clear(&config);
+
     return _Py_RunMain();
+
+failed:
+    _PyCoreConfig_Clear(&config);
+    _Py_ExitInitError(err);
 }
 
 
@@ -1039,10 +1217,14 @@ static struct TestCase TestCases[] = {
     { "init_dont_configure_locale", test_init_dont_configure_locale },
     { "init_dev_mode", test_init_dev_mode },
     { "init_isolated_flag", test_init_isolated_flag },
+    { "preinit_isolated_config", test_preinit_isolated_config },
     { "init_isolated_config", test_init_isolated_config },
+    { "preinit_python_config", test_preinit_python_config },
     { "init_python_config", test_init_python_config },
     { "preinit_isolated1", test_preinit_isolated1 },
     { "preinit_isolated2", test_preinit_isolated2 },
+    { "preinit_parse_argv", test_preinit_parse_argv },
+    { "preinit_dont_parse_argv", test_preinit_dont_parse_argv },
     { "init_read_set", test_init_read_set },
     { "init_run_main", test_init_run_main },
     { "init_main", test_init_main },

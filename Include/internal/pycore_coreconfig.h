@@ -63,8 +63,8 @@ PyAPI_FUNC(int) _PyWstrList_Extend(_PyWstrList *list,
 typedef struct {
     Py_ssize_t argc;
     int use_bytes_argv;
-    char **bytes_argv;
-    wchar_t **wchar_argv;
+    char * const *bytes_argv;
+    wchar_t * const *wchar_argv;
 } _PyArgv;
 
 PyAPI_FUNC(_PyInitError) _PyArgv_AsWstrList(const _PyArgv *args,
@@ -121,6 +121,12 @@ PyAPI_FUNC(_PyInitError) _PyPreCmdline_Read(_PyPreCmdline *cmdline,
 /* --- _PyPreConfig ----------------------------------------------- */
 
 PyAPI_FUNC(void) _PyPreConfig_Init(_PyPreConfig *config);
+PyAPI_FUNC(void) _PyPreConfig_InitFromCoreConfig(
+    _PyPreConfig *config,
+    const _PyCoreConfig *coreconfig);
+PyAPI_FUNC(void) _PyPreConfig_InitFromPreConfig(
+    _PyPreConfig *config,
+    const _PyPreConfig *config2);
 PyAPI_FUNC(void) _PyPreConfig_Copy(_PyPreConfig *config,
     const _PyPreConfig *config2);
 PyAPI_FUNC(PyObject*) _PyPreConfig_AsDict(const _PyPreConfig *config);
