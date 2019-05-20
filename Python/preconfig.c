@@ -95,7 +95,7 @@ _PyArgv_AsWstrList(const _PyArgv *args, _PyWstrList *list)
     }
     else {
         wargv.length = args->argc;
-        wargv.items = args->wchar_argv;
+        wargv.items = (wchar_t **)args->wchar_argv;
         if (_PyWstrList_Copy(list, &wargv) < 0) {
             return _Py_INIT_NO_MEMORY();
         }
@@ -217,16 +217,15 @@ precmdline_parse_cmdline(_PyPreCmdline *cmdline)
 
 
 _PyInitError
-_PyPreCmdline_Read(_PyPreCmdline *cmdline,
-                    const _PyPreConfig *preconfig)
+_PyPreCmdline_Read(_PyPreCmdline *cmdline, const _PyPreConfig *preconfig)
 {
-    if (preconfig) {
-        _PyPreCmdline_GetPreConfig(cmdline, preconfig);
-    }
+    _PyPreCmdline_GetPreConfig(cmdline, preconfig);
 
-    _PyInitError err = precmdline_parse_cmdline(cmdline);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    if (preconfig->parse_argv) {
+        _PyInitError err = precmdline_parse_cmdline(cmdline);
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
     }
 
     /* isolated, use_environment */
@@ -268,6 +267,7 @@ _PyPreConfig_Init(_PyPreConfig *config)
     memset(config, 0, sizeof(*config));
 
     config->_config_version = _Py_CONFIG_VERSION;
+    config->parse_argv = 0;
     config->isolated = -1;
     config->use_environment = -1;
     config->configure_locale = 1;
@@ -285,6 +285,7 @@ _PyPreConfig_InitPythonConfig(_PyPreConfig *config)
 {
     _PyPreConfig_Init(config);
 
+    config->parse_argv = 1;
     /* Set to -1 to enable C locale coercion (PEP 538) and UTF-8 Mode (PEP 540)
        depending on the LC_CTYPE locale, PYTHONUTF8 and PYTHONCOERCECLOCALE
        environment variables. */
@@ -311,10 +312,40 @@ _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config)
 
 
 void
+_PyPreConfig_InitFromPreConfig(_PyPreConfig *config,
+                               const _PyPreConfig *config2)
+{
+    _PyPreConfig_Init(config);
+    _PyPreConfig_Copy(config, config2);
+}
+
+
+void
+_PyPreConfig_InitFromCoreConfig(_PyPreConfig *config,
+                                const _PyCoreConfig *coreconfig)
+{
+    _PyCoreConfigInitEnum config_init = (_PyCoreConfigInitEnum)coreconfig->_config_init;
+    switch (config_init) {
+    case _PyCoreConfig_INIT_PYTHON:
+        _PyPreConfig_InitPythonConfig(config);
+        break;
+    case _PyCoreConfig_INIT_ISOLATED:
+        _PyPreConfig_InitIsolatedConfig(config);
+        break;
+    case _PyCoreConfig_INIT:
+    default:
+        _PyPreConfig_Init(config);
+    }
+    _PyPreConfig_GetCoreConfig(config, coreconfig);
+}
+
+
+void
 _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 {
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
+    COPY_ATTR(parse_argv);
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(configure_locale);
@@ -341,27 +372,20 @@ _PyPreConfig_AsDict(const _PyPreConfig *config)
         return NULL;
     }
 
-#define SET_ITEM(KEY, EXPR) \
+#define SET_ITEM_INT(ATTR) \
         do { \
-            PyObject *obj = (EXPR); \
+            PyObject *obj = PyLong_FromLong(config->ATTR); \
             if (obj == NULL) { \
                 goto fail; \
             } \
-            int res = PyDict_SetItemString(dict, (KEY), obj); \
+            int res = PyDict_SetItemString(dict, #ATTR, obj); \
             Py_DECREF(obj); \
             if (res < 0) { \
                 goto fail; \
             } \
         } while (0)
-#define SET_ITEM_INT(ATTR) \
-    SET_ITEM(#ATTR, PyLong_FromLong(config->ATTR))
-#define FROM_STRING(STR) \
-    ((STR != NULL) ? \
-        PyUnicode_FromString(STR) \
-        : (Py_INCREF(Py_None), Py_None))
-#define SET_ITEM_STR(ATTR) \
-    SET_ITEM(#ATTR, FROM_STRING(config->ATTR))
 
+    SET_ITEM_INT(parse_argv);
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
     SET_ITEM_INT(configure_locale);
@@ -379,10 +403,7 @@ fail:
     Py_DECREF(dict);
     return NULL;
 
-#undef FROM_STRING
-#undef SET_ITEM
 #undef SET_ITEM_INT
-#undef SET_ITEM_STR
 }
 
 
@@ -395,6 +416,7 @@ _PyPreConfig_GetCoreConfig(_PyPreConfig *config,
         config->ATTR = core_config->ATTR; \
     }
 
+    COPY_ATTR(parse_argv);
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
@@ -662,9 +684,11 @@ preconfig_init_allocator(_PyPreConfig *config)
            allocators to "malloc" (and not to "debug"). */
         const char *envvar = _Py_GetEnv(config->use_environment, "PYTHONMALLOC");
         if (envvar) {
-            if (_PyMem_GetAllocatorName(envvar, &config->allocator) < 0) {
+            PyMemAllocatorName name;
+            if (_PyMem_GetAllocatorName(envvar, &name) < 0) {
                 return _Py_INIT_ERR("PYTHONMALLOC: unknown allocator");
             }
+            config->allocator = (int)name;
         }
     }
 
@@ -751,8 +775,7 @@ _PyPreConfig_Read(_PyPreConfig *config, const _PyArgv *args)
 
     /* Save the config to be able to restore it if encodings change */
     _PyPreConfig save_config;
-    _PyPreConfig_Init(&save_config);
-    _PyPreConfig_Copy(&save_config, config);
+    _PyPreConfig_InitFromPreConfig(&save_config, config);
 
     /* Set LC_CTYPE to the user preferred locale */
     if (config->configure_locale) {
@@ -879,8 +902,9 @@ _PyPreConfig_Write(const _PyPreConfig *config)
         return _Py_INIT_OK();
     }
 
-    if (config->allocator != PYMEM_ALLOCATOR_NOT_SET) {
-        if (_PyMem_SetupAllocators(config->allocator) < 0) {
+    PyMemAllocatorName name = (PyMemAllocatorName)config->allocator;
+    if (name != PYMEM_ALLOCATOR_NOT_SET) {
+        if (_PyMem_SetupAllocators(name) < 0) {
             return _Py_INIT_ERR("Unknown PYTHONMALLOC allocator");
         }
     }

@@ -35,11 +35,11 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromArgs(
     const _PyCoreConfig *config,
     Py_ssize_t argc,
-    char **argv);
+    char * const *argv);
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromWideArgs(
     const _PyCoreConfig *config,
     Py_ssize_t argc,
-    wchar_t **argv);
+    wchar_t * const *argv);
 PyAPI_FUNC(_PyInitError) _Py_InitializeMain(void);
 
 PyAPI_FUNC(int) _Py_RunMain(void);
