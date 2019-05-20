@@ -12,6 +12,7 @@ from asyncio.proactor_events import BaseProactorEventLoop
 from asyncio.proactor_events import _ProactorSocketTransport
 from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
+from asyncio.proactor_events import _ProactorDatagramTransport
 from test import support
 from test.test_asyncio import utils as test_utils
 
@@ -863,6 +864,80 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.proactor._stop_serving.assert_called_with(sock1)
         self.assertFalse(sock2.close.called)
         self.assertFalse(future2.cancel.called)
+
+    def datagram_transport(self):
+        self.protocol = test_utils.make_test_protocol(asyncio.DatagramProtocol)
+        return self.loop._make_datagram_transport(self.sock, self.protocol)
+
+    def test_make_datagram_transport(self):
+        tr = self.datagram_transport()
+        self.assertIsInstance(tr, _ProactorDatagramTransport)
+        close_transport(tr)
+
+    def test_datagram_loop_writing(self):
+        tr = self.datagram_transport()
+        tr._buffer.appendleft((b'data', ('127.0.0.1', 12068)))
+        tr._loop_writing()
+        self.loop._proactor.sendto.assert_called_with(self.sock, b'data', addr=('127.0.0.1', 12068))
+        self.loop._proactor.sendto.return_value.add_done_callback.\
+            assert_called_with(tr._loop_writing)
+
+        close_transport(tr)
+
+    def test_datagram_loop_reading(self):
+        tr = self.datagram_transport()
+        tr._loop_reading()
+        self.loop._proactor.recvfrom.assert_called_with(self.sock, 4096)
+        self.assertFalse(self.protocol.datagram_received.called)
+        self.assertFalse(self.protocol.error_received.called)
+        close_transport(tr)
+
+    def test_datagram_loop_reading_data(self):
+        res = asyncio.Future(loop=self.loop)
+        res.set_result((b'data', ('127.0.0.1', 12068)))
+
+        tr = self.datagram_transport()
+        tr._read_fut = res
+        tr._loop_reading(res)
+        self.loop._proactor.recvfrom.assert_called_with(self.sock, 4096)
+        self.protocol.datagram_received.assert_called_with(b'data', ('127.0.0.1', 12068))
+        close_transport(tr)
+
+    def test_datagram_loop_reading_no_data(self):
+        res = asyncio.Future(loop=self.loop)
+        res.set_result((b'', ('127.0.0.1', 12068)))
+
+        tr = self.datagram_transport()
+        self.assertRaises(AssertionError, tr._loop_reading, res)
+
+        tr.close = mock.Mock()
+        tr._read_fut = res
+        tr._loop_reading(res)
+        self.assertTrue(self.loop._proactor.recvfrom.called)
+        self.assertFalse(self.protocol.error_received.called)
+        self.assertFalse(tr.close.called)
+        close_transport(tr)
+
+    def test_datagram_loop_reading_aborted(self):
+        err = self.loop._proactor.recvfrom.side_effect = ConnectionAbortedError()
+
+        tr = self.datagram_transport()
+        tr._fatal_error = mock.Mock()
+        tr._protocol.error_received = mock.Mock()
+        tr._loop_reading()
+        tr._protocol.error_received.assert_called_with(err)
+        close_transport(tr)
+
+    def test_datagram_loop_writing_aborted(self):
+        err = self.loop._proactor.sendto.side_effect = ConnectionAbortedError()
+
+        tr = self.datagram_transport()
+        tr._fatal_error = mock.Mock()
+        tr._protocol.error_received = mock.Mock()
+        tr._buffer.appendleft((b'Hello', ('127.0.0.1', 12068)))
+        tr._loop_writing()
+        tr._protocol.error_received.assert_called_with(err)
+        close_transport(tr)
 
 
 @unittest.skipIf(sys.platform != 'win32',
