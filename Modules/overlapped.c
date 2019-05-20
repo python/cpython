@@ -840,13 +840,11 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
             }
 
             // first item: message
+            Py_INCREF(self->read_from.allocated_buffer);
             PyTuple_SET_ITEM(self->read_from.result, 0,
                              self->read_from.allocated_buffer);
             // second item: address
             PyTuple_SET_ITEM(self->read_from.result, 1, addr);
-
-            Py_INCREF(self->read_from.result);
-            Py_INCREF(self->read_from.allocated_buffer);
             return self->read_from.result;
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
