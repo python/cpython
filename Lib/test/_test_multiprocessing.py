@@ -326,9 +326,7 @@ class _TestProcess(BaseTestCase):
         wconn.send("alive" if parent_process().is_alive() else "not alive")
 
         start_time = time.monotonic()
-        while (parent_process().is_alive() and
-               (time.monotonic() - start_time) < 5):
-            time.sleep(0.1)
+        parent_process().join(timeout=5)
 
         wconn.send("alive" if parent_process().is_alive() else "not alive")
 

@@ -63,6 +63,8 @@ class Popen(popen_fork.Popen):
         finally:
             if parent_r is not None:
                 self.finalizer = util.Finalize(self, os.close, (parent_r,))
+            if parent_w is not None:
+                self.finalizer = util.Finalize(self, os.close, (parent_w,))
             for fd in (child_r, child_w):
                 if fd is not None:
                     os.close(fd)
