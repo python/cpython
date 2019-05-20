@@ -582,30 +582,33 @@ static int
 Overlapped_clear(OverlappedObject *self)
 {
     switch (self->type) {
-                case TYPE_READ:
-                case TYPE_ACCEPT:
-                        Py_CLEAR(self->allocated_buffer);
-                        break;
-                case TYPE_READ_FROM:
-                        // An initial call to WSARecvFrom will only allocate the buffer.
-                        // The result tuple of (message, address) is only
-                        // allocated _after_ a message has been received.
-                        if(self->read_from.result) {
-                                // We've received a message, free the result tuple.
-                                Py_CLEAR(self->read_from.result);
-                        }
-                        if(self->read_from.buffer) {
-                                Py_CLEAR(self->read_from.buffer);
-                        }
-                        break;
-                case TYPE_WRITE:
-                case TYPE_WRITE_TO:
-                case TYPE_READINTO:
-                        if (self->user_buffer.obj) {
-                                PyBuffer_Release(&self->user_buffer);
-                        }
-                        break;
+        case TYPE_READ:
+        case TYPE_ACCEPT: {
+            Py_CLEAR(self->allocated_buffer);
+            break;
         }
+        case TYPE_READ_FROM: {
+            // An initial call to WSARecvFrom will only allocate the buffer.
+            // The result tuple of (message, address) is only
+            // allocated _after_ a message has been received.
+            if(self->read_from.result) {
+                // We've received a message, free the result tuple.
+                Py_CLEAR(self->read_from.result);
+            }
+            if(self->read_from.buffer) {
+                Py_CLEAR(self->read_from.buffer);
+            }
+            break;
+        }
+        case TYPE_WRITE:
+        case TYPE_WRITE_TO:
+        case TYPE_READINTO: {
+            if (self->user_buffer.obj) {
+                PyBuffer_Release(&self->user_buffer);
+            }
+            break;
+        }
+    }
     self->type = TYPE_NOT_STARTED;
     return 0;
 }
@@ -687,38 +690,35 @@ unparse_address(LPSOCKADDR Address, DWORD Length)
         /* The function is adopted from mocketmodule.c makesockaddr()*/
 
     switch(Address->sa_family) {
-                case AF_INET:
-                {
-                        const struct sockaddr_in *a = (const struct sockaddr_in *)Address;
-                        PyObject *addrobj = make_ipv4_addr(a);
-                        PyObject *ret = NULL;
-                        if (addrobj) {
-                                ret = Py_BuildValue("Oi", addrobj, ntohs(a->sin_port));
-                                Py_DECREF(addrobj);
-                        }
-                        return ret;
-                }
+        case AF_INET: {
+            const struct sockaddr_in *a = (const struct sockaddr_in *)Address;
+            PyObject *addrobj = make_ipv4_addr(a);
+            PyObject *ret = NULL;
+            if (addrobj) {
+                ret = Py_BuildValue("Oi", addrobj, ntohs(a->sin_port));
+                Py_DECREF(addrobj);
+            }
+            return ret;
+        }
 #ifdef ENABLE_IPV6
-                case AF_INET6:
-                {
-                        const struct sockaddr_in6 *a = (const struct sockaddr_in6 *)Address;
-                        PyObject *addrobj = make_ipv6_addr(a);
-                        PyObject *ret = NULL;
-                        if (addrobj) {
-                                ret = Py_BuildValue("OiII",
-                                        addrobj,
-                                        ntohs(a->sin6_port),
-                                        ntohl(a->sin6_flowinfo),
-                                        a->sin6_scope_id);
-                                Py_DECREF(addrobj);
-                        }
-                        return ret;
-                }
+        case AF_INET6: {
+            const struct sockaddr_in6 *a = (const struct sockaddr_in6 *)Address;
+            PyObject *addrobj = make_ipv6_addr(a);
+            PyObject *ret = NULL;
+            if (addrobj) {
+                ret = Py_BuildValue("OiII",
+                                    addrobj,
+                                    ntohs(a->sin6_port),
+                                    ntohl(a->sin6_flowinfo),
+                                    a->sin6_scope_id);
+                Py_DECREF(addrobj);
+            }
+            return ret;
+        }
 #endif /* ENABLE_IPV6 */
-                default:
-                {
-                        return SetFromWindowsErr(ERROR_INVALID_PARAMETER);
-                }
+        default: {
+            return SetFromWindowsErr(ERROR_INVALID_PARAMETER);
+        }
     }
 }
 
