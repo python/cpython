@@ -272,15 +272,17 @@ class _TestProcess(BaseTestCase):
     def test_parent_process_attributes(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
-        from multiprocessing.process import current_process
+
+        self.assertIsNone(self.parent_process())
+
         rconn, wconn = self.Pipe(duplex=False)
         p = self.Process(target=self._test_send_parent_process, args=(wconn,))
         p.start()
         p.join()
         parent_pid, parent_name = rconn.recv()
-        self.assertEqual(parent_pid, current_process().pid)
+        self.assertEqual(parent_pid, self.current_process().pid)
         self.assertEqual(parent_pid, os.getpid())
-        self.assertEqual(parent_name, current_process().name)
+        self.assertEqual(parent_name, self.current_process().name)
 
     @classmethod
     def _test_send_parent_process(cls, wconn):
@@ -5451,6 +5453,7 @@ class ProcessesMixin(BaseMixin):
     Process = multiprocessing.Process
     connection = multiprocessing.connection
     current_process = staticmethod(multiprocessing.current_process)
+    parent_process = staticmethod(multiprocessing.parent_process)
     active_children = staticmethod(multiprocessing.active_children)
     Pool = staticmethod(multiprocessing.Pool)
     Pipe = staticmethod(multiprocessing.Pipe)
