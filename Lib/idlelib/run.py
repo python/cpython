@@ -474,15 +474,16 @@ class Executive(object):
                 exec(code, self.locals)
             finally:
                 interruptable = False
-        except SystemExit:
-            # Scripts that raise SystemExit should just
-            # return to the interactive prompt
-            pass
+        except SystemExit as e:
+            if e.args:  # SystemExit called with an argument.
+                ob = e.args[0]
+                if not isinstance(ob, (type(None), int)):
+                    print('SystemExit: ' + str(ob), file=sys.stderr)
+            # Return to the interactive prompt.
         except:
             self.usr_exc_info = sys.exc_info()
             if quitting:
                 exit()
-            # even print a user code SystemExit exception, continue
             print_exception()
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:
