@@ -56,7 +56,7 @@ PyAPI_FUNC(int) _PyStack_UnpackDict(
 #define _PY_FASTCALL_SMALL_STACK 5
 
 /* Return 1 if callable supports FASTCALL calling convention for positional
-   arguments: see _PyObject_FastCallDict() and _PyObject_FastCallKeywords() */
+   arguments: see _PyObject_Vectorcall() and _PyObject_FastCallDict() */
 PyAPI_FUNC(int) _PyObject_HasFastCall(PyObject *callable);
 
 /* Call the callable object 'callable' with the "fast call" calling convention:
@@ -89,17 +89,17 @@ PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
 
    Return the result on success. Raise an exception and return NULL on
    error. */
-PyAPI_FUNC(PyObject *) _PyObject_FastCallKeywords(
+PyAPI_FUNC(PyObject *) _PyObject_Vectorcall(
     PyObject *callable,
     PyObject *const *args,
     Py_ssize_t nargs,
     PyObject *kwnames);
 
 #define _PyObject_FastCall(func, args, nargs) \
-    _PyObject_FastCallDict((func), (args), (nargs), NULL)
+    _PyObject_Vectorcall((func), (args), (nargs), NULL)
 
 #define _PyObject_CallNoArg(func) \
-    _PyObject_FastCallDict((func), NULL, 0, NULL)
+    _PyObject_Vectorcall((func), NULL, 0, NULL)
 
 PyAPI_FUNC(PyObject *) _PyObject_Call_Prepend(
     PyObject *callable,

@@ -4855,7 +4855,7 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
             x = _PyFunction_FastCallKeywords(func, stack, nargs, kwnames);
         }
         else {
-            x = _PyObject_FastCallKeywords(func, stack, nargs, kwnames);
+            x = _PyObject_Vectorcall(func, stack, nargs, kwnames);
         }
         Py_DECREF(func);
     }
