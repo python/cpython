@@ -69,8 +69,8 @@ PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 
 /* Legacy locale support */
-PyAPI_FUNC(void) _Py_CoerceLegacyLocale(int warn);
-PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
+PyAPI_FUNC(int) _Py_CoerceLegacyLocale(int warn);
+PyAPI_FUNC(int) _Py_LegacyLocaleDetected(int warn);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
 #ifdef __cplusplus
