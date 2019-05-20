@@ -1619,12 +1619,12 @@ Overlapped_WSASendTo(OverlappedObject *self, PyObject *args)
                                                ERROR_SUCCESS);
 
     switch(err) {
-                case ERROR_SUCCESS:
-                case ERROR_IO_PENDING:
-                        Py_RETURN_NONE;
-                default:
-                        self->type = TYPE_NOT_STARTED;
-                        return SetFromWindowsErr(err);
+        case ERROR_SUCCESS:
+        case ERROR_IO_PENDING:
+            Py_RETURN_NONE;
+        default:
+            self->type = TYPE_NOT_STARTED;
+            return SetFromWindowsErr(err);
     }
 }
 
