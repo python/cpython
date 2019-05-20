@@ -1,1 +1,0 @@
-Skip ExecTests and URandomFDTests in test_os.py for VxWorks.
