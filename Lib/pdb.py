@@ -1132,9 +1132,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         co = self.curframe.f_code
         dict = self.curframe_locals
-        n = co.co_argcount
-        if co.co_flags & 4: n = n+1
-        if co.co_flags & 8: n = n+1
+        n = co.co_argcount + co.co_kwonlyargcount
+        if co.co_flags & inspect.CO_VARARGS: n = n+1
+        if co.co_flags & inspect.CO_VARKEYWORDS: n = n+1
         for i in range(n):
             name = co.co_varnames[i]
             if name in dict:
