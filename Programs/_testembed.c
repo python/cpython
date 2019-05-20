@@ -568,7 +568,7 @@ static int test_init_dont_parse_argv(void)
 }
 
 
-static void set_all_env_vars(void)
+static void set_most_env_vars(void)
 {
     putenv("PYTHONHASHSEED=42");
     putenv("PYTHONMALLOC=malloc");
@@ -585,13 +585,15 @@ static void set_all_env_vars(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
-    /* FIXME: test PYTHONWARNINGS */
-    /* FIXME: test PYTHONEXECUTABLE */
-    /* FIXME: test PYTHONHOME */
-    /* FIXME: test PYTHONDEBUG */
-    /* FIXME: test PYTHONDUMPREFS */
-    /* FIXME: test PYTHONCOERCECLOCALE */
-    /* FIXME: test PYTHONPATH */
+}
+
+
+static void set_all_env_vars(void)
+{
+    set_most_env_vars();
+
+    putenv("PYTHONWARNINGS=EnvVar");
+    putenv("PYTHONPATH=/my/path");
 }
 
 
@@ -609,7 +611,6 @@ static int test_init_env(void)
 
 static void set_all_env_vars_dev_mode(void)
 {
-    set_all_env_vars();
     putenv("PYTHONMALLOC=");
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONDEVMODE=1");
