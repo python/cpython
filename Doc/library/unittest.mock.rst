@@ -201,9 +201,11 @@ The Mock Class
 
 .. testsetup::
 
+    import asyncio
+    import inspect
     import unittest
     from unittest.mock import sentinel, DEFAULT, ANY
-    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
+    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
     from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
@@ -849,6 +851,217 @@ object::
     >>> m.foo
     3
     >>> p.assert_called_once_with()
+
+
+.. class:: AsyncMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
+
+  An asynchronous version of :class:`Mock`. The :class:`AsyncMock` object will
+  behave so the object is recognized as an async function, and the result of a
+  call is an awaitable.
+
+    >>> mock = AsyncMock()
+    >>> asyncio.iscoroutinefunction(mock)
+    True
+    >>> inspect.isawaitable(mock())
+    True
+
+  The result of ``mock()`` is an async function which will have the outcome
+  of ``side_effect`` or ``return_value``:
+
+  - if ``side_effect`` is a function, the async function will return the
+    result of that function,
+  - if ``side_effect`` is an exception, the async function will raise the
+    exception,
+  - if ``side_effect`` is an iterable, the async function will return the
+    next value of the iterable, however, if the sequence of result is
+    exhausted, ``StopIteration`` is raised immediately,
+  - if ``side_effect`` is not defined, the async function will return the
+    value defined by ``return_value``, hence, by default, the async function
+    returns a new :class:`AsyncMock` object.
+
+
+  Setting the *spec* of a :class:`Mock` or :class:`MagicMock` to an async function
+  will result in a coroutine object being returned after calling.
+
+    >>> async def async_func(): pass
+    ...
+    >>> mock = MagicMock(async_func)
+    >>> mock
+    <MagicMock spec='function' id='...'>
+    >>> mock()
+    <coroutine object AsyncMockMixin._mock_call at ...>
+
+  .. method:: assert_awaited()
+
+      Assert that the mock was awaited at least once.
+
+          >>> mock = AsyncMock()
+          >>> async def main():
+          ...     await mock()
+          ...
+          >>> asyncio.run(main())
+          >>> mock.assert_awaited()
+          >>> mock_2 = AsyncMock()
+          >>> mock_2.assert_awaited()
+          Traceback (most recent call last):
+          ...
+          AssertionError: Expected mock to have been awaited.
+
+  .. method:: assert_awaited_once()
+
+      Assert that the mock was awaited exactly once.
+
+        >>> mock = AsyncMock()
+        >>> async def main():
+        ...     await mock()
+        ...
+        >>> asyncio.run(main())
+        >>> mock.assert_awaited_once()
+        >>> asyncio.run(main())
+        >>> mock.method.assert_awaited_once()
+        Traceback (most recent call last):
+        ...
+        AssertionError: Expected mock to have been awaited once. Awaited 2 times.
+
+  .. method:: assert_awaited_with(*args, **kwargs)
+
+      Assert that the last await was with the specified arguments.
+
+        >>> mock = AsyncMock()
+        >>> async def main(*args, **kwargs):
+        ...     await mock(*args, **kwargs)
+        ...
+        >>> asyncio.run(main('foo', bar='bar'))
+        >>> mock.assert_awaited_with('foo', bar='bar')
+        >>> mock.assert_awaited_with('other')
+        Traceback (most recent call last):
+        ...
+        AssertionError: expected call not found.
+        Expected: mock('other')
+        Actual: mock('foo', bar='bar')
+
+  .. method:: assert_awaited_once_with(*args, **kwargs)
+
+      Assert that the mock was awaited exactly once and with the specified
+      arguments.
+
+        >>> mock = AsyncMock()
+        >>> async def main(*args, **kwargs):
+        ...     await mock(*args, **kwargs)
+        ...
+        >>> asyncio.run(main('foo', bar='bar'))
+        >>> mock.assert_awaited_once_with('foo', bar='bar')
+        >>> asyncio.run(main('foo', bar='bar'))
+        >>> mock.assert_awaited_once_with('foo', bar='bar')
+        Traceback (most recent call last):
+        ...
+        AssertionError: Expected mock to have been awaited once. Awaited 2 times.
+
+  .. method:: assert_any_await(*args, **kwargs)
+
+      Assert the mock has ever been awaited with the specified arguments.
+
+        >>> mock = AsyncMock()
+        >>> async def main(*args, **kwargs):
+        ...     await mock(*args, **kwargs)
+        ...
+        >>> asyncio.run(main('foo', bar='bar'))
+        >>> asyncio.run(main('hello'))
+        >>> mock.assert_any_await('foo', bar='bar')
+        >>> mock.assert_any_await('other')
+        Traceback (most recent call last):
+        ...
+        AssertionError: mock('other') await not found
+
+  .. method:: assert_has_awaits(calls, any_order=False)
+
+      Assert the mock has been awaited with the specified calls.
+      The :attr:`await_args_list` list is checked for the awaits.
+
+      If *any_order* is False (the default) then the awaits must be
+      sequential. There can be extra calls before or after the
+      specified awaits.
+
+      If *any_order* is True then the awaits can be in any order, but
+      they must all appear in :attr:`await_args_list`.
+
+        >>> mock = AsyncMock()
+        >>> async def main(*args, **kwargs):
+        ...     await mock(*args, **kwargs)
+        ...
+        >>> calls = [call("foo"), call("bar")]
+        >>> mock.assert_has_calls(calls)
+        Traceback (most recent call last):
+        ...
+        AssertionError: Calls not found.
+        Expected: [call('foo'), call('bar')]
+        >>> asyncio.run(main('foo'))
+        >>> asyncio.run(main('bar'))
+        >>> mock.assert_has_calls(calls)
+
+  .. method:: assert_not_awaited()
+
+    Assert that the mock was never awaited.
+
+        >>> mock = AsyncMock()
+        >>> mock.assert_not_awaited()
+
+  .. method:: reset_mock(*args, **kwargs)
+
+    See :func:`Mock.reset_mock`. Also sets :attr:`await_count` to 0,
+    :attr:`await_args` to None, and clears the :attr:`await_args_list`.
+
+  .. attribute:: await_count
+
+    An integer keeping track of how many times the mock object has been awaited.
+
+      >>> mock = AsyncMock()
+      >>> async def main():
+      ...     await mock()
+      ...
+      >>> asyncio.run(main())
+      >>> mock.await_count
+      1
+      >>> asyncio.run(main())
+      >>> mock.await_count
+      2
+
+  .. attribute:: await_args
+
+    This is either ``None`` (if the mock hasn’t been awaited), or the arguments that
+    the mock was last awaited with. Functions the same as :attr:`Mock.call_args`.
+
+      >>> mock = AsyncMock()
+      >>> async def main(*args):
+      ...     await mock(*args)
+      ...
+      >>> mock.await_args
+      >>> asyncio.run(main('foo'))
+      >>> mock.await_args
+      call('foo')
+      >>> asyncio.run(main('bar'))
+      >>> mock.await_args
+      call('bar')
+
+
+  .. attribute:: await_args_list
+
+    This is a list of all the awaits made to the mock object in sequence (so the
+    length of the list is the number of times it has been awaited). Before any
+    awaits have been made it is an empty list.
+
+      >>> mock = AsyncMock()
+      >>> async def main(*args):
+      ...     await mock(*args)
+      ...
+      >>> mock.await_args_list
+      []
+      >>> asyncio.run(main('foo'))
+      >>> mock.await_args_list
+      [call('foo')]
+      >>> asyncio.run(main('bar'))
+      >>> mock.await_args_list
+      [call('foo'), call('bar')]
 
 
 Calling
