@@ -335,6 +335,58 @@ Object Protocol
    *NULL* on failure.
 
 
+.. c:function:: PyObject* _PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+
+   Call a callable Python object *callable*.
+
+   *args* is a C array with the positional arguments.
+
+   *nargsf* is the number of positional arguments plus optionally the flag
+   :const:`PY_VECTORCALL_ARGUMENTS_OFFSET` which means that the callee is
+   allowed to modify ``args[-1]``.
+
+   *kwnames* can be either NULL (no keyword arguments) or a tuple of keyword
+   names. In the latter case, the values of the keyword arguments are stored
+   in *args* after the positional arguments
+   (note that the number of keyword arguments does not change *nargsf*).
+
+   *kwnames* must only objects of type ``str`` (not a subclass),
+   and all keys must be unique.
+
+   Return the result of the call on success, or *NULL* on failure.
+
+   This uses the vectorcall protocol if the callable supports it;
+   otherwise, the arguments are converted to use
+   :c:member:`~PyTypeObject.tp_call`.
+
+.. note::
+
+   This function is provisional and expected to become public in Python 3.9,
+   with a different name. If so, the plan is to keep the old name
+   ``_PyObject_Vectorcall`` at least in Python 3.9 for backwards compatibility.
+   It is also possible however that the API will be changed and that
+   this functions will be dropped or replaced by a different function.
+
+.. c:function:: PyObject* _PyObject_FastCallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
+
+   Same as :c:func:`_PyObject_Vectorcall` except that the keyword arguments
+   are passed as a dictionary in *kwdict*. This may be *NULL* if there
+   are no keyword arguments.
+
+   For callables supporting vectorcall, the arguments are internally
+   converted to the vectorcall convention. Therefore, this function
+   adds some overhead compared to :c:func:`_PyObject_Vectorcall`.
+   It should only be used if the caller already has a dictionary ready to use.
+
+.. note::
+
+   This function is provisional and expected to become public in Python 3.9,
+   with a different name. If so, the plan is to keep the old name
+   ``_PyObject_FastCallDict`` at least in Python 3.9 for backwards compatibility.
+   It is also possible however that the API will be changed and that
+   this functions will be dropped or replaced by a different function.
+
+
 .. c:function:: Py_hash_t PyObject_Hash(PyObject *o)
 
    .. index:: builtin: hash

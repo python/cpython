@@ -49,7 +49,7 @@ Quick Reference
    +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_dealloc`        | :c:type:`destructor`              |                   | X | X |   | X |
    +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | (:c:member:`~PyTypeObject.tp_print`)        |                                                                       |
+   | :c:member:`~PyTypeObject.tp_vectorcall_offset`| Py_ssize_t                      |                   |   |   |   | ? |
    +---------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | (:c:member:`~PyTypeObject.tp_getattr`)      | :c:type:`getattrfunc`             | __getattribute__, |   |   |   | G |
    |                                             |                                   | __getattr__       |   |   |   |   |
@@ -364,12 +364,6 @@ slot typedefs
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`reprfunc`          | :c:type:`PyObject` *        | :c:type:`PyObject` * |
 +-----------------------------+-----------------------------+----------------------+
-| :c:type:`printfunc`         | .. line-block::             | int                  |
-|                             |                             |                      |
-|                             |    :c:type:`PyObject` *     |                      |
-|                             |    FILE *                   |                      |
-|                             |    int                      |                      |
-+-----------------------------+-----------------------------+----------------------+
 | :c:type:`getattrfunc`       | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
@@ -675,9 +669,22 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is inherited by subtypes.
 
 
-.. c:member:: printfunc PyTypeObject.tp_print
+.. c:member:: Py_ssize_t PyTypeObject.tp_vectorcall_offset
 
-   Reserved slot, formerly used for print formatting in Python 2.x.
+   This field is only used if the flag :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+   is set. If so, this must be a positive integer containing the offset in the
+   instance struct of the ``vectorcallfunc`` pointer used for the vectorcall
+   protocol.
+
+   This pointer may be zero, in which case the instance behaves as if
+   :const:`Py_TPFLAGS_HAVE_VECTORCALL` was not set.
+
+   **Inheritance:**
+
+   This field is inherited for extension types
+   together with the flag :const:`Py_TPFLAGS_HAVE_VECTORCALL`,
+   but only if :c:member:`~PyTypeObject.tp_call` is also inherited.
+   Heap types never inherit this.
 
 
 .. c:member:: getattrfunc PyTypeObject.tp_getattr
@@ -2302,10 +2309,6 @@ Slot Type typedefs
 
    See :c:member:`~PyTypeObject.tp_repr`.
 
-.. c:type:: int (*printfunc)(PyObject *, FILE *, int)
-
-   This is hidden if :const:`PY_LIMITED_API` is set.
-
 .. c:type:: PyObject *(*getattrfunc)(PyObject *self, char *attr)
 
    Return the value of the named attribute for the object.
@@ -2409,7 +2412,7 @@ with a more verbose initializer::
        sizeof(MyObject),               /* tp_basicsize */
        0,                              /* tp_itemsize */
        (destructor)myobj_dealloc,      /* tp_dealloc */
-       0,                              /* tp_print */
+       0,                              /* tp_vectorcall_offset */
        0,                              /* tp_getattr */
        0,                              /* tp_setattr */
        0,                              /* tp_as_async */
