@@ -1504,6 +1504,13 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
             Py_VISIT(&self->user_buffer.obj);
         }
         break;
+    case TYPE_READ_FROM:
+        if(self->read_from.result) {
+            Py_VISIT(self->read_from.result);
+        }
+        if(self->read_from.allocated_buffer) {
+            Py_VISIT(self->read_from.allocated_buffer);
+        }
     }
     return 0;
 }
