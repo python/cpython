@@ -892,8 +892,6 @@ object::
     >>> mock = MagicMock(async_func)
     >>> mock
     <MagicMock spec='function' id='...'>
-    >>> mock()
-    <coroutine object AsyncMockMixin._mock_call at ...>
 
   .. method:: assert_awaited()
 
