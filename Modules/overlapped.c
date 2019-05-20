@@ -1510,7 +1510,7 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 // UDP functions
 
 PyDoc_STRVAR(
-    overlapped_WSAConnect_doc,
+    WSAConnect_doc,
     "WSAConnect(client_handle, address_as_bytes) -> Overlapped[None]\n\n"
     "Bind a remote address to a connectionless (UDP) socket");
 
@@ -1817,7 +1817,7 @@ static PyMethodDef overlapped_functions[] = {
     {"ConnectPipe", overlapped_ConnectPipe,
      METH_VARARGS, ConnectPipe_doc},
     {"WSAConnect", overlapped_WSAConnect,
-     METH_VARARGS, overlapped_WSAConnect_doc},
+     METH_VARARGS, WSAConnect_doc},
     {NULL}
 };
 
