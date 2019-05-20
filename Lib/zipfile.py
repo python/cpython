@@ -1564,8 +1564,7 @@ class ZipFile:
                              "Close the first handle before opening another.")
 
         # Sizes and CRC are overwritten with correct data after processing the file
-        if not hasattr(zinfo, 'file_size'):
-            zinfo.file_size = 0
+        zinfo.file_size = 0
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
