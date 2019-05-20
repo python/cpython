@@ -944,6 +944,14 @@ Miscellaneous
 
    An analogue of :func:`threading.current_thread`.
 
+.. function:: parent_process()
+
+   Return the :class:`Process` object corresponding to the parent process of
+   the :func:`current_process`. For the main process, ``parent_process`` will
+   be ``None``.
+
+   .. versionadded:: 3.8
+
 .. function:: freeze_support()
 
    Add support for when a program which uses :mod:`multiprocessing` has been
