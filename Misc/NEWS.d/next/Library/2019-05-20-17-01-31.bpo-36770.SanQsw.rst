@@ -1,0 +1,1 @@
+Add support for different ZIP compression methods in :func:`shutil.make_archive`
