@@ -862,7 +862,11 @@ object::
     >>> mock = AsyncMock()
     >>> asyncio.iscoroutinefunction(mock)
     True
-    >>> inspect.isawaitable(mock())
+    >>> async_func = mock()
+    >>> async def main():
+    ...     await async_func
+    >>> asyncio.run(main())
+    >>> inspect.isawaitable(async_func)
     True
 
   The result of ``mock()`` is an async function which will have the outcome
