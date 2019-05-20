@@ -81,7 +81,6 @@ class Popen(object):
             self.finalizer = util.Finalize(self, util.close_fds,
                                            (parent_r, parent_w,))
             self.sentinel = parent_r
-            self._parent_w = parent_w
 
     def close(self):
         if self.finalizer is not None:
