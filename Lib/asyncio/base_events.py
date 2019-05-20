@@ -102,7 +102,7 @@ def _set_reuseport(sock):
                              'SO_REUSEPORT defined but not implemented.')
 
 
-def _ipaddr_info(host, port, family, type, proto):
+def _ipaddr_info(host, port, family, type, proto, flowinfo=0, scopeid=0):
     # Try to skip getaddrinfo if "host" is already an IP. Users might have
     # handled name resolution in their own code and pass in resolved IPs.
     if not hasattr(socket, 'inet_pton'):
@@ -151,7 +151,7 @@ def _ipaddr_info(host, port, family, type, proto):
             socket.inet_pton(af, host)
             # The host has already been resolved.
             if _HAS_IPv6 and af == socket.AF_INET6:
-                return af, type, proto, '', (host, port, 0, 0)
+                return af, type, proto, '', (host, port, flowinfo, scopeid)
             else:
                 return af, type, proto, '', (host, port)
         except OSError:
@@ -1348,7 +1348,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                family=0, type=socket.SOCK_STREAM,
                                proto=0, flags=0, loop):
         host, port = address[:2]
-        info = _ipaddr_info(host, port, family, type, proto)
+        info = _ipaddr_info(host, port, family, type, proto, *address[2:])
         if info is not None:
             # "host" is already a resolved IP.
             return [info]

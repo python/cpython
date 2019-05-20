@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_context.h"

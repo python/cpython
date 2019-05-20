@@ -33,17 +33,6 @@ directory if the :envvar:`PATH` environment variable is not set.
 
 ..
 
-.. bpo: 36751
-.. date: 2019-04-29-23-30-21
-.. nonce: 3NCRbm
-.. section: Core and Builtins
-
-The :func:`~inspect.getfullargspec` function in the :mod:`inspect` module is
-deprecated in favor of the :func:`inspect.signature` API. Contributed by
-Pablo Galindo.
-
-..
-
 .. bpo: 36722
 .. date: 2019-04-25-21-02-40
 .. nonce: 8NApVM
