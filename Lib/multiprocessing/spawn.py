@@ -111,13 +111,13 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     else:
         from . import resource_tracker
         resource_tracker._resource_tracker._fd = tracker_fd
-        fd = parent_sentinel = pipe_handle
-    exitcode = _main(fd, parent_sentinel)
+        parent_sentinel = os.dup(pipe_handle)
+    exitcode = _main(pipe_handle, parent_sentinel)
     sys.exit(exitcode)
 
 
 def _main(fd, parent_sentinel):
-    with os.fdopen(fd, 'rb', closefd=False) as from_parent:
+    with os.fdopen(fd, 'rb', closefd=True) as from_parent:
         process.current_process()._inheriting = True
         try:
             preparation_data = reduction.pickle.load(from_parent)
