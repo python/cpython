@@ -240,8 +240,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     // Count runs of consecutive LOAD_CONSTs
     unsigned int cumlc = 0, lastlc = 0;
     unsigned int *blocks = NULL;
-    _Py_IDENTIFIER(dedent);
-    PyObject *dedent = PyUnicode_FromString("dedent");
 
     /* Bail out if an exception is set */
     if (PyErr_Occurred())
@@ -303,28 +301,12 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                    "while 1" performance.  */
             case LOAD_CONST:
                 cumlc = lastlc + 1;
-                if (nextop == POP_JUMP_IF_FALSE  &&
-                    ISBASICBLOCK(blocks, op_start, i + 1)  &&
-                    PyObject_IsTrue(PyList_GET_ITEM(consts, get_arg(codestr, i)))) {
-
-                    fill_nops(codestr, op_start, nexti + 1);
-                    cumlc = 0;
-                }
-
-                if (nextop == LOAD_METHOD &&
-                    _Py_OPCODE(codestr[nexti+1]) == CALL_METHOD) {
-
-                    if (PyUnicode_CheckExact(PyList_GET_ITEM(consts, get_arg(codestr, i))) &&
-                        PyObject_RichCompareBool(dedent, PyTuple_GET_ITEM(names, get_arg(codestr, nexti)), Py_EQ)) {
-
-                        PyObject *text = PyList_GET_ITEM(consts, get_arg(codestr, i));
-                        text = _PyObject_CallMethodId(text, &PyId_dedent, NULL);
-                        set_arg(codestr, i, PySequence_Length(consts));
-                        PyList_Append(consts, text);
-
-                        fill_nops(codestr, op_start + 1, nexti + 2);
-                    }
-                }
+                if (nextop != POP_JUMP_IF_FALSE  ||
+                    !ISBASICBLOCK(blocks, op_start, i + 1)  ||
+                    !PyObject_IsTrue(PyList_GET_ITEM(consts, get_arg(codestr, i))))
+                    break;
+                fill_nops(codestr, op_start, nexti + 1);
+                cumlc = 0;
                 break;
 
                 /* Try to fold tuples of constants.

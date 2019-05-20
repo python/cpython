@@ -472,6 +472,38 @@ astfold_mod(mod_ty node_, PyArena *ctx_, int optimize_)
 }
 
 static int
+astfold_dedent(expr_ty node_, PyArena *arena, int optimize_)
+{
+    _Py_IDENTIFIER(dedent);
+    PyObject *dedent = PyUnicode_FromString("dedent");
+    if (!dedent) {
+        return 0;
+    }
+    if (asdl_seq_LEN(node_->v.Call.args) != 0 ||
+        asdl_seq_LEN(node_->v.Call.keywords) != 0 ||
+        node_->v.Call.func->kind != Attribute_kind) {
+        return 1;
+    }
+    expr_ty attr = node_->v.Call.func;
+    if (attr->v.Attribute.value->kind != Constant_kind ||
+        attr->v.Attribute.value->v.Constant.kind != NULL ||
+        !PyUnicode_CheckExact(attr->v.Attribute.value->v.Constant.value) ||
+        !PyObject_RichCompareBool(attr->v.Attribute.attr, dedent, Py_EQ)) {
+
+        return 1;
+    }
+
+    PyObject *value = attr->v.Attribute.value->v.Constant.value;
+    PyObject *newval = _PyObject_CallMethodId(value, &PyId_dedent, "", NULL);
+    if (!newval) {
+        Py_DECREF(dedent);
+        return 0;
+    }
+
+    return make_const(node_, newval, arena);
+}
+
+static int
 astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_)
 {
     switch (node_->kind) {
@@ -538,6 +570,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_)
         CALL(astfold_expr, expr_ty, node_->v.Call.func);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.Call.args);
         CALL_SEQ(astfold_keyword, keyword_ty, node_->v.Call.keywords);
+        CALL(astfold_dedent, expr_ty, node_);
         break;
     case FormattedValue_kind:
         CALL(astfold_expr, expr_ty, node_->v.FormattedValue.value);

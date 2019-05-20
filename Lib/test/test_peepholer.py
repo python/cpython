@@ -335,31 +335,6 @@ class TestTranforms(BytecodeTestCase):
                 pass
         self.assertEqual(count_instr_recursively(forloop, 'BUILD_LIST'), 0)
 
-    def test_fold_str_dedent(self):
-        exprs = [
-            '"foo".dedent()',
-        ]
-
-        for e in exprs:
-            code = compile(e, '', 'single')
-            self.assertNotInBytecode(code, 'LOAD_METHOD')
-            self.assertNotInBytecode(code, 'CALL_METHOD')
-
-        # TODO: One constant replace all calls to dedent with the same constant
-        # expr = '"    foo".dedent(); "    foo".dedent()'
-        # code = compile(e, '', 'single')
-        # self.assertEqual(code.co_consts.count('foo'), 1)
-
-        exprs = [
-            # TODO: Multiple calls to dedent are not all removed yet
-            '"foo".dedent().dedent()',
-            # Calls to dedent with something else than a string are not removed
-            '3 .dedent()',
-        ]
-        for e in exprs:
-            code = compile(e, '', 'single')
-            self.assertInBytecode(code, 'LOAD_METHOD')
-            self.assertInBytecode(code, 'CALL_METHOD')
 
 class TestBuglets(unittest.TestCase):
 
