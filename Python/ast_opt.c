@@ -500,6 +500,7 @@ astfold_dedent(expr_ty node_, PyArena *arena, int optimize_)
         return 0;
     }
 
+    Py_DECREF(dedent);
     return make_const(node_, newval, arena);
 }
 
