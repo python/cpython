@@ -54,7 +54,7 @@ provided by this module.
 The following function is the primary interface of this module:
 
 
-.. function:: input(files=None, inplace=False, backup='', mode='r', openhook=None)
+.. function:: input(files=None, inplace=False, backup='', *, mode='r', openhook=None)
 
    Create an instance of the :class:`FileInput` class.  The instance will be used
    as global state for the functions of this module, and is also returned to use
@@ -69,6 +69,9 @@ The following function is the primary interface of this module:
           for line in f:
               process(line)
 
+   .. versionchanged:: 3.8
+      The keyword parameter *mode* and *openhook* are now keyword-only.
+      
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
@@ -132,7 +135,7 @@ The class which implements the sequence behavior provided by the module is
 available for subclassing as well:
 
 
-.. class:: FileInput(files=None, inplace=False, backup='', mode='r', openhook=None)
+.. class:: FileInput(files=None, inplace=False, backup='', *, mode='r', openhook=None)
 
    Class :class:`FileInput` is the implementation; its methods :meth:`filename`,
    :meth:`fileno`, :meth:`lineno`, :meth:`filelineno`, :meth:`isfirstline`,
@@ -156,6 +159,10 @@ available for subclassing as well:
 
       with FileInput(files=('spam.txt', 'eggs.txt')) as input:
           process(input)
+
+
+   .. versionchanged:: 3.8
+      The keyword parameter *mode* and *openhook* are now keyword-only.
 
    .. versionchanged:: 3.2
       Can be used as a context manager.
