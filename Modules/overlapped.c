@@ -582,30 +582,33 @@ static int
 Overlapped_clear(OverlappedObject *self)
 {
     switch (self->type) {
-		case TYPE_READ:
-		case TYPE_ACCEPT:
-			Py_CLEAR(self->allocated_buffer);
-			break;
-		case TYPE_READ_FROM:
-			// An initial call to WSARecvFrom will only allocate the buffer.
-			// The result tuple of (message, address) is only
-			// allocated _after_ a message has been received.
-			if(self->read_from.result) {
-				// We've received a message, free the result tuple.
-				Py_CLEAR(self->read_from.result);
-			}
-			if(self->read_from.allocated_buffer) {
-				Py_CLEAR(self->read_from.allocated_buffer);
-			}
-			break;
-		case TYPE_WRITE:
-		case TYPE_WRITE_TO:
-		case TYPE_READINTO:
-			if (self->user_buffer.obj) {
-				PyBuffer_Release(&self->user_buffer);
-			}
-			break;
-	}
+        case TYPE_READ:
+        case TYPE_ACCEPT: {
+            Py_CLEAR(self->allocated_buffer);
+            break;
+        }
+        case TYPE_READ_FROM: {
+            // An initial call to WSARecvFrom will only allocate the buffer.
+            // The result tuple of (message, address) is only
+            // allocated _after_ a message has been received.
+            if(self->read_from.result) {
+                // We've received a message, free the result tuple.
+                Py_CLEAR(self->read_from.result);
+            }
+            if(self->read_from.buffer) {
+                Py_CLEAR(self->read_from.buffer);
+            }
+            break;
+        }
+        case TYPE_WRITE:
+        case TYPE_WRITE_TO:
+        case TYPE_READINTO: {
+            if (self->user_buffer.obj) {
+                PyBuffer_Release(&self->user_buffer);
+            }
+            break;
+        }
+    }
     self->type = TYPE_NOT_STARTED;
     return 0;
 }
@@ -658,12 +661,12 @@ Overlapped_dealloc(OverlappedObject *self)
 static PyObject *
 make_ipv4_addr(const struct sockaddr_in *addr)
 {
-	char buf[INET_ADDRSTRLEN];
-	if (inet_ntop(AF_INET, &addr->sin_addr, buf, sizeof(buf)) == NULL) {
-		PyErr_SetFromErrno(PyExc_OSError);
-		return NULL;
-	}
-	return PyUnicode_FromString(buf);
+        char buf[INET_ADDRSTRLEN];
+        if (inet_ntop(AF_INET, &addr->sin_addr, buf, sizeof(buf)) == NULL) {
+                PyErr_SetFromErrno(PyExc_OSError);
+                return NULL;
+        }
+        return PyUnicode_FromString(buf);
 }
 
 #ifdef ENABLE_IPV6
@@ -672,53 +675,50 @@ make_ipv4_addr(const struct sockaddr_in *addr)
 static PyObject *
 make_ipv6_addr(const struct sockaddr_in6 *addr)
 {
-	char buf[INET6_ADDRSTRLEN];
-	if (inet_ntop(AF_INET6, &addr->sin6_addr, buf, sizeof(buf)) == NULL) {
-		PyErr_SetFromErrno(PyExc_OSError);
-		return NULL;
-	}
-	return PyUnicode_FromString(buf);
+        char buf[INET6_ADDRSTRLEN];
+        if (inet_ntop(AF_INET6, &addr->sin6_addr, buf, sizeof(buf)) == NULL) {
+                PyErr_SetFromErrno(PyExc_OSError);
+                return NULL;
+        }
+        return PyUnicode_FromString(buf);
 }
 #endif
 
 static PyObject*
 unparse_address(LPSOCKADDR Address, DWORD Length)
 {
-	/* The function is adopted from mocketmodule.c makesockaddr()*/
+        /* The function is adopted from mocketmodule.c makesockaddr()*/
 
     switch(Address->sa_family) {
-		case AF_INET:
-		{
-			const struct sockaddr_in *a = (const struct sockaddr_in *)Address;
-			PyObject *addrobj = make_ipv4_addr(a);
-			PyObject *ret = NULL;
-			if (addrobj) {
-				ret = Py_BuildValue("Oi", addrobj, ntohs(a->sin_port));
-				Py_DECREF(addrobj);
-			}
-			return ret;
-		}
+        case AF_INET: {
+            const struct sockaddr_in *a = (const struct sockaddr_in *)Address;
+            PyObject *addrobj = make_ipv4_addr(a);
+            PyObject *ret = NULL;
+            if (addrobj) {
+                ret = Py_BuildValue("Oi", addrobj, ntohs(a->sin_port));
+                Py_DECREF(addrobj);
+            }
+            return ret;
+        }
 #ifdef ENABLE_IPV6
-		case AF_INET6:
-		{
-			const struct sockaddr_in6 *a = (const struct sockaddr_in6 *)Address;
-			PyObject *addrobj = make_ipv6_addr(a);
-			PyObject *ret = NULL;
-			if (addrobj) {
-				ret = Py_BuildValue("OiII",
-					addrobj,
-					ntohs(a->sin6_port),
-					ntohl(a->sin6_flowinfo),
-					a->sin6_scope_id);
-				Py_DECREF(addrobj);
-			}
-			return ret;
-		}
+        case AF_INET6: {
+            const struct sockaddr_in6 *a = (const struct sockaddr_in6 *)Address;
+            PyObject *addrobj = make_ipv6_addr(a);
+            PyObject *ret = NULL;
+            if (addrobj) {
+                ret = Py_BuildValue("OiII",
+                                    addrobj,
+                                    ntohs(a->sin6_port),
+                                    ntohl(a->sin6_flowinfo),
+                                    a->sin6_scope_id);
+                Py_DECREF(addrobj);
+            }
+            return ret;
+        }
 #endif /* ENABLE_IPV6 */
-		default:
-		{
-			return SetFromWindowsErr(ERROR_INVALID_PARAMETER);
-		}
+        default: {
+            return SetFromWindowsErr(ERROR_INVALID_PARAMETER);
+        }
     }
 }
 
@@ -1511,7 +1511,7 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 // UDP functions
 
 PyDoc_STRVAR(
-    overlapped_WSAConnect_doc,
+    WSAConnect_doc,
     "WSAConnect(client_handle, address_as_bytes) -> Overlapped[None]\n\n"
     "Bind a remote address to a connectionless (UDP) socket");
 
@@ -1619,12 +1619,12 @@ Overlapped_WSASendTo(OverlappedObject *self, PyObject *args)
                                                ERROR_SUCCESS);
 
     switch(err) {
-		case ERROR_SUCCESS:
-		case ERROR_IO_PENDING:
-			Py_RETURN_NONE;
-		default:
-			self->type = TYPE_NOT_STARTED;
-			return SetFromWindowsErr(err);
+                case ERROR_SUCCESS:
+                case ERROR_IO_PENDING:
+                        Py_RETURN_NONE;
+                default:
+                        self->type = TYPE_NOT_STARTED;
+                        return SetFromWindowsErr(err);
     }
 }
 
@@ -1818,7 +1818,7 @@ static PyMethodDef overlapped_functions[] = {
     {"ConnectPipe", overlapped_ConnectPipe,
      METH_VARARGS, ConnectPipe_doc},
     {"WSAConnect", overlapped_WSAConnect,
-     METH_VARARGS, overlapped_WSAConnect_doc},
+     METH_VARARGS, WSAConnect_doc},
     {NULL}
 };
 
