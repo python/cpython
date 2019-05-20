@@ -828,6 +828,10 @@ The following features and APIs have been removed from Python 3.8:
   exposed to the user.
   (Contributed by Aviv Palivoda in :issue:`30262`.)
 
+* The ``bufsize`` keyword argument of :func:`fileinput.input` and
+  :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
+  has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
+
 
 Porting to Python 3.8
 =====================
