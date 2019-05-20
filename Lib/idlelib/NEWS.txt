@@ -1,8 +1,16 @@
 Since 2.7.13, only severe bugs are fixed on the 2.7 branch.
 
+What's New in IDLE 2.7.17?
+==========================
+*Release date: 2019-07-??*
+
+bpo-36807: When saving a file, call file.flush() and os.fsync()
+so bits are flushed to e.g. a USB drive.
+
+
 What's New in IDLE 2.7.16?
 ==========================
-*Release date: 2019-01-01?*
+*Release date: 2019-03-02*
 
 bpo-31500: Default fonts now are scaled on HiDPI displays.
 
