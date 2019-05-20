@@ -1,7 +1,8 @@
 __all__ = (
     'Stream', 'StreamMode',
     'open_connection', 'start_server',
-    'connect')
+    'connect',
+    'StreamServer')
 
 import enum
 import socket
@@ -11,7 +12,8 @@ import weakref
 
 if hasattr(socket, 'AF_UNIX'):
     __all__ += ('open_unix_connection', 'start_unix_server',
-                'connect_unix')
+                'connect_unix',
+                'UnixStreamServer')
 
 from . import coroutines
 from . import events
@@ -19,7 +21,7 @@ from . import exceptions
 from . import format_helpers
 from . import protocols
 from .log import logger
-from .tasks import sleep
+from .tasks import gather, sleep, wait
 
 
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
@@ -131,29 +133,18 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     return await loop.create_server(factory, host, port, **kwds)
 
 
-class ServerStream:
+class _BaseStreamServer:
     # TODO: API for enumerating open server streams
 
-    def __init__(self, client_connected_cb, host=None, port=None, *,
-                  limit=_DEFAULT_LIMIT,
-                 family=socket.AF_UNSPEC,
-                 flags=socket.AI_PASSIVE, sock=None, backlog=100,
-                 ssl=None, reuse_address=None, reuse_port=None,
-                 ssl_handshake_timeout=None,
-                 shutdown_timeout=60):
+    def __init__(self, client_connected_cb,
+                 limit=_DEFAULT_LIMIT,
+                 shutdown_timeout=60,
+                 _asyncio_internal=False):
+        if not _asyncio_internal:
+            raise RuntimeError("_ServerStream is a private asyncio class")
         self._client_connected_cb = client_connected_cb
-        self._host = host
-        self._port = port
         self._limit = limit
-        self._family = family
-        self._flags = flags
-        self._sock = sock
-        self._backlog = backlog
-        self._ssl = ssl
-        self._reuse_address = reuse_address
-        self._reuse_port = reuse_port
-        self._ssl_handshake_timeout = ssl_handshake_timeout
-        self._loop = asyncio.get_running_loop()
+        self._loop = events.get_running_loop()
         self._low_server = None
         self._streams = {}
         self._shutdown_timeout = shutdown_timeout
@@ -161,25 +152,10 @@ class ServerStream:
     async def bind(self):
         if self._low_server is not None:
             return
-        def factory():
-            protocol = _ServerStreamProtocol(self._limit,
-                                             self._client_connected_cb,
-                                             loop=self._loop,
-                                             _asyncio_internal=True)
-            return protocol
-        self._low_server = await self._loop.create_server(
-            factory,
-            self._host,
-            self._port,
-            start_serving=False,
-            family=self._family,
-            flags=self._flags,
-            sock=self._sock,
-            backlog=self._backlog,
-            ssl=self._ssl,
-            reuse_address=self._reuse_address,
-            reuse_port=self._reuse_port,
-            ssl_handshake_timeout=self._ssl_handshake_timeout)
+        self._low_server = await self._bind()
+
+    def is_bound(self):
+        return self._low_server is not None
 
     def is_serving(self):
         if self._low_server is None:
@@ -199,7 +175,7 @@ class ServerStream:
             return
         self._low_server.close()
         tasks = list(self._streams.values())
-        await asyncio.gather(*[stream.close() for stream in self._streams])
+        await gather(*[stream.close() for stream in self._streams])
         await self._low_server.wait_closed()
         await self._warn_active_tasks(tasks)
 
@@ -208,7 +184,7 @@ class ServerStream:
             return
         self._low_server.close()
         tasks = list(self._streams.values())
-        await asyncio.gather(*[stream.abort() for stream in self._streams])
+        await gather(*[stream.abort() for stream in self._streams])
         await self._low_server.wait_closed()
         await self._warn_active_tasks(tasks)
 
@@ -225,20 +201,66 @@ class ServerStream:
     def _detach(self, stream, task):
         del self._streams[stream]
 
-    async def _warn_active_tasks(tasks):
+    async def _warn_active_tasks(self, tasks):
         if not tasks:
             return
 
-        done, pending = await asyncio.wait(tasks, timeout=self._shutdown_timeout)
+        done, pending = await wait(tasks, timeout=self._shutdown_timeout)
         if not pending:
             return
         for task in pending:
             task.cancel()
-        done, pending = await asyncio.wait(pending, timeout=self._shutdown_timeout)
+        done, pending = await wait(pending, timeout=self._shutdown_timeout)
         for task in pending:
             self._loop.call_exception_handler({
                 "message": f'{task} has not finished on stream server closing'
             })
+
+
+class StreamServer(_BaseStreamServer):
+
+    def __init__(self, client_connected_cb, host=None, port=None, *,
+                 limit=_DEFAULT_LIMIT,
+                 family=socket.AF_UNSPEC,
+                 flags=socket.AI_PASSIVE, sock=None, backlog=100,
+                 ssl=None, reuse_address=None, reuse_port=None,
+                 ssl_handshake_timeout=None,
+                 shutdown_timeout=60):
+        super().__init__(client_connected_cb,
+                         limit=limit,
+                         shutdown_timeout=shutdown_timeout,
+                         _asyncio_internal=True)
+        self._host = host
+        self._port = port
+        self._family = family
+        self._flags = flags
+        self._sock = sock
+        self._backlog = backlog
+        self._ssl = ssl
+        self._reuse_address = reuse_address
+        self._reuse_port = reuse_port
+        self._ssl_handshake_timeout = ssl_handshake_timeout
+
+    async def _bind(self):
+        def factory():
+            protocol = _ServerStreamProtocol(self._limit,
+                                             self._client_connected_cb,
+                                             loop=self._loop,
+                                             _asyncio_internal=True)
+            return protocol
+        return await self._loop.create_server(
+            factory,
+            self._host,
+            self._port,
+            start_serving=False,
+            family=self._family,
+            flags=self._flags,
+            sock=self._sock,
+            backlog=self._backlog,
+            ssl=self._ssl,
+            reuse_address=self._reuse_address,
+            reuse_port=self._reuse_port,
+            ssl_handshake_timeout=self._ssl_handshake_timeout)
 
 
 if hasattr(socket, 'AF_UNIX'):
@@ -297,6 +319,41 @@ if hasattr(socket, 'AF_UNIX'):
             return protocol
 
         return await loop.create_unix_server(factory, path, **kwds)
+
+    class UnixStreamServer(_BaseStreamServer):
+
+        def __init__(self, client_connected_cb, path=None, *,
+                     limit=_DEFAULT_LIMIT,
+                     sock=None,
+                     backlog=100,
+                     ssl=None,
+                     ssl_handshake_timeout=None,
+                     shutdown_timeout=60):
+            super().__init__(client_connected_cb,
+                             limit=limit,
+                             shutdown_timeout=shutdown_timeout,
+                             _asyncio_internal=True)
+            self._path = path
+            self._sock = sock
+            self._backlog = backlog
+            self._ssl = ssl
+            self._ssl_handshake_timeout = ssl_handshake_timeout
+
+        async def _bind(self):
+            def factory():
+                protocol = _ServerStreamProtocol(self._limit,
+                                                 self._client_connected_cb,
+                                                 loop=self._loop,
+                                                 _asyncio_internal=True)
+                return protocol
+            return await self._loop.create_unix_server(
+                factory,
+                self._path,
+                start_serving=False,
+                sock=self._sock,
+                backlog=self._backlog,
+                ssl=self._ssl,
+                ssl_handshake_timeout=self._ssl_handshake_timeout)
 
 
 class FlowControlMixin(protocols.Protocol):
@@ -682,6 +739,10 @@ class Stream:
 
     def is_closing(self):
         return self._transport.is_closing()
+
+    async def abort(self):
+        self._transport.abort()
+        await self.wait_closed()
 
     async def wait_closed(self):
         await self._protocol._get_close_waiter(self)
