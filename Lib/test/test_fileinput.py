@@ -82,7 +82,7 @@ class LineReader:
 
 class BufferSizesTests(BaseTests, unittest.TestCase):
     def test_buffer_sizes(self):
-        
+
         t1 = self.writeTmp(''.join("Line %s of file 1\n" % (i+1) for i in range(15)))
         t2 = self.writeTmp(''.join("Line %s of file 2\n" % (i+1) for i in range(10)))
         t3 = self.writeTmp(''.join("Line %s of file 3\n" % (i+1) for i in range(5)))
@@ -113,7 +113,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.filelineno(), 6)
         self.assertFalse(fi.isfirstline())
         self.assertFalse(fi.isstdin())
- 
+
         if verbose:
             print('%s. Nextfile' % (start+2))
         fi.nextfile()

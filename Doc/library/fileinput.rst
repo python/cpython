@@ -71,7 +71,7 @@ The following function is the primary interface of this module:
 
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
-      
+
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
