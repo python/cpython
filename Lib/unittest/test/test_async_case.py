@@ -7,30 +7,53 @@ def tearDownModule():
 
 
 class TestAsyncCase(unittest.TestCase):
-    def test_basic(self):
+    def test_full_cycle(self):
         events = []
 
         class Test(unittest.AsyncioTestCase):
-            async def asyncSetUp(self):
+            def setUp(self):
                 self.assertEqual(events, [])
+                events.append('setUp')
+
+            async def asyncSetUp(self):
+                self.assertEqual(events, ['setUp'])
                 events.append('asyncSetUp')
 
             async def test_func(self):
-                self.assertEqual(events, ['asyncSetUp'])
+                self.assertEqual(events, ['setUp',
+                                          'asyncSetUp'])
                 events.append('test')
                 self.addCleanup(self.on_cleanup)
 
             async def asyncTearDown(self):
-                self.assertEqual(events, ['asyncSetUp', 'test'])
+                self.assertEqual(events, ['setUp',
+                                          'asyncSetUp',
+                                          'test'])
                 events.append('asyncTearDown')
 
+            def tearDown(self):
+                self.assertEqual(events, ['setUp',
+                                          'asyncSetUp',
+                                          'test',
+                                          'asyncTearDown'])
+                events.append('tearDown')
+
             async def on_cleanup(self):
-                self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown'])
+                self.assertEqual(events, ['setUp',
+                                          'asyncSetUp',
+                                          'test',
+                                          'asyncTearDown',
+                                          'tearDown'])
                 events.append('cleanup')
 
         test = Test("test_func")
         test.run()
-        self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
+        self.assertEqual(events, ['setUp',
+                                  'asyncSetUp',
+                                  'test',
+                                  'asyncTearDown',
+                                  'tearDown',
+                                  'cleanup'])
 
 
     def test_exception_in_setup(self):
