@@ -324,10 +324,7 @@ class _TestProcess(BaseTestCase):
     def _test_report_parent_status(cls, wconn):
         from multiprocessing.process import parent_process
         wconn.send("alive" if parent_process().is_alive() else "not alive")
-
-        start_time = time.monotonic()
         parent_process().join(timeout=5)
-
         wconn.send("alive" if parent_process().is_alive() else "not alive")
 
     def test_process(self):

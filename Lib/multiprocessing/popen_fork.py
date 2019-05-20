@@ -78,8 +78,8 @@ class Popen(object):
         else:
             os.close(child_w)
             os.close(child_r)
-            self.finalizer = util.Finalize(self, os.close, (parent_r,))
-            self.finalizer = util.Finalize(self, os.close, (parent_w,))
+            self.finalizer = util.Finalize(self, util.close_fds,
+                                           (parent_r, parent_w,))
             self.sentinel = parent_r
             self._parent_w = parent_w
 
