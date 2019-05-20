@@ -69,11 +69,12 @@ The following function is the primary interface of this module:
           for line in f:
               process(line)
 
+   .. versionchanged:: 3.2
+      Can be used as a context manager.
+
    .. versionchanged:: 3.8
       The keyword parameters *mode* and *openhook* are now keyword-only.
 
-   .. versionchanged:: 3.2
-      Can be used as a context manager.
 
 The following functions use the global state created by :func:`fileinput.input`;
 if there is no active state, :exc:`RuntimeError` is raised.
@@ -161,9 +162,6 @@ available for subclassing as well:
           process(input)
 
 
-   .. versionchanged:: 3.8
-      The keyword parameter *mode* and *openhook* are now keyword-only.
-
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
@@ -172,6 +170,10 @@ available for subclassing as well:
 
    .. deprecated:: 3.8
       Support for :meth:`__getitem__` method is deprecated.
+
+   .. versionchanged:: 3.8
+      The keyword parameter *mode* and *openhook* are now keyword-only.
+
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is

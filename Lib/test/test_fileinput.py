@@ -90,9 +90,8 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
 
         pat = re.compile(r'LINE (\d+) OF FILE (\d+)')
 
-        start = 1
         if verbose:
-            print('%s. Simple iteration' % (start+0))
+            print('1. Simple iteration')
         fi = FileInput(files=(t1, t2, t3, t4))
         lines = list(fi)
         fi.close()
@@ -103,7 +102,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.filename(), t4)
 
         if verbose:
-            print('%s. Status variables' % (start+1))
+            print('2. Status variables')
         fi = FileInput(files=(t1, t2, t3, t4))
         s = "x"
         while s and s != 'Line 6 of file 2\n':
@@ -115,14 +114,14 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         self.assertFalse(fi.isstdin())
 
         if verbose:
-            print('%s. Nextfile' % (start+2))
+            print('3. Nextfile')
         fi.nextfile()
         self.assertEqual(fi.readline(), 'Line 1 of file 3\n')
         self.assertEqual(fi.lineno(), 22)
         fi.close()
 
         if verbose:
-            print('%s. Stdin' % (start+3))
+            print('4. Stdin')
         fi = FileInput(files=(t1, t2, t3, t4, '-'))
         savestdin = sys.stdin
         try:
@@ -136,7 +135,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
             sys.stdin = savestdin
 
         if verbose:
-            print('%s. Boundary conditions' % (start+4))
+            print('5. Boundary conditions')
         fi = FileInput(files=(t1, t2, t3, t4))
         self.assertEqual(fi.lineno(), 0)
         self.assertEqual(fi.filename(), None)
@@ -145,7 +144,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.filename(), None)
 
         if verbose:
-            print('%s. Inplace' % (start+5))
+            print('6. Inplace')
         savestdout = sys.stdout
         try:
             fi = FileInput(files=(t1, t2, t3, t4), inplace=1)
