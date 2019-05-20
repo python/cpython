@@ -917,6 +917,7 @@ class MathTests(unittest.TestCase):
         test_values = (
             list(range(1000))
             + list(range(10**6 - 1000, 10**6 + 1000))
+            + [2**e + i for e in range(60, 200) for i in range(-40, 40)]
             + [3**9999, 10**5001]
         )
 

@@ -538,6 +538,10 @@ unicodedata
 unittest
 --------
 
+* XXX Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
+  Appropriate new assert functions for testing have been added as well.
+  (Contributed by Lisa Roach in :issue:`26467`).
+
 * Added :func:`~unittest.addModuleCleanup()` and
   :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
   cleanups for :func:`~unittest.setUpModule()` and
