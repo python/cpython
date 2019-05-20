@@ -1,5 +1,5 @@
 import unittest
-from test import support
+from test import test_support
 from test import test_urllib
 
 import os
@@ -686,7 +686,7 @@ class HandlerTests(unittest.TestCase):
         h = urllib2.FileHandler()
         o = h.parent = MockOpener()
 
-        TESTFN = support.TESTFN
+        TESTFN = test_support.TESTFN
         urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = "hello, world\n"
         urls = [
@@ -1157,7 +1157,7 @@ class HandlerTests(unittest.TestCase):
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
         msg = "Basic Auth Realm was unquoted"
-        with support.check_warnings((msg, UserWarning)):
+        with test_support.check_warnings((msg, UserWarning)):
             self._test_basic_auth(opener, auth_handler, "Authorization",
                                   realm, http_handler, password_manager,
                                   "http://acme.example.com/protected",
@@ -1350,7 +1350,7 @@ class MiscTests(unittest.TestCase, FakeHTTPMixin):
         host = "localhost:7777?a=1 HTTP/1.1\r\nX-injected: header\r\nTEST: 123"
         schemeless_url = "//" + host + ":8080/test/?test=a"
         try:
-            # We explicitly test urllib.request.urlopen() instead of the top
+            # We explicitly test urllib2.urlopen() instead of the top
             # level 'def urlopen()' function defined in this... (quite ugly)
             # test suite.  They use different url opening codepaths.  Plain
             # urlopen uses FancyURLOpener which goes via a codepath that
@@ -1461,14 +1461,14 @@ class RequestTests(unittest.TestCase):
 
 def test_main(verbose=None):
     from test import test_urllib2
-    support.run_doctest(test_urllib2, verbose)
-    support.run_doctest(urllib2, verbose)
+    test_support.run_doctest(test_urllib2, verbose)
+    test_support.run_doctest(urllib2, verbose)
     tests = (TrivialTests,
              OpenerDirectorTests,
              HandlerTests,
              MiscTests,
              RequestTests)
-    support.run_unittest(*tests)
+    test_support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main(verbose=True)
