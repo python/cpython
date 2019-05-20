@@ -1,0 +1,1 @@
+Add SupportsIndex protocol to allow type checking to detect classes that can have `hex()` `oct()` and `bin()` called on them.
