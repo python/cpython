@@ -700,6 +700,9 @@ If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
 will not work correctly.
 
+When user code raises SystemExit either directly or by calling sys.exit, IDLE
+returns to a Shell prompt instead of exiting.
+
 User output in Shell
 ^^^^^^^^^^^^^^^^^^^^
 
