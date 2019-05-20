@@ -111,8 +111,9 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     else:
         from . import resource_tracker
         resource_tracker._resource_tracker._fd = tracker_fd
+        fd = pipe_handle
         parent_sentinel = os.dup(pipe_handle)
-    exitcode = _main(pipe_handle, parent_sentinel)
+    exitcode = _main(fd, parent_sentinel)
     sys.exit(exitcode)
 
 
