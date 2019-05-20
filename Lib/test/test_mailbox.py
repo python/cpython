@@ -10,7 +10,6 @@ import io
 import tempfile
 from test import support
 import unittest
-import textwrap
 import mailbox
 import glob
 
@@ -82,12 +81,12 @@ class TestMailbox(TestBase):
         for i in (1, 2, 3, 4, 5, 6):
             self._check_sample(self._box[keys[i]])
 
-    _nonascii_msg = textwrap.dedent("""\
+    _nonascii_msg = """\
             From: foo
             Subject: Falinaptár házhozszállítással. Már rendeltél?
 
             0
-            """)
+            """.dedent()
 
     def test_add_invalid_8bit_bytes_header(self):
         key = self._box.add(self._nonascii_msg.encode('latin-1'))
@@ -119,7 +118,7 @@ class TestMailbox(TestBase):
         self._box.close()
         self.assertMailboxEmpty()
 
-    _non_latin_bin_msg = textwrap.dedent("""\
+    _non_latin_bin_msg = """\
         From: foo@bar.com
         To: báz
         Subject: Maintenant je vous présente mon collègue, le pouf célèbre
@@ -129,7 +128,7 @@ class TestMailbox(TestBase):
         Content-Transfer-Encoding: 8bit
 
         Да, они летят.
-        """).encode('utf-8')
+        """.dedent().encode('utf-8')
 
     def test_add_8bit_body(self):
         key = self._box.add(self._non_latin_bin_msg)

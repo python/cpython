@@ -6,6 +6,7 @@
 # Written by Greg Ward <gward@python.net>
 
 import re
+import warnings
 
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten']
 
@@ -426,6 +427,9 @@ def dedent(text):
     """
     # Look for the longest leading string of spaces and tabs common to
     # all lines.
+
+    warnings.warn("textwrap.dedent is deprecated, use the str.dedent method instead",
+            PendingDeprecationWarning)
     return text.dedent()
 
 

@@ -43,7 +43,6 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
-import textwrap
 import threading
 import time
 import unittest
@@ -1436,7 +1435,7 @@ class ConfigFileTest(BaseTest):
     """
 
     def apply_config(self, conf, **kwargs):
-        file = io.StringIO(textwrap.dedent(conf))
+        file = io.StringIO(conf.dedent())
         logging.config.fileConfig(file, **kwargs)
 
     def test_config0_ok(self):
@@ -1457,7 +1456,7 @@ class ConfigFileTest(BaseTest):
     def test_config0_using_cp_ok(self):
         # A simple config file which overrides the default settings.
         with support.captured_stdout() as output:
-            file = io.StringIO(textwrap.dedent(self.config0))
+            file = io.StringIO(self.config0.dedent())
             cp = configparser.ConfigParser()
             cp.read_file(file)
             logging.config.fileConfig(cp)
@@ -1593,7 +1592,7 @@ class ConfigFileTest(BaseTest):
 
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
-        ini = textwrap.dedent("""
+        ini = """
             [formatters]
             keys=default
 
@@ -1612,7 +1611,7 @@ class ConfigFileTest(BaseTest):
             [logger_root]
             formatter=default
             handlers=console
-            """).strip()
+            """.dedent().strip()
         fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.ini')
         try:
             os.write(fd, ini.encode('ascii'))
@@ -3227,7 +3226,7 @@ class ConfigDictTest(BaseTest):
 
     def test_listen_config_1_ok(self):
         with support.captured_stdout() as output:
-            self.setup_via_listener(textwrap.dedent(ConfigFileTest.config1))
+            self.setup_via_listener(ConfigFileTest.config1.dedent())
             logger = logging.getLogger("compiler.parser")
             # Both will output a message
             logger.info(self.next_message())
@@ -3248,7 +3247,7 @@ class ConfigDictTest(BaseTest):
             return stuff[::-1]
 
         logger = logging.getLogger("compiler.parser")
-        to_send = textwrap.dedent(ConfigFileTest.config1)
+        to_send = ConfigFileTest.config1.dedent()
         # First, specify a verification function that will fail.
         # We expect to see no output, since our configuration
         # never took effect.
