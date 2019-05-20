@@ -1017,7 +1017,6 @@ fields:
 .. versionchanged:: 3.5
    Property docstrings became writeable.
 
-
 .. seealso::
 
     * See :class:`typing.NamedTuple` for a way to add type hints for named
