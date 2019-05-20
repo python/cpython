@@ -296,6 +296,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         })
     PYTHON_PRE_CONFIG = dict(DEFAULT_PRE_CONFIG,
         parse_argv=1,
+        coerce_c_locale=GET_DEFAULT_CONFIG,
+        utf8_mode=GET_DEFAULT_CONFIG,
     )
     ISOLATED_PRE_CONFIG = dict(DEFAULT_PRE_CONFIG,
         configure_locale=0,
@@ -303,6 +305,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         use_environment=0,
         utf8_mode=0,
         dev_mode=0,
+        coerce_c_locale=0,
     )
 
     COPY_PRE_CONFIG = [
@@ -435,6 +438,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
         ))
 
+    EXPECTED_CONFIG = None
+
     def main_xoptions(self, xoptions_list):
         xoptions = {}
         for opt in xoptions_list:
@@ -445,37 +450,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 xoptions[opt] = True
         return xoptions
 
-    def get_expected_config(self, expected_preconfig, expected, env, api,
-                            add_path=None):
-        if api == CONFIG_INIT_PYTHON:
-            default_config = self.PYTHON_CORE_CONFIG
-        elif api == CONFIG_INIT_ISOLATED:
-            default_config = self.ISOLATED_CORE_CONFIG
-        else:
-            default_config = self.DEFAULT_CORE_CONFIG
-        expected = dict(default_config, **expected)
-        expected['_config_init'] = api
-
+    def _get_expected_config(self, env):
         code = textwrap.dedent('''
             import json
             import sys
             import _testinternalcapi
 
             configs = _testinternalcapi.get_configs()
-            core_config = configs['core_config']
-            data = {
-                'stdio_encoding': sys.stdout.encoding,
-                'stdio_errors': sys.stdout.errors,
-                'prefix': sys.prefix,
-                'base_prefix': sys.base_prefix,
-                'exec_prefix': sys.exec_prefix,
-                'base_exec_prefix': sys.base_exec_prefix,
-                'filesystem_encoding': sys.getfilesystemencoding(),
-                'filesystem_errors': sys.getfilesystemencodeerrors(),
-                'module_search_paths': core_config['module_search_paths'],
-            }
 
-            data = json.dumps(data)
+            data = json.dumps(configs)
             data = data.encode('utf-8')
             sys.stdout.buffer.write(data)
             sys.stdout.buffer.flush()
@@ -484,10 +467,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # Use -S to not import the site module: get the proper configuration
         # when test_embed is run from a venv (bpo-35313)
         args = [sys.executable, '-S', '-c', code]
-        env = dict(env)
-        if not expected['isolated']:
-            env['PYTHONCOERCECLOCALE'] = '0'
-            env['PYTHONUTF8'] = '0'
         proc = subprocess.run(args, env=env,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT)
@@ -496,9 +475,45 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                             f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
         stdout = proc.stdout.decode('utf-8')
         try:
-            config = json.loads(stdout)
+            return json.loads(stdout)
         except json.JSONDecodeError:
             self.fail(f"fail to decode stdout: {stdout!r}")
+
+    def get_expected_config(self, expected_preconfig, expected, env, api,
+                            add_path=None):
+        cls = self.__class__
+        if cls.EXPECTED_CONFIG is None:
+            cls.EXPECTED_CONFIG = self._get_expected_config(env)
+        configs = {key: dict(value)
+                   for key, value in self.EXPECTED_CONFIG.items()}
+
+        pre_config = configs['pre_config']
+        for key, value in expected_preconfig.items():
+            if value is self.GET_DEFAULT_CONFIG:
+                expected_preconfig[key] = pre_config[key]
+
+        if not expected_preconfig['configure_locale'] or api == CONFIG_INIT:
+            # there is no easy way to get the locale encoding before
+            # setlocale(LC_CTYPE, "") is called: don't test encodings
+            for key in ('filesystem_encoding', 'filesystem_errors',
+                        'stdio_encoding', 'stdio_errors'):
+                expected[key] = self.IGNORE_CONFIG
+
+        if not expected_preconfig['configure_locale']:
+            # UTF-8 Mode depends on the locale. There is no easy way
+            # to guess if UTF-8 Mode will be enabled or not if the locale
+            # is not configured.
+            expected_preconfig['utf8_mode'] = self.IGNORE_CONFIG
+
+        if expected_preconfig['utf8_mode'] == 1:
+            if expected['filesystem_encoding'] is self.GET_DEFAULT_CONFIG:
+                expected['filesystem_encoding'] = 'utf-8'
+            if expected['filesystem_errors'] is self.GET_DEFAULT_CONFIG:
+                expected['filesystem_errors'] = self.UTF8_MODE_ERRORS
+            if expected['stdio_encoding'] is self.GET_DEFAULT_CONFIG:
+                expected['stdio_encoding'] = 'utf-8'
+            if expected['stdio_errors'] is self.GET_DEFAULT_CONFIG:
+                expected['stdio_errors'] = 'surrogateescape'
 
         if expected['executable'] is self.GET_DEFAULT_CONFIG:
             if sys.platform == 'win32':
@@ -511,24 +526,28 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if expected['program_name'] is self.GET_DEFAULT_CONFIG:
             expected['program_name'] = './_testembed'
 
+        core_config = configs['core_config']
         for key, value in expected.items():
             if value is self.GET_DEFAULT_CONFIG:
-                expected[key] = config[key]
+                expected[key] = core_config[key]
 
+        prepend_path = expected['module_search_path_env']
+        if prepend_path is not None:
+            expected['module_search_paths'] = [prepend_path, *expected['module_search_paths']]
         if add_path is not None:
-            expected['module_search_paths'].append(add_path)
+            expected['module_search_paths'] = [*expected['module_search_paths'], add_path]
 
-        if not expected_preconfig['configure_locale']:
-            # there is no easy way to get the locale encoding before
-            # setlocale(LC_CTYPE, "") is called: don't test encodings
-            for key in ('filesystem_encoding', 'filesystem_errors',
-                        'stdio_encoding', 'stdio_errors'):
-                expected[key] = self.IGNORE_CONFIG
-
-        return expected
+        for key in self.COPY_PRE_CONFIG:
+            if key not in expected_preconfig:
+                expected_preconfig[key] = expected[key]
 
     def check_pre_config(self, config, expected):
-        self.assertEqual(config['pre_config'], expected)
+        pre_config = dict(config['pre_config'])
+        for key, value in list(expected.items()):
+            if value is self.IGNORE_CONFIG:
+                del pre_config[key]
+                del expected[key]
+        self.assertEqual(pre_config, expected)
 
     def check_core_config(self, config, expected):
         core_config = dict(config['core_config'])
@@ -567,10 +586,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         for key in list(env):
             if key.startswith('PYTHON'):
                 del env[key]
-        # Disable C locale coercion and UTF-8 mode to not depend
-        # on the current locale
-        env['PYTHONCOERCECLOCALE'] = '0'
-        env['PYTHONUTF8'] = '0'
 
         if api == CONFIG_INIT_ISOLATED:
             default_preconfig = self.ISOLATED_PRE_CONFIG
@@ -583,12 +598,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         expected_preconfig = dict(default_preconfig, **expected_preconfig)
         if expected_config is None:
             expected_config = {}
-        expected_config = self.get_expected_config(expected_preconfig,
-                                                   expected_config, env,
-                                                   api, add_path)
-        for key in self.COPY_PRE_CONFIG:
-            if key not in expected_preconfig:
-                expected_preconfig[key] = expected_config[key]
+
+        if api == CONFIG_INIT_PYTHON:
+            default_config = self.PYTHON_CORE_CONFIG
+        elif api == CONFIG_INIT_ISOLATED:
+            default_config = self.ISOLATED_CORE_CONFIG
+        else:
+            default_config = self.DEFAULT_CORE_CONFIG
+        expected_config = dict(default_config, **expected_config)
+        expected_config['_config_init'] = api
+
+        self.get_expected_config(expected_preconfig,
+                                 expected_config, env,
+                                 api, add_path)
 
         out, err = self.run_embedded_interpreter(testname, env=env)
         if stderr is None and not expected_config['verbose']:
@@ -624,10 +646,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'quiet': 1,
             'buffered_stdio': 0,
 
-            'stdio_encoding': 'utf-8',
-            'stdio_errors': 'surrogateescape',
-            'filesystem_encoding': 'utf-8',
-            'filesystem_errors': self.UTF8_MODE_ERRORS,
             'user_site_directory': 0,
             'pathconfig_warnings': 0,
         }
@@ -650,8 +668,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
-            'filesystem_encoding': 'utf-8',
-            'filesystem_errors': self.UTF8_MODE_ERRORS,
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
@@ -679,43 +695,42 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_config("init_from_config", config, preconfig)
 
-    INIT_ENV_PRECONFIG = {
-        'allocator': PYMEM_ALLOCATOR_MALLOC,
-    }
-    INIT_ENV_CONFIG = {
-        'use_hash_seed': 1,
-        'hash_seed': 42,
-        'tracemalloc': 2,
-        'import_time': 1,
-        'malloc_stats': 1,
-        'inspect': 1,
-        'optimization_level': 2,
-        'pycache_prefix': 'env_pycache_prefix',
-        'write_bytecode': 0,
-        'verbose': 1,
-        'buffered_stdio': 0,
-        'stdio_encoding': 'iso8859-1',
-        'stdio_errors': 'replace',
-        'user_site_directory': 0,
-        'faulthandler': 1,
-    }
-
     def test_init_env(self):
-        self.check_config("init_env", self.INIT_ENV_CONFIG, self.INIT_ENV_PRECONFIG)
+        preconfig = {
+            'allocator': PYMEM_ALLOCATOR_MALLOC,
+        }
+        config = {
+            'use_hash_seed': 1,
+            'hash_seed': 42,
+            'tracemalloc': 2,
+            'import_time': 1,
+            'malloc_stats': 1,
+            'inspect': 1,
+            'optimization_level': 2,
+            'module_search_path_env': '/my/path',
+            'pycache_prefix': 'env_pycache_prefix',
+            'write_bytecode': 0,
+            'verbose': 1,
+            'buffered_stdio': 0,
+            'stdio_encoding': 'iso8859-1',
+            'stdio_errors': 'replace',
+            'user_site_directory': 0,
+            'faulthandler': 1,
+            'warnoptions': ['EnvVar'],
+        }
+        self.check_config("init_env", config, preconfig)
 
     def test_init_env_dev_mode(self):
-        preconfig = dict(self.INIT_ENV_PRECONFIG,
-                      allocator=PYMEM_ALLOCATOR_DEBUG)
-        config = dict(self.INIT_ENV_CONFIG,
-                      dev_mode=1,
+        preconfig = dict(allocator=PYMEM_ALLOCATOR_DEBUG)
+        config = dict(dev_mode=1,
+                      faulthandler=1,
                       warnoptions=['default'])
         self.check_config("init_env_dev_mode", config, preconfig)
 
     def test_init_env_dev_mode_alloc(self):
-        preconfig = dict(self.INIT_ENV_PRECONFIG,
-                         allocator=PYMEM_ALLOCATOR_MALLOC)
-        config = dict(self.INIT_ENV_CONFIG,
-                      dev_mode=1,
+        preconfig = dict(allocator=PYMEM_ALLOCATOR_MALLOC)
+        config = dict(dev_mode=1,
+                      faulthandler=1,
                       warnoptions=['default'])
         self.check_config("init_env_dev_mode_alloc", config, preconfig)
 
@@ -800,6 +815,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # _PyPreConfig.configure_locale=0
         preconfig = {
             'configure_locale': 0,
+            'coerce_c_locale': 0,
         }
         self.check_config("init_dont_configure_locale", {}, preconfig,
                           api=CONFIG_INIT_PYTHON)
