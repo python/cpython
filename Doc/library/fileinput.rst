@@ -70,7 +70,7 @@ The following function is the primary interface of this module:
               process(line)
 
    .. versionchanged:: 3.8
-      The keyword parameter *mode* and *openhook* are now keyword-only.
+      The keyword parameters *mode* and *openhook* are now keyword-only.
 
    .. versionchanged:: 3.2
       Can be used as a context manager.
