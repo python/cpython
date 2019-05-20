@@ -82,18 +82,15 @@ class LineReader:
 
 class BufferSizesTests(BaseTests, unittest.TestCase):
     def test_buffer_sizes(self):
-        # First, run the tests with default and teeny buffer size.
-        for round in (0, 1):
-            t1 = self.writeTmp(''.join("Line %s of file 1\n" % (i+1) for i in range(15)))
-            t2 = self.writeTmp(''.join("Line %s of file 2\n" % (i+1) for i in range(10)))
-            t3 = self.writeTmp(''.join("Line %s of file 3\n" % (i+1) for i in range(5)))
-            t4 = self.writeTmp(''.join("Line %s of file 4\n" % (i+1) for i in range(1)))
-            self.buffer_size_test(t1, t2, t3, t4, round)
+        
+        t1 = self.writeTmp(''.join("Line %s of file 1\n" % (i+1) for i in range(15)))
+        t2 = self.writeTmp(''.join("Line %s of file 2\n" % (i+1) for i in range(10)))
+        t3 = self.writeTmp(''.join("Line %s of file 3\n" % (i+1) for i in range(5)))
+        t4 = self.writeTmp(''.join("Line %s of file 4\n" % (i+1) for i in range(1)))
 
-    def buffer_size_test(self, t1, t2, t3, t4, round=0):
         pat = re.compile(r'LINE (\d+) OF FILE (\d+)')
 
-        start = 1 + round*6
+        start = 1
         if verbose:
             print('%s. Simple iteration' % (start+0))
         fi = FileInput(files=(t1, t2, t3, t4))
@@ -116,7 +113,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.filelineno(), 6)
         self.assertFalse(fi.isfirstline())
         self.assertFalse(fi.isstdin())
-
+ 
         if verbose:
             print('%s. Nextfile' % (start+2))
         fi.nextfile()
@@ -529,7 +526,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
 class MockFileInput:
     """A class that mocks out fileinput.FileInput for use during unit tests"""
 
-    def __init__(self, files=None, inplace=False, backup="",
+    def __init__(self, files=None, inplace=False, backup="", *,
                  mode="r", openhook=None):
         self.files = files
         self.inplace = inplace
