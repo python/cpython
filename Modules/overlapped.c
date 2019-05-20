@@ -595,8 +595,8 @@ Overlapped_clear(OverlappedObject *self)
                 // We've received a message, free the result tuple.
                 Py_CLEAR(self->read_from.result);
             }
-            if(self->read_from.buffer) {
-                Py_CLEAR(self->read_from.buffer);
+            if(self->read_from.allocated_buffer) {
+                Py_CLEAR(self->read_from.allocated_buffer);
             }
             break;
         }
@@ -1451,7 +1451,7 @@ PyDoc_STRVAR(
     "Connect to the pipe for asynchronous I/O (overlapped).");
 
 static PyObject *
-overlapped_ConnectPipe(OverlappedObject *self, PyObject *args)
+overlapped_ConnectPipe(PyObject *self, PyObject *args)
 {
     PyObject *AddressObj;
     wchar_t *Address;
