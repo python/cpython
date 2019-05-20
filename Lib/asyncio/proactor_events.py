@@ -472,7 +472,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
         if not data:
             return
 
-        if self._address and addr not in (None, self._address):
+        if self._address is not None and addr not in (None, self._address):
             raise ValueError(
                 f'Invalid address: must be None or {self._address}')
 
@@ -507,7 +507,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
                 return
 
             data, addr = self._buffer.pop()
-            if self._address:
+            if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock, data)
             else:
                 self._write_fut = self._loop._proactor.sendto(self._sock, data, addr=addr)
@@ -536,14 +536,14 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
                     data = None
                     return
 
-                if self._address:
+                if self._address is not None:
                     data, addr = res, self._address
                 else:
                     data, addr = res
 
             if self._conn_lost:
                 return
-            if self._address:
+            if self._address is not None:
                 self._read_fut = self._loop._proactor.recv(self._sock, 4096)
             else:
                 self._read_fut = self._loop._proactor.recvfrom(self._sock, 4096)
