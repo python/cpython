@@ -846,13 +846,28 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
 
     return archive_name
 
-def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
+def _make_zipfile(base_name, base_dir, compress="zlib",
+                  verbose=0, dry_run=0, logger=None):
     """Create a zip file from all the files under 'base_dir'.
+
+    'compress' must be "zlib" (the default), "bzip2", "xz", or None.
 
     The output zip file will be named 'base_name' + ".zip".  Returns the
     name of the output zip file.
     """
     import zipfile  # late import for breaking circular dependency
+
+    if compress is None:
+        zip_compression = zipfile.ZIP_STORED
+    elif _ZLIB_SUPPORTED and compress == 'zlib':
+        zip_compression = zipfile.ZIP_DEFLATED
+    elif _BZ2_SUPPORTED and compress == 'bzip2':
+        zip_compression = zipfile.ZIP_BZIP2
+    elif _LZMA_SUPPORTED and compress == 'xz':
+        zip_compression = zipfile.ZIP_LZMA
+    else:
+        raise ValueError("bad value for 'compress', or compression format not "
+                         "supported : {0}".format(compress))
 
     zip_filename = base_name + ".zip"
     archive_dir = os.path.dirname(base_name)
@@ -869,7 +884,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
 
     if not dry_run:
         with zipfile.ZipFile(zip_filename, "w",
-                             compression=zipfile.ZIP_DEFLATED) as zf:
+                             compression=zip_compression) as zf:
             path = os.path.normpath(base_dir)
             if path != os.curdir:
                 zf.write(path, path)
@@ -891,21 +906,27 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
     return zip_filename
 
 _ARCHIVE_FORMATS = {
-    'tar':   (_make_tarball, [('compress', None)], "uncompressed tar file"),
+    'tar': (_make_tarball, [('compress', None)], "uncompressed tar file"),
+    'zip_stored': (_make_zipfile, [('compress', None)], "uncompressed zip file"),
 }
 
 if _ZLIB_SUPPORTED:
     _ARCHIVE_FORMATS['gztar'] = (_make_tarball, [('compress', 'gzip')],
-                                "gzip'ed tar-file")
-    _ARCHIVE_FORMATS['zip'] = (_make_zipfile, [], "ZIP file")
+                                 "gzip'ed tar-file")
+    _ARCHIVE_FORMATS['zip'] = (_make_zipfile, [('compress', 'zlib')],
+                               "ZIP file")
 
 if _BZ2_SUPPORTED:
     _ARCHIVE_FORMATS['bztar'] = (_make_tarball, [('compress', 'bzip2')],
-                                "bzip2'ed tar-file")
+                                 "bzip2'ed tar-file")
+    _ARCHIVE_FORMATS['zip_bzip2'] = (_make_zipfile, [('compress', 'bzip2')],
+                                     "bzip2'ed zip-file")
 
 if _LZMA_SUPPORTED:
     _ARCHIVE_FORMATS['xztar'] = (_make_tarball, [('compress', 'xz')],
-                                "xz'ed tar-file")
+                                 "xz'ed tar-file")
+    _ARCHIVE_FORMATS['zip_lzma'] = (_make_zipfile, [('compress', 'xz')],
+                                    "xz'ed zip-file")
 
 def get_archive_formats():
     """Returns a list of supported formats for archiving and unarchiving.
@@ -981,7 +1002,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     for arg, val in format_info[1]:
         kwargs[arg] = val
 
-    if format != 'zip':
+    if not format.startswith('zip'):
         kwargs['owner'] = owner
         kwargs['group'] = group
 
