@@ -63,7 +63,7 @@ typedef struct {
             // A (buffer, (host, port)) tuple
             PyObject *result;
             // The actual read buffer
-            PyObject *buffer;
+            PyObject *allocated_buffer;
             struct sockaddr_in6 address;
             int address_length;
         } read_from;
@@ -594,8 +594,8 @@ Overlapped_clear(OverlappedObject *self)
 				// We've received a message, free the result tuple.
 				Py_CLEAR(self->read_from.result);
 			}
-			if(self->read_from.buffer) {
-				Py_CLEAR(self->read_from.buffer);
+			if(self->read_from.allocated_buffer) {
+				Py_CLEAR(self->read_from.allocated_buffer);
 			}
 			break;
 		case TYPE_WRITE:
@@ -796,7 +796,7 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
             }
             else if (self->type == TYPE_READ_FROM &&
                      (self->read_from.result != NULL ||
-                      self->read_from.buffer != NULL))
+                      self->read_from.allocated_buffer != NULL))
             {
                 break;
             }
@@ -815,10 +815,11 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
             Py_INCREF(self->allocated_buffer);
             return self->allocated_buffer;
         case TYPE_READ_FROM:
-            assert(PyBytes_CheckExact(self->read_from.buffer));
+            assert(PyBytes_CheckExact(self->read_from.allocated_buffer));
 
-            if (transferred != PyBytes_GET_SIZE(self->read_from.buffer) &&
-                _PyBytes_Resize(&self->read_from.buffer, transferred))
+            if (transferred != PyBytes_GET_SIZE(
+                    self->read_from.allocated_buffer) &&
+                _PyBytes_Resize(&self->read_from.allocated_buffer, transferred))
             {
                 return NULL;
             }
@@ -840,12 +841,12 @@ Overlapped_getresult(OverlappedObject *self, PyObject *args)
 
             // first item: message
             PyTuple_SET_ITEM(self->read_from.result, 0,
-                             self->read_from.buffer);
+                             self->read_from.allocated_buffer);
             // second item: address
             PyTuple_SET_ITEM(self->read_from.result, 1, addr);
 
             Py_INCREF(self->read_from.result);
-            Py_INCREF(self->read_from.buffer);
+            Py_INCREF(self->read_from.allocated_buffer);
             return self->read_from.result;
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
@@ -1670,7 +1671,7 @@ Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *args)
 
     self->type = TYPE_READ_FROM;
     self->handle = handle;
-    self->read_from.buffer = buf;
+    self->read_from.allocated_buffer = buf;
     memset(&self->read_from.address, 0, sizeof(self->read_from.address));
     self->read_from.address_length = sizeof(self->read_from.address);
 
