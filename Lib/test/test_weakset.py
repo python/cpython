@@ -434,6 +434,9 @@ class TestWeakSet(unittest.TestCase):
             self.assertGreaterEqual(n2, 0)
             self.assertLessEqual(n2, n1)
 
+    def test_repr(self):
+        assert repr(self.s) == repr(self.s.data)
+
 
 if __name__ == "__main__":
     unittest.main()
