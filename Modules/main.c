@@ -19,8 +19,7 @@
 #  include <unistd.h>   /* getpid() */
 #endif
 #ifdef MS_WINDOWS
-#  include <winternl.h>      /* NTSTATUS */
-#  include <ntstatus.h>   /* STATUS_CONTROL_C_EXIT */
+#  include <windows.h>  /* STATUS_CONTROL_C_EXIT */
 #endif
 /* End of includes for exit_sigint() */
 
