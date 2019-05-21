@@ -243,7 +243,7 @@ class _BaseStreamServer:
         done, pending = await wait(pending, timeout=self._shutdown_timeout)
         for task in pending:
             self._loop.call_exception_handler({
-                "message": f'{task} has not finished on stream server closing'
+                "message": f'{task} was not finished on stream server closing'
             })
 
 
@@ -1129,3 +1129,9 @@ class Stream:
         if val == b'':
             raise StopAsyncIteration
         return val
+
+    # async def __aenter__(self):
+    #     return self
+
+    # async def __aexit__(self, exc_type, exc_val, exc_tb):
+    #     await self.close()

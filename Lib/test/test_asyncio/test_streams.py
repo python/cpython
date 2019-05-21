@@ -1362,7 +1362,6 @@ os.close(fd)
         self.assertTrue(fut.done())
         self.assertTrue(server_stream_aborted)
 
-
     def test_stream_server_abort(self):
         server_stream_aborted = False
         fut = self.loop.create_future()
@@ -1394,6 +1393,82 @@ os.close(fd)
         self.assertEqual(messages, [])
         self.assertTrue(fut.done())
         self.assertTrue(server_stream_aborted)
+
+    def test_stream_shutdown_hung_task(self):
+        fut1 = self.loop.create_future()
+        fut2 = self.loop.create_future()
+
+        async def handle_client(stream):
+            while True:
+                await asyncio.sleep(0.01)
+
+        async def client(srv):
+            addr = srv.served_names()[0]
+            stream = await asyncio.connect(*addr)
+            fut1.set_result(None)
+            await fut2
+            self.assertEqual(b'', await stream.readline())
+            await stream.close()
+
+        async def test():
+            async with asyncio.StreamServer(handle_client,
+                                            '127.0.0.1',
+                                            0,
+                                            shutdown_timeout=0.5) as server:
+                await server.start_serving()
+                task = asyncio.create_task(client(server))
+                await fut1
+                await server.close()
+                fut2.set_result(None)
+                await task
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(test())
+        self.assertEqual(messages, [])
+        self.assertTrue(fut1.done())
+        self.assertTrue(fut2.done())
+
+    def test_stream_shutdown_hung_task_prevents_cancellation(self):
+        fut1 = self.loop.create_future()
+        fut2 = self.loop.create_future()
+        do_handle_client = True
+
+        async def handle_client(stream):
+            while do_handle_client:
+                with contextlib.suppress(asyncio.CancelledError):
+                    await asyncio.sleep(0.01)
+
+        async def client(srv):
+            addr = srv.served_names()[0]
+            stream = await asyncio.connect(*addr)
+            fut1.set_result(None)
+            await fut2
+            self.assertEqual(b'', await stream.readline())
+            await stream.close()
+
+        async def test():
+            async with asyncio.StreamServer(handle_client,
+                                            '127.0.0.1',
+                                            0,
+                                            shutdown_timeout=0.5) as server:
+                await server.start_serving()
+                task = asyncio.create_task(client(server))
+                await fut1
+                await server.close()
+                nonlocal do_handle_client
+                do_handle_client = False
+                fut2.set_result(None)
+                await task
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(test())
+        self.assertEqual(1, len(messages))
+        self.assertRegex(messages[0]['message'],
+                         "<Task pending .+ was not finished on stream server closing")
+        self.assertTrue(fut1.done())
+        self.assertTrue(fut2.done())
 
 
 if __name__ == '__main__':
