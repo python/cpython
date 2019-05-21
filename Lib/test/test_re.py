@@ -1761,24 +1761,28 @@ class ReTests(unittest.TestCase):
     def test_match_repr(self):
         for string in '[abracadabra]', S('[abracadabra]'):
             m = re.search(r'(.+)(.*?)\1', string)
-            self.assertEqual(repr(m), "<%s.%s object; "
-                             "span=(1, 12), match='abracadabra'>" %
-                             (type(m).__module__, type(m).__qualname__))
+            pattern = r"<(%s\.)?%s object; span=\(1, 12\), match='abracadabra'>" % (
+                type(m).__module__, type(m).__qualname__
+            )
+            self.assertRegex(repr(m), pattern)
         for string in (b'[abracadabra]', B(b'[abracadabra]'),
                        bytearray(b'[abracadabra]'),
                        memoryview(b'[abracadabra]')):
             m = re.search(br'(.+)(.*?)\1', string)
-            self.assertEqual(repr(m), "<%s.%s object; "
-                             "span=(1, 12), match=b'abracadabra'>" %
-                             (type(m).__module__, type(m).__qualname__))
+            pattern = r"<(%s\.)?%s object; span=\(1, 12\), match=b'abracadabra'>" % (
+                type(m).__module__, type(m).__qualname__
+            )
+            self.assertRegex(repr(m), pattern)
 
         first, second = list(re.finditer("(aa)|(bb)", "aa bb"))
-        self.assertEqual(repr(first), "<%s.%s object; "
-                         "span=(0, 2), match='aa'>" %
-                         (type(second).__module__, type(first).__qualname__))
-        self.assertEqual(repr(second), "<%s.%s object; "
-                         "span=(3, 5), match='bb'>" %
-                         (type(second).__module__, type(second).__qualname__))
+        pattern = r"<(%s\.)?%s object; span=\(0, 2\), match='aa'>" % (
+            type(second).__module__, type(second).__qualname__
+        )
+        self.assertRegex(repr(first), pattern)
+        pattern = r"<(%s\.)?%s object; span=\(3, 5\), match='bb'>" % (
+            type(second).__module__, type(second).__qualname__
+        )
+        self.assertRegex(repr(second), pattern)
 
     def test_zerowidth(self):
         # Issues 852532, 1647489, 3262, 25054.
