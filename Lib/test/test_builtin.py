@@ -369,7 +369,8 @@ class BuiltinTest(unittest.TestCase):
 
         Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag set,
         and make sure the generated code object has the CO_COROUTINE flag set in
-        order to execute it with `yield from eval(.....)` instead of exec.
+        order to execute it with  `await eval(.....)` instead of exec, or via a
+        FunctionType.
         """
 
         # helper function just to check we can run top=level async-for
@@ -399,13 +400,13 @@ class BuiltinTest(unittest.TestCase):
                                  msg=f"{source=} {mode=}")
 
 
-                # test we can create and  advance a fucntion type
-
+                # test we can create and  advance a function type
                 globals_ = {'asyncio': asyncio, 'a':0, 'arange': arange}
                 async_f = FunctionType(co, globals_)
                 asyncio.run(async_f())
                 self.assertEqual(globals_['a'], 1)
 
+                # test we can await-eval,
                 globals_ = {'asyncio': asyncio, 'a':0, 'arange': arange}
                 asyncio.run(eval(co, globals_))
                 self.assertEqual(globals_['a'], 1)
