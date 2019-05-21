@@ -186,7 +186,7 @@ class ThreadPoolExecutor(_base.Executor):
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):
-        #if idle threads are available, don't spin new threads
+        # if idle threads are available, don't spin new threads
         if self._idle_semaphore.acquire(timeout=0):
             return
 
