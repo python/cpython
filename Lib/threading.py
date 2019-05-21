@@ -34,7 +34,10 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
-get_native_id = _thread.get_native_id
+try:
+    get_native_id = _thread.get_native_id
+except AttributeError:
+    get_native_id = lambda: None
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -791,7 +794,7 @@ class Thread:
         else:
             self._daemonic = current_thread().daemon
         self._ident = None
-        self._native_id = 0
+        self._native_id = None
         self._tstate_lock = None
         self._started = Event()
         self._is_stopped = False

@@ -308,6 +308,7 @@ PyThread_get_thread_ident(void)
     return (unsigned long) threadid;
 }
 
+#ifdef PY_HAVE_THREAD_NATIVE_ID
 unsigned long
 PyThread_get_thread_native_id(void)
 {
@@ -328,6 +329,7 @@ PyThread_get_thread_native_id(void)
 #endif
     return (unsigned long) native_id;
 }
+#endif
 
 void _Py_NO_RETURN
 PyThread_exit_thread(void)
