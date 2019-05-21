@@ -73,7 +73,7 @@ def get_ident():
 
 def get_native_id():
     """Dummy implementation of _thread.get_native_id()."""
-    return 0
+    return None
 
 def allocate_lock():
     """Dummy implementation of _thread.allocate_lock()."""
