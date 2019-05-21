@@ -200,7 +200,7 @@ class _BaseStreamServer:
         tasks = list(self._streams.values())
         await gather(*[stream.close() for stream in self._streams])
         await self._low_server.wait_closed()
-        await self._warn_active_tasks(tasks)
+        await self._shutdown_active_tasks(tasks)
 
     async def abort(self):
         if self._low_server is None:
@@ -209,7 +209,7 @@ class _BaseStreamServer:
         tasks = list(self._streams.values())
         await gather(*[stream.abort() for stream in self._streams])
         await self._low_server.wait_closed()
-        await self._warn_active_tasks(tasks)
+        await self._shutdown_active_tasks(tasks)
 
     async def __aenter__(self):
         await self.bind()
@@ -224,7 +224,7 @@ class _BaseStreamServer:
     def _detach(self, stream, task):
         del self._streams[stream]
 
-    async def _warn_active_tasks(self, tasks):
+    async def _shutdown_active_tasks(self, tasks):
         if not tasks:
             return
 
