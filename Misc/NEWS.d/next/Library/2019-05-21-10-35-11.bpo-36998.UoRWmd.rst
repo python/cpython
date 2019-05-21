@@ -1,0 +1,2 @@
+Fix distutils sdist's MANIFEST writing to handle filenames that are
+undecodable with the current locale.
