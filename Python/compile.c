@@ -2609,7 +2609,9 @@ static int
 compiler_async_for(struct compiler *c, stmt_ty s)
 {
     basicblock *start, *except, *end;
-    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
+    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+        c->u->u_ste->ste_coroutine = 1;
+    } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
         return compiler_error(c, "'async for' outside async function");
     }
 
@@ -4564,7 +4566,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
-    if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
+    if (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT){
+        c->u->u_ste->ste_coroutine = 1;
+    } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
         return compiler_error(c, "'async with' outside async function");
     }
 
@@ -4773,12 +4777,16 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         ADDOP(c, YIELD_FROM);
         break;
     case Await_kind:
-        if (c->u->u_ste->ste_type != FunctionBlock)
-            return compiler_error(c, "'await' outside function");
+        if (!(c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT)){
+            if (c->u->u_ste->ste_type != FunctionBlock){
+                return compiler_error(c, "'await' outside function");
+            }
 
-        if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-                c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION)
-            return compiler_error(c, "'await' outside async function");
+            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION && 
+                    c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION){
+                return compiler_error(c, "'await' outside async function");
+            }
+        }
 
         VISIT(c, expr, e->v.Await.value);
         ADDOP(c, GET_AWAITABLE);
@@ -5711,6 +5719,12 @@ compute_code_flags(struct compiler *c)
 
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
+
+    if ((c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+         ste->ste_coroutine &&
+         !ste->ste_generator) {
+        flags |= CO_COROUTINE;
+    }
 
     return flags;
 }
