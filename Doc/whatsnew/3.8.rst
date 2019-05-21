@@ -344,6 +344,9 @@ Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
 numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 
+Added new function :func:`math.isqrt` for computing integer square roots.
+(Contributed by Mark Dickinson in :issue:`36887`.)
+
 os
 --
 
@@ -534,6 +537,10 @@ unicodedata
 
 unittest
 --------
+
+* XXX Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
+  Appropriate new assert functions for testing have been added as well.
+  (Contributed by Lisa Roach in :issue:`26467`).
 
 * Added :func:`~unittest.addModuleCleanup()` and
   :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
@@ -780,10 +787,6 @@ Deprecated
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
-* The function :func:`~inspect.getfullargspec` in the :mod:`inspect`
-  module is deprecated in favor of the :func:`inspect.signature`
-  API.  (Contributed by Pablo Galindo in :issue:`36751`.)
-
 
 API and Feature Removals
 ========================
@@ -824,6 +827,10 @@ The following features and APIs have been removed from Python 3.8:
 * The ``Cache`` and ``Statement`` objects of the :mod:`sqlite3` module are not
   exposed to the user.
   (Contributed by Aviv Palivoda in :issue:`30262`.)
+
+* The ``bufsize`` keyword argument of :func:`fileinput.input` and
+  :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
+  has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
 
 
 Porting to Python 3.8

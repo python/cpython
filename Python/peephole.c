@@ -302,11 +302,19 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case LOAD_CONST:
                 cumlc = lastlc + 1;
                 if (nextop != POP_JUMP_IF_FALSE  ||
-                    !ISBASICBLOCK(blocks, op_start, i + 1)  ||
-                    !PyObject_IsTrue(PyList_GET_ITEM(consts, get_arg(codestr, i))))
+                    !ISBASICBLOCK(blocks, op_start, i + 1)) {
                     break;
-                fill_nops(codestr, op_start, nexti + 1);
-                cumlc = 0;
+                }
+                PyObject* cnt = PyList_GET_ITEM(consts, get_arg(codestr, i));
+                int is_true = PyObject_IsTrue(cnt);
+                if (is_true == 1) {
+                    fill_nops(codestr, op_start, nexti + 1);
+                    cumlc = 0;
+                } else if (is_true == 0) {
+                    h = get_arg(codestr, nexti) / sizeof(_Py_CODEUNIT);
+                    tgt = find_op(codestr, codelen, h);
+                    fill_nops(codestr, op_start, tgt);
+                }
                 break;
 
                 /* Try to fold tuples of constants.
