@@ -1330,6 +1330,71 @@ os.close(fd)
         self.loop.run_until_complete(test())
         self.assertEqual(messages, [])
 
+    def test_stream_server_close(self):
+        server_stream_aborted = False
+        fut = self.loop.create_future()
+
+        async def handle_client(stream):
+            await fut
+            self.assertEqual(b'', await stream.readline())
+            nonlocal server_stream_aborted
+            server_stream_aborted = True
+
+        async def client(srv):
+            addr = srv.served_names()[0]
+            stream = await asyncio.connect(*addr)
+            fut.set_result(None)
+            self.assertEqual(b'', await stream.readline())
+            await stream.close()
+
+        async def test():
+            async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as server:
+                await server.start_serving()
+                task = asyncio.create_task(client(server))
+                await fut
+                await server.close()
+                await task
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(test())
+        self.assertEqual(messages, [])
+        self.assertTrue(fut.done())
+        self.assertTrue(server_stream_aborted)
+
+
+    def test_stream_server_abort(self):
+        server_stream_aborted = False
+        fut = self.loop.create_future()
+
+        async def handle_client(stream):
+            await fut
+            self.assertEqual(b'', await stream.readline())
+            nonlocal server_stream_aborted
+            server_stream_aborted = True
+
+        async def client(srv):
+            addr = srv.served_names()[0]
+            stream = await asyncio.connect(*addr)
+            fut.set_result(None)
+            self.assertEqual(b'', await stream.readline())
+            await stream.close()
+
+        async def test():
+            async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as server:
+                await server.start_serving()
+                task = asyncio.create_task(client(server))
+                await fut
+                await server.abort()
+                await task
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(test())
+        self.assertEqual(messages, [])
+        self.assertTrue(fut.done())
+        self.assertTrue(server_stream_aborted)
+
 
 if __name__ == '__main__':
     unittest.main()

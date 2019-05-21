@@ -197,8 +197,10 @@ class _BaseStreamServer:
         if self._low_server is None:
             return
         self._low_server.close()
+        streams = list(self._streams.keys())
         tasks = list(self._streams.values())
-        await wait([stream.close() for stream in self._streams])
+        if tasks:
+            await wait([stream.close() for stream in streams])
         await self._low_server.wait_closed()
         self._low_server = None
         await self._shutdown_active_tasks(tasks)
@@ -207,8 +209,10 @@ class _BaseStreamServer:
         if self._low_server is None:
             return
         self._low_server.close()
+        streams = list(self._streams.keys())
         tasks = list(self._streams.values())
-        await wait([stream.abort() for stream in self._streams])
+        if streams:
+            await wait([stream.abort() for stream in streams])
         await self._low_server.wait_closed()
         self._low_server = None
         await self._shutdown_active_tasks(tasks)
@@ -660,6 +664,8 @@ class Stream:
     adds a transport property which references the Transport
     directly.
     """
+
+    # TODO: add __aenter__ / __aexit__ to close stream
 
     _source_traceback = None
 
