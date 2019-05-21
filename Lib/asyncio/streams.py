@@ -135,6 +135,14 @@ async def start_server(client_connected_cb, host=None, port=None, *,
 
 class _BaseStreamServer:
     # TODO: API for enumerating open server streams
+    # TODO: add __repr__
+
+    # Design note.
+    # StreamServer and UnixStreamServer are exposed as FINAL classes, not function
+    # factories.
+    # async with serve(host, port) as server:
+    #      server.start_serving()
+    # looks ugly.
 
     def __init__(self, client_connected_cb,
                  limit=_DEFAULT_LIMIT,
@@ -155,9 +163,24 @@ class _BaseStreamServer:
         self._low_server = await self._bind()
 
     def is_bound(self):
+        # TODO: make is_bound and is_serving properties?
         return self._low_server is not None
 
+    def served_names(self):
+        # The property name is questionable
+        # Also, should it be a property?
+        # API consistency does matter
+        # I don't want to expose plain socket.socket objects as low-level
+        # asyncio.Server does but exposing served IP addresses or unix paths
+        # is useful
+        #
+        # multiple value for socket bound to both IPv4 and IPv6 families
+        if self._low_server is None:
+            return []
+        return [sock.getsockname() for sock in self._low_server.sockets]
+
     def is_serving(self):
+        # TODO: make is_bound and is_serving properties?
         if self._low_server is None:
             return False
         return self._low_server.is_serving()
@@ -226,6 +249,10 @@ class StreamServer(_BaseStreamServer):
                  ssl=None, reuse_address=None, reuse_port=None,
                  ssl_handshake_timeout=None,
                  shutdown_timeout=60):
+        # client_connected_cb name is consistent with legacy API
+        # but it is long and ugly
+        # any suggestion?
+
         super().__init__(client_connected_cb,
                          limit=limit,
                          shutdown_timeout=shutdown_timeout,
@@ -243,7 +270,8 @@ class StreamServer(_BaseStreamServer):
 
     async def _bind(self):
         def factory():
-            protocol = _ServerStreamProtocol(self._limit,
+            protocol = _ServerStreamProtocol(self,
+                                             self._limit,
                                              self._client_connected_cb,
                                              loop=self._loop,
                                              _asyncio_internal=True)
@@ -341,7 +369,8 @@ if hasattr(socket, 'AF_UNIX'):
 
         async def _bind(self):
             def factory():
-                protocol = _ServerStreamProtocol(self._limit,
+                protocol = _ServerStreamProtocol(self,
+                                                 self._limit,
                                                  self._client_connected_cb,
                                                  loop=self._loop,
                                                  _asyncio_internal=True)
@@ -492,7 +521,7 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
     def __del__(self):
         # Prevent reports about unhandled exceptions.
         # Better than self._closed._log_traceback = False hack
-        closed = self._closed
+        closed = self._get_close_waiter(self._stream)
         if closed.done() and not closed.cancelled():
             closed.exception()
 
@@ -582,6 +611,7 @@ class _ServerStreamProtocol(_BaseStreamProtocol):
     def __init__(self, server, limit, client_connected_cb, loop=None,
                  *, _asyncio_internal=False):
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
+        assert self._closed
         self._client_connected_cb = client_connected_cb
         self._limit = limit
         self._server = server
@@ -596,6 +626,9 @@ class _ServerStreamProtocol(_BaseStreamProtocol):
                         loop=self._loop,
                         _asyncio_internal=True)
         self._stream = stream
+        # TODO: log a case when task cannot be created.
+        # Usualy it means that _client_connected_cb
+        # has incompatible signature.
         self._task = self._loop.create_task(
             self._client_connected_cb(self._stream))
         self._server._attach(stream, self._task)

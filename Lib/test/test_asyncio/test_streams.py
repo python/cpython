@@ -1218,20 +1218,14 @@ os.close(fd)
 
     def test_stream_server(self):
 
-        @contextlib.asynccontextmanager
-        async def server():
+        async def handle_client(stream):
+            data = await stream.readline()
+            await stream.write(data)
+            await stream.close()
 
-            async def handle_client(self, stream):
-                data = await stream.readline()
-                await stream.write(data)
-                await stream.close()
 
-            sock = socket.create_server(('127.0.0.1', 0))
-            async with asyncio.StreamServer(handle_client, sock=sock) as server:
-                yield server, sock.getsockname()
-                await server.serve_forever()
-
-        async def client(srv, addr):
+        async def client(srv):
+            addr = srv.served_names()[0]
             stream = await asyncio.connect(*addr)
             # send a line
             await stream.write(b"hello world!\n")
@@ -1242,15 +1236,16 @@ os.close(fd)
             await srv.close()
 
         async def test():
-            async with server() as (srv, addr):
-                task = asyncio.create_task(client(srv, addr))
-                await srv.serve_forever()
-                await task
+            async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as server:
+                await server.start_serving()
+                asyncio.create_task(client(server))
+                await server.serve_forever()
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
-        self.loop.run_until_complete(test())
+        with contextlib.suppress(asyncio.CancelledError):
+            self.loop.run_until_complete(test())
         self.assertEqual(messages, [])
 
 
