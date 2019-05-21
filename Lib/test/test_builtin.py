@@ -1,6 +1,7 @@
 # Python test set -- built-in functions
 
 import ast
+import asyncio
 import builtins
 import collections
 import decimal
@@ -21,10 +22,11 @@ from contextlib import ExitStack
 from inspect import CO_COROUTINE
 from itertools import product
 from textwrap import dedent
-from types import AsyncGeneratorType
+from types import AsyncGeneratorType, FunctionType
 from operator import neg
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink)
+    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
+    maybe_get_event_loop_policy)
 from test.support.script_helper import assert_python_ok
 from unittest.mock import MagicMock, patch
 try:
@@ -369,21 +371,50 @@ class BuiltinTest(unittest.TestCase):
         and make sure the generated code object has the CO_COROUTINE flag set in
         order to execute it with `yield from eval(.....)` instead of exec.
         """
+
+        # helper function just to check we can run top=level async-for
+        async def arange(n):
+            for i in range(n):
+                yield i
+
+        async def async_exec(co, *args):
+            await eval(co, *args)
+
         modes = ('single', 'exec')
-        code_samples = ['''await sleep(0)''',
-        '''async for i in range(10):
-               print(i)''',
+        code_samples = ['''a = await asyncio.sleep(0, result=1)''',
+        '''async for i in arange(1):
+               a = 1''',
         '''async with asyncio.Lock() as l:
-               pass''']
-        for mode, code_sample in product(modes,code_samples):
-            source = dedent(code_sample)
-            with self.assertRaises(SyntaxError, msg=f"{source=} {mode=}"):
-                compile(source, '?' , mode)
+               a = 1''']
+        policy = maybe_get_event_loop_policy()
+        try:
+            for mode, code_sample in product(modes,code_samples):
+                source = dedent(code_sample)
+                with self.assertRaises(SyntaxError, msg=f"{source=} {mode=}"):
+                    compile(source, '?' , mode)
 
-            co = compile(source, '?', mode, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+                co = compile(source,
+                             '?',
+                             mode,
+                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
-            self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                             msg=f"{source=} {mode=}")
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                 msg=f"{source=} {mode=}")
+
+
+                # test we can create and  advance a fucntion type
+
+                globals_ = {'asyncio': asyncio, 'a':0, 'arange': arange}
+                async_f = FunctionType(co, globals_)
+                asyncio.run(async_f())
+                self.assertEqual(globals_['a'], 1)
+
+                globals_ = {'asyncio': asyncio, 'a':0, 'arange': arange}
+                asyncio.run(async_exec(co, globals_))
+                self.assertEqual(globals_['a'], 1)
+        except Exception:
+            asyncio.set_event_loop_policy(policy)
+            raise
 
     def test_compile_async_generator(self):
         """
