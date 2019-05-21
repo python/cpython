@@ -104,7 +104,7 @@ class ThreadTests(BaseTestCase):
             self.assertRegex(repr(t), r'^<TestThread\(.*, initial\)>$')
             t.start()
 
-        if hasattr(_thread, 'get_native_id'):
+        if hasattr(threading, 'get_native_id'):
             native_ids = set(t.native_id for t in threads) | {threading.get_native_id()}
             self.assertNotIn(None, native_ids)
             self.assertEqual(len(native_ids), NUMTASKS + 1)
