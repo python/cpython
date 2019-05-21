@@ -5720,7 +5720,9 @@ compute_code_flags(struct compiler *c)
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
 
-    if ((c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) && ste->ste_coroutine && !ste->ste_generator) {
+    if ((c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) &&
+         ste->ste_coroutine &&
+         !ste->ste_generator) {
         flags |= CO_COROUTINE;
     }
 
