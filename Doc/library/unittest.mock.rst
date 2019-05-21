@@ -862,7 +862,7 @@ object::
     >>> mock = AsyncMock()
     >>> asyncio.iscoroutinefunction(mock)
     True
-    >>> inspect.isawaitable(mock())
+    >>> inspect.isawaitable(mock())  # doctest: +SKIP
     True
 
   The result of ``mock()`` is an async function which will have the outcome
@@ -888,7 +888,7 @@ object::
     >>> mock = MagicMock(async_func)
     >>> mock
     <MagicMock spec='function' id='...'>
-    >>> mock()
+    >>> mock()  # doctest: +SKIP
     <coroutine object AsyncMockMixin._mock_call at ...>
 
   .. method:: assert_awaited()
