@@ -1214,6 +1214,10 @@ class UserString(_collections_abc.Sequence):
     __rmul__ = __mul__
     def __mod__(self, args):
         return self.__class__(self.data % args)
+    def __rmod__(self, template):
+        if isinstance(template, str):
+            return self.__class__(template % self)
+        return NotImplemented
     # the following methods are defined in alphabetical order:
     def capitalize(self): return self.__class__(self.data.capitalize())
     def casefold(self):

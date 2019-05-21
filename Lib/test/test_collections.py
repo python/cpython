@@ -70,6 +70,11 @@ class TestUserObjects(unittest.TestCase):
         obj[123] = "abc"
         self._copy_test(obj)
 
+    def test_str_rmod(self):
+        arg = UserString("python")
+        template = "I love %s"
+        self.assertEqual(arg.__rmod__(template), "I love python")
+        self.assertIs(arg.__rmod__(type('Dummy', (), {})), NotImplemented)
 
 ################################################################################
 ### ChainMap (helper class for configparser and the string module)

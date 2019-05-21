@@ -1252,6 +1252,3 @@ attribute.
     .. versionchanged:: 3.5
        New methods ``__getnewargs__``, ``__rmod__``, ``casefold``,
        ``format_map``, ``isprintable``, and ``maketrans``.
-
-    .. versionchanged:: 3.8
-        The ``__rmod__`` method is removed.

@@ -1,1 +1,1 @@
-The ``__rmod__`` method of ``collections.UserString`` class is removed.
+Fix bug in ``__rmod__`` of ``UserString`` - by Batuhan Taskaya.
