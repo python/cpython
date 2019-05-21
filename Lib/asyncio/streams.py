@@ -21,7 +21,7 @@ from . import exceptions
 from . import format_helpers
 from . import protocols
 from .log import logger
-from .tasks import gather, sleep, wait
+from .tasks import sleep, wait
 
 
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
@@ -198,20 +198,20 @@ class _BaseStreamServer:
             return
         self._low_server.close()
         tasks = list(self._streams.values())
-        await gather(*[stream.close() for stream in self._streams])
+        await wait([stream.close() for stream in self._streams])
         await self._low_server.wait_closed()
-        await self._shutdown_active_tasks(tasks)
         self._low_server = None
+        await self._shutdown_active_tasks(tasks)
 
     async def abort(self):
         if self._low_server is None:
             return
         self._low_server.close()
         tasks = list(self._streams.values())
-        await gather(*[stream.abort() for stream in self._streams])
+        await wait([stream.abort() for stream in self._streams])
         await self._low_server.wait_closed()
-        await self._shutdown_active_tasks(tasks)
         self._low_server = None
+        await self._shutdown_active_tasks(tasks)
 
     async def __aenter__(self):
         await self.bind()
