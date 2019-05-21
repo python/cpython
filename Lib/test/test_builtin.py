@@ -390,10 +390,12 @@ class BuiltinTest(unittest.TestCase):
         With the PyCF_ALLOW_TOP_LEVEL_AWAIT flag added in 3.8, we want to
         make sure AsyncGenerators are still properly not marked with CO_COROUTINE
         """
-        co = compile(dedent("""async def ticker():
+        code = dedent("""async def ticker():
                 for i in range(10):
                     yield i
-                    await asyncio.sleep(0)"""), '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+                    await asyncio.sleep(0)""")
+
+        co = compile(code, '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
         glob = {}
         exec(co, glob)
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)

@@ -297,8 +297,8 @@ are always available.  They are listed here in alphabetical order.
       in *source*.
 
    .. versionadded:: 3.8
-      *flags* can now be used to accept source that would contain a top-level
-      ``await``, ``async for`` or ``async with``.
+      ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
+      support for top-level await, async for, and async with.
 
 
 .. class:: complex([real[, imag]])
