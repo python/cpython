@@ -2931,7 +2931,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
                   try:
                       # body
                   finally:
-                      name = None
+                      name = None # in case body contains "del name"
                       del name
             */
 
