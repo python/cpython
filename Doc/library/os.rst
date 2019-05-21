@@ -32,6 +32,7 @@ Notes on the availability of these functions:
   objects, and result in an object of the same type, if a path or file name is
   returned.
 
+* On VxWorks, os.fork, os.execv and os.spawn*p* are not supported.
 
 .. note::
 
@@ -3577,6 +3578,9 @@ written in Python, such as a mail server's external command delivery program.
    exits normally, or ``-signal``, where *signal* is the signal that killed the
    process.  On Windows, the process id will actually be the process handle, so can
    be used with the :func:`waitpid` function.
+
+   Note on VxWorks, this function doesn't return ``-signal`` when the new process is
+   killed. Instead it raises OSError exception.
 
    The "l" and "v" variants of the :func:`spawn\* <spawnl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
