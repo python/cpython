@@ -30,6 +30,7 @@
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
 #else
 #  define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
+#endif
 
 #define COPYRIGHT \
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
