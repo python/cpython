@@ -323,9 +323,6 @@ PyThread_get_thread_native_id(void)
 #elif defined(__FreeBSD__)
     pid_t native_id;
     native_id = pthread_getthreadid_np();
-#else
-    unsigned long native_id;
-    native_id = 0;
 #endif
     return (unsigned long) native_id;
 }

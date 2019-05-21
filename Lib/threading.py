@@ -23,8 +23,8 @@ except ImportError:
 # with the multiprocessing module, which doesn't provide the old
 # Java inspired names.
 
-__all__ = ['get_ident', 'get_native_id', 'active_count', 'Condition',
-           'current_thread', 'enumerate', 'main_thread', 'TIMEOUT_MAX',
+__all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
+           'enumerate', 'main_thread', 'TIMEOUT_MAX',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size']
@@ -36,8 +36,10 @@ _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
 try:
     get_native_id = _thread.get_native_id
+    _HAVE_THREAD_NATIVE_ID = True
+    __all__.append('get_native_id')
 except AttributeError:
-    get_native_id = lambda: None
+    _HAVE_THREAD_NATIVE_ID = False
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -794,7 +796,8 @@ class Thread:
         else:
             self._daemonic = current_thread().daemon
         self._ident = None
-        self._native_id = None
+        if _HAVE_THREAD_NATIVE_ID:
+            self._native_id = None
         self._tstate_lock = None
         self._started = Event()
         self._is_stopped = False
@@ -897,6 +900,7 @@ class Thread:
         self._ident = get_ident()
 
     def _set_native_id(self):
+        assert _HAVE_THREAD_NATIVE_ID, "Native ID not supported on this platform"
         self._native_id = get_native_id()
 
     def _set_tstate_lock(self):
@@ -911,7 +915,8 @@ class Thread:
         try:
             self._set_ident()
             self._set_tstate_lock()
-            self._set_native_id()
+            if _HAVE_THREAD_NATIVE_ID:
+                self._set_native_id()
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -1088,13 +1093,14 @@ class Thread:
 
     @property
     def native_id(self):
-        """Native integral thread ID of this thread or 0 if it has not been started.
+        """Native integral thread ID of this thread or None if it has not been started.
 
         This is a non-negative integer. See the get_native_id() function.
         This represents the Thread ID as reported by the kernel.
 
         """
         assert self._initialized, "Thread.__init__() not called"
+        assert _HAVE_THREAD_NATIVE_ID, "Native ID not supported on this platform"
         return self._native_id
 
     def is_alive(self):
@@ -1196,7 +1202,8 @@ class _MainThread(Thread):
         self._set_tstate_lock()
         self._started.set()
         self._set_ident()
-        self._set_native_id()
+        if _HAVE_THREAD_NATIVE_ID:
+            self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
 
@@ -1216,7 +1223,8 @@ class _DummyThread(Thread):
 
         self._started.set()
         self._set_ident()
-        self._set_native_id()
+        if _HAVE_THREAD_NATIVE_ID:
+            self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
 
