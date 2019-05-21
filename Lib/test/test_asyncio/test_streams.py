@@ -1311,6 +1311,21 @@ os.close(fd)
         self.loop.run_until_complete(test())
         self.assertEqual(messages, [])
 
+    def test_stream_server_start_serving(self):
+        async def handle_client(stream):
+            await stream.close()
+
+        async def test():
+            async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as srv:
+                self.assertFalse(srv.is_serving())
+                await srv.start_serving()
+                self.assertTrue(srv.is_serving())
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(test())
+        self.assertEqual(messages, [])
+
 
 if __name__ == '__main__':
     unittest.main()
