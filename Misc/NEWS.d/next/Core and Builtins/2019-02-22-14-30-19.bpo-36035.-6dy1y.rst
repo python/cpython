@@ -1,0 +1,1 @@
+Added fix for broken symlinks in combination with pathlib
