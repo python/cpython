@@ -367,10 +367,10 @@ class BuiltinTest(unittest.TestCase):
     def test_compile_top_level_await(self):
         """Test whether code some top level await can be compiled.
 
-        Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag set,
-        and make sure the generated code object has the CO_COROUTINE flag set in
-        order to execute it with  `await eval(.....)` instead of exec, or via a
-        FunctionType.
+        Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
+        set, and make sure the generated code object has the CO_COROUTINE flag
+        set in order to execute it with  `await eval(.....)` instead of exec,
+        or via a FunctionType.
         """
 
         # helper function just to check we can run top=level async-for
@@ -379,17 +379,20 @@ class BuiltinTest(unittest.TestCase):
                 yield i
 
         modes = ('single', 'exec')
-        code_samples = ['''a = await asyncio.sleep(0, result=1)''',
-        '''async for i in arange(1):
-               a = 1''',
-        '''async with asyncio.Lock() as l:
-               a = 1''']
+        code_samples = [
+            '''a = await asyncio.sleep(0, result=1)''',
+            '''async for i in arange(1):
+                   a = 1''',
+            '''async with asyncio.Lock() as l:
+                   a = 1'''
+        ]
         policy = maybe_get_event_loop_policy()
         try:
-            for mode, code_sample in product(modes,code_samples):
+            for mode, code_sample in product(modes, code_samples):
                 source = dedent(code_sample)
-                with self.assertRaises(SyntaxError, msg=f"{source=} {mode=}"):
-                    compile(source, '?' , mode)
+                with self.assertRaises(
+                        SyntaxError, msg=f"source={source} mode={mode}"):
+                    compile(source, '?', mode)
 
                 co = compile(source,
                              '?',
@@ -397,17 +400,16 @@ class BuiltinTest(unittest.TestCase):
                              flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
                 self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                                 msg=f"{source=} {mode=}")
-
+                                 msg=f"source={source} mode={mode}")
 
                 # test we can create and  advance a function type
-                globals_ = {'asyncio': asyncio, 'a':0, 'arange': arange}
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
                 async_f = FunctionType(co, globals_)
                 asyncio.run(async_f())
                 self.assertEqual(globals_['a'], 1)
 
                 # test we can await-eval,
-                globals_ = {'asyncio': asyncio, 'a':0, 'arange': arange}
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
                 asyncio.run(eval(co, globals_))
                 self.assertEqual(globals_['a'], 1)
         finally:
@@ -416,7 +418,8 @@ class BuiltinTest(unittest.TestCase):
     def test_compile_async_generator(self):
         """
         With the PyCF_ALLOW_TOP_LEVEL_AWAIT flag added in 3.8, we want to
-        make sure AsyncGenerators are still properly not marked with CO_COROUTINE
+        make sure AsyncGenerators are still properly not marked with the
+        CO_COROUTINE flag.
         """
         code = dedent("""async def ticker():
                 for i in range(10):
@@ -427,7 +430,6 @@ class BuiltinTest(unittest.TestCase):
         glob = {}
         exec(co, glob)
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
-
 
     def test_delattr(self):
         sys.spam = 1
