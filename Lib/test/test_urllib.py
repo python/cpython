@@ -1470,7 +1470,8 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
             os.close(fd)
             fileurl = "file:" + urllib.request.pathname2url(tmpfile)
             filename, _ = urllib.request.URLopener().retrieve(fileurl)
-            self.assertEqual(filename, tmpfile)
+            # Some buildbots have TEMP folder that uses a lowercase drive letter.
+            self.assertEqual(os.path.normcase(filename), os.path.normcase(tmpfile))
 
     @support.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_remote(self):
