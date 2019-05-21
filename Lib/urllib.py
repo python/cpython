@@ -205,8 +205,7 @@ class URLopener:
         name = name.replace('-', '_')
 
         # bpo-35907: # disallow the file reading with the type not allowed
-        if not hasattr(self, name) or \
-            getattr(self, name) == self.open_local_file:
+        if not hasattr(self, name) or name == 'open_local_file':
             if proxy:
                 return self.open_unknown_proxy(proxy, fullurl, data)
             else:
