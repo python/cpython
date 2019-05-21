@@ -1291,6 +1291,8 @@ os.close(fd)
             self.assertTrue(srv.is_bound())
             self.assertEqual(1, len(srv.served_names()))
             await srv.close()
+            self.assertFalse(srv.is_bound())
+            self.assertEqual([], srv.served_names())
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1320,6 +1322,8 @@ os.close(fd)
                 self.assertFalse(srv.is_serving())
                 await srv.start_serving()
                 self.assertTrue(srv.is_serving())
+                await srv.close()
+                self.assertFalse(srv.is_serving())
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))

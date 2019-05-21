@@ -201,6 +201,7 @@ class _BaseStreamServer:
         await gather(*[stream.close() for stream in self._streams])
         await self._low_server.wait_closed()
         await self._shutdown_active_tasks(tasks)
+        self._low_server = None
 
     async def abort(self):
         if self._low_server is None:
@@ -210,6 +211,7 @@ class _BaseStreamServer:
         await gather(*[stream.abort() for stream in self._streams])
         await self._low_server.wait_closed()
         await self._shutdown_active_tasks(tasks)
+        self._low_server = None
 
     async def __aenter__(self):
         await self.bind()
@@ -227,7 +229,8 @@ class _BaseStreamServer:
     async def _shutdown_active_tasks(self, tasks):
         if not tasks:
             return
-
+        # NOTE: tasks finished with exception are reported
+        # by Tast/Future __del__ method
         done, pending = await wait(tasks, timeout=self._shutdown_timeout)
         if not pending:
             return
