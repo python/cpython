@@ -1520,7 +1520,7 @@ def _execvpe_mockup(defpath=None):
         os.defpath = orig_defpath
 
 @unittest.skipUnless(hasattr(os, 'execv'),
-                     "No os.execv or os.execve function to test.")
+                     "need os.execv()")
 class ExecTests(unittest.TestCase):
     @unittest.skipIf(USING_LINUXTHREADS,
                      "avoid triggering a linuxthreads bug: see issue #4970")
