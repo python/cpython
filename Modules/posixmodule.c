@@ -5656,6 +5656,9 @@ _rtp_spawn(int mode, const char *rtpFileName, const char *argv[],
      pid_t res;
      int async_err = 0;
 
+     /* Set priority=100 and uStackSize=16 MiB (0x1000000) for new processes.
+        uStackSize=0 cannot be used, the default stack size is too small for
+        Python. */
      if (envp) {
          rtpid = rtpSpawn(rtpFileName, argv, envp,
                           100, 0x1000000, 0, VX_FP_TASK);
