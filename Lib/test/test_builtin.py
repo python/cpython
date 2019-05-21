@@ -377,9 +377,6 @@ class BuiltinTest(unittest.TestCase):
             for i in range(n):
                 yield i
 
-        async def async_exec(co, *args):
-            await eval(co, *args)
-
         modes = ('single', 'exec')
         code_samples = ['''a = await asyncio.sleep(0, result=1)''',
         '''async for i in arange(1):
@@ -410,7 +407,7 @@ class BuiltinTest(unittest.TestCase):
                 self.assertEqual(globals_['a'], 1)
 
                 globals_ = {'asyncio': asyncio, 'a':0, 'arange': arange}
-                asyncio.run(async_exec(co, globals_))
+                asyncio.run(eval(co, globals_))
                 self.assertEqual(globals_['a'], 1)
         except Exception:
             asyncio.set_event_loop_policy(policy)
