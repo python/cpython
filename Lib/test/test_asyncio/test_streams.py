@@ -1279,6 +1279,37 @@ os.close(fd)
         self.loop.run_until_complete(test())
         self.assertEqual(messages, [])
 
+    def test_stream_server_bind(self):
+        async def handle_client(stream):
+            await stream.close()
+
+        async def test():
+            srv = asyncio.StreamServer(handle_client, '127.0.0.1', 0)
+            self.assertFalse(srv.is_bound())
+            self.assertEqual([], srv.served_names())
+            await srv.bind()
+            self.assertTrue(srv.is_bound())
+            self.assertEqual(1, len(srv.served_names()))
+            await srv.close()
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(test())
+        self.assertEqual(messages, [])
+
+    def test_stream_server_bind_async_with(self):
+        async def handle_client(stream):
+            await stream.close()
+
+        async def test():
+            async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as srv:
+                self.assertTrue(srv.is_bound())
+                self.assertEqual(1, len(srv.served_names()))
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(test())
+        self.assertEqual(messages, [])
 
 
 if __name__ == '__main__':
