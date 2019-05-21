@@ -3803,10 +3803,10 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         joined = PyUnicode_Join(comma, sorted_methods);
+        method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);
         if (joined == NULL)
             return NULL;
-        method_count = PyObject_Length(abstract_methods);
         if (method_count == -1)
             return NULL;
 
