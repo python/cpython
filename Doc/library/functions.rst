@@ -259,7 +259,7 @@ are always available.  They are listed here in alphabetical order.
 
    The optional argument *flags* also controls whether the compiled source is
    allowed to contain top-level ``await``, ``async for`` and ``async with``.
-   When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the the return code
+   When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the return code
    object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
    executed via ``await eval(code_object)``.
 
@@ -298,7 +298,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionadded:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
-      support for top-level await, async for, and async with.
+      support for top-level ``await``, ``async for``, and ``async with``.
 
 
 .. class:: complex([real[, imag]])
