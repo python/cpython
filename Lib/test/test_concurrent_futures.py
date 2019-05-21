@@ -770,7 +770,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         for i in range(100 * executor._max_workers):
             sem.release()
         executor.shutdown(wait=True)
-         
+
     def test_idle_thread_reuse(self):
         executor = self.executor_type()
         executor.submit(mul, 21, 2).result()
