@@ -1238,14 +1238,14 @@ os.close(fd)
         async def test():
             async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as server:
                 await server.start_serving()
-                asyncio.create_task(client(server))
-                await server.serve_forever()
+                task = asyncio.create_task(client(server))
+                with contextlib.suppress(asyncio.CancelledError):
+                    await server.serve_forever()
+                await task
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-
-        with contextlib.suppress(asyncio.CancelledError):
-            self.loop.run_until_complete(test())
+        self.loop.run_until_complete(test())
         self.assertEqual(messages, [])
 
 
