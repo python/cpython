@@ -10,7 +10,7 @@ class TestAsyncCase(unittest.TestCase):
     def test_full_cycle(self):
         events = []
 
-        class Test(unittest.AsyncioTestCase):
+        class Test(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
                 self.assertEqual(events, [])
                 events.append('setUp')
@@ -59,7 +59,7 @@ class TestAsyncCase(unittest.TestCase):
     def test_exception_in_setup(self):
         events = []
 
-        class Test(unittest.AsyncioTestCase):
+        class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
                 raise Exception()
@@ -83,7 +83,7 @@ class TestAsyncCase(unittest.TestCase):
     def test_exception_in_test(self):
         events = []
 
-        class Test(unittest.AsyncioTestCase):
+        class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
 
@@ -105,7 +105,7 @@ class TestAsyncCase(unittest.TestCase):
     def test_exception_in_test_after_adding_cleanup(self):
         events = []
 
-        class Test(unittest.AsyncioTestCase):
+        class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
 
@@ -127,7 +127,7 @@ class TestAsyncCase(unittest.TestCase):
     def test_exception_in_tear_down(self):
         events = []
 
-        class Test(unittest.AsyncioTestCase):
+        class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
 
@@ -150,7 +150,7 @@ class TestAsyncCase(unittest.TestCase):
     def test_exception_in_tear_clean_up(self):
         events = []
 
-        class Test(unittest.AsyncioTestCase):
+        class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
                 events.append('asyncSetUp')
 

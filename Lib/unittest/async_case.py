@@ -5,7 +5,7 @@ from .case import TestCase
 
 
 
-class AsyncioTestCase(TestCase):
+class IsolatedAsyncioTestCase(TestCase):
     # Names intentionally have a long prefix
     # to reduce a chance of clashing with user-defined attributes
     # from inherited test case
