@@ -474,15 +474,15 @@ astfold_mod(mod_ty node_, PyArena *ctx_, int optimize_)
 static int
 astfold_dedent(expr_ty node_, PyArena *arena, int optimize_)
 {
-    _Py_IDENTIFIER(dedent);
-    PyObject *dedent = PyUnicode_FromString("dedent");
-    if (!dedent) {
-        return 0;
-    }
     if (asdl_seq_LEN(node_->v.Call.args) != 0 ||
         asdl_seq_LEN(node_->v.Call.keywords) != 0 ||
         node_->v.Call.func->kind != Attribute_kind) {
         return 1;
+    }
+    _Py_IDENTIFIER(dedent);
+    PyObject *dedent = PyUnicode_FromString("dedent");
+    if (!dedent) {
+        return 0;
     }
     expr_ty attr = node_->v.Call.func;
     if (attr->v.Attribute.value->kind != Constant_kind ||

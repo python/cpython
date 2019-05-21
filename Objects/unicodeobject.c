@@ -13895,142 +13895,20 @@ static PyObject *
 unicode_dedent_impl(PyObject *self)
 /*[clinic end generated code: output=4d41f65b94304b63 input=032d062ea6d3d9f3]*/
 {
-    // Look for the longest leading string of spaces and tabs common to
-    // all lines.
-    _Py_IDENTIFIER(startswith);
-    _Py_IDENTIFIER(compile);
-    _Py_IDENTIFIER(MULTILINE);
-    _Py_IDENTIFIER(sub);
-    _Py_IDENTIFIER(findall);
-
-    PyObject *re, *compile, *multiline, *_whitespace_only_re, *_leading_whitespace_re,
-                *margin, *text, *indents, *iterator, *indent;
-
-    re = compile = multiline = _whitespace_only_re = NULL;
-    _leading_whitespace_re = margin = text = indents = iterator = indent = NULL;
-
-    re = PyImport_ImportModule("re");
-    if (!re) {
-        goto fail;
+    _Py_IDENTIFIER(_dedent);
+    PyObject *textwrap = PyImport_ImportModule("textwrap");
+    if (!textwrap) {
+        return NULL;
     }
-    compile = _PyObject_GetAttrId(re, &PyId_compile);
-    multiline = _PyObject_GetAttrId(re, &PyId_MULTILINE);
-    if (!multiline || !compile) {
-        goto fail;
+    PyObject *dedent = _PyObject_GetAttrId(textwrap, &PyId__dedent);
+    if (!dedent) {
+        Py_DECREF(textwrap);
+        return NULL;
     }
-    _whitespace_only_re = PyObject_CallFunction(compile, "sO", "^[ \t]+$", multiline);
-    _leading_whitespace_re = PyObject_CallFunction(compile, "sO", "(^[ \t]*)(?:[^ \t\n])", multiline);
-    if (!_whitespace_only_re || !_leading_whitespace_re) {
-        goto fail;
-    }
-
-    text = _PyObject_CallMethodId(_whitespace_only_re, &PyId_sub, "sO", "", self);
-    indents = _PyObject_CallMethodId(_leading_whitespace_re, &PyId_findall, "O", self);
-    iterator = PyObject_GetIter(indents);
-    if (!text || !indents || !iterator) {
-        goto fail;
-    }
-
-    while ((indent = PyIter_Next(iterator)) != NULL) {
-        if (margin == NULL) {
-            margin = indent;
-            Py_INCREF(indent);
-        }
-        else {
-            PyObject *indent_startswith = _PyObject_CallMethodId(indent, &PyId_startswith, "O", margin);
-            if (!indent_startswith) {
-                goto fail;
-            }
-            if (PyObject_IsTrue(indent_startswith)) {
-                // Current line more deeply indented than previous winner:
-                // no change (previous winner is still on top).
-                Py_DECREF(indent_startswith);
-                Py_DECREF(indent);
-                continue;
-            }
-            Py_DECREF(indent_startswith);
-
-            PyObject *margin_startswith = _PyObject_CallMethodId(margin, &PyId_startswith, "O", indent);
-            if (!margin_startswith) {
-                goto fail;
-            }
-            if (PyObject_IsTrue(margin_startswith)) {
-                // Current line consistent with and no deeper than previous winner:
-                // it's the new winner.
-                Py_DECREF(margin_startswith);
-                Py_XDECREF(margin);
-                margin = indent;
-                // No need to incref here, since we should also decref before looping
-                continue;
-            }
-            Py_DECREF(margin_startswith);
-
-            // Find the largest common whitespace between current line and previous
-            // winner.
-            PyObject *iter_margin = PyObject_GetIter(margin);
-            PyObject *iter_indent = PyObject_GetIter(indent);
-            if (!iter_margin || !iter_indent) {
-                Py_XDECREF(iter_margin);
-                goto fail;
-            }
-            size_t i = 0;
-            PyObject *x, *y;
-            while ((x = PyIter_Next(iter_margin)) && (y = PyIter_Next(iter_indent))) {
-                int comp = PyObject_RichCompareBool(x, y, Py_NE);
-                Py_CLEAR(x);
-                Py_DECREF(y);
-                if (comp) {
-                    PyObject *oldmargin = margin;
-                    margin = PySequence_GetSlice(oldmargin, 0, i);
-                    Py_DECREF(oldmargin);
-                    break;
-                }
-                i++;
-            }
-            Py_XDECREF(x);
-            Py_DECREF(iter_margin);
-            Py_DECREF(iter_indent);
-        }
-        Py_DECREF(indent);
-    }
-
-    if (margin != NULL && PyObject_IsTrue(margin)) {
-        PyObject *sub = _PyObject_GetAttrId(re, &PyId_sub);
-        PyObject *format = PyUnicode_FromFormat("%s%U", "(?m)^", margin);
-        if (!sub || !format) {
-            Py_XDECREF(sub);
-            goto fail;
-        }
-        PyObject *result = PyObject_CallFunction(sub, "OsO", format, "", text);
-        Py_DECREF(sub);
-        Py_DECREF(format);
-        Py_DECREF(text);
-        text = result;
-    }
-
-    Py_DECREF(re);
-    Py_DECREF(compile);
-    Py_DECREF(multiline);
-    Py_DECREF(_whitespace_only_re);
-    Py_DECREF(_leading_whitespace_re);
-    Py_DECREF(indents);
-    Py_DECREF(iterator);
-    Py_XDECREF(margin);
-
-    return text;
-
-fail:
-    Py_XDECREF(re);
-    Py_XDECREF(compile);
-    Py_XDECREF(multiline);
-    Py_XDECREF(_whitespace_only_re);
-    Py_XDECREF(_leading_whitespace_re);
-    Py_XDECREF(margin);
-    Py_XDECREF(text);
-    Py_XDECREF(indents);
-    Py_XDECREF(iterator);
-    Py_XDECREF(indent);
-    return NULL;
+    PyObject *result = PyObject_CallFunction(dedent, "O", self);
+    Py_DECREF(textwrap);
+    Py_DECREF(dedent);
+    return result;
 }
 
 static PyObject *

@@ -869,8 +869,7 @@ boolean {0[0]} NO
         invalid = """\
             [DEFAULT]
             test {0} test
-            invalid""".dedent().format(self.delimiters[0]
-        )
+            invalid""".dedent().format(self.delimiters[0])
         cf = self.newconfig()
         with self.assertRaises(configparser.ParsingError):
             cf.read_string(invalid)

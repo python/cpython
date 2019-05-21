@@ -2436,26 +2436,26 @@ class UnicodeTest(string_tests.CommonTest,
         support.check_free_after_iterating(self, iter, str)
         support.check_free_after_iterating(self, reversed, str)
 
-    def assertUnchanged(self, text):
+    def dedent_and_assert_unchanged(self, text):
         """assert that dedent() has no effect on 'text'"""
         self.assertEqual(text, text.dedent())
 
     def test_dedent_nomargin(self):
         # No lines indented.
         text = "Hello there.\nHow are you?\nOh good, I'm glad."
-        self.assertUnchanged(text)
+        self.dedent_and_assert_unchanged(text)
 
         # Similar, with a blank line.
         text = "Hello there.\n\nBoo!"
-        self.assertUnchanged(text)
+        self.dedent_and_assert_unchanged(text)
 
         # Some lines indented, but overall margin is still zero.
         text = "Hello there.\n  This is indented."
-        self.assertUnchanged(text)
+        self.dedent_and_assert_unchanged(text)
 
         # Again, add a blank line.
         text = "Hello there.\n\n  Boo!\n"
-        self.assertUnchanged(text)
+        self.dedent_and_assert_unchanged(text)
 
     def test_dedent_even(self):
         # All lines indented by two spaces.
@@ -2528,11 +2528,11 @@ def foo():
     # considered equivalent)
     def test_dedent_preserve_margin_tabs(self):
         text = "  hello there\n\thow are you?"
-        self.assertUnchanged(text)
+        self.dedent_and_assert_unchanged(text)
 
         # same effect even if we have 8 spaces
         text = "        hello there\n\thow are you?"
-        self.assertUnchanged(text)
+        self.dedent_and_assert_unchanged(text)
 
         # dedent() only removes whitespace that can be uniformly removed!
         text = "\thello there\n\thow are you?"
