@@ -4,10 +4,11 @@ setlocal
 
 set here=%~dp0
 set arm32_ssh=
-
+set suffix=_d
 :CheckOpts
 if "%1"=="-arm32" (set arm32_ssh=true) & (set prefix=c:\python\pcbuild\arm32) & shift & goto CheckOpts
 if "%1"=="-d" (set suffix=_d) & shift & goto CheckOpts
+if "%1"=="+d" (set suffix=) & shift & goto CheckOpts
 if NOT "%1"=="" (echo unrecognized option %1) & goto Arm32SshHelp
 
 if "%arm32_ssh%"=="true" goto :Arm32Ssh
