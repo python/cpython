@@ -1222,7 +1222,6 @@ os.close(fd)
             await stream.write(data)
             await stream.close()
 
-
         async def client(srv):
             addr = srv.served_names()[0]
             stream = await asyncio.connect(*addr)
@@ -1241,6 +1240,39 @@ os.close(fd)
                 with contextlib.suppress(asyncio.CancelledError):
                     await server.serve_forever()
                 await task
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(test())
+        self.assertEqual(messages, [])
+
+    @support.skip_unless_bind_unix_socket
+    def test_unix_stream_server(self):
+
+        async def handle_client(stream):
+            data = await stream.readline()
+            await stream.write(data)
+            await stream.close()
+
+        async def client(srv):
+            addr = srv.served_names()[0]
+            stream = await asyncio.connect_unix(addr)
+            # send a line
+            await stream.write(b"hello world!\n")
+            # read it back
+            msgback = await stream.readline()
+            await stream.close()
+            self.assertEqual(msgback, b"hello world!\n")
+            await srv.close()
+
+        async def test():
+            with test_utils.unix_socket_path() as path:
+                async with asyncio.UnixStreamServer(handle_client, path) as server:
+                    await server.start_serving()
+                    task = asyncio.create_task(client(server))
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await server.serve_forever()
+                    await task
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
