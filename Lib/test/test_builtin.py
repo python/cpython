@@ -410,9 +410,8 @@ class BuiltinTest(unittest.TestCase):
                 globals_ = {'asyncio': asyncio, 'a':0, 'arange': arange}
                 asyncio.run(eval(co, globals_))
                 self.assertEqual(globals_['a'], 1)
-        except Exception:
+        finally:
             asyncio.set_event_loop_policy(policy)
-            raise
 
     def test_compile_async_generator(self):
         """
