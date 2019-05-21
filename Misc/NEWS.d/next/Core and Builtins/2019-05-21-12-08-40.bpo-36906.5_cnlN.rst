@@ -1,0 +1,2 @@
+Add new method `str.dedent()` that is equivalent to ``textwrap.dedent`` but
+cached at compile time. Patch contributed by Rémi Lapeyre.
