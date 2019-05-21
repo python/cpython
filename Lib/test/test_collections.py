@@ -70,17 +70,6 @@ class TestUserObjects(unittest.TestCase):
         obj[123] = "abc"
         self._copy_test(obj)
 
-    def test_str_rmod(self):
-        class ustr2(UserString):
-            pass
-
-        class ustr3(ustr2):
-            def __rmod__(self, other):
-                return super().__rmod__(other)
-
-        fmt2 = ustr2('value is %s')
-        str3 = ustr3('TEST')
-        self.assertEqual(fmt2 % str3, 'value is TEST')
 
 ################################################################################
 ### ChainMap (helper class for configparser and the string module)
