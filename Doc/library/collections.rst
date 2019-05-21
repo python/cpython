@@ -1017,15 +1017,6 @@ fields:
 .. versionchanged:: 3.5
    Property docstrings became writeable.
 
-Default values can be implemented by using :meth:`~somenamedtuple._replace` to
-customize a prototype instance:
-
-    >>> Account = namedtuple('Account', 'owner balance transaction_count')
-    >>> default_account = Account('<owner name>', 0.0, 0)
-    >>> johns_account = default_account._replace(owner='John')
-    >>> janes_account = default_account._replace(owner='Jane')
-
-
 .. seealso::
 
     * See :class:`typing.NamedTuple` for a way to add type hints for named
@@ -1141,7 +1132,7 @@ original insertion position is changed and moved to the end::
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)
-            super().move_to_end(key)
+            self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
 variants of :func:`functools.lru_cache`::

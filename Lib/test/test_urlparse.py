@@ -1011,6 +1011,12 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertIn('\u2100', denorm_chars)
         self.assertIn('\uFF03', denorm_chars)
 
+        # bpo-36742: Verify port separators are ignored when they
+        # existed prior to decomposition
+        urllib.parse.urlsplit('http://\u30d5\u309a:80')
+        with self.assertRaises(ValueError):
+            urllib.parse.urlsplit('http://\u30d5\u309a\ufe1380')
+
         for scheme in ["http", "https", "ftp"]:
             for c in denorm_chars:
                 url = "{}://netloc{}false.netloc/path".format(scheme, c)

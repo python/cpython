@@ -174,6 +174,7 @@ class ThreadPoolExecutor(_base.Executor):
             self._work_queue.put(w)
             self._adjust_thread_count()
             return f
+    submit.__text_signature__ = _base.Executor.submit.__text_signature__
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):

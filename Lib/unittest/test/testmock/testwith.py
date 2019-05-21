@@ -10,6 +10,8 @@ something  = sentinel.Something
 something_else  = sentinel.SomethingElse
 
 
+class SampleException(Exception): pass
+
 
 class WithTest(unittest.TestCase):
 
@@ -20,14 +22,10 @@ class WithTest(unittest.TestCase):
 
 
     def test_with_statement_exception(self):
-        try:
+        with self.assertRaises(SampleException):
             with patch('%s.something' % __name__, sentinel.Something2):
                 self.assertEqual(something, sentinel.Something2, "unpatched")
-                raise Exception('pow')
-        except Exception:
-            pass
-        else:
-            self.fail("patch swallowed exception")
+                raise SampleException()
         self.assertEqual(something, sentinel.Something)
 
 
@@ -128,8 +126,7 @@ class WithTest(unittest.TestCase):
 
     def test_double_patch_instance_method(self):
         class C:
-            def f(self):
-                pass
+            def f(self): pass
 
         c = C()
 
@@ -286,7 +283,12 @@ class TestMockOpen(unittest.TestCase):
         # for mocks returned by mock_open
         some_data = 'foo\nbar\nbaz'
         mock = mock_open(read_data=some_data)
-        self.assertEqual(mock().read(10), some_data)
+        self.assertEqual(mock().read(10), some_data[:10])
+        self.assertEqual(mock().read(10), some_data[:10])
+
+        f = mock()
+        self.assertEqual(f.read(10), some_data[:10])
+        self.assertEqual(f.read(10), some_data[10:])
 
 
     def test_interleaved_reads(self):

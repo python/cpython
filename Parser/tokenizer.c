@@ -983,7 +983,8 @@ tok_nextc(struct tok_state *tok)
                         return EOF;
                     /* Last line does not end in \n,
                        fake one */
-                    strcpy(tok->inp, "\n");
+                    if (tok->inp[-1] != '\n')
+                        strcpy(tok->inp, "\n");
                 }
                 tok->inp = strchr(tok->inp, '\0');
                 done = tok->inp[-1] == '\n';
@@ -1272,14 +1273,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
 
                 type_start = p;
 
-                is_type_ignore = tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0;
-                p += 6;
-                while (is_type_ignore && p < tok->cur) {
-                    if (*p == '#')
-                        break;
-                    is_type_ignore = is_type_ignore && (*p == ' ' || *p == '\t');
-                    p++;
-                }
+                /* A TYPE_IGNORE is "type: ignore" followed by the end of the token
+                 * or anything non-alphanumeric. */
+                is_type_ignore = (
+                    tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0
+                    && !(tok->cur > p + 6 && isalnum(p[6])));
 
                 if (is_type_ignore) {
                     /* If this type ignore is the only thing on the line, consume the newline also. */
@@ -1676,6 +1674,14 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             tok->done = E_LINECONT;
             tok->cur = tok->inp;
             return ERRORTOKEN;
+        }
+        c = tok_nextc(tok);
+        if (c == EOF) {
+            tok->done = E_EOF;
+            tok->cur = tok->inp;
+            return ERRORTOKEN;
+        } else {
+            tok_backup(tok, c);
         }
         tok->cont_line = 1;
         goto again; /* Read next line */

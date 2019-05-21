@@ -361,7 +361,7 @@ list_dealloc(PyListObject *op)
 {
     Py_ssize_t i;
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_SAFE_BEGIN(op)
+    Py_TRASHCAN_BEGIN(op, list_dealloc)
     if (op->ob_item != NULL) {
         /* Do it backwards, for Christian Tismer.
            There's a simple test case where somehow this reduces
@@ -377,7 +377,7 @@ list_dealloc(PyListObject *op)
         free_list[numfree++] = op;
     else
         Py_TYPE(op)->tp_free((PyObject *)op);
-    Py_TRASHCAN_SAFE_END(op)
+    Py_TRASHCAN_END
 }
 
 static PyObject *

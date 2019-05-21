@@ -399,6 +399,12 @@ module.  We'll be using the ``countrydata`` XML document from the
    # All 'neighbor' nodes that are the second child of their parent
    root.findall(".//neighbor[2]")
 
+For XML with namespaces, use the usual qualified ``{namespace}tag`` notation::
+
+   # All dublin-core "title" tags in the document
+   root.findall(".//{http://purl.org/dc/elements/1.1/}title")
+
+
 Supported XPath syntax
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -411,9 +417,16 @@ Supported XPath syntax
 |                       | For example, ``spam`` selects all child elements     |
 |                       | named ``spam``, and ``spam/egg`` selects all         |
 |                       | grandchildren named ``egg`` in all children named    |
-|                       | ``spam``.                                            |
+|                       | ``spam``.  ``{namespace}*`` selects all tags in the  |
+|                       | given namespace, ``{*}spam`` selects tags named      |
+|                       | ``spam`` in any (or no) namespace, and ``{}*``       |
+|                       | only selects tags that are not in a namespace.       |
+|                       |                                                      |
+|                       | .. versionchanged:: 3.8                              |
+|                       |    Support for star-wildcards was added.             |
 +-----------------------+------------------------------------------------------+
-| ``*``                 | Selects all child elements.  For example, ``*/egg``  |
+| ``*``                 | Selects all child elements, including comments and   |
+|                       | processing instructions.  For example, ``*/egg``     |
 |                       | selects all grandchildren named ``egg``.             |
 +-----------------------+------------------------------------------------------+
 | ``.``                 | Selects the current node.  This is mostly useful     |
@@ -464,6 +477,53 @@ Reference
 
 Functions
 ^^^^^^^^^
+
+.. function:: canonicalize(xml_data=None, *, out=None, from_file=None, **options)
+
+   `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
+
+   Canonicalization is a way to normalise XML output in a way that allows
+   byte-by-byte comparisons and digital signatures.  It reduced the freedom
+   that XML serializers have and instead generates a more constrained XML
+   representation.  The main restrictions regard the placement of namespace
+   declarations, the ordering of attributes, and ignorable whitespace.
+
+   This function takes an XML data string (*xml_data*) or a file path or
+   file-like object (*from_file*) as input, converts it to the canonical
+   form, and writes it out using the *out* file(-like) object, if provided,
+   or returns it as a text string if not.  The output file receives text,
+   not bytes.  It should therefore be opened in text mode with ``utf-8``
+   encoding.
+
+   Typical uses::
+
+      xml_data = "<root>...</root>"
+      print(canonicalize(xml_data))
+
+      with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
+          canonicalize(xml_data, out=out_file)
+
+      with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
+          canonicalize(from_file="inputfile.xml", out=out_file)
+
+   The configuration *options* are as follows:
+
+   - *with_comments*: set to true to include comments (default: false)
+   - *strip_text*: set to true to strip whitespace before and after text content
+                   (default: false)
+   - *rewrite_prefixes*: set to true to replace namespace prefixes by "n{number}"
+                         (default: false)
+   - *qname_aware_tags*: a set of qname aware tag names in which prefixes
+                         should be replaced in text content (default: empty)
+   - *qname_aware_attrs*: a set of qname aware attribute names in which prefixes
+                          should be replaced in text content (default: empty)
+   - *exclude_attrs*: a set of attribute names that should not be serialised
+   - *exclude_tags*: a set of tag names that should not be serialised
+
+   In the option list above, "a set" refers to any collection or iterable of
+   strings, no ordering is expected.
+
+   .. versionadded:: 3.8
 
 
 .. function:: Comment(text=None)
@@ -523,8 +583,9 @@ Functions
    Parses an XML section into an element tree incrementally, and reports what's
    going on to the user.  *source* is a filename or :term:`file object`
    containing XML data.  *events* is a sequence of events to report back.  The
-   supported events are the strings ``"start"``, ``"end"``, ``"start-ns"`` and
-   ``"end-ns"`` (the "ns" events are used to get detailed namespace
+   supported events are the strings ``"start"``, ``"end"``, ``"comment"``,
+   ``"pi"``, ``"start-ns"`` and ``"end-ns"``
+   (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
    *parser* is an optional parser instance.  If not given, the standard
    :class:`XMLParser` parser is used.  *parser* must be a subclass of
@@ -548,6 +609,10 @@ Functions
 
    .. deprecated:: 3.4
       The *parser* argument.
+
+   .. versionchanged:: 3.8
+      The ``comment`` and ``pi`` events were added.
+
 
 .. function:: parse(source, parser=None)
 
@@ -1021,14 +1086,24 @@ TreeBuilder Objects
 ^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: TreeBuilder(element_factory=None)
+.. class:: TreeBuilder(element_factory=None, *, comment_factory=None, \
+                       pi_factory=None, insert_comments=False, insert_pis=False)
 
    Generic element structure builder.  This builder converts a sequence of
-   start, data, and end method calls to a well-formed element structure.  You
-   can use this class to build an element structure using a custom XML parser,
-   or a parser for some other XML-like format.  *element_factory*, when given,
-   must be a callable accepting two positional arguments: a tag and
-   a dict of attributes.  It is expected to return a new element instance.
+   start, data, end, comment and pi method calls to a well-formed element
+   structure.  You can use this class to build an element structure using
+   a custom XML parser, or a parser for some other XML-like format.
+
+   *element_factory*, when given, must be a callable accepting two positional
+   arguments: a tag and a dict of attributes.  It is expected to return a new
+   element instance.
+
+   The *comment_factory* and *pi_factory* functions, when given, should behave
+   like the :func:`Comment` and :func:`ProcessingInstruction` functions to
+   create comments and processing instructions.  When not given, the default
+   factories will be used.  When *insert_comments* and/or *insert_pis* is true,
+   comments/pis will be inserted into the tree if they appear within the root
+   element (but not outside of it).
 
    .. method:: close()
 
@@ -1054,8 +1129,24 @@ TreeBuilder Objects
       containing element attributes.  Returns the opened element.
 
 
+   .. method:: comment(text)
+
+      Creates a comment with the given *text*.  If ``insert_comments`` is true,
+      this will also add it to the tree.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: pi(target, text)
+
+      Creates a comment with the given *target* name and *text*.  If
+      ``insert_pis`` is true, this will also add it to the tree.
+
+      .. versionadded:: 3.8
+
+
    In addition, a custom :class:`TreeBuilder` object can provide the
-   following method:
+   following methods:
 
    .. method:: doctype(name, pubid, system)
 
@@ -1064,6 +1155,36 @@ TreeBuilder Objects
       does not exist on the default :class:`TreeBuilder` class.
 
       .. versionadded:: 3.2
+
+   .. method:: start_ns(prefix, uri)
+
+      Is called whenever the parser encounters a new namespace declaration,
+      before the ``start()`` callback for the opening element that defines it.
+      *prefix* is ``''`` for the default namespace and the declared
+      namespace prefix name otherwise.  *uri* is the namespace URI.
+
+      .. versionadded:: 3.8
+
+   .. method:: end_ns(prefix)
+
+      Is called after the ``end()`` callback of an element that declared
+      a namespace prefix mapping, with the name of the *prefix* that went
+      out of scope.
+
+      .. versionadded:: 3.8
+
+
+.. class:: C14NWriterTarget(write, *, \
+             with_comments=False, strip_text=False, rewrite_prefixes=False, \
+             qname_aware_tags=None, qname_aware_attrs=None, \
+             exclude_attrs=None, exclude_tags=None)
+
+   A `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ writer.  Arguments are the
+   same as for the :func:`canonicalize` function.  This class does not build a
+   tree but translates the callback events directly into a serialised form
+   using the *write* function.
+
+   .. versionadded:: 3.8
 
 
 .. _elementtree-xmlparser-objects:
@@ -1100,7 +1221,8 @@ XMLParser Objects
 
    :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
    for each opening tag, its ``end(tag)`` method for each closing tag, and data
-   is processed by method ``data(data)``.  :meth:`XMLParser.close` calls
+   is processed by method ``data(data)``.  For further supported callback
+   methods, see the :class:`TreeBuilder` class.  :meth:`XMLParser.close` calls
    *target*\'s method ``close()``. :class:`XMLParser` can be used not only for
    building a tree structure. This is an example of counting the maximum depth
    of an XML file::
@@ -1150,9 +1272,9 @@ XMLPullParser Objects
    callback target, :class:`XMLPullParser` collects an internal list of parsing
    events and lets the user read from it. *events* is a sequence of events to
    report back.  The supported events are the strings ``"start"``, ``"end"``,
-   ``"start-ns"`` and ``"end-ns"`` (the "ns" events are used to get detailed
-   namespace information).  If *events* is omitted, only ``"end"`` events are
-   reported.
+   ``"comment"``, ``"pi"``, ``"start-ns"`` and ``"end-ns"`` (the "ns" events
+   are used to get detailed namespace information).  If *events* is omitted,
+   only ``"end"`` events are reported.
 
    .. method:: feed(data)
 
@@ -1171,7 +1293,13 @@ XMLPullParser Objects
       data fed to the
       parser.  The iterator yields ``(event, elem)`` pairs, where *event* is a
       string representing the type of event (e.g. ``"end"``) and *elem* is the
-      encountered :class:`Element` object.
+      encountered :class:`Element` object, or other context value as follows.
+
+      * ``start``, ``end``: the current Element.
+      * ``comment``, ``pi``: the current comment / processing instruction
+      * ``start-ns``: a tuple ``(prefix, uri)`` naming the declared namespace
+        mapping.
+      * ``end-ns``: :const:`None` (this may change in a future version)
 
       Events provided in a previous call to :meth:`read_events` will not be
       yielded again.  Events are consumed from the internal queue only when
@@ -1190,6 +1318,10 @@ XMLPullParser Objects
       If you need a fully populated element, look for "end" events instead.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+      The ``comment`` and ``pi`` events were added.
+
 
 Exceptions
 ^^^^^^^^^^

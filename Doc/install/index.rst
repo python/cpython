@@ -1,4 +1,4 @@
-.. highlightlang:: none
+.. highlight:: none
 
 .. _install-index:
 
@@ -13,23 +13,10 @@
 .. seealso::
 
    :ref:`installing-index`
-      The up to date module installation documentations
+      The up to date module installation documentation. For regular Python
+      usage, you almost certainly want that document rather than this one.
 
-.. The audience for this document includes people who don't know anything
-   about Python and aren't about to learn the language just in order to
-   install and maintain it for their users, i.e. system administrators.
-   Thus, I have to be sure to explain the basics at some point:
-   sys.path and PYTHONPATH at least.  Should probably give pointers to
-   other docs on "import site", PYTHONSTARTUP, PYTHONHOME, etc.
-
-   Finally, it might be useful to include all the material from my "Care
-   and Feeding of a Python Installation" talk in here somewhere.  Yow!
-
-This document describes the Python Distribution Utilities ("Distutils") from the
-end-user's point-of-view, describing how to extend the capabilities of a
-standard Python installation by building and installing third-party Python
-modules and extensions.
-
+.. include:: ../distutils/_setuptools_disclaimer.rst
 
 .. note::
 
@@ -46,59 +33,26 @@ modules and extensions.
 Introduction
 ============
 
-Although Python's extensive standard library covers many programming needs,
-there often comes a time when you need to add some new functionality to your
-Python installation in the form of third-party modules.  This might be necessary
-to support your own programming, or to support an application that you want to
-use and that happens to be written in Python.
+In Python 2.0, the ``distutils`` API was first added to the standard library.
+This provided Linux distro maintainers with a standard way of converting
+Python projects into Linux distro packages, and system administrators with a
+standard way of installing them directly onto target systems.
 
-In the past, there has been little support for adding third-party modules to an
-existing Python installation.  With the introduction of the Python Distribution
-Utilities (Distutils for short) in Python 2.0, this changed.
+In the many years since Python 2.0 was released, tightly coupling the build
+system and package installer to the language runtime release cycle has turned
+out to be problematic, and it is now recommended that projects use the
+``pip`` package installer and the ``setuptools`` build system, rather than
+using ``distutils`` directly.
 
-This document is aimed primarily at the people who need to install third-party
-Python modules: end-users and system administrators who just need to get some
-Python application running, and existing Python programmers who want to add some
-new goodies to their toolbox.  You don't need to know Python to read this
-document; there will be some brief forays into using Python's interactive mode
-to explore your installation, but that's it.  If you're looking for information
-on how to distribute your own Python modules so that others may use them, see
-the :ref:`distutils-index` manual.  :ref:`debug-setup-script` may also be of
-interest.
+See :ref:`installing-index` and :ref:`distributing-index` for more details.
 
-
-.. _inst-trivial-install:
-
-Best case: trivial installation
--------------------------------
-
-In the best case, someone will have prepared a special version of the module
-distribution you want to install that is targeted specifically at your platform
-and is installed just like any other software on your platform.  For example,
-the module developer might make an executable installer available for Windows
-users, an RPM package for users of RPM-based Linux systems (Red Hat, SuSE,
-Mandrake, and many others), a Debian package for users of Debian-based Linux
-systems, and so forth.
-
-In that case, you would download the installer appropriate to your platform and
-do the obvious thing with it: run it if it's an executable installer, ``rpm
---install`` it if it's an RPM, etc.  You don't need to run Python or a setup
-script, you don't need to compile anything---you might not even need to read any
-instructions (although it's always a good idea to do so anyway).
-
-Of course, things will not always be that easy.  You might be interested in a
-module distribution that doesn't have an easy-to-use installer for your
-platform.  In that case, you'll have to start with the source distribution
-released by the module's author/maintainer.  Installing from a source
-distribution is not too hard, as long as the modules are packaged in the
-standard way.  The bulk of this document is about building and installing
-modules from standard source distributions.
-
+This legacy documentation is being retained only until we're confident that the
+``setuptools`` documentation covers everything needed.
 
 .. _inst-new-standard:
 
-The new standard: Distutils
----------------------------
+Distutils based source distributions
+------------------------------------
 
 If you download a module source distribution, you can tell pretty quickly if it
 was packaged and distributed in the standard way, i.e. using the Distutils.

@@ -1006,7 +1006,7 @@ def temp_dir(path=None, quiet=False):
         yield path
     finally:
         # In case the process forks, let only the parent remove the
-        # directory. The child has a diffent process id. (bpo-30028)
+        # directory. The child has a different process id. (bpo-30028)
         if dir_created and pid == os.getpid():
             rmtree(path)
 
@@ -1653,7 +1653,7 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "gettotalrefcount"):
+if hasattr(sys, "getobjects"):
     _header = '2P' + _header
     _align = '0P'
 _vheader = _header + 'n'

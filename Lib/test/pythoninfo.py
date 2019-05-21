@@ -571,10 +571,17 @@ def collect_cc(info_add):
     except ImportError:
         args = CC.split()
     args.append('--version')
-    proc = subprocess.Popen(args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            universal_newlines=True)
+    try:
+        proc = subprocess.Popen(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True)
+    except OSError:
+        # Cannot run the compiler, for example when Python has been
+        # cross-compiled and installed on the target platform where the
+        # compiler is missing.
+        return
+
     stdout = proc.communicate()[0]
     if proc.returncode:
         # CC --version failed: ignore error
@@ -595,8 +602,7 @@ def collect_gdbm(info_add):
 
 
 def collect_get_config(info_add):
-    # Dump global configuration variables, _PyCoreConfig
-    # and _PyMainInterpreterConfig
+    # Get global configuration variables, _PyPreConfig and _PyCoreConfig
     try:
         from _testinternalcapi import get_configs
     except ImportError:

@@ -2376,7 +2376,7 @@ other data types containing pointer type fields.
       and so on).  Later assignments to the :attr:`_fields_` class variable will
       raise an AttributeError.
 
-      It is possible to defined sub-subclasses of structure types, they inherit
+      It is possible to define sub-subclasses of structure types, they inherit
       the fields of the base class plus the :attr:`_fields_` defined in the
       sub-subclass, if any.
 
@@ -2424,7 +2424,7 @@ other data types containing pointer type fields.
          td.lptdesc = POINTER(some_type)
          td.u.lptdesc = POINTER(some_type)
 
-   It is possible to defined sub-subclasses of structures, they inherit the
+   It is possible to define sub-subclasses of structures, they inherit the
    fields of the base class.  If the subclass definition has a separate
    :attr:`_fields_` variable, the fields specified in this are appended to the
    fields of the base class.

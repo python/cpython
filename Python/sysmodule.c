@@ -424,7 +424,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-    return PyUnicode_FromString(config->filesystem_encoding);
+    return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
 /*[clinic input]
@@ -439,7 +439,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     const _PyCoreConfig *config = &interp->core_config;
-    return PyUnicode_FromString(config->filesystem_errors);
+    return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
 /*[clinic input]
@@ -1206,30 +1206,9 @@ static PyObject *
 sys__enablelegacywindowsfsencoding_impl(PyObject *module)
 /*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    _PyCoreConfig *config = &interp->core_config;
-
-    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
-    char *encoding = _PyMem_RawStrdup("mbcs");
-    char *errors = _PyMem_RawStrdup("replace");
-    if (encoding == NULL || errors == NULL) {
-        PyMem_Free(encoding);
-        PyMem_Free(errors);
-        PyErr_NoMemory();
+    if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
         return NULL;
     }
-
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
-    PyMem_RawFree(config->filesystem_errors);
-    config->filesystem_errors = errors;
-
-    if (_Py_SetFileSystemEncoding(config->filesystem_encoding,
-                                  config->filesystem_errors) < 0) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
     Py_RETURN_NONE;
 }
 
@@ -1766,7 +1745,7 @@ _alloc_preinit_entry(const wchar_t *value)
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return node;
-};
+}
 
 static int
 _append_preinit_entry(_Py_PreInitEntry *optionlist, const wchar_t *value)
@@ -1788,7 +1767,7 @@ _append_preinit_entry(_Py_PreInitEntry *optionlist, const wchar_t *value)
         last_entry->next = new_entry;
     }
     return 0;
-};
+}
 
 static void
 _clear_preinit_entries(_Py_PreInitEntry *optionlist)
@@ -1805,7 +1784,7 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
         current = next;
     }
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-};
+}
 
 static void
 _clear_all_preinit_options(void)
@@ -1836,7 +1815,7 @@ _PySys_ReadPreInitOptions(void)
 
     _clear_all_preinit_options();
     return 0;
-};
+}
 
 static PyObject *
 get_warnoptions(void)
@@ -2150,12 +2129,12 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static PyObject*
-make_flags(void)
+make_flags(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     int pos = 0;
     PyObject *seq;
-    const _PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    const _PyPreConfig *preconfig = &runtime->preconfig;
+    const _PyCoreConfig *config = &interp->core_config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2370,7 +2349,8 @@ static struct PyModuleDef sysmodule = {
     } while (0)
 
 static _PyInitError
-_PySys_InitCore(PyObject *sysdict)
+_PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
+                PyObject *sysdict)
 {
     PyObject *version_info;
     int res;
@@ -2460,8 +2440,8 @@ _PySys_InitCore(PyObject *sysdict)
             goto type_init_failed;
         }
     }
-    /* Set flags to their default values */
-    SET_SYS_FROM_STRING("flags", make_flags());
+    /* Set flags to their default values (updated by _PySys_InitMain()) */
+    SET_SYS_FROM_STRING("flags", make_flags(runtime, interp));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2582,7 +2562,7 @@ sys_create_xoptions_dict(const _PyCoreConfig *config)
 
 
 int
-_PySys_InitMain(PyInterpreterState *interp)
+_PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     PyObject *sysdict = interp->sysdict;
     const _PyCoreConfig *config = &interp->core_config;
@@ -2636,7 +2616,7 @@ _PySys_InitMain(PyInterpreterState *interp)
 #undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags());
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, interp));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -2703,7 +2683,8 @@ error:
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
 _PyInitError
-_PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
+_PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
+              PyObject **sysmod_p)
 {
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
@@ -2732,7 +2713,7 @@ _PySys_Create(PyInterpreterState *interp, PyObject **sysmod_p)
         return err;
     }
 
-    err = _PySys_InitCore(sysdict);
+    err = _PySys_InitCore(runtime, interp, sysdict);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }

@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_context.h"
@@ -385,7 +386,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                universally available */
             Py_BEGIN_ALLOW_THREADS
             fprintf(fp, "<refcnt %ld at %p>",
-                (long)op->ob_refcnt, op);
+                (long)op->ob_refcnt, (void *)op);
             Py_END_ALLOW_THREADS
         }
         else {
@@ -499,7 +500,7 @@ _PyObject_Dump(PyObject* op)
         "address : %p\n",
         Py_TYPE(op)==NULL ? "NULL" : Py_TYPE(op)->tp_name,
         (long)op->ob_refcnt,
-        op);
+        (void *)op);
     fflush(stderr);
 }
 
@@ -1044,8 +1045,10 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     }
     if (tp->tp_setattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
-        if (name_str == NULL)
+        if (name_str == NULL) {
+            Py_DECREF(name);
             return -1;
+        }
         err = (*tp->tp_setattr)(v, (char *)name_str, value);
         Py_DECREF(name);
         return err;
@@ -1893,7 +1896,7 @@ _Py_PrintReferences(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining objects:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", op, op->ob_refcnt);
+        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, op->ob_refcnt);
         if (PyObject_Print(op, fp, 0) != 0)
             PyErr_Clear();
         putc('\n', fp);
@@ -1909,7 +1912,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining object addresses:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", op,
+        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", (void *)op,
             op->ob_refcnt, Py_TYPE(op)->tp_name);
 }
 
@@ -2166,10 +2169,10 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         fprintf(stderr, "<object: ob_type=NULL>\n");
     }
     else if (_PyObject_IsFreed((PyObject *)Py_TYPE(obj))) {
-        fprintf(stderr, "<object: freed type %p>\n", Py_TYPE(obj));
+        fprintf(stderr, "<object: freed type %p>\n", (void *)Py_TYPE(obj));
     }
     else {
-        /* Diplay the traceback where the object has been allocated.
+        /* Display the traceback where the object has been allocated.
            Do it before dumping repr(obj), since repr() is more likely
            to crash than dumping the traceback. */
         void *ptr;

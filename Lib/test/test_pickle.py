@@ -11,6 +11,7 @@ import weakref
 import unittest
 from test import support
 
+from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
 from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
@@ -18,6 +19,7 @@ from test.pickletester import AbstractPersistentPicklerTests
 from test.pickletester import AbstractIdentityPersistentPicklerTests
 from test.pickletester import AbstractPicklerUnpicklerObjectTests
 from test.pickletester import AbstractDispatchTableTests
+from test.pickletester import AbstractCustomPicklerClass
 from test.pickletester import BigmemPickleTests
 
 try:
@@ -253,12 +255,23 @@ if has_c_implementation:
         def get_dispatch_table(self):
             return collections.ChainMap({}, pickle.dispatch_table)
 
+    class PyPicklerHookTests(AbstractHookTests):
+        class CustomPyPicklerClass(pickle._Pickler,
+                                   AbstractCustomPicklerClass):
+            pass
+        pickler_class = CustomPyPicklerClass
+
+    class CPicklerHookTests(AbstractHookTests):
+        class CustomCPicklerClass(_pickle.Pickler, AbstractCustomPicklerClass):
+            pass
+        pickler_class = CustomCPicklerClass
+
     @support.cpython_only
     class SizeofTests(unittest.TestCase):
         check_sizeof = support.check_sizeof
 
         def test_pickler(self):
-            basesize = support.calcobjsize('6P2n3i2n3iP')
+            basesize = support.calcobjsize('6P2n3i2n3i2P')
             p = _pickle.Pickler(io.BytesIO())
             self.assertEqual(object.__sizeof__(p), basesize)
             MT_size = struct.calcsize('3nP0n')
@@ -498,7 +511,7 @@ def test_main():
     tests = [PyPickleTests, PyUnpicklerTests, PyPicklerTests,
              PyPersPicklerTests, PyIdPersPicklerTests,
              PyDispatchTableTests, PyChainDispatchTableTests,
-             CompatPickleTests]
+             CompatPickleTests, PyPicklerHookTests]
     if has_c_implementation:
         tests.extend([CPickleTests, CUnpicklerTests, CPicklerTests,
                       CPersPicklerTests, CIdPersPicklerTests,
@@ -506,6 +519,7 @@ def test_main():
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
                       CDispatchTableTests, CChainDispatchTableTests,
+                      CPicklerHookTests,
                       InMemoryPickleTests, SizeofTests])
     support.run_unittest(*tests)
     support.run_doctest(pickle)

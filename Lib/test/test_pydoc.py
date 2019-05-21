@@ -1250,7 +1250,6 @@ cm(x) method of builtins.type instance
         class X:
             attr = Descr()
 
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), """\
 <test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
 
@@ -1276,17 +1275,14 @@ foo(...)
         class X:
             attr = Descr()
 
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), "")
 
         X.attr.__doc__ = 'Custom descriptor'
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), """\
     Custom descriptor
 """)
 
         X.attr.__name__ = 'foo'
-        text = pydoc.plain(pydoc.render_doc(X.attr))
         self.assertEqual(self._get_summary_lines(X.attr), """\
 foo
     Custom descriptor

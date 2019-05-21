@@ -755,6 +755,13 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
+
+    @unittest.skipUnless(sys.platform=='win32', 'Windows-only process limit')
+    def test_max_workers_too_large(self):
+        with self.assertRaisesRegex(ValueError,
+                                    "max_workers must be <= 61"):
+            futures.ProcessPoolExecutor(max_workers=62)
+
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".
