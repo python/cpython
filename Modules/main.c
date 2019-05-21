@@ -18,8 +18,8 @@
 #  endif
 #endif
 
-#ifdef _MSC_VER
-#  include <crtdbg.h>
+#ifdef MS_WINDOWS
+#  include <windows.h>  /* STATUS_CONTROL_C_EXIT */
 #endif
 
 #ifdef __FreeBSD__
@@ -30,7 +30,6 @@
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
 #else
 #  define PYTHONHOMEHELP "<prefix>/lib/pythonX.X"
-#endif
 
 #define COPYRIGHT \
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
