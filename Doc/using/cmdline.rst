@@ -1,4 +1,4 @@
-.. highlightlang:: sh
+.. highlight:: sh
 
 .. ATTENTION: You probably should update Misc/python.man, too, if you modify
    this file.

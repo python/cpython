@@ -659,6 +659,8 @@ will then be attached to that window for input and output.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">sys</span></code> is reset by user code, such as with <code class="docutils literal notranslate"><span class="pre">importlib.reload(sys)</span></code>,
 IDLE’s changes are lost and input from the keyboard and output to the screen
 will not work correctly.</p>
+<p>When user code raises SystemExit either directly or by calling sys.exit, IDLE
+returns to a Shell prompt instead of exiting.</p>
 </div>
 <div class="section" id="user-output-in-shell">
 <h3>User output in Shell<a class="headerlink" href="#user-output-in-shell" title="Permalink to this headline">¶</a></h3>
@@ -941,7 +943,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on May 16, 2019.
+    Last updated on May 19, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

@@ -2971,7 +2971,6 @@ ast_for_expr(struct compiling *c, const node *n)
                 return Compare(expression, ops, cmps, LINENO(n), n->n_col_offset,
                                n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             }
-            break;
 
         case star_expr:
             return ast_for_starred(c, n);
@@ -3618,7 +3617,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                     return NULL;
                 return a;
             }
-            break;
         case dotted_name:
             if (NCH(n) == 1) {
                 node *name_node = CHILD(n, 0);
@@ -3669,7 +3667,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 }
                 return alias(str, NULL, c->c_arena);
             }
-            break;
         case STAR:
             str = PyUnicode_InternFromString("*");
             if (!str)

@@ -835,6 +835,9 @@
 /* Define to 1 if you have the `round' function. */
 #undef HAVE_ROUND
 
+/* Define to 1 if you have the `rtpSpawn' function. */
+#undef HAVE_RTPSPAWN
+
 /* Define to 1 if you have the `sched_get_priority_max' function. */
 #undef HAVE_SCHED_GET_PRIORITY_MAX
 

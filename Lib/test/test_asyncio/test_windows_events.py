@@ -104,7 +104,8 @@ class ProactorTests(test_utils.TestCase):
             stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
                                     loop=self.loop, _asyncio_internal=True)
             protocol = _StreamProtocol(stream,
-                                       loop=self.loop)
+                                       loop=self.loop,
+                                       _asyncio_internal=True)
             trans, proto = await self.loop.create_pipe_connection(
                 lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, asyncio.Transport)

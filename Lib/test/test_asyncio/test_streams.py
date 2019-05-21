@@ -643,8 +643,7 @@ class StreamTests(test_utils.TestCase):
                                 loop=self.loop,
                                 _asyncio_internal=True)
 
-        @asyncio.coroutine
-        def set_err():
+        async def set_err():
             stream.set_exception(ValueError())
 
         t1 = asyncio.Task(stream.readline(), loop=self.loop)
