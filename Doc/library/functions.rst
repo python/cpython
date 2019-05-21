@@ -261,7 +261,7 @@ are always available.  They are listed here in alphabetical order.
    allowed to contain top-level ``await``, ``async for`` and ``async with``.
    When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the the return code
    object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
-   executed via ``yield from eval(code_object)``.
+   executed via ``await eval(code_object)``.
 
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
