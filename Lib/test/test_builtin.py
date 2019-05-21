@@ -377,14 +377,13 @@ class BuiltinTest(unittest.TestCase):
                pass''']
         for mode, code_sample in product(modes,code_samples):
             source = dedent(code_sample)
-            msg = 'source={!r} mode={!r})'
-            with self.assertRaises(SyntaxError, msg=msg.format(source, mode)):
+            with self.assertRaises(SyntaxError, msg=f"{source=} {mode=}"):
                 compile(source, '?' , mode)
 
             co = compile(source, '?', mode, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
             self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                             msg=msg.format(source, mode))
+                             msg=f"{source=} {mode=}")
 
     def test_compile_async_generator(self):
         """
