@@ -2593,11 +2593,30 @@ Return the red, green, and blue (RGB) components of the specified color.
 
 A 3-tuple is returned, containing the R, G, B values for the given color,
 which will be between 0 (no component) and 1000 (maximum amount of component).
-[clinic start generated code]*/
+*/
+
+#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
+static PyObject *
+_curses_extended_color_content_impl(PyObject *module, int color_number)
+{
+    int r,g,b;
+
+    PyCursesInitialised;
+    PyCursesInitialisedColor;
+
+    if (extended_color_content(color_number, &r, &g, &b) != ERR)
+        return Py_BuildValue("(iii)", r, g, b);
+    else {
+        PyErr_SetString(PyCursesError,
+                        "Argument 1 was out of range. Check value of COLORS.");
+        return NULL;
+    }
+}
+
+#else   /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 static PyObject *
 _curses_color_content_impl(PyObject *module, short color_number)
-/*[clinic end generated code: output=cb15cf3120d4bfc1 input=5555abb1c11e11b7]*/
 {
     short r,g,b;
 
@@ -2612,6 +2631,7 @@ _curses_color_content_impl(PyObject *module, short color_number)
         return NULL;
     }
 }
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 /*[clinic input]
 _curses.color_pair
@@ -2624,11 +2644,10 @@ Return the attribute value for displaying text in the specified color.
 
 This attribute value can be combined with A_STANDOUT, A_REVERSE, and the
 other A_* attributes.  pair_number() is the counterpart to this function.
-[clinic start generated code]*/
+*/
 
 static PyObject *
-_curses_color_pair_impl(PyObject *module, short color_number)
-/*[clinic end generated code: output=6a84cb6b29ecaf9a input=a9d3eb6f50e4dc12]*/
+_curses_color_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number)
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
@@ -3042,18 +3061,31 @@ Change the definition of a color.
 When init_color() is used, all occurrences of that color on the screen
 immediately change to the new definition.  This function is a no-op on
 most terminals; it is active only if can_change_color() returns 1.
-[clinic start generated code]*/
+*/
+
+#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
+static PyObject *
+_curses_init_extended_color_impl(PyObject *module, int color_number, int r,
+                        int g, int b)
+{
+    PyCursesInitialised;
+    PyCursesInitialisedColor;
+
+    return PyCursesCheckERR(init_extended_color(color_number, r, g, b), "init_extended_color");
+}
+
+#else   /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 static PyObject *
 _curses_init_color_impl(PyObject *module, short color_number, short r,
                         short g, short b)
-/*[clinic end generated code: output=280236f5efe9776a input=f3a05bd38f619175]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
     return PyCursesCheckERR(init_color(color_number, r, g, b), "init_color");
 }
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 /*[clinic input]
 _curses.init_pair
@@ -3070,7 +3102,37 @@ Change the definition of a color-pair.
 
 If the color-pair was previously initialized, the screen is refreshed and
 all occurrences of that color-pair are changed to the new definition.
-[clinic start generated code]*/
+*/
+
+/*
+_curses._curses_init_extended_pair_impl
+
+    pair_number: int
+        The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).
+    fg: int
+        Foreground color number (0 - COLORS).
+    bg: int
+        Background color number (0 - COLORS).
+    /
+
+Change the definition of a color-pair.
+
+If the color-pair was previously initialized, the screen is refreshed and
+all occurrences of that color-pair are changed to the new definition.
+*/
+
+#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
+static PyObject *
+_curses_init_extended_pair_impl(PyObject *module, int pair_number, int fg,
+                                int bg)
+{
+    PyCursesInitialised;
+    PyCursesInitialisedColor;
+
+    return PyCursesCheckERR(init_extended_pair(pair_number, fg, bg), "init_extended_pair");
+}
+
+#else   /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 static PyObject *
 _curses_init_pair_impl(PyObject *module, short pair_number, short fg,
@@ -3082,6 +3144,7 @@ _curses_init_pair_impl(PyObject *module, short pair_number, short fg,
 
     return PyCursesCheckERR(init_pair(pair_number, fg, bg), "init_pair");
 }
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 static PyObject *ModDict;
 
@@ -3702,11 +3765,30 @@ _curses.pair_content
     /
 
 Return a tuple (fg, bg) containing the colors for the requested color pair.
-[clinic start generated code]*/
+*/
+
+#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
+static PyObject *
+_curses_extended_pair_content_impl(PyObject *module, int pair_number)
+{
+    int f, b;
+
+    PyCursesInitialised;
+    PyCursesInitialisedColor;
+
+    if (extended_pair_content(pair_number, &f, &b)!=ERR) {
+        PyErr_SetString(PyCursesError,
+                        "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
+        return NULL;
+    }
+
+    return Py_BuildValue("(ii)", f, b);
+}
+
+#else   /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 static PyObject *
 _curses_pair_content_impl(PyObject *module, short pair_number)
-/*[clinic end generated code: output=5a72aa1a28bbacf3 input=f4d7fec5643b976b]*/
 {
     short f, b;
 
@@ -3721,6 +3803,7 @@ _curses_pair_content_impl(PyObject *module, short pair_number)
 
     return Py_BuildValue("(ii)", f, b);
 }
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 /*[clinic input]
 _curses.pair_number

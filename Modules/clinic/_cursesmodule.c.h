@@ -1,3 +1,22 @@
+
+#if defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)
+#define _NCURSES_EXTENDED_COLOR_FUNCS   1
+#else
+#define _NCURSES_EXTENDED_COLOR_FUNCS   0
+#endif      /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS) */
+
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _NCURSES_COLOR_VAL_MAX      INT_MAX
+#define _NCURSES_COLOR_VAL_MIN      INT_MIN
+#define _NCURSES_COLOR_VAL_TYPE     int
+#define _NCURSES_COLOR_VAL_TYPE_STR "integer"
+#else
+#define _NCURSES_COLOR_VAL_MAX      SHRT_MAX
+#define _NCURSES_COLOR_VAL_MIN      SHRT_MIN
+#define _NCURSES_COLOR_VAL_TYPE     short
+#define _NCURSES_COLOR_VAL_TYPE_STR "short integer"
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
 /*[clinic input]
 preserve
 [clinic start generated code]*/
@@ -1966,39 +1985,49 @@ PyDoc_STRVAR(_curses_color_content__doc__,
 #define _CURSES_COLOR_CONTENT_METHODDEF    \
     {"color_content", (PyCFunction)_curses_color_content, METH_O, _curses_color_content__doc__},
 
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _CURSES_COLOR_CONTENT_IMPL_FUNC    _curses_extended_color_content_impl
+#else
+#define _CURSES_COLOR_CONTENT_IMPL_FUNC    _curses_color_content_impl
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
 static PyObject *
-_curses_color_content_impl(PyObject *module, short color_number);
+_CURSES_COLOR_CONTENT_IMPL_FUNC(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number);
 
 static PyObject *
 _curses_color_content(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    short color_number;
+    _NCURSES_COLOR_VAL_TYPE color_number;
 
     {
         long ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
             goto exit;
         }
         else {
-            color_number = (short) ival;
+            color_number = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
-    return_value = _curses_color_content_impl(module, color_number);
+    return_value = _CURSES_COLOR_CONTENT_IMPL_FUNC(module, color_number);
 
 exit:
     return return_value;
 }
+
+#ifdef _CURSES_COLOR_CONTENT_IMPL_FUNC
+#undef _CURSES_COLOR_CONTENT_IMPL_FUNC
+#endif  /* _CURSES_COLOR_CONTENT_IMPL_FUNC */
 
 PyDoc_STRVAR(_curses_color_pair__doc__,
 "color_pair($module, color_number, /)\n"
@@ -2016,31 +2045,31 @@ PyDoc_STRVAR(_curses_color_pair__doc__,
     {"color_pair", (PyCFunction)_curses_color_pair, METH_O, _curses_color_pair__doc__},
 
 static PyObject *
-_curses_color_pair_impl(PyObject *module, short color_number);
+_curses_color_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number);
 
 static PyObject *
 _curses_color_pair(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    short color_number;
+    _NCURSES_COLOR_VAL_TYPE color_number;
 
     {
         long ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR "is greater than maximum");
             goto exit;
         }
         else {
-            color_number = (short) ival;
+            color_number = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
     return_value = _curses_color_pair_impl(module, color_number);
@@ -2589,18 +2618,25 @@ PyDoc_STRVAR(_curses_init_color__doc__,
 #define _CURSES_INIT_COLOR_METHODDEF    \
     {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
 
+#ifdef  _NCURSES_EXTENDED_COLOR_FUNCS
+#define _CURSES_INIT_COLOR_IMPL_FUNC    _curses_init_extended_color_impl
+#else
+#define _CURSES_INIT_COLOR_IMPL_FUNC    _curses_init_color_impl
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
 static PyObject *
-_curses_init_color_impl(PyObject *module, short color_number, short r,
-                        short g, short b);
+_CURSES_INIT_COLOR_IMPL_FUNC(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number,
+                             _NCURSES_COLOR_VAL_TYPE r, _NCURSES_COLOR_VAL_TYPE g,
+                             _NCURSES_COLOR_VAL_TYPE b);
 
 static PyObject *
 _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    short color_number;
-    short r;
-    short g;
-    short b;
+    _NCURSES_COLOR_VAL_TYPE color_number;
+    _NCURSES_COLOR_VAL_TYPE r;
+    _NCURSES_COLOR_VAL_TYPE g;
+    _NCURSES_COLOR_VAL_TYPE b;
 
     if (!_PyArg_CheckPositional("init_color", nargs, 4, 4)) {
         goto exit;
@@ -2610,18 +2646,18 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is greater than maximum");
             goto exit;
         }
         else {
-            color_number = (short) ival;
+            color_number = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
     {
@@ -2629,18 +2665,18 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is greater than maximum");
             goto exit;
         }
         else {
-            r = (short) ival;
+            r = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
     {
@@ -2648,18 +2684,18 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is greater than maximum");
             goto exit;
         }
         else {
-            g = (short) ival;
+            g = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
     {
@@ -2667,25 +2703,29 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "signed short integer is greater than maximum");
             goto exit;
         }
         else {
-            b = (short) ival;
+            b = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
-    return_value = _curses_init_color_impl(module, color_number, r, g, b);
+    return_value = _CURSES_INIT_COLOR_IMPL_FUNC(module, color_number, r, g, b);
 
 exit:
     return return_value;
 }
+
+#ifdef _CURSES_INIT_COLOR_IMPL_FUNC
+#undef _CURSES_INIT_COLOR_IMPL_FUNC
+#endif  /* _CURSES_INIT_COLOR_IMPL_FUNC */
 
 PyDoc_STRVAR(_curses_init_pair__doc__,
 "init_pair($module, pair_number, fg, bg, /)\n"
@@ -2706,17 +2746,23 @@ PyDoc_STRVAR(_curses_init_pair__doc__,
 #define _CURSES_INIT_PAIR_METHODDEF    \
     {"init_pair", (PyCFunction)(void(*)(void))_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
 
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _CURSES_INIT_PAIR_IMPL_FUNC     _curses_init_extended_pair_impl
+#else
+#define _CURSES_INIT_PAIR_IMPL_FUNC     _curses_init_pair_impl
+#endif
+
 static PyObject *
-_curses_init_pair_impl(PyObject *module, short pair_number, short fg,
-                       short bg);
+_CURSES_INIT_PAIR_IMPL_FUNC(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number,
+                            _NCURSES_COLOR_VAL_TYPE fg, _NCURSES_COLOR_VAL_TYPE bg);
 
 static PyObject *
 _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    short pair_number;
-    short fg;
-    short bg;
+    _NCURSES_COLOR_VAL_TYPE pair_number;
+    _NCURSES_COLOR_VAL_TYPE fg;
+    _NCURSES_COLOR_VAL_TYPE bg;
 
     if (!_PyArg_CheckPositional("init_pair", nargs, 3, 3)) {
         goto exit;
@@ -2726,18 +2772,18 @@ _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
             goto exit;
         }
         else {
-            pair_number = (short) ival;
+            pair_number = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
     {
@@ -2745,18 +2791,18 @@ _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
+                            "signed  " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
+                            "signed  " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
             goto exit;
         }
         else {
-            fg = (short) ival;
+            fg = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
     {
@@ -2764,25 +2810,29 @@ _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
+                            "signed  " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
+                            "signed  " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
             goto exit;
         }
         else {
-            bg = (short) ival;
+            bg = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
-    return_value = _curses_init_pair_impl(module, pair_number, fg, bg);
+    return_value = _CURSES_INIT_PAIR_IMPL_FUNC(module, pair_number, fg, bg);
 
 exit:
     return return_value;
 }
+
+#ifdef _CURSES_INIT_PAIR_IMPL_FUNC
+#undef _CURSES_INIT_PAIR_IMPL_FUNC
+#endif  /* _CURSES_INIT_PAIR_IMPL_FUNC */
 
 PyDoc_STRVAR(_curses_initscr__doc__,
 "initscr($module, /)\n"
@@ -3553,39 +3603,49 @@ PyDoc_STRVAR(_curses_pair_content__doc__,
 #define _CURSES_PAIR_CONTENT_METHODDEF    \
     {"pair_content", (PyCFunction)_curses_pair_content, METH_O, _curses_pair_content__doc__},
 
+#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
+#define _CURSES_PAIR_CONTENT_IMPL_FUNC      _curses_extended_pair_content_impl
+#else
+#define _CURSES_PAIR_CONTENT_IMPL_FUNC      _curses_pair_content_impl
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
 static PyObject *
-_curses_pair_content_impl(PyObject *module, short pair_number);
+_CURSES_PAIR_CONTENT_IMPL_FUNC(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number);
 
 static PyObject *
 _curses_pair_content(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    short pair_number;
+    _NCURSES_COLOR_VAL_TYPE pair_number;
 
     {
         long ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        else if (ival < SHRT_MIN) {
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
             goto exit;
         }
-        else if (ival > SHRT_MAX) {
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
             PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
             goto exit;
         }
         else {
-            pair_number = (short) ival;
+            pair_number = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
-    return_value = _curses_pair_content_impl(module, pair_number);
+    return_value = _CURSES_PAIR_CONTENT_IMPL_FUNC(module, pair_number);
 
 exit:
     return return_value;
 }
+
+#ifdef _CURSES_PAIR_CONTENT_IMPL_FUNC
+#undef _CURSES_PAIR_CONTENT_IMPL_FUNC
+#endif  /* _CURSES_PAIR_CONTENT_IMPL_FUNC */
 
 PyDoc_STRVAR(_curses_pair_number__doc__,
 "pair_number($module, attr, /)\n"
