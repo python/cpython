@@ -47,11 +47,10 @@ Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
+static void
 Xxo_finalize(XxoObject *self)
 {
     Py_CLEAR(self->x_attr);
-    return 0;
 }
 
 static PyObject *
@@ -79,10 +78,13 @@ static PyObject *
 Xxo_getattro(XxoObject *self, PyObject *name)
 {
     if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItem(self->x_attr, name);
+        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
             Py_INCREF(v);
             return v;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
         }
     }
     return PyObject_GenericGetAttr((PyObject *)self, name);
@@ -98,7 +100,7 @@ Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0)
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Xxo attribute");
         return rv;

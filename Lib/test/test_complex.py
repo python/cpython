@@ -345,6 +345,9 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(type(complex("1"*500)), complex)
         # check whitespace processing
         self.assertEqual(complex('\N{EM SPACE}(\N{EN SPACE}1+1j ) '), 1+1j)
+        # Invalid unicode string
+        # See bpo-34087
+        self.assertRaises(ValueError, complex, '\u3053\u3093\u306b\u3061\u306f')
 
         class EvilExc(Exception):
             pass

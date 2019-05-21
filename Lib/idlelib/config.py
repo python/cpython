@@ -34,7 +34,6 @@ import idlelib
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
-class InvalidFgBg(Exception): pass
 class InvalidTheme(Exception): pass
 
 class IdleConfParser(ConfigParser):
@@ -283,34 +282,20 @@ class IdleConf:
             raise InvalidConfigSet('Invalid configSet specified')
         return cfgParser.sections()
 
-    def GetHighlight(self, theme, element, fgBg=None):
-        """Return individual theme element highlight color(s).
+    def GetHighlight(self, theme, element):
+        """Return dict of theme element highlight colors.
 
-        fgBg - string ('fg' or 'bg') or None.
-        If None, return a dictionary containing fg and bg colors with
-        keys 'foreground' and 'background'.  Otherwise, only return
-        fg or bg color, as specified.  Colors are intended to be
-        appropriate for passing to Tkinter in, e.g., a tag_config call).
+        The keys are 'foreground' and 'background'.  The values are
+        tkinter color strings for configuring backgrounds and tags.
         """
-        if self.defaultCfg['highlight'].has_section(theme):
-            themeDict = self.GetThemeDict('default', theme)
-        else:
-            themeDict = self.GetThemeDict('user', theme)
-        fore = themeDict[element + '-foreground']
-        if element == 'cursor':  # There is no config value for cursor bg
-            back = themeDict['normal-background']
-        else:
-            back = themeDict[element + '-background']
-        highlight = {"foreground": fore, "background": back}
-        if not fgBg:  # Return dict of both colors
-            return highlight
-        else:  # Return specified color only
-            if fgBg == 'fg':
-                return highlight["foreground"]
-            if fgBg == 'bg':
-                return highlight["background"]
-            else:
-                raise InvalidFgBg('Invalid fgBg specified')
+        cfg = ('default' if self.defaultCfg['highlight'].has_section(theme)
+               else 'user')
+        theme_dict = self.GetThemeDict(cfg, theme)
+        fore = theme_dict[element + '-foreground']
+        if element == 'cursor':
+            element = 'normal'
+        back = theme_dict[element + '-background']
+        return {"foreground": fore, "background": back}
 
     def GetThemeDict(self, type, themeName):
         """Return {option:value} dict for elements in themeName.
@@ -359,7 +344,10 @@ class IdleConf:
                 'stderr-foreground':'#000000',
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
-                'console-background':'#ffffff' }
+                'console-background':'#ffffff',
+                'context-foreground':'#000000',
+                'context-background':'#ffffff',
+                }
         for element in theme:
             if not cfgParser.has_option(themeName, element):
                 # Print warning that will return a default color
@@ -443,6 +431,11 @@ class IdleConf:
         for extn in userExtns:
             if extn not in extns: #user has added own extension
                 extns.append(extn)
+        for extn in ('AutoComplete','CodeContext',
+                     'FormatParagraph','ParenMatch'):
+            extns.remove(extn)
+            # specific exclusions because we are storing config for mainlined old
+            # extensions in config-extensions.def for backward compatibility
         if active_only:
             activeExtns = []
             for extn in extns:
@@ -554,12 +547,11 @@ class IdleConf:
         result = self.GetKeySet(self.CurrentKeys())
 
         if sys.platform == "darwin":
-            # OS X Tk variants do not support the "Alt" keyboard modifier.
-            # So replace all keybingings that use "Alt" with ones that
-            # use the "Option" keyboard modifier.
-            # TODO (Ned?): the "Option" modifier does not work properly for
-            #        Cocoa Tk and XQuartz Tk so we should not use it
-            #        in default OS X KeySets.
+            # macOS (OS X) Tk variants do not support the "Alt"
+            # keyboard modifier.  Replace it with "Option".
+            # TODO (Ned?): the "Option" modifier does not work properly
+            #     for Cocoa Tk and XQuartz Tk so we should not use it
+            #     in the default 'OSX' keyset.
             for k, v in result.items():
                 v2 = [ x.replace('<Alt-', '<Option-') for x in v ]
                 if v != v2:
@@ -594,7 +586,12 @@ class IdleConf:
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
 # TODO make keyBindins a file or class attribute used for test above
-# and copied in function below
+# and copied in function below.
+
+    former_extension_events = {  #  Those with user-configurable keys.
+        '<<force-open-completions>>', '<<expand-word>>',
+        '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
+         '<<run-module>>', '<<check-module>>', '<<zoom-height>>'}
 
     def GetCoreKeys(self, keySetName=None):
         """Return dict of core virtual-key keybindings for keySetName.
@@ -654,8 +651,17 @@ class IdleConf:
             '<<toggle-tabs>>': ['<Alt-Key-t>'],
             '<<change-indentwidth>>': ['<Alt-Key-u>'],
             '<<del-word-left>>': ['<Control-Key-BackSpace>'],
-            '<<del-word-right>>': ['<Control-Key-Delete>']
+            '<<del-word-right>>': ['<Control-Key-Delete>'],
+            '<<force-open-completions>>': ['<Control-Key-space>'],
+            '<<expand-word>>': ['<Alt-Key-slash>'],
+            '<<force-open-calltip>>': ['<Control-Key-backslash>'],
+            '<<flash-paren>>': ['<Control-Key-0>'],
+            '<<format-paragraph>>': ['<Alt-Key-q>'],
+            '<<run-module>>': ['<Key-F5>'],
+            '<<check-module>>': ['<Alt-Key-x>'],
+            '<<zoom-height>>': ['<Alt-Key-2>'],
             }
+
         if keySetName:
             if not (self.userCfg['keys'].has_section(keySetName) or
                     self.defaultCfg['keys'].has_section(keySetName)):
@@ -670,7 +676,8 @@ class IdleConf:
                     binding = self.GetKeyBinding(keySetName, event)
                     if binding:
                         keyBindings[event] = binding
-                    else: #we are going to return a default, print warning
+                    # Otherwise return default in keyBindings.
+                    elif event not in self.former_extension_events:
                         warning = (
                             '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
                             ' problem retrieving key binding for event %r\n'
@@ -902,7 +909,7 @@ def _dump():  # htest # (not really, but ignore in coverage)
     print('\nlines = ', line, ', crc = ', crc, sep='')
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_config',
-                  verbosity=2, exit=False)
-    #_dump()
+    from unittest import main
+    main('idlelib.idle_test.test_config', verbosity=2, exit=False)
+
+    # Run revised _dump() as htest?

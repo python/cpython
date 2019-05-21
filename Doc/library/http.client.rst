@@ -31,7 +31,8 @@ HTTPS protocols.  It is normally not used directly --- the module
 The module provides the following classes:
 
 
-.. class:: HTTPConnection(host, port=None[, timeout], source_address=None)
+.. class:: HTTPConnection(host, port=None[, timeout], source_address=None, \
+                          blocksize=8192)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
    server.  It should be instantiated passing it a host and optional port
@@ -42,6 +43,8 @@ The module provides the following classes:
    (if it is not given, the global default timeout setting is used).
    The optional *source_address* parameter may be a tuple of a (host, port)
    to use as the source address the HTTP connection is made from.
+   The optional *blocksize* parameter sets the buffer size in bytes for
+   sending a file-like message body.
 
    For example, the following calls all create instances that connect to the server
    at the same host and port::
@@ -58,11 +61,14 @@ The module provides the following classes:
       The  *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
       not longer supported.
 
+   .. versionchanged:: 3.7
+      *blocksize* parameter was added.
+
 
 .. class:: HTTPSConnection(host, port=None, key_file=None, \
                            cert_file=None[, timeout], \
                            source_address=None, *, context=None, \
-                           check_hostname=None)
+                           check_hostname=None, blocksize=8192)
 
    A subclass of :class:`HTTPConnection` that uses SSL for communication with
    secure servers.  Default port is ``443``.  If *context* is specified, it
@@ -109,6 +115,25 @@ The module provides the following classes:
       The *strict* parameter was removed. HTTP 0.9 style "Simple Responses" are
       no longer supported.
 
+This module provides the following function:
+
+.. function:: parse_headers(fp)
+
+   Parse the headers from a file pointer *fp* representing a HTTP
+   request/response. The file has to be a :class:`BufferedIOBase` reader
+   (i.e. not text) and must provide a valid :rfc:`2822` style header.
+
+   This function returns an instance of :class:`http.client.HTTPMessage`
+   that holds the header fields, but no payload
+   (the same as :attr:`HTTPResponse.msg`
+   and :attr:`http.server.BaseHTTPRequestHandler.headers`).
+   After returning, the file pointer *fp* is ready to read the HTTP body.
+
+   .. note::
+      :meth:`parse_headers` does not parse the start-line of a HTTP message;
+      it only parses the ``Name: value`` lines. The file has to be ready to
+      read these field lines, so the first line should already be consumed
+      before calling the function.
 
 The following exceptions are raised as appropriate:
 
@@ -338,6 +363,14 @@ HTTPConnection Objects
 
    Close the connection to the server.
 
+
+.. attribute:: HTTPConnection.blocksize
+
+   Buffer size in bytes for sending a file-like message body.
+
+   .. versionadded:: 3.7
+
+
 As an alternative to using the :meth:`request` method described above, you can
 also send your request step by step, by using the four functions below.
 
@@ -483,6 +516,7 @@ Here is an example session that uses the ``GET`` method::
    b'<!doctype html>\n<!--[if"...
    ...
    >>> # Example of an invalid request
+   >>> conn = http.client.HTTPSConnection("docs.python.org")
    >>> conn.request("GET", "/parrot.spam")
    >>> r2 = conn.getresponse()
    >>> print(r2.status, r2.reason)

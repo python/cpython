@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _extending-intro:
@@ -27,7 +27,8 @@ your system setup; details are given in later chapters.
    avoid writing C extensions and preserve portability to other implementations.
    For example, if your use case is calling C library functions or system calls,
    you should consider using the :mod:`ctypes` module or the `cffi
-   <https://cffi.readthedocs.org>`_ library rather than writing custom C code.
+   <https://cffi.readthedocs.io/>`_ library rather than writing
+   custom C code.
    These modules let you write Python code to interface with C code and are more
    portable between implementations of Python than writing and compiling a C
    extension module.
@@ -40,9 +41,11 @@ A Simple Example
 
 Let's create an extension module called ``spam`` (the favorite food of Monty
 Python fans...) and let's say we want to create a Python interface to the C
-library function :c:func:`system`. [#]_ This function takes a null-terminated
+library function :c:func:`system` [#]_. This function takes a null-terminated
 character string as argument and returns an integer.  We want this function to
-be callable from Python as follows::
+be callable from Python as follows:
+
+.. code-block:: pycon
 
    >>> import spam
    >>> status = spam.system("ls -l")
@@ -52,8 +55,9 @@ called ``spam``, the C file containing its implementation is called
 :file:`spammodule.c`; if the module name is very long, like ``spammify``, the
 module name can be just :file:`spammify.c`.)
 
-The first line of our file can be::
+The first two lines of our file can be::
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
 which pulls in the Python API (you can add a comment describing the purpose of
@@ -64,6 +68,9 @@ the module and a copyright notice if you like).
    Since Python may define some pre-processor definitions which affect the standard
    headers on some systems, you *must* include :file:`Python.h` before any standard
    headers are included.
+
+   It is recommended to always define ``PY_SSIZE_T_CLEAN`` before including
+   ``Python.h``.  See :ref:`parsetuple` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files. For convenience, and
@@ -333,12 +340,12 @@ function.
 The method table must be referenced in the module definition structure::
 
    static struct PyModuleDef spammodule = {
-      PyModuleDef_HEAD_INIT,
-      "spam",   /* name of module */
-      spam_doc, /* module documentation, may be NULL */
-      -1,       /* size of per-interpreter state of the module,
-                   or -1 if the module keeps state in global variables. */
-      SpamMethods
+       PyModuleDef_HEAD_INIT,
+       "spam",   /* name of module */
+       spam_doc, /* module documentation, may be NULL */
+       -1,       /* size of per-interpreter state of the module,
+                    or -1 if the module keeps state in global variables. */
+       SpamMethods
    };
 
 This structure, in turn, must be passed to the interpreter in the module's
@@ -438,7 +445,9 @@ part of the Python interpreter, you will have to change the configuration setup
 and rebuild the interpreter.  Luckily, this is very simple on Unix: just place
 your file (:file:`spammodule.c` for example) in the :file:`Modules/` directory
 of an unpacked source distribution, add a line to the file
-:file:`Modules/Setup.local` describing your file::
+:file:`Modules/Setup.local` describing your file:
+
+.. code-block:: sh
 
    spam spammodule.o
 
@@ -449,7 +458,9 @@ subdirectory, but then you must first rebuild :file:`Makefile` there by running
 :file:`Setup` file.)
 
 If your module requires additional libraries to link with, these can be listed
-on the line in the configuration file as well, for instance::
+on the line in the configuration file as well, for instance:
+
+.. code-block:: sh
 
    spam spammodule.o -lX11
 
@@ -538,8 +549,9 @@ or more format codes between parentheses.  For example::
 :c:func:`PyObject_CallObject` returns a Python object pointer: this is the return
 value of the Python function.  :c:func:`PyObject_CallObject` is
 "reference-count-neutral" with respect to its arguments.  In the example a new
-tuple was created to serve as the argument list, which is :c:func:`Py_DECREF`\
--ed immediately after the :c:func:`PyObject_CallObject` call.
+tuple was created to serve as the argument list, which is
+:c:func:`Py_DECREF`\ -ed immediately after the :c:func:`PyObject_CallObject`
+call.
 
 The return value of :c:func:`PyObject_CallObject` is "new": either it is a brand
 new object, or it is an existing object whose reference count has been
@@ -721,7 +733,8 @@ it returns false and raises an appropriate exception.
 Here is an example module which uses keywords, based on an example by Geoff
 Philbrick (philbrick@hks.com)::
 
-   #include "Python.h"
+   #define PY_SSIZE_T_CLEAN  /* Make "s#" use Py_ssize_t rather than int. */
+   #include <Python.h>
 
    static PyObject *
    keywdarg_parrot(PyObject *self, PyObject *args, PyObject *keywds)
@@ -749,7 +762,7 @@ Philbrick (philbrick@hks.com)::
         * only take two PyObject* parameters, and keywdarg_parrot() takes
         * three.
         */
-       {"parrot", (PyCFunction)keywdarg_parrot, METH_VARARGS | METH_KEYWORDS,
+       {"parrot", (PyCFunction)(void(*)(void))keywdarg_parrot, METH_VARARGS | METH_KEYWORDS,
         "Print a lovely skit to standard output."},
        {NULL, NULL, 0, NULL}   /* sentinel */
    };
@@ -917,7 +930,7 @@ It is also possible to :dfn:`borrow` [#]_ a reference to an object.  The
 borrower of a reference should not call :c:func:`Py_DECREF`.  The borrower must
 not hold on to the object longer than the owner from which it was borrowed.
 Using a borrowed reference after the owner has disposed of it risks using freed
-memory and should be avoided completely. [#]_
+memory and should be avoided completely [#]_.
 
 The advantage of borrowing over owning a reference is that you don't need to
 take care of disposing of the reference on all possible paths through the code
@@ -1088,7 +1101,7 @@ checking.
 
 The C function calling mechanism guarantees that the argument list passed to C
 functions (``args`` in the examples) is never *NULL* --- in fact it guarantees
-that it is always a tuple. [#]_
+that it is always a tuple [#]_.
 
 It is a severe error to ever let a *NULL* pointer "escape" to the Python user.
 
@@ -1220,7 +1233,7 @@ The function :c:func:`spam_system` is modified in a trivial way::
 
 In the beginning of the module, right after the line ::
 
-   #include "Python.h"
+   #include <Python.h>
 
 two more lines must be added::
 

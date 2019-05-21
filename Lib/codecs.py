@@ -480,14 +480,16 @@ class StreamReader(Codec):
             self.charbuffer = self._empty_charbuffer.join(self.linebuffer)
             self.linebuffer = None
 
+        if chars < 0:
+            # For compatibility with other read() methods that take a
+            # single argument
+            chars = size
+
         # read until we get the required number of characters (if available)
         while True:
             # can the request be satisfied from the character buffer?
             if chars >= 0:
                 if len(self.charbuffer) >= chars:
-                    break
-            elif size >= 0:
-                if len(self.charbuffer) >= size:
                     break
             # we need more data
             if size < 0:
@@ -860,7 +862,7 @@ class StreamRecoder:
 
 ### Shortcuts
 
-def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
+def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
 
     """ Open an encoded file using the given mode and return
         a wrapped version providing transparent encoding/decoding.
@@ -881,7 +883,8 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
         encoding error occurs.
 
         buffering has the same meaning as for the builtin open() API.
-        It defaults to line buffered.
+        It defaults to -1 which means that the default buffer size will
+        be used.
 
         The returned wrapped file object provides an extra attribute
         .encoding which allows querying the used encoding. This

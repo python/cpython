@@ -63,7 +63,7 @@ of the production as recognized in the input string: these are always sequences
 which have the same form as the parent.  An important aspect of this structure
 which should be noted is that keywords used to identify the parent node type,
 such as the keyword :keyword:`if` in an :const:`if_stmt`, are included in the
-node tree without any special treatment.  For example, the :keyword:`if` keyword
+node tree without any special treatment.  For example, the :keyword:`!if` keyword
 is represented by the tuple ``(1, 'if')``, where ``1`` is the numeric value
 associated with all :const:`NAME` tokens, including variable and function names
 defined by the user.  In an alternate form returned when line number information

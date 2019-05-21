@@ -1,6 +1,7 @@
 import collections.abc
 import copy
 import pickle
+import sys
 import unittest
 
 class DictSetTest(unittest.TestCase):
@@ -202,6 +203,20 @@ class DictSetTest(unittest.TestCase):
     def test_recursive_repr(self):
         d = {}
         d[42] = d.values()
+        r = repr(d)
+        # Cannot perform a stronger test, as the contents of the repr
+        # are implementation-dependent.  All we can say is that we
+        # want a str result, not an exception of any sort.
+        self.assertIsInstance(r, str)
+        d[42] = d.items()
+        r = repr(d)
+        # Again.
+        self.assertIsInstance(r, str)
+
+    def test_deeply_nested_repr(self):
+        d = {}
+        for i in range(sys.getrecursionlimit() + 100):
+            d = {42: d.values()}
         self.assertRaises(RecursionError, repr, d)
 
     def test_copy(self):

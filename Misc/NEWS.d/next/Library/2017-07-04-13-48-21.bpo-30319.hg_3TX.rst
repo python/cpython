@@ -1,1 +1,0 @@
-socket.close() now ignores ECONNRESET error.

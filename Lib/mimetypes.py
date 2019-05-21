@@ -95,7 +95,7 @@ class MimeTypes:
             exts.append(ext)
 
     def guess_type(self, url, strict=True):
-        """Guess the type of a file based on its URL.
+        """Guess the type of a file which is either a URL or a path-like object.
 
         Return value is a tuple (type, encoding) where type is None if
         the type can't be guessed (no or unknown suffix) or a string
@@ -113,7 +113,8 @@ class MimeTypes:
         Optional `strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
-        scheme, url = urllib.parse.splittype(url)
+        url = os.fspath(url)
+        scheme, url = urllib.parse._splittype(url)
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -411,6 +412,7 @@ def _default_mime_types():
     # appears before any others of the same mimetype.
     types_map = _types_map_default = {
         '.js'     : 'application/javascript',
+        '.mjs'    : 'application/javascript',
         '.json'   : 'application/json',
         '.doc'    : 'application/msword',
         '.dot'    : 'application/msword',
@@ -437,6 +439,7 @@ def _default_mime_types():
         '.ppa'    : 'application/vnd.ms-powerpoint',
         '.pps'    : 'application/vnd.ms-powerpoint',
         '.pwz'    : 'application/vnd.ms-powerpoint',
+        '.wasm'   : 'application/wasm',
         '.bcpio'  : 'application/x-bcpio',
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
@@ -484,6 +487,7 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
         '.jpg'    : 'image/jpeg',

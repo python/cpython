@@ -66,10 +66,13 @@ static PyObject *
 Xxo_getattro(XxoObject *self, PyObject *name)
 {
     if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItem(self->x_attr, name);
+        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
             Py_INCREF(v);
             return v;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
         }
     }
     return PyObject_GenericGetAttr((PyObject *)self, name);
@@ -85,7 +88,7 @@ Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0)
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Xxo attribute");
         return rv;
@@ -308,7 +311,7 @@ static PyTypeObject Null_Type = {
     0,                          /*tp_dictoffset*/
     0,                          /*tp_init*/
     0,                          /*tp_alloc*/
-    0, /* see PyInit_xx */      /*tp_new*/
+    PyType_GenericNew,          /*tp_new*/
     0,                          /*tp_free*/
     0,                          /*tp_is_gc*/
 };
@@ -338,11 +341,19 @@ PyDoc_STRVAR(module_doc,
 static int
 xx_exec(PyObject *m)
 {
-    /* Due to cross platform compiler issues the slots must be filled
-     * here. It's required for portability to Windows without requiring
-     * C++. */
+    /* Slot initialization is subject to the rules of initializing globals.
+       C99 requires the initializers to be "address constants".  Function
+       designators like 'PyType_GenericNew', with implicit conversion to
+       a pointer, are valid C99 address constants.
+
+       However, the unary '&' operator applied to a non-static variable
+       like 'PyBaseObject_Type' is not required to produce an address
+       constant.  Compilers may support this (gcc does), MSVC does not.
+
+       Both compilers are strictly standard conforming in this particular
+       behavior.
+    */
     Null_Type.tp_base = &PyBaseObject_Type;
-    Null_Type.tp_new = PyType_GenericNew;
     Str_Type.tp_base = &PyUnicode_Type;
 
     /* Finalize the type object including setting type of the new type

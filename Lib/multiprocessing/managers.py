@@ -1,5 +1,5 @@
 #
-# Module providing the `SyncManager` class for dealing
+# Module providing manager classes for dealing
 # with shared objects
 #
 # multiprocessing/managers.py
@@ -8,7 +8,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
+__all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token',
+            'SharedMemoryManager' ]
 
 #
 # Imports
@@ -16,18 +17,26 @@ __all__ = [ 'BaseManager', 'SyncManager', 'BaseProxy', 'Token' ]
 
 import sys
 import threading
+import signal
 import array
 import queue
+import time
+import os
+from os import getpid
 
-from time import time as _time
 from traceback import format_exc
 
 from . import connection
-from .context import reduction, get_spawning_popen
+from .context import reduction, get_spawning_popen, ProcessError
 from . import pool
 from . import process
 from . import util
 from . import get_context
+try:
+    from . import shared_memory
+    HAS_SHMEM = True
+except ImportError:
+    HAS_SHMEM = False
 
 #
 # Register some things for pickling
@@ -133,7 +142,10 @@ class Server(object):
               'debug_info', 'number_of_objects', 'dummy', 'incref', 'decref']
 
     def __init__(self, registry, address, authkey, serializer):
-        assert isinstance(authkey, bytes)
+        if not isinstance(authkey, bytes):
+            raise TypeError(
+                "Authkey {0!r} is type {1!s}, not bytes".format(
+                    authkey, type(authkey)))
         self.registry = registry
         self.authkey = process.AuthenticationString(authkey)
         Listener, Client = listener_client[serializer]
@@ -163,7 +175,7 @@ class Server(object):
             except (KeyboardInterrupt, SystemExit):
                 pass
         finally:
-            if sys.stdout != sys.__stdout__:
+            if sys.stdout != sys.__stdout__: # what about stderr?
                 util.debug('resetting stdout, stderr')
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
@@ -316,6 +328,7 @@ class Server(object):
         '''
         Return some info --- useful to spot problems with refcounting
         '''
+        # Perhaps include debug info about 'c'?
         with self.mutex:
             result = []
             keys = list(self.id_to_refcount.keys())
@@ -347,16 +360,44 @@ class Server(object):
         finally:
             self.stop_event.set()
 
-    def create(self, c, typeid, *args, **kwds):
+    def create(*args, **kwds):
         '''
         Create a new shared object and return its id
         '''
+        if len(args) >= 3:
+            self, c, typeid, *args = args
+        elif not args:
+            raise TypeError("descriptor 'create' of 'Server' object "
+                            "needs an argument")
+        else:
+            if 'typeid' not in kwds:
+                raise TypeError('create expected at least 2 positional '
+                                'arguments, got %d' % (len(args)-1))
+            typeid = kwds.pop('typeid')
+            if len(args) >= 2:
+                self, c, *args = args
+                import warnings
+                warnings.warn("Passing 'typeid' as keyword argument is deprecated",
+                              DeprecationWarning, stacklevel=2)
+            else:
+                if 'c' not in kwds:
+                    raise TypeError('create expected at least 2 positional '
+                                    'arguments, got %d' % (len(args)-1))
+                c = kwds.pop('c')
+                self, *args = args
+                import warnings
+                warnings.warn("Passing 'c' as keyword argument is deprecated",
+                              DeprecationWarning, stacklevel=2)
+        args = tuple(args)
+
         with self.mutex:
             callable, exposed, method_to_typeid, proxytype = \
                       self.registry[typeid]
 
             if callable is None:
-                assert len(args) == 1 and not kwds
+                if kwds or (len(args) != 1):
+                    raise ValueError(
+                        "Without callable, must have one non-keyword argument")
                 obj = args[0]
             else:
                 obj = callable(*args, **kwds)
@@ -364,7 +405,10 @@ class Server(object):
             if exposed is None:
                 exposed = public_methods(obj)
             if method_to_typeid is not None:
-                assert type(method_to_typeid) is dict
+                if not isinstance(method_to_typeid, dict):
+                    raise TypeError(
+                        "Method_to_typeid {0!r}: type {1!s}, not dict".format(
+                            method_to_typeid, type(method_to_typeid)))
                 exposed = list(exposed) + list(method_to_typeid)
 
             ident = '%x' % id(obj)  # convert to string because xmlrpclib
@@ -377,6 +421,7 @@ class Server(object):
 
         self.incref(c, ident)
         return ident, tuple(exposed)
+    create.__text_signature__ = '($self, c, typeid, /, *args, **kwds)'
 
     def get_methods(self, c, token):
         '''
@@ -417,7 +462,11 @@ class Server(object):
             return
 
         with self.mutex:
-            assert self.id_to_refcount[ident] >= 1
+            if self.id_to_refcount[ident] <= 0:
+                raise AssertionError(
+                    "Id {0!s} ({1!r}) has refcount {2:n}, not 1+".format(
+                        ident, self.id_to_obj[ident],
+                        self.id_to_refcount[ident]))
             self.id_to_refcount[ident] -= 1
             if self.id_to_refcount[ident] == 0:
                 del self.id_to_refcount[ident]
@@ -480,7 +529,14 @@ class BaseManager(object):
         '''
         Return server object with serve_forever() method and address attribute
         '''
-        assert self._state.value == State.INITIAL
+        if self._state.value != State.INITIAL:
+            if self._state.value == State.STARTED:
+                raise ProcessError("Already started server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
         return Server(self._registry, self._address,
                       self._authkey, self._serializer)
 
@@ -497,7 +553,14 @@ class BaseManager(object):
         '''
         Spawn a server process for this manager object
         '''
-        assert self._state.value == State.INITIAL
+        if self._state.value != State.INITIAL:
+            if self._state.value == State.STARTED:
+                raise ProcessError("Already started server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
 
         if initializer is not None and not callable(initializer):
             raise TypeError('initializer must be a callable')
@@ -535,6 +598,9 @@ class BaseManager(object):
         '''
         Create a server, report its address and run it
         '''
+        # bpo-36368: protect server process from KeyboardInterrupt signals
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         if initializer is not None:
             initializer(*initargs)
 
@@ -549,10 +615,13 @@ class BaseManager(object):
         util.info('manager serving at %r', server.address)
         server.serve_forever()
 
-    def _create(self, typeid, *args, **kwds):
+    def _create(*args, **kwds):
         '''
         Create a new shared object; return the token and exposed tuple
         '''
+        self, typeid, *args = args
+        args = tuple(args)
+
         assert self._state.value == State.STARTED, 'server not yet started'
         conn = self._Client(self._address, authkey=self._authkey)
         try:
@@ -593,7 +662,14 @@ class BaseManager(object):
     def __enter__(self):
         if self._state.value == State.INITIAL:
             self.start()
-        assert self._state.value == State.STARTED
+        if self._state.value != State.STARTED:
+            if self._state.value == State.INITIAL:
+                raise ProcessError("Unable to start server")
+            elif self._state.value == State.SHUTDOWN:
+                raise ProcessError("Manager has shut down")
+            else:
+                raise ProcessError(
+                    "Unknown state {!r}".format(self._state.value))
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -653,7 +729,7 @@ class BaseManager(object):
                            getattr(proxytype, '_method_to_typeid_', None)
 
         if method_to_typeid:
-            for key, value in list(method_to_typeid.items()):
+            for key, value in list(method_to_typeid.items()): # isinstance?
                 assert type(key) is str, '%r is not a string' % key
                 assert type(value) is str, '%r is not a string' % value
 
@@ -1011,13 +1087,13 @@ class ConditionProxy(AcquirerProxy):
         if result:
             return result
         if timeout is not None:
-            endtime = _time() + timeout
+            endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
             if endtime is not None:
-                waittime = endtime - _time()
+                waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break
             self.wait(waittime)
@@ -1100,10 +1176,13 @@ class ListProxy(BaseListProxy):
 
 
 DictProxy = MakeProxyType('DictProxy', (
-    '__contains__', '__delitem__', '__getitem__', '__len__',
-    '__setitem__', 'clear', 'copy', 'get', 'has_key', 'items',
+    '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
+    '__setitem__', 'clear', 'copy', 'get', 'items',
     'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
+DictProxy._method_to_typeid_ = {
+    '__iter__': 'Iterator',
+    }
 
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
@@ -1163,3 +1242,162 @@ SyncManager.register('Namespace', Namespace, NamespaceProxy)
 # types returned by methods of PoolProxy
 SyncManager.register('Iterator', proxytype=IteratorProxy, create_method=False)
 SyncManager.register('AsyncResult', create_method=False)
+
+#
+# Definition of SharedMemoryManager and SharedMemoryServer
+#
+
+if HAS_SHMEM:
+    class _SharedMemoryTracker:
+        "Manages one or more shared memory segments."
+
+        def __init__(self, name, segment_names=[]):
+            self.shared_memory_context_name = name
+            self.segment_names = segment_names
+
+        def register_segment(self, segment_name):
+            "Adds the supplied shared memory block name to tracker."
+            util.debug(f"Register segment {segment_name!r} in pid {getpid()}")
+            self.segment_names.append(segment_name)
+
+        def destroy_segment(self, segment_name):
+            """Calls unlink() on the shared memory block with the supplied name
+            and removes it from the list of blocks being tracked."""
+            util.debug(f"Destroy segment {segment_name!r} in pid {getpid()}")
+            self.segment_names.remove(segment_name)
+            segment = shared_memory.SharedMemory(segment_name)
+            segment.close()
+            segment.unlink()
+
+        def unlink(self):
+            "Calls destroy_segment() on all tracked shared memory blocks."
+            for segment_name in self.segment_names[:]:
+                self.destroy_segment(segment_name)
+
+        def __del__(self):
+            util.debug(f"Call {self.__class__.__name__}.__del__ in {getpid()}")
+            self.unlink()
+
+        def __getstate__(self):
+            return (self.shared_memory_context_name, self.segment_names)
+
+        def __setstate__(self, state):
+            self.__init__(*state)
+
+
+    class SharedMemoryServer(Server):
+
+        public = Server.public + \
+                 ['track_segment', 'release_segment', 'list_segments']
+
+        def __init__(self, *args, **kwargs):
+            Server.__init__(self, *args, **kwargs)
+            self.shared_memory_context = \
+                _SharedMemoryTracker(f"shmm_{self.address}_{getpid()}")
+            util.debug(f"SharedMemoryServer started by pid {getpid()}")
+
+        def create(*args, **kwargs):
+            """Create a new distributed-shared object (not backed by a shared
+            memory block) and return its id to be used in a Proxy Object."""
+            # Unless set up as a shared proxy, don't make shared_memory_context
+            # a standard part of kwargs.  This makes things easier for supplying
+            # simple functions.
+            if len(args) >= 3:
+                typeod = args[2]
+            elif 'typeid' in kwargs:
+                typeid = kwargs['typeid']
+            elif not args:
+                raise TypeError("descriptor 'create' of 'SharedMemoryServer' "
+                                "object needs an argument")
+            else:
+                raise TypeError('create expected at least 2 positional '
+                                'arguments, got %d' % (len(args)-1))
+            if hasattr(self.registry[typeid][-1], "_shared_memory_proxy"):
+                kwargs['shared_memory_context'] = self.shared_memory_context
+            return Server.create(*args, **kwargs)
+        create.__text_signature__ = '($self, c, typeid, /, *args, **kwargs)'
+
+        def shutdown(self, c):
+            "Call unlink() on all tracked shared memory, terminate the Server."
+            self.shared_memory_context.unlink()
+            return Server.shutdown(self, c)
+
+        def track_segment(self, c, segment_name):
+            "Adds the supplied shared memory block name to Server's tracker."
+            self.shared_memory_context.register_segment(segment_name)
+
+        def release_segment(self, c, segment_name):
+            """Calls unlink() on the shared memory block with the supplied name
+            and removes it from the tracker instance inside the Server."""
+            self.shared_memory_context.destroy_segment(segment_name)
+
+        def list_segments(self, c):
+            """Returns a list of names of shared memory blocks that the Server
+            is currently tracking."""
+            return self.shared_memory_context.segment_names
+
+
+    class SharedMemoryManager(BaseManager):
+        """Like SyncManager but uses SharedMemoryServer instead of Server.
+
+        It provides methods for creating and returning SharedMemory instances
+        and for creating a list-like object (ShareableList) backed by shared
+        memory.  It also provides methods that create and return Proxy Objects
+        that support synchronization across processes (i.e. multi-process-safe
+        locks and semaphores).
+        """
+
+        _Server = SharedMemoryServer
+
+        def __init__(self, *args, **kwargs):
+            if os.name == "posix":
+                # bpo-36867: Ensure the resource_tracker is running before
+                # launching the manager process, so that concurrent
+                # shared_memory manipulation both in the manager and in the
+                # current process does not create two resource_tracker
+                # processes.
+                from . import resource_tracker
+                resource_tracker.ensure_running()
+            BaseManager.__init__(self, *args, **kwargs)
+            util.debug(f"{self.__class__.__name__} created by pid {getpid()}")
+
+        def __del__(self):
+            util.debug(f"{self.__class__.__name__}.__del__ by pid {getpid()}")
+            pass
+
+        def get_server(self):
+            'Better than monkeypatching for now; merge into Server ultimately'
+            if self._state.value != State.INITIAL:
+                if self._state.value == State.STARTED:
+                    raise ProcessError("Already started SharedMemoryServer")
+                elif self._state.value == State.SHUTDOWN:
+                    raise ProcessError("SharedMemoryManager has shut down")
+                else:
+                    raise ProcessError(
+                        "Unknown state {!r}".format(self._state.value))
+            return self._Server(self._registry, self._address,
+                                self._authkey, self._serializer)
+
+        def SharedMemory(self, size):
+            """Returns a new SharedMemory instance with the specified size in
+            bytes, to be tracked by the manager."""
+            with self._Client(self._address, authkey=self._authkey) as conn:
+                sms = shared_memory.SharedMemory(None, create=True, size=size)
+                try:
+                    dispatch(conn, None, 'track_segment', (sms.name,))
+                except BaseException as e:
+                    sms.unlink()
+                    raise e
+            return sms
+
+        def ShareableList(self, sequence):
+            """Returns a new ShareableList instance populated with the values
+            from the input sequence, to be tracked by the manager."""
+            with self._Client(self._address, authkey=self._authkey) as conn:
+                sl = shared_memory.ShareableList(sequence)
+                try:
+                    dispatch(conn, None, 'track_segment', (sl.shm.name,))
+                except BaseException as e:
+                    sl.shm.unlink()
+                    raise e
+            return sl

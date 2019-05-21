@@ -1,8 +1,8 @@
-'''Test idlelib.parenmatch.
+"""Test parenmatch, coverage 91%.
 
 This must currently be a gui test because ParenMatch methods use
 several text methods not defined on idlelib.idle_test.mock_tk.Text.
-'''
+"""
 from idlelib.parenmatch import ParenMatch
 from test.support import requires
 requires('gui')
@@ -58,7 +58,7 @@ class ParenMatchTest(unittest.TestCase):
                 ('expression', ('1.10', '1.15'), ('1.10', '1.16'))):
             with self.subTest(style=style):
                 text.delete('1.0', 'end')
-                pm.set_style(style)
+                pm.STYLE = style
                 text.insert('insert', 'def foobar(a, b')
 
                 pm.flash_paren_event('event')

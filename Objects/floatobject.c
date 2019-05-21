@@ -1,4 +1,3 @@
-
 /* Float object implementation */
 
 /* XXX There should be overflow checks here, but it's hard to check
@@ -54,7 +53,7 @@ static PyStructSequence_Field floatinfo_fields[] = {
                     "is representable"},
     {"max_10_exp",      "DBL_MAX_10_EXP -- maximum int e such that 10**e "
                     "is representable"},
-    {"min",             "DBL_MIN -- Minimum positive normalizer float"},
+    {"min",             "DBL_MIN -- Minimum positive normalized float"},
     {"min_exp",         "DBL_MIN_EXP -- minimum int e such that radix**(e-1) "
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
@@ -64,7 +63,7 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"epsilon",         "DBL_EPSILON -- Difference between 1 and the next "
                     "representable float"},
     {"radix",           "FLT_RADIX -- radix of exponent"},
-    {"rounds",          "FLT_ROUNDS -- addition rounds"},
+    {"rounds",          "FLT_ROUNDS -- rounding mode"},
     {0}
 };
 
@@ -176,11 +175,10 @@ PyFloat_FromString(PyObject *v)
         s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
         if (s_buffer == NULL)
             return NULL;
+        assert(PyUnicode_IS_ASCII(s_buffer));
+        /* Simply get a pointer to existing ASCII characters. */
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        if (s == NULL) {
-            Py_DECREF(s_buffer);
-            return NULL;
-        }
+        assert(s != NULL);
     }
     else if (PyBytes_Check(v)) {
         s = PyBytes_AS_STRING(v);
@@ -465,13 +463,13 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                  */
                 PyObject *temp;
 
-                temp = PyNumber_Lshift(ww, _PyLong_One);
+                temp = _PyLong_Lshift(ww, 1);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(ww);
                 ww = temp;
 
-                temp = PyNumber_Lshift(vv, _PyLong_One);
+                temp = _PyLong_Lshift(vv, 1);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -1925,7 +1923,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_as_mapping */
     (hashfunc)float_hash,                       /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)float_repr,                       /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
@@ -2001,8 +1999,9 @@ _PyFloat_Init(void)
 
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0)
+        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
             return 0;
+        }
     }
     return 1;
 }
@@ -2234,11 +2233,13 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
     }
     else {
         float y = (float)x;
-        const unsigned char *s = (unsigned char*)&y;
         int i, incr = 1;
 
         if (Py_IS_INFINITY(y) && !Py_IS_INFINITY(x))
             goto Overflow;
+
+        unsigned char s[sizeof(float)];
+        memcpy(s, &y, sizeof(float));
 
         if ((float_format == ieee_little_endian_format && !le)
             || (float_format == ieee_big_endian_format && le)) {
@@ -2247,7 +2248,7 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
         }
 
         for (i = 0; i < 4; i++) {
-            *p = *s++;
+            *p = s[i];
             p += incr;
         }
         return 0;

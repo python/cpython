@@ -20,9 +20,10 @@ echo.  -h  Display this help message
 echo.  -V  Display version information for the current build
 echo.  -r  Target Rebuild instead of Build
 echo.  -d  Set the configuration to Debug
-echo.  -e  Build external libraries fetched by get_externals.bat
-echo.      Extension modules that depend on external libraries will not attempt
-echo.      to build if this flag is not present
+echo.  -E  Don't fetch or build external libraries.  Extension modules that
+echo.      depend on external libraries will not attempt to build if this flag
+echo.      is present; -e is also accepted to explicitly enable fetching and
+echo.      building externals.
 echo.  -m  Enable parallel build (enabled by default)
 echo.  -M  Disable parallel build
 echo.  -v  Increased output messages
@@ -34,13 +35,14 @@ echo.  --test-marker  Enable the test marker within the build.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
+echo.  --no-ctypes   Do not attempt to build _ctypes
 echo.  --no-ssl      Do not attempt to build _ssl
 echo.  --no-tkinter  Do not attempt to build Tkinter
 echo.
 echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
 echo.     Set the configuration (default: Release)
-echo.  -p x64 ^| Win32
+echo.  -p x64 ^| Win32 ^| ARM ^| ARM64
 echo.     Set the platform (default: Win32)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
@@ -79,10 +81,13 @@ rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
 if "%~1"=="-e" (set IncludeExternals=true) & shift & goto CheckOpts
+if "%~1"=="-E" (set IncludeExternals=false) & shift & goto CheckOpts
+if "%~1"=="--no-ctypes" (set IncludeCTypes=false) & shift & goto CheckOpts
 if "%~1"=="--no-ssl" (set IncludeSSL=false) & shift & goto CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 
-if "%IncludeExternals%"=="" set IncludeExternals=false
+if "%IncludeExternals%"=="" set IncludeExternals=true
+if "%IncludeCTypes%"=="" set IncludeCTypes=true
 if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
 
@@ -137,6 +142,7 @@ echo on
 %MSBUILD% "%dir%pcbuild.proj" /t:%target% %parallel% %verbose%^
  /p:Configuration=%conf% /p:Platform=%platf%^
  /p:IncludeExternals=%IncludeExternals%^
+ /p:IncludeCTypes=%IncludeCTypes%^
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
@@ -146,4 +152,5 @@ goto :eof
 
 :Version
 rem Display the current build version information
-%MSBUILD% "%dir%python.props" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%dir%find_msbuild.bat" %MSBUILD%
+if not ERRORLEVEL 1 %MSBUILD% "%dir%pythoncore.vcxproj" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9

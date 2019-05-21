@@ -87,31 +87,11 @@ def _make_test_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     importlib.invalidate_caches()
     return to_return
 
-# There's no easy way to pass the script directory in to get
-# -m to work (avoiding that is the whole point of making
-# directories and zipfiles executable!)
-# So we fake it for testing purposes with a custom launch script
-launch_source = """\
-import sys, os.path, runpy
-sys.path.insert(0, %s)
-runpy._run_module_as_main(%r)
-"""
-
-def _make_launch_script(script_dir, script_basename, module_name, path=None):
-    if path is None:
-        path = "os.path.dirname(__file__)"
-    else:
-        path = repr(path)
-    source = launch_source % (path, module_name)
-    to_return = make_script(script_dir, script_basename, source)
-    importlib.invalidate_caches()
-    return to_return
-
 class CmdLineTest(unittest.TestCase):
     def _check_output(self, script_name, exit_code, data,
                              expected_file, expected_argv0,
                              expected_path0, expected_package,
-                             expected_loader):
+                             expected_loader, expected_cwd=None):
         if verbose > 1:
             print("Output from test script %r:" % script_name)
             print(repr(data))
@@ -121,7 +101,9 @@ class CmdLineTest(unittest.TestCase):
         printed_package = '__package__==%r' % expected_package
         printed_argv0 = 'sys.argv[0]==%a' % expected_argv0
         printed_path0 = 'sys.path[0]==%a' % expected_path0
-        printed_cwd = 'cwd==%a' % os.getcwd()
+        if expected_cwd is None:
+            expected_cwd = os.getcwd()
+        printed_cwd = 'cwd==%a' % expected_cwd
         if verbose > 1:
             print('Expected output:')
             print(printed_file)
@@ -135,23 +117,33 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(printed_path0.encode('utf-8'), data)
         self.assertIn(printed_cwd.encode('utf-8'), data)
 
-    def _check_script(self, script_name, expected_file,
+    def _check_script(self, script_exec_args, expected_file,
                             expected_argv0, expected_path0,
                             expected_package, expected_loader,
-                            *cmd_line_switches):
+                            *cmd_line_switches, cwd=None, **env_vars):
+        if isinstance(script_exec_args, str):
+            script_exec_args = [script_exec_args]
         run_args = [*support.optim_args_from_interpreter_flags(),
-                    *cmd_line_switches, script_name, *example_args]
-        rc, out, err = assert_python_ok(*run_args, __isolated=False)
-        self._check_output(script_name, rc, out + err, expected_file,
+                    *cmd_line_switches, *script_exec_args, *example_args]
+        rc, out, err = assert_python_ok(
+            *run_args, __isolated=False, __cwd=cwd, **env_vars
+        )
+        self._check_output(script_exec_args, rc, out + err, expected_file,
                            expected_argv0, expected_path0,
-                           expected_package, expected_loader)
+                           expected_package, expected_loader, cwd)
 
-    def _check_import_error(self, script_name, expected_msg,
-                            *cmd_line_switches):
-        run_args = cmd_line_switches + (script_name,)
-        rc, out, err = assert_python_failure(*run_args)
+    def _check_import_error(self, script_exec_args, expected_msg,
+                            *cmd_line_switches, cwd=None, **env_vars):
+        if isinstance(script_exec_args, str):
+            script_exec_args = (script_exec_args,)
+        else:
+            script_exec_args = tuple(script_exec_args)
+        run_args = cmd_line_switches + script_exec_args
+        rc, out, err = assert_python_failure(
+            *run_args, __isolated=False, __cwd=cwd, **env_vars
+        )
         if verbose > 1:
-            print('Output from test script %r:' % script_name)
+            print('Output from test script %r:' % script_exec_args)
             print(repr(err))
             print('Expected output: %r' % expected_msg)
         self.assertIn(expected_msg.encode('utf-8'), err)
@@ -177,10 +169,10 @@ class CmdLineTest(unittest.TestCase):
     @contextlib.contextmanager
     def interactive_python(self, separate_stderr=False):
         if separate_stderr:
-            p = spawn_python('-i', bufsize=1, stderr=subprocess.PIPE)
+            p = spawn_python('-i', stderr=subprocess.PIPE)
             stderr = p.stderr
         else:
-            p = spawn_python('-i', bufsize=1, stderr=subprocess.STDOUT)
+            p = spawn_python('-i', stderr=subprocess.STDOUT)
             stderr = p.stdout
         try:
             # Drain stderr until prompt
@@ -267,10 +259,32 @@ class CmdLineTest(unittest.TestCase):
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
 
-    def test_zipfile_compiled(self):
+    def test_zipfile_compiled_timestamp(self):
         with support.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
+            zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
+            self._check_script(zip_name, run_name, zip_name, zip_name, '',
+                               zipimport.zipimporter)
+
+    def test_zipfile_compiled_checked_hash(self):
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__')
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH)
+            zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
+            self._check_script(zip_name, run_name, zip_name, zip_name, '',
+                               zipimport.zipimporter)
+
+    def test_zipfile_compiled_unchecked_hash(self):
+        with support.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, '__main__')
+            compiled_name = py_compile.compile(
+                script_name, doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
@@ -287,35 +301,35 @@ class CmdLineTest(unittest.TestCase):
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, 'script')
-            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg.script')
-            self._check_script(launch_name, script_name, script_name,
+            self._check_script(["-m", "test_pkg.script"], script_name, script_name,
                                script_dir, 'test_pkg',
-                               importlib.machinery.SourceFileLoader)
+                               importlib.machinery.SourceFileLoader,
+                               cwd=script_dir)
 
     def test_module_in_package_in_zipfile(self):
         with support.temp_dir() as script_dir:
             zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script')
-            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg.script', zip_name)
-            self._check_script(launch_name, run_name, run_name,
-                               zip_name, 'test_pkg', zipimport.zipimporter)
+            self._check_script(["-m", "test_pkg.script"], run_name, run_name,
+                               script_dir, 'test_pkg', zipimport.zipimporter,
+                               PYTHONPATH=zip_name, cwd=script_dir)
 
     def test_module_in_subpackage_in_zipfile(self):
         with support.temp_dir() as script_dir:
             zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script', depth=2)
-            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg.test_pkg.script', zip_name)
-            self._check_script(launch_name, run_name, run_name,
-                               zip_name, 'test_pkg.test_pkg',
-                               zipimport.zipimporter)
+            self._check_script(["-m", "test_pkg.test_pkg.script"], run_name, run_name,
+                               script_dir, 'test_pkg.test_pkg',
+                               zipimport.zipimporter,
+                               PYTHONPATH=zip_name, cwd=script_dir)
 
     def test_package(self):
         with support.temp_dir() as script_dir:
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
             script_name = _make_test_script(pkg_dir, '__main__')
-            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
-            self._check_script(launch_name, script_name,
+            self._check_script(["-m", "test_pkg"], script_name,
                                script_name, script_dir, 'test_pkg',
-                               importlib.machinery.SourceFileLoader)
+                               importlib.machinery.SourceFileLoader,
+                               cwd=script_dir)
 
     def test_package_compiled(self):
         with support.temp_dir() as script_dir:
@@ -325,10 +339,10 @@ class CmdLineTest(unittest.TestCase):
             compiled_name = py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
             pyc_file = support.make_legacy_pyc(script_name)
-            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
-            self._check_script(launch_name, pyc_file,
+            self._check_script(["-m", "test_pkg"], pyc_file,
                                pyc_file, script_dir, 'test_pkg',
-                               importlib.machinery.SourcelessFileLoader)
+                               importlib.machinery.SourcelessFileLoader,
+                               cwd=script_dir)
 
     def test_package_error(self):
         with support.temp_dir() as script_dir:
@@ -336,8 +350,7 @@ class CmdLineTest(unittest.TestCase):
             make_pkg(pkg_dir)
             msg = ("'test_pkg' is a package and cannot "
                    "be directly executed")
-            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
-            self._check_import_error(launch_name, msg)
+            self._check_import_error(["-m", "test_pkg"], msg, cwd=script_dir)
 
     def test_package_recursion(self):
         with support.temp_dir() as script_dir:
@@ -348,8 +361,7 @@ class CmdLineTest(unittest.TestCase):
             msg = ("Cannot use package as __main__ module; "
                    "'test_pkg' is a package and cannot "
                    "be directly executed")
-            launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
-            self._check_import_error(launch_name, msg)
+            self._check_import_error(["-m", "test_pkg"], msg, cwd=script_dir)
 
     def test_issue8202(self):
         # Make sure package __init__ modules see "-m" in sys.argv0 while
@@ -365,7 +377,7 @@ class CmdLineTest(unittest.TestCase):
                 expected = "init_argv0==%r" % '-m'
                 self.assertIn(expected.encode('utf-8'), out)
                 self._check_output(script_name, rc, out,
-                                   script_name, script_name, '', 'test_pkg',
+                                   script_name, script_name, script_dir, 'test_pkg',
                                    importlib.machinery.SourceFileLoader)
 
     def test_issue8202_dash_c_file_ignored(self):
@@ -394,8 +406,25 @@ class CmdLineTest(unittest.TestCase):
                     rc, out, err = assert_python_ok('-m', 'other', *example_args,
                                                     __isolated=False)
                     self._check_output(script_name, rc, out,
-                                      script_name, script_name, '', '',
+                                      script_name, script_name, script_dir, '',
                                       importlib.machinery.SourceFileLoader)
+
+    def test_issue20884(self):
+        # On Windows, script with encoding cookie and LF line ending
+        # will be failed.
+        with support.temp_dir() as script_dir:
+            script_name = os.path.join(script_dir, "issue20884.py")
+            with open(script_name, "w", newline='\n') as f:
+                f.write("#coding: iso-8859-1\n")
+                f.write('"""\n')
+                for _ in range(30):
+                    f.write('x'*80 + '\n')
+                f.write('"""\n')
+
+            with support.change_cwd(path=script_dir):
+                rc, out, err = assert_python_ok(script_name)
+            self.assertEqual(b"", out)
+            self.assertEqual(b"", err)
 
     @contextlib.contextmanager
     def setup_test_pkg(self, *args):
@@ -627,7 +656,7 @@ class CmdLineTest(unittest.TestCase):
             # direct execution test cases
             p = spawn_python("-sm", "script_pkg.__main__", cwd=work_dir)
             out_by_module = kill_python(p).decode().splitlines()
-            self.assertEqual(out_by_module[0], '')
+            self.assertEqual(out_by_module[0], work_dir)
             self.assertNotIn(script_dir, out_by_module)
             # Package execution should give the same output
             p = spawn_python("-sm", "script_pkg", cwd=work_dir)
@@ -639,6 +668,22 @@ class CmdLineTest(unittest.TestCase):
             )
             traceback_lines = stderr.decode().splitlines()
             self.assertIn("No module named script_pkg", traceback_lines[-1])
+
+    def test_nonexisting_script(self):
+        # bpo-34783: "./python script.py" must not crash
+        # if the script file doesn't exist.
+        # (Skip test for macOS framework builds because sys.excutable name
+        #  is not the actual Python executable file name.
+        script = 'nonexistingscript.py'
+        self.assertFalse(os.path.exists(script))
+
+        proc = spawn_python(script, text=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        self.assertIn(": can't open file ", err)
+        self.assertNotEqual(proc.returncode, 0)
+
 
 def test_main():
     support.run_unittest(CmdLineTest)

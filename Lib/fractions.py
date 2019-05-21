@@ -427,23 +427,26 @@ class Fraction(numbers.Rational):
 
     __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
 
-    def __floordiv__(a, b):
+    def _floordiv(a, b):
         """a // b"""
-        return math.floor(a / b)
+        return (a.numerator * b.denominator) // (a.denominator * b.numerator)
 
-    def __rfloordiv__(b, a):
-        """a // b"""
-        return math.floor(a / b)
+    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
 
-    def __mod__(a, b):
+    def _divmod(a, b):
+        """(a // b, a % b)"""
+        da, db = a.denominator, b.denominator
+        div, n_mod = divmod(a.numerator * db, da * b.numerator)
+        return div, Fraction(n_mod, da * db)
+
+    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
+
+    def _mod(a, b):
         """a % b"""
-        div = a // b
-        return a - b * div
+        da, db = a.denominator, b.denominator
+        return Fraction((a.numerator * db) % (b.numerator * da), da * db)
 
-    def __rmod__(b, a):
-        """a % b"""
-        div = a // b
-        return a - b * div
+    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
 
     def __pow__(a, b):
         """a ** b
@@ -509,16 +512,16 @@ class Fraction(numbers.Rational):
             return a._numerator // a._denominator
 
     def __floor__(a):
-        """Will be math.floor(a) in 3.0."""
+        """math.floor(a)"""
         return a.numerator // a.denominator
 
     def __ceil__(a):
-        """Will be math.ceil(a) in 3.0."""
+        """math.ceil(a)"""
         # The negations cleverly convince floordiv to return the ceiling.
         return -(-a.numerator // a.denominator)
 
     def __round__(self, ndigits=None):
-        """Will be round(self, ndigits) in 3.0.
+        """round(self, ndigits)
 
         Rounds half toward even.
         """

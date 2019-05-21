@@ -281,10 +281,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         case ID_INSTALL_BUTTON:
             SavePageSettings();
 
-            if (!WillElevate() && !QueryElevateForCrtInstall()) {
-                break;
-            }
-
             hr = BalGetNumericVariable(L"InstallAllUsers", &installAllUsers);
             ExitOnFailure(hr, L"Failed to get install scope");
 
@@ -330,10 +326,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             if (SUCCEEDED(hr)) {
                 // TODO: Check whether directory exists and contains another installation
                 ReleaseStr(targetDir);
-            }
-
-            if (!WillElevate() && !QueryElevateForCrtInstall()) {
-                break;
             }
 
             OnPlan(_command.action);
@@ -2642,30 +2634,6 @@ private:
         return result;
     }
 
-    BOOL QueryElevateForCrtInstall() {
-        // Called to prompt the user that even though they think they won't need
-        // to elevate, they actually will because of the CRT install.
-        if (IsCrtInstalled()) {
-            // CRT is already installed - no need to prompt
-            return TRUE;
-        }
-        
-        LONGLONG elevated;
-        HRESULT hr = BalGetNumericVariable(L"WixBundleElevated", &elevated);
-        if (SUCCEEDED(hr) && elevated) {
-            // Already elevated - no need to prompt
-            return TRUE;
-        }
-
-        LOC_STRING *locStr;
-        hr = LocGetString(_wixLoc, L"#(loc.ElevateForCRTInstall)", &locStr);
-        if (FAILED(hr)) {
-            BalLogError(hr, "Failed to get ElevateForCRTInstall string");
-            return FALSE;
-        }
-        return ::MessageBoxW(_hWnd, locStr->wzText, _theme->sczCaption, MB_YESNO) != IDNO;
-    }
-
     HRESULT EvaluateConditions() {
         HRESULT hr = S_OK;
         BOOL result = FALSE;
@@ -3021,9 +2989,20 @@ private:
         LOC_STRING *pLocString = nullptr;
         
         if (IsWindowsServer()) {
-            if (IsWindowsVersionOrGreater(6, 1, 1)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2008 R2 or later");
+            if (IsWindowsVersionOrGreater(6, 2, 0)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2012 or later");
                 return;
+            } else if (IsWindowsVersionOrGreater(6, 1, 1)) {
+                HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
+                if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2 without KB2533625");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533625 update is required to continue.");
+                    /* The "MissingSP1" error also specifies updates are required */
+                    LocGetString(_wixLoc, L"#(loc.FailureWS2K8R2MissingSP1)", &pLocString);
+                } else {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2008 R2 or later");
+                    return;
+                }
             } else if (IsWindowsVersionOrGreater(6, 1, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2");
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
@@ -3041,9 +3020,20 @@ private:
                 LocGetString(_wixLoc, L"#(loc.FailureWS2K3OrEarlier)", &pLocString);
             }
         } else {
-            if (IsWindows7SP1OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
+            if (IsWindows8OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 8 or later");
                 return;
+            } else if (IsWindows7SP1OrGreater()) {
+                HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
+                if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 SP1 without KB2533625");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533625 update is required to continue.");
+                    /* The "MissingSP1" error also specifies updates are required */
+                    LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
+                } else {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
+                    return;
+                }
             } else if (IsWindows7OrGreater()) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
