@@ -74,7 +74,6 @@ class TestUserObjects(unittest.TestCase):
         class ustr2(UserString):
             pass
 
-
         class ustr3(ustr2):
             def __rmod__(self, other):
                 return super().__rmod__(other)
