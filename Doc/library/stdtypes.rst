@@ -1546,6 +1546,18 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
 
+.. method:: str.dedent()
+
+   Return without any common leading whitespace from every line.
+
+   This can be used to make triple-quoted strings line up with the left edge of the
+   display, while still presenting them in the source code in indented form.
+
+   Note that tabs and spaces are both treated as whitespace, but they are not
+   equal: the lines ``"  hello"`` and ``"\thello"`` are considered to have no
+   common leading whitespace.
+
+
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
    Return an encoded version of the string as a bytes object. Default encoding
