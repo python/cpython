@@ -1,0 +1,2 @@
+PDB now reset the previous tracing function when leaving. Patch contributed
+by Rémi Lapeyre.

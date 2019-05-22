@@ -33,6 +33,15 @@ class Bdb:
         self.breaks = {}
         self.fncache = {}
         self.frame_returning = None
+        self._previous_trace_function = None
+
+    def _settrace(self, trace):
+        self._previous_trace_function = sys.gettrace()
+        sys.settrace(trace)
+
+    def _resettrace(self):
+        sys.settrace(self._previous_trace_function)
+        self._previous_trace_function = None
 
     def canonic(self, filename):
         """Return canonical form of filename.
@@ -331,7 +340,7 @@ class Bdb:
             self.botframe = frame
             frame = frame.f_back
         self.set_step()
-        sys.settrace(self.trace_dispatch)
+        self._settrace(self.trace_dispatch)
 
     def set_continue(self):
         """Stop only at breakpoints or when finished.
@@ -342,7 +351,7 @@ class Bdb:
         self._set_stopinfo(self.botframe, None, -1)
         if not self.breaks:
             # no breakpoints; run without debugger overhead
-            sys.settrace(None)
+            self._resettrace()
             frame = sys._getframe().f_back
             while frame and frame is not self.botframe:
                 del frame.f_trace
@@ -356,7 +365,7 @@ class Bdb:
         self.stopframe = self.botframe
         self.returnframe = None
         self.quitting = True
-        sys.settrace(None)
+        self._resettrace()
 
     # Derived classes and clients can call the following methods
     # to manipulate breakpoints.  These methods return an
@@ -582,14 +591,14 @@ class Bdb:
         self.reset()
         if isinstance(cmd, str):
             cmd = compile(cmd, "<string>", "exec")
-        sys.settrace(self.trace_dispatch)
+        self._settrace(self.trace_dispatch)
         try:
             exec(cmd, globals, locals)
         except BdbQuit:
             pass
         finally:
             self.quitting = True
-            sys.settrace(None)
+            self._resettrace()
 
     def runeval(self, expr, globals=None, locals=None):
         """Debug an expression executed via the eval() function.
@@ -602,14 +611,14 @@ class Bdb:
         if locals is None:
             locals = globals
         self.reset()
-        sys.settrace(self.trace_dispatch)
+        self._settrace(self.trace_dispatch)
         try:
             return eval(expr, globals, locals)
         except BdbQuit:
             pass
         finally:
             self.quitting = True
-            sys.settrace(None)
+            self._resettrace()
 
     def runctx(self, cmd, globals, locals):
         """For backwards-compatibility.  Defers to run()."""
@@ -639,7 +648,7 @@ class Bdb:
                             'got %d' % (len(args)-1))
 
         self.reset()
-        sys.settrace(self.trace_dispatch)
+        self._settrace(self.trace_dispatch)
         res = None
         try:
             res = func(*args, **kwds)
@@ -647,7 +656,7 @@ class Bdb:
             pass
         finally:
             self.quitting = True
-            sys.settrace(None)
+            self._resettrace()
         return res
     runcall.__text_signature__ = '($self, func, /, *args, **kwds)'
 
