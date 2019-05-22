@@ -237,6 +237,16 @@ asyncio
 
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 
+builtins
+--------
+
+The :func:`compile` built-in has been improved to accept the
+``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` flag. With this new flag passed,
+:func:`compile` will allow top-level ``await``, ``async for`` and ``async with``
+constructs that are usually considered invalid syntax. Asynchronous code object
+marked with the ``CO_COROUTINE`` flag may then be returned.
+
+(Contributed by Matthias Bussonnier in :issue:`34616`)
 
 collections
 -----------
