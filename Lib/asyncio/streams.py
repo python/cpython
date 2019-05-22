@@ -222,8 +222,7 @@ class _BaseStreamServer:
 
     def __init_subclass__(cls):
         if not cls.__module__.startswith('asyncio.'):
-            raise TypeError("Stream server classes are final, "
-                            "don't inherit from them")
+            raise TypeError(f"asyncio.{cls.__name__} class cannot be inherited from")
 
     def _attach(self, stream, task):
         self._streams[stream] = task
