@@ -72,6 +72,9 @@ Printing and clearing
 
 .. c:function:: void PyErr_WriteUnraisable(PyObject *obj)
 
+   Call :func:`sys.unraisablehook` using the current exception and *obj*
+   argument.
+
    This utility function prints a warning message to ``sys.stderr`` when an
    exception has been set but it is impossible for the interpreter to actually
    raise the exception.  It is used, for example, when an exception occurs in an
@@ -80,6 +83,8 @@ Printing and clearing
    The function is called with a single argument *obj* that identifies the context
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
+
+   An exception must be set when calling this function.
 
 
 Raising exceptions

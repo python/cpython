@@ -481,6 +481,16 @@ and manipulating normal distributions of a random variable.
     [7.672102882379219, 12.000027119750287, 4.647488369766392]
 
 
+sys
+---
+
+Add new :func:`sys.unraisablehook` function which can be overridden to control
+how "unraisable exceptions" are handled. It is called when an exception has
+occurred but there is no way for Python to handle it. For example, when a
+destructor raises an exception or during garbage collection
+(:func:`gc.collect`).
+
+
 tarfile
 -------
 

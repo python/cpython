@@ -48,6 +48,7 @@ extern int _PySys_InitMain(
     PyInterpreterState *interp);
 extern _PyInitError _PyImport_Init(PyInterpreterState *interp);
 extern _PyInitError _PyExc_Init(void);
+extern _PyInitError _PyErr_Init(void);
 extern _PyInitError _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern _PyInitError _PyImportHooks_Init(void);
 extern int _PyFloat_Init(void);
@@ -100,7 +101,10 @@ PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromCoreConfig(
     const _PyCoreConfig *coreconfig,
     const _PyArgv *args);
 
+
 PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
+
+PyAPI_FUNC(PyObject*) _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
 
 #ifdef __cplusplus
 }
