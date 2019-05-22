@@ -231,10 +231,8 @@ PyTypeObject PyTraceBack_Type = {
 PyObject*
 _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
 {
-    if (tb_next != NULL && !PyTraceBack_Check(tb_next)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
+    assert(tb_next == NULL || PyTraceBack_Check(tb_next));
+    assert(frame != NULL);
 
     return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti,
                          PyFrame_GetLineNumber(frame));
