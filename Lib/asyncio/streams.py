@@ -245,7 +245,8 @@ class _BaseStreamServer:
                                          timeout=self._shutdown_timeout)
         for task in pending:
             self._loop.call_exception_handler({
-                "message": f'{task} was not finished on stream server closing'
+                "message": f'{task!r} ignored cancellation request from a closing StreamServer {self!r}',
+                "stream_server": self
             })
 
     def __del__(self, _warn=warnings.warn):
