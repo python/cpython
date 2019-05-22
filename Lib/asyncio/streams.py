@@ -134,15 +134,16 @@ async def start_server(client_connected_cb, host=None, port=None, *,
 
 
 class _BaseStreamServer:
-    # TODO: API for enumerating open server streams
     # TODO: add __repr__
 
-    # Design note.
+    # Design notes.
     # StreamServer and UnixStreamServer are exposed as FINAL classes, not function
     # factories.
     # async with serve(host, port) as server:
     #      server.start_serving()
     # looks ugly.
+    # The class doesn't provide API for enumerating connected streams
+    # It can be a subject for improvements in Python 3.9
 
     def __init__(self, client_connected_cb,
                  limit=_DEFAULT_LIMIT,
@@ -244,6 +245,11 @@ class _BaseStreamServer:
             self._loop.call_exception_handler({
                 "message": f'{task} was not finished on stream server closing'
             })
+
+    def __del__(self, _warn=warnings.warn):
+        if self._low_server is not None:
+            _warn(f"unclosed stream server {self!r}", ResourceWarning, source=self)
+            self._low_server.close()
 
 
 class StreamServer(_BaseStreamServer):
