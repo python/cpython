@@ -4746,6 +4746,30 @@ test_pyobject_fastcallkeywords(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+vectorcall(PyObject *self, PyObject *args)
+{
+    PyObject *func;
+    PyObject *argstuple;
+    PyObject *kwargs = NULL;
+
+    if (!PyArg_ParseTuple(args, "OO|O", &func, &argstuple, &kwargs)) {
+        return NULL;
+    }
+
+    if (!PyTuple_Check(argstuple)) {
+        PyErr_SetString(PyExc_TypeError, "args must be a tuple");
+        return NULL;
+    }
+    if (kwargs != NULL && !PyDict_Check(kwargs)) {
+        PyErr_SetString(PyExc_TypeError, "kwargs must be a dict");
+        return NULL;
+    }
+
+    return PyVectorcall_Call(func, argstuple, kwargs);
+}
+
+
 static PyObject*
 stack_pointer(PyObject *self, PyObject *args)
 {
@@ -5231,6 +5255,7 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_fastcallkeywords", test_pyobject_fastcallkeywords, METH_VARARGS},
+    {"vectorcall", vectorcall, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
