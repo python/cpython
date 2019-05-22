@@ -244,9 +244,9 @@ The :func:`compile` built-in has been improved to accept the
 ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` flag. With this new flag passed,
 :func:`compile` will allow top-level ``await``, ``async for`` and ``async with``
 constructs that are usually considered invalid syntax. Asynchronous code object
-marked with the ``CO_COROUTINE`` flag may then be returned. Those code-objects
-can be used in conjunction with ``await eval(...)`` (instead of ``exec``) to for
-example run async snippets in doctest, or build an async-repl.
+marked with the ``CO_COROUTINE`` flag may then be returned. They
+can be used in conjunction with ``await eval(...)`` (instead of ``exec``) to – for
+example – run async snippets in doctest, or build an async-repl.
 
 Example of a bare-bones async REPL ::
 
