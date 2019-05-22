@@ -815,6 +815,11 @@ class Stream:
             await sleep(0)
         await self._protocol._drain_helper()
 
+    async def sendfile(self, file, offset=0, count=None, *, fallback=True):
+        await self.drain()  # check for stream mode and exceptions
+        return await self._loop.sendfile(self._transport, file,
+                                         offset, count, fallback=fallback)
+
     def exception(self):
         return self._exception
 

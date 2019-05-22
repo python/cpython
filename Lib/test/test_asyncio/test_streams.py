@@ -1481,6 +1481,43 @@ os.close(fd)
         self.assertTrue(fut1.done())
         self.assertTrue(fut2.done())
 
+    def test_sendfile(self):
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        with open(support.TESTFN, 'wb') as fp:
+            fp.write(b'data\n')
+        self.addCleanup(support.unlink, support.TESTFN)
+
+        async def serve_callback(stream):
+            data = await stream.readline()
+            self.assertEqual(data, b'begin\n')
+            data = await stream.readline()
+            self.assertEqual(data, b'data\n')
+            data = await stream.readline()
+            self.assertEqual(data, b'end\n')
+            await stream.write(b'done\n')
+            await stream.close()
+
+        async def do_connect(host, port):
+            stream = await asyncio.connect(host, port)
+            await stream.write(b'begin\n')
+            with open(support.TESTFN, 'rb') as fp:
+                await stream.sendfile(fp)
+            await stream.write(b'end\n')
+            data = await stream.readline()
+            self.assertEqual(data, b'done\n')
+            await stream.close()
+
+        async def test():
+            async with asyncio.StreamServer(serve_callback, 'localhost', 0) as srv:
+                await srv.start_serving()
+                await do_connect(*srv.served_names()[0])
+
+        self.loop.run_until_complete(test())
+
+        self.assertEqual([], messages)
+
 
 if __name__ == '__main__':
     unittest.main()
