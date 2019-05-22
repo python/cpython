@@ -1,1 +1,1 @@
-Add SupportsIndex protocol to allow type checking to detect classes that can have `hex()` `oct()` and `bin()` called on them.
+Add SupportsIndex protocol to the typing module to allow type checking to detect classes that can be passed to `hex()`, `oct()` and `bin()`.

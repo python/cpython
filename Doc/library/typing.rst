@@ -532,6 +532,8 @@ The module defines the following classes, functions and decorators:
 .. class:: SupportsIndex
 
     An ABC with one abstract method ``__index__``.
+    
+    .. versionadded:: 3.8
 
 .. class:: SupportsAbs
 
