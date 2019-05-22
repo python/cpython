@@ -317,12 +317,53 @@ dump_config(void)
 }
 
 
-static int test_init_default_config(void)
+static int test_init_initialize_config(void)
 {
     _testembed_Py_Initialize();
     dump_config();
     Py_Finalize();
     return 0;
+}
+
+
+static int check_init_compat_config(int preinit)
+{
+    _PyInitError err;
+
+    if (preinit) {
+        _PyPreConfig preconfig;
+        _PyPreConfig_InitCompatConfig(&preconfig);
+
+        err = _Py_PreInitialize(&preconfig);
+        if (_PyInitError_Failed(err)) {
+            _Py_ExitInitError(err);
+        }
+    }
+
+    _PyCoreConfig config;
+    _PyCoreConfig_InitCompatConfig(&config);
+    config.program_name = L"./_testembed";
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_preinit_compat_config(void)
+{
+    return check_init_compat_config(1);
+}
+
+
+static int test_init_compat_config(void)
+{
+    return check_init_compat_config(0);
 }
 
 
@@ -380,7 +421,7 @@ static int test_init_from_config(void)
     _PyInitError err;
 
     _PyPreConfig preconfig;
-    _PyPreConfig_Init(&preconfig);
+    _PyPreConfig_InitCompatConfig(&preconfig);
 
     putenv("PYTHONMALLOC=malloc_debug");
     preconfig.allocator = PYMEM_ALLOCATOR_MALLOC;
@@ -396,7 +437,7 @@ static int test_init_from_config(void)
 
     /* Test _Py_InitializeFromConfig() */
     _PyCoreConfig config;
-    _PyCoreConfig_Init(&config);
+    _PyCoreConfig_InitCompatConfig(&config);
     config.install_signal_handlers = 0;
 
     /* FIXME: test use_environment */
@@ -676,7 +717,7 @@ static int test_preinit_isolated1(void)
     _PyInitError err;
 
     _PyPreConfig preconfig;
-    _PyPreConfig_Init(&preconfig);
+    _PyPreConfig_InitCompatConfig(&preconfig);
     preconfig.isolated = 1;
 
     err = _Py_PreInitialize(&preconfig);
@@ -685,7 +726,7 @@ static int test_preinit_isolated1(void)
     }
 
     _PyCoreConfig config;
-    _PyCoreConfig_Init(&config);
+    _PyCoreConfig_InitCompatConfig(&config);
     config.program_name = L"./_testembed";
 
     set_all_env_vars();
@@ -705,7 +746,7 @@ static int test_preinit_isolated2(void)
     _PyInitError err;
 
     _PyPreConfig preconfig;
-    _PyPreConfig_Init(&preconfig);
+    _PyPreConfig_InitCompatConfig(&preconfig);
     preconfig.isolated = 0;
 
     err = _Py_PreInitialize(&preconfig);
@@ -715,7 +756,7 @@ static int test_preinit_isolated2(void)
 
     /* Test _PyCoreConfig.isolated=1 */
     _PyCoreConfig config;
-    _PyCoreConfig_Init(&config);
+    _PyCoreConfig_InitCompatConfig(&config);
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
@@ -885,12 +926,14 @@ static int check_preinit_isolated_config(int preinit)
     _PyCoreConfig config;
     err = _PyCoreConfig_InitIsolatedConfig(&config);
     if (_PyInitError_Failed(err)) {
+        _PyCoreConfig_Clear(&config);
         _Py_ExitInitError(err);
     }
     config.program_name = L"./_testembed";
 
     err = _Py_InitializeFromConfig(&config);
     if (_PyInitError_Failed(err)) {
+        _PyCoreConfig_Clear(&config);
         _Py_ExitInitError(err);
     }
 
@@ -1207,7 +1250,9 @@ static struct TestCase TestCases[] = {
     { "bpo20891", test_bpo20891 },
     { "initialize_twice", test_initialize_twice },
     { "initialize_pymain", test_initialize_pymain },
-    { "init_default_config", test_init_default_config },
+    { "init_initialize_config", test_init_initialize_config },
+    { "preinit_compat_config", test_preinit_compat_config },
+    { "init_compat_config", test_init_compat_config },
     { "init_global_config", test_init_global_config },
     { "init_from_config", test_init_from_config },
     { "init_parse_argv", test_init_parse_argv },
