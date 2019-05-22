@@ -21,7 +21,7 @@ from . import exceptions
 from . import format_helpers
 from . import protocols
 from .log import logger
-from .tasks import sleep, wait
+from . import tasks
 
 
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
@@ -137,8 +137,8 @@ class _BaseStreamServer:
     # TODO: add __repr__
 
     # Design notes.
-    # StreamServer and UnixStreamServer are exposed as FINAL classes, not function
-    # factories.
+    # StreamServer and UnixStreamServer are exposed as FINAL classes,
+    # not function factories.
     # async with serve(host, port) as server:
     #      server.start_serving()
     # looks ugly.
@@ -194,24 +194,24 @@ class _BaseStreamServer:
             return
         self._low_server.close()
         streams = list(self._streams.keys())
-        tasks = list(self._streams.values())
-        if tasks:
-            await wait([stream.close() for stream in streams])
+        active_tasks = list(self._streams.values())
+        if streams:
+            await tasks.wait([stream.close() for stream in streams])
         await self._low_server.wait_closed()
         self._low_server = None
-        await self._shutdown_active_tasks(tasks)
+        await self._shutdown_active_tasks(active_tasks)
 
     async def abort(self):
         if self._low_server is None:
             return
         self._low_server.close()
         streams = list(self._streams.keys())
-        tasks = list(self._streams.values())
+        active_tasks = list(self._streams.values())
         if streams:
-            await wait([stream.abort() for stream in streams])
+            await tasks.wait([stream.abort() for stream in streams])
         await self._low_server.wait_closed()
         self._low_server = None
-        await self._shutdown_active_tasks(tasks)
+        await self._shutdown_active_tasks(active_tasks)
 
     async def __aenter__(self):
         await self.bind()
@@ -222,7 +222,8 @@ class _BaseStreamServer:
 
     def __init_subclass__(cls):
         if not cls.__module__.startswith('asyncio.'):
-            raise TypeError("Stream server classes are final, don't inherit from them")
+            raise TypeError("Stream server classes are final, "
+                            "don't inherit from them")
 
     def _attach(self, stream, task):
         self._streams[stream] = task
@@ -230,17 +231,19 @@ class _BaseStreamServer:
     def _detach(self, stream, task):
         del self._streams[stream]
 
-    async def _shutdown_active_tasks(self, tasks):
-        if not tasks:
+    async def _shutdown_active_tasks(self, active_tasks):
+        if not active_tasks:
             return
         # NOTE: tasks finished with exception are reported
         # by Tast/Future __del__ method
-        done, pending = await wait(tasks, timeout=self._shutdown_timeout)
+        done, pending = await tasks.wait(active_tasks,
+                                         timeout=self._shutdown_timeout)
         if not pending:
             return
         for task in pending:
             task.cancel()
-        done, pending = await wait(pending, timeout=self._shutdown_timeout)
+        done, pending = await tasks.wait(pending,
+                                         timeout=self._shutdown_timeout)
         for task in pending:
             self._loop.call_exception_handler({
                 "message": f'{task} was not finished on stream server closing'
@@ -248,7 +251,8 @@ class _BaseStreamServer:
 
     def __del__(self, _warn=warnings.warn):
         if self._low_server is not None:
-            _warn(f"unclosed stream server {self!r}", ResourceWarning, source=self)
+            _warn(f"unclosed stream server {self!r}",
+                  ResourceWarning, source=self)
             self._low_server.close()
 
 
@@ -756,9 +760,9 @@ class Stream:
         return self._fast_drain()
 
     def _fast_drain(self):
-        # The helper tries to use fast-path to return already existing complete future
-        # object if underlying transport is not paused and actual waiting for writing
-        # resume is not needed
+        # The helper tries to use fast-path to return already existing
+        # complete future object if underlying transport is not paused
+        #and actual waiting for writing resume is not needed
         exc = self.exception()
         if exc is not None:
             fut = self._loop.create_future()
@@ -819,7 +823,7 @@ class Stream:
             # Wait for protocol.connection_lost() call
             # Raise connection closing error if any,
             # ConnectionResetError otherwise
-            await sleep(0)
+            await tasks.sleep(0)
         await self._protocol._drain_helper()
 
     async def sendfile(self, file, offset=0, count=None, *, fallback=True):
