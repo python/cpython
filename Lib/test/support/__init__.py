@@ -3049,9 +3049,6 @@ class catch_unraisable_exception:
             ...
 
         # cm.unraisable is None here (to break a reference cycle)
-
-    The finally block is required: cm.unraisable contains a traceback object
-    which indirectly references the 'cm' variable, it's a reference cycle.
     """
 
     def __init__(self):

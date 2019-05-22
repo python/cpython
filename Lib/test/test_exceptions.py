@@ -1184,21 +1184,12 @@ class ExceptionTests(unittest.TestCase):
                 # The following line is included in the traceback report:
                 raise exc
 
-        class BrokenExceptionDel:
-            def __del__(self):
-                exc = BrokenStrException()
-                # The following line is included in the traceback report:
-                raise exc
+        obj = BrokenDel()
+        with support.catch_unraisable_exception() as cm:
+            del obj
 
-        for test_class in (BrokenDel, BrokenExceptionDel):
-            with self.subTest(test_class):
-                obj = test_class()
-                with support.catch_unraisable_exception() as cm:
-                    del obj
-
-                    self.assertEqual(cm.unraisable.object,
-                                     test_class.__del__)
-                    self.assertIsNotNone(cm.unraisable.exc_traceback)
+            self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
+            self.assertIsNotNone(cm.unraisable.exc_traceback)
 
     def test_unhandled(self):
         # Check for sensible reporting of unhandled exceptions

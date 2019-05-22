@@ -2167,7 +2167,7 @@ to test.
 ...     l = Leaker()
 ...     del l
 ...
-...     Leaker.__del__ == cm.unraisable.object
+...     cm.unraisable.object == Leaker.__del__
 ...     cm.unraisable.exc_type == RuntimeError
 ...     str(cm.unraisable.exc_value) == "del failed"
 ...     cm.unraisable.exc_traceback is not None
