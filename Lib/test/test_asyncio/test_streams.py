@@ -1223,7 +1223,7 @@ os.close(fd)
             await stream.close()
 
         async def client(srv):
-            addr = srv.served_names()[0]
+            addr = srv.addresses()[0]
             stream = await asyncio.connect(*addr)
             # send a line
             await stream.write(b"hello world!\n")
@@ -1255,7 +1255,7 @@ os.close(fd)
             await stream.close()
 
         async def client(srv):
-            addr = srv.served_names()[0]
+            addr = srv.addresses()[0]
             stream = await asyncio.connect_unix(addr)
             # send a line
             await stream.write(b"hello world!\n")
@@ -1297,13 +1297,13 @@ os.close(fd)
         async def test():
             srv = asyncio.StreamServer(handle_client, '127.0.0.1', 0)
             self.assertFalse(srv.is_bound())
-            self.assertEqual([], srv.served_names())
+            self.assertEqual([], srv.addresses())
             await srv.bind()
             self.assertTrue(srv.is_bound())
-            self.assertEqual(1, len(srv.served_names()))
+            self.assertEqual(1, len(srv.addresses()))
             await srv.close()
             self.assertFalse(srv.is_bound())
-            self.assertEqual([], srv.served_names())
+            self.assertEqual([], srv.addresses())
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1317,7 +1317,7 @@ os.close(fd)
         async def test():
             async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as srv:
                 self.assertTrue(srv.is_bound())
-                self.assertEqual(1, len(srv.served_names()))
+                self.assertEqual(1, len(srv.addresses()))
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1352,7 +1352,7 @@ os.close(fd)
             server_stream_aborted = True
 
         async def client(srv):
-            addr = srv.served_names()[0]
+            addr = srv.addresses()[0]
             stream = await asyncio.connect(*addr)
             fut.set_result(None)
             self.assertEqual(b'', await stream.readline())
@@ -1384,7 +1384,7 @@ os.close(fd)
             server_stream_aborted = True
 
         async def client(srv):
-            addr = srv.served_names()[0]
+            addr = srv.addresses()[0]
             stream = await asyncio.connect(*addr)
             fut.set_result(None)
             self.assertEqual(b'', await stream.readline())
@@ -1414,7 +1414,7 @@ os.close(fd)
                 await asyncio.sleep(0.01)
 
         async def client(srv):
-            addr = srv.served_names()[0]
+            addr = srv.addresses()[0]
             stream = await asyncio.connect(*addr)
             fut1.set_result(None)
             await fut2
@@ -1425,7 +1425,7 @@ os.close(fd)
             async with asyncio.StreamServer(handle_client,
                                             '127.0.0.1',
                                             0,
-                                            shutdown_timeout=0.5) as server:
+                                            shutdown_timeout=0.3) as server:
                 await server.start_serving()
                 task = asyncio.create_task(client(server))
                 await fut1
@@ -1451,7 +1451,7 @@ os.close(fd)
                     await asyncio.sleep(0.01)
 
         async def client(srv):
-            addr = srv.served_names()[0]
+            addr = srv.addresses()[0]
             stream = await asyncio.connect(*addr)
             fut1.set_result(None)
             await fut2
@@ -1462,7 +1462,7 @@ os.close(fd)
             async with asyncio.StreamServer(handle_client,
                                             '127.0.0.1',
                                             0,
-                                            shutdown_timeout=0.5) as server:
+                                            shutdown_timeout=0.3) as server:
                 await server.start_serving()
                 task = asyncio.create_task(client(server))
                 await fut1
@@ -1512,7 +1512,7 @@ os.close(fd)
         async def test():
             async with asyncio.StreamServer(serve_callback, 'localhost', 0) as srv:
                 await srv.start_serving()
-                await do_connect(*srv.served_names()[0])
+                await do_connect(*srv.addresses()[0])
 
         self.loop.run_until_complete(test())
 

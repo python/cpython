@@ -166,10 +166,7 @@ class _BaseStreamServer:
         # TODO: make is_bound and is_serving properties?
         return self._low_server is not None
 
-    def served_names(self):
-        # The property name is questionable
-        # Also, should it be a property?
-        # API consistency does matter
+    def addresses(self):
         # I don't want to expose plain socket.socket objects as low-level
         # asyncio.Server does but exposing served IP addresses or unix paths
         # is useful
