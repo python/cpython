@@ -1049,12 +1049,16 @@ class URLopener_Tests(unittest.TestCase):
             "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
 
     def test_local_file_open(self):
+        # bpo-35907, CVE-2019-9948: urllib must reject local_file:// scheme
         class DummyURLopener(urllib.URLopener):
             def open_local_file(self, url):
                 return url
         for url in ('local_file://example', 'local-file://example'):
-            self.assertRaises(IOError, DummyURLopener().open, url)
             self.assertRaises(IOError, urllib.urlopen, url)
+            self.assertRaises(IOError, urllib.URLopener().open, url)
+            self.assertRaises(IOError, urllib.URLopener().retrieve, url)
+            self.assertRaises(IOError, DummyURLopener().open, url)
+            self.assertRaises(IOError, DummyURLopener().retrieve, url)
 
 # Just commented them out.
 # Can't really tell why keep failing in windows and sparc.
