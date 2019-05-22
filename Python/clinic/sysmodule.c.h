@@ -65,6 +65,22 @@ sys_exc_info(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_exc_info_impl(module);
 }
 
+PyDoc_STRVAR(sys_unraisablehook__doc__,
+"unraisablehook($module, unraisable, /)\n"
+"--\n"
+"\n"
+"Handle an unraisable exception.\n"
+"\n"
+"The unraisable argument has the following attributes:\n"
+"\n"
+"* exc_type: Exception type.\n"
+"* exc_value: Exception value.\n"
+"* exc_tb: Exception traceback, can be None.\n"
+"* obj: Object causing the exception, can be None.");
+
+#define SYS_UNRAISABLEHOOK_METHODDEF    \
+    {"unraisablehook", (PyCFunction)sys_unraisablehook, METH_O, sys_unraisablehook__doc__},
+
 PyDoc_STRVAR(sys_exit__doc__,
 "exit($module, status=None, /)\n"
 "--\n"
@@ -1060,4 +1076,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=3ba4c194d00f1866 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=603e4d5a453dc769 input=a9049054013a1b77]*/
