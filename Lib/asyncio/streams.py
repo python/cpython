@@ -167,7 +167,7 @@ class _BaseStreamServer:
         return self._low_server is not None
 
     def addresses(self):
-        # I don't want to expose plain socket.socket objects as low-level
+        # We don't want to expose plain socket.socket objects as low-level
         # asyncio.Server does but exposing served IP addresses or unix paths
         # is useful
         #
