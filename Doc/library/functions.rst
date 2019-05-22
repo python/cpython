@@ -257,6 +257,12 @@ are always available.  They are listed here in alphabetical order.
    can be found as the :attr:`~__future__._Feature.compiler_flag` attribute on
    the :class:`~__future__._Feature` instance in the :mod:`__future__` module.
 
+   The optional argument *flags* also controls whether the compiled source is
+   allowed to contain top-level ``await``, ``async for`` and ``async with``.
+   When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the return code
+   object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
+   executed via ``await eval(code_object)``.
+
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
    given by :option:`-O` options.  Explicit levels are ``0`` (no optimization;
@@ -289,6 +295,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.5
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
+
+   .. versionadded:: 3.8
+      ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
+      support for top-level ``await``, ``async for``, and ``async with``.
 
 
 .. class:: complex([real[, imag]])
