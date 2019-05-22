@@ -867,7 +867,7 @@ _Py_InitializeCore(_PyRuntimeState *runtime,
     }
 
     _PyCoreConfig local_config;
-    _PyCoreConfig_Init(&local_config);
+    _PyCoreConfig_InitCompatConfig(&local_config);
     err = pyinit_coreconfig(runtime, &local_config, src_config, args, interp_p);
     _PyCoreConfig_Clear(&local_config);
     return err;
@@ -1096,7 +1096,7 @@ Py_InitializeEx(int install_sigs)
     }
 
     _PyCoreConfig config;
-    _PyCoreConfig_Init(&config);
+    _PyCoreConfig_InitCompatConfig(&config);
     config.install_signal_handlers = install_sigs;
 
     err = _Py_InitializeFromConfig(&config);
