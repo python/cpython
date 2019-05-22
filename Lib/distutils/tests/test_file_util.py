@@ -1,10 +1,11 @@
 """Tests for distutils.file_util."""
 import unittest
 import os
+import sys
 import errno
 from unittest.mock import patch
 
-from distutils.file_util import move_file, copy_file
+from distutils.file_util import move_file, copy_file, write_file
 from distutils import log
 from distutils.tests import support
 from distutils.errors import DistutilsFileError
@@ -113,6 +114,15 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         for fn in (self.source, self.target):
             with open(fn, 'r') as f:
                 self.assertEqual(f.read(), 'some content')
+
+    def test_write_undecodable_file_contents(self):
+        if sys.platform == 'win32':
+            self.skipTest('Undecodable filenames are disallowed on windows and'
+                          ' therefore cannot be written into the MANIFEST')
+        contents = [b'undecodable-filename\xff'.decode('utf-8', errors='surrogateescape')]
+        write_file(self.target, contents)
+        with open(self.target, errors='surrogateescape') as f:
+            self.assertEqual(f.read(), contents[0] + '\n')
 
 
 def test_suite():

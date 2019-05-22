@@ -1,4 +1,5 @@
 """Tests for distutils.command.sdist."""
+import itertools
 import os
 import tarfile
 import unittest
@@ -7,6 +8,7 @@ import zipfile
 from os.path import join
 from textwrap import dedent
 from test.support import captured_stdout, check_warnings, run_unittest
+from unittest import mock
 
 try:
     import zlib
@@ -484,6 +486,43 @@ class SDistTestCase(BasePyPIRCCommandTestCase):
                 self.assertEqual(member.uid, os.getuid())
         finally:
             archive.close()
+
+    def test_manifest_is_not_generated_not_exists(self):
+        # now building a sdist
+        dist, cmd = self.get_cmd()
+
+        with mock.patch('os.path.isfile') as fake_isfile:
+            fake_isfile.return_value = False
+            self.assertFalse(cmd._manifest_is_not_generated())
+
+    def test_manifest_is_not_generated_when_generated(self):
+        # now building a sdist
+        dist, cmd = self.get_cmd()
+
+        cmd.manifest = 'MANIFEST'
+        undecodable_file = b'\xff.bin'.decode('utf-8', errors='surrogateescape')
+
+        with mock.patch('os.path.isfile') as fake_isfile:
+            fake_isfile.return_value = True
+            contents = '{}\n{}\n'.format(MANIFEST, undecodable_file)
+            fake_open = mock.mock_open(read_data=contents)
+            with mock.patch('builtins.open', fake_open):
+                self.assertFalse(cmd._manifest_is_not_generated())
+
+    def test_manifest_is_not_generated_when_manual(self):
+        # now building a sdist
+        dist, cmd = self.get_cmd()
+
+        cmd.manifest = 'MANIFEST'
+        undecodable_file = b'\xff.bin'.decode('utf-8', errors='surrogateescape')
+
+        with mock.patch('os.path.isfile') as fake_isfile:
+            fake_isfile.return_value = True
+            contents = '\n'.join(itertools.chain(MANIFEST.splitlines()[1:], undecodable_file))
+            fake_open = mock.mock_open(read_data=contents)
+            with mock.patch('builtins.open', fake_open):
+                self.assertTrue(cmd._manifest_is_not_generated())
+
 
 def test_suite():
     return unittest.makeSuite(SDistTestCase)
