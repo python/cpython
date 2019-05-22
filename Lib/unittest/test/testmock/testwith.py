@@ -230,6 +230,8 @@ class TestMockOpen(unittest.TestCase):
         self.assertEqual(lines[1], 'bar\n')
         self.assertEqual(lines[2], 'baz\n')
         self.assertEqual(h.readline(), '')
+        with self.assertRaises(StopIteration):
+            next(h)
 
     def test_next_data(self):
         # Check that next will correctly return the next available

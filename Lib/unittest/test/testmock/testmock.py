@@ -1710,6 +1710,8 @@ class MockTest(unittest.TestCase):
         lines = [line for line in f1]
         self.assertEqual(lines[0], '3rd line')
         self.assertEqual(list(f1), [])
+        with self.assertRaises(StopIteration):
+            next(h)
 
     def test_mock_open_write(self):
         # Test exception in file writing write()
