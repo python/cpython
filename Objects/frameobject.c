@@ -11,20 +11,8 @@
 
 #define OFF(x) offsetof(PyFrameObject, x)
 
-/* PEP558:
- *
- * Forward declaration of fastlocalsproxy
- * PyEval_GetLocals will need a new PyFrame_GetLocals() helper function
- * that ensures it always gets the snapshot reference and never the proxy
- * even when tracing is enabled.
- * That should probably be a public API for the benefit of third party debuggers
- * implemented in C.
- *
- */
-
 static PyObject *_PyFastLocalsProxy_New(PyObject *frame);
-static PyObject *_PyFastLocalsProxy_GetLocals(PyObject *flp);
-
+static PyObject *_PyFastLocalsProxy_BorrowLocals(PyObject *flp);
 
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
@@ -38,12 +26,46 @@ static PyMemberDef frame_memberlist[] = {
 };
 
 static PyObject *
-frame_getlocals(PyFrameObject *f, void *closure)
+_frame_get_updated_locals(PyFrameObject *f)
 {
     if (PyFrame_FastToLocalsWithError(f) < 0)
         return NULL;
-    Py_INCREF(f->f_locals);
+    assert(f->f_locals != NULL);
     return f->f_locals;
+}
+
+PyObject *
+PyFrame_GetLocalsAttr(PyFrameObject *f)
+{
+    PyObject *updated_locals =_frame_get_updated_locals(f);
+    Py_INCREF(updated_locals);
+    return updated_locals;
+}
+
+PyObject *
+_PyFrame_BorrowPyLocals(PyFrameObject *f)
+{
+    // This is called by PyEval_GetLocals(), which has historically returned
+    // a borrowed reference, so this does the same
+    PyObject *updated_locals =_frame_get_updated_locals(f);
+    if (_PyFastLocalsProxy_CheckExact(updated_locals)) {
+        updated_locals = _PyFastLocalsProxy_BorrowLocals(updated_locals);
+    }
+    return updated_locals;
+}
+
+PyObject *
+PyFrame_GetPyLocals(PyFrameObject *f)
+{
+    PyObject *updated_locals =_PyFrame_BorrowPyLocals(f);
+    Py_INCREF(updated_locals);
+    return updated_locals;
+}
+
+static PyObject *
+frame_getlocals(PyFrameObject *f, void *__unused)
+{
+    return PyFrame_GetLocalsAttr(f);
 }
 
 int
@@ -821,7 +843,7 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 }
 
 int
-_PyFrame_FastToLocalsInternal(PyFrameObject *f, int deref)
+PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
     /* Merge fast locals into f->f_locals */
     PyObject *locals, *map;
@@ -834,29 +856,26 @@ _PyFrame_FastToLocalsInternal(PyFrameObject *f, int deref)
         PyErr_BadInternalCall();
         return -1;
     }
+    co = f->f_code;
     locals = f->f_locals;
     if (locals == NULL) {
-        locals = f->f_locals = PyDict_New();
-        if (locals == NULL)
-            return -1;
-    }
-    /* PEP558:
-     *
-     *   If a trace function is active, ensure f_locals is a fastlocalsproxy
-     *   instance, while locals still refers to the underlying mapping.
-     *   If a trace function is *not* active, leave any existing proxies alone,
-     *   but also don't create any new ones.
-     */
-    co = f->f_code;
-    if (f->f_trace && (co->co_flags & CO_OPTIMIZED) && PyDict_Check(locals)) {
-        PyObject *flp = _PyFastLocalsProxy_New((PyObject *) f);
-        if (!flp) {
-            return -1;
+        if (co->co_flags & CO_OPTIMIZED) {
+            /* PEP 558: If this is an optimized frame, ensure f_locals is a
+            * fastlocalsproxy instance, while locals refers to the underlying mapping.
+            */
+            PyObject *flp = _PyFastLocalsProxy_New((PyObject *) f);
+            if (flp == NULL) {
+                return -1;
+            }
+            f->f_locals = flp;
+            locals = _PyFastLocalsProxy_BorrowLocals(flp);
+        } else {
+            locals = f->f_locals = PyDict_New();
+            if (locals == NULL)
+                return -1;
         }
-        f->f_locals = flp;
-        Py_DECREF(locals); // The proxy now holds the reference to the snapshot
     } else if (_PyFastLocalsProxy_CheckExact(locals)) {
-        locals = _PyFastLocalsProxy_GetLocals(locals);
+        locals = _PyFastLocalsProxy_BorrowLocals(locals);
     }
 
     map = co->co_varnames;
@@ -877,17 +896,11 @@ _PyFrame_FastToLocalsInternal(PyFrameObject *f, int deref)
     ncells = PyTuple_GET_SIZE(co->co_cellvars);
     nfreevars = PyTuple_GET_SIZE(co->co_freevars);
     if (ncells || nfreevars) {
-        /* If deref is true, we'll replace cells with their values in the
-           namespace. If it's false, we'll include the cells themselves, which
-           means PyFrame_LocalsToFast will skip writing them back (unless
-           they've actually been modified).
-
-           The trace hook implementation relies on this to allow debuggers to
-           inject changes to local variables without inadvertently resetting
-           closure variables to a previous value.
+        /* Passing deref to map_to_dict means we'll replace cells with their
+           values in the namespace.
         */
         if (map_to_dict(co->co_cellvars, ncells,
-                        locals, fast + co->co_nlocals, deref))
+                        locals, fast + co->co_nlocals, 1))
             return -1;
 
         /* If the namespace is unoptimized, then one of the
@@ -900,18 +913,12 @@ _PyFrame_FastToLocalsInternal(PyFrameObject *f, int deref)
         */
         if (co->co_flags & CO_OPTIMIZED) {
             if (map_to_dict(co->co_freevars, nfreevars,
-                            locals, fast + co->co_nlocals + ncells, deref) < 0)
+                            locals, fast + co->co_nlocals + ncells, 1) < 0)
                 return -1;
         }
     }
 
     return 0;
-}
-
-int
-PyFrame_FastToLocalsWithError(PyFrameObject *f)
-{
-    return _PyFrame_FastToLocalsInternal(f, 1);
 }
 
 void
@@ -932,7 +939,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     PyErr_SetString(
         PyExc_RuntimeError,
         "PyFrame_LocalsToFast is no longer supported. "
-        "Use PyFrame_GetLocals() instead."
+        "Use PyFrame_GetPyLocals() instead."
     );
 }
 
@@ -1212,14 +1219,6 @@ fastlocalsproxy_check_frame(PyObject *maybe_frame)
         PyErr_SetString(PyExc_SystemError,
             "fastlocalsproxy() argument must be a frame using fast locals");
         return -1;
-    } else if (frame->f_locals == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-            "fastlocalsproxy() argument must already have an allocated locals namespace");
-        return -1;
-    } else if (!PyDict_CheckExact(frame->f_locals)) {
-        PyErr_SetString(PyExc_SystemError,
-            "fastlocalsproxy() argument must be a builtin dict");
-        return -1;
     }
     return 0;
 }
@@ -1237,23 +1236,23 @@ _PyFastLocalsProxy_New(PyObject *frame)
     flp = PyObject_GC_New(fastlocalsproxyobject, &PyFastLocalsProxy_Type);
     if (flp == NULL)
         return NULL;
+    mapping = PyDict_New();
+    if (mapping == NULL) {
+        Py_DECREF(flp);
+        return NULL;
+    }
+    flp->mapping = mapping;
     Py_INCREF(frame);
     flp->frame = (PyFrameObject *) frame;
-    mapping = flp->frame->f_locals;
-    Py_INCREF(mapping);
-    flp->mapping = mapping;
     flp->fast_refs = _PyFrame_BuildFastRefs(flp->frame);
     _PyObject_GC_TRACK(flp);
     return (PyObject *)flp;
 }
 
 static PyObject *
-_PyFastLocalsProxy_GetLocals(PyObject *self)
+_PyFastLocalsProxy_BorrowLocals(PyObject *self)
 {
-    if (!_PyFastLocalsProxy_CheckExact(self)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
+    assert(_PyFastLocalsProxy_CheckExact(self));
     return ((fastlocalsproxyobject *) self)->mapping;
 }
 

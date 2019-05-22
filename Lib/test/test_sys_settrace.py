@@ -1447,10 +1447,44 @@ class FrameLocalsTestCase(unittest.TestCase):
         self.assertEqual(x_from_nested_ref, [2, 6])
         self.assertEqual(x_from_nested_locals, [3, 7])
 
-    def test_locals_writeback_support(self):
+    def test_locals_writethrough_proxy(self):
         # To support interactive debuggers, trace functions are expected to
         # be able to reliably modify function locals. However, this should
         # NOT enable writebacks via locals() at function scope.
+        #
+        # This is a simple scenario to test the core behaviour of the
+        # writethrough proxy
+        local_var = "original"
+        # Check regular locals() snapshot
+        locals_snapshot = locals()
+        self.assertEqual(locals_snapshot["local_var"], "original")
+        locals_snapshot["local_var"] = "modified"
+        self.assertEqual(local_var, "original")
+        # Check writethrough proxy on frame
+        locals_proxy = sys._getframe().f_locals
+        self.assertEqual(locals_proxy["local_var"], "original")
+        locals_proxy["local_var"] = "modified"
+        self.assertEqual(local_var, "modified")
+        # Check handling of closures
+        def nested_scope():
+            nonlocal local_var
+            return local_var, locals(), sys._getframe().f_locals
+        closure_var, inner_snapshot, inner_proxy = nested_scope()
+        self.assertEqual(closure_var, "modified")
+        self.assertEqual(inner_snapshot["local_var"], "modified")
+        self.assertEqual(inner_proxy["local_var"], "modified")
+        inner_snapshot["local_var"] = "modified_again"
+        self.assertEqual(local_var, "modified")
+        self.assertEqual(inner_snapshot["local_var"], "modified_again")
+        self.assertEqual(inner_proxy["local_var"], "modified_again") # Q: Is this desirable?
+        inner_proxy["local_var"] = "modified_yet_again"
+        self.assertEqual(local_var, "modified_yet_again")
+        self.assertEqual(inner_snapshot["local_var"], "modified_yet_again")
+        self.assertEqual(inner_proxy["local_var"], "modified_yet_again")
+
+    def test_locals_writeback_complex_scenario(self):
+        # Further locals writeback testing using a more complex scenario
+        # involving multiple scopes of different kinds
         #
         # Note: the sample values have numbers in them so mixing up variable
         #       names in the checks can't accidentally make the test pass -
@@ -1471,7 +1505,7 @@ class FrameLocalsTestCase(unittest.TestCase):
                 a_nonlocal = 'original5'       # We expect this to be retained
                 another_nonlocal = 'original6' # Trace func will modify this
                 def inner():
-                    nonlocal another_nonlocal
+                    nonlocal a_nonlocal, another_nonlocal
                     a_local = 'original7'          # We expect this to be retained
                     another_local = 'original8'    # Trace func will modify this
                     ns = locals()
@@ -1492,6 +1526,7 @@ class FrameLocalsTestCase(unittest.TestCase):
             a_local, another_local, inner_ns = inner_result
             a_local_via_ns = inner_ns['a_local']
             a_nonlocal_via_inner_ns = inner_ns['a_nonlocal']
+            print(a_nonlocal_via_inner_ns)
             another_nonlocal_via_inner_ns = inner_ns['another_nonlocal']
             another_local_via_ns = inner_ns['another_local']
             a_new_local_via_ns = inner_ns['a_new_local']
@@ -1499,22 +1534,28 @@ class FrameLocalsTestCase(unittest.TestCase):
             """
         )
         def tracefunc(frame, event, arg):
+            ns = frame.f_locals
+            co_name = frame.f_code.co_name
             if event == "return":
-                # We leave any state manipulation to the very end
-                ns = frame.f_locals
-                co_name = frame.f_code.co_name
+                # We leave most state manipulation to the very end
                 if co_name == "C":
                     # Modify class attributes
                     ns["another_attr"] = "modified4"
                 elif co_name == "inner":
-                    # Modify local and nonlocal variables
+                    # Modify variables in outer scope
                     ns["another_nonlocal"] = "modified6"
-                    ns["another_local"] = "modified8"
                     outer_ns = frame.f_back.f_locals
                     outer_ns["outer_local"] = "modified10"
                 elif co_name == "<module>":
                     # Modify globals
                     ns["another_global"] = "modified2"
+            elif event == "line" and co_name == "inner":
+                # This is the one item we can't leave to the end, as the
+                # return tuple is already built by the time the return event
+                # fires, and we want to manipulate one of the entries in that
+                # So instead, we just mutate it on every line trace event
+                ns["another_local"] = "modified8"
+                print(event)
             return tracefunc
         actual_ns = {}
         sys.settrace(tracefunc)
@@ -1525,9 +1566,6 @@ class FrameLocalsTestCase(unittest.TestCase):
         for k in list(actual_ns.keys()):
             if k.startswith("_"):
                 del actual_ns[k]
-        # CURRENT FAILURE STATUS:
-        # - trace functions mutating state as expected
-        # - proxy is incorrectly being returned by locals(), so that also mutates
         expected_ns = {
             "a_global": "created1",
             "another_global": "modified2",
@@ -1547,7 +1585,8 @@ class FrameLocalsTestCase(unittest.TestCase):
             "outer_local": "modified10",
             "outer_local_via_ns": "modified10",
         }
-        self.assertEqual(actual_ns, expected_ns)
+        # Expected is first so any error diff is easier to read
+        self.assertEqual(expected_ns, actual_ns)
 
 
 if __name__ == "__main__":

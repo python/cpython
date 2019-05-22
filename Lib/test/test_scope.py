@@ -804,7 +804,9 @@ class TestLocalsSemantics(unittest.TestCase):
             return locals()
 
         global_ns = globals()
+        self.assertIsInstance(global_ns, dict)
         local_ns = function_local_semantics()
+        self.assertIsInstance(local_ns, dict)
         self.assertIs(local_ns["global_ns"], global_ns)
         self.assertIs(local_ns["local_ns"], local_ns)
         self.assertEqual(local_ns["known_var"], "original")

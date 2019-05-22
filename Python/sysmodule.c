@@ -507,6 +507,10 @@ call_trampoline(PyObject* callback,
     PyObject *result;
     PyObject *stack[3];
 
+    if (PyFrame_FastToLocalsWithError(frame) < 0) {
+        return NULL;
+    }
+
     stack[0] = (PyObject *)frame;
     stack[1] = whatstrings[what];
     stack[2] = (arg != NULL) ? arg : Py_None;

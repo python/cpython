@@ -4683,11 +4683,7 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    if (PyFrame_FastToLocalsWithError(current_frame) < 0)
-        return NULL;
-
-    assert(current_frame->f_locals != NULL);
-    return current_frame->f_locals;
+    return _PyFrame_BorrowPyLocals(current_frame);
 }
 
 PyObject *

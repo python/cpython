@@ -71,16 +71,6 @@ PyAPI_FUNC(PyTryBlock *) PyFrame_BlockPop(PyFrameObject *);
 
 PyAPI_FUNC(PyObject **) PyFrame_ExtendStack(PyFrameObject *, int, int);
 
-/* Conversions between "fast locals" and locals in dictionary */
-
-PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
-
-PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
-PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
-#ifdef Py_BUILD_CORE
-int _PyFrame_FastToLocalsInternal(PyFrameObject *f, int); /* For sys.settrace */
-#endif
-
 PyAPI_FUNC(int) PyFrame_ClearFreeList(void);
 
 PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
@@ -89,12 +79,28 @@ PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
 
 
+/* Conversions between "fast locals" and locals in dictionary */
+PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
+PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
+
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 /* Fast locals proxy for reliable write-through from trace functions */
 PyTypeObject PyFastLocalsProxy_Type;
 #define _PyFastLocalsProxy_CheckExact(self) \
     (Py_TYPE(self) == &PyFastLocalsProxy_Type)
+
+/* Access the frame locals mapping */
+PyAPI_FUNC(PyObject *) PyFrame_GetPyLocals(PyFrameObject *); // = locals()
+PyAPI_FUNC(PyObject *) PyFrame_GetLocalsAttr(PyFrameObject *);  // = frame.f_locals
 #endif
+
+#ifdef Py_BUILD_CORE
+PyObject *_PyFrame_BorrowPyLocals(PyFrameObject *f); /* For PyEval_GetLocals() */
+#endif
+
+
+/* This always raises RuntimeError now (use PyFrame_GetLocalsAttr() instead) */
+PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
 
 #ifdef __cplusplus
 }
