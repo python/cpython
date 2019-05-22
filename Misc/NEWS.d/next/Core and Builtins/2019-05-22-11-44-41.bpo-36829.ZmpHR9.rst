@@ -1,0 +1,4 @@
+:c:func:`PyErr_WriteUnraisable` now displays the exception even if
+displaying the traceback failed. Moreover, hold a strong reference to
+:data:`sys.stderr` while using it. Document that an exception must be set when
+calling :c:func:`PyErr_WriteUnraisable`.
