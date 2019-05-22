@@ -168,7 +168,7 @@ class _BaseStreamServer:
         return self._low_server is not None
 
     def addresses(self):
-        # I don't want to expose plain socket.socket objects as low-level
+        # We don't want to expose plain socket.socket objects as low-level
         # asyncio.Server does but exposing served IP addresses or unix paths
         # is useful
         #
@@ -235,7 +235,7 @@ class _BaseStreamServer:
         if not active_tasks:
             return
         # NOTE: tasks finished with exception are reported
-        # by Tast/Future __del__ method
+        # by the Task.__del__() method.
         done, pending = await tasks.wait(active_tasks,
                                          timeout=self._shutdown_timeout)
         if not pending:
@@ -246,7 +246,8 @@ class _BaseStreamServer:
                                          timeout=self._shutdown_timeout)
         for task in pending:
             self._loop.call_exception_handler({
-                "message": f'{task} was not finished on stream server closing'
+                "message": f'{task!r} ignored cancellation request from a closing StreamServer {self!r}',
+                "stream_server": self
             })
 
     def __del__(self, _warn=warnings.warn):
