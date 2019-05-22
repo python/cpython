@@ -7,8 +7,6 @@
 extern "C" {
 #endif
 
-#include "vectorcall.h"
-
 /* This is about the type 'builtin_function_or_method',
    not Python methods in user-defined classes.  See classobject.h
    for the latter. */
@@ -51,7 +49,7 @@ PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
 
 PyAPI_FUNC(PyObject *) _PyCFunction_FastCallKeywords(PyObject *func,
     PyObject *const *stack,
-    Py_ssize_t nargs,
+    size_t nargsf,
     PyObject *kwnames);
 #endif
 
@@ -107,7 +105,7 @@ typedef struct {
     PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
     PyObject    *m_module; /* The __module__ attribute, can be anything */
     PyObject    *m_weakreflist; /* List of weak references */
-    vectorcall_func vectorcall;
+    vectorcallfunc vectorcall;
 } PyCFunctionObject;
 
 PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(

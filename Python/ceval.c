@@ -4808,58 +4808,36 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
 
 
 static PyObject *
-trace_call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
+trace_call_function(PyThreadState *tstate,
+                    PyObject *func,
+                    PyObject **args, Py_ssize_t nargs,
+                    PyObject *kwnames)
 {
-    PyObject **pfunc = (*pp_stack) - oparg - 1;
-    PyObject *func = *pfunc;
-    PyObject *x, *w;
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-    Py_ssize_t nargs = oparg - nkwargs;
-    PyObject **stack = (*pp_stack) - nargs - nkwargs;
-    if (!tstate->use_tracing) {
-        x = _Py_VectorCall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+    PyObject *x;
+    if (PyCFunction_Check(func)) {
+        C_TRACE(x, _PyCFunction_FastCallKeywords(func, args, nargs, kwnames));
+        return x;
     }
-    else if (PyCFunction_Check(func)) {
-        C_TRACE(x, _PyCFunction_FastCallKeywords(func, stack, nargs, kwnames));
-    }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
-        if (nargs > 0) {
-            /* We need to create a temporary bound method as argument
-               for profiling.
+    else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
+        /* We need to create a temporary bound method as argument
+           for profiling.
 
-               If nargs == 0, then this cannot work because we have no
-               "self". In any case, the call itself would raise
-               TypeError (foo needs an argument), so we just skip
-               profiling. */
-            PyObject *self = stack[0];
-            func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
-            if (func != NULL) {
-                C_TRACE(x, _PyCFunction_FastCallKeywords(func,
-                                                         stack+1, nargs-1,
-                                                         kwnames));
-                Py_DECREF(func);
-            }
-            else {
-                x = NULL;
-            }
+           If nargs == 0, then this cannot work because we have no
+           "self". In any case, the call itself would raise
+           TypeError (foo needs an argument), so we just skip
+           profiling. */
+        PyObject *self = args[0];
+        func = Py_TYPE(func)->tp_descr_get(func, self, (PyObject*)Py_TYPE(self));
+        if (func == NULL) {
+            return NULL;
         }
-        else {
-            x = PyObject_VectorCallWithCallable(func, stack, nargs, kwnames);
-        }
+        C_TRACE(x, _PyCFunction_FastCallKeywords(func,
+                                                 args+1, nargs-1,
+                                                 kwnames));
+        Py_DECREF(func);
+        return x;
     }
-    else {
-        x = PyObject_VectorCallWithCallable(func, stack, nargs, kwnames);
-    }
-
-    assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-
-    /* Clear the stack of the function object. */
-    while ((*pp_stack) > pfunc) {
-        w = EXT_POP(*pp_stack);
-        Py_DECREF(w);
-    }
-
-    return x;
+    return _PyObject_Vectorcall(func, args, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
 }
 
 /* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
@@ -4873,16 +4851,23 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
     Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
     Py_ssize_t nargs = oparg - nkwargs;
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
-    if (!tstate->use_tracing) {
-        x = _Py_VectorCall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
-        /* Clear the stack of the function object. */
-        while ((*pp_stack) > pfunc) {
-            w = EXT_POP(*pp_stack);
-            Py_DECREF(w);
-        }
-        return x;
+
+    if (tstate->use_tracing) {
+        x = trace_call_function(tstate, func, stack, nargs, kwnames);
     }
-    return trace_call_function(tstate, pp_stack, oparg, kwnames);
+    else {
+        x = _PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+    }
+
+    assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+    /* Clear the stack of the function object. */
+    while ((*pp_stack) > pfunc) {
+        w = EXT_POP(*pp_stack);
+        Py_DECREF(w);
+    }
+
+    return x;
 }
 
 static PyObject *

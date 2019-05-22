@@ -474,7 +474,7 @@ builtin_callable(PyObject *module, PyObject *obj)
 }
 
 static PyObject *
-builtin_breakpoint(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *keywords)
+builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
     PyObject *hook = PySys_GetObject("breakpointhook");
 
@@ -483,7 +483,7 @@ builtin_breakpoint(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *
         return NULL;
     }
     Py_INCREF(hook);
-    PyObject *retval = PyObject_VectorCallWithCallable(hook, args, nargs, keywords);
+    PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 }
@@ -2260,7 +2260,7 @@ PyDoc_STRVAR(builtin_sorted__doc__,
     {"sorted", (PyCFunction)(void(*)(void))builtin_sorted, METH_FASTCALL | METH_KEYWORDS, builtin_sorted__doc__},
 
 static PyObject *
-builtin_sorted(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *newlist, *v, *seq, *callable;
 
@@ -2280,7 +2280,7 @@ builtin_sorted(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwna
     }
 
     assert(nargs >= 1);
-    v = PyObject_VectorCallWithCallable(callable, args + 1, nargs - 1, kwnames);
+    v = _PyObject_Vectorcall(callable, args + 1, nargs - 1, kwnames);
     Py_DECREF(callable);
     if (v == NULL) {
         Py_DECREF(newlist);

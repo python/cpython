@@ -1468,7 +1468,7 @@ static PyTypeObject Xmlparsetype = {
         0,                              /*tp_itemsize*/
         /* methods */
         (destructor)xmlparse_dealloc,   /*tp_dealloc*/
-        0,           /*tp_print*/
+        (printfunc)0,           /*tp_print*/
         0,                      /*tp_getattr*/
         0,  /*tp_setattr*/
         0,                      /*tp_reserved*/

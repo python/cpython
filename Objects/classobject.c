@@ -40,45 +40,43 @@ PyMethod_Self(PyObject *im)
     return ((PyMethodObject *)im)->im_self;
 }
 
-/* Vector call for bound-methods */
+
 static PyObject *
-method_vector_call(PyObject *method, PyObject *const *stack,
-                Py_ssize_t nargs, PyObject *kwnames)
+method_vectorcall(PyObject *method, PyObject *const *args,
+                  size_t nargsf, PyObject *kwnames)
 {
     assert(Py_TYPE(method) == &PyMethod_Type);
     PyObject *self, *func, *result;
     self = PyMethod_GET_SELF(method);
     func = PyMethod_GET_FUNCTION(method);
-    
-    if (nargs & PY_VECTORCALL_ARGUMENTS_OFFSET) {
-        nargs = (nargs&~PY_VECTORCALL_ARGUMENTS_OFFSET)+1;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    if (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET) {
         /* PY_VECTORCALL_ARGUMENTS_OFFSET is set, so we are allowed to mutate the vector */
-        PyObject **args = (PyObject**)stack-1;
-        PyObject *tmp = args[0];
-        args[0] = self;
-        result = _Py_VectorCall(func, args, nargs, kwnames);
-        args[0] = tmp;
+        PyObject **newargs = (PyObject**)args - 1;
+        nargs += 1;
+        PyObject *tmp = newargs[0];
+        newargs[0] = self;
+        result = _PyObject_Vectorcall(func, newargs, nargs, kwnames);
+        newargs[0] = tmp;
     }
     else {
         Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-        PyObject **newstack;
-        Py_ssize_t totalargs = nargs+nkwargs;
-        newstack = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
-        if (newstack == NULL) {
+        PyObject **newargs;
+        Py_ssize_t totalargs = nargs + nkwargs;
+        newargs = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
+        if (newargs == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
         /* use borrowed references */
-        newstack[0] = self;
-        if (totalargs > 0) {
-            memcpy(&newstack[1], stack, totalargs * sizeof(PyObject *));
-        }
-        result = _Py_VectorCall(func, newstack, nargs+1, kwnames);
-        PyMem_Free(newstack);
+        newargs[0] = self;
+        memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
+        result = _PyObject_Vectorcall(func, newargs, nargs+1, kwnames);
+        PyMem_Free(newargs);
     }
     return result;
 }
-
 
 
 /* Method objects are used for bound instance methods returned by
@@ -110,7 +108,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im->im_func = func;
     Py_XINCREF(self);
     im->im_self = self;
-    im->vector_call = method_vector_call;
+    im->vectorcall = method_vectorcall;
     _PyObject_GC_TRACK(im);
     return (PyObject *)im;
 }
@@ -351,7 +349,7 @@ PyTypeObject PyMethod_Type = {
     sizeof(PyMethodObject),
     0,
     (destructor)method_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    offsetof(PyMethodObject, vectorcall),       /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
@@ -366,7 +364,7 @@ PyTypeObject PyMethod_Type = {
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
+    _Py_TPFLAGS_HAVE_VECTORCALL,                /* tp_flags */
     method_doc,                                 /* tp_doc */
     (traverseproc)method_traverse,              /* tp_traverse */
     0,                                          /* tp_clear */
@@ -385,7 +383,6 @@ PyTypeObject PyMethod_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     method_new,                                 /* tp_new */
-    .tp_vectorcall_offset = offsetof(PyMethodObject, vector_call),
 };
 
 /* Clear out the free list */

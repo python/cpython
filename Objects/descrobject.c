@@ -265,14 +265,14 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwargs)
 // same to methoddescr_call(), but use FASTCALL convention.
 PyObject *
 _PyMethodDescr_FastCallKeywords(PyObject *descrobj,
-                                PyObject *const *args, Py_ssize_t nargs,
+                                PyObject *const *args, size_t nargsf,
                                 PyObject *kwnames)
 {
     assert(Py_TYPE(descrobj) == &PyMethodDescr_Type);
     PyMethodDescrObject *descr = (PyMethodDescrObject *)descrobj;
     PyObject *self, *result;
 
-    nargs &= ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     /* Make sure that the first argument is acceptable as 'self' */
     if (nargs < 1) {
         PyErr_Format(PyExc_TypeError,
@@ -543,7 +543,7 @@ PyTypeObject PyMethodDescr_Type = {
     sizeof(PyMethodDescrObject),
     0,
     (destructor)descr_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    offsetof(PyMethodDescrObject, vectorcall),  /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_reserved */
@@ -558,7 +558,7 @@ PyTypeObject PyMethodDescr_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    Py_TPFLAGS_HAVE_VECTORCALL |
+    _Py_TPFLAGS_HAVE_VECTORCALL |
     Py_TPFLAGS_METHOD_DESCRIPTOR,               /* tp_flags */
     0,                                          /* tp_doc */
     descr_traverse,                             /* tp_traverse */
@@ -574,7 +574,6 @@ PyTypeObject PyMethodDescr_Type = {
     0,                                          /* tp_dict */
     (descrgetfunc)method_get,                   /* tp_descr_get */
     0,                                          /* tp_descr_set */
-    .tp_vectorcall_offset = offsetof(PyMethodDescrObject, vector_call),
 };
 
 /* This is for METH_CLASS in C, not for "f = classmethod(f)" in Python! */
@@ -757,7 +756,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
                                              type, method->ml_name);
     if (descr != NULL) {
         descr->d_method = method;
-        descr->vector_call = &_PyMethodDescr_FastCallKeywords;
+        descr->vectorcall = &_PyMethodDescr_FastCallKeywords;
     }
     return (PyObject *)descr;
 }

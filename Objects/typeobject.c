@@ -5221,11 +5221,6 @@ PyType_Ready(PyTypeObject *type)
                      (type->tp_flags & Py_TPFLAGS_READYING) == 0);
 
     type->tp_flags |= Py_TPFLAGS_READYING;
-    
-    /* Make sure that Py_TPFLAGS_HAVE_VECTORCALL and tp_vectorcall_offset are consistent */
-    if ((type->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) == 0) {
-        type->tp_vectorcall_offset = 0;
-    }
 
 #ifdef Py_TRACE_REFS
     /* PyType_Ready is the closest thing we have to a choke point

@@ -291,6 +291,11 @@ given type object has a specified feature.
 /* Set if the type allows subclassing */
 #define Py_TPFLAGS_BASETYPE (1UL << 10)
 
+/* Set if the type implements the vectorcall protocol (PEP 590) */
+#ifndef Py_LIMITED_API
+#define _Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
+#endif
+
 /* Set if the type is 'ready' -- fully initialized */
 #define Py_TPFLAGS_READY (1UL << 12)
 
@@ -337,9 +342,6 @@ given type object has a specified feature.
 
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
-
-/* Type structure has tp_vectorcall_offset member (3.8) */
-#define Py_TPFLAGS_HAVE_VECTORCALL (1UL << 1)
 
 #ifdef Py_LIMITED_API
 #  define PyType_HasFeature(t,f)  ((PyType_GetFlags(t) & (f)) != 0)

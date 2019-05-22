@@ -1064,7 +1064,7 @@ class SizeofTest(unittest.TestCase):
         # buffer
         # XXX
         # builtin_function_or_method
-        check(len, size('5P')) # XXX check layout
+        check(len, size('5P'))
         # bytearray
         samples = [b'', b'u'*100000]
         for sample in samples:
@@ -1259,7 +1259,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2n15Pl4Pn9Pn11PIPI'
+        fmt = 'P2nPI13Pl4Pn9Pn11PIPP'
         if hasattr(sys, 'getcounts'):
             fmt += '3n2P'
         s = vsize(fmt)

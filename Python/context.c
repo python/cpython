@@ -618,7 +618,7 @@ _contextvars_Context_copy_impl(PyContext *self)
 
 
 static PyObject *
-context_run(PyContext *self, PyObject **args,
+context_run(PyContext *self, PyObject *const *args,
             Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs < 1) {
@@ -631,7 +631,7 @@ context_run(PyContext *self, PyObject **args,
         return NULL;
     }
 
-    PyObject *call_result = PyObject_VectorCallWithCallable(
+    PyObject *call_result = _PyObject_Vectorcall(
         args[0], args + 1, nargs - 1, kwnames);
 
     if (PyContext_Exit((PyObject *)self)) {
