@@ -2156,25 +2156,21 @@ explicitly, without generators. We do have to redirect stderr to avoid
 printing warnings and to doublecheck that we actually tested what we wanted
 to test.
 
->>> import sys, io
->>> old = sys.stderr
->>> try:
-...     sys.stderr = io.StringIO()
-...     class Leaker:
-...         def __del__(self):
-...             def invoke(message):
-...                 raise RuntimeError(message)
-...             invoke("test")
+>>> from test import support
+>>> class Leaker:
+...     def __del__(self):
+...         def invoke(message):
+...             raise RuntimeError(message)
+...         invoke("del failed")
 ...
+>>> with support.catch_unraisable_exception() as cm:
 ...     l = Leaker()
 ...     del l
-...     err = sys.stderr.getvalue().strip()
-...     "Exception ignored in" in err
-...     "RuntimeError: test" in err
-...     "Traceback" in err
-...     "in invoke" in err
-... finally:
-...     sys.stderr = old
+...
+...     cm.unraisable.object == Leaker.__del__
+...     cm.unraisable.exc_type == RuntimeError
+...     str(cm.unraisable.exc_value) == "del failed"
+...     cm.unraisable.exc_traceback is not None
 True
 True
 True
