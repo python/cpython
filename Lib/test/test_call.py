@@ -8,6 +8,7 @@ except ImportError:
 import struct
 import collections
 import itertools
+import gc
 
 
 class FunctionCalls(unittest.TestCase):
@@ -466,6 +467,7 @@ class FastCallTests(unittest.TestCase):
                 self.kwargs = kwargs
             def __index__(self):
                 self.kwargs.clear()
+                gc.collect()
                 return 0
         x = IntWithDict(dont_inherit=IntWithDict())
         # We test the argument handling of "compile" here, the compilation
