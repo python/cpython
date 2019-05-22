@@ -2342,24 +2342,19 @@ class OriginTrackingTest(unittest.TestCase):
         orig_wuc = warnings._warn_unawaited_coroutine
         try:
             warnings._warn_unawaited_coroutine = lambda coro: 1/0
-            try:
-                # Note: catch_unraisable_exception() resurect the coroutine
-                with support.catch_unraisable_exception() as cm, \
-                     support.captured_stderr() as stream:
-                    # only store repr() to avoid keeping the coroutine alive
-                    coro = corofn()
-                    coro_repr = repr(coro)
+            with support.catch_unraisable_exception() as cm, \
+                 support.captured_stderr() as stream:
+                # only store repr() to avoid keeping the coroutine alive
+                coro = corofn()
+                coro_repr = repr(coro)
 
-                    # clear reference to the coroutine without awaiting for it
-                    del coro
-                    support.gc_collect()
+                # clear reference to the coroutine without awaiting for it
+                del coro
+                support.gc_collect()
 
                 self.assertEqual(repr(cm.unraisable.object), coro_repr)
                 self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
                 self.assertIn("was never awaited", stream.getvalue())
-            finally:
-                # Explicitly break reference cycle
-                cm = None
 
             del warnings._warn_unawaited_coroutine
             with support.captured_stderr() as stream:

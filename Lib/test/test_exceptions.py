@@ -1193,15 +1193,12 @@ class ExceptionTests(unittest.TestCase):
         for test_class in (BrokenDel, BrokenExceptionDel):
             with self.subTest(test_class):
                 obj = test_class()
-                try:
-                    with support.catch_unraisable_exception() as cm:
-                        del obj
+                with support.catch_unraisable_exception() as cm:
+                    del obj
 
-                    self.assertEqual(cm.unraisable.object, test_class.__del__)
+                    self.assertEqual(cm.unraisable.object,
+                                     test_class.__del__)
                     self.assertIsNotNone(cm.unraisable.exc_traceback)
-                finally:
-                    # Explicitly break reference cycle
-                    cm = None
 
     def test_unhandled(self):
         # Check for sensible reporting of unhandled exceptions

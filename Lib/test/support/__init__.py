@@ -3042,15 +3042,13 @@ class catch_unraisable_exception:
 
     Usage:
 
-        try:
-            with support.catch_unraisable_exception() as cm:
-                ...
-
-            # check the expected unraisable exception
+        with support.catch_unraisable_exception() as cm:
             ...
-        finally:
-            # Explicitly break reference cycle
-            cm = None
+
+            # check the expected unraisable exception: use cm.unraisable
+            ...
+
+        # cm.unraisable is None here (to break a reference cycle)
 
     The finally block is required: cm.unraisable contains a traceback object
     which indirectly references the 'cm' variable, it's a reference cycle.
@@ -3069,4 +3067,6 @@ class catch_unraisable_exception:
         return self
 
     def __exit__(self, *exc_info):
+        # Clear the unraisable exception to explicitly break a reference cycle
+        self.unraisable = None
         sys.unraisablehook = self._old_hook

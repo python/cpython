@@ -2163,18 +2163,14 @@ to test.
 ...             raise RuntimeError(message)
 ...         invoke("del failed")
 ...
->>> try:
-...     with support.catch_unraisable_exception() as cm:
-...         l = Leaker()
-...         del l
+>>> with support.catch_unraisable_exception() as cm:
+...     l = Leaker()
+...     del l
 ...
 ...     Leaker.__del__ == cm.unraisable.object
 ...     cm.unraisable.exc_type == RuntimeError
 ...     str(cm.unraisable.exc_value) == "del failed"
 ...     cm.unraisable.exc_traceback is not None
-... finally:
-...     # Explicitly break reference cycle
-...     cm = None
 True
 True
 True
