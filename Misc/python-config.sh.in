@@ -74,7 +74,7 @@ do
     esac
 done
 
-if [ "$PY_EMBED" = "1" ] ; then
+if [ $PY_EMBED = 1 ] ; then
     LIBS="$LIBS_EMBED"
 fi
 
