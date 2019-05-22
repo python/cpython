@@ -6852,8 +6852,9 @@ socket_if_indextoname(PyObject *self, PyObject *arg)
     char name[IF_NAMESIZE + 1];
 
     index = PyLong_AsUnsignedLong(arg);
-    if (index == (unsigned long) -1)
+    if (index == (unsigned long) -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
