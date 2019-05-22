@@ -34,6 +34,12 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+try:
+    get_native_id = _thread.get_native_id
+    _HAVE_THREAD_NATIVE_ID = True
+    __all__.append('get_native_id')
+except AttributeError:
+    _HAVE_THREAD_NATIVE_ID = False
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -790,6 +796,8 @@ class Thread:
         else:
             self._daemonic = current_thread().daemon
         self._ident = None
+        if _HAVE_THREAD_NATIVE_ID:
+            self._native_id = None
         self._tstate_lock = None
         self._started = Event()
         self._is_stopped = False
@@ -891,6 +899,10 @@ class Thread:
     def _set_ident(self):
         self._ident = get_ident()
 
+    if _HAVE_THREAD_NATIVE_ID:
+        def _set_native_id(self):
+            self._native_id = get_native_id()
+
     def _set_tstate_lock(self):
         """
         Set a lock object which will be released by the interpreter when
@@ -903,6 +915,8 @@ class Thread:
         try:
             self._set_ident()
             self._set_tstate_lock()
+            if _HAVE_THREAD_NATIVE_ID:
+                self._set_native_id()
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -1077,6 +1091,18 @@ class Thread:
         assert self._initialized, "Thread.__init__() not called"
         return self._ident
 
+    if _HAVE_THREAD_NATIVE_ID:
+        @property
+        def native_id(self):
+            """Native integral thread ID of this thread, or None if it has not been started.
+
+            This is a non-negative integer. See the get_native_id() function.
+            This represents the Thread ID as reported by the kernel.
+
+            """
+            assert self._initialized, "Thread.__init__() not called"
+            return self._native_id
+
     def is_alive(self):
         """Return whether the thread is alive.
 
@@ -1176,6 +1202,8 @@ class _MainThread(Thread):
         self._set_tstate_lock()
         self._started.set()
         self._set_ident()
+        if _HAVE_THREAD_NATIVE_ID:
+            self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
 
@@ -1195,6 +1223,8 @@ class _DummyThread(Thread):
 
         self._started.set()
         self._set_ident()
+        if _HAVE_THREAD_NATIVE_ID:
+            self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
 
