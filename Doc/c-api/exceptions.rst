@@ -81,6 +81,8 @@ Printing and clearing
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
 
+   An exception must be set when calling this function.
+
 
 Raising exceptions
 ==================

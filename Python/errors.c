@@ -940,90 +940,121 @@ PyErr_NewExceptionWithDoc(const char *name, const char *doc,
 }
 
 
-/* Call when an exception has occurred but there is no way for Python
-   to handle it.  Examples: exception in __del__ or during GC. */
-void
-PyErr_WriteUnraisable(PyObject *obj)
+static void
+write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
+                          PyObject *exc_tb, PyObject *obj, PyObject *file)
 {
-    _Py_IDENTIFIER(__module__);
-    PyObject *f, *t, *v, *tb;
-    PyObject *moduleName = NULL;
-    char* className;
-
-    PyErr_Fetch(&t, &v, &tb);
-
-    f = _PySys_GetObjectId(&PyId_stderr);
-    if (f == NULL || f == Py_None)
-        goto done;
-
     if (obj) {
-        if (PyFile_WriteString("Exception ignored in: ", f) < 0)
-            goto done;
-        if (PyFile_WriteObject(obj, f, 0) < 0) {
+        if (PyFile_WriteString("Exception ignored in: ", file) < 0) {
+            return;
+        }
+        if (PyFile_WriteObject(obj, file, 0) < 0) {
             PyErr_Clear();
-            if (PyFile_WriteString("<object repr() failed>", f) < 0) {
-                goto done;
+            if (PyFile_WriteString("<object repr() failed>", file) < 0) {
+                return;
             }
         }
-        if (PyFile_WriteString("\n", f) < 0)
-            goto done;
+        if (PyFile_WriteString("\n", file) < 0) {
+            return;
+        }
     }
 
-    if (PyTraceBack_Print(tb, f) < 0)
-        goto done;
+    if (exc_tb != NULL) {
+        if (PyTraceBack_Print(exc_tb, file) < 0) {
+            /* continue even if writing the traceback failed */
+            PyErr_Clear();
+        }
+    }
 
-    if (!t)
-        goto done;
+    if (!exc_type) {
+        return;
+    }
 
-    assert(PyExceptionClass_Check(t));
-    className = PyExceptionClass_Name(t);
+    assert(PyExceptionClass_Check(exc_type));
+    char* className = PyExceptionClass_Name(exc_type);
     if (className != NULL) {
         char *dot = strrchr(className, '.');
-        if (dot != NULL)
+        if (dot != NULL) {
             className = dot+1;
+        }
     }
 
-    moduleName = _PyObject_GetAttrId(t, &PyId___module__);
+    _Py_IDENTIFIER(__module__);
+    PyObject *moduleName = _PyObject_GetAttrId(exc_type, &PyId___module__);
     if (moduleName == NULL || !PyUnicode_Check(moduleName)) {
+        Py_XDECREF(moduleName);
         PyErr_Clear();
-        if (PyFile_WriteString("<unknown>", f) < 0)
-            goto done;
+        if (PyFile_WriteString("<unknown>", file) < 0) {
+            return;
+        }
     }
     else {
         if (!_PyUnicode_EqualToASCIIId(moduleName, &PyId_builtins)) {
-            if (PyFile_WriteObject(moduleName, f, Py_PRINT_RAW) < 0)
-                goto done;
-            if (PyFile_WriteString(".", f) < 0)
-                goto done;
+            if (PyFile_WriteObject(moduleName, file, Py_PRINT_RAW) < 0) {
+                Py_DECREF(moduleName);
+                return;
+            }
+            Py_DECREF(moduleName);
+            if (PyFile_WriteString(".", file) < 0) {
+                return;
+            }
+        }
+        else {
+            Py_DECREF(moduleName);
         }
     }
+
     if (className == NULL) {
-        if (PyFile_WriteString("<unknown>", f) < 0)
-            goto done;
+        if (PyFile_WriteString("<unknown>", file) < 0) {
+            return;
+        }
     }
     else {
-        if (PyFile_WriteString(className, f) < 0)
-            goto done;
+        if (PyFile_WriteString(className, file) < 0) {
+            return;
+        }
     }
 
-    if (v && v != Py_None) {
-        if (PyFile_WriteString(": ", f) < 0)
-            goto done;
-        if (PyFile_WriteObject(v, f, Py_PRINT_RAW) < 0) {
+    if (exc_value && exc_value != Py_None) {
+        if (PyFile_WriteString(": ", file) < 0) {
+            return;
+        }
+        if (PyFile_WriteObject(exc_value, file, Py_PRINT_RAW) < 0) {
             PyErr_Clear();
-            if (PyFile_WriteString("<exception str() failed>", f) < 0) {
-                goto done;
+            if (PyFile_WriteString("<exception str() failed>", file) < 0) {
+                return;
             }
         }
     }
-    if (PyFile_WriteString("\n", f) < 0)
-        goto done;
+    if (PyFile_WriteString("\n", file) < 0) {
+        return;
+    }
+}
 
-done:
-    Py_XDECREF(moduleName);
-    Py_XDECREF(t);
-    Py_XDECREF(v);
-    Py_XDECREF(tb);
+
+/* Display an unraisable exception into sys.stderr.
+
+   Called when an exception has occurred but there is no way for Python to
+   handle it. For example, when a destructor raises an exception or during
+   garbage collection (gc.collect()).
+
+   An exception must be set when calling this function. */
+void
+PyErr_WriteUnraisable(PyObject *obj)
+{
+    PyObject *f, *exc_type, *exc_value, *exc_tb;
+
+    PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+
+    f = _PySys_GetObjectId(&PyId_stderr);
+    /* Do nothing if sys.stderr is not available or set to None */
+    if (f != NULL && f != Py_None) {
+        write_unraisable_exc_file(exc_type, exc_value, exc_tb, obj, f);
+    }
+
+    Py_XDECREF(exc_type);
+    Py_XDECREF(exc_value);
+    Py_XDECREF(exc_tb);
     PyErr_Clear(); /* Just in case */
 }
 
