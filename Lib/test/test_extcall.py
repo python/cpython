@@ -264,7 +264,8 @@ What about willful misconduct?
       ...
     TypeError: dir() argument after * must be an iterable, not function
 
-    >>> None(*h)
+    >>> nothing = None
+    >>> nothing(*h)
     Traceback (most recent call last):
       ...
     TypeError: NoneType object argument after * must be an iterable, \
@@ -305,7 +306,7 @@ not function
       ...
     TypeError: dir() argument after ** must be a mapping, not function
 
-    >>> None(**h)
+    >>> nothing(**h)
     Traceback (most recent call last):
       ...
     TypeError: NoneType object argument after ** must be a mapping, \
@@ -315,6 +316,52 @@ not function
     Traceback (most recent call last):
       ...
     TypeError: dir() got multiple values for keyword argument 'b'
+
+Test a kwargs mapping with duplicated keys.
+
+    >>> from collections.abc import Mapping
+    >>> class MultiDict(Mapping):
+    ...     def __init__(self, items):
+    ...         self._items = items
+    ...
+    ...     def __iter__(self):
+    ...         return (k for k, v in self._items)
+    ...
+    ...     def __getitem__(self, key):
+    ...         for k, v in self._items:
+    ...             if k == key:
+    ...                 return v
+    ...         raise KeyError(key)
+    ...
+    ...     def __len__(self):
+    ...         return len(self._items)
+    ...
+    ...     def keys(self):
+    ...         return [k for k, v in self._items]
+    ...
+    ...     def values(self):
+    ...         return [v for k, v in self._items]
+    ...
+    ...     def items(self):
+    ...         return [(k, v) for k, v in self._items]
+    ...
+    >>> g(**MultiDict([('x', 1), ('y', 2)]))
+    1 () {'y': 2}
+
+    >>> g(**MultiDict([('x', 1), ('x', 2)]))
+    Traceback (most recent call last):
+      ...
+    TypeError: g() got multiple values for keyword argument 'x'
+
+    >>> g(a=3, **MultiDict([('x', 1), ('x', 2)]))
+    Traceback (most recent call last):
+      ...
+    TypeError: g() got multiple values for keyword argument 'x'
+
+    >>> g(**MultiDict([('a', 3)]), **MultiDict([('x', 1), ('x', 2)]))
+    Traceback (most recent call last):
+      ...
+    TypeError: g() got multiple values for keyword argument 'x'
 
 Another helper function
 

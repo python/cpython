@@ -4,7 +4,7 @@ import functools
 from test import support
 import unittest
 
-from .test_contextlib import TestBaseExitStack
+from test.test_contextlib import TestBaseExitStack
 
 
 def _async_test(func):
@@ -18,7 +18,7 @@ def _async_test(func):
             return loop.run_until_complete(coro)
         finally:
             loop.close()
-            asyncio.set_event_loop(None)
+            asyncio.set_event_loop_policy(None)
     return wrapper
 
 
@@ -35,6 +35,28 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
 
         async with manager as context:
             self.assertIs(manager, context)
+
+    @_async_test
+    async def test_async_gen_propagates_generator_exit(self):
+        # A regression test for https://bugs.python.org/issue33786.
+
+        @asynccontextmanager
+        async def ctx():
+            yield
+
+        async def gen():
+            async with ctx():
+                yield 11
+
+        ret = []
+        exc = ValueError(22)
+        with self.assertRaises(ValueError):
+            async with ctx():
+                async for val in gen():
+                    ret.append(val)
+                    raise exc
+
+        self.assertEqual(ret, [11])
 
     def test_exit_is_abstract(self):
         class MissingAexit(AbstractAsyncContextManager):
@@ -295,6 +317,7 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.addCleanup(self.loop.close)
+        self.addCleanup(asyncio.set_event_loop_policy, None)
 
     @_async_test
     async def test_async_callback(self):
@@ -328,6 +351,16 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
                 self.assertIsNone(wrapper[1].__doc__, _exit.__doc__)
 
         self.assertEqual(result, expected)
+
+        result = []
+        async with AsyncExitStack() as stack:
+            with self.assertRaises(TypeError):
+                stack.push_async_callback(arg=1)
+            with self.assertRaises(TypeError):
+                self.exit_stack.push_async_callback(arg=2)
+            with self.assertWarns(DeprecationWarning):
+                stack.push_async_callback(callback=_exit, arg=3)
+        self.assertEqual(result, [((), {'arg': 3})])
 
     @_async_test
     async def test_async_push(self):

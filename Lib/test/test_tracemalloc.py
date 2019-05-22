@@ -15,6 +15,7 @@ except ImportError:
 
 
 EMPTY_STRING_SIZE = sys.getsizeof(b'')
+INVALID_NFRAME = (-1, 2**30)
 
 
 def get_frames(nframe, lineno_delta):
@@ -108,6 +109,26 @@ class TestTracemallocEnabled(unittest.TestCase):
         obj_size = 12345
         obj, obj_traceback = allocate_bytes(obj_size)
         traceback = tracemalloc.get_object_traceback(obj)
+        self.assertEqual(traceback, obj_traceback)
+
+    def test_new_reference(self):
+        tracemalloc.clear_traces()
+        # gc.collect() indirectly calls PyList_ClearFreeList()
+        support.gc_collect()
+
+        # Create a list and "destroy it": put it in the PyListObject free list
+        obj = []
+        obj = None
+
+        # Create a list which should reuse the previously created empty list
+        obj = []
+
+        nframe = tracemalloc.get_traceback_limit()
+        frames = get_frames(nframe, -3)
+        obj_traceback = tracemalloc.Traceback(frames)
+
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIsNotNone(traceback)
         self.assertEqual(traceback, obj_traceback)
 
     def test_set_traceback_limit(self):
@@ -833,6 +854,13 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.rstrip()
         self.assertEqual(stdout, b'False')
 
+    def test_env_var_disabled(self):
+        # tracing at startup
+        code = 'import tracemalloc; print(tracemalloc.is_tracing())'
+        ok, stdout, stderr = assert_python_ok('-c', code, PYTHONTRACEMALLOC='0')
+        stdout = stdout.rstrip()
+        self.assertEqual(stdout, b'False')
+
     def test_env_var_enabled_at_startup(self):
         # tracing at startup
         code = 'import tracemalloc; print(tracemalloc.is_tracing())'
@@ -861,7 +889,7 @@ class TestCommandLine(unittest.TestCase):
 
 
     def test_env_var_invalid(self):
-        for nframe in (-1, 0, 2**30):
+        for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
                 self.check_env_var_invalid(nframe)
 
@@ -889,7 +917,7 @@ class TestCommandLine(unittest.TestCase):
         self.fail(f"unexpeced output: {stderr!a}")
 
     def test_sys_xoptions_invalid(self):
-        for nframe in (-1, 0, 2**30):
+        for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
                 self.check_sys_xoptions_invalid(nframe)
 
@@ -928,7 +956,7 @@ class TestCAPI(unittest.TestCase):
             return None
 
     def track(self, release_gil=False, nframe=1):
-        frames = get_frames(nframe, 2)
+        frames = get_frames(nframe, 1)
         _testcapi.tracemalloc_track(self.domain, self.ptr, self.size,
                                     release_gil)
         return frames

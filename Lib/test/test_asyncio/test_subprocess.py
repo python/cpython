@@ -23,12 +23,18 @@ PROGRAM_CAT = [
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
 
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
     def _start(self, *args, **kwargs):
         self._proc = mock.Mock()
         self._proc.stdin = None
         self._proc.stdout = None
         self._proc.stderr = None
+        self._proc.pid = -1
 
 
 class SubprocessTransportTests(test_utils.TestCase):
@@ -73,6 +79,29 @@ class SubprocessTransportTests(test_utils.TestCase):
 
         transport.close()
 
+    def test_subprocess_repr(self):
+        waiter = asyncio.Future(loop=self.loop)
+        transport, protocol = self.create_transport(waiter)
+        transport._process_exited(6)
+        self.loop.run_until_complete(waiter)
+
+        self.assertEqual(
+            repr(transport),
+            "<TestSubprocessTransport pid=-1 returncode=6>"
+        )
+        transport._returncode = None
+        self.assertEqual(
+            repr(transport),
+            "<TestSubprocessTransport pid=-1 running>"
+        )
+        transport._pid = None
+        transport._returncode = None
+        self.assertEqual(
+            repr(transport),
+            "<TestSubprocessTransport not started>"
+        )
+        transport.close()
+
 
 class SubprocessMixin:
 
@@ -97,7 +126,7 @@ class SubprocessMixin:
             return (exitcode, data)
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0, loop=self.loop)
+        task = asyncio.wait_for(task, 60.0)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -115,7 +144,7 @@ class SubprocessMixin:
             return proc.returncode, stdout
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0, loop=self.loop)
+        task = asyncio.wait_for(task, 60.0)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -204,6 +233,7 @@ class SubprocessMixin:
         proc, large_data = self.prepare_broken_pipe_test()
 
         async def write_stdin(proc, data):
+            await asyncio.sleep(0.5)
             proc.stdin.write(data)
             await proc.stdin.drain()
 
@@ -438,9 +468,7 @@ class SubprocessMixin:
                 isinstance(self, SubprocessFastWatcherTests)):
             asyncio.get_child_watcher()._callbacks.clear()
 
-    def test_popen_error(self):
-        # Issue #24763: check that the subprocess transport is closed
-        # when BaseSubprocessTransport fails
+    def _test_popen_error(self, stdin):
         if sys.platform == 'win32':
             target = 'asyncio.windows_utils.Popen'
         else:
@@ -450,11 +478,22 @@ class SubprocessMixin:
             popen.side_effect = exc
 
             create = asyncio.create_subprocess_exec(sys.executable, '-c',
-                                                    'pass', loop=self.loop)
+                                                    'pass', stdin=stdin,
+                                                    loop=self.loop)
             with warnings.catch_warnings(record=True) as warns:
                 with self.assertRaises(exc):
                     self.loop.run_until_complete(create)
                 self.assertEqual(warns, [])
+
+    def test_popen_error(self):
+        # Issue #24763: check that the subprocess transport is closed
+        # when BaseSubprocessTransport fails
+        self._test_popen_error(stdin=None)
+
+    def test_popen_error_with_stdin_pipe(self):
+        # Issue #35721: check that newly created socket pair is closed when
+        # Popen fails
+        self._test_popen_error(stdin=subprocess.PIPE)
 
     def test_read_stdout_after_process_exit(self):
 
@@ -474,11 +513,23 @@ class SubprocessMixin:
             while True:
                 data = await process.stdout.read(65536)
                 if data:
-                    await asyncio.sleep(0.3, loop=self.loop)
+                    await asyncio.sleep(0.3)
                 else:
                     break
 
         self.loop.run_until_complete(execute())
+
+    def test_subprocess_protocol_create_warning(self):
+        with self.assertWarns(DeprecationWarning):
+            subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop)
+
+    def test_process_create_warning(self):
+        proto = subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop,
+                                                    _asyncio_internal=True)
+        transp = mock.Mock()
+
+        with self.assertWarns(DeprecationWarning):
+            subprocess.Process(transp, proto, loop=self.loop)
 
 
 if sys.platform != 'win32':

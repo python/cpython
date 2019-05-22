@@ -525,6 +525,8 @@ WRAP_BINARY(proxy_iand, PyNumber_InPlaceAnd)
 WRAP_BINARY(proxy_ixor, PyNumber_InPlaceXor)
 WRAP_BINARY(proxy_ior, PyNumber_InPlaceOr)
 WRAP_UNARY(proxy_index, PyNumber_Index)
+WRAP_BINARY(proxy_matmul, PyNumber_MatrixMultiply)
+WRAP_BINARY(proxy_imatmul, PyNumber_InPlaceMatrixMultiply)
 
 static int
 proxy_bool(PyWeakReference *proxy)
@@ -642,6 +644,8 @@ static PyNumberMethods proxy_as_number = {
     proxy_ifloor_div,       /*nb_inplace_floor_divide*/
     proxy_itrue_div,        /*nb_inplace_true_divide*/
     proxy_index,            /*nb_index*/
+    proxy_matmul,           /*nb_matrix_multiply*/
+    proxy_imatmul,          /*nb_inplace_matrix_multiply*/
 };
 
 static PySequenceMethods proxy_as_sequence = {
@@ -833,7 +837,8 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
                        to avoid violating the invariants of the list
                        of weakrefs for ob. */
                     Py_DECREF(result);
-                    Py_INCREF(result = proxy);
+                    result = proxy;
+                    Py_INCREF(result);
                     goto skip_insert;
                 }
                 prev = ref;

@@ -302,26 +302,7 @@ class FTP:
 
     def makeport(self):
         '''Create a new socket and send a PORT command for it.'''
-        err = None
-        sock = None
-        for res in socket.getaddrinfo(None, 0, self.af, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
-            af, socktype, proto, canonname, sa = res
-            try:
-                sock = socket.socket(af, socktype, proto)
-                sock.bind(sa)
-            except OSError as _:
-                err = _
-                if sock:
-                    sock.close()
-                sock = None
-                continue
-            break
-        if sock is None:
-            if err is not None:
-                raise err
-            else:
-                raise OSError("getaddrinfo returns an empty list")
-        sock.listen(1)
+        sock = socket.create_server(("", 0), family=self.af, backlog=1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host
         if self.af == socket.AF_INET:
@@ -732,7 +713,7 @@ else:
                                  "exclusive")
             if keyfile is not None or certfile is not None:
                 import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a"
+                warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile

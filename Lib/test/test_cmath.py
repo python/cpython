@@ -577,8 +577,6 @@ class CMathTests(unittest.TestCase):
         self.assertTrue(cmath.isinf(complex(INF, NAN)))
 
     @requires_IEEE_754
-    @unittest.skipIf(sysconfig.get_config_var('TANH_PRESERVES_ZERO_SIGN') == 0,
-                     "system tanh() function doesn't copy the sign")
     def testTanhSign(self):
         for z in complex_zeros:
             self.assertComplexIdentical(cmath.tanh(z), z)

@@ -47,16 +47,15 @@ for opt in opt_flags:
         print(' '.join(flags))
 
     elif opt in ('--libs', '--ldflags'):
-        libs = ['-lpython' + pyver + sys.abiflags]
-        libs += getvar('LIBS').split()
-        libs += getvar('SYSLIBS').split()
+        libpython = getvar('LIBPYTHON')
+        libs = [libpython] if libpython else []
+        libs.extend(getvar('LIBS').split() + getvar('SYSLIBS').split())
+
         # add the prefix/lib/pythonX.Y/config dir, but only if there is no
         # shared library in prefix/lib/.
         if opt == '--ldflags':
             if not getvar('Py_ENABLE_SHARED'):
                 libs.insert(0, '-L' + getvar('LIBPL'))
-            if not getvar('PYTHONFRAMEWORK'):
-                libs.extend(getvar('LINKFORSHARED').split())
         print(' '.join(libs))
 
     elif opt == '--extension-suffix':

@@ -11,7 +11,7 @@ import warnings
 import tkinter  # Tcl, deletions, messagebox if startup fails
 
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
-from idlelib import calltips  # CallTips
+from idlelib import calltip  # Calltip
 from idlelib import debugger_r  # start_debugger
 from idlelib import debugobj_r  # remote_object_tree_item
 from idlelib import iomenu  # encoding
@@ -462,7 +462,7 @@ class Executive(object):
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
         self.locals = __main__.__dict__
-        self.calltip = calltips.CallTips()
+        self.calltip = calltip.Calltip()
         self.autocomplete = autocomplete.AutoComplete()
 
     def runcode(self, code):
@@ -474,15 +474,16 @@ class Executive(object):
                 exec(code, self.locals)
             finally:
                 interruptable = False
-        except SystemExit:
-            # Scripts that raise SystemExit should just
-            # return to the interactive prompt
-            pass
+        except SystemExit as e:
+            if e.args:  # SystemExit called with an argument.
+                ob = e.args[0]
+                if not isinstance(ob, (type(None), int)):
+                    print('SystemExit: ' + str(ob), file=sys.stderr)
+            # Return to the interactive prompt.
         except:
             self.usr_exc_info = sys.exc_info()
             if quitting:
                 exit()
-            # even print a user code SystemExit exception, continue
             print_exception()
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:

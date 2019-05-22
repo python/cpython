@@ -10,8 +10,6 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.refleak import warm_caches
-
 
 def setup_tests(ns):
     try:
@@ -78,10 +76,6 @@ def setup_tests(ns):
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
-
-        # Avoid false positives due to various caches
-        # filling slowly with random data:
-        warm_caches()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)

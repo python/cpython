@@ -75,10 +75,8 @@ class AnyDBMTestCase:
     def test_anydbm_creation_n_file_exists_with_invalid_contents(self):
         # create an empty file
         test.support.create_empty_file(_fname)
-
-        f = dbm.open(_fname, 'n')
-        self.addCleanup(f.close)
-        self.assertEqual(len(f), 0)
+        with dbm.open(_fname, 'n') as f:
+            self.assertEqual(len(f), 0)
 
     def test_anydbm_modification(self):
         self.init_db()
@@ -162,7 +160,7 @@ class WhichDBTestCase(unittest.TestCase):
             # and test that we can find it
             self.assertIn(b"1", f)
             # and read it
-            self.assertTrue(f[b"1"] == b"1")
+            self.assertEqual(f[b"1"], b"1")
             f.close()
             self.assertEqual(name, self.dbm.whichdb(_fname))
 

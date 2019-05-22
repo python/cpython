@@ -56,7 +56,7 @@ ConfigParser -- responsible for parsing a list of
 
         When `interpolation` is given, it should be an Interpolation subclass
         instance. It will be used as the handler for option value
-        pre-processing when using getters. RawConfigParser object s don't do
+        pre-processing when using getters. RawConfigParser objects don't do
         any sort of interpolation, whereas ConfigParser uses an instance of
         BasicInterpolation. The library also provides a ``zc.buildbot``
         inspired ExtendedInterpolation implementation.
@@ -80,7 +80,7 @@ ConfigParser -- responsible for parsing a list of
         Return list of configuration options for the named section.
 
     read(filenames, encoding=None)
-        Read and parse the list of named configuration files, given by
+        Read and parse the iterable of named configuration files, given by
         name.  A single filename is also allowed.  Non-existing files
         are ignored.  Return list of successfully read files.
 
@@ -139,7 +139,7 @@ ConfigParser -- responsible for parsing a list of
 """
 
 from collections.abc import MutableMapping
-from collections import OrderedDict as _default_dict, ChainMap as _ChainMap
+from collections import ChainMap as _ChainMap
 import functools
 import io
 import itertools
@@ -157,6 +157,7 @@ __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
 
+_default_dict = dict
 DEFAULTSECT = "DEFAULT"
 
 MAX_INTERPOLATION_DEPTH = 10
@@ -676,13 +677,13 @@ class RawConfigParser(MutableMapping):
         return list(opts.keys())
 
     def read(self, filenames, encoding=None):
-        """Read and parse a filename or a list of filenames.
+        """Read and parse a filename or an iterable of filenames.
 
         Files that cannot be opened are silently ignored; this is
-        designed so that you can specify a list of potential
+        designed so that you can specify an iterable of potential
         configuration file locations (e.g. current directory, user's
         home directory, systemwide directory), and all existing
-        configuration files in the list will be read.  A single
+        configuration files in the iterable will be read.  A single
         filename may also be given.
 
         Return list of successfully read files.
@@ -962,7 +963,8 @@ class RawConfigParser(MutableMapping):
     def __setitem__(self, key, value):
         # To conform with the mapping protocol, overwrites existing values in
         # the section.
-
+        if key in self and self[key] is value:
+            return
         # XXX this is not atomic if read_dict fails at any point. Then again,
         # no update method in configparser is atomic in this implementation.
         if key == self.default_section:
@@ -1207,8 +1209,16 @@ class ConfigParser(RawConfigParser):
 
     def _read_defaults(self, defaults):
         """Reads the defaults passed in the initializer, implicitly converting
-        values to strings like the rest of the API."""
-        self.read_dict({self.default_section: defaults})
+        values to strings like the rest of the API.
+
+        Does not perform interpolation for backwards compatibility.
+        """
+        try:
+            hold_interpolation = self._interpolation
+            self._interpolation = Interpolation()
+            self.read_dict({self.default_section: defaults})
+        finally:
+            self._interpolation = hold_interpolation
 
 
 class SafeConfigParser(ConfigParser):

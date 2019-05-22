@@ -3,11 +3,13 @@
 __all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
 
 import collections
+import types
 import warnings
 
 from . import events
 from . import futures
-from .coroutines import coroutine
+from . import exceptions
+from .import coroutines
 
 
 class _ContextManager:
@@ -54,7 +56,7 @@ class _ContextManagerMixin:
         # always raises; that's how the with-statement works.
         pass
 
-    @coroutine
+    @types.coroutine
     def __iter__(self):
         # This is not a coroutine.  It is meant to enable the idiom:
         #
@@ -76,6 +78,9 @@ class _ContextManagerMixin:
                       DeprecationWarning, stacklevel=2)
         yield from self.acquire()
         return _ContextManager(self)
+
+    # The flag is needed for legacy asyncio.iscoroutine()
+    __iter__._is_coroutine = coroutines._is_coroutine
 
     async def __acquire_ctx(self):
         await self.acquire()
@@ -192,7 +197,7 @@ class Lock(_ContextManagerMixin):
                 await fut
             finally:
                 self._waiters.remove(fut)
-        except futures.CancelledError:
+        except exceptions.CancelledError:
             if not self._locked:
                 self._wake_up_first()
             raise
@@ -363,11 +368,11 @@ class Condition(_ContextManagerMixin):
                 try:
                     await self.acquire()
                     break
-                except futures.CancelledError:
+                except exceptions.CancelledError:
                     cancelled = True
 
             if cancelled:
-                raise futures.CancelledError
+                raise exceptions.CancelledError
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.

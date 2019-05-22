@@ -69,8 +69,15 @@ class PycInvalidationMode(enum.Enum):
     UNCHECKED_HASH = 3
 
 
+def _get_default_invalidation_mode():
+    if os.environ.get('SOURCE_DATE_EPOCH'):
+        return PycInvalidationMode.CHECKED_HASH
+    else:
+        return PycInvalidationMode.TIMESTAMP
+
+
 def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
-            invalidation_mode=PycInvalidationMode.TIMESTAMP):
+            invalidation_mode=None):
     """Byte-compile one Python source file to Python bytecode.
 
     :param file: The source file name.
@@ -112,8 +119,8 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     the resulting file would be regular and thus not the same type of file as
     it was previously.
     """
-    if os.environ.get('SOURCE_DATE_EPOCH'):
-        invalidation_mode = PycInvalidationMode.CHECKED_HASH
+    if invalidation_mode is None:
+        invalidation_mode = _get_default_invalidation_mode()
     if cfile is None:
         if optimize >= 0:
             optimization = optimize if optimize >= 1 else ''

@@ -127,11 +127,11 @@ class TimeoutTestCase(unittest.TestCase):
         self.sock.settimeout(timeout)
         method = getattr(self.sock, method)
         for i in range(count):
-            t1 = time.time()
+            t1 = time.monotonic()
             try:
                 method(*args)
             except socket.timeout as e:
-                delta = time.time() - t1
+                delta = time.monotonic() - t1
                 break
         else:
             self.fail('socket.timeout was not raised')

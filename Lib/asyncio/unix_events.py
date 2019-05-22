@@ -18,8 +18,10 @@ from . import base_subprocess
 from . import constants
 from . import coroutines
 from . import events
+from . import exceptions
 from . import futures
 from . import selector_events
+from . import tasks
 from . import transports
 from .log import logger
 
@@ -308,6 +310,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                     ssl, backlog, ssl_handshake_timeout)
         if start_serving:
             server._start_serving()
+            # Skip one loop iteration so that all 'loop.add_reader'
+            # go through.
+            await tasks.sleep(0, loop=self)
 
         return server
 
@@ -315,16 +320,16 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             os.sendfile
         except AttributeError as exc:
-            raise events.SendfileNotAvailableError(
+            raise exceptions.SendfileNotAvailableError(
                 "os.sendfile() is not available")
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
         except OSError as err:
-            raise events.SendfileNotAvailableError("not a regular file")
+            raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
             return 0  # empty file
@@ -378,7 +383,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 # one being 'file' is not a regular mmap(2)-like
                 # file, in which case we'll fall back on using
                 # plain send().
-                err = events.SendfileNotAvailableError(
+                err = exceptions.SendfileNotAvailableError(
                     "os.sendfile call failed")
                 self._sock_sendfile_update_filepos(fileno, offset, total_sent)
                 fut.set_exception(err)
@@ -506,10 +511,9 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         if not self._closing:
             self._close(None)
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if self._pipe is not None:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._pipe.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
@@ -702,10 +706,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             # write_eof is all what we needed to close the write pipe
             self.write_eof()
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if self._pipe is not None:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._pipe.close()
 
     def abort(self):
@@ -754,12 +757,18 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             # other end).  Notably this is needed on AIX, and works
             # just fine on other platforms.
             stdin, stdin_w = socket.socketpair()
-        self._proc = subprocess.Popen(
-            args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
-            universal_newlines=False, bufsize=bufsize, **kwargs)
-        if stdin_w is not None:
-            stdin.close()
-            self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+        try:
+            self._proc = subprocess.Popen(
+                args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
+                universal_newlines=False, bufsize=bufsize, **kwargs)
+            if stdin_w is not None:
+                stdin.close()
+                self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
+                stdin_w = None
+        finally:
+            if stdin_w is not None:
+                stdin.close()
+                stdin_w.close()
 
 
 class AbstractChildWatcher:

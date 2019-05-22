@@ -126,7 +126,7 @@ module documentation.  This section lists the differences between the API and
 
    You can avoid calling this method explicitly by using the :keyword:`with`
    statement. The following code will automatically unlink *dom* when the
-   :keyword:`with` block is exited::
+   :keyword:`!with` block is exited::
 
       with xml.dom.minidom.parse(datasource) as dom:
           ... # Work with dom.
@@ -143,6 +143,9 @@ module documentation.  This section lists the differences between the API and
    For the :class:`Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
 
+   .. versionchanged:: 3.8
+      The :meth:`writexml` method now preserves the attribute order specified
+      by the user.
 
 .. method:: Node.toxml(encoding=None)
 
@@ -156,7 +159,11 @@ module documentation.  This section lists the differences between the API and
    encoding. Encoding this string in an encoding other than UTF-8 is
    likely incorrect, since UTF-8 is the default encoding of XML.
 
-.. method:: Node.toprettyxml(indent="", newl="", encoding="")
+   .. versionchanged:: 3.8
+      The :meth:`toxml` method now preserves the attribute order specified
+      by the user.
+
+.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None)
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string
@@ -164,6 +171,10 @@ module documentation.  This section lists the differences between the API and
 
    The *encoding* argument behaves like the corresponding argument of
    :meth:`toxml`.
+
+   .. versionchanged:: 3.8
+      The :meth:`toprettyxml` method now preserves the attribute order specified
+      by the user.
 
 
 .. _dom-example:
@@ -227,21 +238,7 @@ The following interfaces have no implementation in :mod:`xml.dom.minidom`:
 
 * :class:`DOMTimeStamp`
 
-* :class:`DocumentType`
-
-* :class:`DOMImplementation`
-
-* :class:`CharacterData`
-
-* :class:`CDATASection`
-
-* :class:`Notation`
-
-* :class:`Entity`
-
 * :class:`EntityReference`
-
-* :class:`DocumentFragment`
 
 Most of these reflect information in the XML document that is not of general
 utility to most DOM users.

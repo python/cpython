@@ -10,8 +10,8 @@
 
 --------------
 
-This module is always available.  It provides access to the mathematical
-functions defined by the C standard.
+This module provides access to the mathematical functions defined by the C
+standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -166,6 +166,20 @@ Number-theoretic and representation functions
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
+.. function:: isqrt(n)
+
+   Return the integer square root of the nonnegative integer *n*. This is the
+   floor of the exact square root of *n*, or equivalently the greatest integer
+   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
+
+   For some applications, it may be more convenient to have the least integer
+   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
+   the exact square root of *n*. For positive *n*, this can be computed using
+   ``a = 1 + isqrt(n - 1)``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
@@ -176,6 +190,18 @@ Number-theoretic and representation functions
 
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
+
+
+.. function:: prod(iterable, *, start=1)
+
+   Calculate the product of all the elements in the input *iterable*.
+   The default *start* value for the product is ``1``.
+
+   When the iterable is empty, return the start value.  This function is
+   intended specifically for use with numeric values and may reject
+   non-numeric types.
+
+   .. versionadded:: 3.8
 
 
 .. function:: remainder(x, y)
@@ -330,10 +356,31 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
-.. function:: hypot(x, y)
+.. function:: dist(p, q)
 
-   Return the Euclidean norm, ``sqrt(x*x + y*y)``. This is the length of the vector
-   from the origin to point ``(x, y)``.
+   Return the Euclidean distance between two points *p* and *q*, each
+   given as a tuple of coordinates.  The two tuples must be the same size.
+
+   Roughly equivalent to::
+
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+
+   .. versionadded:: 3.8
+
+
+.. function:: hypot(*coordinates)
+
+   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
+   This is the length of the vector from the origin to the point
+   given by the coordinates.
+
+   For a two dimensional point ``(x, y)``, this is equivalent to computing
+   the hypotenuse of a right triangle using the Pythagorean theorem,
+   ``sqrt(x*x + y*y)``.
+
+   .. versionchanged:: 3.8
+      Added support for n-dimensional points. Formerly, only the two
+      dimensional case was supported.
 
 
 .. function:: sin(x)
@@ -505,3 +552,6 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
+
+.. |nbsp| unicode:: 0xA0
+   :trim:

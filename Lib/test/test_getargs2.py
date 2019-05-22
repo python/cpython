@@ -1,9 +1,10 @@
 import unittest
 import math
+import string
 import sys
 from test import support
 # Skip this test if the _testcapi module isn't available.
-support.import_module('_testcapi')
+_testcapi = support.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
 
 # > How about the following counterproposal. This also changes some of
@@ -51,6 +52,27 @@ NAN = float('nan')
 LLONG_MAX = 2**63-1
 LLONG_MIN = -2**63
 ULLONG_MAX = 2**64-1
+
+class Index:
+    def __index__(self):
+        return 99
+
+class IndexIntSubclass(int):
+    def __index__(self):
+        return 99
+
+class BadIndex:
+    def __index__(self):
+        return 1.0
+
+class BadIndex2:
+    def __index__(self):
+        return True
+
+class BadIndex3(int):
+    def __index__(self):
+        return True
+
 
 class Int:
     def __int__(self):
@@ -133,7 +155,14 @@ class Unsigned_TestCase(unittest.TestCase):
         from _testcapi import getargs_b
         # b returns 'unsigned char', and does range checking (0 ... UCHAR_MAX)
         self.assertRaises(TypeError, getargs_b, 3.14)
-        self.assertEqual(99, getargs_b(Int()))
+        self.assertEqual(99, getargs_b(Index()))
+        self.assertEqual(0, getargs_b(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_b, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_b(BadIndex2()))
+        self.assertEqual(0, getargs_b(BadIndex3()))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(99, getargs_b(Int()))
         self.assertEqual(0, getargs_b(IntSubclass()))
         self.assertRaises(TypeError, getargs_b, BadInt())
         with self.assertWarns(DeprecationWarning):
@@ -152,7 +181,14 @@ class Unsigned_TestCase(unittest.TestCase):
         from _testcapi import getargs_B
         # B returns 'unsigned char', no range checking
         self.assertRaises(TypeError, getargs_B, 3.14)
-        self.assertEqual(99, getargs_B(Int()))
+        self.assertEqual(99, getargs_B(Index()))
+        self.assertEqual(0, getargs_B(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_B, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_B(BadIndex2()))
+        self.assertEqual(0, getargs_B(BadIndex3()))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(99, getargs_B(Int()))
         self.assertEqual(0, getargs_B(IntSubclass()))
         self.assertRaises(TypeError, getargs_B, BadInt())
         with self.assertWarns(DeprecationWarning):
@@ -171,7 +207,14 @@ class Unsigned_TestCase(unittest.TestCase):
         from _testcapi import getargs_H
         # H returns 'unsigned short', no range checking
         self.assertRaises(TypeError, getargs_H, 3.14)
-        self.assertEqual(99, getargs_H(Int()))
+        self.assertEqual(99, getargs_H(Index()))
+        self.assertEqual(0, getargs_H(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_H, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_H(BadIndex2()))
+        self.assertEqual(0, getargs_H(BadIndex3()))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(99, getargs_H(Int()))
         self.assertEqual(0, getargs_H(IntSubclass()))
         self.assertRaises(TypeError, getargs_H, BadInt())
         with self.assertWarns(DeprecationWarning):
@@ -191,7 +234,14 @@ class Unsigned_TestCase(unittest.TestCase):
         from _testcapi import getargs_I
         # I returns 'unsigned int', no range checking
         self.assertRaises(TypeError, getargs_I, 3.14)
-        self.assertEqual(99, getargs_I(Int()))
+        self.assertEqual(99, getargs_I(Index()))
+        self.assertEqual(0, getargs_I(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_I, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_I(BadIndex2()))
+        self.assertEqual(0, getargs_I(BadIndex3()))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(99, getargs_I(Int()))
         self.assertEqual(0, getargs_I(IntSubclass()))
         self.assertRaises(TypeError, getargs_I, BadInt())
         with self.assertWarns(DeprecationWarning):
@@ -212,6 +262,11 @@ class Unsigned_TestCase(unittest.TestCase):
         # k returns 'unsigned long', no range checking
         # it does not accept float, or instances with __int__
         self.assertRaises(TypeError, getargs_k, 3.14)
+        self.assertRaises(TypeError, getargs_k, Index())
+        self.assertEqual(0, getargs_k(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_k, BadIndex())
+        self.assertRaises(TypeError, getargs_k, BadIndex2())
+        self.assertEqual(0, getargs_k(BadIndex3()))
         self.assertRaises(TypeError, getargs_k, Int())
         self.assertEqual(0, getargs_k(IntSubclass()))
         self.assertRaises(TypeError, getargs_k, BadInt())
@@ -232,7 +287,14 @@ class Signed_TestCase(unittest.TestCase):
         from _testcapi import getargs_h
         # h returns 'short', and does range checking (SHRT_MIN ... SHRT_MAX)
         self.assertRaises(TypeError, getargs_h, 3.14)
-        self.assertEqual(99, getargs_h(Int()))
+        self.assertEqual(99, getargs_h(Index()))
+        self.assertEqual(0, getargs_h(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_h, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_h(BadIndex2()))
+        self.assertEqual(0, getargs_h(BadIndex3()))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(99, getargs_h(Int()))
         self.assertEqual(0, getargs_h(IntSubclass()))
         self.assertRaises(TypeError, getargs_h, BadInt())
         with self.assertWarns(DeprecationWarning):
@@ -251,7 +313,14 @@ class Signed_TestCase(unittest.TestCase):
         from _testcapi import getargs_i
         # i returns 'int', and does range checking (INT_MIN ... INT_MAX)
         self.assertRaises(TypeError, getargs_i, 3.14)
-        self.assertEqual(99, getargs_i(Int()))
+        self.assertEqual(99, getargs_i(Index()))
+        self.assertEqual(0, getargs_i(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_i, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_i(BadIndex2()))
+        self.assertEqual(0, getargs_i(BadIndex3()))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(99, getargs_i(Int()))
         self.assertEqual(0, getargs_i(IntSubclass()))
         self.assertRaises(TypeError, getargs_i, BadInt())
         with self.assertWarns(DeprecationWarning):
@@ -270,7 +339,14 @@ class Signed_TestCase(unittest.TestCase):
         from _testcapi import getargs_l
         # l returns 'long', and does range checking (LONG_MIN ... LONG_MAX)
         self.assertRaises(TypeError, getargs_l, 3.14)
-        self.assertEqual(99, getargs_l(Int()))
+        self.assertEqual(99, getargs_l(Index()))
+        self.assertEqual(0, getargs_l(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_l, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_l(BadIndex2()))
+        self.assertEqual(0, getargs_l(BadIndex3()))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(99, getargs_l(Int()))
         self.assertEqual(0, getargs_l(IntSubclass()))
         self.assertRaises(TypeError, getargs_l, BadInt())
         with self.assertWarns(DeprecationWarning):
@@ -290,6 +366,12 @@ class Signed_TestCase(unittest.TestCase):
         # n returns 'Py_ssize_t', and does range checking
         # (PY_SSIZE_T_MIN ... PY_SSIZE_T_MAX)
         self.assertRaises(TypeError, getargs_n, 3.14)
+        self.assertEqual(99, getargs_n(Index()))
+        self.assertEqual(0, getargs_n(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_n, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_n(BadIndex2()))
+        self.assertEqual(0, getargs_n(BadIndex3()))
         self.assertRaises(TypeError, getargs_n, Int())
         self.assertEqual(0, getargs_n(IntSubclass()))
         self.assertRaises(TypeError, getargs_n, BadInt())
@@ -312,7 +394,14 @@ class LongLong_TestCase(unittest.TestCase):
         # ... LLONG_MAX)
         self.assertRaises(TypeError, getargs_L, 3.14)
         self.assertRaises(TypeError, getargs_L, "Hello")
-        self.assertEqual(99, getargs_L(Int()))
+        self.assertEqual(99, getargs_L(Index()))
+        self.assertEqual(0, getargs_L(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_L, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_L(BadIndex2()))
+        self.assertEqual(0, getargs_L(BadIndex3()))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(99, getargs_L(Int()))
         self.assertEqual(0, getargs_L(IntSubclass()))
         self.assertRaises(TypeError, getargs_L, BadInt())
         with self.assertWarns(DeprecationWarning):
@@ -331,6 +420,11 @@ class LongLong_TestCase(unittest.TestCase):
         from _testcapi import getargs_K
         # K return 'unsigned long long', no range checking
         self.assertRaises(TypeError, getargs_K, 3.14)
+        self.assertRaises(TypeError, getargs_K, Index())
+        self.assertEqual(0, getargs_K(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_K, BadIndex())
+        self.assertRaises(TypeError, getargs_K, BadIndex2())
+        self.assertEqual(0, getargs_K(BadIndex3()))
         self.assertRaises(TypeError, getargs_K, Int())
         self.assertEqual(0, getargs_K(IntSubclass()))
         self.assertRaises(TypeError, getargs_K, BadInt())
@@ -681,11 +775,11 @@ class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
         self.assertEqual(self.getargs(1), (1, -1, -1))
         # required positional arg missing
         with self.assertRaisesRegex(TypeError,
-            r"function takes at least 1 positional arguments \(0 given\)"):
+            r"function takes at least 1 positional argument \(0 given\)"):
             self.getargs()
 
         with self.assertRaisesRegex(TypeError,
-            r"function takes at least 1 positional arguments \(0 given\)"):
+            r"function takes at least 1 positional argument \(0 given\)"):
             self.getargs(keyword=3)
 
     def test_empty_keyword(self):
@@ -954,6 +1048,183 @@ class Object_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_U, b'bytes')
         self.assertRaises(TypeError, getargs_U, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_U, None)
+
+
+# Bug #6012
+class Test6012(unittest.TestCase):
+    def test(self):
+        self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
+
+
+class SkipitemTest(unittest.TestCase):
+
+    def test_skipitem(self):
+        """
+        If this test failed, you probably added a new "format unit"
+        in Python/getargs.c, but neglected to update our poor friend
+        skipitem() in the same file.  (If so, shame on you!)
+
+        With a few exceptions**, this function brute-force tests all
+        printable ASCII*** characters (32 to 126 inclusive) as format units,
+        checking to see that PyArg_ParseTupleAndKeywords() return consistent
+        errors both when the unit is attempted to be used and when it is
+        skipped.  If the format unit doesn't exist, we'll get one of two
+        specific error messages (one for used, one for skipped); if it does
+        exist we *won't* get that error--we'll get either no error or some
+        other error.  If we get the specific "does not exist" error for one
+        test and not for the other, there's a mismatch, and the test fails.
+
+           ** Some format units have special funny semantics and it would
+              be difficult to accommodate them here.  Since these are all
+              well-established and properly skipped in skipitem() we can
+              get away with not testing them--this test is really intended
+              to catch *new* format units.
+
+          *** Python C source files must be ASCII.  Therefore it's impossible
+              to have non-ASCII format units.
+
+        """
+        empty_tuple = ()
+        tuple_1 = (0,)
+        dict_b = {'b':1}
+        keywords = ["a", "b"]
+
+        for i in range(32, 127):
+            c = chr(i)
+
+            # skip parentheses, the error reporting is inconsistent about them
+            # skip 'e', it's always a two-character code
+            # skip '|' and '$', they don't represent arguments anyway
+            if c in '()e|$':
+                continue
+
+            # test the format unit when not skipped
+            format = c + "i"
+            try:
+                _testcapi.parse_tuple_and_keywords(tuple_1, dict_b,
+                    format, keywords)
+                when_not_skipped = False
+            except SystemError as e:
+                s = "argument 1 (impossible<bad format char>)"
+                when_not_skipped = (str(e) == s)
+            except TypeError:
+                when_not_skipped = False
+
+            # test the format unit when skipped
+            optional_format = "|" + format
+            try:
+                _testcapi.parse_tuple_and_keywords(empty_tuple, dict_b,
+                    optional_format, keywords)
+                when_skipped = False
+            except SystemError as e:
+                s = "impossible<bad format char>: '{}'".format(format)
+                when_skipped = (str(e) == s)
+
+            message = ("test_skipitem_parity: "
+                "detected mismatch between convertsimple and skipitem "
+                "for format unit '{}' ({}), not skipped {}, skipped {}".format(
+                    c, i, when_skipped, when_not_skipped))
+            self.assertIs(when_skipped, when_not_skipped, message)
+
+    def test_skipitem_with_suffix(self):
+        parse = _testcapi.parse_tuple_and_keywords
+        empty_tuple = ()
+        tuple_1 = (0,)
+        dict_b = {'b':1}
+        keywords = ["a", "b"]
+
+        supported = ('s#', 's*', 'z#', 'z*', 'u#', 'Z#', 'y#', 'y*', 'w#', 'w*')
+        for c in string.ascii_letters:
+            for c2 in '#*':
+                f = c + c2
+                with self.subTest(format=f):
+                    optional_format = "|" + f + "i"
+                    if f in supported:
+                        parse(empty_tuple, dict_b, optional_format, keywords)
+                    else:
+                        with self.assertRaisesRegex(SystemError,
+                                    'impossible<bad format char>'):
+                            parse(empty_tuple, dict_b, optional_format, keywords)
+
+        for c in map(chr, range(32, 128)):
+            f = 'e' + c
+            optional_format = "|" + f + "i"
+            with self.subTest(format=f):
+                if c in 'st':
+                    parse(empty_tuple, dict_b, optional_format, keywords)
+                else:
+                    with self.assertRaisesRegex(SystemError,
+                                'impossible<bad format char>'):
+                        parse(empty_tuple, dict_b, optional_format, keywords)
+
+
+class ParseTupleAndKeywords_Test(unittest.TestCase):
+
+    def test_parse_tuple_and_keywords(self):
+        # Test handling errors in the parse_tuple_and_keywords helper itself
+        self.assertRaises(TypeError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, 42, [])
+        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '', 42)
+        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '', [''] * 42)
+        self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '', [42])
+
+    def test_bad_use(self):
+        # Test handling invalid format and keywords in
+        # PyArg_ParseTupleAndKeywords()
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '||O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1, 2), {}, '|O|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1}, '$$O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1, 'b': 2}, '$O$O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1}, '$|O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1, 'b': 2}, '$O|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '|OO', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '|$O', [''])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '|OO', ['a', ''])
+
+    def test_positional_only(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        parse((1, 2, 3), {}, 'OOO', ['', '', 'a'])
+        parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a'])
+        with self.assertRaisesRegex(TypeError,
+               r'function takes at least 2 positional arguments \(1 given\)'):
+            parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
+        parse((1,), {}, 'O|OO', ['', '', 'a'])
+        with self.assertRaisesRegex(TypeError,
+               r'function takes at least 1 positional argument \(0 given\)'):
+            parse((), {}, 'O|OO', ['', '', 'a'])
+        parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
+        with self.assertRaisesRegex(TypeError,
+               r'function takes exactly 2 positional arguments \(1 given\)'):
+            parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
+        parse((1,), {}, 'O|O$O', ['', '', 'a'])
+        with self.assertRaisesRegex(TypeError,
+               r'function takes at least 1 positional argument \(0 given\)'):
+            parse((), {}, 'O|O$O', ['', '', 'a'])
+        with self.assertRaisesRegex(SystemError, r'Empty parameter name after \$'):
+            parse((1,), {}, 'O|$OO', ['', '', 'a'])
+        with self.assertRaisesRegex(SystemError, 'Empty keyword'):
+            parse((1,), {}, 'O|OO', ['', 'a', ''])
+
+
+class Test_testcapi(unittest.TestCase):
+    locals().update((name, getattr(_testcapi, name))
+                    for name in dir(_testcapi)
+                    if name.startswith('test_') and name.endswith('_code'))
 
 
 if __name__ == "__main__":

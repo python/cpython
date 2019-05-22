@@ -10,7 +10,6 @@ import codecs
 import gc
 import sysconfig
 import locale
-import threading
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
@@ -654,10 +653,10 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
-    def c_locale_get_error_handler(self, isolated=False, encoding=None):
+    def c_locale_get_error_handler(self, locale, isolated=False, encoding=None):
         # Force the POSIX locale
         env = os.environ.copy()
-        env["LC_ALL"] = "C"
+        env["LC_ALL"] = locale
         env["PYTHONCOERCECLOCALE"] = "0"
         code = '\n'.join((
             'import sys',
@@ -668,7 +667,7 @@ class SysModuleTest(unittest.TestCase):
             'dump("stdout")',
             'dump("stderr")',
         ))
-        args = [sys.executable, "-c", code]
+        args = [sys.executable, "-X", "utf8=0", "-c", code]
         if isolated:
             args.append("-I")
         if encoding is not None:
@@ -683,43 +682,49 @@ class SysModuleTest(unittest.TestCase):
         stdout, stderr = p.communicate()
         return stdout
 
-    def test_c_locale_surrogateescape(self):
-        out = self.c_locale_get_error_handler(isolated=True)
+    def check_locale_surrogateescape(self, locale):
+        out = self.c_locale_get_error_handler(locale, isolated=True)
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
 
         # replace the default error handler
-        out = self.c_locale_get_error_handler(encoding=':ignore')
+        out = self.c_locale_get_error_handler(locale, encoding=':ignore')
         self.assertEqual(out,
                          'stdin: ignore\n'
                          'stdout: ignore\n'
                          'stderr: backslashreplace\n')
 
         # force the encoding
-        out = self.c_locale_get_error_handler(encoding='iso8859-1')
+        out = self.c_locale_get_error_handler(locale, encoding='iso8859-1')
         self.assertEqual(out,
                          'stdin: strict\n'
                          'stdout: strict\n'
                          'stderr: backslashreplace\n')
-        out = self.c_locale_get_error_handler(encoding='iso8859-1:')
+        out = self.c_locale_get_error_handler(locale, encoding='iso8859-1:')
         self.assertEqual(out,
                          'stdin: strict\n'
                          'stdout: strict\n'
                          'stderr: backslashreplace\n')
 
         # have no any effect
-        out = self.c_locale_get_error_handler(encoding=':')
-        self.assertEqual(out,
-                         'stdin: strict\n'
-                         'stdout: strict\n'
-                         'stderr: backslashreplace\n')
-        out = self.c_locale_get_error_handler(encoding='')
+        out = self.c_locale_get_error_handler(locale, encoding=':')
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
+        out = self.c_locale_get_error_handler(locale, encoding='')
+        self.assertEqual(out,
+                         'stdin: surrogateescape\n'
+                         'stdout: surrogateescape\n'
+                         'stderr: backslashreplace\n')
+
+    def test_c_locale_surrogateescape(self):
+        self.check_locale_surrogateescape('C')
+
+    def test_posix_locale_surrogateescape(self):
+        self.check_locale_surrogateescape('POSIX')
 
     def test_implementation(self):
         # This test applies to all implementations equally.
@@ -762,8 +767,13 @@ class SysModuleTest(unittest.TestCase):
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
-            alloc_name = _testcapi.pymem_getallocatorsname()
-            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+            try:
+                alloc_name = _testcapi.pymem_getallocatorsname()
+            except RuntimeError as exc:
+                # "cannot get allocators name" (ex: tracemalloc is used)
+                with_pymalloc = True
+            else:
+                with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
 
         # Some sanity checks
         a = sys.getallocatedblocks()
@@ -854,6 +864,91 @@ class SysModuleTest(unittest.TestCase):
 
     def test_no_duplicates_in_meta_path(self):
         self.assertEqual(len(sys.meta_path), len(set(sys.meta_path)))
+
+    @unittest.skipUnless(hasattr(sys, "_enablelegacywindowsfsencoding"),
+                         'needs sys._enablelegacywindowsfsencoding()')
+    def test__enablelegacywindowsfsencoding(self):
+        code = ('import sys',
+                'sys._enablelegacywindowsfsencoding()',
+                'print(sys.getfilesystemencoding(), sys.getfilesystemencodeerrors())')
+        rc, out, err = assert_python_ok('-c', '; '.join(code))
+        out = out.decode('ascii', 'replace').rstrip()
+        self.assertEqual(out, 'mbcs replace')
+
+
+@test.support.cpython_only
+class UnraisableHookTest(unittest.TestCase):
+    def write_unraisable_exc(self, exc, obj):
+        import _testcapi
+        import types
+        try:
+            # raise the exception to get a traceback in the except block
+            try:
+                raise exc
+            except Exception as exc2:
+                _testcapi.write_unraisable_exc(exc2, obj)
+                return types.SimpleNamespace(exc_type=type(exc2),
+                                             exc_value=exc2,
+                                             exc_traceback=exc2.__traceback__,
+                                             object=obj)
+        finally:
+            # Explicitly break any reference cycle
+            exc = None
+            exc2 = None
+
+    def test_original_unraisablehook(self):
+        obj = "an object"
+
+        with test.support.captured_output("stderr") as stderr:
+            with test.support.swap_attr(sys, 'unraisablehook',
+                                        sys.__unraisablehook__):
+                self.write_unraisable_exc(ValueError(42), obj)
+
+        err = stderr.getvalue()
+        self.assertIn(f'Exception ignored in: {obj!r}\n', err)
+        self.assertIn('Traceback (most recent call last):\n', err)
+        self.assertIn('ValueError: 42\n', err)
+
+    def test_original_unraisablehook_wrong_type(self):
+        exc = ValueError(42)
+        with test.support.swap_attr(sys, 'unraisablehook',
+                                    sys.__unraisablehook__):
+            with self.assertRaises(TypeError):
+                sys.unraisablehook(exc)
+
+    def test_custom_unraisablehook(self):
+        hook_args = None
+
+        def hook_func(args):
+            nonlocal hook_args
+            hook_args = args
+
+        obj = object()
+        try:
+            with test.support.swap_attr(sys, 'unraisablehook', hook_func):
+                expected = self.write_unraisable_exc(ValueError(42), obj)
+                for attr in "exc_type exc_value exc_traceback object".split():
+                    self.assertEqual(getattr(hook_args, attr),
+                                     getattr(expected, attr),
+                                     (hook_args, expected))
+        finally:
+            # expected and hook_args contain an exception: break reference cycle
+            expected = None
+            hook_args = None
+
+    def test_custom_unraisablehook_fail(self):
+        def hook_func(*args):
+            raise Exception("hook_func failed")
+
+        with test.support.captured_output("stderr") as stderr:
+            with test.support.swap_attr(sys, 'unraisablehook', hook_func):
+                self.write_unraisable_exc(ValueError(42), None)
+
+        err = stderr.getvalue()
+        self.assertIn(f'Exception ignored in: {hook_func!r}\n',
+                      err)
+        self.assertIn('Traceback (most recent call last):\n', err)
+        self.assertIn('Exception: hook_func failed\n', err)
 
 
 @test.support.cpython_only
@@ -967,8 +1062,10 @@ class SizeofTest(unittest.TestCase):
         check(int.__add__, size('3P2P'))
         # method-wrapper (descriptor object)
         check({}.__iter__, size('2P'))
+        # empty dict
+        check({}, size('nQ2P'))
         # dict
-        check({}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        check({"a": 1}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
         check(longdict, size('nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
@@ -1255,8 +1352,5 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(cur.finalizer)
 
 
-def test_main():
-    test.support.run_unittest(SysModuleTest, SizeofTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
