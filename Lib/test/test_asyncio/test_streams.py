@@ -1279,6 +1279,17 @@ os.close(fd)
         self.loop.run_until_complete(test())
         self.assertEqual(messages, [])
 
+    def test_stream_server_inheritance_forbidden(self):
+        with self.assertRaises(TypeError):
+            class MyServer(asyncio.StreamServer):
+                pass
+
+    @support.skip_unless_bind_unix_socket
+    def test_unix_stream_server_inheritance_forbidden(self):
+        with self.assertRaises(TypeError):
+            class MyServer(asyncio.UnixStreamServer):
+                pass
+
     def test_stream_server_bind(self):
         async def handle_client(stream):
             await stream.close()

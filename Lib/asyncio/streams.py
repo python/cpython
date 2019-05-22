@@ -224,6 +224,10 @@ class _BaseStreamServer:
     async def __aexit__(self, exc_type, exc_value, exc_tb):
         await self.close()
 
+    def __init_subclass__(cls):
+        if not cls.__module__.startswith('asyncio.'):
+            raise TypeError("Stream server classes are final, don't inherit from them")
+
     def _attach(self, stream, task):
         self._streams[stream] = task
 
