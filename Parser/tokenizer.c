@@ -1275,10 +1275,11 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 type_start = p;
 
                 /* A TYPE_IGNORE is "type: ignore" followed by the end of the token
-                 * or anything non-alphanumeric. */
+                 * or anything ASCII and non-alphanumeric. */
                 is_type_ignore = (
                     tok->cur >= ignore_end && memcmp(p, "ignore", 6) == 0
-                    && !(tok->cur > ignore_end && isalnum(p[6])));
+                    && !(tok->cur > ignore_end
+                         && ((unsigned char)ignore_end[0] >= 128 || Py_ISALNUM(ignore_end[0]))));
 
                 if (is_type_ignore) {
                     *p_start = (char *) ignore_end;

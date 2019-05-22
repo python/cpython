@@ -334,6 +334,7 @@ class TypeCommentTests(unittest.TestCase):
         check_both_ways("try:  # type: int\n  pass\nfinally:\n  pass\n")
         check_both_ways("try:\n  pass\nfinally:  # type: int\n  pass\n")
         check_both_ways("pass  # type: ignorewhatever\n")
+        check_both_ways("pass  # type: ignoreé\n")
 
     def test_func_type_input(self):
 
