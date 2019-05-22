@@ -49,7 +49,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
-    _PyPreConfig_Init(&runtime->preconfig);
+    _PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
     runtime->gilstate.check_enabled = 1;
 
@@ -189,7 +189,13 @@ PyInterpreterState_New(void)
     memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
     interp->check_interval = 100;
-    _PyCoreConfig_Init(&interp->core_config);
+
+    _PyInitError err = _PyCoreConfig_InitPythonConfig(&interp->core_config);
+    if (_Py_INIT_FAILED(err)) {
+        PyMem_RawFree(interp);
+        return NULL;
+    }
+
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW

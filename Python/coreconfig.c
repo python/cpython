@@ -109,7 +109,7 @@ static const char usage_6[] =
 /* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
    stdin and stdout error handler to "surrogateescape". It is equal to
    -1 by default: unknown, will be set by Py_Main() */
-int Py_UTF8Mode = 0;
+int Py_UTF8Mode = -1;
 int Py_DebugFlag = 0; /* Needed by parser.c */
 int Py_VerboseFlag = 0; /* Needed by import.c */
 int Py_QuietFlag = 0; /* Needed by sysmodule.c */
@@ -546,12 +546,12 @@ _PyCoreConfig_Clear(_PyCoreConfig *config)
 
 
 void
-_PyCoreConfig_Init(_PyCoreConfig *config)
+_PyCoreConfig_InitCompatConfig(_PyCoreConfig *config)
 {
     memset(config, 0, sizeof(*config));
 
     config->_config_version = _Py_CONFIG_VERSION;
-    config->_config_init = (int)_PyCoreConfig_INIT;
+    config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->isolated = -1;
     config->use_environment = -1;
     config->dev_mode = -1;
@@ -586,7 +586,7 @@ _PyCoreConfig_Init(_PyCoreConfig *config)
 static void
 _PyCoreConfig_InitDefaults(_PyCoreConfig *config)
 {
-    _PyCoreConfig_Init(config);
+    _PyCoreConfig_InitCompatConfig(config);
 
     config->isolated = 0;
     config->use_environment = 1;
@@ -613,7 +613,7 @@ _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config)
 {
     _PyCoreConfig_InitDefaults(config);
 
-    config->_config_init = (int)_PyCoreConfig_INIT_PYTHON;
+    config->_config_init = (int)_PyConfig_INIT_PYTHON;
     config->configure_c_stdio = 1;
     config->parse_argv = 1;
 
@@ -626,7 +626,7 @@ _PyCoreConfig_InitIsolatedConfig(_PyCoreConfig *config)
 {
     _PyCoreConfig_InitDefaults(config);
 
-    config->_config_init = (int)_PyCoreConfig_INIT_ISOLATED;
+    config->_config_init = (int)_PyConfig_INIT_ISOLATED;
     config->isolated = 1;
     config->use_environment = 0;
     config->user_site_directory = 0;
@@ -962,6 +962,11 @@ _PyCoreConfig_GetEnvDup(_PyCoreConfig *config,
 static void
 _PyCoreConfig_GetGlobalConfig(_PyCoreConfig *config)
 {
+    if (config->_config_init != _PyConfig_INIT_COMPAT) {
+        /* Python and Isolated configuration ignore global variables */
+        return;
+    }
+
 #define COPY_FLAG(ATTR, VALUE) \
         if (config->ATTR == -1) { \
             config->ATTR = VALUE; \
