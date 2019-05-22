@@ -234,7 +234,7 @@ class _BaseStreamServer:
         if not active_tasks:
             return
         # NOTE: tasks finished with exception are reported
-        # by Tast/Future __del__ method
+        # by the Task.__del__() method.
         done, pending = await tasks.wait(active_tasks,
                                          timeout=self._shutdown_timeout)
         if not pending:
