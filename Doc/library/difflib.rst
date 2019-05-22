@@ -545,13 +545,13 @@ The :class:`SequenceMatcher` class has this constructor:
 
       .. note::
 
-         Caution: The result of a :meth:`ratio` call is *NOT* symmetric with 
-         respect to the order of the arguments. For instance::
+         Caution: The result of a :meth:`ratio` call may depend on the order of
+         the arguments. For instance::
             
-            >>> SequenceMatcher(None, 'brady', 'byrd').ratio()
-            0.6666666666666666
-            >>> SequenceMatcher(None, 'byrd', 'brady').ratio()
-            0.4444444444444444
+            >>> SequenceMatcher(None, 'tide', 'diet').ratio()
+            0.25
+            >>> SequenceMatcher(None, 'diet', 'tide').ratio()
+            0.5
 
 
    .. method:: quick_ratio()
