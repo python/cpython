@@ -870,7 +870,7 @@ Other constructors, all class methods:
 
    .. versionadded:: 3.8
 
-.. classmethod:: datetime.strptime(date_string, format, tzname_to_tzinfo=None)
+.. classmethod:: datetime.strptime(date_string, format, infos=None)
 
    Return a :class:`.datetime` corresponding to *date_string*, parsed according to
    *format*.  This is equivalent to ``datetime(*(time.strptime(date_string,
@@ -878,11 +878,11 @@ Other constructors, all class methods:
    can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
    time tuple. For a complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
-   To interpret a timezone name (`%Z`), provide a converter with the *tzname_to_tzinfo*
+   To interpret a timezone name (`%Z`), provide a converter with the *infos*
    argument that accepts the name and returns a :class:`tzinfo` object.
 
    .. versionchanged:: 3.9
-      Added the *tzname_to_tzinfo* argument.
+      Added the *infos* argument.
 
 
 Class attributes:
