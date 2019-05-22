@@ -882,19 +882,14 @@ class UnraisableHookTest(unittest.TestCase):
         import _testcapi
         import types
         try:
-            # raise the exception to get a traceback in the except block
-            try:
-                raise exc
-            except Exception as exc2:
-                _testcapi.write_unraisable_exc(exc2, obj)
-                return types.SimpleNamespace(exc_type=type(exc2),
-                                             exc_value=exc2,
-                                             exc_traceback=exc2.__traceback__,
-                                             object=obj)
+            _testcapi.write_unraisable_exc(exc, obj)
+            return types.SimpleNamespace(exc_type=type(exc),
+                                         exc_value=exc,
+                                         exc_traceback=exc.__traceback__,
+                                         object=obj)
         finally:
             # Explicitly break any reference cycle
             exc = None
-            exc2 = None
 
     def test_original_unraisablehook(self):
         obj = "an object"
