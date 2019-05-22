@@ -1683,15 +1683,15 @@ _PyErr_CheckSignals(void)
 }
 
 
-/* Simulate the effect of a SIGINT signal arriving. The next time
-   PyErr_CheckSignals() is called,  the Python SIGINT signal handler will be
+/* Simulate the effect of a signal.SIGINT signal arriving. The next time
+   PyErr_CheckSignals is called,  the Python SIGINT signal handler will be
    raised.
 
-   A signal handler for the :data:`signal.SIGINT` signal must have been
-   installed by the `signal` function, otherwise an exception is raised and
-   return -1. Return 0 on success. */
+   A signal handler for the SIGINT signal must have been installed by the
+   `signal` function, otherwise an exception is raised and the function returns
+   -1 on error. It returns 0 on success. */
 int
-PyErr_SetInterruptWithErr(void)
+PyErr_SetInterrupt(void)
 {
     if (Handlers[SIGINT].func == IgnoreHandler) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1707,16 +1707,6 @@ PyErr_SetInterruptWithErr(void)
 
     trip_signal(SIGINT);
     return 0;
-}
-
-
-/* Simulate the effect of a SIGINT signal arriving. The next time
-   PyErr_CheckSignals() is called,  the Python SIGINT signal handler will be
-   raised. */
-void
-PyErr_SetInterrupt(void)
-{
-    trip_signal(SIGINT);
 }
 
 void

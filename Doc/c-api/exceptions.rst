@@ -513,25 +513,23 @@ Signal Handling
    cleared if it was previously set.
 
 
-.. c:function:: int PyErr_SetInterruptWithErr()
+.. c:function:: void PyErr_SetInterrupt()
 
    .. index::
       single: SIGINT
+      single: KeyboardInterrupt (built-in exception)
 
    Simulate the effect of a :data:`signal.SIGINT` signal arriving. The next
    time :c:func:`PyErr_CheckSignals` is called,  the Python
    :data:`signal.SIGINT` signal handler will be raised.
 
    A signal handler for the :data:`signal.SIGINT` signal must have been
-   installed by the `signal` function, otherwise an exception is raised and
-   return ``-1`` on error. Return ``0`` on success.
+   installed by the `signal` function, otherwise an exception is raised and the
+   function returns ``-1`` on error. It returns ``0`` on success.
 
-   .. versionadded:: 3.8
-
-
-.. c:function:: void PyErr_SetInterrupt()
-
-   Deprecated version of :c:func:`PyErr_SetInterruptWithErr` which ignores errors.
+   .. versionchanged:: 3.8
+      The function now raises an exception if the signal is ignored or not
+      handled by Python.
 
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
