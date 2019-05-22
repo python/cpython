@@ -879,7 +879,8 @@ Other constructors, all class methods:
    time tuple. For a complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
    To interpret a timezone name (`%Z`), provide a converter with the *infos*
-   argument that accepts the name and returns a :class:`tzinfo` object.
+   argument that accepts a tz agnostic :class:`datetime` object and the tz
+   name string. It should return a :class:`tzinfo` object.
 
    .. versionchanged:: 3.9
       Added the *infos* argument.

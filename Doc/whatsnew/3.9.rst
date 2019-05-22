@@ -2,7 +2,7 @@ Changes in the Python API
 -------------------------
 
 * :meth:`datetime.strptime` now accepts an optional 3rd parameter
-  `infos`. It accepts a callable that converts a timezone name to a
+  `infos`. It accepts a callable or mapping that converts a timezone name to a
   tzinfo object. For example ``datetime.strptime("2018-01-05 13:10:00 CET",
-  "%Y-%m-%d %H:%M:%S %Z", pytz.timezone)``. It is used to interpret the
-  timezone name given by `%Z`.
+  "%Y-%m-%d %H:%M:%S %Z", lambda dt, tzname: ...)``. It is used to interpret
+  the timezone name given by `%Z`.
