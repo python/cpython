@@ -8,6 +8,7 @@ except ImportError:
 import struct
 import collections
 import itertools
+import gc
 
 
 class FunctionCalls(unittest.TestCase):
@@ -457,6 +458,22 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcallkeywords(func, args, kwnames)
                 self.check_result(result, expected)
 
+    def test_fastcall_clearing_dict(self):
+        # Test bpo-36907: the point of the test is just checking that this
+        # does not crash.
+        class IntWithDict:
+            __slots__ = ["kwargs"]
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+            def __index__(self):
+                self.kwargs.clear()
+                gc.collect()
+                return 0
+        x = IntWithDict(dont_inherit=IntWithDict())
+        # We test the argument handling of "compile" here, the compilation
+        # itself is not relevant. When we pass flags=x below, x.__index__() is
+        # called, which changes the keywords dict.
+        compile("pass", "", "exec", x, **x.kwargs)
 
 if __name__ == "__main__":
     unittest.main()
