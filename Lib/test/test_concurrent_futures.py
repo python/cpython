@@ -759,15 +759,15 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
                          (os.cpu_count() or 1) * 5)
 
     def test_saturation(self):
-        executor = self.executor_type()
+        executor = self.executor_type(4)
         def acquire_lock(lock):
             lock.acquire()
 
         sem = threading.Semaphore(0)
-        for i in range(100 * executor._max_workers):
+        for i in range(15 * executor._max_workers):
             executor.submit(acquire_lock, sem)
         self.assertEqual(len(executor._threads), executor._max_workers)
-        for i in range(100 * executor._max_workers):
+        for i in range(15 * executor._max_workers):
             sem.release()
         executor.shutdown(wait=True)
 
