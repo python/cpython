@@ -105,7 +105,7 @@ SOLARIS_XHDTYPE = b"X"          # Solaris extended header
 USTAR_FORMAT = 0                # POSIX.1-1988 (ustar) format
 GNU_FORMAT = 1                  # GNU tar format
 PAX_FORMAT = 2                  # POSIX.1-2001 (pax) format
-DEFAULT_FORMAT = GNU_FORMAT
+DEFAULT_FORMAT = PAX_FORMAT
 
 #---------------------------------------------------------
 # tarfile constants
@@ -200,8 +200,9 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # base-256 representation. This allows values up to (256**(digits-1))-1.
     # A 0o200 byte indicates a positive number, a 0o377 byte a negative
     # number.
+    n = int(n)
     if 0 <= n < 8 ** (digits - 1):
-        s = bytes("%0*o" % (digits - 1, int(n)), "ascii") + NUL
+        s = bytes("%0*o" % (digits - 1, n), "ascii") + NUL
     elif format == GNU_FORMAT and -256 ** (digits - 1) <= n < 256 ** (digits - 1):
         if n >= 0:
             s = bytearray([0o200])
@@ -254,13 +255,6 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
             raise exception("unexpected end of data")
         dst.write(buf)
     return
-
-def filemode(mode):
-    """Deprecated in this location; use stat.filemode."""
-    import warnings
-    warnings.warn("deprecated in favor of stat.filemode",
-                  DeprecationWarning, 2)
-    return stat.filemode(mode)
 
 def _safe_print(s):
     encoding = getattr(sys.stdout, 'encoding', None)
@@ -519,21 +513,10 @@ class _Stream:
             raise StreamError("seeking backwards is not allowed")
         return self.pos
 
-    def read(self, size=None):
-        """Return the next size number of bytes from the stream.
-           If size is not defined, return all bytes of the stream
-           up to EOF.
-        """
-        if size is None:
-            t = []
-            while True:
-                buf = self._read(self.bufsize)
-                if not buf:
-                    break
-                t.append(buf)
-            buf = "".join(t)
-        else:
-            buf = self._read(size)
+    def read(self, size):
+        """Return the next size number of bytes from the stream."""
+        assert size is not None
+        buf = self._read(size)
         self.pos += len(buf)
         return buf
 
@@ -544,34 +527,41 @@ class _Stream:
             return self.__read(size)
 
         c = len(self.dbuf)
+        t = [self.dbuf]
         while c < size:
-            buf = self.__read(self.bufsize)
-            if not buf:
-                break
+            # Skip underlying buffer to avoid unaligned double buffering.
+            if self.buf:
+                buf = self.buf
+                self.buf = b""
+            else:
+                buf = self.fileobj.read(self.bufsize)
+                if not buf:
+                    break
             try:
                 buf = self.cmp.decompress(buf)
             except self.exception:
                 raise ReadError("invalid compressed data")
-            self.dbuf += buf
+            t.append(buf)
             c += len(buf)
-        buf = self.dbuf[:size]
-        self.dbuf = self.dbuf[size:]
-        return buf
+        t = b"".join(t)
+        self.dbuf = t[size:]
+        return t[:size]
 
     def __read(self, size):
         """Return size bytes from stream. If internal buffer is empty,
            read another block from the stream.
         """
         c = len(self.buf)
+        t = [self.buf]
         while c < size:
             buf = self.fileobj.read(self.bufsize)
             if not buf:
                 break
-            self.buf += buf
+            t.append(buf)
             c += len(buf)
-        buf = self.buf[:size]
-        self.buf = self.buf[size:]
-        return buf
+        t = b"".join(t)
+        self.buf = t[size:]
+        return t[:size]
 # class _Stream
 
 class _StreamProxy(object):
@@ -727,11 +717,32 @@ class TarInfo(object):
        usually created internally.
     """
 
-    __slots__ = ("name", "mode", "uid", "gid", "size", "mtime",
-                 "chksum", "type", "linkname", "uname", "gname",
-                 "devmajor", "devminor",
-                 "offset", "offset_data", "pax_headers", "sparse",
-                 "tarfile", "_sparse_structs", "_link_target")
+    __slots__ = dict(
+        name = 'Name of the archive member.',
+        mode = 'Permission bits.',
+        uid = 'User ID of the user who originally stored this member.',
+        gid = 'Group ID of the user who originally stored this member.',
+        size = 'Size in bytes.',
+        mtime = 'Time of last modification.',
+        chksum = 'Header checksum.',
+        type = ('File type. type is usually one of these constants: '
+                'REGTYPE, AREGTYPE, LNKTYPE, SYMTYPE, DIRTYPE, FIFOTYPE, '
+                'CONTTYPE, CHRTYPE, BLKTYPE, GNUTYPE_SPARSE.'),
+        linkname = ('Name of the target file name, which is only present '
+                    'in TarInfo objects of type LNKTYPE and SYMTYPE.'),
+        uname = 'User name.',
+        gname = 'Group name.',
+        devmajor = 'Device major number.',
+        devminor = 'Device minor number.',
+        offset = 'The tar header starts here.',
+        offset_data = "The file's data starts here.",
+        pax_headers = ('A dictionary containing key-value pairs of an '
+                       'associated pax extended header.'),
+        sparse = 'Sparse member information.',
+        tarfile = None,
+        _sparse_structs = None,
+        _link_target = None,
+        )
 
     def __init__(self, name=""):
         """Construct a TarInfo object. name is the optional name
@@ -757,10 +768,9 @@ class TarInfo(object):
         self.sparse = None      # sparse member information
         self.pax_headers = {}   # pax header information
 
-    # In pax headers the "name" and "linkname" field are called
-    # "path" and "linkpath".
     @property
     def path(self):
+        'In pax headers, "name" is called "path".'
         return self.name
 
     @path.setter
@@ -769,6 +779,7 @@ class TarInfo(object):
 
     @property
     def linkpath(self):
+        'In pax headers, "linkname" is called "linkpath".'
         return self.linkname
 
     @linkpath.setter
@@ -1360,24 +1371,42 @@ class TarInfo(object):
         return blocks * BLOCKSIZE
 
     def isreg(self):
+        'Return True if the Tarinfo object is a regular file.'
         return self.type in REGULAR_TYPES
+
     def isfile(self):
+        'Return True if the Tarinfo object is a regular file.'
         return self.isreg()
+
     def isdir(self):
+        'Return True if it is a directory.'
         return self.type == DIRTYPE
+
     def issym(self):
+        'Return True if it is a symbolic link.'
         return self.type == SYMTYPE
+
     def islnk(self):
+        'Return True if it is a hard link.'
         return self.type == LNKTYPE
+
     def ischr(self):
+        'Return True if it is a character device.'
         return self.type == CHRTYPE
+
     def isblk(self):
+        'Return True if it is a block device.'
         return self.type == BLKTYPE
+
     def isfifo(self):
+        'Return True if it is a FIFO.'
         return self.type == FIFOTYPE
+
     def issparse(self):
         return self.sparse is not None
+
     def isdev(self):
+        'Return True if it is one of character device, block device or FIFO.'
         return self.type in (CHRTYPE, BLKTYPE, FIFOTYPE)
 # class TarInfo
 
@@ -1797,10 +1826,9 @@ class TarFile(object):
         tarinfo = self.tarinfo()
         tarinfo.tarfile = self  # Not needed
 
-        # Use os.stat or os.lstat, depending on platform
-        # and if symlinks shall be resolved.
+        # Use os.stat or os.lstat, depending on if symlinks shall be resolved.
         if fileobj is None:
-            if hasattr(os, "lstat") and not self.dereference:
+            if not self.dereference:
                 statres = os.lstat(name)
             else:
                 statres = os.stat(name)
@@ -1943,7 +1971,7 @@ class TarFile(object):
         elif tarinfo.isdir():
             self.addfile(tarinfo)
             if recursive:
-                for f in os.listdir(name):
+                for f in sorted(os.listdir(name)):
                     self.add(os.path.join(name, f), os.path.join(arcname, f),
                             recursive, filter=filter)
 
@@ -2245,11 +2273,10 @@ class TarFile(object):
     def chmod(self, tarinfo, targetpath):
         """Set file permissions of targetpath according to tarinfo.
         """
-        if hasattr(os, 'chmod'):
-            try:
-                os.chmod(targetpath, tarinfo.mode)
-            except OSError:
-                raise ExtractError("could not change mode")
+        try:
+            os.chmod(targetpath, tarinfo.mode)
+        except OSError:
+            raise ExtractError("could not change mode")
 
     def utime(self, tarinfo, targetpath):
         """Set modification time of targetpath according to tarinfo.

@@ -66,7 +66,7 @@ class MetaPathFinder(Finder):
 
         """
         warnings.warn("MetaPathFinder.find_module() is deprecated since Python "
-                      "3.4 in favor of MetaPathFinder.find_spec()"
+                      "3.4 in favor of MetaPathFinder.find_spec() "
                       "(available since 3.4)",
                       DeprecationWarning,
                       stacklevel=2)
@@ -342,9 +342,14 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
 _register(SourceLoader, machinery.SourceFileLoader)
 
 
-class ResourceReader(Loader):
+class ResourceReader(metaclass=abc.ABCMeta):
 
-    """Abstract base class for loaders to provide resource reading support."""
+    """Abstract base class to provide resource-reading support.
+
+    Loaders that support resource reading are expected to implement
+    the ``get_resource_reader(fullname)`` method and have it either return None
+    or an object compatible with this ABC.
+    """
 
     @abc.abstractmethod
     def open_resource(self, resource):
@@ -376,5 +381,8 @@ class ResourceReader(Loader):
 
     @abc.abstractmethod
     def contents(self):
-        """Return an iterator of strings over the contents of the package."""
-        return iter([])
+        """Return an iterable of strings over the contents of the package."""
+        return []
+
+
+_register(ResourceReader, machinery.SourceFileLoader)

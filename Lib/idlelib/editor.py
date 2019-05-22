@@ -2,9 +2,7 @@ import importlib.abc
 import importlib.util
 import os
 import platform
-import re
 import string
-import sys
 import tokenize
 import traceback
 import webbrowser
@@ -25,11 +23,12 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
-from idlelib import windows
+from idlelib import window
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
 _py_version = ' (%s)' % platform.python_version()
+darwin = sys.platform == 'darwin'
 
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
@@ -49,15 +48,15 @@ class EditorWindow(object):
     from idlelib.undo import UndoDelegator
     from idlelib.iomenu import IOBinding, encoding
     from idlelib import mainmenu
-    from tkinter import Toplevel
     from idlelib.statusbar import MultiStatusBar
     from idlelib.autocomplete import AutoComplete
     from idlelib.autoexpand import AutoExpand
-    from idlelib.calltips import CallTips
+    from idlelib.calltip import Calltip
     from idlelib.codecontext import CodeContext
     from idlelib.paragraph import FormatParagraph
     from idlelib.parenmatch import ParenMatch
-    from idlelib.rstrip import RstripExtension
+    from idlelib.rstrip import Rstrip
+    from idlelib.squeezer import Squeezer
     from idlelib.zoomheight import ZoomHeight
 
     filesystemencoding = sys.getfilesystemencoding()  # for file names
@@ -100,7 +99,7 @@ class EditorWindow(object):
         root = root or flist.root
         self.root = root
         self.menubar = Menu(root)
-        self.top = top = windows.ListedToplevel(root, menu=self.menubar)
+        self.top = top = window.ListedToplevel(root, menu=self.menubar)
         if flist:
             self.tkinter_vars = flist.vars
             #self.top.instance_dict makes flist.inversedict available to
@@ -137,7 +136,7 @@ class EditorWindow(object):
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<<close-window>>", self.close_event)
         if macosx.isAquaTk():
-            # Command-W on editorwindows doesn't work without this.
+            # Command-W on editor windows doesn't work without this.
             text.bind('<<close-window>>', self.close_event)
             # Some OS X systems have only one mouse button, so use
             # control-click for popup context menus there. For two
@@ -147,6 +146,9 @@ class EditorWindow(object):
         else:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
+        text.bind('<MouseWheel>', self.mousescroll)
+        text.bind('<Button-4>', self.mousescroll)
+        text.bind('<Button-5>', self.mousescroll)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
         text.bind("<<paste>>", self.paste)
@@ -193,7 +195,7 @@ class EditorWindow(object):
             text.bind("<<open-turtle-demo>>", self.open_turtle_demo)
 
         self.set_status_bar()
-        vbar['command'] = text.yview
+        vbar['command'] = self.handle_yview
         vbar.pack(side=RIGHT, fill=Y)
         text['yscrollcommand'] = vbar.set
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
@@ -263,7 +265,7 @@ class EditorWindow(object):
         self.saved_change_hook()
         self.update_recent_files_list()
         self.load_extensions()
-        menu = self.menudict.get('windows')
+        menu = self.menudict.get('window')
         if menu:
             end = menu.index("end")
             if end is None:
@@ -272,7 +274,7 @@ class EditorWindow(object):
                 menu.add_separator()
                 end = end + 1
             self.wmenu_end = end
-            windows.register_callback(self.postwindowsmenu)
+            window.register_callback(self.postwindowsmenu)
 
         # Some abstractions so IDLE extensions are cross-IDE
         self.askyesno = tkMessageBox.askyesno
@@ -306,12 +308,12 @@ class EditorWindow(object):
         scriptbinding = ScriptBinding(self)
         text.bind("<<check-module>>", scriptbinding.check_module_event)
         text.bind("<<run-module>>", scriptbinding.run_module_event)
-        text.bind("<<do-rstrip>>", self.RstripExtension(self).do_rstrip)
-        calltips = self.CallTips(self)
-        text.bind("<<try-open-calltip>>", calltips.try_open_calltip_event)
-        #refresh-calltips must come after paren-closed to work right
-        text.bind("<<refresh-calltip>>", calltips.refresh_calltip_event)
-        text.bind("<<force-open-calltip>>", calltips.force_open_calltip_event)
+        text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
+        ctip = self.Calltip(self)
+        text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
+        #refresh-calltip must come after paren-closed to work right
+        text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
+        text.bind("<<force-open-calltip>>", ctip.force_open_calltip_event)
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         text.bind("<<toggle-code-context>>",
                   self.CodeContext(self).toggle_code_context_event)
@@ -406,7 +408,7 @@ class EditorWindow(object):
         ("format", "F_ormat"),
         ("run", "_Run"),
         ("options", "_Options"),
-        ("windows", "_Window"),
+        ("window", "_Window"),
         ("help", "_Help"),
     ]
 
@@ -432,14 +434,52 @@ class EditorWindow(object):
         self.reset_help_menu_entries()
 
     def postwindowsmenu(self):
-        # Only called when Windows menu exists
-        menu = self.menudict['windows']
+        # Only called when Window menu exists
+        menu = self.menudict['window']
         end = menu.index("end")
         if end is None:
             end = -1
         if end > self.wmenu_end:
             menu.delete(self.wmenu_end+1, end)
-        windows.add_windows_to_menu(menu)
+        window.add_windows_to_menu(menu)
+
+    def update_menu_label(self, menu, index, label):
+        "Update label for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, label=label)
+
+    def update_menu_state(self, menu, index, state):
+        "Update state for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, state=state)
+
+    def handle_yview(self, event, *args):
+        "Handle scrollbar."
+        if event == 'moveto':
+            fraction = float(args[0])
+            lines = (round(self.getlineno('end') * fraction) -
+                     self.getlineno('@0,0'))
+            event = 'scroll'
+            args = (lines, 'units')
+        self.text.yview(event, *args)
+        return 'break'
+
+    def mousescroll(self, event):
+        """Handle scrollwheel event.
+
+        For wheel up, event.delta = 120*n on Windows, -1*n on darwin,
+        where n can be > 1 if one scrolls fast.  Flicking the wheel
+        generates up to maybe 20 events with n up to 10 or more 1.
+        Macs use wheel down (delta = 1*n) to scroll up, so positive
+        delta means to scroll up on both systems.
+
+        X-11 sends Control-Button-4 event instead.
+        """
+        up = {EventType.MouseWheel: event.delta > 0,
+              EventType.Button: event.num == 4}
+        lines = -5 if up[event.type] else 5
+        self.text.yview_scroll(lines, 'units')
+        return 'break'
 
     rmenu = None
 
@@ -903,7 +943,7 @@ class EditorWindow(object):
         elif long:
             title = long
         else:
-            title = "Untitled"
+            title = "untitled"
         icon = short or long or title
         if not self.get_saved():
             title = "*%s*" % title
@@ -925,7 +965,7 @@ class EditorWindow(object):
         if filename:
             filename = os.path.basename(filename)
         else:
-            filename = "Untitled"
+            filename = "untitled"
         # return unicode string to display non-ASCII chars correctly
         return self._filename_to_unicode(filename)
 
@@ -987,13 +1027,13 @@ class EditorWindow(object):
     def _close(self):
         if self.io.filename:
             self.update_recent_files_list(new_file=self.io.filename)
-        windows.unregister_callback(self.postwindowsmenu)
+        window.unregister_callback(self.postwindowsmenu)
         self.unload_extensions()
         self.io.close()
         self.io = None
         self.undo = None
         if self.color:
-            self.color.close(False)
+            self.color.close()
             self.color = None
         self.text = None
         self.tkinter_vars = None
@@ -1302,7 +1342,7 @@ class EditorWindow(object):
                     startat = max(lno - context, 1)
                     startatindex = repr(startat) + ".0"
                     rawtext = text.get(startatindex, "insert")
-                    y.set_str(rawtext)
+                    y.set_code(rawtext)
                     bod = y.find_good_parse_start(
                               self.context_use_ps1,
                               self._build_char_in_string_func(startatindex))
@@ -1316,7 +1356,7 @@ class EditorWindow(object):
                 else:
                     startatindex = "1.0"
                 rawtext = text.get(startatindex, "insert")
-                y.set_str(rawtext)
+                y.set_code(rawtext)
                 y.set_lo(0)
 
             c = y.get_continuation_type()
@@ -1658,12 +1698,12 @@ def get_accelerator(keydefs, eventname):
 
 
 def fixwordbreaks(root):
-    # Make sure that Tk's double-click and next/previous word
-    # operations use our definition of a word (i.e. an identifier)
+    # On Windows, tcl/tk breaks 'words' only on spaces, as in Command Prompt.
+    # We want Motif style everywhere. See #21474, msg218992 and followup.
     tk = root.tk
     tk.call('tcl_wordBreakAfter', 'a b', 0) # make sure word.tcl is loaded
-    tk.call('set', 'tcl_wordchars', '[a-zA-Z0-9_]')
-    tk.call('set', 'tcl_nonwordchars', '[^a-zA-Z0-9_]')
+    tk.call('set', 'tcl_wordchars', r'\w')
+    tk.call('set', 'tcl_nonwordchars', r'\W')
 
 
 def _editor_window(parent):  # htest #
@@ -1676,13 +1716,17 @@ def _editor_window(parent):  # htest #
         filename = None
     macosx.setupApp(root, None)
     edit = EditorWindow(root=root, filename=filename)
-    edit.text.bind("<<close-all-windows>>", edit.close_event)
+    text = edit.text
+    text['height'] = 10
+    for i in range(20):
+        text.insert('insert', '  '*i + str(i) + '\n')
+    # text.bind("<<close-all-windows>>", edit.close_event)
     # Does not stop error, neither does following
     # edit.text.bind("<<close-window>>", edit.close_event)
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_editor', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_editor', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_editor_window)

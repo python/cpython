@@ -1,2 +1,0 @@
-:func:`re.sub()` now replaces empty matches adjacent to a previous non-empty
-match.

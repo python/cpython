@@ -5,6 +5,27 @@
 
 #include <inttypes.h>
 
+
+/* Defines to build Python and its standard library:
+ *
+ * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
+ *   should not be used by third-party modules.
+ * - Py_BUILD_CORE_BUILTIN: Build a Python stdlib module as a built-in module.
+ * - Py_BUILD_CORE_MODULE: Build a Python stdlib module as a dynamic library.
+ *
+ * Py_BUILD_CORE_BUILTIN and Py_BUILD_CORE_MODULE imply Py_BUILD_CORE.
+ *
+ * On Windows, Py_BUILD_CORE_MODULE exports "PyInit_xxx" symbol, whereas
+ * Py_BUILD_CORE_BUILTIN does not.
+ */
+#if defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE)
+#  define Py_BUILD_CORE
+#endif
+#if defined(Py_BUILD_CORE_MODULE) && !defined(Py_BUILD_CORE)
+#  define Py_BUILD_CORE
+#endif
+
+
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
@@ -164,18 +185,18 @@ typedef int Py_ssize_clean_t;
  */
 
 #if defined(_MSC_VER)
-#if defined(PY_LOCAL_AGGRESSIVE)
-/* enable more aggressive optimization for visual studio */
-#pragma optimize("agtw", on)
+#  if defined(PY_LOCAL_AGGRESSIVE)
+   /* enable more aggressive optimization for visual studio */
+#  pragma optimize("agtw", on)
 #endif
-/* ignore warnings if the compiler decides not to inline a function */
-#pragma warning(disable: 4710)
-/* fastest possible local call under MSVC */
-#define Py_LOCAL(type) static type __fastcall
-#define Py_LOCAL_INLINE(type) static __inline type __fastcall
+   /* ignore warnings if the compiler decides not to inline a function */
+#  pragma warning(disable: 4710)
+   /* fastest possible local call under MSVC */
+#  define Py_LOCAL(type) static type __fastcall
+#  define Py_LOCAL_INLINE(type) static __inline type __fastcall
 #else
-#define Py_LOCAL(type) static type
-#define Py_LOCAL_INLINE(type) static inline type
+#  define Py_LOCAL(type) static type
+#  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
 /* Py_MEMCPY is kept for backwards compatibility,
@@ -406,7 +427,7 @@ extern "C" {
 #endif
 
 /* get and set x87 control word for VisualStudio/x86 */
-#if defined(_MSC_VER) && !defined(_WIN64) /* x87 not supported in 64-bit */
+#if defined(_MSC_VER) && !defined(_WIN64) && !defined(_M_ARM) /* x87 not supported in 64-bit or ARM */
 #define HAVE_PY_SET_53BIT_PRECISION 1
 #define _Py_SET_53BIT_PRECISION_HEADER \
     unsigned int old_387controlword, new_387controlword, out_387controlword
@@ -525,8 +546,10 @@ extern "C" {
  * Usage:
  *    int _Py_NO_INLINE x(void) { return 3; }
  */
-#if defined(__GNUC__) || defined(__clang__)
-#  define _Py_NO_INLINE __attribute__((noinline))
+#if defined(_MSC_VER)
+#  define _Py_NO_INLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define _Py_NO_INLINE __attribute__ ((noinline))
 #else
 #  define _Py_NO_INLINE
 #endif
@@ -564,18 +587,8 @@ extern char * _getpty(int *, int, mode_t, int);
  * workaround was provided by Tim Robbins of FreeBSD project.
  */
 
-#ifdef __FreeBSD__
-#include <osreldate.h>
-#if (__FreeBSD_version >= 500040 && __FreeBSD_version < 602113) || \
-    (__FreeBSD_version >= 700000 && __FreeBSD_version < 700054) || \
-    (__FreeBSD_version >= 800000 && __FreeBSD_version < 800001)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
-#endif
-#endif
-
-
 #if defined(__APPLE__)
-# define _PY_PORT_CTYPE_UTF8_ISSUE
+#  define _PY_PORT_CTYPE_UTF8_ISSUE
 #endif
 
 #ifdef _PY_PORT_CTYPE_UTF8_ISSUE
@@ -631,7 +644,7 @@ extern char * _getpty(int *, int, mode_t, int);
 /* only get special linkage if built as shared or platform is Cygwin */
 #if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #       if defined(HAVE_DECLSPEC_DLL)
-#               if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
+#               if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #                       define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
 #                       define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
         /* module init functions inside the core need no external linkage */
@@ -763,7 +776,7 @@ extern char * _getpty(int *, int, mode_t, int);
 #define PY_LITTLE_ENDIAN 1
 #endif
 
-#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
+#ifdef Py_BUILD_CORE
 /*
  * Macros to protect CRT calls against instant termination when passed an
  * invalid parameter (issue23524).
@@ -784,9 +797,9 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* Py_BUILD_CORE */
 
 #ifdef __ANDROID__
-/* The Android langinfo.h header is not used. */
-#undef HAVE_LANGINFO_H
-#undef CODESET
+   /* The Android langinfo.h header is not used. */
+#  undef HAVE_LANGINFO_H
+#  undef CODESET
 #endif
 
 /* Maximum value of the Windows DWORD type */
@@ -797,7 +810,37 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
  * for compatibility.
  */
 #ifndef WITH_THREAD
-#define WITH_THREAD
+#  define WITH_THREAD
+#endif
+
+/* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
+   ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
+#if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
+#  error "Py_TRACE_REFS ABI is not compatible with release and debug ABI"
+#endif
+
+#if defined(__ANDROID__) || defined(__VXWORKS__)
+   /* Ignore the locale encoding: force UTF-8 */
+#  define _Py_FORCE_UTF8_LOCALE
+#endif
+
+#if defined(_Py_FORCE_UTF8_LOCALE) || defined(__APPLE__)
+   /* Use UTF-8 as filesystem encoding */
+#  define _Py_FORCE_UTF8_FS_ENCODING
+#endif
+
+/* Mark a function which cannot return. Example:
+
+   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void); */
+#if defined(__clang__) || \
+    (defined(__GNUC__) && \
+     ((__GNUC__ >= 3) || \
+      (__GNUC__ == 2) && (__GNUC_MINOR__ >= 5)))
+#  define _Py_NO_RETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+#  define _Py_NO_RETURN __declspec(noreturn)
+#else
+#  define _Py_NO_RETURN
 #endif
 
 #endif /* Py_PYPORT_H */

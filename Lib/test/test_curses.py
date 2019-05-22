@@ -368,9 +368,8 @@ class TestCurses(unittest.TestCase):
         self.stdscr.getkey()
 
     @requires_curses_func('unget_wch')
-    # XXX Remove the decorator when ncurses on OpenBSD be updated
-    @unittest.skipIf(sys.platform.startswith("openbsd"),
-                     "OpenBSD's curses (v.5.7) has bugs")
+    @unittest.skipIf(getattr(curses, 'ncurses_version', (99,)) < (5, 8),
+                     "unget_wch is broken in ncurses 5.7 and earlier")
     def test_unget_wch(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
@@ -456,6 +455,23 @@ class MiscTests(unittest.TestCase):
         # can be called.
         curses.update_lines_cols()
 
+    @requires_curses_func('ncurses_version')
+    def test_ncurses_version(self):
+        v = curses.ncurses_version
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 0)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
 
 class TestAscii(unittest.TestCase):
 

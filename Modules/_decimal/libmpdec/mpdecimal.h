@@ -818,12 +818,12 @@ void *mpd_sh_alloc(mpd_size_t struct_size, mpd_size_t nmemb, mpd_size_t size);
 mpd_t *mpd_qnew(void);
 mpd_t *mpd_new(mpd_context_t *ctx);
 mpd_t *mpd_qnew_size(mpd_ssize_t size);
-void mpd_del(mpd_t *dec);
+EXTINLINE void mpd_del(mpd_t *dec);
 
-void mpd_uint_zero(mpd_uint_t *dest, mpd_size_t len);
-int mpd_qresize(mpd_t *result, mpd_ssize_t size, uint32_t *status);
-int mpd_qresize_zero(mpd_t *result, mpd_ssize_t size, uint32_t *status);
-void mpd_minalloc(mpd_t *result);
+EXTINLINE void mpd_uint_zero(mpd_uint_t *dest, mpd_size_t len);
+EXTINLINE int mpd_qresize(mpd_t *result, mpd_ssize_t size, uint32_t *status);
+EXTINLINE int mpd_qresize_zero(mpd_t *result, mpd_ssize_t size, uint32_t *status);
+EXTINLINE void mpd_minalloc(mpd_t *result);
 
 int mpd_resize(mpd_t *result, mpd_ssize_t size, mpd_context_t *ctx);
 int mpd_resize_zero(mpd_t *result, mpd_ssize_t size, mpd_context_t *ctx);

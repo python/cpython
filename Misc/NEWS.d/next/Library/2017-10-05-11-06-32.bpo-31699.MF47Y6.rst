@@ -1,4 +1,0 @@
-Fix deadlocks in :class:`concurrent.futures.ProcessPoolExecutor` when
-task arguments or results cause pickling or unpickling errors.
-This should make sure that calls to the :class:`ProcessPoolExecutor` API
-always eventually return.

@@ -117,11 +117,11 @@ newcompobject(PyTypeObject *type)
 static void*
 PyZlib_Malloc(voidpf ctx, uInt items, uInt size)
 {
-    if (items > (size_t)PY_SSIZE_T_MAX / size)
+    if (size != 0 && items > (size_t)PY_SSIZE_T_MAX / size)
         return NULL;
     /* PyMem_Malloc() cannot be used: the GIL is not held when
        inflate() and deflate() are called */
-    return PyMem_RawMalloc(items * size);
+    return PyMem_RawMalloc((size_t)items * (size_t)size);
 }
 
 static void
@@ -291,7 +291,9 @@ ssize_t_converter(PyObject *obj, void *ptr)
     PyObject *long_obj;
     Py_ssize_t val;
 
-    long_obj = (PyObject *)_PyLong_FromNbInt(obj);
+    /* XXX Should be replaced with PyNumber_AsSsize_t after the end of the
+       deprecation period. */
+    long_obj = _PyLong_FromNbIndexOrNbInt(obj);
     if (long_obj == NULL) {
         return 0;
     }
@@ -985,6 +987,32 @@ error:
 }
 
 /*[clinic input]
+zlib.Compress.__copy__
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Compress___copy___impl(compobject *self)
+/*[clinic end generated code: output=1875e6791975442e input=be97a05a788dfd83]*/
+{
+    return zlib_Compress_copy_impl(self);
+}
+
+/*[clinic input]
+zlib.Compress.__deepcopy__
+
+    memo: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Compress___deepcopy__(compobject *self, PyObject *memo)
+/*[clinic end generated code: output=f47a2213282c9eb0 input=a9a8b0b40d83388e]*/
+{
+    return zlib_Compress_copy_impl(self);
+}
+
+/*[clinic input]
 zlib.Decompress.copy
 
 Return a copy of the decompression object.
@@ -1039,6 +1067,33 @@ error:
     Py_XDECREF(retval);
     return NULL;
 }
+
+/*[clinic input]
+zlib.Decompress.__copy__
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Decompress___copy___impl(compobject *self)
+/*[clinic end generated code: output=80bae8bc43498ad4 input=efcb98b5472c13d2]*/
+{
+    return zlib_Decompress_copy_impl(self);
+}
+
+/*[clinic input]
+zlib.Decompress.__deepcopy__
+
+    memo: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Decompress___deepcopy__(compobject *self, PyObject *memo)
+/*[clinic end generated code: output=1f77286ab490124b input=6e99bd0ac4b9cd8b]*/
+{
+    return zlib_Decompress_copy_impl(self);
+}
+
 #endif
 
 /*[clinic input]
@@ -1139,6 +1194,8 @@ static PyMethodDef comp_methods[] =
     ZLIB_COMPRESS_COMPRESS_METHODDEF
     ZLIB_COMPRESS_FLUSH_METHODDEF
     ZLIB_COMPRESS_COPY_METHODDEF
+    ZLIB_COMPRESS___COPY___METHODDEF
+    ZLIB_COMPRESS___DEEPCOPY___METHODDEF
     {NULL, NULL}
 };
 
@@ -1147,6 +1204,8 @@ static PyMethodDef Decomp_methods[] =
     ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESS_FLUSH_METHODDEF
     ZLIB_DECOMPRESS_COPY_METHODDEF
+    ZLIB_DECOMPRESS___COPY___METHODDEF
+    ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     {NULL, NULL}
 };
 
@@ -1361,18 +1420,33 @@ PyInit_zlib(void)
     PyModule_AddIntMacro(m, DEFLATED);
     PyModule_AddIntMacro(m, DEF_MEM_LEVEL);
     PyModule_AddIntMacro(m, DEF_BUF_SIZE);
+    // compression levels
+    PyModule_AddIntMacro(m, Z_NO_COMPRESSION);
     PyModule_AddIntMacro(m, Z_BEST_SPEED);
     PyModule_AddIntMacro(m, Z_BEST_COMPRESSION);
     PyModule_AddIntMacro(m, Z_DEFAULT_COMPRESSION);
+    // compression strategies
     PyModule_AddIntMacro(m, Z_FILTERED);
     PyModule_AddIntMacro(m, Z_HUFFMAN_ONLY);
+#ifdef Z_RLE // 1.2.0.1
+    PyModule_AddIntMacro(m, Z_RLE);
+#endif
+#ifdef Z_FIXED // 1.2.2.2
+    PyModule_AddIntMacro(m, Z_FIXED);
+#endif
     PyModule_AddIntMacro(m, Z_DEFAULT_STRATEGY);
-
-    PyModule_AddIntMacro(m, Z_FINISH);
+    // allowed flush values
     PyModule_AddIntMacro(m, Z_NO_FLUSH);
+    PyModule_AddIntMacro(m, Z_PARTIAL_FLUSH);
     PyModule_AddIntMacro(m, Z_SYNC_FLUSH);
     PyModule_AddIntMacro(m, Z_FULL_FLUSH);
-
+    PyModule_AddIntMacro(m, Z_FINISH);
+#ifdef Z_BLOCK // 1.2.0.5 for inflate, 1.2.3.4 for deflate
+    PyModule_AddIntMacro(m, Z_BLOCK);
+#endif
+#ifdef Z_TREES // 1.2.3.4, only for inflate
+    PyModule_AddIntMacro(m, Z_TREES);
+#endif
     ver = PyUnicode_FromString(ZLIB_VERSION);
     if (ver != NULL)
         PyModule_AddObject(m, "ZLIB_VERSION", ver);

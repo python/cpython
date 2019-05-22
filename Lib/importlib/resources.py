@@ -2,17 +2,29 @@ import os
 import tempfile
 
 from . import abc as resources_abc
-from builtins import open as builtins_open
 from contextlib import contextmanager, suppress
 from importlib import import_module
 from importlib.abc import ResourceLoader
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from types import ModuleType
-from typing import Iterator, Optional, Set, Union   # noqa: F401
+from typing import Iterable, Iterator, Optional, Set, Union   # noqa: F401
 from typing import cast
 from typing.io import BinaryIO, TextIO
-from zipfile import ZipFile
+from zipimport import ZipImportError
+
+
+__all__ = [
+    'Package',
+    'Resource',
+    'contents',
+    'is_resource',
+    'open_binary',
+    'open_text',
+    'path',
+    'read_binary',
+    'read_text',
+    ]
 
 
 Package = Union[str, ModuleType]
@@ -44,8 +56,7 @@ def _normalize_path(path) -> str:
 
     If the resulting string contains path separators, an exception is raised.
     """
-    str_path = str(path)
-    parent, file_name = os.path.split(str_path)
+    parent, file_name = os.path.split(path)
     if parent:
         raise ValueError('{!r} must be only a file name'.format(path))
     else:
@@ -59,9 +70,16 @@ def _get_resource_reader(
     # hook wants to create a weak reference to the object, but
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
-    if hasattr(package.__spec__.loader, 'open_resource'):
-        return cast(resources_abc.ResourceReader, package.__spec__.loader)
+    spec = package.__spec__
+    if hasattr(spec.loader, 'get_resource_reader'):
+        return cast(resources_abc.ResourceReader,
+                    spec.loader.get_resource_reader(spec.name))
     return None
+
+
+def _check_location(package):
+    if package.__spec__.origin is None or not package.__spec__.has_location:
+        raise FileNotFoundError(f'Package has no location {package!r}')
 
 
 def open_binary(package: Package, resource: Resource) -> BinaryIO:
@@ -71,11 +89,12 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     reader = _get_resource_reader(package)
     if reader is not None:
         return reader.open_resource(resource)
+    _check_location(package)
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
     try:
-        return builtins_open(full_path, mode='rb')
+        return open(full_path, mode='rb')
     except OSError:
         # Just assume the loader is a resource loader; all the relevant
         # importlib.machinery loaders are and an AttributeError for
@@ -104,12 +123,12 @@ def open_text(package: Package,
     reader = _get_resource_reader(package)
     if reader is not None:
         return TextIOWrapper(reader.open_resource(resource), encoding, errors)
+    _check_location(package)
     absolute_package_path = os.path.abspath(package.__spec__.origin)
     package_path = os.path.dirname(absolute_package_path)
     full_path = os.path.join(package_path, resource)
     try:
-        return builtins_open(
-            full_path, mode='r', encoding=encoding, errors=errors)
+        return open(full_path, mode='r', encoding=encoding, errors=errors)
     except OSError:
         # Just assume the loader is a resource loader; all the relevant
         # importlib.machinery loaders are and an AttributeError for
@@ -170,6 +189,8 @@ def path(package: Package, resource: Resource) -> Iterator[Path]:
             return
         except FileNotFoundError:
             pass
+    else:
+        _check_location(package)
     # Fall-through for both the lack of resource_path() *and* if
     # resource_path() raises FileNotFoundError.
     package_directory = Path(package.__spec__.origin).parent
@@ -214,42 +235,11 @@ def is_resource(package: Package, name: str) -> bool:
     # contents doesn't necessarily mean it's a resource.  Directories are not
     # resources, so let's try to find out if it's a directory or not.
     path = Path(package.__spec__.origin).parent / name
-    if path.is_file():
-        return True
-    if path.is_dir():
-        return False
-    # If it's not a file and it's not a directory, what is it?  Well, this
-    # means the file doesn't exist on the file system, so it probably lives
-    # inside a zip file.  We have to crack open the zip, look at its table of
-    # contents, and make sure that this entry doesn't have sub-entries.
-    archive_path = package.__spec__.loader.archive   # type: ignore
-    package_directory = Path(package.__spec__.origin).parent
-    with ZipFile(archive_path) as zf:
-        toc = zf.namelist()
-    relpath = package_directory.relative_to(archive_path)
-    candidate_path = relpath / name
-    for entry in toc:
-        try:
-            relative_to_candidate = Path(entry).relative_to(candidate_path)
-        except ValueError:
-            # The two paths aren't relative to each other so we can ignore it.
-            continue
-        # Since directories aren't explicitly listed in the zip file, we must
-        # infer their 'directory-ness' by looking at the number of path
-        # components in the path relative to the package resource we're
-        # looking up.  If there are zero additional parts, it's a file, i.e. a
-        # resource.  If there are more than zero it's a directory, i.e. not a
-        # resource.  It has to be one of these two cases.
-        return len(relative_to_candidate.parts) == 0
-    # I think it's impossible to get here.  It would mean that we are looking
-    # for a resource in a zip file, there's an entry matching it in the return
-    # value of contents(), but we never actually found it in the zip's table of
-    # contents.
-    raise AssertionError('Impossible situation')
+    return path.is_file()
 
 
-def contents(package: Package) -> Iterator[str]:
-    """Return the list of entries in 'package'.
+def contents(package: Package) -> Iterable[str]:
+    """Return an iterable of entries in 'package'.
 
     Note that not all entries are resources.  Specifically, directories are
     not considered resources.  Use `is_resource()` on each entry returned here
@@ -258,46 +248,12 @@ def contents(package: Package) -> Iterator[str]:
     package = _get_package(package)
     reader = _get_resource_reader(package)
     if reader is not None:
-        yield from reader.contents()
-        return
+        return reader.contents()
     # Is the package a namespace package?  By definition, namespace packages
-    # cannot have resources.
-    if (package.__spec__.origin == 'namespace' and
-            not package.__spec__.has_location):
-        return []
-    package_directory = Path(package.__spec__.origin).parent
-    try:
-        yield from os.listdir(str(package_directory))
-    except (NotADirectoryError, FileNotFoundError):
-        # The package is probably in a zip file.
-        archive_path = getattr(package.__spec__.loader, 'archive', None)
-        if archive_path is None:
-            raise
-        relpath = package_directory.relative_to(archive_path)
-        with ZipFile(archive_path) as zf:
-            toc = zf.namelist()
-        subdirs_seen = set()                        # type: Set
-        for filename in toc:
-            path = Path(filename)
-            # Strip off any path component parts that are in common with the
-            # package directory, relative to the zip archive's file system
-            # path.  This gives us all the parts that live under the named
-            # package inside the zip file.  If the length of these subparts is
-            # exactly 1, then it is situated inside the package.  The resulting
-            # length will be 0 if it's above the package, and it will be
-            # greater than 1 if it lives in a subdirectory of the package
-            # directory.
-            #
-            # However, since directories themselves don't appear in the zip
-            # archive as a separate entry, we need to return the first path
-            # component for any case that has > 1 subparts -- but only once!
-            if path.parts[:len(relpath.parts)] != relpath.parts:
-                continue
-            subparts = path.parts[len(relpath.parts):]
-            if len(subparts) == 1:
-                yield subparts[0]
-            elif len(subparts) > 1:
-                subdir = subparts[0]
-                if subdir not in subdirs_seen:
-                    subdirs_seen.add(subdir)
-                    yield subdir
+    # cannot have resources.  We could use _check_location() and catch the
+    # exception, but that's extra work, so just inline the check.
+    elif package.__spec__.origin is None or not package.__spec__.has_location:
+        return ()
+    else:
+        package_directory = Path(package.__spec__.origin).parent
+        return os.listdir(package_directory)

@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -21,7 +22,7 @@
 #endif /* HAVE_SYS_STAT_H */
 
 #ifdef MS_WINDOWS
-#include <consoleapi.h>
+#include <windows.h>
 #endif
 
 /* Various interned strings */
@@ -36,6 +37,7 @@ PyObject *_PyIO_str_getstate = NULL;
 PyObject *_PyIO_str_isatty = NULL;
 PyObject *_PyIO_str_newlines = NULL;
 PyObject *_PyIO_str_nl = NULL;
+PyObject *_PyIO_str_peek = NULL;
 PyObject *_PyIO_str_read = NULL;
 PyObject *_PyIO_str_read1 = NULL;
 PyObject *_PyIO_str_readable = NULL;
@@ -240,7 +242,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     char rawmode[6], *m;
     int line_buffering, is_number;
-    long isatty;
+    long isatty = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
@@ -323,7 +325,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (universal) {
         if (creating || writing || appending || updating) {
             PyErr_SetString(PyExc_ValueError,
-                            "mode U cannot be combined with x', 'w', 'a', or '+'");
+                            "mode U cannot be combined with 'x', 'w', 'a', or '+'");
             goto error;
         }
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -362,11 +364,21 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
     }
 
+    if (binary && buffering == 1) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "line buffering (buffering=1) isn't supported in "
+                         "binary mode, the default buffer size will be used",
+                         1) < 0) {
+           goto error;
+        }
+    }
+
     /* Create the Raw file stream */
     {
         PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
 #ifdef MS_WINDOWS
-        if (!Py_LegacyWindowsStdioFlag && _PyIO_get_console_type(path_or_fd) != '\0') {
+        _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+        if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
             encoding = "utf-8";
         }
@@ -387,7 +399,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
 
     /* buffering */
-    {
+    if (buffering < 0) {
         PyObject *res = _PyObject_CallMethodId(raw, &PyId_isatty, NULL);
         if (res == NULL)
             goto error;
@@ -397,7 +409,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
             goto error;
     }
 
-    if (buffering == 1 || (buffering < 0 && isatty)) {
+    if (buffering == 1 || isatty) {
         buffering = -1;
         line_buffering = 1;
     }
@@ -740,6 +752,7 @@ PyInit__io(void)
     ADD_INTERNED(getstate)
     ADD_INTERNED(isatty)
     ADD_INTERNED(newlines)
+    ADD_INTERNED(peek)
     ADD_INTERNED(read)
     ADD_INTERNED(read1)
     ADD_INTERNED(readable)

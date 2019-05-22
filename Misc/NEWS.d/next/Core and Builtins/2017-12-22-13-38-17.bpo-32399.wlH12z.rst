@@ -1,1 +1,0 @@
-Add AIX uuid library support for RFC4122 using uuid_create() in libc.a

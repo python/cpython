@@ -21,6 +21,7 @@ typedef uint16_t _Py_CODEUNIT;
 typedef struct {
     PyObject_HEAD
     int co_argcount;            /* #arguments, except *args */
+    int co_posonlyargcount;     /* #positional only arguments */
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_nlocals;             /* #local variables */
     int co_stacksize;           /* #entries needed for evaluation stack */
@@ -82,6 +83,7 @@ typedef struct {
 
 #define CO_FUTURE_BARRY_AS_BDFL  0x40000
 #define CO_FUTURE_GENERATOR_STOP  0x80000
+#define CO_FUTURE_ANNOTATIONS    0x100000
 
 /* This value is found in the co_cell2arg array when the associated cell
    variable does not correspond to an argument. */
@@ -101,7 +103,7 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 /* Public interface */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
-        int, int, int, int, int, PyObject *, PyObject *,
+        int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, int, PyObject *);
         /* same as struct above */

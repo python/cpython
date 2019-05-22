@@ -64,6 +64,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     char *str;
     Py_ssize_t len;
     char buf[1024];
+    int async_err = 0;
 
     if (arg != NULL) {
         int parse_result;
@@ -75,12 +76,13 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 return NULL;
             }
             memcpy(buf, str, len);
-            Py_BEGIN_ALLOW_THREADS
-            ret = fcntl(fd, code, buf);
-            Py_END_ALLOW_THREADS
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = fcntl(fd, code, buf);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
             if (ret < 0) {
-                PyErr_SetFromErrno(PyExc_OSError);
-                return NULL;
+                return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
             }
             return PyBytes_FromStringAndSize(buf, len);
         }
@@ -95,12 +97,13 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         }
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    ret = fcntl(fd, code, (int)int_arg);
-    Py_END_ALLOW_THREADS
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = fcntl(fd, code, (int)int_arg);
+        Py_END_ALLOW_THREADS
+    } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (ret < 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
+        return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
     }
     return PyLong_FromLong((long)ret);
 }
@@ -283,11 +286,14 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
 /*[clinic end generated code: output=84059e2b37d2fc64 input=b70a0a41ca22a8a0]*/
 {
     int ret;
+    int async_err = 0;
 
 #ifdef HAVE_FLOCK
-    Py_BEGIN_ALLOW_THREADS
-    ret = flock(fd, code);
-    Py_END_ALLOW_THREADS
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = flock(fd, code);
+        Py_END_ALLOW_THREADS
+    } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
 
 #ifndef LOCK_SH
@@ -310,14 +316,15 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
             return NULL;
         }
         l.l_whence = l.l_start = l.l_len = 0;
-        Py_BEGIN_ALLOW_THREADS
-        ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
-        Py_END_ALLOW_THREADS
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+            Py_END_ALLOW_THREADS
+        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     }
 #endif /* HAVE_FLOCK */
     if (ret < 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
+        return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
     }
     Py_RETURN_NONE;
 }
@@ -363,6 +370,7 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
 /*[clinic end generated code: output=4985e7a172e7461a input=3a5dc01b04371f1a]*/
 {
     int ret;
+    int async_err = 0;
 
 #ifndef LOCK_SH
 #define LOCK_SH         1       /* shared lock */
@@ -407,13 +415,14 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                 return NULL;
         }
         l.l_whence = whence;
-        Py_BEGIN_ALLOW_THREADS
-        ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
-        Py_END_ALLOW_THREADS
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+            Py_END_ALLOW_THREADS
+        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     }
     if (ret < 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
+        return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
     }
     Py_RETURN_NONE;
 }
@@ -430,7 +439,7 @@ static PyMethodDef fcntl_methods[] = {
 
 
 PyDoc_STRVAR(module_doc,
-"This module performs file control and I/O control on file \n\
+"This module performs file control and I/O control on file\n\
 descriptors.  It is an interface to the fcntl() and ioctl() Unix\n\
 routines.  File descriptors can be obtained with the fileno() method of\n\
 a file or socket object.");

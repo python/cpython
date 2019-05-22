@@ -862,7 +862,7 @@ class StreamRecoder:
 
 ### Shortcuts
 
-def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
+def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
 
     """ Open an encoded file using the given mode and return
         a wrapped version providing transparent encoding/decoding.
@@ -883,7 +883,8 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
         encoding error occurs.
 
         buffering has the same meaning as for the builtin open() API.
-        It defaults to line buffered.
+        It defaults to -1 which means that the default buffer size will
+        be used.
 
         The returned wrapped file object provides an extra attribute
         .encoding which allows querying the used encoding. This

@@ -1,2 +1,0 @@
-The error message of a TypeError raised when unpack non-iterable is now more
-specific.

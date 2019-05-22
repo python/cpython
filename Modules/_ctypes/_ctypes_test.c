@@ -87,7 +87,7 @@ EXPORT(void)testfunc_array(int values[4])
 EXPORT(long double)testfunc_Ddd(double a, double b)
 {
     long double result = (long double)(a * b);
-    printf("testfunc_Ddd(%p, %p)\n", &a, &b);
+    printf("testfunc_Ddd(%p, %p)\n", (void *)&a, (void *)&b);
     printf("testfunc_Ddd(%g, %g)\n", a, b);
     return result;
 }
@@ -95,7 +95,7 @@ EXPORT(long double)testfunc_Ddd(double a, double b)
 EXPORT(long double)testfunc_DDD(long double a, long double b)
 {
     long double result = a * b;
-    printf("testfunc_DDD(%p, %p)\n", &a, &b);
+    printf("testfunc_DDD(%p, %p)\n", (void *)&a, (void *)&b);
     printf("testfunc_DDD(%Lg, %Lg)\n", a, b);
     return result;
 }
@@ -103,7 +103,7 @@ EXPORT(long double)testfunc_DDD(long double a, long double b)
 EXPORT(int)testfunc_iii(int a, int b)
 {
     int result = a * b;
-    printf("testfunc_iii(%p, %p)\n", &a, &b);
+    printf("testfunc_iii(%p, %p)\n", (void *)&a, (void *)&b);
     return result;
 }
 
@@ -361,7 +361,7 @@ static void _xxx_init(void *(*Xalloc)(int), void (*Xfree)(void *))
 {
     void *ptr;
 
-    printf("_xxx_init got %p %p\n", Xalloc, Xfree);
+    printf("_xxx_init got %p %p\n", (void *)Xalloc, (void *)Xfree);
     printf("calling\n");
     ptr = Xalloc(32);
     Xfree(ptr);
@@ -414,8 +414,15 @@ EXPORT(long long) last_tf_arg_s = 0;
 EXPORT(unsigned long long) last_tf_arg_u = 0;
 
 struct BITS {
-    int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
-    short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+    signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
+/*
+ * The test case needs/uses "signed short" bitfields, but the
+ * IBM XLC compiler does not support this
+ */
+#ifndef __xlc__
+#define SIGNED_SHORT_BITFIELDS
+     short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+#endif
 };
 
 EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
@@ -430,7 +437,7 @@ EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
     case 'G': bits->G = value; break;
     case 'H': bits->H = value; break;
     case 'I': bits->I = value; break;
-
+#ifdef SIGNED_SHORT_BITFIELDS
     case 'M': bits->M = value; break;
     case 'N': bits->N = value; break;
     case 'O': bits->O = value; break;
@@ -438,6 +445,7 @@ EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
     case 'Q': bits->Q = value; break;
     case 'R': bits->R = value; break;
     case 'S': bits->S = value; break;
+#endif
     }
 }
 
@@ -454,6 +462,7 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     case 'H': return bits->H;
     case 'I': return bits->I;
 
+#ifdef SIGNED_SHORT_BITFIELDS
     case 'M': return bits->M;
     case 'N': return bits->N;
     case 'O': return bits->O;
@@ -461,8 +470,9 @@ EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
     case 'Q': return bits->Q;
     case 'R': return bits->R;
     case 'S': return bits->S;
+#endif
     }
-    return 0;
+    return 999;
 }
 
 static PyMethodDef module_methods[] = {
@@ -659,6 +669,200 @@ EXPORT(void) TwoOutArgs(int a, int *pi, int b, int *pj)
     *pi += a;
     *pj += b;
 }
+
+#ifdef MS_WIN32
+
+typedef struct {
+    char f1;
+} Size1;
+
+typedef struct {
+    char f1;
+    char f2;
+} Size2;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+} Size3;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+} Size4;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+} Size5;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+} Size6;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+} Size7;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+} Size8;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+} Size9;
+
+typedef struct {
+    char f1;
+    char f2;
+    char f3;
+    char f4;
+    char f5;
+    char f6;
+    char f7;
+    char f8;
+    char f9;
+    char f10;
+} Size10;
+
+EXPORT(Size1) TestSize1() {
+    Size1 f;
+    f.f1 = 'a';
+    return f;
+}
+
+EXPORT(Size2) TestSize2() {
+    Size2 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    return f;
+}
+
+EXPORT(Size3) TestSize3() {
+    Size3 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    return f;
+}
+
+EXPORT(Size4) TestSize4() {
+    Size4 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    return f;
+}
+
+EXPORT(Size5) TestSize5() {
+    Size5 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    return f;
+}
+
+EXPORT(Size6) TestSize6() {
+    Size6 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    return f;
+}
+
+EXPORT(Size7) TestSize7() {
+    Size7 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    return f;
+}
+
+EXPORT(Size8) TestSize8() {
+    Size8 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    return f;
+}
+
+EXPORT(Size9) TestSize9() {
+    Size9 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    return f;
+}
+
+EXPORT(Size10) TestSize10() {
+    Size10 f;
+    f.f1 = 'a';
+    f.f2 = 'b';
+    f.f3 = 'c';
+    f.f4 = 'd';
+    f.f5 = 'e';
+    f.f6 = 'f';
+    f.f7 = 'g';
+    f.f8 = 'h';
+    f.f9 = 'i';
+    f.f10 = 'j';
+    return f;
+}
+
+#endif
 
 #ifdef MS_WIN32
 EXPORT(S2H) __stdcall s_ret_2h_func(S2H inp) { return ret_2h_func(inp); }

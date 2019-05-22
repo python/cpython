@@ -63,11 +63,14 @@ The :mod:`gc` module provides the following functions:
    Return the debugging flags currently set.
 
 
-.. function:: get_objects()
+.. function:: get_objects(generation=None)
 
    Returns a list of all objects tracked by the collector, excluding the list
-   returned.
+   returned. If *generation* is not None, return only the objects tracked by
+   the collector that are in that generation.
 
+   .. versionchanged:: 3.8
+      New *generation* parameter.
 
 .. function:: get_stats()
 
@@ -181,7 +184,7 @@ The :mod:`gc` module provides the following functions:
    fork() call to make the gc copy-on-write friendly or to speed up collection.
    Also collection before a POSIX fork() call may free pages for future
    allocation which can cause copy-on-write too so it's advised to disable gc
-   in master process and freeze before fork and enable gc in child process.
+   in parent process and freeze before fork and enable gc in child process.
 
    .. versionadded:: 3.7
 

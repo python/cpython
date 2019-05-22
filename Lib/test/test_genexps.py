@@ -137,12 +137,12 @@ Verify that syntax error's are raised for genexps used as lvalues
     >>> (y for y in (1,2)) = 10
     Traceback (most recent call last):
        ...
-    SyntaxError: can't assign to generator expression
+    SyntaxError: cannot assign to generator expression
 
     >>> (y for y in (1,2)) += 10
     Traceback (most recent call last):
        ...
-    SyntaxError: can't assign to generator expression
+    SyntaxError: cannot assign to generator expression
 
 
 ########### Tests borrowed from or inspired by test_generators.py ############
