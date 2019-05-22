@@ -240,10 +240,13 @@ PyThread_get_thread_ident(void)
 unsigned long
 PyThread_get_thread_native_id(void)
 {
-    if (!initialized)
+    if (!initialized) {
         PyThread_init_thread();
+    }
 
-    return GetCurrentThreadId();
+    DWORD native_id;
+    native_id = GetCurrentThreadId();
+    return (unsigned long) native_id;
 }
 #endif
 

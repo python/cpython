@@ -899,9 +899,9 @@ class Thread:
     def _set_ident(self):
         self._ident = get_ident()
 
-    def _set_native_id(self):
-        assert _HAVE_THREAD_NATIVE_ID, "Native ID not supported on this platform"
-        self._native_id = get_native_id()
+    if _HAVE_THREAD_NATIVE_ID:
+        def _set_native_id(self):
+            self._native_id = get_native_id()
 
     def _set_tstate_lock(self):
         """
@@ -1091,17 +1091,17 @@ class Thread:
         assert self._initialized, "Thread.__init__() not called"
         return self._ident
 
-    @property
-    def native_id(self):
-        """Native integral thread ID of this thread or None if it has not been started.
+    if _HAVE_THREAD_NATIVE_ID:
+        @property
+        def native_id(self):
+            """Native integral thread ID of this thread, or None if it has not been started.
 
-        This is a non-negative integer. See the get_native_id() function.
-        This represents the Thread ID as reported by the kernel.
+            This is a non-negative integer. See the get_native_id() function.
+            This represents the Thread ID as reported by the kernel.
 
-        """
-        assert self._initialized, "Thread.__init__() not called"
-        assert _HAVE_THREAD_NATIVE_ID, "Native ID not supported on this platform"
-        return self._native_id
+            """
+            assert self._initialized, "Thread.__init__() not called"
+            return self._native_id
 
     def is_alive(self):
         """Return whether the thread is alive.
