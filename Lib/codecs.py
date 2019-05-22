@@ -838,7 +838,7 @@ class StreamRecoder:
 
     def writelines(self, list):
 
-        data = ''.join(list)
+        data = b''.join(list)
         data, bytesdecoded = self.decode(data, self.errors)
         return self.writer.write(data)
 
