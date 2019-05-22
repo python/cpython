@@ -882,7 +882,6 @@ class UnraisableHookTest(unittest.TestCase):
         import _testcapi
         import types
         try:
-            # raise the exception to get a traceback in the except block
             _testcapi.write_unraisable_exc(exc, obj)
             return types.SimpleNamespace(exc_type=type(exc),
                                          exc_value=exc,
