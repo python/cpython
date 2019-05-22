@@ -146,6 +146,7 @@ class _BaseStreamServer:
     # It can be a subject for improvements in Python 3.9
 
     def __init__(self, client_connected_cb,
+                 /,
                  limit=_DEFAULT_LIMIT,
                  shutdown_timeout=60,
                  _asyncio_internal=False):
@@ -257,17 +258,13 @@ class _BaseStreamServer:
 
 class StreamServer(_BaseStreamServer):
 
-    def __init__(self, client_connected_cb, host=None, port=None, *,
+    def __init__(self, client_connected_cb, /, host=None, port=None, *,
                  limit=_DEFAULT_LIMIT,
                  family=socket.AF_UNSPEC,
                  flags=socket.AI_PASSIVE, sock=None, backlog=100,
                  ssl=None, reuse_address=None, reuse_port=None,
                  ssl_handshake_timeout=None,
                  shutdown_timeout=60):
-        # client_connected_cb name is consistent with legacy API
-        # but it is long and ugly
-        # any suggestion?
-
         super().__init__(client_connected_cb,
                          limit=limit,
                          shutdown_timeout=shutdown_timeout,
@@ -365,7 +362,7 @@ if hasattr(socket, 'AF_UNIX'):
 
     class UnixStreamServer(_BaseStreamServer):
 
-        def __init__(self, client_connected_cb, path=None, *,
+        def __init__(self, client_connected_cb, /, path=None, *,
                      limit=_DEFAULT_LIMIT,
                      sock=None,
                      backlog=100,
