@@ -3034,3 +3034,39 @@ def collision_stats(nbins, nballs):
         collisions = k - occupied
         var = dn*(dn-1)*((dn-2)/dn)**k + meanempty * (1 - meanempty)
         return float(collisions), float(var.sqrt())
+
+
+class catch_unraisable_exception:
+    """
+    Context manager catching unraisable exception using sys.unraisablehook.
+
+    Usage:
+
+        try:
+            with support.catch_unraisable_exception() as cm:
+                ...
+
+            # check the expected unraisable exception
+            ...
+        finally:
+            # Explicitly break reference cycle
+            cm = None
+
+    The finally block is required: cm.unraisable contains a traceback object
+    which indirectly references the 'cm' variable, it's a reference cycle.
+    """
+
+    def __init__(self):
+        self.unraisable = None
+        self._old_hook = None
+
+    def _hook(self, unraisable):
+        self.unraisable = unraisable
+
+    def __enter__(self):
+        self._old_hook = sys.unraisablehook
+        sys.unraisablehook = self._hook
+        return self
+
+    def __exit__(self, *exc_info):
+        sys.unraisablehook = self._old_hook
