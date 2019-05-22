@@ -1,0 +1,1 @@
+Added thousands separators to ``pstats`` results, increased the column width and allowed to reduce automatically subsequent ``pstats`` rows size.
