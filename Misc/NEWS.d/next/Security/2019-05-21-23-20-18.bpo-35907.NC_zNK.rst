@@ -1,0 +1,2 @@
+CVE-2019-9948: Avoid file reading as disallowing the unnecessary URL scheme in
+``URLopener().open()`` ``URLopener().retrieve()`` of :mod:`urllib.request`.
