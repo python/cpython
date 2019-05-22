@@ -18,8 +18,8 @@
 #  endif
 #endif
 
-#ifdef _MSC_VER
-#  include <crtdbg.h>
+#ifdef MS_WINDOWS
+#  include <windows.h>  /* STATUS_CONTROL_C_EXIT */
 #endif
 
 #ifdef __FreeBSD__
