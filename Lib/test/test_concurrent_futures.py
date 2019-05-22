@@ -1087,6 +1087,22 @@ class FutureTests(BaseTestCase):
         f.add_done_callback(fn)
         self.assertTrue(was_cancelled)
 
+    def test_done_callback_raises_already_succeeded(self):
+        with test.support.captured_stderr() as stderr:
+            def raising_fn(callback_future):
+                raise Exception('doh!')
+
+            f = Future()
+
+            # Set the result first to simulate a future that runs instantly,
+            # effectively allowing the callback to be run immediately.
+            f.set_result(5)
+            f.add_done_callback(raising_fn)
+
+            self.assertIn('exception calling callback for', stderr.getvalue())
+            self.assertIn('doh!', stderr.getvalue())
+
+
     def test_repr(self):
         self.assertRegex(repr(PENDING_FUTURE),
                          '<Future at 0x[0-9a-f]+ state=pending>')
