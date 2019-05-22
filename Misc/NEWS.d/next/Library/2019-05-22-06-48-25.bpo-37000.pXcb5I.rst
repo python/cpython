@@ -1,0 +1,1 @@
+Fixed a performance issue in ``random._randbelow_with_getrandint`` when the number supplied is a power of two.
