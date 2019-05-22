@@ -2,6 +2,7 @@
 /* Error handling */
 
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #include "pycore_pystate.h"
 
 #ifndef __STDC__
@@ -944,90 +945,271 @@ PyErr_NewExceptionWithDoc(const char *name, const char *doc,
 }
 
 
-/* Call when an exception has occurred but there is no way for Python
-   to handle it.  Examples: exception in __del__ or during GC. */
-void
-PyErr_WriteUnraisable(PyObject *obj)
+PyDoc_STRVAR(UnraisableHookArgs__doc__,
+"UnraisableHookArgs\n\
+\n\
+Type used to pass arguments to sys.unraisablehook.");
+
+static PyTypeObject UnraisableHookArgsType;
+
+static PyStructSequence_Field UnraisableHookArgs_fields[] = {
+    {"exc_type", "Exception type"},
+    {"exc_value", "Exception value"},
+    {"exc_traceback", "Exception traceback"},
+    {"object", "Object causing the exception"},
+    {0}
+};
+
+static PyStructSequence_Desc UnraisableHookArgs_desc = {
+    .name = "UnraisableHookArgs",
+    .doc = UnraisableHookArgs__doc__,
+    .fields = UnraisableHookArgs_fields,
+    .n_in_sequence = 4
+};
+
+
+_PyInitError
+_PyErr_Init(void)
 {
-    _Py_IDENTIFIER(__module__);
-    PyObject *f, *t, *v, *tb;
-    PyObject *moduleName = NULL;
-    const char *className;
-
-    PyErr_Fetch(&t, &v, &tb);
-
-    f = _PySys_GetObjectId(&PyId_stderr);
-    if (f == NULL || f == Py_None)
-        goto done;
-
-    if (obj) {
-        if (PyFile_WriteString("Exception ignored in: ", f) < 0)
-            goto done;
-        if (PyFile_WriteObject(obj, f, 0) < 0) {
-            PyErr_Clear();
-            if (PyFile_WriteString("<object repr() failed>", f) < 0) {
-                goto done;
-            }
+    if (UnraisableHookArgsType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&UnraisableHookArgsType,
+                                       &UnraisableHookArgs_desc) < 0) {
+            return _Py_INIT_ERR("failed to initialize UnraisableHookArgs type");
         }
-        if (PyFile_WriteString("\n", f) < 0)
-            goto done;
+    }
+    return _Py_INIT_OK();
+}
+
+
+static PyObject *
+make_unraisable_hook_args(PyObject *exc_type, PyObject *exc_value,
+                          PyObject *exc_tb, PyObject *obj)
+{
+    PyObject *args = PyStructSequence_New(&UnraisableHookArgsType);
+    if (args == NULL) {
+        return NULL;
     }
 
-    if (PyTraceBack_Print(tb, f) < 0)
-        goto done;
+    Py_ssize_t pos = 0;
+#define ADD_ITEM(exc_type) \
+        do { \
+            if (exc_type == NULL) { \
+                exc_type = Py_None; \
+            } \
+            Py_INCREF(exc_type); \
+            PyStructSequence_SET_ITEM(args, pos++, exc_type); \
+        } while (0)
 
-    if (!t)
-        goto done;
 
-    assert(PyExceptionClass_Check(t));
-    className = PyExceptionClass_Name(t);
+    ADD_ITEM(exc_type);
+    ADD_ITEM(exc_value);
+    ADD_ITEM(exc_tb);
+    ADD_ITEM(obj);
+#undef ADD_ITEM
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(args);
+        return NULL;
+    }
+    return args;
+}
+
+
+
+/* Default implementation of sys.unraisablehook.
+
+   It can be called to log the exception of a custom sys.unraisablehook.
+
+   Do nothing if sys.stderr attribute doesn't exist or is set to None. */
+static int
+write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
+                          PyObject *exc_tb, PyObject *obj, PyObject *file)
+{
+    if (obj != NULL && obj != Py_None) {
+        if (PyFile_WriteString("Exception ignored in: ", file) < 0) {
+            return -1;
+        }
+
+        if (PyFile_WriteObject(obj, file, 0) < 0) {
+            PyErr_Clear();
+            if (PyFile_WriteString("<object repr() failed>", file) < 0) {
+                return -1;
+            }
+        }
+        if (PyFile_WriteString("\n", file) < 0) {
+            return -1;
+        }
+    }
+
+    if (exc_tb != NULL && exc_tb != Py_None) {
+        if (PyTraceBack_Print(exc_tb, file) < 0) {
+            /* continue even if writing the traceback failed */
+            PyErr_Clear();
+        }
+    }
+
+    if (!exc_type) {
+        return -1;
+    }
+
+    assert(PyExceptionClass_Check(exc_type));
+    const char *className = PyExceptionClass_Name(exc_type);
     if (className != NULL) {
         const char *dot = strrchr(className, '.');
         if (dot != NULL)
             className = dot+1;
     }
 
-    moduleName = _PyObject_GetAttrId(t, &PyId___module__);
+    _Py_IDENTIFIER(__module__);
+    PyObject *moduleName = _PyObject_GetAttrId(exc_type, &PyId___module__);
     if (moduleName == NULL || !PyUnicode_Check(moduleName)) {
+        Py_XDECREF(moduleName);
         PyErr_Clear();
-        if (PyFile_WriteString("<unknown>", f) < 0)
-            goto done;
+        if (PyFile_WriteString("<unknown>", file) < 0) {
+            return -1;
+        }
     }
     else {
         if (!_PyUnicode_EqualToASCIIId(moduleName, &PyId_builtins)) {
-            if (PyFile_WriteObject(moduleName, f, Py_PRINT_RAW) < 0)
-                goto done;
-            if (PyFile_WriteString(".", f) < 0)
-                goto done;
+            if (PyFile_WriteObject(moduleName, file, Py_PRINT_RAW) < 0) {
+                Py_DECREF(moduleName);
+                return -1;
+            }
+            Py_DECREF(moduleName);
+            if (PyFile_WriteString(".", file) < 0) {
+                return -1;
+            }
+        }
+        else {
+            Py_DECREF(moduleName);
         }
     }
     if (className == NULL) {
-        if (PyFile_WriteString("<unknown>", f) < 0)
-            goto done;
+        if (PyFile_WriteString("<unknown>", file) < 0) {
+            return -1;
+        }
     }
     else {
-        if (PyFile_WriteString(className, f) < 0)
-            goto done;
+        if (PyFile_WriteString(className, file) < 0) {
+            return -1;
+        }
     }
 
-    if (v && v != Py_None) {
-        if (PyFile_WriteString(": ", f) < 0)
-            goto done;
-        if (PyFile_WriteObject(v, f, Py_PRINT_RAW) < 0) {
+    if (exc_value && exc_value != Py_None) {
+        if (PyFile_WriteString(": ", file) < 0) {
+            return -1;
+        }
+        if (PyFile_WriteObject(exc_value, file, Py_PRINT_RAW) < 0) {
             PyErr_Clear();
-            if (PyFile_WriteString("<exception str() failed>", f) < 0) {
-                goto done;
+            if (PyFile_WriteString("<exception str() failed>", file) < 0) {
+                return -1;
             }
         }
     }
-    if (PyFile_WriteString("\n", f) < 0)
-        goto done;
+    if (PyFile_WriteString("\n", file) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+static int
+write_unraisable_exc(PyObject *exc_type, PyObject *exc_value,
+                     PyObject *exc_tb, PyObject *obj)
+{
+    PyObject *file = _PySys_GetObjectId(&PyId_stderr);
+    if (file == NULL || file == Py_None) {
+        return 0;
+    }
+
+    /* Hold a strong reference to ensure that sys.stderr doesn't go away
+       while we use it */
+    Py_INCREF(file);
+    int res = write_unraisable_exc_file(exc_type, exc_value, exc_tb,
+                                        obj, file);
+    Py_DECREF(file);
+
+    return res;
+}
+
+
+PyObject*
+_PyErr_WriteUnraisableDefaultHook(PyObject *args)
+{
+    if (Py_TYPE(args) != &UnraisableHookArgsType) {
+        PyErr_SetString(PyExc_TypeError,
+                        "sys.unraisablehook argument type "
+                        "must be UnraisableHookArgs");
+        return NULL;
+    }
+
+    /* Borrowed references */
+    PyObject *exc_type = PyStructSequence_GET_ITEM(args, 0);
+    PyObject *exc_value = PyStructSequence_GET_ITEM(args, 1);
+    PyObject *exc_tb = PyStructSequence_GET_ITEM(args, 2);
+    PyObject *obj = PyStructSequence_GET_ITEM(args, 3);
+
+    if (write_unraisable_exc(exc_type, exc_value, exc_tb, obj) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+/* Call sys.unraisablehook().
+
+   This function can be used when an exception has occurred but there is no way
+   for Python to handle it. For example, when a destructor raises an exception
+   or during garbage collection (gc.collect()).
+
+   An exception must be set when calling this function. */
+void
+PyErr_WriteUnraisable(PyObject *obj)
+{
+    PyObject *exc_type, *exc_value, *exc_tb;
+
+    PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+
+    assert(exc_type != NULL);
+
+    if (exc_type == NULL) {
+        /* sys.unraisablehook requires that at least exc_type is set */
+        goto default_hook;
+    }
+
+    _Py_IDENTIFIER(unraisablehook);
+    PyObject *hook = _PySys_GetObjectId(&PyId_unraisablehook);
+    if (hook != NULL && hook != Py_None) {
+        PyObject *hook_args;
+
+        hook_args = make_unraisable_hook_args(exc_type, exc_value, exc_tb, obj);
+        if (hook_args != NULL) {
+            PyObject *args[1] = {hook_args};
+            PyObject *res = _PyObject_FastCall(hook, args, 1);
+            Py_DECREF(hook_args);
+            if (res != NULL) {
+                Py_DECREF(res);
+                goto done;
+            }
+        }
+
+        /* sys.unraisablehook failed: log its error using default hook */
+        Py_XDECREF(exc_type);
+        Py_XDECREF(exc_value);
+        Py_XDECREF(exc_tb);
+        PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+
+        obj = hook;
+    }
+
+default_hook:
+    /* Call the default unraisable hook (ignore failure) */
+    (void)write_unraisable_exc(exc_type, exc_value, exc_tb, obj);
 
 done:
-    Py_XDECREF(moduleName);
-    Py_XDECREF(t);
-    Py_XDECREF(v);
-    Py_XDECREF(tb);
+    Py_XDECREF(exc_type);
+    Py_XDECREF(exc_value);
+    Py_XDECREF(exc_tb);
     PyErr_Clear(); /* Just in case */
 }
 

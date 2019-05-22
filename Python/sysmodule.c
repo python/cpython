@@ -375,6 +375,30 @@ sys_exc_info_impl(PyObject *module)
 
 
 /*[clinic input]
+sys.unraisablehook
+
+    unraisable: object
+    /
+
+Handle an unraisable exception.
+
+The unraisable argument has the following attributes:
+
+* exc_type: Exception type.
+* exc_value: Exception value.
+* exc_tb: Exception traceback, can be None.
+* obj: Object causing the exception, can be None.
+[clinic start generated code]*/
+
+static PyObject *
+sys_unraisablehook(PyObject *module, PyObject *unraisable)
+/*[clinic end generated code: output=bb92838b32abaa14 input=fdbdb47fdd0bee06]*/
+{
+    return _PyErr_WriteUnraisableDefaultHook(unraisable);
+}
+
+
+/*[clinic input]
 sys.exit
 
     status: object = NULL
@@ -1672,6 +1696,7 @@ static PyMethodDef sys_methods[] = {
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF
     SYS_GETANDROIDAPILEVEL_METHODDEF
+    SYS_UNRAISABLEHOOK_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2369,6 +2394,9 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
     SET_SYS_FROM_STRING_BORROW(
         "__breakpointhook__",
         PyDict_GetItemString(sysdict, "breakpointhook"));
+    SET_SYS_FROM_STRING_BORROW("__unraisablehook__",
+                               PyDict_GetItemString(sysdict, "unraisablehook"));
+
     SET_SYS_FROM_STRING("version",
                          PyUnicode_FromString(Py_GetVersion()));
     SET_SYS_FROM_STRING("hexversion",
