@@ -1206,6 +1206,7 @@ os.close(fd)
         with test_utils.run_test_server() as httpd:
             stream = self.loop.run_until_complete(
                 asyncio.connect(*httpd.address))
+            self.assertFalse(stream.is_server_side())
             self._basetest_connect(stream)
 
     @support.skip_unless_bind_unix_socket
@@ -1218,6 +1219,7 @@ os.close(fd)
     def test_stream_server(self):
 
         async def handle_client(stream):
+            self.assertTrue(stream.is_server_side())
             data = await stream.readline()
             await stream.write(data)
             await stream.close()
