@@ -1,0 +1,2 @@
+:class:`urllib.request.ProxyHandler` now lowercases the keys of the passed
+dictionary.
