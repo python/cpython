@@ -5,7 +5,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: Python
-Description: Embed Python into an application
+Description: Build a C extension for Python
 Requires:
 Version: @VERSION@
 Libs.private: @LIBS@
