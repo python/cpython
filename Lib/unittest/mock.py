@@ -1185,6 +1185,8 @@ class _patch(object):
     def __call__(self, func):
         if isinstance(func, type):
             return self.decorate_class(func)
+        if inspect.iscoroutinefunction(func):
+            return self.decorate_async_callable(func)
         return self.decorate_callable(func)
 
 
@@ -1224,6 +1226,47 @@ class _patch(object):
 
                 args += tuple(extra_args)
                 return func(*args, **keywargs)
+            except:
+                if (patching not in entered_patchers and
+                    _is_started(patching)):
+                    # the patcher may have been started, but an exception
+                    # raised whilst entering one of its additional_patchers
+                    entered_patchers.append(patching)
+                # Pass the exception to __exit__
+                exc_info = sys.exc_info()
+                # re-raise the exception
+                raise
+            finally:
+                for patching in reversed(entered_patchers):
+                    patching.__exit__(*exc_info)
+
+        patched.patchings = [self]
+        return patched
+
+
+    def decorate_async_callable(self, func):
+        '''This is same as decorate_callable except patched is a coroutine'''
+        if hasattr(func, 'patchings'):
+            func.patchings.append(self)
+            return func
+
+        @wraps(func)
+        async def patched(*args, **keywargs):
+            extra_args = []
+            entered_patchers = []
+
+            exc_info = tuple()
+            try:
+                for patching in patched.patchings:
+                    arg = patching.__enter__()
+                    entered_patchers.append(patching)
+                    if patching.attribute_name is not None:
+                        keywargs.update(arg)
+                    elif patching.new is DEFAULT:
+                        extra_args.append(arg)
+
+                args += tuple(extra_args)
+                return await func(*args, **keywargs)
             except:
                 if (patching not in entered_patchers and
                     _is_started(patching)):
