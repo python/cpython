@@ -830,7 +830,10 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                 goto out;
 
             for (i = 0; i < num; i++) {
-                type_ignore_ty ti = TypeIgnore(LINENO(CHILD(ch, i)), arena);
+                string type_comment = new_type_comment(STR(CHILD(ch, i)), &c);
+                if (!type_comment)
+                    goto out;
+                type_ignore_ty ti = TypeIgnore(LINENO(CHILD(ch, i)), type_comment, arena);
                 if (!ti)
                    goto out;
                asdl_seq_SET(type_ignores, i, ti);
