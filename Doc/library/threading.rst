@@ -311,12 +311,13 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: native_id
 
-      The native integral thread ID of this thread or ``0`` if the thread has not
-      been started.  This is a non-negative integer.  See the
-      :func:`get_native_id` function.
+      The native integral thread ID of this thread.
+      This is a non-negative integer, or ``None`` if the thread has not
+      been started. See the :func:`get_native_id` function.
       This represents the Thread ID (``TID``) as assigned to the
       thread by the OS (kernel).  Its value may be used to uniquely identify
-      this particular thread system-wide.
+      this particular thread system-wide (until the thread terminates,
+      after which the value may be recycled by the OS).
 
       .. note::
 

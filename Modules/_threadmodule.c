@@ -1159,6 +1159,7 @@ allocated consecutive numbers starting at 1, this behavior should not\n\
 be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.");
 
+#ifdef PY_HAVE_THREAD_NATIVE_ID
 static PyObject *
 thread_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -1172,6 +1173,7 @@ PyDoc_STRVAR(get_native_id_doc,
 Return a non-negative integer identifying the thread as reported\n\
 by the OS (kernel). This may be used to uniquely identify a\n\
 particular thread within a system.");
+#endif
 
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1324,8 +1326,10 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, interrupt_doc},
     {"get_ident",               thread_get_ident,
      METH_NOARGS, get_ident_doc},
+#ifdef PY_HAVE_THREAD_NATIVE_ID
     {"get_native_id",           thread_get_native_id,
      METH_NOARGS, get_native_id_doc},
+#endif
     {"_count",                  thread__count,
      METH_NOARGS, _count_doc},
     {"stack_size",              (PyCFunction)thread_stack_size,

@@ -877,6 +877,81 @@ class SysModuleTest(unittest.TestCase):
 
 
 @test.support.cpython_only
+class UnraisableHookTest(unittest.TestCase):
+    def write_unraisable_exc(self, exc, obj):
+        import _testcapi
+        import types
+        try:
+            # raise the exception to get a traceback in the except block
+            try:
+                raise exc
+            except Exception as exc2:
+                _testcapi.write_unraisable_exc(exc2, obj)
+                return types.SimpleNamespace(exc_type=type(exc2),
+                                             exc_value=exc2,
+                                             exc_traceback=exc2.__traceback__,
+                                             object=obj)
+        finally:
+            # Explicitly break any reference cycle
+            exc = None
+            exc2 = None
+
+    def test_original_unraisablehook(self):
+        obj = "an object"
+
+        with test.support.captured_output("stderr") as stderr:
+            with test.support.swap_attr(sys, 'unraisablehook',
+                                        sys.__unraisablehook__):
+                self.write_unraisable_exc(ValueError(42), obj)
+
+        err = stderr.getvalue()
+        self.assertIn(f'Exception ignored in: {obj!r}\n', err)
+        self.assertIn('Traceback (most recent call last):\n', err)
+        self.assertIn('ValueError: 42\n', err)
+
+    def test_original_unraisablehook_wrong_type(self):
+        exc = ValueError(42)
+        with test.support.swap_attr(sys, 'unraisablehook',
+                                    sys.__unraisablehook__):
+            with self.assertRaises(TypeError):
+                sys.unraisablehook(exc)
+
+    def test_custom_unraisablehook(self):
+        hook_args = None
+
+        def hook_func(args):
+            nonlocal hook_args
+            hook_args = args
+
+        obj = object()
+        try:
+            with test.support.swap_attr(sys, 'unraisablehook', hook_func):
+                expected = self.write_unraisable_exc(ValueError(42), obj)
+                for attr in "exc_type exc_value exc_traceback object".split():
+                    self.assertEqual(getattr(hook_args, attr),
+                                     getattr(expected, attr),
+                                     (hook_args, expected))
+        finally:
+            # expected and hook_args contain an exception: break reference cycle
+            expected = None
+            hook_args = None
+
+    def test_custom_unraisablehook_fail(self):
+        def hook_func(*args):
+            raise Exception("hook_func failed")
+
+        with test.support.captured_output("stderr") as stderr:
+            with test.support.swap_attr(sys, 'unraisablehook', hook_func):
+                self.write_unraisable_exc(ValueError(42), None)
+
+        err = stderr.getvalue()
+        self.assertIn(f'Exception ignored in: {hook_func!r}\n',
+                      err)
+        self.assertIn('Traceback (most recent call last):\n', err)
+        self.assertIn('Exception: hook_func failed\n', err)
+
+
+@test.support.cpython_only
 class SizeofTest(unittest.TestCase):
 
     def setUp(self):
@@ -1277,8 +1352,5 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(cur.finalizer)
 
 
-def test_main():
-    test.support.run_unittest(SysModuleTest, SizeofTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

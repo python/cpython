@@ -568,6 +568,10 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(list, typing.Reversible)
         self.assertNotIsSubclass(int, typing.Reversible)
 
+    def test_supports_index(self):
+        self.assertIsSubclass(int, typing.SupportsIndex)
+        self.assertNotIsSubclass(str, typing.SupportsIndex)
+
     def test_protocol_instance_type_error(self):
         with self.assertRaises(TypeError):
             isinstance(0, typing.SupportsAbs)
