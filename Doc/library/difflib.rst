@@ -543,6 +543,16 @@ The :class:`SequenceMatcher` class has this constructor:
       to try :meth:`quick_ratio` or :meth:`real_quick_ratio` first to get an
       upper bound.
 
+      .. note::
+
+         Caution: The result of a :meth:`ratio` call is *NOT* symmetric with 
+         respect to the order of the arguments. For instance::
+            
+            >>> SequenceMatcher(None, 'brady', 'byrd').ratio()
+            0.6666666666666666
+            >>> SequenceMatcher(None, 'byrd', 'brady').ratio()
+            0.4444444444444444
+
 
    .. method:: quick_ratio()
 
