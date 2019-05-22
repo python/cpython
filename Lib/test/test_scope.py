@@ -757,5 +757,59 @@ class ScopeTests(unittest.TestCase):
         self.assertIsNone(ref())
 
 
+
+LOCALS_SEMANTICS_TEST_CODE = """\
+global_ns = globals()
+known_var = "original"
+local_ns_1 = locals()
+local_ns_1["known_var"] = "set_via_locals"
+local_ns_1["unknown_var"] = "set_via_locals"
+local_ns_2 = locals()
+"""
+
+
+class TestLocalsSemantics(unittest.TestCase):
+    # This is a new set of test cases added as part of the implementation
+    # of PEP 558 to cover the expected behaviour of locals()
+    # The expected behaviour of frame.f_locals is covered in test_sys_settrace
+
+    def test_locals_update_semantics_at_module_scope(self):
+        # At module scope, globals() and locals() are the same namespace
+        global_ns = dict()
+        exec(LOCALS_SEMANTICS_TEST_CODE, global_ns)
+        self.assertIs(global_ns["global_ns"], global_ns)
+        self.assertIs(global_ns["local_ns_1"], global_ns)
+        self.assertIs(global_ns["local_ns_2"], global_ns)
+        self.assertEqual(global_ns["known_var"], "set_via_locals")
+        self.assertEqual(global_ns["unknown_var"], "set_via_locals")
+
+    def test_locals_update_semantics_at_class_scope(self):
+        # At class scope, globals() and locals() are different namespaces
+        global_ns = dict()
+        local_ns = dict()
+        exec(LOCALS_SEMANTICS_TEST_CODE, global_ns, local_ns)
+        self.assertIs(local_ns["global_ns"], global_ns)
+        self.assertIs(local_ns["local_ns_1"], local_ns)
+        self.assertIs(local_ns["local_ns_2"], local_ns)
+        self.assertEqual(local_ns["known_var"], "set_via_locals")
+        self.assertEqual(local_ns["unknown_var"], "set_via_locals")
+
+    def test_locals_update_semantics_at_function_scope(self):
+        def function_local_semantics():
+            global_ns = globals()
+            known_var = "original"
+            local_ns = locals()
+            local_ns["known_var"] = "set_via_locals"
+            local_ns["unknown_var"] = "set_via_locals"
+            return locals()
+
+        global_ns = globals()
+        local_ns = function_local_semantics()
+        self.assertIs(local_ns["global_ns"], global_ns)
+        self.assertIs(local_ns["local_ns"], local_ns)
+        self.assertEqual(local_ns["known_var"], "original")
+        self.assertEqual(local_ns["unknown_var"], "set_via_locals")
+
+
 if __name__ == '__main__':
     unittest.main()
