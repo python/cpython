@@ -481,6 +481,16 @@ and manipulating normal distributions of a random variable.
     [7.672102882379219, 12.000027119750287, 4.647488369766392]
 
 
+sys
+---
+
+Add new :func:`sys.unraisablehook` function which can be overridden to control
+how "unraisable exceptions" are handled. It is called when an exception has
+occurred but there is no way for Python to handle it. For example, when a
+destructor raises an exception or during garbage collection
+(:func:`gc.collect`).
+
+
 tarfile
 -------
 
@@ -537,6 +547,10 @@ unicodedata
 
 unittest
 --------
+
+* XXX Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
+  Appropriate new assert functions for testing have been added as well.
+  (Contributed by Lisa Roach in :issue:`26467`).
 
 * Added :func:`~unittest.addModuleCleanup()` and
   :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
@@ -823,6 +837,10 @@ The following features and APIs have been removed from Python 3.8:
 * The ``Cache`` and ``Statement`` objects of the :mod:`sqlite3` module are not
   exposed to the user.
   (Contributed by Aviv Palivoda in :issue:`30262`.)
+
+* The ``bufsize`` keyword argument of :func:`fileinput.input` and
+  :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
+  has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
 
 
 Porting to Python 3.8
