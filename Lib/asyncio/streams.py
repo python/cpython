@@ -607,6 +607,7 @@ class _LegacyServerStreamProtocol(_BaseStreamProtocol):
                         protocol=self,
                         limit=self._limit,
                         loop=self._loop,
+                        is_server_side=True,
                         _asyncio_internal=True)
         self._stream = stream
         res = self._client_connected_cb(self._stream, self._stream)
@@ -635,6 +636,7 @@ class _ServerStreamProtocol(_BaseStreamProtocol):
                         protocol=self,
                         limit=self._limit,
                         loop=self._loop,
+                        is_server_side=True,
                         _asyncio_internal=True)
         self._stream = stream
         # TODO: log a case when task cannot be created.
@@ -678,6 +680,7 @@ class Stream:
                  protocol=None,
                  loop=None,
                  limit=_DEFAULT_LIMIT,
+                 is_server_side=False,
                  _asyncio_internal=False):
         if not _asyncio_internal:
             warnings.warn(f"{self.__class__} should be instaniated "
@@ -687,6 +690,7 @@ class Stream:
         self._mode = mode
         self._transport = transport
         self._protocol = protocol
+        self._is_server_side = is_server_side
 
         # The line length limit is  a security feature;
         # it also doubles as half the buffer limit.
@@ -733,6 +737,9 @@ class Stream:
     @property
     def mode(self):
         return self._mode
+
+    def is_server_side(self):
+        return self._is_server_side
 
     @property
     def transport(self):
@@ -819,6 +826,19 @@ class Stream:
         await self.drain()  # check for stream mode and exceptions
         return await self._loop.sendfile(self._transport, file,
                                          offset, count, fallback=fallback)
+
+    async def start_tls(self, sslcontext, *,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None):
+        await self.drain()  # check for stream mode and exceptions
+        transport = await self._loop.start_tls(
+            self._transport, self._protocol, sslcontext,
+            server_side=self._is_server_side,
+            server_hostname=server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout)
+        self._transport = transport
+        self._protocol._transport = transport
+        self._protocol._over_ssl = True
 
     def exception(self):
         return self._exception
