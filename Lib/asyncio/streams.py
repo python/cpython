@@ -634,9 +634,8 @@ class _ServerStreamProtocol(_BaseStreamProtocol):
                         is_server_side=True,
                         _asyncio_internal=True)
         self._stream = stream
-        # TODO: log a case when task cannot be created.
-        # Usualy it means that _client_connected_cb
-        # has incompatible signature.
+        # If self._client_connected_cb(self._stream) fails
+        # the exception is logged by transport
         self._task = self._loop.create_task(
             self._client_connected_cb(self._stream))
         self._server._attach(stream, self._task)
