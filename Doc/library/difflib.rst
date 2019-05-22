@@ -547,7 +547,7 @@ The :class:`SequenceMatcher` class has this constructor:
 
          Caution: The result of a :meth:`ratio` call may depend on the order of
          the arguments. For instance::
-            
+
             >>> SequenceMatcher(None, 'tide', 'diet').ratio()
             0.25
             >>> SequenceMatcher(None, 'diet', 'tide').ratio()
