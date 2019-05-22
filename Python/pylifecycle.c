@@ -447,9 +447,9 @@ _Py_SetLocaleFromEnv(int category)
 */
 
 static _PyInitError
-_Py_Initialize_ReconfigureCore(_PyRuntimeState *runtime,
-                               PyInterpreterState **interp_p,
-                               const _PyCoreConfig *core_config)
+pyinit_core_reconfigure(_PyRuntimeState *runtime,
+                        PyInterpreterState **interp_p,
+                        const _PyCoreConfig *core_config)
 {
     _PyInitError err;
     PyThreadState *tstate = _PyThreadState_GET();
@@ -657,9 +657,9 @@ pycore_init_import_warnings(PyInterpreterState *interp, PyObject *sysmod)
 
 
 static _PyInitError
-_Py_InitializeCore_impl(_PyRuntimeState *runtime,
-                        PyInterpreterState **interp_p,
-                        const _PyCoreConfig *core_config)
+pyinit_core_config(_PyRuntimeState *runtime,
+                   PyInterpreterState **interp_p,
+                   const _PyCoreConfig *core_config)
 {
     PyInterpreterState *interp;
 
@@ -801,41 +801,6 @@ _Py_PreInitializeFromCoreConfig(const _PyCoreConfig *coreconfig,
 }
 
 
-static _PyInitError
-pyinit_coreconfig(_PyRuntimeState *runtime,
-                  _PyCoreConfig *config,
-                  const _PyCoreConfig *src_config,
-                  const _PyArgv *args,
-                  PyInterpreterState **interp_p)
-{
-    assert(src_config != NULL);
-
-    _PyInitError err = _PyCoreConfig_Copy(config, src_config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    if (args) {
-        err = _PyCoreConfig_SetPyArgv(config, args);
-        if (_Py_INIT_FAILED(err)) {
-            return err;
-        }
-    }
-
-    err = _PyCoreConfig_Read(config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
-    if (!runtime->core_initialized) {
-        return _Py_InitializeCore_impl(runtime, interp_p, config);
-    }
-    else {
-        return _Py_Initialize_ReconfigureCore(runtime, interp_p, config);
-    }
-}
-
-
 /* Begin interpreter initialization
  *
  * On return, the first thread and interpreter state have been created,
@@ -854,10 +819,10 @@ pyinit_coreconfig(_PyRuntimeState *runtime,
  * safe to call without calling Py_Initialize first)
  */
 static _PyInitError
-_Py_InitializeCore(_PyRuntimeState *runtime,
-                   const _PyCoreConfig *src_config,
-                   const _PyArgv *args,
-                   PyInterpreterState **interp_p)
+pyinit_core(_PyRuntimeState *runtime,
+            const _PyCoreConfig *src_config,
+            const _PyArgv *args,
+            PyInterpreterState **interp_p)
 {
     _PyInitError err;
 
@@ -866,10 +831,38 @@ _Py_InitializeCore(_PyRuntimeState *runtime,
         return err;
     }
 
-    _PyCoreConfig local_config;
-    _PyCoreConfig_InitCompatConfig(&local_config);
-    err = pyinit_coreconfig(runtime, &local_config, src_config, args, interp_p);
-    _PyCoreConfig_Clear(&local_config);
+    _PyCoreConfig config;
+    _PyCoreConfig_InitCompatConfig(&config);
+
+    err = _PyCoreConfig_Copy(&config, src_config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    if (args) {
+        err = _PyCoreConfig_SetPyArgv(&config, args);
+        if (_Py_INIT_FAILED(err)) {
+            goto done;
+        }
+    }
+
+    err = _PyCoreConfig_Read(&config);
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+    if (!runtime->core_initialized) {
+        err = pyinit_core_config(runtime, interp_p, &config);
+    }
+    else {
+        err = pyinit_core_reconfigure(runtime, interp_p, &config);
+    }
+    if (_Py_INIT_FAILED(err)) {
+        goto done;
+    }
+
+done:
+    _PyCoreConfig_Clear(&config);
     return err;
 }
 
@@ -907,8 +900,7 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
  * non-zero return code.
  */
 static _PyInitError
-_Py_InitializeMainInterpreter(_PyRuntimeState *runtime,
-                              PyInterpreterState *interp)
+pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     if (!runtime->core_initialized) {
         return _Py_INIT_ERR("runtime core not initialized");
@@ -1015,14 +1007,14 @@ _Py_InitializeMain(void)
     _PyRuntimeState *runtime = &_PyRuntime;
     PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
 
-    return _Py_InitializeMainInterpreter(runtime, interp);
+    return pyinit_main(runtime, interp);
 }
 
 
 #undef _INIT_DEBUG_PRINT
 
 static _PyInitError
-init_python(const _PyCoreConfig *config, const _PyArgv *args)
+pyinit_python(const _PyCoreConfig *config, const _PyArgv *args)
 {
     if (config == NULL) {
         return _Py_INIT_ERR("initialization config is NULL");
@@ -1037,14 +1029,14 @@ init_python(const _PyCoreConfig *config, const _PyArgv *args)
     _PyRuntimeState *runtime = &_PyRuntime;
 
     PyInterpreterState *interp = NULL;
-    err = _Py_InitializeCore(runtime, config, args, &interp);
+    err = pyinit_core(runtime, config, args, &interp);
     if (_Py_INIT_FAILED(err)) {
         return err;
     }
     config = &interp->core_config;
 
     if (config->_init_main) {
-        err = _Py_InitializeMainInterpreter(runtime, interp);
+        err = pyinit_main(runtime, interp);
         if (_Py_INIT_FAILED(err)) {
             return err;
         }
@@ -1059,7 +1051,7 @@ _Py_InitializeFromArgs(const _PyCoreConfig *config,
                        Py_ssize_t argc, char * const *argv)
 {
     _PyArgv args = {.use_bytes_argv = 1, .argc = argc, .bytes_argv = argv};
-    return init_python(config, &args);
+    return pyinit_python(config, &args);
 }
 
 
@@ -1068,14 +1060,14 @@ _Py_InitializeFromWideArgs(const _PyCoreConfig *config,
                            Py_ssize_t argc, wchar_t * const *argv)
 {
     _PyArgv args = {.use_bytes_argv = 0, .argc = argc, .wchar_argv = argv};
-    return init_python(config, &args);
+    return pyinit_python(config, &args);
 }
 
 
 _PyInitError
 _Py_InitializeFromConfig(const _PyCoreConfig *config)
 {
-    return init_python(config, NULL);
+    return pyinit_python(config, NULL);
 }
 
 
