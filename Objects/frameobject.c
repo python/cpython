@@ -199,13 +199,15 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
 
     /* We're now ready to look at the bytecode. */
-    Py_buffer view = {};
+    Py_buffer view = {NULL, NULL};
     if (PyBytes_Check(f->f_code->co_code)) {
         PyBytes_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
     } else if (!PyObject_GetBuffer(f->f_code->co_code, &view, PyBUF_SIMPLE)) {
         code = (unsigned char *)view.buf;
         code_len = view.len;
     } else {
+        PyErr_SetString(PyExc_BufferError,
+            "unable to get buffer from code object");
         return -1;
     }
 
@@ -324,16 +326,18 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         delta--;
     }
 
-    if (view.obj != NULL)
+    if (view.obj != NULL) {
         PyBuffer_Release(&view);
+    }
 
     /* Finally set the new f_lineno and f_lasti and return OK. */
     f->f_lineno = new_lineno;
     f->f_lasti = new_lasti;
     return 0;
 error:
-    if (view.obj != NULL)
+    if (view.obj != NULL) {
         PyBuffer_Release(&view);
+    }
     return -1;
 }
 

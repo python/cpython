@@ -462,13 +462,13 @@ class DisTests(unittest.TestCase):
         except ImportError:
             return
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile('wb', suffix='.code') as f:
-            f.write(_f.__code__.co_code)
-            f.flush()
-            map = mmap.mmap(f.fileno(),
-                            length=0, access=mmap.ACCESS_READ)
+        with NamedTemporaryFile('wb', suffix='.code') as tmp_code:
+            tmp_code.write(_f.__code__.co_code)
+            tmp_code.flush()
+            with mmap.mmap(tmp_code.fileno(),
+                            length=0, access=mmap.ACCESS_READ) as map:
 
-            self.do_disassembly_test(map, dis_f_co_code)
+                self.do_disassembly_test(map, dis_f_co_code)
 
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)

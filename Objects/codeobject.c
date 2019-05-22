@@ -96,19 +96,23 @@ intern_string_constants(PyObject *tuple)
 
 static int
 code_check_buffer(PyObject *code) {
-    Py_buffer codebuffer = {};
+    Py_buffer codebuffer = {NULL, NULL};
     if (!PyBytes_Check(code)) {
-        if (PyObject_GetBuffer(code, &codebuffer, PyBUF_SIMPLE))
+        if (PyObject_GetBuffer(code, &codebuffer, PyBUF_SIMPLE)) {
             return 0;
+        }
 
-        int contiguous = PyBuffer_IsContiguous(&codebuffer, 'C');
+        int ok = codebuffer.readonly &&
+                 codebuffer.ndim == 1 &&
+                 codebuffer.strides == NULL;
 
         PyBuffer_Release(&codebuffer);
 
-        return contiguous;
+        return ok;
     }
     return 1;
 }
+
 
 PyCodeObject *
 PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,

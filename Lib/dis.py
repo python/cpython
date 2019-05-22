@@ -84,7 +84,7 @@ def dis(x=None, *, file=None, depth=None):
     else:
         try:
             x = memoryview(x)
-        except TypeError:
+        except Exception:
             raise TypeError("don't know how to disassemble %s objects" %
                             type(x).__name__)
         _disassemble_bytes(x, file=file)

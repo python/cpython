@@ -125,8 +125,8 @@ consts: ('None',)
 
 """
 
-import array
 import inspect
+import mmap
 import sys
 import threading
 import unittest
@@ -184,15 +184,49 @@ implementing the buffer protocol and that they can successfully be evaluated'''
 
         code = f.__code__
         ct = type(f.__code__)
-        c = ct(code.co_argcount, code.co_posonlyargcount,
-               code.co_kwonlyargcount, code.co_nlocals, code.co_stacksize,
-               code.co_flags, array.array('B', code.co_code),
-               code.co_consts, code.co_names, code.co_varnames,
-               code.co_filename, code.co_name, code.co_firstlineno,
-               code.co_lnotab, code.co_freevars, code.co_cellvars)
-        nf = type(f)(c, f.__globals__, 'nf', f.__defaults__, f.__closure__)
-        self.assertEqual(f(), nf())
-        self.assertEqual(type(nf.__code__.co_code), array.array)
+        from tempfile import NamedTemporaryFile
+
+        def make_mapped_func(map):
+            c = ct(code.co_argcount, code.co_posonlyargcount,
+                   code.co_kwonlyargcount, code.co_nlocals, code.co_stacksize,
+                   code.co_flags, map,
+                   code.co_consts, code.co_names, code.co_varnames,
+                   code.co_filename, code.co_name, code.co_firstlineno,
+                   code.co_lnotab, code.co_freevars, code.co_cellvars)
+            nf = type(f)(c, f.__globals__, 'nf', f.__defaults__, f.__closure__)
+            return nf
+
+        with NamedTemporaryFile('wb', suffix='.code') as tmp_code:
+            tmp_code.write(f.__code__.co_code)
+            tmp_code.flush()
+            with mmap.mmap(tmp_code.fileno(),
+                            length=0, access=mmap.ACCESS_READ) as map:
+                nf = make_mapped_func(map)
+                self.assertEqual(f(), nf())
+                self.assertEqual(type(nf.__code__.co_code), mmap.mmap)
+
+        # Closed buffer will raise
+        self.assertRaises(BufferError, nf)
+        buf_cannot_close = "cannot close exported pointers exist"
+        with NamedTemporaryFile('wb', suffix='.code') as tmp_code:
+            tmp_code.write(f.__code__.co_code)
+            tmp_code.flush()
+            with mmap.mmap(tmp_code.fileno(),
+                            length=0, access=mmap.ACCESS_READ) as map:
+                nf = make_mapped_func(map)
+                def trace_func(frame, event, arg):
+                    if event == 'call':
+                        return trace_func
+                    elif event == 'line':
+                        # eval loop should keep buffer open
+                        self.assertRaisesRegex(BufferError, buf_cannot_close,
+                                               map.close)
+                prev_trace = sys.gettrace()
+                try:
+                    sys.settrace(trace_func)
+                    nf()
+                finally:
+                    sys.settrace(prev_trace)
 
     @cpython_only
     def test_closure_injection(self):

@@ -336,7 +336,7 @@ _PyGen_yf(PyGenObject *gen)
     if (f && f->f_stacktop) {
         PyObject *bytecode = f->f_code->co_code;
         unsigned char *code;
-        Py_buffer view = {};
+        Py_buffer view = {NULL, NULL};
 
         if (PyBytes_Check(bytecode)) {
             code = (unsigned char *)PyBytes_AS_STRING(bytecode);
@@ -355,11 +355,13 @@ _PyGen_yf(PyGenObject *gen)
         }
 
         char opcode = code[f->f_lasti + sizeof(_Py_CODEUNIT)];
-        if (view.obj != NULL)
+        if (view.obj != NULL) {
             PyBuffer_Release(&view);
+        }
 
         if (opcode != YIELD_FROM)
             return NULL;
+
         yf = f->f_stacktop[-1];
         Py_INCREF(yf);
     }

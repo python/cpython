@@ -702,7 +702,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     struct _ceval_runtime_state * const ceval = &runtime->ceval;
     _Py_atomic_int * const eval_breaker = &ceval->eval_breaker;
     PyCodeObject *co;
-    Py_buffer code_view = {};
+    Py_buffer code_view = {NULL, NULL};
 
     /* when tracing we set things up so that
 
@@ -1039,6 +1039,8 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         assert(_Py_IS_ALIGNED(code_view.buf, sizeof(_Py_CODEUNIT)));
         first_instr = (_Py_CODEUNIT *) code_view.buf;
     } else {
+        PyErr_SetString(PyExc_BufferError,
+            "unable to get buffer from code object");
         goto exit_eval_frame;
     }
 
@@ -3667,8 +3669,9 @@ exit_yielding:
 exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
-    if (code_view.obj != NULL)
+    if (code_view.obj != NULL) {
         PyBuffer_Release(&code_view);
+    }
     Py_LeaveRecursiveCall();
     f->f_executing = 0;
     tstate->frame = f->f_back;
