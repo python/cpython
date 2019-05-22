@@ -163,7 +163,6 @@ class _BaseStreamServer:
         self._low_server = await self._bind()
 
     def is_bound(self):
-        # TODO: make is_bound and is_serving properties?
         return self._low_server is not None
 
     def addresses(self):
@@ -177,7 +176,6 @@ class _BaseStreamServer:
         return [sock.getsockname() for sock in self._low_server.sockets]
 
     def is_serving(self):
-        # TODO: make is_bound and is_serving properties?
         if self._low_server is None:
             return False
         return self._low_server.is_serving()
