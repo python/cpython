@@ -1,2 +1,2 @@
-Add support for calling `next` with the mock resulting from
+Add support for calling :func:`next` with the mock resulting from
 :func:`unittest.mock.mock_open`
