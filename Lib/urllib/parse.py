@@ -952,7 +952,10 @@ def _to_bytes(url):
 
 
 def unwrap(url):
-    """unwrap('<URL:scheme://host/path>') --> 'scheme://host/path'."""
+    """Transform a string like '<URL:scheme://host/path>' into 'scheme://host/path'.
+    
+    The string is returned unchanged if it's not a wrapped URL.
+    """
     url = str(url).strip()
     if url[:1] == '<' and url[-1:] == '>':
         url = url[1:-1].strip()
