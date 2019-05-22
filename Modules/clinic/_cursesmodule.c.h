@@ -1,20 +1,19 @@
-
 #if defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
-#endif      /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS) */
+#endif  /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)  */
 
 #if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _NCURSES_COLOR_VAL_MAX      INT_MAX
-#define _NCURSES_COLOR_VAL_MIN      INT_MIN
-#define _NCURSES_COLOR_VAL_TYPE     int
-#define _NCURSES_COLOR_VAL_TYPE_STR "integer"
+#define _NCURSES_COLOR_VAL_MAX         INT_MAX
+#define _NCURSES_COLOR_VAL_MIN         INT_MIN
+#define _NCURSES_COLOR_VAL_TYPE        int
+#define _NCURSES_COLOR_VAL_TYPE_STR    "integer"
 #else
-#define _NCURSES_COLOR_VAL_MAX      SHRT_MAX
-#define _NCURSES_COLOR_VAL_MIN      SHRT_MIN
-#define _NCURSES_COLOR_VAL_TYPE     short
-#define _NCURSES_COLOR_VAL_TYPE_STR "short integer"
+#define _NCURSES_COLOR_VAL_MAX         SHRT_MAX
+#define _NCURSES_COLOR_VAL_MIN         SHRT_MIN
+#define _NCURSES_COLOR_VAL_TYPE        short
+#define _NCURSES_COLOR_VAL_TYPE_STR    "short integer"
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 /*[clinic input]
@@ -1985,14 +1984,8 @@ PyDoc_STRVAR(_curses_color_content__doc__,
 #define _CURSES_COLOR_CONTENT_METHODDEF    \
     {"color_content", (PyCFunction)_curses_color_content, METH_O, _curses_color_content__doc__},
 
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_COLOR_CONTENT_IMPL_FUNC    _curses_extended_color_content_impl
-#else
-#define _CURSES_COLOR_CONTENT_IMPL_FUNC    _curses_color_content_impl
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
 static PyObject *
-_CURSES_COLOR_CONTENT_IMPL_FUNC(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number);
+_curses_color_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number);
 
 static PyObject *
 _curses_color_content(PyObject *module, PyObject *arg)
@@ -2019,7 +2012,7 @@ _curses_color_content(PyObject *module, PyObject *arg)
             color_number = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
-    return_value = _CURSES_COLOR_CONTENT_IMPL_FUNC(module, color_number);
+    return_value = _curses_color_content_impl(module, color_number);
 
 exit:
     return return_value;
@@ -2618,16 +2611,10 @@ PyDoc_STRVAR(_curses_init_color__doc__,
 #define _CURSES_INIT_COLOR_METHODDEF    \
     {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
 
-#ifdef  _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_INIT_COLOR_IMPL_FUNC    _curses_init_extended_color_impl
-#else
-#define _CURSES_INIT_COLOR_IMPL_FUNC    _curses_init_color_impl
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
 static PyObject *
-_CURSES_INIT_COLOR_IMPL_FUNC(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number,
-                             _NCURSES_COLOR_VAL_TYPE r, _NCURSES_COLOR_VAL_TYPE g,
-                             _NCURSES_COLOR_VAL_TYPE b);
+_curses_init_color_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number,
+                        _NCURSES_COLOR_VAL_TYPE r, _NCURSES_COLOR_VAL_TYPE g,
+                        _NCURSES_COLOR_VAL_TYPE b);
 
 static PyObject *
 _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -2717,7 +2704,7 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             b = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
-    return_value = _CURSES_INIT_COLOR_IMPL_FUNC(module, color_number, r, g, b);
+    return_value = _curses_init_color_impl(module, color_number, r, g, b);
 
 exit:
     return return_value;
@@ -2746,15 +2733,9 @@ PyDoc_STRVAR(_curses_init_pair__doc__,
 #define _CURSES_INIT_PAIR_METHODDEF    \
     {"init_pair", (PyCFunction)(void(*)(void))_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
 
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_INIT_PAIR_IMPL_FUNC     _curses_init_extended_pair_impl
-#else
-#define _CURSES_INIT_PAIR_IMPL_FUNC     _curses_init_pair_impl
-#endif
-
 static PyObject *
-_CURSES_INIT_PAIR_IMPL_FUNC(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number,
-                            _NCURSES_COLOR_VAL_TYPE fg, _NCURSES_COLOR_VAL_TYPE bg);
+_curses_init_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number,
+                       _NCURSES_COLOR_VAL_TYPE fg, _NCURSES_COLOR_VAL_TYPE bg);
 
 static PyObject *
 _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -2824,7 +2805,7 @@ _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             bg = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
-    return_value = _CURSES_INIT_PAIR_IMPL_FUNC(module, pair_number, fg, bg);
+    return_value = _curses_init_pair_impl(module, pair_number, fg, bg);
 
 exit:
     return return_value;
@@ -3603,14 +3584,8 @@ PyDoc_STRVAR(_curses_pair_content__doc__,
 #define _CURSES_PAIR_CONTENT_METHODDEF    \
     {"pair_content", (PyCFunction)_curses_pair_content, METH_O, _curses_pair_content__doc__},
 
-#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_PAIR_CONTENT_IMPL_FUNC      _curses_extended_pair_content_impl
-#else
-#define _CURSES_PAIR_CONTENT_IMPL_FUNC      _curses_pair_content_impl
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
 static PyObject *
-_CURSES_PAIR_CONTENT_IMPL_FUNC(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number);
+_curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number);
 
 static PyObject *
 _curses_pair_content(PyObject *module, PyObject *arg)
@@ -3637,7 +3612,7 @@ _curses_pair_content(PyObject *module, PyObject *arg)
             pair_number = (_NCURSES_COLOR_VAL_TYPE) ival;
         }
     }
-    return_value = _CURSES_PAIR_CONTENT_IMPL_FUNC(module, pair_number);
+    return_value = _curses_pair_content_impl(module, pair_number);
 
 exit:
     return return_value;

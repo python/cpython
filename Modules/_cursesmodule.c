@@ -408,6 +408,10 @@ static int func_PyCursesInitialisedColor(void)
     return 1;
 }
 
+/* _CURSES_FUNC_NAME_STR() is used by some of the         */
+/* color functions that have extended color alternatives  */
+#define _CURSES_FUNC_NAME_STR(s)  #s
+
 /*****************************************************************************
  The Window Object
 ******************************************************************************/
@@ -2595,43 +2599,30 @@ A 3-tuple is returned, containing the R, G, B values for the given color,
 which will be between 0 (no component) and 1000 (maximum amount of component).
 */
 
-#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
-static PyObject *
-_curses_extended_color_content_impl(PyObject *module, int color_number)
-{
-    int r,g,b;
-
-    PyCursesInitialised;
-    PyCursesInitialisedColor;
-
-    if (extended_color_content(color_number, &r, &g, &b) != ERR)
-        return Py_BuildValue("(iii)", r, g, b);
-    else {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. Check value of COLORS.");
-        return NULL;
-    }
-}
-
-#else   /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
-static PyObject *
-_curses_color_content_impl(PyObject *module, short color_number)
-{
-    short r,g,b;
-
-    PyCursesInitialised;
-    PyCursesInitialisedColor;
-
-    if (color_content(color_number, &r, &g, &b) != ERR)
-        return Py_BuildValue("(iii)", r, g, b);
-    else {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. Check value of COLORS.");
-        return NULL;
-    }
-}
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _COLOR_CONTENT_FUNC   extended_color_content
+#else
+#define _COLOR_CONTENT_FUNC   color_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+static PyObject *
+_curses_color_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number)
+{
+    _NCURSES_COLOR_VAL_TYPE r,g,b;
+
+    PyCursesInitialised;
+    PyCursesInitialisedColor;
+
+    if (_COLOR_CONTENT_FUNC(color_number, &r, &g, &b) != ERR)
+        return Py_BuildValue("(iii)", r, g, b);
+    else {
+        PyErr_SetString(PyCursesError,
+                        "Argument 1 was out of range. Check value of COLORS.");
+        return NULL;
+    }
+}
+
+#undef _COLOR_CONTENT_FUNC
 
 /*[clinic input]
 _curses.color_pair
@@ -3064,28 +3055,26 @@ most terminals; it is active only if can_change_color() returns 1.
 */
 
 #ifdef _NCURSES_EXTENDED_COLOR_FUNCS
-static PyObject *
-_curses_init_extended_color_impl(PyObject *module, int color_number, int r,
-                        int g, int b)
-{
-    PyCursesInitialised;
-    PyCursesInitialisedColor;
-
-    return PyCursesCheckERR(init_extended_color(color_number, r, g, b), "init_extended_color");
-}
-
-#else   /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
-static PyObject *
-_curses_init_color_impl(PyObject *module, short color_number, short r,
-                        short g, short b)
-{
-    PyCursesInitialised;
-    PyCursesInitialisedColor;
-
-    return PyCursesCheckERR(init_color(color_number, r, g, b), "init_color");
-}
+#define _CURSES_INIT_COLOR_FUNC         init_extended_color
+#else
+#define _CURSES_INIT_COLOR_FUNC         init_color
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+#define _CURSES_INIT_COLOR_FUNC_NAME    _CURSES_FUNC_NAME_STR(_CURSES_INIT_COLOR_FUNC)
+
+static PyObject *
+_curses_init_color_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number,
+                        _NCURSES_COLOR_VAL_TYPE r, _NCURSES_COLOR_VAL_TYPE g,
+                        _NCURSES_COLOR_VAL_TYPE b)
+{
+    PyCursesInitialised;
+    PyCursesInitialisedColor;
+
+    return PyCursesCheckERR(_CURSES_INIT_COLOR_FUNC(color_number, r, g, b), _CURSES_INIT_COLOR_FUNC_NAME);
+}
+
+#undef _CURSES_INIT_COLOR_FUNC
+#undef _CURSES_INIT_COLOR_FUNC_NAME
 
 /*[clinic input]
 _curses.init_pair
@@ -3104,47 +3093,26 @@ If the color-pair was previously initialized, the screen is refreshed and
 all occurrences of that color-pair are changed to the new definition.
 */
 
-/*
-_curses._curses_init_extended_pair_impl
-
-    pair_number: int
-        The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).
-    fg: int
-        Foreground color number (0 - COLORS).
-    bg: int
-        Background color number (0 - COLORS).
-    /
-
-Change the definition of a color-pair.
-
-If the color-pair was previously initialized, the screen is refreshed and
-all occurrences of that color-pair are changed to the new definition.
-*/
-
 #ifdef _NCURSES_EXTENDED_COLOR_FUNCS
-static PyObject *
-_curses_init_extended_pair_impl(PyObject *module, int pair_number, int fg,
-                                int bg)
-{
-    PyCursesInitialised;
-    PyCursesInitialisedColor;
-
-    return PyCursesCheckERR(init_extended_pair(pair_number, fg, bg), "init_extended_pair");
-}
-
-#else   /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
-static PyObject *
-_curses_init_pair_impl(PyObject *module, short pair_number, short fg,
-                       short bg)
-/*[clinic end generated code: output=9c2ce39c22f376b6 input=c9f0b11b17a2ac6d]*/
-{
-    PyCursesInitialised;
-    PyCursesInitialisedColor;
-
-    return PyCursesCheckERR(init_pair(pair_number, fg, bg), "init_pair");
-}
+#define _CURSES_INIT_PAIR_FUNC    init_extended_pair
+#else
+#define _CURSES_INIT_PAIR_FUNC    init_pair
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+#define _CURSES_INIT_PAIR_FUNC_NAME   _CURSES_FUNC_NAME_STR(_CURSES_INIT_PAIR_FUNC)
+
+static PyObject *
+_curses_init_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number,
+                       _NCURSES_COLOR_VAL_TYPE fg, _NCURSES_COLOR_VAL_TYPE bg)
+{
+    PyCursesInitialised;
+    PyCursesInitialisedColor;
+
+    return PyCursesCheckERR(_CURSES_INIT_PAIR_FUNC(pair_number, fg, bg), _CURSES_INIT_PAIR_FUNC_NAME);
+}
+
+#undef _CURSES_INIT_PAIR_FUNC
+#undef _CURSES_INIT_PAIR_FUNC_NAME
 
 static PyObject *ModDict;
 
@@ -3767,43 +3735,28 @@ _curses.pair_content
 Return a tuple (fg, bg) containing the colors for the requested color pair.
 */
 
-#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
-static PyObject *
-_curses_extended_pair_content_impl(PyObject *module, int pair_number)
-{
-    int f, b;
-
-    PyCursesInitialised;
-    PyCursesInitialisedColor;
-
-    if (extended_pair_content(pair_number, &f, &b)!=ERR) {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
-        return NULL;
-    }
-
-    return Py_BuildValue("(ii)", f, b);
-}
-
-#else   /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
-static PyObject *
-_curses_pair_content_impl(PyObject *module, short pair_number)
-{
-    short f, b;
-
-    PyCursesInitialised;
-    PyCursesInitialisedColor;
-
-    if (pair_content(pair_number, &f, &b)==ERR) {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
-        return NULL;
-    }
-
-    return Py_BuildValue("(ii)", f, b);
-}
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _CURSES_PAIR_NUMBER_FUNC  extended_pair_content
+#else
+#define _CURSES_PAIR_NUMBER_FUNC  pair_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+static PyObject *
+_curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number)
+{
+    _NCURSES_COLOR_VAL_TYPE f, b;
+
+    PyCursesInitialised;
+    PyCursesInitialisedColor;
+
+    if (_CURSES_PAIR_NUMBER_FUNC(pair_number, &f, &b)==ERR) {
+        PyErr_SetString(PyCursesError,
+                        "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
+        return NULL;
+    }
+
+    return Py_BuildValue("(ii)", f, b);
+}
 
 /*[clinic input]
 _curses.pair_number
