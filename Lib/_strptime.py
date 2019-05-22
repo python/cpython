@@ -581,6 +581,8 @@ def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y", infos=No
     if gmtoff is None and tzname is not None and infos:
         try:
             tz = infos[tzname]
+        except KeyError:
+            tz = None
         except TypeError:
             tz = infos(dt, tzname)
         if tz:
