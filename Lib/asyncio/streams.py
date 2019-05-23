@@ -807,9 +807,9 @@ class StreamReader:
         seplen = len(sep)
         try:
             line = await self.readuntil(sep)
-        except IncompleteReadError as e:
+        except exceptions.IncompleteReadError as e:
             return e.partial
-        except LimitOverrunError as e:
+        except exceptions.LimitOverrunError as e:
             if self._buffer.startswith(sep, e.consumed):
                 del self._buffer[:e.consumed + seplen]
             else:
@@ -884,7 +884,7 @@ class StreamReader:
                 # see upper comment for explanation.
                 offset = buflen + 1 - seplen
                 if offset > self._limit:
-                    raise LimitOverrunError(
+                    raise exceptions.LimitOverrunError(
                         'Separator is not found, and chunk exceed the limit',
                         offset)
 
@@ -895,13 +895,13 @@ class StreamReader:
             if self._eof:
                 chunk = bytes(self._buffer)
                 self._buffer.clear()
-                raise IncompleteReadError(chunk, None)
+                raise exception.IncompleteReadError(chunk, None)
 
             # _wait_for_data() will resume reading if stream was paused.
             await self._wait_for_data('readuntil')
 
         if isep > self._limit:
-            raise LimitOverrunError(
+            raise exceptions.LimitOverrunError(
                 'Separator is found, but chunk is longer than limit', isep)
 
         chunk = self._buffer[:isep + seplen]
@@ -987,7 +987,7 @@ class StreamReader:
             if self._eof:
                 incomplete = bytes(self._buffer)
                 self._buffer.clear()
-                raise IncompleteReadError(incomplete, n)
+                raise exception.IncompleteReadError(incomplete, n)
 
             await self._wait_for_data('readexactly')
 
