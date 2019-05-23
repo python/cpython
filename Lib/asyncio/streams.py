@@ -135,6 +135,11 @@ async def open_connection(host=None, port=None, *,
     StreamReaderProtocol classes, just copy the code -- there's
     really nothing special here except some convenience.)
     """
+    warnings.warn("open_connection() is deprecated since Python 3.8 "
+                  "in favor of connect(), and scheduled for removal "
+                  "in Python 3.10",
+                  DeprecationWarning,
+                  stacklevel=2)
     if loop is None:
         loop = events.get_event_loop()
     reader = StreamReader(limit=limit, loop=loop)
@@ -168,6 +173,11 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     The return value is the same as loop.create_server(), i.e. a
     Server object which can be used to stop the service.
     """
+    warnings.warn("start_server() is deprecated since Python 3.8 "
+                  "in favor of StreamServer(), and scheduled for removal "
+                  "in Python 3.10",
+                  DeprecationWarning,
+                  stacklevel=2)
     if loop is None:
         loop = events.get_event_loop()
 
@@ -357,6 +367,11 @@ if hasattr(socket, 'AF_UNIX'):
     async def open_unix_connection(path=None, *,
                                    loop=None, limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
+        warnings.warn("open_unix_connection() is deprecated since Python 3.8 "
+                      "in favor of connect_unix(), and scheduled for removal "
+                      "in Python 3.10",
+                      DeprecationWarning,
+                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
         reader = StreamReader(limit=limit, loop=loop)
@@ -393,6 +408,11 @@ if hasattr(socket, 'AF_UNIX'):
     async def start_unix_server(client_connected_cb, path=None, *,
                                 loop=None, limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `start_server` but works with UNIX Domain Sockets."""
+        warnings.warn("start_unix_server() is deprecated since Python 3.8 "
+                      "in favor of UnixStreamServer(), and scheduled "
+                      "for removal in Python 3.10",
+                      DeprecationWarning,
+                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
 
