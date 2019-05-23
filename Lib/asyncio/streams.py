@@ -1,5 +1,5 @@
 __all__ = (
-    'Stream', 'StreamMode',
+    'Stream', 'StreamMode', 'Listener',
     'open_connection', 'start_server',
     'connect',
     'StreamServer')
@@ -39,6 +39,57 @@ class StreamMode(enum.Flag):
     def _check_write(self):
         if not self & self.WRITE:
             raise RuntimeError("The stream is read-only")
+
+class Listener:
+    # The class represents listening sockets served by
+    # StreamServer and UnixStreamServer
+    # The exposed API is IPv4/IPv6/UNIX address itself
+    # and socket fileno
+    # The socket object is not exposed intentionally
+    # to prevent wild access from high-level API
+    # sock = socket.fromfd(fileno, family, type, proto)
+    # still can be used if the hacking is really necessary
+
+    __slots__ = ('_family', '_type', '_proto', '_addr', '_fileno')
+
+    def __init__(self, sock, _asyncio_internal=False):
+        if not _asyncio_internal:
+            raise TypeError(f"{self.__class__} should be instaniated "
+                            "by asyncio internals only")
+        self._family = sock.family
+        self._type = sock.type
+        self._proto = sock.proto
+        self._addr = sock.getsockname()
+        self._fileno = sock.fileno()
+
+    @property
+    def family(self):
+        return self._family
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def proto(self):
+        return self._proto
+
+    @property
+    def addr(self):
+        return self._addr
+
+    def fileno(self):
+        return self._fileno
+
+    def __repr__(self):
+        ret = [f"<{self.__class__.__name__}"]
+        ret.append(f"family={self.family}")
+        ret.append(f"type={self.type}")
+        ret.append(f"proto={self.proto}")
+        ret.append(f"addr={self.addr}")
+        ret.append(f"fileno={self.fileno()}")
+        ret.append(">")
+        return " ".join(ret)
 
 
 async def connect(host=None, port=None, *,
@@ -167,15 +218,12 @@ class _BaseStreamServer:
     def is_bound(self):
         return self._low_server is not None
 
-    def addresses(self):
-        # We don't want to expose plain socket.socket objects as low-level
-        # asyncio.Server does but exposing served IP addresses or unix paths
-        # is useful
-        #
+    def listeners(self):
         # multiple value for socket bound to both IPv4 and IPv6 families
         if self._low_server is None:
-            return []
-        return [sock.getsockname() for sock in self._low_server.sockets]
+            return tuple()
+        return tuple(Listener(sock, _asyncio_internal=True)
+                     for sock in self._low_server.sockets)
 
     def is_serving(self):
         if self._low_server is None:
@@ -223,7 +271,8 @@ class _BaseStreamServer:
 
     def __init_subclass__(cls):
         if not cls.__module__.startswith('asyncio.'):
-            raise TypeError(f"asyncio.{cls.__name__} class cannot be inherited from")
+            raise TypeError(f"asyncio.{cls.__name__} "
+                            "class cannot be inherited from")
 
     def _attach(self, stream, task):
         self._streams[stream] = task
@@ -246,7 +295,8 @@ class _BaseStreamServer:
                                          timeout=self._shutdown_timeout)
         for task in pending:
             self._loop.call_exception_handler({
-                "message": f'{task!r} ignored cancellation request from a closing StreamServer {self!r}',
+                "message": (f'{task!r} ignored cancellation request '
+                            f'from a closing {self!r}'),
                 "stream_server": self
             })
 
