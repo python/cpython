@@ -1,0 +1,2 @@
+Now code objects ``co_filename`` attribute is always an absolute path -- by
+Batuhan Taskaya
