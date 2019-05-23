@@ -1229,6 +1229,7 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
         return null_error();
     }
 
+    callable = NULL;
     is_method = _PyObject_GetMethod(obj, name, &callable);
     if (callable == NULL) {
         return NULL;
@@ -1260,6 +1261,7 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj,
     if (!oname)
         return NULL;
 
+    callable = NULL;
     is_method = _PyObject_GetMethod(obj, oname, &callable);
     if (callable == NULL) {
         return NULL;
