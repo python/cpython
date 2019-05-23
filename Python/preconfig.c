@@ -403,6 +403,7 @@ _PyPreConfig_AsDict(const _PyPreConfig *config)
             } \
         } while (0)
 
+    SET_ITEM_INT(_config_init);
     SET_ITEM_INT(parse_argv);
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);

@@ -287,6 +287,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     IGNORE_CONFIG = object()
 
     PRE_CONFIG_COMPAT = {
+        '_config_init': API_COMPAT,
         'allocator': PYMEM_ALLOCATOR_NOT_SET,
         'parse_argv': 0,
         'configure_locale': 1,
@@ -299,11 +300,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'legacy_windows_fs_encoding': 0,
         })
     PRE_CONFIG_PYTHON = dict(PRE_CONFIG_COMPAT,
+        _config_init=API_PYTHON,
         parse_argv=1,
         coerce_c_locale=GET_DEFAULT_CONFIG,
         utf8_mode=GET_DEFAULT_CONFIG,
     )
     PRE_CONFIG_ISOLATED = dict(PRE_CONFIG_COMPAT,
+        _config_init=API_ISOLATED,
         configure_locale=0,
         isolated=1,
         use_environment=0,
@@ -388,10 +391,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         })
 
     CORE_CONFIG_PYTHON = dict(CORE_CONFIG_COMPAT,
+        _config_init=API_PYTHON,
         configure_c_stdio=1,
         parse_argv=1,
     )
     CORE_CONFIG_ISOLATED = dict(CORE_CONFIG_COMPAT,
+        _config_init=API_ISOLATED,
         isolated=1,
         use_environment=0,
         user_site_directory=0,
@@ -611,7 +616,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         else:
             default_config = self.CORE_CONFIG_COMPAT
         expected_config = dict(default_config, **expected_config)
-        expected_config['_config_init'] = api
 
         self.get_expected_config(expected_preconfig,
                                  expected_config, env,
