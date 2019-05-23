@@ -708,7 +708,33 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_config("test_init_from_config", config, preconfig,
                           api=API_COMPAT)
 
-    def test_init_env(self):
+    def test_init_compat_env(self):
+        preconfig = {
+            'allocator': PYMEM_ALLOCATOR_MALLOC,
+        }
+        config = {
+            'use_hash_seed': 1,
+            'hash_seed': 42,
+            'tracemalloc': 2,
+            'import_time': 1,
+            'malloc_stats': 1,
+            'inspect': 1,
+            'optimization_level': 2,
+            'module_search_path_env': '/my/path',
+            'pycache_prefix': 'env_pycache_prefix',
+            'write_bytecode': 0,
+            'verbose': 1,
+            'buffered_stdio': 0,
+            'stdio_encoding': 'iso8859-1',
+            'stdio_errors': 'replace',
+            'user_site_directory': 0,
+            'faulthandler': 1,
+            'warnoptions': ['EnvVar'],
+        }
+        self.check_config("test_init_compat_env", config, preconfig,
+                          api=API_COMPAT)
+
+    def test_init_python_env(self):
         preconfig = {
             'allocator': PYMEM_ALLOCATOR_MALLOC,
             'utf8_mode': 1,
@@ -732,8 +758,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'faulthandler': 1,
             'warnoptions': ['EnvVar'],
         }
-        self.check_config("test_init_env", config, preconfig,
-                          api=API_COMPAT)
+        self.check_config("test_init_python_env", config, preconfig,
+                          api=API_PYTHON)
 
     def test_init_env_dev_mode(self):
         preconfig = dict(allocator=PYMEM_ALLOCATOR_DEBUG)
