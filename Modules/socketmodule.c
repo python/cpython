@@ -345,6 +345,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&
 
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <versionhelpers.h>
+// For if_nametoindex() and if_indextoname()
+#include <iphlpapi.h>
 
 /* remove some flags on older version Windows during run-time.
    https://msdn.microsoft.com/en-us/library/windows/desktop/ms738596.aspx */
@@ -6647,13 +6649,18 @@ PyDoc_STRVAR(if_nameindex_doc,
 "if_nameindex()\n\
 \n\
 Returns a list of network interface information (index, name) tuples.");
+#endif /* HAVE_IF_NAMEINDEX */
 
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 static PyObject *
 socket_if_nametoindex(PyObject *self, PyObject *args)
 {
     PyObject *oname;
+#ifdef MS_WINDOWS
+    NET_IFINDEX index;
+#else
     unsigned long index;
-
+#endif
     if (!PyArg_ParseTuple(args, "O&:if_nametoindex",
                           PyUnicode_FSConverter, &oname))
         return NULL;
@@ -6677,7 +6684,11 @@ Returns the interface index corresponding to the interface name if_name.");
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
+#ifdef MS_WINDOWS
+    NET_IFINDEX index;
+#else
     unsigned long index;
+#endif
     char name[IF_NAMESIZE + 1];
 
     index = PyLong_AsUnsignedLong(arg);
@@ -6697,7 +6708,7 @@ PyDoc_STRVAR(if_indextoname_doc,
 \n\
 Returns the interface name corresponding to the interface index if_index.");
 
-#endif  /* HAVE_IF_NAMEINDEX */
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 
 
 #ifdef CMSG_LEN
@@ -6822,6 +6833,8 @@ static PyMethodDef socket_methods[] = {
 #ifdef HAVE_IF_NAMEINDEX
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
+#endif
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nametoindex", socket_if_nametoindex,
      METH_VARARGS, if_nametoindex_doc},
     {"if_indextoname", socket_if_indextoname,
