@@ -4264,6 +4264,11 @@ os_system_impl(PyObject *module, const Py_UNICODE *command)
 /*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
 {
     long result;
+
+    if (PySys_Audit("system", "(u)", command) < 0) {
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     result = _wsystem(command);
@@ -4286,6 +4291,11 @@ os_system_impl(PyObject *module, PyObject *command)
 {
     long result;
     const char *bytes = PyBytes_AsString(command);
+
+    if (PySys_Audit("system", "(O)", command) < 0) {
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     result = system(bytes);
     Py_END_ALLOW_THREADS
@@ -8279,6 +8289,10 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     flags |= O_CLOEXEC;
 #endif
 
+    if (PySys_Audit("open", "OOi", path->object, Py_None, flags) < 0) {
+        return -1;
+    }
+
     _Py_BEGIN_SUPPRESS_IPH
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -9598,6 +9612,10 @@ os_ftruncate_impl(PyObject *module, int fd, Py_off_t length)
     int result;
     int async_err = 0;
 
+    if (PySys_Audit("os.truncate", "in", fd, length) < 0) {
+        return NULL;
+    }
+
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
@@ -9640,6 +9658,10 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
 
     if (path->fd != -1)
         return os_ftruncate_impl(module, path->fd, length);
+
+    if (PySys_Audit("os.truncate", "On", path->object, length) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH

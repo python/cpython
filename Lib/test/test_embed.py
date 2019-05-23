@@ -927,5 +927,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           api=API_PYTHON)
 
 
+class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
+    def test_open_code_hook(self):
+        self.run_embedded_interpreter("test_open_code_hook")
+
+    def test_audit(self):
+        self.run_embedded_interpreter("test_audit")
+
+    def test_audit_subinterpreter(self):
+        self.run_embedded_interpreter("test_audit_subinterpreter")
+
+
 if __name__ == "__main__":
     unittest.main()

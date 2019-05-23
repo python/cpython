@@ -90,6 +90,9 @@
     <ClInclude Include="..\Include\cpython\dictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\fileobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -106,6 +109,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\sysmodule.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\traceback.h">

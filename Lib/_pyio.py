@@ -254,6 +254,29 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         result.close()
         raise
 
+# Define a default pure-Python implementation for open_code()
+# that does not allow hooks. Warn on first use. Defined for tests.
+def _open_code_with_warning(path):
+    """Opens the provided file with mode ``'rb'``. This function
+    should be used when the intent is to treat the contents as
+    executable code.
+
+    ``path`` should be an absolute path.
+
+    When supported by the runtime, this function can be hooked
+    in order to allow embedders more control over code files.
+    This functionality is not supported on the current runtime.
+    """
+    import warnings
+    warnings.warn("_pyio.open_code() may not be using hooks",
+                  RuntimeWarning, 2)
+    return open(path, "rb")
+
+try:
+    open_code = io.open_code
+except AttributeError:
+    open_code = _open_code_with_warning
+
 
 class DocDescriptor:
     """Helper for builtins.open.__doc__

@@ -1052,6 +1052,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/abstract.h \
 		$(srcdir)/Include/cpython/coreconfig.h \
 		$(srcdir)/Include/cpython/dictobject.h \
+		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
@@ -1059,6 +1060,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
+		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
 		$(srcdir)/Include/cpython/unicodeobject.h \

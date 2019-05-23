@@ -3861,7 +3861,7 @@ class MiscIOTest(unittest.TestCase):
         for name in self.io.__all__:
             obj = getattr(self.io, name, None)
             self.assertIsNotNone(obj, name)
-            if name == "open":
+            if name in ("open", "open_code"):
                 continue
             elif "error" in name.lower() or name == "UnsupportedOperation":
                 self.assertTrue(issubclass(obj, Exception), name)
