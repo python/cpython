@@ -318,6 +318,15 @@ for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
           self.bit_rate = round(bit_rate / 1000.0, 1)
           self.duration = ceil(duration)
 
+io
+--
+
+In development mode (:option:`-X` ``env``) and in debug build, the
+:class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
+fails. The exception is ignored silently by default in release build.
+(Contributed by Victor Stinner in :issue:`18748`.)
+
+
 gc
 --
 
