@@ -6,6 +6,7 @@ import inspect
 import sys
 import threading
 import types
+import warnings
 
 from . import futures
 
@@ -23,10 +24,20 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
 
         def callback():
             global repl_future
+            global repl_future_interrupted
+
+            repl_future = None
+            repl_future_interrupted = False
 
             func = types.FunctionType(code, self.locals)
             try:
                 coro = func()
+            except SystemExit:
+                raise
+            except KeyboardInterrupt as ex:
+                repl_future_interrupted = True
+                future.set_exception(ex)
+                return
             except BaseException as ex:
                 future.set_exception(ex)
                 return
@@ -48,7 +59,10 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
         except SystemExit:
             raise
         except BaseException:
-            self.showtraceback()
+            if repl_future_interrupted:
+                self.write("\nKeyboardInterrupt\n")
+            else:
+                self.showtraceback()
 
 
 class REPLThread(threading.Thread):
@@ -56,7 +70,8 @@ class REPLThread(threading.Thread):
     def run(self):
         try:
             banner = (
-                f'asyncio REPL {sys.version} on {sys.platform}\n'
+                f'asyncio REPL {sys.version} on {sys.platform}\n\n'
+                f'Use "await" directly instead of asyncio.run().\n'
                 f'Type "help", "copyright", "credits" or "license" '
                 f'for more information.\n\n'
                 f'{getattr(sys, "ps1", ">>> ")}import asyncio\n'
@@ -66,6 +81,11 @@ class REPLThread(threading.Thread):
                 banner=banner,
                 exitmsg='exiting asyncio REPL...')
         finally:
+            warnings.filterwarnings(
+                'ignore',
+                message=r'^coroutine .* was never awaited$',
+                category=RuntimeWarning)
+
             loop.call_soon_threadsafe(loop.stop)
 
 
@@ -80,14 +100,17 @@ if __name__ == '__main__':
         repl_locals[key] = locals()[key]
 
     console = AsyncIOInteractiveConsole(repl_locals, loop)
+
     repl_future = None
+    repl_future_interrupted = False
 
     try:
         import readline  # NoQA
     except ImportError:
         pass
 
-    REPLThread().start()
+    repl_thread = REPLThread()
+    repl_thread.start()
 
     while True:
         try:
@@ -95,6 +118,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             if repl_future and not repl_future.done():
                 repl_future.cancel()
+                repl_future_interrupted = True
             continue
         else:
             break
