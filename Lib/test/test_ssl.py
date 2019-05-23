@@ -26,7 +26,7 @@ except ImportError:
 ssl = support.import_module("ssl")
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
-Py_DEBUG_Win32 = Py_DEBUG and platform.win32_is_iot()
+Py_DEBUG_Win32 = Py_DEBUG and sys.platform=='win32'
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
