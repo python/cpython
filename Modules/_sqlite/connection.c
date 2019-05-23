@@ -1493,9 +1493,9 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
     int sleep_ms = 250;
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
-    static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
+    static char *kwlist[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsO:backup", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsO:backup", kwlist,
                                      &pysqlite_ConnectionType, &target,
                                      &pages, &progress, &name, &sleep_obj)) {
         return NULL;

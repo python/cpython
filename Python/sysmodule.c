@@ -909,12 +909,12 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
 static PyObject *
 sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 {
-    static char *keywords[] = {"firstiter", "finalizer", NULL};
+    static char *kwlist[] = {"firstiter", "finalizer", NULL};
     PyObject *firstiter = NULL;
     PyObject *finalizer = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kw, "|OO", keywords,
+            args, kw, "|OO", kwlist,
             &firstiter, &finalizer)) {
         return NULL;
     }

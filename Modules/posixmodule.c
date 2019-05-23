@@ -8845,19 +8845,19 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     struct sf_hdtr sf;
     int flags = 0;
     /* Beware that "in" clashes with Python's own "in" operator keyword */
-    static char *keywords[] = {"out", "in",
-                                "offset", "count",
-                                "headers", "trailers", "flags", NULL};
+    static char *kwlist[] = {"out", "in",
+                             "offset", "count",
+                             "headers", "trailers", "flags", NULL};
 
     sf.headers = NULL;
     sf.trailers = NULL;
 
 #ifdef __APPLE__
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&O&|OOi:sendfile",
-        keywords, &out, &in, Py_off_t_converter, &offset, Py_off_t_converter, &sbytes,
+        kwlist, &out, &in, Py_off_t_converter, &offset, Py_off_t_converter, &sbytes,
 #else
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO&n|OOi:sendfile",
-        keywords, &out, &in, Py_off_t_converter, &offset, &len,
+        kwlist, &out, &in, Py_off_t_converter, &offset, &len,
 #endif
                 &headers, &trailers, &flags))
             return NULL;
@@ -8961,10 +8961,10 @@ done:
 #else
     Py_ssize_t count;
     PyObject *offobj;
-    static char *keywords[] = {"out", "in",
-                                "offset", "count", NULL};
+    static char *kwlist[] = {"out", "in",
+                             "offset", "count", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiOn:sendfile",
-            keywords, &out, &in, &offobj, &count))
+            kwlist, &out, &in, &offobj, &count))
         return NULL;
 #ifdef __linux__
     if (offobj == Py_None) {

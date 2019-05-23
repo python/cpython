@@ -1055,11 +1055,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
     int devzero = -1;
     int access = (int)ACCESS_DEFAULT;
-    static char *keywords[] = {"fileno", "length",
-                               "flags", "prot",
-                               "access", "offset", NULL};
+    static char *kwlist[] = {"fileno", "length",
+                             "flags", "prot",
+                             "access", "offset", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|iii" _Py_PARSE_OFF_T, keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|iii" _Py_PARSE_OFF_T, kwlist,
                                      &fd, &map_size, &flags, &prot,
                                      &access, &offset))
         return NULL;
@@ -1221,11 +1221,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     HANDLE fh = 0;
     int access = (access_mode)ACCESS_DEFAULT;
     DWORD flProtect, dwDesiredAccess;
-    static char *keywords[] = { "fileno", "length",
-                                "tagname",
-                                "access", "offset", NULL };
+    static char *kwlist[] = { "fileno", "length",
+                              "tagname",
+                              "access", "offset", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|ziL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|ziL", kwlist,
                                      &fileno, &map_size,
                                      &tagname, &access, &offset)) {
         return NULL;

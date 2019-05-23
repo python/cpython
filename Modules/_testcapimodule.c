@@ -1025,11 +1025,11 @@ getargs_tuple(PyObject *self, PyObject *args)
 static PyObject *
 getargs_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"arg1","arg2","arg3","arg4","arg5", NULL};
+    static char *kwlist[] = {"arg1","arg2","arg3","arg4","arg5", NULL};
     static const char fmt[] = "(ii)i|(i(ii))(iii)i";
     int int_args[10]={-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, kwlist,
         &int_args[0], &int_args[1], &int_args[2], &int_args[3], &int_args[4],
         &int_args[5], &int_args[6], &int_args[7], &int_args[8], &int_args[9]))
         return NULL;
@@ -1042,12 +1042,12 @@ getargs_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 getargs_keyword_only(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"required", "optional", "keyword_only", NULL};
+    static char *kwlist[] = {"required", "optional", "keyword_only", NULL};
     int required = -1;
     int optional = -1;
     int keyword_only = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|i$i", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|i$i", kwlist,
                                      &required, &optional, &keyword_only))
         return NULL;
     return Py_BuildValue("iii", required, optional, keyword_only);
@@ -1057,12 +1057,12 @@ getargs_keyword_only(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 getargs_positional_only_and_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"", "", "keyword", NULL};
+    static char *kwlist[] = {"", "", "keyword", NULL};
     int required = -1;
     int optional = -1;
     int keyword = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|ii", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|ii", kwlist,
                                      &required, &optional, &keyword))
         return NULL;
     return Py_BuildValue("iii", required, optional, keyword);
@@ -5104,7 +5104,7 @@ static struct PyMemberDef test_members[] = {
 static PyObject *
 test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {
+    static char *kwlist[] = {
         "T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
         "T_INT", "T_UINT", "T_LONG", "T_ULONG", "T_PYSSIZET",
         "T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
@@ -5118,7 +5118,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (ob == NULL)
         return NULL;
     memset(&ob->structmembers, 0, sizeof(all_structmembers));
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, kwlist,
                                      &ob->structmembers.bool_member,
                                      &ob->structmembers.byte_member,
                                      &ob->structmembers.ubyte_member,

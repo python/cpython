@@ -2432,13 +2432,13 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     PyObject *y = NULL;         /* temp sum of microseconds */
     double leftover_us = 0.0;
 
-    static char *keywords[] = {
+    static char *kwlist[] = {
         "days", "seconds", "microseconds", "milliseconds",
         "minutes", "hours", "weeks", NULL
     };
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOO:__new__",
-                                    keywords,
+                                    kwlist,
                                     &day, &second, &us,
                                     &ms, &minute, &hour, &week) == 0)
         goto Done;
@@ -3007,13 +3007,13 @@ invalid_string_error:
 static PyObject *
 date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
 {
-    static char *keywords[] = {
+    static char *kwlist[] = {
         "year", "week", "day", NULL
     };
 
     int year, week, day;
     if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
-                keywords,
+                kwlist,
                 &year, &week, &day) == 0) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             PyErr_Format(PyExc_ValueError,
@@ -3183,9 +3183,9 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
     PyObject *tuple;
     PyObject *format;
     _Py_IDENTIFIER(timetuple);
-    static char *keywords[] = {"format", NULL};
+    static char *kwlist[] = {"format", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", kwlist,
                                       &format))
         return NULL;
 
@@ -4184,7 +4184,7 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
     char buf[100];
     char *timespec = NULL;
-    static char *keywords[] = {"timespec", NULL};
+    static char *kwlist[] = {"timespec", NULL};
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
     static char *specs[][2] = {
@@ -4196,7 +4196,7 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     };
     size_t given_spec;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|s:isoformat", keywords, &timespec))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|s:isoformat", kwlist, &timespec))
         return NULL;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
@@ -4250,9 +4250,9 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     PyObject *result;
     PyObject *tuple;
     PyObject *format;
-    static char *keywords[] = {"format", NULL};
+    static char *kwlist[] = {"format", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", kwlist,
                                       &format))
         return NULL;
 
@@ -4984,10 +4984,10 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
     PyObject *self;
     PyObject *timestamp;
     PyObject *tzinfo = Py_None;
-    static char *keywords[] = {"timestamp", "tz", NULL};
+    static char *kwlist[] = {"timestamp", "tz", NULL};
 
     if (! PyArg_ParseTupleAndKeywords(args, kw, "O|O:fromtimestamp",
-                                      keywords, &timestamp, &tzinfo))
+                                      kwlist, &timestamp, &tzinfo))
         return NULL;
     if (check_tzinfo_subclass(tzinfo) < 0)
         return NULL;
@@ -5041,13 +5041,13 @@ datetime_strptime(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 {
-    static char *keywords[] = {"date", "time", "tzinfo", NULL};
+    static char *kwlist[] = {"date", "time", "tzinfo", NULL};
     PyObject *date;
     PyObject *time;
     PyObject *tzinfo = NULL;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "O!O!|O:combine", keywords,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "O!O!|O:combine", kwlist,
                                     &PyDateTime_DateType, &date,
                                     &PyDateTime_TimeType, &time, &tzinfo)) {
         if (tzinfo == NULL) {
@@ -5415,7 +5415,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
     int sep = 'T';
     char *timespec = NULL;
-    static char *keywords[] = {"sep", "timespec", NULL};
+    static char *kwlist[] = {"sep", "timespec", NULL};
     char buffer[100];
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
@@ -5428,7 +5428,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     };
     size_t given_spec;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Cs:isoformat", keywords, &sep, &timespec))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Cs:isoformat", kwlist, &sep, &timespec))
         return NULL;
 
     if (timespec == NULL || strcmp(timespec, "auto") == 0) {
@@ -5871,9 +5871,9 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     PyObject *temp;
     PyObject *self_tzinfo;
     PyObject *tzinfo = Py_None;
-    static char *keywords[] = {"tz", NULL};
+    static char *kwlist[] = {"tz", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:astimezone", keywords,
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:astimezone", kwlist,
                                       &tzinfo))
         return NULL;
 

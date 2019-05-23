@@ -382,15 +382,15 @@ parser_st2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject *res = 0;
     int ok;
 
-    static char *keywords[] = {"st", "line_info", "col_info", NULL};
+    static char *kwlist[] = {"st", "line_info", "col_info", NULL};
 
     if (self == NULL || PyModule_Check(self)) {
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|pp:st2tuple", keywords,
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|pp:st2tuple", kwlist,
                                          &PyST_Type, &self, &line_info,
                                          &col_info);
     }
     else
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "|pp:totuple", &keywords[1],
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "|pp:totuple", &kwlist[1],
                                          &line_info, &col_info);
     if (ok != 0) {
         /*
@@ -418,14 +418,14 @@ parser_st2list(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject *res = 0;
     int ok;
 
-    static char *keywords[] = {"st", "line_info", "col_info", NULL};
+    static char *kwlist[] = {"st", "line_info", "col_info", NULL};
 
     if (self == NULL || PyModule_Check(self))
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|pp:st2list", keywords,
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|pp:st2list", kwlist,
                                          &PyST_Type, &self, &line_info,
                                          &col_info);
     else
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "|pp:tolist", &keywords[1],
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "|pp:tolist", &kwlist[1],
                                          &line_info, &col_info);
     if (ok) {
         /*
@@ -454,14 +454,14 @@ parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject*     filename = NULL;
     int ok;
 
-    static char *keywords[] = {"st", "filename", NULL};
+    static char *kwlist[] = {"st", "filename", NULL};
 
     if (self == NULL || PyModule_Check(self))
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O&:compilest", keywords,
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O&:compilest", kwlist,
                                          &PyST_Type, &self,
                                          PyUnicode_FSDecoder, &filename);
     else
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "|O&:compile", &keywords[1],
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "|O&:compile", &kwlist[1],
                                          PyUnicode_FSDecoder, &filename);
     if (!ok)
         goto error;
@@ -504,13 +504,13 @@ parser_isexpr(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject* res = 0;
     int ok;
 
-    static char *keywords[] = {"st", NULL};
+    static char *kwlist[] = {"st", NULL};
 
     if (self == NULL || PyModule_Check(self))
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:isexpr", keywords,
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:isexpr", kwlist,
                                          &PyST_Type, &self);
     else
-        ok = PyArg_ParseTupleAndKeywords(args, kw, ":isexpr", &keywords[1]);
+        ok = PyArg_ParseTupleAndKeywords(args, kw, ":isexpr", &kwlist[1]);
 
     if (ok) {
         /* Check to see if the ST represents an expression or not. */
@@ -527,13 +527,13 @@ parser_issuite(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject* res = 0;
     int ok;
 
-    static char *keywords[] = {"st", NULL};
+    static char *kwlist[] = {"st", NULL};
 
     if (self == NULL || PyModule_Check(self))
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:issuite", keywords,
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:issuite", kwlist,
                                          &PyST_Type, &self);
     else
-        ok = PyArg_ParseTupleAndKeywords(args, kw, ":issuite", &keywords[1]);
+        ok = PyArg_ParseTupleAndKeywords(args, kw, ":issuite", &kwlist[1]);
 
     if (ok) {
         /* Check to see if the ST represents an expression or not. */
@@ -570,9 +570,9 @@ parser_do_parse(PyObject *args, PyObject *kw, const char *argspec, int type)
     int flags        = 0;
     perrdetail err;
 
-    static char *keywords[] = {"source", NULL};
+    static char *kwlist[] = {"source", NULL};
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, argspec, keywords, &string)) {
+    if (PyArg_ParseTupleAndKeywords(args, kw, argspec, kwlist, &string)) {
         node* n = PyParser_ParseStringFlagsFilenameEx(string, NULL,
                                                        &_PyParser_Grammar,
                                                       (type == PyST_EXPR)
@@ -755,9 +755,9 @@ parser_tuple2st(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject *tuple;
     node *tree;
 
-    static char *keywords[] = {"sequence", NULL};
+    static char *kwlist[] = {"sequence", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O:sequence2st", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O:sequence2st", kwlist,
                                      &tuple))
         return (0);
     if (!PySequence_Check(tuple)) {
