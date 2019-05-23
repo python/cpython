@@ -380,11 +380,11 @@ Subprocess Transports
    Return the transport for the communication pipe corresponding to the
    integer file descriptor *fd*:
 
-   * ``0``: readable streaming transport of the standard input (*stdin*),
+   * ``0``: writable pipe transport of the standard input (*stdin*),
      or :const:`None` if the subprocess was not created with ``stdin=PIPE``
-   * ``1``: writable streaming transport of the standard output (*stdout*),
+   * ``1``: readable pipe transport of the standard output (*stdout*),
      or :const:`None` if the subprocess was not created with ``stdout=PIPE``
-   * ``2``: writable streaming transport of the standard error (*stderr*),
+   * ``2``: readable pipe transport of the standard error (*stderr*),
      or :const:`None` if the subprocess was not created with ``stderr=PIPE``
    * other *fd*: :const:`None`
 
