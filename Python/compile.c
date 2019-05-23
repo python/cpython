@@ -325,9 +325,14 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     }
     if (!compiler_init(&c))
         return NULL;
+
+    #if defined(HAVE_REALPATH)
     char* path = realpath(PyUnicode_DATA(filename), NULL);
-    if (path != NULL)
+    if (path != NULL) {
         filename = PyUnicode_FromString(path);
+    }
+    #endif
+
     Py_INCREF(filename);
     c.c_filename = filename;
     c.c_arena = arena;
