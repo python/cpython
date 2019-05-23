@@ -34,7 +34,6 @@ very little overhead for build/release/install mechanics.
    configfile.rst
    sourcedist.rst
    builtdist.rst
-   packageindex.rst
    examples.rst
    extending.rst
    commandref.rst
