@@ -119,6 +119,7 @@ class ProactorTests(test_utils.TestCase):
             response = await r.readline()
             self.assertEqual(response, 'LOWER-{}\n'.format(i).encode())
             w.close()
+            await r.close()
 
         server.close()
 
