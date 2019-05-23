@@ -1103,11 +1103,10 @@ class CommonBufferedTests:
                 with self.assertRaises(AttributeError):
                     self.tp(rawio).xyzzy
 
-            if IOBASE_EMITS_UNRAISABLE:
-                self.assertIsNotNone(cm.unraisable)
-                self.assertEqual(cm.unraisable.exc_type, OSError)
-            else:
+            if not IOBASE_EMITS_UNRAISABLE:
                 self.assertIsNone(cm.unraisable)
+            elif cm.unraisable is not None:
+                self.assertEqual(cm.unraisable.exc_type, OSError)
         finally:
             # Explicitly break reference cycle
             cm = None
@@ -2860,11 +2859,10 @@ class TextIOWrapperTest(unittest.TestCase):
                 with self.assertRaises(AttributeError):
                     self.TextIOWrapper(rawio).xyzzy
 
-            if IOBASE_EMITS_UNRAISABLE:
-                self.assertIsNotNone(cm.unraisable)
-                self.assertEqual(cm.unraisable.exc_type, OSError)
-            else:
+            if not IOBASE_EMITS_UNRAISABLE:
                 self.assertIsNone(cm.unraisable)
+            elif cm.unraisable is not None:
+                self.assertEqual(cm.unraisable.exc_type, OSError)
         finally:
             # Explicitly break reference cycle
             cm = None
