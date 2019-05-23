@@ -511,7 +511,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
             if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock, data)
             else:
-                self._write_fut = self._loop._proactor.sendto(self._sock, data, addr)
+                self._write_fut = self._loop._proactor.sendto(self._sock, data, addr=addr)
         except OSError as exc:
             self._protocol.error_received(exc)
         except Exception as exc:

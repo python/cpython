@@ -793,7 +793,7 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         transport.sendto(data, ('0.0.0.0', 1234))
         self.assertTrue(self.proactor.sendto.called)
         self.proactor.sendto.assert_called_with( 
-            self.sock, data, ('0.0.0.0', 1234))
+            self.sock, data, addr=('0.0.0.0', 1234))
 
     def test_sendto_bytearray(self):
         data = bytearray(b'data')
