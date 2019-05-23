@@ -3054,7 +3054,7 @@ immediately change to the new definition.  This function is a no-op on
 most terminals; it is active only if can_change_color() returns 1.
 */
 
-#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
+#if _NCURSES_EXTENDED_COLOR_FUNCS
 #define _CURSES_INIT_COLOR_FUNC         init_extended_color
 #else
 #define _CURSES_INIT_COLOR_FUNC         init_color
@@ -3093,7 +3093,7 @@ If the color-pair was previously initialized, the screen is refreshed and
 all occurrences of that color-pair are changed to the new definition.
 */
 
-#ifdef _NCURSES_EXTENDED_COLOR_FUNCS
+#if _NCURSES_EXTENDED_COLOR_FUNCS
 #define _CURSES_INIT_PAIR_FUNC    init_extended_pair
 #else
 #define _CURSES_INIT_PAIR_FUNC    init_pair
