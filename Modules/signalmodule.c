@@ -1683,13 +1683,18 @@ _PyErr_CheckSignals(void)
 }
 
 
-/* Replacements for intrcheck.c functionality
- * Declared in pyerrors.h
- */
+/* Simulate the effect of a signal.SIGINT signal arriving. The next time
+   PyErr_CheckSignals is called,  the Python SIGINT signal handler will be
+   raised.
+
+   Missing signal handler for the SIGINT signal is silently ignored. */
 void
 PyErr_SetInterrupt(void)
 {
-    trip_signal(SIGINT);
+    if ((Handlers[SIGINT].func != IgnoreHandler) &&
+        (Handlers[SIGINT].func != DefaultHandler)) {
+        trip_signal(SIGINT);
+    }
 }
 
 void

@@ -16,6 +16,7 @@ import unittest
 import weakref
 import os
 import subprocess
+import signal
 
 from test import lock_tests
 from test import support
@@ -1168,12 +1169,46 @@ class BoundedSemaphoreTests(lock_tests.BoundedSemaphoreTests):
 class BarrierTests(lock_tests.BarrierTests):
     barriertype = staticmethod(threading.Barrier)
 
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {"ThreadError"}
         blacklist = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, blacklist=blacklist)
+
+
+class InterruptMainTests(unittest.TestCase):
+    def test_interrupt_main_subthread(self):
+        # Calling start_new_thread with a function that executes interrupt_main
+        # should raise KeyboardInterrupt upon completion.
+        def call_interrupt():
+            _thread.interrupt_main()
+        t = threading.Thread(target=call_interrupt)
+        with self.assertRaises(KeyboardInterrupt):
+            t.start()
+            t.join()
+        t.join()
+
+    def test_interrupt_main_mainthread(self):
+        # Make sure that if interrupt_main is called in main thread that
+        # KeyboardInterrupt is raised instantly.
+        with self.assertRaises(KeyboardInterrupt):
+            _thread.interrupt_main()
+
+    def test_interrupt_main_noerror(self):
+        handler = signal.getsignal(signal.SIGINT)
+        try:
+            # No exception should arise.
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+            _thread.interrupt_main()
+
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            _thread.interrupt_main()
+        finally:
+            # Restore original handler
+            signal.signal(signal.SIGINT, handler)
+
 
 if __name__ == "__main__":
     unittest.main()
