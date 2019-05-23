@@ -482,7 +482,8 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
             self._conn_lost += 1
             return
 
-        self._buffer.appendleft((data, addr))
+        # Ensure that what we buffer is immutable.
+        self._buffer.append((bytes(data), addr))
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
@@ -506,11 +507,11 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
                     self._loop.call_soon(self._call_connection_lost, None)
                 return
 
-            data, addr = self._buffer.pop()
+            data, addr = self._buffer.popleft()
             if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock, data)
             else:
-                self._write_fut = self._loop._proactor.sendto(self._sock, data, addr=addr)
+                self._write_fut = self._loop._proactor.sendto(self._sock, data, addr)
         except OSError as exc:
             self._protocol.error_received(exc)
         except Exception as exc:
@@ -544,9 +545,9 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
             if self._conn_lost:
                 return
             if self._address is not None:
-                self._read_fut = self._loop._proactor.recv(self._sock, 4096)
+                self._read_fut = self._loop._proactor.recv(self._sock, self.max_size)
             else:
-                self._read_fut = self._loop._proactor.recvfrom(self._sock, 4096)
+                self._read_fut = self._loop._proactor.recvfrom(self._sock, self.max_size)
         except OSError as exc:
             self._protocol.error_received(exc)
         except exceptions.CancelledError:

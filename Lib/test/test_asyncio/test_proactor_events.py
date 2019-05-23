@@ -731,13 +731,15 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
         self.loop = self.new_test_loop()
+        self.proactor = mock.Mock()
+        self.loop._proactor = self.proactor
         self.protocol = test_utils.make_test_protocol(asyncio.DatagramProtocol)
         self.sock = mock.Mock(spec_set=socket.socket)
         self.sock.fileno.return_value = 7
 
     def datagram_transport(self, address=None):
         self.sock.getpeername.side_effect = None if address else OSError
-        transport = _SelectorDatagramTransport(self.loop, self.sock,
+        transport = _ProactorDatagramTransport(self.loop, self.sock,
                                                self.protocol,
                                                address=address)
         self.addCleanup(close_transport, transport)
@@ -746,8 +748,11 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
     def test_read_ready(self):
         transport = self.datagram_transport()
 
-        self.sock.recvfrom.return_value = (b'data', ('0.0.0.0', 1234))
+        fut = self.loop.create_future()
+        fut.set_result((b'data', ('0.0.0.0', 1234)))
+        self.proactor.recv_from.return_value = fut
         transport._read_ready()
+        self.proactor.recvfrom.assert_called_with(self.sock, 256 * 1024)
 
         self.protocol.datagram_received.assert_called_with(
             b'data', ('0.0.0.0', 1234))
@@ -786,25 +791,21 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         data = b'data'
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 1234))
-        self.assertTrue(self.sock.sendto.called)
-        self.assertEqual(
-            self.sock.sendto.call_args[0], (data, ('0.0.0.0', 1234)))
+        self.assertTrue(self.proactor.sendto.called)
+        self.proactor.sendto.assert_called_with( 
+            self.sock, data, ('0.0.0.0', 1234))
 
     def test_sendto_bytearray(self):
         data = bytearray(b'data')
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 1234))
-        self.assertTrue(self.sock.sendto.called)
-        self.assertEqual(
-            self.sock.sendto.call_args[0], (data, ('0.0.0.0', 1234)))
+        self.assertEqual(transport._buffer, deque([data, ('0.0.0.0', 1234)]))
 
     def test_sendto_memoryview(self):
         data = memoryview(b'data')
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 1234))
-        self.assertTrue(self.sock.sendto.called)
-        self.assertEqual(
-            self.sock.sendto.call_args[0], (data, ('0.0.0.0', 1234)))
+        self.assertEqual(transport._buffer, deque([data, ('0.0.0.0', 1234)]))
 
     def test_sendto_no_data(self):
         transport = self.datagram_transport()
@@ -817,8 +818,9 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
     def test_sendto_buffer(self):
         transport = self.datagram_transport()
         transport._buffer.append((b'data1', ('0.0.0.0', 12345)))
+        transport._write_fut = object()
         transport.sendto(b'data2', ('0.0.0.0', 12345))
-        self.assertFalse(self.sock.sendto.called)
+        self.assertFalse(self.proactor.sendto.called)
         self.assertEqual(
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
@@ -828,8 +830,9 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         data2 = bytearray(b'data2')
         transport = self.datagram_transport()
         transport._buffer.append((b'data1', ('0.0.0.0', 12345)))
+        transport._write_fut = object()
         transport.sendto(data2, ('0.0.0.0', 12345))
-        self.assertFalse(self.sock.sendto.called)
+        self.assertFalse(self.proactor.sendto.called)
         self.assertEqual(
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
@@ -840,8 +843,9 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         data2 = memoryview(b'data2')
         transport = self.datagram_transport()
         transport._buffer.append((b'data1', ('0.0.0.0', 12345)))
+        transport._write_fut = object()
         transport.sendto(data2, ('0.0.0.0', 12345))
-        self.assertFalse(self.sock.sendto.called)
+        self.assertFalse(self.proactor.sendto.called)
         self.assertEqual(
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
@@ -860,10 +864,10 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.assertEqual(
             [(b'data', ('0.0.0.0', 12345))], list(transport._buffer))
 
-    @mock.patch('asyncio.selector_events.logger')
+    @mock.patch('asyncio.proactor_events.logger')
     def test_sendto_exception(self, m_log):
         data = b'data'
-        err = self.sock.sendto.side_effect = RuntimeError()
+        err = self.proactor.sendto.side_effect = RuntimeError()
 
         transport = self.datagram_transport()
         transport._fatal_error = mock.Mock()
@@ -881,7 +885,7 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         transport.sendto(data)
         transport.sendto(data)
         transport.sendto(data)
-        m_log.warning.assert_called_with('socket.send() raised exception.')
+        m_log.warning.assert_called_with('socket.sendto() raised exception.')
 
     def test_sendto_error_received(self):
         data = b'data'
@@ -898,7 +902,7 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
     def test_sendto_error_received_connected(self):
         data = b'data'
 
-        self.sock.send.side_effect = ConnectionRefusedError
+        self.proactor.send.side_effect = ConnectionRefusedError
 
         transport = self.datagram_transport(address=('0.0.0.0', 1))
         transport._fatal_error = mock.Mock()
