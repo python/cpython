@@ -1366,6 +1366,14 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         }
     }
 
+    /* XXX [Steve Dower] These are really noisy - worth it? */
+    /*if (PyType_Check(obj) || PyModule_Check(obj)) {
+        if (value && PySys_Audit("object.__setattr__", "OOO", obj, name, value) < 0)
+            return -1;
+        if (!value && PySys_Audit("object.__delattr__", "OO", obj, name) < 0)
+            return -1;
+    }*/
+
     if (dict == NULL) {
         dictptr = _PyObject_GetDictPtr(obj);
         if (dictptr == NULL) {

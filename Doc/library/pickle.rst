@@ -427,6 +427,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       how they can be loaded, potentially reducing security risks. Refer to
       :ref:`pickle-restrict` for details.
 
+      .. audit-event:: pickle.find_class "module name"
 
 .. _pickle-picklable:
 

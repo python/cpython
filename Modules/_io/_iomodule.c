@@ -503,6 +503,25 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     Py_XDECREF(modeobj);
     return NULL;
 }
+
+/*[clinic input]
+_io.open_code
+
+    path : unicode
+
+Opens the provided file with the intent to import the contents.
+
+This may perform extra validation beyond open(), but is otherwise interchangeable
+with calling open(path, 'rb').
+
+[clinic start generated code]*/
+
+static PyObject *
+_io_open_code_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=f5c18e23f4b2ed9f]*/
+{
+    return PyFile_OpenCodeObject(path);
+}
 
 /*
  * Private helpers for the io module.
@@ -630,6 +649,7 @@ iomodule_free(PyObject *mod) {
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
+    _IO_OPEN_CODE_METHODDEF
     {NULL, NULL}
 };
 

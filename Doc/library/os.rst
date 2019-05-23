@@ -651,7 +651,7 @@ process and user.
 File Object Creation
 --------------------
 
-This function creates new :term:`file objects <file object>`.  (See also
+These functions create new :term:`file objects <file object>`.  (See also
 :func:`~os.open` for opening file descriptors.)
 
 
@@ -829,10 +829,13 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
+   .. audit-event:: os.truncate "fd length"
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.5
       Added support for Windows
+
 
 .. function:: get_blocking(fd)
 
@@ -844,6 +847,7 @@ as internal buffering of data.
    .. availability:: Unix.
 
    .. versionadded:: 3.5
+
 
 .. function:: isatty(fd)
 
@@ -911,6 +915,8 @@ as internal buffering of data.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>` with the *dir_fd* parameter.
+
+   .. audit-event:: open "path mode flags"
 
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
@@ -2756,6 +2762,8 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
+   .. audit-event:: os.truncate "path length"
+
    .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
@@ -3714,6 +3722,8 @@ written in Python, such as a mail server's external command delivery program.
    new processes and retrieving their results; using that module is preferable
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
+
+   .. audit-event:: os.system command
 
    .. availability:: Unix, Windows.
 

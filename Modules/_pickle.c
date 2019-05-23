@@ -6659,6 +6659,11 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
     PyObject *global;
     PyObject *module;
 
+    if (PySys_Audit("pickle.find_class", "OO",
+                    module_name, global_name) < 0) {
+        return NULL;
+    }
+
     /* Try to map the old names used in Python 2.x to the new ones used in
        Python 3.x.  We do this only with old pickle protocols and when the
        user has not disabled the feature. */

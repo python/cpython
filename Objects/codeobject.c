@@ -380,6 +380,12 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                           &PyTuple_Type, &cellvars))
         return NULL;
 
+    if (PySys_Audit("code.__new__", "OOOiiiii",
+                    code, filename, name, argcount, kwonlyargcount,
+                    nlocals, stacksize, flags) < 0) {
+        goto cleanup;
+    }
+
     if (argcount < 0) {
         PyErr_SetString(
             PyExc_ValueError,

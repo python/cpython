@@ -275,6 +275,12 @@ are always available.  They are listed here in alphabetical order.
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
 
+   .. audit-event:: compile "source filename"
+
+      Raises an :func:`auditing event <sys.audit>` ``compile`` with arguments
+      ``source`` and ``filename``. This event may also be raised by implicit
+      compilation.
+
    .. note::
 
       When compiling a string with multi-line code in ``'single'`` or
@@ -473,6 +479,11 @@ are always available.  They are listed here in alphabetical order.
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
+   .. audit-event:: exec code_object
+
+      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
+      the argument. Code compilation events may also be raised.
+
 .. index:: builtin: exec
 
 .. function:: exec(object[, globals[, locals]])
@@ -501,6 +512,11 @@ are always available.  They are listed here in alphabetical order.
    :mod:`builtins` is inserted under that key.  That way you can control what
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+
+   .. audit-event:: exec code_object
+
+      Raises an :func:`auditing event <sys.audit>` ``exec`` with the code object as
+      the argument. Code compilation events may also be raised.
 
    .. note::
 
@@ -746,6 +762,16 @@ are always available.  They are listed here in alphabetical order.
 
    If the :mod:`readline` module was loaded, then :func:`input` will use it
    to provide elaborate line editing and history features.
+
+   .. audit-event:: builtins.input prompt
+
+      Raises an :func:`auditing event <sys.audit>` ``builtins.input`` with
+      argument ``prompt`` before reading input
+
+   .. audit-event:: builtins.input/result result
+
+      Raises an auditing event ``builtins.input/result`` with the result after
+      successfully reading input.
 
 
 .. class:: int([x])
@@ -1175,6 +1201,11 @@ are always available.  They are listed here in alphabetical order.
    See also the file handling modules, such as, :mod:`fileinput`, :mod:`io`
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
+
+   .. audit-event:: open "file mode flags"
+
+   The ``mode`` and ``flags`` arguments may have been modified or inferred from
+   the original call.
 
    .. versionchanged::
       3.3
