@@ -27,6 +27,7 @@ set dashU=-unetwork,decimal,subprocess,urlfetch,tzdata
 if "%SSH_SERVER%"=="" goto :Arm32SshHelp
 if "%PYTHON_SOURCE%"=="" (set PYTHON_SOURCE=%here%..\..\)
 if "%REMOTE_PYTHON_DIR%"=="" (set REMOTE_PYTHON_DIR=C:\python\)
+if NOT "%REMOTE_PYTHON_DIR:~-1,1%"=="\" (set REMOTE_PYTHON_DIR=%REMOTE_PYTHON_DIR%\)
 if "%SSH%"=="" if EXIST %WINDIR%\System32\OpenSSH\ssh.exe (set SSH=%WINDIR%\System32\OpenSSH\ssh.exe)
 set TEMP_ARGS=--temp %REMOTE_PYTHON_DIR%temp
 
