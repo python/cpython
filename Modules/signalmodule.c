@@ -1687,26 +1687,14 @@ _PyErr_CheckSignals(void)
    PyErr_CheckSignals is called,  the Python SIGINT signal handler will be
    raised.
 
-   A signal handler for the SIGINT signal must have been installed by the
-   `signal` function, otherwise an exception is raised and the function returns
-   -1 on error. It returns 0 on success. */
-int
+   Missing signal handler for the SIGINT signal is silently ignored. */
+void
 PyErr_SetInterrupt(void)
 {
-    if (Handlers[SIGINT].func == IgnoreHandler) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "the SIGINT signal is ignored");
-        return -1;
+    if ((Handlers[SIGINT].func != IgnoreHandler) &&
+        (Handlers[SIGINT].func != DefaultHandler)) {
+	trip_signal(SIGINT);
     }
-
-    if (Handlers[SIGINT].func == DefaultHandler) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "the SIGINT signal is not handled by Python");
-        return -1;
-    }
-
-    trip_signal(SIGINT);
-    return 0;
 }
 
 void

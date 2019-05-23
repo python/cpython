@@ -523,13 +523,10 @@ Signal Handling
    time :c:func:`PyErr_CheckSignals` is called,  the Python
    :data:`signal.SIGINT` signal handler will be raised.
 
-   A signal handler for the :data:`signal.SIGINT` signal must have been
-   installed by the `signal` function, otherwise an exception is raised and the
-   function returns ``-1`` on error. It returns ``0`` on success.
+   Missing signal handler for the SIGINT signal is silently ignored.
 
    .. versionchanged:: 3.8
-      The function now raises an exception if the signal is ignored or not
-      handled by Python.
+      The function now ignores the signal is ignored or not handled by Python.
 
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)

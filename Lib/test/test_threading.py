@@ -1196,23 +1196,17 @@ class InterruptMainTests(unittest.TestCase):
         with self.assertRaises(KeyboardInterrupt):
             _thread.interrupt_main()
 
-    def test_interrupt_main_error(self):
+    def test_interrupt_main_noerror(self):
         handler = signal.getsignal(signal.SIGINT)
-        try:
-            signal.signal(signal.SIGINT, signal.SIG_IGN)
-            with self.assertRaises(RuntimeError) as cm:
-                _thread.interrupt_main()
-            self.assertEqual(str(cm.exception),
-                             'the SIGINT signal is ignored')
+        # No exception should arise.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        _thread.interrupt_main()
 
-            signal.signal(signal.SIGINT, signal.SIG_DFL)
-            with self.assertRaises(RuntimeError) as cm:
-                _thread.interrupt_main()
-            self.assertEqual(str(cm.exception),
-                             'the SIGINT signal is not handled by Python')
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        _thread.interrupt_main()
 
-        finally:
-            signal.signal(signal.SIGINT, handler)
+        # Restore original handlers
+        signal.signal(signal.SIGINT, handler)
 
 
 if __name__ == "__main__":
