@@ -1693,7 +1693,7 @@ PyErr_SetInterrupt(void)
 {
     if ((Handlers[SIGINT].func != IgnoreHandler) &&
         (Handlers[SIGINT].func != DefaultHandler)) {
-	trip_signal(SIGINT);
+        trip_signal(SIGINT);
     }
 }
 

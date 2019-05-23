@@ -1,3 +1,2 @@
-``_thread.interrupt_main()`` now raises an exception if the ``SIGINT`` signal
-is ignored or not handled by Python.
-Patch by Victor Stinner and Matěj Cepl
+``_thread.interrupt_main()`` now avoids setting the Python error status
+if the ``SIGINT`` signal is ignored or not handled by Python.

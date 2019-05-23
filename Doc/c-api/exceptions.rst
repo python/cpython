@@ -519,15 +519,13 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   Simulate the effect of a :data:`signal.SIGINT` signal arriving. The next
-   time :c:func:`PyErr_CheckSignals` is called,  the Python
-   :data:`signal.SIGINT` signal handler will be raised.
+   Simulate the effect of a :const:`SIGINT` signal arriving. The next time
+   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
+   :const:`SIGINT` will be called.
 
-   Missing signal handler for the SIGINT signal is silently ignored.
-
-   .. versionchanged:: 3.8
-      The function now ignores the signal is ignored or not handled by Python.
-
+   If :const:`SIGINT` isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   nothing.
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
 

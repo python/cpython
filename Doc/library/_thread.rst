@@ -56,10 +56,9 @@ This module defines the following constants and functions:
    Simulate the effect of a :data:`signal.SIGINT` signal arriving in the main
    thread. A thread can use this function to interrupt the main thread.
 
-   Missing signal handler for the SIGINT signal is silently ignored.
-
-   .. versionchanged:: 3.8
-      The function now ignores the signal is ignored or not handled by Python.
+   If :data:`signal.SIGINT` isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   nothing.
 
 
 .. function:: exit()

@@ -1198,15 +1198,16 @@ class InterruptMainTests(unittest.TestCase):
 
     def test_interrupt_main_noerror(self):
         handler = signal.getsignal(signal.SIGINT)
-        # No exception should arise.
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        _thread.interrupt_main()
+        try:
+            # No exception should arise.
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+            _thread.interrupt_main()
 
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-        _thread.interrupt_main()
-
-        # Restore original handlers
-        signal.signal(signal.SIGINT, handler)
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            _thread.interrupt_main()
+        finally:
+            # Restore original handler
+            signal.signal(signal.SIGINT, handler)
 
 
 if __name__ == "__main__":
