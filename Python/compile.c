@@ -22,7 +22,7 @@
  */
 
 #include "Python.h"
-
+#include "osdefs.h"
 #include "Python-ast.h"
 #include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "ast.h"
@@ -30,6 +30,7 @@
 #include "symtable.h"
 #include "opcode.h"
 #include "wordcode_helpers.h"
+#include <wchar.h>
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_BLOCKS 8
@@ -326,13 +327,18 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     if (!compiler_init(&c))
         return NULL;
 
+    wchar_t *path = PyUnicode_AsWideCharString(filename, NULL);
     #if defined(HAVE_REALPATH)
-    char* path = realpath(PyUnicode_DATA(filename), NULL);
-    if (path != NULL) {
-        filename = PyUnicode_FromString(path);
-    }
+        wchar_t fullpath[MAXPATHLEN];
+        path = _Py_wrealpath(path, fullpath, Py_ARRAY_LENGTH(fullpath));
+    #elif defined(MS_WINDOWS)
+        wchar_t fullpath[MAX_PATH];
+        wchar_t *ptemp;
+        if (GetFullPathNameW(path, Py_ARRAY_LENGTH(fullpath), fullpath, &ptemp))
+            path = fullpath;
     #endif
-
+    if (path != NULL)
+        filename = PyUnicode_FromWideChar(path, -1);
     Py_INCREF(filename);
     c.c_filename = filename;
     c.c_arena = arena;
