@@ -891,7 +891,7 @@ os.close(fd)
 
         def server():
             # Runs in a separate thread.
-            with socket.create_server(('localhost', 0)) as sock:
+            with socket.create_server(('127.0.0.1', 0)) as sock:
                 addr = sock.getsockname()
                 q.put(addr)
                 clt, _ = sock.accept()
@@ -1512,7 +1512,7 @@ os.close(fd)
             await stream.close()
 
         async def test():
-            async with asyncio.StreamServer(serve_callback, 'localhost', 0) as srv:
+            async with asyncio.StreamServer(serve_callback, '127.0.0.1', 0) as srv:
                 await srv.start_serving()
                 await do_connect(*srv.addresses()[0])
 
