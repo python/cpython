@@ -303,7 +303,7 @@ for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
 io
 --
 
-In development mode (:opt:`-X` ``env``) and in debug build, the
+In development mode (:option:`-X` ``env``) and in debug build, the
 :class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
 fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
