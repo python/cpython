@@ -70,11 +70,11 @@ class REPLThread(threading.Thread):
     def run(self):
         try:
             banner = (
-                f'asyncio REPL {sys.version} on {sys.platform}\n\n'
+                f'asyncio REPL {sys.version} on {sys.platform}\n'
                 f'Use "await" directly instead of "asyncio.run()".\n'
                 f'Type "help", "copyright", "credits" or "license" '
-                f'for more information.\n\n'
-                f'{getattr(sys, "ps1", ">>> ")}import asyncio\n'
+                f'for more information.\n'
+                f'{getattr(sys, "ps1", ">>> ")}import asyncio'
             )
 
             console.interact(
@@ -110,6 +110,7 @@ if __name__ == '__main__':
         pass
 
     repl_thread = REPLThread()
+    repl_thread.daemon = True
     repl_thread.start()
 
     while True:
