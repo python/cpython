@@ -1619,34 +1619,28 @@ init_timezone(PyObject *m)
     And I'm lazy and hate C so nyer.
      */
 #ifdef HAVE_DECL_TZNAME
-#ifdef MS_WINDOWS
-#	include <locale.h>
-	// https://bugs.python.org/issue36778
-	// workaround bug in UCRT
-	// strptime fails if the current locale is a Unicode locale
-	int cp = GetACP();
-	char* save_locale = NULL;
-	if (cp == CP_UTF8 || cp == CP_UTF7)
-	{
-		save_locale = setlocale(LC_CTYPE, NULL);
-		setlocale(LC_CTYPE, "C");
-	}
-#endif
     PyObject *otz0, *otz1;
     tzset();
     PyModule_AddIntConstant(m, "timezone", _Py_timezone);
-#ifdef MS_WINDOWS
-	if (cp == CP_UTF8 || cp == CP_UTF7)
-	{
-		setlocale(LC_CTYPE, save_locale);
-	}
-#endif
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);
 #else
     PyModule_AddIntConstant(m, "altzone", _Py_timezone-3600);
 #endif
     PyModule_AddIntConstant(m, "daylight", _Py_daylight);
+#ifdef MS_WINDOWS
+    TIME_ZONE_INFORMATION tzinfo = {0};
+    GetTimeZoneInformation(&tzinfo);
+    otz0 = PyUnicode_FromWideChar(tzinfo.StandardName, -1);
+    if (otz0 == NULL) {
+        return -1;
+    }
+    otz1 = PyUnicode_FromWideChar(tzinfo.DaylightName, -1);
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return -1;
+    }
+#else
     otz0 = PyUnicode_DecodeLocale(_Py_tzname[0], "surrogateescape");
     if (otz0 == NULL) {
         return -1;
@@ -1656,6 +1650,7 @@ init_timezone(PyObject *m)
         Py_DECREF(otz0);
         return -1;
     }
+#endif // MS_WINDOWS
     PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
     if (tzname_obj == NULL) {
         return -1;
