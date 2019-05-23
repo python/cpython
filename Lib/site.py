@@ -625,11 +625,11 @@ def envpath_info(vname) :
 def useful_info() :
     global use_sitevendor, use_sitecustomize, use_usercustomize
 
-    print("sys.version:", sys.version ) 
-    print("sys._git:", sys._git ) 
-    print("sys.prefix:", sys.prefix) 
-    print("sys.base_prefix:", sys.base_prefix) 
-    print("sys.executable:", sys.executable) 
+    print("sys.version:", sys.version )
+    print("sys._git:", sys._git )
+    print("sys.prefix:", sys.prefix)
+    print("sys.base_prefix:", sys.base_prefix)
+    print("sys.executable:", sys.executable)
     print("sys.path = [")
     for dir in sys.path:
         print("  %s" % (dir))
@@ -657,7 +657,7 @@ def useful_info() :
     else :
         print("sys._xoptions is empty")
 
-    print("sys.warnoptions:", sys.warnoptions ) 
+    print("sys.warnoptions:", sys.warnoptions )
 # end useful_info
 
 
