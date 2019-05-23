@@ -33,6 +33,10 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 # Rebind for compatibility
 BlockingIOError = BlockingIOError
 
+# Does io.IOBase finalizer log the exception if the close() method fails?
+# The exception is ignored silently by default in release build.
+_IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+
 
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
          newline=None, closefd=True, opener=None):
@@ -378,15 +382,18 @@ class IOBase(metaclass=abc.ABCMeta):
 
     def __del__(self):
         """Destructor.  Calls close()."""
-        # The try/except block is in case this is called at program
-        # exit time, when it's possible that globals have already been
-        # deleted, and then the close() call might fail.  Since
-        # there's nothing we can do about such failures and they annoy
-        # the end users, we suppress the traceback.
-        try:
+        if _IOBASE_EMITS_UNRAISABLE:
             self.close()
-        except:
-            pass
+        else:
+            # The try/except block is in case this is called at program
+            # exit time, when it's possible that globals have already been
+            # deleted, and then the close() call might fail.  Since
+            # there's nothing we can do about such failures and they annoy
+            # the end users, we suppress the traceback.
+            try:
+                self.close()
+            except:
+                pass
 
     ### Inquiries ###
 
