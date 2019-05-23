@@ -522,7 +522,7 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.decode()
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
-        self.assertIn(f'6   100%   {TESTFN}   ({filename})', stdout)
+        self.assertIn(f'6   100%   {TESTFN}   ({os.path.abspath(filename)})', stdout)
 
 if __name__ == '__main__':
     unittest.main()

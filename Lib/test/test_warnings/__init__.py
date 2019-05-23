@@ -932,7 +932,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
               f = None
             ResourceWarning: Enable tracemalloc to get the object allocation traceback
         ''')
-        expected = expected.format(fname=support.TESTFN).strip()
+        expected = expected.format(fname=os.path.abspath(support.TESTFN)).strip()
         self.assertEqual(stderr, expected)
 
         # tracemalloc enabled
@@ -946,7 +946,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
               File "{fname}", lineno 3
                 f = open(__file__)
         ''')
-        expected = expected.format(fname=support.TESTFN).strip()
+        expected = expected.format(fname=os.path.abspath(support.TESTFN)).strip()
         self.assertEqual(stderr, expected)
 
 

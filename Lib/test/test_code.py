@@ -131,6 +131,7 @@ import threading
 import unittest
 import weakref
 import opcode
+import os
 try:
     import ctypes
 except ImportError:
@@ -211,6 +212,12 @@ class CodeTest(unittest.TestCase):
         # Ensure the zero-arg super() call in the injected method works
         obj = List([1, 2, 3])
         self.assertEqual(obj[0], "Foreign getitem: 1")
+
+    @cpython_only
+    def test_filename_abspath(self):
+        def x():
+            pass
+        self.assertEqual(x.__code__.co_filename, os.path.abspath(__file__))
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
