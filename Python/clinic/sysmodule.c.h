@@ -2,6 +2,38 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(sys_addaudithook__doc__,
+"addaudithook($module, /, hook)\n"
+"--\n"
+"\n"
+"Adds a new audit hook callback.");
+
+#define SYS_ADDAUDITHOOK_METHODDEF    \
+    {"addaudithook", (PyCFunction)(void(*)(void))sys_addaudithook, METH_FASTCALL|METH_KEYWORDS, sys_addaudithook__doc__},
+
+static PyObject *
+sys_addaudithook_impl(PyObject *module, PyObject *hook);
+
+static PyObject *
+sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"hook", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "addaudithook", 0};
+    PyObject *argsbuf[1];
+    PyObject *hook;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    hook = args[0];
+    return_value = sys_addaudithook_impl(module, hook);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_displayhook__doc__,
 "displayhook($module, object, /)\n"
 "--\n"
@@ -1076,4 +1108,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=603e4d5a453dc769 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c32bc91ec659509 input=a9049054013a1b77]*/

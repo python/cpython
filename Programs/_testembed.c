@@ -1091,6 +1091,164 @@ static int test_init_dev_mode(void)
     return 0;
 }
 
+static PyObject *_open_code_hook(PyObject *path, void *data)
+{
+    if (PyUnicode_CompareWithASCIIString(path, "$$test-filename") == 0) {
+        return PyLong_FromVoidPtr(data);
+    }
+    PyObject *io = PyImport_ImportModule("_io");
+    if (!io) {
+        return NULL;
+    }
+    return PyObject_CallMethod(io, "open", "Os", path, "rb");
+}
+
+static int test_open_code_hook(void)
+{
+    int result = 0;
+
+    /* Provide a hook */
+    result = PyFile_SetOpenCodeHook(_open_code_hook, &result);
+    if (result) {
+        printf("Failed to set hook\n");
+        return 1;
+    }
+    /* A second hook should fail */
+    result = PyFile_SetOpenCodeHook(_open_code_hook, &result);
+    if (!result) {
+        printf("Should have failed to set second hook\n");
+        return 2;
+    }
+
+    Py_IgnoreEnvironmentFlag = 0;
+    _testembed_Py_Initialize();
+    result = 0;
+
+    PyObject *r = PyFile_OpenCode("$$test-filename");
+    if (!r) {
+        PyErr_Print();
+        result = 3;
+    } else {
+        void *cmp = PyLong_AsVoidPtr(r);
+        Py_DECREF(r);
+        if (cmp != &result) {
+            printf("Did not get expected result from hook\n");
+            result = 4;
+        }
+    }
+
+    if (!result) {
+        PyObject *io = PyImport_ImportModule("_io");
+        PyObject *r = io
+            ? PyObject_CallMethod(io, "open_code", "s", "$$test-filename")
+            : NULL;
+        if (!r) {
+            PyErr_Print();
+            result = 5;
+        } else {
+            void *cmp = PyLong_AsVoidPtr(r);
+            Py_DECREF(r);
+            if (cmp != &result) {
+                printf("Did not get expected result from hook\n");
+                result = 6;
+            }
+        }
+        Py_XDECREF(io);
+    }
+
+    Py_Finalize();
+    return result;
+}
+
+static int _audit_hook(const char *event, PyObject *args, void *userdata)
+{
+    if (strcmp(event, "_testembed.raise") == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Intentional error");
+        return -1;
+    } else if (strcmp(event, "_testembed.set") == 0) {
+        if (!PyArg_ParseTuple(args, "n", userdata)) {
+            return -1;
+        }
+        return 0;
+    }
+    return 0;
+}
+
+static int _test_audit(Py_ssize_t setValue)
+{
+    Py_ssize_t sawSet = 0;
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_hook, &sawSet);
+    _testembed_Py_Initialize();
+
+    if (PySys_Audit("_testembed.raise", NULL) == 0) {
+        printf("No error raised");
+        return 1;
+    }
+    if (PySys_Audit("_testembed.nop", NULL) != 0) {
+        printf("Nop event failed");
+        /* Exception from above may still remain */
+        PyErr_Clear();
+        return 2;
+    }
+    if (!PyErr_Occurred()) {
+        printf("Exception not preserved");
+        return 3;
+    }
+    PyErr_Clear();
+
+    if (PySys_Audit("_testembed.set", "n", setValue) != 0) {
+        PyErr_Print();
+        printf("Set event failed");
+        return 4;
+    }
+
+    if (sawSet != 42) {
+        printf("Failed to see *userData change\n");
+        return 5;
+    }
+    return 0;
+}
+
+static int test_audit(void)
+{
+    int result = _test_audit(42);
+    Py_Finalize();
+    return result;
+}
+
+static volatile int _audit_subinterpreter_interpreter_count = 0;
+
+static int _audit_subinterpreter_hook(const char *event, PyObject *args, void *userdata)
+{
+    printf("%s\n", event);
+    if (strcmp(event, "cpython.PyInterpreterState_New") == 0) {
+        _audit_subinterpreter_interpreter_count += 1;
+    }
+    return 0;
+}
+
+static int test_audit_subinterpreter(void)
+{
+    PyThreadState *ts;
+
+    Py_IgnoreEnvironmentFlag = 0;
+    PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
+    _testembed_Py_Initialize();
+
+    ts = Py_NewInterpreter();
+    ts = Py_NewInterpreter();
+    ts = Py_NewInterpreter();
+
+    Py_Finalize();
+
+    switch (_audit_subinterpreter_interpreter_count) {
+        case 3: return 0;
+        case 0: return -1;
+        default: return _audit_subinterpreter_interpreter_count;
+    }
+}
 
 static int test_init_read_set(void)
 {
@@ -1299,6 +1457,9 @@ static struct TestCase TestCases[] = {
     {"test_init_run_main", test_init_run_main},
     {"test_init_main", test_init_main},
     {"test_run_main", test_run_main},
+    {"test_open_code_hook", test_open_code_hook},
+    {"test_audit", test_audit},
+    {"test_audit_subinterpreter", test_audit_subinterpreter},
     {NULL, NULL}
 };
 
