@@ -2680,6 +2680,11 @@ def mock_open(mock=None, read_data=''):
         for line in _state[0]:
             yield line
 
+    def _next_side_effect():
+        if handle.readline.return_value is not None:
+            return handle.readline.return_value
+        return next(_state[0])
+
     global file_spec
     if file_spec is None:
         import _io
@@ -2701,6 +2706,7 @@ def mock_open(mock=None, read_data=''):
     handle.readline.side_effect = _state[1]
     handle.readlines.side_effect = _readlines_side_effect
     handle.__iter__.side_effect = _iter_side_effect
+    handle.__next__.side_effect = _next_side_effect
 
     def reset_data(*args, **kwargs):
         _state[0] = _to_stream(read_data)
