@@ -20,7 +20,7 @@ if NOT "%1"=="" (set regrtest_args=%regrtest_args% %1) & shift & goto CheckOpts
 if "%arm32_ssh%"=="true" goto :Arm32Ssh
 
 call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args%
-exit /b 0
+exit /b %ERRORLEVEL%
 
 :Arm32Ssh
 set dashU=-unetwork,decimal,subprocess,urlfetch,tzdata
@@ -33,7 +33,7 @@ set TEMP_ARGS=--temp %REMOTE_PYTHON_DIR%temp
 
 set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args% %TEMP_ARGS%
 %SSH% %SSH_SERVER% "set TEMP=%REMOTE_PYTHON_DIR%temp& %REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
-exit /b 0
+exit /b %ERRORLEVEL%
 
 :Arm32SshHelp
 echo SSH_SERVER environment variable must be set to administrator@[ip address]
