@@ -262,16 +262,26 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const _PyPreConfig *preconfig)
 
 
 void
-_PyPreConfig_Init(_PyPreConfig *config)
+_PyPreConfig_InitCompatConfig(_PyPreConfig *config)
 {
     memset(config, 0, sizeof(*config));
 
     config->_config_version = _Py_CONFIG_VERSION;
+    config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->parse_argv = 0;
     config->isolated = -1;
     config->use_environment = -1;
     config->configure_locale = 1;
-    config->utf8_mode = -2;
+
+    /* bpo-36443: C locale coercion (PEP 538) and UTF-8 Mode (PEP 540)
+       are disabled by default using the Compat configuration.
+
+       Py_UTF8Mode=1 enables the UTF-8 mode. PYTHONUTF8 environment variable
+       is ignored (even if use_environment=1). */
+    config->utf8_mode = 0;
+    config->coerce_c_locale = 0;
+    config->coerce_c_locale_warn = 0;
+
     config->dev_mode = -1;
     config->allocator = PYMEM_ALLOCATOR_NOT_SET;
 #ifdef MS_WINDOWS
@@ -283,23 +293,30 @@ _PyPreConfig_Init(_PyPreConfig *config)
 void
 _PyPreConfig_InitPythonConfig(_PyPreConfig *config)
 {
-    _PyPreConfig_Init(config);
+    _PyPreConfig_InitCompatConfig(config);
 
+    config->_config_init = (int)_PyConfig_INIT_PYTHON;
+    config->isolated = 0;
     config->parse_argv = 1;
+    config->use_environment = 1;
     /* Set to -1 to enable C locale coercion (PEP 538) and UTF-8 Mode (PEP 540)
        depending on the LC_CTYPE locale, PYTHONUTF8 and PYTHONCOERCECLOCALE
        environment variables. */
     config->coerce_c_locale = -1;
     config->coerce_c_locale_warn = -1;
     config->utf8_mode = -1;
+#ifdef MS_WINDOWS
+    config->legacy_windows_fs_encoding = 0;
+#endif
 }
 
 
 void
 _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config)
 {
-    _PyPreConfig_Init(config);
+    _PyPreConfig_InitCompatConfig(config);
 
+    config->_config_init = (int)_PyConfig_INIT_ISOLATED;
     config->configure_locale = 0;
     config->isolated = 1;
     config->use_environment = 0;
@@ -315,7 +332,7 @@ void
 _PyPreConfig_InitFromPreConfig(_PyPreConfig *config,
                                const _PyPreConfig *config2)
 {
-    _PyPreConfig_Init(config);
+    _PyPreConfig_InitCompatConfig(config);
     _PyPreConfig_Copy(config, config2);
 }
 
@@ -324,17 +341,17 @@ void
 _PyPreConfig_InitFromCoreConfig(_PyPreConfig *config,
                                 const _PyCoreConfig *coreconfig)
 {
-    _PyCoreConfigInitEnum config_init = (_PyCoreConfigInitEnum)coreconfig->_config_init;
+    _PyConfigInitEnum config_init = (_PyConfigInitEnum)coreconfig->_config_init;
     switch (config_init) {
-    case _PyCoreConfig_INIT_PYTHON:
+    case _PyConfig_INIT_PYTHON:
         _PyPreConfig_InitPythonConfig(config);
         break;
-    case _PyCoreConfig_INIT_ISOLATED:
+    case _PyConfig_INIT_ISOLATED:
         _PyPreConfig_InitIsolatedConfig(config);
         break;
-    case _PyCoreConfig_INIT:
+    case _PyConfig_INIT_COMPAT:
     default:
-        _PyPreConfig_Init(config);
+        _PyPreConfig_InitCompatConfig(config);
     }
     _PyPreConfig_GetCoreConfig(config, coreconfig);
 }
@@ -345,6 +362,7 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 {
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
+    COPY_ATTR(_config_init);
     COPY_ATTR(parse_argv);
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
@@ -385,6 +403,7 @@ _PyPreConfig_AsDict(const _PyPreConfig *config)
             } \
         } while (0)
 
+    SET_ITEM_INT(_config_init);
     SET_ITEM_INT(parse_argv);
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
@@ -428,6 +447,11 @@ _PyPreConfig_GetCoreConfig(_PyPreConfig *config,
 static void
 _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 {
+    if (config->_config_init != _PyConfig_INIT_COMPAT) {
+        /* Python and Isolated configuration ignore global variables */
+        return;
+    }
+
 #define COPY_FLAG(ATTR, VALUE) \
     if (config->ATTR < 0) { \
         config->ATTR = VALUE; \
@@ -439,12 +463,12 @@ _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
+    if (Py_UTF8Mode > 0) {
+        config->utf8_mode = Py_UTF8Mode;
+    }
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
-    if (config->utf8_mode == -2) {
-        config->utf8_mode = Py_UTF8Mode;
-    }
 
 #undef COPY_FLAG
 #undef COPY_NOT_FLAG
@@ -565,12 +589,7 @@ preconfig_init_utf8_mode(_PyPreConfig *config, const _PyPreCmdline *cmdline)
     }
 
     const wchar_t *xopt;
-    if (cmdline) {
-        xopt = _Py_get_xoption(&cmdline->xoptions, L"utf8");
-    }
-    else {
-        xopt = NULL;
-    }
+    xopt = _Py_get_xoption(&cmdline->xoptions, L"utf8");
     if (xopt) {
         wchar_t *sep = wcschr(xopt, L'=');
         if (sep) {

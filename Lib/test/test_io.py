@@ -67,9 +67,9 @@ MEMORY_SANITIZER = (
     '--with-memory-sanitizer' in _config_args
 )
 
-# Does io.IOBase logs unhandled exceptions on calling close()?
-# They are silenced by default in release build.
-DESTRUCTOR_LOG_ERRORS = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+# Does io.IOBase finalizer log the exception if the close() method fails?
+# The exception is ignored silently by default in release build.
+IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
 
 
 def _default_chunk_size():
@@ -1098,23 +1098,18 @@ class CommonBufferedTests:
         # Test that the exception state is not modified by a destructor,
         # even if close() fails.
         rawio = self.CloseFailureIO()
-        def f():
-            self.tp(rawio).xyzzy
-        with support.captured_output("stderr") as s:
-            self.assertRaises(AttributeError, f)
-        s = s.getvalue().strip()
-        if s:
-            # The destructor *may* have printed an unraisable error, check it
-            lines = s.splitlines()
-            if DESTRUCTOR_LOG_ERRORS:
-                self.assertEqual(len(lines), 5)
-                self.assertTrue(lines[0].startswith("Exception ignored in: "), lines)
-                self.assertEqual(lines[1], "Traceback (most recent call last):", lines)
-                self.assertEqual(lines[4], 'OSError:', lines)
-            else:
-                self.assertEqual(len(lines), 1)
-                self.assertTrue(lines[-1].startswith("Exception OSError: "), lines)
-                self.assertTrue(lines[-1].endswith(" ignored"), lines)
+        try:
+            with support.catch_unraisable_exception() as cm:
+                with self.assertRaises(AttributeError):
+                    self.tp(rawio).xyzzy
+
+            if not IOBASE_EMITS_UNRAISABLE:
+                self.assertIsNone(cm.unraisable)
+            elif cm.unraisable is not None:
+                self.assertEqual(cm.unraisable.exc_type, OSError)
+        finally:
+            # Explicitly break reference cycle
+            cm = None
 
     def test_repr(self):
         raw = self.MockRawIO()
@@ -2859,23 +2854,18 @@ class TextIOWrapperTest(unittest.TestCase):
         # Test that the exception state is not modified by a destructor,
         # even if close() fails.
         rawio = self.CloseFailureIO()
-        def f():
-            self.TextIOWrapper(rawio).xyzzy
-        with support.captured_output("stderr") as s:
-            self.assertRaises(AttributeError, f)
-        s = s.getvalue().strip()
-        if s:
-            # The destructor *may* have printed an unraisable error, check it
-            lines = s.splitlines()
-            if DESTRUCTOR_LOG_ERRORS:
-                self.assertEqual(len(lines), 5)
-                self.assertTrue(lines[0].startswith("Exception ignored in: "), lines)
-                self.assertEqual(lines[1], "Traceback (most recent call last):", lines)
-                self.assertEqual(lines[4], 'OSError:', lines)
-            else:
-                self.assertEqual(len(lines), 1)
-                self.assertTrue(lines[-1].startswith("Exception OSError: "), lines)
-                self.assertTrue(lines[-1].endswith(" ignored"), lines)
+        try:
+            with support.catch_unraisable_exception() as cm:
+                with self.assertRaises(AttributeError):
+                    self.TextIOWrapper(rawio).xyzzy
+
+            if not IOBASE_EMITS_UNRAISABLE:
+                self.assertIsNone(cm.unraisable)
+            elif cm.unraisable is not None:
+                self.assertEqual(cm.unraisable.exc_type, OSError)
+        finally:
+            # Explicitly break reference cycle
+            cm = None
 
     # Systematic tests of the text I/O API
 

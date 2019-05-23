@@ -40,9 +40,18 @@ typedef struct {
 
 #define _Py_CONFIG_VERSION 1
 
+typedef enum {
+    /* Py_Initialize() API: backward compatibility with Python 3.6 and 3.7 */
+    _PyConfig_INIT_COMPAT = 1,
+    _PyConfig_INIT_PYTHON = 2,
+    _PyConfig_INIT_ISOLATED = 3
+} _PyConfigInitEnum;
+
+
 typedef struct {
     int _config_version;  /* Internal configuration version,
                              used for ABI compatibility */
+    int _config_init;     /* _PyConfigInitEnum value */
 
     /* Parse _Py_PreInitializeFromArgs() arguments?
        See _PyCoreConfig.parse_argv */
@@ -107,10 +116,7 @@ typedef struct {
        Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
 
        If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
-       "POSIX", otherwise it is set to 0.
-
-       If equals to -2, inherit Py_UTF8Mode value value (which is equal to 0
-       by default). */
+       "POSIX", otherwise it is set to 0. Inherit Py_UTF8Mode value value. */
     int utf8_mode;
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
@@ -126,16 +132,10 @@ PyAPI_FUNC(void) _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config);
 
 /* --- _PyCoreConfig ---------------------------------------------- */
 
-typedef enum {
-    _PyCoreConfig_INIT = 0,
-    _PyCoreConfig_INIT_PYTHON = 1,
-    _PyCoreConfig_INIT_ISOLATED = 2
-} _PyCoreConfigInitEnum;
-
 typedef struct {
     int _config_version;  /* Internal configuration version,
                              used for ABI compatibility */
-    int _config_init;     /* _PyCoreConfigInitEnum value */
+    int _config_init;     /* _PyConfigInitEnum value */
 
     int isolated;         /* Isolated mode? see _PyPreConfig.isolated */
     int use_environment;  /* Use environment variables? see _PyPreConfig.use_environment */

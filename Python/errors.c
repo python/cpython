@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_coreconfig.h"
 #include "pycore_pystate.h"
+#include "pycore_traceback.h"
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
@@ -1048,7 +1049,7 @@ write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
         }
     }
 
-    if (!exc_type) {
+    if (exc_type == NULL || exc_type == Py_None) {
         return -1;
     }
 
@@ -1106,6 +1107,7 @@ write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
             }
         }
     }
+
     if (PyFile_WriteString("\n", file) < 0) {
         return -1;
     }
@@ -1175,6 +1177,24 @@ PyErr_WriteUnraisable(PyObject *obj)
     if (exc_type == NULL) {
         /* sys.unraisablehook requires that at least exc_type is set */
         goto default_hook;
+    }
+
+    if (exc_tb == NULL) {
+        struct _frame *frame = _PyThreadState_GET()->frame;
+        if (frame != NULL) {
+            exc_tb = _PyTraceBack_FromFrame(NULL, frame);
+            if (exc_tb == NULL) {
+                PyErr_Clear();
+            }
+        }
+    }
+
+    PyErr_NormalizeException(&exc_type, &exc_value, &exc_tb);
+
+    if (exc_tb != NULL && exc_tb != Py_None && PyTraceBack_Check(exc_tb)) {
+        if (PyException_SetTraceback(exc_value, exc_tb) < 0) {
+            PyErr_Clear();
+        }
     }
 
     _Py_IDENTIFIER(unraisablehook);

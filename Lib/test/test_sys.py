@@ -882,19 +882,14 @@ class UnraisableHookTest(unittest.TestCase):
         import _testcapi
         import types
         try:
-            # raise the exception to get a traceback in the except block
-            try:
-                raise exc
-            except Exception as exc2:
-                _testcapi.write_unraisable_exc(exc2, obj)
-                return types.SimpleNamespace(exc_type=type(exc2),
-                                             exc_value=exc2,
-                                             exc_traceback=exc2.__traceback__,
-                                             object=obj)
+            _testcapi.write_unraisable_exc(exc, obj)
+            return types.SimpleNamespace(exc_type=type(exc),
+                                         exc_value=exc,
+                                         exc_traceback=exc.__traceback__,
+                                         object=obj)
         finally:
             # Explicitly break any reference cycle
             exc = None
-            exc2 = None
 
     def test_original_unraisablehook(self):
         obj = "an object"
@@ -908,6 +903,47 @@ class UnraisableHookTest(unittest.TestCase):
         self.assertIn(f'Exception ignored in: {obj!r}\n', err)
         self.assertIn('Traceback (most recent call last):\n', err)
         self.assertIn('ValueError: 42\n', err)
+
+    def test_original_unraisablehook_err(self):
+        # bpo-22836: PyErr_WriteUnraisable() should give sensible reports
+        class BrokenDel:
+            def __del__(self):
+                exc = ValueError("del is broken")
+                # The following line is included in the traceback report:
+                raise exc
+
+        class BrokenStrException(Exception):
+            def __str__(self):
+                raise Exception("str() is broken")
+
+        class BrokenExceptionDel:
+            def __del__(self):
+                exc = BrokenStrException()
+                # The following line is included in the traceback report:
+                raise exc
+
+        for test_class in (BrokenDel, BrokenExceptionDel):
+            with self.subTest(test_class):
+                obj = test_class()
+                with test.support.captured_stderr() as stderr, \
+                     test.support.swap_attr(sys, 'unraisablehook',
+                                            sys.__unraisablehook__):
+                    # Trigger obj.__del__()
+                    del obj
+
+                report = stderr.getvalue()
+                self.assertIn("Exception ignored", report)
+                self.assertIn(test_class.__del__.__qualname__, report)
+                self.assertIn("test_sys.py", report)
+                self.assertIn("raise exc", report)
+                if test_class is BrokenExceptionDel:
+                    self.assertIn("BrokenStrException", report)
+                    self.assertIn("<exception str() failed>", report)
+                else:
+                    self.assertIn("ValueError", report)
+                    self.assertIn("del is broken", report)
+                self.assertTrue(report.endswith("\n"))
+
 
     def test_original_unraisablehook_wrong_type(self):
         exc = ValueError(42)
