@@ -622,6 +622,45 @@ def envpath_info(vname) :
     print("]")
 
 
+def useful_info() :
+    global use_sitevendor, use_sitecustomize, use_usercustomize
+
+    print("sys.version:", sys.version ) 
+    print("sys._git:", sys._git ) 
+    print("sys.prefix:", sys.prefix) 
+    print("sys.base_prefix:", sys.base_prefix) 
+    print("sys.executable:", sys.executable) 
+    print("sys.path = [")
+    for dir in sys.path:
+        print("  %s" % (dir))
+    print("]")
+    envpath_info('PATH')
+
+    user_base = getuserbase()
+    user_site = getusersitepackages()
+    print("USER_BASE: %r (%s)" % (user_base,
+        "exists" if os.path.isdir(user_base) else "doesn't exist"))
+    print("USER_SITE: %r (%s)" % (user_site,
+        "exists" if os.path.isdir(user_site) else "doesn't exist"))
+    print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
+
+    custsite_info("sitevendor" ,   use_sitevendor)
+    custsite_info("sitecustomize", use_sitecustomize)
+    custsite_info("usercustomize", use_usercustomize)
+
+    lng = len(sys._xoptions)
+    if (lng > 0) :
+        print("sys._xoptions = {") # name-value dictionary
+        for nm, val in sys._xoptions.items() :
+            print("  %s=%s" % (nm, val))
+        print("}")
+    else :
+        print("sys._xoptions is empty")
+
+    print("sys.warnoptions:", sys.warnoptions ) 
+# end useful_info
+
+
 def _script():
     help = """\
     %s [--user-base] [--user-site]
@@ -638,28 +677,9 @@ def _script():
      >2 - unknown error
     """
 
-    global use_sitevendor, use_sitecustomize, use_usercustomize
     args = sys.argv[1:]
     if not args:
-        print("sys.path = [")
-        for dir in sys.path:
-            print("  %s" % (dir))
-        print("]")
-
-        envpath_info('PATH')
-
-        user_base = getuserbase()
-        user_site = getusersitepackages()
-        print("USER_BASE: %r (%s)" % (user_base,
-            "exists" if os.path.isdir(user_base) else "doesn't exist"))
-        print("USER_SITE: %r (%s)" % (user_site,
-            "exists" if os.path.isdir(user_site) else "doesn't exist"))
-
-        print("ENABLE_USER_SITE: %r" %  ENABLE_USER_SITE)
-        custsite_info("sitevendor" ,   use_sitevendor)
-        custsite_info("sitecustomize", use_sitecustomize)
-        custsite_info("usercustomize", use_usercustomize)
-
+        useful_info()
         sys.exit(0)
 
     buffer = []
@@ -685,3 +705,5 @@ def _script():
 
 if __name__ == '__main__':
     _script()
+
+# eof site.py
