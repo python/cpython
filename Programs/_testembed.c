@@ -1231,15 +1231,13 @@ static int _audit_subinterpreter_hook(const char *event, PyObject *args, void *u
 
 static int test_audit_subinterpreter(void)
 {
-    PyThreadState *ts;
-
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_Py_Initialize();
 
-    ts = Py_NewInterpreter();
-    ts = Py_NewInterpreter();
-    ts = Py_NewInterpreter();
+    Py_NewInterpreter();
+    Py_NewInterpreter();
+    Py_NewInterpreter();
 
     Py_Finalize();
 
