@@ -2158,6 +2158,21 @@ class TestQuantiles(unittest.TestCase):
                 result = quantiles(map(datatype, data), n=n)
                 self.assertTrue(all(type(x) == datatype) for x in result)
                 self.assertEqual(result, list(map(datatype, expected)))
+            # Quantiles should be idempotent
+            if len(expected) >= 2:
+                self.assertEqual(quantiles(expected, n=n), expected)
+            # Cross-check against method='inclusive' which should give
+            # the same result after adding in minimum and maximum values
+            # extrapolated from the two lowest and two highest points.
+            sdata = sorted(data)
+            lo = 2 * sdata[0] - sdata[1]
+            hi = 2 * sdata[-1] - sdata[-2]
+            padded_data = data + [lo, hi]
+            self.assertEqual(
+                quantiles(data, n=n),
+                quantiles(padded_data, n=n, method='inclusive'),
+                (n, data),
+            )
             # Invariant under tranlation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
@@ -2174,11 +2189,16 @@ class TestQuantiles(unittest.TestCase):
             actual = quantiles(statistics.NormalDist(), n=n)
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
+        # Q2 agrees with median()
+        for k in range(2, 60):
+            data = random.choices(range(100), k=k)
+            q1, q2, q3 = quantiles(data)
+            self.assertEqual(q2, statistics.median(data))
 
     def test_specific_cases_inclusive(self):
         # Match results computed by hand and cross-checked
         # against the PERCENTILE.INC function in MS Excel
-        # and against the quaatile() function in SciPy.
+        # and against the quantile() function in SciPy.
         quantiles = statistics.quantiles
         data = [100, 200, 400, 800]
         random.shuffle(data)
@@ -2219,6 +2239,25 @@ class TestQuantiles(unittest.TestCase):
             actual = quantiles(statistics.NormalDist(), n=n, method="inclusive")
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
+        # Natural deciles
+        self.assertEqual(quantiles([0, 100], n=10, method='inclusive'),
+                         [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0])
+        self.assertEqual(quantiles(range(0, 101), n=10, method='inclusive'),
+                         [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0])
+        # Whenever n is smaller than the number of data points, running
+        # method='inclusive' should give the same result as method='exclusive'
+        # after the two included extreme points are removed.
+        data = [random.randrange(10_000) for i in range(501)]
+        actual = quantiles(data, n=32, method='inclusive')
+        data.remove(min(data))
+        data.remove(max(data))
+        expected = quantiles(data, n=32)
+        self.assertEqual(expected, actual)
+        # Q2 agrees with median()
+        for k in range(2, 60):
+            data = random.choices(range(100), k=k)
+            q1, q2, q3 = quantiles(data, method='inclusive')
+            self.assertEqual(q2, statistics.median(data))
 
     def test_equal_inputs(self):
         quantiles = statistics.quantiles

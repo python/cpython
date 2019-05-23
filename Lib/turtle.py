@@ -1568,7 +1568,7 @@ class TNavigator(object):
         fullcircle -  a number
 
         Set angle measurement units, i. e. set number
-        of 'degrees' for a full circle. Dafault value is
+        of 'degrees' for a full circle. Default value is
         360 degrees.
 
         Example (for a Turtle instance named turtle):

@@ -2,9 +2,11 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+#include "pycore_ceval.h"
 #include "pycore_coreconfig.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
+#include "pycore_pylifecycle.h"
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -38,17 +40,27 @@ extern "C" {
 /* Forward declarations */
 static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_state *gilstate);
 static void _PyThreadState_Delete(_PyRuntimeState *runtime, PyThreadState *tstate);
-static PyThreadState *_PyThreadState_Swap(struct _gilstate_runtime_state *gilstate, PyThreadState *newts);
 
 
 static _PyInitError
 _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 {
+    /* We preserve the hook across init, because there is
+       currently no public API to set it between runtime
+       initialization and interpreter initialization. */
+    void *open_code_hook = runtime->open_code_hook;
+    void *open_code_userdata = runtime->open_code_userdata;
+    _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
+
     memset(runtime, 0, sizeof(*runtime));
+
+    runtime->open_code_hook = open_code_hook;
+    runtime->open_code_userdata = open_code_userdata;
+    runtime->audit_hook_head = audit_hook_head;
 
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
-    runtime->preconfig = _PyPreConfig_INIT;
+    _PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
     runtime->gilstate.check_enabled = 1;
 
@@ -104,8 +116,6 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         PyThread_free_lock(runtime->xidregistry.mutex);
         runtime->xidregistry.mutex = NULL;
     }
-
-    _PyPreConfig_Clear(&runtime->preconfig);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -182,6 +192,10 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
+    if (PySys_Audit("cpython.PyInterpreterState_New", NULL) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = PyMem_RawMalloc(sizeof(PyInterpreterState));
     if (interp == NULL) {
         return NULL;
@@ -190,7 +204,13 @@ PyInterpreterState_New(void)
     memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
     interp->check_interval = 100;
-    interp->core_config = _PyCoreConfig_INIT;
+
+    _PyInitError err = _PyCoreConfig_InitPythonConfig(&interp->core_config);
+    if (_Py_INIT_FAILED(err)) {
+        PyMem_RawFree(interp);
+        return NULL;
+    }
+
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
 #if HAVE_DECL_RTLD_NOW
@@ -228,6 +248,8 @@ PyInterpreterState_New(void)
 
     interp->tstate_next_unique_id = 0;
 
+    interp->audit_hooks = NULL;
+
     return interp;
 }
 
@@ -235,11 +257,18 @@ PyInterpreterState_New(void)
 static void
 _PyInterpreterState_Clear(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
+    if (PySys_Audit("cpython.PyInterpreterState_Clear", NULL) < 0) {
+        PyErr_Clear();
+    }
+
     HEAD_LOCK(runtime);
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
         PyThreadState_Clear(p);
     }
     HEAD_UNLOCK(runtime);
+
+    Py_CLEAR(interp->audit_hooks);
+
     _PyCoreConfig_Clear(&interp->core_config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
@@ -257,6 +286,9 @@ _PyInterpreterState_Clear(_PyRuntimeState *runtime, PyInterpreterState *interp)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
+    if (runtime->finalizing == NULL) {
+        _PyWarnings_Fini(interp);
+    }
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
@@ -863,9 +895,8 @@ PyThreadState_DeleteCurrent()
  * be kept in those other interpreteres.
  */
 void
-_PyThreadState_DeleteExcept(PyThreadState *tstate)
+_PyThreadState_DeleteExcept(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyInterpreterState *interp = tstate->interp;
     PyThreadState *p, *next, *garbage;
     HEAD_LOCK(runtime);
@@ -911,7 +942,7 @@ PyThreadState_Get(void)
 }
 
 
-static PyThreadState *
+PyThreadState *
 _PyThreadState_Swap(struct _gilstate_runtime_state *gilstate, PyThreadState *newts)
 {
     PyThreadState *oldts = _PyRuntimeGILState_GetThreadState(gilstate);
@@ -976,8 +1007,8 @@ PyThreadState_GetDict(void)
 int
 PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    PyThreadState *p;
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
 
     /* Although the GIL is held, a few C API functions can be called
      * without the GIL held, and in particular some that create and
@@ -985,9 +1016,8 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
      * list of thread states we're traversing, so to prevent that we lock
      * head_mutex for the duration.
      */
-    _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
-    for (p = interp->tstate_head; p != NULL; p = p->next) {
+    for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
         if (p->thread_id == id) {
             /* Tricky:  we need to decref the current value
              * (if any) in p->async_exc, but that can in turn
@@ -1001,7 +1031,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
             p->async_exc = exc;
             HEAD_UNLOCK(runtime);
             Py_XDECREF(old_exc);
-            _PyEval_SignalAsyncExc();
+            _PyEval_SignalAsyncExc(&runtime->ceval);
             return 1;
         }
     }
@@ -1050,6 +1080,10 @@ _PyThread_CurrentFrames(void)
 {
     PyObject *result;
     PyInterpreterState *i;
+
+    if (PySys_Audit("sys._current_frames", NULL) < 0) {
+        return NULL;
+    }
 
     result = PyDict_New();
     if (result == NULL)

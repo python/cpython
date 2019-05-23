@@ -1,0 +1,2 @@
+The ``FrameType`` stack is now correctly cleaned up if the execution ends
+with a return and the stack is not empty.

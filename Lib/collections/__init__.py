@@ -1018,6 +1018,8 @@ class UserDict(_collections_abc.MutableMapping):
             self.update(dict)
         if kwargs:
             self.update(kwargs)
+    __init__.__text_signature__ = '($self, dict=None, /, **kwargs)'
+
     def __len__(self): return len(self.data)
     def __getitem__(self, key):
         if key in self.data:
@@ -1036,6 +1038,13 @@ class UserDict(_collections_abc.MutableMapping):
 
     # Now, add the methods in dicts but not in MutableMapping
     def __repr__(self): return repr(self.data)
+    def __copy__(self):
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
+        # Create a copy and avoid triggering descriptors
+        inst.__dict__["data"] = self.__dict__["data"].copy()
+        return inst
+
     def copy(self):
         if self.__class__ is UserDict:
             return UserDict(self.data.copy())
@@ -1048,6 +1057,7 @@ class UserDict(_collections_abc.MutableMapping):
             self.data = data
         c.update(self)
         return c
+
     @classmethod
     def fromkeys(cls, iterable, value=None):
         d = cls()
@@ -1083,7 +1093,11 @@ class UserList(_collections_abc.MutableSequence):
         return other.data if isinstance(other, UserList) else other
     def __contains__(self, item): return item in self.data
     def __len__(self): return len(self.data)
-    def __getitem__(self, i): return self.data[i]
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            return self.__class__(self.data[i])
+        else:
+            return self.data[i]
     def __setitem__(self, i, item): self.data[i] = item
     def __delitem__(self, i): del self.data[i]
     def __add__(self, other):
@@ -1112,6 +1126,12 @@ class UserList(_collections_abc.MutableSequence):
     def __imul__(self, n):
         self.data *= n
         return self
+    def __copy__(self):
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
+        # Create a copy and avoid triggering descriptors
+        inst.__dict__["data"] = self.__dict__["data"][:]
+        return inst
     def append(self, item): self.data.append(item)
     def insert(self, i, item): self.data.insert(i, item)
     def pop(self, i=-1): return self.data.pop(i)
@@ -1194,9 +1214,8 @@ class UserString(_collections_abc.Sequence):
     __rmul__ = __mul__
     def __mod__(self, args):
         return self.__class__(self.data % args)
-    def __rmod__(self, format):
-        return self.__class__(format % args)
-
+    def __rmod__(self, template):
+        return self.__class__(str(template) % self)
     # the following methods are defined in alphabetical order:
     def capitalize(self): return self.__class__(self.data.capitalize())
     def casefold(self):

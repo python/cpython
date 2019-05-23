@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_coreconfig.h"
 #ifdef MS_WINDOWS
 #  include <windows.h>
 /* All sample MSDN wincrypt programs include the header below. It is at least
@@ -578,8 +579,8 @@ _Py_HashRandomization_Init(const _PyCoreConfig *config)
            pyurandom() is non-blocking mode (blocking=0): see the PEP 524. */
         res = pyurandom(secret, secret_size, 0, 0);
         if (res < 0) {
-            return _Py_INIT_USER_ERR("failed to get random numbers "
-                                     "to initialize Python");
+            return _Py_INIT_ERR("failed to get random numbers "
+                                "to initialize Python");
         }
     }
     return _Py_INIT_OK();

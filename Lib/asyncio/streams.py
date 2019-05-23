@@ -4,6 +4,7 @@ __all__ = (
 
 import socket
 import sys
+import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
@@ -42,11 +43,14 @@ async def open_connection(host=None, port=None, *,
     """
     if loop is None:
         loop = events.get_event_loop()
-    reader = StreamReader(limit=limit, loop=loop)
-    protocol = StreamReaderProtocol(reader, loop=loop)
+    reader = StreamReader(limit=limit, loop=loop,
+                          _asyncio_internal=True)
+    protocol = StreamReaderProtocol(reader, loop=loop,
+                                    _asyncio_internal=True)
     transport, _ = await loop.create_connection(
         lambda: protocol, host, port, **kwds)
-    writer = StreamWriter(transport, protocol, reader, loop)
+    writer = StreamWriter(transport, protocol, reader, loop,
+                          _asyncio_internal=True)
     return reader, writer
 
 
@@ -77,9 +81,11 @@ async def start_server(client_connected_cb, host=None, port=None, *,
         loop = events.get_event_loop()
 
     def factory():
-        reader = StreamReader(limit=limit, loop=loop)
+        reader = StreamReader(limit=limit, loop=loop,
+                              _asyncio_internal=True)
         protocol = StreamReaderProtocol(reader, client_connected_cb,
-                                        loop=loop)
+                                        loop=loop,
+                                        _asyncio_internal=True)
         return protocol
 
     return await loop.create_server(factory, host, port, **kwds)
@@ -93,11 +99,14 @@ if hasattr(socket, 'AF_UNIX'):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
         if loop is None:
             loop = events.get_event_loop()
-        reader = StreamReader(limit=limit, loop=loop)
-        protocol = StreamReaderProtocol(reader, loop=loop)
+        reader = StreamReader(limit=limit, loop=loop,
+                              _asyncio_internal=True)
+        protocol = StreamReaderProtocol(reader, loop=loop,
+                                        _asyncio_internal=True)
         transport, _ = await loop.create_unix_connection(
             lambda: protocol, path, **kwds)
-        writer = StreamWriter(transport, protocol, reader, loop)
+        writer = StreamWriter(transport, protocol, reader, loop,
+                              _asyncio_internal=True)
         return reader, writer
 
     async def start_unix_server(client_connected_cb, path=None, *,
@@ -107,9 +116,11 @@ if hasattr(socket, 'AF_UNIX'):
             loop = events.get_event_loop()
 
         def factory():
-            reader = StreamReader(limit=limit, loop=loop)
+            reader = StreamReader(limit=limit, loop=loop,
+                                  _asyncio_internal=True)
             protocol = StreamReaderProtocol(reader, client_connected_cb,
-                                            loop=loop)
+                                            loop=loop,
+                                            _asyncio_internal=True)
             return protocol
 
         return await loop.create_unix_server(factory, path, **kwds)
@@ -125,11 +136,20 @@ class FlowControlMixin(protocols.Protocol):
     StreamWriter.drain() must wait for _drain_helper() coroutine.
     """
 
-    def __init__(self, loop=None):
+    def __init__(self, loop=None, *, _asyncio_internal=False):
         if loop is None:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
+        if not _asyncio_internal:
+            # NOTE:
+            # Avoid inheritance from FlowControlMixin
+            # Copy-paste the code to your project
+            # if you need flow control helpers
+            warnings.warn(f"{self.__class__} should be instaniated "
+                          "by asyncio internals only, "
+                          "please avoid its creation from user code",
+                          DeprecationWarning)
         self._paused = False
         self._drain_waiter = None
         self._connection_lost = False
@@ -179,6 +199,9 @@ class FlowControlMixin(protocols.Protocol):
         self._drain_waiter = waiter
         await waiter
 
+    def _get_close_waiter(self, stream):
+        raise NotImplementedError
+
 
 class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     """Helper class to adapt between Protocol and StreamReader.
@@ -191,8 +214,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     _source_traceback = None
 
-    def __init__(self, stream_reader, client_connected_cb=None, loop=None):
-        super().__init__(loop=loop)
+    def __init__(self, stream_reader, client_connected_cb=None, loop=None,
+                 *, _asyncio_internal=False):
+        super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
         if stream_reader is not None:
             self._stream_reader_wr = weakref.ref(stream_reader,
                                                  self._on_reader_gc)
@@ -253,7 +277,8 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         if self._client_connected_cb is not None:
             self._stream_writer = StreamWriter(transport, self,
                                                reader,
-                                               self._loop)
+                                               self._loop,
+                                               _asyncio_internal=True)
             res = self._client_connected_cb(reader,
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
@@ -293,12 +318,22 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             return False
         return True
 
+    def _get_close_waiter(self, stream):
+        return self._closed
+
     def __del__(self):
         # Prevent reports about unhandled exceptions.
         # Better than self._closed._log_traceback = False hack
         closed = self._closed
         if closed.done() and not closed.cancelled():
             closed.exception()
+
+
+def _swallow_unhandled_exception(task):
+    # Do a trick to suppress unhandled exception
+    # if stream.write() was used without await and
+    # stream.drain() was paused and resumed with an exception
+    task.exception()
 
 
 class StreamWriter:
@@ -311,13 +346,21 @@ class StreamWriter:
     directly.
     """
 
-    def __init__(self, transport, protocol, reader, loop):
+    def __init__(self, transport, protocol, reader, loop,
+                 *, _asyncio_internal=False):
+        if not _asyncio_internal:
+            warnings.warn(f"{self.__class__} should be instaniated "
+                          "by asyncio internals only, "
+                          "please avoid its creation from user code",
+                          DeprecationWarning)
         self._transport = transport
         self._protocol = protocol
         # drain() expects that the reader has an exception() method
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
         self._loop = loop
+        self._complete_fut = self._loop.create_future()
+        self._complete_fut.set_result(None)
 
     def __repr__(self):
         info = [self.__class__.__name__, f'transport={self._transport!r}']
@@ -331,9 +374,35 @@ class StreamWriter:
 
     def write(self, data):
         self._transport.write(data)
+        return self._fast_drain()
 
     def writelines(self, data):
         self._transport.writelines(data)
+        return self._fast_drain()
+
+    def _fast_drain(self):
+        # The helper tries to use fast-path to return already existing complete future
+        # object if underlying transport is not paused and actual waiting for writing
+        # resume is not needed
+        if self._reader is not None:
+            # this branch will be simplified after merging reader with writer
+            exc = self._reader.exception()
+            if exc is not None:
+                fut = self._loop.create_future()
+                fut.set_exception(exc)
+                return fut
+        if not self._transport.is_closing():
+            if self._protocol._connection_lost:
+                fut = self._loop.create_future()
+                fut.set_exception(ConnectionResetError('Connection lost'))
+                return fut
+            if not self._protocol._paused:
+                # fast path, the stream is not paused
+                # no need to wait for resume signal
+                return self._complete_fut
+        ret = self._loop.create_task(self.drain())
+        ret.add_done_callback(_swallow_unhandled_exception)
+        return ret
 
     def write_eof(self):
         return self._transport.write_eof()
@@ -343,12 +412,13 @@ class StreamWriter:
 
     def close(self):
         self._transport.close()
+        return self._protocol._get_close_waiter(self)
 
     def is_closing(self):
         return self._transport.is_closing()
 
     async def wait_closed(self):
-        await self._protocol._closed
+        await self._protocol._get_close_waiter(self)
 
     def get_extra_info(self, name, default=None):
         return self._transport.get_extra_info(name, default)
@@ -366,29 +436,25 @@ class StreamWriter:
             if exc is not None:
                 raise exc
         if self._transport.is_closing():
-            # Yield to the event loop so connection_lost() may be
-            # called.  Without this, _drain_helper() would return
-            # immediately, and code that calls
-            #     write(...); await drain()
-            # in a loop would never call connection_lost(), so it
-            # would not see an error when the socket is closed.
-            await sleep(0, loop=self._loop)
+            # Wait for protocol.connection_lost() call
+            # Raise connection closing error if any,
+            # ConnectionResetError otherwise
+            await sleep(0)
         await self._protocol._drain_helper()
-
-    async def aclose(self):
-        self.close()
-        await self.wait_closed()
-
-    async def awrite(self, data):
-        self.write(data)
-        await self.drain()
 
 
 class StreamReader:
 
     _source_traceback = None
 
-    def __init__(self, limit=_DEFAULT_LIMIT, loop=None):
+    def __init__(self, limit=_DEFAULT_LIMIT, loop=None,
+                 *, _asyncio_internal=False):
+        if not _asyncio_internal:
+            warnings.warn(f"{self.__class__} should be instaniated "
+                          "by asyncio internals only, "
+                          "please avoid its creation from user code",
+                          DeprecationWarning)
+
         # The line length limit is  a security feature;
         # it also doubles as half the buffer limit.
 
