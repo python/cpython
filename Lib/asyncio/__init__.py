@@ -50,15 +50,20 @@ __all__ += ('StreamReader', 'StreamWriter')  # deprecated
 
 
 def __getattr__(name):
+    global StreamReader, StreamWriter
     if name == 'StreamReader':
         warnings.warn("StreamReader is deprecated, use asyncio.Stream instead",
                       DeprecationWarning,
                       stacklevel=2)
-        return Stream
+        from .streams import StreamReader as sr
+        StreamReader = sr
+        return StreamReader
     if name == 'StreamWriter':
         warnings.warn("StreamWriter is deprecated, use asyncio.Stream instead",
                       DeprecationWarning,
                       stacklevel=2)
-        return Stream
+        from .streams import StreamWriter as sw
+        StreamWriter = sw
+        return StreamWriter
 
     raise AttributeError(f"module {__name__} has no attribute {name}")
