@@ -638,12 +638,35 @@ static void set_all_env_vars(void)
 }
 
 
-static int test_init_env(void)
+static int test_init_compat_env(void)
 {
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars();
     _testembed_Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_python_env(void)
+{
+    _PyInitError err;
+
+    set_all_env_vars();
+
+    _PyCoreConfig config;
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+    config.program_name = L"./_testembed";
+
+    err = _Py_InitializeFromConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
     dump_config();
     Py_Finalize();
     return 0;
@@ -1257,7 +1280,8 @@ static struct TestCase TestCases[] = {
     {"test_init_from_config", test_init_from_config},
     {"test_init_parse_argv", test_init_parse_argv},
     {"test_init_dont_parse_argv", test_init_dont_parse_argv},
-    {"test_init_env", test_init_env},
+    {"test_init_compat_env", test_init_compat_env},
+    {"test_init_python_env", test_init_python_env},
     {"test_init_env_dev_mode", test_init_env_dev_mode},
     {"test_init_env_dev_mode_alloc", test_init_env_dev_mode_alloc},
     {"test_init_dont_configure_locale", test_init_dont_configure_locale},
