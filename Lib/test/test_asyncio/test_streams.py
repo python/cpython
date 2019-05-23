@@ -1029,27 +1029,27 @@ os.close(fd)
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
-        with test_utils.run_test_server() as httpd:
-            rd, wr = self.loop.run_until_complete(
-                asyncio.open_connection(*httpd.address, loop=self.loop))
-            sock = wr.get_extra_info('socket')
-            self.assertNotEqual(sock.fileno(), -1)
+        async def test():
 
-            wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            f = rd.readline()
-            data = self.loop.run_until_complete(f)
-            self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+            with test_utils.run_test_server() as httpd:
+                stream = await asyncio.connect(*httpd.address)
+                sock = stream.get_extra_info('socket')
+                self.assertNotEqual(sock.fileno(), -1)
 
-            # drop refs to reader/writer
-            del rd
-            del wr
-            gc.collect()
-            # make a chance to close the socket
-            test_utils.run_briefly(self.loop)
+                await stream.write(b'GET / HTTP/1.0\r\n\r\n')
+                data = await stream.readline()
+                self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
 
-            self.assertEqual(1, len(messages), messages)
-            self.assertEqual(sock.fileno(), -1)
+                # drop refs to reader/writer
+                del stream
+                gc.collect()
+                # make a chance to close the socket
+                await asyncio.sleep(0)
 
+                self.assertEqual(1, len(messages), messages)
+                self.assertEqual(sock.fileno(), -1)
+
+        self.loop.run_until_complete(test())
         self.assertEqual(1, len(messages), messages)
         self.assertEqual('An open stream object is being garbage '
                          'collected; call "stream.close()" explicitly.',
@@ -1082,14 +1082,14 @@ os.close(fd)
 
     def test_async_writer_api(self):
         async def inner(httpd):
-            rd, wr = await asyncio.open_connection(*httpd.address)
+            stream = await asyncio.connect(*httpd.address)
 
-            await wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            data = await rd.readline()
+            await stream.write(b'GET / HTTP/1.0\r\n\r\n')
+            data = await stream.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-            data = await rd.read()
+            data = await stream.read()
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
-            await wr.close()
+            await stream.close()
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1099,18 +1099,18 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
-    def test_async_writer_api(self):
+    def test_async_writer_api_exception_after_close(self):
         async def inner(httpd):
-            rd, wr = await asyncio.open_connection(*httpd.address)
+            stream = await asyncio.connect(*httpd.address)
 
-            await wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            data = await rd.readline()
+            await stream.write(b'GET / HTTP/1.0\r\n\r\n')
+            data = await stream.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-            data = await rd.read()
+            data = await stream.read()
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
-            wr.close()
+            stream.close()
             with self.assertRaises(ConnectionResetError):
-                await wr.write(b'data')
+                await stream.write(b'data')
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1130,7 +1130,8 @@ os.close(fd)
                 asyncio.open_connection(*httpd.address,
                                         loop=self.loop))
 
-            f = wr.close()
+            wr.close()
+            f = wr.wait_closed()
             self.loop.run_until_complete(f)
             assert rd.at_eof()
             f = rd.read()
