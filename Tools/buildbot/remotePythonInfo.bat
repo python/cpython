@@ -22,7 +22,7 @@ if "%SSH%"=="" if EXIST %WINDIR%\System32\OpenSSH\ssh.exe (set SSH=%WINDIR%\Syst
 set PYTHON_EXE=%prefix%\python%suffix%.exe
 echo on
 %SSH% %SSH_SERVER% %PYTHON_EXE% -m test.pythoninfo
-exit /b 0
+exit /b %ERRORLEVEL%
 
 :Arm32SshHelp
 echo SSH_SERVER environment variable must be set to administrator@[ip address]

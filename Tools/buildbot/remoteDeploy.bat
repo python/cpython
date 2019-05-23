@@ -35,7 +35,7 @@ for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.dll /b`) do @%SCP% PCBuild\arm32\
 %SCP% "%PYTHON_SOURCE%Modules\Setup" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Modules"
 %SCP% "%PYTHON_SOURCE%PC\pyconfig.h" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PC"
 
-exit /b 0
+exit /b %ERRORLEVEL%
 
 :Arm32SshHelp
 echo SSH_SERVER environment variable must be set to administrator@[ip address]
