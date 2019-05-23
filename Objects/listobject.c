@@ -1324,9 +1324,8 @@ gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_
         while (ofs < maxofs) {
             IFLT(a[ofs], key) {
                 lastofs = ofs;
+                assert(ofs <= (PY_SSIZE_T_MAX - 1) / 2);
                 ofs = (ofs << 1) + 1;
-                if (ofs <= 0)                   /* int overflow */
-                    ofs = maxofs;
             }
             else                /* key <= a[hint + ofs] */
                 break;
@@ -1347,9 +1346,8 @@ gallop_left(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize_
                 break;
             /* key <= a[hint - ofs] */
             lastofs = ofs;
+            assert(ofs <= (PY_SSIZE_T_MAX - 1) / 2);
             ofs = (ofs << 1) + 1;
-            if (ofs <= 0)               /* int overflow */
-                ofs = maxofs;
         }
         if (ofs > maxofs)
             ofs = maxofs;
@@ -1415,9 +1413,8 @@ gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize
         while (ofs < maxofs) {
             IFLT(key, *(a-ofs)) {
                 lastofs = ofs;
+                assert(ofs <= (PY_SSIZE_T_MAX - 1) / 2);
                 ofs = (ofs << 1) + 1;
-                if (ofs <= 0)                   /* int overflow */
-                    ofs = maxofs;
             }
             else                /* a[hint - ofs] <= key */
                 break;
@@ -1439,9 +1436,8 @@ gallop_right(MergeState *ms, PyObject *key, PyObject **a, Py_ssize_t n, Py_ssize
                 break;
             /* a[hint + ofs] <= key */
             lastofs = ofs;
+            assert(ofs <= (PY_SSIZE_T_MAX - 1) / 2);
             ofs = (ofs << 1) + 1;
-            if (ofs <= 0)               /* int overflow */
-                ofs = maxofs;
         }
         if (ofs > maxofs)
             ofs = maxofs;
