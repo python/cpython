@@ -272,7 +272,16 @@ _PyPreConfig_InitCompatConfig(_PyPreConfig *config)
     config->isolated = -1;
     config->use_environment = -1;
     config->configure_locale = 1;
-    config->utf8_mode = -1;
+
+    /* bpo-36443: C locale coercion (PEP 538) and UTF-8 Mode (PEP 540)
+       are disabled by default using the Compat configuration.
+
+       Py_UTF8Mode=1 enables the UTF-8 mode. PYTHONUTF8 environment variable
+       is ignored (even if use_environment=1). */
+    config->utf8_mode = 0;
+    config->coerce_c_locale = 0;
+    config->coerce_c_locale_warn = 0;
+
     config->dev_mode = -1;
     config->allocator = PYMEM_ALLOCATOR_NOT_SET;
 #ifdef MS_WINDOWS
@@ -353,6 +362,7 @@ _PyPreConfig_Copy(_PyPreConfig *config, const _PyPreConfig *config2)
 {
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
+    COPY_ATTR(_config_init);
     COPY_ATTR(parse_argv);
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
@@ -393,6 +403,7 @@ _PyPreConfig_AsDict(const _PyPreConfig *config)
             } \
         } while (0)
 
+    SET_ITEM_INT(_config_init);
     SET_ITEM_INT(parse_argv);
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
@@ -452,7 +463,9 @@ _PyPreConfig_GetGlobalConfig(_PyPreConfig *config)
 
     COPY_FLAG(isolated, Py_IsolatedFlag);
     COPY_NOT_FLAG(use_environment, Py_IgnoreEnvironmentFlag);
-    COPY_FLAG(utf8_mode, Py_UTF8Mode);
+    if (Py_UTF8Mode > 0) {
+        config->utf8_mode = Py_UTF8Mode;
+    }
 #ifdef MS_WINDOWS
     COPY_FLAG(legacy_windows_fs_encoding, Py_LegacyWindowsFSEncodingFlag);
 #endif
