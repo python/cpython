@@ -1,0 +1,2 @@
+Allow whitespace only header encoding in ``email.header`` - by Batuhan
+Taskaya
