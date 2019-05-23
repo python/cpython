@@ -36,6 +36,7 @@ Lib/test/data/*
 Makefile
 Makefile.pre
 Misc/python.pc
+Misc/python-embed.pc
 Misc/python-config.sh
 Modules/Setup
 Modules/Setup.config
