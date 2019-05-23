@@ -388,7 +388,9 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                                              **kwargs)
         try:
             await waiter
-        except Exception:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException:
             transp.close()
             await transp._wait()
             raise
