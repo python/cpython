@@ -223,6 +223,8 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
     won't include undocumented commands (that is, there are do_*() methods without
     corresponding help_*() methods).
 
+    .. versionadded:: 3.8
+
 .. _cmd-example:
 
 Cmd Example
