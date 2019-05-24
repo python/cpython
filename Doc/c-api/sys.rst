@@ -332,7 +332,7 @@ accessible to C code.  They all work with the current interpreter thread's
    functions may be called from different runtimes, this pointer should not
    refer directly to Python state.
 
-   See :pep:`578` for a detailed decription of auditing. Functions in the
+   See :pep:`578` for a detailed description of auditing. Functions in the
    runtime and standard library that raise events include the details in each
    function's documentation.
 
