@@ -150,7 +150,7 @@ class _BaseStreamServer:
     # The class doesn't provide API for enumerating connected streams
     # It can be a subject for improvements in Python 3.9
 
-    _low_server = None
+    _server_impl = None
 
     def __init__(self, client_connected_cb,
                  /,
@@ -171,55 +171,55 @@ class _BaseStreamServer:
                             "class cannot be inherited from")
 
     async def bind(self):
-        if self._low_server is not None:
+        if self._server_impl is not None:
             return
-        self._low_server = await self._bind()
+        self._server_impl = await self._bind()
 
     def is_bound(self):
-        return self._low_server is not None
+        return self._server_impl is not None
 
     @property
     def sockets(self):
         # multiple value for socket bound to both IPv4 and IPv6 families
-        if self._low_server is None:
+        if self._server_impl is None:
             return []
-        return self._low_server.sockets
+        return self._server_impl.sockets
 
     def is_serving(self):
-        if self._low_server is None:
+        if self._server_impl is None:
             return False
-        return self._low_server.is_serving()
+        return self._server_impl.is_serving()
 
     async def start_serving(self):
         await self.bind()
-        await self._low_server.start_serving()
+        await self._server_impl.start_serving()
 
     async def serve_forever(self):
         await self.start_serving()
-        await self._low_server.serve_forever()
+        await self._server_impl.serve_forever()
 
     async def close(self):
-        if self._low_server is None:
+        if self._server_impl is None:
             return
-        self._low_server.close()
+        self._server_impl.close()
         streams = list(self._streams.keys())
         active_tasks = list(self._streams.values())
         if streams:
             await tasks.wait([stream.close() for stream in streams])
-        await self._low_server.wait_closed()
-        self._low_server = None
+        await self._server_impl.wait_closed()
+        self._server_impl = None
         await self._shutdown_active_tasks(active_tasks)
 
     async def abort(self):
-        if self._low_server is None:
+        if self._server_impl is None:
             return
-        self._low_server.close()
+        self._server_impl.close()
         streams = list(self._streams.keys())
         active_tasks = list(self._streams.values())
         if streams:
             await tasks.wait([stream.abort() for stream in streams])
-        await self._low_server.wait_closed()
-        self._low_server = None
+        await self._server_impl.wait_closed()
+        self._server_impl = None
         await self._shutdown_active_tasks(active_tasks)
 
     async def __aenter__(self):
@@ -264,10 +264,10 @@ class _BaseStreamServer:
         return '<' + ' '.join(ret) + '>'
 
     def __del__(self, _warn=warnings.warn):
-        if self._low_server is not None:
+        if self._server_impl is not None:
             _warn(f"unclosed stream server {self!r}",
                   ResourceWarning, source=self)
-            self._low_server.close()
+            self._server_impl.close()
 
 
 class StreamServer(_BaseStreamServer):
