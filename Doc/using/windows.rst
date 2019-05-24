@@ -1112,7 +1112,6 @@ For extension modules, consult :ref:`building-on-windows`.
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
 
    `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
-      by Trent Apted et al, 2007
 
 
 Other Platforms
