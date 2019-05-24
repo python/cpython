@@ -1,0 +1,1 @@
+Code objects can now be constructed with read-only buffers.  This enables sophisticated byte code sharing scenarios where the byte code can be shared across multiple processes in read-only memory, reducing the overhead of memory usage in fork-and-exec web servers.
