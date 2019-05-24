@@ -53,7 +53,7 @@ if 'Clang' in platform.python_compiler() and sys.platform == 'darwin':
                             " built with LLVM clang")
 
 if ((sysconfig.get_config_var('PGO_PROF_USE_FLAG') or 'xxx') in
-    sysconfig.get_config_var('PY_CORE_CFLAGS') or ''):
+    (sysconfig.get_config_var('PY_CORE_CFLAGS') or '')):
     raise unittest.SkipTest("test_gdb is not reliable on PGO builds")
 
 # Location of custom hooks file in a repository checkout.
