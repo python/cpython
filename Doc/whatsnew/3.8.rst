@@ -287,6 +287,21 @@ where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
 
 
+curses
+-------
+
+Added a new variable holding structured version information for the
+underlying ncurses library: :data:`~curses.ncurses_version`.
+(Contributed by Serhiy Storchaka in :issue:`31680`.)
+
+The extended color functions added in ncurses 6.1 will be used transparently
+by :func:`curses.color_content`, :func:`curses.init_color`,
+:func:`curses.init_pair`, and :func:`curses.pair_content`. A new function,
+:func:`curses.has_extended_color_support`, indicates whether extended color
+support is provided by the underlying ncurses library.
+(Contributed by Jeffrey Kintscher in :issue:`36982`.)
+
+
 datetime
 --------
 
@@ -384,6 +399,7 @@ numbers. (Contributed by Pablo Galindo in :issue:`35606`)
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
+
 os
 --
 
@@ -406,21 +422,6 @@ characters or bytes unrepresentable at the OS level.
 :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
 environment variable and does not use :envvar:`HOME`, which is not normally set
 for regular user accounts.
-
-
-ncurses
--------
-
-Added a new variable holding structured version information for the
-underlying ncurses library: :data:`~curses.ncurses_version`.
-(Contributed by Serhiy Storchaka in :issue:`31680`.)
-
-The extended color functions added in ncurses 6.1 will be used transparently
-by :func:`curses.color_content`, :func:`curses.init_color`,
-:func:`curses.init_pair`, and :func:`curses.pair_content`. A new function,
-:func:`curses.has_extended_color_support`, indicates whether extended color
-support is provided by the underlying ncurses library.
-(Contributed by Jeffrey Kintscher in :issue:`36982`.)
 
 
 pathlib
