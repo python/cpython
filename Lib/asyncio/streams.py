@@ -1199,13 +1199,20 @@ class _ServerStreamProtocol(_BaseStreamProtocol):
         self._stream = None
 
 
-def _swallow_unhandled_exception(task):
-    # Do a trick to suppress unhandled exception
-    # if stream.write() was used without await and
-    # stream.drain() was paused and resumed with an exception
+class _OptionalAwait:
+    # The class doesn't create a coroutine
+    # if not awaited
+    # It prevents "coroutine is never awaited" message
 
-    if not task.cancelled():
-        task.exception()
+    __slot___ = ('_method', '_args', '_kwargs')
+
+    def __init__(self, method, *args, **kwargs):
+        self._method = method
+        self._args = args
+        self._kwargs = kwargs
+
+    def __await__(self):
+        return self._method(*self._args, *self._kwargs).__await__()
 
 
 class Stream:
@@ -1318,9 +1325,7 @@ class Stream:
                 # fast path, the stream is not paused
                 # no need to wait for resume signal
                 return self._complete_fut
-        ret = self._loop.create_task(self.drain())
-        ret.add_done_callback(_swallow_unhandled_exception)
-        return ret
+        return _OptionalAwait(self.drain)
 
     def write_eof(self):
         self._mode._check_write()
