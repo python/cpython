@@ -830,7 +830,10 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
                 goto out;
 
             for (i = 0; i < num; i++) {
-                type_ignore_ty ti = TypeIgnore(LINENO(CHILD(ch, i)), arena);
+                string type_comment = new_type_comment(STR(CHILD(ch, i)), &c);
+                if (!type_comment)
+                    goto out;
+                type_ignore_ty ti = TypeIgnore(LINENO(CHILD(ch, i)), type_comment, arena);
                 if (!ti)
                    goto out;
                asdl_seq_SET(type_ignores, i, ti);
@@ -2971,7 +2974,6 @@ ast_for_expr(struct compiling *c, const node *n)
                 return Compare(expression, ops, cmps, LINENO(n), n->n_col_offset,
                                n->n_end_lineno, n->n_end_col_offset, c->c_arena);
             }
-            break;
 
         case star_expr:
             return ast_for_starred(c, n);
@@ -3618,7 +3620,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                     return NULL;
                 return a;
             }
-            break;
         case dotted_name:
             if (NCH(n) == 1) {
                 node *name_node = CHILD(n, 0);
@@ -3669,7 +3670,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                 }
                 return alias(str, NULL, c->c_arena);
             }
-            break;
         case STAR:
             str = PyUnicode_InternFromString("*");
             if (!str)

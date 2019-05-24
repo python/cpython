@@ -1,1 +1,1 @@
-Add native thread ID (TID) to threading.Thread objects
+Add native thread ID (TID) to threading.Thread objects (supported platforms: Windows, FreeBSD, Linux, macOS)

@@ -13,9 +13,9 @@
 #include <signal.h>
 
 #if defined(__linux__)
-#include <sys/syscall.h>
+#   include <sys/syscall.h>     /* syscall(SYS_gettid) */
 #elif defined(__FreeBSD__)
-#include <pthread_np.h>
+#   include <pthread_np.h>      /* pthread_getthreadid_np() */
 #endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
@@ -308,6 +308,7 @@ PyThread_get_thread_ident(void)
     return (unsigned long) threadid;
 }
 
+#ifdef PY_HAVE_THREAD_NATIVE_ID
 unsigned long
 PyThread_get_thread_native_id(void)
 {
@@ -315,19 +316,17 @@ PyThread_get_thread_native_id(void)
         PyThread_init_thread();
 #ifdef __APPLE__
     uint64_t native_id;
-    pthread_threadid_np(NULL, &native_id);
+    (void) pthread_threadid_np(NULL, &native_id);
 #elif defined(__linux__)
     pid_t native_id;
-    native_id = syscall(__NR_gettid);
+    native_id = syscall(SYS_gettid);
 #elif defined(__FreeBSD__)
-    pid_t native_id;
+    int native_id;
     native_id = pthread_getthreadid_np();
-#else
-    unsigned long native_id;
-    native_id = 0;
 #endif
     return (unsigned long) native_id;
 }
+#endif
 
 void _Py_NO_RETURN
 PyThread_exit_thread(void)

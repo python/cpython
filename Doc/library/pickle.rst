@@ -427,6 +427,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       how they can be loaded, potentially reducing security risks. Refer to
       :ref:`pickle-restrict` for details.
 
+      .. audit-event:: pickle.find_class "module name"
 
 .. _pickle-picklable:
 
@@ -642,7 +643,7 @@ or both.
      by other classes as long as they implement :meth:`__setitem__`.
 
    * Optionally, a callable with a ``(obj, state)`` signature. This
-     callable allows the user to programatically control the state-updating
+     callable allows the user to programmatically control the state-updating
      behavior of a specific object, instead of using ``obj``'s static
      :meth:`__setstate__` method. If not ``None``, this callable will have
      priority over ``obj``'s :meth:`__setstate__`.

@@ -1436,6 +1436,7 @@ class _Unpickler:
 
     def find_class(self, module, name):
         # Subclasses may override this.
+        sys.audit('pickle.find_class', module, name)
         if self.proto < 3 and self.fix_imports:
             if (module, name) in _compat_pickle.NAME_MAPPING:
                 module, name = _compat_pickle.NAME_MAPPING[(module, name)]
