@@ -2638,6 +2638,23 @@ _curses_has_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_has_colors_impl(module);
 }
 
+PyDoc_STRVAR(_curses_has_extended_color_support__doc__,
+"has_extended_color_support($module, /)\n"
+"--\n"
+"\n"
+"Return True if the module supports extended colors; otherwise, return\n"
+"False. Extended color support allows more than 256 color-pairs for terminals\n"
+"that support more than 16 colors (e.g. xterm-256color).\n");
+
+#define _CURSES_HAS_EXTENDED_COLOR_SUPPORT_METHODDEF   \
+    {"has_extended_color_support", (PyCFunction)_curses_has_extended_color_support, METH_NOARGS, _curses_has_extended_color_support__doc__},
+
+static PyObject *
+_curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return PyBool_FromLong(_NCURSES_EXTENDED_COLOR_FUNCS);
+}
+
 PyDoc_STRVAR(_curses_has_ic__doc__,
 "has_ic($module, /)\n"
 "--\n"
