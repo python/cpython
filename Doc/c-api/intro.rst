@@ -156,7 +156,7 @@ complete listing.
 .. c:macro:: Py_UNUSED(arg)
 
    Use this for unused arguments in a function definition to silence compiler
-   warnings, e.g. ``PyObject* func(PyObject *Py_UNUSED(ignored))``.
+   warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
 
    .. versionadded:: 3.4
 
