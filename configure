@@ -3292,6 +3292,8 @@ then
 	'')	MACHDEP="unknown";;
     esac
 fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
+$as_echo "\"$MACHDEP\"" >&6; }
 
 
 if test "$cross_compiling" = yes; then
@@ -15131,10 +15133,10 @@ $as_echo "$LDVERSION" >&6; }
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 
-if test -z "$ANDROID_API_LEVEL" -o "$MACHDEP" != "cygwin"; then
-  LIBPYTHON=''
-else
+if test -n "$ANDROID_API_LEVEL" -o "$MACHDEP" = "cygwin"; then
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+else
+  LIBPYTHON=''
 fi
 
 
