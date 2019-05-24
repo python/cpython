@@ -93,6 +93,10 @@ language using this mechanism:
 | annotations      | 3.7.0b1     | 4.0          | :pep:`563`:                                 |
 |                  |             |              | *Postponed evaluation of annotations*       |
 +------------------+-------------+--------------+---------------------------------------------+
++------------------+-------------+--------------+---------------------------------------------+
+| absolute_codepath| 3.8.0b1     | 4.0          | :pep:`XXX`:                                 |
+|                  |             |              | *Absolute codepaths*                        |
++------------------+-------------+--------------+---------------------------------------------+
 
 .. XXX Adding a new entry?  Remember to update simple_stmts.rst, too.
 

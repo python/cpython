@@ -58,6 +58,7 @@ all_feature_names = [
     "barry_as_FLUFL",
     "generator_stop",
     "annotations",
+    "absolute_codepath",
 ]
 
 __all__ = ["all_feature_names"] + all_feature_names
@@ -76,6 +77,7 @@ CO_FUTURE_UNICODE_LITERALS = 0x20000 # unicode string literals
 CO_FUTURE_BARRY_AS_BDFL = 0x40000
 CO_FUTURE_GENERATOR_STOP  = 0x80000 # StopIteration becomes RuntimeError in generators
 CO_FUTURE_ANNOTATIONS     = 0x100000  # annotations become strings at runtime
+CO_FUTURE_ABSOLUTE_CODEPATH = 0x200000
 
 class _Feature:
     def __init__(self, optionalRelease, mandatoryRelease, compiler_flag):
@@ -144,3 +146,7 @@ generator_stop = _Feature((3, 5, 0, "beta", 1),
 annotations = _Feature((3, 7, 0, "beta", 1),
                        (4, 0, 0, "alpha", 0),
                        CO_FUTURE_ANNOTATIONS)
+
+absolute_codepath = _Feature((3, 8, 0, "beta", 1),
+                            (4, 0, 0, "alpha", 0),
+                            CO_FUTURE_ABSOLUTE_CODEPATH)

@@ -327,20 +327,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     if (!compiler_init(&c))
         return NULL;
 
-    wchar_t *path = PyUnicode_AsWideCharString(filename, NULL);
-    #if defined(HAVE_REALPATH)
-        wchar_t fullpath[MAXPATHLEN];
-        path = _Py_wrealpath(path, fullpath, Py_ARRAY_LENGTH(fullpath));
-    #elif defined(MS_WINDOWS)
-        wchar_t fullpath[MAX_PATH];
-        wchar_t *ptemp;
-        if (GetFullPathNameW(path, Py_ARRAY_LENGTH(fullpath), fullpath, &ptemp))
-            path = fullpath;
-    #endif
-    if (path != NULL)
-        filename = PyUnicode_FromWideChar(path, -1);
-    Py_INCREF(filename);
-    c.c_filename = filename;
     c.c_arena = arena;
     c.c_future = PyFuture_FromASTObject(mod, filename);
     if (c.c_future == NULL)
@@ -367,6 +353,23 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
             PyErr_SetString(PyExc_SystemError, "no symtable");
         goto finally;
     }
+
+    if (c.c_future->ff_features & CO_FUTURE_ABSOLUTE_CODEPATH) {
+        wchar_t *path = PyUnicode_AsWideCharString(filename, NULL);
+        #if defined(HAVE_REALPATH)
+            wchar_t fullpath[MAXPATHLEN];
+            path = _Py_wrealpath(path, fullpath, Py_ARRAY_LENGTH(fullpath));
+        #elif defined(MS_WINDOWS)
+            wchar_t fullpath[MAX_PATH];
+            wchar_t *ptemp;
+            if (GetFullPathNameW(path, Py_ARRAY_LENGTH(fullpath), fullpath, &ptemp))
+                path = fullpath;
+        #endif
+        if (path != NULL)
+            filename = PyUnicode_FromWideChar(path, -1);
+    }
+    Py_INCREF(filename);
+    c.c_filename = filename;
 
     co = compiler_mod(&c, mod);
 

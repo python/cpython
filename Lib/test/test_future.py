@@ -103,6 +103,10 @@ class FutureTest(unittest.TestCase):
         exec("from __future__ import unicode_literals; x = ''", {}, scope)
         self.assertIsInstance(scope["x"], str)
 
+    def test_future5(self):
+        with support.CleanImport('test_future6'):
+            from test import test_future6
+
 class AnnotationsFutureTestCase(unittest.TestCase):
     template = dedent(
         """
