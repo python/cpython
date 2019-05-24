@@ -21,7 +21,7 @@ echo on
 if "%arm32_ssh%"=="true" goto :Arm32Ssh
 
 call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args%
-exit /b 0
+exit /b %ERRORLEVEL%
 
 :Arm32Ssh
 set dashU=-unetwork,decimal,subprocess,urlfetch,tzdata
@@ -42,7 +42,7 @@ scp -r "%PYTHON_SOURCE%Lib" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Lib"
 
 set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args% %TEMP_ARGS%
 ssh %SSH_SERVER% "set TEMP=%REMOTE_PYTHON_DIR%temp& %REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
-exit /b 0
+exit /b %ERRORLEVEL%
 
 :Arm32SshHelp
 echo SSH_SERVER environment variable must be set to administrator@[ip address]
