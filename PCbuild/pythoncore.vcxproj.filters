@@ -207,6 +207,9 @@
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pyerrors.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
