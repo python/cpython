@@ -35,7 +35,12 @@ class PackageNotFoundError(ModuleNotFoundError):
 
 
 class EntryPoint(collections.namedtuple('EntryPointBase', 'name value group')):
-    """An entry point as defined by Python packaging conventions."""
+    """An entry point as defined by Python packaging conventions.
+
+    See `the packaging docs on entry points
+    <https://packaging.python.org/specifications/entry-points/>`_
+    for more information.
+    """
 
     pattern = re.compile(
         r'(?P<module>[\w.]+)\s*'
@@ -178,15 +183,6 @@ class Distribution:
             )
         return filter(None, declared)
 
-    @classmethod
-    def find_local(cls):
-        dists = itertools.chain.from_iterable(
-            resolver(path=['.'])
-            for resolver in cls._discover_resolvers()
-            )
-        dist, = dists
-        return dist
-
     @property
     def metadata(self):
         """Return the parsed metadata for this Distribution.
@@ -309,8 +305,10 @@ class DistributionFinder(MetaPathFinder):
     @abc.abstractmethod
     def find_distributions(self, name=None, path=None):
         """
+        Find distributions.
+
         Return an iterable of all Distribution instances capable of
-        loading the metadata for packages matching the name
+        loading the metadata for packages matching the ``name``
         (or all names if not supplied) along the paths in the list
         of directories ``path`` (defaults to sys.path).
         """
@@ -345,14 +343,6 @@ def distributions():
     :return: An iterable of ``Distribution`` instances.
     """
     return Distribution.discover()
-
-
-def local_distribution():
-    """Get the ``Distribution`` instance for the package in CWD.
-
-    :return: A ``Distribution`` instance (or subclass thereof).
-    """
-    return Distribution.find_local()
 
 
 def metadata(package):

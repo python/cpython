@@ -1,13 +1,14 @@
 import re
 import textwrap
 import unittest
+import itertools
 
 from collections.abc import Iterator
 
 from . import fixtures
 from importlib.metadata import (
     Distribution, PackageNotFoundError, distribution,
-    entry_points, files, local_distribution, metadata, requires, version,
+    entry_points, files, metadata, requires, version,
     )
 
 
@@ -138,7 +139,13 @@ class APITests(
         assert deps == expected
 
 
-class LocalProjectTests(fixtures.LocalPackage, unittest.TestCase):
-    def test_find_local(self):
-        dist = local_distribution()
-        assert dist.metadata['Name'] == 'egginfo-pkg'
+class OffSysPathTests(fixtures.DistInfoPkgOffPath, unittest.TestCase):
+    def test_find_distributions_specified_path(self):
+        dists = itertools.chain.from_iterable(
+            resolver(path=[str(self.site_dir)])
+            for resolver in Distribution._discover_resolvers()
+            )
+        assert any(
+            dist.metadata['Name'] == 'distinfo-pkg'
+            for dist in dists
+            )

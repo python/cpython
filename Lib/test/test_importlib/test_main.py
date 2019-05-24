@@ -50,7 +50,8 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
         assert ep.load() is importlib.metadata
 
 
-class NameNormalizationTests(fixtures.SiteDir, unittest.TestCase):
+class NameNormalizationTests(
+        fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     @staticmethod
     def pkg_with_dashes(site_dir):
         """
@@ -95,7 +96,7 @@ class NameNormalizationTests(fixtures.SiteDir, unittest.TestCase):
         assert version(pkg_name.upper()) == '1.0'
 
 
-class NonASCIITests(fixtures.SiteDir, unittest.TestCase):
+class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     @staticmethod
     def pkg_with_non_ascii_description(site_dir):
         """
@@ -146,7 +147,7 @@ class DiscoveryTests(fixtures.EggInfoPkg,
         assert all(
             isinstance(dist, Distribution)
             for dist in dists
-            ), dists
+            )
         assert any(
             dist.metadata['Name'] == 'egginfo-pkg'
             for dist in dists

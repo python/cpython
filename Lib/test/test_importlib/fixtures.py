@@ -48,23 +48,28 @@ def tempdir_as_cwd():
 
 
 class SiteDir:
-    @staticmethod
-    @contextlib.contextmanager
-    def site_dir():
-        with tempdir() as tmp:
-            sys.path[:0] = [str(tmp)]
-            try:
-                yield tmp
-            finally:
-                sys.path.remove(str(tmp))
-
     def setUp(self):
         self.fixtures = ExitStack()
         self.addCleanup(self.fixtures.close)
-        self.site_dir = self.fixtures.enter_context(self.site_dir())
+        self.site_dir = self.fixtures.enter_context(tempdir())
 
 
-class DistInfoPkg(SiteDir):
+class OnSysPath:
+    @staticmethod
+    @contextlib.contextmanager
+    def add_sys_path(dir):
+        sys.path[:0] = [str(dir)]
+        try:
+            yield
+        finally:
+            sys.path.remove(str(dir))
+
+    def setUp(self):
+        super(OnSysPath, self).setUp()
+        self.fixtures.enter_context(self.add_sys_path(self.site_dir))
+
+
+class DistInfoPkg(OnSysPath, SiteDir):
     files = {
         "distinfo_pkg-1.0.0.dist-info": {
             "METADATA": """
@@ -91,7 +96,13 @@ class DistInfoPkg(SiteDir):
         build_files(DistInfoPkg.files, self.site_dir)
 
 
-class EggInfoPkg(SiteDir):
+class DistInfoPkgOffPath(SiteDir):
+    def setUp(self):
+        super(DistInfoPkgOffPath, self).setUp()
+        build_files(DistInfoPkg.files, self.site_dir)
+
+
+class EggInfoPkg(OnSysPath, SiteDir):
     files = {
         "egginfo_pkg.egg-info": {
             "PKG-INFO": """
@@ -128,7 +139,7 @@ class EggInfoPkg(SiteDir):
         build_files(EggInfoPkg.files, prefix=self.site_dir)
 
 
-class EggInfoFile(SiteDir):
+class EggInfoFile(OnSysPath, SiteDir):
     files = {
         "egginfo_file.egg-info": """
             Metadata-Version: 1.0
@@ -147,14 +158,6 @@ class EggInfoFile(SiteDir):
     def setUp(self):
         super(EggInfoFile, self).setUp()
         build_files(EggInfoFile.files, prefix=self.site_dir)
-
-
-class LocalPackage:
-    def setUp(self):
-        self.fixtures = ExitStack()
-        self.addCleanup(self.fixtures.close)
-        self.fixtures.enter_context(tempdir_as_cwd())
-        build_files(EggInfoPkg.files)
 
 
 def build_files(file_defs, prefix=pathlib.Path()):

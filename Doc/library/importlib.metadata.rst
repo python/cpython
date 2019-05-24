@@ -221,7 +221,7 @@ interface expected of finders by Python's import system.
 an iterator over instances of the ``Distribution`` abstract class. This
 method must have the signature::
 
-    def find_distributions(name=None, path=sys.path):
+    def find_distributions(name=None, path=None):
         """Return an iterable of all Distribution instances capable of
         loading the metadata for packages matching the name
         (or all names if not supplied) along the paths in the list
