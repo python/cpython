@@ -1313,7 +1313,7 @@ os.close(fd)
             await stream.close()
 
         async def client(srv):
-            addr = srv.listeners()[0].addr
+            addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
             # send a line
             await stream.write(b"hello world!\n")
@@ -1345,7 +1345,7 @@ os.close(fd)
             await stream.close()
 
         async def client(srv):
-            addr = srv.listeners()[0].addr
+            addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect_unix(addr)
             # send a line
             await stream.write(b"hello world!\n")
@@ -1387,13 +1387,13 @@ os.close(fd)
         async def test():
             srv = asyncio.StreamServer(handle_client, '127.0.0.1', 0)
             self.assertFalse(srv.is_bound())
-            self.assertEqual(0, len(srv.listeners()))
+            self.assertEqual(0, len(srv.sockets))
             await srv.bind()
             self.assertTrue(srv.is_bound())
-            self.assertEqual(1, len(srv.listeners()))
+            self.assertEqual(1, len(srv.sockets))
             await srv.close()
             self.assertFalse(srv.is_bound())
-            self.assertEqual(0, len(srv.listeners()))
+            self.assertEqual(0, len(srv.sockets))
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1407,7 +1407,7 @@ os.close(fd)
         async def test():
             async with asyncio.StreamServer(handle_client, '127.0.0.1', 0) as srv:
                 self.assertTrue(srv.is_bound())
-                self.assertEqual(1, len(srv.listeners()))
+                self.assertEqual(1, len(srv.sockets))
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1442,7 +1442,7 @@ os.close(fd)
             server_stream_aborted = True
 
         async def client(srv):
-            addr = srv.listeners()[0].addr
+            addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
             fut.set_result(None)
             self.assertEqual(b'', await stream.readline())
@@ -1474,7 +1474,7 @@ os.close(fd)
             server_stream_aborted = True
 
         async def client(srv):
-            addr = srv.listeners()[0].addr
+            addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
             fut.set_result(None)
             self.assertEqual(b'', await stream.readline())
@@ -1504,7 +1504,7 @@ os.close(fd)
                 await asyncio.sleep(0.01)
 
         async def client(srv):
-            addr = srv.listeners()[0].addr
+            addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
             fut1.set_result(None)
             await fut2
@@ -1541,7 +1541,7 @@ os.close(fd)
                     await asyncio.sleep(0.01)
 
         async def client(srv):
-            addr = srv.listeners()[0].addr
+            addr = srv.sockets[0].getsockname()
             stream = await asyncio.connect(*addr)
             fut1.set_result(None)
             await fut2
@@ -1602,7 +1602,7 @@ os.close(fd)
         async def test():
             async with asyncio.StreamServer(serve_callback, '127.0.0.1', 0) as srv:
                 await srv.start_serving()
-                await do_connect(*srv.listeners()[0].addr)
+                await do_connect(*srv.sockets[0].getsockname())
 
         self.loop.run_until_complete(test())
 
