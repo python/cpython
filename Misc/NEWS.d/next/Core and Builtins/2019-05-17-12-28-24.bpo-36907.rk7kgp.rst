@@ -1,0 +1,2 @@
+Fix a crash when calling a C function with a keyword dict (``f(**kwargs)``)
+and changing the dict ``kwargs`` while that function is running.

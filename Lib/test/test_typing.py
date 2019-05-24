@@ -568,6 +568,10 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(list, typing.Reversible)
         self.assertNotIsSubclass(int, typing.Reversible)
 
+    def test_supports_index(self):
+        self.assertIsSubclass(int, typing.SupportsIndex)
+        self.assertNotIsSubclass(str, typing.SupportsIndex)
+
     def test_protocol_instance_type_error(self):
         with self.assertRaises(TypeError):
             isinstance(0, typing.SupportsAbs)
@@ -1708,9 +1712,8 @@ class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
     def __aiter__(self) -> typing.AsyncIterator[T_a]:
         return self
 
-    @asyncio.coroutine
-    def __anext__(self) -> T_a:
-        data = yield from self.value
+    async def __anext__(self) -> T_a:
+        data = await self.value
         if data:
             return data
         else:

@@ -1148,6 +1148,8 @@ non-important content
         self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
 
+        self.assertRaises(SyntaxError, eval, "f'{C=]'")
+
     def test_walrus(self):
         x = 20
         # This isn't an assignment expression, it's 'x', with a format

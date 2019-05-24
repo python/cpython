@@ -48,12 +48,15 @@ extern int _PySys_InitMain(
     PyInterpreterState *interp);
 extern _PyInitError _PyImport_Init(PyInterpreterState *interp);
 extern _PyInitError _PyExc_Init(void);
+extern _PyInitError _PyErr_Init(void);
 extern _PyInitError _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern _PyInitError _PyImportHooks_Init(void);
 extern int _PyFloat_Init(void);
 extern _PyInitError _Py_HashRandomization_Init(const _PyCoreConfig *);
 
 extern _PyInitError _PyTypes_Init(void);
+extern _PyInitError _PyImportZip_Init(PyInterpreterState *interp);
+
 
 /* Various internal finalizers */
 
@@ -81,7 +84,7 @@ extern void PyLong_Fini(void);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern int _PyTraceMalloc_Fini(void);
-extern void _PyWarnings_Fini(_PyRuntimeState *runtime);
+extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
 extern void _PyGILState_Init(
     _PyRuntimeState *runtime,
@@ -97,6 +100,13 @@ PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromPyArgv(
 PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromCoreConfig(
     const _PyCoreConfig *coreconfig,
     const _PyArgv *args);
+
+
+PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
+
+PyAPI_FUNC(PyObject*) _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
+
+PyAPI_FUNC(void) _PyErr_Print(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

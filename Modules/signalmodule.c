@@ -5,6 +5,8 @@
 
 #include "Python.h"
 #include "pycore_atomic.h"
+#include "pycore_ceval.h"
+#include "pycore_pystate.h"
 
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
@@ -97,10 +99,7 @@ class sigset_t_converter(CConverter):
    may not be the thread that received the signal.
 */
 
-#include <sys/types.h> /* For pid_t */
 #include "pythread.h"
-static unsigned long main_thread;
-static PyInterpreterState *main_interp;
 
 static volatile struct {
     _Py_atomic_int tripped;
@@ -188,10 +187,12 @@ itimer_retval(struct itimerval *iv)
 #endif
 
 static int
-is_main(void)
+is_main(_PyRuntimeState *runtime)
 {
-    return PyThread_get_thread_ident() == main_thread &&
-        _PyInterpreterState_Get() == main_interp;
+    unsigned long thread = PyThread_get_thread_ident();
+    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
+    return (thread == runtime->main_thread
+            && interp == runtime->interpreters.main);
 }
 
 static PyObject *
@@ -256,7 +257,9 @@ trip_signal(int sig_num)
     _Py_atomic_store(&is_tripped, 1);
 
     /* Notify ceval.c */
-    _PyEval_SignalReceived();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    _PyEval_SignalReceived(&runtime->ceval);
 
     /* And then write to the wakeup fd *after* setting all the globals and
        doing the _PyEval_SignalReceived. We used to write to the wakeup fd
@@ -296,8 +299,9 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    Py_AddPendingCall(report_wakeup_send_error,
-                                      (void *)(intptr_t) last_error);
+                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                                           report_wakeup_send_error,
+                                           (void *)(intptr_t) last_error);
                 }
             }
         }
@@ -314,8 +318,9 @@ trip_signal(int sig_num)
                 {
                     /* Py_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    Py_AddPendingCall(report_wakeup_write_error,
-                                      (void *)(intptr_t)errno);
+                    _PyEval_AddPendingCall(tstate, &runtime->ceval,
+                                           report_wakeup_write_error,
+                                           (void *)(intptr_t)errno);
                 }
             }
         }
@@ -420,7 +425,7 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
     err = raise(signalnum);
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
-    
+
     if (err) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
@@ -469,7 +474,9 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
             return NULL;
     }
 #endif
-    if (!is_main()) {
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    if (!is_main(runtime)) {
         PyErr_SetString(PyExc_ValueError,
                         "signal only works in main thread");
         return NULL;
@@ -686,7 +693,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 #endif
 
-    if (!is_main()) {
+    _PyRuntimeState *runtime = &_PyRuntime;
+    if (!is_main(runtime)) {
         PyErr_SetString(PyExc_ValueError,
                         "set_wakeup_fd only works in main thread");
         return NULL;
@@ -1076,18 +1084,18 @@ fill_siginfo(siginfo_t *si)
 
     PyStructSequence_SET_ITEM(result, 0, PyLong_FromLong((long)(si->si_signo)));
     PyStructSequence_SET_ITEM(result, 1, PyLong_FromLong((long)(si->si_code)));
-#ifdef __VXWORKS__   
+#ifdef __VXWORKS__
     PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong(0L));
     PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong(0L));
     PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong(0L));
     PyStructSequence_SET_ITEM(result, 5, PyLong_FromLong(0L));
-#else   
+#else
     PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si->si_errno)));
     PyStructSequence_SET_ITEM(result, 3, PyLong_FromPid(si->si_pid));
     PyStructSequence_SET_ITEM(result, 4, _PyLong_FromUid(si->si_uid));
     PyStructSequence_SET_ITEM(result, 5,
                                 PyLong_FromLong((long)(si->si_status)));
-#endif   
+#endif
 #ifdef HAVE_SIGINFO_T_SI_BAND
     PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(si->si_band));
 #else
@@ -1323,9 +1331,6 @@ PyInit__signal(void)
 {
     PyObject *m, *d, *x;
     int i;
-
-    main_thread = PyThread_get_thread_ident();
-    main_interp = _PyInterpreterState_Get();
 
     /* Create the module and add the functions */
     m = PyModule_Create(&signalmodule);
@@ -1617,7 +1622,8 @@ finisignal(void)
 int
 PyErr_CheckSignals(void)
 {
-    if (!is_main()) {
+    _PyRuntimeState *runtime = &_PyRuntime;
+    if (!is_main(runtime)) {
         return 0;
     }
 
@@ -1678,13 +1684,18 @@ _PyErr_CheckSignals(void)
 }
 
 
-/* Replacements for intrcheck.c functionality
- * Declared in pyerrors.h
- */
+/* Simulate the effect of a signal.SIGINT signal arriving. The next time
+   PyErr_CheckSignals is called,  the Python SIGINT signal handler will be
+   raised.
+
+   Missing signal handler for the SIGINT signal is silently ignored. */
 void
 PyErr_SetInterrupt(void)
 {
-    trip_signal(SIGINT);
+    if ((Handlers[SIGINT].func != IgnoreHandler) &&
+        (Handlers[SIGINT].func != DefaultHandler)) {
+        trip_signal(SIGINT);
+    }
 }
 
 void
@@ -1706,7 +1717,8 @@ int
 PyOS_InterruptOccurred(void)
 {
     if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
-        if (!is_main()) {
+        _PyRuntimeState *runtime = &_PyRuntime;
+        if (!is_main(runtime)) {
             return 0;
         }
         _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
@@ -1734,14 +1746,13 @@ _PySignal_AfterFork(void)
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
-    main_thread = PyThread_get_thread_ident();
-    main_interp = _PyInterpreterState_Get();
 }
 
 int
 _PyOS_IsMainThread(void)
 {
-    return is_main();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    return is_main(runtime);
 }
 
 #ifdef MS_WINDOWS

@@ -138,7 +138,9 @@ environment variable, can be set using the new ``./configure --with-trace-refs``
 build option.
 (Contributed by Victor Stinner in :issue:`36465`.)
 
-On Unix, C extensions are no longer linked to libpython. It is now possible
+On Unix, C extensions are no longer linked to libpython except on Android
+and Cygwin.
+It is now possible
 for a statically linked Python to load a C extension built using a shared
 library Python.
 (Contributed by Victor Stinner in :issue:`21536`.)
@@ -147,6 +149,24 @@ On Unix, when Python is built in debug mode, import now also looks for C
 extensions compiled in release mode and for C extensions compiled with the
 stable ABI.
 (Contributed by Victor Stinner in :issue:`36722`.)
+
+To embed Python into an application, a new ``--embed`` option must be passed to
+``python3-config --libs --embed`` to get ``-lpython3.8`` (link the application
+to libpython). To support both 3.8 and older, try ``python3-config --libs
+--embed`` first and fallback to ``python3-config --libs`` (without ``--embed``)
+if the previous command fails.
+
+Add a pkg-config ``python-3.8-embed`` module to embed Python into an
+application: ``pkg-config python-3.8-embed --libs`` includes ``-lpython3.8``.
+To support both 3.8 and older, try ``pkg-config python-X.Y-embed --libs`` first
+and fallback to ``pkg-config python-X.Y --libs`` (without ``--embed``) if the
+previous command fails (replace ``X.Y`` with the Python version).
+
+On the other hand, ``pkg-config python3.8 --libs`` no longer contains
+``-lpython3.8``. C extensions must not be linked to libpython (except on
+Android and Cygwin, whose cases are handled by the script);
+this change is backward incompatible on purpose.
+(Contributed by Victor Stinner in :issue:`36721`.)
 
 f-strings now support =  for quick and easy debugging
 -----------------------------------------------------
@@ -236,6 +256,16 @@ asyncio
 
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 
+builtins
+--------
+
+The :func:`compile` built-in has been improved to accept the
+``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` flag. With this new flag passed,
+:func:`compile` will allow top-level ``await``, ``async for`` and ``async with``
+constructs that are usually considered invalid syntax. Asynchronous code object
+marked with the ``CO_COROUTINE`` flag may then be returned.
+
+(Contributed by Matthias Bussonnier in :issue:`34616`)
 
 collections
 -----------
@@ -289,6 +319,15 @@ for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
           self.bit_rate = round(bit_rate / 1000.0, 1)
           self.duration = ceil(duration)
 
+io
+--
+
+In development mode (:option:`-X` ``env``) and in debug build, the
+:class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
+fails. The exception is ignored silently by default in release build.
+(Contributed by Victor Stinner in :issue:`18748`.)
+
+
 gc
 --
 
@@ -302,6 +341,11 @@ gzip
 
 Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
 (Contributed by Guo Ci Teo in :issue:`34898`.)
+
+A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
+for certain types of invalid or corrupt gzip files.
+(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
+:issue:`6584`.)
 
 
 idlelib and IDLE
@@ -337,6 +381,9 @@ Formerly, it only supported the 2-D case.
 Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
 numbers. (Contributed by Pablo Galindo in :issue:`35606`)
+
+Added new function :func:`math.isqrt` for computing integer square roots.
+(Contributed by Mark Dickinson in :issue:`36887`.)
 
 os
 --
@@ -386,6 +433,14 @@ contain characters unrepresentable at the OS level.
 Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
+
+
+plistlib
+--------
+
+Added new :class:`plistlib.UID` and enabled support for reading and writing
+NSKeyedArchiver-encoded binary plists.
+(Contributed by Jon Janzen in :issue:`26707`.)
 
 
 socket
@@ -464,6 +519,16 @@ and manipulating normal distributions of a random variable.
     [7.672102882379219, 12.000027119750287, 4.647488369766392]
 
 
+sys
+---
+
+Add new :func:`sys.unraisablehook` function which can be overridden to control
+how "unraisable exceptions" are handled. It is called when an exception has
+occurred but there is no way for Python to handle it. For example, when a
+destructor raises an exception or during garbage collection
+(:func:`gc.collect`).
+
+
 tarfile
 -------
 
@@ -520,6 +585,10 @@ unicodedata
 
 unittest
 --------
+
+* XXX Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
+  Appropriate new assert functions for testing have been added as well.
+  (Contributed by Lisa Roach in :issue:`26467`).
 
 * Added :func:`~unittest.addModuleCleanup()` and
   :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
@@ -766,10 +835,6 @@ Deprecated
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
-* The function :func:`~inspect.getfullargspec` in the :mod:`inspect`
-  module is deprecated in favor of the :func:`inspect.signature`
-  API.  (Contributed by Pablo Galindo in :issue:`36751`.)
-
 
 API and Feature Removals
 ========================
@@ -781,6 +846,10 @@ The following features and APIs have been removed from Python 3.8:
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
   Python 3.3: use :func:`os.popen` instead.
+
+* The function :func:`time.clock` has been removed, it was deprecated since Python
+  3.3: use :func:`time.perf_counter` or :func:`time.process_time` instead, depending
+  on your requirements, to have a well defined behavior.
 
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
@@ -806,6 +875,10 @@ The following features and APIs have been removed from Python 3.8:
 * The ``Cache`` and ``Statement`` objects of the :mod:`sqlite3` module are not
   exposed to the user.
   (Contributed by Aviv Palivoda in :issue:`30262`.)
+
+* The ``bufsize`` keyword argument of :func:`fileinput.input` and
+  :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
+  has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
 
 
 Porting to Python 3.8
@@ -976,16 +1049,25 @@ Changes in the Python API
   replacement by a pure Python implementation. (Contributed by Pablo Galindo
   in :issue:`36623`.)
 
+* :class:`types.CodeType` has a new parameter in the second position of the
+  constructor (*posonlyargcount*) to support positional-only arguments defined
+  in :pep:`570`.
+
 
 Changes in the C API
 --------------------
 
-* On Unix, C extensions are no longer linked to libpython except on
-  Android. When Python is embedded, ``libpython`` must not be loaded with
+* The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
+  It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
+  instead.
+  (Contributed by Victor Stinner in :issue:`36728`.)
+
+* On Unix, C extensions are no longer linked to libpython except on Android
+  and Cygwin. When Python is embedded, ``libpython`` must not be loaded with
   ``RTLD_LOCAL``, but ``RTLD_GLOBAL`` instead. Previously, using
-  ``RTLD_LOCAL``, it was already not possible to load C extensions which were
-  not linked to ``libpython``, like C extensions of the standard library built
-  by the ``*shared*`` section of ``Modules/Setup``.
+  ``RTLD_LOCAL``, it was already not possible to load C extensions which
+  were not linked to ``libpython``, like C extensions of the standard
+  library built by the ``*shared*`` section of ``Modules/Setup``.
 
 * Use of ``#`` variants of formats in parsing or building value (e.g.
   :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,

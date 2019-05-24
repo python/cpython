@@ -1978,7 +1978,7 @@ dict_dealloc(PyDictObject *mp)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
-    Py_TRASHCAN_SAFE_BEGIN(mp)
+    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values != empty_values) {
             for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
@@ -1996,7 +1996,7 @@ dict_dealloc(PyDictObject *mp)
         free_list[numfree++] = mp;
     else
         Py_TYPE(mp)->tp_free((PyObject *)mp);
-    Py_TRASHCAN_SAFE_END(mp)
+    Py_TRASHCAN_END
 }
 
 

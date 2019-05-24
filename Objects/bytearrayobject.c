@@ -410,7 +410,8 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
         return PyLong_FromLong((unsigned char)(PyByteArray_AS_STRING(self)[i]));
     }
     else if (PySlice_Check(index)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         if (PySlice_Unpack(index, &start, &stop, &step) < 0) {
             return NULL;
         }
@@ -998,7 +999,8 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-    if (Py_BytesWarningFlag) {
+    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    if (config->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytearray instance", 1)) {
                 return NULL;
@@ -1023,7 +1025,8 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
     if (rc < 0)
         return NULL;
     if (rc) {
-        if (Py_BytesWarningFlag && (op == Py_EQ || op == Py_NE)) {
+        _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+        if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
                             "Comparison between bytearray and string", 1))
                 return NULL;

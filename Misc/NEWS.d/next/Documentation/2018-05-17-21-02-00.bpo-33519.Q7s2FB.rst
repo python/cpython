@@ -1,0 +1,1 @@
+Clarify that `copy()` is not part of the `MutableSequence` ABC.
