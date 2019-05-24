@@ -7,7 +7,7 @@ import posixpath
 import re
 import sys
 from _collections_abc import Sequence
-from errno import EINVAL, ENOENT, ENOTDIR, EBADF
+from errno import EINVAL, ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
@@ -35,10 +35,11 @@ __all__ = [
 #
 
 # EBADF - guard against macOS `stat` throwing EBADF
-_IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF)
+_IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, ELOOP)
 
 _IGNORED_WINERRORS = (
     21,  # ERROR_NOT_READY - drive exists but is not accessible
+    1921,  # ERROR_CANT_RESOLVE_FILENAME - fix for broken symlink pointing to itself
 )
 
 def _ignore_error(exception):
@@ -520,7 +521,13 @@ class _WildcardSelector(_Selector):
             cf = parent_path._flavour.casefold
             entries = list(scandir(parent_path))
             for entry in entries:
-                if not self.dironly or entry.is_dir():
+                entry_is_dir = False
+                try:
+                    entry_is_dir = entry.is_dir()
+                except OSError as e:
+                    if not _ignore_error(e):
+                        raise
+                if not self.dironly or entry_is_dir:
                     name = entry.name
                     casefolded = cf(name)
                     if self.pat.match(casefolded):
