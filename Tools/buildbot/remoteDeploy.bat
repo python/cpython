@@ -34,6 +34,7 @@ for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.dll /b`) do @%SCP% PCBuild\arm32\
 %SCP% -r "%PYTHON_SOURCE%Include" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Include"
 %SCP% -r "%PYTHON_SOURCE%Lib" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Lib"
 %SCP% -r "%PYTHON_SOURCE%Tools\buildbot" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Tools\buildbot"
+%SCP% -r "%PYTHON_SOURCE%Tools\parser" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Tools\parser"
 %SCP% -r "%PYTHON_SOURCE%Tools\scripts" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Tools\scripts"
 %SCP% "%PYTHON_SOURCE%Modules\Setup" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Modules"
 %SCP% "%PYTHON_SOURCE%PC\pyconfig.h" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PC"
