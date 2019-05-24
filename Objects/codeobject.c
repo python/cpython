@@ -18,6 +18,8 @@ class code "PyCodeObject *" "&PyCode_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=78aa5d576683bb4b]*/
 
+/* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
+
 static int
 all_name_chars(PyObject *o)
 {
