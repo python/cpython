@@ -3292,6 +3292,8 @@ then
 	'')	MACHDEP="unknown";;
     esac
 fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
+$as_echo "\"$MACHDEP\"" >&6; }
 
 
 if test "$cross_compiling" = yes; then
