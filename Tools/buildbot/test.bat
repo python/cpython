@@ -17,8 +17,10 @@ if "%1"=="+d" (set rt_opts=%rt_opts:-d=%) & shift & goto CheckOpts
 if "%1"=="+q" (set rt_opts=%rt_opts:-q=%) & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtest_args=%regrtest_args% %1) & shift & goto CheckOpts
 
+if "%PROCESSOR_ARCHITECTURE%"=="ARM" if "%arm32_ssh%"=="true" goto NativeExecution
 if "%arm32_ssh%"=="true" goto :Arm32Ssh
 
+:NativeExecution
 call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args%
 exit /b %ERRORLEVEL%
 

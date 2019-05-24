@@ -25,6 +25,7 @@ if NOT "%REMOTE_PYTHON_DIR:~-1,1%"=="\" (set REMOTE_PYTHON_DIR=%REMOTE_PYTHON_DI
 %SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%temp"
 %SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%Modules"
 %SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%PC"
+%SSH% %SSH_SERVER% "md %REMOTE_PYTHON_DIR%Tools"
 for /f "USEBACKQ" %%i in (`dir PCbuild\*.bat /b`) do @%SCP% PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
 for /f "USEBACKQ" %%i in (`dir PCbuild\*.py /b`) do @%SCP% PCBuild\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild"
 for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.exe /b`) do @%SCP% PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
@@ -32,6 +33,8 @@ for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.pyd /b`) do @%SCP% PCBuild\arm32\
 for /f "USEBACKQ" %%i in (`dir PCbuild\arm32\*.dll /b`) do @%SCP% PCBuild\arm32\%%i "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PCBuild\arm32"
 %SCP% -r "%PYTHON_SOURCE%Include" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Include"
 %SCP% -r "%PYTHON_SOURCE%Lib" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Lib"
+%SCP% -r "%PYTHON_SOURCE%Tools\buildbot" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Tools\buildbot"
+%SCP% -r "%PYTHON_SOURCE%Tools\scripts" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Tools\scripts"
 %SCP% "%PYTHON_SOURCE%Modules\Setup" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%Modules"
 %SCP% "%PYTHON_SOURCE%PC\pyconfig.h" "%SSH_SERVER%:%REMOTE_PYTHON_DIR%PC"
 
