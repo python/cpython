@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_coreconfig.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "pycore_traceback.h"
 
@@ -27,13 +28,13 @@ _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
 
 
-/* Forward declaration */
-static void _PyErr_Fetch(PyThreadState *tstate, PyObject **p_type,
-                         PyObject **p_value, PyObject **p_traceback);
-static void _PyErr_Clear(PyThreadState *tstate);
+/* Forward declarations */
+static PyObject *
+_PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
+               const char *format, va_list vargs);
 
 
-static void
+void
 _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
                PyObject *traceback)
 {
@@ -95,7 +96,7 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
     }
 }
 
-static void
+void
 _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
 {
     PyObject *exc_value;
@@ -103,9 +104,9 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
 
     if (exception != NULL &&
         !PyExceptionClass_Check(exception)) {
-        PyErr_Format(PyExc_SystemError,
-                     "exception %R not a BaseException subclass",
-                     exception);
+        _PyErr_Format(tstate, PyExc_SystemError,
+                      "exception %R not a BaseException subclass",
+                      exception);
         return;
     }
 
@@ -181,7 +182,7 @@ _PyErr_SetKeyError(PyObject *arg)
     Py_DECREF(tup);
 }
 
-static void
+void
 _PyErr_SetNone(PyThreadState *tstate, PyObject *exception)
 {
     _PyErr_SetObject(tstate, exception, (PyObject *)NULL);
@@ -196,7 +197,7 @@ PyErr_SetNone(PyObject *exception)
 }
 
 
-static void
+void
 _PyErr_SetString(PyThreadState *tstate, PyObject *exception,
                  const char *string)
 {
@@ -210,13 +211,6 @@ PyErr_SetString(PyObject *exception, const char *string)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _PyErr_SetString(tstate, exception, string);
-}
-
-
-static PyObject*
-_PyErr_Occurred(PyThreadState *tstate)
-{
-    return tstate == NULL ? NULL : tstate->curexc_type;
 }
 
 
@@ -261,10 +255,17 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
 
 
 int
+_PyErr_ExceptionMatches(PyThreadState *tstate, PyObject *exc)
+{
+    return PyErr_GivenExceptionMatches(_PyErr_Occurred(tstate), exc);
+}
+
+
+int
 PyErr_ExceptionMatches(PyObject *exc)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return PyErr_GivenExceptionMatches(_PyErr_Occurred(tstate), exc);
+    return _PyErr_ExceptionMatches(tstate, exc);
 }
 
 
@@ -278,7 +279,7 @@ PyErr_ExceptionMatches(PyObject *exc)
    XXX: should PyErr_NormalizeException() also call
             PyException_SetTraceback() with the resulting value and tb?
 */
-static void
+void
 _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
                           PyObject **val, PyObject **tb)
 {
@@ -390,7 +391,7 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 }
 
 
-static void
+void
 _PyErr_Fetch(PyThreadState *tstate, PyObject **p_type, PyObject **p_value,
              PyObject **p_traceback)
 {
@@ -412,7 +413,7 @@ PyErr_Fetch(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 }
 
 
-static void
+void
 _PyErr_Clear(PyThreadState *tstate)
 {
     _PyErr_Restore(tstate, NULL, NULL, NULL);
@@ -506,7 +507,7 @@ _PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
     Py_DECREF(exc);
     assert(!_PyErr_Occurred(tstate));
 
-    PyErr_FormatV(exception, format, vargs);
+    _PyErr_FormatV(tstate, exception, format, vargs);
 
     _PyErr_Fetch(tstate, &exc, &val2, &tb);
     _PyErr_NormalizeException(tstate, &exc, &val2, &tb);
@@ -895,9 +896,10 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 void
 _PyErr_BadInternalCall(const char *filename, int lineno)
 {
-    PyErr_Format(PyExc_SystemError,
-                 "%s:%d: bad argument to internal function",
-                 filename, lineno);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_Format(tstate, PyExc_SystemError,
+                  "%s:%d: bad argument to internal function",
+                  filename, lineno);
 }
 
 /* Remove the preprocessor macro for PyErr_BadInternalCall() so that we can
@@ -907,16 +909,17 @@ void
 PyErr_BadInternalCall(void)
 {
     assert(0 && "bad argument to internal function");
-    PyErr_Format(PyExc_SystemError,
-                 "bad argument to internal function");
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetString(tstate, PyExc_SystemError,
+                     "bad argument to internal function");
 }
 #define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
 
-PyObject *
-PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
+static PyObject *
+_PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
+               const char *format, va_list vargs)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject* string;
 
     /* Issue #23571: PyUnicode_FromFormatV() must not be called with an
@@ -932,7 +935,16 @@ PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
 
 
 PyObject *
-PyErr_Format(PyObject *exception, const char *format, ...)
+PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_FormatV(tstate, exception, format, vargs);
+}
+
+
+PyObject *
+_PyErr_Format(PyThreadState *tstate, PyObject *exception,
+              const char *format, ...)
 {
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
@@ -940,7 +952,23 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 #else
     va_start(vargs);
 #endif
-    PyErr_FormatV(exception, format, vargs);
+    _PyErr_FormatV(tstate, exception, format, vargs);
+    va_end(vargs);
+    return NULL;
+}
+
+
+PyObject *
+PyErr_Format(PyObject *exception, const char *format, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    _PyErr_FormatV(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
 }
