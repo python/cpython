@@ -165,6 +165,11 @@ class _BaseStreamServer:
         self._streams = {}
         self._shutdown_timeout = shutdown_timeout
 
+    def __init_subclass__(cls):
+        if not cls.__module__.startswith('asyncio.'):
+            raise TypeError(f"asyncio.{cls.__name__} "
+                            "class cannot be inherited from")
+
     async def bind(self):
         if self._low_server is not None:
             return
@@ -223,11 +228,6 @@ class _BaseStreamServer:
 
     async def __aexit__(self, exc_type, exc_value, exc_tb):
         await self.close()
-
-    def __init_subclass__(cls):
-        if not cls.__module__.startswith('asyncio.'):
-            raise TypeError(f"asyncio.{cls.__name__} "
-                            "class cannot be inherited from")
 
     def _attach(self, stream, task):
         self._streams[stream] = task
