@@ -5,12 +5,18 @@
 #include "structmember.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
+#include "clinic/codeobject.c.h"
 
 /* Holder for co_extra information */
 typedef struct {
     Py_ssize_t ce_size;
     void *ce_extras[1];
 } _PyCodeObjectExtra;
+
+/*[clinic input]
+class code "PyCodeObject *" "&PyCode_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=78aa5d576683bb4b]*/
 
 /* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
 static int
@@ -109,7 +115,8 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
 
     /* Check argument types */
     if (argcount < 0 || posonlyargcount < 0 || kwonlyargcount < 0 ||
-        nlocals < 0 || code == NULL || !PyBytes_Check(code) ||
+        nlocals < 0 || stacksize < 0 || flags < 0 ||
+        code == NULL || !PyBytes_Check(code) ||
         consts == NULL || !PyTuple_Check(consts) ||
         names == NULL || !PyTuple_Check(names) ||
         varnames == NULL || !PyTuple_Check(varnames) ||
@@ -122,9 +129,13 @@ PyCode_New(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
 
-    /* Ensure that the filename is a ready Unicode string */
-    if (PyUnicode_READY(filename) < 0)
+    /* Ensure that strings are ready Unicode string */
+    if (PyUnicode_READY(name) < 0) {
         return NULL;
+    }
+    if (PyUnicode_READY(filename) < 0) {
+        return NULL;
+    }
 
     intern_strings(names);
     intern_strings(varnames);
@@ -482,7 +493,7 @@ code_dealloc(PyCodeObject *co)
 }
 
 static PyObject *
-code_sizeof(PyCodeObject *co, void *unused)
+code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
 {
     Py_ssize_t res = _PyObject_SIZE(Py_TYPE(co));
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
@@ -495,6 +506,65 @@ code_sizeof(PyCodeObject *co, void *unused)
                (co_extra->ce_size-1) * sizeof(co_extra->ce_extras[0]);
     }
     return PyLong_FromSsize_t(res);
+}
+
+/*[clinic input]
+code.replace
+
+    *
+    co_argcount: int(c_default="self->co_argcount") = -1
+    co_posonlyargcount: int(c_default="self->co_posonlyargcount") = -1
+    co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = -1
+    co_nlocals: int(c_default="self->co_nlocals") = -1
+    co_stacksize: int(c_default="self->co_stacksize") = -1
+    co_flags: int(c_default="self->co_flags") = -1
+    co_firstlineno: int(c_default="self->co_firstlineno") = -1
+    co_code: PyBytesObject(c_default="(PyBytesObject *)self->co_code") = None
+    co_consts: object(subclass_of="&PyTuple_Type", c_default="self->co_consts") = None
+    co_names: object(subclass_of="&PyTuple_Type", c_default="self->co_names") = None
+    co_varnames: object(subclass_of="&PyTuple_Type", c_default="self->co_varnames") = None
+    co_freevars: object(subclass_of="&PyTuple_Type", c_default="self->co_freevars") = None
+    co_cellvars: object(subclass_of="&PyTuple_Type", c_default="self->co_cellvars") = None
+    co_filename: unicode(c_default="self->co_filename") = None
+    co_name: unicode(c_default="self->co_name") = None
+    co_lnotab: PyBytesObject(c_default="(PyBytesObject *)self->co_lnotab") = None
+
+Return a new code object with new specified fields.
+[clinic start generated code]*/
+
+static PyObject *
+code_replace_impl(PyCodeObject *self, int co_argcount,
+                  int co_posonlyargcount, int co_kwonlyargcount,
+                  int co_nlocals, int co_stacksize, int co_flags,
+                  int co_firstlineno, PyBytesObject *co_code,
+                  PyObject *co_consts, PyObject *co_names,
+                  PyObject *co_varnames, PyObject *co_freevars,
+                  PyObject *co_cellvars, PyObject *co_filename,
+                  PyObject *co_name, PyBytesObject *co_lnotab)
+/*[clinic end generated code: output=25c8e303913bcace input=77189e46579ec426]*/
+{
+#define CHECK_INT_ARG(ARG) \
+        if (ARG < 0) { \
+            PyErr_SetString(PyExc_ValueError, \
+                            #ARG " must be a positive integer"); \
+            return NULL; \
+        }
+
+    CHECK_INT_ARG(co_argcount);
+    CHECK_INT_ARG(co_posonlyargcount);
+    CHECK_INT_ARG(co_kwonlyargcount);
+    CHECK_INT_ARG(co_nlocals);
+    CHECK_INT_ARG(co_stacksize);
+    CHECK_INT_ARG(co_flags);
+    CHECK_INT_ARG(co_firstlineno);
+
+#undef CHECK_INT_ARG
+
+    return (PyObject *)PyCode_New(
+        co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
+        co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
+        co_varnames, co_freevars, co_cellvars, co_filename, co_name,
+        co_firstlineno, (PyObject*)co_lnotab);
 }
 
 static PyObject *
@@ -751,6 +821,7 @@ code_hash(PyCodeObject *co)
 
 static struct PyMethodDef code_methods[] = {
     {"__sizeof__", (PyCFunction)code_sizeof, METH_NOARGS},
+    CODE_REPLACE_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 

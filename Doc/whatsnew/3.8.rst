@@ -240,6 +240,9 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
+* Added new ``replace()`` method to the code type (:class:`types.CodeType`).
+  (Contributed by Victor Stinner in :issue:`37032`.)
+
 
 New Modules
 ===========
@@ -1051,7 +1054,8 @@ Changes in the Python API
 
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
-  in :pep:`570`.
+  in :pep:`570`. A new ``replace()`` method of :class:`types.CodeType` can be
+  used to make the code future-proof.
 
 
 Changes in the C API
