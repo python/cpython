@@ -1288,6 +1288,29 @@ foo
     Custom descriptor
 """)
 
+    def test_async_annotation(self):
+        async def coro_function(ign) -> int:
+            return 1
+
+        text = pydoc.plain(pydoc.plaintext.document(coro_function))
+        self.assertIn('async coro_function', text)
+
+        html = pydoc.HTMLDoc().document(coro_function)
+        self.assertIn(
+            'async <a name="-coro_function"><strong>coro_function',
+            html)
+
+    def test_async_generator_annotation(self):
+        async def an_async_generator():
+            yield 1
+
+        text = pydoc.plain(pydoc.plaintext.document(an_async_generator))
+        self.assertIn('async an_async_generator', text)
+
+        html = pydoc.HTMLDoc().document(an_async_generator)
+        self.assertIn(
+            'async <a name="-an_async_generator"><strong>an_async_generator',
+            html)
 
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
