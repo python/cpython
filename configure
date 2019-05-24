@@ -15129,9 +15129,9 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 $as_echo "$LDVERSION" >&6; }
 
-# On Android the shared libraries must be linked with libpython.
+# On Android and Cygwin the shared libraries must be linked with libpython.
 
-if test -z "$ANDROID_API_LEVEL"; then
+if test -z "$ANDROID_API_LEVEL" -o "$MACHDEP" != "cygwin"; then
   LIBPYTHON=''
 else
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"

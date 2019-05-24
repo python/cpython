@@ -290,7 +290,7 @@ the full reference.
    .. versionchanged:: 3.8
 
       On Unix, C extensions are no longer linked to libpython except on
-      Android.
+      Android and Cygwin.
 
 
 .. class:: Distribution
