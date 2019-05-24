@@ -1222,15 +1222,14 @@ PyObject *
 PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 {
     va_list vargs;
-    PyObject *callable, *result;
-    int is_method;
+    PyObject *result;
 
     if (obj == NULL || name == NULL) {
         return null_error();
     }
 
-    callable = NULL;
-    is_method = _PyObject_GetMethod(obj, name, &callable);
+    PyObject *callable = NULL;
+    int is_method = _PyObject_GetMethod(obj, name, &callable);
     if (callable == NULL) {
         return NULL;
     }
@@ -1250,8 +1249,7 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj,
                               struct _Py_Identifier *name, ...)
 {
     va_list vargs;
-    PyObject *callable, *result;
-    int is_method;
+    PyObject *result;
 
     if (obj == NULL || name == NULL) {
         return null_error();
@@ -1261,8 +1259,8 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj,
     if (!oname)
         return NULL;
 
-    callable = NULL;
-    is_method = _PyObject_GetMethod(obj, oname, &callable);
+    PyObject *callable = NULL;
+    int is_method = _PyObject_GetMethod(obj, oname, &callable);
     if (callable == NULL) {
         return NULL;
     }
