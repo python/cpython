@@ -1098,18 +1098,14 @@ class CommonBufferedTests:
         # Test that the exception state is not modified by a destructor,
         # even if close() fails.
         rawio = self.CloseFailureIO()
-        try:
-            with support.catch_unraisable_exception() as cm:
-                with self.assertRaises(AttributeError):
-                    self.tp(rawio).xyzzy
+        with support.catch_unraisable_exception() as cm:
+            with self.assertRaises(AttributeError):
+                self.tp(rawio).xyzzy
 
             if not IOBASE_EMITS_UNRAISABLE:
                 self.assertIsNone(cm.unraisable)
             elif cm.unraisable is not None:
                 self.assertEqual(cm.unraisable.exc_type, OSError)
-        finally:
-            # Explicitly break reference cycle
-            cm = None
 
     def test_repr(self):
         raw = self.MockRawIO()
@@ -2854,18 +2850,14 @@ class TextIOWrapperTest(unittest.TestCase):
         # Test that the exception state is not modified by a destructor,
         # even if close() fails.
         rawio = self.CloseFailureIO()
-        try:
-            with support.catch_unraisable_exception() as cm:
-                with self.assertRaises(AttributeError):
-                    self.TextIOWrapper(rawio).xyzzy
+        with support.catch_unraisable_exception() as cm:
+            with self.assertRaises(AttributeError):
+                self.TextIOWrapper(rawio).xyzzy
 
             if not IOBASE_EMITS_UNRAISABLE:
                 self.assertIsNone(cm.unraisable)
             elif cm.unraisable is not None:
                 self.assertEqual(cm.unraisable.exc_type, OSError)
-        finally:
-            # Explicitly break reference cycle
-            cm = None
 
     # Systematic tests of the text I/O API
 
