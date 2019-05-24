@@ -6590,25 +6590,51 @@ Set the default timeout in seconds (float) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
-#ifdef HAVE_IF_NAMEINDEX
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 /* Python API for getting interface indices and names */
 
 static PyObject *
 socket_if_nameindex(PyObject *self, PyObject *arg)
 {
-    PyObject *list;
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
+        return NULL;
+    }
+#ifdef MS_WINDOWS
+    PMIB_IF_TABLE2 tbl;
+    if (GetIfTable2Ex(MibIfTableRaw, &tbl) != NO_ERROR) {
+        Py_DECREF(list);
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    for (ULONG i = 0; i < tbl->NumEntries; ++i) {
+        MIB_IF_ROW2 r = tbl->Table[i];
+        WCHAR buf[NDIS_IF_MAX_STRING_SIZE + 1];
+        if (ConvertInterfaceLuidToNameW(&r.InterfaceLuid, buf,
+                                        NDIS_IF_MAX_STRING_SIZE + 1)) {
+            Py_DECREF(list);
+            FreeMibTable(tbl);
+            return PyErr_SetFromErrno(PyExc_OSError);
+        }
+        PyObject *tuple = Py_BuildValue("IN", r.InterfaceIndex,
+                PyUnicode_FromWideChar(buf, -1));
+        if (tuple == NULL || PyList_Append(list, tuple) == -1) {
+            Py_XDECREF(tuple);
+            Py_DECREF(list);
+            FreeMibTable(tbl);
+            return NULL;
+        }
+        Py_DECREF(tuple);
+    }
+    FreeMibTable(tbl);
+    return list;
+#else
     int i;
     struct if_nameindex *ni;
 
     ni = if_nameindex();
     if (ni == NULL) {
+        Py_DECREF(list);
         PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-
-    list = PyList_New(0);
-    if (list == NULL) {
-        if_freenameindex(ni);
         return NULL;
     }
 
@@ -6643,15 +6669,14 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
 
     if_freenameindex(ni);
     return list;
+#endif
 }
 
 PyDoc_STRVAR(if_nameindex_doc,
 "if_nameindex()\n\
 \n\
 Returns a list of network interface information (index, name) tuples.");
-#endif /* HAVE_IF_NAMEINDEX */
 
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 static PyObject *
 socket_if_nametoindex(PyObject *self, PyObject *args)
 {
@@ -6830,11 +6855,9 @@ static PyMethodDef socket_methods[] = {
      METH_NOARGS, getdefaulttimeout_doc},
     {"setdefaulttimeout",       socket_setdefaulttimeout,
      METH_O, setdefaulttimeout_doc},
-#ifdef HAVE_IF_NAMEINDEX
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
-#endif
-#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nametoindex", socket_if_nametoindex,
      METH_VARARGS, if_nametoindex_doc},
     {"if_indextoname", socket_if_indextoname,

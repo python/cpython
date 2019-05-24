@@ -1014,9 +1014,12 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.8
+      Windows support was added.
 
 
 .. function:: if_nametoindex(if_name)
