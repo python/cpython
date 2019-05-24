@@ -10,7 +10,7 @@
 # arguments).
 # The original file is kept as a back-up (with a "~" attached to its name),
 # -n flag can be used to disable this.
-#
+# For keeping flags use -f option.For adding flags pass argument to -f option
 # Undoubtedly you can do this using find and sed or perl, but this is
 # a nice example of Python code that recurses down a directory tree
 # and uses regular expressions.  Also note several subtleties like
@@ -171,16 +171,19 @@ def fix(filename):
 
 
 def parse_shebang(shebangline):
-    shebangline = shebangline.decode()
+    """takes shebangline and returns tuple with string of shebang's flags
+    and string of shebang's args
+    parse_shebang(b'#!/usr/bin/python -f sfj') --> (b'f',b'sfj')
+    """
     end = len(shebangline)
-    start = shebangline.find(' -', 0, end) + 2  # find returns index at space
-    if shebangline[start].isalpha():
+    start = shebangline.find(b' -', 0, end) + 2  # .find() returns index at space
+    if chr(shebangline[start]).isalpha():
         flags = shebangline[start:end].split()
-        args = ''
+        args = b''
         if len(flags) > 1:
-            args = ' '.join(flags[1:len(flags)])
+            args = b' '.join(flags[1:])
         flags = flags[0]
-        return flags.encode(), args.encode()
+        return flags, args
     return b'', b''
 
 
