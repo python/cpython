@@ -1,2 +1,2 @@
 Update the docstring and the Documentation of :class:`FileInput`. Explain
-the behavior of :class:`FileInput` when reading from ``sys.stdin```.
+the behavior of :class:`FileInput` when reading from ``sys.stdin``.
