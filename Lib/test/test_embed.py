@@ -287,7 +287,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'coerce_c_locale_warn': 0,
 
         'program_name': './_testembed',
-        'argv': [],
+        'argv': [''],
         'program': None,
 
         'xoptions': [],

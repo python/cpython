@@ -2373,6 +2373,17 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
         }
     }
 
+    /* ensure that sys.argv is always set and non-empty */
+    if (config->argc < 0) {
+        config->argc = 0;
+    }
+    if (config->argc == 0) {
+        err = wstrlist_append(&config->argc, &config->argv, L"");
+        if (_Py_INIT_FAILED(err)) {
+            return err;
+        }
+    }
+
     /* default values */
     if (config->dev_mode) {
         if (config->faulthandler < 0) {
@@ -2401,10 +2412,6 @@ _PyCoreConfig_Read(_PyCoreConfig *config)
     if (config->utf8_mode < 0) {
         config->utf8_mode = 0;
     }
-    if (config->argc < 0) {
-        config->argc = 0;
-    }
-
     return _Py_INIT_OK();
 }
 
