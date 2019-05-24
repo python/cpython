@@ -316,6 +316,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
             goto clear;
         if (mro_meth != type_mro_meth)
             goto clear;
+        Py_XDECREF(mro_meth);
+        Py_XDECREF(type_mro_meth);
     }
     n = PyTuple_GET_SIZE(bases);
     for (i = 0; i < n; i++) {
