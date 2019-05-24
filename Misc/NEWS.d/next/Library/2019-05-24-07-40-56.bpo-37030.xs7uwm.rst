@@ -1,0 +1,1 @@
+cmd.py: Hide undocumented commands in help and completenames
