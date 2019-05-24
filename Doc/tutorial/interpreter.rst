@@ -24,11 +24,11 @@ Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
 On Windows machines, the Python installation is usually placed in
-:file:`C:\\Python36`, though you can change this when you're running the
+:file:`C:\\Python38`, though you can change this when you're running the
 installer.  To add this directory to your path,  you can type the following
-command into the command prompt in a DOS box::
+command into :ref:`a command prompt window <faq-run-program-under-windows>`::
 
-   set path=%path%;C:\python36
+   set path=%path%;C:\python38
 
 Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
 Windows) at the primary prompt causes the interpreter to exit with a zero exit
@@ -148,14 +148,14 @@ where *encoding* is one of the valid :mod:`codecs` supported by Python.
 For example, to declare that Windows-1252 encoding is to be used, the first
 line of your source code file should be::
 
-   # -*- coding: cp-1252 -*-
+   # -*- coding: cp1252 -*-
 
 One exception to the *first line* rule is when the source code starts with a
 :ref:`UNIX "shebang" line <tut-scripts>`.  In this case, the encoding
 declaration should be added as the second line of the file.  For example::
 
    #!/usr/bin/env python3
-   # -*- coding: cp-1252 -*-
+   # -*- coding: cp1252 -*-
 
 .. rubric:: Footnotes
 

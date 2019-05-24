@@ -40,8 +40,8 @@ else:
             # resulting codeset may be unknown to Python. We ignore all
             # these problems, falling back to ASCII
             locale_encoding = locale.nl_langinfo(locale.CODESET)
-            if locale_encoding is None or locale_encoding is '':
-                # situation occurs on Mac OS X
+            if locale_encoding is None or locale_encoding == '':
+                # situation occurs on macOS
                 locale_encoding = 'ascii'
             codecs.lookup(locale_encoding)
         except (NameError, AttributeError, LookupError):
@@ -50,8 +50,8 @@ else:
             # bugs that can cause ValueError.
             try:
                 locale_encoding = locale.getdefaultlocale()[1]
-                if locale_encoding is None or locale_encoding is '':
-                    # situation occurs on Mac OS X
+                if locale_encoding is None or locale_encoding == '':
+                    # situation occurs on macOS
                     locale_encoding = 'ascii'
                 codecs.lookup(locale_encoding)
             except (ValueError, LookupError):
@@ -384,6 +384,8 @@ class IOBinding:
         try:
             with open(filename, "wb") as f:
                 f.write(chars)
+                f.flush()
+                os.fsync(f.fileno())
             return True
         except OSError as msg:
             tkMessageBox.showerror("I/O Error", str(msg),
@@ -567,8 +569,8 @@ def _io_binding(parent):  # htest #
     IOBinding(editwin)
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_iomenu', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_iomenu', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_io_binding)

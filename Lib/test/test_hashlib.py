@@ -162,6 +162,16 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test.values()
         return itertools.chain.from_iterable(constructors)
 
+    @support.refcount_test
+    @unittest.skipIf(c_hashlib is None, 'Require _hashlib module')
+    def test_refleaks_in_hash___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        sha1_hash = c_hashlib.new('sha1')
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            sha1_hash.__init__('sha1')
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
     def test_hash_array(self):
         a = array.array("b", range(10))
         for cons in self.hash_constructors:
@@ -219,6 +229,19 @@ class HashLibTestCase(unittest.TestCase):
             else:
                 self.assertIsInstance(h.digest(), bytes)
                 self.assertEqual(hexstr(h.digest()), h.hexdigest())
+
+    def test_digest_length_overflow(self):
+        # See issue #34922
+        large_sizes = (2**29, 2**32-10, 2**32+10, 2**61, 2**64-10, 2**64+10)
+        for cons in self.hash_constructors:
+            h = cons()
+            if h.name not in self.shakes:
+                continue
+            for digest in h.digest, h.hexdigest:
+                self.assertRaises(ValueError, digest, -10)
+                for length in large_sizes:
+                    with self.assertRaises((ValueError, OverflowError)):
+                        digest(length)
 
     def test_name_attribute(self):
         for cons in self.hash_constructors:
@@ -550,16 +573,20 @@ class HashLibTestCase(unittest.TestCase):
 
         constructor(leaf_size=0)
         constructor(leaf_size=(1<<32)-1)
-        self.assertRaises(OverflowError, constructor, leaf_size=-1)
+        self.assertRaises(ValueError, constructor, leaf_size=-1)
         self.assertRaises(OverflowError, constructor, leaf_size=1<<32)
 
         constructor(node_offset=0)
         constructor(node_offset=max_offset)
-        self.assertRaises(OverflowError, constructor, node_offset=-1)
+        self.assertRaises(ValueError, constructor, node_offset=-1)
         self.assertRaises(OverflowError, constructor, node_offset=max_offset+1)
 
+        self.assertRaises(TypeError, constructor, data=b'')
+        self.assertRaises(TypeError, constructor, string=b'')
+        self.assertRaises(TypeError, constructor, '')
+
         constructor(
-            string=b'',
+            b'',
             key=b'',
             salt=b'',
             person=b'',

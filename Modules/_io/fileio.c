@@ -2,6 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -356,6 +357,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #elif defined(O_CLOEXEC)
     flags |= O_CLOEXEC;
 #endif
+
+    if (PySys_Audit("open", "Osi", nameobj, mode, flags) < 0) {
+        goto error;
+    }
 
     if (fd >= 0) {
         self->fd = fd;
@@ -791,11 +796,9 @@ _io_FileIO_read_impl(fileio *self, Py_ssize_t size)
     if (size < 0)
         return _io_FileIO_readall_impl(self);
 
-#ifdef MS_WINDOWS
-    /* On Windows, the count parameter of read() is an int */
-    if (size > INT_MAX)
-        size = INT_MAX;
-#endif
+    if (size > _PY_READ_MAX) {
+        size = _PY_READ_MAX;
+    }
 
     bytes = PyBytes_FromStringAndSize(NULL, size);
     if (bytes == NULL)
@@ -1122,14 +1125,6 @@ _io_FileIO_isatty_impl(fileio *self)
     return PyBool_FromLong(res);
 }
 
-static PyObject *
-fileio_getstate(fileio *self)
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot serialize '%s' object", Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 #include "clinic/fileio.c.h"
 
 static PyMethodDef fileio_methods[] = {
@@ -1147,7 +1142,6 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_FILENO_METHODDEF
     _IO_FILEIO_ISATTY_METHODDEF
     {"_dealloc_warn", (PyCFunction)fileio_dealloc_warn, METH_O, NULL},
-    {"__getstate__", (PyCFunction)fileio_getstate, METH_NOARGS, NULL},
     {NULL,           NULL}             /* sentinel */
 };
 

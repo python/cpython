@@ -1,4 +1,4 @@
-"""Test idlelib.query.
+"""Test query, coverage 91%).
 
 Non-gui tests for Query, SectionName, ModuleName, and HelpSource use
 dummy versions that extract the non-gui methods and add other needed
@@ -8,17 +8,15 @@ the subclass definition.
 
 The appearance of the widgets is checked by the Query and
 HelpSource htests.  These are run by running query.py.
-
-Coverage: 94% (100% for Query and SectionName).
-6 of 8 missing are ModuleName exceptions I don't know how to trigger.
 """
-from test.support import requires
-import sys
-from tkinter import Tk
+from idlelib import query
 import unittest
+from test.support import requires
+from tkinter import Tk
+
+import sys
 from unittest import mock
 from idlelib.idle_test.mock_tk import Var
-from idlelib import query
 
 
 # NON-GUI TESTS

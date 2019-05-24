@@ -392,6 +392,20 @@ def _close_stdin():
         pass
 
 #
+# Flush standard streams, if any
+#
+
+def _flush_std_streams():
+    try:
+        sys.stdout.flush()
+    except (AttributeError, ValueError):
+        pass
+    try:
+        sys.stderr.flush()
+    except (AttributeError, ValueError):
+        pass
+
+#
 # Start a program with only specified fds kept open
 #
 
@@ -407,3 +421,9 @@ def spawnv_passfds(path, args, passfds):
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
+
+
+def close_fds(*fds):
+    """Close each file descriptor given as an argument"""
+    for fd in fds:
+        os.close(fd)

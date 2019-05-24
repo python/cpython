@@ -41,33 +41,38 @@ import types as _types
 from io import StringIO as _StringIO
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
-           "PrettyPrinter"]
+           "PrettyPrinter", "pp"]
 
 
 def pprint(object, stream=None, indent=1, width=80, depth=None, *,
-           compact=False):
+           compact=False, sort_dicts=True):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
         stream=stream, indent=indent, width=width, depth=depth,
-        compact=compact)
+        compact=compact, sort_dicts=sort_dicts)
     printer.pprint(object)
 
-def pformat(object, indent=1, width=80, depth=None, *, compact=False):
+def pformat(object, indent=1, width=80, depth=None, *,
+            compact=False, sort_dicts=True):
     """Format a Python object into a pretty-printed representation."""
     return PrettyPrinter(indent=indent, width=width, depth=depth,
-                         compact=compact).pformat(object)
+                         compact=compact, sort_dicts=sort_dicts).pformat(object)
+
+def pp(object, *args, sort_dicts=False, **kwargs):
+    """Pretty-print a Python object"""
+    pprint(object, *args, sort_dicts=sort_dicts, **kwargs)
 
 def saferepr(object):
     """Version of repr() which can handle recursive data structures."""
-    return _safe_repr(object, {}, None, 0)[0]
+    return _safe_repr(object, {}, None, 0, True)[0]
 
 def isreadable(object):
     """Determine if saferepr(object) is readable by eval()."""
-    return _safe_repr(object, {}, None, 0)[1]
+    return _safe_repr(object, {}, None, 0, True)[1]
 
 def isrecursive(object):
     """Determine if object requires a recursive representation."""
-    return _safe_repr(object, {}, None, 0)[2]
+    return _safe_repr(object, {}, None, 0, True)[2]
 
 class _safe_key:
     """Helper function for key functions when sorting unorderable objects.
@@ -97,7 +102,7 @@ def _safe_tuple(t):
 
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *,
-                 compact=False):
+                 compact=False, sort_dicts=True):
         """Handle pretty printing operations onto a stream using a set of
         configured parameters.
 
@@ -117,6 +122,9 @@ class PrettyPrinter:
         compact
             If true, several items will be combined in one line.
 
+        sort_dicts
+            If true, dict keys are sorted.
+
         """
         indent = int(indent)
         width = int(width)
@@ -134,6 +142,7 @@ class PrettyPrinter:
         else:
             self._stream = _sys.stdout
         self._compact = bool(compact)
+        self._sort_dicts = sort_dicts
 
     def pprint(self, object):
         self._format(object, self._stream, 0, 0, {}, 0)
@@ -184,7 +193,10 @@ class PrettyPrinter:
             write((self._indent_per_level - 1) * ' ')
         length = len(object)
         if length:
-            items = sorted(object.items(), key=_safe_tuple)
+            if self._sort_dicts:
+                items = sorted(object.items(), key=_safe_tuple)
+            else:
+                items = object.items()
             self._format_dict_items(items, stream, indent, allowance + 1,
                                     context, level)
         write('}')
@@ -402,7 +414,7 @@ class PrettyPrinter:
         and flags indicating whether the representation is 'readable'
         and whether the object represents a recursive construct.
         """
-        return _safe_repr(object, context, maxlevels, level)
+        return _safe_repr(object, context, maxlevels, level, self._sort_dicts)
 
     def _pprint_default_dict(self, object, stream, indent, allowance, context, level):
         if not len(object):
@@ -487,7 +499,7 @@ class PrettyPrinter:
 
 # Return triple (repr_string, isreadable, isrecursive).
 
-def _safe_repr(object, context, maxlevels, level):
+def _safe_repr(object, context, maxlevels, level, sort_dicts):
     typ = type(object)
     if typ in _builtin_scalars:
         return repr(object), True, False
@@ -507,11 +519,13 @@ def _safe_repr(object, context, maxlevels, level):
         components = []
         append = components.append
         level += 1
-        saferepr = _safe_repr
-        items = sorted(object.items(), key=_safe_tuple)
+        if sort_dicts:
+            items = sorted(object.items(), key=_safe_tuple)
+        else:
+            items = object.items()
         for k, v in items:
-            krepr, kreadable, krecur = saferepr(k, context, maxlevels, level)
-            vrepr, vreadable, vrecur = saferepr(v, context, maxlevels, level)
+            krepr, kreadable, krecur = _safe_repr(k, context, maxlevels, level, sort_dicts)
+            vrepr, vreadable, vrecur = _safe_repr(v, context, maxlevels, level, sort_dicts)
             append("%s: %s" % (krepr, vrepr))
             readable = readable and kreadable and vreadable
             if krecur or vrecur:
@@ -543,7 +557,7 @@ def _safe_repr(object, context, maxlevels, level):
         append = components.append
         level += 1
         for o in object:
-            orepr, oreadable, orecur = _safe_repr(o, context, maxlevels, level)
+            orepr, oreadable, orecur = _safe_repr(o, context, maxlevels, level, sort_dicts)
             append(orepr)
             if not oreadable:
                 readable = False
@@ -568,11 +582,11 @@ def _perfcheck(object=None):
     if object is None:
         object = [("string", (1, 2), [3, 4], {5: 6, 7: 8})] * 100000
     p = PrettyPrinter()
-    t1 = time.time()
-    _safe_repr(object, {}, None, 0)
-    t2 = time.time()
+    t1 = time.perf_counter()
+    _safe_repr(object, {}, None, 0, True)
+    t2 = time.perf_counter()
     p.pformat(object)
-    t3 = time.time()
+    t3 = time.perf_counter()
     print("_safe_repr:", t2 - t1)
     print("pformat:", t3 - t2)
 

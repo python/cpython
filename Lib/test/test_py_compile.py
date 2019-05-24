@@ -1,3 +1,4 @@
+import functools
 import importlib.util
 import os
 import py_compile
@@ -10,7 +11,44 @@ import unittest
 from test import support
 
 
-class PyCompileTests(unittest.TestCase):
+def without_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH unset."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with support.EnvironmentVarGuard() as env:
+            env.unset('SOURCE_DATE_EPOCH')
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+def with_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH set."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with support.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '123456789'
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+# Run tests with SOURCE_DATE_EPOCH set or unset explicitly.
+class SourceDateEpochTestMeta(type(unittest.TestCase)):
+    def __new__(mcls, name, bases, dct, *, source_date_epoch):
+        cls = super().__new__(mcls, name, bases, dct)
+
+        for attr in dir(cls):
+            if attr.startswith('test_'):
+                meth = getattr(cls, attr)
+                if source_date_epoch:
+                    wrapper = with_source_date_epoch(meth)
+                else:
+                    wrapper = without_source_date_epoch(meth)
+                setattr(cls, attr, wrapper)
+
+        return cls
+
+
+class PyCompileTestsBase:
 
     def setUp(self):
         self.directory = tempfile.mkdtemp()
@@ -99,16 +137,18 @@ class PyCompileTests(unittest.TestCase):
             importlib.util.cache_from_source(bad_coding)))
 
     def test_source_date_epoch(self):
-        testtime = 123456789
-        with support.EnvironmentVarGuard() as env:
-            env["SOURCE_DATE_EPOCH"] = str(testtime)
-            py_compile.compile(self.source_path, self.pyc_path)
+        py_compile.compile(self.source_path, self.pyc_path)
         self.assertTrue(os.path.exists(self.pyc_path))
         self.assertFalse(os.path.exists(self.cache_path))
         with open(self.pyc_path, 'rb') as fp:
             flags = importlib._bootstrap_external._classify_pyc(
                 fp.read(), 'test', {})
-        self.assertEqual(flags, 0b11)
+        if os.environ.get('SOURCE_DATE_EPOCH'):
+            expected_flags = 0b11
+        else:
+            expected_flags = 0b00
+
+        self.assertEqual(flags, expected_flags)
 
     @unittest.skipIf(sys.flags.optimize > 0, 'test does not work with -O')
     def test_double_dot_no_clobber(self):
@@ -151,6 +191,20 @@ class PyCompileTests(unittest.TestCase):
             flags = importlib._bootstrap_external._classify_pyc(
                 fp.read(), 'test', {})
         self.assertEqual(flags, 0b1)
+
+
+class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,
+                                    unittest.TestCase,
+                                    metaclass=SourceDateEpochTestMeta,
+                                    source_date_epoch=True):
+    pass
+
+
+class PyCompileTestsWithoutSourceEpoch(PyCompileTestsBase,
+                                       unittest.TestCase,
+                                       metaclass=SourceDateEpochTestMeta,
+                                       source_date_epoch=False):
+    pass
 
 
 if __name__ == "__main__":

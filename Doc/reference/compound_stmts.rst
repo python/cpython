@@ -21,6 +21,7 @@ also syntactically compound statements.
 .. index::
    single: clause
    single: suite
+   single: ; (semicolon)
 
 A compound statement consists of one or more 'clauses.'  A clause consists of a
 header and a 'suite.'  The clause headers of a particular compound statement are
@@ -77,21 +78,20 @@ on a separate line for clarity.
 .. _elif:
 .. _else:
 
-The :keyword:`if` statement
-===========================
+The :keyword:`!if` statement
+============================
 
 .. index::
-   statement: if
+   ! statement: if
    keyword: elif
    keyword: else
-           keyword: elif
-           keyword: else
+   single: : (colon); compound statement
 
 The :keyword:`if` statement is used for conditional execution:
 
 .. productionlist::
    if_stmt: "if" `expression` ":" `suite`
-          : ( "elif" `expression` ":" `suite` )*
+          : ("elif" `expression` ":" `suite`)*
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one
@@ -103,14 +103,14 @@ false, the suite of the :keyword:`else` clause, if present, is executed.
 
 .. _while:
 
-The :keyword:`while` statement
-==============================
+The :keyword:`!while` statement
+===============================
 
 .. index::
-   statement: while
+   ! statement: while
    keyword: else
    pair: loop; statement
-   keyword: else
+   single: : (colon); compound statement
 
 The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
@@ -121,7 +121,7 @@ expression is true:
 
 This repeatedly tests the expression and, if it is true, executes the first
 suite; if the expression is false (which may be the first time it is tested) the
-suite of the :keyword:`else` clause, if present, is executed and the loop
+suite of the :keyword:`!else` clause, if present, is executed and the loop
 terminates.
 
 .. index::
@@ -129,26 +129,24 @@ terminates.
    statement: continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
-without executing the :keyword:`else` clause's suite.  A :keyword:`continue`
+without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
 statement executed in the first suite skips the rest of the suite and goes back
 to testing the expression.
 
 
 .. _for:
 
-The :keyword:`for` statement
-============================
+The :keyword:`!for` statement
+=============================
 
 .. index::
-   statement: for
+   ! statement: for
    keyword: in
    keyword: else
    pair: target; list
    pair: loop; statement
-   keyword: in
-   keyword: else
-   pair: target; list
    object: sequence
+   single: : (colon); compound statement
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
@@ -164,19 +162,19 @@ by the iterator.  Each item in turn is assigned to the target list using the
 standard rules for assignments (see :ref:`assignment`), and then the suite is
 executed.  When the items are exhausted (which is immediately when the sequence
 is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
-the :keyword:`else` clause, if present, is executed, and the loop terminates.
+the :keyword:`!else` clause, if present, is executed, and the loop terminates.
 
 .. index::
    statement: break
    statement: continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
-without executing the :keyword:`else` clause's suite.  A :keyword:`continue`
+without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
 statement executed in the first suite skips the rest of the suite and continues
-with the next item, or with the :keyword:`else` clause if there is no next
+with the next item, or with the :keyword:`!else` clause if there is no next
 item.
 
-The for-loop makes assignments to the variables(s) in the target list.
+The for-loop makes assignments to the variables in the target list.
 This overwrites all previous assignments to those variables including
 those made in the suite of the for-loop::
 
@@ -203,7 +201,7 @@ returns the list ``[0, 1, 2]``.
       single: mutable sequence; loop over
 
    There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, i.e. lists).  An internal counter is used
+   only occur for mutable sequences, e.g. lists).  An internal counter is used
    to keep track of which item is used next, and this is incremented on each
    iteration.  When this counter has reached the length of the sequence the loop
    terminates.  This means that if the suite deletes the current (or a previous)
@@ -222,20 +220,22 @@ returns the list ``[0, 1, 2]``.
 .. _except:
 .. _finally:
 
-The :keyword:`try` statement
-============================
+The :keyword:`!try` statement
+=============================
 
 .. index::
-   statement: try
+   ! statement: try
    keyword: except
    keyword: finally
-.. index:: keyword: except
+   keyword: else
+   keyword: as
+   single: : (colon); compound statement
 
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist::
-   try_stmt: try1_stmt | try2_stmt
+   try_stmt: `try1_stmt` | `try2_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
             : ["else" ":" `suite`]
@@ -246,7 +246,7 @@ for a group of statements:
 
 The :keyword:`except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
-When an exception occurs in the :keyword:`try` suite, a search for an exception
+When an exception occurs in the :keyword:`!try` suite, a search for an exception
 handler is started.  This search inspects the except clauses in turn until one
 is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
@@ -263,8 +263,10 @@ exception, the original search for a handler is canceled and a search starts for
 the new exception in the surrounding code and on the call stack (it is treated
 as if the entire :keyword:`try` statement raised the exception).
 
+.. index:: single: as; except clause
+
 When a matching except clause is found, the exception is assigned to the target
-specified after the :keyword:`as` keyword in that except clause, if present, and
+specified after the :keyword:`!as` keyword in that except clause, if present, and
 the except clause's suite is executed.  All except clauses must have an
 executable block.  When the end of this block is reached, execution continues
 normally after the entire try statement.  (This means that if two nested
@@ -308,21 +310,23 @@ from a function that handled an exception.
    statement: break
    statement: continue
 
-The optional :keyword:`else` clause is executed if and when control flows off
-the end of the :keyword:`try` clause. [#]_ Exceptions in the :keyword:`else`
-clause are not handled by the preceding :keyword:`except` clauses.
+The optional :keyword:`!else` clause is executed if the control flow leaves the
+:keyword:`try` suite, no exception was raised, and no :keyword:`return`,
+:keyword:`continue`, or :keyword:`break` statement was executed.  Exceptions in
+the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
+clauses.
 
 .. index:: keyword: finally
 
 If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
-not handled, the exception is temporarily saved. The :keyword:`finally` clause
+:keyword:`!else` clauses.  If an exception occurs in any of the clauses and is
+not handled, the exception is temporarily saved. The :keyword:`!finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
-:keyword:`finally` clause.  If the :keyword:`finally` clause raises another
+:keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
-If the :keyword:`finally` clause executes a :keyword:`return` or :keyword:`break`
-statement, the saved exception is discarded::
+If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
+or :keyword:`continue` statement, the saved exception is discarded::
 
    >>> def f():
    ...     try:
@@ -342,15 +346,12 @@ the :keyword:`finally` clause.
    statement: continue
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
-executed in the :keyword:`try` suite of a :keyword:`try`...\ :keyword:`finally`
-statement, the :keyword:`finally` clause is also executed 'on the way out.' A
-:keyword:`continue` statement is illegal in the :keyword:`finally` clause. (The
-reason is a problem with the current implementation --- this restriction may be
-lifted in the future).
+executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
+statement, the :keyword:`finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`finally` clause always executes, a
-:keyword:`return` statement executed in the :keyword:`finally` clause will
+:keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed::
 
    >>> def foo():
@@ -366,16 +367,23 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
+.. versionchanged:: 3.8
+   Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
+   :keyword:`finally` clause due to a problem with the implementation.
+
 
 .. _with:
 .. _as:
 
-The :keyword:`with` statement
-=============================
+The :keyword:`!with` statement
+==============================
 
 .. index::
-    statement: with
-    single: as; with statement
+   ! statement: with
+   keyword: as
+   single: as; with statement
+   single: , (comma); with statement
+   single: : (colon); compound statement
 
 The :keyword:`with` statement is used to wrap the execution of a block with
 methods defined by a context manager (see section :ref:`context-managers`).
@@ -383,7 +391,7 @@ This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
 .. productionlist::
-   with_stmt: "with" with_item ("," with_item)* ":" `suite`
+   with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
    with_item: `expression` ["as" `target`]
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
@@ -462,19 +470,23 @@ Function definitions
    object: function
    pair: function; name
    pair: name; binding
+   single: () (parentheses); function definition
+   single: , (comma); parameter list
+   single: : (colon); compound statement
 
 A function definition defines a user-defined function object (see section
 :ref:`types`):
 
 .. productionlist::
-   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
+   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
+          : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                  : | `parameter_list_starargs`
    parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
-                         : | "**" `parameter` [","]
+                          : | "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
@@ -490,7 +502,7 @@ The function definition does not execute the function body; this gets executed
 only when the function is called. [#]_
 
 .. index::
-  statement: @
+   single: @ (at); function definition
 
 A function definition may be wrapped by one or more :term:`decorator` expressions.
 Decorator expressions are evaluated when the function is defined, in the scope
@@ -513,6 +525,7 @@ except that the original function is not temporarily bound to the name ``func``.
 .. index::
    triple: default; parameter; value
    single: argument; function definition
+   single: = (equals); function definition
 
 When one or more :term:`parameters <parameter>` have the form *parameter* ``=``
 *expression*, the function is said to have "default parameter values."  For a
@@ -539,8 +552,8 @@ e.g.::
        return penguin
 
 .. index::
-  statement: *
-  statement: **
+   single: * (asterisk); function definition
+   single: **; function definition
 
 Function call semantics are described in more detail in section :ref:`calls`. A
 function call always assigns values to all parameters mentioned in the parameter
@@ -553,10 +566,13 @@ new empty mapping of the same type.  Parameters after "``*``" or
 "``*identifier``" are keyword-only parameters and may only be passed
 used keyword arguments.
 
-.. index:: pair: function; annotations
+.. index::
+   pair: function; annotations
+   single: ->; function annotations
+   single: : (colon); function annotations
 
-Parameters may have annotations of the form "``: expression``" following the
-parameter name.  Any parameter may have an annotation even those of the form
+Parameters may have an :term:`annotation <function annotation>` of the form "``: expression``"
+following the parameter name.  Any parameter may have an annotation, even those of the form
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
@@ -575,7 +591,7 @@ name), for immediate use in expressions.  This uses lambda expressions, describe
 section :ref:`lambda`.  Note that the lambda expression is merely a shorthand for a
 simplified function definition; a function defined in a ":keyword:`def`"
 statement can be passed around or assigned to another name just like a function
-defined by a lambda expression.  The ":keyword:`def`" form is actually more powerful
+defined by a lambda expression.  The ":keyword:`!def`" form is actually more powerful
 since it allows the execution of multiple statements and annotations.
 
 **Programmer's note:** Functions are first-class objects.  A "``def``" statement
@@ -615,6 +631,9 @@ Class definitions
    pair: execution; frame
    single: inheritance
    single: docstring
+   single: () (parentheses); class definition
+   single: , (comma); expression list
+   single: : (colon); compound statement
 
 A class definition defines a class object (see section :ref:`types`):
 
@@ -653,6 +672,9 @@ the definition syntax.
 
 Class creation can be customized heavily using :ref:`metaclasses <metaclasses>`.
 
+.. index::
+   single: @ (at); class definition
+
 Classes can also be decorated: just like when decorating functions, ::
 
    @f1(arg)
@@ -679,9 +701,17 @@ can be used to create instance variables with different implementation details.
 
 .. seealso::
 
-   :pep:`3115` - Metaclasses in Python 3
-   :pep:`3129` - Class Decorators
+   :pep:`3115` - Metaclasses in Python 3000
+      The proposal that changed the declaration of metaclasses to the current
+      syntax, and the semantics for how classes with metaclasses are
+      constructed.
 
+   :pep:`3129` - Class Decorators
+      The proposal that added class decorators.  Function and method decorators
+      were introduced in :pep:`318`.
+
+
+.. _async:
 
 Coroutines
 ==========
@@ -695,23 +725,24 @@ Coroutine function definition
 -----------------------------
 
 .. productionlist::
-   async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
+   async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")"
+                : ["->" `expression`] ":" `suite`
 
 .. index::
    keyword: async
    keyword: await
 
 Execution of Python coroutines can be suspended and resumed at many points
-(see :term:`coroutine`).  In the body of a coroutine, any ``await`` and
+(see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
 ``async`` identifiers become reserved keywords; :keyword:`await` expressions,
 :keyword:`async for` and :keyword:`async with` can only be used in
-coroutine bodies.
+coroutine function bodies.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
 
-It is a :exc:`SyntaxError` to use ``yield from`` expressions in
-``async def`` coroutines.
+It is a :exc:`SyntaxError` to use a ``yield from`` expression inside the body
+of a coroutine function.
 
 An example of a coroutine function::
 
@@ -723,8 +754,8 @@ An example of a coroutine function::
 .. index:: statement: async for
 .. _`async for`:
 
-The :keyword:`async for` statement
-----------------------------------
+The :keyword:`!async for` statement
+-----------------------------------
 
 .. productionlist::
    async_for_stmt: "async" `for_stmt`
@@ -760,15 +791,15 @@ Is semantically equivalent to::
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
-It is a :exc:`SyntaxError` to use ``async for`` statement outside of an
-:keyword:`async def` function.
+It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
+body of a coroutine function.
 
 
 .. index:: statement: async with
 .. _`async with`:
 
-The :keyword:`async with` statement
------------------------------------
+The :keyword:`!async with` statement
+------------------------------------
 
 .. productionlist::
    async_with_stmt: "async" `with_stmt`
@@ -798,12 +829,14 @@ Is semantically equivalent to::
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 
-It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
-:keyword:`async def` function.
+It is a :exc:`SyntaxError` to use an ``async with`` statement outside the
+body of a coroutine function.
 
 .. seealso::
 
    :pep:`492` - Coroutines with async and await syntax
+      The proposal that made coroutines a proper standalone concept in Python,
+      and added supporting syntax.
 
 
 .. rubric:: Footnotes
@@ -811,10 +844,6 @@ It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
 .. [#] The exception is propagated to the invocation stack unless
    there is a :keyword:`finally` clause which happens to raise another
    exception. That new exception causes the old one to be lost.
-
-.. [#] Currently, control "flows off the end" except in the case of an exception
-   or the execution of a :keyword:`return`, :keyword:`continue`, or
-   :keyword:`break` statement.
 
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the

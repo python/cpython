@@ -2,6 +2,7 @@ import importlib
 import importlib.util
 import os
 import os.path
+import py_compile
 import sys
 from test import support
 from test.support import script_helper
@@ -331,6 +332,17 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             create_dynamic(BadSpec())
 
+    def test_issue_35321(self):
+        # Both _frozen_importlib and _frozen_importlib_external
+        # should have a spec origin of "frozen" and
+        # no need to clean up imports in this case.
+
+        import _frozen_importlib_external
+        self.assertEqual(_frozen_importlib_external.__spec__.origin, "frozen")
+
+        import _frozen_importlib
+        self.assertEqual(_frozen_importlib.__spec__.origin, "frozen")
+
     def test_source_hash(self):
         self.assertEqual(_imp.source_hash(42, b'hi'), b'\xc6\xe7Z\r\x03:}\xab')
         self.assertEqual(_imp.source_hash(43, b'hi'), b'\x85\x9765\xf8\x9a\x8b9')
@@ -349,6 +361,20 @@ class ImportTests(unittest.TestCase):
             ]
             res = script_helper.assert_python_ok(*args)
             self.assertEqual(res.out.strip().decode('utf-8'), expected)
+
+    def test_find_and_load_checked_pyc(self):
+        # issue 34056
+        with support.temp_cwd():
+            with open('mymod.py', 'wb') as fp:
+                fp.write(b'x = 42\n')
+            py_compile.compile(
+                'mymod.py',
+                doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
+            )
+            file, path, description = imp.find_module('mymod', path=['.'])
+            mod = imp.load_module('mymod', file, path, description)
+        self.assertEqual(mod.x, 42)
 
 
 class ReloadTests(unittest.TestCase):

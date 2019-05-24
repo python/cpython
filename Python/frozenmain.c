@@ -2,7 +2,7 @@
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -17,10 +17,8 @@ int
 Py_FrozenMain(int argc, char **argv)
 {
     _PyInitError err = _PyRuntime_Initialize();
-    if (_Py_INIT_FAILED(err)) {
-        fprintf(stderr, "Fatal Python error: %s\n", err.msg);
-        fflush(stderr);
-        exit(1);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
     }
 
     const char *p;
@@ -41,7 +39,13 @@ Py_FrozenMain(int argc, char **argv)
         }
     }
 
-    Py_FrozenFlag = 1; /* Suppress errors from getpath.c */
+    _PyCoreConfig config;
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _PyCoreConfig_Clear(&config);
+        _Py_ExitInitError(err);
+    }
+    config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
         inspect = 1;
@@ -80,7 +84,13 @@ Py_FrozenMain(int argc, char **argv)
 #endif /* MS_WINDOWS */
     if (argc >= 1)
         Py_SetProgramName(argv_copy[0]);
-    Py_Initialize();
+
+    err = _Py_InitializeFromConfig(&config);
+    _PyCoreConfig_Clear(&config);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
+    }
+
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeInit();
 #endif

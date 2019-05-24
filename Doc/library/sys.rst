@@ -19,6 +19,30 @@ always available.
    .. versionadded:: 3.2
 
 
+.. function:: addaudithook(hook)
+
+   Adds the callable *hook* to the collection of active auditing hooks for the
+   current interpreter.
+
+   When an auditing event is raised through the :func:`sys.audit` function, each
+   hook will be called in the order it was added with the event name and the
+   tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
+   called first, followed by hooks added in the current interpreter.
+
+   Calling this function will trigger an event for all existing hooks, and if
+   any raise an exception derived from :class:`Exception`, the add will be
+   silently ignored. As a result, callers cannot assume that their hook has been
+   added unless they control all existing hooks.
+
+   .. versionadded:: 3.8
+
+   .. impl-detail::
+
+      When tracing is enabled, Python hooks are only traced if the callable has
+      a ``__cantrace__`` member that is set to a true value. Otherwise, trace
+      functions will not see the hook.
+
+
 .. data:: argv
 
    The list of command line arguments passed to a Python script. ``argv[0]`` is the
@@ -29,6 +53,36 @@ always available.
 
    To loop over the standard input, or the list of files given on the
    command line, see the :mod:`fileinput` module.
+
+   .. note::
+      On Unix, command line arguments are passed by bytes from OS.  Python decodes
+      them with filesystem encoding and "surrogateescape" error handler.
+      When you need original bytes, you can get it by
+      ``[os.fsencode(arg) for arg in sys.argv]``.
+
+
+.. _auditing:
+
+.. function:: audit(event, *args)
+
+   .. index:: single: auditing
+
+   Raises an auditing event with any active hooks. The event name is a string
+   identifying the event and its associated schema, which is the number and
+   types of arguments. The schema for a given event is considered public and
+   stable API and should not be modified between releases.
+
+   This function will raise the first exception raised by any hook. In general,
+   these errors should not be handled and should terminate the process as
+   quickly as possible.
+
+   Hooks are added using the :func:`sys.addaudithook` or
+   :c:func:`PySys_AddAuditHook` functions.
+
+   The native equivalent of this function is :c:func:`PySys_Audit`. Using the
+   native function is preferred when possible.
+
+   .. versionadded:: 3.8
 
 
 .. data:: base_exec_prefix
@@ -108,6 +162,8 @@ always available.
 
    This function should be used for internal and specialized purposes only.
 
+   .. audit-event:: sys._current_frames
+
 
 .. function:: breakpointhook()
 
@@ -161,7 +217,9 @@ always available.
 
 .. data:: dllhandle
 
-   Integer specifying the handle of the Python DLL. Availability: Windows.
+   Integer specifying the handle of the Python DLL.
+
+   .. availability:: Windows.
 
 
 .. function:: displayhook(value)
@@ -209,6 +267,26 @@ always available.
    yourself to control bytecode file generation.
 
 
+.. data:: pycache_prefix
+
+   If this is set (not ``None``), Python will write bytecode-cache ``.pyc``
+   files to (and read them from) a parallel directory tree rooted at this
+   directory, rather than from ``__pycache__`` directories in the source code
+   tree. Any ``__pycache__`` directories in the source code tree will be ignored
+   and new `.pyc` files written within the pycache prefix. Thus if you use
+   :mod:`compileall` as a pre-build step, you must ensure you run it with the
+   same pycache prefix (if any) that you will use at runtime.
+
+   A relative path is interpreted relative to the current working directory.
+
+   This value is initially set based on the value of the :option:`-X`
+   ``pycache_prefix=PATH`` command-line option or the
+   :envvar:`PYTHONPYCACHEPREFIX` environment variable (command-line takes
+   precedence). If neither are set, it is ``None``.
+
+   .. versionadded:: 3.8
+
+
 .. function:: excepthook(type, value, traceback)
 
    This function prints out a given traceback and exception to ``sys.stderr``.
@@ -220,16 +298,19 @@ always available.
    before the program exits.  The handling of such top-level exceptions can be
    customized by assigning another three-argument function to ``sys.excepthook``.
 
+   See also :func:`unraisablehook` which handles unraisable exceptions.
+
 
 .. data:: __breakpointhook__
           __displayhook__
           __excepthook__
+          __unraisablehook__
 
    These objects contain the original values of ``breakpointhook``,
-   ``displayhook``, and ``excepthook`` at the start of the program.  They are
-   saved so that ``breakpointhook``, ``displayhook`` and ``excepthook`` can be
-   restored in case they happen to get replaced with broken or alternative
-   objects.
+   ``displayhook``, ``excepthook``, and ``unraisablehook`` at the start of the
+   program.  They are saved so that ``breakpointhook``, ``displayhook`` and
+   ``excepthook``, ``unraisablehook`` can be restored in case they happen to
+   get replaced with broken or alternative objects.
 
    .. versionadded:: 3.7
       __breakpointhook__
@@ -313,9 +394,6 @@ always available.
       has caught :exc:`SystemExit` (such as an error flushing buffered data
       in the standard streams), the exit status is changed to 120.
 
-   .. versionchanged:: 3.7
-      Added ``utf8_mode`` attribute for the new :option:`-X` ``utf8`` flag.
-
 
 .. data:: flags
 
@@ -328,6 +406,7 @@ always available.
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
+   :const:`isolated`             :option:`-I`
    :const:`optimize`             :option:`-O` or :option:`-OO`
    :const:`dont_write_bytecode`  :option:`-B`
    :const:`no_user_site`         :option:`-s`
@@ -349,6 +428,9 @@ always available.
 
    .. versionchanged:: 3.3
       Removed obsolete ``division_warning`` attribute.
+
+   .. versionchanged:: 3.4
+      Added ``isolated`` attribute for :option:`-I` ``isolated`` flag.
 
    .. versionchanged:: 3.7
       Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
@@ -456,7 +538,7 @@ always available.
 
    Return the build time API version of Android as an integer.
 
-   Availability: Android.
+   .. availability:: Android.
 
    .. versionadded:: 3.7
 
@@ -480,7 +562,9 @@ always available.
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
    found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
-   :data:`os.RTLD_LAZY`).  Availability: Unix.
+   :data:`os.RTLD_LAZY`).
+
+   .. availability:: Unix.
 
 
 .. function:: getfilesystemencoding()
@@ -499,12 +583,16 @@ always available.
 
    * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
 
-   * On Mac OS X, the encoding is ``'utf-8'``.
+   * On macOS, the encoding is ``'utf-8'``.
 
    * On Unix, the encoding is the locale encoding.
 
    * On Windows, the encoding may be ``'utf-8'`` or ``'mbcs'``, depending
      on user configuration.
+
+   * On Android, the encoding is ``'utf-8'``.
+
+   * On VxWorks, the encoding is ``'utf-8'``.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
@@ -579,6 +667,8 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
+   .. audit-event:: sys._getframe
+
    .. impl-detail::
 
       This function should be used for internal and specialized purposes only.
@@ -648,7 +738,7 @@ always available.
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionchanged:: 3.2
       Changed to a named tuple and added *service_pack_minor*,
@@ -678,7 +768,7 @@ always available.
 .. function:: get_coroutine_origin_tracking_depth()
 
    Get the current coroutine origin tracking depth, as set by
-   func:`set_coroutine_origin_tracking_depth`.
+   :func:`set_coroutine_origin_tracking_depth`.
 
    .. versionadded:: 3.7
 
@@ -979,7 +1069,7 @@ always available.
    This string contains a platform identifier that can be used to append
    platform-specific components to :data:`sys.path`, for instance.
 
-   For Unix systems, except on Linux, this is the lowercased OS name as
+   For Unix systems, except on Linux and AIX, this is the lowercased OS name as
    returned by ``uname -s`` with the first part of the version as returned by
    ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
    when Python was built*.  Unless you want to test for a specific system
@@ -989,21 +1079,30 @@ always available.
           # FreeBSD-specific code here...
       elif sys.platform.startswith('linux'):
           # Linux-specific code here...
+      elif sys.platform.startswith('aix'):
+          # AIX-specific code here...
 
    For other systems, the values are:
 
    ================ ===========================
    System           ``platform`` value
    ================ ===========================
+   AIX              ``'aix'``
    Linux            ``'linux'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
-   Mac OS X         ``'darwin'``
+   macOS            ``'darwin'``
    ================ ===========================
 
    .. versionchanged:: 3.3
       On Linux, :attr:`sys.platform` doesn't contain the major version anymore.
       It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
+      older Python versions include the version number, it is recommended to
+      always use the ``startswith`` idiom presented above.
+
+   .. versionchanged:: 3.8
+      On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
       older Python versions include the version number, it is recommended to
       always use the ``startswith`` idiom presented above.
 
@@ -1039,6 +1138,8 @@ always available.
    .. index::
       single: interpreter prompts
       single: prompts, interpreter
+      single: >>>; interpreter prompt
+      single: ...; interpreter prompt
 
    Strings specifying the primary and secondary prompt of the interpreter.  These
    are only defined if the interpreter is in interactive mode.  Their initial
@@ -1073,7 +1174,7 @@ always available.
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
    :data:`os.RTLD_LAZY`).
 
-   Availability: Unix.
+   .. availability:: Unix.
 
 .. function:: setprofile(profilefunc)
 
@@ -1096,6 +1197,8 @@ always available.
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
+
+   .. audit-event:: sys.setprofile
 
    The events have the following meaning:
 
@@ -1158,8 +1261,8 @@ always available.
 
    Set the system's trace function, which allows you to implement a Python
    source code debugger in Python.  The function is thread-specific; for a
-   debugger to support multiple threads, it must be registered using
-   :func:`settrace` for each thread being debugged.
+   debugger to support multiple threads, it must register a trace function using
+   :func:`settrace` for each thread being debugged or use :func:`threading.settrace`.
 
    Trace functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
@@ -1217,6 +1320,8 @@ always available.
 
    For more information on code and frame objects, refer to :ref:`types`.
 
+   .. audit-event:: sys.settrace
+
    .. impl-detail::
 
       The :func:`settrace` function is intended only for implementing debuggers,
@@ -1236,6 +1341,13 @@ always available.
    callable will be called when an asynchronous generator is iterated for the
    first time. The *finalizer* will be called when an asynchronous generator
    is about to be garbage collected.
+
+   .. audit-event:: sys.set_asyncgen_hooks_firstiter
+
+   .. audit-event:: sys.set_asyncgen_hooks_finalizer
+
+   Two auditing events are raised because the underlying API consists of two
+   calls, each of which must raise its own event.
 
    .. versionadded:: 3.6
       See :pep:`525` for more details, and for a reference example of a
@@ -1307,7 +1419,7 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
-   .. deprecated:: 3.7
+   .. deprecated-removed:: 3.7 3.8
       The coroutine wrapper functionality has been deprecated, and
       will be removed in 3.8. See :issue:`32591` for details.
 
@@ -1319,7 +1431,7 @@ always available.
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
 
-   Availability: Windows
+   .. availability:: Windows.
 
    .. versionadded:: 3.6
       See :pep:`529` for more details.
@@ -1341,13 +1453,30 @@ always available.
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The character encoding is platform-dependent.  Under Windows, if the stream
-     is interactive (that is, if its :meth:`isatty` method returns ``True``), the
-     console codepage is used, otherwise the ANSI code page.  Under other
-     platforms, the locale encoding is used (see :meth:`locale.getpreferredencoding`).
+   * The character encoding is platform-dependent.  Non-Windows
+     platforms use the locale encoding (see
+     :meth:`locale.getpreferredencoding()`).
 
-     Under all platforms though, you can override this value by setting the
-     :envvar:`PYTHONIOENCODING` environment variable before starting Python.
+     On Windows, UTF-8 is used for the console device.  Non-character
+     devices such as disk files and pipes use the system locale
+     encoding (i.e. the ANSI codepage).  Non-console character
+     devices such as NUL (i.e. where isatty() returns True) use the
+     value of the console input and output codepages at startup,
+     respectively for stdin and stdout/stderr. This defaults to the
+     system locale encoding if the process is not initially attached
+     to a console.
+
+     The special behaviour of the console can be overridden
+     by setting the environment variable PYTHONLEGACYWINDOWSSTDIO
+     before starting Python. In that case, the console codepages are
+     used as for any other character device.
+
+     Under all platforms, you can override the character encoding by
+     setting the :envvar:`PYTHONIOENCODING` environment variable before
+     starting Python or by using the new :option:`-X` ``utf8`` command
+     line option and :envvar:`PYTHONUTF8` environment variable.  However,
+     for the Windows console, this only applies when
+     :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also set.
 
    * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
      Otherwise, they are block-buffered like regular text files.  You can
@@ -1424,6 +1553,28 @@ always available.
    is suppressed and only the exception type and value are printed.
 
 
+.. function:: unraisablehook(unraisable, /)
+
+   Handle an unraisable exception.
+
+   Called when an exception has occurred but there is no way for Python to
+   handle it. For example, when a destructor raises an exception or during
+   garbage collection (:func:`gc.collect`).
+
+   The *unraisable* argument has the following attributes:
+
+   * *exc_type*: Exception type.
+   * *exc_value*: Exception value, can be ``None``.
+   * *exc_traceback*: Exception traceback, can be ``None``.
+   * *object*: Object causing the exception, can be ``None``.
+
+   :func:`sys.unraisablehook` can be overridden to control how unraisable
+   exceptions are handled.
+
+   See also :func:`excepthook` which handles uncaught exceptions.
+
+   .. versionadded:: 3.8
+
 .. data:: version
 
    A string containing the version number of the Python interpreter plus additional
@@ -1465,7 +1616,9 @@ always available.
    stored as string resource 1000 in the Python DLL.  The value is normally the
    first three characters of :const:`version`.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
-   registry keys used by Python. Availability: Windows.
+   registry keys used by Python.
+
+   .. availability:: Windows.
 
 
 .. data:: _xoptions

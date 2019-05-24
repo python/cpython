@@ -1,16 +1,17 @@
 import unittest
 from test.support import (verbose, refcount_test, run_unittest,
                           strip_python_stderr, cpython_only, start_threads,
-                          temp_dir, requires_type_collecting,reap_threads)
+                          temp_dir, requires_type_collecting, TESTFN, unlink,
+                          import_module)
 from test.support.script_helper import assert_python_ok, make_script
 
-import sys
-import time
 import gc
-import weakref
+import sys
+import sysconfig
+import textwrap
 import threading
-import warnings
-
+import time
+import weakref
 
 try:
     from _testcapi import with_tp_del
@@ -63,6 +64,14 @@ class Uncollectable(object):
             self.partner = partner
     def __tp_del__(self):
         pass
+
+if sysconfig.get_config_vars().get('PY_CFLAGS', ''):
+    BUILD_WITH_NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
+else:
+    # Usually, sys.gettotalrefcount() is only present if Python has been
+    # compiled in debug mode. If it's missing, expect that Python has
+    # been released in release mode: with NDEBUG defined.
+    BUILD_WITH_NDEBUG = (not hasattr(sys, 'gettotalrefcount'))
 
 ### Tests
 ###############################################################################
@@ -710,6 +719,21 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
+    @requires_type_collecting
+    def test_global_del_SystemExit(self):
+        code = """if 1:
+            class ClassWithDel:
+                def __del__(self):
+                    print('__del__ called')
+            a = ClassWithDel()
+            a.link = a
+            raise SystemExit(0)"""
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, 'w') as script:
+            script.write(code)
+        rc, out, err = assert_python_ok(TESTFN)
+        self.assertEqual(out.strip(), b'__del__ called')
+
     def test_get_stats(self):
         stats = gc.get_stats()
         self.assertEqual(len(stats), 3)
@@ -741,6 +765,62 @@ class GCTests(unittest.TestCase):
         self.assertGreater(gc.get_freeze_count(), 0)
         gc.unfreeze()
         self.assertEqual(gc.get_freeze_count(), 0)
+
+    def test_get_objects(self):
+        gc.collect()
+        l = []
+        l.append(l)
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=0)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertTrue(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=1)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=2)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        del l
+        gc.collect()
+
+    def test_get_objects_arguments(self):
+        gc.collect()
+        self.assertEqual(len(gc.get_objects()),
+                         len(gc.get_objects(generation=None)))
+
+        self.assertRaises(ValueError, gc.get_objects, 1000)
+        self.assertRaises(ValueError, gc.get_objects, -1000)
+        self.assertRaises(TypeError, gc.get_objects, "1")
+        self.assertRaises(TypeError, gc.get_objects, 1.234)
 
 
 class GCCallbackTests(unittest.TestCase):
@@ -863,6 +943,58 @@ class GCCallbackTests(unittest.TestCase):
 
         # Uncollectables should be gone
         self.assertEqual(len(gc.garbage), 0)
+
+
+    @unittest.skipIf(BUILD_WITH_NDEBUG,
+                     'built with -NDEBUG')
+    def test_refcount_errors(self):
+        self.preclean()
+        # Verify the "handling" of objects with broken refcounts
+
+        # Skip the test if ctypes is not available
+        import_module("ctypes")
+
+        import subprocess
+        code = textwrap.dedent('''
+            from test.support import gc_collect, SuppressCrashReport
+
+            a = [1, 2, 3]
+            b = [a]
+
+            # Avoid coredump when Py_FatalError() calls abort()
+            SuppressCrashReport().__enter__()
+
+            # Simulate the refcount of "a" being too low (compared to the
+            # references held on it by live data), but keeping it above zero
+            # (to avoid deallocating it):
+            import ctypes
+            ctypes.pythonapi.Py_DecRef(ctypes.py_object(a))
+
+            # The garbage collector should now have a fatal error
+            # when it reaches the broken object
+            gc_collect()
+        ''')
+        p = subprocess.Popen([sys.executable, "-c", code],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        p.stdout.close()
+        p.stderr.close()
+        # Verify that stderr has a useful error message:
+        self.assertRegex(stderr,
+            br'gcmodule\.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
+        self.assertRegex(stderr,
+            br'refcount is too small')
+        self.assertRegex(stderr,
+            br'object  : \[1, 2, 3\]')
+        self.assertRegex(stderr,
+            br'type    : list')
+        self.assertRegex(stderr,
+            br'refcount: 1')
+        # "address : 0x7fb5062efc18"
+        # "address : 7FB5062EFC18"
+        self.assertRegex(stderr,
+            br'address : [0-9a-fA-Fx]+')
 
 
 class GCTogglingTests(unittest.TestCase):
@@ -1008,73 +1140,6 @@ class GCTogglingTests(unittest.TestCase):
             # If __del__ resurrected c2, the instance would be damaged, with an
             # empty __dict__.
             self.assertEqual(x, None)
-
-    def test_ensure_disabled(self):
-        original_status = gc.isenabled()
-
-        with gc.ensure_disabled():
-            inside_status = gc.isenabled()
-
-        after_status = gc.isenabled()
-        self.assertEqual(original_status, True)
-        self.assertEqual(inside_status, False)
-        self.assertEqual(after_status, True)
-
-    def test_ensure_disabled_with_gc_disabled(self):
-        gc.disable()
-
-        original_status = gc.isenabled()
-
-        with gc.ensure_disabled():
-            inside_status = gc.isenabled()
-
-        after_status = gc.isenabled()
-        self.assertEqual(original_status, False)
-        self.assertEqual(inside_status, False)
-        self.assertEqual(after_status, False)
-
-    @reap_threads
-    def test_ensure_disabled_thread(self):
-
-        thread_original_status = None
-        thread_inside_status = None
-        thread_after_status = None
-
-        def disabling_thread():
-            nonlocal thread_original_status
-            nonlocal thread_inside_status
-            nonlocal thread_after_status
-            thread_original_status = gc.isenabled()
-
-            with gc.ensure_disabled():
-                time.sleep(0.01)
-                thread_inside_status = gc.isenabled()
-
-            thread_after_status = gc.isenabled()
-
-        original_status = gc.isenabled()
-
-        with warnings.catch_warnings(record=True) as w, gc.ensure_disabled():
-            inside_status_before_thread = gc.isenabled()
-            thread = threading.Thread(target=disabling_thread)
-            thread.start()
-            inside_status_after_thread = gc.isenabled()
-
-        after_status = gc.isenabled()
-        thread.join()
-
-        self.assertEqual(len(w), 1)
-        self.assertTrue(issubclass(w[-1].category, RuntimeWarning))
-        self.assertEqual("Garbage collector enabled while another thread is "
-                         "inside gc.ensure_enabled", str(w[-1].message))
-        self.assertEqual(original_status, True)
-        self.assertEqual(inside_status_before_thread, False)
-        self.assertEqual(thread_original_status, False)
-        self.assertEqual(thread_inside_status, True)
-        self.assertEqual(thread_after_status, False)
-        self.assertEqual(inside_status_after_thread, False)
-        self.assertEqual(after_status, True)
-
 
 def test_main():
     enabled = gc.isenabled()

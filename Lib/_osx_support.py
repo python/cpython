@@ -17,7 +17,7 @@ __all__ = [
 _UNIVERSAL_CONFIG_VARS = ('CFLAGS', 'LDFLAGS', 'CPPFLAGS', 'BASECFLAGS',
                             'BLDSHARED', 'LDSHARED', 'CC', 'CXX',
                             'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
-                            'PY_CORE_CFLAGS')
+                            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS')
 
 # configuration variables that may contain compiler calls
 _COMPILER_CONFIG_VARS = ('BLDSHARED', 'LDSHARED', 'CC', 'CXX')

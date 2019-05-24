@@ -509,7 +509,7 @@ def func_std_string(func_name): # match what old profile produced
         return "%s:%d(%s)" % func_name
 
 #**************************************************************************
-# The following functions combine statists for pairs functions.
+# The following functions combine statistics for pairs functions.
 # The bulk of the processing involves correctly handling "call" lists,
 # such as callers and callees.
 #**************************************************************************
@@ -530,7 +530,7 @@ def add_callers(target, source):
         if func in new_callers:
             if isinstance(caller, tuple):
                 # format used by cProfile
-                new_callers[func] = tuple(i[0] + i[1] for i in zip(caller, new_callers[func]))
+                new_callers[func] = tuple(i + j for i, j in zip(caller, new_callers[func]))
             else:
                 # format used by profile
                 new_callers[func] += caller

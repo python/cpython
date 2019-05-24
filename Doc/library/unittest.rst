@@ -27,7 +27,7 @@ object-oriented way:
 
 test fixture
    A :dfn:`test fixture` represents the preparation needed to perform one or more
-   tests, and any associate cleanup actions.  This may involve, for example,
+   tests, and any associated cleanup actions.  This may involve, for example,
    creating temporary or proxy databases, directories, or starting a server
    process.
 
@@ -56,7 +56,7 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.io/>`_ and `py.test <https://docs.pytest.org/>`_
+   `Nose <https://nose.readthedocs.io/>`_ and `pytest <https://docs.pytest.org/>`_
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
@@ -361,8 +361,9 @@ testing code::
 
 Note that in order to test something, we use one of the :meth:`assert\*`
 methods provided by the :class:`TestCase` base class.  If the test fails, an
-exception will be raised, and :mod:`unittest` will identify the test case as a
-:dfn:`failure`.  Any other exceptions will be treated as :dfn:`errors`.
+exception will be raised with an explanatory message, and :mod:`unittest`
+will identify the test case as a :dfn:`failure`.  Any other exceptions will be
+treated as :dfn:`errors`.
 
 Tests can be numerous, and their set-up can be repetitive.  Luckily, we
 can factor out set-up code by implementing a method called
@@ -408,13 +409,18 @@ after the test method has been run::
 If :meth:`~TestCase.setUp` succeeded, :meth:`~TestCase.tearDown` will be
 run whether the test method succeeded or not.
 
-Such a working environment for the testing code is called a :dfn:`fixture`.
+Such a working environment for the testing code is called a
+:dfn:`test fixture`.  A new TestCase instance is created as a unique
+test fixture used to execute each individual test method.  Thus
+:meth:`~TestCase.setUp`, :meth:`~TestCase.tearDown`, and :meth:`~TestCase.__init__`
+will be called once per test.
 
-Test case instances are grouped together according to the features they test.
-:mod:`unittest` provides a mechanism for this: the :dfn:`test suite`,
-represented by :mod:`unittest`'s :class:`TestSuite` class.  In most cases,
-calling :func:`unittest.main` will do the right thing and collect all the
-module's test cases for you, and then execute them.
+It is recommended that you use TestCase implementations to group tests together
+according to the features they test.  :mod:`unittest` provides a mechanism for
+this: the :dfn:`test suite`, represented by :mod:`unittest`'s
+:class:`TestSuite` class.  In most cases, calling :func:`unittest.main` will do
+the right thing and collect all the module's test cases for you and execute
+them.
 
 However, should you want to customize the building of your test suite,
 you can do it yourself::
@@ -579,8 +585,8 @@ The following decorators implement test skipping and expected failures:
 
 .. decorator:: expectedFailure
 
-   Mark the test as an expected failure.  If the test fails when run, the test
-   is not counted as a failure.
+   Mark the test as an expected failure.  If the test fails it will be
+   considered a success.  If the test passes, it will be considered a failure.
 
 .. exception:: SkipTest(reason)
 
@@ -601,7 +607,7 @@ Distinguishing test iterations using subtests
 
 .. versionadded:: 3.4
 
-When some of your tests differ only by a some very small differences, for
+When there are very small differences among your tests, for
 instance some parameters, unittest allows you to distinguish them inside
 the body of a test method using the :meth:`~TestCase.subTest` context manager.
 
@@ -718,7 +724,7 @@ Test cases
 
    .. method:: setUpClass()
 
-      A class method called before tests in an individual class run.
+      A class method called before tests in an individual class are run.
       ``setUpClass`` is called with the class as the only argument
       and must be decorated as a :func:`classmethod`::
 
@@ -938,7 +944,7 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
-               assertRaises(exception, msg=None)
+               assertRaises(exception, *, msg=None)
 
       Test that an exception is raised when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -978,7 +984,7 @@ Test cases
 
 
    .. method:: assertRaisesRegex(exception, regex, callable, *args, **kwds)
-               assertRaisesRegex(exception, regex, msg=None)
+               assertRaisesRegex(exception, regex, *, msg=None)
 
       Like :meth:`assertRaises` but also tests that *regex* matches
       on the string representation of the raised exception.  *regex* may be
@@ -994,7 +1000,7 @@ Test cases
             int('XYZ')
 
       .. versionadded:: 3.1
-         under the name ``assertRaisesRegexp``.
+         Added under the name ``assertRaisesRegexp``.
 
       .. versionchanged:: 3.2
          Renamed to :meth:`assertRaisesRegex`.
@@ -1004,7 +1010,7 @@ Test cases
 
 
    .. method:: assertWarns(warning, callable, *args, **kwds)
-               assertWarns(warning, msg=None)
+               assertWarns(warning, *, msg=None)
 
       Test that a warning is triggered when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -1045,7 +1051,7 @@ Test cases
 
 
    .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
-               assertWarnsRegex(warning, regex, msg=None)
+               assertWarnsRegex(warning, regex, *, msg=None)
 
       Like :meth:`assertWarns` but also tests that *regex* matches on the
       message of the triggered warning.  *regex* may be a regular expression
@@ -1139,7 +1145,7 @@ Test cases
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order      |              |
+   |                                       | regardless of their order.     |              |
    +---------------------------------------+--------------------------------+--------------+
 
 
@@ -1155,7 +1161,7 @@ Test cases
       If *delta* is supplied instead of *places* then the difference
       between *first* and *second* must be less or equal to (or greater than) *delta*.
 
-      Supplying both *delta* and *places* raises a ``TypeError``.
+      Supplying both *delta* and *places* raises a :exc:`TypeError`.
 
       .. versionchanged:: 3.2
          :meth:`assertAlmostEqual` automatically considers almost equal objects
@@ -1187,7 +1193,7 @@ Test cases
       expression suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.1
-         under the name ``assertRegexpMatches``.
+         Added under the name ``assertRegexpMatches``.
       .. versionchanged:: 3.2
          The method ``assertRegexpMatches()`` has been renamed to
          :meth:`.assertRegex`.
@@ -1442,6 +1448,39 @@ Test cases
 
       .. versionadded:: 3.1
 
+   .. classmethod:: addClassCleanup(function, *args, **kwargs)
+
+      Add a function to be called after :meth:`tearDownClass` to cleanup
+      resources used during the test class. Functions will be called in reverse
+      order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+      They are called with any arguments and keyword arguments passed into
+      :meth:`addClassCleanup` when they are added.
+
+      If :meth:`setUpClass` fails, meaning that :meth:`tearDownClass` is not
+      called, then any cleanup functions added will still be called.
+
+      .. versionadded:: 3.8
+
+
+   .. classmethod:: doClassCleanups()
+
+      This method is called unconditionally after :meth:`tearDownClass`, or
+      after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
+
+      It is responsible for calling all the cleanup functions added by
+      :meth:`addCleanupClass`. If you need cleanup functions to be called
+      *prior* to :meth:`tearDownClass` then you can call
+      :meth:`doCleanupsClass` yourself.
+
+      :meth:`doCleanupsClass` pops methods off the stack of cleanup
+      functions one at a time, so it can be called at any time.
+
+      .. versionadded:: 3.8
+
+
+
+
+
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)
 
@@ -1477,14 +1516,14 @@ along with their deprecated aliases:
    ==============================  ====================== =======================
 
    .. deprecated:: 3.1
-         the fail* aliases listed in the second column.
+         The fail* aliases listed in the second column have been deprecated.
    .. deprecated:: 3.2
-         the assert* aliases listed in the third column.
+         The assert* aliases listed in the third column have been deprecated.
    .. deprecated:: 3.2
          ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
          :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
    .. deprecated:: 3.5
-         the ``assertNotRegexpMatches`` name in favor of :meth:`.assertNotRegex`.
+         The ``assertNotRegexpMatches`` name is deprecated in favor of :meth:`.assertNotRegex`.
 
 .. _testsuite-objects:
 
@@ -2044,7 +2083,7 @@ Loading and running tests
 
    .. method:: run(test)
 
-      This method is the main public interface to the `TextTestRunner`. This
+      This method is the main public interface to the ``TextTestRunner``. This
       method takes a :class:`TestSuite` or :class:`TestCase` instance. A
       :class:`TestResult` is created by calling
       :func:`_makeResult` and the test(s) are run and the
@@ -2262,6 +2301,38 @@ module will be run and the ``tearDownModule`` will not be run. If the exception 
 :exc:`SkipTest` exception then the module will be reported as having been skipped
 instead of as an error.
 
+To add cleanup code that must be run even in the case of an exception, use
+``addModuleCleanup``:
+
+
+.. function:: addModuleCleanup(function, *args, **kwargs)
+
+   Add a function to be called after :func:`tearDownModule` to cleanup
+   resources used during the test class. Functions will be called in reverse
+   order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+   They are called with any arguments and keyword arguments passed into
+   :meth:`addModuleCleanup` when they are added.
+
+   If :meth:`setUpModule` fails, meaning that :func:`tearDownModule` is not
+   called, then any cleanup functions added will still be called.
+
+   .. versionadded:: 3.8
+
+
+.. function:: doModuleCleanups()
+
+   This function is called unconditionally after :func:`tearDownModule`, or
+   after :func:`setUpModule` if :func:`setUpModule` raises an exception.
+
+   It is responsible for calling all the cleanup functions added by
+   :func:`addCleanupModule`. If you need cleanup functions to be called
+   *prior* to :func:`tearDownModule` then you can call
+   :func:`doModuleCleanups` yourself.
+
+   :func:`doModuleCleanups` pops methods off the stack of cleanup
+   functions one at a time, so it can be called at any time.
+
+   .. versionadded:: 3.8
 
 Signal Handling
 ---------------
@@ -2316,7 +2387,7 @@ handling functionality within test frameworks.
 
    When called without arguments this function removes the control-c handler
    if it has been installed. This function can also be used as a test decorator
-   to temporarily remove the handler whilst the test is being executed::
+   to temporarily remove the handler while the test is being executed::
 
       @unittest.removeHandler
       def test_signal_handling(self):

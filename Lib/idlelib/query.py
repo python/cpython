@@ -1,6 +1,5 @@
 """
 Dialogs that query users and verify the answer before accepting.
-Use ttk widgets, limiting use to tcl/tk 8.5+, as in IDLE 3.6+.
 
 Query is the generic base class for a popup dialog.
 The user must either enter a valid answer or close the dialog.
@@ -142,6 +141,10 @@ class Query(Toplevel):
         "Set dialog result to None and destroy tk widget."
         self.result = None
         self.destroy()
+
+    def destroy(self):
+        self.grab_release()
+        super().destroy()
 
 
 class SectionName(Query):
@@ -301,8 +304,8 @@ class HelpSource(Query):
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_query', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_query', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(Query, HelpSource)
