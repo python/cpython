@@ -52,6 +52,10 @@ if 'Clang' in platform.python_compiler() and sys.platform == 'darwin':
     raise unittest.SkipTest("test_gdb doesn't work correctly when python is"
                             " built with LLVM clang")
 
+if ((sysconfig.get_config_var('PGO_PROF_USE_FLAG') or 'xxx') in
+    (sysconfig.get_config_var('PY_CORE_CFLAGS') or '')):
+    raise unittest.SkipTest("test_gdb is not reliable on PGO builds")
+
 # Location of custom hooks file in a repository checkout.
 checkout_hook_path = os.path.join(os.path.dirname(sys.executable),
                                   'python-gdb.py')
@@ -272,7 +276,7 @@ class DebuggerTests(unittest.TestCase):
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
-        m = re.match(r'.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)\)\s+at\s+\S*Python/bltinmodule.c.*',
+        m = re.match(r'.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)\s+at\s+\S*Python/bltinmodule.c.*',
                      gdb_output, re.DOTALL)
         if not m:
             self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
