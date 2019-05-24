@@ -1,2 +1,2 @@
-Now code objects ``co_filename`` attribute is always an absolute path -- by
+Now code objects ``co_filename`` attribute is always an absolute path if a ``absolute_codepath`` future flag specified -- by
 Batuhan Taskaya
