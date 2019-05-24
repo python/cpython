@@ -52,7 +52,7 @@ static PyObject * do_call_core(
 
 #ifdef LLTRACE
 static int lltrace;
-static int prtrace(PyThreadState * const, PyObject *, const char *);
+static int prtrace(PyThreadState *, PyObject *, const char *);
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
                       PyThreadState *, PyFrameObject *,
@@ -4438,7 +4438,7 @@ Error:
 
 #ifdef LLTRACE
 static int
-prtrace(PyThreadState * const tstate, PyObject *v, const char *str)
+prtrace(PyThreadState *tstate, PyObject *v, const char *str)
 {
     printf("%s ", str);
     if (PyObject_Print(v, stdout, 0) != 0) {
@@ -4696,8 +4696,7 @@ _PyEval_GetAsyncGenFinalizer(void)
 static PyFrameObject *
 _PyEval_GetFrame(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    return runtime->gilstate.getframe(tstate);
+    return _PyRuntime.gilstate.getframe(tstate);
 }
 
 PyFrameObject *

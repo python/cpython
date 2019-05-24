@@ -24,14 +24,14 @@ extern char *strerror(int);
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(builtins);
+_Py_IDENTIFIER(stderr);
+
+
 /* Forward declarations */
 static PyObject *
 _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
                const char *format, va_list vargs);
-
-
-_Py_IDENTIFIER(builtins);
-_Py_IDENTIFIER(stderr);
 
 
 void
@@ -910,8 +910,8 @@ PyErr_BadInternalCall(void)
 {
     assert(0 && "bad argument to internal function");
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyErr_Format(tstate, PyExc_SystemError,
-                  "bad argument to internal function");
+    _PyErr_SetString(tstate, PyExc_SystemError,
+                     "bad argument to internal function");
 }
 #define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
