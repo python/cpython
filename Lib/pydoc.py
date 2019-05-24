@@ -951,6 +951,12 @@ class HTMLDoc(Doc):
                 else:
                     note = ' unbound %s method' % self.classlink(imclass,mod)
 
+        if (inspect.iscoroutinefunction(object) or
+                inspect.isasyncgenfunction(object)):
+            asyncqualifier = 'async '
+        else:
+            asyncqualifier = ''
+
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
@@ -979,8 +985,8 @@ class HTMLDoc(Doc):
         if not argspec:
             argspec = '(...)'
 
-        decl = title + self.escape(argspec) + (note and self.grey(
-               '<font face="helvetica, arial">%s</font>' % note))
+        decl = asyncqualifier + title + self.escape(argspec) + (note and
+               self.grey('<font face="helvetica, arial">%s</font>' % note))
 
         if skipdocs:
             return '<dl><dt>%s</dt></dl>\n' % decl
@@ -1382,6 +1388,12 @@ location listed above.
                 else:
                     note = ' unbound %s method' % classname(imclass,mod)
 
+        if (inspect.iscoroutinefunction(object) or
+                inspect.isasyncgenfunction(object)):
+            asyncqualifier = 'async '
+        else:
+            asyncqualifier = ''
+
         if name == realname:
             title = self.bold(realname)
         else:
@@ -1405,7 +1417,7 @@ location listed above.
                     argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
-        decl = title + argspec + note
+        decl = asyncqualifier + title + argspec + note
 
         if skipdocs:
             return decl + '\n'
