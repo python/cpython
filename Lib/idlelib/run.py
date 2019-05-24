@@ -8,8 +8,6 @@ import _thread as thread
 import threading
 import warnings
 
-import tkinter  # Tcl, deletions, messagebox if startup fails
-
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
 from idlelib import calltip  # Calltip
 from idlelib import debugger_r  # start_debugger
@@ -19,11 +17,15 @@ from idlelib import rpc  # multiple objects
 from idlelib import stackviewer  # StackTreeItem
 import __main__
 
-for mod in ('simpledialog', 'messagebox', 'font',
-            'dialog', 'filedialog', 'commondialog',
-            'ttk'):
-    delattr(tkinter, mod)
-    del sys.modules['tkinter.' + mod]
+import tkinter  # Tcl, deletions, messagebox if startup fails
+if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
+    # Undo modifications of tkinter by idlelib imports.
+    for mod in ('simpledialog', 'messagebox', 'font',
+                'dialog', 'filedialog', 'commondialog',
+                'ttk'):
+        delattr(tkinter, mod)
+        del sys.modules['tkinter.' + mod]
+    sys.modules['idlelib.run'].firstrun = False
 
 LOCALHOST = '127.0.0.1'
 
