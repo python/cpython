@@ -867,7 +867,7 @@ class HTMLDoc(Doc):
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is builtins.object:
+            if object is not builtins.object and thisclass is builtins.object:
                 attrs = inherited
                 continue
             elif thisclass is object:
@@ -1327,7 +1327,7 @@ location listed above.
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is builtins.object:
+            if object is not builtins.object and thisclass is builtins.object:
                 attrs = inherited
                 continue
             elif thisclass is object:
