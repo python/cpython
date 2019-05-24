@@ -4620,9 +4620,9 @@ AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
 
-# On Android the shared libraries must be linked with libpython.
+# On Android and Cygwin the shared libraries must be linked with libpython.
 AC_SUBST(LIBPYTHON)
-if test -z "$ANDROID_API_LEVEL"; then
+if test -z "$ANDROID_API_LEVEL" -o "$MACHDEP" != "cygwin"; then
   LIBPYTHON=''
 else
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
