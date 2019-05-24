@@ -1318,6 +1318,33 @@ os.close(fd)
         with test_utils.run_test_server() as httpd:
             self.loop.run_until_complete(test(httpd))
 
+    def test_connect_async_context_manager(self):
+        async def test(httpd):
+            async with asyncio.connect(*httpd.address) as stream:
+                await stream.write(b'GET / HTTP/1.0\r\n\r\n')
+                data = await stream.readline()
+                self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+                data = await stream.read()
+                self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertTrue(stream.is_closing())
+
+        with test_utils.run_test_server() as httpd:
+            self.loop.run_until_complete(test(httpd))
+
+    @support.skip_unless_bind_unix_socket
+    def test_connect_unix_async_context_manager(self):
+        async def test(httpd):
+            async with asyncio.connect_unix(httpd.address) as stream:
+                await stream.write(b'GET / HTTP/1.0\r\n\r\n')
+                data = await stream.readline()
+                self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+                data = await stream.read()
+                self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertTrue(stream.is_closing())
+
+        with test_utils.run_test_unix_server() as httpd:
+            self.loop.run_until_complete(test(httpd))
+
     def test_stream_server(self):
 
         async def handle_client(stream):

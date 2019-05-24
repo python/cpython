@@ -41,13 +41,53 @@ class StreamMode(enum.Flag):
             raise RuntimeError("The stream is read-only")
 
 
-async def connect(host=None, port=None, *,
-                  limit=_DEFAULT_LIMIT,
-                  ssl=None, family=0, proto=0,
-                  flags=0, sock=None, local_addr=None,
-                  server_hostname=None,
-                  ssl_handshake_timeout=None,
-                  happy_eyeballs_delay=None, interleave=None):
+class _ContextManagerHelper:
+    __slots__ = ('_awaitable', '_result')
+
+    def __init__(self, awaitable):
+        self._awaitable = awaitable
+        self._result = None
+
+    def __await__(self):
+        return self._awaitable.__await__()
+
+    async def __aenter__(self):
+        ret = await self._awaitable
+        result = await ret.__aenter__()
+        self._result = result
+        return result
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return await self._result.__aexit__(exc_type, exc_val, exc_tb)
+
+
+def connect(host=None, port=None, *,
+            limit=_DEFAULT_LIMIT,
+            ssl=None, family=0, proto=0,
+            flags=0, sock=None, local_addr=None,
+            server_hostname=None,
+            ssl_handshake_timeout=None,
+            happy_eyeballs_delay=None, interleave=None):
+    # Design note:
+    # Don't use decorator approach but exilicit non-async
+    # function to fail fast and explicitly
+    # if passed arguments don't match the function signature
+    return _ContextManagerHelper(_connect(host, port, limit,
+                                          ssl, family, proto,
+                                          flags, sock, local_addr,
+                                          server_hostname,
+                                          ssl_handshake_timeout,
+                                          happy_eyeballs_delay,
+                                          interleave))
+
+
+async def _connect(host, port,
+                  limit,
+                  ssl, family, proto,
+                  flags, sock, local_addr,
+                  server_hostname,
+                  ssl_handshake_timeout,
+                  happy_eyeballs_delay, interleave):
     loop = events.get_running_loop()
     stream = Stream(mode=StreamMode.READWRITE,
                     limit=limit,
@@ -338,11 +378,29 @@ if hasattr(socket, 'AF_UNIX'):
         writer = StreamWriter(transport, protocol, reader, loop)
         return reader, writer
 
-    async def connect_unix(path=None, *,
-                           limit=_DEFAULT_LIMIT,
-                           ssl=None, sock=None,
-                           server_hostname=None,
-                           ssl_handshake_timeout=None):
+
+    def connect_unix(path=None, *,
+                     limit=_DEFAULT_LIMIT,
+                     ssl=None, sock=None,
+                     server_hostname=None,
+                     ssl_handshake_timeout=None):
+        """Similar to `connect()` but works with UNIX Domain Sockets."""
+        # Design note:
+        # Don't use decorator approach but exilicit non-async
+        # function to fail fast and explicitly
+        # if passed arguments don't match the function signature
+        return _ContextManagerHelper(_connect_unix(path,
+                                                   limit,
+                                                   ssl, sock,
+                                                   server_hostname,
+                                                   ssl_handshake_timeout))
+
+
+    async def _connect_unix(path,
+                           limit,
+                           ssl, sock,
+                           server_hostname,
+                           ssl_handshake_timeout):
         """Similar to `connect()` but works with UNIX Domain Sockets."""
         loop = events.get_running_loop()
         stream = Stream(mode=StreamMode.READWRITE,
