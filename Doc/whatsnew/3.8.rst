@@ -239,6 +239,9 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
+* Added new ``replace()`` method to the code type (:class:`types.CodeType`).
+  (Contributed by Victor Stinner in :issue:`37032`.)
+
 
 New Modules
 ===========
