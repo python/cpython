@@ -1146,8 +1146,8 @@ def _swallow_unhandled_exception(task):
     # if stream.write() was used without await and
     # stream.drain() was paused and resumed with an exception
 
-    # TODO: add if not task.cancelled() check!!!!
-    task.exception()
+    if not task.cancelled():
+        task.exception()
 
 
 class Stream:
