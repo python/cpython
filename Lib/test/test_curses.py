@@ -231,7 +231,8 @@ class TestCurses(unittest.TestCase):
                      curses.nocbreak, curses.noecho, curses.nonl,
                      curses.noqiflush, curses.noraw,
                      curses.reset_prog_mode, curses.termattrs,
-                     curses.termname, curses.erasechar]:
+                     curses.termname, curses.erasechar,
+                     curses.has_extended_color_support]:
             with self.subTest(func=func.__qualname__):
                 func()
         if hasattr(curses, 'filter'):
