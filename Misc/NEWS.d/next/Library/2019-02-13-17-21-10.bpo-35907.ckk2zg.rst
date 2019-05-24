@@ -1,3 +1,0 @@
-CVE-2019-9948: Avoid file reading as disallowing the unnecessary URL scheme in
-:func:`urllib.urlopen`, :meth:`urllib.URLopener.open` and
-:meth:`urllib.URLopener.retrieve`.
