@@ -1082,7 +1082,7 @@ Changes in the C API
 
   Example::
 
-      Py_DEPRECATED(3.8) int Py_OldFunction(void);
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
 
   (Contributed by Zackery Spytz in :issue:`33407`.)
 
