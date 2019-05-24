@@ -99,10 +99,7 @@ class sigset_t_converter(CConverter):
    may not be the thread that received the signal.
 */
 
-#include <sys/types.h> /* For pid_t */
 #include "pythread.h"
-static unsigned long main_thread;
-static PyInterpreterState *main_interp;
 
 static volatile struct {
     _Py_atomic_int tripped;
@@ -190,10 +187,12 @@ itimer_retval(struct itimerval *iv)
 #endif
 
 static int
-is_main(void)
+is_main(_PyRuntimeState *runtime)
 {
-    return PyThread_get_thread_ident() == main_thread &&
-        _PyInterpreterState_Get() == main_interp;
+    unsigned long thread = PyThread_get_thread_ident();
+    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
+    return (thread == runtime->main_thread
+            && interp == runtime->interpreters.main);
 }
 
 static PyObject *
@@ -474,7 +473,9 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
             return NULL;
     }
 #endif
-    if (!is_main()) {
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    if (!is_main(runtime)) {
         PyErr_SetString(PyExc_ValueError,
                         "signal only works in main thread");
         return NULL;
@@ -691,7 +692,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 #endif
 
-    if (!is_main()) {
+    _PyRuntimeState *runtime = &_PyRuntime;
+    if (!is_main(runtime)) {
         PyErr_SetString(PyExc_ValueError,
                         "set_wakeup_fd only works in main thread");
         return NULL;
@@ -1329,9 +1331,6 @@ PyInit__signal(void)
     PyObject *m, *d, *x;
     int i;
 
-    main_thread = PyThread_get_thread_ident();
-    main_interp = _PyInterpreterState_Get();
-
     /* Create the module and add the functions */
     m = PyModule_Create(&signalmodule);
     if (m == NULL)
@@ -1622,7 +1621,8 @@ finisignal(void)
 int
 PyErr_CheckSignals(void)
 {
-    if (!is_main()) {
+    _PyRuntimeState *runtime = &_PyRuntime;
+    if (!is_main(runtime)) {
         return 0;
     }
 
@@ -1716,7 +1716,8 @@ int
 PyOS_InterruptOccurred(void)
 {
     if (_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
-        if (!is_main()) {
+        _PyRuntimeState *runtime = &_PyRuntime;
+        if (!is_main(runtime)) {
             return 0;
         }
         _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
@@ -1744,14 +1745,13 @@ _PySignal_AfterFork(void)
      * in both processes if they came in just before the fork() but before
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
-    main_thread = PyThread_get_thread_ident();
-    main_interp = _PyInterpreterState_Get();
 }
 
 int
 _PyOS_IsMainThread(void)
 {
-    return is_main();
+    _PyRuntimeState *runtime = &_PyRuntime;
+    return is_main(runtime);
 }
 
 #ifdef MS_WINDOWS
