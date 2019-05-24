@@ -744,13 +744,13 @@ class MmapTests(unittest.TestCase):
         size = 8192
         m = mmap.mmap(-1, size)
 
-        with self.assertRaisesRegex(ValueError, "madvise start invalid"):
+        with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
             m.madvise(mmap.MADV_NORMAL, size)
-        with self.assertRaisesRegex(ValueError, "madvise start invalid"):
+        with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
             m.madvise(mmap.MADV_NORMAL, -1)
         with self.assertRaisesRegex(ValueError, "madvise length invalid"):
-            m.madvise(mmap.MADV_NORMAL, 0, 0)
-        with self.assertRaisesRegex(OverflowError, "overflow"):
+            m.madvise(mmap.MADV_NORMAL, 0, -1)
+        with self.assertRaisesRegex(OverflowError, "madvise length too large"):
             m.madvise(mmap.MADV_NORMAL, PAGESIZE, sys.maxsize)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE), None)
