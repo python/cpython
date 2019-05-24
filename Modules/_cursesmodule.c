@@ -134,6 +134,24 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
+#if defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)
+#define _NCURSES_EXTENDED_COLOR_FUNCS   1
+#else
+#define _NCURSES_EXTENDED_COLOR_FUNCS   0
+#endif  /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)  */
+
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _NCURSES_COLOR_VAL_MAX         INT_MAX
+#define _NCURSES_COLOR_VAL_MIN         INT_MIN
+#define _NCURSES_COLOR_VAL_TYPE        int
+#define _NCURSES_COLOR_VAL_TYPE_STR    "integer"
+#else
+#define _NCURSES_COLOR_VAL_MAX         SHRT_MAX
+#define _NCURSES_COLOR_VAL_MIN         SHRT_MIN
+#define _NCURSES_COLOR_VAL_TYPE        short
+#define _NCURSES_COLOR_VAL_TYPE_STR    "short integer"
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
 /*[clinic input]
 module _curses
 class _curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
@@ -2586,7 +2604,13 @@ _curses_cbreak_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=9f9dee9664769751 input=150be619eb1f1458]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
-/*[clinic input]
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _COLOR_CONTENT_FUNC   extended_color_content
+#else
+#define _COLOR_CONTENT_FUNC   color_content
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+/*
 _curses.color_content
 
     color_number: short
@@ -2598,12 +2622,6 @@ Return the red, green, and blue (RGB) components of the specified color.
 A 3-tuple is returned, containing the R, G, B values for the given color,
 which will be between 0 (no component) and 1000 (maximum amount of component).
 */
-
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _COLOR_CONTENT_FUNC   extended_color_content
-#else
-#define _COLOR_CONTENT_FUNC   color_content
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 static PyObject *
 _curses_color_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number)
@@ -2624,10 +2642,64 @@ _curses_color_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_numbe
 
 #undef _COLOR_CONTENT_FUNC
 
-/*[clinic input]
+PyDoc_STRVAR(_curses_color_content__doc__,
+"color_content($module, color_number, /)\n"
+"--\n"
+"\n"
+"Return the red, green, and blue (RGB) components of the specified color.\n"
+"\n"
+"  color_number\n"
+"    The number of the color (0 - COLORS).\n"
+"\n"
+"A 3-tuple is returned, containing the R, G, B values for the given color,\n"
+"which will be between 0 (no component) and 1000 (maximum amount of component).");
+
+#define _CURSES_COLOR_CONTENT_METHODDEF    \
+    {"color_content", (PyCFunction)_curses_color_content, METH_O, _curses_color_content__doc__},
+
+static PyObject *
+_curses_color_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number);
+
+static PyObject *
+_curses_color_content(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    _NCURSES_COLOR_VAL_TYPE color_number;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
+            goto exit;
+        }
+        else {
+            color_number = (_NCURSES_COLOR_VAL_TYPE) ival;
+       }
+     }
+    return_value = _curses_color_content_impl(module, color_number);
+
+exit:
+    return return_value;
+}
+
+/*
 _curses.color_pair
 
-    color_number: short
+    color_number: _NCURSES_COLOR_VAL_TYPE
         The number of the color (0 - COLORS).
     /
 
@@ -2644,6 +2716,60 @@ _curses_color_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number)
     PyCursesInitialisedColor;
 
     return  PyLong_FromLong(color_pair_to_attr(color_number));
+}
+
+PyDoc_STRVAR(_curses_color_pair__doc__,
+"color_pair($module, color_number, /)\n"
+"--\n"
+"\n"
+"Return the attribute value for displaying text in the specified color.\n"
+"\n"
+"  color_number\n"
+"    The number of the color (0 - COLORS).\n"
+"\n"
+"This attribute value can be combined with A_STANDOUT, A_REVERSE, and the\n"
+"other A_* attributes.  pair_number() is the counterpart to this function.");
+
+#define _CURSES_COLOR_PAIR_METHODDEF    \
+    {"color_pair", (PyCFunction)_curses_color_pair, METH_O, _curses_color_pair__doc__},
+
+static PyObject *
+_curses_color_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number);
+
+static PyObject *
+_curses_color_pair(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    _NCURSES_COLOR_VAL_TYPE color_number;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR "is greater than maximum");
+            goto exit;
+        }
+        else {
+            color_number = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    return_value = _curses_color_pair_impl(module, color_number);
+
+exit:
+    return return_value;
 }
 
 /*[clinic input]
@@ -3034,16 +3160,24 @@ _curses_has_key_impl(PyObject *module, int key)
 }
 #endif
 
-/*[clinic input]
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _CURSES_INIT_COLOR_FUNC         init_extended_color
+#else
+#define _CURSES_INIT_COLOR_FUNC         init_color
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+#define _CURSES_INIT_COLOR_FUNC_NAME    _CURSES_FUNC_NAME_STR(_CURSES_INIT_COLOR_FUNC)
+
+/*
 _curses.init_color
 
-    color_number: short
+    color_number: _NCURSES_COLOR_VAL_TYPE
         The number of the color to be changed (0 - COLORS).
-    r: short
+    r: _NCURSES_COLOR_VAL_TYPE
         Red component (0 - 1000).
-    g: short
+    g: _NCURSES_COLOR_VAL_TYPE
         Green component (0 - 1000).
-    b: short
+    b: _NCURSES_COLOR_VAL_TYPE
         Blue component (0 - 1000).
     /
 
@@ -3053,14 +3187,6 @@ When init_color() is used, all occurrences of that color on the screen
 immediately change to the new definition.  This function is a no-op on
 most terminals; it is active only if can_change_color() returns 1.
 */
-
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_INIT_COLOR_FUNC         init_extended_color
-#else
-#define _CURSES_INIT_COLOR_FUNC         init_color
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
-#define _CURSES_INIT_COLOR_FUNC_NAME    _CURSES_FUNC_NAME_STR(_CURSES_INIT_COLOR_FUNC)
 
 static PyObject *
 _curses_init_color_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number,
@@ -3076,7 +3202,156 @@ _curses_init_color_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number,
 #undef _CURSES_INIT_COLOR_FUNC
 #undef _CURSES_INIT_COLOR_FUNC_NAME
 
-/*[clinic input]
+PyDoc_STRVAR(_curses_init_color__doc__,
+"init_color($module, color_number, r, g, b, /)\n"
+"--\n"
+"\n"
+"Change the definition of a color.\n"
+"\n"
+"  color_number\n"
+"    The number of the color to be changed (0 - COLORS).\n"
+"  r\n"
+"    Red component (0 - 1000).\n"
+"  g\n"
+"    Green component (0 - 1000).\n"
+"  b\n"
+"    Blue component (0 - 1000).\n"
+"\n"
+"When init_color() is used, all occurrences of that color on the screen\n"
+"immediately change to the new definition.  This function is a no-op on\n"
+"most terminals; it is active only if can_change_color() returns 1.");
+
+#define _CURSES_INIT_COLOR_METHODDEF    \
+    {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
+
+static PyObject *
+_curses_init_color_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE color_number,
+                        _NCURSES_COLOR_VAL_TYPE r, _NCURSES_COLOR_VAL_TYPE g,
+                        _NCURSES_COLOR_VAL_TYPE b);
+
+static PyObject *
+_curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    _NCURSES_COLOR_VAL_TYPE color_number;
+    _NCURSES_COLOR_VAL_TYPE r;
+    _NCURSES_COLOR_VAL_TYPE g;
+    _NCURSES_COLOR_VAL_TYPE b;
+
+    if (!_PyArg_CheckPositional("init_color", nargs, 4, 4)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+             PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            color_number = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[1]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            r = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[2]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            g = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[3]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            b = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    return_value = _curses_init_color_impl(module, color_number, r, g, b);
+
+exit:
+    return return_value;
+}
+
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _CURSES_INIT_PAIR_FUNC    init_extended_pair
+#else
+#define _CURSES_INIT_PAIR_FUNC    init_pair
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+#define _CURSES_INIT_PAIR_FUNC_NAME   _CURSES_FUNC_NAME_STR(_CURSES_INIT_PAIR_FUNC)
+
+/*
 _curses.init_pair
 
     pair_number: short
@@ -3093,14 +3368,6 @@ If the color-pair was previously initialized, the screen is refreshed and
 all occurrences of that color-pair are changed to the new definition.
 */
 
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_INIT_PAIR_FUNC    init_extended_pair
-#else
-#define _CURSES_INIT_PAIR_FUNC    init_pair
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
-#define _CURSES_INIT_PAIR_FUNC_NAME   _CURSES_FUNC_NAME_STR(_CURSES_INIT_PAIR_FUNC)
-
 static PyObject *
 _curses_init_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number,
                        _NCURSES_COLOR_VAL_TYPE fg, _NCURSES_COLOR_VAL_TYPE bg)
@@ -3113,6 +3380,118 @@ _curses_init_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number,
 
 #undef _CURSES_INIT_PAIR_FUNC
 #undef _CURSES_INIT_PAIR_FUNC_NAME
+
+PyDoc_STRVAR(_curses_init_pair__doc__,
+"init_pair($module, pair_number, fg, bg, /)\n"
+"--\n"
+"\n"
+"Change the definition of a color-pair.\n"
+"\n"
+"  pair_number\n"
+"    The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).\n"
+"  fg\n"
+"    Foreground color number (0 - COLORS).\n"
+"  bg\n"
+"    Background color number (0 - COLORS).\n"
+"\n"
+"If the color-pair was previously initialized, the screen is refreshed and\n"
+"all occurrences of that color-pair are changed to the new definition.");
+
+#define _CURSES_INIT_PAIR_METHODDEF    \
+    {"init_pair", (PyCFunction)(void(*)(void))_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
+
+static PyObject *
+_curses_init_pair_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number,
+                       _NCURSES_COLOR_VAL_TYPE fg, _NCURSES_COLOR_VAL_TYPE bg);
+
+static PyObject *
+_curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    _NCURSES_COLOR_VAL_TYPE pair_number;
+    _NCURSES_COLOR_VAL_TYPE fg;
+    _NCURSES_COLOR_VAL_TYPE bg;
+
+    if (!_PyArg_CheckPositional("init_pair", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
+            goto exit;
+        }
+        else {
+            pair_number = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[1]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed  " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed  " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
+            goto exit;
+        }
+        else {
+            fg = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[2]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed  " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed  " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
+            goto exit;
+        }
+        else {
+            bg = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    return_value = _curses_init_pair_impl(module, pair_number, fg, bg);
+
+exit:
+    return return_value;
+}
 
 static PyObject *ModDict;
 
@@ -3725,21 +4104,21 @@ _curses_noraw_impl(PyObject *module)
 /*[clinic end generated code: output=39894e5524c430cc input=6ec86692096dffb5]*/
 NoArgNoReturnFunctionBody(noraw)
 
-/*[clinic input]
-_curses.pair_content
-
-    pair_number: short
-        The number of the color pair (1 - (COLOR_PAIRS-1)).
-    /
-
-Return a tuple (fg, bg) containing the colors for the requested color pair.
-*/
-
 #if _NCURSES_EXTENDED_COLOR_FUNCS
 #define _CURSES_PAIR_NUMBER_FUNC  extended_pair_content
 #else
 #define _CURSES_PAIR_NUMBER_FUNC  pair_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+/*
+_curses.pair_content
+
+    pair_number: _NCURSES_COLOR_VAL_TYPE
+        The number of the color pair (1 - (COLOR_PAIRS-1)).
+    /
+
+Return a tuple (fg, bg) containing the colors for the requested color pair.
+*/
 
 static PyObject *
 _curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number)
@@ -3756,6 +4135,57 @@ _curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number)
     }
 
     return Py_BuildValue("(ii)", f, b);
+}
+
+PyDoc_STRVAR(_curses_pair_content__doc__,
+"pair_content($module, pair_number, /)\n"
+"--\n"
+"\n"
+"Return a tuple (fg, bg) containing the colors for the requested color pair.\n"
+"\n"
+"  pair_number\n"
+"    The number of the color pair (1 - (COLOR_PAIRS-1)).");
+
+#define _CURSES_PAIR_CONTENT_METHODDEF    \
+    {"pair_content", (PyCFunction)_curses_pair_content, METH_O, _curses_pair_content__doc__},
+
+static PyObject *
+_curses_pair_content_impl(PyObject *module, _NCURSES_COLOR_VAL_TYPE pair_number);
+
+static PyObject *
+_curses_pair_content(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    _NCURSES_COLOR_VAL_TYPE pair_number;
+
+    if (PyFloat_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < _NCURSES_COLOR_VAL_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is less than minimum");
+            goto exit;
+        }
+        else if (ival > _NCURSES_COLOR_VAL_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed " _NCURSES_COLOR_VAL_TYPE_STR " is greater than maximum");
+            goto exit;
+        }
+        else {
+            pair_number = (_NCURSES_COLOR_VAL_TYPE) ival;
+        }
+    }
+    return_value = _curses_pair_content_impl(module, pair_number);
+
+exit:
+    return return_value;
 }
 
 /*[clinic input]
@@ -4486,6 +4916,22 @@ make_ncurses_version(void)
 
 #endif /* NCURSES_VERSION */
 
+PyDoc_STRVAR(_curses_has_extended_color_support__doc__,
+"has_extended_color_support($module, /)\n"
+"--\n"
+"\n"
+"Return True if the module supports extended colors; otherwise, return\n"
+"False. Extended color support allows more than 256 color-pairs for terminals\n"
+"that support more than 16 colors (e.g. xterm-256color).\n");
+
+#define _CURSES_HAS_EXTENDED_COLOR_SUPPORT_METHODDEF   \
+    {"has_extended_color_support", (PyCFunction)_curses_has_extended_color_support, METH_NOARGS, _curses_has_extended_color_support__doc__},
+
+static PyObject *
+_curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return PyBool_FromLong(_NCURSES_EXTENDED_COLOR_FUNCS);
+}
 
 /* List of functions defined in the module */
 
