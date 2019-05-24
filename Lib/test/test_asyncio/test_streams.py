@@ -1622,6 +1622,41 @@ os.close(fd)
                     sslcontext=test_utils.dummy_ssl_context()))
             self._basetest_connect(stream)
 
+    def test_repr_unbound(self):
+        async def serve(stream):
+            pass
+
+        async def test():
+            srv = asyncio.StreamServer(serve)
+            self.assertEqual('<StreamServer>', repr(srv))
+            await srv.close()
+
+        self.loop.run_until_complete(test())
+
+    def test_repr_bound(self):
+        async def serve(stream):
+            pass
+
+        async def test():
+            srv = asyncio.StreamServer(serve, '127.0.0.1', 0)
+            await srv.bind()
+            self.assertRegex(repr(srv), r'<StreamServer sockets=\[.+\]>')
+            await srv.close()
+
+        self.loop.run_until_complete(test())
+
+    def test_repr_serving(self):
+        async def serve(stream):
+            pass
+
+        async def test():
+            srv = asyncio.StreamServer(serve, '127.0.0.1', 0)
+            await srv.start_serving()
+            self.assertRegex(repr(srv), r'<StreamServer serving sockets=\[.+\]>')
+            await srv.close()
+
+        self.loop.run_until_complete(test())
+
 
 if __name__ == '__main__':
     unittest.main()

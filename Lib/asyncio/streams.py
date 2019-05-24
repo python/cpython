@@ -141,8 +141,6 @@ async def start_server(client_connected_cb, host=None, port=None, *,
 
 
 class _BaseStreamServer:
-    # TODO: add __repr__
-
     # Design notes.
     # StreamServer and UnixStreamServer are exposed as FINAL classes,
     # not function factories.
@@ -151,6 +149,8 @@ class _BaseStreamServer:
     # looks ugly.
     # The class doesn't provide API for enumerating connected streams
     # It can be a subject for improvements in Python 3.9
+
+    _low_server = None
 
     def __init__(self, client_connected_cb,
                  /,
@@ -162,7 +162,6 @@ class _BaseStreamServer:
         self._client_connected_cb = client_connected_cb
         self._limit = limit
         self._loop = events.get_running_loop()
-        self._low_server = None
         self._streams = {}
         self._shutdown_timeout = shutdown_timeout
 
@@ -255,6 +254,14 @@ class _BaseStreamServer:
                             f'from a closing {self!r}'),
                 "stream_server": self
             })
+
+    def __repr__(self):
+        ret = [f'{self.__class__.__name__}']
+        if self.is_serving():
+            ret.append('serving')
+        if self.sockets:
+            ret.append(f'sockets={self.sockets!r}')
+        return '<' + ' '.join(ret) + '>'
 
     def __del__(self, _warn=warnings.warn):
         if self._low_server is not None:
