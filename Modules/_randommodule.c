@@ -248,7 +248,7 @@ random_seed_time_pid(RandomObject *self)
     init_by_array(self, key, Py_ARRAY_LENGTH(key));
 }
 
-static PyObject*
+static PyObject *
 random_seed(RandomObject *self, PyObject *arg)
 {
     PyObject *result = NULL;            /* guilty until proved innocent */
@@ -337,12 +337,15 @@ _random.Random.seed
   n: object = None
   /
 
-seed([n]) -> None.  Defaults to current time.
+seed([n]) -> None.
+
+Defaults to use urandom and falls back to a combination
+of the current time and the process identifier.
 [clinic start generated code]*/
 
 static PyObject *
 _random_Random_seed_impl(RandomObject *self, PyObject *n)
-/*[clinic end generated code: output=0fad1e16ba883681 input=cfd157a84eeaea60]*/
+/*[clinic end generated code: output=0fad1e16ba883681 input=78d6ef0d52532a54]*/
 {
     return random_seed(self, n);
 }

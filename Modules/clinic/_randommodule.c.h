@@ -24,7 +24,10 @@ PyDoc_STRVAR(_random_Random_seed__doc__,
 "seed($self, n=None, /)\n"
 "--\n"
 "\n"
-"seed([n]) -> None.  Defaults to current time.");
+"seed([n]) -> None.\n"
+"\n"
+"Defaults to use urandom and falls back to a combination\n"
+"of the current time and the process identifier.");
 
 #define _RANDOM_RANDOM_SEED_METHODDEF    \
     {"seed", (PyCFunction)(void(*)(void))_random_Random_seed, METH_FASTCALL, _random_Random_seed__doc__},
@@ -111,4 +114,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9483c0efeb0dbba7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7feb0c9c8d1b627 input=a9049054013a1b77]*/
