@@ -203,9 +203,9 @@ def fixline(line):
         args = b' ' + args
 
     if add_flag in flags:
-        return fixedline + b' -' + flags + args
+        return fixedline + b' -' + flags + args + b'\n'
 
-    return fixedline + b' -' + add_flag + flags + args
+    return fixedline + b' -' + add_flag + flags + args + b'\n'
 
 
 if __name__ == '__main__':
