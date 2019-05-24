@@ -1661,6 +1661,17 @@ import_find_and_load(PyObject *abs_name)
 
     _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
+    PyObject *sys_path = PySys_GetObject("path");
+    PyObject *sys_meta_path = PySys_GetObject("meta_path");
+    PyObject *sys_path_hooks = PySys_GetObject("path_hooks");
+    if (PySys_Audit("import", "OOOOO",
+                    abs_name, Py_None, sys_path ? sys_path : Py_None,
+                    sys_meta_path ? sys_meta_path : Py_None,
+                    sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
+        return NULL;
+    }
+
+
     /* XOptions is initialized after first some imports.
      * So we can't have negative cache before completed initialization.
      * Anyway, importlib._find_and_load is much slower than

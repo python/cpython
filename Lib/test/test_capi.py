@@ -473,6 +473,19 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
 
+    def test_mutate_exception(self):
+        """
+        Exceptions saved in global module state get shared between
+        individual module instances. This test checks whether or not
+        a change in one interpreter's module gets reflected into the
+        other ones.
+        """
+        import binascii
+
+        support.run_in_subinterp("import binascii; binascii.Error.foobar = 'foobar'")
+
+        self.assertFalse(hasattr(binascii.Error, "foobar"))
+
 
 class TestThreadState(unittest.TestCase):
 

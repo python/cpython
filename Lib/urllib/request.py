@@ -521,6 +521,7 @@ class OpenerDirector:
             meth = getattr(processor, meth_name)
             req = meth(req)
 
+        sys.audit('urllib.Request', req.full_url, req.data, req.headers, req.get_method())
         response = self._open(req, data)
 
         # post-process response
@@ -1745,7 +1746,7 @@ class URLopener:
         name = 'open_' + urltype
         self.type = urltype
         name = name.replace('-', '_')
-        if not hasattr(self, name):
+        if not hasattr(self, name) or name == 'open_local_file':
             if proxy:
                 return self.open_unknown_proxy(proxy, fullurl, data)
             else:

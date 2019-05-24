@@ -1822,16 +1822,35 @@ objects on the thread which called tp_dealloc will not violate any assumptions
 of the library.
 
 
+.. _heap-types:
+
 Heap Types
 ----------
 
-In addition to defining Python types statically, you can define them
-dynamically (i.e. to the heap) using  :c:func:`PyType_FromSpec` and
+Traditionally, types defined in C code are *static*, that is,
+a static :c:type:`PyTypeObject` structure is defined directly in code
+and initialized using :c:func:`PyType_Ready`.
+
+This results in types that are limited relative to types defined in Python:
+
+* Static types are limited to one base, i.e. they cannot use multiple
+  inheritance.
+* Static type objects (but not necessarily their instances) are immutable.
+  It is not possible to add or modify the type object's attributes from Python.
+* Static type objects are shared across
+  :ref:`sub-interpreters <sub-interpreter-support>`, so they should not
+  include any subinterpreter-specific state.
+
+Also, since *PyTypeObject* is not part of the :ref:`stable ABI <stable>`,
+any extension modules using static types must be compiled for a specific
+Python minor version.
+
+An alternative to static types is *heap-allocated types*, or *heap types*
+for short, which correspond closely to classes created by Python's
+``class`` statement.
+
+This is done by filling a :c:type:`PyType_Spec` structure and calling
 :c:func:`PyType_FromSpecWithBases`.
-
-.. XXX Explain how to use PyType_FromSpec().
-
-.. XXX Document PyType_Spec.
 
 
 .. _number-structs:

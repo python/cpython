@@ -383,7 +383,7 @@ pathconfig_global_init(void)
 
     _PyInitError err;
     _PyCoreConfig config;
-    _PyCoreConfig_Init(&config);
+    _PyCoreConfig_InitCompatConfig(&config);
 
     err = _PyCoreConfig_Read(&config);
     if (_Py_INIT_FAILED(err)) {
