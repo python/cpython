@@ -168,6 +168,7 @@
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
+    <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
     <ClInclude Include="..\Include\internal\pycore_pyhash.h" />
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />

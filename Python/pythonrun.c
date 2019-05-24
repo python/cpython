@@ -12,6 +12,7 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "grammar.h"
@@ -542,12 +543,6 @@ finally:
     return 0;
 }
 
-void
-PyErr_Print(void)
-{
-    PyErr_PrintEx(1);
-}
-
 static void
 print_error_text(PyObject *f, int offset, PyObject *text_obj)
 {
@@ -667,34 +662,38 @@ handle_system_exit(void)
 }
 
 
-void
-PyErr_PrintEx(int set_sys_last_vars)
+static void
+_PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
 {
     PyObject *exception, *v, *tb, *hook;
 
     handle_system_exit();
 
-    PyErr_Fetch(&exception, &v, &tb);
-    if (exception == NULL)
-        return;
-    PyErr_NormalizeException(&exception, &v, &tb);
+    _PyErr_Fetch(tstate, &exception, &v, &tb);
+    if (exception == NULL) {
+        goto done;
+    }
+
+    _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
         tb = Py_None;
         Py_INCREF(tb);
     }
     PyException_SetTraceback(v, tb);
-    if (exception == NULL)
-        return;
+    if (exception == NULL) {
+        goto done;
+    }
+
     /* Now we know v != NULL too */
     if (set_sys_last_vars) {
         if (_PySys_SetObjectId(&PyId_last_type, exception) < 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
         if (_PySys_SetObjectId(&PyId_last_value, v) < 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
         if (_PySys_SetObjectId(&PyId_last_traceback, tb) < 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
@@ -710,8 +709,8 @@ PyErr_PrintEx(int set_sys_last_vars)
             handle_system_exit();
 
             PyObject *exception2, *v2, *tb2;
-            PyErr_Fetch(&exception2, &v2, &tb2);
-            PyErr_NormalizeException(&exception2, &v2, &tb2);
+            _PyErr_Fetch(tstate, &exception2, &v2, &tb2);
+            _PyErr_NormalizeException(tstate, &exception2, &v2, &tb2);
             /* It should not be possible for exception2 or v2
                to be NULL. However PyErr_Display() can't
                tolerate NULLs, so just be safe. */
@@ -733,13 +732,35 @@ PyErr_PrintEx(int set_sys_last_vars)
             Py_XDECREF(tb2);
         }
         Py_XDECREF(result);
-    } else {
+    }
+    else {
         PySys_WriteStderr("sys.excepthook is missing\n");
         PyErr_Display(exception, v, tb);
     }
+
+done:
     Py_XDECREF(exception);
     Py_XDECREF(v);
     Py_XDECREF(tb);
+}
+
+void
+_PyErr_Print(PyThreadState *tstate)
+{
+    _PyErr_PrintEx(tstate, 1);
+}
+
+void
+PyErr_PrintEx(int set_sys_last_vars)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_PrintEx(tstate, set_sys_last_vars);
+}
+
+void
+PyErr_Print(void)
+{
+    PyErr_PrintEx(1);
 }
 
 static void
