@@ -1304,6 +1304,20 @@ os.close(fd)
                 asyncio.connect_unix(httpd.address))
             self._basetest_connect(stream)
 
+    def test_stream_async_context_manager(self):
+        async def test(httpd):
+            stream = await asyncio.connect(*httpd.address)
+            async with stream:
+                await stream.write(b'GET / HTTP/1.0\r\n\r\n')
+                data = await stream.readline()
+                self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
+                data = await stream.read()
+                self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertTrue(stream.is_closing())
+
+        with test_utils.run_test_server() as httpd:
+            self.loop.run_until_complete(test(httpd))
+
     def test_stream_server(self):
 
         async def handle_client(stream):
