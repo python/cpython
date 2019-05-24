@@ -10,7 +10,7 @@ from test import support
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
     raise unittest.SkipTest("test only relevant when sys.audit is available")
 
-AUDIT_TESTS_PY = os.path.join(os.path.dirname(__file__), "audit-tests.py")
+AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):
