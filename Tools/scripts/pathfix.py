@@ -10,7 +10,7 @@
 # arguments).
 # The original file is kept as a back-up (with a "~" attached to its name),
 # -n flag can be used to disable this.
-# For keeping flags use -f option.For adding flags pass argument to -f option
+# For keeping flags use -f option. For adding flags pass argument to -f option
 # Undoubtedly you can do this using find and sed or perl, but this is
 # a nice example of Python code that recurses down a directory tree
 # and uses regular expressions.  Also note several subtleties like
