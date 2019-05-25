@@ -119,7 +119,7 @@ The module defines three convenience functions and a public class:
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
-   .. versionchanged: 3.8
+   .. versionchanged:: 3.8
       The optional *target_time* parameter was added.
 
    .. method:: Timer.timeit(number=1000000)
