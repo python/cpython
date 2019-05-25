@@ -59,6 +59,7 @@ dummy_src_name = "<timeit-src>"
 default_number = 1000000
 default_repeat = 5
 default_timer = time.perf_counter
+default_target_time = 0.2
 
 _globals = globals
 
@@ -98,9 +99,10 @@ class Timer:
     """
 
     def __init__(self, stmt="pass", setup="pass", timer=default_timer,
-                 globals=None):
+                 globals=None, target_time=default_target_time):
         """Constructor.  See class doc string."""
         self.timer = timer
+        self.target_time = target_time
         local_ns = {}
         global_ns = _globals() if globals is None else globals
         init = ''
@@ -169,6 +171,8 @@ class Timer:
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
         """
+        if (number == 0) or number is None:
+            return self.autorange(target_time=self.target_time)
         it = itertools.repeat(None, number)
         gcold = gc.isenabled()
         gc.disable()
@@ -199,15 +203,17 @@ class Timer:
         interested in.  After that, you should look at the entire
         vector and apply common sense rather than statistics.
         """
+        if (number == 0) or number is None:
+            return self.autorange(target_time=self.target_time)
         r = []
         for i in range(repeat):
             t = self.timeit(number)
             r.append(t)
         return r
 
-    def autorange(self, callback=None, total_time=0.2):
+    def autorange(self, callback=None, target_time=None):
         """Return the number of loops and time taken so that total time
-        is greater than or equal to *total_time*.
+        is greater than or equal to *target_time*.
 
         Calls the timeit method with increasing numbers from the sequence
         1, 2, 5, 10, 20, 50, ... until the time taken is at least 0.2
@@ -216,6 +222,8 @@ class Timer:
         If *callback* is given and is not None, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
         """
+        if target_time is None:
+            target_time = self.target_time
         i = 1
         while True:
             for j in 1, 2, 5:
@@ -223,7 +231,7 @@ class Timer:
                 time_taken = self.timeit(number)
                 if callback:
                     callback(number, time_taken)
-                if time_taken >= total_time:
+                if time_taken >= target_time:
                     return (number, time_taken)
             i *= 10
 
