@@ -129,12 +129,14 @@
     <ClInclude Include="..\Include\cpython\abstract.h" />
     <ClInclude Include="..\Include\cpython\coreconfig.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
+    <ClInclude Include="..\Include\cpython\fileobject.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
     <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
+    <ClInclude Include="..\Include\cpython\sysmodule.h" />
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
@@ -166,6 +168,7 @@
     <ClInclude Include="..\Include\internal\pycore_hamt.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
+    <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
     <ClInclude Include="..\Include\internal\pycore_pyhash.h" />
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />

@@ -350,3 +350,6 @@ whatsnew/3.7,,::,error::BytesWarning
 whatsnew/changelog,,::,error::BytesWarning
 whatsnew/changelog,,::,default::BytesWarning
 whatsnew/changelog,,::,default::DeprecationWarning
+library/importlib.metadata,,.. highlight:,.. highlight:: none
+library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
+library/importlib.metadata,,`,of directories ``path`` (defaults to sys.path).

@@ -3,7 +3,9 @@
 
 #include "Python.h"
 #include "pycore_coreconfig.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
+#include "pycore_traceback.h"
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
@@ -26,10 +28,16 @@ _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
 
 
+/* Forward declarations */
+static PyObject *
+_PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
+               const char *format, va_list vargs);
+
+
 void
-PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
+_PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
+               PyObject *traceback)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *oldtype, *oldvalue, *oldtraceback;
 
     if (traceback != NULL && !PyTraceBack_Check(traceback)) {
@@ -53,6 +61,14 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
     Py_XDECREF(oldvalue);
     Py_XDECREF(oldtraceback);
 }
+
+void
+PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_Restore(tstate, type, value, traceback);
+}
+
 
 _PyErr_StackItem *
 _PyErr_GetTopmostException(PyThreadState *tstate)
@@ -81,17 +97,16 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
 }
 
 void
-PyErr_SetObject(PyObject *exception, PyObject *value)
+_PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *exc_value;
     PyObject *tb = NULL;
 
     if (exception != NULL &&
         !PyExceptionClass_Check(exception)) {
-        PyErr_Format(PyExc_SystemError,
-                     "exception %R not a BaseException subclass",
-                     exception);
+        _PyErr_Format(tstate, PyExc_SystemError,
+                      "exception %R not a BaseException subclass",
+                      exception);
         return;
     }
 
@@ -106,7 +121,7 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 
             /* Issue #23571: functions must not be called with an
                exception set */
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
 
             fixed_value = _PyErr_CreateException(exception, value);
             Py_XDECREF(value);
@@ -141,7 +156,14 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     if (value != NULL && PyExceptionInstance_Check(value))
         tb = PyException_GetTraceback(value);
     Py_XINCREF(exception);
-    PyErr_Restore(exception, value, tb);
+    _PyErr_Restore(tstate, exception, value, tb);
+}
+
+void
+PyErr_SetObject(PyObject *exception, PyObject *value)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetObject(tstate, exception, value);
 }
 
 /* Set a key error with the specified argument, wrapping it in a
@@ -150,26 +172,45 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 void
 _PyErr_SetKeyError(PyObject *arg)
 {
-    PyObject *tup;
-    tup = PyTuple_Pack(1, arg);
-    if (!tup)
-        return; /* caller will expect error to be set anyway */
-    PyErr_SetObject(PyExc_KeyError, tup);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *tup = PyTuple_Pack(1, arg);
+    if (!tup) {
+        /* caller will expect error to be set anyway */
+        return;
+    }
+    _PyErr_SetObject(tstate, PyExc_KeyError, tup);
     Py_DECREF(tup);
 }
 
 void
+_PyErr_SetNone(PyThreadState *tstate, PyObject *exception)
+{
+    _PyErr_SetObject(tstate, exception, (PyObject *)NULL);
+}
+
+
+void
 PyErr_SetNone(PyObject *exception)
 {
-    PyErr_SetObject(exception, (PyObject *)NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetNone(tstate, exception);
+}
+
+
+void
+_PyErr_SetString(PyThreadState *tstate, PyObject *exception,
+                 const char *string)
+{
+    PyObject *value = PyUnicode_FromString(string);
+    _PyErr_SetObject(tstate, exception, value);
+    Py_XDECREF(value);
 }
 
 void
 PyErr_SetString(PyObject *exception, const char *string)
 {
-    PyObject *value = PyUnicode_FromString(string);
-    PyErr_SetObject(exception, value);
-    Py_XDECREF(value);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetString(tstate, exception, string);
 }
 
 
@@ -177,7 +218,7 @@ PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return tstate == NULL ? NULL : tstate->curexc_type;
+    return _PyErr_Occurred(tstate);
 }
 
 
@@ -214,9 +255,17 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
 
 
 int
+_PyErr_ExceptionMatches(PyThreadState *tstate, PyObject *exc)
+{
+    return PyErr_GivenExceptionMatches(_PyErr_Occurred(tstate), exc);
+}
+
+
+int
 PyErr_ExceptionMatches(PyObject *exc)
 {
-    return PyErr_GivenExceptionMatches(PyErr_Occurred(), exc);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_ExceptionMatches(tstate, exc);
 }
 
 
@@ -231,7 +280,8 @@ PyErr_ExceptionMatches(PyObject *exc)
             PyException_SetTraceback() with the resulting value and tb?
 */
 void
-PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+_PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
+                          PyObject **val, PyObject **tb)
 {
     int recursion_depth = 0;
     PyObject *type, *value, *initial_tb;
@@ -298,15 +348,16 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
     Py_DECREF(value);
     recursion_depth++;
     if (recursion_depth == Py_NORMALIZE_RECURSION_LIMIT) {
-        PyErr_SetString(PyExc_RecursionError, "maximum recursion depth "
-                        "exceeded while normalizing an exception");
+        _PyErr_SetString(tstate, PyExc_RecursionError,
+                         "maximum recursion depth exceeded "
+                         "while normalizing an exception");
     }
     /* If the new exception doesn't set a traceback and the old
        exception had a traceback, use the old traceback for the
        new exception.  It's better than nothing.
     */
     initial_tb = *tb;
-    PyErr_Fetch(exc, val, tb);
+    _PyErr_Fetch(tstate, exc, val, tb);
     assert(*exc != NULL);
     if (initial_tb != NULL) {
         if (*tb == NULL)
@@ -333,10 +384,17 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 
 
 void
-PyErr_Fetch(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_NormalizeException(tstate, exc, val, tb);
+}
 
+
+void
+_PyErr_Fetch(PyThreadState *tstate, PyObject **p_type, PyObject **p_value,
+             PyObject **p_traceback)
+{
     *p_type = tstate->curexc_type;
     *p_value = tstate->curexc_value;
     *p_traceback = tstate->curexc_traceback;
@@ -346,11 +404,29 @@ PyErr_Fetch(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
     tstate->curexc_traceback = NULL;
 }
 
+
+void
+PyErr_Fetch(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_Fetch(tstate, p_type, p_value, p_traceback);
+}
+
+
+void
+_PyErr_Clear(PyThreadState *tstate)
+{
+    _PyErr_Restore(tstate, NULL, NULL, NULL);
+}
+
+
 void
 PyErr_Clear(void)
 {
-    PyErr_Restore(NULL, NULL, NULL);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_Clear(tstate);
 }
+
 
 void
 PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
@@ -396,47 +472,49 @@ _PyErr_ChainExceptions(PyObject *exc, PyObject *val, PyObject *tb)
     if (exc == NULL)
         return;
 
-    if (PyErr_Occurred()) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyErr_Occurred(tstate)) {
         PyObject *exc2, *val2, *tb2;
-        PyErr_Fetch(&exc2, &val2, &tb2);
-        PyErr_NormalizeException(&exc, &val, &tb);
+        _PyErr_Fetch(tstate, &exc2, &val2, &tb2);
+        _PyErr_NormalizeException(tstate, &exc, &val, &tb);
         if (tb != NULL) {
             PyException_SetTraceback(val, tb);
             Py_DECREF(tb);
         }
         Py_DECREF(exc);
-        PyErr_NormalizeException(&exc2, &val2, &tb2);
+        _PyErr_NormalizeException(tstate, &exc2, &val2, &tb2);
         PyException_SetContext(val2, val);
-        PyErr_Restore(exc2, val2, tb2);
+        _PyErr_Restore(tstate, exc2, val2, tb2);
     }
     else {
-        PyErr_Restore(exc, val, tb);
+        _PyErr_Restore(tstate, exc, val, tb);
     }
 }
 
 static PyObject *
-_PyErr_FormatVFromCause(PyObject *exception, const char *format, va_list vargs)
+_PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
+                        const char *format, va_list vargs)
 {
     PyObject *exc, *val, *val2, *tb;
 
-    assert(PyErr_Occurred());
-    PyErr_Fetch(&exc, &val, &tb);
-    PyErr_NormalizeException(&exc, &val, &tb);
+    assert(_PyErr_Occurred(tstate));
+    _PyErr_Fetch(tstate, &exc, &val, &tb);
+    _PyErr_NormalizeException(tstate, &exc, &val, &tb);
     if (tb != NULL) {
         PyException_SetTraceback(val, tb);
         Py_DECREF(tb);
     }
     Py_DECREF(exc);
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 
-    PyErr_FormatV(exception, format, vargs);
+    _PyErr_FormatV(tstate, exception, format, vargs);
 
-    PyErr_Fetch(&exc, &val2, &tb);
-    PyErr_NormalizeException(&exc, &val2, &tb);
+    _PyErr_Fetch(tstate, &exc, &val2, &tb);
+    _PyErr_NormalizeException(tstate, &exc, &val2, &tb);
     Py_INCREF(val);
     PyException_SetCause(val2, val);
     PyException_SetContext(val2, val);
-    PyErr_Restore(exc, val2, tb);
+    _PyErr_Restore(tstate, exc, val2, tb);
 
     return NULL;
 }
@@ -444,13 +522,14 @@ _PyErr_FormatVFromCause(PyObject *exception, const char *format, va_list vargs)
 PyObject *
 _PyErr_FormatFromCause(PyObject *exception, const char *format, ...)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
 #else
     va_start(vargs);
 #endif
-    _PyErr_FormatVFromCause(exception, format, vargs);
+    _PyErr_FormatVFromCause(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
 }
@@ -460,21 +539,23 @@ _PyErr_FormatFromCause(PyObject *exception, const char *format, ...)
 int
 PyErr_BadArgument(void)
 {
-    PyErr_SetString(PyExc_TypeError,
-                    "bad argument type for built-in operation");
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetString(tstate, PyExc_TypeError,
+                     "bad argument type for built-in operation");
     return 0;
 }
 
 PyObject *
 PyErr_NoMemory(void)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     if (Py_TYPE(PyExc_MemoryError) == NULL) {
         /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
            initialized by _PyExc_Init() */
         Py_FatalError("Out of memory and PyExc_MemoryError is not "
                       "initialized yet");
     }
-    PyErr_SetNone(PyExc_MemoryError);
+    _PyErr_SetNone(tstate, PyExc_MemoryError);
     return NULL;
 }
 
@@ -487,6 +568,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 PyObject *
 PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, PyObject *filenameObject2)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *message;
     PyObject *v, *args;
     int i = errno;
@@ -572,7 +654,7 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
         v = PyObject_Call(exc, args, NULL);
         Py_DECREF(args);
         if (v != NULL) {
-            PyErr_SetObject((PyObject *) Py_TYPE(v), v);
+            _PyErr_SetObject(tstate, (PyObject *) Py_TYPE(v), v);
             Py_DECREF(v);
         }
     }
@@ -625,12 +707,17 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObjects(
     PyObject *filenameObject,
     PyObject *filenameObject2)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     int len;
     WCHAR *s_buf = NULL; /* Free via LocalFree */
     PyObject *message;
     PyObject *args, *v;
+
     DWORD err = (DWORD)ierr;
-    if (err==0) err = GetLastError();
+    if (err==0) {
+        err = GetLastError();
+    }
+
     len = FormatMessageW(
         /* Error API error */
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -675,7 +762,7 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObjects(
         v = PyObject_Call(exc, args, NULL);
         Py_DECREF(args);
         if (v != NULL) {
-            PyErr_SetObject((PyObject *) Py_TYPE(v), v);
+            _PyErr_SetObject(tstate, (PyObject *) Py_TYPE(v), v);
             Py_DECREF(v);
         }
     }
@@ -751,6 +838,7 @@ PyObject *
 PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
     PyObject *name, PyObject *path)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     int issubclass;
     PyObject *kwargs, *error;
 
@@ -759,12 +847,14 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
         return NULL;
     }
     else if (!issubclass) {
-        PyErr_SetString(PyExc_TypeError, "expected a subclass of ImportError");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "expected a subclass of ImportError");
         return NULL;
     }
 
     if (msg == NULL) {
-        PyErr_SetString(PyExc_TypeError, "expected a message argument");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "expected a message argument");
         return NULL;
     }
 
@@ -788,7 +878,7 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
 
     error = _PyObject_FastCallDict(exception, &msg, 1, kwargs);
     if (error != NULL) {
-        PyErr_SetObject((PyObject *)Py_TYPE(error), error);
+        _PyErr_SetObject(tstate, (PyObject *)Py_TYPE(error), error);
         Py_DECREF(error);
     }
 
@@ -806,9 +896,10 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 void
 _PyErr_BadInternalCall(const char *filename, int lineno)
 {
-    PyErr_Format(PyExc_SystemError,
-                 "%s:%d: bad argument to internal function",
-                 filename, lineno);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_Format(tstate, PyExc_SystemError,
+                  "%s:%d: bad argument to internal function",
+                  filename, lineno);
 }
 
 /* Remove the preprocessor macro for PyErr_BadInternalCall() so that we can
@@ -818,31 +909,42 @@ void
 PyErr_BadInternalCall(void)
 {
     assert(0 && "bad argument to internal function");
-    PyErr_Format(PyExc_SystemError,
-                 "bad argument to internal function");
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_SetString(tstate, PyExc_SystemError,
+                     "bad argument to internal function");
 }
 #define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
 
-PyObject *
-PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
+static PyObject *
+_PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
+               const char *format, va_list vargs)
 {
     PyObject* string;
 
     /* Issue #23571: PyUnicode_FromFormatV() must not be called with an
        exception set, it calls arbitrary Python code like PyObject_Repr() */
-    PyErr_Clear();
+    _PyErr_Clear(tstate);
 
     string = PyUnicode_FromFormatV(format, vargs);
 
-    PyErr_SetObject(exception, string);
+    _PyErr_SetObject(tstate, exception, string);
     Py_XDECREF(string);
     return NULL;
 }
 
 
 PyObject *
-PyErr_Format(PyObject *exception, const char *format, ...)
+PyErr_FormatV(PyObject *exception, const char *format, va_list vargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_FormatV(tstate, exception, format, vargs);
+}
+
+
+PyObject *
+_PyErr_Format(PyThreadState *tstate, PyObject *exception,
+              const char *format, ...)
 {
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
@@ -850,7 +952,23 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 #else
     va_start(vargs);
 #endif
-    PyErr_FormatV(exception, format, vargs);
+    _PyErr_FormatV(tstate, exception, format, vargs);
+    va_end(vargs);
+    return NULL;
+}
+
+
+PyObject *
+PyErr_Format(PyObject *exception, const char *format, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    _PyErr_FormatV(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
 }
@@ -859,28 +977,31 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 PyObject *
 PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     _Py_IDENTIFIER(__module__);
-    const char *dot;
     PyObject *modulename = NULL;
     PyObject *classname = NULL;
     PyObject *mydict = NULL;
     PyObject *bases = NULL;
     PyObject *result = NULL;
-    dot = strrchr(name, '.');
+
+    const char *dot = strrchr(name, '.');
     if (dot == NULL) {
-        PyErr_SetString(PyExc_SystemError,
-            "PyErr_NewException: name must be module.class");
+        _PyErr_SetString(tstate, PyExc_SystemError,
+                         "PyErr_NewException: name must be module.class");
         return NULL;
     }
-    if (base == NULL)
+    if (base == NULL) {
         base = PyExc_Exception;
+    }
     if (dict == NULL) {
         dict = mydict = PyDict_New();
         if (dict == NULL)
             goto failure;
     }
+
     if (_PyDict_GetItemIdWithError(dict, &PyId___module__) == NULL) {
-        if (PyErr_Occurred()) {
+        if (_PyErr_Occurred(tstate)) {
             goto failure;
         }
         modulename = PyUnicode_FromStringAndSize(name,
@@ -982,8 +1103,8 @@ _PyErr_Init(void)
 
 
 static PyObject *
-make_unraisable_hook_args(PyObject *exc_type, PyObject *exc_value,
-                          PyObject *exc_tb, PyObject *obj)
+make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
+                          PyObject *exc_value, PyObject *exc_tb, PyObject *obj)
 {
     PyObject *args = PyStructSequence_New(&UnraisableHookArgsType);
     if (args == NULL) {
@@ -1007,7 +1128,7 @@ make_unraisable_hook_args(PyObject *exc_type, PyObject *exc_value,
     ADD_ITEM(obj);
 #undef ADD_ITEM
 
-    if (PyErr_Occurred()) {
+    if (_PyErr_Occurred(tstate)) {
         Py_DECREF(args);
         return NULL;
     }
@@ -1022,8 +1143,9 @@ make_unraisable_hook_args(PyObject *exc_type, PyObject *exc_value,
 
    Do nothing if sys.stderr attribute doesn't exist or is set to None. */
 static int
-write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
-                          PyObject *exc_tb, PyObject *obj, PyObject *file)
+write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
+                          PyObject *exc_value, PyObject *exc_tb,
+                          PyObject *obj, PyObject *file)
 {
     if (obj != NULL && obj != Py_None) {
         if (PyFile_WriteString("Exception ignored in: ", file) < 0) {
@@ -1031,7 +1153,7 @@ write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
         }
 
         if (PyFile_WriteObject(obj, file, 0) < 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
             if (PyFile_WriteString("<object repr() failed>", file) < 0) {
                 return -1;
             }
@@ -1044,11 +1166,11 @@ write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
     if (exc_tb != NULL && exc_tb != Py_None) {
         if (PyTraceBack_Print(exc_tb, file) < 0) {
             /* continue even if writing the traceback failed */
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
     }
 
-    if (!exc_type) {
+    if (exc_type == NULL || exc_type == Py_None) {
         return -1;
     }
 
@@ -1064,7 +1186,7 @@ write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
     PyObject *moduleName = _PyObject_GetAttrId(exc_type, &PyId___module__);
     if (moduleName == NULL || !PyUnicode_Check(moduleName)) {
         Py_XDECREF(moduleName);
-        PyErr_Clear();
+        _PyErr_Clear(tstate);
         if (PyFile_WriteString("<unknown>", file) < 0) {
             return -1;
         }
@@ -1100,12 +1222,13 @@ write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
             return -1;
         }
         if (PyFile_WriteObject(exc_value, file, Py_PRINT_RAW) < 0) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
             if (PyFile_WriteString("<exception str() failed>", file) < 0) {
                 return -1;
             }
         }
     }
+
     if (PyFile_WriteString("\n", file) < 0) {
         return -1;
     }
@@ -1114,8 +1237,8 @@ write_unraisable_exc_file(PyObject *exc_type, PyObject *exc_value,
 
 
 static int
-write_unraisable_exc(PyObject *exc_type, PyObject *exc_value,
-                     PyObject *exc_tb, PyObject *obj)
+write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
+                     PyObject *exc_value, PyObject *exc_tb, PyObject *obj)
 {
     PyObject *file = _PySys_GetObjectId(&PyId_stderr);
     if (file == NULL || file == Py_None) {
@@ -1125,7 +1248,7 @@ write_unraisable_exc(PyObject *exc_type, PyObject *exc_value,
     /* Hold a strong reference to ensure that sys.stderr doesn't go away
        while we use it */
     Py_INCREF(file);
-    int res = write_unraisable_exc_file(exc_type, exc_value, exc_tb,
+    int res = write_unraisable_exc_file(tstate, exc_type, exc_value, exc_tb,
                                         obj, file);
     Py_DECREF(file);
 
@@ -1136,10 +1259,12 @@ write_unraisable_exc(PyObject *exc_type, PyObject *exc_value,
 PyObject*
 _PyErr_WriteUnraisableDefaultHook(PyObject *args)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     if (Py_TYPE(args) != &UnraisableHookArgsType) {
-        PyErr_SetString(PyExc_TypeError,
-                        "sys.unraisablehook argument type "
-                        "must be UnraisableHookArgs");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "sys.unraisablehook argument type "
+                         "must be UnraisableHookArgs");
         return NULL;
     }
 
@@ -1149,7 +1274,7 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
     PyObject *exc_tb = PyStructSequence_GET_ITEM(args, 2);
     PyObject *obj = PyStructSequence_GET_ITEM(args, 3);
 
-    if (write_unraisable_exc(exc_type, exc_value, exc_tb, obj) < 0) {
+    if (write_unraisable_exc(tstate, exc_type, exc_value, exc_tb, obj) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1166,9 +1291,11 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
-    PyObject *exc_type, *exc_value, *exc_tb;
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
 
-    PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+    PyObject *exc_type, *exc_value, *exc_tb;
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
     assert(exc_type != NULL);
 
@@ -1177,12 +1304,31 @@ PyErr_WriteUnraisable(PyObject *obj)
         goto default_hook;
     }
 
+    if (exc_tb == NULL) {
+        struct _frame *frame = tstate->frame;
+        if (frame != NULL) {
+            exc_tb = _PyTraceBack_FromFrame(NULL, frame);
+            if (exc_tb == NULL) {
+                _PyErr_Clear(tstate);
+            }
+        }
+    }
+
+    _PyErr_NormalizeException(tstate, &exc_type, &exc_value, &exc_tb);
+
+    if (exc_tb != NULL && exc_tb != Py_None && PyTraceBack_Check(exc_tb)) {
+        if (PyException_SetTraceback(exc_value, exc_tb) < 0) {
+            _PyErr_Clear(tstate);
+        }
+    }
+
     _Py_IDENTIFIER(unraisablehook);
     PyObject *hook = _PySys_GetObjectId(&PyId_unraisablehook);
     if (hook != NULL && hook != Py_None) {
         PyObject *hook_args;
 
-        hook_args = make_unraisable_hook_args(exc_type, exc_value, exc_tb, obj);
+        hook_args = make_unraisable_hook_args(tstate, exc_type, exc_value,
+                                              exc_tb, obj);
         if (hook_args != NULL) {
             PyObject *args[1] = {hook_args};
             PyObject *res = _PyObject_FastCall(hook, args, 1);
@@ -1197,20 +1343,20 @@ PyErr_WriteUnraisable(PyObject *obj)
         Py_XDECREF(exc_type);
         Py_XDECREF(exc_value);
         Py_XDECREF(exc_tb);
-        PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
+        _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
         obj = hook;
     }
 
 default_hook:
     /* Call the default unraisable hook (ignore failure) */
-    (void)write_unraisable_exc(exc_type, exc_value, exc_tb, obj);
+    (void)write_unraisable_exc(tstate, exc_type, exc_value, exc_tb, obj);
 
 done:
     Py_XDECREF(exc_type);
     Py_XDECREF(exc_value);
     Py_XDECREF(exc_tb);
-    PyErr_Clear(); /* Just in case */
+    _PyErr_Clear(tstate); /* Just in case */
 }
 
 extern PyObject *PyModule_GetWarningsModule(void);
@@ -1237,37 +1383,43 @@ PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
     _Py_IDENTIFIER(offset);
     _Py_IDENTIFIER(print_file_and_line);
     _Py_IDENTIFIER(text);
+    PyThreadState *tstate = _PyThreadState_GET();
 
     /* add attributes for the line number and filename for the error */
-    PyErr_Fetch(&exc, &v, &tb);
-    PyErr_NormalizeException(&exc, &v, &tb);
+    _PyErr_Fetch(tstate, &exc, &v, &tb);
+    _PyErr_NormalizeException(tstate, &exc, &v, &tb);
     /* XXX check that it is, indeed, a syntax error. It might not
      * be, though. */
     tmp = PyLong_FromLong(lineno);
     if (tmp == NULL)
-        PyErr_Clear();
+        _PyErr_Clear(tstate);
     else {
-        if (_PyObject_SetAttrId(v, &PyId_lineno, tmp))
-            PyErr_Clear();
+        if (_PyObject_SetAttrId(v, &PyId_lineno, tmp)) {
+            _PyErr_Clear(tstate);
+        }
         Py_DECREF(tmp);
     }
     tmp = NULL;
     if (col_offset >= 0) {
         tmp = PyLong_FromLong(col_offset);
-        if (tmp == NULL)
-            PyErr_Clear();
+        if (tmp == NULL) {
+            _PyErr_Clear(tstate);
+        }
     }
-    if (_PyObject_SetAttrId(v, &PyId_offset, tmp ? tmp : Py_None))
-        PyErr_Clear();
+    if (_PyObject_SetAttrId(v, &PyId_offset, tmp ? tmp : Py_None)) {
+        _PyErr_Clear(tstate);
+    }
     Py_XDECREF(tmp);
     if (filename != NULL) {
-        if (_PyObject_SetAttrId(v, &PyId_filename, filename))
-            PyErr_Clear();
+        if (_PyObject_SetAttrId(v, &PyId_filename, filename)) {
+            _PyErr_Clear(tstate);
+        }
 
         tmp = PyErr_ProgramTextObject(filename, lineno);
         if (tmp) {
-            if (_PyObject_SetAttrId(v, &PyId_text, tmp))
-                PyErr_Clear();
+            if (_PyObject_SetAttrId(v, &PyId_text, tmp)) {
+                _PyErr_Clear(tstate);
+            }
             Py_DECREF(tmp);
         }
     }
@@ -1275,33 +1427,39 @@ PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
         if (!_PyObject_HasAttrId(v, &PyId_msg)) {
             tmp = PyObject_Str(v);
             if (tmp) {
-                if (_PyObject_SetAttrId(v, &PyId_msg, tmp))
-                    PyErr_Clear();
+                if (_PyObject_SetAttrId(v, &PyId_msg, tmp)) {
+                    _PyErr_Clear(tstate);
+                }
                 Py_DECREF(tmp);
-            } else {
-                PyErr_Clear();
+            }
+            else {
+                _PyErr_Clear(tstate);
             }
         }
         if (!_PyObject_HasAttrId(v, &PyId_print_file_and_line)) {
             if (_PyObject_SetAttrId(v, &PyId_print_file_and_line,
-                                    Py_None))
-                PyErr_Clear();
+                                    Py_None)) {
+                _PyErr_Clear(tstate);
+            }
         }
     }
-    PyErr_Restore(exc, v, tb);
+    _PyErr_Restore(tstate, exc, v, tb);
 }
 
 void
 PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *fileobj;
     if (filename != NULL) {
         fileobj = PyUnicode_DecodeFSDefault(filename);
-        if (fileobj == NULL)
-            PyErr_Clear();
+        if (fileobj == NULL) {
+            _PyErr_Clear(tstate);
+        }
     }
-    else
+    else {
         fileobj = NULL;
+    }
     PyErr_SyntaxLocationObject(fileobj, lineno, col_offset);
     Py_XDECREF(fileobj);
 }
@@ -1313,7 +1471,7 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
    functionality in tb_displayline() in traceback.c. */
 
 static PyObject *
-err_programtext(FILE *fp, int lineno)
+err_programtext(PyThreadState *tstate, FILE *fp, int lineno)
 {
     int i;
     char linebuf[1000];
@@ -1339,7 +1497,7 @@ err_programtext(FILE *fp, int lineno)
         PyObject *res;
         res = PyUnicode_FromString(linebuf);
         if (res == NULL)
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         return res;
     }
     return NULL;
@@ -1349,24 +1507,28 @@ PyObject *
 PyErr_ProgramText(const char *filename, int lineno)
 {
     FILE *fp;
-    if (filename == NULL || *filename == '\0' || lineno <= 0)
+    if (filename == NULL || *filename == '\0' || lineno <= 0) {
         return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
     fp = _Py_fopen(filename, "r" PY_STDIOTEXTMODE);
-    return err_programtext(fp, lineno);
+    return err_programtext(tstate, fp, lineno);
 }
 
 PyObject *
 PyErr_ProgramTextObject(PyObject *filename, int lineno)
 {
-    FILE *fp;
-    if (filename == NULL || lineno <= 0)
-        return NULL;
-    fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
-    if (fp == NULL) {
-        PyErr_Clear();
+    if (filename == NULL || lineno <= 0) {
         return NULL;
     }
-    return err_programtext(fp, lineno);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    FILE *fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
+    if (fp == NULL) {
+        _PyErr_Clear(tstate);
+        return NULL;
+    }
+    return err_programtext(tstate, fp, lineno);
 }
 
 #ifdef __cplusplus
