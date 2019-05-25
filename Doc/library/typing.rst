@@ -960,7 +960,7 @@ The module defines the following classes, functions and decorators:
       class Other(Leaf):  # Error reported by type checker
           ...
 
-    There is no runtime checking of these properties.
+   There is no runtime checking of these properties.
 
    .. versionadded:: 3.8
 
@@ -1142,7 +1142,7 @@ The module defines the following classes, functions and decorators:
       class FastConnector(Connection):
           TIMEOUT = 1  # Error reported by type checker
 
-    There is no runtime checking of these properties.
+   There is no runtime checking of these properties.
 
    .. versionadded:: 3.8
 
