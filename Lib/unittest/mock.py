@@ -1256,7 +1256,7 @@ class _patch(object):
 
 
     def decorate_async_callable(self, func):
-        # NB. Keep the method in sync with decorate_callable
+        # NB. Keep the method in sync with decorate_callable()
         if hasattr(func, 'patchings'):
             func.patchings.append(self)
             return func
