@@ -2525,7 +2525,6 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                  name=_name, **_kwargs)
 
     if isinstance(spec, FunctionTypes):
-        wrapped_mock = mock
         # should only happen at the top level because we don't
         # recurse for functions
         mock = _set_signature(mock, spec)
