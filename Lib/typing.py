@@ -353,6 +353,10 @@ class _SpecialForm(_Final, _Immutable, _root=True):
         if self._name == 'Optional':
             arg = _type_check(parameters, "Optional[t] requires a single type.")
             return Union[arg, type(None)]
+        if self._name == 'Literal':
+            # There is no '_type_check' call because arguments to Literal[...] are
+            # values, not types.
+            return _GenericAlias(self, parameters)
         raise TypeError(f"{self} is not subscriptable")
 
 
@@ -429,6 +433,22 @@ Optional = _SpecialForm('Optional', doc=
     """Optional type.
 
     Optional[X] is equivalent to Union[X, None].
+    """)
+
+Literal = _SpecialForm('Literal', doc=
+    """Special typing form to define literal types (a.k.a. value types).
+
+    This type constructor can be used to indicate to type checkers that
+    the corresponding variable has a value literally equivalent to the
+    provided parameter. For example:
+
+      var: Literal[4] = 4
+
+    The type checker understands that 'var' is literally equal to the
+    value 4 and no other value.
+
+    Literal[...] cannot be subclassed. There is no runtime checking
+    verifying that the parameter is actually a value instead of a type.
     """)
 
 
