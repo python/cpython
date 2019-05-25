@@ -3,18 +3,23 @@ import copyreg
 import dbm
 import io
 import functools
+import os
+import math
 import pickle
 import pickletools
+import shutil
 import struct
 import sys
+import threading
 import unittest
 import weakref
+from textwrap import dedent
 from http.cookies import SimpleCookie
 
 from test import support
 from test.support import (
     TestFailed, TESTFN, run_with_locale, no_tracing,
-    _2G, _4G, bigmemtest,
+    _2G, _4G, bigmemtest, reap_threads, forget,
     )
 
 from pickle import bytes_types
@@ -1174,6 +1179,67 @@ class AbstractUnpickleTests(unittest.TestCase):
         for p in badpickles:
             self.check_unpickling_error(self.truncated_errors, p)
 
+    @reap_threads
+    def test_unpickle_module_race(self):
+        # https://bugs.python.org/issue34572
+        locker_module = dedent("""
+        import threading
+        barrier = threading.Barrier(2)
+        """)
+        locking_import_module = dedent("""
+        import locker
+        locker.barrier.wait()
+        class ToBeUnpickled(object):
+            pass
+        """)
+
+        os.mkdir(TESTFN)
+        self.addCleanup(shutil.rmtree, TESTFN)
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        with open(os.path.join(TESTFN, "locker.py"), "wb") as f:
+            f.write(locker_module.encode('utf-8'))
+        with open(os.path.join(TESTFN, "locking_import.py"), "wb") as f:
+            f.write(locking_import_module.encode('utf-8'))
+        self.addCleanup(forget, "locker")
+        self.addCleanup(forget, "locking_import")
+
+        import locker
+
+        pickle_bytes = (
+            b'\x80\x03clocking_import\nToBeUnpickled\nq\x00)\x81q\x01.')
+
+        # Then try to unpickle two of these simultaneously
+        # One of them will cause the module import, and we want it to block
+        # until the other one either:
+        #   - fails (before the patch for this issue)
+        #   - blocks on the import lock for the module, as it should
+        results = []
+        barrier = threading.Barrier(3)
+        def t():
+            # This ensures the threads have all started
+            # presumably barrier release is faster than thread startup
+            barrier.wait()
+            results.append(pickle.loads(pickle_bytes))
+
+        t1 = threading.Thread(target=t)
+        t2 = threading.Thread(target=t)
+        t1.start()
+        t2.start()
+
+        barrier.wait()
+        # could have delay here
+        locker.barrier.wait()
+
+        t1.join()
+        t2.join()
+
+        from locking_import import ToBeUnpickled
+        self.assertEqual(
+            [type(x) for x in results],
+            [ToBeUnpickled] * 2)
+
+
 
 class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads.
@@ -1503,11 +1569,10 @@ class AbstractPickleTests(unittest.TestCase):
             s = self.dumps(t, proto)
             u = self.loads(s)
             self.assert_is_copy(t, u)
-            if hasattr(os, "stat"):
-                t = os.stat(os.curdir)
-                s = self.dumps(t, proto)
-                u = self.loads(s)
-                self.assert_is_copy(t, u)
+            t = os.stat(os.curdir)
+            s = self.dumps(t, proto)
+            u = self.loads(s)
+            self.assert_is_copy(t, u)
             if hasattr(os, "statvfs"):
                 t = os.statvfs(os.curdir)
                 s = self.dumps(t, proto)
@@ -2158,7 +2223,7 @@ class AbstractPickleTests(unittest.TestCase):
 
         frame_size = self.FRAME_SIZE_TARGET
         num_frames = 20
-        # Large byte objects (dict values) intermitted with small objects
+        # Large byte objects (dict values) intermittent with small objects
         # (dict keys)
         obj = {i: bytes([i]) * frame_size for i in range(num_frames)}
 
@@ -2928,7 +2993,93 @@ class AAA(object):
         return str, (REDUCE_A,)
 
 class BBB(object):
-    pass
+    def __init__(self):
+        # Add an instance attribute to enable state-saving routines at pickling
+        # time.
+        self.a = "some attribute"
+
+    def __setstate__(self, state):
+        self.a = "BBB.__setstate__"
+
+
+def setstate_bbb(obj, state):
+    """Custom state setter for BBB objects
+
+    Such callable may be created by other persons than the ones who created the
+    BBB class. If passed as the state_setter item of a custom reducer, this
+    allows for custom state setting behavior of BBB objects. One can think of
+    it as the analogous of list_setitems or dict_setitems but for foreign
+    classes/functions.
+    """
+    obj.a = "custom state_setter"
+
+
+
+class AbstractCustomPicklerClass:
+    """Pickler implementing a reducing hook using reducer_override."""
+    def reducer_override(self, obj):
+        obj_name = getattr(obj, "__name__", None)
+
+        if obj_name == 'f':
+            # asking the pickler to save f as 5
+            return int, (5, )
+
+        if obj_name == 'MyClass':
+            return str, ('some str',)
+
+        elif obj_name == 'g':
+            # in this case, the callback returns an invalid result (not a 2-5
+            # tuple or a string), the pickler should raise a proper error.
+            return False
+
+        elif obj_name == 'h':
+            # Simulate a case when the reducer fails. The error should
+            # be propagated to the original ``dump`` call.
+            raise ValueError('The reducer just failed')
+
+        return NotImplemented
+
+class AbstractHookTests(unittest.TestCase):
+    def test_pickler_hook(self):
+        # test the ability of a custom, user-defined CPickler subclass to
+        # override the default reducing routines of any type using the method
+        # reducer_override
+
+        def f():
+            pass
+
+        def g():
+            pass
+
+        def h():
+            pass
+
+        class MyClass:
+            pass
+
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                bio = io.BytesIO()
+                p = self.pickler_class(bio, proto)
+
+                p.dump([f, MyClass, math.log])
+                new_f, some_str, math_log = pickle.loads(bio.getvalue())
+
+                self.assertEqual(new_f, 5)
+                self.assertEqual(some_str, 'some str')
+                # math.log does not have its usual reducer overriden, so the
+                # custom reduction callback should silently direct the pickler
+                # to the default pickling by attribute, by returning
+                # NotImplemented
+                self.assertIs(math_log, math.log)
+
+                with self.assertRaises(pickle.PicklingError):
+                    p.dump(g)
+
+                with self.assertRaisesRegex(
+                        ValueError, 'The reducer just failed'):
+                    p.dump(h)
+
 
 class AbstractDispatchTableTests(unittest.TestCase):
 
@@ -3016,6 +3167,25 @@ class AbstractDispatchTableTests(unittest.TestCase):
         self.assertIsInstance(custom_load_dump(b), BBB)
         self.assertEqual(default_load_dump(a), REDUCE_A)
         self.assertIsInstance(default_load_dump(b), BBB)
+
+        # End-to-end testing of save_reduce with the state_setter keyword
+        # argument. This is a dispatch_table test as the primary goal of
+        # state_setter is to tweak objects reduction behavior.
+        # In particular, state_setter is useful when the default __setstate__
+        # behavior is not flexible enough.
+
+        # No custom reducer for b has been registered for now, so
+        # BBB.__setstate__ should be used at unpickling time
+        self.assertEqual(default_load_dump(b).a, "BBB.__setstate__")
+
+        def reduce_bbb(obj):
+            return BBB, (), obj.__dict__, None, None, setstate_bbb
+
+        dispatch_table[BBB] = reduce_bbb
+
+        # The custom reducer reduce_bbb includes a state setter, that should
+        # have priority over BBB.__setstate__
+        self.assertEqual(custom_load_dump(b).a, "custom state_setter")
 
 
 if __name__ == "__main__":

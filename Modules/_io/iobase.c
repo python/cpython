@@ -10,6 +10,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -285,10 +286,22 @@ iobase_finalize(PyObject *self)
         /* Silencing I/O errors is bad, but printing spurious tracebacks is
            equally as bad, and potentially more frequent (because of
            shutdown issues). */
-        if (res == NULL)
-            PyErr_Clear();
-        else
+        if (res == NULL) {
+#ifndef Py_DEBUG
+            const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+            if (config->dev_mode) {
+                PyErr_WriteUnraisable(self);
+            }
+            else {
+                PyErr_Clear();
+            }
+#else
+            PyErr_WriteUnraisable(self);
+#endif
+        }
+        else {
             Py_DECREF(res);
+        }
     }
 
     /* Restore the saved exception. */
@@ -738,11 +751,16 @@ _io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
 _io._IOBase.writelines
     lines: object
     /
+
+Write a list of lines to stream.
+
+Line separators are not added, so it is usual for each of the
+lines provided to have a line separator at the end.
 [clinic start generated code]*/
 
 static PyObject *
 _io__IOBase_writelines(PyObject *self, PyObject *lines)
-/*[clinic end generated code: output=976eb0a9b60a6628 input=432e729a8450b3cb]*/
+/*[clinic end generated code: output=976eb0a9b60a6628 input=cac3fc8864183359]*/
 {
     PyObject *iter, *res;
 

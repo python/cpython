@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _veryhigh:
@@ -108,6 +108,10 @@ the same library that the Python runtime is using.
    the file, it is decoded from the filesystem encoding
    (:func:`sys.getfilesystemencoding`).  If *closeit* is true, the file is
    closed before PyRun_SimpleFileExFlags returns.
+
+   .. note::
+      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``.
+      Otherwise, Python may not handle script file with LF line ending correctly.
 
 
 .. c:function:: int PyRun_InteractiveOne(FILE *fp, const char *filename)

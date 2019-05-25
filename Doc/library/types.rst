@@ -8,7 +8,7 @@
 
 --------------
 
-This module defines utility function to assist in dynamic creation of
+This module defines utility functions to assist in dynamic creation of
 new types.
 
 It also defines names for some object types that are used by the standard
@@ -134,6 +134,14 @@ Standard names are defined for the following types:
    .. index:: builtin: compile
 
    The type for code objects such as returned by :func:`compile`.
+
+
+.. data:: CellType
+
+   The type for cell objects: such objects are used as containers for
+   a function's free variables.
+
+   .. versionadded:: 3.8
 
 
 .. data:: MethodType

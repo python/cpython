@@ -141,12 +141,11 @@ _editor_window_spec = {
            "Best to close editor first."
     }
 
-# Update once issue21519 is resolved.
 GetKeysDialog_spec = {
     'file': 'config_key',
     'kwds': {'title': 'Test keybindings',
              'action': 'find-again',
-             'currentKeySequences': [''] ,
+             'current_key_sequences': [['<Control-Key-g>', '<Key-F3>', '<Control-Key-G>']],
              '_htest': True,
              },
     'msg': "Test for different key modifier sequences.\n"

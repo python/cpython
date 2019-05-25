@@ -186,7 +186,7 @@ previous simple module-based configuration example::
     # 'application' code
     logger.debug('debug message')
     logger.info('info message')
-    logger.warn('warn message')
+    logger.warning('warn message')
     logger.error('error message')
     logger.critical('critical message')
 
@@ -295,7 +295,7 @@ Here is an example of a module using the logging configuration server::
         while True:
             logger.debug('debug message')
             logger.info('info message')
-            logger.warn('warn message')
+            logger.warning('warn message')
             logger.error('error message')
             logger.critical('critical message')
             time.sleep(5)

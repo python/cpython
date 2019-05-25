@@ -146,6 +146,7 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.isfunction, 'mod.spam')
         self.istest(inspect.isfunction, 'mod.StupidGit.abuse')
         self.istest(inspect.ismethod, 'git.argue')
+        self.istest(inspect.ismethod, 'mod.custom_method')
         self.istest(inspect.ismodule, 'mod')
         self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         self.istest(inspect.isgenerator, '(x for x in range(2))')
@@ -375,6 +376,11 @@ class GetSourceBase(unittest.TestCase):
         self.assertEqual(inspect.getsource(obj),
                          self.sourcerange(top, bottom))
 
+class SlotUser:
+    'Docstrings for __slots__'
+    __slots__ = {'power': 'measured in kilowatts',
+                 'distance': 'measured in kilometers'}
+
 class TestRetrievingSourceCode(GetSourceBase):
     fodderModule = mod
 
@@ -429,6 +435,10 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'A longer,\n\nindented\n\ndocstring.')
         self.assertEqual(inspect.getdoc(git.abuse),
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
+        self.assertEqual(inspect.getdoc(SlotUser.power),
+                         'measured in kilowatts')
+        self.assertEqual(inspect.getdoc(SlotUser.distance),
+                         'measured in kilometers')
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -740,20 +750,19 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def assertArgSpecEquals(self, routine, args_e, varargs_e=None,
                             varkw_e=None, defaults_e=None, formatted=None):
-        with self.assertWarns(DeprecationWarning):
-            args, varargs, varkw, defaults = inspect.getargspec(routine)
+        args, varargs, varkw, defaults = inspect.getargspec(routine)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
         self.assertEqual(defaults, defaults_e)
         if formatted is not None:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
-                                 formatted)
+            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
+                             formatted)
 
     def assertFullArgSpecEquals(self, routine, args_e, varargs_e=None,
                                     varkw_e=None, defaults_e=None,
-                                    kwonlyargs_e=[], kwonlydefaults_e=None,
+                                    posonlyargs_e=[], kwonlyargs_e=[],
+                                    kwonlydefaults_e=None,
                                     ann_e={}, formatted=None):
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
             inspect.getfullargspec(routine)
@@ -765,9 +774,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(kwonlydefaults, kwonlydefaults_e)
         self.assertEqual(ann, ann_e)
         if formatted is not None:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
-                                                       kwonlyargs, kwonlydefaults, ann),
+            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
+                                                   kwonlyargs, kwonlydefaults, ann),
                              formatted)
 
     def test_getargspec(self):
@@ -799,6 +807,23 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertFullArgSpecEquals(mod2.keyword_only_arg, [],
                                      kwonlyargs_e=['arg'],
                                      formatted='(*, arg)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers, ['a', 'b', 'c', 'd'],
+                                     kwonlyargs_e=['e', 'f'],
+                                     formatted='(a, b, c, d, *, e, f)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers_with_args_and_kwargs,
+                                     ['a', 'b', 'c', 'd'],
+                                     varargs_e='args',
+                                     varkw_e='kwargs',
+                                     kwonlyargs_e=['e', 'f'],
+                                     formatted='(a, b, c, d, *args, e, f, **kwargs)')
+
+        self.assertFullArgSpecEquals(mod2.all_markers_with_defaults, ['a', 'b', 'c', 'd'],
+                                     defaults_e=(1,2,3),
+                                     kwonlyargs_e=['e', 'f'],
+                                     kwonlydefaults_e={'e': 4, 'f': 5},
+                                     formatted='(a, b=1, c=2, d=3, *, e=4, f=5)')
 
     def test_argspec_api_ignores_wrapped(self):
         # Issue 20684: low level introspection API must ignore __wrapped__
@@ -846,7 +871,7 @@ class TestClassesAndFunctions(unittest.TestCase):
         spam_param = inspect.Parameter('spam', inspect.Parameter.POSITIONAL_ONLY)
         test.__signature__ = inspect.Signature(parameters=(spam_param,))
 
-        self.assertFullArgSpecEquals(test, args_e=['spam'], formatted='(spam)')
+        self.assertFullArgSpecEquals(test, ['spam'], formatted='(spam)')
 
     def test_getfullargspec_signature_annos(self):
         def test(a:'spam') -> 'ham': pass
@@ -860,11 +885,11 @@ class TestClassesAndFunctions(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_methods(self):
-        self.assertFullArgSpecEquals(_pickle.Pickler.dump,
-                                     args_e=['self', 'obj'], formatted='(self, obj)')
+        self.assertFullArgSpecEquals(_pickle.Pickler.dump, ['self', 'obj'],
+                                     formatted='(self, obj)')
 
-        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump,
-                                     args_e=['self', 'obj'], formatted='(self, obj)')
+        self.assertFullArgSpecEquals(_pickle.Pickler(io.BytesIO()).dump, ['self', 'obj'],
+                                     formatted='(self, obj)')
 
         self.assertFullArgSpecEquals(
              os.stat,
@@ -3742,6 +3767,17 @@ class TestSignatureDefinitions(unittest.TestCase):
         for name in no_signature:
             with self.subTest(builtin=name):
                 self.assertIsNone(obj.__text_signature__)
+
+    def test_python_function_override_signature(self):
+        def func(*args, **kwargs):
+            pass
+        func.__text_signature__ = '($self, a, b=1, *args, c, d=2, **kwargs)'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, a, b=1, *args, c, d=2, **kwargs)')
+        func.__text_signature__ = '($self, a, b=1, /, *args, c, d=2, **kwargs)'
+        sig = inspect.signature(func)
+        self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
 
 
 class NTimesUnwrappable:

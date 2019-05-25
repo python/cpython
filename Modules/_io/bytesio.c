@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"       /* for offsetof() */
 #include "_iomodule.h"
 
@@ -201,7 +202,7 @@ write_bytes(bytesio *self, const char *bytes, Py_ssize_t len)
 }
 
 static PyObject *
-bytesio_get_closed(bytesio *self)
+bytesio_get_closed(bytesio *self, void *Py_UNUSED(ignored))
 {
     if (self->buf == NULL) {
         Py_RETURN_TRUE;

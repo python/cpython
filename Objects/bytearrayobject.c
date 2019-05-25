@@ -2,6 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 #include "structmember.h"
@@ -15,17 +16,6 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5535b77c37a119e0]*/
 
 char _PyByteArray_empty_string[] = "";
-
-void
-PyByteArray_Fini(void)
-{
-}
-
-int
-PyByteArray_Init(void)
-{
-    return 1;
-}
 
 /* end nullbytes support */
 
@@ -420,7 +410,8 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
         return PyLong_FromLong((unsigned char)(PyByteArray_AS_STRING(self)[i]));
     }
     else if (PySlice_Check(index)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         if (PySlice_Unpack(index, &start, &stop, &step) < 0) {
             return NULL;
         }
@@ -1008,7 +999,8 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-    if (Py_BytesWarningFlag) {
+    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    if (config->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytearray instance", 1)) {
                 return NULL;
@@ -1033,7 +1025,8 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
     if (rc < 0)
         return NULL;
     if (rc) {
-        if (Py_BytesWarningFlag && (op == Py_EQ || op == Py_NE)) {
+        _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+        if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
                             "Comparison between bytearray and string", 1))
                 return NULL;
@@ -2357,11 +2350,12 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
     }
 }
 

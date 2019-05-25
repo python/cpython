@@ -260,6 +260,7 @@ Py_LOCAL_INLINE(PyObject *)
 STRINGLIB(utf8_encoder)(PyObject *unicode,
                         STRINGLIB_CHAR *data,
                         Py_ssize_t size,
+                        _Py_error_handler error_handler,
                         const char *errors)
 {
     Py_ssize_t i;                /* index into data of next input character */
@@ -268,7 +269,6 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
     PyObject *rep = NULL;
-    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 #endif
 #if STRINGLIB_SIZEOF_CHAR == 1
     const Py_ssize_t max_char_size = 2;

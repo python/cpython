@@ -8,6 +8,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -673,8 +674,8 @@ typedef struct
     */
     PyObject *decoded_chars;       /* buffer for text returned from decoder */
     Py_ssize_t decoded_chars_used; /* offset into _decoded_chars for read() */
-    PyObject *pending_bytes;       /* list of bytes objects waiting to be
-                                      written, or NULL */
+    PyObject *pending_bytes;       // data waiting to be written.
+                                   // ascii unicode, bytes, or list of them.
     Py_ssize_t pending_bytes_count;
 
     /* snapshot is either NULL, or a tuple (dec_flags, next_input) where
@@ -774,6 +775,15 @@ static PyObject *
 latin1_encode(textio *self, PyObject *text)
 {
     return _PyUnicode_AsLatin1String(text, PyUnicode_AsUTF8(self->errors));
+}
+
+// Return true when encoding can be skipped when text is ascii.
+static inline int
+is_asciicompat_encoding(encodefunc_t f)
+{
+    return f == (encodefunc_t) ascii_encode
+        || f == (encodefunc_t) latin1_encode
+        || f == (encodefunc_t) utf8_encode;
 }
 
 /* Map normalized encoding names onto the specialized encoding funcs */
@@ -1488,21 +1498,62 @@ _io_TextIOWrapper_detach_impl(textio *self)
 static int
 _textiowrapper_writeflush(textio *self)
 {
-    PyObject *pending, *b, *ret;
-
     if (self->pending_bytes == NULL)
         return 0;
 
-    pending = self->pending_bytes;
-    Py_INCREF(pending);
-    self->pending_bytes_count = 0;
-    Py_CLEAR(self->pending_bytes);
+    PyObject *pending = self->pending_bytes;
+    PyObject *b;
 
-    b = _PyBytes_Join(_PyIO_empty_bytes, pending);
+    if (PyBytes_Check(pending)) {
+        b = pending;
+        Py_INCREF(b);
+    }
+    else if (PyUnicode_Check(pending)) {
+        assert(PyUnicode_IS_ASCII(pending));
+        assert(PyUnicode_GET_LENGTH(pending) == self->pending_bytes_count);
+        b = PyBytes_FromStringAndSize(
+                PyUnicode_DATA(pending), PyUnicode_GET_LENGTH(pending));
+        if (b == NULL) {
+            return -1;
+        }
+    }
+    else {
+        assert(PyList_Check(pending));
+        b = PyBytes_FromStringAndSize(NULL, self->pending_bytes_count);
+        if (b == NULL) {
+            return -1;
+        }
+
+        char *buf = PyBytes_AsString(b);
+        Py_ssize_t pos = 0;
+
+        for (Py_ssize_t i = 0; i < PyList_GET_SIZE(pending); i++) {
+            PyObject *obj = PyList_GET_ITEM(pending, i);
+            char *src;
+            Py_ssize_t len;
+            if (PyUnicode_Check(obj)) {
+                assert(PyUnicode_IS_ASCII(obj));
+                src = PyUnicode_DATA(obj);
+                len = PyUnicode_GET_LENGTH(obj);
+            }
+            else {
+                assert(PyBytes_Check(obj));
+                if (PyBytes_AsStringAndSize(obj, &src, &len) < 0) {
+                    Py_DECREF(b);
+                    return -1;
+                }
+            }
+            memcpy(buf + pos, src, len);
+            pos += len;
+        }
+        assert(pos == self->pending_bytes_count);
+    }
+
+    self->pending_bytes_count = 0;
+    self->pending_bytes = NULL;
     Py_DECREF(pending);
-    if (b == NULL)
-        return -1;
-    ret = NULL;
+
+    PyObject *ret;
     do {
         ret = PyObject_CallMethodObjArgs(self->buffer,
                                          _PyIO_str_write, b, NULL);
@@ -1565,16 +1616,23 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
 
     /* XXX What if we were just reading? */
     if (self->encodefunc != NULL) {
-        b = (*self->encodefunc)((PyObject *) self, text);
+        if (PyUnicode_IS_ASCII(text) && is_asciicompat_encoding(self->encodefunc)) {
+            b = text;
+            Py_INCREF(b);
+        }
+        else {
+            b = (*self->encodefunc)((PyObject *) self, text);
+        }
         self->encoding_start_of_stream = 0;
     }
     else
         b = PyObject_CallMethodObjArgs(self->encoder,
                                        _PyIO_str_encode, text, NULL);
+
     Py_DECREF(text);
     if (b == NULL)
         return NULL;
-    if (!PyBytes_Check(b)) {
+    if (b != text && !PyBytes_Check(b)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder should return a bytes object, not '%.200s'",
                      Py_TYPE(b)->tp_name);
@@ -1582,20 +1640,37 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         return NULL;
     }
 
+    Py_ssize_t bytes_len;
+    if (b == text) {
+        bytes_len = PyUnicode_GET_LENGTH(b);
+    }
+    else {
+        bytes_len = PyBytes_GET_SIZE(b);
+    }
+
     if (self->pending_bytes == NULL) {
-        self->pending_bytes = PyList_New(0);
-        if (self->pending_bytes == NULL) {
+        self->pending_bytes_count = 0;
+        self->pending_bytes = b;
+    }
+    else if (!PyList_CheckExact(self->pending_bytes)) {
+        PyObject *list = PyList_New(2);
+        if (list == NULL) {
             Py_DECREF(b);
             return NULL;
         }
-        self->pending_bytes_count = 0;
+        PyList_SET_ITEM(list, 0, self->pending_bytes);
+        PyList_SET_ITEM(list, 1, b);
+        self->pending_bytes = list;
     }
-    if (PyList_Append(self->pending_bytes, b) < 0) {
+    else {
+        if (PyList_Append(self->pending_bytes, b) < 0) {
+            Py_DECREF(b);
+            return NULL;
+        }
         Py_DECREF(b);
-        return NULL;
     }
-    self->pending_bytes_count += PyBytes_GET_SIZE(b);
-    Py_DECREF(b);
+
+    self->pending_bytes_count += bytes_len;
     if (self->pending_bytes_count > self->chunk_size || needflush ||
         text_needflush) {
         if (_textiowrapper_writeflush(self) < 0)
@@ -2343,7 +2418,8 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
-    if (whence == 1) {
+    switch (whence) {
+    case SEEK_CUR:
         /* seek relative to current position */
         cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
@@ -2361,8 +2437,9 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         cookieObj = _PyObject_CallMethodId((PyObject *)self, &PyId_tell, NULL);
         if (cookieObj == NULL)
             goto fail;
-    }
-    else if (whence == 2) {
+        break;
+
+    case SEEK_END:
         /* seek relative to end of file */
         cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
         if (cmp < 0)
@@ -2400,10 +2477,14 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             }
         }
         return res;
-    }
-    else if (whence != 0) {
+
+    case SEEK_SET:
+        break;
+
+    default:
         PyErr_Format(PyExc_ValueError,
-                     "invalid whence (%d, should be 0, 1 or 2)", whence);
+                     "invalid whence (%d, should be %d, %d or %d)", whence,
+                     SEEK_SET, SEEK_CUR, SEEK_END);
         goto fail;
     }
 
@@ -3041,6 +3122,10 @@ textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
+    if (arg == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
     n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;

@@ -16,7 +16,7 @@ if not defined SPHINXBUILD (
         %PYTHON% -m pip install sphinx
         if errorlevel 1 exit /B
     )
-    set SPHINXBUILD=%PYTHON% -c "import sphinx, sys; sys.argv[0] = 'sphinx-build'; sys.exit(sphinx.main())"
+    set SPHINXBUILD=%PYTHON% -c "import sphinx.cmd.build, sys; sys.exit(sphinx.cmd.build.main())"
 )
 
 %PYTHON% -c "import python_docs_theme" > nul 2> nul
@@ -41,7 +41,7 @@ if exist "%HTMLHELP%" goto :skiphhcsearch
 
 rem Search for HHC in likely places
 set HTMLHELP=
-where hhc /q && set HTMLHELP=hhc && goto :skiphhcsearch
+where hhc /q && set "HTMLHELP=hhc" && goto :skiphhcsearch
 where /R ..\externals hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
 if not exist "%HTMLHELP%" where /R "%ProgramFiles(x86)%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
 if not exist "%HTMLHELP%" where /R "%ProgramFiles%" hhc > "%TEMP%\hhc.loc" 2> nul && set /P HTMLHELP= < "%TEMP%\hhc.loc" & del "%TEMP%\hhc.loc"
@@ -115,13 +115,16 @@ goto end
 :build
 if not exist "%BUILDDIR%" mkdir "%BUILDDIR%"
 
+rem PY_MISC_NEWS_DIR is also used by our Sphinx extension in tools/extensions/pyspecific.py
+if not defined PY_MISC_NEWS_DIR set PY_MISC_NEWS_DIR=%BUILDDIR%\%1
 if exist ..\Misc\NEWS (
-    echo.Copying Misc\NEWS to build\NEWS
-    copy ..\Misc\NEWS build\NEWS > nul
+    echo.Copying Misc\NEWS to %PY_MISC_NEWS_DIR%\NEWS
+    copy ..\Misc\NEWS "%PY_MISC_NEWS_DIR%\NEWS" > nul
 ) else if exist ..\Misc\NEWS.D (
     if defined BLURB (
         echo.Merging Misc/NEWS with %BLURB%
-        %BLURB% merge -f build\NEWS
+        if not exist build mkdir build
+        %BLURB% merge -f "%PY_MISC_NEWS_DIR%\NEWS"
     ) else (
         echo.No Misc/NEWS file and Blurb is not available.
         exit /B 1

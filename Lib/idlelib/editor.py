@@ -317,9 +317,6 @@ class EditorWindow(object):
         text.bind("<<zoom-height>>", self.ZoomHeight(self).zoom_height_event)
         text.bind("<<toggle-code-context>>",
                   self.CodeContext(self).toggle_code_context_event)
-        squeezer = self.Squeezer(self)
-        text.bind("<<squeeze-current-text>>",
-                  squeezer.squeeze_current_text_event)
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so diplayable in Tk."""
@@ -445,6 +442,16 @@ class EditorWindow(object):
         if end > self.wmenu_end:
             menu.delete(self.wmenu_end+1, end)
         window.add_windows_to_menu(menu)
+
+    def update_menu_label(self, menu, index, label):
+        "Update label for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, label=label)
+
+    def update_menu_state(self, menu, index, state):
+        "Update state for menu item at index."
+        menuitem = self.menudict[menu]
+        menuitem.entryconfig(index, state=state)
 
     def handle_yview(self, event, *args):
         "Handle scrollbar."
@@ -936,7 +943,7 @@ class EditorWindow(object):
         elif long:
             title = long
         else:
-            title = "Untitled"
+            title = "untitled"
         icon = short or long or title
         if not self.get_saved():
             title = "*%s*" % title
@@ -958,7 +965,7 @@ class EditorWindow(object):
         if filename:
             filename = os.path.basename(filename)
         else:
-            filename = "Untitled"
+            filename = "untitled"
         # return unicode string to display non-ASCII chars correctly
         return self._filename_to_unicode(filename)
 
@@ -1026,7 +1033,7 @@ class EditorWindow(object):
         self.io = None
         self.undo = None
         if self.color:
-            self.color.close(False)
+            self.color.close()
             self.color = None
         self.text = None
         self.tkinter_vars = None

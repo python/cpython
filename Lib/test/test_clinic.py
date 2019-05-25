@@ -44,7 +44,6 @@ class FakeConvertersDict:
     def get(self, name, default):
         return self.used_converters.setdefault(name, FakeConverterFactory(name))
 
-clinic.Clinic.presets_text = ''
 c = clinic.Clinic(language='C', filename = "file")
 
 class FakeClinic:
@@ -796,6 +795,23 @@ Not at column 0!
             with self.assertRaises(SystemExit):
                 clinic.fail('The igloos are melting!', filename='clown.txt', line_number=69)
         self.assertEqual(stdout.getvalue(), 'Error in file "clown.txt" on line 69:\nThe igloos are melting!\n')
+
+
+class ClinicExternalTest(TestCase):
+    maxDiff = None
+
+    def test_external(self):
+        source = support.findfile('clinic.test')
+        with open(source, 'r', encoding='utf-8') as f:
+            original = f.read()
+        with support.temp_dir() as testdir:
+            testfile = os.path.join(testdir, 'clinic.test.c')
+            with open(testfile, 'w', encoding='utf-8') as f:
+                f.write(original)
+            clinic.parse_file(testfile, force=True)
+            with open(testfile, 'r', encoding='utf-8') as f:
+                result = f.read()
+            self.assertEqual(result, original)
 
 
 if __name__ == "__main__":

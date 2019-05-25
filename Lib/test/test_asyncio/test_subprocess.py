@@ -468,9 +468,7 @@ class SubprocessMixin:
                 isinstance(self, SubprocessFastWatcherTests)):
             asyncio.get_child_watcher()._callbacks.clear()
 
-    def test_popen_error(self):
-        # Issue #24763: check that the subprocess transport is closed
-        # when BaseSubprocessTransport fails
+    def _test_popen_error(self, stdin):
         if sys.platform == 'win32':
             target = 'asyncio.windows_utils.Popen'
         else:
@@ -480,11 +478,22 @@ class SubprocessMixin:
             popen.side_effect = exc
 
             create = asyncio.create_subprocess_exec(sys.executable, '-c',
-                                                    'pass', loop=self.loop)
+                                                    'pass', stdin=stdin,
+                                                    loop=self.loop)
             with warnings.catch_warnings(record=True) as warns:
                 with self.assertRaises(exc):
                     self.loop.run_until_complete(create)
                 self.assertEqual(warns, [])
+
+    def test_popen_error(self):
+        # Issue #24763: check that the subprocess transport is closed
+        # when BaseSubprocessTransport fails
+        self._test_popen_error(stdin=None)
+
+    def test_popen_error_with_stdin_pipe(self):
+        # Issue #35721: check that newly created socket pair is closed when
+        # Popen fails
+        self._test_popen_error(stdin=subprocess.PIPE)
 
     def test_read_stdout_after_process_exit(self):
 
@@ -509,6 +518,18 @@ class SubprocessMixin:
                     break
 
         self.loop.run_until_complete(execute())
+
+    def test_subprocess_protocol_create_warning(self):
+        with self.assertWarns(DeprecationWarning):
+            subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop)
+
+    def test_process_create_warning(self):
+        proto = subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop,
+                                                    _asyncio_internal=True)
+        transp = mock.Mock()
+
+        with self.assertWarns(DeprecationWarning):
+            subprocess.Process(transp, proto, loop=self.loop)
 
 
 if sys.platform != 'win32':

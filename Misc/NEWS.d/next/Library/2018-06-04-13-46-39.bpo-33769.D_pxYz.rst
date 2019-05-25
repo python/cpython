@@ -1,2 +1,0 @@
-asyncio/start_tls: Fix error message; cancel callbacks in case of an
-unhandled error; mark SSLTransport as closed if it is aborted.

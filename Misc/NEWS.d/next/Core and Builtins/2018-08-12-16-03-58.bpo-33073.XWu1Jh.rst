@@ -1,1 +1,0 @@
-Added as_integer_ratio to ints to make them more interoperable with floats.

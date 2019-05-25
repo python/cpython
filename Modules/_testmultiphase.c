@@ -53,10 +53,13 @@ static PyObject *
 Example_getattro(ExampleObject *self, PyObject *name)
 {
     if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItem(self->x_attr, name);
+        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
             Py_INCREF(v);
             return v;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
         }
     }
     return PyObject_GenericGetAttr((PyObject *)self, name);
@@ -72,7 +75,7 @@ Example_setattr(ExampleObject *self, const char *name, PyObject *v)
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0)
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Example attribute");
         return rv;
@@ -624,6 +627,14 @@ bad_traverse(PyObject *self, visitproc visit, void *arg) {
     testmultiphase_state *m_state;
 
     m_state = PyModule_GetState(self);
+
+    /* The following assertion mimics any traversal function that doesn't correctly handle
+     * the case during module creation where the module state hasn't been created yet.
+     *
+     * The check that it is used to test only runs in debug mode, so it is OK that the
+     * assert() will get compiled out in fully optimised release builds.
+     */
+    assert(m_state != NULL);
     Py_VISIT(m_state->integer);
     return 0;
 }

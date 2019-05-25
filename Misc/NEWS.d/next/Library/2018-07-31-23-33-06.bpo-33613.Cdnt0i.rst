@@ -1,3 +1,0 @@
-Fix a race condition in ``multiprocessing.semaphore_tracker`` when the
-tracker receives SIGINT before it can register signal handlers for ignoring
-it.

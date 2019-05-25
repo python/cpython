@@ -2,6 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"
 #include "structmember.h"
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -356,6 +357,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 #elif defined(O_CLOEXEC)
     flags |= O_CLOEXEC;
 #endif
+
+    if (PySys_Audit("open", "Osi", nameobj, mode, flags) < 0) {
+        goto error;
+    }
 
     if (fd >= 0) {
         self->fd = fd;
