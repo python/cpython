@@ -1,0 +1,2 @@
+Handle late binding and attribute access in AsyncMock setup for
+autospeccing. Document newly implemented async methods in MagicMock.
