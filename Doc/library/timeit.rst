@@ -94,8 +94,7 @@ The module defines three convenience functions and a public class:
       :func:`time.perf_counter` is now the default timer.
 
 
-.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None,
-                    target_time=0.2)
+.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None, target_time=0.2)
 
    Class for timing execution speed of small code snippets.
 
@@ -144,7 +143,7 @@ The module defines three convenience functions and a public class:
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-   .. method:: Timer.autorange(callback=None, target_time=default_target_time)
+   .. method:: Timer.autorange(callback=None, target_time=0.2)
 
       Automatically determine how many times to call :meth:`.timeit`.
 
