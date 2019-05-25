@@ -2487,7 +2487,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         spec = type(spec)
 
     is_type = isinstance(spec, type)
-    is_async_func = _is_async_obj(spec)
+    is_async_func = _is_async_func(spec)
     _kwargs = {'spec': spec}
     if spec_set:
         _kwargs = {'spec_set': spec}
