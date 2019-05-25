@@ -751,7 +751,7 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 1234))
         self.assertTrue(self.proactor.sendto.called)
-        self.proactor.sendto.assert_called_with( 
+        self.proactor.sendto.assert_called_with(
             self.sock, data, addr=('0.0.0.0', 1234))
 
     def test_sendto_bytearray(self):
@@ -759,7 +759,7 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 1234))
         self.assertTrue(self.proactor.sendto.called)
-        self.proactor.sendto.assert_called_with( 
+        self.proactor.sendto.assert_called_with(
             self.sock, b'data', addr=('0.0.0.0', 1234))
 
     def test_sendto_memoryview(self):
@@ -767,7 +767,7 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 1234))
         self.assertTrue(self.proactor.sendto.called)
-        self.proactor.sendto.assert_called_with( 
+        self.proactor.sendto.assert_called_with(
             self.sock, b'data', addr=('0.0.0.0', 1234))
 
     def test_sendto_no_data(self):
