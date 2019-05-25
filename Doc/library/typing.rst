@@ -878,6 +878,34 @@ The module defines the following classes, functions and decorators:
       The ``_field_types`` and ``__annotations__`` attributes are
       now regular dictionaries instead of instances of ``OrderedDict``.
 
+.. class:: TypedDict(dict)
+
+   A simple typed name space. At runtime it is equivalent to
+   a plain :class:`dict`.
+
+   ``TypedDict`` creates a dictionary type that expects all of its
+   instances to have a certain set of keys, with each key
+   associated with a value of a consistent type. This expectation
+   is not checked at runtime but is only enforced by type checkers.
+   Usage::
+
+      class Point2D(TypedDict):
+          x: int
+          y: int
+          label: str
+
+      a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
+      b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
+
+      assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+
+   The type info for introspection could be accessed via ``Point2D.__annotations__``
+   and ``Point2D.__total__``.  Backward-compatible usage::
+
+      Point2D = TypedDict('Point2D', x=int, y=int, label=str)
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   .. versionadded:: 3.8
 
 .. function:: NewType(typ)
 
