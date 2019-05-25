@@ -4,6 +4,7 @@ import io
 import socket
 import unittest
 import sys
+from collections import deque
 from unittest import mock
 
 import asyncio
@@ -745,48 +746,6 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.addCleanup(close_transport, transport)
         return transport
 
-    def test_read_ready(self):
-        transport = self.datagram_transport()
-
-        fut = self.loop.create_future()
-        fut.set_result((b'data', ('0.0.0.0', 1234)))
-        self.proactor.recv_from.return_value = fut
-        transport._read_ready()
-        self.proactor.recvfrom.assert_called_with(self.sock, 256 * 1024)
-
-        self.protocol.datagram_received.assert_called_with(
-            b'data', ('0.0.0.0', 1234))
-
-    def test_read_ready_tryagain(self):
-        transport = self.datagram_transport()
-
-        self.sock.recvfrom.side_effect = BlockingIOError
-        transport._fatal_error = mock.Mock()
-        transport._read_ready()
-
-        self.assertFalse(transport._fatal_error.called)
-
-    def test_read_ready_err(self):
-        transport = self.datagram_transport()
-
-        err = self.sock.recvfrom.side_effect = RuntimeError()
-        transport._fatal_error = mock.Mock()
-        transport._read_ready()
-
-        transport._fatal_error.assert_called_with(
-                                   err,
-                                   'Fatal read error on datagram transport')
-
-    def test_read_ready_oserr(self):
-        transport = self.datagram_transport()
-
-        err = self.sock.recvfrom.side_effect = OSError()
-        transport._fatal_error = mock.Mock()
-        transport._read_ready()
-
-        self.assertFalse(transport._fatal_error.called)
-        self.protocol.error_received.assert_called_with(err)
-
     def test_sendto(self):
         data = b'data'
         transport = self.datagram_transport()
@@ -799,13 +758,17 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         data = bytearray(b'data')
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 1234))
-        self.assertEqual(transport._buffer, deque([data, ('0.0.0.0', 1234)]))
+        self.assertTrue(self.proactor.sendto.called)
+        self.proactor.sendto.assert_called_with( 
+            self.sock, b'data', addr=('0.0.0.0', 1234))
 
     def test_sendto_memoryview(self):
         data = memoryview(b'data')
         transport = self.datagram_transport()
         transport.sendto(data, ('0.0.0.0', 1234))
-        self.assertEqual(transport._buffer, deque([data, ('0.0.0.0', 1234)]))
+        self.assertTrue(self.proactor.sendto.called)
+        self.proactor.sendto.assert_called_with( 
+            self.sock, b'data', addr=('0.0.0.0', 1234))
 
     def test_sendto_no_data(self):
         transport = self.datagram_transport()
@@ -851,18 +814,6 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
              (b'data2', ('0.0.0.0', 12345))],
             list(transport._buffer))
         self.assertIsInstance(transport._buffer[1][0], bytes)
-
-    def test_sendto_tryagain(self):
-        data = b'data'
-
-        self.sock.sendto.side_effect = BlockingIOError
-
-        transport = self.datagram_transport()
-        transport.sendto(data, ('0.0.0.0', 12345))
-
-        self.loop.assert_writer(7, transport._sendto_ready)
-        self.assertEqual(
-            [(b'data', ('0.0.0.0', 12345))], list(transport._buffer))
 
     @mock.patch('asyncio.proactor_events.logger')
     def test_sendto_exception(self, m_log):
@@ -927,82 +878,44 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         transport.sendto(b'data', (1,))
         self.assertEqual(transport._conn_lost, 2)
 
-    def test_sendto_ready(self):
-        data = b'data'
-        self.sock.sendto.return_value = len(data)
-
-        transport = self.datagram_transport()
-        transport._buffer.append((data, ('0.0.0.0', 12345)))
-        self.loop._add_writer(7, transport._sendto_ready)
-        transport._sendto_ready()
-        self.assertTrue(self.sock.sendto.called)
-        self.assertEqual(
-            self.sock.sendto.call_args[0], (data, ('0.0.0.0', 12345)))
-        self.assertFalse(self.loop.writers)
-
-    def test_sendto_ready_closing(self):
-        data = b'data'
-        self.sock.send.return_value = len(data)
-
+    def test__loop_writing_closing(self):
         transport = self.datagram_transport()
         transport._closing = True
-        transport._buffer.append((data, ()))
-        self.loop._add_writer(7, transport._sendto_ready)
-        transport._sendto_ready()
-        self.sock.sendto.assert_called_with(data, ())
-        self.assertFalse(self.loop.writers)
+        transport._loop_writing()
+        self.assertIsNone(transport._write_fut)
+        test_utils.run_briefly(self.loop)
         self.sock.close.assert_called_with()
         self.protocol.connection_lost.assert_called_with(None)
 
-    def test_sendto_ready_no_data(self):
-        transport = self.datagram_transport()
-        self.loop._add_writer(7, transport._sendto_ready)
-        transport._sendto_ready()
-        self.assertFalse(self.sock.sendto.called)
-        self.assertFalse(self.loop.writers)
-
-    def test_sendto_ready_tryagain(self):
-        self.sock.sendto.side_effect = BlockingIOError
-
-        transport = self.datagram_transport()
-        transport._buffer.extend([(b'data1', ()), (b'data2', ())])
-        self.loop._add_writer(7, transport._sendto_ready)
-        transport._sendto_ready()
-
-        self.loop.assert_writer(7, transport._sendto_ready)
-        self.assertEqual(
-            [(b'data1', ()), (b'data2', ())],
-            list(transport._buffer))
-
-    def test_sendto_ready_exception(self):
-        err = self.sock.sendto.side_effect = RuntimeError()
+    def test__loop_writing_exception(self):
+        err = self.proactor.sendto.side_effect = RuntimeError()
 
         transport = self.datagram_transport()
         transport._fatal_error = mock.Mock()
         transport._buffer.append((b'data', ()))
-        transport._sendto_ready()
+        transport._loop_writing()
 
         transport._fatal_error.assert_called_with(
                                    err,
                                    'Fatal write error on datagram transport')
 
-    def test_sendto_ready_error_received(self):
-        self.sock.sendto.side_effect = ConnectionRefusedError
+    def test__loop_writing_error_received(self):
+        self.proactor.sendto.side_effect = ConnectionRefusedError
 
         transport = self.datagram_transport()
         transport._fatal_error = mock.Mock()
         transport._buffer.append((b'data', ()))
-        transport._sendto_ready()
+        transport._loop_writing()
 
         self.assertFalse(transport._fatal_error.called)
 
-    def test_sendto_ready_error_received_connection(self):
-        self.sock.send.side_effect = ConnectionRefusedError
+    def test__loop_writing_error_received_connection(self):
+        self.proactor.send.side_effect = ConnectionRefusedError
 
         transport = self.datagram_transport(address=('0.0.0.0', 1))
         transport._fatal_error = mock.Mock()
         transport._buffer.append((b'data', ()))
-        transport._sendto_ready()
+        transport._loop_writing()
 
         self.assertFalse(transport._fatal_error.called)
         self.assertTrue(self.protocol.error_received.called)
@@ -1015,8 +928,8 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.assertFalse(self.protocol.error_received.called)
         m_exc.assert_called_with(
             test_utils.MockPattern(
-                'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
+                'Fatal error on pipe transport\nprotocol:.*\ntransport:.*'),
+            exc_info=(ConnectionRefusedError, mock.ANY, mock.ANY))
 
 
 class BaseProactorEventLoopTests(test_utils.TestCase):
@@ -1180,7 +1093,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
     def test_datagram_loop_reading(self):
         tr = self.datagram_transport()
         tr._loop_reading()
-        self.loop._proactor.recvfrom.assert_called_with(self.sock, 4096)
+        self.loop._proactor.recvfrom.assert_called_with(self.sock, 256 * 1024)
         self.assertFalse(self.protocol.datagram_received.called)
         self.assertFalse(self.protocol.error_received.called)
         close_transport(tr)
@@ -1192,7 +1105,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         tr = self.datagram_transport()
         tr._read_fut = res
         tr._loop_reading(res)
-        self.loop._proactor.recvfrom.assert_called_with(self.sock, 4096)
+        self.loop._proactor.recvfrom.assert_called_with(self.sock, 256 * 1024)
         self.protocol.datagram_received.assert_called_with(b'data', ('127.0.0.1', 12068))
         close_transport(tr)
 
