@@ -1130,8 +1130,8 @@ The module defines the following classes, functions and decorators:
 
 .. data:: Final
 
-   A special typing construct to indicate that a name cannot be
-   re-assigned or overridden in a subclass. For example::
+   A special typing construct to indicate to type checkers that a name
+   cannot be re-assigned or overridden in a subclass. For example::
 
       MAX_SIZE: Final = 9000
       MAX_SIZE += 1  # Error reported by type checker

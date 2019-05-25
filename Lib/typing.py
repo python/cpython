@@ -401,7 +401,7 @@ ClassVar = _SpecialForm('ClassVar', doc=
     """)
 
 Final = _SpecialForm('Final', doc=
-    """Special typing construct to indicate final names.
+    """Special typing construct to indicate final names to type checkers.
 
     A final name cannot be re-assigned or overridden in a subclass.
     For example:
