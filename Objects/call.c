@@ -1221,9 +1221,6 @@ extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
 PyObject *
 PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 {
-    va_list vargs;
-    PyObject *result;
-
     if (obj == NULL || name == NULL) {
         return null_error();
     }
@@ -1235,8 +1232,9 @@ PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
     }
     obj = is_method ? obj : NULL;
 
+    va_list vargs;
     va_start(vargs, name);
-    result = object_vacall(obj, callable, vargs);
+    PyObject *result = object_vacall(obj, callable, vargs);
     va_end(vargs);
 
     Py_DECREF(callable);
@@ -1248,16 +1246,14 @@ PyObject *
 _PyObject_CallMethodIdObjArgs(PyObject *obj,
                               struct _Py_Identifier *name, ...)
 {
-    va_list vargs;
-    PyObject *result;
-
     if (obj == NULL || name == NULL) {
         return null_error();
     }
 
     PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname)
+    if (!oname) {
         return NULL;
+    }
 
     PyObject *callable = NULL;
     int is_method = _PyObject_GetMethod(obj, oname, &callable);
@@ -1266,8 +1262,9 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj,
     }
     obj = is_method ? obj : NULL;
 
+    va_list vargs;
     va_start(vargs, name);
-    result = object_vacall(obj, callable, vargs);
+    PyObject *result = object_vacall(obj, callable, vargs);
     va_end(vargs);
 
     Py_DECREF(callable);
