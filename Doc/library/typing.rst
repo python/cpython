@@ -880,11 +880,11 @@ The module defines the following classes, functions and decorators:
 
 .. class:: TypedDict(dict)
 
-   A simple typed name space. At runtime it is equivalent to
+   A simple typed namespace. At runtime it is equivalent to
    a plain :class:`dict`.
 
    ``TypedDict`` creates a dictionary type that expects all of its
-   instances to have a certain set of keys, with each key
+   instances to have a certain set of keys, where each key is
    associated with a value of a consistent type. This expectation
    is not checked at runtime but is only enforced by type checkers.
    Usage::
@@ -899,11 +899,16 @@ The module defines the following classes, functions and decorators:
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   The type info for introspection could be accessed via ``Point2D.__annotations__``
-   and ``Point2D.__total__``.  Backward-compatible usage::
+   The type info for introspection can be accessed via ``Point2D.__annotations__``
+   and ``Point2D.__total__``.  To allow using this feature with older versions
+   of Python that do not support :pep:`526`, ``TypedDict`` supports two additional
+   equivalent syntactic forms::
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   See :pep:`589` for more examples and detailed rules of using ``TypedDict``
+   with type checkers.
 
    .. versionadded:: 3.8
 

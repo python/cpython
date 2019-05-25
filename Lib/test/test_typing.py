@@ -2562,13 +2562,11 @@ class XMethBad2(NamedTuple):
 
 
 class TypedDictTests(BaseTestCase):
-    def test_basics_iterable_syntax(self):
+    def test_basics_functional_syntax(self):
         Emp = TypedDict('Emp', {'name': str, 'id': int})
         self.assertIsSubclass(Emp, dict)
         self.assertIsSubclass(Emp, typing.MutableMapping)
-        if sys.version_info[0] >= 3:
-            import collections.abc
-            self.assertNotIsSubclass(Emp, collections.abc.Sequence)
+        self.assertNotIsSubclass(Emp, collections.abc.Sequence)
         jim = Emp(name='Jim', id=1)
         self.assertIs(type(jim), dict)
         self.assertEqual(jim['name'], 'Jim')
@@ -2583,9 +2581,7 @@ class TypedDictTests(BaseTestCase):
         Emp = TypedDict('Emp', name=str, id=int)
         self.assertIsSubclass(Emp, dict)
         self.assertIsSubclass(Emp, typing.MutableMapping)
-        if sys.version_info[0] >= 3:
-            import collections.abc
-            self.assertNotIsSubclass(Emp, collections.abc.Sequence)
+        self.assertNotIsSubclass(Emp, collections.abc.Sequence)
         jim = Emp(name='Jim', id=1)
         self.assertIs(type(jim), dict)
         self.assertEqual(jim['name'], 'Jim')

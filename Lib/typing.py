@@ -87,7 +87,7 @@ __all__ = [
     'Set',
     'FrozenSet',
     'NamedTuple',  # Not really a type.
-    'TypedDict',
+    'TypedDict',  # Not really a type.
     'Generator',
 
     # One-off things.
@@ -1472,10 +1472,10 @@ class _TypedDictMeta(type):
 
 
 class TypedDict(dict, metaclass=_TypedDictMeta):
-    """A simple typed name space. At runtime it is equivalent to a plain dict.
+    """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type that expects all of its
-    instances to have a certain set of keys, with each key
+    instances to have a certain set of keys, where each key is
     associated with a value of a consistent type. This expectation
     is not checked at runtime but is only enforced by type checkers.
     Usage::
