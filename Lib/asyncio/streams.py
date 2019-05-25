@@ -1,7 +1,7 @@
 __all__ = (
     'Stream', 'StreamMode',
     'open_connection', 'start_server',
-    'connect',
+    'connect', 'connect_read_pipe', 'connect_write_pipe',
     'StreamServer')
 
 import enum
@@ -102,6 +102,48 @@ async def _connect(host, port,
         server_hostname=server_hostname,
         ssl_handshake_timeout=ssl_handshake_timeout,
         happy_eyeballs_delay=happy_eyeballs_delay, interleave=interleave)
+    return stream
+
+
+def connect_read_pipe(pipe, *, limit=_DEFAULT_LIMIT):
+    # Design note:
+    # Don't use decorator approach but exilicit non-async
+    # function to fail fast and explicitly
+    # if passed arguments don't match the function signature
+    return _ContextManagerHelper(_connect_read_pipe(pipe, limit))
+
+
+async def _connect_read_pipe(pipe, limit):
+    loop = events.get_running_loop()
+    stream = Stream(mode=StreamMode.READ,
+                    limit=limit,
+                    loop=loop,
+                    _asyncio_internal=True)
+    await loop.connect_read_pipe(
+        lambda: _StreamProtocol(stream, loop=loop,
+                                _asyncio_internal=True),
+        pipe)
+    return stream
+
+
+def connect_write_pipe(pipe, *, limit=_DEFAULT_LIMIT):
+    # Design note:
+    # Don't use decorator approach but exilicit non-async
+    # function to fail fast and explicitly
+    # if passed arguments don't match the function signature
+    return _ContextManagerHelper(_connect_write_pipe(pipe, limit))
+
+
+async def _connect_write_pipe(pipe, limit):
+    loop = events.get_running_loop()
+    stream = Stream(mode=StreamMode.WRITE,
+                    limit=limit,
+                    loop=loop,
+                    _asyncio_internal=True)
+    await loop.connect_write_pipe(
+        lambda: _StreamProtocol(stream, loop=loop,
+                                _asyncio_internal=True),
+        pipe)
     return stream
 
 
@@ -1422,13 +1464,11 @@ class Stream:
             self._transport.resume_reading()
 
     def feed_eof(self):
-        self._mode._check_read()
         self._eof = True
         self._wakeup_waiter()
 
     def at_eof(self):
         """Return True if the buffer is empty and 'feed_eof' was called."""
-        self._mode._check_read()
         return self._eof and not self._buffer
 
     def feed_data(self, data):

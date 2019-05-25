@@ -2,6 +2,7 @@
 
 import contextlib
 import gc
+import io
 import os
 import queue
 import pickle
@@ -1255,10 +1256,6 @@ os.close(fd)
             stream = asyncio.Stream(mode=asyncio.StreamMode.WRITE,
                                     _asyncio_internal=True)
             with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
-                stream.feed_eof()
-            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
-                stream.at_eof()
-            with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
                 stream.feed_data(b'data')
             with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
                 await stream.readline()
@@ -1695,6 +1692,50 @@ os.close(fd)
             await srv.start_serving()
             self.assertRegex(repr(srv), r'<StreamServer serving sockets=\[.+\]>')
             await srv.close()
+
+        self.loop.run_until_complete(test())
+
+
+    @unittest.skipUnless(sys.platform != 'win32',
+                         "Don't support pipes for Windows")
+    def test_read_pipe(self):
+        async def test():
+            rpipe, wpipe = os.pipe()
+            pipeobj = io.open(rpipe, 'rb', 1024)
+
+            async with asyncio.connect_read_pipe(pipeobj) as stream:
+                self.assertEqual(stream.mode, asyncio.StreamMode.READ)
+
+                os.write(wpipe, b'1')
+                data = await stream.readexactly(1)
+                self.assertEqual(data, b'1')
+
+                os.write(wpipe, b'2345')
+                data = await stream.readexactly(4)
+                self.assertEqual(data, b'2345')
+                os.close(wpipe)
+
+        self.loop.run_until_complete(test())
+
+    @unittest.skipUnless(sys.platform != 'win32',
+                         "Don't support pipes for Windows")
+    def test_write_pipe(self):
+        async def test():
+            rpipe, wpipe = os.pipe()
+            pipeobj = io.open(wpipe, 'wb', 1024)
+
+            async with asyncio.connect_write_pipe(pipeobj) as stream:
+                self.assertEqual(stream.mode, asyncio.StreamMode.WRITE)
+
+                await stream.write(b'1')
+                data = os.read(rpipe, 1024)
+                self.assertEqual(data, b'1')
+
+                await stream.write(b'2345')
+                data = os.read(rpipe, 1024)
+                self.assertEqual(data, b'2345')
+
+                os.close(rpipe)
 
         self.loop.run_until_complete(test())
 
