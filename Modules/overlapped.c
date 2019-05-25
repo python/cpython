@@ -1499,6 +1499,7 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
         Py_VISIT(self->allocated_buffer);
         break;
     case TYPE_WRITE:
+    case TYPE_WRITE_TO:
     case TYPE_READINTO:
         if (self->user_buffer.obj) {
             Py_VISIT(&self->user_buffer.obj);
