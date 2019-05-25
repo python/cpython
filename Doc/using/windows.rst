@@ -1043,7 +1043,9 @@ The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
-* `Component Object Model <https://www.microsoft.com/com/>`_ (COM)
+* `Component Object Model
+  <https://docs.microsoft.com/en-us/windows/desktop/com/component-object-model--com--portal>`_
+  (COM)
 * Win32 API calls
 * Registry
 * Event log
@@ -1109,8 +1111,7 @@ For extension modules, consult :ref:`building-on-windows`.
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
 
-   `MingW -- Python extensions <http://oldwiki.mingw.org/index.php/Python%20extensions>`_
-      by Trent Apted et al, 2007
+   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
 
 
 Other Platforms
