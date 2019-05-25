@@ -461,6 +461,9 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
     def _set_extra(self, sock):
         _set_socket_extra(self, sock)
 
+    def get_write_buffer_size(self):
+        return sum(len(data) for data, _ in self._buffer)
+
     def abort(self):
         self._force_close(None)
 
@@ -490,6 +493,8 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
             self._loop_writing()
         # else: A write operation is already kicked off
 
+        self._maybe_pause_protocol()
+
     def _loop_writing(self, fut=None):
         try:
             if self._conn_lost:
@@ -509,15 +514,19 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
 
             data, addr = self._buffer.popleft()
             if self._address is not None:
-                self._write_fut = self._loop._proactor.send(self._sock, data)
+                self._write_fut = self._loop._proactor.send(self._sock,
+                                                            data)
             else:
-                self._write_fut = self._loop._proactor.sendto(self._sock, data, addr=addr)
+                self._write_fut = self._loop._proactor.sendto(self._sock,
+                                                              data,
+                                                              addr=addr)
         except OSError as exc:
             self._protocol.error_received(exc)
         except Exception as exc:
             self._fatal_error(exc, 'Fatal write error on datagram transport')
         else:
             self._write_fut.add_done_callback(self._loop_writing)
+            self._maybe_resume_protocol()
 
     def _loop_reading(self, fut=None):
         data = None
@@ -545,9 +554,11 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
             if self._conn_lost:
                 return
             if self._address is not None:
-                self._read_fut = self._loop._proactor.recv(self._sock, self.max_size)
+                self._read_fut = self._loop._proactor.recv(self._sock,
+                                                           self.max_size)
             else:
-                self._read_fut = self._loop._proactor.recvfrom(self._sock, self.max_size)
+                self._read_fut = self._loop._proactor.recvfrom(self._sock,
+                                                               self.max_size)
         except OSError as exc:
             self._protocol.error_received(exc)
         except exceptions.CancelledError:
