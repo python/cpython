@@ -2598,7 +2598,7 @@ class TypedDictTests(BaseTestCase):
 
     def test_typeddict_errors(self):
         Emp = TypedDict('Emp', {'name': str, 'id': int})
-        self.assertEqual(TypedDict.__module__, 'typing_extensions')
+        self.assertEqual(TypedDict.__module__, 'typing')
         jim = Emp(name='Jim', id=1)
         with self.assertRaises(TypeError):
             isinstance({}, Emp)
