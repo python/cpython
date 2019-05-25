@@ -36,6 +36,7 @@ __all__ = [
     'Callable',
     'ClassVar',
     'Generic',
+    'Literal',
     'Optional',
     'Tuple',
     'Type',

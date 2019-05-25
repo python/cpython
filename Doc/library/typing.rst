@@ -1078,6 +1078,22 @@ The module defines the following classes, functions and decorators:
    ``Callable[..., Any]``, and in turn to
    :class:`collections.abc.Callable`.
 
+.. data:: Literal
+
+   A type that can be used to indicate to type checkers that the
+   corresponding value has a value literally equivalent to the
+   provided parameter.  For example::
+
+      var: Literal[4] = 4
+
+   The type checker understands that var is literally equal to the
+   value 4 and no other value.
+
+   ``Literal[...]`` cannot be subclassed. There is no runtime checking
+   verifying that the parameter is actually a value instead of a type.
+
+   .. versionadded:: 3.8
+
 .. data:: ClassVar
 
    Special type construct to mark class variables.
