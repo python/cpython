@@ -35,7 +35,7 @@ def zoom_height(top):
                    (22, 88) if macosx.isAquaTk() else
                    (0, 88) ) # Guess for anything else.
     newheight = newheight - newy - bot_y
-    newgeom = ('' if height >= newheight else f"{width}x{newheight}+{x}+{newy}")
+    newgeom = '' if height >= newheight else f"{width}x{newheight}+{x}+{newy}"
     top.wm_geometry(newgeom)
     return newgeom != ""
 
