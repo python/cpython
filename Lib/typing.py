@@ -1490,7 +1490,7 @@ class TypedDict(dict, metaclass=_TypedDictMeta):
 
         assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-    The type info could be accessed via Point2D.__annotations__. TypedDict
+    The type info can be accessed via Point2D.__annotations__. TypedDict
     supports two additional equivalent forms::
 
         Point2D = TypedDict('Point2D', x=int, y=int, label=str)
