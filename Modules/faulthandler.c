@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_coreconfig.h"
+#include "pycore_traceback.h"
 #include "pythread.h"
 #include <signal.h>
 #include <object.h>

@@ -40,9 +40,22 @@ typedef struct {
 
 #define _Py_CONFIG_VERSION 1
 
+typedef enum {
+    /* Py_Initialize() API: backward compatibility with Python 3.6 and 3.7 */
+    _PyConfig_INIT_COMPAT = 1,
+    _PyConfig_INIT_PYTHON = 2,
+    _PyConfig_INIT_ISOLATED = 3
+} _PyConfigInitEnum;
+
+
 typedef struct {
     int _config_version;  /* Internal configuration version,
                              used for ABI compatibility */
+    int _config_init;     /* _PyConfigInitEnum value */
+
+    /* Parse _Py_PreInitializeFromArgs() arguments?
+       See _PyCoreConfig.parse_argv */
+    int parse_argv;
 
     /* If greater than 0, enable isolated mode: sys.path contains
        neither the script's directory nor the user's site-packages directory.
@@ -103,16 +116,14 @@ typedef struct {
        Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
 
        If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
-       "POSIX", otherwise it is set to 0.
-
-       If equals to -2, inherit Py_UTF8Mode value value (which is equal to 0
-       by default). */
+       "POSIX", otherwise it is set to 0. Inherit Py_UTF8Mode value value. */
     int utf8_mode;
 
     int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
 
-    /* Memory allocator: PYTHONMALLOC env var */
-    PyMemAllocatorName allocator;
+    /* Memory allocator: PYTHONMALLOC env var.
+       See PyMemAllocatorName for valid values. */
+    int allocator;
 } _PyPreConfig;
 
 PyAPI_FUNC(void) _PyPreConfig_InitPythonConfig(_PyPreConfig *config);
@@ -124,6 +135,7 @@ PyAPI_FUNC(void) _PyPreConfig_InitIsolatedConfig(_PyPreConfig *config);
 typedef struct {
     int _config_version;  /* Internal configuration version,
                              used for ABI compatibility */
+    int _config_init;     /* _PyConfigInitEnum value */
 
     int isolated;         /* Isolated mode? see _PyPreConfig.isolated */
     int use_environment;  /* Use environment variables? see _PyPreConfig.use_environment */
@@ -401,19 +413,21 @@ PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitPythonConfig(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_InitIsolatedConfig(_PyCoreConfig *config);
 PyAPI_FUNC(void) _PyCoreConfig_Clear(_PyCoreConfig *);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetString(
+    _PyCoreConfig *config,
     wchar_t **config_str,
     const wchar_t *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_DecodeLocale(
+    _PyCoreConfig *config,
     wchar_t **config_str,
     const char *str);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_Read(_PyCoreConfig *config);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetArgv(
     _PyCoreConfig *config,
     Py_ssize_t argc,
-    char **argv);
+    char * const *argv);
 PyAPI_FUNC(_PyInitError) _PyCoreConfig_SetWideArgv(_PyCoreConfig *config,
     Py_ssize_t argc,
-    wchar_t **argv);
+    wchar_t * const *argv);
 
 #ifdef __cplusplus
 }

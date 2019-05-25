@@ -35,11 +35,11 @@ PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromArgs(
     const _PyCoreConfig *config,
     Py_ssize_t argc,
-    char **argv);
+    char * const *argv);
 PyAPI_FUNC(_PyInitError) _Py_InitializeFromWideArgs(
     const _PyCoreConfig *config,
     Py_ssize_t argc,
-    wchar_t **argv);
+    wchar_t * const *argv);
 PyAPI_FUNC(_PyInitError) _Py_InitializeMain(void);
 
 PyAPI_FUNC(int) _Py_RunMain(void);
@@ -69,8 +69,8 @@ PyAPI_FUNC(int) _PyOS_URandom(void *buffer, Py_ssize_t size);
 PyAPI_FUNC(int) _PyOS_URandomNonblock(void *buffer, Py_ssize_t size);
 
 /* Legacy locale support */
-PyAPI_FUNC(void) _Py_CoerceLegacyLocale(int warn);
-PyAPI_FUNC(int) _Py_LegacyLocaleDetected(void);
+PyAPI_FUNC(int) _Py_CoerceLegacyLocale(int warn);
+PyAPI_FUNC(int) _Py_LegacyLocaleDetected(int warn);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
 #ifdef __cplusplus

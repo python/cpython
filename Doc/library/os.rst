@@ -32,6 +32,7 @@ Notes on the availability of these functions:
   objects, and result in an object of the same type, if a path or file name is
   returned.
 
+* On VxWorks, os.fork, os.execv and os.spawn*p* are not supported.
 
 .. note::
 
@@ -650,7 +651,7 @@ process and user.
 File Object Creation
 --------------------
 
-This function creates new :term:`file objects <file object>`.  (See also
+These functions create new :term:`file objects <file object>`.  (See also
 :func:`~os.open` for opening file descriptors.)
 
 
@@ -828,10 +829,13 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
+   .. audit-event:: os.truncate "fd length"
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.5
       Added support for Windows
+
 
 .. function:: get_blocking(fd)
 
@@ -843,6 +847,7 @@ as internal buffering of data.
    .. availability:: Unix.
 
    .. versionadded:: 3.5
+
 
 .. function:: isatty(fd)
 
@@ -910,6 +915,8 @@ as internal buffering of data.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>` with the *dir_fd* parameter.
+
+   .. audit-event:: open "path mode flags"
 
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
@@ -2755,6 +2762,8 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
+   .. audit-event:: os.truncate "path length"
+
    .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
@@ -3578,6 +3587,9 @@ written in Python, such as a mail server's external command delivery program.
    process.  On Windows, the process id will actually be the process handle, so can
    be used with the :func:`waitpid` function.
 
+   Note on VxWorks, this function doesn't return ``-signal`` when the new process is
+   killed. Instead it raises OSError exception.
+
    The "l" and "v" variants of the :func:`spawn\* <spawnl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
@@ -3710,6 +3722,8 @@ written in Python, such as a mail server's external command delivery program.
    new processes and retrieving their results; using that module is preferable
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
+
+   .. audit-event:: os.system command
 
    .. availability:: Unix, Windows.
 

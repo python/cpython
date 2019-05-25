@@ -18,8 +18,8 @@
 #if defined(HAVE_GETPID) && defined(HAVE_UNISTD_H)
 #  include <unistd.h>   /* getpid() */
 #endif
-#ifdef _MSC_VER
-#  include <crtdbg.h>   /* STATUS_CONTROL_C_EXIT */
+#ifdef MS_WINDOWS
+#  include <windows.h>  /* STATUS_CONTROL_C_EXIT */
 #endif
 /* End of includes for exit_sigint() */
 
