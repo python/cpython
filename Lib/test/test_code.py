@@ -174,18 +174,14 @@ class CodeTest(unittest.TestCase):
     @cpython_only
     def test_closure_injection(self):
         # From https://bugs.python.org/issue32176
-        from types import FunctionType, CodeType
+        from types import FunctionType
 
         def create_closure(__class__):
             return (lambda: __class__).__closure__
 
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            return CodeType(
-                c.co_argcount, c.co_posonlyargcount, c.co_kwonlyargcount, c.co_nlocals,
-                c.co_stacksize, c.co_flags, c.co_code, c.co_consts, c.co_names,
-                c.co_varnames, c.co_filename, c.co_name, c.co_firstlineno,
-                c.co_lnotab, c.co_freevars + ('__class__',), c.co_cellvars)
+            return c.replace(co_freevars=c.co_freevars + ('__class__',))
 
         def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)
@@ -211,6 +207,64 @@ class CodeTest(unittest.TestCase):
         # Ensure the zero-arg super() call in the injected method works
         obj = List([1, 2, 3])
         self.assertEqual(obj[0], "Foreign getitem: 1")
+
+    def test_constructor(self):
+        def func(): pass
+        co = func.__code__
+        CodeType = type(co)
+
+        # test code constructor
+        return CodeType(co.co_argcount,
+                        co.co_posonlyargcount,
+                        co.co_kwonlyargcount,
+                        co.co_nlocals,
+                        co.co_stacksize,
+                        co.co_flags,
+                        co.co_code,
+                        co.co_consts,
+                        co.co_names,
+                        co.co_varnames,
+                        co.co_filename,
+                        co.co_name,
+                        co.co_firstlineno,
+                        co.co_lnotab,
+                        co.co_freevars,
+                        co.co_cellvars)
+
+    def test_replace(self):
+        def func():
+            x = 1
+            return x
+        code = func.__code__
+
+        # different co_name, co_varnames, co_consts
+        def func2():
+            y = 2
+            return y
+        code2 = func.__code__
+
+        for attr, value in (
+            ("co_argcount", 0),
+            ("co_posonlyargcount", 0),
+            ("co_kwonlyargcount", 0),
+            ("co_nlocals", 0),
+            ("co_stacksize", 0),
+            ("co_flags", code.co_flags | inspect.CO_COROUTINE),
+            ("co_firstlineno", 100),
+            ("co_code", code2.co_code),
+            ("co_consts", code2.co_consts),
+            ("co_names", ("myname",)),
+            ("co_varnames", code2.co_varnames),
+            ("co_freevars", ("freevar",)),
+            ("co_cellvars", ("cellvar",)),
+            ("co_filename", "newfilename"),
+            ("co_name", "newname"),
+            ("co_lnotab", code2.co_lnotab),
+        ):
+            with self.subTest(attr=attr, value=value):
+                new_code = code.replace(**{attr: value})
+                self.assertEqual(getattr(new_code, attr), value)
+
 
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])

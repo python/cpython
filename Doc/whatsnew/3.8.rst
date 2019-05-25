@@ -138,7 +138,8 @@ environment variable, can be set using the new ``./configure --with-trace-refs``
 build option.
 (Contributed by Victor Stinner in :issue:`36465`.)
 
-On Unix, C extensions are no longer linked to libpython except on Android.
+On Unix, C extensions are no longer linked to libpython except on Android
+and Cygwin.
 It is now possible
 for a statically linked Python to load a C extension built using a shared
 library Python.
@@ -163,8 +164,8 @@ previous command fails (replace ``X.Y`` with the Python version).
 
 On the other hand, ``pkg-config python3.8 --libs`` no longer contains
 ``-lpython3.8``. C extensions must not be linked to libpython (except on
-Android, case handled by the script); this change is backward incompatible on
-purpose.
+Android and Cygwin, whose cases are handled by the script);
+this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
 f-strings now support =  for quick and easy debugging
@@ -238,6 +239,9 @@ Other Language Changes
   calling process can detect that it died due to a Ctrl-C.  Shells on POSIX
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
+
+* Added new ``replace()`` method to the code type (:class:`types.CodeType`).
+  (Contributed by Victor Stinner in :issue:`37032`.)
 
 
 New Modules
@@ -1050,7 +1054,8 @@ Changes in the Python API
 
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
-  in :pep:`570`.
+  in :pep:`570`. A new ``replace()`` method of :class:`types.CodeType` can be
+  used to make the code future-proof.
 
 
 Changes in the C API
@@ -1061,12 +1066,12 @@ Changes in the C API
   instead.
   (Contributed by Victor Stinner in :issue:`36728`.)
 
-* On Unix, C extensions are no longer linked to libpython except on
-  Android. When Python is embedded, ``libpython`` must not be loaded with
+* On Unix, C extensions are no longer linked to libpython except on Android
+  and Cygwin. When Python is embedded, ``libpython`` must not be loaded with
   ``RTLD_LOCAL``, but ``RTLD_GLOBAL`` instead. Previously, using
-  ``RTLD_LOCAL``, it was already not possible to load C extensions which were
-  not linked to ``libpython``, like C extensions of the standard library built
-  by the ``*shared*`` section of ``Modules/Setup``.
+  ``RTLD_LOCAL``, it was already not possible to load C extensions which
+  were not linked to ``libpython``, like C extensions of the standard
+  library built by the ``*shared*`` section of ``Modules/Setup``.
 
 * Use of ``#`` variants of formats in parsing or building value (e.g.
   :c:func:`PyArg_ParseTuple`, :c:func:`Py_BuildValue`, :c:func:`PyObject_CallFunction`,
