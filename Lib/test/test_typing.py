@@ -496,14 +496,16 @@ class LiteralTests(BaseTestCase):
         Literal[1, 2, 3]
         Literal["x", "y", "z"]
         Literal[None]
+        Literal[True]
+        Literal[1, "2", False]
+        Literal[Literal[1, 2], Literal[4, 5]]
+        Literal[b"foo", u"bar"]
 
     def test_illegal_parameters_do_not_raise_runtime_errors(self):
         # Type checkers should reject these types, but we do not
         # raise errors at runtime to maintain maximium flexibility.
         Literal[int]
-        Literal[Literal[1, 2], Literal[4, 5]]
         Literal[3j + 2, ..., ()]
-        Literal[b"foo", u"bar"]
         Literal[{"foo": 3, "bar": 4}]
         Literal[T]
 

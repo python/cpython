@@ -1081,16 +1081,22 @@ The module defines the following classes, functions and decorators:
 .. data:: Literal
 
    A type that can be used to indicate to type checkers that the
-   corresponding value has a value literally equivalent to the
-   provided parameter.  For example::
+   corresponding variable or function parameter has a value equivalent to
+   the provided literal (or one of several literals). For example::
 
-      var: Literal[4] = 4
+      def validate_simple(data: Any) -> Literal[True]:  # always returns True
+          ...
 
-   The type checker understands that var is literally equal to the
-   value 4 and no other value.
+      MODE = Literal['r', 'rb', 'w', 'wb']
+      def open_helper(file: str, mode: MODE) -> str:
+          ...
 
-   ``Literal[...]`` cannot be subclassed. There is no runtime checking
-   verifying that the parameter is actually a value instead of a type.
+      open_helper('/some/path', 'r')  # Passes type check
+      open_helper('/other/path', 'typo')  # Error in type checker
+
+   ``Literal[...]`` cannot be subclassed. At runtime, an arbitrary value
+   is allowed as type argument to ``Literal[...]``, but type checkers may
+   impose restrictions. See :pep:`586` for more details about literal types.
 
    .. versionadded:: 3.8
 
