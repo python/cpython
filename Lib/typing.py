@@ -401,17 +401,22 @@ ClassVar = _SpecialForm('ClassVar', doc=
     """)
 
 Final = _SpecialForm('Final', doc=
-"""A special typing construct to indicate that a name
-cannot be re-assigned or overridden in a subclass.
-For example:
-    MAX_SIZE: Final = 9000
-    MAX_SIZE += 1  # Error reported by type checker
-    class Connection:
-        TIMEOUT: Final[int] = 10
-    class FastConnector(Connection):
-        TIMEOUT = 1  # Error reported by type checker
-There is no runtime checking of these properties.
-""")
+    """Special typing construct to indicate final names.
+
+    A final name cannot be re-assigned or overridden in a subclass.
+    For example:
+
+      MAX_SIZE: Final = 9000
+      MAX_SIZE += 1  # Error reported by type checker
+
+      class Connection:
+          TIMEOUT: Final[int] = 10
+
+      class FastConnector(Connection):
+          TIMEOUT = 1  # Error reported by type checker
+
+    There is no runtime checking of these properties.
+    """)
 
 Union = _SpecialForm('Union', doc=
     """Union type; Union[X, Y] means either X or Y.
@@ -1101,21 +1106,26 @@ def overload(func):
 
 
 def final(f):
-    """This decorator can be used to indicate to type checkers that
-    the decorated method cannot be overridden, and decorated class
-    cannot be subclassed. For example:
-        class Base:
-            @final
-            def done(self) -> None:
+    """A decorator to indicate final methods and final classes.
+
+    Use this decorator to indicate to type checkers that the decorated
+    method cannot be overridden, and decorated class cannot be subclassed.
+    For example:
+
+      class Base:
+          @final
+          def done(self) -> None:
+              ...
+      class Sub(Base):
+          def done(self) -> None:  # Error reported by type checker
                 ...
-        class Sub(Base):
-            def done(self) -> None:  # Error reported by type checker
-                ...
-        @final
-        class Leaf:
-            ...
-        class Other(Leaf):  # Error reported by type checker
-            ...
+
+      @final
+      class Leaf:
+          ...
+      class Other(Leaf):  # Error reported by type checker
+          ...
+
     There is no runtime checking of these properties.
     """
     return f
