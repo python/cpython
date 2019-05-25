@@ -21,7 +21,7 @@ class AsyncClass:
 async def async_func():
     pass
 
-async def async_func_1(a, b, *, c):
+async def async_func_args(a, b, *, c):
     pass
 
 def normal_func():
@@ -145,7 +145,7 @@ class AsyncAutospecTest(unittest.TestCase):
             create_autospec(async_func, instance=True)
 
     def test_create_autospec(self):
-        spec = create_autospec(async_func_1)
+        spec = create_autospec(async_func_args)
         awaitable = spec(1, 2, c=3)
         async def main():
             await awaitable
@@ -253,13 +253,15 @@ class AsyncSpecTest(unittest.TestCase):
     def test_patch_with_autospec(self):
 
         async def test_async():
-            with patch(f"{__name__}.async_func_1", autospec=True) as mock_method:
+            with patch(f"{__name__}.async_func_args", autospec=True) as mock_method:
                 awaitable = mock_method(1, 2, c=3)
                 self.assertIsInstance(mock_method.mock, AsyncMock)
 
                 self.assertTrue(asyncio.iscoroutinefunction(mock_method))
                 self.assertTrue(asyncio.iscoroutine(awaitable))
                 self.assertTrue(inspect.isawaitable(awaitable))
+
+                # Verify the default values during mock setup
                 self.assertEqual(mock_method.await_count, 0)
                 self.assertEqual(mock_method.await_args_list, [])
                 self.assertIsNone(mock_method.await_args)
