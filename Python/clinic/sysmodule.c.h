@@ -510,15 +510,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(sys_set_coroutine_wrapper__doc__,
-"set_coroutine_wrapper($module, wrapper, /)\n"
-"--\n"
-"\n"
-"Set a wrapper for coroutine objects.");
-
-#define SYS_SET_COROUTINE_WRAPPER_METHODDEF    \
-    {"set_coroutine_wrapper", (PyCFunction)sys_set_coroutine_wrapper, METH_O, sys_set_coroutine_wrapper__doc__},
-
 PyDoc_STRVAR(sys_get_coroutine_wrapper__doc__,
 "get_coroutine_wrapper($module, /)\n"
 "--\n"
