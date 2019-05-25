@@ -3122,6 +3122,18 @@ class TermsizeTests(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
+@unittest.skipUnless(sysconfig.get_config_var(
+                     'HAVE_MEMFD_CREATE_SYSCALL') == 1,
+                     'requires os.memfd_create')
+class MemfdCreateTests(unittest.TestCase):
+    def test_memfd_create(self):
+        fd = os.memfd_create("Hi", os.MFD_CLOEXEC)
+        self.assertNotEqual(fd, -1)
+        with open(fd, "wb") as f:
+            f.write(b'memfd_create')
+            self.assertEqual(f.tell(), 12)
+
+
 class OSErrorTests(unittest.TestCase):
     def setUp(self):
         class Str(str):

@@ -7343,6 +7343,52 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_MEMFD_CREATE_SYSCALL)
+
+PyDoc_STRVAR(os_memfd_create__doc__,
+"memfd_create($module, name, flags, /)\n"
+"--\n"
+"\n");
+
+#define OS_MEMFD_CREATE_METHODDEF    \
+    {"memfd_create", (PyCFunction)(void(*)(void))os_memfd_create, METH_FASTCALL, os_memfd_create__doc__},
+
+static PyObject *
+os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags);
+
+static PyObject *
+os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *name = NULL;
+    unsigned int flags;
+
+    if (!_PyArg_CheckPositional("memfd_create", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &name)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (flags == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = os_memfd_create_impl(module, name, flags);
+
+exit:
+    /* Cleanup for name */
+    Py_XDECREF(name);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_MEMFD_CREATE_SYSCALL) */
+
 PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
 "--\n"
@@ -8549,6 +8595,10 @@ exit:
     #define OS_LISTXATTR_METHODDEF
 #endif /* !defined(OS_LISTXATTR_METHODDEF) */
 
+#ifndef OS_MEMFD_CREATE_METHODDEF
+    #define OS_MEMFD_CREATE_METHODDEF
+#endif /* !defined(OS_MEMFD_CREATE_METHODDEF) */
+
 #ifndef OS_GET_HANDLE_INHERITABLE_METHODDEF
     #define OS_GET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_GET_HANDLE_INHERITABLE_METHODDEF) */
@@ -8576,4 +8626,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=5ee9420fb2e7aa2c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6a5172c69f2c30a input=a9049054013a1b77]*/

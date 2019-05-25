@@ -2982,6 +2982,21 @@ features:
       Added support for :class:`bytes` paths.
 
 
+.. function:: memfd_create(name, flags)
+
+   Create an anonymous file and return a file descriptor that refers to it.
+   *flags* must be one of the ``os.MFD_*`` constants available on the system
+   (or a bitwise ORed combination of them).
+
+   .. availability:: Linux 3.17 and newer.
+
+   .. versionadded:: 3.8
+
+
+.. data:: MFD_CLOEXEC
+.. data:: MFD_ALLOW_SEALING
+
+
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

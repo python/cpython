@@ -5487,6 +5487,27 @@ if test "$have_getrandom" = yes; then
               [Define to 1 if the getrandom() function is available])
 fi
 
+# check if the memfd_create() function is available
+AC_MSG_CHECKING(for the memfd_create() function)
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    #include <unistd.h>
+    #include <sys/syscall.h>
+
+    int main() {
+        (void)syscall(__NR_memfd_create, "", 0);
+        return 0;
+    }
+  ]])
+],[have_memfd_create=yes],[have_memfd_create=no])
+AC_MSG_RESULT($have_memfd_create)
+
+if test "$have_memfd_create" = yes; then
+    AC_DEFINE(HAVE_MEMFD_CREATE_SYSCALL, 1,
+              [Define to 1 if the memfd_create() function is available])
+fi
+
 # checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c
 # shm_* may only be available if linking against librt
 save_LIBS="$LIBS"
