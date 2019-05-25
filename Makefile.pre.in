@@ -1320,6 +1320,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
 		importlib \
+		importlib/metadata \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/data01 \
