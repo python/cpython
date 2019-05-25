@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-The Python team applies security fixes according to the table in
+The Python team applies security fixes according to the table
 in [the devguide](
 https://devguide.python.org/#status-of-python-branches
 ).
