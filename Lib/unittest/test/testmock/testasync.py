@@ -67,8 +67,8 @@ class AsyncPatchDecoratorTest(unittest.TestCase):
         async def test_async():
             self.assertIsInstance(async_func, AsyncMock)
 
-        self.assertTrue(inspect.iscoroutinefunction(async_func))
         asyncio.run(test_async())
+        self.assertTrue(inspect.iscoroutinefunction(async_func))
 
 
 class AsyncPatchCMTest(unittest.TestCase):
