@@ -1957,7 +1957,7 @@ The full list of supported magic methods is:
 * Pickling: ``__reduce__``, ``__reduce_ex__``, ``__getinitargs__``,
   ``__getnewargs__``, ``__getstate__`` and ``__setstate__``
 * File system path representation: ``__fspath__``
-* Asynchronous iteration methods: ``__aiter__``, ``__anext__``
+* Asynchronous iteration methods: ``__aiter__`` and ``__anext__``
 
 .. versionchanged:: 3.8
    Added support for :func:`os.PathLike.__fspath__`.
