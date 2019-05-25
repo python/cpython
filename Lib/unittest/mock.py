@@ -2181,7 +2181,7 @@ class AsyncMockMixin(Base):
         """
         self = _mock_self
         if self.await_count != 0:
-            msg = (f"Expected {self._mock_name or 'mock'} to have been not awaited."
+            msg = (f"Expected {self._mock_name or 'mock'} to not have been awaited."
                    f" Awaited {self.await_count} times.")
             raise AssertionError(msg)
 
