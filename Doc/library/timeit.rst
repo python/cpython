@@ -58,36 +58,38 @@ Python Interface
 The module defines three convenience functions and a public class:
 
 
-.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000, globals=None, max_time_taken=0.2)
+.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000, globals=None, target_time=0.2)
 
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.timeit` method with *number* executions.
    The optional *globals* argument specifies a namespace in which to execute the
    code. If *number* is 0, :meth:`.autorange` method is executed, a convenience
-   function that calls :meth:`.timeit` repeatedly so that the total time >= *max_time_taken* second.
+   function that calls :meth:`.timeit` repeatedly so that the total time >= *target_time* second.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
    .. versionchanged:: 3.8
-      The optional *max_time_taken* parameter was added.
+      The optional *target_time* parameter was added.
 
 
-.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=5, number=1000000, globals=None, max_time_taken=0.2)
+.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=5, number=1000000, globals=None, target_time=0.2)
 
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.repeat` method with the given *repeat*
    count and *number* executions.  The optional *globals* argument specifies a
    namespace in which to execute the code. If *number* is 0, :meth:`.autorange`
    method is executed, a convenience function that calls :meth:`.timeit` repeatedly
-   so that the total time >= *max_time_taken* second.
+   so that the total time >= *target_time* second.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
    .. versionchanged:: 3.7
       Default value of *repeat* changed from 3 to 5.
-      The optional *max_time_taken* parameter was added.
+
+   .. versionchanged:: 3.8
+      The optional *target_time* parameter was added.
 
 .. function:: default_timer()
 
@@ -97,7 +99,7 @@ The module defines three convenience functions and a public class:
       :func:`time.perf_counter` is now the default timer.
 
 
-.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None, max_time_taken=0.2)
+.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None, target_time=0.2)
 
    Class for timing execution speed of small code snippets.
 
@@ -124,7 +126,7 @@ The module defines three convenience functions and a public class:
       The optional *globals* parameter was added.
 
    .. versionchanged:: 3.8
-      The optional *max_time_taken* parameter was added.
+      The optional *target_time* parameter was added.
 
    .. method:: Timer.timeit(number=1000000)
 
@@ -147,15 +149,15 @@ The module defines three convenience functions and a public class:
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
 
-   .. method:: Timer.autorange(callback=None)
+   .. method:: Timer.autorange(callback=None, target_time=None)
 
       Automatically determine how many times to call :meth:`.timeit`.
 
       This is a convenience function that calls :meth:`.timeit` repeatedly
-      so that the total time >= *Timer.max_time_taken* second, returning the eventual
+      so that the total time >= *Timer.target_time* seconds, returning the eventual
       (number of loops, time taken for that number of loops). It calls
       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
-      10, 20, 50, ... until the time taken is at least *max_time_taken* second.
+      10, 20, 50, ... until the time taken is at least *target_time* seconds.
 
       If *callback* is given and is not ``None``, it will be called after
       each trial with two arguments: ``callback(number, time_taken)``.
@@ -243,9 +245,9 @@ Where the following options are understood:
 
    .. versionadded:: 3.5
 
-.. cmdoption:: -m, --max_time_taken=M
+.. cmdoption:: -t, --target_time=T
 
-    calls :meth:`.timeit` repeatedly so that the total time >= *max_time_taken* second
+    calls :meth:`.timeit` repeatedly so that the total time >= *target_time* seconds
 
    .. versionadded:: 3.8
 

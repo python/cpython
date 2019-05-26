@@ -143,7 +143,8 @@ class TestTimeit(unittest.TestCase):
 
     def test_timeit_function_max_time_taken(self):
         delta_time = timeit.timeit(self.fake_stmt, self.fake_setup, number=0,
-                timer=FakeTimer(), max_time_taken=1)
+                timer=FakeTimer(), target_time=1)
+        self.assertEqual(delta_time, (1, 1.0))
 
     def test_timeit_globals_args(self):
         global _global_timer
@@ -156,9 +157,9 @@ class TestTimeit(unittest.TestCase):
         timeit.timeit(stmt='local_timer.inc()', timer=local_timer,
                       globals=locals(), number=3)
 
-    def repeat(self, stmt, setup, repeat=None, number=None, max_time_taken=0.5):
+    def repeat(self, stmt, setup, repeat=None, number=None, target_time=0.5):
         self.fake_timer = FakeTimer()
-        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer, max_time_taken=max_time_taken)
+        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer, target_time=target_time)
         kwargs = {}
         if repeat is None:
             repeat = DEFAULT_REPEAT
@@ -192,7 +193,7 @@ class TestTimeit(unittest.TestCase):
 
     def test_repeat_callable_max_time_taken(self):
         self.repeat(self.fake_callable_stmt, self.fake_setup,
-                repeat=3, number=5, max_time_taken=1)
+                repeat=3, number=5, target_time=1)
 
     def test_repeat_callable_setup(self):
         self.repeat(self.fake_stmt, self.fake_callable_setup,
