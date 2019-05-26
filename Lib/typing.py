@@ -983,10 +983,10 @@ def _allow_reckless_class_cheks():
         return True
 
 
-_PROTOCOL_ WHITELIST = ['Callable', 'Awaitable',
-                        'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
-                        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
-                        'ContextManager', 'AsyncContextManager']
+_PROTOCOL_WHITELIST = ['Callable', 'Awaitable',
+                       'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
+                       'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+                       'ContextManager', 'AsyncContextManager']
 
 
 class _ProtocolMeta(ABCMeta):
