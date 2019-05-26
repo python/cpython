@@ -96,9 +96,9 @@ The :mod:`functools` module defines the following functions:
    the *maxsize* at its default value of 128::
 
        @lru_cache
-       def summary_statistics(data):
-           data = list(data)
-           return len(data), min(data), mean(data), max(data), stdev(data)
+       def count_vowels(sentence):
+           sentence = sentence.casefold()
+           return sum(sentence.count(vowel) for vowel in 'aeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.  The LRU feature performs best when *maxsize* is a
