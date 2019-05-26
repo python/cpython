@@ -239,6 +239,12 @@ def _setup_async_mock(mock):
     mock.await_args_list = _CallList()
     mock.awaited = _AwaitEvent(mock)
 
+    # Mock is not configured yet so the attributes are set
+    # to a function and then the corresponding mock helper function
+    # is called when the helper is accessed similar to _setup_func.
+    def wrapper(attr, *args, **kwargs):
+        return getattr(mock.mock, attr)(*args, **kwargs)
+
     for attribute in ('assert_awaited',
                       'assert_awaited_once',
                       'assert_awaited_with',
@@ -246,13 +252,12 @@ def _setup_async_mock(mock):
                       'assert_any_await',
                       'assert_has_awaits',
                       'assert_not_awaited'):
-        def f(attribute, *args, **kwargs):
-            return getattr(mock.mock, attribute)(*args, **kwargs)
-        # setattr(mock, attribute, f) causes late binding
+
+        # setattr(mock, attribute, wrapper) causes late binding
         # hence attribute will always be the last value in the loop
-        # Use partial(f, attribute) to ensure the attribute is bound
+        # Use partial(wrapper, attribute) to ensure the attribute is bound
         # correctly.
-        setattr(mock, attribute, partial(f, attribute))
+        setattr(mock, attribute, partial(wrapper, attribute))
 
 
 def _is_magic(name):
