@@ -57,9 +57,9 @@ class PyPicklerTests(AbstractPickleTests):
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
 
-    def dumps(self, arg, proto=None):
+    def dumps(self, arg, proto=None, **kwargs):
         f = io.BytesIO()
-        p = self.pickler(f, proto)
+        p = self.pickler(f, proto, **kwargs)
         p.dump(arg)
         f.seek(0)
         return bytes(f.read())
@@ -78,8 +78,8 @@ class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
                         AttributeError, ValueError,
                         struct.error, IndexError, ImportError)
 
-    def dumps(self, arg, protocol=None):
-        return pickle.dumps(arg, protocol)
+    def dumps(self, arg, protocol=None, **kwargs):
+        return pickle.dumps(arg, protocol, **kwargs)
 
     def loads(self, buf, **kwds):
         return pickle.loads(buf, **kwds)
@@ -271,7 +271,7 @@ if has_c_implementation:
         check_sizeof = support.check_sizeof
 
         def test_pickler(self):
-            basesize = support.calcobjsize('6P2n3i2n3i2P')
+            basesize = support.calcobjsize('7P2n3i2n3i2P')
             p = _pickle.Pickler(io.BytesIO())
             self.assertEqual(object.__sizeof__(p), basesize)
             MT_size = struct.calcsize('3nP0n')
@@ -288,7 +288,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n6P2n2i')
+            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n8P2n2i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.

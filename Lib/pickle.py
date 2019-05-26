@@ -36,8 +36,10 @@ import io
 import codecs
 import _compat_pickle
 
+from _pickle import PickleBuffer
+
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
-           "Unpickler", "dump", "dumps", "load", "loads"]
+           "Unpickler", "dump", "dumps", "load", "loads", "PickleBuffer"]
 
 # Shortcut for use in isinstance testing
 bytes_types = (bytes, bytearray)
@@ -51,10 +53,11 @@ compatible_formats = ["1.0",            # Original protocol 0
                       "2.0",            # Protocol 2
                       "3.0",            # Protocol 3
                       "4.0",            # Protocol 4
+                      "5.0",            # Protocol 5
                       ]                 # Old format versions we can read
 
 # This is the highest protocol number we know how to read.
-HIGHEST_PROTOCOL = 4
+HIGHEST_PROTOCOL = 5
 
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
 # Only bump this if the oldest still supported version of Python already
@@ -167,6 +170,7 @@ BINBYTES       = b'B'   # push bytes; counted binary string argument
 SHORT_BINBYTES = b'C'   #  "     "   ;    "      "       "      " < 256 bytes
 
 # Protocol 4
+
 SHORT_BINUNICODE = b'\x8c'  # push short string; UTF-8 length < 256 bytes
 BINUNICODE8      = b'\x8d'  # push very long string
 BINBYTES8        = b'\x8e'  # push very long bytes string
@@ -177,6 +181,12 @@ NEWOBJ_EX        = b'\x92'  # like NEWOBJ but work with keyword only arguments
 STACK_GLOBAL     = b'\x93'  # same as GLOBAL but using names on the stacks
 MEMOIZE          = b'\x94'  # store top of the stack in memo
 FRAME            = b'\x95'  # indicate the beginning of a new frame
+
+# Protocol 5
+
+BYTEARRAY8       = b'\x96'  # push bytearray
+NEXT_BUFFER      = b'\x97'  # push next out-of-band buffer
+READONLY_BUFFER  = b'\x98'  # make top of stack readonly
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
 
@@ -250,6 +260,23 @@ class _Unframer:
         self.file_read = file_read
         self.file_readline = file_readline
         self.current_frame = None
+
+    def readinto(self, buf):
+        if self.current_frame:
+            n = self.current_frame.readinto(buf)
+            if n == 0 and len(buf) != 0:
+                self.current_frame = None
+                n = len(buf)
+                buf[:] = self.file_read(n)
+                return n
+            if n < len(buf):
+                raise UnpicklingError(
+                    "pickle exhausted before end of frame")
+            return n
+        else:
+            n = len(buf)
+            buf[:] = self.file_read(n)
+            return n
 
     def read(self, n):
         if self.current_frame:
@@ -371,7 +398,8 @@ def decode_long(data):
 
 class _Pickler:
 
-    def __init__(self, file, protocol=None, *, fix_imports=True):
+    def __init__(self, file, protocol=None, *, fix_imports=True,
+                 buffer_callback=None):
         """This takes a binary file for writing a pickle data stream.
 
         The optional *protocol* argument tells the pickler to use the
@@ -393,6 +421,17 @@ class _Pickler:
         will try to map the new Python 3 names to the old module names
         used in Python 2, so that the pickle data stream is readable
         with Python 2.
+
+        If *buffer_callback* is None (the default), buffer views are
+        serialized into *file* as part of the pickle stream.
+
+        If *buffer_callback* is not None, then it can be called any number
+        of times with a buffer view.  If the callback returns a false value
+        (such as None), the given buffer is out-of-band; otherwise the
+        buffer is serialized in-band, i.e. inside the pickle stream.
+
+        It is an error if *buffer_callback* is not None and *protocol*
+        is None or smaller than 5.
         """
         if protocol is None:
             protocol = DEFAULT_PROTOCOL
@@ -400,6 +439,9 @@ class _Pickler:
             protocol = HIGHEST_PROTOCOL
         elif not 0 <= protocol <= HIGHEST_PROTOCOL:
             raise ValueError("pickle protocol must be <= %d" % HIGHEST_PROTOCOL)
+        if buffer_callback is not None and protocol < 5:
+            raise ValueError("buffer_callback needs protocol >= 5")
+        self._buffer_callback = buffer_callback
         try:
             self._file_write = file.write
         except AttributeError:
@@ -756,6 +798,46 @@ class _Pickler:
         self.memoize(obj)
     dispatch[bytes] = save_bytes
 
+    def save_bytearray(self, obj):
+        if self.proto < 5:
+            if not obj:  # bytearray is empty
+                self.save_reduce(bytearray, (), obj=obj)
+            else:
+                self.save_reduce(bytearray, (bytes(obj),), obj=obj)
+            return
+        n = len(obj)
+        if n >= self.framer._FRAME_SIZE_TARGET:
+            self._write_large_bytes(BYTEARRAY8 + pack("<Q", n), obj)
+        else:
+            self.write(BYTEARRAY8 + pack("<Q", n) + obj)
+    dispatch[bytearray] = save_bytearray
+
+    def save_picklebuffer(self, obj):
+        if self.proto < 5:
+            raise PicklingError("PickleBuffer can only pickled with "
+                                "protocol >= 5")
+        with obj.raw() as m:
+            if not m.contiguous:
+                raise PicklingError("PickleBuffer can not be pickled when "
+                                    "pointing to a non-contiguous buffer")
+            in_band = True
+            if self._buffer_callback is not None:
+                in_band = bool(self._buffer_callback(obj))
+            if in_band:
+                # Write data in-band
+                # XXX The C implementation avoids a copy here
+                if m.readonly:
+                    self.save_bytes(m.tobytes())
+                else:
+                    self.save_bytearray(m.tobytes())
+            else:
+                # Write data out-of-band
+                self.write(NEXT_BUFFER)
+                if m.readonly:
+                    self.write(READONLY_BUFFER)
+
+    dispatch[PickleBuffer] = save_picklebuffer
+
     def save_str(self, obj):
         if self.bin:
             encoded = obj.encode('utf-8', 'surrogatepass')
@@ -1042,7 +1124,7 @@ class _Pickler:
 class _Unpickler:
 
     def __init__(self, file, *, fix_imports=True,
-                 encoding="ASCII", errors="strict"):
+                 encoding="ASCII", errors="strict", buffers=None):
         """This takes a binary file for reading a pickle data stream.
 
         The protocol version of the pickle is detected automatically, so
@@ -1061,7 +1143,17 @@ class _Unpickler:
         reading, a BytesIO object, or any other custom object that
         meets this interface.
 
-        Optional keyword arguments are *fix_imports*, *encoding* and
+        If *buffers* is not None, it should be an iterable of buffer-enabled
+        objects that is consumed each time the pickle stream references
+        an out-of-band buffer view.  Such buffers have been given in order
+        to the *buffer_callback* of a Pickler object.
+
+        If *buffers* is None (the default), then the buffers are taken
+        from the pickle stream, assuming they are serialized there.
+        It is an error for *buffers* to be None if the pickle stream
+        was produced with a non-None *buffer_callback*.
+
+        Other optional arguments are *fix_imports*, *encoding* and
         *errors*, which are used to control compatibility support for
         pickle stream generated by Python 2.  If *fix_imports* is True,
         pickle will try to map the old Python 2 names to the new names
@@ -1070,6 +1162,7 @@ class _Unpickler:
         default to 'ASCII' and 'strict', respectively. *encoding* can be
         'bytes' to read theses 8-bit string instances as bytes objects.
         """
+        self._buffers = iter(buffers) if buffers is not None else None
         self._file_readline = file.readline
         self._file_read = file.read
         self.memo = {}
@@ -1090,6 +1183,7 @@ class _Unpickler:
                                   "%s.__init__()" % (self.__class__.__name__,))
         self._unframer = _Unframer(self._file_read, self._file_readline)
         self.read = self._unframer.read
+        self.readinto = self._unframer.readinto
         self.readline = self._unframer.readline
         self.metastack = []
         self.stack = []
@@ -1275,6 +1369,34 @@ class _Unpickler:
                                   "of %d bytes" % maxsize)
         self.append(self.read(len))
     dispatch[BINBYTES8[0]] = load_binbytes8
+
+    def load_bytearray8(self):
+        len, = unpack('<Q', self.read(8))
+        if len > maxsize:
+            raise UnpicklingError("BYTEARRAY8 exceeds system's maximum size "
+                                  "of %d bytes" % maxsize)
+        b = bytearray(len)
+        self.readinto(b)
+        self.append(b)
+    dispatch[BYTEARRAY8[0]] = load_bytearray8
+
+    def load_next_buffer(self):
+        if self._buffers is None:
+            raise UnpicklingError("pickle stream refers to out-of-band data "
+                                  "but no *buffers* argument was given")
+        try:
+            buf = next(self._buffers)
+        except StopIteration:
+            raise UnpicklingError("not enough out-of-band buffers")
+        self.append(buf)
+    dispatch[NEXT_BUFFER[0]] = load_next_buffer
+
+    def load_readonly_buffer(self):
+        buf = self.stack[-1]
+        with memoryview(buf) as m:
+            if not m.readonly:
+                self.stack[-1] = m.toreadonly()
+    dispatch[READONLY_BUFFER[0]] = load_readonly_buffer
 
     def load_short_binstring(self):
         len = self.read(1)[0]
@@ -1600,25 +1722,29 @@ class _Unpickler:
 
 # Shorthands
 
-def _dump(obj, file, protocol=None, *, fix_imports=True):
-    _Pickler(file, protocol, fix_imports=fix_imports).dump(obj)
+def _dump(obj, file, protocol=None, *, fix_imports=True, buffer_callback=None):
+    _Pickler(file, protocol, fix_imports=fix_imports,
+             buffer_callback=buffer_callback).dump(obj)
 
-def _dumps(obj, protocol=None, *, fix_imports=True):
+def _dumps(obj, protocol=None, *, fix_imports=True, buffer_callback=None):
     f = io.BytesIO()
-    _Pickler(f, protocol, fix_imports=fix_imports).dump(obj)
+    _Pickler(f, protocol, fix_imports=fix_imports,
+             buffer_callback=buffer_callback).dump(obj)
     res = f.getvalue()
     assert isinstance(res, bytes_types)
     return res
 
-def _load(file, *, fix_imports=True, encoding="ASCII", errors="strict"):
-    return _Unpickler(file, fix_imports=fix_imports,
+def _load(file, *, fix_imports=True, encoding="ASCII", errors="strict",
+          buffers=None):
+    return _Unpickler(file, fix_imports=fix_imports, buffers=buffers,
                      encoding=encoding, errors=errors).load()
 
-def _loads(s, *, fix_imports=True, encoding="ASCII", errors="strict"):
+def _loads(s, *, fix_imports=True, encoding="ASCII", errors="strict",
+           buffers=None):
     if isinstance(s, str):
         raise TypeError("Can't load pickle from unicode string")
     file = io.BytesIO(s)
-    return _Unpickler(file, fix_imports=fix_imports,
+    return _Unpickler(file, fix_imports=fix_imports, buffers=buffers,
                       encoding=encoding, errors=errors).load()
 
 # Use the faster _pickle if possible
