@@ -115,10 +115,12 @@ class CheckSuspiciousMarkupBuilder(Builder):
     def finish(self):
         unused_rules = [rule for rule in self.rules if not rule.used]
         if unused_rules:
-            self.logger.warn('Found %s/%s unused rules:' %
-                             (len(unused_rules), len(self.rules)))
-            for rule in unused_rules:
-                self.logger.info(repr(rule))
+            self.logger.warning(
+                'Found %s/%s unused rules: %s' % (
+                    len(unused_rules), len(self.rules),
+                    ''.join(repr(rule) for rule in unused_rules),
+                )
+            )
         return
 
     def check_issue(self, line, lineno, issue):
