@@ -534,10 +534,18 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                          dirs_exist_ok=dirs_exist_ok)
 
 # version vulnerable to race conditions
+#
+# Ignore FileNotFoundError exceptions because
+# another process may have deleted the directory
+# entry after we started scanning.
+# See issue #29699 for details.
+
 def _rmtree_unsafe(path, onerror):
     try:
         with os.scandir(path) as scandir_it:
             entries = list(scandir_it)
+    except FileNotFoundError:
+        pass
     except OSError:
         onerror(os.scandir, path, sys.exc_info())
         entries = []
@@ -545,6 +553,8 @@ def _rmtree_unsafe(path, onerror):
         fullname = entry.path
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
+        except FileNotFoundError:
+            pass
         except OSError:
             is_dir = False
         if is_dir:
@@ -561,18 +571,30 @@ def _rmtree_unsafe(path, onerror):
         else:
             try:
                 os.unlink(fullname)
+            except FileNotFoundError:
+                pass
             except OSError:
                 onerror(os.unlink, fullname, sys.exc_info())
     try:
         os.rmdir(path)
+    except FileNotFoundError:
+        pass
     except OSError:
         onerror(os.rmdir, path, sys.exc_info())
 
 # Version using fd-based APIs to protect against races
+#
+# Ignore FileNotFoundError exceptions because
+# another process may have deleted the directory
+# entry after we started scanning.
+# See issue #29699 for details.
+
 def _rmtree_safe_fd(topfd, path, onerror):
     try:
         with os.scandir(topfd) as scandir_it:
             entries = list(scandir_it)
+    except FileNotFoundError:
+        pass
     except OSError as err:
         err.filename = path
         onerror(os.scandir, path, sys.exc_info())
@@ -589,6 +611,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
         if is_dir:
             try:
                 dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
+            except FileNotFoundError:
+                pass
             except OSError:
                 onerror(os.open, fullname, sys.exc_info())
             else:
@@ -597,6 +621,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
                         _rmtree_safe_fd(dirfd, fullname, onerror)
                         try:
                             os.rmdir(entry.name, dir_fd=topfd)
+                        except FileNotFoundError:
+                            pass
                         except OSError:
                             onerror(os.rmdir, fullname, sys.exc_info())
                     else:
@@ -613,6 +639,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
         else:
             try:
                 os.unlink(entry.name, dir_fd=topfd)
+            except FileNotFoundError:
+                pass
             except OSError:
                 onerror(os.unlink, fullname, sys.exc_info())
 
