@@ -407,8 +407,8 @@ NSKeyedArchiver-encoded binary plists.
 py_compile
 ----------
 
-* The :meth:`py_compile.compile` method now supports silent mode.
-  (Contributed by Joannah Nanjekye in :issue:`22640`.)
+The :meth:`py_compile.compile` method now supports silent mode.
+(Contributed by Joannah Nanjekye in :issue:`22640`.)
 
 
 socket
