@@ -76,7 +76,8 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
 
-.. decorator:: lru_cache(maxsize=128, typed=False)
+.. decorator:: lru_cache(user_function)
+               lru_cache(maxsize=128, typed=False)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
@@ -89,6 +90,15 @@ The :mod:`functools` module defines the following functions:
    separate cache entries.  For example, `f(a=1, b=2)` and `f(b=2, a=1)`
    differ in their keyword argument order and may have two separate cache
    entries.
+
+   If *user_function* is specified, it must be a callable. This allows the
+   *lru_cache* decorator to be applied directly to a user function, leaving
+   the *maxsize* at its default value of 128::
+
+       @lru_cache
+       def count_vowels(sentence):
+           sentence = sentence.casefold()
+           return sum(sentence.count(vowel) for vowel in 'aeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.  The LRU feature performs best when *maxsize* is a
@@ -164,6 +174,9 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.3
       Added the *typed* option.
+
+   .. versionchanged:: 3.8
+      Added the *user_function* option.
 
 .. decorator:: total_ordering
 
