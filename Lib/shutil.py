@@ -545,7 +545,7 @@ def _rmtree_unsafe(path, onerror):
         with os.scandir(path) as scandir_it:
             entries = list(scandir_it)
     except FileNotFoundError:
-        pass
+        return
     except OSError:
         onerror(os.scandir, path, sys.exc_info())
         entries = []
@@ -594,7 +594,7 @@ def _rmtree_safe_fd(topfd, path, onerror):
         with os.scandir(topfd) as scandir_it:
             entries = list(scandir_it)
     except FileNotFoundError:
-        pass
+        return
     except OSError as err:
         err.filename = path
         onerror(os.scandir, path, sys.exc_info())
