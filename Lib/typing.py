@@ -983,10 +983,10 @@ def _allow_reckless_class_cheks():
         return True
 
 
-_PROTOCOL_WHITELIST = ['Callable', 'Awaitable',
-                       'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
-                       'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
-                       'ContextManager', 'AsyncContextManager']
+_PROTO_WHITELIST = ['Callable', 'Awaitable',
+                    'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
+                    'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+                    'ContextManager', 'AsyncContextManager']
 
 
 class _ProtocolMeta(ABCMeta):
@@ -1097,6 +1097,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
             if not (base in (object, Generic) or
+                    base.__module__ == 'collections.abc' and base.__name__ in _PROTO_WHITELIST or
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)

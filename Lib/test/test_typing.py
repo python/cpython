@@ -1348,6 +1348,20 @@ class ProtocolTests(BaseTestCase):
         c = C2()
         self.assertIsInstance(c, C1)
 
+    def test_collections_protocols_allowed(self):
+        @runtime_checkable
+        class Custom(collections.abc.Iterable, Protocol):
+            def close(self): ...
+
+        class A: pass
+        class B:
+            def __iter__(self):
+                return []
+            def close(self):
+                return 0
+
+        self.assertIsSubclass(B, Custom)
+        self.assertNotIsSubclass(A, Custom)
 
 class GenericTests(BaseTestCase):
 
