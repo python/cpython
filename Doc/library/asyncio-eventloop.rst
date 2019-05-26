@@ -1218,9 +1218,9 @@ async/await code consider using the high-level
    Other parameters:
 
    * *stdin* can be any of these:
-   
+
      * a file-like object representing a pipe to be connected to the
-       subprocess's standard input stream using 
+       subprocess's standard input stream using
        :meth:`~loop.connect_write_pipe`
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
@@ -1232,7 +1232,7 @@ async/await code consider using the high-level
    * *stdout* can be any of these:
 
      * a file-like object representing a pipe to be connected to the
-       subprocess's standard output stream using 
+       subprocess's standard output stream using
        :meth:`~loop.connect_write_pipe`
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
@@ -1241,10 +1241,10 @@ async/await code consider using the high-level
      * the :const:`subprocess.DEVNULL` constant which indicates that the
        special :data:`os.devnull` file will be used
 
-   * *stderr* can be any of these: 
-    
+   * *stderr* can be any of these:
+
      * a file-like object representing a pipe to be connected to the
-       subprocess's standard error stream using 
+       subprocess's standard error stream using
        :meth:`~loop.connect_write_pipe`
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
