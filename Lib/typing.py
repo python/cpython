@@ -37,6 +37,7 @@ __all__ = [
     'ClassVar',
     'Final',
     'Generic',
+    'Literal',
     'Optional',
     'Tuple',
     'Type',
@@ -355,6 +356,10 @@ class _SpecialForm(_Final, _Immutable, _root=True):
         if self._name == 'Optional':
             arg = _type_check(parameters, "Optional[t] requires a single type.")
             return Union[arg, type(None)]
+        if self._name == 'Literal':
+            # There is no '_type_check' call because arguments to Literal[...] are
+            # values, not types.
+            return _GenericAlias(self, parameters)
         raise TypeError(f"{self} is not subscriptable")
 
 
@@ -449,6 +454,28 @@ Optional = _SpecialForm('Optional', doc=
     """Optional type.
 
     Optional[X] is equivalent to Union[X, None].
+    """)
+
+Literal = _SpecialForm('Literal', doc=
+    """Special typing form to define literal types (a.k.a. value types).
+
+    This form can be used to indicate to type checkers that the corresponding
+    variable or function parameter has a value equivalent to the provided
+    literal (or one of several literals):
+
+      def validate_simple(data: Any) -> Literal[True]:  # always returns True
+          ...
+
+      MODE = Literal['r', 'rb', 'w', 'wb']
+      def open_helper(file: str, mode: MODE) -> str:
+          ...
+
+      open_helper('/some/path', 'r')  # Passes type check
+      open_helper('/other/path', 'typo')  # Error in type checker
+
+   Literal[...] cannot be subclassed. At runtime, an arbitrary value
+   is allowed as type argument to Literal[...], but type checkers may
+   impose restrictions.
     """)
 
 
