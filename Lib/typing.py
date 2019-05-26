@@ -35,6 +35,7 @@ __all__ = [
     'Any',
     'Callable',
     'ClassVar',
+    'Final',
     'Generic',
     'Optional',
     'Tuple',
@@ -92,6 +93,7 @@ __all__ = [
     # One-off things.
     'AnyStr',
     'cast',
+    'final',
     'get_type_hints',
     'NewType',
     'no_type_check',
@@ -121,7 +123,7 @@ def _type_check(arg, msg, is_argument=True):
     """
     invalid_generic_forms = (Generic, _Protocol)
     if is_argument:
-        invalid_generic_forms = invalid_generic_forms + (ClassVar, )
+        invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
 
     if arg is None:
         return type(None)
@@ -336,8 +338,8 @@ class _SpecialForm(_Final, _Immutable, _root=True):
 
     @_tp_cache
     def __getitem__(self, parameters):
-        if self._name == 'ClassVar':
-            item = _type_check(parameters, 'ClassVar accepts only single type.')
+        if self._name in ('ClassVar', 'Final'):
+            item = _type_check(parameters, f'{self._name} accepts only single type.')
             return _GenericAlias(self, (item,))
         if self._name == 'Union':
             if parameters == ():
@@ -396,6 +398,24 @@ ClassVar = _SpecialForm('ClassVar', doc=
 
     Note that ClassVar is not a class itself, and should not
     be used with isinstance() or issubclass().
+    """)
+
+Final = _SpecialForm('Final', doc=
+    """Special typing construct to indicate final names to type checkers.
+
+    A final name cannot be re-assigned or overridden in a subclass.
+    For example:
+
+      MAX_SIZE: Final = 9000
+      MAX_SIZE += 1  # Error reported by type checker
+
+      class Connection:
+          TIMEOUT: Final[int] = 10
+
+      class FastConnector(Connection):
+          TIMEOUT = 1  # Error reported by type checker
+
+    There is no runtime checking of these properties.
     """)
 
 Union = _SpecialForm('Union', doc=
@@ -1083,6 +1103,32 @@ def overload(func):
           # implementation goes here
     """
     return _overload_dummy
+
+
+def final(f):
+    """A decorator to indicate final methods and final classes.
+
+    Use this decorator to indicate to type checkers that the decorated
+    method cannot be overridden, and decorated class cannot be subclassed.
+    For example:
+
+      class Base:
+          @final
+          def done(self) -> None:
+              ...
+      class Sub(Base):
+          def done(self) -> None:  # Error reported by type checker
+                ...
+
+      @final
+      class Leaf:
+          ...
+      class Other(Leaf):  # Error reported by type checker
+          ...
+
+    There is no runtime checking of these properties.
+    """
+    return f
 
 
 class _ProtocolMeta(type):
