@@ -1172,9 +1172,7 @@ sys_get_coroutine_wrapper_impl(PyObject *module)
                      "get_coroutine_wrapper is deprecated", 1) < 0) {
         return NULL;
     }
-    PyObject *wrapper = Py_None;
-    Py_INCREF(wrapper);
-    return wrapper;
+    Py_RETURN_NONE;
 }
 
 
