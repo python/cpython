@@ -89,6 +89,7 @@ __all__ = [
     'Set',
     'FrozenSet',
     'NamedTuple',  # Not really a type.
+    'TypedDict',  # Not really a type.
     'Generator',
 
     # One-off things.
@@ -1488,6 +1489,89 @@ class NamedTuple(metaclass=NamedTupleMeta):
             raise TypeError("Either list of fields or keywords"
                             " can be provided to NamedTuple, not both")
         return _make_nmtuple(typename, fields)
+
+
+def _dict_new(cls, *args, **kwargs):
+    return dict(*args, **kwargs)
+
+
+def _typeddict_new(cls, _typename, _fields=None, **kwargs):
+    total = kwargs.pop('total', True)
+    if _fields is None:
+        _fields = kwargs
+    elif kwargs:
+        raise TypeError("TypedDict takes either a dict or keyword arguments,"
+                        " but not both")
+
+    ns = {'__annotations__': dict(_fields), '__total__': total}
+    try:
+        # Setting correct module is necessary to make typed dict classes pickleable.
+        ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
+    except (AttributeError, ValueError):
+        pass
+
+    return _TypedDictMeta(_typename, (), ns)
+
+
+def _check_fails(cls, other):
+    # Typed dicts are only for static structural subtyping.
+    raise TypeError('TypedDict does not support instance and class checks')
+
+
+class _TypedDictMeta(type):
+    def __new__(cls, name, bases, ns, total=True):
+        """Create new typed dict class object.
+
+        This method is called directly when TypedDict is subclassed,
+        or via _typeddict_new when TypedDict is instantiated. This way
+        TypedDict supports all three syntax forms described in its docstring.
+        Subclasses and instances of TypedDict return actual dictionaries
+        via _dict_new.
+        """
+        ns['__new__'] = _typeddict_new if name == 'TypedDict' else _dict_new
+        tp_dict = super(_TypedDictMeta, cls).__new__(cls, name, (dict,), ns)
+
+        anns = ns.get('__annotations__', {})
+        msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
+        anns = {n: _type_check(tp, msg) for n, tp in anns.items()}
+        for base in bases:
+            anns.update(base.__dict__.get('__annotations__', {}))
+        tp_dict.__annotations__ = anns
+        if not hasattr(tp_dict, '__total__'):
+            tp_dict.__total__ = total
+        return tp_dict
+
+    __instancecheck__ = __subclasscheck__ = _check_fails
+
+
+class TypedDict(dict, metaclass=_TypedDictMeta):
+    """A simple typed namespace. At runtime it is equivalent to a plain dict.
+
+    TypedDict creates a dictionary type that expects all of its
+    instances to have a certain set of keys, where each key is
+    associated with a value of a consistent type. This expectation
+    is not checked at runtime but is only enforced by type checkers.
+    Usage::
+
+        class Point2D(TypedDict):
+            x: int
+            y: int
+            label: str
+
+        a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
+        b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
+
+        assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+
+    The type info can be accessed via Point2D.__annotations__. TypedDict
+    supports two additional equivalent forms::
+
+        Point2D = TypedDict('Point2D', x=int, y=int, label=str)
+        Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+    The class syntax is only supported in Python 3.6+, while two other
+    syntax forms work for Python 2.7 and 3.2+
+    """
 
 
 def NewType(name, tp):
