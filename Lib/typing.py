@@ -1010,7 +1010,9 @@ class _ProtocolMeta(ABCMeta):
 
 
 class Protocol(Generic, metaclass=_ProtocolMeta):
-    """Base class for protocol classes. Protocol classes are defined as::
+    """Base class for protocol classes.
+
+    Protocol classes are defined as::
 
         class Proto(Protocol):
             def meth(self) -> int:
@@ -1029,7 +1031,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         func(C())  # Passes static type check
 
     See PEP 544 for details. Protocol classes decorated with
-    @typing.runtime_checkable act as simple-minded runtime protocol that checks
+    @typing.runtime_checkable act as simple-minded runtime protocols that check
     only the presence of given attributes, ignoring their type signatures.
     Protocol classes can be generic, they are defined as::
 
@@ -1105,11 +1107,22 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
 
 def runtime_checkable(cls):
-    """Mark a protocol class as a runtime protocol, so that it
-    can be used with isinstance() and issubclass(). Raise TypeError
-    if applied to a non-protocol class.
-    This allows a simple-minded structural check very similar to the
-    one-offs in collections.abc such as Hashable.
+    """Mark a protocol class as a runtime protocol.
+
+    Such protocol can be used with isinstance() and issubclass().
+    Raise TypeError if applied to a non-protocol class.
+    This allows a simple-minded structural check very similar to
+    one trick ponies in collections.abc such as Iterable.
+    For example::
+
+        @runtime_checkable
+        class Closable(Protocol):
+            def close(self): ...
+
+        assert isinstance(open('/some/file'), Closable)
+
+    Warning: this will check only the presence of the required methods,
+    not their type signatures!
     """
     if not issubclass(cls, Generic) or not cls._is_protocol:
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
