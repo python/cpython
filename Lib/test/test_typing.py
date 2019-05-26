@@ -1772,6 +1772,11 @@ class ForwardRefTests(BaseTestCase):
         hints = get_type_hints(ns['C'].foo)
         self.assertEqual(hints, {'a': ns['C'], 'return': ns['D']})
 
+    def test_final_forward_ref(self):
+        self.assertEqual(gth(Loop, globals())['attr'], Final[Loop])
+        self.assertNotEqual(gth(Loop, globals())['attr'], Final[int])
+        self.assertNotEqual(gth(Loop, globals())['attr'], Final)
+
 
 class OverloadTests(BaseTestCase):
 
@@ -1857,6 +1862,9 @@ class CSub(B):
     z: ClassVar['CSub'] = B()
 class G(Generic[T]):
     lst: ClassVar[List[T]] = []
+
+class Loop:
+    attr: Final['Loop']
 
 class NoneAndForward:
     parent: 'NoneAndForward'
