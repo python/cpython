@@ -554,7 +554,7 @@ def _rmtree_unsafe(path, onerror):
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
         except FileNotFoundError:
-            pass
+            continue
         except OSError:
             is_dir = False
         if is_dir:
@@ -606,6 +606,8 @@ def _rmtree_safe_fd(topfd, path, onerror):
             if is_dir:
                 orig_st = entry.stat(follow_symlinks=False)
                 is_dir = stat.S_ISDIR(orig_st.st_mode)
+        except FileNotFoundError:
+            continue
         except OSError:
             is_dir = False
         if is_dir:
