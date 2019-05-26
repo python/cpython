@@ -469,7 +469,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
 
     def sendto(self, data, addr=None):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be byte-ish (%r)',
+            raise TypeError('data argument must be bytes-like object (%r)',
                             type(data))
 
         if not data:
