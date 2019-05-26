@@ -1260,7 +1260,7 @@ async/await code consider using the high-level
      *shell*, *text*, *encoding* and *errors*, which should not be specified
      at all.
 
-     The ``asyncio`` subprocess API does not yet support decoding the streams
+     The ``asyncio`` subprocess API does not support decoding the streams
      as text. :func:`bytes.decode` can be used to convert the bytes returned
      from the stream to text.
 
