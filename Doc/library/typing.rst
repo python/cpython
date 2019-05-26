@@ -428,7 +428,7 @@ and ``Iterable[int]`` by static type checkers. This is known as
        def __iter__(self) -> Iterator[int]: ...
 
    def collect(items: Iterable[int]) -> int: ...
-   result: int = collect(Bucket())  # Passes type check
+   result = collect(Bucket())  # Passes type check
 
 Moreover, by subclassing a special class :class:`Protocol`, a user
 can define new custom protocols to fully enjoy structural subtyping
