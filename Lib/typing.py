@@ -962,8 +962,8 @@ def _get_protocol_attrs(cls):
 
 
 def _is_callable_members_only(cls):
-    return all(callable(getattr(cls, attr, None))
-               for attr in _get_protocol_attrs(cls))
+    # PEP 544 prohibits using issubclass() with protocols that have non-method members.
+    return all(callable(getattr(cls, attr, None)) for attr in _get_protocol_attrs(cls))
 
 
 def _no_init(self, *args, **kwargs):
@@ -1001,6 +1001,7 @@ class _ProtocolMeta(ABCMeta):
             return True
         if cls._is_protocol:
             if all(hasattr(instance, attr) and
+                    # All *methods* can be blocked by setting them to None.
                     (not callable(getattr(cls, attr, None)) or
                      getattr(instance, attr) is not None)
                     for attr in _get_protocol_attrs(cls)):
@@ -1044,35 +1045,43 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         super().__init_subclass__(*args, **kwargs)
 
         # Determine if this is a protocol or a concrete subclass.
-        if not cls.__dict__.get('_is_protocol', None):
+        if not cls.__dict__.get('_is_protocol', False):
             cls._is_protocol = any(b is Protocol for b in cls.__bases__)
 
         # Set (or override) the protocol subclass hook.
         def _proto_hook(other):
-            if not cls.__dict__.get('_is_protocol', None):
+            if not cls.__dict__.get('_is_protocol', False):
                 return NotImplemented
+
+            # First, perform various sanity checks.
             if not getattr(cls, '_is_runtime_protocol', False):
                 if _allow_reckless_class_cheks():
                     return NotImplemented
                 raise TypeError("Instance and class checks can only be used with"
-                                " @runtime protocols")
+                                " @runtime_checkable protocols")
             if not _is_callable_members_only(cls):
                 if _allow_reckless_class_cheks():
                     return NotImplemented
                 raise TypeError("Protocols with non-method members"
                                 " don't support issubclass()")
             if not isinstance(other, type):
-                # Same error as for issubclass(1, int)
+                # Same error message as for issubclass(1, int).
                 raise TypeError('issubclass() arg 1 must be a class')
+
+            # Second, perform the actual structural compatibility check.
             for attr in _get_protocol_attrs(cls):
                 for base in other.__mro__:
+                    # Check if the members appears in the class dictionary...
                     if attr in base.__dict__:
                         if base.__dict__[attr] is None:
                             return NotImplemented
                         break
+
+                    # ...or in annotations, if it is a sub-protocol.
                     annotations = getattr(base, '__annotations__', {})
-                    if (isinstance(annotations, collections.abc.Mapping) and attr in annotations and
-                            isinstance(other, _ProtocolMeta) and other._is_protocol):
+                    if (isinstance(annotations, collections.abc.Mapping) and
+                            attr in annotations and
+                            issubclass(other, Generic) and other._is_protocol):
                         break
                 else:
                     return NotImplemented
