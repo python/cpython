@@ -153,14 +153,15 @@ class CheckSuspiciousMarkupBuilder(Builder):
         self.any_issue = True
         self.write_log_entry(lineno, issue, text)
         if py3:
-            self.logger.warn('[%s:%d] "%s" found in "%-.120s"' %
-                             (self.docname, lineno, issue, text))
+            self.logger.warning('[%s:%d] "%s" found in "%-.120s"' %
+                                (self.docname, lineno, issue, text))
         else:
-            self.logger.warn('[%s:%d] "%s" found in "%-.120s"' % (
-                self.docname.encode(sys.getdefaultencoding(),'replace'),
-                lineno,
-                issue.encode(sys.getdefaultencoding(),'replace'),
-                text.strip().encode(sys.getdefaultencoding(),'replace')))
+            self.logger.warning(
+                '[%s:%d] "%s" found in "%-.120s"' % (
+                    self.docname.encode(sys.getdefaultencoding(),'replace'),
+                    lineno,
+                    issue.encode(sys.getdefaultencoding(),'replace'),
+                    text.strip().encode(sys.getdefaultencoding(),'replace')))
         self.app.statuscode = 1
 
     def write_log_entry(self, lineno, issue, text):
