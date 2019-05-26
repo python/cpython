@@ -1,1 +1,2 @@
-`py_compile` now supports silent mode.
+:func:`py_compile.compile` now supports silent mode.  
+Patch by Joannah Nanjekye

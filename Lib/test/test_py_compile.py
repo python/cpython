@@ -194,9 +194,10 @@ class PyCompileTestsBase:
 
     def test_quiet(self):
         bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
-        with support.captured_stderr():
+        with support.captured_stderr() as stderr:
             self.assertIsNone(py_compile.compile(bad_coding, doraise=False, quiet=2))
             self.assertIsNone(py_compile.compile(bad_coding, doraise=True, quiet=2))
+            self.assertEqual(stderr.getvalue(), '')
             with self.assertRaises(py_compile.PyCompileError):
                 py_compile.compile(bad_coding, doraise=True, quiet=1)
 
