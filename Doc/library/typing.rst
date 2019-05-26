@@ -459,6 +459,37 @@ The module defines the following classes, functions and decorators:
           except KeyError:
               return default
 
+.. class:: Protocol(Generic)
+
+   Base class for protocol classes. Protocol classes are defined as::
+
+      class Proto(Protocol):
+          def meth(self) -> int:
+              ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing), for example::
+
+      class C:
+          def meth(self) -> int:
+              return 0
+
+      def func(x: Proto) -> int:
+          return x.meth()
+
+      func(C())  # Passes static type check
+
+   See :pep:`544` for details. Protocol classes decorated with
+   :decorator:`runtime_checkable` act as simple-minded runtime protocols that
+   check only the presence of given attributes, ignoring their type signatures.
+   Protocol classes can be generic, they are defined as::
+
+      class GenProto(Protocol[T]):
+          def meth(self) -> T:
+              ...
+
+   .. versionadded:: 3.8
+
 .. class:: Type(Generic[CT_co])
 
    A variable annotated with ``C`` may accept a value of type ``C``. In
@@ -1032,6 +1063,27 @@ The module defines the following classes, functions and decorators:
 
    Note that returning instances of private classes is not recommended.
    It is usually preferable to make such classes public.
+
+.. decorator:: runtime_checkable
+
+   Mark a protocol class as a runtime protocol.
+
+   Such protocol can be used with :function:`isinstance` and
+   :function:`issubclass`.  Raise :exc:`TypeError` if applied to a non-protocol
+   class.  This allows a simple-minded structural check very similar to
+   one trick ponies in :mod:`collections.abc` such as :class:`Iterable`.
+   For example::
+
+      @runtime_checkable
+      class Closable(Protocol):
+          def close(self): ...
+
+      assert isinstance(open('/some/file'), Closable)
+
+   **Warning:** this will check only the presence of the required methods,
+   not their type signatures!
+
+   .. versionadded:: 3.8
 
 .. data:: Any
 
