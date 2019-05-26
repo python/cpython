@@ -1100,4 +1100,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=03da2eb03135d9f2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f23f7d918d369fd input=a9049054013a1b77]*/
