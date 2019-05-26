@@ -1,2 +1,2 @@
-Don't log OSError based exceptions if a fatal error is occured in asyncio
+Don't log OSError based exceptions if a fatal error has occurred in asyncio
 transport
