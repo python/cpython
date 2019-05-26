@@ -399,6 +399,8 @@ class Unparser:
         elif value is ...:
             self.write("...")
         else:
+            if t.kind == "u":
+                self.write("u")
             self._write_constant(t.value)
 
     def _List(self, t):
