@@ -9,8 +9,7 @@ At large scale, the structure of the module is following:
 * The core of internal generics API: _GenericAlias and _VariadicGenericAlias, the latter is
   currently only used by Tuple and Callable. All subscripted types like X[int], Union[int, str],
   etc., are instances of either of these classes.
-* The public counterpart of the generics API consists of two classes: Generic and Protocol
-  (the latter is currently private, but will be made public after PEP 544 acceptance).
+* The public counterpart of the generics API consists of two classes: Generic and Protocol.
 * Public helper functions: get_type_hints, overload, cast, no_type_check,
   no_type_check_decorator.
 * Generic aliases for collections.abc ABCs and few additional protocols.
@@ -934,6 +933,181 @@ class _TypingEllipsis:
     """Internal placeholder for ... (ellipsis)."""
 
 
+_TYPING_INTERNALS = ['__parameters__', '__orig_bases__',  '__orig_class__',
+                     '_is_protocol', '_is_runtime_protocol']
+
+_SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__dict__', '__doc__',
+                  '__init__', '__module__', '__new__', '__slots__',
+                  '__subclasshook__', '__weakref__']
+
+# These special attributes will be not collected as protocol members.
+EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS + _SPECIAL_NAMES + ['_MutableMapping__marker']
+
+
+def _get_protocol_attrs(cls):
+    """Collect protocol members from a protocol class objects.
+
+    This includes names actually defined in the class dictionary, as well
+    as names that appear in annotations. Special names (above) are skipped.
+    """
+    attrs = set()
+    for base in cls.__mro__[:-1]:  # without object
+        if base.__name__ in ('Protocol', 'Generic'):
+            continue
+        annotations = getattr(base, '__annotations__', {})
+        for attr in list(base.__dict__.keys()) + list(annotations.keys()):
+            if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
+                attrs.add(attr)
+    return attrs
+
+
+def _is_callable_members_only(cls):
+    return all(callable(getattr(cls, attr, None))
+               for attr in _get_protocol_attrs(cls))
+
+
+def _no_init(self, *args, **kwargs):
+    if type(self)._is_protocol:
+        raise TypeError('Protocols cannot be instantiated')
+
+
+def _allow_reckless_class_cheks():
+    """Allow instnance and class checks for special stdlib modules.
+
+    The abc and functools modules indiscriminately call isinstance() and
+    issubclass() on the whole MRO of a user class, which may contain protocols.
+    """
+    try:
+        return sys._getframe(3).f_globals['__name__'] in ['abc', 'functools']
+    except (AttributeError, ValueError):  # For platforms without _getframe().
+        return True
+
+
+_PROTOCOL_ WHITELIST = ['Callable', 'Awaitable',
+                        'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
+                        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+                        'ContextManager', 'AsyncContextManager']
+
+
+class _ProtocolMeta(ABCMeta):
+    # This metaclass is really unfortunate and exists only because of
+    # the lack of __instancehook__.
+    def __instancecheck__(cls, instance):
+        # We need this method for situations where attributes are
+        # assigned in __init__.
+        if ((not getattr(cls, '_is_protocol', False) or
+                _is_callable_members_only(cls)) and
+                issubclass(instance.__class__, cls)):
+            return True
+        if cls._is_protocol:
+            if all(hasattr(instance, attr) and
+                    (not callable(getattr(cls, attr, None)) or
+                     getattr(instance, attr) is not None)
+                    for attr in _get_protocol_attrs(cls)):
+                return True
+        return super().__instancecheck__(instance)
+
+
+class Protocol(Generic, metaclass=_ProtocolMeta):
+    """Base class for protocol classes. Protocol classes are defined as::
+
+        class Proto(Protocol):
+            def meth(self) -> int:
+                ...
+
+    Such classes are primarily used with static type checkers that recognize
+    structural subtyping (static duck-typing), for example::
+
+        class C:
+            def meth(self) -> int:
+                return 0
+
+        def func(x: Proto) -> int:
+            return x.meth()
+
+        func(C())  # Passes static type check
+
+    See PEP 544 for details. Protocol classes decorated with
+    @typing.runtime_checkable act as simple-minded runtime protocol that checks
+    only the presence of given attributes, ignoring their type signatures.
+    Protocol classes can be generic, they are defined as::
+
+        class GenProto(Protocol[T]):
+            def meth(self) -> T:
+                ...
+    """
+    __slots__ = ()
+    _is_protocol = True
+    _is_runtime_protocol = False
+
+    def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
+
+        # Determine if this is a protocol or a concrete subclass.
+        if not cls.__dict__.get('_is_protocol', None):
+            cls._is_protocol = any(b is Protocol for b in cls.__bases__)
+
+        # Set (or override) the protocol subclass hook.
+        def _proto_hook(other):
+            if not cls.__dict__.get('_is_protocol', None):
+                return NotImplemented
+            if not getattr(cls, '_is_runtime_protocol', False):
+                if _allow_reckless_class_cheks():
+                    return NotImplemented
+                raise TypeError("Instance and class checks can only be used with"
+                                " @runtime protocols")
+            if not _is_callable_members_only(cls):
+                if _allow_reckless_class_cheks():
+                    return NotImplemented
+                raise TypeError("Protocols with non-method members"
+                                " don't support issubclass()")
+            if not isinstance(other, type):
+                # Same error as for issubclass(1, int)
+                raise TypeError('issubclass() arg 1 must be a class')
+            for attr in _get_protocol_attrs(cls):
+                for base in other.__mro__:
+                    if attr in base.__dict__:
+                        if base.__dict__[attr] is None:
+                            return NotImplemented
+                        break
+                    annotations = getattr(base, '__annotations__', {})
+                    if (isinstance(annotations, collections.abc.Mapping) and attr in annotations and
+                            isinstance(other, _ProtocolMeta) and other._is_protocol):
+                        break
+                else:
+                    return NotImplemented
+            return True
+
+        if '__subclasshook__' not in cls.__dict__:
+            cls.__subclasshook__ = _proto_hook
+
+        # We have nothing more to do for non-protocols...
+        if not cls._is_protocol:
+            return
+
+        # ... otherwise check consistency of bases, and prohibit instantiation.
+        for base in cls.__bases__:
+            if not (base in (object, Generic) or
+                    issubclass(base, Generic) and base._is_protocol):
+                raise TypeError('Protocols can only inherit from other'
+                                ' protocols, got %r' % base)
+        cls.__init__ = _no_init
+
+
+def runtime_checkable(cls):
+    """Mark a protocol class as a runtime protocol, so that it
+    can be used with isinstance() and issubclass(). Raise TypeError
+    if applied to a non-protocol class.
+    This allows a simple-minded structural check very similar to the
+    one-offs in collections.abc such as Hashable.
+    """
+    if not issubclass(cls, Generic) or not cls._is_protocol:
+        raise TypeError('@runtime_checkable can be only applied to protocol classes,'
+                        ' got %r' % cls)
+    cls._is_runtime_protocol = True
+    return cls
+
+
 def cast(typ, val):
     """Cast a value to a type.
 
@@ -1156,160 +1330,6 @@ def final(f):
     There is no runtime checking of these properties.
     """
     return f
-
-
-def _get_protocol_attrs(cls):
-    attrs = set()
-    for base in cls.__mro__[:-1]:  # without object
-        if base.__name__ in ('Protocol', 'Generic'):
-            continue
-        annotations = getattr(base, '__annotations__', {})
-        for attr in list(base.__dict__.keys()) + list(annotations.keys()):
-            if (not attr.startswith('_abc_') and attr not in (
-                    '__abstractmethods__', '__annotations__', '__weakref__',
-                    '_is_protocol', '_is_runtime_protocol', '__dict__',
-                    '__args__', '__slots__',
-                    '__next_in_mro__', '__parameters__', '__origin__',
-                    '__orig_bases__', '__extra__', '__tree_hash__',
-                    '__doc__', '__subclasshook__', '__init__', '__new__',
-                    '__module__', '_MutableMapping__marker', '_gorg')):
-                attrs.add(attr)
-    return attrs
-
-
-def _is_callable_members_only(cls):
-    return all(callable(getattr(cls, attr, None)) for attr in _get_protocol_attrs(cls))
-
-
-def _no_init(self, *args, **kwargs):
-    if type(self)._is_protocol:
-        raise TypeError('Protocols cannot be instantiated')
-
-
-def _allow_reckless_class_cheks():
-    try:
-        return sys._getframe(3).f_globals['__name__'] in ['abc', 'functools']
-    except (AttributeError, ValueError):  # For platforms without _getframe().
-        return True
-
-
-class _ProtocolMeta(ABCMeta):
-    # This metaclass is really unfortunate and exists only because of
-    # the lack of __instancehook__.
-    def __instancecheck__(cls, instance):
-        # We need this method for situations where attributes are
-        # assigned in __init__.
-        if ((not getattr(cls, '_is_protocol', False) or
-                _is_callable_members_only(cls)) and
-                issubclass(instance.__class__, cls)):
-            return True
-        if cls._is_protocol:
-            if all(hasattr(instance, attr) and
-                    (not callable(getattr(cls, attr, None)) or
-                     getattr(instance, attr) is not None)
-                    for attr in _get_protocol_attrs(cls)):
-                return True
-        return super().__instancecheck__(instance)
-
-
-class Protocol(Generic, metaclass=_ProtocolMeta):
-    """Base class for protocol classes. Protocol classes are defined as::
-
-        class Proto(Protocol):
-            def meth(self) -> int:
-                ...
-
-    Such classes are primarily used with static type checkers that recognize
-    structural subtyping (static duck-typing), for example::
-
-        class C:
-            def meth(self) -> int:
-                return 0
-
-        def func(x: Proto) -> int:
-            return x.meth()
-
-        func(C())  # Passes static type check
-
-    See PEP 544 for details. Protocol classes decorated with
-    @typing.runtime_checkable act as simple-minded runtime protocol that checks
-    only the presence of given attributes, ignoring their type signatures.
-    Protocol classes can be generic, they are defined as::
-
-        class GenProto(Protocol[T]):
-            def meth(self) -> T:
-                ...
-    """
-    __slots__ = ()
-    _is_protocol = True
-    _is_runtime_protocol = False
-
-    def __init_subclass__(cls, *args, **kwargs):
-        super().__init_subclass__(*args, **kwargs)
-
-        # Determine if this is a protocol or a concrete subclass.
-        if not cls.__dict__.get('_is_protocol', None):
-            cls._is_protocol = any(b is Protocol for b in cls.__bases__)
-
-        # Set (or override) the protocol subclass hook.
-        def _proto_hook(other):
-            if not cls.__dict__.get('_is_protocol', None):
-                return NotImplemented
-            if not getattr(cls, '_is_runtime_protocol', False):
-                if _allow_reckless_class_cheks():
-                    return NotImplemented
-                raise TypeError("Instance and class checks can only be used with"
-                                " @runtime protocols")
-            if not _is_callable_members_only(cls):
-                if _allow_reckless_class_cheks():
-                    return NotImplemented
-                raise TypeError("Protocols with non-method members"
-                                " don't support issubclass()")
-            if not isinstance(other, type):
-                # Same error as for issubclass(1, int)
-                raise TypeError('issubclass() arg 1 must be a class')
-            for attr in _get_protocol_attrs(cls):
-                for base in other.__mro__:
-                    if attr in base.__dict__:
-                        if base.__dict__[attr] is None:
-                            return NotImplemented
-                        break
-                    annotations = getattr(base, '__annotations__', {})
-                    if (isinstance(annotations, collections.abc.Mapping) and attr in annotations and
-                            isinstance(other, _ProtocolMeta) and other._is_protocol):
-                        break
-                else:
-                    return NotImplemented
-            return True
-
-        if '__subclasshook__' not in cls.__dict__:
-            cls.__subclasshook__ = _proto_hook
-
-        # We have nothing more to do for non-protocols...
-        if not cls._is_protocol:
-            return
-
-        # ... otherwise check consistency of bases, and prohibit instantiation.
-        for base in cls.__bases__:
-            if not (base in (object, Generic) or
-                    issubclass(base, Generic) and base._is_protocol):
-                raise TypeError('Protocols can only inherit from other'
-                                ' protocols, got %r' % base)
-        cls.__init__ = _no_init
-
-
-def runtime_checkable(cls):
-    """Mark a protocol class as a runtime protocol, so that it
-    can be used with isinstance() and issubclass(). Raise TypeError
-    if applied to a non-protocol class.
-    This allows a simple-minded structural check very similar to the
-    one-offs in collections.abc such as Hashable.
-    """
-    if not issubclass(cls, Generic) or not cls._is_protocol:
-        raise TypeError('@runtime_checkable can be only applied to protocol classes,'
-                        ' got %r' % cls)
-    cls._is_runtime_protocol = True
-    return cls
 
 
 # Some unconstrained type variables.  These are used by the container types.
