@@ -1251,6 +1251,18 @@ class TestLRU:
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
 
+    def test_lru_no_args(self):
+        @self.module.lru_cache
+        def square(x):
+            return x ** 2
+
+        self.assertEqual(list(map(square, [10, 20, 10])),
+                         [100, 400, 100])
+        self.assertEqual(square.cache_info().hits, 1)
+        self.assertEqual(square.cache_info().misses, 2)
+        self.assertEqual(square.cache_info().maxsize, 128)
+        self.assertEqual(square.cache_info().currsize, 2)
+
     def test_lru_bug_35780(self):
         # C version of the lru_cache was not checking to see if
         # the user function call has already modified the cache
@@ -1581,13 +1593,6 @@ class TestLRU:
         test_func(DoubleEq(2))                      # Load the cache
         self.assertEqual(test_func(DoubleEq(2)),    # Trigger a re-entrant __eq__ call
                          DoubleEq(2))               # Verify the correct return value
-
-    def test_early_detection_of_bad_call(self):
-        # Issue #22184
-        with self.assertRaises(TypeError):
-            @functools.lru_cache
-            def f():
-                pass
 
     def test_lru_method(self):
         class X(int):
