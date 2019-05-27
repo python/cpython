@@ -18,7 +18,7 @@ except ImportError:
     ssl = None
 
 import asyncio
-from asyncio.streams import _StreamProtocol, _check_read, _check_write
+from asyncio.streams import _StreamProtocol, _ensure_can_read, _ensure_can_write
 from test.test_asyncio import utils as test_utils
 
 
@@ -27,21 +27,21 @@ def tearDownModule():
 
 
 class StreamModeTests(unittest.TestCase):
-    def test__check_read_ok(self):
-        self.assertIsNone(_check_read(asyncio.StreamMode.READ))
-        self.assertIsNone(_check_read(asyncio.StreamMode.READWRITE))
+    def test__ensure_can_read_ok(self):
+        self.assertIsNone(_ensure_can_read(asyncio.StreamMode.READ))
+        self.assertIsNone(_ensure_can_read(asyncio.StreamMode.READWRITE))
 
-    def test__check_read_fail(self):
+    def test__ensure_can_read_fail(self):
         with self.assertRaisesRegex(RuntimeError, "The stream is write-only"):
-            _check_read(asyncio.StreamMode.WRITE)
+            _ensure_can_read(asyncio.StreamMode.WRITE)
 
-    def test__check_write_ok(self):
-        self.assertIsNone(_check_write(asyncio.StreamMode.WRITE))
-        self.assertIsNone(_check_write(asyncio.StreamMode.READWRITE))
+    def test__ensure_can_write_ok(self):
+        self.assertIsNone(_ensure_can_write(asyncio.StreamMode.WRITE))
+        self.assertIsNone(_ensure_can_write(asyncio.StreamMode.READWRITE))
 
-    def test__check_write_fail(self):
+    def test__ensure_can_write_fail(self):
         with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
-            _check_write(asyncio.StreamMode.READ)
+            _ensure_can_write(asyncio.StreamMode.READ)
 
 
 class StreamTests(test_utils.TestCase):
