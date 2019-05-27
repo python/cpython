@@ -31,7 +31,7 @@ def zoom_height(top):
 
     # The constants below for Windows and Mac Aqua are visually determined
     # to avoid taskbar or menubar and app icons.
-    newy, bot_y = ((0, 114) if sys.platform == 'win32' else
+    newy, bot_y = ((0, 72) if sys.platform == 'win32' else
                    (22, 88) if macosx.isAquaTk() else
                    (0, 88) ) # Guess for anything else.
     newheight = newheight - newy - bot_y
