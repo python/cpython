@@ -7,17 +7,17 @@ class TestPathFix(unittest.TestCase):
     def setUp(self):
         self.pathfix = import_tool('pathfix')
     test_cases = [
-        (b'#!/usr/bin/python'       , b'#! /usr/bin/python -f\n'),
-        (b'#!python -f'             , b'#! /usr/bin/python -f\n'),
-        (b'#! /usr/bin/python -s'   , b'#! /usr/bin/python -fs\n'),
+        (b'#!/usr/bin/python', b'#! /usr/bin/python -f\n'),
+        (b'#!python -f', b'#! /usr/bin/python -f\n'),
+        (b'#! /usr/bin/python -s', b'#! /usr/bin/python -fs\n'),
         (b'#!/usr/bin/python -f sfj', b'#! /usr/bin/python -f sfj\n'),
-        (b'#!/usr/python -s sfj'    , b'#! /usr/bin/python -fs sfj\n'),
+        (b'#!/usr/python -s sfj', b'#! /usr/bin/python -fs sfj\n'),
     ]
 
     test_cases_for_parsing = [
-        (b'#!/usr/bin/python'             , (b'',b'')),
-        (b'#! /usr/bin/python -f'         , (b'f',b'')),
-        (b'#!/usr/bin/python -f sfj'      , (b'f',b'sfj')),
+        (b'#!/usr/bin/python', (b'', b'')),
+        (b'#! /usr/bin/python -f', (b'f',b'')),
+        (b'#!/usr/bin/python -f sfj', (b'f', b'sfj')),
         (b'#!/usr/bin/python -f sfj af bg', (b'f', b'sfj af bg')),
     ]
 
