@@ -1561,6 +1561,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                stderr=subprocess.PIPE,
                                universal_newlines=False,
                                shell=True, bufsize=0,
+                               encoding=None, errors=None, text=None,
                                **kwargs):
         if not isinstance(cmd, (bytes, str)):
             raise ValueError("cmd must be a string")
@@ -1570,6 +1571,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("shell must be True")
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
+        if encoding or errors or text:
+            raise ValueError("text decoding is not supported: encoding, "
+                             "errors and text must be None")
+
         protocol = protocol_factory()
         debug_log = None
         if self._debug:
@@ -1586,13 +1591,19 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def subprocess_exec(self, protocol_factory, program, *args,
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, universal_newlines=False,
-                              shell=False, bufsize=0, **kwargs):
+                              shell=False, bufsize=0,
+                              encoding=None, errors=None, text=None,
+                              **kwargs):
         if universal_newlines:
             raise ValueError("universal_newlines must be False")
         if shell:
             raise ValueError("shell must be False")
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
+        if encoding or errors or text:
+            raise ValueError("text decoding is not supported: encoding, "
+                             "errors and text must be None")
+
         popen_args = (program,) + args
         for arg in popen_args:
             if not isinstance(arg, (str, bytes)):
