@@ -1573,9 +1573,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("bufsize must be 0")
         if text:
             raise ValueError("text must be False")
-        if encoding:
+        if encoding is not None:
             raise ValueError("encoding must be None")
-        if errors:
+        if errors is not None:
             raise ValueError("errors must be None")
 
         protocol = protocol_factory()
@@ -1605,9 +1605,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("bufsize must be 0")
         if text:
             raise ValueError("text must be False")
-        if encoding:
+        if encoding is not None:
             raise ValueError("encoding must be None")
-        if errors:
+        if errors is not None:
             raise ValueError("errors must be None")
 
         popen_args = (program,) + args
