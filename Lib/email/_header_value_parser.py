@@ -831,8 +831,10 @@ class HeaderLabel(TokenList):
 class MsgID(TokenList):
     token_type = 'msg-id'
     as_ew_allowed = False
-    fold_subparts = False
 
+    def fold(self, policy):
+        # message-id tokens may not be folded.
+        return str(self) + policy.linesep
 
 class MessageID(MsgID):
     token_type = 'message-id'
@@ -2747,10 +2749,6 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # to unpacking the subparts and wrapping them.
             if not hasattr(part, 'encode'):
                 # It's not a Terminal, do each piece individually.
-                if not getattr(part, 'fold_subparts', True):
-                    # This part can't be folded and also doesn't allow folding
-                    # of subparts.
-                    wrap_as_ew_blocked += 1
                 parts = list(part) + parts
             else:
                 # It's a terminal, wrap it as an encoded word, possibly
