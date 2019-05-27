@@ -161,14 +161,14 @@ The :mod:`binascii` module defines the following functions:
    if you wish to count from the left, supply a negative *bytes_per_sep* value.
 
       >>> from binascii
-      >>> binascii.b2a_hex(b'\xb9\x01\x3f')
-      b'b9013f'
-      >>> binascii.hexlify(b'\xb9\x01\x3f', ':')
-      b'b9:01:3f'
-      >>> binascii.b2a_hex(b'\xb9\x01\x3f', b'_', 2)
-      b'b9_013f'
-      >>> binascii.b2a_hex(b'\xb9\x01\x3f', b' ', -2)
-      b'b901 3f'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef')
+      b'b901ef'
+      >>> binascii.hexlify(b'\xb9\x01\xef', ':')
+      b'b9\:01\:ef'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef', b'_', 2)
+      b'b9_01ef'
+      >>> binascii.b2a_hex(b'\xb9\x01\xef', b' ', -2)
+      b'b901 ef'
 
    .. versionchanged:: 3.8
       The *sep* and *bytes_per_sep* parameters were added.
