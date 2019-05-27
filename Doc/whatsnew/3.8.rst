@@ -469,6 +469,16 @@ access the ``madvise()`` system call.
 (Contributed by Zackery Spytz in :issue:`32941`.)
 
 
+multiprocessing
+---------------
+
+Added new :mod:`multiprocessing.shared_memory` module.
+(Contributed Davin Potts in :issue:`35813`.)
+
+On macOS, the *spawn* start method is now used by default.
+(Contributed by Victor Stinner in :issue:`33725`.)
+
+
 os
 --
 
