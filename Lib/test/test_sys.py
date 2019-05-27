@@ -878,31 +878,38 @@ class SysModuleTest(unittest.TestCase):
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
-    def write_unraisable_exc(self, exc, obj):
+    def write_unraisable_exc(self, exc, err_msg, obj):
         import _testcapi
         import types
+        err_msg2 = f"Exception ignored {err_msg}"
         try:
-            _testcapi.write_unraisable_exc(exc, obj)
+            _testcapi.write_unraisable_exc(exc, err_msg, obj)
             return types.SimpleNamespace(exc_type=type(exc),
                                          exc_value=exc,
                                          exc_traceback=exc.__traceback__,
+                                         err_msg=err_msg2,
                                          object=obj)
         finally:
             # Explicitly break any reference cycle
             exc = None
 
     def test_original_unraisablehook(self):
-        obj = "an object"
+        for err_msg in (None, "original hook"):
+            with self.subTest(err_msg=err_msg):
+                obj = "an object"
 
-        with test.support.captured_output("stderr") as stderr:
-            with test.support.swap_attr(sys, 'unraisablehook',
-                                        sys.__unraisablehook__):
-                self.write_unraisable_exc(ValueError(42), obj)
+                with test.support.captured_output("stderr") as stderr:
+                    with test.support.swap_attr(sys, 'unraisablehook',
+                                                sys.__unraisablehook__):
+                        self.write_unraisable_exc(ValueError(42), err_msg, obj)
 
-        err = stderr.getvalue()
-        self.assertIn(f'Exception ignored in: {obj!r}\n', err)
-        self.assertIn('Traceback (most recent call last):\n', err)
-        self.assertIn('ValueError: 42\n', err)
+                err = stderr.getvalue()
+                if err_msg is not None:
+                    self.assertIn(f'Exception ignored {err_msg}: {obj!r}\n', err)
+                else:
+                    self.assertIn(f'Exception ignored in: {obj!r}\n', err)
+                self.assertIn('Traceback (most recent call last):\n', err)
+                self.assertIn('ValueError: 42\n', err)
 
     def test_original_unraisablehook_err(self):
         # bpo-22836: PyErr_WriteUnraisable() should give sensible reports
@@ -962,8 +969,9 @@ class UnraisableHookTest(unittest.TestCase):
         obj = object()
         try:
             with test.support.swap_attr(sys, 'unraisablehook', hook_func):
-                expected = self.write_unraisable_exc(ValueError(42), obj)
-                for attr in "exc_type exc_value exc_traceback object".split():
+                expected = self.write_unraisable_exc(ValueError(42),
+                                                     "custom hook", obj)
+                for attr in "exc_type exc_value exc_traceback err_msg object".split():
                     self.assertEqual(getattr(hook_args, attr),
                                      getattr(expected, attr),
                                      (hook_args, expected))
@@ -978,10 +986,12 @@ class UnraisableHookTest(unittest.TestCase):
 
         with test.support.captured_output("stderr") as stderr:
             with test.support.swap_attr(sys, 'unraisablehook', hook_func):
-                self.write_unraisable_exc(ValueError(42), None)
+                self.write_unraisable_exc(ValueError(42),
+                                          "custom hook fail", None)
 
         err = stderr.getvalue()
-        self.assertIn(f'Exception ignored in: {hook_func!r}\n',
+        self.assertIn(f'Exception ignored in sys.unraisablehook: '
+                      f'{hook_func!r}\n',
                       err)
         self.assertIn('Traceback (most recent call last):\n', err)
         self.assertIn('Exception: hook_func failed\n', err)

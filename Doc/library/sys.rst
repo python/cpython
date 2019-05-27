@@ -1566,10 +1566,15 @@ always available.
    * *exc_type*: Exception type.
    * *exc_value*: Exception value, can be ``None``.
    * *exc_traceback*: Exception traceback, can be ``None``.
+   * *err_msg*: Error message, can be ``None``.
    * *object*: Object causing the exception, can be ``None``.
 
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
+
+   The default hook formats *err_msg* and *object* as:
+   ``f'{err_msg}: {object!r}'``; use "Exception ignored in" error message
+   if *err_msg* is ``None``.
 
    See also :func:`excepthook` which handles uncaught exceptions.
 

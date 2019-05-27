@@ -689,14 +689,15 @@ Handle an unraisable exception.
 The unraisable argument has the following attributes:
 
 * exc_type: Exception type.
-* exc_value: Exception value.
-* exc_tb: Exception traceback, can be None.
-* obj: Object causing the exception, can be None.
+* exc_value: Exception value, can be None.
+* exc_traceback: Exception traceback, can be None.
+* err_msg: Error message, can be None.
+* object: Object causing the exception, can be None.
 [clinic start generated code]*/
 
 static PyObject *
 sys_unraisablehook(PyObject *module, PyObject *unraisable)
-/*[clinic end generated code: output=bb92838b32abaa14 input=fdbdb47fdd0bee06]*/
+/*[clinic end generated code: output=bb92838b32abaa14 input=ec3af148294af8d3]*/
 {
     return _PyErr_WriteUnraisableDefaultHook(unraisable);
 }

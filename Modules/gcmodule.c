@@ -929,9 +929,8 @@ delete_garbage(struct _gc_runtime_state *state,
                 Py_INCREF(op);
                 (void) clear(op);
                 if (PyErr_Occurred()) {
-                    PySys_WriteStderr("Exception ignored in tp_clear of "
-                                      "%.50s\n", Py_TYPE(op)->tp_name);
-                    PyErr_WriteUnraisable(NULL);
+                    _PyErr_WriteUnraisableMsg("in tp_clear of",
+                                              (PyObject*)Py_TYPE(op));
                 }
                 Py_DECREF(op);
             }

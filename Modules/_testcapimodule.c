@@ -4985,13 +4985,24 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject*
 test_write_unraisable_exc(PyObject *self, PyObject *args)
 {
-    PyObject *exc, *obj;
-    if (!PyArg_ParseTuple(args, "OO", &exc, &obj)) {
+    PyObject *exc, *err_msg, *obj;
+    if (!PyArg_ParseTuple(args, "OOO", &exc, &err_msg, &obj)) {
         return NULL;
     }
 
+    const char *err_msg_utf8;
+    if (err_msg != Py_None) {
+        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
+        if (err_msg_utf8 == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        err_msg_utf8 = NULL;
+    }
+
     PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    PyErr_WriteUnraisable(obj);
+    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
     Py_RETURN_NONE;
 }
 
