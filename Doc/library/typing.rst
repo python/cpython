@@ -17,8 +17,8 @@
 
 --------------
 
-This module supports type hints as specified by :pep:`484`, :pep:`526`,
-:pep:`544`, :pep:`586`, :pep:`589`, and :pep:`591`.
+This module provides runtime support for type hints as specified by
+:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, and :pep:`591`.
 The most fundamental support consists of the types :data:`Any`, :data:`Union`,
 :data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
@@ -402,7 +402,7 @@ Initially :pep:`484` defined Python static type system as using
 a class ``B`` is expected if and only if ``A`` is a subclass of ``B``.
 
 This requirement previously also applied to abstract base classes, such as
-:class:`Iterable`. The problem with such approach is that a class had
+:class:`Iterable`. The problem with this approach is that a class had
 to be explicitly marked to support them, which is unpythonic and unlike
 what one would normally do in idiomatic dynamically typed Python code.
 For example, this conforms to the :pep:`484`::
@@ -414,7 +414,7 @@ For example, this conforms to the :pep:`484`::
        def __len__(self) -> int: ...
        def __iter__(self) -> Iterator[int]: ...
 
-The :pep:`544` allows to solve this problem by allowing users to write
+:pep:`544` allows to solve this problem by allowing users to write
 the above code without explicit base classes in the class definition,
 allowing ``Bucket`` to be implicitly considered a subtype of both ``Sized``
 and ``Iterable[int]`` by static type checkers. This is known as
@@ -504,7 +504,7 @@ The module defines the following classes, functions and decorators:
 
 .. class:: Protocol(Generic)
 
-   Base class for protocol classes. Protocol classes are defined as::
+   Base class for protocol classes. Protocol classes are defined like this::
 
       class Proto(Protocol):
           def meth(self) -> int:
@@ -523,9 +523,11 @@ The module defines the following classes, functions and decorators:
       func(C())  # Passes static type check
 
    See :pep:`544` for details. Protocol classes decorated with
-   :func:`runtime_checkable` act as simple-minded runtime protocols that
-   check only the presence of given attributes, ignoring their type signatures.
-   Protocol classes can be generic, they are defined as::
+   :func:`runtime_checkable` (described later) act as simple-minded runtime
+   protocols that check only the presence of given attributes, ignoring their
+   type signatures.
+
+   Protocol classes can be generic, for example::
 
       class GenProto(Protocol[T]):
           def meth(self) -> T:
@@ -1111,10 +1113,10 @@ The module defines the following classes, functions and decorators:
 
    Mark a protocol class as a runtime protocol.
 
-   Such protocol can be used with :func:`isinstance` and :func:`issubclass`.
-   Raise :exc:`TypeError` if applied to a non-protocol class.  This allows
-   a simple-minded structural check very similar to one trick ponies in
-   :mod:`collections.abc` such as :class:`Iterable`.  For example::
+   Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
+   This raises :exc:`TypeError` when applied to a non-protocol class.  This
+   allows a simple-minded structural check, very similar to "one trick ponies"
+   in :mod:`collections.abc` such as :class:`Iterable`.  For example::
 
       @runtime_checkable
       class Closable(Protocol):
