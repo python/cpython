@@ -1378,7 +1378,7 @@ class Stream:
 
     def close(self):
         self._transport.close()
-        return self._protocol._get_close_waiter(self)
+        return _OptionalAwait(self.wait_closed)
 
     def is_closing(self):
         return self._transport.is_closing()
