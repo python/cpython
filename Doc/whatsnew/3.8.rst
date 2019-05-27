@@ -182,6 +182,61 @@ Would print ``x*9 + 15=42``.
 
 (Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
 
+PEP 587: Python Initialization Configuration
+--------------------------------------------
+
+The :pep:`587` adds a new C API to configure the Python Initialization
+providing finer control on the whole configuration and better error reporting.
+
+New structures:
+
+* :c:type:`PyConfig`
+* :c:type:`PyPreConfig`
+* :c:type:`PyStatus`
+* :c:type:`PyWideStringList`
+
+New functions:
+
+* :c:func:`PyConfig_Clear`
+* :c:func:`PyConfig_InitIsolatedConfig`
+* :c:func:`PyConfig_InitPythonConfig`
+* :c:func:`PyConfig_Read`
+* :c:func:`PyConfig_SetArgv`
+* :c:func:`PyConfig_SetBytesArgv`
+* :c:func:`PyConfig_SetBytesString`
+* :c:func:`PyConfig_SetString`
+* :c:func:`PyPreConfig_InitIsolatedConfig`
+* :c:func:`PyPreConfig_InitPythonConfig`
+* :c:func:`PyStatus_Error`
+* :c:func:`PyStatus_Exception`
+* :c:func:`PyStatus_Exit`
+* :c:func:`PyStatus_IsError`
+* :c:func:`PyStatus_IsExit`
+* :c:func:`PyStatus_NoMemory`
+* :c:func:`PyStatus_Ok`
+* :c:func:`PyWideStringList_Append`
+* :c:func:`PyWideStringList_Insert`
+* :c:func:`Py_BytesMain`
+* :c:func:`Py_ExitStatusException`
+* :c:func:`Py_InitializeFromConfig`
+* :c:func:`Py_PreInitialize`
+* :c:func:`Py_PreInitializeFromArgs`
+* :c:func:`Py_PreInitializeFromBytesArgs`
+* :c:func:`Py_RunMain`
+
+This PEP also adds ``_PyRuntimeState.preconfig`` (:c:type:`PyPreConfig` type)
+and ``PyInterpreterState.config`` (:c:type:`PyConfig` type) fields to these
+internal structures. ``PyInterpreterState.config`` becomes the new
+reference configuration, replacing global configuration variables and
+other private variables.
+
+See :ref:`Python Initialization Configuration <init-config>` for the
+documentation.
+
+See :pep:`587` for a full description.
+
+(Contributed by Victor Stinner in :issue:`36763`.)
+
 
 Other Language Changes
 ======================
