@@ -2412,7 +2412,7 @@ data and are closely related to string objects in a variety of other ways.
 
       >>> value = b'\xf0\xf1\xf2'
       >>> value.hex(':')
-      'f0:f1:f2'
+      'f0\:f1\:f2'
       >>> value.hex('_', 2)
       'f0_f1f2'
       >>> b'UUDDLRLRAB'.hex(' ', -4)
