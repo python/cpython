@@ -1262,6 +1262,10 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 #endif
 
     if (gil_held) {
+        if (PySys_Audit("open", "sOi", pathname, Py_None, flags) < 0) {
+            return -1;
+        }
+
         do {
             Py_BEGIN_ALLOW_THREADS
             fd = open(pathname, flags);
@@ -1331,6 +1335,9 @@ FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
     FILE *f;
+    if (PySys_Audit("open", "uui", path, mode, 0) < 0) {
+        return NULL;
+    }
 #ifndef MS_WINDOWS
     char *cpath;
     char cmode[10];
@@ -1366,6 +1373,10 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
+    if (PySys_Audit("open", "ssi", pathname, mode, 0) < 0) {
+        return NULL;
+    }
+
     FILE *f = fopen(pathname, mode);
     if (f == NULL)
         return NULL;
@@ -1401,6 +1412,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
 
     assert(PyGILState_Check());
 
+    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        return NULL;
+    }
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError,
                      "str file path expected under Windows, got %R",
@@ -1433,6 +1447,10 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;
     path_bytes = PyBytes_AS_STRING(bytes);
+
+    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        return NULL;
+    }
 
     do {
         Py_BEGIN_ALLOW_THREADS

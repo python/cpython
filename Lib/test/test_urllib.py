@@ -1470,7 +1470,8 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
             os.close(fd)
             fileurl = "file:" + urllib.request.pathname2url(tmpfile)
             filename, _ = urllib.request.URLopener().retrieve(fileurl)
-            self.assertEqual(filename, tmpfile)
+            # Some buildbots have TEMP folder that uses a lowercase drive letter.
+            self.assertEqual(os.path.normcase(filename), os.path.normcase(tmpfile))
 
     @support.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_remote(self):
@@ -1479,6 +1480,19 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
         self.addCleanup(self.unfakehttp)
         filename, _ = urllib.request.URLopener().retrieve(url)
         self.assertEqual(os.path.splitext(filename)[1], ".txt")
+
+    @support.ignore_warnings(category=DeprecationWarning)
+    def test_local_file_open(self):
+        # bpo-35907, CVE-2019-9948: urllib must reject local_file:// scheme
+        class DummyURLopener(urllib.request.URLopener):
+            def open_local_file(self, url):
+                return url
+        for url in ('local_file://example', 'local-file://example'):
+            self.assertRaises(OSError, urllib.request.urlopen, url)
+            self.assertRaises(OSError, urllib.request.URLopener().open, url)
+            self.assertRaises(OSError, urllib.request.URLopener().retrieve, url)
+            self.assertRaises(OSError, DummyURLopener().open, url)
+            self.assertRaises(OSError, DummyURLopener().retrieve, url)
 
 
 # Just commented them out.

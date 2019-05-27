@@ -4982,6 +4982,31 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 #endif
 
 
+static PyObject*
+test_write_unraisable_exc(PyObject *self, PyObject *args)
+{
+    PyObject *exc, *err_msg, *obj;
+    if (!PyArg_ParseTuple(args, "OOO", &exc, &err_msg, &obj)) {
+        return NULL;
+    }
+
+    const char *err_msg_utf8;
+    if (err_msg != Py_None) {
+        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
+        if (err_msg_utf8 == NULL) {
+            return NULL;
+        }
+    }
+    else {
+        err_msg_utf8 = NULL;
+    }
+
+    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
+    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5221,6 +5246,7 @@ static PyMethodDef TestMethods[] = {
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
 #endif
+    {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

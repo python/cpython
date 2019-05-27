@@ -476,7 +476,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             other_loop.run_until_complete, task)
 
     def test_run_until_complete_loop_orphan_future_close_loop(self):
-        class ShowStopper(BaseException):
+        class ShowStopper(SystemExit):
             pass
 
         async def foo(delay):
@@ -487,10 +487,8 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         self.loop._process_events = mock.Mock()
         self.loop.call_soon(throw)
-        try:
+        with self.assertRaises(ShowStopper):
             self.loop.run_until_complete(foo(0.1))
-        except ShowStopper:
-            pass
 
         # This call fails if run_until_complete does not clean up
         # done-callback for the previous future.
@@ -1154,8 +1152,9 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
     def test_create_server_ipv6(self):
         async def main():
-            srv = await asyncio.start_server(
-                lambda: None, '::1', 0, loop=self.loop)
+            with self.assertWarns(DeprecationWarning):
+                srv = await asyncio.start_server(
+                    lambda: None, '::1', 0, loop=self.loop)
             try:
                 self.assertGreater(len(srv.sockets), 0)
             finally:

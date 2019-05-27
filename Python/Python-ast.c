@@ -314,12 +314,10 @@ static char *Call_fields[]={
 static PyTypeObject *FormattedValue_type;
 _Py_IDENTIFIER(conversion);
 _Py_IDENTIFIER(format_spec);
-_Py_IDENTIFIER(expr_text);
 static char *FormattedValue_fields[]={
     "value",
     "conversion",
     "format_spec",
-    "expr_text",
 };
 static PyTypeObject *JoinedStr_type;
 static char *JoinedStr_fields[]={
@@ -524,8 +522,10 @@ static char *withitem_fields[]={
 static PyTypeObject *type_ignore_type;
 static PyObject* ast2obj_type_ignore(void*);
 static PyTypeObject *TypeIgnore_type;
+_Py_IDENTIFIER(tag);
 static char *TypeIgnore_fields[]={
     "lineno",
+    "tag",
 };
 
 
@@ -952,7 +952,7 @@ static int init_types(void)
     Call_type = make_type("Call", expr_type, Call_fields, 3);
     if (!Call_type) return 0;
     FormattedValue_type = make_type("FormattedValue", expr_type,
-                                    FormattedValue_fields, 4);
+                                    FormattedValue_fields, 3);
     if (!FormattedValue_type) return 0;
     JoinedStr_type = make_type("JoinedStr", expr_type, JoinedStr_fields, 1);
     if (!JoinedStr_type) return 0;
@@ -1164,7 +1164,7 @@ static int init_types(void)
     if (!type_ignore_type) return 0;
     if (!add_attributes(type_ignore_type, NULL, 0)) return 0;
     TypeIgnore_type = make_type("TypeIgnore", type_ignore_type,
-                                TypeIgnore_fields, 1);
+                                TypeIgnore_fields, 2);
     if (!TypeIgnore_type) return 0;
     initialized = 1;
     return 1;
@@ -2251,9 +2251,9 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int lineno, int
 }
 
 expr_ty
-FormattedValue(expr_ty value, int conversion, expr_ty format_spec, string
-               expr_text, int lineno, int col_offset, int end_lineno, int
-               end_col_offset, PyArena *arena)
+FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
+               int col_offset, int end_lineno, int end_col_offset, PyArena
+               *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2268,7 +2268,6 @@ FormattedValue(expr_ty value, int conversion, expr_ty format_spec, string
     p->v.FormattedValue.value = value;
     p->v.FormattedValue.conversion = conversion;
     p->v.FormattedValue.format_spec = format_spec;
-    p->v.FormattedValue.expr_text = expr_text;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -2667,14 +2666,20 @@ withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
 }
 
 type_ignore_ty
-TypeIgnore(int lineno, PyArena *arena)
+TypeIgnore(int lineno, string tag, PyArena *arena)
 {
     type_ignore_ty p;
+    if (!tag) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field tag is required for TypeIgnore");
+        return NULL;
+    }
     p = (type_ignore_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = TypeIgnore_kind;
     p->v.TypeIgnore.lineno = lineno;
+    p->v.TypeIgnore.tag = tag;
     return p;
 }
 
@@ -3499,11 +3504,6 @@ ast2obj_expr(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_format_spec, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_string(o->v.FormattedValue.expr_text);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_expr_text, value) == -1)
-            goto failed;
-        Py_DECREF(value);
         break;
     case JoinedStr_kind:
         result = PyType_GenericNew(JoinedStr_type, NULL, NULL);
@@ -4156,6 +4156,11 @@ ast2obj_type_ignore(void* _o)
         value = ast2obj_int(o->v.TypeIgnore.lineno);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_lineno, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.TypeIgnore.tag);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_tag, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -7156,7 +7161,6 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty value;
         int conversion;
         expr_ty format_spec;
-        string expr_text;
 
         if (_PyObject_LookupAttrId(obj, &PyId_value, &tmp) < 0) {
             return 1;
@@ -7197,22 +7201,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttrId(obj, &PyId_expr_text, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            expr_text = NULL;
-        }
-        else {
-            int res;
-            res = obj2ast_string(tmp, &expr_text, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = FormattedValue(value, conversion, format_spec, expr_text,
-                              lineno, col_offset, end_lineno, end_col_offset,
-                              arena);
+        *out = FormattedValue(value, conversion, format_spec, lineno,
+                              col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8738,6 +8728,7 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
     }
     if (isinstance) {
         int lineno;
+        string tag;
 
         if (_PyObject_LookupAttrId(obj, &PyId_lineno, &tmp) < 0) {
             return 1;
@@ -8752,7 +8743,20 @@ obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = TypeIgnore(lineno, arena);
+        if (_PyObject_LookupAttrId(obj, &PyId_tag, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"tag\" missing from TypeIgnore");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &tag, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = TypeIgnore(lineno, tag, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8776,6 +8780,8 @@ PyInit__ast(void)
     if (!m) return NULL;
     d = PyModule_GetDict(m);
     if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;
+    if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)
+        return NULL;
     if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
         return NULL;
     if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)
@@ -8994,6 +9000,10 @@ mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_ver
     PyObject *req_type[3];
     char *req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
+
+    if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
+        return NULL;
+    }
 
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;
