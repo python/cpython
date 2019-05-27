@@ -5471,31 +5471,26 @@ class _TestCustomReducer(BaseTestCase):
         self.assertEqual(self.spy['dump'], 1)
 
     @classmethod
-    def _put_and_get_in_queue(cls, queue, parent_can_continue):
-        parent_can_continue.set()
+    def _put_and_get_in_queue(cls, queue,):
         queue.put("Something")
-        queue.get(timeout=TIMEOUT2)
-        close_queue(queue)
-        parent_can_continue.set()
+        queue.get(timeout=TIMEOUT)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_queue_custom_reducer(self):
         queue = self.Queue()
-        parent_can_continue = self.Event()
         p = self.Process(target=self._put_and_get_in_queue,
-                         args=(queue, parent_can_continue))
+                         args=(queue,))
         p.start()
-        parent_can_continue.wait()
-        element = queue.get(timeout=TIMEOUT3)
+        element = queue.get(timeout=TIMEOUT)
         self.assertEqual(element, "Something")
         queue.put("Other_Something")
-        parent_can_continue.wait()
         close_queue(queue)
-        p.join(timeout=TIMEOUT3)
+        p.join(timeout=TIMEOUT)
         p.terminate()
         self.assertEqual(element, "Something")
         self.assertEqual(self.spy['loads'], 1)
-        self.assertEqual(self.spy['dump'], 3)
+        # Fork and spawn call this different ammount of times
+        self.assertGreaterEqual(self.spy['dump'], 1)
         self.assertEqual(p.exitcode, 0)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
@@ -5535,12 +5530,9 @@ class _TestCustomReducerWithContext(BaseTestCase):
         self.default_ctx.set_reducer(self.original_default_reducer)
 
     @classmethod
-    def _put_and_get_in_queue(cls, queue, parent_can_continue):
-        parent_can_continue.set()
+    def _put_and_get_in_queue(cls, queue):
         queue.put("Something")
-        queue.get(timeout=TIMEOUT2)
-        close_queue(queue)
-        parent_can_continue.set()
+        queue.get(timeout=TIMEOUT)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_queue_custom_reducer_over_custom_context(self):
@@ -5548,24 +5540,21 @@ class _TestCustomReducerWithContext(BaseTestCase):
         self.custom_ctx.set_reducer(SpyReducer(self.custom_spy))
 
         queue = self.custom_ctx.Queue()
-        parent_can_continue = self.custom_ctx.Event()
         p = self.custom_ctx.Process(target=self._put_and_get_in_queue,
-            args=(queue, parent_can_continue))
+            args=(queue,))
         p.start()
-        parent_can_continue.wait()
-        element = queue.get(timeout=TIMEOUT3)
+        element = queue.get(timeout=TIMEOUT)
         self.assertEqual(element, "Something")
         queue.put("Other_Something")
-        parent_can_continue.wait()
         close_queue(queue)
-        p.join(timeout=TIMEOUT3)
+        p.join(timeout=TIMEOUT)
         p.terminate()
+        self.assertEqual(p.exitcode, 0)
         self.assertEqual(element, "Something")
         self.assertEqual(self.custom_spy['loads'], 1)
         self.assertEqual(self.custom_spy['dump'], 1)
         self.assertEqual(self.default_spy['loads'], 0)
         self.assertEqual(self.default_spy['dump'], 0)
-        self.assertEqual(p.exitcode, 0)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_listener_custom_reduction_custom_context(self):
@@ -5593,22 +5582,20 @@ class _TestCustomReducerWithContext(BaseTestCase):
         self.custom_ctx.set_reducer(SpyReducer(self.custom_spy))
 
         queue = self.default_ctx.Queue()
-        parent_can_continue = self.default_ctx.Event()
         p = self.default_ctx.Process(target=self._put_and_get_in_queue,
-            args=(queue, parent_can_continue))
-        p.daemon = True
+            args=(queue, ))
         p.start()
-        parent_can_continue.wait()
-        element = queue.get(timeout=TIMEOUT3)
+        element = queue.get(timeout=TIMEOUT)
         self.assertEqual(element, "Something")
         queue.put("Other_Something")
-        p.join(timeout=TIMEOUT3)
+        p.join(timeout=TIMEOUT)
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(element, "Something")
         self.assertEqual(self.custom_spy['loads'], 0)
         self.assertEqual(self.custom_spy['dump'], 0)
         self.assertEqual(self.default_spy['loads'], 1)
-        self.assertEqual(self.default_spy['dump'], 3)
+        # Fork and spawn call this different ammount of times
+        self.assertGreaterEqual(self.default_spy['dump'], 1)
         close_queue(queue)
 
 
