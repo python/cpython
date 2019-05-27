@@ -1678,7 +1678,7 @@ os.close(fd)
         async def test():
             srv = asyncio.StreamServer(serve, '127.0.0.1', 0)
             await srv.bind()
-            self.assertRegex(repr(srv), r'<StreamServer sockets=\[.+\]>')
+            self.assertRegex(repr(srv), r'<StreamServer sockets=\(.+\)>')
             await srv.close()
 
         self.loop.run_until_complete(test())
@@ -1690,7 +1690,7 @@ os.close(fd)
         async def test():
             srv = asyncio.StreamServer(serve, '127.0.0.1', 0)
             await srv.start_serving()
-            self.assertRegex(repr(srv), r'<StreamServer serving sockets=\[.+\]>')
+            self.assertRegex(repr(srv), r'<StreamServer serving sockets=\(.+\)>')
             await srv.close()
 
         self.loop.run_until_complete(test())
