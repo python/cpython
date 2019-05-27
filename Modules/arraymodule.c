@@ -2343,7 +2343,8 @@ array_subscr(arrayobject* self, PyObject* item)
         return array_item(self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         PyObject* result;
         arrayobject* ar;
         int itemsize = self->ob_descr->itemsize;
@@ -2527,7 +2528,8 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
         return 0;
     }
     else {
-        Py_ssize_t cur, i;
+        size_t cur;
+        Py_ssize_t i;
 
         if (needed != slicelength) {
             PyErr_Format(PyExc_ValueError,
@@ -2632,6 +2634,11 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))
         return NULL;
+
+    if (PySys_Audit("array.__new__", "CO",
+                    c, initial ? initial : Py_None) < 0) {
+        return NULL;
+    }
 
     if (initial && c != 'u') {
         if (PyUnicode_Check(initial)) {

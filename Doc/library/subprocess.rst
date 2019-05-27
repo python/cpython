@@ -55,7 +55,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
    ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be supplied at the same time as *capture_output*.
+   not be supplied at the same time as *capture_output*.  If you wish to capture
+   and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
+   instead of *capture_output*.
 
    The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
    expires, the child process will be killed and waited for.  The
@@ -566,6 +568,13 @@ functions.
    .. versionchanged:: 3.6
       Popen destructor now emits a :exc:`ResourceWarning` warning if the child
       process is still running.
+
+   .. versionchanged:: 3.8
+      Popen can use :func:`os.posix_spawn` in some cases for better
+      performance. On Windows Subsystem for Linux and QEMU User Emulation,
+      Popen constructor using :func:`os.posix_spawn` no longer raise an
+      exception on errors like missing program, but the child process fails
+      with a non-zero :attr:`~Popen.returncode`.
 
 
 Exceptions

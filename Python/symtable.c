@@ -1653,6 +1653,8 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
     /* skip default arguments inside function block
        XXX should ast be different?
     */
+    if (a->posonlyargs && !symtable_visit_params(st, a->posonlyargs))
+        return 0;
     if (a->args && !symtable_visit_params(st, a->args))
         return 0;
     if (a->kwonlyargs && !symtable_visit_params(st, a->kwonlyargs))

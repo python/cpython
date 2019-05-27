@@ -644,7 +644,6 @@ validate_node(node *tree)
 {
     int type = TYPE(tree);
     int nch = NCH(tree);
-    dfa *nt_dfa;
     state *dfa_state;
     int pos, arc;
 
@@ -654,7 +653,7 @@ validate_node(node *tree)
         PyErr_Format(parser_error, "Unrecognized node type %d.", TYPE(tree));
         return 0;
     }
-    nt_dfa = &_PyParser_Grammar.g_dfa[type];
+    const dfa *nt_dfa = &_PyParser_Grammar.g_dfa[type];
     REQ(tree, nt_dfa->d_type);
 
     /* Run the DFA for this nonterminal. */

@@ -17,10 +17,8 @@ int
 Py_FrozenMain(int argc, char **argv)
 {
     _PyInitError err = _PyRuntime_Initialize();
-    if (_Py_INIT_FAILED(err)) {
-        fprintf(stderr, "Fatal Python error: %s\n", err.msg);
-        fflush(stderr);
-        exit(1);
+    if (_PyInitError_Failed(err)) {
+        _Py_ExitInitError(err);
     }
 
     const char *p;
@@ -41,8 +39,13 @@ Py_FrozenMain(int argc, char **argv)
         }
     }
 
-    _PyCoreConfig config = _PyCoreConfig_INIT;
-    config._frozen = 1;   /* Suppress errors from getpath.c */
+    _PyCoreConfig config;
+    err = _PyCoreConfig_InitPythonConfig(&config);
+    if (_PyInitError_Failed(err)) {
+        _PyCoreConfig_Clear(&config);
+        _Py_ExitInitError(err);
+    }
+    config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
         inspect = 1;
@@ -83,9 +86,8 @@ Py_FrozenMain(int argc, char **argv)
         Py_SetProgramName(argv_copy[0]);
 
     err = _Py_InitializeFromConfig(&config);
-    /* No need to call _PyCoreConfig_Clear() since we didn't allocate any
-       memory: program_name is a constant string. */
-    if (_Py_INIT_FAILED(err)) {
+    _PyCoreConfig_Clear(&config);
+    if (_PyInitError_Failed(err)) {
         _Py_ExitInitError(err);
     }
 

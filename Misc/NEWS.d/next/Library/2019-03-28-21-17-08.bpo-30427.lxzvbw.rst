@@ -1,2 +1,0 @@
-``os.path.normcase()`` relies on ``os.fspath()`` to check the type of its argument. Redundant checks have been removed from its ``posixpath.normcase()`` and ``ntpath.normcase()`` implementations.
-Patch by Wolfgang Maier.

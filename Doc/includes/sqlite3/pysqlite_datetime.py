@@ -18,3 +18,5 @@ cur.execute('select current_date as "d [date]", current_timestamp as "ts [timest
 row = cur.fetchone()
 print("current_date", row[0], type(row[0]))
 print("current_timestamp", row[1], type(row[1]))
+
+con.close()

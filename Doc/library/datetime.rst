@@ -458,6 +458,13 @@ Other constructors, all class methods:
   .. versionadded:: 3.7
 
 
+.. classmethod:: date.fromisocalendar(year, week, day)
+
+   Return a :class:`date` corresponding to the ISO calendar date specified by
+   year, week and day. This is the inverse of the function :meth:`date.isocalendar`.
+
+   .. versionadded:: 3.8
+
 
 Class attributes:
 
@@ -853,6 +860,16 @@ Other constructors, all class methods:
     as the inverse operation of :meth:`datetime.isoformat`.
 
   .. versionadded:: 3.7
+
+
+.. classmethod:: datetime.fromisocalendar(year, week, day)
+
+   Return a :class:`datetime` corresponding to the ISO calendar date specified
+   by year, week and day. The non-date components of the datetime are populated
+   with their normal default values. This is the inverse of the function
+   :meth:`datetime.isocalendar`.
+
+   .. versionadded:: 3.8
 
 .. classmethod:: datetime.strptime(date_string, format)
 
@@ -2031,6 +2048,9 @@ For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
 values.  If they're used anyway, ``0`` is substituted for them.
 
+For the :meth:`datetime.strptime` class method, the default value is ``1900-01-01T00:00:00.000``:
+any components not specified in the format string will be pulled from the default value. [#]_
+
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common.  To see the full set of format codes supported on your
@@ -2265,3 +2285,4 @@ Notes:
 .. rubric:: Footnotes
 
 .. [#] If, that is, we ignore the effects of Relativity
+.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since ``1900`` is not a leap year.

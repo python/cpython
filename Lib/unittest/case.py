@@ -102,6 +102,7 @@ def addModuleCleanup(*args, **kwargs):
     args = tuple(args)
 
     _module_cleanups.append((function, args, kwargs))
+addModuleCleanup.__text_signature__ = '(function, /, *args, **kwargs)'
 
 
 def doModuleCleanups():
@@ -498,8 +499,8 @@ class TestCase(object):
         args = tuple(args)
 
         self._cleanups.append((function, args, kwargs))
+    addCleanup.__text_signature__ = '($self, function, /, *args, **kwargs)'
 
-    @classmethod
     def addClassCleanup(*args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
@@ -514,6 +515,8 @@ class TestCase(object):
         args = tuple(args)
 
         cls._class_cleanups.append((function, args, kwargs))
+    addClassCleanup.__text_signature__ = '($cls, function, /, *args, **kwargs)'
+    addClassCleanup = classmethod(addClassCleanup)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -1244,9 +1247,8 @@ class TestCase(object):
 
 
     def assertCountEqual(self, first, second, msg=None):
-        """An unordered sequence comparison asserting that the same elements,
-        regardless of order.  If the same element occurs more than once,
-        it verifies that the elements occur the same number of times.
+        """Asserts that two iterables have the same elements, the same number of
+        times, without regard to order.
 
             self.assertEqual(Counter(list(first)),
                              Counter(list(second)))

@@ -1,0 +1,2 @@
+Fix asyncio discarding IPv6 scopes when ensuring hostname resolutions
+internally

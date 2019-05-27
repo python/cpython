@@ -23,7 +23,7 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import futures
-from .coroutines import coroutine
+from .coroutines import _is_coroutine
 
 # Helper to generate new task names
 # This uses itertools.count() instead of a "+= 1" operation because the latter
@@ -95,7 +95,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         None is returned when called not in the context of a Task.
         """
-        warnings.warn("Task.current_task() is deprecated, "
+        warnings.warn("Task.current_task() is deprecated since Python 3.7, "
                       "use asyncio.current_task() instead",
                       DeprecationWarning,
                       stacklevel=2)
@@ -109,7 +109,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         By default all tasks for the current event loop are returned.
         """
-        warnings.warn("Task.all_tasks() is deprecated, "
+        warnings.warn("Task.all_tasks() is deprecated since Python 3.7, "
                       "use asyncio.all_tasks() instead",
                       DeprecationWarning,
                       stacklevel=2)
@@ -388,8 +388,8 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
@@ -418,8 +418,8 @@ async def wait_for(fut, timeout, *, loop=None):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     if timeout is None:
@@ -495,10 +495,11 @@ async def _wait(fs, timeout, return_when, loop):
     finally:
         if timeout_handle is not None:
             timeout_handle.cancel()
+        for f in fs:
+            f.remove_done_callback(_on_completion)
 
     done, pending = set(), set()
     for f in fs:
-        f.remove_done_callback(_on_completion)
         if f.done():
             done.add(f)
         else:
@@ -599,8 +600,8 @@ async def sleep(delay, result=None, *, loop=None):
     if loop is None:
         loop = events.get_running_loop()
     else:
-        warnings.warn("The loop argument is deprecated and scheduled for "
-                      "removal in Python 3.10.",
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
     future = loop.create_future()
@@ -627,7 +628,8 @@ def ensure_future(coro_or_future, *, loop=None):
         return task
     elif futures.isfuture(coro_or_future):
         if loop is not None and loop is not futures._get_loop(coro_or_future):
-            raise ValueError('loop argument must agree with Future')
+            raise ValueError('The future belongs to a different loop than '
+                             'the one specified as the loop argument')
         return coro_or_future
     elif inspect.isawaitable(coro_or_future):
         return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
@@ -636,7 +638,7 @@ def ensure_future(coro_or_future, *, loop=None):
                         'required')
 
 
-@coroutine
+@types.coroutine
 def _wrap_awaitable(awaitable):
     """Helper for asyncio.ensure_future().
 
@@ -644,6 +646,8 @@ def _wrap_awaitable(awaitable):
     that will later be wrapped in a Task by ensure_future().
     """
     return (yield from awaitable.__await__())
+
+_wrap_awaitable._is_coroutine = _is_coroutine
 
 
 class _GatheringFuture(futures.Future):
@@ -816,7 +820,7 @@ def shield(arg, *, loop=None):
     loop = futures._get_loop(inner)
     outer = loop.create_future()
 
-    def _done_callback(inner):
+    def _inner_done_callback(inner):
         if outer.cancelled():
             if not inner.cancelled():
                 # Mark inner's result as retrieved.
@@ -832,7 +836,13 @@ def shield(arg, *, loop=None):
             else:
                 outer.set_result(inner.result())
 
-    inner.add_done_callback(_done_callback)
+
+    def _outer_done_callback(outer):
+        if not inner.done():
+            inner.remove_done_callback(_inner_done_callback)
+
+    inner.add_done_callback(_inner_done_callback)
+    outer.add_done_callback(_outer_done_callback)
     return outer
 
 

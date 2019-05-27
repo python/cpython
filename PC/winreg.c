@@ -521,7 +521,7 @@ fixupMultiSZ(wchar_t **str, wchar_t *data, int len)
     Q = data + len;
     for (P = data, i = 0; P < Q && *P != '\0'; P++, i++) {
         str[i] = P;
-        for(; *P != '\0'; P++)
+        for (; P < Q && *P != '\0'; P++)
             ;
     }
 }
@@ -1614,7 +1614,7 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = RegSetValueW(key, sub_key, REG_SZ, value, value_length+1);
+    rc = RegSetValueW(key, sub_key, REG_SZ, value, (DWORD)(value_length + 1));
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");

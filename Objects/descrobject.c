@@ -144,6 +144,14 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
 
     if (descr_check((PyDescrObject *)descr, obj, &res))
         return res;
+
+    if (descr->d_member->flags & READ_RESTRICTED) {
+        if (PySys_Audit("object.__getattr__", "Os",
+            obj ? obj : Py_None, descr->d_member->name) < 0) {
+            return NULL;
+        }
+    }
+
     return PyMember_GetOne((char *)obj, descr->d_member);
 }
 
@@ -1021,11 +1029,11 @@ static void
 wrapper_dealloc(wrapperobject *wp)
 {
     PyObject_GC_UnTrack(wp);
-    Py_TRASHCAN_SAFE_BEGIN(wp)
+    Py_TRASHCAN_BEGIN(wp, wrapper_dealloc)
     Py_XDECREF(wp->descr);
     Py_XDECREF(wp->self);
     PyObject_GC_Del(wp);
-    Py_TRASHCAN_SAFE_END(wp)
+    Py_TRASHCAN_END
 }
 
 static PyObject *

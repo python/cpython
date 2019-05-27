@@ -526,6 +526,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
+   .. audit-event:: socket.__new__ "self family type protocol"
+
    .. versionchanged:: 3.3
       The AF_CAN family was added.
       The AF_RDS family was added.
@@ -718,6 +720,8 @@ The :mod:`socket` module also offers various network-related services:
    :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
    method.
 
+   .. audit-event:: socket.getaddrinfo "host port family type protocol"
+
    The following example fetches address information for a hypothetical TCP
    connection to ``example.org`` on port 80 (results may differ on your
    system if IPv6 isn't enabled)::
@@ -753,6 +757,8 @@ The :mod:`socket` module also offers various network-related services:
    interface. :func:`gethostbyname` does not support IPv6 name resolution, and
    :func:`getaddrinfo` should be used instead for IPv4/v6 dual stack support.
 
+   .. audit-event:: socket.gethostbyname hostname
+
 
 .. function:: gethostbyname_ex(hostname)
 
@@ -765,11 +771,15 @@ The :mod:`socket` module also offers various network-related services:
    resolution, and :func:`getaddrinfo` should be used instead for IPv4/v6 dual
    stack support.
 
+   .. audit-event:: socket.gethostbyname hostname
+
 
 .. function:: gethostname()
 
    Return a string containing the hostname of the machine where  the Python
    interpreter is currently executing.
+
+   .. audit-event:: socket.gethostname
 
    Note: :func:`gethostname` doesn't always return the fully qualified domain
    name; use :func:`getfqdn` for that.
@@ -785,6 +795,8 @@ The :mod:`socket` module also offers various network-related services:
    domain name, use the function :func:`getfqdn`. :func:`gethostbyaddr` supports
    both IPv4 and IPv6.
 
+   .. audit-event:: socket.gethostbyaddr ip_address
+
 
 .. function:: getnameinfo(sockaddr, flags)
 
@@ -797,6 +809,8 @@ The :mod:`socket` module also offers various network-related services:
    contains meaningful *scopeid*. Usually this happens for multicast addresses.
 
    For more information about *flags* you can consult :manpage:`getnameinfo(3)`.
+
+   .. audit-event:: socket.getnameinfo sockaddr
 
 .. function:: getprotobyname(protocolname)
 
@@ -813,12 +827,16 @@ The :mod:`socket` module also offers various network-related services:
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
 
+   .. audit-event:: socket.getservbyname "servicename protocolname"
+
 
 .. function:: getservbyport(port[, protocolname])
 
    Translate an Internet port number and protocol name to a service name for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
+
+   .. audit-event:: socket.getservbyport "port protocolname"
 
 
 .. function:: ntohl(x)
@@ -1003,6 +1021,8 @@ The :mod:`socket` module also offers various network-related services:
    Set the machine's hostname to *name*.  This will raise an
    :exc:`OSError` if you don't have enough rights.
 
+   .. audit-event:: socket.sethostname name
+
    .. availability:: Unix.
 
    .. versionadded:: 3.3
@@ -1078,6 +1098,7 @@ to sockets.
    Bind the socket to *address*.  The socket must not already be bound. (The format
    of *address* depends on the address family --- see above.)
 
+   .. audit-event:: socket.bind "self address"
 
 .. method:: socket.close()
 
@@ -1115,6 +1136,8 @@ to sockets.
    :exc:`InterruptedError` exception if the connection is interrupted by a
    signal (or the exception raised by the signal handler).
 
+   .. audit-event:: socket.connect "self address"
+
    .. versionchanged:: 3.5
       The method now waits until the connection completes instead of raising an
       :exc:`InterruptedError` exception if the connection is interrupted by a
@@ -1131,6 +1154,7 @@ to sockets.
    :c:data:`errno` variable.  This is useful to support, for example, asynchronous
    connects.
 
+   .. audit-event:: socket.connect "self address"
 
 .. method:: socket.detach()
 
@@ -1472,6 +1496,8 @@ to sockets.
    bytes sent. (The format of *address* depends on the address family --- see
    above.)
 
+   .. audit-event:: socket.sendto "self address"
+
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
       an exception, the method now retries the system call instead of raising
@@ -1510,6 +1536,8 @@ to sockets.
           return sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", fds))])
 
    .. availability:: most Unix platforms, possibly others.
+
+   .. audit-event:: socket.sendmsg "self address"
 
    .. versionadded:: 3.3
 

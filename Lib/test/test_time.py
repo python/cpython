@@ -88,17 +88,6 @@ class TimeTestCase(unittest.TestCase):
             check_ns(time.clock_gettime(time.CLOCK_REALTIME),
                      time.clock_gettime_ns(time.CLOCK_REALTIME))
 
-    @unittest.skipUnless(hasattr(time, 'clock'),
-                         'need time.clock()')
-    def test_clock(self):
-        with self.assertWarns(DeprecationWarning):
-            time.clock()
-
-        with self.assertWarns(DeprecationWarning):
-            info = time.get_clock_info('clock')
-        self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjustable)
-
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
     def test_clock_realtime(self):
@@ -470,8 +459,9 @@ class TimeTestCase(unittest.TestCase):
         t2 = time.monotonic()
         dt = t2 - t1
         self.assertGreater(t2, t1)
-        # Issue #20101: On some Windows machines, dt may be slightly low
-        self.assertTrue(0.45 <= dt <= 1.0, dt)
+        # bpo-20101: tolerate a difference of 50 ms because of bad timer
+        # resolution on Windows
+        self.assertTrue(0.450 <= dt)
 
         # monotonic() is a monotonic but non adjustable clock
         info = time.get_clock_info('monotonic')
@@ -552,15 +542,9 @@ class TimeTestCase(unittest.TestCase):
 
     def test_get_clock_info(self):
         clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
-        if hasattr(time, 'clock'):
-            clocks.append('clock')
 
         for name in clocks:
-            if name == 'clock':
-                with self.assertWarns(DeprecationWarning):
-                    info = time.get_clock_info('clock')
-            else:
-                info = time.get_clock_info(name)
+            info = time.get_clock_info(name)
 
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)

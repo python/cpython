@@ -1509,6 +1509,17 @@ object is available:
    :c:type:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`restype` attribute to use these functions.
 
+.. audit-event:: ctypes.dlopen name
+
+   Loading a library through any of these objects raises an
+   :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
+   ``name``, the name used to load the library.
+
+.. audit-event:: ctypes.dlsym "library name"
+
+   Accessing a function on a loaded library raises an auditing event
+   ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
+   (the symbol's name as a string or integer).
 
 .. _ctypes-foreign-functions:
 
@@ -2032,6 +2043,12 @@ Data types
       This method returns a ctypes type instance using the memory specified by
       *address* which must be an integer.
 
+      .. audit-event:: ctypes.cdata address
+
+         This method, and others that indirectly call this method, raises an
+         :func:`auditing event <sys.audit>` ``ctypes.cdata`` with argument
+         ``address``.
+
    .. method:: from_param(obj)
 
       This method adapts *obj* to a ctypes type.  It is called with the actual
@@ -2376,7 +2393,7 @@ other data types containing pointer type fields.
       and so on).  Later assignments to the :attr:`_fields_` class variable will
       raise an AttributeError.
 
-      It is possible to defined sub-subclasses of structure types, they inherit
+      It is possible to define sub-subclasses of structure types, they inherit
       the fields of the base class plus the :attr:`_fields_` defined in the
       sub-subclass, if any.
 
@@ -2424,7 +2441,7 @@ other data types containing pointer type fields.
          td.lptdesc = POINTER(some_type)
          td.u.lptdesc = POINTER(some_type)
 
-   It is possible to defined sub-subclasses of structures, they inherit the
+   It is possible to define sub-subclasses of structures, they inherit the
    fields of the base class.  If the subclass definition has a separate
    :attr:`_fields_` variable, the fields specified in this are appended to the
    fields of the base class.

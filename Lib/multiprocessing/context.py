@@ -35,6 +35,7 @@ class BaseContext(object):
     AuthenticationError = AuthenticationError
 
     current_process = staticmethod(process.current_process)
+    parent_process = staticmethod(process.parent_process)
     active_children = staticmethod(process.active_children)
 
     def cpu_count(self):
