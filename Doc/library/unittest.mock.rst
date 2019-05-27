@@ -1945,7 +1945,7 @@ The full list of supported magic methods is:
 * Container methods: ``__getitem__``, ``__setitem__``, ``__delitem__``,
   ``__contains__``, ``__len__``, ``__iter__``, ``__reversed__``
   and ``__missing__``
-* Context manager: ``__enter__`` and ``__exit__``
+* Context manager: ``__enter__``, ``__exit__``, ``__aenter`` and ``__aexit__``
 * Unary numeric methods: ``__neg__``, ``__pos__`` and ``__invert__``
 * The numeric methods (including right hand and in-place variants):
   ``__add__``, ``__sub__``, ``__mul__``, ``__matmul__``, ``__div__``, ``__truediv__``,
@@ -1957,9 +1957,13 @@ The full list of supported magic methods is:
 * Pickling: ``__reduce__``, ``__reduce_ex__``, ``__getinitargs__``,
   ``__getnewargs__``, ``__getstate__`` and ``__setstate__``
 * File system path representation: ``__fspath__``
+* Asynchronous iteration methods: ``__aiter__`` and ``__anext__``
 
 .. versionchanged:: 3.8
    Added support for :func:`os.PathLike.__fspath__`.
+
+.. versionchanged:: 3.8
+   Added support for ``__aenter__``, ``__aexit__``, ``__aiter__`` and ``__anext__``.
 
 
 The following methods exist but are *not* supported as they are either in use
