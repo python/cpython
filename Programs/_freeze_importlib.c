@@ -36,7 +36,7 @@ main(int argc, char *argv[])
     const char *name, *inpath, *outpath;
     char buf[100];
     FILE *infile = NULL, *outfile = NULL;
-    struct _Py_stat_struct status;
+    struct _Py_stat_struct stat;
     size_t text_size, data_size, i, n;
     char *text = NULL;
     unsigned char *data;
@@ -56,11 +56,11 @@ main(int argc, char *argv[])
         fprintf(stderr, "cannot open '%s' for reading\n", inpath);
         goto error;
     }
-    if (_Py_fstat_noraise(fileno(infile), &status)) {
+    if (_Py_fstat_noraise(fileno(infile), &stat)) {
         fprintf(stderr, "cannot fstat '%s'\n", inpath);
         goto error;
     }
-    text_size = (size_t)status.st_size;
+    text_size = (size_t)stat.st_size;
     text = (char *) malloc(text_size + 1);
     if (text == NULL) {
         fprintf(stderr, "could not allocate %ld bytes\n", (long) text_size);
