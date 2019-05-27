@@ -1077,6 +1077,7 @@ static PyStructSequence_Field UnraisableHookArgs_fields[] = {
     {"exc_type", "Exception type"},
     {"exc_value", "Exception value"},
     {"exc_traceback", "Exception traceback"},
+    {"err_msg", "Error message"},
     {"object", "Object causing the exception"},
     {0}
 };
@@ -1085,7 +1086,7 @@ static PyStructSequence_Desc UnraisableHookArgs_desc = {
     .name = "UnraisableHookArgs",
     .doc = UnraisableHookArgs__doc__,
     .fields = UnraisableHookArgs_fields,
-    .n_in_sequence = 4
+    .n_in_sequence = 5
 };
 
 
@@ -1104,7 +1105,8 @@ _PyErr_Init(void)
 
 static PyObject *
 make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
-                          PyObject *exc_value, PyObject *exc_tb, PyObject *obj)
+                          PyObject *exc_value, PyObject *exc_tb,
+                          PyObject *err_msg, PyObject *obj)
 {
     PyObject *args = PyStructSequence_New(&UnraisableHookArgsType);
     if (args == NULL) {
@@ -1125,6 +1127,7 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
     ADD_ITEM(exc_type);
     ADD_ITEM(exc_value);
     ADD_ITEM(exc_tb);
+    ADD_ITEM(err_msg);
     ADD_ITEM(obj);
 #undef ADD_ITEM
 
@@ -1145,11 +1148,21 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
 static int
 write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
                           PyObject *exc_value, PyObject *exc_tb,
-                          PyObject *obj, PyObject *file)
+                          PyObject *err_msg, PyObject *obj, PyObject *file)
 {
     if (obj != NULL && obj != Py_None) {
-        if (PyFile_WriteString("Exception ignored in: ", file) < 0) {
-            return -1;
+        if (err_msg != NULL && err_msg != Py_None) {
+            if (PyFile_WriteObject(err_msg, file, Py_PRINT_RAW) < 0) {
+                return -1;
+            }
+            if (PyFile_WriteString(": ", file) < 0) {
+                return -1;
+            }
+        }
+        else {
+            if (PyFile_WriteString("Exception ignored in: ", file) < 0) {
+                return -1;
+            }
         }
 
         if (PyFile_WriteObject(obj, file, 0) < 0) {
@@ -1159,6 +1172,14 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
             }
         }
         if (PyFile_WriteString("\n", file) < 0) {
+            return -1;
+        }
+    }
+    else if (err_msg != NULL && err_msg != Py_None) {
+        if (PyFile_WriteObject(err_msg, file, Py_PRINT_RAW) < 0) {
+            return -1;
+        }
+        if (PyFile_WriteString(":\n", file) < 0) {
             return -1;
         }
     }
@@ -1178,8 +1199,9 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     const char *className = PyExceptionClass_Name(exc_type);
     if (className != NULL) {
         const char *dot = strrchr(className, '.');
-        if (dot != NULL)
+        if (dot != NULL) {
             className = dot+1;
+        }
     }
 
     _Py_IDENTIFIER(__module__);
@@ -1238,7 +1260,8 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
 
 static int
 write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
-                     PyObject *exc_value, PyObject *exc_tb, PyObject *obj)
+                     PyObject *exc_value, PyObject *exc_tb, PyObject *err_msg,
+                     PyObject *obj)
 {
     PyObject *file = _PySys_GetObjectId(&PyId_stderr);
     if (file == NULL || file == Py_None) {
@@ -1249,7 +1272,7 @@ write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
        while we use it */
     Py_INCREF(file);
     int res = write_unraisable_exc_file(tstate, exc_type, exc_value, exc_tb,
-                                        obj, file);
+                                        err_msg, obj, file);
     Py_DECREF(file);
 
     return res;
@@ -1272,9 +1295,10 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
     PyObject *exc_type = PyStructSequence_GET_ITEM(args, 0);
     PyObject *exc_value = PyStructSequence_GET_ITEM(args, 1);
     PyObject *exc_tb = PyStructSequence_GET_ITEM(args, 2);
-    PyObject *obj = PyStructSequence_GET_ITEM(args, 3);
+    PyObject *err_msg = PyStructSequence_GET_ITEM(args, 3);
+    PyObject *obj = PyStructSequence_GET_ITEM(args, 4);
 
-    if (write_unraisable_exc(tstate, exc_type, exc_value, exc_tb, obj) < 0) {
+    if (write_unraisable_exc(tstate, exc_type, exc_value, exc_tb, err_msg, obj) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1287,13 +1311,18 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
    for Python to handle it. For example, when a destructor raises an exception
    or during garbage collection (gc.collect()).
 
+   If err_msg_str is non-NULL, the error message is formatted as:
+   "Exception ignored %s" % err_msg_str. Otherwise, use "Exception ignored in"
+   error message.
+
    An exception must be set when calling this function. */
 void
-PyErr_WriteUnraisable(PyObject *obj)
+_PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     assert(tstate != NULL);
 
+    PyObject *err_msg = NULL;
     PyObject *exc_type, *exc_value, *exc_tb;
     _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
@@ -1322,13 +1351,20 @@ PyErr_WriteUnraisable(PyObject *obj)
         }
     }
 
+    if (err_msg_str != NULL) {
+        err_msg = PyUnicode_FromFormat("Exception ignored %s", err_msg_str);
+        if (err_msg == NULL) {
+            PyErr_Clear();
+        }
+    }
+
     _Py_IDENTIFIER(unraisablehook);
     PyObject *hook = _PySys_GetObjectId(&PyId_unraisablehook);
     if (hook != NULL && hook != Py_None) {
         PyObject *hook_args;
 
         hook_args = make_unraisable_hook_args(tstate, exc_type, exc_value,
-                                              exc_tb, obj);
+                                              exc_tb, err_msg, obj);
         if (hook_args != NULL) {
             PyObject *args[1] = {hook_args};
             PyObject *res = _PyObject_FastCall(hook, args, 1);
@@ -1337,6 +1373,18 @@ PyErr_WriteUnraisable(PyObject *obj)
                 Py_DECREF(res);
                 goto done;
             }
+
+            err_msg_str = "Exception ignored in sys.unraisablehook";
+        }
+        else {
+            err_msg_str = ("Exception ignored on building "
+                           "sys.unraisablehook arguments");
+        }
+
+        Py_XDECREF(err_msg);
+        err_msg = PyUnicode_FromString(err_msg_str);
+        if (err_msg == NULL) {
+            PyErr_Clear();
         }
 
         /* sys.unraisablehook failed: log its error using default hook */
@@ -1350,14 +1398,24 @@ PyErr_WriteUnraisable(PyObject *obj)
 
 default_hook:
     /* Call the default unraisable hook (ignore failure) */
-    (void)write_unraisable_exc(tstate, exc_type, exc_value, exc_tb, obj);
+    (void)write_unraisable_exc(tstate, exc_type, exc_value, exc_tb,
+                               err_msg, obj);
 
 done:
     Py_XDECREF(exc_type);
     Py_XDECREF(exc_value);
     Py_XDECREF(exc_tb);
+    Py_XDECREF(err_msg);
     _PyErr_Clear(tstate); /* Just in case */
 }
+
+
+void
+PyErr_WriteUnraisable(PyObject *obj)
+{
+    _PyErr_WriteUnraisableMsg(NULL, obj);
+}
+
 
 extern PyObject *PyModule_GetWarningsModule(void);
 
