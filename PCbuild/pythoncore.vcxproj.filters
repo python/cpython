@@ -84,13 +84,13 @@
     <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\coreconfig.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\dictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\fileobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
@@ -186,9 +186,6 @@
     <ClInclude Include="..\Include\internal\pycore_context.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_coreconfig.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -199,6 +196,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_hamt.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_initconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
@@ -920,9 +920,6 @@
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\coreconfig.c">
-      <Filter>Python</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\context.h">
       <Filter>Python</Filter>
     </ClCompile>
@@ -975,6 +972,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\importdl.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\initconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\marshal.c">
