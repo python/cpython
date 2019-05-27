@@ -2,7 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_context.h"
@@ -124,7 +124,7 @@ void
 _Py_dump_counts(FILE* f)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (!interp->core_config.show_alloc_count) {
+    if (!interp->config.show_alloc_count) {
         return;
     }
 
@@ -1767,13 +1767,13 @@ PyObject _Py_NotImplementedStruct = {
     1, &_PyNotImplemented_Type
 };
 
-_PyInitError
+PyStatus
 _PyTypes_Init(void)
 {
 #define INIT_TYPE(TYPE, NAME) \
     do { \
         if (PyType_Ready(TYPE) < 0) { \
-            return _Py_INIT_ERR("Can't initialize " NAME " type"); \
+            return _PyStatus_ERR("Can't initialize " NAME " type"); \
         } \
     } while (0)
 
@@ -1843,7 +1843,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyCoro_Type, "coroutine");
     INIT_TYPE(&_PyCoroWrapper_Type, "coroutine wrapper");
     INIT_TYPE(&_PyInterpreterID_Type, "interpreter ID");
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 #undef INIT_TYPE
 }

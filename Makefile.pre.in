@@ -322,7 +322,7 @@ PYTHON_OBJS=	\
 		Python/ceval.o \
 		Python/codecs.o \
 		Python/compile.o \
-		Python/coreconfig.o \
+		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
 		Python/frozenmain.o \
@@ -333,8 +333,10 @@ PYTHON_OBJS=	\
 		Python/getplatform.o \
 		Python/getversion.o \
 		Python/graminit.o \
+		Python/hamt.o \
 		Python/import.o \
 		Python/importdl.o \
+		Python/initconfig.o \
 		Python/marshal.o \
 		Python/modsupport.o \
 		Python/mysnprintf.o \
@@ -349,8 +351,6 @@ PYTHON_OBJS=	\
 		Python/pylifecycle.o \
 		Python/pymath.o \
 		Python/pystate.o \
-		Python/context.o \
-		Python/hamt.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
 		Python/bootstrap_hash.o \
@@ -1052,9 +1052,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/Python-ast.h \
 		\
 		$(srcdir)/Include/cpython/abstract.h \
-		$(srcdir)/Include/cpython/coreconfig.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
+		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
@@ -1072,11 +1072,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
-		$(srcdir)/Include/internal/pycore_coreconfig.h \
 		$(srcdir)/Include/internal/pycore_fileutils.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
+		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \

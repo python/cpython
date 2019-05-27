@@ -76,32 +76,32 @@ main(int argc, char *argv[])
     }
     text[text_size] = '\0';
 
-    _PyInitError err;
-    _PyCoreConfig config;
+    PyStatus status;
+    PyConfig config;
 
-    err = _PyCoreConfig_InitIsolatedConfig(&config);
-    if (_PyInitError_Failed(err)) {
-        _PyCoreConfig_Clear(&config);
-        _Py_ExitInitError(err);
+    status = PyConfig_InitIsolatedConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
     }
 
     config.site_import = 0;
 
-    err = _PyCoreConfig_SetString(&config, &config.program_name,
+    status = PyConfig_SetString(&config, &config.program_name,
                                   L"./_freeze_importlib");
-    if (_PyInitError_Failed(err)) {
-        _PyCoreConfig_Clear(&config);
-        _Py_ExitInitError(err);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
     }
 
     /* Don't install importlib, since it could execute outdated bytecode. */
     config._install_importlib = 0;
     config._init_main = 0;
 
-    err = _Py_InitializeFromConfig(&config);
-    _PyCoreConfig_Clear(&config);
-    if (_PyInitError_Failed(err)) {
-        _Py_ExitInitError(err);
+    status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
     }
 
     sprintf(buf, "<frozen %s>", name);
