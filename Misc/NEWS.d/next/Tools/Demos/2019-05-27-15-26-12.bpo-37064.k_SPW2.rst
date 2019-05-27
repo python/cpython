@@ -1,0 +1,3 @@
+adds option -f to pathscript.py. The option takes argument and is for adding flags. If argument is empty, it just keeps flags.
+Let's say you have script with '#! /usr/bin/env -R' and you want to just change interpreter. You can run now
+``pathfix.py -i /usr/bin/python -f file_or_directory``and get '#! /usr/bin/python -R'
