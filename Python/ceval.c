@@ -4614,12 +4614,6 @@ _PyEval_GetCoroutineOriginTrackingDepth(void)
     return tstate->coroutine_origin_tracking_depth;
 }
 
-PyObject *
-_PyEval_GetCoroutineWrapper(void)
-{
-    return NULL;
-}
-
 void
 _PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
 {

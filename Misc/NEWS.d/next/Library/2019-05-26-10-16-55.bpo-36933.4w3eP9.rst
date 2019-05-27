@@ -1,3 +1,2 @@
-The function ``sys.set_coroutine_wrapper`` that was deprecated and marked
-for removal in 3.8 has been removed. ``sys.get_coroutine_wrapper`` now
-always return ``None``.
+The functions ``sys.set_coroutine_wrapper`` and ``sys.get_coroutine_wrapper``
+that were deprecated and marked for removal in 3.8 have been removed.

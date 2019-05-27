@@ -777,22 +777,6 @@ always available.
       for details.)  Use it only for debugging purposes.
 
 
-.. function:: get_coroutine_wrapper()
-
-   Returns ``None``, or a wrapper set by :func:`set_coroutine_wrapper`.
-
-   .. versionadded:: 3.5
-      See :pep:`492` for more details.
-
-   .. note::
-      This function has been added on a provisional basis (see :pep:`411`
-      for details.)  Use it only for debugging purposes.
-
-   .. deprecated:: 3.7
-      The coroutine wrapper functionality has been deprecated, and
-      will be removed in 3.8. See :issue:`32591` for details.
-
-
 .. data:: hash_info
 
    A :term:`struct sequence` giving parameters of the numeric hash

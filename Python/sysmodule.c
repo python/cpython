@@ -1158,24 +1158,6 @@ sys_get_coroutine_origin_tracking_depth_impl(PyObject *module)
     return _PyEval_GetCoroutineOriginTrackingDepth();
 }
 
-/*[clinic input]
-sys.get_coroutine_wrapper
-
-Return the wrapper for coroutines set by sys.set_coroutine_wrapper.
-[clinic start generated code]*/
-
-static PyObject *
-sys_get_coroutine_wrapper_impl(PyObject *module)
-/*[clinic end generated code: output=b74a7e4b14fe898e input=ef0351fb9ece0bb4]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "get_coroutine_wrapper is deprecated", 1) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 static PyTypeObject AsyncGenHooksType;
 
 PyDoc_STRVAR(asyncgen_hooks_doc,
@@ -1964,7 +1946,6 @@ static PyMethodDef sys_methods[] = {
     SYS__DEBUGMALLOCSTATS_METHODDEF
     SYS_SET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
     SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF
-    SYS_GET_COROUTINE_WRAPPER_METHODDEF
     {"set_asyncgen_hooks", (PyCFunction)(void(*)(void))sys_set_asyncgen_hooks,
      METH_VARARGS | METH_KEYWORDS, set_asyncgen_hooks_doc},
     SYS_GET_ASYNCGEN_HOOKS_METHODDEF

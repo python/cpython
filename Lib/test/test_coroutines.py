@@ -2146,13 +2146,6 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
         self.assertEqual(buffer, [1, 2, 'MyException'])
 
 
-class SysGetCoroWrapperTest(unittest.TestCase):
-
-    def test_get_wrapper_1(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsNone(sys.get_coroutine_wrapper())
-
-
 class OriginTrackingTest(unittest.TestCase):
     def here(self):
         info = inspect.getframeinfo(inspect.currentframe().f_back)
