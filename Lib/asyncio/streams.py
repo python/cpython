@@ -32,13 +32,15 @@ class StreamMode(enum.Flag):
     WRITE = enum.auto()
     READWRITE = READ | WRITE
 
-    def _check_read(self):
-        if not self & self.READ:
-            raise RuntimeError("The stream is write-only")
 
-    def _check_write(self):
-        if not self & self.WRITE:
-            raise RuntimeError("The stream is read-only")
+def _check_read(mode):
+    if not mode & StreamMode.READ:
+        raise RuntimeError("The stream is write-only")
+
+
+def _check_write(mode):
+    if not mode & StreamMode.WRITE:
+        raise RuntimeError("The stream is read-only")
 
 
 class _ContextManagerHelper:
@@ -1338,12 +1340,12 @@ class Stream:
         return self._transport
 
     def write(self, data):
-        self._mode._check_write()
+        _check_write(self._mode)
         self._transport.write(data)
         return self._fast_drain()
 
     def writelines(self, data):
-        self._mode._check_write()
+        _check_write(self._mode)
         self._transport.writelines(data)
         return self._fast_drain()
 
@@ -1368,7 +1370,7 @@ class Stream:
         return _OptionalAwait(self.drain)
 
     def write_eof(self):
-        self._mode._check_write()
+        _check_write(self._mode)
         return self._transport.write_eof()
 
     def can_write_eof(self):
@@ -1401,7 +1403,7 @@ class Stream:
           w.write(data)
           await w.drain()
         """
-        self._mode._check_write()
+        _check_write(self._mode)
         exc = self.exception()
         if exc is not None:
             raise exc
@@ -1470,7 +1472,7 @@ class Stream:
         return self._eof and not self._buffer
 
     def feed_data(self, data):
-        self._mode._check_read()
+        _check_read(self._mode)
         assert not self._eof, 'feed_data after feed_eof'
 
         if not data:
@@ -1536,7 +1538,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._mode._check_read()
+        _check_read(self._mode)
         sep = b'\n'
         seplen = len(sep)
         try:
@@ -1572,7 +1574,7 @@ class Stream:
         LimitOverrunError exception  will be raised, and the data
         will be left in the internal buffer, so it can be read again.
         """
-        self._mode._check_read()
+        _check_read(self._mode)
         seplen = len(separator)
         if seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
@@ -1664,7 +1666,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._mode._check_read()
+        _check_read(self._mode)
 
         if self._exception is not None:
             raise self._exception
@@ -1710,7 +1712,7 @@ class Stream:
         If stream was paused, this function will automatically resume it if
         needed.
         """
-        self._mode._check_read()
+        _check_read(self._mode)
         if n < 0:
             raise ValueError('readexactly size can not be less than zero')
 
@@ -1738,7 +1740,7 @@ class Stream:
         return data
 
     def __aiter__(self):
-        self._mode._check_read()
+        _check_read(self._mode)
         return self
 
     async def __anext__(self):
