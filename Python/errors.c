@@ -2,7 +2,7 @@
 /* Error handling */
 
 #include "Python.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "pycore_traceback.h"
@@ -1090,16 +1090,16 @@ static PyStructSequence_Desc UnraisableHookArgs_desc = {
 };
 
 
-_PyInitError
+PyStatus
 _PyErr_Init(void)
 {
     if (UnraisableHookArgsType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&UnraisableHookArgsType,
                                        &UnraisableHookArgs_desc) < 0) {
-            return _Py_INIT_ERR("failed to initialize UnraisableHookArgs type");
+            return _PyStatus_ERR("failed to initialize UnraisableHookArgs type");
         }
     }
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
 

@@ -14,14 +14,14 @@ PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 
-PyAPI_FUNC(_PyInitError) _Py_PreInitialize(
-    const _PyPreConfig *src_config);
-PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromArgs(
-    const _PyPreConfig *src_config,
+PyAPI_FUNC(PyStatus) Py_PreInitialize(
+    const PyPreConfig *src_config);
+PyAPI_FUNC(PyStatus) Py_PreInitializeFromBytesArgs(
+    const PyPreConfig *src_config,
     Py_ssize_t argc,
     char **argv);
-PyAPI_FUNC(_PyInitError) _Py_PreInitializeFromWideArgs(
-    const _PyPreConfig *src_config,
+PyAPI_FUNC(PyStatus) Py_PreInitializeFromArgs(
+    const PyPreConfig *src_config,
     Py_ssize_t argc,
     wchar_t **argv);
 
@@ -30,22 +30,22 @@ PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
 /* Initialization and finalization */
 
-PyAPI_FUNC(_PyInitError) _Py_InitializeFromConfig(
-    const _PyCoreConfig *config);
-PyAPI_FUNC(_PyInitError) _Py_InitializeFromArgs(
-    const _PyCoreConfig *config,
+PyAPI_FUNC(PyStatus) Py_InitializeFromConfig(
+    const PyConfig *config);
+PyAPI_FUNC(PyStatus) _Py_InitializeFromArgs(
+    const PyConfig *config,
     Py_ssize_t argc,
     char * const *argv);
-PyAPI_FUNC(_PyInitError) _Py_InitializeFromWideArgs(
-    const _PyCoreConfig *config,
+PyAPI_FUNC(PyStatus) _Py_InitializeFromWideArgs(
+    const PyConfig *config,
     Py_ssize_t argc,
     wchar_t * const *argv);
-PyAPI_FUNC(_PyInitError) _Py_InitializeMain(void);
+PyAPI_FUNC(PyStatus) _Py_InitializeMain(void);
 
-PyAPI_FUNC(int) _Py_RunMain(void);
+PyAPI_FUNC(int) Py_RunMain(void);
 
 
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_ExitInitError(_PyInitError err);
+PyAPI_FUNC(void) _Py_NO_RETURN Py_ExitStatusException(PyStatus err);
 
 /* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level
  * exit functions.

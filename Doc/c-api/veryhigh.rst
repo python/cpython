@@ -42,6 +42,13 @@ the same library that the Python runtime is using.
    ``Py_InspectFlag`` is not set.
 
 
+.. c:function:: int Py_BytesMain(int argc, char **argv)
+
+   Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings.
+
+   .. versionadded:: 3.8
+
+
 .. c:function:: int PyRun_AnyFile(FILE *fp, const char *filename)
 
    This is a simplified interface to :c:func:`PyRun_AnyFileExFlags` below, leaving

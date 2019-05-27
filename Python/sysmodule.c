@@ -17,7 +17,7 @@ Data members:
 #include "Python.h"
 #include "code.h"
 #include "frameobject.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pathconfig.h"
@@ -752,7 +752,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const _PyCoreConfig *config = &interp->core_config;
+    const PyConfig *config = &interp->config;
     return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
@@ -767,7 +767,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 /*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    const _PyCoreConfig *config = &interp->core_config;
+    const PyConfig *config = &interp->config;
     return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
@@ -2475,8 +2475,8 @@ make_flags(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     int pos = 0;
     PyObject *seq;
-    const _PyPreConfig *preconfig = &runtime->preconfig;
-    const _PyCoreConfig *config = &interp->core_config;
+    const PyPreConfig *preconfig = &runtime->preconfig;
+    const PyConfig *config = &interp->config;
 
     seq = PyStructSequence_New(&FlagsType);
     if (seq == NULL)
@@ -2690,7 +2690,7 @@ static struct PyModuleDef sysmodule = {
         }                                                  \
     } while (0)
 
-static _PyInitError
+static PyStatus
 _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
                 PyObject *sysdict)
 {
@@ -2827,13 +2827,13 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
     if (PyErr_Occurred()) {
         goto err_occurred;
     }
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 type_init_failed:
-    return _Py_INIT_ERR("failed to initialize a type");
+    return _PyStatus_ERR("failed to initialize a type");
 
 err_occurred:
-    return _Py_INIT_ERR("can't initialize sys module");
+    return _PyStatus_ERR("can't initialize sys module");
 }
 
 #undef SET_SYS_FROM_STRING
@@ -2885,7 +2885,7 @@ error:
 
 
 static PyObject*
-sys_create_xoptions_dict(const _PyCoreConfig *config)
+sys_create_xoptions_dict(const PyConfig *config)
 {
     Py_ssize_t nxoption = config->xoptions.length;
     wchar_t * const * xoptions = config->xoptions.items;
@@ -2910,12 +2910,12 @@ int
 _PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
 {
     PyObject *sysdict = interp->sysdict;
-    const _PyCoreConfig *config = &interp->core_config;
+    const PyConfig *config = &interp->config;
     int res;
 
 #define COPY_LIST(KEY, VALUE) \
     do { \
-        PyObject *list = _PyWstrList_AsList(&(VALUE)); \
+        PyObject *list = _PyWideStringList_AsList(&(VALUE)); \
         if (list == NULL) { \
             return -1; \
         } \
@@ -3003,7 +3003,7 @@ err_occurred:
    infrastructure for the io module in place.
 
    Use UTF-8/surrogateescape and ignore EAGAIN errors. */
-_PyInitError
+PyStatus
 _PySys_SetPreliminaryStderr(PyObject *sysdict)
 {
     PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
@@ -3017,56 +3017,56 @@ _PySys_SetPreliminaryStderr(PyObject *sysdict)
         goto error;
     }
     Py_DECREF(pstderr);
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 error:
     Py_XDECREF(pstderr);
-    return _Py_INIT_ERR("can't set preliminary stderr");
+    return _PyStatus_ERR("can't set preliminary stderr");
 }
 
 
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
-_PyInitError
+PyStatus
 _PySys_Create(_PyRuntimeState *runtime, PyInterpreterState *interp,
               PyObject **sysmod_p)
 {
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
-        return _Py_INIT_ERR("can't make modules dictionary");
+        return _PyStatus_ERR("can't make modules dictionary");
     }
     interp->modules = modules;
 
     PyObject *sysmod = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
     if (sysmod == NULL) {
-        return _Py_INIT_ERR("failed to create a module object");
+        return _PyStatus_ERR("failed to create a module object");
     }
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
-        return _Py_INIT_ERR("can't initialize sys dict");
+        return _PyStatus_ERR("can't initialize sys dict");
     }
     Py_INCREF(sysdict);
     interp->sysdict = sysdict;
 
     if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
-        return _Py_INIT_ERR("can't initialize sys module");
+        return _PyStatus_ERR("can't initialize sys module");
     }
 
-    _PyInitError err = _PySys_SetPreliminaryStderr(sysdict);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    PyStatus status = _PySys_SetPreliminaryStderr(sysdict);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
-    err = _PySys_InitCore(runtime, interp, sysdict);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
+    status = _PySys_InitCore(runtime, interp, sysdict);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     _PyImport_FixupBuiltin(sysmod, "sys", interp->modules);
 
     *sysmod_p = sysmod;
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 }
 
 
@@ -3156,7 +3156,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (updatepath) {
         /* If argv[0] is not '-c' nor '-m', prepend argv[0] to sys.path.
            If argv[0] is a symlink, use the real path. */
-        const _PyWstrList argv_list = {.length = argc, .items = argv};
+        const PyWideStringList argv_list = {.length = argc, .items = argv};
         PyObject *path0 = NULL;
         if (_PyPathConfig_ComputeSysPath0(&argv_list, &path0)) {
             if (path0 == NULL) {

@@ -2824,7 +2824,7 @@ _PyBuiltin_Init(void)
 {
     PyObject *mod, *dict, *debug;
 
-    const _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    const PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (PyType_Ready(&PyFilter_Type) < 0 ||
         PyType_Ready(&PyMap_Type) < 0 ||

@@ -311,7 +311,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags;
     int merged;
-    _PyCoreConfig *config = &_PyInterpreterState_GET_UNSAFE()->core_config;
+    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -4782,7 +4782,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
                 return compiler_error(c, "'await' outside function");
             }
 
-            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION && 
+            if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
                     c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION){
                 return compiler_error(c, "'await' outside async function");
             }
