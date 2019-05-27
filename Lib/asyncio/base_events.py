@@ -45,6 +45,7 @@ from . import sslproto
 from . import staggered
 from . import tasks
 from . import transports
+from . import trsock
 from .log import logger
 
 
@@ -319,8 +320,8 @@ class Server(events.AbstractServer):
     @property
     def sockets(self):
         if self._sockets is None:
-            return []
-        return list(self._sockets)
+            return ()
+        return tuple(trsock.TransportSocket(s) for s in self._sockets)
 
     def close(self):
         sockets = self._sockets

@@ -19,6 +19,7 @@ from . import exceptions
 from . import protocols
 from . import sslproto
 from . import transports
+from . import trsock
 from .log import logger
 
 
@@ -454,7 +455,7 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
         base_events._set_nodelay(sock)
 
     def _set_extra(self, sock):
-        self._extra['socket'] = sock
+        self._extra['socket'] = trsock.TransportSocket(sock)
 
         try:
             self._extra['sockname'] = sock.getsockname()
@@ -679,7 +680,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                     self.call_exception_handler({
                         'message': 'Accept failed on a socket',
                         'exception': exc,
-                        'socket': sock,
+                        'socket': trsock.TransportSocket(sock),
                     })
                     sock.close()
                 elif self._debug:

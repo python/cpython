@@ -25,6 +25,7 @@ from . import futures
 from . import protocols
 from . import sslproto
 from . import transports
+from . import trsock
 from .log import logger
 
 
@@ -171,7 +172,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     self.call_exception_handler({
                         'message': 'socket.accept() out of system resource',
                         'exception': exc,
-                        'socket': sock,
+                        'socket': trsock.TransportSocket(sock),
                     })
                     self._remove_reader(sock.fileno())
                     self.call_later(constants.ACCEPT_RETRY_DELAY,
@@ -603,7 +604,7 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def __init__(self, loop, sock, protocol, extra=None, server=None):
         super().__init__(extra, loop)
-        self._extra['socket'] = sock
+        self._extra['socket'] = trsock.TransportSocket(sock)
         try:
             self._extra['sockname'] = sock.getsockname()
         except OSError:
