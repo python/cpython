@@ -1217,32 +1217,52 @@ async/await code consider using the high-level
 
    Other parameters:
 
-   * *stdin*: either a file-like object representing a pipe to be
-     connected to the subprocess's standard input stream using
-     :meth:`~loop.connect_write_pipe`, or the
-     :const:`subprocess.PIPE`  constant (default). By default a new
-     pipe will be created and connected.
+   * *stdin* can be any of these:
 
-   * *stdout*: either a file-like object representing the pipe to be
-     connected to the subprocess's standard output stream using
-     :meth:`~loop.connect_read_pipe`, or the
-     :const:`subprocess.PIPE` constant (default). By default a new pipe
-     will be created and connected.
+     * a file-like object representing a pipe to be connected to the
+       subprocess's standard input stream using
+       :meth:`~loop.connect_write_pipe`
+     * the :const:`subprocess.PIPE` constant (default) which will create a new
+       pipe and connect it,
+     * the value ``None`` which will make the subprocess inherit the file
+       descriptor from this process
+     * the :const:`subprocess.DEVNULL` constant which indicates that the
+       special :data:`os.devnull` file will be used
 
-   * *stderr*: either a file-like object representing the pipe to be
-     connected to the subprocess's standard error stream using
-     :meth:`~loop.connect_read_pipe`, or one of
-     :const:`subprocess.PIPE` (default) or :const:`subprocess.STDOUT`
-     constants.
+   * *stdout* can be any of these:
 
-     By default a new pipe will be created and connected. When
-     :const:`subprocess.STDOUT` is specified, the subprocess' standard
-     error stream will be connected to the same pipe as the standard
-     output stream.
+     * a file-like object representing a pipe to be connected to the
+       subprocess's standard output stream using
+       :meth:`~loop.connect_write_pipe`
+     * the :const:`subprocess.PIPE` constant (default) which will create a new
+       pipe and connect it,
+     * the value ``None`` which will make the subprocess inherit the file
+       descriptor from this process
+     * the :const:`subprocess.DEVNULL` constant which indicates that the
+       special :data:`os.devnull` file will be used
+
+   * *stderr* can be any of these:
+
+     * a file-like object representing a pipe to be connected to the
+       subprocess's standard error stream using
+       :meth:`~loop.connect_write_pipe`
+     * the :const:`subprocess.PIPE` constant (default) which will create a new
+       pipe and connect it,
+     * the value ``None`` which will make the subprocess inherit the file
+       descriptor from this process
+     * the :const:`subprocess.DEVNULL` constant which indicates that the
+       special :data:`os.devnull` file will be used
+     * the :const:`subprocess.STDOUT` constant which will connect the standard
+       error stream to the process' standard output stream
 
    * All other keyword arguments are passed to :class:`subprocess.Popen`
-     without interpretation, except for *bufsize*, *universal_newlines*
-     and *shell*, which should not be specified at all.
+     without interpretation, except for *bufsize*, *universal_newlines*,
+     *shell*, *text*, *encoding* and *errors*, which should not be specified
+     at all.
+
+     The ``asyncio`` subprocess API does not support decoding the streams
+     as text. :func:`bytes.decode` can be used to convert the bytes returned
+     from the stream to text.
 
    See the constructor of the :class:`subprocess.Popen` class
    for documentation on other arguments.
