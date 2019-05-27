@@ -5484,13 +5484,12 @@ class SpyReducer(reduction.AbstractReducer):
         self.spy = spy
     def get_pickler_class(self):
         spy = self.spy
-        class Pickler(multiprocessing.reduction.ForkingPickler):
+        class Pickler(multiprocessing.reduction.AbstractPickler):
+            def dump(self, obj, protocol=None):
+                spy["dump"] += 1
+                super().dump(obj)
             @classmethod
-            def dumps(self, obj, protocol=None):
-                spy["dumps"] += 1
-                return pickle.dumps(obj)
-            @classmethod
-            def loads(self, *args, **kwargs):
+            def loads(cls, *args, **kwargs):
                 spy["loads"] += 1
                 return pickle.loads(*args, **kwargs)
         return Pickler
@@ -5503,7 +5502,7 @@ class _TestCustomReducer(BaseTestCase):
     def setUp(self):
         self.context = multiprocessing.get_context()
         self.original_reducer = multiprocessing.get_reducer()
-        self.spy = {'loads': 0, 'dumps': 0}
+        self.spy = {'loads': 0, 'dump': 0}
         self.context.set_reducer(SpyReducer(self.spy))
 
     def tearDown(self):
@@ -5522,7 +5521,7 @@ class _TestCustomReducer(BaseTestCase):
             self.assertRaises(OSError, l.accept)
 
         self.assertEqual(self.spy['loads'], 1)
-        self.assertEqual(self.spy['dumps'], 1)
+        self.assertEqual(self.spy['dump'], 1)
 
     @classmethod
     def _put_and_get_in_queue(cls, queue, parent_can_continue):
@@ -5549,7 +5548,7 @@ class _TestCustomReducer(BaseTestCase):
         p.terminate()
         self.assertEqual(element, "Something")
         self.assertEqual(self.spy['loads'], 1)
-        self.assertEqual(self.spy['dumps'], 1)
+        self.assertEqual(self.spy['dump'], 3)
         self.assertEqual(p.exitcode, 0)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
@@ -5564,7 +5563,7 @@ class _TestCustomReducer(BaseTestCase):
             self.assertRaises(OSError, l.accept)
 
         self.assertEqual(self.spy['loads'], 1)
-        self.assertEqual(self.spy['dumps'], 1)
+        self.assertEqual(self.spy['dump'], 1)
 
 class CustomContext(multiprocessing.context.BaseContext):
     _name = "custom"
@@ -5581,8 +5580,8 @@ class _TestCustomReducerWithContext(BaseTestCase):
         self.default_ctx = multiprocessing.get_context()
         self.original_custom_reducer = self.custom_ctx.get_reducer()
         self.original_default_reducer = self.default_ctx.get_reducer()
-        self.default_spy = {'loads': 0, 'dumps': 0}
-        self.custom_spy = {'loads': 0, 'dumps': 0}
+        self.default_spy = {'loads': 0, 'dump': 0}
+        self.custom_spy = {'loads': 0, 'dump': 0}
 
     def tearDown(self):
         self.custom_ctx.set_reducer(self.original_custom_reducer)
@@ -5616,9 +5615,9 @@ class _TestCustomReducerWithContext(BaseTestCase):
         p.terminate()
         self.assertEqual(element, "Something")
         self.assertEqual(self.custom_spy['loads'], 1)
-        self.assertEqual(self.custom_spy['dumps'], 1)
+        self.assertEqual(self.custom_spy['dump'], 1)
         self.assertEqual(self.default_spy['loads'], 0)
-        self.assertEqual(self.default_spy['dumps'], 0)
+        self.assertEqual(self.default_spy['dump'], 0)
         self.assertEqual(p.exitcode, 0)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
@@ -5636,9 +5635,9 @@ class _TestCustomReducerWithContext(BaseTestCase):
             self.assertRaises(OSError, l.accept)
 
         self.assertEqual(self.custom_spy['loads'], 1)
-        self.assertEqual(self.custom_spy['dumps'], 1)
+        self.assertEqual(self.custom_spy['dump'], 1)
         self.assertEqual(self.default_spy['loads'], 0)
-        self.assertEqual(self.default_spy['dumps'], 0)
+        self.assertEqual(self.default_spy['dump'], 0)
 
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
@@ -5660,9 +5659,9 @@ class _TestCustomReducerWithContext(BaseTestCase):
         self.assertEqual(p.exitcode, 0)
         self.assertEqual(element, "Something")
         self.assertEqual(self.custom_spy['loads'], 0)
-        self.assertEqual(self.custom_spy['dumps'], 0)
+        self.assertEqual(self.custom_spy['dump'], 0)
         self.assertEqual(self.default_spy['loads'], 1)
-        self.assertEqual(self.default_spy['dumps'], 1)
+        self.assertEqual(self.default_spy['dump'], 3)
         close_queue(queue)
 
 

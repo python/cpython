@@ -51,7 +51,15 @@ class ForkingPickler(pickle.Pickler):
         cls(buf, protocol).dump(obj)
         return buf.getbuffer()
 
-    loads = pickle.loads
+    @classmethod
+    def loads(cls, bytes_object, *, fix_imports=True,
+                   encoding="ASCII", errors="strict"):
+        return pickle.loads(bytes_object, fix_imports=fix_imports,
+                            encoding=encoding, errors=errors)
+
+
+class AbstractPickler(ForkingPickler):
+    pass
 
 
 def register(type_, reduce_):
