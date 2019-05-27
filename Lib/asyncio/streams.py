@@ -266,7 +266,7 @@ class _BaseStreamServer:
     def sockets(self):
         # multiple value for socket bound to both IPv4 and IPv6 families
         if self._server_impl is None:
-            return []
+            return ()
         return self._server_impl.sockets
 
     def is_serving(self):
