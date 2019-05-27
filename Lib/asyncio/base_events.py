@@ -1571,9 +1571,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("shell must be True")
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
-        if encoding or errors or text:
-            raise ValueError("text decoding is not supported: encoding, "
-                             "errors and text must be None")
+        if text:
+            raise ValueError("text must be False")
+        if encoding:
+            raise ValueError("encoding must be None")
+        if errors:
+            raise ValueError("errors must be None")
 
         protocol = protocol_factory()
         debug_log = None
@@ -1600,9 +1603,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("shell must be False")
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
-        if encoding or errors or text:
-            raise ValueError("text decoding is not supported: encoding, "
-                             "errors and text must be None")
+        if text:
+            raise ValueError("text must be False")
+        if encoding:
+            raise ValueError("encoding must be None")
+        if errors:
+            raise ValueError("errors must be None")
 
         popen_args = (program,) + args
         for arg in popen_args:
